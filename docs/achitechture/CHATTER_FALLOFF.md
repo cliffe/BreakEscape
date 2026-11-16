@@ -22,10 +22,17 @@ Now:
 | `CHATTER_FLOOR` | 0.15 | room-hearing.js |
 | `THROUGH_DOOR` | 0.4 | room-hearing.js |
 | `VOLUME_TICK_MS` | 250 | npc-needs-chatter.js |
+| `FAINT_MAX` | 0.5 (a background voice is the curve times this; R2 m1, was a cap) | npc-needs-chatter.js |
+| `FAINT_COOLDOWN_MS` | 25000 (a speaker's faint-line throttle, needs clock) | npc-needs.js |
+| `FADE_MS` | 300 (a faint line given way to fades over this) | npc-needs-chatter.js |
+| `BARK_DUCK` | 0.25 (a faint line under a scripted bark) | npc-needs-chatter.js |
+| `FAINT_ALPHA` | 0.6 (dimmed bubble opacity) | npc-world-bubbles.js |
 
 Curve: 1.0 up to 160 px, straight line down to 0.15 at 480 px, 0.15 beyond. Through an open door the same curve is multiplied by 0.4 (floor there is 0.06). A shut door, a room that is not joined by a connection, and an unknown room give 0 (`other_room` in the log).
 
-## Not done (left from the plan's option a): superseded, see Handover below; kept for history
+## Not done (left from the plan's option a): history only
+
+This section describes the first pass. Everything in it was done in the second pass or round 1 (see Status and R1 fixes); read it as a record, not as the current state.
 
 - No new faint lines are drawn for ambient chatter or grumbles out of earshot; those still show a picture only. Faint audio therefore covers exchange lines (which already run to the end once started) and any ambient line drawn within earshot that outlasts the player walking off.
 - No dimmed bubbles, no `faintChatter` scenario flag, no music-widget toggle, no preemption of a faint line by a full one, no ducking under a scripted bark. The single-line queue and speech lock already cap faint voices at one.
@@ -85,7 +92,7 @@ Not done at this point: grumbles and mutters drawing faint lines, the music-widg
 
 ## R1 fixes
 
-From `CHATTER_FALLOFF_REVIEW_R1.md` (0 blocking, 3 major, 10 minor). Main merged first (a0f35064f). Tests are in `test/js/npc-chatter-faint.test.mjs` (28 cases) and `test/js/tts-distance-gain.test.mjs` (4). M1, M2, M3 and the m1 to m8 tests were run against the old sources and failed there. Commits: A = bae7e2f1e (majors), B = 2af863cba (minors and docs), C = 13010d7c5 (m10 tests), D = ee0561985 (live proof cases).
+From `CHATTER_FALLOFF_REVIEW_R1.md` (0 blocking, 3 major, 10 minor). Main merged first (a0f35064f). Tests are in `test/js/npc-chatter-faint.test.mjs` (28 cases) and `test/js/tts-distance-gain.test.mjs` (4). M1, M2, M3 and the m1, m2, m5, m6, m7 and m8 tests failed against the old sources; the R1 m3 test did not (it passed on them, fixed in R2 m4). Commits: A = bae7e2f1e (majors), B = 2af863cba (minors and docs), C = 13010d7c5 (m10 tests), D = ee0561985 (live proof cases).
 
 | Finding | Fix | Test | Commit |
 |---|---|---|---|
@@ -117,3 +124,30 @@ Keyless server on :3092 from this worktree, fresh test_needs_sims game 6359, hea
 ### Handover (end of R1 fix pass)
 
 Done: all 13 findings fixed, tested and live-proved (above). Open: nothing. Suites on f90d108e2: `bin/test-js` 719 files passed, 0 failed; `bin/rails test` 3003 runs, 48495 assertions, 0 failures, 0 errors, 3 skips. Gotchas: background shells were reaped once, so run the suites with `run_in_background` and wait for the notice. The :3092 server was killed (its pid was the listener on that port); game 6359 remains in the dev DB.
+
+
+## R2 fixes
+
+From `CHATTER_FALLOFF_REVIEW_R2.md` (0 blocking, 1 major, 9 minor). Main merged first (already up to date). Commits: A = b893c67c5 (code and tests), B = 7c7551139 (switch look, live proof cases). Unit tests: `test/js/npc-chatter-faint.test.mjs`, now 37 cases.
+
+| Finding | Fix | Test |
+|---|---|---|
+| M1 switch and level miss unheard exchange lines | One helper, `_backgroundLevel(npcId)`: 0 with the switch off, else curve x door x `FAINT_MAX`. `faintVolume`, `say` and the follow tick all use it. An exchange line voiced out of earshot is passed `{ unheard: true }` (not `faint`, so it keeps the lock and no full line cuts it); `say` drops it when the switch is off (`background_off` in the log, bubble unchanged) and the follow tick stops a line already playing when the switch goes off | three "R2 M1" cases, and the R1 m8 test (`info.unheard`) |
+| m1 plateau | Scale instead of clamp: the curve x 0.5 (0.5 at the earshot edge, 0.075 at 3r). A dark room beside the speaker is still 0.5. Through a door it is 0.4 x curve x 0.5 | updated figures, and "louder nearer, inside the old plateau" |
+| m2 faint grumbles and mutters not dimmed | `s.saying.faint` is stored and `_talking` returns it | "R2 m2" |
+| m3 switch | Row label dropped; one name, "Background voices", in the button, tooltip, comments and tests. `.mw-toggle-btn[aria-pressed]` styles: on has a filled face and accent border, off is dim with a dashed 2px border; on the themed skin on is the accent colour and off is the dimmed filter. 2px borders, no radius, the widget's pixel font, `white-space: nowrap`. Screenshots below | live case 9 clicks the real button |
+| m4 weak tests | The R1 m3 test now uses a 2 s clip and must end before the first 250 ms follow tick; the R1 m10 test now runs the unheard grumble half. The R1 table sentence above is corrected | edited tests |
+| m5 two untested fixes | "R2 m5" mutter wait queue case; "R2 m5" real-adapter case with a stale `phone-chat` type and a lockpick open. Both were checked by mutation: reverting `_tickMutterWaits` to `_speechFree()` fails the first, making the inline `conversationOpen` read `currentConversationMinigameType` again fails the second. The inline copy now has a comment naming `room-hearing.js` | as named |
+| m6 docs | README step 5 figures, `NPC_NEEDS_SYSTEM.md`, constants table, "Not done" marked as history | n/a |
+| m7 token leak | The step's outer `.catch` calls `dropTok()` | "R2 m7" |
+| m8 paused conversation | Decision: a minigame whose `params.returnTo.sceneType` is a chat counts as a conversation, in `room-hearing.js` and the inline copy, so chatter stays muted under a cloner or lockpick opened from a conversation | "R2 m8", real-adapter case, live case 10 |
+| m9 late blip | The late-load branch calls `setDistanceGain(0, true)` before `stop()` | "R2 m9" |
+
+### Live proof (R2)
+
+Keyless server on :3092 from this worktree, fresh test_needs_sims game 6383, headless, `setFPS(20)`, fixed steps on; `PLAYTEST_PORT` not used by the script (it reads `PORT`). `PORT=3092 node tools/playtest/chatter-falloff-proof.mjs 6383 faint`, no page errors. The old cases still hold at the scaled level: 1 faint from 204 px `play` 0.441 (curve 0.88 x 0.5); 2 through the open door 0.152; 3 and 4 the conversation mute and the heard line at 0.77 after the call; 5 full over faint (`preempted`, then Amara at 1); 6 under a bark 0.089; 7 and 8 unchanged.
+
+- 9a The real "Background voices" button clicked off (`window.backgroundChatter` false, `aria-pressed` false): an unheard exchange line from Sanjay is not played, log `background_off`. 9b Clicked on: the same line plays at 0.356.
+- 10 A person-chat with Amara, marked suspended, with a `notes` minigame opened over it (`returnTo` person-chat): `conversationOpen` true, `faintVolume` 0, `playerHears` false, and a direct `say` is logged `conversation`. After the child closes, `conversationOpen` is false again.
+
+Screenshots (headless, the music widget at 300 px): `chatter-switch-on.png` and `chatter-switch-off.png` (themed skin), `chatter-switch-plain-on.png` and `chatter-switch-plain-off.png` (no theme), all under the session scratchpad. The text sits on one line in all four (themed button 256 px wide with scrollWidth equal to clientWidth, plain 276 px).
