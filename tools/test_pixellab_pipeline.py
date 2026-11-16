@@ -13,7 +13,8 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pixellab_pipeline import (clear_edge_white, clear_white_backgrounds,  # noqa: E402
-                               parse_pose_from, take_pose_from_state)
+                               parse_pose_from, take_pose_from_state,
+                               apply_stored_import_settings)
 from convert_pixellab_to_spritesheet import normalize_anim_type  # noqa: E402
 
 WHITE = (254, 255, 254, 255)
@@ -184,6 +185,38 @@ class PoseFromTest(unittest.TestCase):
         self.assertEqual(normalize_anim_type("pose_use"), "pose_use")
         self.assertEqual(normalize_anim_type("Breathing_Idle-9fa0f8f5"), "breathing-idle")
         self.assertEqual(normalize_anim_type("sit"), "sit")
+
+
+class StoredImportSettingsTest(unittest.TestCase):
+    """A re-import keeps sit_from, poses and idle_from, by key or by id with --key."""
+
+    CID = "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37"
+    MANIFEST = {"mow": {"character_id": CID, "sit_from": "sit-id", "idle_from": "idle-id",
+                        "poses": {"drink": "d1", "phone": "p1", "use": "u1"}}}
+
+    def args(self, target, key=None, pose_from=None):
+        import argparse
+        return argparse.Namespace(target=target, key=key, pose_from=pose_from, idle_from=None,
+                                  sit_from=None, white_threshold=None)
+
+    def test_by_key(self):
+        a = self.args("mow", pose_from=["phone=p2"])
+        apply_stored_import_settings(a, self.MANIFEST)
+        self.assertEqual((a.target, a.key, a.sit_from, a.idle_from), (self.CID, "mow", "sit-id", "idle-id"))
+        self.assertEqual(a.poses, {"drink": "d1", "phone": "p2", "use": "u1"})
+
+    def test_by_id_or_url_with_key_of_the_same_character(self):
+        for target in (self.CID, f"https://www.pixellab.ai/characters/{self.CID}"):
+            a = self.args(target, key="mow", pose_from=["use=u2"])
+            apply_stored_import_settings(a, self.MANIFEST)
+            self.assertEqual(a.sit_from, "sit-id", target)
+            self.assertEqual(a.poses, {"drink": "d1", "phone": "p1", "use": "u2"})
+
+    def test_key_of_another_character_keeps_nothing(self):
+        a = self.args("0" * 36, key="mow", pose_from=["use=u2"])
+        apply_stored_import_settings(a, self.MANIFEST)
+        self.assertIsNone(a.sit_from)
+        self.assertEqual(a.poses, {"use": "u2"})
 
 
 if __name__ == "__main__":
