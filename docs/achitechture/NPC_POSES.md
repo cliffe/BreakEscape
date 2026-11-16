@@ -1,5 +1,56 @@
 # NPC poses (drink, use-machine, phone)
 
+## Handover (2026-11-16, fourth session; earlier sessions below)
+
+Fourth session: review R1 fixed (outcomes in NPC_POSES_REVIEW_R1.md) and player poses built.
+
+- NPC pass: the behaviour's `lastAnimationKey` stays on the idle key for the current direction,
+  so its per-tick `playAnimation('idle')` is a no-op (live: 0 animation starts in 5 s at the
+  coffee machine, 93 behaviour calls). `use` shows only while the NPC faces the object (within
+  one compass step); turned to a colleague or the player it shows `drink` for a drink, else
+  nothing. A social use of a drinks object (the cooler chat) shows `drink` (owner decision). A
+  hunger use at a machine (microwave) shows `use` for the lead, then nothing. Machines: resolved
+  office preset first (coffee, kettle, cooler, microwave, copier, shredder), then the name regex
+  without table, cup or mug. The object is looked up once per job; the lead pauses during a chat;
+  a first pose waits `SETTLE_MS` (150 ms) so an NPC about to sit never flashes one;
+  `"officeVisuals": false` turns poses off.
+- Pipeline: `--pose-from name=` removes a stored pose; the drift audit parses names from the right
+  (`pose_drink_south` adopts); the converter puts each pose frame on its direction's idle feet
+  line (PixelLab's breathing-idle sits 1 to 2 px higher than the rotations, south most), and a
+  pose canvas size no standing frame shares uses the pose frames' own feet. The three test
+  atlases were rebuilt offline by key: only pose frames moved (art commit, still not approved).
+- Validator: warnings for `poses` on an NPC with no needs, a listed pose the atlas lacks, and
+  `affordance.pose`/`machine` on an object that satisfies no need.
+- Player poses: `systems/player-poses.js` (below). Live proof on test_phone_calls with the player
+  swapped to male_office_worker_v2; shots in the owner's quality pack (scratch, not committed).
+
+Left: owner verdicts D26 and on standing idle breathing; whether a phone pose should also show a
+moment before the phone opens (it shows from the frame it opens, see Player poses).
+
+## Player poses
+
+`systems/player-poses.js`, installed from `core/game.js` after `createPlayer` (dynamic import;
+one static import, sprite-breath.js). It plays the player animations `pose_<name>_<compass>`
+that core/player.js already builds from any atlas frames; with no such frames nothing changes.
+
+| Trigger | Where | Pose |
+| --- | --- | --- |
+| a drink consumed (coffee, tea, energy drink, soda, water) | consumables.js `useConsumable` | drink, 1.6 s, with the existing sound |
+| a world object interaction (not an inventory item) | interactions.js `handleObjectInteraction`, after the facing turn | use, 0.5 s; the interaction runs at once |
+| a phone-style minigame opens / closes | minigame-manager.js start and end | phone, held while open, then 0.6 s |
+
+Phone-style minigames: `phone-chat` (texts, voice calls, ringing incoming calls) and
+`person-chat` with `videoCall` (a video call). Not included: `authenticator` (it shows the
+target's phone, not the player's), the scanners (handheld tools), `mail-client` and the rest.
+The pose starts the frame the minigame opens; the open is not delayed, because
+`startMinigame` returns the instance synchronously and callers rely on it.
+
+Skipped while seated, walking, knocked out, fighting (punch, jab, hit or death animation, or an
+NPC chasing) or with `"officeVisuals": false`; a walk or any other animation ends a pose at once.
+Client only: nothing is synced. A held pose breathes (sprite-breath.js). `updatePlayerSprite`
+now also removes the `pose_*` animations, so a swapped-in atlas never shows the old one's poses.
+Tests: `test/js/player-poses.test.mjs` (9, including the three trigger sites).
+
 ## Handover (2026-11-16, third session; second session below)
 
 Third session (2026-11-16):
@@ -106,56 +157,8 @@ Pipeline, seated frames end to end:
   `normalize_anim_type` pose case, `frame_offsets` ignoring pose frames, and the manifest
   round trip (`poses: {name: state id}` kept on re-import).
 
-Planned pipeline change: `--pose-from name=<state id or URL>`, repeatable (`action="append"`),
-names limited to `drink`, `use`, `phone`. A generalised `take_frames_from_state(root,
-state_root, char, anim_name)` serves both sit and poses. The manifest gets
-`"poses": {"drink": "<id>", ...}`, merged with the stored one on re-import (a new
-`--pose-from` for one name replaces only that name).
-
-Engine:
-
-- `NPCBehavior.playAnimation` (npc-behavior.js ~2841) returns early when `this._seat` is set;
-  it replays only when the anim key or flipX changes (`lastAnimationKey`). Facing is
-  `behavior.direction` ('down', 'up-left', ...); seating.js ~37 has the map to compass names.
-- Needs state is on `window.npcNeedsSystem.states` (Map id -> state). A use is
-  `s.job.phase === 'using'` with `s.job.targetId`; the object comes from
-  `npcNeedsSystem.world.getObject(id)` and its `affordance.satisfies`. Visits
-  (`job.kind === 'visit'`), print errands and `socialDesk` uses are not machine uses.
-  A desk-phone call is `s.call` (`{ phoneId, until }`, npc-needs.js ~4651); a colleague
-  answering a ringing phone is `job.phone` in `using`.
-- Blockers to respect: `b._seat` / `b._seatMove` (seated wins), `b.isMoving`,
-  `b.currentState` in `face_player`, `maintain_space`, `chase`, `flee`,
-  `npcHostileSystem.isNPCHostile/isNPCKO`, `npcNeedsSystem.world.inChatWith(id)`, and any
-  playing hit, attack, punch, jab or death animation.
-- `npc-office-visuals.js` already runs a `postupdate` pass (`followHeld`); the pose pass
-  should be its own module on `postupdate` too, loaded by dynamic import in `core/game.js`
-  (~2089) next to the office visuals. A new module with no static imports, and no new static
-  import in npc-needs.js, means no JS test harness copy list changes (38 harnesses copy
-  npc-needs.js).
-
-### Planned design and default mapping
-
-Per frame, for each needs NPC: work out the wanted pose, check the atlas has
-`pose_<name>_<compass>_frame_000` (`scene.textures.get(key).has(frame)`), and if so stop
-the animation and set that frame. When the pose ends (or a blocker appears), clear
-`lastAnimationKey` and call `playAnimation('idle', direction)` so the normal animation comes
-back. With no such frame nothing is touched, which is every atlas today.
-
-Default mapping (an affordance's `pose` field overrides it; `pose: null` turns it off):
-
-| Use | Pose |
-| --- | --- |
-| affordance satisfies `caffeine` or `thirst` | `drink` |
-| same, at a machine (coffee machine, boiler, water cooler) | `use` for the first few seconds, then `drink` |
-| other machine objects: copier, printer, microwave, vending, keypad, socket, boiler | `use` |
-| desk-phone call or answering a ringing desk phone, standing | `phone` |
-| eating, sitting, visits, social desk, anything else | none |
-
-Per NPC: `"poses": false` on the NPC record turns poses off; a list such as
-`["phone"]` allows only those names. Seated phone calls keep the sit frame (a seated phone
-variant is only on request).
-
-Note from the scenario scan: few objects across `scenarios/` declare `satisfies` inline next
-to their `type` (the regex scan found cake1, staff_lockers; boiler, water cooler and
-microwave had none inline), so the machine list should key on object `type` and texture as
-well as `satisfies`. Check `scenarios/test_needs_sims/scenario.json.erb` before fixing the list.
+The pipeline, engine and mapping planned here are built; "Decisions" in the second session and
+the fourth session's notes above describe them as built. Per NPC, `"poses": false` turns poses
+off and a list such as `["phone"]` allows only those names; an affordance's `pose: false` turns
+one object's pose off. The pass plays the pose animation (`npc-<id>-pose_<name>-<direction>`)
+when it has frames, never sets a texture frame directly, and face-player is no blocker.

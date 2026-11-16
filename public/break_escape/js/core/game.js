@@ -1930,6 +1930,8 @@ export async function create() {
     // Create player first like in original
     createPlayer(this);
     installSeating(this);
+    // Player poses (docs/achitechture/NPC_POSES.md): drink, use and phone frames when the player's atlas has them
+    import('../systems/player-poses.js').then(m => m.installPlayerPoses(this)).catch(e => console.warn('player poses failed', e));
     installBehindWallFade(this);
 
     // Store player globally for access from other modules

@@ -841,6 +841,10 @@ export function handleObjectInteraction(sprite) {
     // this interaction (warning shown, or dropped because the player is busy).
     if (maybeInteractionWarning(sprite)) return;
 
+    // A short use pose facing the object when the player's atlas has one (systems/player-poses.js);
+    // cosmetic, the interaction goes on at once
+    try { window.playerPoses?.use?.(sprite); } catch (e) { /* cosmetic */ }
+
     // Emit object interaction event (for NPCs to react)
     if (window.eventDispatcher && sprite.scenarioData) {
         window.eventDispatcher.emit('object_interacted', {
