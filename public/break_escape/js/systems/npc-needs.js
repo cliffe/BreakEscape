@@ -5581,7 +5581,8 @@ export function createEngineWorld() {
             const f = findSprite(itemId);
             if (!f || f.sp._npcCarried || f.sp.visible === false) return false;
             const sp = f.sp;
-            if (isSlot(sp)) slotHome(sp, f.roomId, f.key);   // its declared spot, for a later stow
+            const slot = isSlot(sp);
+            if (slot) slotHome(sp, f.roomId, f.key);   // its declared spot, for a later stow
             sp._npcCarried = npcId;
             // Office visuals (slice 3) keep it visible in the carrier's hand (npc-office-visuals.js
             // follows it on postupdate); with "officeVisuals": false it is hidden, as before
@@ -5595,6 +5596,26 @@ export function createEngineWorld() {
                 rec.itemsHeld = rec.itemsHeld || [];
                 rec._needsCarried = rec._needsCarried || {};
                 rec._needsCarried[itemId] = { sprite: sp, roomId: f.roomId, key: f.key };
+                // Record the carried object as a held item of the NPC (server serves
+                // it in itemsHeld; this is the local mirror for an offline frame). A
+                // reveal slot (copier output) keeps its own client-only place-then-file
+                // flow, outside the server allowlist, so it is never mirrored here nor
+                // sent a server carry (review R1 m5): no 422 is logged for it.
+                const sd = sp.scenarioData || {};
+                if (!slot && !rec.itemsHeld.some(i => i && i.id === itemId)) {
+                    rec.itemsHeld.push({ id: itemId, type: sd.type, name: sd.name, _needsCarried: true });
+                }
+            }
+            // The server holds the carry (NPC_CARRIED_ITEMS_PLAN.md): it leaves the
+            // origin room and is served in the NPC's itemsHeld. Replaces the old
+            // client-only carry that left the object in its scenario room. On a server
+            // refusal, undo the local pick-up so the client stops diverging (review R1 m2).
+            if (!slot) {
+                try {
+                    Promise.resolve(W().RoomStateSync?.carryObject?.(npcId, itemId, f.roomId))
+                        .then(ok => { if (ok === false) this._uncarryToOrigin(npcId, itemId); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
             }
             return true;
         },
@@ -5603,9 +5624,26 @@ export function createEngineWorld() {
             const held = rec?._needsCarried?.[itemId];
             if (!held) return;
             delete rec._needsCarried[itemId];
-            try { held.sprite.destroy?.(); } catch (e) { /* already gone */ }
-            // Used up: take it off the server's room state too, or a reload brings it back
-            try { Promise.resolve(W().RoomStateSync?.removeItemFromRoom?.(held.roomId, itemId)).catch(() => {}); } catch (e) { /* offline */ }
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+            const sp = held.sprite;
+            const sd = sp?.scenarioData || {};
+            // Hide the carried sprite but keep it until the server confirms (review R2 m3):
+            // on a refusal the NPC still holds it server-side, so _reinstateHeld gets this
+            // same sprite back and the hand is never left holding an invisible item.
+            // Destroy it only once the consume is confirmed.
+            try { sp?.setVisible?.(false); if (sp) sp.interactable = false; sp?.disableInteractive?.(); } catch (e) { /* already gone */ }
+            // Used up: tell the server the NPC consumed it, so the carry is cleared
+            // and a reload keeps it gone. No room is named (the old remove_object sent
+            // the carrier's room and 422'd), so there is no wrong-room failure.
+            const npcRoom = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
+            try {
+                Promise.resolve(W().RoomStateSync?.consumeCarried?.(npcId, itemId, npcRoom))
+                    .then(ok => {
+                        if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name });
+                        else { try { sp?.destroy?.(); } catch (e) { /* already gone */ } }
+                    })
+                    .catch(() => {});
+            } catch (e) { try { sp?.destroy?.(); } catch (er) { /* ok */ } }
         },
         dropHeld(npcId, itemId) {
             const rec = W().npcManager?.getNPC?.(npcId);
@@ -5613,6 +5651,7 @@ export function createEngineWorld() {
             const pos = this.npcPos(npcId);
             if (!held) return;
             delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
             const sp = held.sprite;
             const roomId = W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
             if (pos) { sp.x = pos.x - (sp.displayWidth || 0) / 2; sp.y = pos.y - (sp.displayHeight || 0) / 2; }
@@ -5623,6 +5662,16 @@ export function createEngineWorld() {
             try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
             const room = W().rooms?.[roomId] || W().rooms?.[held.roomId];
             if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = roomId; }
+            // The server lands the object in the room the NPC set it down in, from the
+            // scenario definition, and clears the carry. Only the position is the client's.
+            // On a refusal (e.g. an unreachable room) the server still holds the carry, so
+            // reinstate the held record so the client stops diverging (review R1 m2).
+            const sd = sp?.scenarioData || {};
+            try {
+                Promise.resolve(W().RoomStateSync?.putDownObject?.(npcId, itemId, roomId, pos ? { px: pos.x, py: pos.y } : null))
+                    .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name }); })
+                    .catch(() => {});
+            } catch (e) { /* offline */ }
         },
         // ── reveal slots (slice 7) ──
         // Set a delivered slot down on the target: at its centre plus placeAt {dx, dy} tiles, else
@@ -5643,6 +5692,7 @@ export function createEngineWorld() {
                 at = cell ? { x: (target.x + cell.x) / 2, y: (target.y + cell.y) / 2 } : { x: target.x, y: target.y };
             }
             delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
             setCentre(sp, at);
             sp._npcCarried = null;
             sp._npcPlacedBy = npcId;
@@ -5653,8 +5703,104 @@ export function createEngineWorld() {
             try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
             const room = W().rooms?.[target.roomId] || W().rooms?.[held.roomId];
             if (room) { room.objects = room.objects || {}; room.objects[sp.objectId || held.key] = sp; }
+            // A reveal slot keeps its client-only place-then-file flow (it is outside the
+            // server carry allowlist), so no server put-down is sent for it and no 422 is
+            // logged (review R1 m5). A non-slot carried item placed here still syncs, and
+            // reinstates its held record on a refusal (review R1 m2).
+            if (!isSlot(sp)) {
+                const sd = sp?.scenarioData || {};
+                try {
+                    Promise.resolve(W().RoomStateSync?.putDownObject?.(npcId, itemId, target.roomId, { px: at.x, py: at.y }))
+                        .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name }); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
+            }
             W().eventDispatcher?.emit(`npc_placed:${itemId}`, { npcId, itemId, targetId: target.id, roomId: target.roomId });
             return true;
+        },
+        // Undo a local pick-up after the server refused the carry (review R1 m2): the
+        // server kept the object in its origin room, so restore it there and clear the
+        // carry state the client set optimistically.
+        _uncarryToOrigin(npcId, itemId) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            const held = rec?._needsCarried?.[itemId];
+            if (!held) return;
+            delete rec._needsCarried[itemId];
+            if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+            const sp = held.sprite;
+            if (sp) {
+                sp._npcCarried = null;
+                if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+                sp.setVisible?.(true);
+                sp.interactable = true;
+                try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+                const room = W().rooms?.[held.roomId];
+                if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = held.roomId; }
+            }
+        },
+        // Reinstate the held record after the server refused a put-down or consume
+        // (review R1 m2): the server still holds the carry, so keep the client's model
+        // in step (the object stays in the NPC's hand). Tolerant of a destroyed sprite.
+        _reinstateHeld(npcId, itemId, info = {}) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            if (!rec) return;
+            rec._needsCarried = rec._needsCarried || {};
+            rec._needsCarried[itemId] = { sprite: info.sprite || null, roomId: info.roomId, key: info.key };
+            rec.itemsHeld = rec.itemsHeld || [];
+            if (!rec.itemsHeld.some(i => i && i.id === itemId)) {
+                rec.itemsHeld.push({ id: itemId, type: info.type, name: info.name, _needsCarried: true });
+            }
+            const sp = info.sprite;
+            if (sp && !sp.destroyed) {
+                sp._npcCarried = npcId;
+                if (W().gameScenario?.officeVisuals === false) sp.setVisible?.(false);
+                else if (sp.body && sp.body.enable !== false) { sp._carryBodyOff = true; sp.body.enable = false; }
+                sp.interactable = false;
+                try { sp.disableInteractive?.(); } catch (e) { /* ok */ }
+                const room = W().rooms?.[info.roomId];
+                if (room?.objects) delete room.objects[info.key];
+            }
+        },
+        // KO while carrying (review R1 M1, slice C): the carrying NPC is knocked out, so
+        // every carried item drops to the KO room floor and the carry ends. Re-shows the
+        // carried sprite in the KO room at the body position, and tells the server to end
+        // the carry as a KO put-down (ko_drop_carried: it trusts the recorded KO, clears
+        // npcCarry, lands the object once). Returns the ids dropped.
+        koDropCarried(npcId, koRoomId, pos) {
+            const rec = W().npcManager?.getNPC?.(npcId);
+            if (!rec || !rec._needsCarried) return [];
+            const dropped = [];
+            for (const itemId of Object.keys(rec._needsCarried)) {
+                const held = rec._needsCarried[itemId];
+                if (!held) continue;
+                const sp = held.sprite;
+                const toRoom = koRoomId || W().npcBehaviorManager?.getBehavior?.(npcId)?.roomId || held.roomId;
+                delete rec._needsCarried[itemId];
+                if (Array.isArray(rec.itemsHeld)) rec.itemsHeld = rec.itemsHeld.filter(i => !(i && i._needsCarried && i.id === itemId));
+                if (sp && !sp.destroyed) {
+                    if (pos) { sp.x = pos.x - (sp.displayWidth || 0) / 2; sp.y = pos.y - (sp.displayHeight || 0) / 2; }
+                    sp._npcCarried = null;
+                    if (sp._carryBodyOff) { sp._carryBodyOff = false; if (sp.body) sp.body.enable = true; }
+                    sp.setVisible?.(true);
+                    sp.interactable = true;
+                    try { sp.setInteractive?.({ useHandCursor: true }); } catch (e) { /* ok */ }
+                    const room = W().rooms?.[toRoom] || W().rooms?.[held.roomId];
+                    if (room) { room.objects = room.objects || {}; room.objects[held.key] = sp; sp.roomId = toRoom; }
+                }
+                // On a server refusal the carry survives server-side, so the floor copy
+                // the client just drew is not backed (review R2 m5). Reinstate the held
+                // record pointing at the drop room, which removes that floor copy and puts
+                // the object back in the hand, matching the server until the KO catches up.
+                const sd = sp?.scenarioData || {};
+                const heldKey = held.key;
+                try {
+                    Promise.resolve(W().RoomStateSync?.koDropObject?.(npcId, itemId, toRoom, pos ? { px: pos.x, py: pos.y } : null))
+                        .then(ok => { if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: toRoom, key: heldKey, type: sd.type, name: sd.name }); })
+                        .catch(() => {});
+                } catch (e) { /* offline */ }
+                dropped.push(itemId);
+            }
+            return dropped;
         },
         // File a slot away: hidden at its declared spot, back in its declared room's objects under its
         // original key, global false. No server call. False when it is gone (the player took it).
