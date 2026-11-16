@@ -86,6 +86,74 @@ module BreakEscape
       { 'kind' => entry['kind'], 'label' => credential_label(entry) }
     end
 
+    # --- Ending an invite (plan 7.1) ---------------------------------------------------------
+    #
+    # credentialEndGlobals caches CredentialModel.end_globals ({ global => [credId, ...] }, at most
+    # 64 entries) so the sync merge can end an invite without loading scenario_data. It and
+    # endedCredentials are written only here, never read from a client body and never sent to the
+    # client (both sit in ACCESS_STATE_DEFAULTS, outside the bootstrap's whitelist).
+
+    # The bootstrap's term (bootstrap_state_needs_write?): true when the scenario declares any
+    # endsOnGlobal and the stored map is missing or differs from the scenario's. A scenario with
+    # none is never stale, so its game never writes the key.
+    def credential_end_globals_stale?(scenario: scenario_data)
+      want = CredentialModel.end_globals(scenario)
+      want.any? && player_state['credentialEndGlobals'] != want
+    end
+
+    # The bootstrap writer (run_bootstrap_writers!, inside the lock; does not save). Stores the map
+    # when stale, then runs the end check once, so a global that turned true before the cache
+    # existed is caught here. Returns whether anything changed.
+    def record_credential_end_globals!(scenario: scenario_data)
+      want = CredentialModel.end_globals(scenario)
+      return false if want.empty?
+
+      changed = false
+      if player_state['credentialEndGlobals'] != want
+        player_state['credentialEndGlobals'] = want
+        changed = true
+      end
+      result = apply_credential_end_globals!
+      changed || !result.nil?
+    end
+
+    # The end check (sync merge, after globals are applied; and the bootstrap writer). Reads only
+    # the cached map and the stored globals: no scenario load. For each listed global now true,
+    # adds its credential ids to endedCredentials (grow-only, at most 64) and deletes every relay
+    # session whose credential is ended (a relay never pivots or sources a `from`, so nothing chains
+    # off it and no prune is needed). Returns nil when nothing changed, else the PC ids whose relay
+    # session it ended (possibly empty), at most 64.
+    def apply_credential_end_globals!
+      map = player_state['credentialEndGlobals']
+      globals = player_state['globalVariables']
+      return nil unless map.is_a?(Hash) && map.any? && globals.is_a?(Hash)
+
+      ended = Array(player_state['endedCredentials']).select { |c| c.is_a?(String) }
+      newly = []
+      map.each do |global, ids|
+        next unless globals[global] == true
+
+        Array(ids).each do |id|
+          next unless id.is_a?(String) && !ended.include?(id) && !newly.include?(id)
+          next if ended.size + newly.size >= CredentialModel::MAX_ENTRIES
+
+          newly << id
+        end
+      end
+      return nil if newly.empty?
+
+      all_ended = ended + newly
+      player_state['endedCredentials'] = all_ended
+      sessions = player_state['sessions']
+      return [] unless sessions.is_a?(Hash)
+
+      pc_ids = sessions.select do |_pc_id, s|
+        s.is_a?(Hash) && s['relay'] == true && all_ended.include?(s['credential'])
+      end.keys
+      pc_ids.each { |pc_id| sessions.delete(pc_id) }
+      pc_ids.first(CredentialModel::MAX_ENTRIES)
+    end
+
     private
 
     # The registry entry for a credential the player may use now, or nil (step 2): a well-formed

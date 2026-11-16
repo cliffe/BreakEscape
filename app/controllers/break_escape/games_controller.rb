@@ -883,6 +883,10 @@ module BreakEscape
         # se_captures global and records params[:captures], taking every field from the
         # scenario, so the client never owns the record.
         apply_capture_sync_step(stale: stale)
+        # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): end each invite whose cached end global is now
+        # true. Reads only credentialEndGlobals (written on the bootstrap), never scenario_data; with
+        # no cache yet it does nothing and the next bootstrap ends the invite.
+        @ended_relay_pc_ids = @game.apply_credential_end_globals!
         # validate: false because the validations here are player and mission
         # presence (twice each: belongs_to is required and validates :player /
         # :mission repeat it), which load both rows on every save, and the
@@ -919,12 +923,14 @@ module BreakEscape
         body[:notSaved] = @not_saved if @not_saved.any?
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
+        body[:endedRelayPcIds] = @ended_relay_pc_ids if @ended_relay_pc_ids.present?
         render json: body
       else
         body = { success: true }
         body[:notSaved] = @not_saved if @not_saved.any?
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
+        body[:endedRelayPcIds] = @ended_relay_pc_ids if @ended_relay_pc_ids.present?
         render json: body
       end
     end

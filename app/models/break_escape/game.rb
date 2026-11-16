@@ -1727,7 +1727,8 @@ module BreakEscape
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
       cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
-        unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries?
+        unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries? ||
+        credential_end_globals_stale?
     end
 
     # True when a carry is still stored at load time. A reload lands on the bootstrap
@@ -1762,6 +1763,9 @@ module BreakEscape
       # cannot resume an in-flight carry, so put each carried object back on the floor
       # and free the NPC.
       changed = end_stranded_carries! || changed
+      # Keyring K2 (plan 7.1): cache the end-global map for the sync merge and end any invite whose
+      # global is already true.
+      changed = record_credential_end_globals!(scenario: scenario) || changed
       changed
     end
 
@@ -2876,7 +2880,11 @@ module BreakEscape
       # Review R1 m1: the server time each guest record was written, for the server's own lock
       'guestSessionsAt' => {},
       # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
-      'feedRevealed' => {}
+      'feedRevealed' => {},
+      # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): invites the NPC has ended (grow-only, at most 64)
+      # and the cached { global => [credId] } map the sync merge reads in place of scenario_data.
+      # Server-written only, never read from a sync body and never sent to the client.
+      'endedCredentials' => [], 'credentialEndGlobals' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
