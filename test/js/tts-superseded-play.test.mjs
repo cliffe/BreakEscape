@@ -57,7 +57,7 @@ function manager(fetches) {
     const mgr = {
         audio: new FakeAudio(), enabled: true, preloadCache: new Map(), playing: false, _hasSrc: false,
         currentText: null, lipSync: null, playSeq: 0,
-        _setActiveFXProfile() {}, _resolveFXProfile() { return null; }, _ensureAudioContext() {}, _alignLipSync() {}
+        _setActiveFXProfile() {}, _resolveFXProfile() { return null; }, _ensureAudioContext() {}, _alignLipSync() {}, setDistanceGain() {}
     };
     mgr._cacheKey = method(mgrSrc, '_cacheKey', {});
     mgr.stop = method(mgrSrc, 'stop', deps);
