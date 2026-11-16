@@ -90,3 +90,27 @@ From `STAGE4_REVIEW_R2.md` (D1 to D5). The approved sample's pool lines and all 
 ### Removed
 
 None. Ernesto's two earlier radio lines stay for a player who has not heard the cleared exchange.
+
+## Stage 5 R1 fixes (2026-11-16, in progress)
+
+From `REVIEW_STAGE5_R1.md` and the owner's calls. Counts against the 71 above so far: **4 added, 0 changed, 0 removed**, so 75 clips. m2 split Ernesto's radio topic into two choices; the spoken lines are the same clips, and the new choice label "Security still after that visitor?" is not voiced.
+
+### Added
+
+| Speaker | Where | Line | Why |
+|---|---|---|---|
+| Ernesto | `scenario.json.erb`, his `chatter.coffee` (5th) | Same mug since ninety-six. | R4, pool 4 to 6 so the first repeat lands past 15 minutes |
+| Ernesto | same (6th) | Third wheelchair I've chased tonight. | R4 |
+| Hodan | `scenario.json.erb`, her `chatter.coffee` (5th) | Somebody's had my good mop again. | R4 check on her pool: her first repeat came at 903 s (15.05 min) in game 5626, too close to the line |
+| Hodan | same (6th) | Two minutes. Then the stairs again. | R4 |
+
+The cooler pools stay at 4: one cooler break in nine in the R4 run, so they do not repeat inside 15 minutes.
+
+### To voice
+
+None of the office-life clips has audio yet (D2). New in this round, all four above:
+
+1. Ernesto, coffee: Same mug since ninety-six.
+2. Ernesto, coffee: Third wheelchair I've chased tonight.
+3. Hodan, coffee: Somebody's had my good mop again.
+4. Hodan, coffee: Two minutes. Then the stairs again.

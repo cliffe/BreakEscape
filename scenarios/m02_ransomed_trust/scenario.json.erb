@@ -3509,7 +3509,7 @@ boardroom_pin = "0417"
           "needsCompany": { "groups": ["night_staff"] },
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": ["Lab's quiet. That never lasts.", "Thirty years. Never seen it like this.", "Bloods all night. All on foot.", "Tea's stewed. Still hot, mind."],
+            "coffee": ["Lab's quiet. That never lasts.", "Thirty years. Never seen it like this.", "Bloods all night. All on foot.", "Tea's stewed. Still hot, mind.", "Same mug since ninety-six.", "Third wheelchair I've chased tonight."],
             "cooler": ["Cold in that corridor tonight.", "Last cone's always the one with a hole.", "Lift's out again. Stairs it is.", "Water's free, at least."]
           },
           "needs": {
@@ -3518,9 +3518,9 @@ boardroom_pin = "0417"
             "hunger": { "initial": 70, "decayPerMin": 2, "urgentAt": 30 }
           },
           "eventMappings": [
-            { "eventPattern": "room_entered:staff_room", "cooldown": 120000, "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:staff_room", "cooldown": 150000, "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "conversation_closed:gary_whitlock", "condition": "globalVars.cover_burned === true", "onceOnly": true, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "conversation_closed:dr_sarah_kim", "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:dr_sarah_kim", "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "room_entered:office_corridor", "condition": "data.previousRoom === 'ward_hall'", "fireOnlyWhenLoaded": true, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "thirst": 20 } } }
@@ -3545,7 +3545,7 @@ boardroom_pin = "0417"
           "needsCompany": { "groups": ["night_staff"] },
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": ["Four beds turned. Linen's run out.", "Every bed I turn, they want two.", "Matron's lot want it done yesterday.", "Can't feel my hands. Mop water's cold."],
+            "coffee": ["Four beds turned. Linen's run out.", "Every bed I turn, they want two.", "Matron's lot want it done yesterday.", "Can't feel my hands. Mop water's cold.", "Somebody's had my good mop again.", "Two minutes. Then the stairs again."],
             "cooler": ["This cooler's warmer than the sink.", "My feet have given up, Ernesto.", "Bed manager's on my radio every hour.", "Floor's done till they call me."]
           },
 <%# Exchanges (office_life/PLAN.md 6): read in order, the first unheard one whose gates hold

@@ -1,3 +1,19 @@
+# m02 office life: stage 5 R1 fixes, handover 2026-11-16 (in progress)
+
+Brief: fix `REVIEW_STAGE5_R1.md` findings with the owner's calls (m3 150 s, m2 split, m8 smaller fix, fault log stays takeable, R4 pools to 6). Scratch scripts: session scratchpad `m02-fix1/` (`lib2.mjs` points OUT at `m02-fix1/out/`, `ngr2.sh` makes games on :3090, `seat2.mjs`, `dbg.mjs`, `chairs.mjs`, `radio.cjs`).
+
+Done (committed with this note):
+- m3: mapping 1 (`room_entered:staff_room`) and mapping 3 (`conversation_closed:dr_sarah_kim`) cooldowns 120000 to 150000. Mapping 4 (ward to corridor cooler) left at 120000: the review named only 1 and 3.
+- m2: Ernesto's radio topic split into `[Busy night on the radio?]` (burned, not cleared) and `[Security still after that visitor?]` (cleared). Recompiled; inkcheck and loopcheck clean in 5 states; an inkjs run of burned-then-cleared (`m02-fix1/radio.cjs`) reaches both read-backs for told and not-told.
+- R4 pools: Ernesto and Hodan coffee pools 4 to 6 (lines in `SPOKEN_LINES.md`, To voice list there). Bubble limit is 40 characters (validator error), so keep new pool lines under it.
+- m7: validator baseline is now 0 errors, 33 warnings. The 3 new-to-main warnings are `onceOnly` on the three `timers` (`scenario.json.erb` around :3744, :3754, :3764), reported as ignored by the engine; main also stopped flagging top-level `validSprites` (net +2 against the old 31). Leave the timer fields to the m02 owner.
+
+m8 finding (not yet fixed): moving Hodan's seat is not possible. Only `hospital_chair_north` (hers, `_14`) and `hospital_chair_south` (Ernesto's, `_20`) have a seat spec; the side chairs `hospital_chair1`/`hospital_chair2` (`_16` to `_19`) have none (`window.seating.seatSpec` null, game 5646), so a post by them leaves her standing (games 5638, 5639). Her post is back at (4.2, 6.1). Next: the reaction. Person-NPC barks are voiced (`npc-manager.js` ~:1950, `useTTS` for a person with a voice; m02 already uses them on the ward nurse ~:1714). Add to Hodan's `eventMappings`: `{ "eventPattern": "item_picked_up:workstation", "condition": "data.itemId === 'ward_clerk_laptop' && !globalVars.night_staff_attacked && !globalVars.hodan_warsame_ko", "onceOnly": true, "bark": "Ward clerk'll want that back. Just saying.", "barkDelay": 800 }` (check the event name live first), add the line to SPOKEN_LINES To voice, live-prove it.
+
+Open, not started: m4 (5 walked crossings into IT with Ernesto at the microwave; fridge screenshot), m6 (Hodan talk after reload-after-attack, 5 s wait, porter over 160 px; base on `m02-s5/rl.mjs`), m5 (variants A and B five tries each with Gary's real conversation via walk4's `talkAll` prefs `['administrator','Take the card back','booking|pass','Fair']`; read `heard_night_watch_paper` after the break ends; base on `m02-s5/mb2.mjs`), the struck-only credits line to `docs/IDEAS_BACKLOG.md`, the "R5 fixes" section in `STAGE5_LIVE.md` and Outcomes in `REVIEW_STAGE5_R1.md`. Held for D30: paper exchange order, heard rule.
+
+Games made this round: 5636, 5638, 5639, 5646 (probes). Server on :3090 stopped by its PID at the end.
+
 # m02 office life: stage 5, handover 2026-11-15
 
 ## Stage 5

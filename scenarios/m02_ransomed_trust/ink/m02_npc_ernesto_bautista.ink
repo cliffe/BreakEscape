@@ -66,21 +66,23 @@ Ernesto Bautista: You with IT? Somebody ought to be.
     Ernesto Bautista: I carry what they send. Anything more and I'm under Sister's feet.
     ~ hub_quiet = true
     -> hub
-* {not night_staff_attacked && heard_night_watch_burned} [Busy night on the radio?]
-    {heard_night_watch_cleared:
-        Ernesto Bautista: Security had a call out for some visitor. Stood down now.
-        {ernesto_told_security:
-            Ernesto Bautista: Your lot sorted it, I expect. Paying you nights after all.
-        - else:
-            Ernesto Bautista: Fuss over nothing, like I said.
-        }
+// Two choices, as in Hodan's ink: asking about the radio before the cleared exchange leaves
+// the cleared read-back to ask about later.
+* {not night_staff_attacked && heard_night_watch_burned && not heard_night_watch_cleared} [Busy night on the radio?]
+    Ernesto Bautista: Security put a call out for some visitor. That's their department.
+    {ernesto_told_security:
+        Ernesto Bautista: Your department too, I'd have thought. You'll hear before I do.
     - else:
-        Ernesto Bautista: Security put a call out for some visitor. That's their department.
-        {ernesto_told_security:
-            Ernesto Bautista: Your department too, I'd have thought. You'll hear before I do.
-        - else:
-            Ernesto Bautista: Always someone looking for someone, a night like this.
-        }
+        Ernesto Bautista: Always someone looking for someone, a night like this.
+    }
+    ~ hub_quiet = true
+    -> hub
+* {not night_staff_attacked && heard_night_watch_cleared} [Security still after that visitor?]
+    Ernesto Bautista: Security had a call out for some visitor. Stood down now.
+    {ernesto_told_security:
+        Ernesto Bautista: Your lot sorted it, I expect. Paying you nights after all.
+    - else:
+        Ernesto Bautista: Fuss over nothing, like I said.
     }
     ~ hub_quiet = true
     -> hub
