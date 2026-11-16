@@ -32,6 +32,7 @@ let onCall = null;
 for (let i = 0; i < 40 && !onCall; i++) { const t = await tom(); if (t.mode === 'idle' && !t.call) await ring(); await page.waitForTimeout(500); const n = await tom(); if (n.call && !n.seated && !n.seatMove) onCall = n; }
 R.onCall = onCall;
 // ---- m1: chat mid-call (hangs up), then hand over to Tom's inventory and resume
+await page.evaluate(() => window.__test.moveToNear('tom').catch(() => null));
 R.m1.open = await page.evaluate(() => window.__test.interact('tom').then(r => !!r.ok).catch(e => String(e).slice(0, 100)));
 await page.waitForTimeout(800);
 R.m1.chat1 = await tom();
