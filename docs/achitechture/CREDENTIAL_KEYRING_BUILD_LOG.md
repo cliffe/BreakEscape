@@ -743,3 +743,97 @@ in `ACCESS_STATE_DEFAULTS`, `record_credential_end_globals!` writer and `credent
 merge end check and `endedRelayPcIds`, `sync_end_globals_test`, `bootstrap_writers_test` additions), carry-in m3,
 the live proof. The sync merge deletes relay sessions whose `credential` is ended; `session_route_up?` already
 refuses them.
+
+### K2 run 3 (part 2 of 2): built
+
+Commits `f095da290` (7.1), `93e7797fa` (carry-in m3) and the one adding this note. Slice K2's server side is complete
+apart from the live proof (handover below).
+
+Done:
+- Step 1: the full Rails suite and rubocop on part 1's files. Rubocop: no offences. Suite: see Tests.
+- Plan 7.1 (`app/models/break_escape/credential_login.rb`, `game.rb`, `games_controller.rb`):
+  `endedCredentials` ([]) and `credentialEndGlobals` ({}) in `ACCESS_STATE_DEFAULTS`. Neither is in the
+  bootstrap's whitelist nor read from a sync body (`merge_last_write_wins_sections` names its sections), so
+  both stay server-only; `sync_end_globals_test` proves it from both sides. `credential_end_globals_stale?`
+  is ORed into `bootstrap_state_needs_write?`; `record_credential_end_globals!` runs last in
+  `run_bootstrap_writers!`, stores the map when stale and then runs the end check once.
+  `apply_credential_end_globals!` is the end check: it reads only the cached map and
+  `player_state['globalVariables']`, adds newly ended ids to `endedCredentials` (grow-only, capped at 64),
+  deletes relay sessions whose `credential` is ended, and returns nil (nothing changed) or the ended relay
+  PC ids. `sync_state` calls it after `apply_capture_sync_step`, on fresh and stale requests alike, and both
+  answer bodies add `endedRelayPcIds` only when it is non-empty.
+- Carry-in m3 (`tools/playtest/lib/access_leak_scanner.rb`): `keyring_capture_password_paths` now maps a
+  path to an NPC id only when the entry's id is `<npcId>.password` and that NPC is in the game's
+  `account_capture_usernames` (read once, `captured_account_ids`); `scan_passwords` exempts the path only
+  when the password found there is that NPC's own. A scanner run with no game, or a game that cannot answer
+  `account_capture_usernames`, exempts nothing.
+
+Deviations and calls:
+- The plan's "digest differs" is a direct comparison of the stored map with `CredentialModel.end_globals`:
+  the map is at most 64 entries, so a digest would save nothing and add a second key.
+- `ACCESS_STATE_DEFAULTS` puts `{}` in `credentialEndGlobals` on every new game, so "a scenario with no
+  `endsOnGlobal` never writes the key" holds as "never writes a non-empty map, and never takes the bootstrap
+  lock for it".
+- The end check runs on a stale sync too. It reads only stored globals, so a stale request that merged no
+  globals ends nothing new; a stale-but-recent one that did merge them ends the invite as a fresh one would.
+- Ending deletes every relay session whose credential is in `endedCredentials`, not only the newly ended
+  ones; none should exist (step 8 refuses an ended invite), so this only tidies a stale record.
+- m3 also checks the password belongs to the NPC the id names, which the handover did not ask for: a captured
+  account's id carrying another NPC's password is still flagged.
+
+Tests and lint:
+- New: `test/models/break_escape/bootstrap_writers_test.rb` (7: a fresh game with an `endsOnGlobal` and no other
+  bootstrap work writes the map; no `endsOnGlobal` never writes it; a missing or different map is rewritten; the
+  writer ends an invite whose global was already true; grow-only, relay-only; capped at 64) and
+  `test/controllers/break_escape/sync_end_globals_test.rb` (5: the end with no `scenario_data` query, using
+  `capture_proofs_test.rb`'s `count_scenario_loads` subscriber; `endedRelayPcIds` once, then the invite answers
+  `ended`; an ordinary sync carries no `endedRelayPcIds`; an end with no relay open sends none; a sync before any
+  bootstrap records nothing and the next bootstrap ends it; a sync body naming either key changes neither and
+  the bootstrap sends neither). `access_leak_scanner_test.rb` gains the m3 test (4 cases); the K1 capture test now
+  gives its stub game a captured `jake`.
+- Full Rails suite, final run at `93e7797fa`: 2988 runs, 0 failures, 0 errors, 3 skips. Rubocop on all 12 Ruby
+  files K2 changed: no offences.
+- Two earlier full runs, for the record. The first (part 1's tip) showed 946 `AssociationTypeMismatch` errors
+  and 24 failures; that run overlapped my edits to `app/` files, and the clean rerun had none of them, so they
+  were edit contamination, not K2 faults. The second showed one error,
+  `TtsDeliveryTest#test_call_gemini_tts_puts_the_combined_style_in_speech_metadata` (`Net::HTTPOK`
+  uninitialised): a test-order issue in a file K2 does not touch (last changed in `db4983a98`); it passes alone
+  and in the final run. Worth a `require 'net/http'` in that test some day.
+
+### Live proof (plan 7.4): HANDOVER for the integrator, not run
+
+Saved-connection half, on `test_access_keyring` as it stands (`lena_pc` HB-FIN-02 on `office_lan`, policy
+`finance_desk`; `ops_pc` SV-OPS-01 on `server_lan`, policy `pw_only`; `comms_port` on `office_lan`;
+`kit_dropbox` in the start inventory; registry `lena_rdp`, `jake_pw_note`, `ops_cookie`):
+1. Take `lena_rdp_file`, plant the drop box at `comms_port`, then from the page POST /login
+   `{ pc_id: "lena_pc", credential: "lena_rdp", foothold: "jack_comms_port" }`: success, `via: credential`,
+   `kind: saved_connection`. GET /keyring then lists `jake_pw_note` (the `session: lena_pc` proof).
+2. Tampered calls, each answering as noted with `loginFailures` / `loginLockouts` unchanged: an undeclared id
+   and `jake_pw_note` (generic refusal, byte-identical); `lena_rdp` before taking the file (generic);
+   a forged inventory add of a notepad claiming `credential: "lena_rdp"`, then the sign-in without the real
+   file (generic: the server stamps the credential from the scenario's own item);
+   `lena_rdp` with no route at Lena's keyboard (generic); `lena_rdp` with `relay: true` (generic);
+   a typed `{ username, password, relay: true }` (generic, uncounted); `lena_rdp` at `ops_pc` (`wrongPc`);
+   `ops_cookie` at `ops_pc` over the foothold (`kindRefused`, since `pw_only` accepts only passwords: this
+   stands in for the plan's "ops .rdp at a policy that refuses it", as the scenario has no ops .rdp item).
+3. Missing from the scenario for this half: nothing beyond the above. The plan's "sign out at HB-DESK-01"
+   cannot run (no `sam_pc` yet).
+
+Relay half, needs plan 9.1 added to the scenario first: Jake Brooks (an account holder) with
+`jake_assist_code` (`text_file`, `credential: jake_assist`) in his `itemsHeld` and the ink choice that gives
+it; `jake_pc` HB-FIN-03 on `office_lan` in a locked Jake's office, policy
+`jake_desk` `{ "remote": "blocked", "accepts": ["password", "assist_invite"] }`; `sam_pc` HB-DESK-01; the
+`jake_assist` registry entry `{ kind: assist_invite, account: jake, connectsTo: jake_pc,
+proof: { held: jake_assist_code }, endsOnGlobal: jake_ended_assist }` and the `jake_ended_assist` global
+(false); `finance_share` on `server_lan` for Jake. Then: sign out at HB-DESK-01 and HB-FIN-02, POST /login
+`{ pc_id: "jake_pc", credential: "jake_assist", relay: true }` from the page, check the drop box view still
+lists `office_lan` only, GET /container of `finance_share` refused, a no-route and a `foothold=` GET
+/container at `jake_pc` refused, then set `jake_ended_assist` through PUT /sync_state (answer carries
+`endedRelayPcIds: ["jake_pc"]` once), clear it by sync, and retry the relay sign-in (`ended: true`).
+The bootstrap must run once after the scenario gains `endsOnGlobal` (GET /scenario) before a sync can end
+the invite; a sync before that records nothing.
+
+Open:
+- The live proof above (saved-connection half runnable now; relay half after the 9.1 scenario additions).
+- K2 has had no review round yet.
+- The client side of `endedRelayPcIds` (close the relay desktop) belongs to K3c.
