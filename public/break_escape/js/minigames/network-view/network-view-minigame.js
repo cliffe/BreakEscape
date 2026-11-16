@@ -689,7 +689,9 @@ export class NetworkViewMinigame extends MinigameScene {
             if (typeof start !== 'function') return false;
             // The view hands over: the screen it opens replaces it, and the trip goes on
             this.exitReason = 'handover';
-            if (action === 'open') start(row.id, footholdId);
+            const from = action === 'open' && typeof row.session?.route?.from === 'string' ? row.session.route.from : null;
+            if (from && typeof window.openFromDesktop === 'function') window.openFromDesktop(row.id, from);
+            else if (action === 'open') start(row.id, footholdId);
             else start(row, footholdId);
             return this.handedOver();
         }

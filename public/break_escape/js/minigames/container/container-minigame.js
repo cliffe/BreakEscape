@@ -9,7 +9,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { RELAY_FOLDER_UNAVAILABLE_TEXT } from '../../utils/remote-host-text.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage } from '../../utils/remote-host-text.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
@@ -26,6 +26,8 @@ export function folderRouteQuery(pcId, sessions = (typeof window !== 'undefined'
     if (!s) return '';
     if (s.relay === true) return '?relay=1';
     if (s.remote === true && s.footholdId) return `?foothold=${encodeURIComponent(s.footholdId)}`;
+    // K4: a folder under a desktop reached from another PC names that PC
+    if (s.remote === true && s.fromPcId) return `?from=${encodeURIComponent(s.fromPcId)}`;
     return '';
 }
 
@@ -72,10 +74,12 @@ export function claimLineText(session) {
  * Copy to inventory, Move to inventory, Cancel; only Open (and Cancel) once it is held.
  * `"transfer": "copy" | "move" | "both"` (default both) restricts the two takes.
  */
-export function transferChoices(item, held) {
-    if (held) return ['open', 'cancel'];
+export function transferChoices(item, held, { connect = false } = {}) {
+    // K4: a saved connection on a desktop also offers Connect (it takes the file first if not held)
+    if (held) return connect ? ['open', 'connect', 'cancel'] : ['open', 'cancel'];
     const transfer = ['copy', 'move', 'both'].includes(item?.transfer) ? item.transfer : 'both';
     const out = ['open'];
+    if (connect) out.push('connect');
     if (transfer !== 'move') out.push('copy');
     if (transfer !== 'copy') out.push('move');
     out.push('cancel');
@@ -97,7 +101,9 @@ export function isNetworkScreenContainer(item) {
     if (item.sourceResourceId && !item.sourcePcId) return true;
     if (item.parentLockable) return isNetworkScreenContainer(item.parentLockable);
     const pcId = item.sourcePcId;
-    return !!(pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true);
+    // A session reached from another desktop (K4) has no foothold and is no network screen
+    const s = pcId && typeof window !== 'undefined' ? window.pcSessions?.get?.(pcId) : null;
+    return !!(s?.remote === true && s.footholdId);
 }
 if (typeof window !== 'undefined') window.isNetworkScreenContainer = isNetworkScreenContainer;
 
@@ -148,7 +154,8 @@ export function networkScreenKind(item) {
     if (item.parentLockable) return networkScreenKind(item.parentLockable);
     if (item.sourceResourceId && !item.sourcePcId) return 'share';
     const pcId = item.sourcePcId;
-    return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
+    const s = pcId && typeof window !== 'undefined' ? window.pcSessions?.get?.(pcId) : null;
+    return s?.remote === true && s.footholdId ? 'desktop' : null;
 }
 // The text-file reader's bezel X (UI PC 2, E08) lands a network trip with this, without
 // importing this module
@@ -271,6 +278,7 @@ const TRANSFER_LABELS = {
     open: 'Open',
     copy: 'Copy to inventory',
     move: 'Move to inventory',
+    connect: 'Connect',
     cancel: 'Cancel'
 };
 
@@ -400,6 +408,10 @@ export class ContainerMinigame extends MinigameScene {
         // A relay desktop (keyring K3c, 8.3): remote: { relay: true }. It is no network screen
         // (no foothold, no view to land on): its fetches say relay=1 and its end closes to the world.
         this.relay = this.loginPcId && !this.remote && data.remote && data.remote.relay === true ? data.remote : null;
+        // A desktop reached from another PC's desktop (keyring K4, 3.7): remote: { fromPcId, fromHost }.
+        // Its fetches say from=; it is no network screen and never reopens itself on close.
+        this.fromRoute = this.loginPcId && !this.remote && !this.relay && data.remote && typeof data.remote.fromPcId === 'string' && data.remote.fromPcId
+            ? data.remote : null;
         this.parentLockable = this.mode === 'npc' ? null : (this.containerItem?.parentLockable || null);
         this.sourceResourceId = this.mode === 'npc' || this.sourcePcId ? null
             : (params.sourceResourceId || this.containerItem?.sourceResourceId
@@ -633,7 +645,9 @@ export class ContainerMinigame extends MinigameScene {
         const pcId = this.loginPcId;
         // A remote desktop names its foothold on every fetch (slice 9.3a, 4.4)
         // A relay desktop says relay=1 on every fetch (K3c, 8.3)
-        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}` : (this.relay ? '?relay=1' : '');
+        // A desktop reached from another desktop says from= on every fetch (K4)
+        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}`
+            : (this.relay ? '?relay=1' : (this.fromRoute ? `?from=${encodeURIComponent(this.fromRoute.fromPcId)}` : ''));
         try {
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
@@ -652,6 +666,23 @@ export class ContainerMinigame extends MinigameScene {
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && this.fromRoute) {
+                // Same reasons as a foothold desktop (K3b R1 m4, K3c): unreachable and not_responding
+                // keep the session and close with the route line; any other 403 means no session
+                // is held, so the copy is dropped. Never the keyboard sign-in screen. A running trip
+                // says the line itself (landed); with none the line is said here.
+                const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
+                if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = reason;
+                this.complete(false);
+                if (!window.networkLinks?.trip) {
+                    const host = this.networkDetail().host;
+                    const line = reason === 'unreachable' ? unreachableMessage(host)
+                        : (reason === 'not_responding' ? notRespondingMessage(host) : sessionEndedMessage(host));
+                    window.gameAlert?.(line, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                }
                 return null;
             }
             if (response.status === 403 && this.relay && ['off', 'not_responding'].includes(refusal?.reason)) {
@@ -843,7 +874,23 @@ export class ContainerMinigame extends MinigameScene {
         // its own loginPcId, so without this its Close met the folder branch below and reopened
         // the desktop, which reopened on every close (a loop).
         if (this.relay) return;
+        // A desktop reached from another desktop (K4): its sourcePcId is its own loginPcId too,
+        // so it must not meet the folder branch below (it would reopen itself on every close).
+        // A running trip lands as a desktop close; with none it closes to the world.
+        if (this.fromRoute) {
+            links?.landed?.('desktop', reason, this.networkDetail());
+            return;
+        }
         const session = this.sourcePcId ? window.pcSessions?.get?.(this.sourcePcId) : null;
+        if (session?.remote === true && !session.footholdId && session.fromPcId && !this.loginPcId) {
+            // A folder opened from a desktop reached from another desktop: closed, that desktop again (K4)
+            if (reason === 'close' && this.closeWholePc !== true && typeof window.openFromDesktop === 'function') {
+                const pcId = this.sourcePcId;
+                const fromPcId = session.fromPcId;
+                setTimeout(() => { if (!minigameOpen()) window.openFromDesktop(pcId, fromPcId); }, 0);
+            }
+            return;
+        }
         if (session?.relay === true && !this.loginPcId) {
             // A folder opened from a relay desktop: closed, the relay desktop again (K3c)
             if (reason === 'close' && this.closeWholePc !== true && typeof window.openRelayDesktop === 'function') {
@@ -1107,7 +1154,9 @@ export class ContainerMinigame extends MinigameScene {
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
         const remoteLine = this.remote
             ? `
-                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
+                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>`
+            : (this.fromRoute ? `
+                    <div class="desktop-remote-line">${escapeHtml(displayDashes(this.fromSessionText()))}</div>` : '');
         const claim = claimLineText(session);
         const claimLine = claim ? `
                     <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
@@ -1205,11 +1254,20 @@ export class ContainerMinigame extends MinigameScene {
         }
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
         const remoteLine = this.remote ? `
-                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
+                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>`
+            : (this.fromRoute ? `
+                    <div class="desktop-remote-line">${escapeHtml(displayDashes(this.fromSessionText()))}</div>` : '');
         const claim = claimLineText(session);
         const claimLine = claim ? `
                     <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
         return `${remoteLine}${claimLine}`;
+    }
+
+    /** "Remote session from {fromHost}" for a desktop reached from another desktop (K4). */
+    fromSessionText() {
+        const s = window.pcSessions?.get?.(this.loginPcId);
+        const host = s?.fromHost || this.fromRoute?.fromHost || this.fromRoute?.fromPcId || 'another PC';
+        return `Remote session from ${host}`;
     }
 
     /** The desktop lockable this view belongs to: itself, the share's parent, or the kept one. */
@@ -1231,8 +1289,11 @@ export class ContainerMinigame extends MinigameScene {
         const pcData = desktop?.scenarioData || findPcData(pcId);
         const session = window.pcSessions?.get?.(pcId) || null;
         const relay = !!this.relay || desktop?.scenarioData?.remote?.relay === true || session?.relay === true;
-        const remote = relay ? null : (this.remote || desktop?.scenarioData?.remote || (session?.remote === true ? { footholdId: session.footholdId } : null));
+        const remote = relay ? null : (this.remote || this.fromRoute || desktop?.scenarioData?.remote || (session?.remote === true ? { footholdId: session.footholdId } : null));
         const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
+        // K4: a desktop reached from another desktop names that desktop on the start panel
+        const fromHost = !remote?.footholdId && (remote?.fromPcId || session?.fromPcId)
+            ? (session?.fromHost || remote?.fromHost || remote?.fromPcId || session?.fromPcId) : null;
         let places;
         if (this.desktopMode) {
             places = (this.contents || []).filter(i => i?.type === 'network_share' && i.id);
@@ -1240,7 +1301,7 @@ export class ContainerMinigame extends MinigameScene {
         } else {
             places = rememberedDesktop(pcId)?.places || [];
         }
-        const model = pcTaskbarModel({ pcData, session, remote: !!remote, relay, linkName, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, relay, linkName, fromHost, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
         this.taskbarModel = model;
         this.taskbar = mountPcTaskbar(host, model, {
             windowTitle,
@@ -1280,7 +1341,9 @@ export class ContainerMinigame extends MinigameScene {
     switchUser() {
         const desktop = this.desktopLockable();
         if (!desktop) return;
-        const remote = desktop.scenarioData?.remote?.footholdId ? desktop.scenarioData.remote : null;
+        const dr = desktop.scenarioData?.remote;
+        // K4: a desktop reached from another desktop switches on the same from screen
+        const remote = dr?.footholdId ? dr : (dr?.fromPcId ? { fromPcId: dr.fromPcId, fromHost: dr.fromHost || null } : null);
         this.exitReason = 'switch';
         // A remote desktop's Switch user is the remote screen: no tiles, no sticky note.
         // It starts at once and replaces this view; if it did not, this view is still open
@@ -1553,7 +1616,7 @@ export class ContainerMinigame extends MinigameScene {
     showTransferDialog(item, element) {
         this.closeTransferDialog();
         const held = this.isHeld(item);
-        const choices = transferChoices(item, held);
+        const choices = transferChoices(item, held, { connect: this.offersConnect(item) });
         const host = this.gameContainer.querySelector('.desktop-background, .share-folder-window') || this.gameContainer;
         const dialog = document.createElement('div');
         // In the monitor it scrolls inside the screen if it must, never cut off (R3 live check)
@@ -1607,7 +1670,54 @@ export class ContainerMinigame extends MinigameScene {
         this.closeTransferDialog();
         if (choice === 'cancel') return;
         if (choice === 'open') { this.openFileInPlace(item); return; }
+        if (choice === 'connect') { this.connectFromDesktop(item, element); return; }
         this.takeItem(item, element, choice);
+    }
+
+    /**
+     * Whether a file on this desktop offers Connect (keyring K4, plan 9): a saved connection
+     * (the server's display-only `connect: true`, or a held file the keyring already lists),
+     * on a sign-in desktop or a folder under one, never on a relay desktop or a share.
+     */
+    offersConnect(item) {
+        if (this.mode === 'npc' || !this.sourcePcId || this.relay || !item?.id) return false;
+        if (window.pcSessions?.isRelay?.(this.sourcePcId)) return false;
+        if (typeof window.keyring?.connect !== 'function') return false;
+        if (item.connect === true) return true;
+        try { return !!window.keyring.connectEntryFor?.(item.id); } catch (e) { return false; }
+    }
+
+    /**
+     * Connect from a desktop (K4): take the file first if it is not held (a copy when allowed,
+     * else a move), then keyring Connect from this desktop's PC. A foothold desktop hands over
+     * (its trip stays alive); when the screens Connect opened have closed, this desktop reopens.
+     */
+    async connectFromDesktop(item, element) {
+        if (!this.isHeld(item)) {
+            const transfer = item.transfer === 'move' ? 'move' : 'copy';
+            const took = await this.takeItem(item, element, transfer);
+            if (!took) return { outcome: 'not_taken' };
+        }
+        const from = this.sourcePcId;
+        const desktop = this.desktopLockable();
+        const returnTo = () => {
+            if (window.MinigameFramework?.currentMinigame) return;
+            if (desktop && typeof window.startContainerMinigame === 'function') window.startContainerMinigame(desktop, null, false, true);
+        };
+        this.exitReason = 'handover';
+        // A foothold desktop on a running trip: the target's X comes back here, not to the view
+        const marked = this.remote && !!from && !!window.networkLinks?.setConnectBack?.(from);
+        let r;
+        try {
+            r = await window.keyring.connect({ scenarioData: { id: item.id, name: item.name } }, { from, returnTo });
+        } finally {
+            // Connect only toasted and this desktop is still up: a later close is a plain close
+            if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+                this.exitReason = 'close';
+                if (marked) window.networkLinks?.setConnectBack?.(null);
+            }
+        }
+        return r;
     }
 
     /** Open a file without taking it: the viewer (or notes) for something with text. */
@@ -1989,6 +2099,8 @@ export class ContainerMinigame extends MinigameScene {
             if (window.playUISound) window.playUISound('reject');
             this.showMessage(`Failed to add ${displayDashes(item.name)} to inventory`, 'error');
         }
+        // K4: Connect from a desktop takes the file first and reads this
+        return !!(addResult && addResult.ok);
     }
 
     // async for the same reason as takeItem above.

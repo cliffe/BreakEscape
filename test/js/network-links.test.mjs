@@ -592,6 +592,64 @@ test('landing: a remote desktop closed goes to the world when the trip began at 
     assert.deepEqual(views, []);
 });
 
+// K4 client R1 M1: a `from` session opened from the capture log has no foothold, so its
+// endings say their own line and leave; none of them is "The link is gone."
+async function fromTrip() {
+    await reset({ planted: true });
+    withStarters();
+    const fromOpened = [];
+    window.openFromDesktop = (pcId, fromPcId) => fromOpened.push({ pcId, fromPcId });
+    window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, fromPcId: 'lena_pc', host: 'OPS-PC' }) };
+    const back = [];
+    links.openSession('ops_pc', { returnTo: (d) => back.push(d) });
+    assert.deepEqual(fromOpened, [{ pcId: 'ops_pc', fromPcId: 'lena_pc' }]);
+    return back;
+}
+
+for (const [reason, line] of [['no_session', 'Your session on OPS-PC has ended.'],
+    ['unreachable', "OPS-PC can't be reached over this link."],
+    ['not_responding', 'OPS-PC is not responding.'],
+    ['sign_out', null], ['displaced', null]]) {
+    test(`landing: ${reason} on a from desktop leaves with its own line, never "The link is gone."`, async () => {
+        const back = await fromTrip();
+        assert.equal(links.landed('desktop', reason, { pcId: 'ops_pc', host: 'OPS-PC' }).landing, 'world');
+        await settle();
+        assert.deepEqual(toasts, line ? [line] : []);
+        assert.ok(!toasts.includes(LINK_GONE_MESSAGE));
+        assert.deepEqual(closed(), [{ footholdId: null, reason: 'closed' }]);
+        assert.deepEqual(back, [{ reason: 'closed' }]);
+        assert.deepEqual(views, []);
+    });
+}
+
+// K4 client R1 m1 (plan 9): Connect from a foothold desktop on a view trip returns to that desktop
+test('landing: the X on a Connect target returns to the source desktop, once, not the view', async () => {
+    await tripFromView();
+    assert.equal(links.setConnectBack('lena_pc'), true);
+    assert.equal(links.landed('desktop', 'handover', { pcId: 'lena_pc' }).landing, 'handover');
+    assert.equal(links.trip.connectBack, 'lena_pc', 'the source desktop closing for Connect keeps the mark');
+    assert.deepEqual(links.landed('desktop', 'close', { pcId: 'door_box' }), { landing: 'desktop', pcId: 'lena_pc' });
+    await settle();
+    assert.deepEqual(desktops, [{ pcId: 'lena_pc', footholdId: 'jack_comms_port' }]);
+    assert.deepEqual(views, []);
+    // the mark is spent: the source desktop's own close is the plain landing again
+    assert.equal(links.landed('desktop', 'close', { pcId: 'lena_pc' }).landing, 'view');
+});
+
+test('landing: a Connect target that ends another way clears the mark and lands as usual', async () => {
+    await tripFromView();
+    links.views.set('jack_comms_port', viewEntry);
+    links.setConnectBack('lena_pc');
+    assert.equal(links.landed('desktop', 'unreachable', { pcId: 'door_box' }).landing, 'view');
+    await settle();
+    assert.equal(links.trip.connectBack, null);
+    assert.deepEqual(desktops, []);
+    assert.equal(links.setConnectBack('x'), true);
+    links.leave('closed');
+    await settle();
+    assert.equal(links.setConnectBack('x'), false, 'no trip, no mark');
+});
+
 test('landing: a file opened from a remote desktop hands over to the reader', async () => {
     await tripFromView();
     assert.equal(links.landed('desktop', 'item').landing, 'handover');
@@ -1125,4 +1183,17 @@ test('a join publishes <apId>_planted as load() does: true at the first access p
     links.load([wifiFoothold], ['guest_ap', 'guest_ap2']);
     assert.equal(window.gameState.globalVariables.guest_ap_planted, live.guest_ap_planted);
     assert.equal(window.gameState.globalVariables.guest_ap2_planted, live.guest_ap2_planted);
+});
+
+test('openSession: a from session (no foothold) reopens through its source desktop, with a trip', async () => {
+    await reset({ planted: true });
+    withStarters();
+    const froms = [];
+    window.openFromDesktop = (pcId, fromPcId) => { froms.push([pcId, fromPcId]); return true; };
+    window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, footholdId: null, fromPcId: 'lena_pc', host: 'OPS-PC' }) };
+    const trip = links.openSession('ops_pc', { returnTo: () => {} });
+    assert.deepEqual(froms, [['ops_pc', 'lena_pc']]);
+    assert.deepEqual(desktops, [], 'not the foothold route');
+    assert.ok(trip, 'a trip started');
+    delete window.openFromDesktop;
 });

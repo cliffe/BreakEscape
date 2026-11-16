@@ -1195,3 +1195,33 @@ test('mutters follow the grumble earshot rule: an ambient start line out of ears
     stepUntil(t.sys, () => said.length >= 3, 20000);
     assert.equal(said[2].line, 'I will just jot this down.', 'within earshot: spoken');
 });
+
+test('an answer with endedPcIds hands them to linkDropped (K4), once', async () => {
+    const dropped = [];
+    const { runner } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true, endedPcIds: ['ops_pc', 'fin_pc'] } } });
+    runner.deps.linkDropped = ids => dropped.push(ids);
+    runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.deepEqual(dropped, [['ops_pc', 'fin_pc']]);
+});
+
+test('an answer without endedPcIds drops nothing', async () => {
+    const dropped = [];
+    const { runner } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true } } });
+    runner.deps.linkDropped = ids => dropped.push(ids);
+    runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.deepEqual(dropped, []);
+});
+
+test('a dropped answer drops no sessions even when it carries endedPcIds', async () => {
+    const dropped = [];
+    const { runner } = stub({ answers: { mei: { dropped: true, endedPcIds: ['ops_pc'], pcId: 'mei_pc', hasPostit: true } } });
+    runner.deps.linkDropped = ids => dropped.push(ids);
+    runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.deepEqual(dropped, []);
+});

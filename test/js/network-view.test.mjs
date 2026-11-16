@@ -1090,3 +1090,16 @@ test('phone rows render through the real view: a Phones heading and the phone5 i
     assert.match(r.textContent, /LW-CM01/);
     assert.equal(document.querySelectorAll('.network-row-icon[src$="phone5.png"]').length, 2);
 });
+
+test('Open on a row whose session came from another desktop opens it with from', async () => {
+    setup();
+    const froms = [];
+    window.openFromDesktop = (pcId, from) => { froms.push([pcId, from]); window.MinigameFramework.startMinigame('container', null, {}); };
+    window.openRemoteDesktop = (pcId, footholdId) => { desktops.push([pcId, footholdId]); };
+    links.open('jack_comms_port');
+    await settle();
+    view().act({ id: 'ops_pc', kind: 'pc', session: { route: { from: 'lena_pc' } } }, 'open');
+    assert.deepEqual(froms, [['ops_pc', 'lena_pc']]);
+    assert.deepEqual(desktops, [], 'not the foothold desktop');
+    delete window.openFromDesktop;
+});

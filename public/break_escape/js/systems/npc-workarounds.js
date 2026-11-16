@@ -352,6 +352,8 @@ export class NpcWorkarounds {
             this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'dropped' });
             return;
         }
+        // K4: a borrow or hand that ended routes server-side reports them; drop their sessions
+        if (Array.isArray(body.endedPcIds) && body.endedPcIds.length) this.deps.linkDropped?.(body.endedPcIds);
         if (typeof body.pcId === 'string' && body.hasPostit === true) this.deps.markPostit?.(body.pcId, true);
         if (typeof body.roomId === 'string') {
             this.propped.add(body.roomId);
@@ -476,6 +478,7 @@ export function installNpcWorkarounds(api) {
             gs.globalVariables[name] = value;
             w.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value, oldValue: old });
         },
+        linkDropped: ids => w.pcSessions?.linkDropped?.(ids, 'route_ended'),
         markPostit: (pcId, on) => w.postitMarks?.mark?.(pcId, on),
         openDoor: (roomId, roomData) => openProppedDoor(roomId, roomData, w),
         loadedRooms: () => Object.keys(w.rooms || {}),

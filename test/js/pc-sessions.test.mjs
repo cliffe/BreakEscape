@@ -1002,3 +1002,36 @@ test('settle leaves a relay session untouched', async () => {
     assert.notEqual(s.sessions.get('fin_pc').remote, true, 'no remote fields are merged into a relay');
     assert.notEqual(s.sessions.get('fin_pc').footholdId, 'jack');
 });
+
+test('displaced: the logout answer\'s endedPcIds end the onward sessions (K4)', async () => {
+    const s = setup();
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const dropped = [];
+    s.linkDropped = (ids, why) => dropped.push([ids, why]);
+    window.ApiClient.logout = async () => ({ success: true, endedPcIds: ['ops_pc', 'hot_desk'] });
+    assert.equal(await s.displaced('hot_desk', 'Sam Okafor', 'sam'), true);
+    assert.deepEqual(dropped, [[['ops_pc'], 'route_ended']], 'the displaced PC itself is not dropped twice');
+});
+
+test('a session answer with fromPcId carries fromPcId and fromHost; a plain remote one does not (K4)', async () => {
+    const s = setup();
+    window.ApiClient.login = async () => ({ success: true, npcId: 'sam', username: 'sokafor', remote: true, footholdId: null, host: 'OPS-PC', fromPcId: 'lena_pc', fromHost: 'LENA-PC' });
+    const r = await s.signIn('ops_pc', 'sokafor', 'right-sam', { from: 'lena_pc' });
+    assert.equal(r.session.fromPcId, 'lena_pc');
+    assert.equal(r.session.fromHost, 'LENA-PC');
+    window.ApiClient.login = async () => ({ success: true, npcId: 'sam', username: 'sokafor', remote: true, footholdId: 'fh1', host: 'OPS-PC' });
+    const r2 = await s.signIn('ops_pc', 'sokafor', 'right-sam', { foothold: 'fh1' });
+    assert.ok(!('fromPcId' in r2.session));
+});
+
+test('openedOrder rises with each open of a desktop session (K4)', async () => {
+    const s = setup();
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    const a = s.openedOrder('hot_desk');
+    await s.signIn('fin_pc', 'ishaw', 'right-ian').catch(() => {});
+    const b = s.openedOrder('hot_desk');
+    assert.ok(typeof a === 'number' && a > 0);
+    assert.equal(b, a, 'another PC signing in does not move this one');
+    s._markOpened('hot_desk');
+    assert.ok(s.openedOrder('hot_desk') > a, 'opening it again raises its order');
+});

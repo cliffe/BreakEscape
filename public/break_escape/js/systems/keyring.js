@@ -56,14 +56,28 @@ export const CONNECT_KINDS = ['saved_connection', 'assist_invite'];
 /** How long Connect waits for its screen to appear before it gives up watching for the close. */
 export const RETURN_TO_OPEN_WAIT_MS = 3000;
 export const RETURN_TO_POLL_MS = 250;
+/** After a minigame ends, how long the watcher waits before it looks (a folder close reopens its desktop on a 0 ms timer). */
+export const RETURN_TO_SETTLE_MS = 100;
 
 /**
- * The route Connect signs in by (plan 8.2 step 8): K4's `from` first, then footholds, then
- * the relay (K3c, an assist invite only). K4's `from` is not built yet, so it is skipped.
+ * The route Connect signs in by (plan 8.2 step 8): a `from` desktop first (K4), then
+ * footholds, then the relay (K3c, an assist invite only). `from` names the desktop Connect
+ * started on: when the entry lists it, that is the route; otherwise the most recently opened
+ * source desktop the entry lists (pcSessions.openedOrder). A starting desktop the entry does
+ * not list falls back to this tray order.
  */
-export function connectRoute(entry) {
+export function connectRoute(entry, { from = null, sessions = null } = {}) {
     const routes = Array.isArray(entry?.routes) ? entry.routes : [];
-    // K4: a { from } route goes first here, once pc-sessions can post it
+    const fromRows = routes.filter(r => r && typeof r.from === 'string' && r.from);
+    if (from && fromRows.some(r => r.from === from)) return { from };
+    if (fromRows.length) {
+        const s = sessions || (typeof window !== 'undefined' ? window.pcSessions : null);
+        const order = (id) => { try { return Number(s?.openedOrder?.(id)) || 0; } catch (e) { return 0; } };
+        // Highest open order wins; a tie keeps the server's order (sorted by PC id)
+        let best = fromRows[0];
+        for (const r of fromRows) if (order(r.from) > order(best.from)) best = r;
+        return { from: best.from };
+    }
     const foothold = routes.find(r => r && typeof r.foothold === 'string' && r.foothold);
     if (foothold) return { foothold: foothold.foothold };
     if (entry.kind === 'assist_invite' && routes.some(r => r && r.relay === true)) return { relay: true };
@@ -145,7 +159,8 @@ export class Keyring {
         return true;
     }
 
-    static cacheKey(pcId, { foothold } = {}) {
+    static cacheKey(pcId, { foothold, from } = {}) {
+        if (!foothold && typeof from === 'string' && from) return `${pcId || ''}|from:${from}`;
         return `${pcId || ''}|${foothold ? `foothold:${foothold}` : SCREEN_KEYBOARD}`;
     }
 
@@ -176,11 +191,13 @@ export class Keyring {
      * GET /keyring for a screen. Resolves to the entries; throws when the request fails, and
      * when the answer is unusable, so the caller shows the "could not be loaded" line.
      */
-    async fetch(pcId, { foothold, primed = false, timeoutMs = 0, deadline = 0 } = {}) {
+    async fetch(pcId, { foothold, from, primed = false, timeoutMs = 0, deadline = 0 } = {}) {
         const api = typeof window !== 'undefined' ? (window.ApiClient || window.APIClient) : null;
         if (!api?.keyring) throw new Error('keyring not available');
-        const key = Keyring.cacheKey(pcId, { foothold });
-        const background = !pcId && !foothold;
+        // K4: a screen reached from another desktop asks with from (never with a foothold too)
+        const fromId = !foothold && typeof from === 'string' && from ? from : null;
+        const key = Keyring.cacheKey(pcId, { foothold, from: fromId });
+        const background = !pcId && !foothold && !fromId;
         const seq = background ? ++this._askSeq : 0;
         // An answer to an older background ask than one already applied is dropped whole
         const stale = () => background && seq < this._appliedSeq;
@@ -204,12 +221,13 @@ export class Keyring {
             return Promise.race([api.keyring(pcId, ctl ? { ...opts, signal: ctl.signal } : opts), timeout])
                 .finally(() => clearTimeout(timer));
         };
-        const first = await ask({ foothold, rev: this.revFor(key) });
+        const route = fromId ? { from: fromId } : { foothold };
+        const first = await ask({ ...route, rev: this.revFor(key) });
         if (stale()) { noteDropped(first); return this.latest; }
         let entries = this.remember(key, first, { primed });
         // A rev the cache lost (or an odd answer): ask once more without it
         if (!entries) {
-            const again = await ask({ foothold });
+            const again = await ask(route);
             if (stale()) { noteDropped(again); return this.latest; }
             entries = this.remember(key, again, { primed });
         }
@@ -466,7 +484,7 @@ export class Keyring {
      * No network-view trip starts. `returnTo({ reason })` runs once the screens it opened have
      * all closed. A second call while one runs does nothing. Resolves to { outcome } for tests.
      */
-    async connect(el, { returnTo = null, text = null } = {}) {
+    async connect(el, { returnTo = null, text = null, from = null } = {}) {
         const data = el?.scenarioData;
         const itemId = data?.id;
         if (!itemId) return { outcome: 'none' };
@@ -474,13 +492,14 @@ export class Keyring {
         this.connecting = itemId;
         try {
             const t = text || await import('../utils/remote-host-text.js');
-            return await this._connect(data, t, typeof returnTo === 'function' ? returnTo : null);
+            return await this._connect(data, t, typeof returnTo === 'function' ? returnTo : null,
+                typeof from === 'string' && from ? from : null);
         } finally {
             this.connecting = null;
         }
     }
 
-    async _connect(data, t, returnTo) {
+    async _connect(data, t, returnTo, from = null) {
         const w = window;
         const title = data.name || 'Connect';
         const toast = (msg, outcome, type = 'error') => {
@@ -508,7 +527,7 @@ export class Keyring {
         // A server-held relay with no mirrored copy (after a reload, or a dropped local copy)
         // has nothing to open: it falls through to sign in again by the relay below, which
         // replaces the identical record server-side (R1 M1)
-        const relayLost = entry.sessionHeld === true && !held && connectRoute(entry)?.relay === true;
+        const relayLost = entry.sessionHeld === true && !held && connectRoute(entry, { from })?.relay === true;
         if (entry.sessionHeld === true && !relayLost) {
             if (held?.relay === true) {
                 // Re-entry to a relay session is by Connect only (8.3)
@@ -516,12 +535,17 @@ export class Keyring {
                 this.armRelaySync();
                 return opened('session_held', { relay: true });
             }
-            const foothold = held?.footholdId || connectRoute(entry)?.foothold || null;
+            // K4: a session held by a desktop route reopens from its source desktop
+            if (held?.fromPcId && !held.footholdId) {
+                w.openFromDesktop?.(pcId, held.fromPcId);
+                return opened('session_held', { from: held.fromPcId });
+            }
+            const foothold = held?.footholdId || connectRoute(entry, { from })?.foothold || null;
             w.openRemoteDesktop?.(pcId, foothold);
             return opened('session_held', { foothold });
         }
         if (entry.remoteBlocked === true) return toast(t.remoteOffMessage(host), 'remote_blocked');
-        const route = connectRoute(entry);
+        const route = connectRoute(entry, { from });
         if (!route) return toast(t.trayUnreachableMessage(host), 'no_route');
 
         if (typeof w.pcSessions?.signInWithCredential !== 'function') return toast(t.CONNECT_FAILED_TEXT, 'login_failed');
@@ -531,6 +555,8 @@ export class Keyring {
             if (route.relay === true) {
                 this.armRelaySync();
                 w.openRelayDesktop?.(pcId);
+            } else if (route.from) {
+                w.openFromDesktop?.(pcId, route.from);
             } else {
                 w.openRemoteDesktop?.(pcId, route.foothold);
             }
@@ -559,7 +585,9 @@ export class Keyring {
         if (entry.kind === 'saved_connection' && (reason === 'kind_refused' || reason === 'locked_out')) {
             // The target's remote sign-in screen, the account and the credential chosen, the refusal shown
             w.openCredentialSignIn?.({
-                pcId, host, footholdId: route.foothold, username: entry.account?.username || null,
+                pcId, host, footholdId: route.foothold,
+                ...(route.from ? { fromPcId: route.from } : {}),
+                username: entry.account?.username || null,
                 refusal: {
                     credentialId: entry.id, reason, kind: result.kind || entry.kind,
                     attemptsLeft: result.attemptsLeft ?? null, message: result.message || null
@@ -576,20 +604,56 @@ export class Keyring {
     /**
      * returnTo for Connect (plan 8.2): no trip carries it, so watch the minigame layer and call
      * returnTo({ reason: 'closed' }) once the screens Connect opened have all closed (or never
-     * opened within RETURN_TO_OPEN_WAIT_MS).
+     * opened within RETURN_TO_OPEN_WAIT_MS). It listens for minigame-manager's `minigame_ended`
+     * (K3b R3 t1, built in K4): after each one it waits `settle` ms, because a folder's close
+     * reopens its desktop on a 0 ms timer, then finishes when no minigame is open. With no
+     * dispatcher it falls back to polling every `every` ms. Returns a stop function.
      */
-    watchScreensClose(returnTo, { every = RETURN_TO_POLL_MS, openWait = RETURN_TO_OPEN_WAIT_MS } = {}) {
+    watchScreensClose(returnTo, { every = RETURN_TO_POLL_MS, openWait = RETURN_TO_OPEN_WAIT_MS, settle = RETURN_TO_SETTLE_MS } = {}) {
         const w = window;
+        const dispatcher = w.eventDispatcher;
+        let done = false;
+        let openTimer = null;
+        let settleTimer = null;
+        let pollTimer = null;
+        const onEnded = () => {
+            if (done) return;
+            if (settleTimer) clearTimeout(settleTimer);
+            settleTimer = setTimeout(() => {
+                settleTimer = null;
+                if (!w.MinigameFramework?.currentMinigame) finish();
+            }, settle);
+        };
+        const stop = () => {
+            done = true;
+            if (openTimer) clearTimeout(openTimer);
+            if (settleTimer) clearTimeout(settleTimer);
+            if (pollTimer) clearInterval(pollTimer);
+            try { dispatcher?.off?.('minigame_ended', onEnded); } catch (e) { /* none */ }
+        };
+        function finish() {
+            if (done) return;
+            stop();
+            try { returnTo({ reason: 'closed' }); } catch (e) { console.warn('[keyring] returnTo threw', e); }
+        }
+        if (dispatcher && typeof dispatcher.on === 'function') {
+            dispatcher.on('minigame_ended', onEnded);
+            // Nothing ever opened: finish once the open wait runs out
+            openTimer = setTimeout(() => {
+                openTimer = null;
+                if (!w.MinigameFramework?.currentMinigame) finish();
+            }, openWait);
+            return stop;
+        }
         const started = Date.now();
         let seen = false;
-        const timer = setInterval(() => {
+        pollTimer = setInterval(() => {
             const open = !!w.MinigameFramework?.currentMinigame;
             if (open) { seen = true; return; }
             if (!seen && Date.now() - started < openWait) return;
-            clearInterval(timer);
-            try { returnTo({ reason: 'closed' }); } catch (e) { console.warn('[keyring] returnTo threw', e); }
+            finish();
         }, every);
-        return timer;
+        return stop;
     }
 
     /**

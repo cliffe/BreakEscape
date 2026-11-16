@@ -450,26 +450,51 @@ test('an item with no id does nothing', async () => {
 
 // ── returnTo ────────────────────────────────────────────────────────────────────────────────
 
-test('returnTo runs once after the screens Connect opened have closed, never before', async () => {
+// A dispatcher that keeps its listeners, so a test can send minigame_ended (K4 carry-in t1)
+function liveDispatcher() {
+    const listeners = new Map();
+    return {
+        listeners,
+        emit(name, data) { for (const fn of [...(listeners.get(name) || [])]) fn(data); },
+        on(name, fn) { if (!listeners.has(name)) listeners.set(name, []); listeners.get(name).push(fn); },
+        off(name, fn) { const l = listeners.get(name) || []; const i = l.indexOf(fn); if (i >= 0) l.splice(i, 1); }
+    };
+}
+
+test('returnTo runs once after the screens Connect opened have closed, never before (minigame_ended)', async () => {
     setup();
-    mock.timers.enable({ apis: ['setInterval', 'Date'] });
+    const d = liveDispatcher();
+    window.eventDispatcher = d;
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
     try {
         const seen = [];
         await window.keyring.connect(ITEM, { returnTo: (info) => seen.push(info) });
         window.MinigameFramework.currentMinigame = { open: true };
-        mock.timers.tick(1000);
-        assert.deepEqual(seen, [], 'a screen is open');
+        mock.timers.tick(5000);
+        assert.deepEqual(seen, [], 'a screen is open, so the open wait does not finish it');
+        // A folder closes and its desktop reopens on a 0 ms timer: not finished
         window.MinigameFramework.currentMinigame = null;
-        mock.timers.tick(250);
+        d.emit('minigame_ended', {});
+        setTimeout(() => { window.MinigameFramework.currentMinigame = { open: true }; }, 0);
+        mock.timers.tick(150);
+        assert.deepEqual(seen, [], 'the desktop came back within the settle');
+        window.MinigameFramework.currentMinigame = null;
+        d.emit('minigame_ended', {});
+        mock.timers.tick(50);
+        assert.deepEqual(seen, [], 'not before the settle');
+        mock.timers.tick(60);
         assert.deepEqual(seen, [{ reason: 'closed' }]);
+        d.emit('minigame_ended', {});
         mock.timers.tick(2000);
         assert.equal(seen.length, 1, 'once');
+        assert.equal((d.listeners.get('minigame_ended') || []).length, 0, 'the listener is removed');
     } finally { mock.timers.reset(); }
 });
 
 test('returnTo: when no screen ever opens it still runs, after the open wait', async () => {
     setup();
-    mock.timers.enable({ apis: ['setInterval', 'Date'] });
+    window.eventDispatcher = liveDispatcher();
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
     try {
         const seen = [];
         await window.keyring.connect(ITEM, { returnTo: (info) => seen.push(info) });
@@ -482,7 +507,9 @@ test('returnTo: when no screen ever opens it still runs, after the open wait', a
 
 test('returnTo is not watched when Connect only toasted, and a sign-in screen counts as opened', async () => {
     setup();
-    mock.timers.enable({ apis: ['setInterval', 'Date'] });
+    const d = liveDispatcher();
+    window.eventDispatcher = d;
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
     try {
         const seen = [];
         keyringAnswer = () => ({ entries: [], rev: 'r1' });
@@ -495,9 +522,102 @@ test('returnTo is not watched when Connect only toasted, and a sign-in screen co
         window.MinigameFramework.currentMinigame = { open: true };
         mock.timers.tick(500);
         window.MinigameFramework.currentMinigame = null;
-        mock.timers.tick(250);
+        d.emit('minigame_ended', {});
+        mock.timers.tick(150);
         assert.equal(seen.length, 1);
     } finally { mock.timers.reset(); }
+});
+
+test('returnTo with no dispatcher falls back to polling the minigame layer', async () => {
+    setup();
+    window.eventDispatcher = null;
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const seen = [];
+        await window.keyring.connect(ITEM, { returnTo: (info) => seen.push(info) });
+        window.MinigameFramework.currentMinigame = { open: true };
+        mock.timers.tick(1000);
+        window.MinigameFramework.currentMinigame = null;
+        mock.timers.tick(250);
+        assert.deepEqual(seen, [{ reason: 'closed' }]);
+    } finally { mock.timers.reset(); }
+});
+
+// ── K4: the from route (plan 3.7, 9) ────────────────────────────────────────────────────────
+
+const FROM_RDP = { ...RDP, routes: [{ foothold: 'jack_comms_port' }, { from: 'a_pc' }, { from: 'b_pc' }] };
+
+test('K4 connectRoute: the starting desktop when listed, else the most recently opened source, before any foothold', () => {
+    const order = { a_pc: 3, b_pc: 7 };
+    const sessions = { openedOrder: (id) => order[id] || 0 };
+    assert.deepEqual(connectRoute(FROM_RDP, { from: 'a_pc', sessions }), { from: 'a_pc' }, 'the desktop Connect started on');
+    assert.deepEqual(connectRoute(FROM_RDP, { sessions }), { from: 'b_pc' }, 'the most recent open');
+    assert.deepEqual(connectRoute(FROM_RDP, { from: 'elsewhere_pc', sessions }), { from: 'b_pc' }, 'an unlisted start falls back to the tray order');
+    assert.deepEqual(connectRoute(FROM_RDP, { sessions: { openedOrder: () => 0 } }), { from: 'a_pc' }, 'a tie keeps the server order');
+    assert.deepEqual(connectRoute(RDP, { from: 'a_pc', sessions }), { foothold: 'jack_comms_port' }, 'no from rows: the foothold');
+    assert.deepEqual(connectRoute({ kind: 'assist_invite', routes: [{ relay: true }] }, { from: 'a_pc' }), { relay: true });
+});
+
+test('K4 pcSessions.openedOrder rises with each desktop open and sign-in', () => {
+    const ps = new PcSessions();
+    assert.equal(ps.openedOrder('a_pc'), 0);
+    ps._replace('a_pc', { npcId: 'lena', via: 'password' });
+    ps._replace('b_pc', { npcId: 'sam', via: 'password' });
+    assert.ok(ps.openedOrder('b_pc') > ps.openedOrder('a_pc'));
+    ps.desktopOpened('a_pc');
+    assert.ok(ps.openedOrder('a_pc') > ps.openedOrder('b_pc'));
+});
+
+test('K4 step 8: a from route posts from and opens the desktop from its source', async () => {
+    setup();
+    const fromOpened = [];
+    window.openFromDesktop = (pcId, fromPcId) => fromOpened.push([pcId, fromPcId]);
+    keyringAnswer = () => ({ entries: [FROM_RDP], rev: 'r1' });
+    loginAnswer = () => ({
+        success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection',
+        label: 'HB-FIN-02.rdp', remote: true, fromPcId: 'a_pc', fromHost: 'HB-DESK-01', host: 'HB-FIN-02', route: { from: 'a_pc' }
+    });
+    const r = await window.keyring.connect(ITEM, { from: 'a_pc' });
+    assert.equal(r.outcome, 'signed_in');
+    assert.deepEqual(posts()[0][3], { from: 'a_pc' });
+    assert.deepEqual(fromOpened, [['lena_pc', 'a_pc']]);
+    assert.equal(opened.length, 0, 'no foothold desktop');
+    const held = pcSessions.get('lena_pc');
+    assert.equal(held.fromPcId, 'a_pc');
+    assert.equal(held.fromHost, 'HB-DESK-01');
+});
+
+test('K4 step 5: a session held by a from route reopens from its source', async () => {
+    setup();
+    const fromOpened = [];
+    window.openFromDesktop = (pcId, fromPcId) => fromOpened.push([pcId, fromPcId]);
+    pcSessions._replace('lena_pc', { npcId: 'lena', via: 'credential', remote: true, footholdId: null, fromPcId: 'b_pc', host: 'HB-FIN-02' });
+    keyringAnswer = () => ({ entries: [{ ...FROM_RDP, sessionHeld: true }], rev: 'r1' });
+    const r = await window.keyring.connect(ITEM);
+    assert.equal(r.outcome, 'session_held');
+    assert.deepEqual(fromOpened, [['lena_pc', 'b_pc']]);
+    assert.equal(posts().length, 0);
+});
+
+test('K4 step 8 refusal: a lockout by a from route opens the sign-in screen with fromPcId', async () => {
+    setup();
+    keyringAnswer = () => ({ entries: [FROM_RDP], rev: 'r1' });
+    loginAnswer = () => { throw refusal(422, { lockedOut: true, attemptsLeft: 0 }); };
+    const r = await window.keyring.connect(ITEM, { from: 'a_pc' });
+    assert.equal(r.outcome, 'signin_screen');
+    assert.equal(signIns[0].fromPcId, 'a_pc');
+    assert.equal(signIns[0].footholdId, undefined);
+});
+
+test('K4 Keyring.fetch with from asks from= and keeps its own cache key', async () => {
+    setup();
+    const asked = [];
+    window.ApiClient.keyring = async (pcId, opts = {}) => { asked.push([pcId, opts]); return { entries: [RDP], rev: 'rf' }; };
+    await window.keyring.fetch('lena_pc', { from: 'a_pc' });
+    assert.equal(asked[0][1].from, 'a_pc');
+    assert.equal(asked[0][1].foothold, undefined);
+    assert.ok(window.keyring.cache.has('lena_pc|from:a_pc'));
+    assert.equal(Keyring.cacheKey('lena_pc', { foothold: 'fh', from: 'a_pc' }), 'lena_pc|foothold:fh', 'a foothold wins');
 });
 
 // ── The entry lookup and the tray refresh ───────────────────────────────────────────────────

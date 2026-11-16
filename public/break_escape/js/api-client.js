@@ -152,9 +152,11 @@ export class ApiClient {
   // { success, npcId, username, displayName, via } (a remote one adds remote, footholdId
   // and host); a refusal throws with err.status (422) and err.body { message,
   // attemptsLeft, lockedOut?, notPermitted?, remoteBlocked? }.
+  // K4: { from: <source pcId> } names a desktop route instead (one route at a time).
   static async login(pcId, fields = {}) {
-    const { foothold, ...rest } = fields || {};
-    return this.post('/login', { ...rest, ...(foothold ? { foothold } : {}), pc_id: pcId });
+    const { foothold, from, ...rest } = fields || {};
+    const route = foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {});
+    return this.post('/login', { ...rest, ...route, pc_id: pcId });
   }
 
   // Networks (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md section 5). Only
@@ -223,10 +225,13 @@ export class ApiClient {
   // reached the PC through (credential keyring K0, plan 5.2), so the server answers from
   // Game#remote_login_accounts (the PC's own tiles under remoteScreen "tiles", never the
   // post-it) instead of the keyboard branch. Additive: with no foothold the URL is unchanged.
-  static async loginAccounts(pcId, { foothold } = {}) {
+  static async loginAccounts(pcId, { foothold, from } = {}) {
     let url = `/login_accounts?pc_id=${encodeURIComponent(pcId)}`;
     if (foothold !== undefined && foothold !== null && foothold !== '') {
       url += `&foothold=${encodeURIComponent(foothold)}`;
+    } else if (typeof from === 'string' && from) {
+      // K4: a sign-in screen reached from another desktop
+      url += `&from=${encodeURIComponent(from)}`;
     }
     return this.get(url);
   }
@@ -235,10 +240,11 @@ export class ApiClient {
   // scenario that declares credentials (window.gameScenario.credentialsDeclared). pc_id and
   // foothold name the screen being drawn, so each entry carries forThisPc and accepted; rev
   // asks for { rev, unchanged: true } when nothing changed since that answer.
-  static async keyring(pcId = null, { foothold, rev, signal } = {}) {
+  static async keyring(pcId = null, { foothold, from, rev, signal } = {}) {
     const params = [];
     if (pcId) params.push(`pc_id=${encodeURIComponent(pcId)}`);
     if (foothold !== undefined && foothold !== null && foothold !== '') params.push(`foothold=${encodeURIComponent(foothold)}`);
+    else if (typeof from === 'string' && from) params.push(`from=${encodeURIComponent(from)}`);
     if (rev) params.push(`rev=${encodeURIComponent(rev)}`);
     return this.get(`/keyring${params.length ? `?${params.join('&')}` : ''}`, { signal });
   }
@@ -247,13 +253,14 @@ export class ApiClient {
   // with the screen's route. Never sends relay: false. Answers as login() with kind and label;
   // a refusal throws with err.status and err.body (wrongPc, kindRefused, notPermitted,
   // lockedOut, ended, remoteBlocked, or the generic message).
-  static async loginWithCredential(pcId, credential, { foothold, relay } = {}) {
-    // K3c: the relay route is relay: true, and only when asked; one route at a time
-    return this.post('/login', {
-      pc_id: pcId,
-      credential,
-      ...(relay === true ? { relay: true } : (foothold ? { foothold } : {}))
-    });
+  static async loginWithCredential(pcId, credential, { foothold, relay, from } = {}) {
+    // K3c: the relay route is relay: true, and only when asked; one route at a time.
+    // K4: { from: <source pcId> } is the desktop route.
+    let route = {};
+    if (relay === true) route = { relay: true };
+    else if (foothold) route = { foothold };
+    else if (typeof from === 'string' && from) route = { from };
+    return this.post('/login', { pc_id: pcId, credential, ...route });
   }
 
   /**

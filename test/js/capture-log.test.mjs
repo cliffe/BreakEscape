@@ -488,3 +488,16 @@ test('m10: a link row clicked after a refused unlock does not leave the return l
     await settle();
     assert.equal(device(), null, 'an ending minigame does not reopen the device through the stale listener');
 });
+
+test('a session reached from another desktop is listed last as "Remote session from {host}" (K4)', async () => {
+    reset();
+    window.pcSessions = { list: () => [
+        { pcId: 'ops_pc', displayName: 'Ops Admin', remote: true, footholdId: null, host: 'OPS-PC', fromPcId: 'lena_pc', fromHost: 'LENA-PC' },
+        { pcId: 'lena_pc', displayName: 'Lena Fox', remote: true, footholdId: 'fh1', host: 'HB-FIN-02' }
+    ] };
+    window.networkLinks = { open: () => {}, openSession: () => {} };
+    await add(HOLDER); await add(LINK);
+    await openDevice();
+    assert.deepEqual(keysIn('sessions'), ['item:netlink_fh1', 'session:lena_pc:fh1', 'session:ops_pc:']);
+    assert.match(device().root.textContent, /Remote session from LENA-PC/);
+});
