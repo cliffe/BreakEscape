@@ -89,3 +89,32 @@ Candidate cause to check first (not tested): the NPC is `initiallyHidden` and th
 | P9 | note | Ghost's video call popped up after the Combined Recovery confirm and showed only "End of conversation"; I closed it, which may have cut a closing line. |
 
 Handover: restart a keyless server on 3090, `session-start.sh` for game 5801, re-install the `__cx` hook (command 2 of the log), `bootstrap` with resume, then walk to the boardroom and look for the debrief as above. Then run `verify-run.rb 5801`.
+
+## P6 diagnosis (third agent, 2026-11-16)
+
+**Verdict: not a game bug and not a regression. The debrief was held, not lost.** The "Before the mission ends" warning did fire and was answered "Keep going" by the harness, so the ending sat in the held state the engine designs for that answer. I resumed game 5801 on a keyless server on 3090 and drove only that game. No state was edited or seeded.
+
+### What the live game showed
+- After a reload and `bootstrap` with resume: `mission_complete` true, `debrief_played` false, `debrief_ready` false, `awaiting_ambush` false, `insider_confronted` true, and the saved global `__ending_held` present: `{npcId: closing_debrief_trigger, reason: mapping, eventPattern: global_variable_changed:mission_complete, handlerIndex: 0}`.
+- `window.endingCheck.hasHeld()` true, `needsAnswer()` true, no overlay on screen, `breakEscapeConfig.endingCheck` true, `missionConcludedAt` null.
+- Open optional tasks the player can see: `learn_about_scapegoating` and `investigate_gary_office` (both in the completed aim `access_it_systems`). The objectives panel carried an "End the mission" button.
+- Re-entering a room and waiting 60 s did nothing, as designed: a held ending auto-runs only when no optional task is open, and two are. A reload restored the hold (npc-manager `_rebuildHeldMapping`) but does not re-ask.
+- Clicking the panel's "End the mission" button ran the held mapping: person-chat opened with the Narrator line "SAFETYNET headquarters. Forty-eight hours after St. Catherine's." (the debrief). So the trigger, the NPC mapping and the ink entry all work.
+
+### Root cause
+`closing_debrief_trigger` carries `"endingCheck": true` on its `global_variable_changed:mission_complete` mapping (scenario.json.erb:1513-1520). With optional objectives open, `_handleEventMapping` (public/break_escape/js/systems/npc-manager.js:1389-1405) shows the ending-check overlay first and runs nothing until it is answered. Escape resolves it as "Keep going" (public/break_escape/js/systems/ending-check.js:376-382, Keep going is also the focused default). That answer holds the ending (`__ending_held`) and the debrief opens only from the panel button or once nothing optional is open. In the earlier run:
+1. The transmit confirm set `mission_complete`, the overlay opened over the press terminal, and the harness `brief` does not list it (`blockingUi` stays null).
+2. The next harness commands (`mg close`, the second close at seq 424) were Escape-style closes, which answered "Keep going". The first close replied `stillOpen: true`, which fits the overlay having taken the key. I cannot prove which command answered it, but the saved `__ending_held` record is only written when the overlay is shown, so it did appear.
+3. The session then looked for a debrief and a warning, found neither, and reported a stall.
+
+The earlier hypothesis (NPC not loaded, onceOnly mapping missed) is wrong: the mapping fired, and onceOnly is marked on purpose so the warning does not ask twice (npc-manager.js:1389-1395).
+
+### Regression check
+`git diff main...HEAD` shows no change to ending-check.js, npc-manager.js, the music events or the closing_debrief_trigger mapping on this branch. The optional tasks are unchanged from main. The same sequence on main gives the same result. Not a regression.
+
+### Smallest fix (harness and docs, nothing in the game)
+1. In the playtest harness `brief`, report the ending overlay as `blockingUi` (it already has an `endingOverlay` command at playtest-session.js:586), and make `mg close` refuse or warn while `#ending-check-overlay` exists, so Escape cannot answer it silently.
+2. In the m02 playthrough route, after the press terminal confirm run `{"cmd":"endingOverlay"}`, then `{"cmd":"endingOverlay","action":"end"}` (or finish the two optional tasks).
+3. Optional game polish (not needed): none. The hold, the panel button and the reload restore all behaved as written.
+
+Header correction for the earlier sections: P6 is closed as a harness mishap; the mission's debrief reaches the player.
