@@ -92,3 +92,10 @@ merge build/keyring-k4 only when it is finished; build log section "## Slice K5 
   `expiresInS`, `expired`; `unchanged` answer carries `expiresInS: { credId: n }`.
 - Desktop refusal reason `expired`; unlock refusal reason `expired`; `tokenExpiredPcIds` beside
   `endedPcIds` on POST /login, /logout, /network/unplug, /npc_workaround.
+
+## Run 2 (server) status, 2026-11-16
+Done and committed (68b44943d to 17fbda3a6): steps 1 to 6 and 10 (server tests). Build log section
+"## Slice K5 run 2 (server)" lists commits, tests and deviations. Steps 7 to 9 were the parallel run (c64c0ad44).
+Open: the K4 merge must add `token` to any `finance` policy; credential_login_test.rb:92 (`from` route) fails
+at base 3e21ce0fd too (K4 part 1). No JS client work done (separate run). Gotcha: Ruby 2.7 keyword
+splitting on test helpers with string-keyed hashes; use positional args.
