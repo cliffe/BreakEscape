@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tapPickList, seatsGiveWay, pixelHits, soleHit, overlapStandPoint, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
+import { tapPickList, seatsGiveWay, pixelHits, soleHit, overlapStandPoint, OVERLAP_MARGINS, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
 import { withoutChairsIfOthers, withoutLeavingNpcsIfObjects } from '../../public/break_escape/js/systems/interaction-reach.js';
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
@@ -611,6 +611,35 @@ test('overlap 11: overlapStandPoint tries the click point, then each hit; skips 
     overlapStandPoint([{ id: 'd', x: 300, y: 0, doorProperties: {} }], { x: 300, y: 0 }, player,
         { ...base, doorRange: 64, inReachFrom: () => false, findCell: (x, y) => { seen.push(x); return { x, y }; } });
     assert.ok(seen.includes(268), `door stand point aims half the door range short: ${seen.slice(0, 3)}`);
+});
+
+test('overlap 11b: overlapStandPoint steps the reach margin 12, 8, 4, 0 over walkable cells; null with no joint cell', () => {
+    assert.deepEqual(OVERLAP_MARGINS, [12, 8, 4, 0]);
+    const player = { x: 0, y: 0 };
+    const reach = 20;
+    const inReachFrom = (p, h, margin = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= reach - margin;
+    const base = { range: 32, inReachFrom, findCell: (x, y) => ({ x, y }) };
+    const a = { id: 'a', x: 100, y: 0 };
+    // Two hits d apart share a spot (their midpoint) only inside reach - margin, so the margin
+    // that wins is the widest one that still has a cell: d 16 -> 12, 24 -> 8, 32 -> 4, 40 -> 0
+    for (const [d, margin] of [[16, 12], [24, 8], [32, 4], [40, 0]]) {
+        const b = { id: 'b', x: 100 + d, y: 0 };
+        const p = overlapStandPoint([a, b], { x: 100 + d / 2, y: 0 }, player, base);
+        assert.ok(p, `d ${d}: a spot`);
+        assert.ok(inReachFrom(p, a, margin) && inReachFrom(p, b, margin), `d ${d}: reaches both at margin ${margin}`);
+        if (margin < 12) assert.ok(!(inReachFrom(p, a, margin + 4) && inReachFrom(p, b, margin + 4)), `d ${d}: no wider margin was possible`);
+    }
+    // No joint cell: the hits are further apart than twice the reach
+    assert.equal(overlapStandPoint([a, { id: 'b', x: 148, y: 0 }], { x: 124, y: 0 }, player, base), null);
+    // Joint cells exist but none is walkable
+    const b40 = { id: 'b', x: 140, y: 0 };
+    assert.equal(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { ...base, findCell: (x, y) => (x < 110 ? { x, y } : null) }), null);
+    // A wall refuses the only joint cell
+    assert.equal(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { ...base, wallClear: () => false }), null);
+    // The margin-12 point still comes first when one exists (no lattice detour)
+    const c = { id: 'c', x: 110, y: 0 };
+    const pc = overlapStandPoint([a, c], { x: 105, y: 0 }, player, base);
+    assert.ok(inReachFrom(pc, a, 12) && inReachFrom(pc, c, 12));
 });
 
 test('overlap 12: farUnderTap with every NPC under the tap finds the far one on her figure', () => {

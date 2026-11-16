@@ -98,6 +98,7 @@ const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYie
 const body = [
     ...HELPERS.map(fnSource),
     stmtSource('const pendingTapUse = createPendingTapUse({'),
+    'let overlapRetry = { stand: null, used: false };',
     stmtSource('const pendingOverlapWalk = createPendingTapUse({'),
     `const handler = ${handlerSource()};`,
     'return { handler, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom };'

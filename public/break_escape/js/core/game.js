@@ -2364,10 +2364,12 @@ export async function create() {
                 // click there opens the menu. No menu and nothing used on arrival.
                 if (menuHits.length > 1 && !menuHits.some(inReachNow)) {
                     const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE };
-                    const stand = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps)
-                        || farStandPoint(menuHits[0]);
+                    // Margins 12, 8, 4, 0 over walkable cells; the first hit's own point only when no cell reaches them all
+                    const joint = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps);
+                    const stand = joint || farStandPoint(menuHits[0]);
                     if (stand && !feetWithin(stand, ARRIVAL_THRESHOLD)) {
                         movePlayerToPoint(stand.x, stand.y, { avoidNpcs: true });
+                        overlapRetry = { stand: joint, used: false };
                         pendingOverlapWalk.arm(menuHits, Date.now());
                     } else {
                         window.gameAlert?.("Can't reach it from here.", 'info', '', 2500);
@@ -3000,8 +3002,21 @@ const pendingTapUse = createPendingTapUse({
 });
 // A far tap on an overlap (overlap plan D2): walks to where every hit is in reach and uses
 // nothing on arrival; says why when the walk is blocked or ends with none in reach
+let overlapRetry = { stand: null, used: false };
 const pendingOverlapWalk = createPendingTapUse({
-    inReach: (hits) => hits.some(inReachNow),
+    inReach: (hits) => {
+        if (!hits.some(inReachNow)) return false;
+        const live = hits.filter(stillThere);
+        if (live.every(inReachNow)) return true;
+        // Stopped with only some hits in reach: one more short step to the exact point, then
+        // today's behaviour (finish with whatever is in reach)
+        const r = overlapRetry;
+        if (!r.stand || r.used) return true;
+        r.used = true;
+        if (feetWithin(r.stand, 1)) return true;
+        movePlayerToPoint(r.stand.x, r.stand.y, { avoidNpcs: true });
+        return false;
+    },
     alive: (hits) => Array.isArray(hits) && hits.some(stillThere),
     isMoving: () => playerIsMoving,
     use: () => {},
@@ -3109,10 +3124,9 @@ function playerAtFeet(point) {
 }
 
 // In reach from a stand point, with a margin for a walk that ends up to ARRIVAL_THRESHOLD short (D2)
-function inReachFrom(point, hit) {
+function inReachFrom(point, hit, margin = ARRIVAL_THRESHOLD + 4) {
     if (!point || !hit) return false;
     const from = playerAtFeet(point);
-    const margin = ARRIVAL_THRESHOLD + 4;
     if (hit.doorProperties) return Math.hypot(hit.x - from.x, hit.y - from.y) <= DOOR_INTERACTION_RANGE - margin;
     return isObjectInInteractionRange(hit, from, INTERACTION_RANGE - margin);
 }

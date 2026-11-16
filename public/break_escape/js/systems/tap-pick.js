@@ -235,17 +235,23 @@ export function soleHit({ allHits } = {}, isSeat = () => false) {
     return Array.isArray(allHits) && allHits.length === 1 && !isSeat(allHits[0]) ? allHits[0] : null;
 }
 
+/** Reach margins an overlap stand point is judged with, widest first (px inside the range) */
+export const OVERLAP_MARGINS = [12, 8, 4, 0];
+
 /**
- * Where to stand so every hit of a far overlap is in reach (overlap plan D2): the click point's
- * stand point, then each hit's own (topmost first), each from objectStandPoint, keeping the first
- * from which every hit passes deps.inReachFrom (the real reach with a 12 px margin for a walk
- * that stops short). Null when none does.
+ * Where to stand so every hit of a far overlap is in reach (overlap plan D2): at each margin in
+ * OVERLAP_MARGINS (12, 8, 4, 0 px inside the range, widest first), the click point's stand
+ * point, then each hit's own (topmost first), each from objectStandPoint; then, when none of
+ * those reaches every hit, the walkable cells round the hits (deps.findCell on a 4 px lattice,
+ * nearest walk first) that deps.wallClear / deps.sameRoom allow. The first point from which
+ * every hit passes deps.inReachFrom wins. Null only when no walkable cell reaches them all.
  *
  * @param {Array<object>} hits - the menu hits, topmost first
  * @param {{x:number,y:number}} click
  * @param {object} player
  * @param {object} deps - objectStandPoint's deps, plus:
- * @param {function({x:number,y:number}, object): boolean} deps.inReachFrom
+ * @param {function({x:number,y:number}, object, number=): boolean} deps.inReachFrom - the real reach
+ *   from a feet point, judged `margin` px inside the range (default 12 when omitted)
  * @param {function(object): boolean} [deps.isDoor]
  * @param {number} [deps.doorRange] - DOOR_INTERACTION_RANGE
  * @returns {?{x:number,y:number}}
@@ -256,10 +262,45 @@ export function overlapStandPoint(hits, click, player, deps) {
     const rangeFor = (t) => (isDoor(t) && deps.doorRange ? deps.doorRange : deps.range);
     const clickRange = hits.every(isDoor) && deps.doorRange ? deps.doorRange : deps.range;
     const targets = [[{ x: click.x, y: click.y }, clickRange], ...hits.map(h => [h, rangeFor(h)])];
+    const named = [];
     for (const [t, range] of targets) {
         let p = null;
         try { p = objectStandPoint(t, player, { ...deps, range }); } catch (e) { p = null; }
-        if (p && hits.every(h => deps.inReachFrom(p, h))) return p;
+        if (p) named.push(p);
+    }
+    const allIn = (p, margin) => hits.every(h => deps.inReachFrom(p, h, margin));
+    let cells = null;   // built once, only when a named point fails
+    const lattice = () => {
+        if (cells) return cells;
+        cells = [];
+        if (typeof deps.findCell !== 'function') return cells;
+        const wallClear = deps.wallClear || (() => true);
+        const sameRoom = deps.sameRoom || (() => true);
+        const reach = Math.max(deps.range || 0, deps.doorRange || 0);
+        let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+        for (const h of hits) { x0 = Math.min(x0, h.x); x1 = Math.max(x1, h.x); y0 = Math.min(y0, h.y); y1 = Math.max(y1, h.y); }
+        const seen = new Set();
+        const fx = player?.body ? player.body.center.x - player.x : 0;
+        const fy = player?.body ? player.body.center.y - player.y : 0;
+        const from = { x: player.x + fx, y: player.y + fy };
+        for (let y = y0 - reach; y <= y1 + reach; y += 4) {
+            for (let x = x0 - reach; x <= x1 + reach; x += 4) {
+                let c = null;
+                try { c = deps.findCell(x, y, 0); } catch (e) { c = null; }
+                if (!c) continue;
+                const k = `${c.x},${c.y}`;
+                if (seen.has(k)) continue;
+                seen.add(k);
+                if (!hits.every(h => wallClear(c, h) && sameRoom(c, h))) continue;
+                cells.push({ p: c, walk: Math.hypot(c.x - from.x, c.y - from.y) });
+            }
+        }
+        cells.sort((a, b) => a.walk - b.walk);
+        return cells;
+    };
+    for (const margin of OVERLAP_MARGINS) {
+        for (const p of named) if (allIn(p, margin)) return p;
+        for (const c of lattice()) if (allIn(c.p, margin)) return c.p;
     }
     return null;
 }
