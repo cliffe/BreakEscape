@@ -1189,3 +1189,12 @@ Commits afd895cd2, be5982573, 04f7b596c, then 83f8b83ac on `build/keyring-k3c`.
 - Checks that failed before the fix: the five new access-relay-desktop tests fail with the two engine files reverted.
 - Tests: access-relay-desktop 20/20 (capped), keyring-relay-hooks 16/16, keyring-client 72/72 (one timing flake in the R3 t1 PUT-cap test on a first run, clean on two reruns), pc-sessions 58/58, inventory-menu 28/28, keyring_folder_route_test.rb 7 runs, 0 failures.
 - Open: live proof of Connect after a reload and a powered-off relay PC; signin-fit relay sizes (t3); full `bin/test-js` not rerun after these fixes.
+
+## K3c run 6 (R2 fixes)
+
+Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R2.md, verdict FIX (m1, t1).
+
+- m1 fixed: `container-minigame.js` loadContainerContents. A relay folder 403 now only closes the folder; the reopened relay desktop decides between "assist ended" and "PC is off". The server sends no reason for a locked or powered-off folder (games_controller.rb:634, :3664). The folder tests now use that real reason-less body (`Container not unlocked: jake_docs`) and answer the reopened desktop separately: live relay stays, ended assist shows the ended line, off and not_responding show the PC-off line.
+- t1 fixed: `keyring.js` refresh() returns null with no GET once the PUT cap's timer has fired (the timeout error carries `deadlineHit`; other sync errors still ask anyway). The R3 t1 test now asserts zero GETs during the hang.
+- Mutation checks: with the two engine files restored from HEAD, three access-relay-desktop tests fail (the reason-less live-relay folder test and the off and not_responding folder tests). With keyring.js reverted, the R3 t1 test failed in 2 of 6 runs (the flake itself), so it shows only intermittently.
+- Tests: access-relay-desktop 21/21 (capped), keyring-client 72/72 in 10 of 10 consecutive runs.

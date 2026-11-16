@@ -70,9 +70,11 @@ const JAKE_PC = { id: 'jake_pc', type: 'pc', name: "Jake's PC", host: 'HB-FIN-03
 const RELAY_ANSWER = { success: true, npcId: 'jake', username: 'jbrooks', displayName: 'Jake Brooks', via: 'credential',
     kind: 'assist_invite', label: 'Remote assist code', relay: true, host: 'HB-FIN-03' };
 
-let calls, started, alerts, sessions, fetches, fetchAnswer, signInScreens;
+let calls, started, alerts, sessions, fetches, fetchAnswer, signInScreens, fetchFor;
+globalThis.__fetchAnswer = () => fetchAnswer;
 
 function setup() {
+    fetchFor = null;
     calls = []; started = []; alerts = []; fetches = []; signInScreens = [];
     fetchAnswer = { status: 200, body: { contents: [{ id: 'jake_docs', type: 'folder', name: 'Documents', contents: [] }],
         session: { ...RELAY_ANSWER } } };
@@ -92,6 +94,7 @@ function setup() {
     };
     window.fetch = globalThis.fetch = async (url) => {
         fetches.push(url);
+        const fetchAnswer = fetchFor ? fetchFor(url) : globalThis.__fetchAnswer();
         return { ok: fetchAnswer.status === 200, status: fetchAnswer.status, statusText: String(fetchAnswer.status), json: async () => fetchAnswer.body };
     };
     sessions = new PcSessions();
@@ -243,13 +246,29 @@ test('a folder under the relay desktop names relay=1, and its Close reopens the 
     assert.ok(fetches.some(u => /\/container\/jake_pc\?relay=1$/.test(u)));
 });
 
-test('a folder 403 under a relay drops it and closes with the ended line', async () => {
+// R2 m1: the server sends no reason for a locked or powered-off folder (games_controller.rb:634, :3664),
+// so a relay folder 403 only closes the folder and the reopened desktop decides
+const FOLDER_403 = { status: 403, body: { error: 'Container not unlocked: jake_docs' } };
+const folderOf = () => ({ scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents', locked: false }, sourcePcId: 'jake_pc' });
+
+test('a reason-less folder 403 under a live relay closes the folder only; the relay desktop reopens', async () => {
     setup();
     await sessions.signInWithCredential('jake_pc', 'jake_assist', { relay: true });
-    const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents', locked: false }, sourcePcId: 'jake_pc' };
-    fetchAnswer = { status: 403, body: { error: 'PC not reachable: jake_pc', reason: 'unreachable' } };
-    window.startContainerMinigame(folder, null, false, false, { sourcePcId: 'jake_pc' });
-    await settle(6);
+    fetchFor = (url) => (/jake_docs/.test(url) ? FOLDER_403 : { status: 200, body: { contents: [], session: { ...RELAY_ANSWER } } });
+    window.startContainerMinigame(folderOf(), null, false, false, { sourcePcId: 'jake_pc' });
+    await settle(8);
+    assert.equal(sessions.isRelay('jake_pc'), true, 'the relay is kept');
+    assert.ok(current() instanceof ContainerMinigame && current().relay, 'the relay desktop is open again');
+    assert.ok(!alerts.some(a => /ended the remote assist/.test(a[0])), 'no ended line');
+});
+
+test('a reason-less folder 403 after the assist ended: the reopened desktop says so', async () => {
+    setup();
+    await sessions.signInWithCredential('jake_pc', 'jake_assist', { relay: true });
+    fetchFor = (url) => (/jake_docs/.test(url) ? FOLDER_403
+        : { status: 403, body: { error: 'Not signed in: jake_pc', reason: 'no_session' } });
+    window.startContainerMinigame(folderOf(), null, false, false, { sourcePcId: 'jake_pc' });
+    await settle(8);
     assert.equal(sessions.has('jake_pc'), false);
     assert.equal(current(), null);
     assert.ok(alerts.some(a => a[0] === 'Jake Brooks ended the remote assist.'));
@@ -364,7 +383,8 @@ for (const reason of ['off', 'not_responding']) {
         setup();
         await sessions.signInWithCredential('jake_pc', 'jake_assist', { relay: true });
         const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents', locked: false }, sourcePcId: 'jake_pc' };
-        fetchAnswer = { status: 403, body: { error: 'PC is off: jake_pc', reason } };
+        // The server's real folder body has no reason; the reopened desktop gets the PC-off reason
+        fetchFor = (url) => (/jake_docs/.test(url) ? FOLDER_403 : { status: 403, body: { error: 'PC is off: jake_pc', reason } });
         window.startContainerMinigame(folder, null, false, false, { sourcePcId: 'jake_pc' });
         await settle(6);
         assert.equal(sessions.isRelay('jake_pc'), true, 'the relay is kept');

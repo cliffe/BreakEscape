@@ -962,8 +962,12 @@ test('R3 t1: a sync PUT that never answers is inside the same cap, so the chain 
     let hang = true;
     window.stateSync = { syncConfirmed: () => (hang ? new Promise(() => {}) : Promise.resolve()) };
     const t0 = Date.now();
+    const getsBefore = keyringGets().length;
     assert.equal(await kr.refresh(), null, 'the hung PUT spends the cap and the refresh gives up');
     assert.ok(Date.now() - t0 < 1000, 'well inside a second');
+    // K3c R2 t1: no GET at all once the PUT has spent the cap (a GET sent with a sliver left
+    // could beat its own timeout and return [] instead of null)
+    assert.equal(keyringGets().length, getsBefore, 'no GET while the PUT hangs');
     hang = false;
     answers({ entries: [RDP], rev: 'r1' });
     const after = await kr.refresh(); await settle();

@@ -84,7 +84,7 @@ function beforeDeadline(promise, deadline) {
     if (!(deadline > 0)) return Promise.resolve(promise);
     let timer;
     const left = Math.max(0, deadline - Date.now());
-    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timed out')), left); });
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => { const err = new Error('timed out'); err.deadlineHit = true; reject(err); }, left); });
     return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timer));
 }
 
@@ -356,7 +356,9 @@ export class Keyring {
             // One cap for the sync PUT and the GET together (R3 t1): a PUT that never answers
             // cannot hold the chain, and the GET gets only what the PUT left of it
             const deadline = this.askTimeoutMs > 0 ? Date.now() + this.askTimeoutMs : 0;
-            try { await beforeDeadline(window.stateSync?.syncConfirmed?.(), deadline); } catch (e) { /* ask anyway */ }
+            // A PUT that spent the whole cap gives up with no GET (K3c R2 t1): the timer can fire a
+            // millisecond early, and a GET sent with that sliver left could still beat its own timeout
+            try { await beforeDeadline(window.stateSync?.syncConfirmed?.(), deadline); } catch (e) { if (e?.deadlineHit) return null; /* any other failure: ask anyway */ }
             try { return await this.fetch(null, { deadline }); } catch (e) { return null; }
         });
         this._queued = ask;

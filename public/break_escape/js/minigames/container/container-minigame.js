@@ -582,22 +582,11 @@ export class ContainerMinigame extends MinigameScene {
             this._loadStatus = response.status;
 
             if (!response.ok) {
-                // A folder from a relay desktop whose assist has ended: the session is gone, the
-                // screen closes to the world with the ended line (K3c, 8.3)
+                // A folder from a relay desktop: any 403 only closes the folder. The server sends no
+                // reason for a locked or powered-off folder, so the reopened relay desktop decides
+                // whether the assist ended or the PC is off (K3c R2 m1)
                 if (response.status === 403 && this.sourcePcId && window.pcSessions?.isRelay?.(this.sourcePcId)) {
-                    let why = null;
-                    try { why = (await response.json())?.reason; } catch (e) { /* no body */ }
-                    // A powered-off PC is not an end: keep the relay and say so (R1 m1)
-                    if (why === 'off' || why === 'not_responding') {
-                        // Closing reopens the relay desktop, which shows the PC-off line itself
-                        this.complete(false);
-                        return [];
-                    }
-                    const name = window.pcSessions.get?.(this.sourcePcId)?.displayName;
-                    window.pcSessions.dropLocal?.(this.sourcePcId);
-                    this.exitReason = 'no_session';
                     this.complete(false);
-                    window.gameAlert?.(relayEndedText(name), 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                     return [];
                 }
                 // A folder or share from a desktop whose PC is now off (review R3 nit 2): say so,
