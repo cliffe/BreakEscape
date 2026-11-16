@@ -1,0 +1,6 @@
+{
+  "display_name": "Test: hidden hostiles and fight music",
+  "description": "Engine check: a hostile hidden by setVisible false must not keep the fight music going.",
+  "difficulty_level": 1,
+  "collection": "testing"
+}
