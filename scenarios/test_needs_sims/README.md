@@ -4,6 +4,8 @@ A demo and live test of the NPC needs system (`public/break_escape/js/systems/np
 
 `test_npc_needs` stays as the minimal fixture; this scenario is the showcase.
 
+Reloading while an NPC is carrying something (Grace with the dirty mugs, say) is expected replay, not a bug: the reload ends the carry and returns the object to the spot it was picked up from, then the NPC notices it again and repeats the carry. Nothing is lost or duplicated.
+
 ## Copy the levers, not the counts
 
 The validator's sync-budget check (V8) warns on this scenario: reveal and left-behind globals 14 against a cap of 6, onceOnly mappings 57 against 10, items 9 against 4, and an info line for small keys at 89 against 64. That is a demo ceiling. The showcase packs many beats into one map on purpose. A mission stays under the caps, or says why in its plan when it goes over. The `outcast_pending` idiom (arm on a beat, tick the task, disarm on the return) costs one global and three mappings, so use it only where a task must hang on a beat that can fail. A beat that needs two NPCs' needs to line up (row 6 needs Sanjay's social need due while Marek holds the cooler) ticks only when they do, so a mission objective must not depend on a beat like this without a fallback: a second route that also completes it, or both needs driven from the lever.

@@ -46,11 +46,10 @@ Design as built, differences from the plan:
 - The npcCarry jsonb write needs `player_state_will_change!` before the save: an
   intermediate save in `remove_item_from_room!` otherwise reset dirty tracking and
   the nested entry was dropped.
-- The sync merge (`merge_npc_carry!`) validates against the allowlist only when
-  scenario_data is loaded; the narrow sync load rebuilds the entry from known keys
-  (extra keys dropped, bounded by the NPC count), and the serve path re-validates
-  every stored carry, so a non-carriable stored entry is inert (never served, put
-  down or consumed).
+- There is no sync merge for carries: `merge_npc_carry!` was removed on main
+  (`cf40b8e54`) and an `npcCarry` delta in a sync is ignored. Carries are written only by
+  the four `update_room` carry actions, and the serve path re-validates every stored
+  carry, so a non-carriable stored entry is inert (never served, put down or consumed).
 
 Commits (branch build/ol-carry): slice A `d86a1bacc`, slice B `018b240b9`,
 persistence fix + Rails tests `1956a6e84`, JS test `b8f8801b0`.
@@ -95,10 +94,20 @@ endpoints and persistence).
   the carrier's room when it is reachable; a KO drop would need the KO room treated
   as reachable (the KO-drop trust, as `add_item_to_room!` does for `npc_defeated`).
   `npcCarry[npc_id]` must be cleared on the KO drop.
-- Reload mid-carry: already correct server-side (the object is served in the NPC's
-  itemsHeld from the npcCarry delta and absent from its origin room). No client
-  restore code is needed for correctness; the needs system may stow/drop on its next
-  tick. A future reload-time rule could set it down at the NPC.
+- Reload in the middle of a carry (settled, slice C; `NPC_CARRIED_ITEMS_SLICE_C_PLAN.md`):
+  the rule is that a reload ends the carry and returns the object to the spot it was
+  picked up from, then the NPC re-notices it on its next choose tick and repeats the
+  carry. `prepare_bootstrap_state!`'s `end_stranded_carries!` ends every stored carry at
+  the bootstrap, adding the object back to its `fromRoom`. Resume (spawning the NPC still
+  holding the object and walking straight to the target) was not built: the server does
+  not know the NPC's live position, so the walk restarts from the spawn point either way,
+  resume saves only a few seconds, and every rebuild case it misses leaves the object
+  stranded in a hand nobody can empty, the exact failure put-back removes. The carry entry
+  carries an optional sanitised `fromPos` field, captured from the server's own stored copy
+  at pick-up (`carry_object!`), so a placed copy (a player drop or a put-down) returns to
+  where it was lying rather than to its scenario spot; an object taken from its scenario
+  spot has no `fromPos` and keeps the scenario position. An object the player has already
+  taken into their inventory gets no floor copy at the bootstrap (the inventory guard).
 - Player takes the carried item: `apply_npc_carry!` already suppresses the held item
   once it is in inventory; on delivery the `npcCarry` entry should also be cleared
   (hook: wherever `npc_given_items` / delivery is recorded).
