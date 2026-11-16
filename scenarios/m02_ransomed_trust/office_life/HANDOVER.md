@@ -1,3 +1,23 @@
+# m02 office life: R4 fix round, live proofs part-done, handover 2026-11-16 (context guard)
+
+Suites: `bin/test-js` on tip bc612c980: 690 files passed, 0 failed. m02 `lock_key_diff` not yet run (open).
+
+Scratch (session scratchpad `m02-r4/`, not committed): `lib.mjs`, `common.mjs` (hooks, `talk`, `hop`, `openMg`), `runA.mjs` (proof A), `runB.mjs` (B and C), `ng.sh` (new-game on :3090), logs `A-6012.log`, `B-6028.log`, screenshots in `m02-r4/out/`. The :3090 server was started with its own pidfile and stopped.
+
+Findings so far:
+- Risk cleared. The drop-site's give_item emits `item_picked_up:text_file` through play: `restore_manifest_obtained` is set when flag 3 is submitted in the page (games 6007, 6012, 6028).
+- Proof A PASS, game 6012 (flags 1, 2, 4 seeded by new-game, flag 3 typed in play): first console visit, `backup-recovery` opens, then Ghost's person-chat interrupts it (`start person-chat npc=ghost knot=on_recovery_console`); "Go on, then" and "I accept" set `ghost_deal_accepted`; the reopened console lists "Ghost's Keys (Free, On Ghost's Terms)"; choosing it and confirming gives `backup_recovery_source=ghost_keys`, `ransom_decision_made=true`, no later call. Log `A-6012.log`, screenshot `out/A-4-ghost-keys-selected.png`.
+- Seeding gotcha: `--submit-flag` for flag 4 does NOT open the staging cache on the client (cache stays locked with empty contents). Submit flag 4 in play at the drop-site (games 6021 and 6028: cache opened, `entropy_key_material` taken). The step 2 route above is wrong on this: seed no flags and type all four in play.
+- Offer on first visit also interrupts in the B route (game 6028): `start backup-recovery`, then `start person-chat npc=ghost`, the offer played, "I need time to think" closed it, `ghost_offer_made=true`.
+- Safe route: lobby plaque ("Founded 1987", id `reception_lobby_notes_1`, a game-display dialog, not a minigame), then `emergency_storage_safe` with PIN buttons 1, 9, 8, 7, ENTER; taking the keys opens the notes viewer and sets `offline_keys_recovered`. Game 6028 holds both prerequisites.
+- With `--unlock` on the route rooms, Val's `on_server_room_access` chat fires on first return to server_room; pick "I've got Gary Whitlock's card..." and it closes.
+- Needs an owner call: on the SECOND console visit after deferring, Ghost's `on_console_again` call interrupts the console again ("Back at the console. So you've decided."; choices "I'll take the keys. And publish." / "No. I'm doing this without you." / "I still don't know."). It is designed (`interrupt: true` on both mappings), but a player who keeps answering "I still don't know" meets the call at every visit. Confirm that is wanted.
+
+Open for the next agent:
+1. Proofs B and C on a fresh game made with `--start-room server_room` and `--unlock` for security_office, office_corridor, ward_hall, hospital_ward, emergency_equipment_storage (no `--submit-flag`). Run `node runB.mjs <gid>` from the scratchpad dir. One change: at "console-2" answer the second Ghost call with "No. I'm doing this without you", then click "Combined Recovery" and "CONFIRM RESTORE". Record globals (`backup_recovery_source`, `ransom_decision_made`), screenshots and the call log, and check no "End of conversation" call follows. Run C once more with Ransom Payment as the source.
+2. m02 `lock_key_diff`.
+3. R4 Outcomes in `REVIEW_STAGE5_R4.md` and the P9 entry below.
+
 # m02 office life: R4 fixes, handover 2026-11-16 (code done, live proof not started)
 
 Brief: fix `REVIEW_STAGE5_R4.md` (M1 option a, m1 to m6), plus the coordinator's extras: interrupt on the queued and delayMs paths, and a third live proof (offer on the first console visit, then Combined Recovery chosen and confirmed, its prerequisites reached through play).
