@@ -333,7 +333,10 @@ export function overlapStandPoint(hits, click, player, deps) {
         near.sort((a, b) => (b.slack - a.slack) || (a.walk - b.walk));
         // Lattice cells also need a clear way there; the next best is taken when one has none
         for (const c of [...near, ...pass.filter(c => !near.includes(c))]) if (reachable(c)) return c.p;
-        return null;
+        // None has a straight clear line, but the walk pathfinds around furniture (live check: the
+        // lounge desks blocked every line to the only cells where Grace and Marek were both in
+        // reach): the shortest walk is still better than no joint stand point
+        return pass[0].p;
     };
     const namedPool = named.map(p => ({ p, walk: walkOf(p) }));
     // A named point with the widest margin wins outright; the lattice is only built when none has it

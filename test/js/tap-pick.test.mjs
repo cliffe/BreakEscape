@@ -696,14 +696,17 @@ test('overlap 11e (R5 m2/m3): the lattice stays inside the hits\' reach boxes, i
     overlapStandPoint([a, b], { x: 115, y: 0 }, player, { range: 32, inReachFrom, findCell });
     const lattice = asked;
     assert.ok(lattice.length > 0 && lattice.every(([x, y]) => x >= 98 && x <= 132 && y >= -32 && y <= 32), JSON.stringify(lattice.slice(0, 4)));
-    // A lattice cell the player cannot walk to is not offered: 40 px apart only (120,0) reaches both
+    // A lattice cell with no clear straight line is the last choice, not refused: 40 px apart only (120,0) reaches both
     const b40 = { id: 'b', x: 140, y: 0 };
     const reached = [];
     const refused = overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { range: 32, inReachFrom, findCell,
         pathClear: (q) => { reached.push(q); return false; } });
-    assert.equal(refused, null, 'the only cell has no way there');
+    assert.deepEqual(refused, { x: 120, y: 0 }, 'no clear line to the only cell: still offered (the walk pathfinds)');
     assert.deepEqual(reached, [{ x: 120, y: 0 }]);
     assert.deepEqual(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { range: 32, inReachFrom, findCell, pathClear: () => true }), { x: 120, y: 0 });
+    // A passing cell with a clear line beats a nearer one without
+    const prefer = overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { range: 32, inReachFrom: (p, h, m = 0) => Math.hypot(p.x - h.x, p.y - h.y) <= 30 - m, findCell, pathClear: (q) => q.y > 0 });
+    assert.ok(prefer && prefer.y > 0, JSON.stringify(prefer));
 });
 
 test('overlap 11f (R5 M1): the retry target lies past the stand point, far enough from the feet to move, with every hit in reach', () => {
