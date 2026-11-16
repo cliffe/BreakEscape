@@ -53,3 +53,11 @@ Leading suspect to check next: `isSettling`. `updatePatrol` returns early with v
 Also noted: calling `body.reset` on an NPC through the page froze the game clock (scene time stopped) in the live page; teleport only the player. Live script: scratchpad `stall-live.mjs` (env PX, PY, SECS). The natural run with the player at (156,169) for 60 s did not stall (waypoint_fast never came within 37 px of the player).
 
 Suggested next step: a node test that puts two NPCs (one in face_player, one patrolling) overlapping, calls `handleNPCCollision` every frame and runs `updatePatrol`, and asserts the walker moves within a second or two; then fix `settleOnContact` or add a settle cap. Live proof: player parked at (156,169) beside waypoint_with_face, watch waypoint_fast for a stand-still over 90 s.
+
+## 3. waypoint_fast stand-still: cause found and fixed
+
+Cause: the settle was re-armed in step with the pause. The behaviour manager updates every 50 ms and physics runs at 60 fps. When a settle ended, `updatePatrol` set the walker's velocity, then the very next overlap callback (contact with a face_player NPC, or the player, that does not move away) called `triggerSettling` again and zeroed the velocity before the body integrated it. The walker never moved. A path point under 8 px away was still stepped past, but one further away (the sprite and body positions differ, so the 3 px read in T100 was not the body distance) kept `pathIndex` at 0 with `_stuckWatch` re-armed by each settle.
+
+Test: `test/js/npc-patrol-settle.test.mjs`, "continuous contact ... for ever": 0.0 px moved in 10 s with `settling true` on the old code, passes on the new. Two guards: a single contact still pauses for `settleDuration` then resumes; contact after the grace settles as before and a settle in progress is not extended.
+
+Fix: `triggerSettling` returns false for `SETTLE_GRACE_MS` (600 ms) after a settle ends, and the four contact sites in `npc-sprites.js` only zero the velocity when it returns anything but false. The avoidance-waypoint logic in `handleNPCCollision` is untouched.

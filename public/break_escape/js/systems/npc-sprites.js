@@ -1377,8 +1377,7 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
 export function settleOnContact(npcBehavior, npcSprite, otherNPC) {
     if (otherNPC?.body?.immovable) return false;
     const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) npcSprite.body.setVelocity(0, 0);
+    if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) npcSprite.body.setVelocity(0, 0);
     return true;
 }
 
@@ -1474,9 +1473,8 @@ export function handleNPCCollision(npcSprite, otherNPC) {
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior && !otherHeld) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        // Ensure velocity is zero while settling
-        if (npcSprite.body) {
+        // Ensure velocity is zero while settling (not in the grace after a settle: see triggerSettling)
+        if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
             npcSprite.body.setVelocity(0, 0);
         }
     }
@@ -1603,8 +1601,7 @@ function handleNPCPlayerCollision(npcSprite, player) {
     // ALWAYS trigger settling on collision, regardless of patrol type
     // This prevents NPCs from being pushed across the room by pausing their behavior briefly
     const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) {
+    if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
         npcSprite.body.setVelocity(0, 0);
     }
 
@@ -1661,9 +1658,8 @@ function handleNPCPlayerCollision(npcSprite, player) {
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        // Ensure velocity is zero while settling
-        if (npcSprite.body) {
+        // Ensure velocity is zero while settling (not in the grace after a settle: see triggerSettling)
+        if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
             npcSprite.body.setVelocity(0, 0);
         }
     }
