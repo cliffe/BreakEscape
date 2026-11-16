@@ -259,7 +259,7 @@ test('R6 M1: with still no way round, the next back-off step follows at once', (
     t += AVOID_BACKOFF_MS + 10; b._handleBlockerAhead(t, { x: 400, y: 0 });   // step over: detour retried, fails
     t += 50; b._handleBlockerAhead(t, { x: 400, y: 0 });     // no fresh 2.5 s wait: step 2 at once
     assert.ok(b._vel.x < 0, 'a second step without the long wait');
-    assert.equal(b._avoid.pinned, undefined, 'a step that gained ground is not pinned');
+    assert.ok(!b._avoid.pinned, 'a step that gained ground is not pinned');
 });
 
 test('R6 M1: a yielder that cannot back off is pinned and stops yielding; the other side yields to it', () => {

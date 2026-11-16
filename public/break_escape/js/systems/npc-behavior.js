@@ -78,6 +78,12 @@ const AVOID_SQUEEZE_FACTOR = 0.45;  // squeeze/back-off speed as a fraction of p
 export const AVOID_BACKOFF_MS = 700;
 export const AVOID_BACKOFF_PINNED_PX = 3;
 const AVOID_BACKOFF_REACH_PX = TILE_SIZE * 2;   // how far ahead of the step its aim point lies
+// A yielder keeps yielding to the same NPC while it is still this close ahead, for up to
+// AVOID_YIELD_HOLD_MS from its first step (sims tidy R6, three-NPC lane test): a step that took it
+// just past AVOID_LOOKAHEAD_PX used to clear the meeting, so it walked straight back in and met
+// the same NPC again after a fresh wait, a back-and-forth in which neither got through the lane.
+export const AVOID_YIELD_HOLD_PX = TILE_SIZE * 3;
+export const AVOID_YIELD_HOLD_MS = 10000;
 
 /**
  * The nearest blocker that lies AHEAD of a walker on its heading, or null.
@@ -1609,9 +1615,16 @@ export class NPCBehavior {
         // path behind nextWaypoint, the heading check alone.
         const path = this.currentPath;
         const onPath = Array.isArray(path) && path[this.pathIndex] === nextWaypoint;
-        const hit = onPath
-            ? nearestBlockerOnPath(pos, path, this._dynamicBlockers(), AVOID_LOOKAHEAD_PX, AVOID_LANE_HALF_PX, this.pathIndex)
-            : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, this._dynamicBlockers());
+        const blockers = this._dynamicBlockers();
+        const ahead = (list, reach) => onPath
+            ? nearestBlockerOnPath(pos, path, list, reach, AVOID_LANE_HALF_PX, this.pathIndex)
+            : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, list, reach);
+        let hit = ahead(blockers, AVOID_LOOKAHEAD_PX);
+        // Still yielding: the NPC it backed off from, a little beyond the look-ahead, still counts
+        const held = this._avoid;
+        if (!hit && held?.yieldTo && time < held.yieldUntil) {
+            hit = ahead(blockers.filter(b => b.id === held.yieldTo), AVOID_YIELD_HOLD_PX);
+        }
         if (!hit) { this._avoid = null; return false; }
 
         // A needs-driven NPC whose pickup/use cell has the player standing on or
@@ -1643,7 +1656,7 @@ export class NPCBehavior {
         }
         if (a.backoffUntil) {
             const gained = Math.hypot(pos.x - a.backoffFrom.x, pos.y - a.backoffFrom.y);
-            if (gained < AVOID_BACKOFF_PINNED_PX) a.pinned = true;
+            a.pinned = gained < AVOID_BACKOFF_PINNED_PX;   // a step that gains ground clears the pin
             a.backoffUntil = 0; a.since = time - AVOID_GIVEUP_MS - 1; a.gaveUp = false; a.repathAfter = 0;
         }
 
@@ -1662,9 +1675,11 @@ export class NPCBehavior {
             return true;
         }
 
-        // A pinned NPC (no room behind) stops yielding; one that meets a pinned NPC yields to it
-        const amYielder = hit.isPlayer || (!a.pinned
-            && (!!hit.pinned || avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy)));
+        // A pinned NPC (no room behind) stops yielding; one that meets a pinned NPC yields to it.
+        // Both pinned (or neither): the usual tie-break, so two pinned NPCs never both hold (R6).
+        const amYielder = hit.isPlayer || (!!a.pinned === !!hit.pinned
+            ? avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy)
+            : !!hit.pinned);
         // A higher-priority NPC first gives the yielder time to move, then tries its own detour.
         if (!amYielder && waited < AVOID_PRIORITY_WAIT_MS) return true;
 
@@ -1685,6 +1700,7 @@ export class NPCBehavior {
                 a.backoffFrom = { x: pos.x, y: pos.y };
                 a.backoffTo = { x: pos.x + dx / d * AVOID_BACKOFF_REACH_PX, y: pos.y + dy / d * AVOID_BACKOFF_REACH_PX };
                 a.backoffUntil = time + AVOID_BACKOFF_MS;
+                if (a.yieldTo !== hit.id) { a.yieldTo = hit.id; a.yieldUntil = time + AVOID_YIELD_HOLD_MS; }
                 this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
                 return true;
             }
