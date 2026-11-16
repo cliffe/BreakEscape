@@ -12,6 +12,7 @@ export async function runFaint({ page, errs, sleep, info, mode }) {
         // the clip is regenerated each call from __clipSeconds, but the earlier closure fixed it at 1 s; rebuild via getTTS wrapper
         window.__sayLine = (npc, faint) => {
             const s = window.npcNeedsSystem, st = s.states.get(npc);
+            if (faint) st.faintQuietUntil = 0;   // the faint throttle (R1 M2) is not what these cases test
             const pick = s._pickBark(st, 'coffee', { faint, ignoreCooldown: true });
             if (!pick?.line) return { npc, line: null, note: 'no bag line (lock held or empty pool)' };
             // No bubble is staged for a hand-drawn line, so the bubble layer would hold the voice back for ever:
@@ -117,6 +118,34 @@ export async function runFaint({ page, errs, sleep, info, mode }) {
     await rec('6_duck_under_bark', { player: pos6, undampedFaintVolume: f6.faintVolume, said: r6 });
     await page.evaluate(() => { const bs = window.barkSystem; bs.ttsManagers = window.__bs.m; bs._voicePlaying = window.__bs.p; });
     await idle();
+
+    // 7. R1 M1: the mute lifts the moment a phone-chat closes, and a later non-conversation minigame is not a conversation
+    //    although currentConversationMinigameType stays 'phone-chat' (a page-only stand-in minigame stands for a lockpick)
+    // stand 200 px from Tom: out of earshot (160) but inside the falloff range (480)
+    await page.evaluate(() => { const t = window.npcBehaviorManager.getBehavior('tom').sprite; const x = Math.max(40, t.x - 200), y = t.y; window.player.body.reset(x, y); window.player.setPosition(x, y); });
+    await page.evaluate(() => window.MinigameFramework.startMinigame('phone-chat', null, { phoneId: 'proof_phone', npcIds: ['amara'], title: 'Phone' })); await sleep(1500);
+    const open7 = await page.evaluate(() => ({ conv: window.npcChatterVoice.conversationOpen(), type: window.currentConversationMinigameType, scene: window.MinigameFramework.currentMinigame?._sceneType || null }));
+    await page.evaluate(() => window.__test.minigame.close()); await sleep(300);
+    const closed7 = await page.evaluate(() => ({ conv: window.npcChatterVoice.conversationOpen(), type: window.currentConversationMinigameType, faint: window.npcChatterVoice.faintVolume('tom') }));
+    const stub7 = await page.evaluate(() => {
+        const mf = window.MinigameFramework, keep = mf.currentMinigame;
+        mf.currentMinigame = { constructor: { name: 'LockpickingMinigamePhaser' }, _sceneType: 'lockpicking' };
+        const r = { conv: window.npcChatterVoice.conversationOpen(), type: window.currentConversationMinigameType, hears: window.npcNeedsSystem.world.playerHears('tom', 160) };
+        mf.currentMinigame = keep; return r;
+    });
+    await rec('7_mute_lifts_on_close', { open7, closed7, stub7 });
+
+    // 8. R1 M2: a faint draw leaves the full cooldown alone; a heard draw straight after still gets a line
+    const r8 = await page.evaluate(() => {
+        const s = window.npcNeedsSystem, st = s.states.get('sanjay');
+        st.chatterQuietUntil = 0; st.faintQuietUntil = 0;
+        const f = s._pickBark(st, 'coffee', { faint: true });
+        const after = { chatterQuietUntil: st.chatterQuietUntil || 0, faintQuietUntil: Math.round(st.faintQuietUntil - s.clockMs) };
+        const again = s._pickBark(st, 'coffee', { faint: true });
+        const heard = s._pickBark(st, 'coffee', {});
+        return { faintLine: !!f?.line, ...after, secondFaintIsPicture: !again?.line, heardLine: !!heard?.line, chatterQuietAfterHeard: Math.round(st.chatterQuietUntil - s.clockMs) };
+    });
+    await rec('8_faint_keeps_full_cooldown', r8);
 
     out.errors = errs;
     console.log(JSON.stringify({ errors: errs }));
