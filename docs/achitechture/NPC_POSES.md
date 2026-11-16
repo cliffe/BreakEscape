@@ -1,6 +1,37 @@
 # NPC poses (drink, use-machine, phone)
 
-## Handover (2026-11-15, second session)
+## Handover (2026-11-16, third session; second session below)
+
+Third session (2026-11-16):
+
+- Breathing (D24) is built. `systems/sprite-breath.js` (no imports) holds `breathRows`,
+  `breathDown`, `updateBreath`, `endBreath` and `prefersReducedMotion`, moved verbatim from
+  seating.js, which imports them (and still exports `breathRows`/`breathDown`). No JS test harness
+  copies seating.js or npc-poses.js (they import in place), so no copy list changed; a harness
+  that copies either must now copy sprite-breath.js too. `test/js/sprite-breath.test.mjs` pins the
+  seated output call for call against `test/js/fixtures/seated-breath-trace.json`, recorded from
+  the old seating.js before the move (a changed depth step fails it).
+- npc-poses.js breathes pose frames (each NPC its own phase) and ends the breath when the pose
+  drops. When a pose drops because the NPC sat down in the same frame, it clears seating's crop
+  marker (`_seat.breath.crop`) so seating crops again on the next frame.
+- Standing idles: opt-in, off by default. NPC `"idleBreathing": true` (schema), or
+  `window.npcPoses.idleBreathing = true` for every NPC (debug). Screenshot verdict: no seam or
+  gap at the cut, but the idle already plays PixelLab's 4-frame breathing-idle, so the 1px sink
+  adds a second, unsynchronised rhythm to the same figure. Keep it off; it may suit an atlas
+  whose idle is a single frame.
+- male_office_worker_v2 re-imported with the retest states: phone 7d83b546 (smartphone), use
+  dc21f2ad (right hand); drink kept (6bd09056). Only the 16 phone and use frames changed; every
+  other frame, sit frames included, is byte-identical. Pending owner verdict D26. In-game check:
+  all 3 poses x 8 directions with breathing on, a phone breathing cycle and a live test_needs_sims
+  run (phone, use, drink, idle; no page errors). The images were made in a scratch folder, not
+  committed.
+- Pipeline fix found on the way: an import by character id or URL with `--key <existing key>`
+  used to ignore the stored `sit_from`, `idle_from` and `poses` (it dropped the sit and drink
+  frames). Now `apply_stored_import_settings` keeps them when the key's entry is the same
+  character; tests in `StoredImportSettingsTest`.
+- Skill doc: Stage 4c (pose frames, `--pose-from`) in pixellab-character-pipeline.
+
+Second session (2026-11-15):
 
 Built on build/ol-poses:
 
@@ -50,16 +81,9 @@ Decisions:
 
 Left:
 
-- D24 breathing on pose frames: not started. Plan: move `breathRows`, `breathDown` and the
-  draw helper from seating.js (~85-160) into a shared module with no imports of its own; seating.js
-  imports it statically, so add it to every test harness copy list that copies seating.js
-  (`grep -l seating.js test/js`). npc-poses.js then calls it for pose frames; standing idles get
-  an opt-in, default off until a screenshot says otherwise. Keep a test that the seated output is
-  unchanged.
-- Pose art: the use take reads as a reach on side views (see the notes in
-  tmp/handover/ac4_poses/notes.md); new takes are being tried. Nothing is approved to merge.
-- Full `bin/test-js` run: only the validator suites, office visuals and the new file were run.
-- Skill doc (pixellab-character-pipeline) has no `--pose-from` section yet.
+- Owner verdicts: D26 (new phone and use takes), and whether standing idles should breathe.
+- Pose art for ernesto_bautista and hodan_warsame still uses the first takes; nothing is approved
+  to merge (the art commits are separate so they can be dropped).
 
 ### What the reading found
 
