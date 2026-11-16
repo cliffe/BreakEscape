@@ -34,6 +34,9 @@ export const overheadPx = (contentWidth) => (contentWidth >= 480 ? 204 : 214);
 /** W, the content width: the viewport less 32 gutters, 32 frame and 16 padding. */
 export const contentWidth = (vw) => vw - 80;
 
+/** Width the scroll area's vertical scrollbar takes from W. */
+export const SCROLLBAR_PX = 16;
+
 const SHAPES = [
     { rows: 2, perRow: 12 },
     { rows: 4, perRow: 6 }
@@ -70,7 +73,7 @@ export function chooseLayout(vw, vh) {
         for (const { rows, perRow } of SHAPES) {
             for (const scale of [4, 3]) {
                 const fit = make(rows, perRow, scale, true);
-                if (fit.width <= W) return fit;
+                if (fit.width <= W - SCROLLBAR_PX) return fit;
             }
         }
     }

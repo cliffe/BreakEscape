@@ -34,7 +34,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const model = await imp('minigames/patch-panel/patch-panel-model.js');
-const { PatchPanelMinigame, UNPATCHED_MESSAGE, NO_DEVICE_FALLBACK, startPatchPanelMinigame, LEGEND } =
+const { PatchPanelMinigame, PANEL_UNREACHABLE, UNPATCHED_MESSAGE, NO_DEVICE_FALLBACK, startPatchPanelMinigame, LEGEND } =
     await imp('minigames/patch-panel/patch-panel-minigame.js');
 const { NetworkLinks, PLANT_LABEL, LEAVE_LABEL } = await imp('systems/network-links.js');
 const { gameConfirm } = await imp('systems/notifications.js');
@@ -466,7 +466,7 @@ test('interactions.js opens the panel for an object with panelPorts, after the w
     const branch = src.indexOf('Array.isArray(sprite.scenarioData.panelPorts)');
     assert.ok(branch > src.indexOf('sprite.scenarioData.wifiAp === true'));
     assert.ok(branch < src.indexOf("sprite.scenarioData.type === 'network_link'"));
-    assert.match(src.slice(branch, branch + 160), /window\.startPatchPanelMinigame\?\.\(sprite\.scenarioData\);\s*return;/);
+    assert.match(src.slice(branch, branch + 300), /window\.startPatchPanelMinigame\?\.\(sprite\.scenarioData\);\s*return;/);
 });
 
 test('the 4 rows of 6 print a range label above each row', () => {
@@ -523,4 +523,80 @@ test('a click or a same-layout resize updates ports in place and keeps keyboard 
     dom.window.dispatchEvent(new dom.window.Event('resize'));
     assert.notEqual(port(2), btn);
     assert.equal(document.activeElement, port(2));
+});
+
+// ---- Pentest B1 R2 ----------------------------------------------------------------------
+
+test('R2 M1: a locked panel goes to handleUnlock and returns before the panel opens', () => {
+    const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    const branch = src.indexOf('Array.isArray(sprite.scenarioData.panelPorts)');
+    const body = src.slice(branch, src.indexOf("sprite.scenarioData.type === 'network_link'"));
+    assert.match(body, /locked === true\)\s*\{\s*handleUnlock\(sprite, 'item'\);\s*return;\s*\}\s*window\.startPatchPanelMinigame\?\.\(sprite\.scenarioData\);/);
+});
+
+test('R2 M1: a 403 from a plant (locked panel or container) says so in the footer, with no toast, panel stays', async () => {
+    const m = setup();
+    plantError = Object.assign(new Error('x'), { status: 403, body: {} });
+    const pending = m.clickPort(2);
+    await settle();
+    confirmButton('ok').click();
+    const r = await pending;
+    assert.deepEqual([r.action, r.status], ['error', 403]);
+    assert.equal(footer(), PANEL_UNREACHABLE);
+    assert.deepEqual(toasts, []);
+    assert.equal(window.MinigameFramework.currentMinigame, m);
+});
+
+test('R2 M1: another plant failure shows the retry line in the footer, not a stale state', async () => {
+    const m = setup();
+    plantError = Object.assign(new Error('x'), { status: 500, body: {} });
+    const pending = m.clickPort(2);
+    await settle();
+    confirmButton('ok').click();
+    await pending;
+    assert.equal(footer(), 'The port did not respond. Try again.');
+    assert.deepEqual(toasts, []);
+});
+
+test('R2 m2: a port-security jack with no authored message shows the server refusal in the footer', async () => {
+    const m = setup();
+    const saved = JACKS.secured_port.portSecurityMessage;
+    delete JACKS.secured_port.portSecurityMessage;
+    try {
+        plantError = Object.assign(new Error('x'), { status: 422, body: { reason: 'port_security', error: 'server words' } });
+        const pending = m.clickPort(4);
+        await settle();
+        confirmButton('ok').click();
+        await pending;
+        assert.equal(footer(), 'server words');
+    } finally { JACKS.secured_port.portSecurityMessage = saved; }
+});
+
+test('R2 m3: the scroll fallback leaves room for the scrollbar (770x300 drops 2x12 to scale 3)', () => {
+    const l = chooseLayout(770, 300);
+    assert.deepEqual([l.W, l.rows, l.perRow, l.scale, l.width, l.scroll], [690, 2, 12, 3, 516, true]);
+    // W 704 still takes scale 4 (688 + 16)
+    const e = chooseLayout(784, 300);
+    assert.deepEqual([e.W, e.scale, e.width], [704, 4, 688]);
+    assert.ok(e.width <= e.W - 16);
+});
+
+test('R2 keyboard: ports are native buttons, so Enter and Space activate them through click', async () => {
+    const m = setup();
+    const buttons = [...document.querySelectorAll('[data-port]')];
+    assert.equal(buttons.length, 24);
+    for (const b of buttons) {
+        assert.equal(b.tagName, 'BUTTON');
+        assert.equal(b.type, 'button');
+        assert.equal(b.disabled, false);
+        assert.equal(b.getAttribute('tabindex'), null);
+    }
+    // a native button turns Enter/Space into a click; the click handler is what runs
+    const btn = port(5);
+    btn.focus();
+    btn.click();
+    await settle();
+    assert.equal(footer(), UNPATCHED_MESSAGE);
+    assert.equal(document.activeElement, btn);
+    assert.equal(window.MinigameFramework.currentMinigame, m);
 });

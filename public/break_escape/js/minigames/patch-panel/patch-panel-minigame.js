@@ -20,6 +20,8 @@ export const PANEL_TITLE = 'Patch panel';
 export const UNPATCHED_MESSAGE = 'Nothing at the other end.';
 export const NO_DEVICE_FALLBACK = 'You have nothing to plug into this port.';
 export const PORT_SECURITY_FALLBACK = 'That port only takes known machines.';
+export const PANEL_UNREACHABLE = 'The panel is locked or out of reach. Unlock it first.';
+export const PLANT_ERROR = 'The port did not respond. Try again.';
 export const START_MESSAGE = 'Pick a port.';
 export { MORE_BELOW_TEXT };
 
@@ -257,8 +259,11 @@ export class PatchPanelMinigame extends MinigameScene {
         const result = await links.interactJack({ scenarioData: jack }, { quiet: true });
         if (this.gameState?.isActive === false || win().MinigameFramework?.currentMinigame !== this) return result;
         if (result?.action === 'refused' && result.reason === 'port_security') {
-            this.setFooter(resolveObjectField(jack, 'portSecurityMessage', PORT_SECURITY_FALLBACK)
+            this.setFooter(resolveObjectField(jack, 'portSecurityMessage', null)
                 || result.message || PORT_SECURITY_FALLBACK);
+        } else if (result?.action === 'error') {
+            // quiet hid the toast, so the footer says it (a 403 is a locked panel or container)
+            this.setFooter(result.status === 403 ? PANEL_UNREACHABLE : (result.message || PLANT_ERROR));
         } else if (result?.action === 'cancelled') {
             this.setFooter(`${label}${desk}: left alone`);
         } else if (result?.action === 'planted' || result?.action === 'already') {
