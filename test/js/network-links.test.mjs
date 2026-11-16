@@ -216,6 +216,8 @@ test('with a device the jack confirms first, and a cancelled confirm sends nothi
     assert.equal(confirms.length, 1);
     assert.equal(confirms[0].message, 'Plug the drop box into this port?');
     assert.equal(confirms[0].opts.plainText, true, 'author text is shown as plain text');
+    assert.equal(confirms[0].ok, 'Plug it in');
+    assert.equal(confirms[0].cancel, 'Leave it', 'the second button is named for what it does (no generic Cancel)');
     assert.deepEqual(calls, []);
     assert.equal(held('kit_dropbox').length, 1, 'the box is still held');
 });
