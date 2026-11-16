@@ -28,6 +28,9 @@ let openedRoom = null;
 let openedInFight = false;
 let lastTick = 0;
 let roomSubscribed = false;
+let lastPlacement = null;   // the last phone placement: { covered, cover, gap, tight, avoid }
+/** The last phone placement (for tests and live checks) */
+export function getLastMenuPlacement() { return lastPlacement; }
 const TICK_MS = 250;
 
 function injectStyles() {
@@ -343,42 +346,79 @@ function subscribeRoomChange() {
 }
 
 /**
- * Where a touch menu goes so it does not cover the things tapped (overlap plan 6.3): beside the
- * `avoid` box (client px: left, top, right, bottom) on the side with more room, level with it;
- * when neither side is wide enough, above or below it, whichever has more room. Null when the
- * menu fits nowhere clear of the box (the caller keeps its usual spot).
+ * Where a touch menu goes so it does not cover the things tapped (overlap plan 6.3). `avoid` is
+ * the UNION of every tapped thing's screen rect (client px: left, top, right, bottom). The menu
+ * keeps `margin` px clear of it (and of the screen edge): beside it on the side with more room,
+ * level with it; else above or below, whichever has more room. When no place is clear (a union
+ * taller than the screen, say) the place that covers the least of the box is used and the result
+ * says so: `covered` is true and `cover` is the px area still under the menu. A fallback spot
+ * that overlaps nothing but sits closer than `margin` is `tight` (with its `gap` in px), not clear.
  *
  * @param {{width:number,height:number}} rect - the menu's size
  * @param {{width:number,height:number}} view - the viewport
  * @param {{left:number,top:number,right:number,bottom:number}} avoid
- * @param {number} [margin=8]
- * @returns {?{x:number,y:number}}
+ * @param {number} [margin=8] - clearance in client px (8 times the HUD zoom, at least 8)
+ * @returns {?{x:number,y:number,covered:boolean,cover:number,gap:number,tight:boolean}}
  */
 export function menuPlacement(rect, view, avoid, margin = 8) {
     if (!rect || !view || !avoid) return null;
-    const gap = 8;
+    margin = Math.max(8, Number.isFinite(margin) ? Math.ceil(margin) : 8);
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
+    const maxX = view.width - rect.width - margin;
+    const maxY = view.height - rect.height - margin;
+    const cx = (v) => (maxX >= margin ? clamp(v, margin, maxX) : Math.max(0, (view.width - rect.width) / 2));
+    const cy = (v) => (maxY >= margin ? clamp(v, margin, maxY) : Math.max(0, (view.height - rect.height) / 2));
     const midY = (avoid.top + avoid.bottom) / 2;
     const midX = (avoid.left + avoid.right) / 2;
-    const roomL = avoid.left - gap - margin;
-    const roomR = view.width - avoid.right - gap - margin;
+    const coverOf = (x, y) => {
+        const w = Math.min(x + rect.width, avoid.right) - Math.max(x, avoid.left);
+        const h = Math.min(y + rect.height, avoid.bottom) - Math.max(y, avoid.top);
+        return w > 0 && h > 0 ? w * h : 0;
+    };
+    // Px between the menu and the tapped union (0 or less when they overlap on both axes)
+    const gapOf = (x, y) => Math.max(avoid.left - (x + rect.width), x - avoid.right,
+        avoid.top - (y + rect.height), y - avoid.bottom);
+    const done = (x, y) => {
+        const cover = coverOf(x, y);
+        const gap = gapOf(x, y);
+        // `tight`: not over anything, but closer than `margin` (a fallback spot pushed against the screen edge)
+        return { x, y, covered: cover > 0, cover, gap, tight: cover === 0 && gap < margin - 1e-6 };
+    };
+
+    // Beside, then above or below: the first kind with room, the side with more room within it
+    const roomL = avoid.left - margin - margin;
+    const roomR = view.width - avoid.right - margin - margin;
     const sides = [];
-    if (roomL >= rect.width) sides.push({ room: roomL, x: avoid.left - gap - rect.width });
-    if (roomR >= rect.width) sides.push({ room: roomR, x: avoid.right + gap });
+    if (roomL >= rect.width) sides.push({ room: roomL, x: Math.floor(avoid.left - margin - rect.width) });
+    if (roomR >= rect.width) sides.push({ room: roomR, x: Math.ceil(avoid.right + margin) });
     if (sides.length) {
         sides.sort((a, b) => b.room - a.room);
-        return { x: sides[0].x, y: clamp(midY - rect.height / 2, margin, view.height - rect.height - margin) };
+        return done(sides[0].x, Math.round(cy(midY - rect.height / 2)));
     }
-    const roomU = avoid.top - gap - margin;
-    const roomD = view.height - avoid.bottom - gap - margin;
+    const roomU = avoid.top - margin - margin;
+    const roomD = view.height - avoid.bottom - margin - margin;
     const rows = [];
-    if (roomU >= rect.height) rows.push({ room: roomU, y: avoid.top - gap - rect.height });
-    if (roomD >= rect.height) rows.push({ room: roomD, y: avoid.bottom + gap });
+    if (roomU >= rect.height) rows.push({ room: roomU, y: Math.floor(avoid.top - margin - rect.height) });
+    if (roomD >= rect.height) rows.push({ room: roomD, y: Math.ceil(avoid.bottom + margin) });
     if (rows.length) {
         rows.sort((a, b) => b.room - a.room);
-        return { x: clamp(midX - rect.width / 2, margin, view.width - rect.width - margin), y: rows[0].y };
+        return done(Math.round(cx(midX - rect.width / 2)), rows[0].y);
     }
-    return null;
+
+    // Nowhere clear: the least-cover spot among the four sides and the corners, clamped on screen
+    const spots = [
+        [Math.floor(avoid.left - margin - rect.width), Math.round(midY - rect.height / 2)],
+        [Math.ceil(avoid.right + margin), Math.round(midY - rect.height / 2)],
+        [Math.round(midX - rect.width / 2), Math.floor(avoid.top - margin - rect.height)],
+        [Math.round(midX - rect.width / 2), Math.ceil(avoid.bottom + margin)],
+        [margin, margin], [maxX, margin], [margin, maxY], [maxX, maxY]
+    ];
+    let best = null;
+    for (const [x, y] of spots) {
+        const c = done(cx(x), cy(y));
+        if (!best || c.cover < best.cover) best = c;
+    }
+    return best;
 }
 
 /**
@@ -600,20 +640,45 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText,
     let x = (clientX ?? window.innerWidth / 2) - rect.width / 2;
     let y = (clientY ?? window.innerHeight / 2) - rect.height - 16;
 
-    // On a phone the menu goes beside the tapped things, not over them (overlap plan 6.3)
-    if (touch && avoid) {
-        const spot = menuPlacement(rect, { width: window.innerWidth, height: window.innerHeight }, avoid, margin);
-        if (spot) { x = spot.x; y = spot.y; }
+    // The menu goes beside the tapped things, not over them (overlap plan 6.3). A phone always
+    // uses that spot; a desktop menu keeps its place near the cursor unless that place covers
+    // or crowds them (a narrow window), then it takes the same spot.
+    let placed = false;
+    if (avoid) {
+        const hudZoom = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--hud-zoom')) || 1;
+        const clearBy = margin * Math.max(1, hudZoom);
+        const view = { width: window.innerWidth, height: window.innerHeight };
+        let useSpot = touch;
+        if (!touch) {
+            // The usual desktop spot, clamped as below, and whether it is within `clearBy` of the box
+            const dx = Math.max(margin, Math.min(x, view.width - rect.width - margin));
+            let dy = y < margin ? (clientY ?? 0) + 16 : y;
+            dy = Math.max(margin, Math.min(dy, view.height - rect.height - margin));
+            useSpot = dx < avoid.right + clearBy && dx + rect.width > avoid.left - clearBy
+                && dy < avoid.bottom + clearBy && dy + rect.height > avoid.top - clearBy;
+        }
+        const spot = useSpot ? menuPlacement(rect, view, avoid, clearBy) : null;
+        if (spot) {
+            x = spot.x; y = spot.y;
+            // Recorded for the tests: whether the menu is clear of the tapped things
+            menuEl.dataset.placement = spot.covered ? 'least-cover' : (spot.tight ? 'tight' : 'clear');
+            lastPlacement = { covered: spot.covered, cover: spot.cover, gap: spot.gap, tight: spot.tight, avoid: { ...avoid } };
+            placed = true;
+        }
     }
 
-    if (x + rect.width + margin > window.innerWidth) x = window.innerWidth - rect.width - margin;
-    if (x < margin) x = margin;
-    if (y < margin) y = (clientY ?? 0) + 16; // not enough room above — drop below the tap
-    if (y + rect.height + margin > window.innerHeight) y = window.innerHeight - rect.height - margin;
-    if (y < margin) y = margin;
+    if (!placed) {   // a phone placement is already clear of the tapped things and on screen
+        if (x + rect.width + margin > window.innerWidth) x = window.innerWidth - rect.width - margin;
+        if (x < margin) x = margin;
+        if (y < margin) y = (clientY ?? 0) + 16; // not enough room above — drop below the tap
+        if (y + rect.height + margin > window.innerHeight) y = window.innerHeight - rect.height - margin;
+        if (y < margin) y = margin;
+    }
 
-    menuEl.style.left = `${Math.round(x)}px`;
-    menuEl.style.top = `${Math.round(y)}px`;
+    // A placed menu is already whole px on the axis facing the tapped things, rounded away from
+    // them; rounding it again could take back part of the gap
+    menuEl.style.left = `${placed ? x : Math.round(x)}px`;
+    menuEl.style.top = `${placed ? y : Math.round(y)}px`;
     updateMoreCue();
 }
 
@@ -635,3 +700,4 @@ window.menuIcons = { openHand: openHandIcon, jabHand: jabHandIcon, talk: talkIco
 window.closeInteractionMenu = closeInteractionMenu;
 window.tickInteractionMenu = tickInteractionMenu;
 window.isInteractionMenuOpen = isInteractionMenuOpen;
+window.getLastMenuPlacement = getLastMenuPlacement;
