@@ -37,11 +37,11 @@ function issuesFor(lines) {
 }
 const long = list => list.filter(s => s.includes('a bubble holds at most 40'));
 
-test('exchange line over 40 characters is a warning, counted without the Name: prefix', { skip }, () => {
+test('exchange line over 40 characters is an error, counted without the Name: prefix', { skip }, () => {
     const text = 'Eleven lab runs tonight. Every result in an envelope.';
     const out = long(issuesFor([`Ernesto: ${text}`, 'Hodan: Fine.']));
     assert.equal(out.length, 1, out.join('\n'));
-    assert.match(out[0], /⚠️ WARNING/);
+    assert.match(out[0], /❌ ERROR/);
     assert.match(out[0], new RegExp(`is ${text.length} characters`));
 });
 

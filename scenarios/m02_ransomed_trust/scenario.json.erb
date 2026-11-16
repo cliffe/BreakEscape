@@ -1462,7 +1462,7 @@ boardroom_pin = "0417"
     Ghost's answer known. ghost_offer_made is set by the knot, so a reload can't replay it. %>
             {
               "eventPattern": "object_interacted",
-              "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made",
+              "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made && !globalVars.ransom_decision_made",
               "onceOnly": true,
               "conversationMode": "video-call",
               "voiced": true,
@@ -1471,7 +1471,7 @@ boardroom_pin = "0417"
             {
               "_comment": "Second and last ask, for a player who said 'I need time to think': the next console use.",
               "eventPattern": "object_interacted",
-              "condition": "data.objectType === 'backup_recovery' && globalVars.ghost_offer_made === true && !globalVars.ghost_deal_accepted && !globalVars.ghost_deal_refused && !globalVars.backup_restore_initiated",
+              "condition": "data.objectType === 'backup_recovery' && globalVars.ghost_offer_made === true && !globalVars.ghost_deal_accepted && !globalVars.ghost_deal_refused && !globalVars.backup_restore_initiated && !globalVars.ransom_decision_made",
               "onceOnly": true,
               "conversationMode": "video-call",
               "voiced": true,
