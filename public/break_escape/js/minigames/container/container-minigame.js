@@ -10,7 +10,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
-import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
+import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
 
 
 
@@ -1026,7 +1026,7 @@ export class ContainerMinigame extends MinigameScene {
         // A keyring credential session adds how it signed in (K3a 8.1)
         const credLine = credentialSessionLine(session);
         const whoLines = credLine
-            ? `${who}<span class="desktop-account-credential">${escapeHtml(displayDashes(credLine))}</span>` : who;
+            ? `${who}<span class="desktop-account-credential">${credentialLineHtml(session)}</span>` : who;
         return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
                         <span class="desktop-account-name">${whoLines}</span>
@@ -1827,6 +1827,10 @@ export class ContainerMinigame extends MinigameScene {
         
         // Add to inventory
         const addResult = await addToInventory(tempSprite);
+        // Keyring K3a (R1 m2): a file taken (copied or moved) counts as opened for an "In file" tag
+        if (addResult && addResult.ok) {
+            try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
+        }
         if (addResult && addResult.ok && isCopy) {
             // A copy stays on the PC (and in its profile on every PC)
             if (window.playUISound) window.playUISound('item');

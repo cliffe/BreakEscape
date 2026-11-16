@@ -69,7 +69,7 @@ export class Keyring {
      * Take one GET /keyring answer for a cache key; answers the entries to draw (the cached
      * ones on { unchanged: true }), or null when the answer is not usable.
      */
-    remember(key, answer) {
+    remember(key, answer, { primed = false } = {}) {
         if (!answer || typeof answer !== 'object') return null;
         if (answer.unchanged === true) {
             const hit = this.cache.get(key);
@@ -78,7 +78,8 @@ export class Keyring {
         if (!Array.isArray(answer.entries)) return null;
         const entries = answer.entries.filter(e => e && typeof e === 'object' && typeof e.id === 'string');
         this.cache.set(key, { rev: typeof answer.rev === 'string' ? answer.rev : null, entries });
-        if (this.firstAnswerIds === null) this.firstAnswerIds = new Set(entries.map(e => e.id));
+        // Only the page-start prime fixes the reload set; a screen's answer never does (R1 m1)
+        if (primed && this.firstAnswerIds === null) this.firstAnswerIds = new Set(entries.map(e => e.id));
         return entries;
     }
 
@@ -86,13 +87,13 @@ export class Keyring {
      * GET /keyring for a screen. Resolves to the entries; throws when the request fails, and
      * when the answer is unusable, so the caller shows the "could not be loaded" line.
      */
-    async fetch(pcId, { foothold } = {}) {
+    async fetch(pcId, { foothold, primed = false } = {}) {
         const api = typeof window !== 'undefined' ? (window.ApiClient || window.APIClient) : null;
         if (!api?.keyring) throw new Error('keyring not available');
         const key = Keyring.cacheKey(pcId, { foothold });
-        let entries = this.remember(key, await api.keyring(pcId, { foothold, rev: this.revFor(key) }));
+        let entries = this.remember(key, await api.keyring(pcId, { foothold, rev: this.revFor(key) }), { primed });
         // A rev the cache lost (or an odd answer): ask once more without it
-        if (!entries) entries = this.remember(key, await api.keyring(pcId, { foothold }));
+        if (!entries) entries = this.remember(key, await api.keyring(pcId, { foothold }), { primed });
         if (!entries) throw new Error('keyring answer unusable');
         return entries;
     }
@@ -104,7 +105,11 @@ export class Keyring {
     prime() {
         if (!credentialsDeclared()) return Promise.resolve(null);
         if (!this._primed) {
-            this._primed = this.fetch(null).catch(() => null);
+            this._primed = this.fetch(null, { primed: true }).catch(() => {
+                // A failed prime is the stricter case: nothing counts as earned before this page
+                if (this.firstAnswerIds === null) this.firstAnswerIds = new Set();
+                return null;
+            });
         }
         return this._primed;
     }
@@ -132,7 +137,7 @@ export class Keyring {
             if (screen !== SCREEN_FOOTHOLD) return false;
             if (e.kind === 'saved_connection') {
                 if (e.ended === true) return false;
-                return e.forThisPc === true || (pcId && e.connectsTo === pcId);
+                return e.forThisPc === true;
             }
             return false;
         });

@@ -670,6 +670,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             tiles: picker === false ? [] : tiles,
             current,
             preselect: current && current.locked ? current.username : null,
+            // Belt and braces: screenEntries already limits the keyboard to passwords; this keeps it so
             ...(keyringNow ? { keyring: keyringNow.list.filter(e => e.kind === 'password'), keyringFailed: keyringNow.failed, accountsFailed } : {})
         },
         postitNote,

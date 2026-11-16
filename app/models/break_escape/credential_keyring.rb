@@ -191,11 +191,14 @@ module BreakEscape
       row
     end
 
-    # A connecting credential's label: its held item's authored name, else its connectsTo id. The
-    # keyring row and the credential sign-in answer (K2) share it.
+    # A connecting credential's label: the entry's own `label`, else its held item's authored
+    # name, else empty (the screen then uses the generic kind wording; a PC id is never shown).
+    # The keyring row and the credential sign-in answer (K2) share it.
     def credential_label(entry)
+      return entry['label'] if CredentialModel.present_string?(entry['label'])
+
       definition = CredentialModel.item_definition(scenario_data, entry.dig('proof', 'held'))
-      definition.is_a?(Hash) && CredentialModel.present_string?(definition['name']) ? definition['name'] : entry['connectsTo'].to_s
+      definition.is_a?(Hash) && CredentialModel.present_string?(definition['name']) ? definition['name'] : ''
     end
 
     # The routes that reach a connecting credential's connectsTo now (section 6.2). K1 computes held

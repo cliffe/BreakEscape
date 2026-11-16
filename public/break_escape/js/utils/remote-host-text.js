@@ -131,11 +131,11 @@ export function teachLine(kind, { displayName } = {}) {
 
 /**
  * The error line for a credential sign-in's refusal (8.5), by pc-sessions' reason. A policy
- * refusal already shown under its greyed button answers '' (the error line stays empty).
+ * refusal gets its full line here (a greyed button never posts, so none is shown twice).
  */
-export function credentialRefusalLine(reason, { host, label, displayName, kind, greyedShown = false } = {}) {
+export function credentialRefusalLine(reason, { host, label, displayName, kind } = {}) {
     switch (reason) {
-    case 'kind_refused': return greyedShown ? '' : kindRefusedMessage(kind, host);
+    case 'kind_refused': return kindRefusedMessage(kind, host);
     case 'wrong_pc': return WRONG_PC_TEXT;
     case 'not_permitted': return remoteNotPermittedMessage(host);
     case 'locked_out': return remoteLockedOutMessage(host);

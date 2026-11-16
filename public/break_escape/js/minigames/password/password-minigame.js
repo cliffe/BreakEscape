@@ -415,11 +415,22 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
         } else if (kind === 'in_file') {
             if (!tile.found.some(f => f.id === e.id)) tile.found.push({ id: e.id, label: String(e.label || e.foundIn || '') });
         } else if (!tile.credentials.some(c => c.id === e.id)) {
-            tile.credentials.push({ id: e.id, kind, label: String(e.label || ''), accepted: e.accepted !== false,
+            tile.credentials.push({ id: e.id, kind, label: credentialLabel(e, kind), accepted: e.accepted === true,
                 host: typeof e.host === 'string' ? e.host : null });
         }
     }
     return out;
+}
+
+/**
+ * The label a credential button shows: the author's label, else the 8.5 generic wording for
+ * the kind ("Saved connection"). Never a PC id: an older answer that fell back to connectsTo
+ * is treated as no label.
+ */
+export function credentialLabel(e, kind) {
+    const label = typeof e?.label === 'string' ? e.label.trim() : '';
+    if (label && label !== e?.connectsTo) return label;
+    return tileFullNames([kind])[0];
 }
 
 /** The tag kind of a keyring entry (8.5): captured, in_file, or the entry's own kind. */
@@ -1568,13 +1579,13 @@ export class PasswordMinigame extends MinigameScene {
                         <div class="signin-prompt" id="signin-prompt" aria-live="polite" hidden></div>
                         <div class="signin-card" id="signin-card">` : ''}
                         <div class="signin-form" id="signin-form">
-                            <div class="signin-ways" id="signin-ways" hidden></div>
-                            <div class="signin-ways-more" id="signin-ways-more" hidden aria-hidden="true"><span class="signin-tiles-more-arrow"></span><span>${REMOTE_MORE_BELOW_TEXT}</span></div>
                             <div class="signin-selected-row">${inMonitor ? `
                                 <span class="signin-selected-headshot" aria-hidden="true" hidden></span>` : ''}
                                 <div class="signin-selected" id="signin-selected"></div>
                                 <button type="button" class="signin-change${inMonitor ? ' pc-os-btn' : ''}" id="signin-change">Change</button>
                             </div>
+                            <div class="signin-ways" id="signin-ways" hidden></div>
+                            <div class="signin-ways-more" id="signin-ways-more" hidden aria-hidden="true"><span class="signin-tiles-more-arrow"></span><span>${REMOTE_MORE_BELOW_TEXT}</span></div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
                                 <input type="text" id="signin-username" class="password-field" placeholder="Username" aria-label="Username" maxlength="64" autocomplete="off" spellcheck="false">
@@ -2093,7 +2104,7 @@ export class PasswordMinigame extends MinigameScene {
             way.className = 'signin-cred-way';
             const b = doc.createElement('button');
             b.type = 'button';
-            b.className = `signin-cred${inMonitor ? ' pc-os-btn' : ''}`;
+            b.className = `signin-cred ${inMonitor ? 'pc-os-btn' : 'minigame-button'}`;
             b.dataset.credId = cred.id;
             const fixed = doc.createElement('span');
             fixed.className = 'signin-cred-fixed';

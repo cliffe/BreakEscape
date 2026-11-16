@@ -92,6 +92,18 @@ export function unplugEndedMessage(hosts = []) {
     const names = list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
     return `Unplugged. Your session${list.length === 1 ? '' : 's'} on ${names} ended.`;
 }
+/**
+ * The toast for sessions a sign-in or sign-out pruned (plan 8.5, reason route_ended): the
+ * session each went through was closed. Not an unplug.
+ */
+export function routeEndedMessage(hosts = []) {
+    const list = (Array.isArray(hosts) ? hosts : []).filter(h => typeof h === 'string' && h);
+    if (!list.length) return null;
+    const names = list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+    return list.length === 1
+        ? `Your session on ${names} ended: the session it went through was closed.`
+        : `Your sessions on ${names} ended: the sessions they went through were closed.`;
+}
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 export const displacedMessage = (name) => `${name || 'Someone'} has signed in at this PC`;
 
@@ -183,7 +195,7 @@ export class PcSessions {
         this._listening = dispatcher;
         dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
-        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds));
+        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged'));
         // 9.2 H (6.4): an NPC sitting down, or leaving a borrowed session, ends the player's there
         const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId)); };
         dispatcher.on('npc_sat_at:*', sat);
@@ -346,7 +358,7 @@ export class PcSessions {
     /** The sessions a sign-in's answer says ended (keyring K2 3.8), never the new one itself. */
     _dropEnded(endedPcIds, pcId) {
         const ended = Array.isArray(endedPcIds) ? endedPcIds.filter(id => typeof id === 'string' && id && id !== pcId) : [];
-        if (ended.length) this.linkDropped(ended);
+        if (ended.length) this.linkDropped(ended, 'route_ended');
     }
 
     /**
@@ -557,7 +569,7 @@ export class PcSessions {
         this._closeDesktop(pcId, message, 'sign_out');
         // Signing out of a pivot ends the onward sessions (slice 9.3b K, 5.1): the server
         // returned them, so their desktops close with "the link dropped".
-        if (Array.isArray(ended) && ended.length) this.linkDropped(ended);
+        if (Array.isArray(ended) && ended.length) this.linkDropped(ended, 'route_ended');
         return true;
     }
 
@@ -614,7 +626,8 @@ export class PcSessions {
      * The sessions whose desktop was not open (the usual case: the unplug happens at the jack)
      * get one toast naming their hosts. Returns the pcIds dropped.
      */
-    linkDropped(endedPcIds = []) {
+    linkDropped(endedPcIds = [], reason = 'unplugged') {
+        const routeEnded = reason === 'route_ended';
         const dropped = [];
         const unseen = [];
         for (const pcId of (Array.isArray(endedPcIds) ? endedPcIds : [])) {
@@ -625,9 +638,10 @@ export class PcSessions {
             // The host label the server sent; never the internal PC id
             if (!this.desktops.has(pcId)) unseen.push(previous.host || 'a remote PC');
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
-            this._closeDesktop(pcId, LINK_DROPPED_MESSAGE, 'link_dropped');
+            // An open desktop of a pruned session names its host; an unplug keeps "The link dropped"
+            this._closeDesktop(pcId, routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE, 'link_dropped');
         }
-        const message = unplugEndedMessage(unseen);
+        const message = routeEnded ? routeEndedMessage(unseen) : unplugEndedMessage(unseen);
         if (message) {
             try {
                 // Host labels are author text: plain text, never markup

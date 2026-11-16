@@ -86,6 +86,18 @@ export function credentialSessionLine(session) {
     return null;
 }
 
+/**
+ * The credential line as safe HTML with the label in a no-break span, so a label such as
+ * "HB-FIN-02.rdp" never splits at its hyphen: the line may wrap before the label, not inside it.
+ */
+export function credentialLineHtml(session) {
+    const line = credentialSessionLine(session);
+    if (!line) return '';
+    const label = session.label;
+    const lead = line.slice(0, line.length - label.length);
+    return `${escapeHtml(displayDashes(lead))}<span class="credential-label-nowrap">${escapeHtml(displayDashes(label))}</span>`;
+}
+
 export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
     const signIn = pcData?.lockType === 'login' || !!session;
     let account = null;
@@ -98,7 +110,7 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
                 npcId: session.npcId || null,
                 claimed: session.via === 'claim',
                 // A keyring credential session names how it signed in (K3a 8.1)
-                ...(credentialSessionLine(session) ? { credentialLine: credentialSessionLine(session) } : {}),
+                ...(credentialSessionLine(session) ? { credentialLine: credentialSessionLine(session), credentialHtml: credentialLineHtml(session) } : {}),
                 // The picture's source from the server's session answer, so an NPC whose room is
                 // not loaded still has its headshot (fix round 1, M2)
                 ...(session.portrait ? { portrait: session.portrait } : {}),
@@ -185,7 +197,7 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
             <span class="pc-start-who">
                 <span class="pc-start-name">${escapeHtml(displayDashes(a.name))}</span>${a.kind === 'session' && a.username ? `
                 <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}${a.credentialLine ? `
-                <span class="pc-start-credential">${escapeHtml(displayDashes(a.credentialLine))}</span>` : ''}
+                <span class="pc-start-credential">${a.credentialHtml || escapeHtml(displayDashes(a.credentialLine))}</span>` : ''}
             </span>
         </div>` : '';
     const lines = `<span class="pc-start-line pc-start-host">${escapeHtml(displayDashes(m.host))}</span>`

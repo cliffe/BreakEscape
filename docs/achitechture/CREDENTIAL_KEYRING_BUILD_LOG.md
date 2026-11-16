@@ -957,3 +957,24 @@ Run 3 stopped at the context limit after step 2's writing. Commits `d42e4d7ce` a
 **Open**
 - Live proof on :3063 (R2, R3 sign-in half, R4, R5a) and the `signin-fit.mjs` run, both needing a server.
 - `assets/icons/badge-plug.png` art for the user (8x8 by hand); the plug group shows the key badge until then.
+
+### Run 6 (R1 fixes)
+
+Fixes for `CREDENTIAL_KEYRING_K3A_REVIEW_R1.md`, plus two live findings. Tip before this run `dc53512c4`.
+
+| Finding | Fix | Test |
+|---|---|---|
+| M1 | `linkDropped(endedPcIds, reason = 'unplugged')` in `pc-sessions.js`. `_dropEnded` and the sign-out prune pass `route_ended`; the `network_device_unplugged` listener passes `unplugged`. New `routeEndedMessage(hosts)` gives the 8.5 line ("Your session on {host} ended: the session it went through was closed."); an open desktop of a pruned session closes with the same line, an unplug keeps "The link dropped". | `keyring-signin.test.mjs` "M1 plan 8.3": toast text in the credential and password paths, several hosts, default reason keeps the unplug line, open desktop wording. |
+| m1 | `remember(key, answer, { primed })`: only the prime fixes `firstAnswerIds`; a failed prime sets it to an empty set (the stricter case). | "R1 m1": prime rejects, then a screen answer; the found password stays hidden until `noteOpened`. Also a screen answer ahead of a slow prime. Two older tests now call `prime()` first, as the page does. |
+| m2 | `noteOpened` also runs on a successful `takeItem` (copy or move) and in `TextFileMinigame.init` (any reader, including the inventory). | `container-transfer-dialog.test.mjs`: Open, Copy, Move and a plain click each record the id; Cancel records none. Removing the container hooks fails it (checked: 1 failure). The text-file hook has no test (no harness for that minigame loads cheaply). |
+| m3 | `screenEntries` needs `forThisPc === true`; `accepted` is `e.accepted === true`. | "R1 m3": connectsTo alone is not listed; a missing `accepted` stays greyed. |
+| m4 | The ways box and its "more" cue now follow `.signin-selected-row`. | Ordering assertions added to the ways test. `signin-fit.mjs` not run (no server): the first button still being in view at the four sizes is unconfirmed. |
+| Live: raw id | Server `credential_label`: the entry's own `label`, else the item name, else empty (never `connectsTo`). Client `credentialLabel`: empty or an id equal to `connectsTo` becomes "Saved connection" (8.5 full name). `test_access_keyring` `ops_cookie` gets `"label": "SV-OPS-01.rdp"` (plan 9.1 already gives `lena_token` a `label`). | "R1 live" client test; `credential_keyring_test.rb` label precedence. |
+| Live: wrapped label | `credentialLineHtml` wraps the label in `.credential-label-nowrap` (`white-space: nowrap`), used by the start panel and the account bar. The line wraps before the label only. | start panel and account bar assertions. 390 width not measured live. |
+| Live: in_file toast | Real `notifications.js` held-queue path: held while a panel is open, shown once after it closes. No fix needed. | "R1 5". |
+| t1 | `.signin-cred` takes `minigame-button` outside a monitor. | none (CSS class). |
+| t2 | `greyedShown` dropped from `credentialRefusalLine`. | old assertion removed. |
+| t4 | Account bar line tested, label escaped. | `container-transfer-dialog.test.mjs`. |
+| t5 | Comment added at the keyboard filter. | n/a |
+
+**Deferred.** t3 (the keyboard's chosen line naming kinds): a wording change to a shipped screen, wants the owner's pick. `signin-fit.mjs` and the live beats need a server and were not run. Existing games on `test_access_keyring` keep a stored scenario copy, so Ian's button shows "Saved connection" there until a new game.

@@ -754,3 +754,8 @@
     color: #9fb0bf;
     overflow-wrap: anywhere;
 }
+
+/* Credential keyring K3a: the label stays on one line; the line may wrap before it */
+.credential-label-nowrap {
+    white-space: nowrap;
+}

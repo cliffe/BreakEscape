@@ -45,7 +45,7 @@ put('systems/inventory.js',
 for (const rel of ['utils/escape-html.js', 'utils/lock-scope-refusal.js', 'utils/more-below.js', 'utils/computer-keywords.js',
     'utils/pc-monitor.js', 'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js',
     'utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
-    'utils/remote-host-text.js', 'systems/keyring.js',
+    'utils/remote-host-text.js', 'systems/keyring.js', 'systems/notifications.js', 'ui/modal-stack.js', 'utils/overlay-open.js',
     'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/network-links.js', 'api-client.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
     'minigames/container/container-minigame.js', 'minigames/password/password-minigame.js']) copy(rel);
@@ -58,7 +58,7 @@ const {
     PasswordMinigame, mergeRemoteTiles, mergeKeyboardTiles, keyringTagKind
 } = await imp('minigames/password/password-minigame.js');
 const { Keyring, entryTagKind, credentialsDeclared, SCREEN_FOOTHOLD, SCREEN_KEYBOARD } = await imp('systems/keyring.js');
-const { PcSessions, credentialRefusalReason } = await imp('systems/pc-sessions.js');
+const { PcSessions, credentialRefusalReason, routeEndedMessage } = await imp('systems/pc-sessions.js');
 const { openLoginSignIn, openRemoteSignIn, keyringForScreen, REMOTE_CAPTURES_WAIT_MS } = await imp('systems/unlock-system.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 const { ApiClient: RealApiClient } = await imp('api-client.js');
@@ -193,11 +193,72 @@ test('8.1 an In file entry waits until its file is opened in this page; the page
     assert.equal(kr.foundVisible(LENA_CAPTURED), true, 'a captured password needs no file');
     // After a reload the first answer already holds it
     const reloaded = new Keyring();
-    reloaded.remember('|keyboard', { entries: [JAKE_FOUND], rev: 'a' });
+    reloaded.remember('|keyboard', { entries: [JAKE_FOUND], rev: 'a' }, { primed: true });
     assert.equal(reloaded.foundVisible(JAKE_FOUND), true, 'in the first answer: shown at once, accepted gap');
     const later = { ...JAKE_FOUND, id: 'k_pw2', foundIn: 'pw_file2' };
     reloaded.remember('|keyboard', { entries: [JAKE_FOUND, later], rev: 'b' });
     assert.equal(reloaded.foundVisible(later), false, 'one earned after the first answer still waits for its file');
+});
+
+test('R1 m1: a failed prime leaves nothing earned before this page; a screen answer never fixes the reload set', async () => {
+    setup();
+    const kr = new Keyring();
+    window.ApiClient.keyring = async (pcId) => {
+        if (pcId === null || pcId === undefined) throw refusal(500, {});
+        return { entries: [RDP, JAKE_FOUND], rev: 'r1' };
+    };
+    assert.equal(await kr.prime(), null, 'the prime swallows the failure');
+    const entries = await kr.fetch('lena_pc', { foothold: 'jack_comms_port' });
+    assert.deepEqual(entries.map(e => e.id), ['k_rdp', 'k_pw']);
+    assert.equal(kr.foundVisible(JAKE_FOUND), false, 'a screen answer does not make the found password visible');
+    assert.deepEqual(kr.screenEntries(entries, { pcId: 'lena_pc', screen: SCREEN_FOOTHOLD }).map(e => e.id), ['k_rdp']);
+    kr.noteOpened('pw_file');
+    assert.equal(kr.foundVisible(JAKE_FOUND), true, 'once its file is opened');
+    // A screen answer that beats a slow prime does not fix the set either
+    const kr2 = new Keyring();
+    await kr2.fetch('lena_pc', { foothold: 'jack_comms_port' });
+    assert.equal(kr2.foundVisible(JAKE_FOUND), false);
+});
+
+test('R1 5: the In file teaching toast is held while the panel is open and shows once when it closes', async () => {
+    setup();
+    const notif = await imp('systems/notifications.js');
+    const realAlert = notif.gameAlert;
+    document.body.insertAdjacentHTML('beforeend', '<div id="notification-container"></div>');
+    window.gameAlert = realAlert;
+    window.MinigameFramework = { currentMinigame: { _ending: false } };
+    const lead = 'People save passwords in files.';
+    const toasts = () => [...document.querySelectorAll('#notification-container .notification')].filter(el => el.textContent.includes(lead));
+    // The sign-in screen (a minigame) is open when the sign-in succeeds
+    PasswordMinigame.prototype.teachAfter.call({}, 'in_file', { displayName: 'Jake Jones' });
+    PasswordMinigame.prototype.teachAfter.call({}, 'in_file', { displayName: 'Jake Jones' });
+    assert.equal(toasts().length, 0, 'held while the panel is open');
+    // The panel closes
+    window.MinigameFramework.currentMinigame = null;
+    await new Promise(r => setTimeout(r, 900));
+    assert.equal(toasts().length, 1, 'shown once after the panel closes (the second call was the same page, so no second teach)');
+    window.MinigameFramework = undefined;
+});
+
+test('R1 m3: a saved connection with no forThisPc is not listed, and a missing accepted is not accepted', () => {
+    const kr = new Keyring();
+    const unscoped = { ...RDP }; delete unscoped.forThisPc;
+    assert.deepEqual(kr.screenEntries([unscoped], { pcId: 'lena_pc', screen: SCREEN_FOOTHOLD }), [], 'connectsTo alone is not enough');
+    assert.deepEqual(kr.screenEntries([{ ...RDP, forThisPc: false }], { pcId: 'lena_pc', screen: SCREEN_FOOTHOLD }), []);
+    const noAccepted = { ...RDP }; delete noAccepted.accepted;
+    const tiles = mergeRemoteTiles({ accounts: [], captures: [], keyring: [noAccepted], picker: 'known' });
+    assert.equal(tiles[0].credentials[0].accepted, false, 'the client never invents an accept');
+});
+
+test('R1 live: a connection with no label shows the generic kind wording, never a PC id', () => {
+    const noLabel = { ...RDP, label: '' };
+    const idLabel = { ...RDP, label: 'ops_pc', connectsTo: 'ops_pc' };
+    for (const e of [noLabel, idLabel, { ...RDP, label: undefined }]) {
+        const tiles = mergeRemoteTiles({ accounts: [], captures: [], keyring: [e], picker: 'known' });
+        assert.equal(tiles[0].credentials[0].label, 'Saved connection');
+    }
+    const ok = mergeRemoteTiles({ accounts: [], captures: [], keyring: [RDP], picker: 'known' });
+    assert.equal(ok[0].credentials[0].label, 'HB-FIN-02.rdp');
 });
 
 test('keyring.js: fetch asks with rev and reuses the cached entries on unchanged; a lost rev asks again without it', async () => {
@@ -324,6 +385,11 @@ test('8.1 choosing an account shows its ways in: a button per credential with "C
     assert.match(buttons[0].title, /opening it signs you in as Lena Fox/);
     assert.equal(buttons[0].getAttribute('aria-disabled'), null);
     assert.equal(visible(q('#password-field')), true, 'Password is always shown');
+    // R1 m4: the ways in sit on the chosen line, after the chosen account's name and before the fields
+    const order = (a, b) => !!(q(a).compareDocumentPosition(q(b)) & 4);
+    assert.equal(order('.signin-selected-row', '#signin-ways'), true, 'ways come after the chosen account row');
+    assert.equal(order('#signin-ways', '#signin-username-row'), true, 'and before the fields');
+    assert.equal(order('#signin-ways-more', '#signin-username-row'), true);
     assert.equal(q('#password-field').value, 'Ledger-Lena-9', 'a captured password the server served fills it');
     assert.equal(ways.querySelectorAll('.signin-found').length, 0);
     // Jake: no buttons, the found-password lines
@@ -445,7 +511,6 @@ test('8.5 reasons: each server flag maps to its reason; the generic body means t
     assert.equal(credentialRefusalReason({ lockedOut: true }), 'locked_out');
     assert.equal(credentialRefusalReason({ ended: true }), 'ended');
     assert.equal(credentialRefusalReason({ remoteBlocked: true }), 'remote_blocked');
-    assert.equal(text.credentialRefusalLine('kind_refused', { host: 'H', kind: 'saved_connection', greyedShown: true }), '', 'already shown under the button: empty');
     assert.equal(text.credentialRefusalLine('mystery', {}), null);
 });
 
@@ -609,8 +674,9 @@ test('8.1 loading: an In file entry not yet opened is filtered out of the remote
     openLinks();
     const scene = sceneStub();
     window.ApiClient.keyring = async () => ({ entries: [RDP, JAKE_FOUND], rev: 'r1' });
+    await window.keyring.prime();
     await openRemoteSignIn(LENA_ROW, 'jack_comms_port');
-    // The first answer is the page-start answer in effect, so the file need not be opened; a later one waits
+    // The page-start answer (the prime) is the reload set, so the file need not be opened; a later one waits
     assert.deepEqual(scene.layouts[0].keyring.map(e => e.id), ['k_rdp', 'k_pw']);
     scene.layouts.length = 0;
     window.ApiClient.keyring = async () => ({ entries: [RDP, JAKE_FOUND, { ...JAKE_FOUND, id: 'k_pw2', foundIn: 'later_file' }], rev: 'r2' });
@@ -669,6 +735,8 @@ test('8.1 loading: the keyboard screen fetches /keyring beside /login_accounts, 
     window.ApiClient.loginAccounts = async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: TILES, loginPicker: 'accounts', headless: false, host: 'HB-DESK-01' }; };
     window.ApiClient.keyring = async (pcId, opts = {}) => { calls.push(['keyring', pcId, opts.foothold ?? null]); return { entries: [LENA_CAPTURED, JAKE_FOUND, RDP], rev: 'r1' }; };
     const lockable = { scenarioData: { id: 'hot_desk', name: 'Hot desk PC', type: 'pc', lockType: 'login', loginPicker: 'accounts', loginAccounts: [] } };
+    await window.keyring.prime();
+    calls.length = 0;
     await openLoginSignIn(lockable);
     assert.deepEqual(calls.filter(c => c[0] === 'keyring'), [['keyring', 'hot_desk', null]], 'the keyboard route has no foothold');
     assert.deepEqual(scene.params.signIn.keyring.map(e => e.id), ['k_cap', 'k_pw'], 'passwords only; the saved connection never reaches the keyboard');
@@ -718,7 +786,7 @@ test('8.1 the start panel names a credential session\'s saved connection under t
     const model = pcTaskbarModel({ pcData: { lockType: 'login', host: 'HB-FIN-02' }, session });
     assert.equal(model.account.credentialLine, 'with the saved connection HB-FIN-02.rdp');
     const html = pcStartPanelHtml(model);
-    assert.match(html, /<span class="pc-start-credential">with the saved connection HB-FIN-02\.rdp<\/span>/);
+    assert.match(html, /<span class="pc-start-credential">with the saved connection <span class="credential-label-nowrap">HB-FIN-02\.rdp<\/span><\/span>/);
     assert.ok(html.indexOf('pc-start-name') < html.indexOf('pc-start-credential'), 'under the name');
     const evil = pcStartPanelHtml(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { ...session, label: '<img src=x>' } }));
     assert.equal(evil.includes('<img src=x>'), false);
@@ -761,6 +829,38 @@ test('K2 3.8 a sign-in answer\'s endedPcIds go to linkDropped, in the credential
     window.ApiClient.login = async () => ({ success: true, npcId: 'jake', username: 'jjones', displayName: 'Jake Jones', via: 'password' });
     await pcSessions.signIn('hot_desk2', 'jjones', 'x');
     assert.equal(dropped.length, 2);
+});
+
+test('M1 plan 8.3: a sign-in prunes with the route_ended line; an unplug keeps the unplug line', async () => {
+    setup();
+    // A sign-in's endedPcIds: the 8.5 route-ended text, never "Unplugged."
+    pcSessions.sessions.set('old_pc', { npcId: 'x', username: 'x', via: 'password', host: 'HB-FIN-03' });
+    credAnswer = () => ({ success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection', label: 'a.rdp', endedPcIds: ['old_pc'] });
+    alerts.length = 0;
+    await pcSessions.signInWithCredential('lena_pc', 'k_rdp', { foothold: 'jack_comms_port' });
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0][0], 'Your session on HB-FIN-03 ended: the session it went through was closed.');
+    assert.doesNotMatch(alerts[0][0], /Unplugged/);
+    // The password path says the same
+    pcSessions.sessions.set('old2', { npcId: 'y', username: 'y', via: 'password', host: 'HB-OLD-02' });
+    window.ApiClient.login = async () => ({ success: true, npcId: 'jake', username: 'jjones', displayName: 'Jake Jones', via: 'password', endedPcIds: ['old2'] });
+    alerts.length = 0;
+    await pcSessions.signIn('hot_desk', 'jjones', 'x');
+    assert.equal(alerts[0][0], 'Your session on HB-OLD-02 ended: the session it went through was closed.');
+    // Several hosts
+    assert.equal(routeEndedMessage(['A', 'B']), 'Your sessions on A and B ended: the sessions they went through were closed.');
+    assert.equal(routeEndedMessage([]), null);
+    // The default reason is the unplug, and keeps its text
+    pcSessions.sessions.set('u_pc', { npcId: 'z', username: 'z', via: 'password', host: 'LW-DOOR01' });
+    alerts.length = 0;
+    pcSessions.linkDropped(['u_pc']);
+    assert.equal(alerts[0][0], 'Unplugged. Your session on LW-DOOR01 ended.');
+    // An open desktop of a pruned session closes naming its host
+    const closed = [];
+    pcSessions.sessions.set('o_pc', { npcId: 'z', username: 'z', via: 'password', host: 'HB-OPEN-01' });
+    pcSessions.desktops.set('o_pc', (msg, why) => closed.push([msg, why]));
+    pcSessions.linkDropped(['o_pc'], 'route_ended');
+    assert.deepEqual(closed, [['Your session on HB-OPEN-01 ended: the session it went through was closed.', 'link_dropped']]);
 });
 
 test('pc-sessions: a credential 403 or no answer is an error carrying the server reason; a bad answer fails closed', async () => {
