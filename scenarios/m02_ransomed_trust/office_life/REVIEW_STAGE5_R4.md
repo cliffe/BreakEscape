@@ -68,3 +68,26 @@ The real P9 cause sits deeper. The offer was designed to cut in before the conso
 - **Where:** test/js/npc-exchange-heard.test.mjs:492 ("the fixture long lines also raise the 40-character bubble warning").
 - **Failure scenario:** a reader takes the bubble check for a warning, as it was in R3, and expects 0 errors from a scenario with long exchange lines.
 - **Fix:** "bubble error".
+
+## R4 Outcomes (fix round, 2026-11-16)
+
+Fixed in 9de9c4c66 and 796e73708, proved live on :3090 (keyless, own pidfile). Evidence scripts and logs are in the session scratchpad `m02-r4/` (not committed): `A-6012.log`, `B-6033.log`, `C-6034.log`, screenshots in `m02-r4/out/` and `m02-r4/shots/`.
+
+- **M1 (option a):** Ghost's offer now interrupts the console. New mapping field `interrupt: true` (video-call only) on both Ghost console mappings. In the start-delay busy guard the minigame the player opened is closed and the call opens; the queued path and the delayMs path interrupt too (shared `_interruptAndOpen`); another scripted conversation is never closed (the call waits). `skipIfGlobal` stays the backstop.
+- **m1:** schema `eventMapping` gains `skipIfGlobal` and `interrupt`; the m02 validator is back to 0 errors, 33 warnings.
+- **m2:** README mapping-table rows added.
+- **m3:** `skipIfGlobal` is checked at the event in the video-call branch: no call, and the open minigame is untouched.
+- **m4:** `_skipGlobalSet(name)` (truthy) is the one test for every `skipIfGlobal` check.
+- **m5:** tests added for the real P9 route (start delay), the queued path, the delayMs path and the m3 case, with and without `interrupt`. Tests for m3, m4 and the interrupt paths fail on the old code.
+- **m6:** comment corrected.
+
+Live proofs:
+- **A (game 6012):** flags 1, 2, 4 seeded, flag 3 typed in play. First console visit: the console opens, Ghost's offer interrupts it, "I accept" sets `ghost_deal_accepted`, the reopened console lists Ghost's Keys; choosing and confirming gives `backup_recovery_source=ghost_keys`, `ransom_decision_made=true`, no later call.
+- **B (game 6033, all four flags typed in play, since seeding flag 4 does not open the cache):** first visit, offer plays, "I need time to think" (`ghost_offer_made=true`). Escrow keys from the safe (plaque 1987) and `entropy_key_material` from the cache. Second visit: the again call ("Back at the console. So you've decided.") interrupts; "No. I'm doing this without you" sets `ghost_deal_refused`, the call closes, no empty popup (`after-again-top null`). The console reopens; Combined Recovery confirmed: `backup_recovery_source=combined_recovery`, `ransom_decision_made=true`. Call log after the confirm: no further call, no "End of conversation" popup (`after-confirm null`, `mg-final null`).
+- **C (game 6034):** defer, then on the second visit the again call interrupts and "I still don't know" closes it with nothing decided. Third and fourth console visits open the console with no call. Ransom Payment confirmed: `backup_recovery_source=ransom_payment`. The call log holds exactly one `on_console_again` start.
+
+**The again-call decision (interrupt at most once):** no config change was needed. The `on_console_again` mapping already carried `onceOnly: true`, and the engine counts a handler at fire time, so in a session it cannot fire twice (proof C, two further visits, no call). It is saved as fired when the call closes, so a reload after it does not replay it; only a reload in the middle of the call lets it fire again, by design. The earlier note that the call met the player at every visit was wrong. A test pins the mapping as `onceOnly` plus `interrupt` (921889896).
+
+**Is the deal still reachable after two deferrals?** Yes. Ghost's phone (`mid_mission_contact`) offers "Your offer. The keys for the evidence. I'll take it." while `ghost_offer_made` and no `ghost_deal_accepted`, `ghost_deal_refused` or `ransom_decision_made`. "I still don't know" says as much ("This device reaches me if you change your mind"). No dialogue added. Not live-played through the phone in this round.
+
+Checks: m02 `lock_key_diff` against `office_life/baseline_locks.json`: empty. `bin/test-js`: see HANDOVER.

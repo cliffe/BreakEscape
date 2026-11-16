@@ -1,3 +1,11 @@
+# m02 office life: R4 fix round closed, handover 2026-11-16
+
+- All R4 items done; Outcomes in `REVIEW_STAGE5_R4.md`. Proofs A (game 6012), B (6033, Combined Recovery after the again call refused) and C (6034, Ransom Payment, again call once) pass; no empty "End of conversation" popup, no call after a confirmed restore.
+- Again call: `on_console_again` was already `onceOnly` plus `interrupt`, so it cuts in once per session; the earlier "every visit" worry was wrong. Pinned by a test. The deal stays reachable from Ghost's phone (`mid_mission_contact`, "Your offer...").
+- Checks: `bin/test-js` 690 files passed, 0 failed; m02 `lock_key_diff` empty.
+- Live route: seed no flags; type all four at the drop-site (seeding flag 4 does not open the cache). The older step 2 below is superseded.
+- P9 (below): the offer now interrupts the console (`interrupt: true`); `skipIfGlobal` is the backstop.
+
 # m02 office life: R4 fix round, live proofs part-done, handover 2026-11-16 (context guard)
 
 Suites: `bin/test-js` on tip bc612c980: 690 files passed, 0 failed. m02 `lock_key_diff` not yet run (open).
@@ -30,7 +38,7 @@ Done:
 
 Open (next agent):
 1. `bin/test-js` on the tip; m02 `lock_key_diff`.
-2. Live proofs on :3090 (own pidfile). Route without setting globals in the page: `new-game.rb m02_ransomed_trust --start-room server_room` with `--submit-flag` for flags 1, 2 and 4 only (flag 4's reward opens the staging cache server-side). Submit flag 3 (database) IN PLAY at `flag_station_dropsite` in server_room with the flags XML (`<flag:3>` token), so `verified_restore_manifest` arrives through the client and `item_picked_up:text_file` sets `restore_manifest_obtained`. Check first whether a flag-station give_item emits `item_picked_up` (apply-actions.js:249, flag-station-minigame.js:941); if not, the manifest has to be picked up some other in-play way: ask AC0 before any workaround. Then: (a) first console visit, Ghost's offer interrupts, accept, Ghost's Keys available, choose it; (b) second game, choose another source first, no empty call; (c) offer on first visit, then Combined Recovery: take `entropy_key_material` from `entropy_staging_cache` (server_room rack) and the escrow keys from the emergency storage safe (PIN is the founding year on the lobby plaque; sets `offline_keys_recovered`), then confirm Combined. Old take script for driving the call: `tools/video/takes/m02/t17_ghost_call.mjs`.
+2. (Superseded: seed no flags; type all four at the drop-site, because seeding flag 4 does not open the cache.) Live proofs on :3090 (own pidfile). Route without setting globals in the page: `new-game.rb m02_ransomed_trust --start-room server_room` with `--submit-flag` for flags 1, 2 and 4 only (flag 4's reward opens the staging cache server-side). Submit flag 3 (database) IN PLAY at `flag_station_dropsite` in server_room with the flags XML (`<flag:3>` token), so `verified_restore_manifest` arrives through the client and `item_picked_up:text_file` sets `restore_manifest_obtained`. Check first whether a flag-station give_item emits `item_picked_up` (apply-actions.js:249, flag-station-minigame.js:941); if not, the manifest has to be picked up some other in-play way: ask AC0 before any workaround. Then: (a) first console visit, Ghost's offer interrupts, accept, Ghost's Keys available, choose it; (b) second game, choose another source first, no empty call; (c) offer on first visit, then Combined Recovery: take `entropy_key_material` from `entropy_staging_cache` (server_room rack) and the escrow keys from the emergency storage safe (PIN is the founding year on the lobby plaque; sets `offline_keys_recovered`), then confirm Combined. Old take script for driving the call: `tools/video/takes/m02/t17_ghost_call.mjs`.
 3. R4 Outcomes in `REVIEW_STAGE5_R4.md` and the P9 section below (now: offer interrupts the console; skipIfGlobal is the backstop).
 
 # m02 office life: stage 5 closed after R3, handover 2026-11-16
@@ -265,6 +273,8 @@ All section 9 items are decided except the voicing spend (about 53 clips, V6 at 
 Stage 4 once V1 to V10 are on main and main is merged. Art runs separately for `ernesto_bautista` and `hodan_warsame`.
 
 ## P9 (Ghost's empty console popup), fixed
+
+R4 update: both Ghost console mappings now carry `interrupt: true` (video-call only): the console the player opened is closed and the call opens, on the start-delay, queued and delayMs paths. `on_console_again` is `onceOnly`, so it interrupts at most once. `skipIfGlobal` remains the backstop. Proofs: games 6012, 6033, 6034 (`REVIEW_STAGE5_R4.md`, R4 Outcomes).
 
 Cause: the two Ghost video-call mappings on the recovery console (`on_recovery_console`, `on_console_again`) fire on `object_interacted`, which is emitted as the console opens. The scripted call finds the console minigame open, so it waits in the call queue and opens when the player closes the console, after the restore is chosen. `on_console_again` exits straight to DONE once `ransom_decision_made` is set (the ink guard at ink/m02_phone_ghost.ink), which showed "End of conversation". `on_recovery_console` has no such guard, so with the old code it played the whole offer after the decision.
 
