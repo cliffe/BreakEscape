@@ -211,7 +211,7 @@
   },
   "cody_old_coyote": {
     "character_id": "30db8608-97e0-46fc-9bb2-1860721e6585",
-    "name": "Make portrait for Cody Old Coyote\nA young Aps\u00e1aloo...",
+    "name": "Make portrait for Cody Old Coyote\nA young Apsáaloo...",
     "size": {
       "width": 60,
       "height": 60
@@ -353,10 +353,11 @@
     "imported": "2026-11-16",
     "sit_from": "2700d754-04d2-4dbf-8739-a56afcaed3f0",
     "poses": {
-      "drink": "dbf6dfc0-5b3a-46fc-93bc-b9c700ad6a79",
-      "phone": "28630deb-a821-49c3-b57d-e8baa39c600e",
-      "use": "1afce27f-1cc8-4531-a06e-632523382b9a"
-    }
+      "drink": "6bd09056-a3c8-43f9-a43c-50810915d719",
+      "phone": "7d83b546-ceb9-46b6-96b0-f858f294fc2e",
+      "use": "dc21f2ad-5208-470c-8247-bed67956c0f8"
+    },
+    "copied_from": "male_office_worker_v2"
   },
   "dev_malhotra": {
     "character_id": "17bea81b-0912-4868-b9ac-3ed08f124c09",
@@ -970,10 +971,11 @@
     "imported": "2026-11-16",
     "sit_from": "d2346e82-0a06-4440-9efc-3bce63aca588",
     "poses": {
-      "drink": "e948a9b1-c20f-4b94-bd35-7b557b9c2b80",
-      "phone": "87d88d6a-4a1f-486b-af50-81292c6fb5f8",
-      "use": "5cf9d501-1dba-4b05-aae8-c3e300de3b85"
-    }
+      "drink": "b0727a5d-1ec4-48b5-99cf-ea23a977ec6e",
+      "phone": "f04b104c-ca28-4f49-b9fb-2e4e91d1f0fe",
+      "use": "69fb632f-20cd-461d-b8c7-75d1ef027d3c"
+    },
+    "copied_from": "male_nerd_v2"
   },
   "kieran_doyle": {
     "character_id": "91ede002-4a15-4070-aeb1-39a6e241223a",
