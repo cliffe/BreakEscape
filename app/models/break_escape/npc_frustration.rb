@@ -218,6 +218,8 @@ module BreakEscape
       # was the borrowed PC), only when there are any, so the client closes the onward desktops.
       # A resent "done" is answered above from lastSpent and never carries them.
       result[:body]['endedPcIds'] = borrow_ended if borrow_ended.any?
+      # Keyring K5 (plan 10): and the expired token sessions among them
+      result[:body] = with_token_expired_pc_ids(result[:body]) if borrow_ended.any?
       result
     end
 

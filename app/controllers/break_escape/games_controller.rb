@@ -1497,7 +1497,8 @@ module BreakEscape
       # Ending a session can break a pivot; the model ends the onward sessions and returns
       # their ids (networks slice 9.3b, 5.1) for pc-sessions.js.
       ended = @game.logout_session!(pc_id)
-      render json: { success: true, endedPcIds: Array(ended) }
+      # Keyring K5 (plan 10): tokenExpiredPcIds names the expired token sessions the prune ended
+      render json: @game.with_token_expired_pc_ids({ success: true, endedPcIds: Array(ended) })
     end
 
     # POST /games/:id/lock_session
@@ -1773,7 +1774,11 @@ module BreakEscape
 
       response.headers['Cache-Control'] = 'no-store'
       if params[:rev].present? && params[:rev].to_s == answer[:rev]
-        render json: { rev: answer[:rev], unchanged: true }
+        unchanged = { rev: answer[:rev], unchanged: true }
+        # Keyring K5 (plan 10): expiresInS sits outside the digest, so it rides on unchanged too
+        live = @game.keyring_live_expires(answer[:entries])
+        unchanged[:expiresInS] = live if live.any?
+        render json: unchanged
       else
         render json: answer
       end
