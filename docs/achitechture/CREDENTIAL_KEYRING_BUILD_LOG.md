@@ -1021,3 +1021,36 @@ Stopped at the context limit. Tip before this run `427680566`.
 3. `bin/test-js` (not yet run this slice; `keyring-signin` 53 pass and `inventory-menu` 28 pass after the edits), then `bin/rails test test/controllers/break_escape/keyring_route_test.rb` and rubocop on `credential_keyring.rb`.
 4. Live proof (separate agent): R1 Connect beats on a new `test_access_keyring` game.
 5. Part B: the find toasts (8.2 second bullet). `latest`, `listen()` and `trayChanged` are the place to diff for new entries; `heldItem` lets part B tell a tray add of a credential item.
+
+### K3b run 2 (part A tests)
+
+Tip before this run `e814559ca`.
+
+**Built**
+- `test/js/keyring-client.test.mjs` (38 cases): 8.5 strings word for word; steps 1 to 7 each with its exact toast, title (the tray item's name) and no POST; step 2 named from the tray item, not the entry, and "That sign-in" with no name; an assist invite never answers Connect; step 5 by the mirrored session's foothold, else the entry's; the order test (all states set, each cleared in turn); step 8 success (POST `{ foothold }`, desktop, no sign-in screen); teaching toast once per kind and again for a new page; `endedPcIds` to `linkDropped` as `route_ended` (never the new session); POST network failure; 403 `not_responding`, 403 unreachable and 422 `remoteBlocked` races; `LOGIN_NOT_PERMITTED` toast; `kind_refused` and `locked_out` open the screen with the account and refusal and no toast; any other refusal is a toast; a real `PasswordMinigame` chooses Lena's tile and shows the "always asks for the password" line; in-flight guard (a second and a different item are `busy`, it clears after success and failure); flush before the GET (`sync, keyring, post, desktop`); `returnTo` (once, after close; after the open wait with nothing opened; not watched after a toast); `connectEntryFor`; `trayChanged` once per changed id set; `listen`. The file copies the same module list as `keyring-signin.test.mjs`, which covers everything it loads (`keyring.js` loads `remote-host-text.js` by dynamic import, copied).
+- `keyring_route_test.rb` (12 runs): `heldItem` is sent only for a held proof. A dropped or forged item lists no entry and its id is absent from the response body; every `heldItem` named is in the player's inventory; a foothold-proven saved connection carries no `heldItem`.
+
+**heldItem finding.** No leak. The row is built only after `credential_proof_holds?`, whose `held` branch needs a non-forged inventory entry with the item's `credential`, type and id. The id sent is the player's own carried item. The one risk is the server naming an item for a non-held proof; that is now tested.
+
+**Mutation results** (each broken in turn, restored with `git checkout -- <file>`)
+
+| Mutation | Caught by |
+|---|---|
+| step order (drop the targetOff step) | keyring-client: step 4 and the order test |
+| in-flight guard removed | keyring-client: 4 cases (guard, flush order, flush throw) |
+| flush before the GET removed | keyring-client: guard and flush-order cases |
+| refusal mapping (`locked_out` no longer opens the screen) | keyring-client: lockout case |
+| `linkDropped` call removed (`_dropEnded` in the sign-in) | keyring-client: endedPcIds case |
+| teach-once check removed | keyring-client: teaching toast case |
+| heldItem filter, client (match any saved connection) | keyring-client: step 2 and the two-entries case |
+| heldItem filter, server (names `id` for a non-held proof) | keyring_route_test: foothold case |
+| heldItem filter, server (key set when nil) | keyring_route_test (1 failure) |
+| direct-Connect condition (`trayClickIsConnect`) | inventory-menu.test: 3 cases |
+
+A first server mutation (removing `present_string?`) survived because password rows never use that path; the foothold-proof test was added to kill the next one.
+
+**HANDOVER (part B, the find toasts, plan 8.2 second bullet)**
+1. `systems/keyring.js`: `latest`, `listen()` and `trayChanged` are the hooks. Diff each new answer's ids against the previous answer's (the page-start prime is the baseline: `firstAnswerIds`), toast the new entries only. Asks with `rev` after: a successful sign-in once the desktop opens, an inventory add/remove of an item with `credential` (`trayChanged` already asks; `heldItem` on the row tells a credential item), a plant, implant or Wi-Fi join, and a `foundIn` item opening (`noteOpened`).
+2. Wording per 8.2: capture-log pointer when a capture log is held, else "Saved connection found: {label} for {displayName} on {host}." and "{displayName}'s password is in {label}."; more than two: two then "and N more"; captured entries silent; a `foundIn` entry waits for `noteOpened`; an NPC give's find is held until the conversation closes. An `assist_invite` gets no toast before K3c.
+3. Tests go in `test/js/keyring-client.test.mjs` (same harness: `setup()`, the `alerts` list, `window.ApiClient.keyring` answers).
+4. Live proof of Connect (R1, R3, R5b) is still a separate agent.

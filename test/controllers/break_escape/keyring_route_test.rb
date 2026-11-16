@@ -116,6 +116,15 @@ module BreakEscape
       keyring['entries'].each { |e| assert_includes held_ids, e['heldItem'] if e.key?('heldItem') }
     end
 
+    test 'a connecting entry proven another way (a foothold) names no tray item' do
+      data = @game.reload.scenario_data
+      data['credentials']['lena_rdp_fh'] = { 'kind' => 'saved_connection', 'account' => 'lena', 'connectsTo' => 'lena_pc', 'proof' => { 'foothold' => 'fh1' } }
+      @game.update_columns(scenario_data: data, player_state: @game.player_state.merge('footholds' => { 'fh1' => { 'seq' => 1 } }))
+      entry = keyring['entries'].find { |x| x['id'] == 'lena_rdp_fh' }
+      assert entry, 'the foothold-proven connection is listed'
+      refute entry.key?('heldItem'), 'only a held proof names a tray item'
+    end
+
     test 'the scenario answer carries credentialsDeclared and never the registry' do
       get "/break_escape/games/#{@game.id}/scenario", as: :json
       assert_response :success
