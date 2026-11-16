@@ -180,10 +180,10 @@ test('step 2: an item with no name falls back to "That sign-in"', async () => {
     assert.deepEqual(toasts(), ['That sign-in no longer works.']);
 });
 
-test('step 2: an assist invite never answers Connect before K3c (CONNECT_KINDS is saved_connection only)', async () => {
+test('step 2: an assist invite answers Connect from K3c (CONNECT_KINDS has both kinds); a token still does not', async () => {
     setup();
-    assert.deepEqual(CONNECT_KINDS, ['saved_connection']);
-    keyringAnswer = () => ({ entries: [INVITE], rev: 'r1' });
+    assert.deepEqual(CONNECT_KINDS, ['saved_connection', 'assist_invite']);
+    keyringAnswer = () => ({ entries: [{ ...INVITE, kind: 'token' }], rev: 'r1' });
     assertOnlyToast(await window.keyring.connect(ITEM), 'missing', 'HB-FIN-02.rdp no longer works.');
 });
 
@@ -547,7 +547,7 @@ test('listen hooks inventory_changed once per dispatcher and asks through trayCh
     assert.equal(kr.listen(), true);
     assert.equal(kr.listen(), false);
     assert.deepEqual(handlers.map(h => h[0]),
-        ['inventory_changed', 'pc_signed_in', 'pc_desktop_opened', 'network_foothold_gained', 'conversation_closed:*']);
+        ['inventory_changed', 'pc_signed_in', 'pc_signed_out', 'pc_desktop_opened', 'network_foothold_gained', 'conversation_closed:*']);
     handlers[0][1]({ items: [{ scenarioData: { id: 'lena_rdp_file' } }] });
     await settle();
     assert.equal(calls.filter(c => c[0] === 'keyring').length, 1);
@@ -583,7 +583,7 @@ test('8.5 find strings are exactly the plan text', () => {
     assert.equal(text.findLine(RDP), RDP_FOUND);
     assert.equal(text.findLine(PW), PW_FOUND);
     assert.equal(text.findLine(CAPTURED), null, 'a capture has no find line');
-    assert.equal(text.findLine(INVITE), null, 'no invite toast before K3c');
+    assert.equal(text.findLine(INVITE), "Assist code: Connect it from your inventory to join Lena Fox's session.", 'K3c: the invite line');
 });
 
 test('find toasts: the page-start prime is the baseline and toasts nothing', async () => {
@@ -641,17 +641,20 @@ test('find toasts: one per kind, two in one toast, more than two names two then 
     await kr.refresh(); await settle();
     assert.equal(alerts.length, 3, 'one toast per answer');
     assert.equal(toasts()[2],
-        "Ana Abara's password is in notes.txt.\nJake Smith's password is in old.txt.\nand 1 more",
-        'three toastable finds: two named, then "and 1 more" (the invite and the capture are not counted)');
+        "Ana Abara's password is in notes.txt.\nJake Smith's password is in old.txt.\nand 2 more",
+        'four toastable finds: two named, then "and 2 more" (the invite counts from K3c; the capture is not counted)');
 });
 
-test('find toasts: a capture and an assist invite stay silent', async () => {
+test('find toasts: a capture stays silent; an assist invite toasts its K3c line', async () => {
     setup();
     const kr = window.keyring;
-    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, CAPTURED, INVITE, { ...RDP, id: 'k_rdpc', source: 'capture' }], rev: 'r2' });
+    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, CAPTURED, { ...INVITE, id: 'k_invc', source: 'capture' }, { ...RDP, id: 'k_rdpc', source: 'capture' }], rev: 'r2' },
+        { entries: [RDP, CAPTURED, INVITE], rev: 'r3' });
     await kr.prime();
     await kr.refresh(); await settle();
-    assert.equal(alerts.length, 0);
+    assert.equal(alerts.length, 0, 'captures, an invite capture among them, are silent');
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), ["Assist code: Connect it from your inventory to join Lena Fox's session."]);
 });
 
 test('find toasts: a password in a file waits until its file is opened, then asks once with rev', async () => {
