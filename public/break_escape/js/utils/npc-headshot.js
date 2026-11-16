@@ -39,8 +39,11 @@ export function headshotKeys({ avatar = null, spriteSheet = null, portrait = nul
     const keys = [];
     const add = (k) => { if (k && !keys.includes(k)) keys.push(k); };
     if (typeof avatar === 'string' && /_headshot\.png$/i.test(avatar.split(/[?#]/)[0])) add(characterKey(avatar));
-    if (typeof spriteSheet === 'string' && spriteSheet && !isObjectSpriteKey(spriteSheet, textures)) add(characterKey(spriteSheet));
-    if (typeof portrait === 'string' && portrait) {
+    // A character who wears an object sprite (a bed patient) has no headshot by design (the
+    // rule avatar_unlocks.rb applies), so neither the sprite key nor the talk stem is tried.
+    const objectSprite = typeof spriteSheet === 'string' && isObjectSpriteKey(spriteSheet, textures);
+    if (typeof spriteSheet === 'string' && spriteSheet && !objectSprite) add(characterKey(spriteSheet));
+    if (!objectSprite && typeof portrait === 'string' && portrait) {
         const stem = characterKey(portrait);
         if (stem.endsWith('_v2')) { add(stem); add(stem.replace(/_v2$/, '')); }
         else { add(`${stem}_v2`); add(stem); }

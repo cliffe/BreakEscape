@@ -28,11 +28,17 @@ function fakeImage(existing, requests) {
 }
 const settle = () => new Promise((r) => setTimeout(r, 5));
 
-test('bed patients (object spritesheets) add no spriteSheet candidate', () => {
-    assert.deepEqual(headshotKeys({ spriteSheet: 'bed2', portrait: 'assets/characters/mrs_hargreaves_talk.png' }, { textures }),
-        ['mrs_hargreaves_v2', 'mrs_hargreaves']);
-    assert.deepEqual(headshotKeys({ spriteSheet: 'bed_ms_chen', portrait: 'assets/characters/ms_chen_talk.png' }, { textures }),
-        ['ms_chen_v2', 'ms_chen']);
+test('bed patients (object spritesheets) have no headshot candidates at all', () => {
+    assert.deepEqual(headshotKeys({ spriteSheet: 'bed2', portrait: 'assets/characters/mrs_hargreaves_talk.png' }, { textures }), []);
+    assert.deepEqual(headshotKeys({ spriteSheet: 'bed_ms_chen', portrait: 'assets/characters/ms_chen_talk.png' }, { textures }), []);
+});
+
+test('an authored headshot avatar still counts for an object-sprite NPC', () => {
+    assert.deepEqual(headshotKeys({ avatar: 'assets/characters/x_headshot.png', spriteSheet: 'bed2' }, { textures }), ['x']);
+});
+
+test('a character atlas keeps its talk-stem candidates', () => {
+    assert.deepEqual(headshotKeys({ spriteSheet: 'maya', portrait: 'assets/characters/maya_talk.png' }, { textures }), ['maya', 'maya_v2']);
 });
 
 test('a character atlas or an unloaded key still gets its spriteSheet candidate', () => {
