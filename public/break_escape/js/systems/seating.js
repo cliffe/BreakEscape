@@ -2010,8 +2010,9 @@ export function needsStop(ns) {
     const home = window.npcManager?.getNPC?.(ns.npcId)?.needsHome;
     const homeId = typeof home === 'string' ? home : null;
     // Whoever answers a ringing desk phone, the owner at its desk or a colleague, stands for the
-    // call (pose_phone) even by a chair, and sits again when it ends
-    if (ns.call || (ns.mode === 'job' && ns.job?.phone && ns.job.phase === 'using')) return null;
+    // call (pose_phone) even by a chair, and sits again when it ends. Only an NPC with phone frames:
+    // one without stays seated for a call, exactly as before the pose
+    if ((ns.call || (ns.mode === 'job' && ns.job?.phone && ns.job.phase === 'using')) && window.npcPoses?.hasPhonePose?.(ns.npcId)) return null;
     // Own-desk work never leaves the post (npc-needs _atOwnPost): the home stop in every phase
     // (start, goto_target, using) and on the one `returning` tick after it, so the key never
     // changes and the NPC stays seated (OFFICE_LIFE_PLAN 2.11)
@@ -2256,6 +2257,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
         // and then a glance round (slice 21); the roll and the swivel wait while the NPC is busy
         const sys = window.npcNeedsSystem;
         const chatting = sys?.world?.inChatWith?.(behavior.npcId);
+        // (a call no longer seats an NPC with phone frames; `call` still holds the swivel for one without)
         const held = idleMotionHeld({ call: !!ns.call, paired: !!sys?._chatPartner?.(behavior.npcId),
             talking: !!sys?._talking?.(behavior.npcId), typing: isTyping(ns), chatting: !!chatting });
         if (st.seat.kind === 'swivel') {
@@ -2307,6 +2309,9 @@ function updateNeedsSeat(behavior, ns, playerPos) {
 
     if (!stop || status.ko || status.hostile) { behavior._seatStopKey = null; return false; }
     if (behavior.isMoving || behavior._goToStayDest) return false;
+    // Never start a stop mid-conversation: a chat that hangs up a call brings the home stop back as a
+    // fresh one, and the NPC stays where it stands until the chat closes
+    if (window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId)) return false;
     const now = window.npcNeedsSystem?.clockMs ?? 0;
     // At the post, the first try waits (a while) for the home cell: a provisional home is the
     // spawn feet, which can sit against a desk (SIMS_TIDY_LOG.md item 3)
@@ -2314,8 +2319,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     if (postHomePending(stop, ns?.home, now, behavior._postWaitSince)) return false;
     // Tried at this stop already: elsewhere that's final; at the post, try again now and then
     const retry = behavior._seatStopKey === stop.key;
-    if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)
-        || window.npcNeedsSystem?.world?.inChatWith?.(behavior.npcId))) return false; // not mid-conversation
+    if (retry && !postSeatRetryDue(stop, behavior._seatTriedAt, now)) return false;
     if (!retry) { // a new stop: the first try may fetch, and the retry counts start again
         behavior._fetchTriedAt = undefined;
         behavior._seatRetries = 0;

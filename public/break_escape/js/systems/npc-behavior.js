@@ -892,6 +892,7 @@ export class NPCBehavior {
             if (window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId)) {
                 this._avoid = null;
                 this.sprite.body.setVelocity(0, 0);
+                if (!this._chatFaced) { this._chatFaced = true; this.faceForChat(playerPos); }   // once per chat
                 if (this.isMoving) {
                     this.isMoving = false;
                     this.playAnimation('idle', this.direction);
@@ -899,6 +900,7 @@ export class NPCBehavior {
                 this.updateDepth();
                 return;
             }
+            this._chatFaced = false;
 
             // Update NPC's current room if they've moved to a different room
             // This allows hostile NPCs to chase across rooms with correct pathfinding
@@ -1170,6 +1172,19 @@ export class NPCBehavior {
         this._faceSightAt = now;
         this._faceSightClear = clear;
         return clear;
+    }
+
+    /**
+     * A conversation starts: release any pose hold (npc-poses.js) and turn to the player, which
+     * always wins over a pose's machine or phone. Needs NPCs return early during a chat, so
+     * face_player never runs for them; this is the one turn at chat start.
+     */
+    faceForChat(playerPos) {
+        this._poseHoldFacing = false;
+        if (!this.config?.facePlayer || !playerPos) return;
+        const { x: nx, y: ny } = this.npcBodyPos();
+        this.direction = this.calculateDirection(playerPos.x - nx, playerPos.y - ny);
+        this.playAnimation('idle', this.direction);
     }
 
     facePlayer(playerPos) {
