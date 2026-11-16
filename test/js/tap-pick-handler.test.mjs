@@ -98,7 +98,7 @@ const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYie
 const body = [
     ...HELPERS.map(fnSource),
     stmtSource('const pendingTapUse = createPendingTapUse({'),
-    'const RETRY_GRACE_MS = 300;',
+    src.match(/^const RETRY_GRACE_MS = \d+;$/m)[0],
     'let overlapRetry = { stand: null, used: false };',
     stmtSource('const pendingOverlapWalk = createPendingTapUse({'),
     `const handler = ${handlerSource()};`,
