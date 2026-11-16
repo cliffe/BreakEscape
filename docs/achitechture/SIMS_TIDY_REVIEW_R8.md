@@ -159,3 +159,45 @@ normal patrol movement on a real mission map, not the avoidance paths; the sims 
 
 Server killed; `ss` shows nothing on :3093 and curl is refused. new-game.rb left
 tools/playtest/m02_ransomed_trust-flags-game6149.xml untracked in the worktree; not committed.
+
+## R8 Outcomes
+
+Fixes in bd3a05212 (npc-behavior.js, test/js/npc-local-avoidance.test.mjs). Main was already merged (up to date).
+
+- **m1.** Both target choosers now call `_resetAvoidForNewTarget`: the pin and the back-off step are dropped, a live
+  `yieldTo`/`yieldUntil` (and its step count) is kept. An expired hold is dropped as before.
+- **m2.** The player check behind a back-off now reaches the step length (`AVOID_BACKOFF_MS` x squeeze factor x speed)
+  plus a body (`AVOID_BODY_PX`, 20), in a lane of a body each side (19 px half-width).
+- **m3.** `AVOID_YIELD_MAX_STEPS`: after that many back-off steps to the same NPC inside one yield hold, the yielder
+  stands (as main does) so a waypoint patrol's `_patrolStalled` can fire. N = 6. N = 4 delayed three B from 35.4 s
+  to 40.2 s; N = 6 and 8 match the tip exactly on every three-NPC and lane-48 case. 6 was kept as the smallest value
+  that costs nothing.
+
+Fail-on-old: the three new tests (R8 m1, R8 m2, R8 m3) fail on f5cb9cfbe's npc-behavior.js and pass now (44 pass).
+
+Lane sim (R8 lane harness, busy mocks, dt 50, 200 px lane), N = 6:
+
+| Case | tip (before) | with fixes |
+|---|---|---|
+| three A | 18.3 s | 18.3 s |
+| three B | 35.4 s | 35.4 s |
+| three C | 22.9 s | 22.9 s |
+| two against two A | never | never |
+| two against two B | never | 72.0 s |
+| one against three, lone eve | 25.9 s | 25.9 s |
+| one against three, lone cat | 59.9 s | 59.9 s |
+| one against three, lone amy | never | never |
+
+Doorway (lane 16): lone amy 9.8 s, lone eve 15.0 s, lone cat 12.4 s, two against two A 15.2 s (all unchanged).
+Lane 48: lone eve 29.4 s, lone cat 39.0 s, two against two A 40.1 s, lone amy never (unchanged). The sim has no
+stall check, so the lone-amy rows still show handovers; the unit test covers the stall path.
+
+Suites: `bin/test-js` 712 files passed, 0 failed. Rails 2940 runs, 48173 assertions, 0 failures, 0 errors, 3 skips.
+
+Live proof (keyless server on :3093, games 6151 and 6152 from test_needs_sims, DOORWAY_LOG=1 BOARD_ROUTE=direct,
+rows 1/3/5/6): all four rows ok in both, page errors 0, head-on stalls (8 s or more) none in either. Game 6151 had no
+stuck lines; game 6152 had five (return_stuck for tom, grace, rosa, sanjay and walk_stuck for marek in the kitchen
+doorway, y 84, late in the tour). To see whether the fixes caused that, the same tour ran on the old npc-behavior.js
+(games 6153 and 6154): 6153 had none, 6154 had seven stuck lines at the same doorway plus one head-on stall
+(rosa/tom, 18 s). So the doorway pile-up of returning staff against marek exists without these fixes; it is not new.
+Server killed, port free.
