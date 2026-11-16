@@ -172,7 +172,10 @@ module BreakEscape
       if last.is_a?(Hash) && last['hand'] == hand
         return { status: :ok, body: { 'dropped' => true } } unless last['done']
 
-        return workaround_body(npc, w, heard: last['heard'] == true)
+        replay = workaround_body(npc, w, heard: last['heard'] == true)
+        # K4 R1: a resent borrow "done" carries the ids the original ended (kept in lastSpent)
+        replay[:body]['endedPcIds'] = last['endedPcIds'] if last['endedPcIds'].is_a?(Array) && last['endedPcIds'].any?
+        return replay
       end
       # 3. handed over and not yet spent
       handed = view['handed'][key]
@@ -212,12 +215,16 @@ module BreakEscape
           record_shared_login!(npc_id, scenario: scenario_data, workaround: w)
         end
       end
+      # Kept so a resent "done" (a lost answer) names them again (K4 R1)
+      entry['lastSpent'][key]['endedPcIds'] = borrow_ended if borrow_ended.any?
       save!
       result = workaround_body(npc, w, heard: heard_now)
       # Keyring K4 (plan 9): the sessions the borrow's end pruned (a `from` session whose source
       # was the borrowed PC), only when there are any, so the client closes the onward desktops.
-      # A resent "done" is answered above from lastSpent and never carries them.
-      result[:body]['endedPcIds'] = borrow_ended if borrow_ended.any?
+      # A resent "done" is answered above from lastSpent, with the ids kept there.
+      if borrow_ended.any?
+        result[:body]['endedPcIds'] = borrow_ended
+      end
       result
     end
 

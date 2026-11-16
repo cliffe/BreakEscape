@@ -3576,8 +3576,11 @@ module BreakEscape
     # { pcId => { npcId, username, displayName, via } } for the scenario response (5.3).
     def sessions_for_client
       reload_ended = reload_ended_session_ids.map(&:to_s)
+      survivors = sessions_surviving_reload(reload_ended)
       access_sessions.each_with_object({}) do |(pc_id, session), out|
         next unless session.is_a?(Hash)
+        # Nor a session the reload's prune ends through a claimed pivot (keyring K4 R1 m1)
+        next if survivors && !reload_ended.include?(pc_id.to_s) && !survivors.include?(pc_id.to_s)
         # The bootstrap ends relay sessions in the same request (end_claimed_sessions!), so
         # it never hands one to the client (keyring K2, plan 3.8)
         next if relay_session?(session)
@@ -3590,6 +3593,23 @@ module BreakEscape
 
         answer = session_for_client(pc_id)
         out[pc_id] = answer if answer
+      end
+    end
+
+    # The ids of the sessions left once end_claimed_sessions! has run, or nil when it ends
+    # nothing. A dry run of the same prune on the in-memory sessions (restored afterwards, never
+    # saved), so the bootstrap hands out no session the same request then ends, whichever
+    # pivot or source it hung from (keyring K4 R1 m1; it covers foothold sessions too).
+    def sessions_surviving_reload(reload_ended)
+      return nil if reload_ended.empty?
+
+      original = player_state['sessions']
+      begin
+        player_state['sessions'] = access_sessions.except(*reload_ended)
+        prune_unreachable_sessions!
+        access_sessions.keys.map(&:to_s)
+      ensure
+        player_state['sessions'] = original
       end
     end
 
@@ -4182,7 +4202,12 @@ module BreakEscape
       # A relay sign-in keeps that rule (one screen, one session; plan 7.2).
       end_guest_session_at!(pc_id) unless via == 'claim'
       player_state['sessions'] = access_sessions
-      replaced = player_state['sessions'][pc_id.to_s].is_a?(Hash)
+      previous = player_state['sessions'][pc_id.to_s]
+      replaced = previous.is_a?(Hash)
+      # Keyring K4 R1 m2: a different account signing in at a source PC (Switch user) ends the
+      # `from` sessions opened from it, as losing a pivot does; the prune below then ends any
+      # chained beyond them. The same account signing in again keeps them.
+      switched = replaced && previous['id'].to_s != npc['id'].to_s ? from_sessions_of(pc_id) : []
       record = { 'id' => npc['id'], 'via' => via }
       record['credential'] = credential.to_s if credential.present?
       # A session opened over the network records its foothold (slice 9.3a, 4.1)
@@ -4195,7 +4220,15 @@ module BreakEscape
         player_state['signedInPcs'] = signed_in_pcs
         player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
       end
-      replaced ? prune_unreachable_sessions! : []
+      return [] unless replaced
+
+      player_state['sessions'] = player_state['sessions'].except(*switched) if switched.any?
+      switched + prune_unreachable_sessions!
+    end
+
+    # The ids of the sessions opened `from` the given PC (direct onward sessions only).
+    def from_sessions_of(pc_id)
+      access_sessions.select { |_id, session| session.is_a?(Hash) && session['from'].to_s == pc_id.to_s }.keys
     end
 
     # A remote session (slice 9.3a, 4.4) adds remote, footholdId and host, the PC's label,

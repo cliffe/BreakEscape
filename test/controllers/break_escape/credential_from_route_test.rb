@@ -362,7 +362,7 @@ module BreakEscape
       response.parsed_body['answers'].first
     end
 
-    test 'a borrow that ends a source answers endedPcIds, and a resend answers without it' do
+    test 'a borrow that ends a source answers endedPcIds, and a resend names them again' do
       @game = create_access_game(
         mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user), scenario: borrow_scenario,
         player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => %w[lobby office],
@@ -384,7 +384,7 @@ module BreakEscape
       assert_equal ['dana_pc'], body['endedPcIds']
       assert_nil state['sessions']['hot_desk']
       assert_nil state['sessions']['dana_pc']
-      refute done.call(t + 61).key?('endedPcIds'), 'a resend answers from lastSpent without it'
+      assert_equal ['dana_pc'], done.call(t + 61)['endedPcIds'], 'a resend answers from lastSpent with the same ids'
     end
 
     # ---- chains, self, cycles ------------------------------------------------------------
@@ -469,6 +469,146 @@ module BreakEscape
       refute_includes game.from_reach('office_lan', ignore_outages: false), 'vault_net', 'an ended one is seen too'
     end
 
+    # ---- source checks that only the model enforces (review R1 M1) ----------------------------
+
+    SERVER_DOWN = 'server_net_down'.freeze
+
+    def outage_scenario
+      data = scenario
+      data['networks']['server_net']['offWhen'] = SERVER_DOWN
+      data['globalVariables'] = (data['globalVariables'] || {}).merge(SERVER_DOWN => false)
+      data
+    end
+
+    def lock_at(pc_id)
+      post lock_session_game_url(@game), params: { pc_id: pc_id }, as: :json
+      assert_response :success, response.body
+    end
+
+    test 'a locked source refuses new from sign-ins and the existing from desktop, and opens again after the password' do
+      build
+      hold('lena_rdp_file')
+      lena_from_sam
+      lock_at('sam_pc')
+      before = counters
+      typed_from('vault_pc', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')
+      assert_response :forbidden
+      typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')
+      assert_response :forbidden
+      cred_login('lena_pc', 'lena_rdp', from: 'sam_pc')
+      assert_response :forbidden
+      get_container('lena_pc', from: 'sam_pc')
+      assert_response :forbidden
+      login_accounts('sv_fs02', from: 'sam_pc')
+      assert_response :forbidden
+      assert_equal before, counters
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from'], 'a lock never prunes'
+
+      assert_equal true, sign_in('sam_pc', 'sokafor', NS::SAM_PASSWORD)['success']
+      get_container('lena_pc', from: 'sam_pc')
+      assert_response :success, response.body
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success']
+    end
+
+    test 'an outage on the target or on a pivot network refuses a from sign-in, and it works again when it clears' do
+      build({}, outage_scenario)
+      sam_at_keyboard
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success'], response.body
+      logout('sv_fs02')
+
+      set_global(SERVER_DOWN, true)
+      typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')
+      assert_response :forbidden, 'the target network is down'
+      login_accounts('sv_fs02', from: 'sam_pc')
+      assert_response :forbidden
+      set_global(SERVER_DOWN, false)
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success']
+      assert_equal true, typed_from('vault_pc', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success']
+
+      set_global(SERVER_DOWN, true)
+      get_container('vault_pc', from: 'sam_pc')
+      assert_response :forbidden, 'the pivot network is down, so the vault is out of reach'
+      logout('vault_pc')
+      typed_from('vault_pc', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')
+      assert_response :forbidden
+      assert_equal 'sam_pc', state['sessions']['sv_fs02']['from'], 'an outage never prunes'
+      set_global(SERVER_DOWN, false)
+      assert_equal true, typed_from('vault_pc', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success']
+    end
+
+    test 'a source whose own route is down (two hops, the first switched off) refuses new sign-ins and its onward desktop' do
+      build
+      assert_equal true, sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)['success'], response.body
+      assert_equal true, typed_from('lena_pc', 'lfox', NS::LENA_PASSWORD, 'jake_pc')['success'], response.body
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'lena_pc')['success'], response.body
+      logout('sv_fs02')
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'lena_pc')['success']
+
+      set_global(KS::JAKE_OFF_GLOBAL, true)
+      get_container('sv_fs02', from: 'lena_pc')
+      assert_response :forbidden, 'the onward desktop hangs from a source whose own route is off'
+      logout('sv_fs02')
+      typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'lena_pc')
+      assert_response :forbidden
+      assert_equal 'jake_pc', state['sessions']['lena_pc']['from'], 'power never prunes'
+      set_global(KS::JAKE_OFF_GLOBAL, false)
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'lena_pc')['success']
+    end
+
+    # ---- prune cases (review R1 M2, m2) -------------------------------------------------------
+
+    test 'a relay replacing the source ends the from session and names it in endedPcIds' do
+      build
+      hold('jake_assist_code')
+      assert_equal true, sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)['success'], response.body
+      assert_equal true, typed_from('lena_pc', 'lfox', NS::LENA_PASSWORD, 'jake_pc')['success'], response.body
+      body = cred_login('jake_pc', 'jake_assist', relay: true)
+      assert_response :success, response.body
+      assert_equal ['lena_pc'], body['endedPcIds']
+      assert_equal ['jake_pc'], state['sessions'].keys
+      assert_equal true, state['sessions']['jake_pc']['relay']
+    end
+
+    test 'losing the pivot session ends a from session that was reached through it' do
+      build
+      sam_at_keyboard
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success'], response.body
+      assert_equal true, typed_from('vault_pc', 'ishaw', NS::IAN_PASSWORD, 'sam_pc')['success'], response.body
+      body = logout('sv_fs02')
+      assert_response :success
+      assert_equal ['vault_pc'], body['endedPcIds']
+      assert_equal ['sam_pc'], state['sessions'].keys
+    end
+
+    test 'a different account signing in at the source ends its onward from sessions; the same account keeps them' do
+      build
+      lena_from_sam
+      assert_equal true, typed_from('sv_fs02', 'ishaw', NS::IAN_PASSWORD, 'lena_pc')['success'], response.body
+      assert_equal true, typed_from('lena_pc', 'lfox', NS::LENA_PASSWORD, 'sam_pc')['success'], 'the same account again'
+      assert_equal %w[lena_pc sam_pc sv_fs02], state['sessions'].keys.sort
+
+      body = typed_from('lena_pc', 'jbrooks', KS::JAKE_PASSWORD, 'sam_pc')
+      assert_equal true, body['success'], response.body
+      assert_equal ['sv_fs02'], body['endedPcIds']
+      assert_equal %w[lena_pc sam_pc], state['sessions'].keys.sort
+      assert_equal 'jake', state['sessions']['lena_pc']['id']
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
+    end
+
+    test 'the bootstrap hands out no from session whose route hangs from a claimed pivot' do
+      build
+      seed_sessions(
+        'sam_pc' => { 'id' => 'sam', 'via' => 'password' },
+        'sv_fs02' => { 'id' => 'ian', 'via' => 'claim', 'foothold' => nil },
+        'vault_pc' => { 'id' => 'ian', 'via' => 'password', 'from' => 'sam_pc' }
+      )
+      sessions = bootstrap_scenario['sessions']
+      assert sessions.key?('sam_pc')
+      refute sessions.key?('vault_pc'), 'the same request prunes it through the claimed pivot'
+      assert sessions.key?('sv_fs02'), 'the claimed session itself is still reported, so the client can end it'
+      assert_equal ['sam_pc'], state['sessions'].keys
+    end
+
     # ---- hostile from values -------------------------------------------------------------------
 
     HOSTILE = [['sam_pc'], { 'a' => 'b' }, 'x' * 80, ' ', "\t", 'no_such_pc', 'lena_pc'].freeze
@@ -522,6 +662,8 @@ module BreakEscape
       assert_response :bad_request
       keyring(pc_id: 'lena_pc', from: { 'a' => 'b' })
       assert_response :bad_request
+      get game_path('container/lena_pc?from')
+      assert_response :bad_request, 'a bare ?from is malformed, never the keyboard rule'
       assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
     end
 

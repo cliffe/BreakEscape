@@ -2983,6 +2983,9 @@ module BreakEscape
     # host only on a remote one), so the client learns at once that a keyboard fetch made
     # a remote session local (review R1, m3).
     def render_login_desktop(container_id)
+      # Keyring K4 R1 m3: a bare ?from (Rack reads it as nil) is malformed, never the keyboard rule
+      return render json: { error: 'Malformed from', reason: 'malformed' }, status: :bad_request if params.key?(:from) && params[:from].nil?
+
       info = @game.find_login_pc(container_id)
       return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden unless info
 
@@ -3044,7 +3047,7 @@ module BreakEscape
       # K4: any non-empty from= is a `from` request (a whitespace one is refused by the model,
       # never the keyboard); a structured value is refused outright
       from = from_param_given? ? params[:from] : nil
-      return :conflict if from && !from.is_a?(String)
+      return :conflict if from_param_given? && !from.is_a?(String)
 
       foothold = params[:foothold].presence&.to_s
       named = [relay, !from.nil?, foothold.present?].count(&:itself)
