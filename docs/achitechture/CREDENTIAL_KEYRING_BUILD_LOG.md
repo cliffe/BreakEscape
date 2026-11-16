@@ -1141,3 +1141,15 @@ Tip before this run `0782e1206`. Review: `CREDENTIAL_KEYRING_K3B_REVIEW_R2.md` (
 
 **Live note (no change)**
 - One-click Connect cannot occur with this fixture: the item is droppable (Drop here) and has file text (Examine), so the tray shows the menu. That is correct per 8.2. The one-click path stays covered by the inventory-menu tests.
+
+## K3c run 1 (part A)
+
+Commit 888f48af3. Part B (the relay with its 9.1 fixtures, and the K2 m4 folder route) is still open; see the K3c handover.
+
+- D49 tidy: the `BADGE_FILE` comment in `remote-host-text.js` no longer calls the plug art pending. No test expected `badge-key.png` for plug; a new test pins `badgeSrc` for key, plug and an unknown group.
+- D50: the chosen-account line names the kinds of knowledge on the keyboard screen as well as the remote screen. Both go through `chosenAccountLine(tile)` in `remote-host-text.js`, so the wording is one: "Lena Fox (lfox), Captured password". Test: the same account on both screens gives the same line.
+- R3 t1: `refresh()` sets one deadline (`askTimeoutMs`, 15 s) before the sync PUT; the PUT is raced against it and the GET gets what is left. A PUT that never answers spends the cap and the refresh gives up, so the chain moves on.
+- R3 t2: `fetch` takes a `deadline` (or `timeoutMs`, turned into one); the no-rev retry uses the time left, not a fresh timer.
+- Reconnect toast: `noteFinds` now checks a page-life `_announced` map (id to its held tray item) in place of the previous answer's ids. An id is forgotten only when an answer lacks it and its tray item is out of the tray (an unknown tray keeps it), so an answer that briefly lacks an entry does not toast it again, and dropping and retaking a file still does. Entries with no held item are never forgotten. Held finds are one per id, and at release a find the latest no-screen answer no longer names is left out. The new tests failed on the old code before the fix.
+- route_ended: a `pc-sessions` test covers two hosts in one toast, one host, an open desktop closed with its own host's line, and the unplug keeping its line. The live proof should also exercise `route_ended` (a sign-in that prunes a session through another route).
+- Tests: `bin/test-js` 716 files passed. No Rails files touched.
