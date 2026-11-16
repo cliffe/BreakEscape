@@ -155,3 +155,47 @@ rails with BUNDLE_PATH=<main checkout>/vendor/bundle.
 
 ### Suites
 bin/test-js 681 of 681 (run alongside tour 5733). test/js/seating.test.mjs 59 of 59.
+
+## Handover 4 (fourth session stopped at the context guard)
+
+Games this session (keyless :3093): 5753 (office geometry probe), 5764 (tour, stopped after row 3 at the
+guard). Scratch: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/sims-tidy4/
+(geo4.mjs, geo-5753.txt, tour-5764.out, val.txt). Server and tour stopped.
+
+### Item 2, Marek: post moved (5659540bd), not yet proved live
+- needsHome and position (1.65, 4.0) to (2.15, 6.65): south side of the spare desk office_desk1_91
+  (40..98 x 195..205), a dead-end corner. Chair 152 is at Sanjay's post, so he should fetch loose chair
+  155 from (227,278). 73 px from the mugs, so outside Sanjay's 2-tile avoid radius (only Sanjay has a
+  radius; `_avoidedAt` uses the avoider's own). README rows and PROOF_HISTORY line 881 updated.
+- Validator: 0 errors, 36 warnings (no Marek warning about the post).
+- 5764 (old engine, page loaded before 22724fa2f): row 1 ok, row 3 ok (see item 1); the run was cut
+  before the stall summary, so Rosa's and Marek's stalls are NOT yet checked. Unchecked: whether
+  Marek fetches 155 and which way he faces (a coordinate home has no face point).
+
+### Path grid: engine fix built (22724fa2f), unit-tested, not yet live
+- Finding (5753): rebuildWorldGrid bakes whatever is immovable at rebuild time, so a chair seated at a
+  door-open rebuild stays blocked after its sitter stands, and one seated later is never in the grid.
+  `_avoidNPCPositions` (player) skips immovable bodies. That is why 5748 saw a clear column at x 220.
+- Fix: `buildWorldGrid({ skipSeated })` (rebuildWorldGrid passes it; the seat-box stand-up grid does not)
+  leaves out seated chairs (seatedBy, body immovable) and NPC bodies overlapping them. `findWorldPath`
+  avoids `seatedAvoidCells(...)` (path-avoid.js) per search: padded like avoidCells, a chair within one
+  cell of the start or goal skipped whole, end cells and padding within 2 cells of an end kept open,
+  cells cleared after calculate(). A search that finds nothing reruns with `opts.ignoreSeated`; in sync
+  mode the rerun waits until calculate() returns (EasyStar calls back inside calculate). About 55 engine
+  lines. No new static import (path-avoid.js was already imported).
+- Tests: test/js/path-seated-chairs.test.mjs 5 of 5; path-avoid 9, npc-needs-reroute-held 11,
+  npc-pathfinding-world-grid 9, door-gates 20, npc-local-avoidance 29, npc-room-leash 4, seating 59,
+  all pass. bin/test-js NOT run yet.
+- Check whether bin/test-js needs the new test file listed anywhere (it ran by glob before).
+
+### Item 1: row 3 read the board on 5764 with the driver waypoints (old engine)
+- Board try 1 from (200,176): moved, arrived (219,47), read true. Then off/turn-back ok (Marek and Tom
+  queued, both turned back, Marek grumbled). This is the waypoint driver fix, before the engine change.
+
+### Next, in order
+1. bin/test-js (alone, no live run).
+2. Fresh game, full tour on the new engine: rows 1, 3, 5, 6; check stuck list for rosa/marek/grace
+   (Grace's return_stuck by seated Amara should go with the engine fix), tom_sat, row 3 read.
+   Also look for `chair_out_of_doorway` in the log (e131ef703); if none, say unit-test only.
+3. Item 4: GL=1 fresh game, needs-sims-staff-room.mjs job_beat, look at 02a-jodie-locker-trip.
+4. "Status for review" section.
