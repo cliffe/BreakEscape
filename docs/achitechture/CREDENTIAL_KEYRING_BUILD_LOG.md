@@ -713,3 +713,33 @@ SQL subscriber for the "no scenario_data query" assertion.
 `test_access_keyring` (K1 run 3) has `lena_rdp`, `jake_pw_note`, `ops_cookie` and Ian's capture, but
 no assist invite, no Jake relay PC and no `endsOnGlobal`. The saved-connection half of 7.4 can run
 on it; the relay half needs the scenario extended first (plan 9.1), so leave that as a handover item.
+
+### K2 run 2 (part 1 of 2): built
+Commits `804a22722`, `4c7ad6a5e`, `285e1989e`. Built: plan 7 steps 1 to 9 (`app/models/break_escape/credential_login.rb`,
+`Game#attempt_credential_login!`, dispatch in `GamesController#login`), the 7.2 / 3.8 server readers in
+`network_access.rb` (`session_route_up?` relay branch, `reach_session_hosts` / `view_session_hosts` skip relay,
+`resource_admits_player?`, `mapped_shares`, `implant_foothold!`, `host_row`, `desktop_request_allowed?` /
+`desktop_refusal` taking a route hash, `settle_session_at_keyboard!` leaves `via: credential`, prune to a fixed point),
+`game.rb` (`start_login_session!` takes `credential:` / `relay:`, returns the pruned ids; `login_session_answer`
+and `session_for_client` carry kind, label, relay; `reload_ended_session_ids`; `session_held_at_keyboard?` in both
+claim guards; `unlock_session_refusal`), `render_login_desktop` route from `relay=1` / `from=` / `foothold=`.
+Tests: `test/controllers/break_escape/credential_login_test.rb` (24), `test/models/break_escape/credential_sessions_test.rb`
+(11), fixture `test/support/keyring_login_scenario.rb`; carry-in m2 covered (crate take, `source_npc_id` take).
+
+Deviations and calls:
+- 3.8 names "a typed or claim sign-in replacing a relay", so every replacing sign-in (typed, claim, credential) prunes;
+  `endedPcIds` is added only when non-empty, so existing answers are unchanged.
+- 3.8 said `reach_cache_key` needs no change for a relay. It does: the key used session keys only, so a relay
+  replacing a pivot at the same PC hit a stale walk. The key now lists pivoting (non-relay) sessions.
+- `from` (K4) is refused: generic refusal on POST /login, `false` in `desktop_request_allowed?`, `session_route_up?`
+  false for a session carrying `from`. Hooks are commented "K4".
+- Step 8 reads `player_state['endedCredentials']` through `ended_credential?` (network_access.rb), read only.
+
+Not yet run: the full Rails suite and rubocop on the changed files (context limit). Network, keyring and the two
+new files pass (35 + 270 runs, 0 failures).
+
+Remaining for part 2: run the full suite and rubocop first; then 7.1 (`credentialEndGlobals` and `endedCredentials`
+in `ACCESS_STATE_DEFAULTS`, `record_credential_end_globals!` writer and `credential_end_globals_stale?`, the sync
+merge end check and `endedRelayPcIds`, `sync_end_globals_test`, `bootstrap_writers_test` additions), carry-in m3,
+the live proof. The sync merge deletes relay sessions whose `credential` is ended; `session_route_up?` already
+refuses them.
