@@ -448,17 +448,23 @@ test('a same-tab redraw keeps the pane scroll, and Start brings the status line 
     const scene = open();
     scene.showTab('clone');
     let scrolledTo = null;
-    window.HTMLElement.prototype.scrollIntoView = function (arg) { scrolledTo = { node: this, arg }; };
-    scene.pane.scrollTop = 120;
-    click(qa('.rogue-ap-ssid-pick').find((b) => b.dataset.ssid === 'Ledgerwell-Staff'));
-    assert.equal(scene.pane.scrollTop, 120, 'choosing a network does not jump to the top');
-    click(q('.rogue-ap-start'));
-    assert.equal(scene.pane.scrollTop, 120, 'Start does not jump to the top');
-    assert.ok(scrolledTo && scrolledTo.node.classList.contains('rogue-ap-status'), 'the status line is scrolled into view');
-    assert.equal(scrolledTo.arg.block, 'nearest');
-    scene.showTab('log');
-    assert.equal(scene.pane.scrollTop, 0, 'a tab change starts at the top');
-    delete window.HTMLElement.prototype.scrollIntoView;
+    const hadStub = Object.prototype.hasOwnProperty.call(window.HTMLElement.prototype, 'scrollIntoView');
+    const priorStub = window.HTMLElement.prototype.scrollIntoView;
+    try {
+        window.HTMLElement.prototype.scrollIntoView = function (arg) { scrolledTo = { node: this, arg }; };
+        scene.pane.scrollTop = 120;
+        click(qa('.rogue-ap-ssid-pick').find((b) => b.dataset.ssid === 'Ledgerwell-Staff'));
+        assert.equal(scene.pane.scrollTop, 120, 'choosing a network does not jump to the top');
+        click(q('.rogue-ap-start'));
+        assert.equal(scene.pane.scrollTop, 120, 'Start does not jump to the top');
+        assert.ok(scrolledTo && scrolledTo.node.classList.contains('rogue-ap-status'), 'the status line is scrolled into view');
+        assert.equal(scrolledTo.arg.block, 'nearest');
+        scene.showTab('log');
+        assert.equal(scene.pane.scrollTop, 0, 'a tab change starts at the top');
+    } finally {
+        if (hadStub) window.HTMLElement.prototype.scrollIntoView = priorStub;
+        else delete window.HTMLElement.prototype.scrollIntoView;
+    }
 });
 
 test('the Wi-Fi icon is drawn at whole multiples of 11x8 and headshots at multiples of 32', () => {
