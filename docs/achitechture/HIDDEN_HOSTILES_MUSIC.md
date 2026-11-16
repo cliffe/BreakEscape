@@ -24,20 +24,20 @@ Why not skip every hidden NPC: an NPC that starts hidden (`behavior.initiallyHid
 
 m10 hostiles are `initiallyHidden`. Only `reinforcement_a` and `reinforcement_b` have `startHostile: true`; the rest (Arakawa, the minders, Vector, Phantom, Nightshade) turn hostile only when attacked or made hostile in play.
 
-- The two reinforcements start hidden with no record, so they still count until revealed (gallery, after Victoria is trusted). Unchanged.
+- The two reinforcements start hidden: since R2 M1 they are not hostile until first shown (gallery, after Victoria is trusted), so they neither cue the fight music nor count while hidden.
 - The only m10 `all_hostiles_ko` entry is `spy-action` while `!hax_jammed && !outer_lock_open`. The behaviour that changes is intended: a hostile that a mapping hid again (for example Arakawa at `breach_open`) no longer holds that entry back.
 
 ## Tests
 
-`test/js/hostiles-hidden-music.test.mjs` (real `scenario-music-events.js`, `NPCManager` and `NPCBehaviorManager.setNPCVisible`, and the real `NPCBehavior` constructor, in jsdom). Hides go through `_setupEventMappings` and a `setVisible` mapping, not `recordNpcVisibility`. Every music assertion checks the resulting playlist (`calm`), and the "keeps fighting" tests end with a KO as a positive control, so a handler that never registered cannot pass. Twelve tests; against the old source (restored from 5bfb95a5d) seven fail:
+`test/js/hostiles-hidden-music.test.mjs` (real `scenario-music-events.js`, `NPCManager` and `NPCBehaviorManager.setNPCVisible`, and the real `NPCBehavior` constructor, in jsdom). Hides go through `_setupEventMappings` and a `setVisible` mapping, not `recordNpcVisibility`. Every music assertion checks the resulting playlist (`calm`), and the "keeps fighting" tests end with a KO as a positive control, so a handler that never registered cannot pass. Nineteen tests (twelve from round 1, seven from R2). Against the old source (restored from 5bfb95a5d) six of the first twelve fail (the hide-first test passes there too); the seven R2 tests are listed under R2 outcomes:
 
-- hide first, KO second ends the fight (fails on old code: no handler change)
+- hide first, KO second ends the fight (passes on old code too; it is the real hide-first order, kept as a guard)
 - M1, KO first then hide ends the fight (fails)
 - revealed hostile is announced, and counts again (fails: no announce)
 - a reveal of a visible, peaceful or KO'd NPC announces nothing (fails: no announce for the hostile case)
 - M2, a restored hostile hidden by a mapping is not announced on reload (fails)
 - M2 then reveal announces once on the reveal (fails)
-- m6 (partial), a hidden hostile with no record is announced on its first reveal (fails)
+- a hidden hostile with no record is announced on its first reveal (fails; reveal branch only, M1 is covered by the R2 tests)
 - pass on both, guarding other behaviour: one hostile hidden while another fights, a peaceful or KO'd hide, a hostile that starts hidden with no record, hidden state surviving export and restore, a restored hostile that is not hidden still announced.
 
 ## Live proof (keyless server, port 3093, headless, setFPS(20), fixed steps on)
@@ -61,9 +61,9 @@ Against the old source (5bfb95a5d, games 6355 and 6356) each route fails one che
 
 m10, game 6333 earlier (`tools/playtest/m10-opening-music-read.mjs`, read only helper, unchanged): opening playlist `noir`, no hostile NPCs, visibility record holds only `nightshade_van` and `kowalczyk_post`. The first hidden-hostile reveal in m10 (the reinforcements in the gallery) was not reached live.
 
-## Open: m10 reinforcements start hostile while hidden (review m6, not fixed here)
+## Fixed in R2: m10 reinforcements start hostile only when first shown (review M1)
 
-`reinforcement_a` and `reinforcement_b` (`initiallyHidden`, `startHostile`) call `setHostile(true)` when their behaviour is created, which emits `npc_hostile_state_changed` while nobody can see them. The announce-on-reveal change does not touch that path: it covers a restored hostile and a reveal, not the startHostile emit at creation. A unit test shows the reveal announcing once (`m6 (partial)`), so a reveal brings the fight back, but the early emit can still start the fight music with the reinforcements hidden, and with no record they count until revealed, so `all_hostiles_ko` cannot end it on a route where Victoria is not trusted. A fix is a follow-up: defer `startHostile` (or its emit) for an `initiallyHidden` NPC until it is first shown. It needs one live read with a seeded save at the gallery door. Left alone on this branch.
+`reinforcement_a` and `reinforcement_b` (`initiallyHidden`, `startHostile`) used to call `setHostile(true)` at creation, so the threat cue fired for nobody and they counted as live hostiles, which stopped `all_hostiles_ko` firing on a non-trusted route. Now the `NPCBehavior` constructor sets `_startHostileOnReveal` when `sprite.visible === false` and skips `setHostile`; `setNPCVisible` calls `setHostile(true)` after the sprite is shown, giving exactly one emit with the NPC on screen. A restored hostile on a hidden sprite is not announced at room load (guard is `sprite.visible !== false`, not the mapping record); the reveal announces it. A reload while still hidden has nothing saved, so it stays pending; a reload after the reveal restores the hostility on a visible sprite and announces it as before.
 
 ## Static check of the eight missions that use both `setVisible: false` and `all_hostiles_ko`
 
@@ -82,7 +82,8 @@ Complete m10 hide list (31 literal lines plus the generated closing hides), read
 
 | Lines | NPC | Hides on | Reading |
 | --- | --- | --- | --- |
-| 2033, 2034, 2080, 2081 | `alarm_override` | `breach_open` (change and `game_loaded`) | No `startHostile`, no ink tag; hostile only by punching. |
+| 2033, 2034 | `nightshade_table` | `breach_open` (change and `game_loaded`) | No `startHostile`, no ink tag; hostile only by punching. |
+| 2080, 2081 | `nightshade_van` | `breach_open` (change and `game_loaded`) | Same: no `startHostile`, no ink tag; hostile only by punching. |
 | 2149, 2151, 2152 | `kowalczyk_post` | `split_started`, `breach_open` | Same: no `startHostile`, no ink tag. |
 | 2192, 2194 to 2196 | `quintero_post` | `split_started`, `breach_open` | Same. |
 | 2216, 2217 | `arakawa_post` | `split_started` | Same. No `startHostile`, no ink tag. |
@@ -102,3 +103,21 @@ Where one of these is hostile and conscious when hidden, the new rule drops it f
 No mission relies on a hidden, conscious hostile keeping the fight music going, so no behaviour on a normal route changes in any of the eight. Nothing here looked affected enough to need a live run beyond the m10 opening above.
 
 Limit of this check: it is a read of the scenario files (ERB templated conditions at m07:2188 and m10:4071, 4095 were read as written, not rendered for each variable value).
+
+## R2 outcomes
+
+Review: `HIDDEN_HOSTILES_MUSIC_REVIEW_R2.md` (B0, M1, m4). Tests are in `test/js/hostiles-hidden-music.test.mjs`, now 19; the five marked below failed on tip c34d74cd5 before the fix.
+
+| Finding | Outcome |
+| --- | --- |
+| M1 | Fixed as described above. Tests (real `NPCBehavior` with a hidden sprite): no hostility, no cue and not counted while hidden, with `all_hostiles_ko` firing on a KO (fails before); reveal gives exactly one threat cue and counts from then on (fails before); a visible `startHostile` NPC is still hostile at creation; reload while hidden keeps it pending with no cue (fails before); reload after the reveal announces once; a restored hostile on a hidden sprite waits for the reveal (fails before). |
+| m1 | `setNPCVisible` emits `npc_hidden` only if the visibility record was not already hidden (`wasRecordedHidden`, not the sprite state, so a never-shown `initiallyHidden` hostile still emits on its first hide). Test: hiding twice after a KO gives one `calm` (fails before), and hide, reveal, hide gives a second. |
+| m2 | Test 1 now hides first and KOs second, and its row above says it passes on old code too. Six of the original twelve fail on 5bfb95a5d. |
+| m3 | m10 table corrected: 2033 and 2034 are `nightshade_table`, 2080 and 2081 `nightshade_van` (blocks from lines 1992 and 2039 of `scenario.json.erb`). |
+| m4 | The "m6 (partial)" test is retitled as the reveal branch only; M1 is covered by the real `startHostile` tests. The M2 reload tests now give the fake sprite `visible: false`, as `npc-sprites.js` does. |
+
+Live proof, keyless server on :3093 from the worktree, `setFPS(20)` with fixed steps on, script `tools/playtest/hidden-hostiles-music-proof.mjs` (exits 1 on any failed check). `test_hidden_hostiles` gained `reserve_guard` (lobby, `initiallyHidden`, `startHostile`), a locked cellar, and a `reserve` global that the cellar door attempt sets, which reveals it.
+
+- hide-then-ko, game 6394: 9 of 9 pass (earlier route still passes with the reserve guard in the lobby).
+- ko-then-hide, game 6395: 4 of 4 pass.
+- reserve, game 6396: 8 of 8 pass. Hidden at start: not hostile, sprite hidden. Lobby guard KO'd with the reserve guard hidden: `noir` (`all_hostiles_ko` fires). Reload while hidden: not hostile, still `noir`. Cellar door: hostile, exactly one `npc_hostile_state_changed` for `reserve_guard`, music `threat`.
