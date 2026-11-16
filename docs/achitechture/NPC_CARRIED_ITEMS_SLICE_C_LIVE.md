@@ -46,6 +46,8 @@ the reload in either run; her needs log shows only parked rest and thirst needs 
 arriving. Not investigated further (brief: record and stop). It may be the needs scheduler
 cadence after a reload or the dirty_mugs task needing a trigger, so check this before treating
 T1/T2 as passed.
+(Resolved below under "T1/T2 re-pick": a driver gap, not a feature fault; the follow-up run
+also found and fixed a put-down position fault on the client.)
 
 ### Sofia's pick-up bark
 
@@ -86,3 +88,58 @@ bark but before its triggeredEvents record synced (the periodic/debounced sync, 
 flush on an ordinary reload). The slice-C plan calls this acceptable. Note C2 (the consume
 requestSoon) narrows the equivalent gap only for the use's globals, not for triggeredEvents, so the
 bark's at-most-once-extra replay is unchanged by this slice.
+
+## T1/T2 re-pick
+
+Follow-up run, 16 Nov 2026, port 3094, keyless server from this worktree, fresh game per beat.
+
+### Cause: the driver did not reload the kitchen
+
+Not a feature fault, and not a slice C regression. The needs system simulates only loaded rooms
+(`scenarios/test_needs_sims/README.md`, step 2). A reload restarts the player in the office with
+only the office loaded. The washing-up tray (the only `accepts: dirty_mugs` target), the water
+and every rest spot are in the kitchen and lounge, so after the reload `_carryCandidate` finds the
+mug but no target and returns null, and rest and thirst park with `no_source`. That is the log
+the first run recorded. The lab beats had the same gap and were fixed by walking back to
+open_plan; the T beats never got the equivalent step.
+
+Nothing on the server or in player_state was stale: no reservation, claim, cooldown or carry flag
+survives the reload (the client needs state is rebuilt on load, and `end_stranded_carries!` drops
+the npcCarry entry). Slice C's server diff changes only where the object is put back, which for
+T1 is the scenario spot either way, so main behaves the same.
+
+Driver fix (`785865033`): after a test_needs_sims reload it walks kitchen, office, lounge,
+office, as before the reload. `REENTER=0` skips that, for a control run.
+
+| Run | Game | Re-entry | Result |
+|---|---|---|---|
+| T1 | 5745 | yes | mug once at (4, 7); Grace's job starts 28 s after the reload, picks up at 74 s, walks it to the tray |
+| T2 | 5746 | yes | Grace picks up the put-down mug 38 s after the reload, before the post-reload snapshot |
+| Control (T1) | 5747 | no (`REENTER=0`) | reproduces the first run exactly: job null, nothing held for 240 s, log only rest and thirst `no_source` |
+
+### Second finding: a reloaded put-down copy landed at a random spot (fixed)
+
+The server put-back was right in every T2 run, but the mug's sprite was not. In 5661, 5723 and
+5746 the server held the put-down position (for example px (131.4, 221.3) in 5746) while the
+sprite after the reload sat elsewhere ((159, 167) in 5746, (162, 172) in 5661 against a stored
+(44, 139)). Cause: `core/rooms.js` placed room objects only from tile `position.x/y`. An NPC
+put-down or KO drop stores `{px, py}` (the sprite centre in world pixels, per
+`room-state-sync.js` putDownObject/koDropObject), so such an object fell through to
+`createSpriteAtRandomPosition`. This predates slice C (slice A/B wrote px/py; their reload
+checks read the server record, not the sprite), and it hid C1's put-back on screen for any
+put-down copy, the KO-drop reload case included.
+
+Fix (`b585d672e`): `applyScenarioObjectPosition` in `core/rooms.js`, used by both room-object
+branches. Tile x/y keep priority (every authored object is unchanged); otherwise a finite px/py
+centres the sprite there, the same centring the live put-down uses. Tests:
+`test/js/room-object-position.test.mjs` (6: tile path, px/py centre in world pixels, tile wins,
+half or non-finite px/py ignored, no/string position, elevation only).
+
+| Run | Game | Put-down (server) | Sprite centre after reload | Re-pick |
+|---|---|---|---|---|
+| T2 | 5755 | px (132.01, 221.22), office | (133, 221), one copy | job 18 s after the reload, picked up at 39 s |
+| T1 | 5756 | none (scenario spot) | top-left (128, 224) = tile (4, 7), one copy | job 19 s after the reload, picked up at 74 s |
+
+Server log over all five games: 20,324 responses, every one 200 (0 x 422). 0 page errors,
+`badCarryStatuses` empty in every beat. No player_state change: the fix is in the room build only.
+
