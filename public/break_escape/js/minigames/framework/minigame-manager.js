@@ -171,6 +171,9 @@ export const MinigameFramework = {
         // A task or pickup toast raised just before this opened waits for it to close
         // (notifications.js; m07 confirmation N1)
         window.holdRecentNotifications?.();
+        // Warnings and errors over the panel are placed clear of its title, X and controls
+        // (ui/hud-lanes.js placeNotifyBlock, toast plan 2.8)
+        try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
         // The panel the toasts were waiting for is here: it holds them from now on
         window.clearExpectedPanel?.();
         this.currentMinigame.init();
@@ -312,6 +315,8 @@ export const MinigameFramework = {
                 if (ending._suspendedForChild !== true) {
                     try { window.phoneRinger?.onMinigameEnded?.(ending); } catch (e) { console.error('phoneRinger end hook failed', e); }
                 }
+                // Toasts placed over the panel go back to the lane; waiting ones show (toast plan 2.8)
+                try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
             }
         } else {
             console.log('No current minigame to end');
