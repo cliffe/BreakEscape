@@ -641,8 +641,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
 <%# Office life (SLICE3_4.md): the reception coffee station claims the drawn sprite (no position).
     useSeconds 17 (preset 12) so a coffee trip is long enough to read as a break. offWhen stops
-    every use once the day staff are upset. zainab_laptop is Zainab's seat object (no preset);
-    the screen habit is slice 4. %>
+    every use once the day staff are upset. zainab_laptop is Zainab's seat object (no preset)
+    and, from slice 4, her readable laptop with the screen habit. %>
         {
           "type": "coffee_station1", "id": "reception_coffee", "name": "Reception Coffee Station", "takeable": false,
           "offWhen": "wh_staff_upset",
@@ -652,8 +652,25 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         {
           "type": "laptop1", "id": "zainab_laptop", "name": "Zainab's Laptop", "takeable": false,
           "position": { "x": 5.0, "y": 8.7 },
-          "observations": "A laptop open on the low table in front of the sofa.",
-          "affordance": false
+          "observations": "A laptop on the low table in front of the sofa.",
+          <%# Slice 4: a readable table-top object, not a PC (laptop1 takes no desk preset). Her post is the
+              sofa's west place, set by useFrom (offset from the laptop's centre, tiles). The text is the
+              gate: only the away-and-open variant shows anything, and the engine does not refuse a read over
+              her shoulder. Order: night, trouble, locked, away and open, then attended. No secret, route or
+              flag of the mission appears in any variant. %>
+          "workstation": true,
+          "owner": "zainab_hussain",
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "affordance": { "useFrom": { "dx": -0.75, "dy": -1.06 } },
+          "text": "Zainab's working on it.",
+          "textVariants": [
+            { "condition": "globalVars.mission_phase === 'act2_infiltration'", "value": "The lid is shut. Zainab has gone home for the night." },
+            { "condition": "globalVars.wh_staff_upset", "value": "The lid is shut. Nobody is working on this laptop right now." },
+            { "condition": "globalVars.zainab_laptop_screen_locked", "value": "The screen is locked. The lock screen shows a photo of a harbour and a cursor waiting for a password." },
+            { "condition": "globalVars.zainab_laptop_owner_away", "value": "Zainab's laptop, left unlocked while she is away.\n\nCALENDAR, THIS WEEK\nMon: Penhallow Dental, wireless survey\nTue: Harcourt Haulage, phishing exercise debrief\nWed: Quayside Surgery, backup restore test\nThu: Marlowe & Pike, firewall rule review\nFri: write up, all of the above\n\nFROM VICTORIA STERLING: \"Client data stays on client kit. Nothing from a site goes on a personal drive, and nothing from a site goes home with you.\"\n\nDRAFT MESSAGE TO THE TEAM, UNSENT: \"Who are the after-hours lot? I keep finding the lights on at eight and nobody will tell me whose they are.\"" }
+          ]
         }
       ],
       "npcs": [
@@ -805,6 +822,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "globalVarOnKO": "zainab_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": "zainab_laptop",
+          "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 21.3, "_comment": "Slice 4: measured expectedAwayMs, coffee 19.3 to 20.6 s (stays open), cooler 22.1 to 24.6 s (locks)." } },
           "needsRooms": ["reception_lobby", "main_hallway"],
           "needsCompany": { "groups": ["wh_day_staff"] },
           "needs": {
