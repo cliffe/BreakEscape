@@ -244,6 +244,16 @@ console.log('row 5', JSON.stringify(report.rows[5]));
 
 // Row 6: the Kitchen Rota, then wait in the kitchen
 report.rows[6] = { rota: await read('kitchen_rota') };
+// Sims tidy 5 (5793: every rota try stopped at x 41, the doorway's office end): the grid round the
+// kitchen doorway (# blocked, . open), the seated chairs and the NPC bodies within 96 px of it
+if (!report.rows[6].rota.ok) report.rows[6].doorway = await page.evaluate(() => {
+    const pm = window.pathfindingManager, gb = pm.worldGridBounds, g = pm.worldGrid, rows = [];
+    for (let y = 56; y <= 112; y += gb.step) { let line = ''; for (let x = -64; x <= 80; x += gb.step) line += g[Math.floor((y - gb.minY) / gb.step)]?.[Math.floor((x - gb.minX) / gb.step)] === 0 ? '.' : '#'; rows.push(`${y} ${line}`); }
+    const box = b => [b.left, b.top, b.right, b.bottom].map(Math.round), npcs = [];
+    for (const room of Object.values(window.rooms || {})) for (const sp of room.npcSprites || []) { const c = sp.body?.center; if (c && Math.hypot(c.x, c.y - 80) < 96) npcs.push({ npc: sp.npcId, box: box(sp.body), held: !!sp.body.immovable }); }
+    const seated = (window.chairs || []).filter(c => c?.seatedBy).map(c => ({ by: c.seatedBy, chair: c.objectId, box: box(c.body), imm: !!c.body?.immovable }));
+    return { x0: -64, step: gb.step, rows, npcs, seated, player: [Math.round(window.player.x), Math.round(window.player.y)] };
+}).catch(e => ({ err: String(e) }));
 // The row 5 chat met Sanjay's social need, and the README says row 6 will not tick straight after
 // it: wait a few minutes, or read the rota when his S bar turns amber. Rather than wait, set his
 // social need just under its urgentAt (40) with the scenario's own needs command, as the Activity
@@ -267,10 +277,11 @@ report.marek = await page.evaluate(() => {
         chair: st?.chair?.objectId || null, facing: st?.facing || null, homeFacing: st?.homeFacing || null, direction: b?.direction || null,
         fetches: window.npcNeedsSystem.getLog().filter(e => e.npc === 'marek' && /^(fetch_start|fetch_end|seat_move_end|seat_gave_up)$/.test(e.ev)) };
 });
-await page.evaluate(() => { const sp = window.npcBehaviorManager?.getBehavior?.('marek')?.sprite; if (sp) { const cam = window.game.scene.scenes.find(s => s.cameras?.main)?.cameras.main; cam?.stopFollow?.(); cam?.centerOn?.(sp.x, sp.y); } });
+fs.writeFileSync(`${outDir}/tour-${gid}.json`, JSON.stringify(report, null, 1));
+await page.evaluate(() => { const sp = window.npcBehaviorManager?.getBehavior?.('marek')?.sprite, cam = window.player?.scene?.cameras?.main; if (sp && cam) { cam.stopFollow(); cam.centerOn(sp.x, sp.y); } }).catch(() => null);
 await t(500);
 await page.screenshot({ path: `${outDir}/marek-${gid}.png` });
-await page.evaluate(() => { const cam = window.game.scene.scenes.find(s => s.cameras?.main)?.cameras.main; if (window.player) cam?.startFollow?.(window.player); });
+await page.evaluate(() => { const cam = window.player?.scene?.cameras?.main; if (cam) cam.startFollow(window.player); }).catch(() => null);
 report.stuck = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(return_stuck|walk_stuck)$/.test(e.ev)).map(e => ({ t: e.t, npc: e.npc, ev: e.ev, x: e.x, y: e.y })));
 // Seating: every NPC's first time seated (needs clock, s) and the fetch and seat-move ends (the
 // needs log's t is in 250 ms ticks), for the sims tidy pass's Tom check
