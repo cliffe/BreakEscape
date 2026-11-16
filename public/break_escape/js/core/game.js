@@ -3014,8 +3014,8 @@ const pendingOverlapWalk = createPendingTapUse({
         const r = overlapRetry;
         if (!r.stand || r.used) return true;
         r.used = true;
-        if (feetWithin(r.stand, 1)) return true;
-        movePlayerToPoint(r.stand.x, r.stand.y, { avoidNpcs: true });
+        if (feetWithin(r.stand, 1.5)) return true;
+        movePlayerToPoint(r.stand.x, r.stand.y, { avoidNpcs: true, exact: true });
         return false;
     },
     alive: (hits) => Array.isArray(hits) && hits.some(stillThere),

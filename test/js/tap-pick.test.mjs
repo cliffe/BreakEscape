@@ -301,6 +301,15 @@ test('pending use: a menu or confirm opening on the way drops it (busy)', () => 
 });
 
 // ── game.js and player.js wiring ──
+test('overlap walk: the watcher retries once with an exact final leg; player.js honours opts.exact', () => {
+    const g = readFileSync(join(js, 'core/game.js'), 'utf8');
+    assert.match(g, /movePlayerToPoint\(r\.stand\.x, r\.stand\.y, \{ avoidNpcs: true, exact: true \}\)/);
+    assert.match(g, /if \(!r\.stand \|\| r\.used\) return true;/, 'one retry, then today\'s behaviour');
+    const p = readFileSync(join(js, 'core/player.js'), 'utf8');
+    assert.match(p, /playerExactArrival = !!opts\?\.exact;/);
+    assert.match(p, /const arriveAt = exactLeg \? EXACT_ARRIVAL : ARRIVAL_THRESHOLD;/);
+});
+
 test('game.js: pointerdown builds the far lists with farUnderTap and the pick list with tapPickList', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, seatsGiveWay \} from '\.\.\/systems\/tap-pick\.js'/);

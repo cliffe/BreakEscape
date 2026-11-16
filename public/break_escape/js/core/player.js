@@ -775,8 +775,15 @@ function drawPathDebug(fromX, fromY, smoothed, raw) {
     }
 }
 
+// opts.exact (the overlap menu's last short step, core/game.js): the final leg ends within
+// EXACT_ARRIVAL px of the point, not ARRIVAL_THRESHOLD, and its speed is capped so one physics
+// step cannot overshoot it. A leg that stops closing in (the body is blocked) ends as usual.
+const EXACT_ARRIVAL = 1.5;
+let playerExactArrival = false;
+
 export function movePlayerToPoint(x, y, opts = null) {
     window.seating?.onMoveIntent(); // a static chair: hop off first
+    playerExactArrival = !!opts?.exact;
     playerLosOpts = opts?.avoidNpcs ? { avoidNpcs: true } : null;
     const worldBounds = gameRef.physics.world.bounds;
 
@@ -1365,13 +1372,16 @@ function updatePlayerMouseMovement() {
     // pinned (doorway) waypoints must be reached within WAYPOINT_TIGHT, and any
     // other waypoint is left early only if the next one is clear from here.
     const WAYPOINT_TIGHT = 3;
-    let arrived = distanceSq < ARRIVAL_THRESHOLD * ARRIVAL_THRESHOLD;
+    const exactLeg = playerExactArrival && playerPathIndex >= playerPath.length;
+    const arriveAt = exactLeg ? EXACT_ARRIVAL : ARRIVAL_THRESHOLD;
+    let arrived = distanceSq < arriveAt * arriveAt;
     // Only hold out for the tight radius while still closing in. Once the
     // player stops getting closer (a big frame step overshooting it, or the
     // body touching something) move on as before, so it can never jitter
     // round a point or push at one it can't reach.
     const closing = waypointApproach.target !== targetPoint || distanceSq < waypointApproach.distSq;
     waypointApproach = { target: targetPoint, distSq: distanceSq };
+    if (exactLeg && !arrived && !closing && distanceSq < ARRIVAL_THRESHOLD * ARRIVAL_THRESHOLD) arrived = true;
     if (arrived && playerFollowingPath && playerPathIndex < playerPath.length
         && distanceSq >= WAYPOINT_TIGHT * WAYPOINT_TIGHT && closing && player.body.blocked.none) {
         const next = playerPath[playerPathIndex];
@@ -1417,8 +1427,13 @@ function updatePlayerMouseMovement() {
 
     // Normalize movement vector for consistent speed
     const distance = Math.sqrt(distanceSq);
-    const velocityX = (dx / distance) * MOVEMENT_SPEED;
-    const velocityY = (dy / distance) * MOVEMENT_SPEED;
+    let speed = MOVEMENT_SPEED;
+    if (exactLeg) {
+        const frameTime = gameRef.physics?.world?._frameTime || 1 / 60;
+        speed = Math.min(speed, distance / frameTime);   // land on the point, not past it
+    }
+    const velocityX = (dx / distance) * speed;
+    const velocityY = (dy / distance) * speed;
 
     // Set velocity directly without checking for changes
     player.body.setVelocity(velocityX, velocityY);
