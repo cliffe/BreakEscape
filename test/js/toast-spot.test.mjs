@@ -34,6 +34,7 @@ const FALLBACK = {
   '390x844 siem-dashboard': { rung: 3, side: 'lane', controls: 2 },
   '390x844 log-filter': { rung: 3, side: 'lane-side', width: 358, top: 112, controls: 1 },
   '800x600 backup-recovery': { rung: 3, side: 'lane-side', width: 768, top: 88, left: 16, controls: 1, titles: 0 },   // Batch 4: tiles fill the panel, see the test below
+  '2560x1440 lockpicking-hud1': { rung: 2, side: 'left', width: 480, left: 16, top: 952 },   // Batch 4: see the test below
   '360x740 dusting': { rung: 2, side: 'left', width: 240, top: 8, left: 16 }   // R3: the canvas is no control; the error alone is in the test below
 };
 
@@ -359,4 +360,28 @@ test('cryptex 800x600: the warning or the error alone has a clear place; only th
   const pair = errorSpot(c, { pair: true });
   assert.equal(pair.rung, 3);
   assert.deepEqual(hits(pair, c.xs), []);
+});
+
+// ------------------------------------------------------------------ Batch 4: lockpicking, HUD zoom 2
+
+test('lockpicking 2560x1440 at HUD zoom 2: the side gutters are narrower than the narrowest toast, so rung 2 takes a sliver of canvas edge, the least any 8 px place can', () => {
+  const c = get('2560x1440', 'lockpicking-hud1');
+  assert.equal(c.z, 2);
+  const cv = c.canvases[0];
+  assert.ok(cv.left < 480 + 16 + M && c.vw - cv.right < 480 + 16 + M, 'no side gutter holds a 480 px toast');
+  const s = errorSpot(c);
+  assert.equal(s.rung, 2);
+  assert.equal(s.covers.titles, 0);
+  assert.deepEqual(hits(s, c.xs), []);
+  // what it covers is the left 116 px of the canvas, none of it above the toast's top
+  assert.equal(s.covers.canvasPx, (s.left + s.width - cv.left) * (Math.min(s.top + s.height, cv.bottom) - Math.max(s.top, cv.top)));
+  // brute force: no place from the left gutter to the lane's right edge, at any top, covers fewer canvas pixels
+  let least = Infinity;
+  for (let left = 16; left + 480 <= c.lane.left + c.lane.width; left += 4) for (let top = 8; top + s.height <= c.vh - 8; top += 8) {
+    const p = { left, top, width: 480, height: s.height };
+    if (hits(p, c.xs).length) continue;
+    const px = Math.max(0, Math.min(left + 480, cv.right) - Math.max(left, cv.left)) * Math.max(0, Math.min(top + s.height, cv.bottom) - Math.max(top, cv.top));
+    least = Math.min(least, px);
+  }
+  assert.ok(s.covers.canvasPx <= least, `${s.covers.canvasPx} <= ${least}`);
 });
