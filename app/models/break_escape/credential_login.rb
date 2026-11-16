@@ -41,7 +41,7 @@ module BreakEscape
       end
 
       # 4. A route the kind allows, judged as POST /login judges a foothold
-      route_refusal = credential_route_refusal(kind, pc, route)
+      route_refusal = kind == 'token' ? token_route_refusal(entry, pc, route) : credential_route_refusal(kind, pc, route)
       return route_refusal if route_refusal
 
       # 5. The policy accepts the kind
@@ -66,12 +66,17 @@ module BreakEscape
         return { status: :unprocessable_entity, body: { success: false, ended: true } }
       end
 
+      # 8b. A session token that has run out (K5, section 10)
+      return { status: :unprocessable_entity, body: { success: false, expired: true } } if kind == 'token' && token_expired?(cred_id)
+
       # 9. Write the session (3.8); a replaced session prunes, and the answer names what ended
       relay = route[:relay] == true
       from = relay ? nil : route[:from]
       foothold = relay || from ? nil : route[:foothold]
       ended = start_login_session!(pc['id'], npc, 'credential', credential: cred_id, foothold: foothold, relay: relay,
                                                                 from: from)
+      # A game whose proof foothold predates K5 has no clock: its first sign-in starts it
+      stamp_token_clock!(cred_id) if kind == 'token'
       save!
       answer = login_session_answer(npc, 'credential', pc_id: pc['id'], foothold: foothold, relay: relay,
                                                        credential: cred_id, from: from)
@@ -80,7 +85,7 @@ module BreakEscape
         elsif from then { 'from' => from }
         else { 'foothold' => foothold }
         end
-      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
+      { status: :ok, body: with_token_expired_pc_ids(with_ended_pc_ids({ success: true }.merge(answer), ended)) }
     end
 
     # kind and label for a credential session's answer (3.8), from the registry; {} when the id is
@@ -89,7 +94,9 @@ module BreakEscape
       entry = CredentialModel.registry(scenario_data)[cred_id.to_s]
       return {} unless entry.is_a?(Hash)
 
-      { 'kind' => entry['kind'], 'label' => credential_label(entry) }
+      fields = { 'kind' => entry['kind'], 'label' => credential_label(entry) }
+      fields['expiresInS'] = token_expires_in_s(cred_id) if entry['kind'] == 'token'
+      fields
     end
 
     # --- Ending an invite (plan 7.1) ---------------------------------------------------------
@@ -216,6 +223,25 @@ module BreakEscape
       else
         return credential_login_refusal
       end
+      nil
+    end
+
+    # Step 4 for a token (K5, section 10): the one route is { foothold: <its proof foothold> }.
+    # Any other route (none, relay, from, another foothold, two fields) gets the generic refusal;
+    # then reach (403), power (not_responding) and remote: "blocked" (422), as a foothold.
+    def token_route_refusal(entry, pc, route)
+      given = %i[foothold from relay].select { |k| route.key?(k) && !route[k].nil? }
+      return credential_login_refusal unless given == [:foothold]
+
+      proof = CredentialModel.token_proof_foothold(entry)
+      return credential_login_refusal unless proof && route[:foothold].is_a?(String) && route[:foothold] == proof
+      return { status: :forbidden, body: { success: false, message: 'PC not reachable' } } unless host_reachable_through?(proof, pc)
+      return credential_not_responding if host_service_off?(pc)
+      if remote_blocked?(pc)
+        return { status: :unprocessable_entity,
+                 body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
+      end
+
       nil
     end
 
