@@ -43,6 +43,9 @@ copy('utils/author-html.js');
 copy('minigames/framework/base-minigame.js');
 copy('minigames/capture-log/capture-log-model.js');
 copy('minigames/capture-log/capture-rows.js');
+copy('minigames/capture-log/signin-rows.js');
+copy('utils/remote-host-text.js');
+copy('systems/keyring.js');
 copy('minigames/capture-log/capture-log-minigame.js');
 copy('systems/pc-sessions.js');
 put('api-client.js', 'export const ApiClient = { get: (...a) => window.__api.get(...a) };');
@@ -94,6 +97,8 @@ const rows = await import(url('minigames/capture-log/capture-rows.js'));
 const model = await import(url('minigames/capture-log/capture-log-model.js'));
 // The real PcSessions class (M2); the module also sets window.pcSessions, which reset() clears.
 const { PcSessions } = await import(url('systems/pc-sessions.js'));
+// The real keyring (no static imports); the device imports the same module copy dynamically.
+const { Keyring } = await import(url('systems/keyring.js'));
 const { addToInventory, removeFromInventory, initializeInventory, processInitialInventoryItems, trayStateOf, refreshInventoryTray } = inv;
 
 // A reader: any minigame the device's rows open (a text file, a desktop).
@@ -131,6 +136,9 @@ function reset({ globals = {}, social = { captures: { revealSecret: true } }, pl
     delete window.pcSessions;
     delete window.networkLinks;
     delete window.pendingContainerReturn;
+    // A fresh page keyring each test (getKeyring returns window.keyring when it is a Keyring)
+    window.keyring = new Keyring();
+    delete window.ApiClient;
     window.handleObjectInteraction = () => {};
     window.MinigameFramework = MF;
     initializeInventory();
@@ -168,7 +176,8 @@ test('the three sections from a fixture inventory and se_captures', async () => 
     assert.deepEqual(trayStateOf(held('records_remote_session')), { hidden: true, holderId: 'capture_log' });
     assert.ok(held('cable_capture').isConnected, 'a filed item keeps its element');
     await openDevice();
-    assert.deepEqual(keysIn('captures'), ['capture:network_drop', 'capture:hampshire'], 'oldest first');
+    assert.deepEqual(keysIn('signins'), ['capture:hampshire'], 'a credential capture is a sign-in');
+    assert.deepEqual(keysIn('captures'), ['capture:network_drop'], 'a foothold is a capture row');
     assert.deepEqual(keysIn('sessions'), ['item:records_remote_session']);
     assert.deepEqual(keysIn('findings'), ['item:cable_capture']);
     assert.match(device().root.textContent, /Remote session/);
@@ -184,7 +193,9 @@ test('the secret is masked until /capture_secrets answers, after the sync', asyn
     await add(HOLDER);
     await openDevice();
     await settle();
-    assert.deepEqual(order, ['sync', '/capture_secrets']);
+    // The keyring's own background ask awaits the sync too (K3d), so 'sync' may show twice
+    assert.equal(order[0], 'sync', 'the sync first');
+    assert.deepEqual(order.filter(p => p !== 'sync'), ['/capture_secrets'], 'one secrets request');
     assert.deepEqual(device().getTestState().captureLog.secrets, ['Recruit-2026']);
 });
 
@@ -487,4 +498,148 @@ test('m10: a link row clicked after a refused unlock does not leave the return l
     MF.currentMinigame.complete(true);
     await settle();
     assert.equal(device(), null, 'an ending minigame does not reopen the device through the stale listener');
+});
+
+// ---- K3d (credential keyring plan 8.7): Sign-ins and Captures from the keyring answer ----------
+
+const K3D_CAPTURES = {
+    lord_qr: { targetId: 'lord_qr', kind: 'credential', roleLabel: 'Facilities', address: 's.lord', host: 'LW-FAC-01', note: 'QR look-alike', at: 1 },
+    lord_keys: { targetId: 'lord_keys', kind: 'credential', roleLabel: 'Facilities', address: 's.lord', host: 'LW-FAC-01', note: 'Keylogger', at: 3 },
+    stationery_pin: { targetId: 'stationery_pin', kind: 'credential', roleLabel: 'Lobby card', host: 'Stationery cupboard keypad', at: 2 }
+};
+const K3D_ANSWER = {
+    rev: 'r1',
+    entries: [
+        { id: 'pw_lord', kind: 'password', source: 'registry', label: 'facilities_notes.txt', foundIn: 'facilities_notes', how: 'found',
+            account: { npcId: 'lord', displayName: 'Sam Lord', username: 's.lord' } },
+        { id: 'rdp_fin', kind: 'saved_connection', source: 'registry', label: 'FIN-02.rdp', heldItem: 'rdp_fin_item', how: 'given',
+            host: 'HB-FIN-02', account: { npcId: 'lena', displayName: 'Lena Fox', username: 'lfox' } },
+        { id: 'cap_lord_qr', kind: 'password', source: 'capture', account: { npcId: 'lord' } }
+    ],
+    captures: {
+        lord_qr: { tag: 'password', source: 'phished', account: 'lord' },
+        lord_keys: { tag: 'password', source: 'recorded', account: 'lord' },
+        stationery_pin: { tag: 'pin', source: 'recorded' }
+    }
+};
+
+/** The real Keyring (systems/keyring.js) over a stub GET /keyring. */
+function stubKeyring(answer) {
+    const calls = [];
+    const box = { answer };
+    window.ApiClient = { keyring: async (pcId, opts) => { calls.push({ pcId, rev: opts?.rev ?? null }); return structuredClone(box.answer); } };
+    return { calls, box };
+}
+const headings = () => [...device().root.querySelectorAll('.capture-log-heading')].map(n => n.textContent);
+const banner = (section) => device().root.querySelector(`[data-section="${section}"] .capture-log-banner`)?.textContent ?? null;
+const rowText = (key) => device().root.querySelector(`[data-key="${key}"]`)?.textContent ?? '';
+const tagsOf = (key) => [...device().root.querySelectorAll(`[data-key="${key}"] .signin-tag`)].map(n => n.textContent);
+
+test('K3d: the device asks GET /keyring on open (no credentials declared) and builds Sign-ins and Captures from it', async () => {
+    reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
+    const { calls } = stubKeyring(K3D_ANSWER);
+    api.get = async () => ({ secrets: { lord_qr: 'Facilities!7', stationery_pin: '4471' } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.equal(calls.length, 1, 'one background GET /keyring on open');
+    assert.equal(calls[0].pcId, null, 'the no-screen ask');
+    assert.deepEqual(headings(), ['Sign-ins', 'Captures']);
+    assert.match(banner('signins'), /^Sign-ins this engagement has captured or found\./);
+    assert.equal(banner('captures'), 'PINs, footholds and findings this engagement has recorded.');
+    // One row per account (two captures), one per connecting entry; the file waits until opened
+    assert.deepEqual(keysIn('signins'), ['account:lord', 'cred:rdp_fin']);
+    assert.deepEqual(keysIn('captures'), ['capture:stationery_pin'], 'a PIN is a capture row, never a sign-in');
+    assert.deepEqual(tagsOf('account:lord'), ['Captured password', 'Phished', 'Recorded']);
+    assert.deepEqual(tagsOf('cred:rdp_fin'), ['Saved connection', 'Given']);
+    assert.match(rowText('account:lord'), /Facilities!7/, 'the oldest capture with a served value');
+    assert.match(rowText('account:lord'), /QR look-alike.*Keylogger/, 'both notes, oldest first');
+    assert.match(rowText('cred:rdp_fin'), /Connect FIN-02\.rdp from your inventory\./);
+    assert.match(rowText('capture:stationery_pin'), /Stationery cupboard keypad: 4471/);
+    assert.deepEqual(tagsOf('capture:stationery_pin'), ['Captured PIN'], 'no source tag on a capture row');
+    const state = device().getTestState().captureLog;
+    assert.deepEqual(state.signins.map(r => r.key), ['account:lord', 'cred:rdp_fin']);
+    assert.deepEqual(state.captures.map(r => r.key), ['capture:stationery_pin']);
+
+    // The registry password's file is opened in this page: the account row gains its tag and line
+    window.keyring.noteOpened('facilities_notes');
+    device().redraw();
+    assert.deepEqual(tagsOf('account:lord'), ['Captured password', 'Password in a file', 'Phished', 'Recorded', 'Found']);
+    assert.match(rowText('account:lord'), /Also in facilities_notes\.txt\./);
+    assert.deepEqual(keysIn('signins'), ['account:lord', 'cred:rdp_fin'], 'still one row and one key for the account');
+});
+
+test('K3d: the Captures section is hidden when it has no row; without revealSecret the Sign-ins banner is the awareness line', async () => {
+    reset({ globals: { se_captures: { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) } }, social: { captures: { revealSecret: false } } });
+    stubKeyring({ rev: 'r2', entries: [], captures: { lord_qr: { tag: 'password', source: 'phished', account: 'lord' } } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.deepEqual(headings(), ['Sign-ins']);
+    assert.equal(device().root.querySelector('[data-section="captures"]'), null);
+    assert.equal(banner('signins'), rows.captureBannerText(false));
+    assert.doesNotMatch(device().root.textContent, /Facilities!7/);
+});
+
+test('K3d: before the first answer the rows come from the globals, keyed by capture; the account row then reads as seen', async () => {
+    reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
+    await add(HOLDER);
+    // No window.ApiClient: the keyring cannot answer, so the tags are guessed from the kind
+    assert.equal(badge(), '3', 'three capture rows before any answer');
+    await openDevice();
+    await settle(5);
+    assert.deepEqual(keysIn('signins'), ['capture:lord_qr', 'capture:stationery_pin', 'capture:lord_keys']);
+    const seenWrites = () => Object.keys(window.gameState.globalVariables).filter(k => k.startsWith('__capture_log_seen:')).sort();
+    assert.deepEqual(seenWrites(), ['__capture_log_seen:capture:lord_keys', '__capture_log_seen:capture:lord_qr',
+        '__capture_log_seen:capture:stationery_pin']);
+    closeDevice();
+
+    // The answer arrives: the two Lord captures are one account row, seen under their old keys
+    stubKeyring(K3D_ANSWER);
+    await window.keyring.fetch(null);
+    await settle();
+    assert.equal(badge(), '1', 'only the new saved connection is new');
+    await openDevice();
+    await settle(5);
+    assert.deepEqual(device().getTestState().captureLog.newMarks, ['cred:rdp_fin']);
+    assert.ok(!seenWrites().includes('__capture_log_seen:account:lord'), 'an account seen under an old key writes nothing');
+    assert.ok(seenWrites().includes('__capture_log_seen:cred:rdp_fin'));
+});
+
+test('K3d: keyring_changed re-badges the tray and redraws the open device; New marks stay while it is open', async () => {
+    reset({ globals: { se_captures: { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) } } });
+    const { box } = stubKeyring({ rev: 'r3', entries: [], captures: { lord_qr: { tag: 'password', source: 'phished', account: 'lord' } } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(5);
+    assert.deepEqual(keysIn('signins'), ['account:lord']);
+    assert.deepEqual(device().getTestState().captureLog.newMarks, ['account:lord']);
+    const emitted = () => window.eventDispatcher.log.filter(e => e === 'keyring_changed').length;
+    const before = emitted();
+    box.answer = { ...K3D_ANSWER, rev: 'r4', entries: [K3D_ANSWER.entries[1]] };
+    await window.keyring.fetch(null);
+    await settle();
+    assert.equal(emitted() - before, 1, 'a new rev emits keyring_changed');
+    assert.deepEqual(keysIn('signins'), ['account:lord', 'cred:rdp_fin'], 'the open device redrew in place');
+    assert.deepEqual(device().getTestState().captureLog.newMarks.sort(), ['account:lord', 'cred:rdp_fin'],
+        'the first row keeps its New mark through the redraw');
+    closeDevice();
+    box.answer = { ...K3D_ANSWER, rev: 'r5', entries: K3D_ANSWER.entries.slice(1) };
+    window.eventDispatcher.log.length = 0;
+    await window.keyring.fetch(null);
+    assert.equal(badge(), null, 'nothing new to count: the device saw both');
+    box.answer = { rev: 'r6', entries: [...K3D_ANSWER.entries, { id: 'rdp_two', kind: 'saved_connection', label: 'TWO.rdp', heldItem: 'x', how: 'found' }],
+        captures: K3D_ANSWER.captures };
+    await window.keyring.fetch(null);
+    assert.equal(badge(), '1', 'a closed device re-badges on keyring_changed');
+});
+
+test('K3d: a new capture with a capture log held asks GET /keyring again', async () => {
+    reset({ globals: { se_captures: {} } });
+    const { calls } = stubKeyring({ rev: 'r7', entries: [], captures: {} });
+    await add(HOLDER);
+    window.gameState.globalVariables.se_captures = { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) };
+    window.eventDispatcher.emit('global_variable_changed:se_captures', {});
+    await settle(5);
+    assert.equal(calls.length, 1);
 });

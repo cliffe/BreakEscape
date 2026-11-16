@@ -21,3 +21,20 @@
 .lpb-captures-row.capture-log-new .capture-log-new-mark { margin-left: 0; }
 .capture-log .lpb-captures-host, .capture-log .lpb-captures-note { font-size: 18px; }
 .capture-log-empty { margin: 0; padding: 16px 12px; border: 2px dashed var(--ui-line, #4c5b80); }
+/* K3d (credential keyring plan 8.7): Sign-ins and Captures rows. Kind tags filled, source tags
+   in a 2px outline; pixel fonts inherited from the console window, square corners. */
+.signin-row { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; min-width: 0;
+    background: var(--ui-surface, #1c2438); border: 2px solid var(--ui-line, #4c5b80); overflow-wrap: anywhere; }
+.signin-row.capture-log-new { padding-right: 56px; }
+.signin-row .capture-log-new-mark { position: absolute; top: 6px; right: 6px; margin-left: 0; }
+.signin-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.signin-tag { display: inline-block; padding: 0 6px; font-size: 16px; line-height: 22px; white-space: nowrap;
+    border: 2px solid var(--ui-accent, #8fb3ff); border-radius: 0; }
+.signin-tag-kind { background: var(--ui-accent, #8fb3ff); color: #10141f; }
+.signin-tag-source { background: transparent; color: var(--ui-accent, #8fb3ff); }
+.signin-title { font-size: 20px; }
+.signin-subtitle, .signin-line { font-size: 18px; opacity: 0.85; }
+.signin-use { font-size: 18px; }
+.signin-secret { font-size: 20px; letter-spacing: 1px; }
+.signin-row-greyed { opacity: 0.55; border-style: dashed; }
+.signin-row-greyed .signin-tag-kind { background: transparent; color: var(--ui-text, #eef1f8); border-color: var(--ui-line, #4c5b80); }

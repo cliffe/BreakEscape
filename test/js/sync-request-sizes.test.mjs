@@ -283,10 +283,12 @@ test('a single foothold capture (lab_physical_pentest, store_controller) is unde
 
 const logDir = mkdtempSync(join(tmpdir(), 'sync-sizes-log-'));
 {
-  const capturesUrl = pathToFileURL(join(js, 'systems/captures.js')).href;
+  // The model's imports point at the real files (signin-rows.js, since K3d, and through it
+  // captures.js and remote-host-text.js, by their own relative paths)
+  const signInRowsUrl = pathToFileURL(join(js, 'minigames/capture-log/signin-rows.js')).href;
   writeFileSync(join(logDir, 'capture-log-model.mjs'),
     readFileSync(join(js, 'minigames/capture-log/capture-log-model.js'), 'utf8')
-      .replace("'../../systems/captures.js'", `'${capturesUrl}'`));
+      .replace("'./signin-rows.js'", `'${signInRowsUrl}'`));
 }
 const { SEEN_PREFIX, buildSections, rowKeys, readSeen, newKeys } = await import(pathToFileURL(join(logDir, 'capture-log-model.mjs')).href);
 

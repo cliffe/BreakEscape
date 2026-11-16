@@ -313,6 +313,107 @@ async function measure(page, fx) {
     }, fx);
 }
 
+// ---- K3d (credential keyring plan 8.7): the capture log's Sign-ins list ----------------------
+// The capture log's console window at the four fit sizes, with a 32-character label, a row with
+// four tags (two kind, two source), a three-tag row, a greyed row, a New mark, and the Captures
+// section. The rows come from the real buildSignInRows and buildSignInRow (signin-rows.js) and
+// the real capture-log CSS; the device is opened with no holder (so it reads and writes no
+// game globals: nothing reaches the throwaway game's record) and the fixture sections are drawn
+// into its root with the device's own section markup. Checks: the console window inside the
+// viewport, no row or tag wider than its row, no sideways scroll in the list, and both banners
+// within two lines at 390x844.
+const K3D_SIZES = [[1400, 1000], [390, 844], [915, 412], [800, 600]];
+const LABEL_32 = 'FINANCE-REMOTE-DESKTOP-OPS-3.rdp';   // 32 characters, the longest label case
+
+async function measureCaptureLog(page, size) {
+    return page.evaluate(async ({ label, size }) => {
+        const out = { ok: true, notes: [] };
+        try {
+            const MF = window.MinigameFramework;
+            while (MF.currentMinigame) MF.endMinigame(false, null);
+            const sr = await import('/break_escape/js/minigames/capture-log/signin-rows.js');
+            const txt = await import('/break_escape/js/utils/remote-host-text.js');
+            const acct = (npcId, displayName, username) => ({ npcId, displayName, username });
+            const captures = {
+                lord_qr: { targetId: 'lord_qr', kind: 'credential', roleLabel: 'Facilities manager', address: 's.lord@harbour-logistics.example', host: 'HB-FAC-01', note: 'QR look-alike page left in the lobby', at: 1 },
+                harp_qr: { targetId: 'harp_qr', kind: 'credential', roleLabel: 'Recruitment', address: 'i.harper', host: 'HB-RECEP-01', note: 'Phished from the careers page', at: 2 },
+                harp_keys: { targetId: 'harp_keys', kind: 'credential', roleLabel: 'Recruitment', address: 'i.harper', host: 'HB-RECEP-01', note: 'Keylogger on the reception PC', at: 3 },
+                harp_box: { targetId: 'harp_box', kind: 'credential', roleLabel: 'Recruitment', address: 'i.harper', host: 'HB-RECEP-01', note: 'Drop box on the comms port', at: 4 },
+                pin: { targetId: 'pin', kind: 'credential', roleLabel: 'Lobby card', host: 'Stationery cupboard keypad', at: 5 },
+                fh: { targetId: 'fh', kind: 'foothold', roleLabel: 'Operations', host: 'HB-OPS-02', note: 'Payload ran from the USB lure', at: 6 },
+                post: { targetId: 'post', kind: 'foothold', roleLabel: 'Post room', host: 'Post room door', note: 'Wedged open with a folded card', at: 7 }
+            };
+            const keyring = {
+                entries: [
+                    { id: 'pw_lord', kind: 'password', source: 'registry', label, foundIn: 'f1', how: 'found', account: acct('lord', 'Samantha Lord-Whitfield', 's.lord') },
+                    { id: 'rdp', kind: 'saved_connection', source: 'registry', label, heldItem: 'rdp_item', how: 'given', host: 'HB-FIN-03', account: acct('okafor', 'Sam Okafor', 'sokafor') },
+                    { id: 'assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist from Lena', how: 'given', ended: true, account: acct('lena', 'Lena Fox', 'lfox') }
+                ],
+                captures: {
+                    lord_qr: { tag: 'password', source: 'phished', account: 'lord' },
+                    harp_qr: { tag: 'password', source: 'phished', account: 'harper' },
+                    harp_keys: { tag: 'password', source: 'recorded', account: 'harper' },
+                    harp_box: { tag: 'password', source: 'recorded', account: 'harper' },
+                    pin: { tag: 'pin', source: 'recorded' }, fh: { tag: 'foothold', source: 'recorded' }, post: { tag: 'finding', source: 'recorded' }
+                },
+                firstSeen: new Map([['pw_lord', 0], ['rdp', 10], ['assist', 11]]),
+                foundVisible: () => true
+            };
+            const sections = sr.buildSignInRows({ captures, keyring, secrets: { lord_qr: 'Facilities!2026', harp_qr: 'Recruit-2026', pin: '4471' },
+                social: { captures: { revealSecret: true } } });
+            const four = sections.signins.find(r => r.key === 'account:lord');
+            if (!four || (four.kinds.length + four.sources.length) !== 4) { out.ok = false; out.notes.push('fixture: no four-tag row'); }
+            MF.startMinigame('capture-log', null, { title: 'Capture log', holderId: '__signin_fit_none__' });
+            const scene = MF.currentMinigame;
+            const root = scene.root;
+            root.textContent = '';
+            const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+            const section = (id, title, banner, rows) => {
+                const s = el('section', `capture-log-section capture-log-${id}`);
+                s.dataset.section = id;
+                s.appendChild(el('h4', 'capture-log-heading', title));
+                s.appendChild(el('p', 'lpb-captures-banner capture-log-banner', banner));
+                const list = el('ul', 'capture-log-list');
+                rows.forEach((r, i) => {
+                    const { row } = sr.buildSignInRow(r);
+                    row.dataset.key = r.key;
+                    if (i === 0) { row.classList.add('capture-log-new'); row.appendChild(el('span', 'capture-log-new-mark', 'New')); }
+                    list.appendChild(row);
+                });
+                s.appendChild(list);
+                root.appendChild(s);
+            };
+            section('signins', txt.SIGNINS_HEADING, txt.SIGNINS_BANNER_TEXT, sections.signins);
+            section('captures', txt.CAPTURES_HEADING, txt.CAPTURES_ROWS_BANNER_TEXT, sections.captures);
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            const vw = window.innerWidth, vh = window.innerHeight;
+            const win = scene.consoleWindowEl || scene.container;
+            const wr = win.getBoundingClientRect();
+            if (wr.left < -1 || wr.top < -1 || wr.right > vw + 1 || wr.bottom > vh + 1) {
+                out.ok = false; out.notes.push(`console window outside the viewport (${Math.round(wr.left)},${Math.round(wr.top)} to ${Math.round(wr.right)},${Math.round(wr.bottom)})`);
+            }
+            if (root.scrollWidth > root.clientWidth + 1) { out.ok = false; out.notes.push(`list scrolls sideways by ${root.scrollWidth - root.clientWidth}px`); }
+            for (const row of root.querySelectorAll('.signin-row')) {
+                const rr = row.getBoundingClientRect();
+                if (row.scrollWidth > row.clientWidth + 1) { out.ok = false; out.notes.push(`${row.dataset.key} overflows by ${row.scrollWidth - row.clientWidth}px`); }
+                for (const t of row.querySelectorAll('.signin-tag, .capture-log-new-mark')) {
+                    const tr = t.getBoundingClientRect();
+                    if (tr.left < rr.left - 1 || tr.right > rr.right + 1) { out.ok = false; out.notes.push(`${row.dataset.key}: "${t.textContent}" outside its row`); }
+                }
+            }
+            out.banners = [...root.querySelectorAll('.capture-log-banner')].map(b => {
+                const lh = parseFloat(getComputedStyle(b).lineHeight) || (parseFloat(getComputedStyle(b).fontSize) * 1.2);
+                return Math.round(b.getBoundingClientRect().height / lh);
+            });
+            if (size[0] === 390 && out.banners.some(n => n > 2)) { out.ok = false; out.notes.push(`a banner takes ${Math.max(...out.banners)} lines at 390x844`); }
+            out.window = `${Math.round(wr.width)}x${Math.round(wr.height)}`;
+            out.scrolls = root.scrollHeight > root.clientHeight + 1;
+            out.tags = four ? [...root.querySelectorAll('[data-key="account:lord"] .signin-tag')].map(t => t.textContent) : [];
+        } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
+        return out;
+    }, { label: LABEL_32, size });
+}
+
 (async () => {
     const id = Number(process.argv[2]) || newGame();
     const browser = await chromium.launch({ ...(CHROME ? { executablePath: CHROME } : {}), headless: true, args: ['--no-sandbox'] });
@@ -332,7 +433,7 @@ async function measure(page, fx) {
     }
     let failed = 0;
     const rows = [];
-    for (const fx of FIXTURES) {
+    for (const fx of (process.env.K3D_ONLY ? [] : FIXTURES)) {
         for (const [w, h] of SIZES) {
             await page.setViewportSize({ width: w, height: h });
             await sleep(80);
@@ -358,6 +459,23 @@ async function measure(page, fx) {
                 } catch {}
             }
         }
+    }
+    // K3d: the capture log's Sign-ins list (run alone with K3D_ONLY=1)
+    for (const [w, h] of K3D_SIZES) {
+        await page.setViewportSize({ width: w, height: h });
+        await sleep(80);
+        const m = await measureCaptureLog(page, [w, h]);
+        const tag = `capture-log-signins @ ${w}x${h}`;
+        if (!m.ok) failed++;
+        rows.push({ tag, verdict: m.ok ? 'PASS' : 'FAIL', notes: m.notes });
+        console.log(`${m.ok ? 'PASS' : 'FAIL'}  ${tag.padEnd(34)} window=${m.window}  banners=${(m.banners || []).join('/')} lines  ${m.scrolls ? 'list scrolls' : 'fits'}${m.notes?.length ? '  ' + m.notes.join('; ') : ''}`);
+        if (SHOTS) {
+            try {
+                const el = await page.$('.minigame-container .console-window') || await page.$('.minigame-container');
+                if (el) await el.screenshot({ path: `${SHOTS}/capture-log-signins-${w}x${h}.png` });
+            } catch {}
+        }
+        await page.evaluate(() => { const MF = window.MinigameFramework; while (MF?.currentMinigame) MF.endMinigame(false, null); });
     }
     console.log(`\n${failed === 0 ? 'ALL PASS' : failed + ' FAILURE(S)'} over ${rows.length} checks (game ${id})`);
     await browser.close();
