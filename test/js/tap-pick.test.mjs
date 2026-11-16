@@ -491,6 +491,74 @@ test('isPlayerAvoidedCell: the berth the player\'s search keeps round a movable 
     } finally { window.rooms = saved; }
 });
 
+test('isPlayerAvoidedCell: the player\'s own cell is exempt, as the search skips its start cell (R4 n1)', async () => {
+    globalThis.window = globalThis.window || {};
+    const { NPCPathfindingManager } = await import('../../public/break_escape/js/systems/npc-pathfinding.js');
+    const pm = new NPCPathfindingManager({ time: { delayedCall() {} } });
+    pm.worldGridBounds = { minX: 0, minY: 0, cols: 40, rows: 40, step: 8 };
+    const saved = window.rooms;
+    window.rooms = { r: { npcSprites: [{ body: { enable: true, immovable: false, left: 48, top: 120, right: 58, bottom: 133 } }] } };
+    try {
+        assert.equal(pm.isPlayerAvoidedCell(44, 140), true);
+        assert.equal(pm.isPlayerAvoidedCell(44, 140, 41, 143), false, 'same cell as the feet: never avoided');
+        assert.equal(pm.isPlayerAvoidedCell(44, 140, 41, 151), true, 'the feet are in another cell');
+    } finally { window.rooms = saved; }
+});
+
+test('isPlayerAvoidedCell and _avoidNPCPositions agree on every cell, for several NPCs and edges (R4 m2)', async () => {
+    globalThis.window = globalThis.window || {};
+    const { NPCPathfindingManager } = await import('../../public/break_escape/js/systems/npc-pathfinding.js');
+    const pm = new NPCPathfindingManager({ time: { delayedCall() {} } });
+    const cols = 30, rows = 30;
+    pm.worldGridBounds = { minX: 16, minY: 8, cols, rows, step: 8 };
+    pm.worldGrid = Array.from({ length: rows }, () => Array(cols).fill(0));
+    const avoided = new Set();
+    pm.worldPathfinder = { avoidAdditionalPoint: (cx, cy) => avoided.add(`${cx},${cy}`) };
+    const b = (l, t, r, bo, immovable = false, enable = true) => ({ sprite: { body: { enable, immovable, left: l, top: t, right: r, bottom: bo } } }).sprite;
+    const saved = window.rooms;
+    window.rooms = {
+        a: { npcSprites: [b(100, 100, 110, 113), b(17, 9, 27, 22), b(220, 230, 239, 247)] },   // mid, top-left corner, bottom-right corner
+        c: { npcSprites: [b(130, 60, 136, 70), b(60, 150, 70, 160, true), b(70, 170, 80, 180, false, false)] }  // + immovable, disabled (not avoided)
+    };
+    try {
+        pm._avoidNPCPositions(-1, -1);
+        assert.ok(avoided.size > 40, 'some cells avoided');
+        for (let cy = 0; cy < rows; cy++) for (let cx = 0; cx < cols; cx++) {
+            // a point inside the cell, off its edges
+            const x = 16 + cx * 8 + 3, y = 8 + cy * 8 + 5;
+            assert.equal(pm.isPlayerAvoidedCell(x, y), avoided.has(`${cx},${cy}`), `cell ${cx},${cy}`);
+        }
+        // The berth edges: first and last avoided row and column, and one past each, for the mid NPC
+        // (body x 100..110 -> cells 10..11 (minX 16), y 100..113 -> cells 11..13)
+        const at = (cx, cy) => pm.isPlayerAvoidedCell(16 + cx * 8 + 3, 8 + cy * 8 + 3);
+        assert.equal(at(8, 12), true, 'left edge'); assert.equal(at(7, 12), false);
+        assert.equal(at(13, 12), true, 'right edge'); assert.equal(at(14, 12), false);
+        assert.equal(at(10, 10), true, 'top edge (one above the body)'); assert.equal(at(10, 9), false);
+        assert.equal(at(10, 14), true, 'bottom edge'); assert.equal(at(10, 15), false);
+    } finally { window.rooms = saved; }
+});
+
+test('overlapStandPoint: a hit\'s reach span joins its centre; the box is not cut to a span that sits to one side (R3/R4 m2)', () => {
+    const player = { x: 0, y: 0 };
+    const reach = 32;                                       // = range: lattice margin 0 reaches exactly this far
+    const inReachFrom = (p, h, margin = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= reach - margin;
+    const a = { id: 'a', x: 100, y: 0 };
+    // The only walkable cell is on the far side of the centre from the span, exactly `reach` away
+    const cases = [
+        ['left of the span', { left: 106, right: 110, top: 0, bottom: 0 }, (x, y) => x <= 68 && y === 0],
+        ['right of the span', { left: 92, right: 94, top: 0, bottom: 0 }, (x, y) => x >= 132 && y === 0],
+        ['above the span', { left: 100, right: 100, top: 6, bottom: 10 }, (x, y) => y <= -32 && x === 100],
+        ['below the span', { left: 100, right: 100, top: -12, bottom: -6 }, (x, y) => y >= 32 && x === 100]
+    ];
+    for (const [name, span, walkable] of cases) {
+        const deps = { range: reach, inReachFrom, reachSpan: () => span,
+            findCell: (x, y) => (walkable(x, y) ? { x, y } : null),
+            occupied: (q) => !walkable(q.x, q.y) };   // named points elsewhere are refused too
+        const p = overlapStandPoint([a], { x: 100, y: 0 }, player, deps);
+        assert.ok(p && walkable(p.x, p.y), `${name}: ${JSON.stringify(p)}`);
+    }
+});
+
 test('player.js and game.js: a far tap\'s walk passes { avoidNpcs } to every player line-of-sight test (R3 m1)', () => {
     const player = readFileSync(join(js, 'core/player.js'), 'utf8');
     assert.match(player, /export function movePlayerToPoint\(x, y, opts = null\)/);

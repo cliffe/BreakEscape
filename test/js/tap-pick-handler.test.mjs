@@ -716,8 +716,8 @@ test('overlap 22g (live c10): the retry is not spent before the path is found; a
     // from the start point and the real stop had none left)
     const player = { x: 200, y: 200 };
     const w = world({ player, objects: [copierAt(), printoutAt()] });
+    const t0 = Date.now();                         // before the tap: the arm time is never earlier, whatever the host load
     w.tap(118, 108);
-    const t0 = Date.now();
     w.state.moving = false;
     w.pendingOverlapWalk.update(t0 + 50);
     assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 1, 'no retry at the click: ' + w.log.join());
@@ -726,9 +726,25 @@ test('overlap 22g (live c10): the retry is not spent before the path is found; a
     // (EasyStar finds no path to it, and the walk went to some other cell): no joint stand, so the old
     // single far click on the topmost hit
     const w2 = world({ player: { x: 200, y: 200 }, objects: [copierAt(), printoutAt()] });
-    w2.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }), isPlayerAvoidedCell: () => true };
+    w2.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }), hasPlayerLineOfSight: () => false, isPlayerAvoidedCell: () => true };
     w2.tap(118, 108);
     assert.equal(w2.win.__overlapStand?.joint, false, JSON.stringify(w2.win.__overlapStand));
+    // 3. (R4 m1) The same berth, but the straight line from the feet is clear: player.js walks the line
+    // and never runs the search that avoids the berth, so the stand points stay usable. The berth test
+    // is not even asked, and the feet are passed so the search's start-cell exemption can apply (n1)
+    const w3 = world({ player: { x: 200, y: 200 }, objects: [copierAt(), printoutAt()] });
+    const asked = [];
+    w3.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }), hasPlayerLineOfSight: () => true,
+        isPlayerAvoidedCell: (...a) => { asked.push(a); return true; } };
+    w3.tap(118, 108);
+    assert.equal(w3.win.__overlapStand?.joint, true, JSON.stringify(w3.win.__overlapStand));
+    assert.equal(asked.length, 0, 'berth not consulted when the line is clear');
+    const w4 = world({ player: { x: 200, y: 200 }, objects: [copierAt(), printoutAt()] });
+    const asked4 = [];
+    w4.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }), hasPlayerLineOfSight: () => false,
+        isPlayerAvoidedCell: (...a) => { asked4.push(a); return false; } };
+    w4.tap(118, 108);
+    assert.ok(asked4.length > 0 && asked4.every(a => a.length === 4 && Number.isFinite(a[2]) && Number.isFinite(a[3])), 'feet passed: ' + JSON.stringify(asked4[0]));
 });
 
 test('overlap 22f (R2 n1): the live-proof hooks are cleared at the start of each click', () => {

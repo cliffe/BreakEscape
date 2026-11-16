@@ -3244,8 +3244,13 @@ function lineClearFromFeet(p) {
 // The player's body at feet point p would overlap an NPC's body (the walk could not end there)
 function standsInsideNpc(p) {
     const player = window.player;
-    // The player's search avoids a berth round a movable NPC: a stand point in it has no path (live c10)
-    if (p && window.pathfindingManager?.isPlayerAvoidedCell?.(p.x, p.y)) return true;
+    // The player's search avoids a berth round a movable NPC: a stand point in it has no path (live c10).
+    // Only when the walk needs that search: player.js tries the straight line first (and the search
+    // never avoids the player's own cell), so a cell beside her with a clear line is still reachable.
+    if (p && !lineClearFromFeet(p)) {
+        const f = player ? playerFeet(player) : null;
+        if (window.pathfindingManager?.isPlayerAvoidedCell?.(p.x, p.y, f?.x, f?.y)) return true;
+    }
     const rects = window.pathfindingManager?.getNpcBodyRects?.();
     const b = player?.body;
     if (!rects?.length || !b || !p) return false;
