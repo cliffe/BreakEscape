@@ -673,9 +673,13 @@ export function applyPickupAction(sprite) {
  * workstation and the lab workstation keep their own toasts in interactions.js.
  */
 const OWN_PICKUP_TOAST_TYPES = new Set(['lockpick', 'lockpickset']);
+const OPEN_FROM_INVENTORY_TEXT = (name) => `${name} added to inventory. Open it from your inventory to use it.`;
 const PICKUP_TOAST_TEXT = {
-    workstation: (name) => `${name} added to inventory. You can now use it for cryptographic analysis.`,
-    'lab-workstation': (name) => `${name} added to inventory. You can now use it to access lab sheets.`
+    workstation: OPEN_FROM_INVENTORY_TEXT,
+    'lab-workstation': OPEN_FROM_INVENTORY_TEXT,
+    'vm-launcher': OPEN_FROM_INVENTORY_TEXT,
+    vm_launcher: OPEN_FROM_INVENTORY_TEXT,
+    'launch-device': OPEN_FROM_INVENTORY_TEXT
 };
 export function pickupToast(data) {
     if (!data || typeof data !== 'object') return null;

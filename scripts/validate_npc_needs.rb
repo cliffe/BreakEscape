@@ -934,6 +934,11 @@ module ValidateNpcNeeds
             issues << "⚠️ WARNING: #{where}: knot '#{e['knot']}' line #{t.inspect} is spoken by '#{speaker['id']}', not by the pair; the engine will not play it."
           end
           issues << "❌ ERROR: #{where}: knot '#{e['knot']}' line #{t.inspect} has a { } variable; spoken lines must not print variables." if t.match?(/[{}]/)
+          # Exchange lines draw as world bubbles, so they share the pool-line limit (spoken text, without "Name:")
+          spoken = m ? m[2] : t
+          if spoken.length > CHAT_LINE_MAX
+            issues << "❌ ERROR: #{where}: knot '#{e['knot']}' line #{t.inspect} is #{spoken.length} characters; a bubble holds at most #{CHAT_LINE_MAX}."
+          end
         end
       end
     end

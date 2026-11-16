@@ -20,7 +20,7 @@ function resetWindow(extra = {}) {
     shown = null;
     globalThis.window = {
         inventory: { items: [] },
-        showInteractionMenu: (actions, x, y, title) => { shown = { actions, title }; },
+        showInteractionMenu: (actions, x, y, title, opts) => { shown = { actions, title, opts }; },
         isInteractionMenuOpen: () => false,
         startRFIDMinigame: (...args) => { globalThis.window._rfid = args; },
         handleObjectInteraction: (sprite) => { globalThis.window._handled = sprite; },
@@ -108,6 +108,13 @@ test('maybeShowObjectActionMenu shows the menu for 2+ actions and returns true',
     assert.equal(r, true);
     assert.equal(shown.actions.length, 2);
     assert.equal(shown.title, 'Choose an action…');
+    assert.deepEqual(shown.opts, { holdKeys: true }, 'holds the game keys when no fight is on');
+});
+
+test('maybeShowObjectActionMenu does not hold the keys while a fight is on', () => {
+    resetWindow({ inventory: { items: [cloner] }, roomHasActiveHostile: () => true });
+    assert.equal(maybeShowObjectActionMenu(worldKeycard()), true);
+    assert.deepEqual(shown.opts, { holdKeys: false });
 });
 
 test('maybeShowObjectActionMenu returns false with fewer than 2 actions', () => {

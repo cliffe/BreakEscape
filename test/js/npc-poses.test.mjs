@@ -4,7 +4,7 @@
 // Run with: node test/js/npc-poses.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wantedPose, isMachine, npcAllows, poseBlocked, poseAnimKey, NpcPoses, USE_LEAD_MS, SETTLE_MS,
+import { wantedPose, isMachine, npcAllows, poseBlocked, poseAnimKey, NpcPoses, USE_LEAD_MS, SETTLE_MS, POSE_RECHECK_MS,
     facesWithin, facesObject, directionTo }
     from '../../public/break_escape/js/systems/npc-poses.js';
 
@@ -342,4 +342,45 @@ test('pass: officeVisuals false, hostility, KO, chat, leaving states and a destr
     r.b.sprite.destroyed = true;
     r.poses.update();
     assert.equal(r.poses.active.size, 0);
+});
+
+test('an atlas without pose frames: checked once, no per-frame pose work, looked at again later and on a new texture', () => {
+    const { poses, b, scene, lookups } = rig({ poseKeys: [] });
+    b.sprite.texture = { key: 'ana_v1' };
+    let gets = 0;
+    const get = scene.anims.get;
+    scene.anims.get = (k) => { gets++; return get(k); };
+    poses.update();
+    const first = gets;
+    assert.ok(first > 0, 'the first frame checks the atlas');
+    for (let i = 0; i < 5; i++) poses.update();
+    assert.equal(gets, first, 'no pose lookups while the no is fresh');
+    assert.equal(lookups(), 0, 'no object lookup for an NPC that cannot pose');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down');
+    // A new texture is checked at once
+    b.sprite.texture = { key: 'ana_v2' };
+    poses.update();
+    assert.ok(gets > first, 'a sprite swap checks the new atlas');
+    // Frames made later are found after the recheck time
+    const useKey = poseAnimKey('ana', 'use', 'down');
+    scene.anims.get = (k) => (k === useKey || get(k) ? { frames: [{}] } : null);
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down', 'still the cached no');
+    scene.time.now = POSE_RECHECK_MS + 1;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, useKey);
+});
+
+test('frames that appear mid-use keep the use clock: the lead is not restarted', () => {
+    const { poses, b, sys, scene } = rig({ poseKeys: [] });
+    b.sprite.texture = { key: 'ana_v1' };
+    poses.update();
+    sys.clockMs = USE_LEAD_MS + 10;   // the use has run past its lead with no frames
+    poses.update();
+    const drinkKey = poseAnimKey('ana', 'drink', 'down');
+    const get = scene.anims.get;
+    scene.anims.get = (k) => (k === drinkKey || k === poseAnimKey('ana', 'use', 'down') || get(k) ? { frames: [{}] } : null);
+    scene.time.now = POSE_RECHECK_MS + 1;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, drinkKey, 'straight to the drink, not a fresh use lead');
 });

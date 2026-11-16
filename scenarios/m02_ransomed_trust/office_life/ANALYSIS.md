@@ -83,7 +83,7 @@ Item types an existing lock, check or mapping reads: `key`, `keycard`, `id_badge
 
 ## Recommended tier
 
-**Tier 3, kept small.** Two new ambient NPCs (Ernie Bautista and Hodan Warsame, approved) in the existing staff room, posted and leashed there, with shared breaks at the boiler and the cooler, their own chatter pools and three exchanges; Gary kept still, with a mug at his post and a command print at the IT copier; presets and room tone. No new room, no lever and no physical-pentest opening: every m02 NPC carries a beat or is fixed by its text, so talk needs a new pair; every screen is encrypted or a puzzle lock, so screen habits would bypass a lock; and nothing the pair could guard is locked, so a magnet opens nothing. The staff room has four doors and the walkthrough crosses it more than any other room, so the pair are where the player is.
+**Tier 3, kept small.** Two new ambient NPCs (Ernesto Bautista and Hodan Warsame, approved) in the existing staff room, posted and leashed there, with shared breaks at the boiler and the cooler, their own chatter pools and three exchanges; Gary kept still, with a mug at his post and a command print at the IT copier; presets and room tone. No new room, no lever and no physical-pentest opening: every m02 NPC carries a beat or is fixed by its text, so talk needs a new pair; every screen is encrypted or a puzzle lock, so screen habits would bypass a lock; and nothing the pair could guard is locked, so a magnet opens nothing. The staff room has four doors and the walkthrough crosses it more than any other room, so the pair are where the player is.
 
 ## Differences from plan section 6
 

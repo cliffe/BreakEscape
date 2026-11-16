@@ -271,11 +271,48 @@
           "social": { "type": "string", "enum": ["allowed", "blocked"] },
           "remote": { "type": "string", "enum": ["allowed", "blocked"], "description": "Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md 3.4): whether a sign-in PC under this policy takes a remote sign-in through a foothold. Absent means allowed; a blocked PC is still listed in the network view, marked remote sign-in off." },
           "remoteScreen": { "type": "string", "enum": ["tiles", "typed"], "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K0): the remote sign-in screen over a foothold. tiles (the default, D1 (a)) shows the PC's own account tiles by its loginPicker; typed shows none of the PC's accounts until a password is right, as Network Level Authentication does. Never affects the keyboard screen; a headless host shows no PC tiles under either value." },
+          "accepts": { "type": "array", "items": { "type": "string" }, "uniqueItems": true, "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1, 3.2): the credential kinds this PC takes. Absent means CredentialModel::DEFAULT_ACCEPTS (password, saved_connection, assist_invite; token joins in K5). password is always accepted; a list without it draws a validator warning. Cross-references are enforced only by check_credentials." },
           "_comment": { "type": "string" }
         }
       }
     },
     "defaultPolicy": { "type": "string", "x-ref": "policy", "description": "Access model: the policy a PC with no policy of its own uses." },
+    "credentials": {
+      "x-serverOnly": true, "x-servedBy": "GET /keyring",
+      "type": "object",
+      "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1, 3.3): the registry of credentials the game recognises, server-only. The bootstrap strips it and no answer sends it whole; the keyring reaches the client through GET /keyring, one proven entry at a time. At most 64 entries (the server reads the first 64 by sorted id). The schema closes each entry's shape; cross-references (account, connectsTo, proof, foundIn, endsOnGlobal, kinds built) are enforced only by check_credentials.",
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "patternProperties": { "^_": {} },
+        "properties": {
+          "kind": { "type": "string", "description": "An open string; CredentialModel::KINDS says which are built. Phase 1 builds password, saved_connection and assist_invite; token is K5, hash is phase 3." },
+          "account": { "type": "string", "description": "The NPC id of an account holder." },
+          "proof": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": { "^_": {} },
+            "description": "Exactly one of session, planted, dropped, held or foothold (check_credentials enforces exactly one).",
+            "properties": {
+              "session": { "type": "string", "description": "A sign-in PC id: holds once the player has ever held a non-relay session there (signedInPcs)." },
+              "planted": { "type": "string", "description": "A capture proof: an item planted at an object." },
+              "on": { "type": "string", "description": "Optional, with planted: the object id it was planted on." },
+              "dropped": { "type": "string", "description": "A capture proof: an item accepted as a player drop." },
+              "held": { "type": "string", "description": "A scenario item id: holds while an inventory entry carrying the server's own `credential` field for this id is held (identity-strict)." },
+              "foothold": { "type": "string", "description": "A foothold id: holds while the foothold is held now." }
+            }
+          },
+          "connectsTo": { "type": "string", "description": "The sign-in PC a connecting kind opens. Required for connecting kinds; not allowed on password." },
+          "foundIn": { "type": "string", "description": "Required on password, not allowed on other kinds: the item whose text holds the password. Names the entry's label, tag and found-password line." },
+          "endsOnGlobal": { "type": "string", "description": "assist_invite only, optional: a declared global; once true, the invite is over for the game." },
+          "label": { "type": "string", "maxLength": 40, "description": "token only, required (K5): the name the screens and toasts use." },
+          "expiresMin": { "type": "integer", "minimum": 1, "maximum": 240, "description": "token only, required (K5): whole minutes from first use." },
+          "_comment": { "type": "string" }
+        },
+        "required": ["kind", "account", "proof"]
+      }
+    },
     "networks": {
       "x-serverOnly": true, "x-servedBy": ["GET /network", "GET /container"],
       "type": "object",
@@ -5087,6 +5124,8 @@
         "resume": {"type": "boolean", "description": "phone-chat: reopen the saved thread, with no knot jump."},
         "voiced": {"type": "boolean", "description": "phone-chat: speak the NPC's lines through TTS."},
         "ring": {"x-id-map": false, "description": "phone-chat: an incoming call that rings, true or a ring config."},
+        "skipIfGlobal": {"type": "string", "description": "video-call only: no call if this global is truthy at the event, and the call is dropped if it became truthy while the call waited. The mapping's setGlobal, completeTask and other effects have already run at the event."},
+        "interrupt": {"type": "boolean", "description": "video-call only: a minigame the player opens during the call's 500 ms start delay is closed and the call opens, instead of waiting behind it; the same when it waited in the queue, or its delayMs ends with a minigame open. Never closes another scripted conversation (npc-manager.js _interruptAndOpen)."},
         "unlockDoor": {"x-id-map": false, "description": "A room id, or a list of them, whose door the server unlocks when this fires (npc-game-bridge.js). The server also reads it to allow the unlock (game.rb), so keep it even where the mapping never fires."},
         "emitEvent": {"type": "string", "description": "An event to emit when the mapping fires."},
         "emitEventData": {"type": "object", "x-id-map": false, "description": "The payload sent with emitEvent."}
@@ -5105,6 +5144,7 @@
         "takeable": { "type": "boolean" },
         "blocksSight": { "type": "boolean", "description": "true: this prop blocks NPC sight like a wall; false: it never does. Unset: tall racks, shelving, cabinets, lockers and vending machines block (npc-sight-occlusion.js)" },
         "readable": { "type": "boolean" },
+        "credential": { "type": "string", "description": "Credential keyring (CREDENTIAL_KEYRING_PLAN.md K1, 3.4): names a top-level `credentials` registry id this item carries (a saved connection or a written assist code). Server-only: joins ItemIdentity::FORGEABLE_ITEM_FIELDS, so a client-built item can never carry it, and the stored field always comes from the server's own copy of the definition. The item must use a type with a tray slot that is not always-allowed (text_file), never a notes-family or always-allowed type. Cross-references are enforced only by check_credentials." },
         "interactable": { "type": "boolean" },
         "active": { "type": "boolean" },
         "locked": { "type": "boolean" },

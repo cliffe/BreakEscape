@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Credential keyring",
+  "description": "Test of the credential keyring (CREDENTIAL_KEYRING_PLAN.md, slice K1): the server-only registry, the proof kinds the server reads (a held .rdp item, a session, a captured account, a foothold) and the GET /keyring answer. Browser only, no VM. K2 to K5 (the login branch, the sign-in UI, from and relay routes, tokens) extend it later. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 10,
+  "test_type": "access_model",
+  "test_objective": "Prove GET /keyring starts empty and gains an entry as each K1 proof is earned: taking the .rdp lists the saved connection (held), signing in at Lena's PC lists the found password (session), reading Ian's card captures his account (an implicit password entry with its value), and planting the drop box lists the foothold-proof saved connection; a registry password never carries a value and the bootstrap carries no credentials key"
+}

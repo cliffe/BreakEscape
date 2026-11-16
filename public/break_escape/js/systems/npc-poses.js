@@ -43,6 +43,8 @@
 import { updateBreath, endBreath } from './sprite-breath.js';
 
 export const POSE_NAMES = Object.freeze(['drink', 'use', 'phone']);
+/** How long a "this atlas has no pose frames" answer is trusted before it is checked again. */
+export const POSE_RECHECK_MS = 2000;
 export const DRINK_NEEDS = Object.freeze(['caffeine', 'thirst']);
 /** ms of `use` at a drinks machine before the drink pose (needs clock). */
 export const USE_LEAD_MS = 3000;
@@ -176,6 +178,22 @@ export class NpcPoses {
         this.breath = new Map();    // npcId -> { breath } (sprite-breath.js holder) while breathing
         this.idleBreathing = false; // debug: every standing idle breathes
         this.settleMs = SETTLE_MS;
+        this.poseCheck = new Map(); // npcId -> { tex, has, at }: does the atlas have any pose frames
+    }
+
+    /**
+     * Has this NPC's atlas any pose animation? Cached per texture; a "no" is looked at again
+     * after POSE_RECHECK_MS in case the animations are made after the first frame. Without
+     * pose frames the per-frame work stops here.
+     */
+    _mayPose(id, b, now) {
+        const scene = this.scene || b.scene;
+        const tex = b.sprite?.texture?.key || '';
+        const rec = this.poseCheck.get(id);
+        if (rec && rec.tex === tex && (rec.has || now - rec.at < POSE_RECHECK_MS)) return rec.has;
+        const has = POSE_NAMES.some(n => DIRECTIONS.some(d => hasPoseAnim(scene, poseAnimKey(id, n, d))));
+        this.poseCheck.set(id, { tex, has, at: now });
+        return has;
     }
 
     _now() {
@@ -271,6 +289,11 @@ export class NpcPoses {
             seen.add(id);
             const b = mgr.getBehavior?.(id);
             if (!b) { this.active.delete(id); this.pending.delete(id); continue; }
+            if (!this.active.has(id) && !this._mayPose(id, b, now)) {
+                this._useRec(id, s, clockMs, false);   // keep the use clock, so frames that appear mid-use keep its lead
+                this.pending.delete(id);
+                continue;
+            }
             const inChat = !!sys?.world?.inChatWith?.(id);
             const rec = this._useRec(id, s, clockMs, inChat);
             const blocked = blockedFor(id, b, inChat);

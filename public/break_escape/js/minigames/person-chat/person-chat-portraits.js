@@ -17,6 +17,11 @@ import { backgroundRect, portraitRect } from './person-chat-camera.js';
 // Remembered after the first failed lookup so later conversations skip the 404s.
 const spritesWithoutTalkImage = new Set();
 
+// First-choice talk path -> the path that finally loaded (after the _v2_talk -> _talk -> _headshot
+// fallbacks), or null when every candidate failed. Kept for the session so a portrait renderer
+// built for each line or refresh asks the server for each candidate once, not every time.
+const talkSrcOutcome = new Map();
+
 // spriteVisemes path → loaded sheet ({ image, frameSize, columns }) or null when it failed.
 // Pending loads live in visemeSheetLoads so speaker switches never fetch a sheet twice.
 const visemeSheets = new Map();
@@ -373,17 +378,22 @@ export default class PersonChatPortraits {
      * @private
      */
     _resolveTalkImageSrc() {
-        if (this.npc.spriteTalk) return this.npc.spriteTalk;
+        let candidate = this.npc.spriteTalk;
+        if (!candidate) {
+            const sprite = this.npc.spriteSheet;
+            if (!sprite || spritesWithoutTalkImage.has(sprite)) return null;
 
-        const sprite = this.npc.spriteSheet;
-        if (!sprite || spritesWithoutTalkImage.has(sprite)) return null;
-
-        // Legacy sprites use hyphen naming; all others follow {sprite}_talk.png
-        const legacyMap = {
-            'hacker': 'assets/characters/hacker-talk.png',
-            'hacker-red': 'assets/characters/hacker-red-talk.png'
-        };
-        return legacyMap[sprite] || `assets/characters/${sprite}_talk.png`;
+            // Legacy sprites use hyphen naming; all others follow {sprite}_talk.png
+            const legacyMap = {
+                'hacker': 'assets/characters/hacker-talk.png',
+                'hacker-red': 'assets/characters/hacker-red-talk.png'
+            };
+            candidate = legacyMap[sprite] || `assets/characters/${sprite}_talk.png`;
+        }
+        this._talkCandidate = candidate;
+        // Already tried this session: go straight to what worked (or to the sprite when nothing did)
+        if (talkSrcOutcome.has(candidate)) return talkSrcOutcome.get(candidate);
+        return candidate;
     }
 
     /**
@@ -864,6 +874,7 @@ export default class PersonChatPortraits {
         img.crossOrigin = 'anonymous';
 
         img.onload = () => {
+            if (this._talkCandidate) talkSrcOutcome.set(this._talkCandidate, this.talkImageSrc);
             this.spriteTalkImage = img;
             this._loadingSpriteTalkImage = false;
             this._lastRenderedTalkFrame = -1; // force next loop tick to re-render
@@ -889,6 +900,7 @@ export default class PersonChatPortraits {
                 this._startLoadingSpriteTalkImage();
                 return;
             }
+            if (this._talkCandidate) talkSrcOutcome.set(this._talkCandidate, null);
             console.warn(`⚠️ No talk image found for ${this.npc.id} (${this.talkImageSrc}), falling back to sprite`);
             // Only remember derived misses — an explicit spriteTalk is the author's call
             if (!this.npc.spriteTalk && this.npc.spriteSheet) {

@@ -236,3 +236,24 @@ test('the interaction warning opens no second confirm over an open one', async (
     reset();
     assert.equal(window.gameConfirmOpen(), false);
 });
+
+test('a holdKeys interaction menu holds E and the arrows; one without holdKeys does not', async () => {
+    const { showInteractionMenu, closeInteractionMenu, isInteractionMenuOpen } =
+        await import(pathToFileURL(join(js, 'ui/interaction-menu.js')).href);
+    reset();
+    const entries = () => [{ label: 'A', onSelect() {} }, { label: 'B', onSelect() {} }];
+    showInteractionMenu(entries(), 10, 10, 'Pick', { holdKeys: true });
+    assert.equal(openModalCount(), 1);
+    press('e');
+    press('ArrowLeft');
+    assert.deepEqual(log, [], 'the game saw neither key');
+    assert.equal(playerKeys.state().isKeyboardMoving, false);
+    // a confirm opening over it closes the menu (it yields), and Esc then declines the confirm
+    gameConfirm('Sure?', 'Yes', 'No');
+    assert.equal(isInteractionMenuOpen(), false, 'the menu yielded to the confirm');
+    assert.equal(openModalCount(), 1);
+    reset();
+    showInteractionMenu(entries(), 10, 10, 'Pick', {});
+    assert.equal(openModalCount(), 0, 'no holdKeys: not on the stack');
+    closeInteractionMenu();
+});

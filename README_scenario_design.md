@@ -1414,6 +1414,33 @@ Common mistakes the validator now catches:
 }
 ```
 
+### Credentials (the keyring)
+
+A credential is anything a sign-in PC accepts as proof that the player is a particular account: a typed password, a saved connection, an invite to someone's screen. The player's earned credentials show on a server-computed keyring (GET `/keyring`); the game never trusts the browser for what has been earned.
+
+**The registry.** Credentials live in a top-level `credentials` map, server-only: the server strips it from the bootstrap, and only GET `/keyring` reads it. Each entry is keyed by an id matching `^[a-z][a-z0-9_]{0,63}$`, and the server reads at most the first 64 by sorted id.
+
+```json
+"credentials": {
+  "lena_rdp": { "kind": "saved_connection", "account": "lena", "connectsTo": "ops_pc",
+                "proof": { "held": "lena_rdp_file" } },
+  "jake_pw":  { "kind": "password", "account": "jake", "foundIn": "lena_passwords_txt",
+                "proof": { "session": "lena_pc" } }
+}
+```
+
+**Kinds.** `password` (an account's typed password), `saved_connection` (a stored connection to a PC, reached through a foothold), and `assist_invite` (a one-off invite to share someone's screen, reached by relay). `token` and `hash` are reserved and not built yet. A `password` sets `foundIn` (the item it was read from) and must not set `connectsTo`; a connecting kind (`saved_connection`, `assist_invite`) sets `connectsTo` (a sign-in PC) and must not set `foundIn`.
+
+**Proofs.** Exactly one of `session`, `planted`, `dropped`, `held` or `foothold` names how the credential is earned; the server reads only state it writes itself. `session` is a sign-in the player holds; `planted`/`dropped` are capture proofs; `held` names an inventory item carrying the server's own `credential` field (identity-strict: type and id must match the authored definition, and a client-forged item never counts); `foothold` is a foothold held now.
+
+**Policy `accepts`.** A sign-in PC's policy may set `accepts`, a unique list of kinds it admits. `password` is always accepted whatever the list says (a PC that refused typed passwords would be unusable, so a list without it is only misleading). Leaving `accepts` off accepts `password`, `saved_connection` and `assist_invite`.
+
+**The item that carries a credential.** A credential item sets `credential` to the registry id, and that entry's proof must be `held` on this item. The item must be a real tray item (`text_file` is the safe type): a notes-family type never reaches the tray, and an always-allowed type (`notepad`) is one a tampered client could build for itself, so neither is allowed. Place the item where the player earns it: in a room, on a desktop, in a share, or a start-inventory item. A declared grant alone is weaker (a tampered client can claim it at once), so a `saved_connection` placed only by a grant warns.
+
+**An assist invite.** Hand the invite code from the account holder's `itemsHeld` through an ink `#give_item`, not as a placed grant, so it is earned in conversation. An `assist_invite` reaches its `connectsTo` by **relay** only: the server offers a relay route, never a foothold or a held session, and a `session` proof on the invite's own `connectsTo` never completes (a relay sign-in does not satisfy it). An invite can end on a global with `endsOnGlobal`, after which its keyring row is marked `ended`.
+
+Run `scripts/validate_scenario.rb` after any change: `check_credentials` reports an unbuilt kind, a proof that names no reachable source, a held item that can never hold, an item type that cannot carry a credential, a credential no machine accepts, and the other registry mistakes above.
+
 ### Security Tools
 
 Security tools enable specific mini-games and unlock mechanics. Can be placed as room objects or in NPC `itemsHeld`.
@@ -1725,6 +1752,8 @@ Trigger a conversation automatically when the player loads the room:
 | `videoLabel`, `participantTag` | With `videoCall`: the meeting-tool name on the call bar (default "SECURE VIDEO LINK") and a tag beside the peer's name (for example "External"). |
 | `ring` | `true` or an object (`onMissed`, `voicemailKnot`, `withheld`, `untilAnswered`, `callbackWhen`, `ringWhile`). The timed call rings (answer, decline, miss, callback) instead of opening at once. Phone NPCs only, not with `videoCall`. See [Voiced phone calls](#voiced-phone-calls). |
 | `voiced: true` | `phone-chat` only: the conversation opens at once as a voiced call (the older form; see "Every form, old and new"). Not needed with `ring`. |
+| `skipIfGlobal: "name"` | `video-call` only: if the global is set (truthy) at the event, no call is placed and an open minigame is left alone; if it becomes set while the call waits (behind a minigame or another call), the call is dropped when it would open. A dropped `onceOnly` call is not saved, so it can fire again after a reload. The mapping's other effects (`setGlobal`, `completeTask` and the rest) have already run at the event, and are not undone. Repeat the guard in `condition` too. Ignored by `person-chat` and `phone-chat`. |
+| `interrupt: true` | `video-call` only: a call opens 500 ms after its event. Without this, a minigame the player opens in that time (the usual case for an `object_interacted` mapping, since the object's own minigame opens straight after the event) makes the call wait until it closes. With it, that minigame is closed and the call plays, so a call meant to come before the player acts in it does (m02: Ghost's offer before the recovery console choice). It also applies when the call waited in the queue behind another scripted call, and to a `delayMs` mapping whose delay ends while a minigame is open. It never closes another scripted conversation: it waits behind that. The `skipIfGlobal` check runs first. Leave it off unless the call must cut in. |
 | `callLabel` | With `ring` or `voiced`: the caption under the caller's name, as the phone would show it ("SAFETYNET secure line"). |
 
 #### NPC Event Mappings
@@ -2776,7 +2805,7 @@ These are the mistakes that most often leave a mission unfinishable or silently 
 
 ### Timers
 
-- **Timers need conditions.** The HUD clock ignores `cancelOnGlobal`, and a reload restarts any timer whose start global is true. Put `!globalVars.done && ...` as a `condition` on every timer and on its expiry action, and guard the arming mapping so it cannot re-arm after the win.
+- **Timers need conditions.** The HUD clock ignores `cancelOnGlobal`, and on reload a timer whose start global is true resumes from its saved running time rather than restarting (`ui/scenario-timer-dispatcher.js:86-96`). Put `!globalVars.done && ...` as a `condition` on every timer and on its expiry action, and guard the arming mapping so it cannot re-arm after the win.
 - **Start finale clocks once the VM work is done.** Timers run on wall-clock time, VM time included.
 - **To show a toast from an event, use a timer with a `hint` action.** An event mapping has no toast action. Have the mapping set a global (`setGlobal`), start a timer on it (`startOnGlobal`, a short `delayMs`, no `showCountdown`) and give the timer a `hint` action. `lab_physical_pentest` does this for its pointers after each beat.
 - **Gate HaX timed messages near scripted conversations.** A timed message can open a phone chat over a conversation in progress.

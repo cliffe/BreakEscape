@@ -4,6 +4,7 @@ require 'json'
 require 'set'
 require 'cgi'
 require 'uri'
+require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -304,6 +305,7 @@ class AccessLeakScanner
       scan_reacts_key(body, add)
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
+      scan_credentials(body, add)
     end
     findings
   end
@@ -344,7 +346,11 @@ class AccessLeakScanner
     'feed_reaction_reactor' => 'a feed reaction from an NPC with no served post yet',
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
-    'lockout_unrecorded' => 'a lockout the server\'s check did not record'
+    'lockout_unrecorded' => 'a lockout the server\'s check did not record',
+    'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
+    'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
+    'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
+    'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)'
   }.freeze
 
   private
@@ -712,7 +718,8 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
-      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone')
+      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
+      keyring: method == 'GET' && path.end_with?('/keyring')
     }
   end
 
@@ -732,11 +739,17 @@ class AccessLeakScanner
 
     note = ctx[:login_accounts] ? served_note_password(body) : nil
     shared = ctx[:npc_workaround] ? heard_share_password(body) : nil
+    # A GET /keyring answer's implicit capture entries carry the captured account's own
+    # password, just as GET /capture_secrets does. Exempt the `password` field on a
+    # `source: "capture"` entry (owner's own game only); a registry-sourced entry is not
+    # exempted, so a password on one is still flagged.
+    keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
+        next if keyring_capture_paths && keyring_capture_paths.include?(json_path)
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
@@ -1173,6 +1186,74 @@ class AccessLeakScanner
     end
   end
 
+  # Credential keyring (CREDENTIAL_KEYRING_PLAN.md, section 6.1). Three leaks:
+  # - any response carrying a `credentials` key (the registry is server-only, stripped from the
+  #   bootstrap, so it must never reach the browser);
+  # - a registry credential served in a GET /keyring answer whose proof does not hold in the
+  #   recorded state (@game, read once at scan time, as the lockout records are);
+  # - a registry password credential carrying its `password` value (only a captured account's
+  #   implicit entry may carry one, and only where GET /capture_secrets already serves it).
+  def scan_credentials(body, add)
+    walk_hashes(body, '$') do |hash, path|
+      add.call('credential_registry', 'credentials', safe_path("#{path}.credentials")) if hash.key?('credentials')
+      # The item-level `credential` field is server-only: both client filters strip it, so it
+      # must never reach the browser. A second guard on the field R1 m1 flagged (K1 R2 m3).
+      add.call('credential_field', 'credential', safe_path("#{path}.credential")) if hash['credential'].is_a?(String)
+    end
+
+    entries = keyring_entries_in(body)
+    return if entries.nil?
+
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash)
+      next unless entry['source'].to_s == 'registry'
+
+      id = entry['id'].to_s
+      base = "$.entries[#{i}]"
+      if entry['kind'].to_s == 'password' && entry.key?('password')
+        add.call('credential_password_value', "credential:#{id}", safe_path("#{base}.password"))
+      end
+      next if credential_proof_held_ids.nil?
+
+      add.call('credential_unheld', "credential:#{id}", safe_path(base)) unless credential_proof_held_ids.include?(id)
+    end
+  end
+
+  # A GET /keyring answer, told apart by its shape (`{ rev, entries: [...] }`); nil otherwise.
+  def keyring_entries_in(body)
+    return nil unless body.is_a?(Hash) && body.key?('rev') && body['entries'].is_a?(Array)
+
+    body['entries']
+  end
+
+  # The JSON paths of the `password` field on every `source: "capture"` keyring entry, so
+  # scan_passwords can exempt the captured account's own value there (and only there).
+  def keyring_capture_password_paths(body)
+    entries = keyring_entries_in(body)
+    return Set.new if entries.nil?
+
+    paths = Set.new
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'capture' && entry['password'].is_a?(String)
+
+      paths << "$.entries[#{i}].password"
+    end
+    paths
+  end
+
+  # The registry credential ids whose proof holds in the recorded state, from the game read once at
+  # scan time; nil when no game is given (the unheld check then does not run).
+  def credential_proof_held_ids
+    return @credential_proof_held_ids if defined?(@credential_proof_held_ids)
+
+    @credential_proof_held_ids =
+      if @game.respond_to?(:credential_proof_holds?)
+        BreakEscape::CredentialModel.registry(@data)
+                                    .select { |id, entry| @game.credential_proof_holds?(id, entry) }
+                                    .keys.map(&:to_s).to_set
+      end
+  end
+
   def walk_hashes(node, path, &block)
     case node
     when Array then node.each_with_index { |v, i| walk_hashes(v, "#{path}[#{i}]", &block) }
@@ -1332,7 +1413,10 @@ class AccessLeakScanner
     return if scoped.empty?
 
     hits = Hash.new { |h, k| h[k] = [] }
+    disclosed = ctx[:keyring] ? held_keyring_disclosure_paths(body) : []
     each_string(body) do |str, json_path|
+      next if disclosed.any? { |p| json_path == p || json_path.start_with?("#{p}[") }
+
       scoped.each do |item_id, info|
         hits[item_id] << json_path if content_match?(str, info[:strings])
       end
@@ -1348,6 +1432,24 @@ class AccessLeakScanner
       rule = { profile: 'profile_content', stick: 'stick_content' }.fetch(info[:scope], 'signin_content')
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
+  end
+
+  # The JSON paths of the `label` and `foundIn` fields on GET /keyring registry entries whose proof
+  # holds: the keyring serves them on purpose once the proof holds, so a label equal to a sign-in
+  # item's name (a "passwords.txt" note) is not sign-in content. An unheld entry is not exempted
+  # (credential_unheld flags it too), and no other field (a file body) is. Empty without a game.
+  def held_keyring_disclosure_paths(body)
+    entries = keyring_entries_in(body)
+    held = credential_proof_held_ids
+    return [] if entries.nil? || held.nil?
+
+    paths = []
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry' && held.include?(entry['id'].to_s)
+
+      paths << "$.entries[#{i}].label" << "$.entries[#{i}].foundIn"
+    end
+    paths
   end
 
   # A folder inside a sign-in PC or profile (a locked archive) opened by /unlock: the server

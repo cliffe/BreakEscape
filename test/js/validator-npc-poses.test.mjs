@@ -5,13 +5,23 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 
-function check(scenario) {
+// A fixture atlas with pose frames, so the test does not depend on which committed atlases have pose art.
+const fixtureDir = mkdtempSync(join(tmpdir(), 'npc-poses-atlas-'));
+writeFileSync(join(fixtureDir, 'fixture_posed.json'), JSON.stringify({ frames: { pose_drink_south: {}, pose_phone_south: {}, 'breathing-idle_south_frame_000': {} } }));
+
+// assetsDir: read atlases from there in place of the committed characters folder.
+function check(scenario, assetsDir = null) {
+    const swap = assetsDir ? `ValidateNpcNeeds.send(:remove_const, :CHARACTER_ASSETS)
+      ValidateNpcNeeds.const_set(:CHARACTER_ASSETS, ${JSON.stringify(assetsDir)})` : '';
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_npc_needs.rb'))}
+      ${swap}
       puts JSON.generate(ValidateNpcNeeds.check(JSON.parse(STDIN.read)))`;
     const r = spawnSync('ruby', ['-e', script], { input: JSON.stringify(scenario), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
@@ -31,7 +41,9 @@ test('poses on an NPC with no needs: warning', { skip }, () => {
 test('a listed pose the atlas lacks: warning; one it has: none', { skip }, () => {
     const lacks = poseIssues(check(scenario({ id: 'ana', needs: thirst, spriteSheet: 'female_office_worker', poses: ['drink'] })));
     assert.ok(lacks.some(s => s.includes('no pose_drink frames')), lacks.join('\n'));
-    const hasIt = poseIssues(check(scenario({ id: 'ana', needs: thirst, spriteSheet: 'male_office_worker_v2', poses: ['drink', 'phone'] })));
+    const hasIt = poseIssues(check(scenario({ id: 'ana', needs: thirst, spriteSheet: 'fixture_posed', poses: ['drink', 'phone'] }), fixtureDir));
+    const fixtureLacks = poseIssues(check(scenario({ id: 'ana', needs: thirst, spriteSheet: 'fixture_posed', poses: ['use'] }), fixtureDir));
+    assert.ok(fixtureLacks.some(s => s.includes('no pose_use frames')), fixtureLacks.join('\n'));
     assert.deepEqual(hasIt, []);
     assert.deepEqual(poseIssues(check(scenario({ id: 'ana', needs: thirst, spriteSheet: 'female_office_worker', poses: false }))), []);
 });

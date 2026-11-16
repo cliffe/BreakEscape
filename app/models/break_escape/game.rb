@@ -6,6 +6,7 @@ module BreakEscape
     include ScoreBreakdown
     include NetworkAccess
     include CaptureProofs
+    include CredentialKeyring
     include NpcFrustration
     include SocialFeed
     include Wearables
@@ -640,6 +641,12 @@ module BreakEscape
     def add_inventory_item!(item)
       player_state['inventory'] ||= []
 
+      # `credential` is a forgeable field (stripped from every client contribution and
+      # by both client filters), so a stored take never carries it. Re-stamp it here
+      # from the scenario's own definition, matched by type and id, so the keyring's
+      # `held` proof can match. A client-supplied value is never trusted (K1 live fix).
+      restamp_item_credential!(item)
+
       # Check if item already exists in inventory (by id or combination of type and name)
       item_exists = inventory_includes?(item)
 
@@ -651,6 +658,39 @@ module BreakEscape
       else
         Rails.logger.info "[BreakEscape] Item already in inventory, skipping: #{item['type']} / #{item['name']}"
       end
+    end
+
+    # Re-stamp a stored inventory item's `credential` from the scenario's own definition
+    # (CredentialModel.item_definition, matched by type and id), never from the client.
+    # `credential` is forgeable, so any client-supplied value is dropped first; the
+    # authored value is restored only when the definition is the scenario's own item of
+    # the same type. Stamps onto the same level the keyring `held` proof reads
+    # (`inv['scenarioData'] || inv`). Without this, both client filters strip `credential`
+    # on the way out and the client posts the item back without it, so the `held` proof
+    # could never match through the real request path (K1 live fix).
+    def restamp_item_credential!(item)
+      return unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      # Drop any client-supplied value up front (forgeable field).
+      data.delete('credential')
+
+      # The notepad and decor cups are client-built (no scenario lookup), so their id is
+      # client-chosen: never stamp a credential on them (R3 m1; the validator also errors).
+      return if BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.include?(data['type'].to_s)
+      return if BreakEscape::DeclaredGrants::DECOR_CUPS.include?(data['type'].to_s)
+
+      # Look up by id, exactly as the `held` proof matches (def_id == data['id']).
+      item_id = data['id'].to_s
+      return if item_id.empty?
+
+      definition = BreakEscape::CredentialModel.item_definition(scenario_data, item_id)
+      return unless definition.is_a?(Hash)
+      return unless definition['type'].to_s == data['type'].to_s
+      return unless definition['id'].to_s == item_id
+
+      credential = definition['credential']
+      data['credential'] = credential if BreakEscape::CredentialModel.present_string?(credential)
     end
 
     # A deep copy of a stored inventory item without saved_cards, for any item an
@@ -1155,6 +1195,12 @@ module BreakEscape
     # are built from the scenario definition, never client fields).
     # ========================================================================
 
+    # Stored carry positions: generous bounds that only reject tampering. Scenario
+    # elevations run 18..40; tile x/y are room-relative, 0 up to the room size (the
+    # largest authored room is 20 tiles wide), so 0..64 is three times that.
+    CARRY_TILE_BOUND = 64
+    CARRY_ELEVATION_RANGE = [0, 256].freeze
+
     # Object types that may never be carried even with a needsTag: keys and the
     # credential family. The structural lock-field checks below catch the rest.
     CARRY_DISQUALIFYING_TYPES = %w[key keycard credential password badge smartcard rfid_card].freeze
@@ -1291,9 +1337,48 @@ module BreakEscape
       # Write the carry entry first so it rides remove_item_from_room!'s save!: a
       # second save! after that one would not see the nested jsonb mutation as dirty.
       player_state_will_change!
-      carry[npc_id] = { 'itemId' => item_id, 'fromRoom' => from_room }
+      entry = { 'itemId' => item_id, 'fromRoom' => from_room }
+      # slice C C1: remember where the object was lying, so a reload mid-carry puts it
+      # back there, not at its scenario spot. The position is read from the server's own
+      # stored copy (objects_added) before remove_item_from_room! deletes it, never from
+      # the request. Only a placed copy (a player drop or a put-down) has one; an object
+      # picked up from its scenario spot has none, and end_stranded_carries! keeps the
+      # scenario position for it.
+      from_pos = sanitised_carry_position(from_room, item_id)
+      entry['fromPos'] = from_pos if from_pos
+      carry[npc_id] = entry
       remove_item_from_room!(from_room, item_id)
       true
+    end
+
+    # The pick-up position of a placed copy, read from the room's objects_added record
+    # (the drop and put-down paths write it there). Keep only the coordinate keys those
+    # paths write (x, y, px, py, elevation), each a valid coordinate; drop every other
+    # key, so no client-supplied field rides into the stored carry. Coordinates are kept
+    # only as complete valid pairs (x with y, px with py), and elevation only alongside a
+    # kept pair, so a half pair never rebuilds the object half at its pick-up spot and half
+    # at random. nil when the object has no stored placement or no pair survives.
+    def sanitised_carry_position(room_id, item_id)
+      added = player_state.dig('room_states', room_id, 'objects_added')
+      return nil unless added.is_a?(Array)
+
+      stored = added.find { |o| o.is_a?(Hash) && o['id'] == item_id }
+      pos = stored && stored['position']
+      return nil unless pos.is_a?(Hash)
+
+      cleaned = {}
+      [%w[x y], %w[px py]].each do |pair|
+        next unless pair.all? { |k| valid_ko_coord?(pos[k]) }
+        # Tile coordinates are room-relative, so bound them to 0..CARRY_TILE_BOUND (no room geometry here).
+        next if pair == %w[x y] && pair.any? { |k| !pos[k].between?(0, CARRY_TILE_BOUND) }
+
+        pair.each { |k| cleaned[k] = pos[k] }
+      end
+      elevation = pos['elevation']
+      if cleaned.any? && valid_ko_coord?(elevation) && elevation.between?(*CARRY_ELEVATION_RANGE)
+        cleaned['elevation'] = elevation
+      end
+      cleaned.presence
     end
 
     # Put down: the NPC sets the carried object down in to_room at position. Confirms
@@ -1680,11 +1765,13 @@ module BreakEscape
     end
 
     # End every stored carry by putting its object back where it was picked up
-    # (fromRoom, scenario position) and dropping the entry. The client then sees the
-    # object on the floor and the NPC is free to carry again. Mirrors put_down_carried!
-    # (add to objects_added, keep the origin objects_removed), so nothing duplicates.
-    # Resuming the walk mid-carry is future work (plan slice C). Returns whether it
-    # changed anything.
+    # (fromRoom, at fromPos when the entry has one, else the scenario position) and
+    # dropping the entry. The client then sees the object on the floor and the NPC is
+    # free to carry again. Mirrors put_down_carried! (add to objects_added, keep the
+    # origin objects_removed), so nothing duplicates. An object the player has already
+    # taken into their inventory gets no floor copy (the same guard the carry actions
+    # use), so a stranded delivery entry drops without duplicating the item. Returns
+    # whether it changed anything.
     def end_stranded_carries!
       carry = player_state['npcCarry']
       return false unless carry.is_a?(Hash) && carry.any?
@@ -1697,11 +1784,16 @@ module BreakEscape
           item_id = entry['itemId']
           from_room = entry['fromRoom']
           info = item_id.is_a?(String) ? carriable_object_index[item_id] : nil
-          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String)
+          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String) &&
+             !carried_item_in_inventory?(item_id)
             room_state = (player_state['room_states'][from_room] ||=
               { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} })
             item = info['object'].deep_dup.except('texture')
                        .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+            # slice C C1: a placed copy goes back to the spot it was lying on, not its
+            # scenario position. fromPos is the sanitised server record from pick-up.
+            from_pos = entry['fromPos']
+            item['position'] = from_pos if from_pos.is_a?(Hash) && from_pos.any?
             room_state['objects_added'].reject! { |o| o['id'] == item_id }
             room_state['objects_added'] << item
           end
@@ -1720,6 +1812,10 @@ module BreakEscape
         self.class.strip_puzzle_graph_keys!(obj)
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         strip_capture_secrets!(obj)
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # the `held` proof reads it from the stored inventory, the client never needs it (K3 draws
+        # Connect from GET /keyring), so it never rides a client inventory copy or echo (R1 m1).
+        obj.delete('credential')
         obj.delete('requires') if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
         obj.each_value { |value| filter_inventory_for_client!(value) }
       when Array
@@ -2245,6 +2341,11 @@ module BreakEscape
       # The top-level roles (slice 9.1, 5.2; slice 9.2 adds its own keys): default
       # awareness levels by role. Nothing in the browser reads it.
       filtered.delete('roles')
+
+      # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6): the top-level `credentials`
+      # registry is server-only. No answer sends it whole; the keyring reaches the client only
+      # through GET /keyring, one proven entry at a time.
+      filtered.delete('credentials')
 
       # Networks (slice 9.3a, section 6): a network's name and what it exposes reach the
       # browser only through GET /network and GET /container, for a foothold or session
@@ -6777,6 +6878,12 @@ module BreakEscape
         # it, so remove it outright rather than keeping a count.
         obj.delete('hintOnlyFlags')
 
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # a credential item left loose in a room, on a desktop or in a share is served through this
+        # filter, so strip the field here too (R1 m1). The `held` proof reads it only from the
+        # stored inventory, never from a client payload.
+        obj.delete('credential')
+
         # Networks (slice 9.3a, section 6): membership never ships, and a jack's link
         # name and holder arrive on the link item instead.
         BreakEscape::NetworkAccess::WITHHELD_OBJECT_FIELDS.each { |field| obj.delete(field) }
@@ -7061,6 +7168,9 @@ module BreakEscape
             if item.is_a?(Hash)
               copy = item.deep_dup
               filter_requires_and_contents_recursive(copy)
+              # The filter strips `credential` (forgeable); restore it from the scenario's
+              # own definition so a credential start item still proves `held` (K1 live fix).
+              restamp_item_credential!(copy)
               self.player_state['inventory'] << copy
             else
               self.player_state['inventory'] << item

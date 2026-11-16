@@ -304,12 +304,46 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         // M2: Jodie takes the job in the exchange, then walks to the lockers; the light steadies when
         // she finishes there. Then ask her, and hear the cleared exchange on the next (cooler) break.
         const t0 = Date.now(); let shotLockers = false;
+        // The walk to the lockers can be shorter than the 1 s poll (5693 never caught it): watch
+        // Jodie's job in the page every 50 ms, log each change, and on the first moving frame with
+        // the lockers as target pause the game for the shot; the driver resumes it
+        await page.evaluate(() => {
+            window.__jodieJobs = []; window.__tripHit = null; let last = '';
+            const iv = setInterval(() => {
+                const n = window.npcNeedsSystem, s = n?.states?.get?.('jodie'), b = window.npcBehaviorManager?.getBehavior?.('jodie');
+                if (!s || !b?.sprite) return;
+                const j = s.job, moving = !!(b.isMoving || b._goToStayDest);
+                const rec = { c: n.clockMs, target: j?.targetId || null, kind: j?.kind || null, phase: j?.phase || null, moving,
+                              at: [Math.round(b.sprite.x), Math.round(b.sprite.y)] };
+                const key = JSON.stringify([rec.target, rec.kind, rec.phase, rec.moving]);
+                if (key !== last) { window.__jodieJobs.push(rec); last = key; }
+                if (rec.target === 'staff_lockers' && moving && rec.phase !== 'using') {
+                    clearInterval(iv); window.__tripHit = rec; window.game.sys.game.loop.sleep();
+                }
+            }, 50);
+            window.__tripWatch = iv;
+        });
         while (Date.now() - t0 < 150000) {
+            const hit = !r.trip_icon && await page.evaluate(() => window.__tripHit);
+            if (hit) {
+                r.trip_icon = await page.evaluate(() => {
+                    const sp = window.npcBehaviorManager.getBehavior('jodie').sprite, out = [];
+                    for (const sc of window.game.sys.game.scene.scenes) for (const o of sc.children?.list || []) {
+                        const k = o.texture?.key || '';
+                        if (o.visible && k.startsWith('icon:') && Math.hypot(o.x - sp.x, o.y - sp.y) < 64) out.push({ key: k, x: Math.round(o.x), y: Math.round(o.y), alpha: +(o.alpha ?? 1).toFixed(2) });
+                    }
+                    return { ...window.__tripHit, icons: out, paused_for_screenshot: true };
+                });
+                await shot('02a-jodie-locker-trip');
+                await page.evaluate(() => window.game.sys.game.loop.wake());
+            }
             evs = await events();
             if (!shotLockers && evs.some(e => e.ev === 'npc_use_started:staff_lockers')) { await t(1500); await shot('02-jodie-at-lockers'); r.light_while_at_lockers = await light(); shotLockers = true; }
             if (evs.some(e => e.ev === 'npc_used:staff_lockers')) break;
             await t(1000);
         }
+        await page.evaluate(() => { clearInterval(window.__tripWatch); if (window.game.sys.game.loop.sleeping) window.game.sys.game.loop.wake(); });
+        r.jodie_jobs = await page.evaluate(() => window.__jodieJobs);
         const used = evs.find(e => e.ev === 'npc_used:staff_lockers');
         const callHeard = evs.find(e => e.ev === 'npc_exchange_heard:exchange_job_called');
         const lockerStart = evs.find(e => e.ev === 'npc_use_started:staff_lockers');

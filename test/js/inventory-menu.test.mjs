@@ -188,10 +188,20 @@ test('the tray click maps the entries onto drop, examine and use', () => {
     assert.equal(opened, true);
     assert.equal(shown.title, 'Beacon');
     assert.deepEqual([shown.x, shown.y], [10, 20]);
-    assert.deepEqual(shown.opts, { numberKeys: true });
+    assert.deepEqual(shown.opts, { numberKeys: true, holdKeys: true }, 'no fight: holds the game keys');
     assert.deepEqual(shown.entries.map(e => e.label), ['Use', 'Drop here', 'Examine']);
     shown.entries.forEach(e => e.onSelect());
     assert.deepEqual(calls, [['use', el], ['drop', el], ['examine', el]]);
+
+    // a fight in the room: the menu leaves the game keys alone
+    let fightShown;
+    openInventoryItemMenu(el, 10, 20, {
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: { roomHasActiveHostile: () => true },
+        dropBlockedReason: () => null,
+        showInteractionMenu: (entries, x, y, title, opts) => { fightShown = opts; }
+    });
+    assert.deepEqual(fightShown, { numberKeys: true, holdKeys: false });
 
     // no menu: the caller runs the click as before
     const phone = held({ type: 'phone', id: 'p', name: 'Phone' });
