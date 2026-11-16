@@ -102,7 +102,7 @@ const body = [
     'let overlapRetry = { stand: null, used: false };',
     stmtSource('const pendingOverlapWalk = createPendingTapUse({'),
     `const handler = ${handlerSource()};`,
-    'return { handler, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom };'
+    'return { handler, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom, overlapStoppedShort, overlapReachSpan };'
 ].join('\n\n');
 // playerIsMoving is a live binding in game.js (imported from player.js); a destructured stub
 // would freeze it at false, so the cut text reads it from deps each time
@@ -181,9 +181,9 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
         cameras: { main: { scrollX: 0, scrollY: 0 } },
         textures: { getPixelAlpha: (x, y, key) => (sprites.get(key)?.shape ? (sprites.get(key).shape(x, y) ? 255 : 0) : 255) }
     };
-    const { handler, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom } = factory.call(scene, deps);
+    const { handler, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom, overlapStoppedShort, overlapReachSpan } = factory.call(scene, deps);
     const tap = (x, y) => handler.call(scene, { x, y, rightButtonDown: () => false, event: {} });
-    return { ovr, tap, log, state, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom, win, deps };
+    return { ovr, tap, log, state, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom, overlapStoppedShort, overlapReachSpan, win, deps };
 }
 const walkedTo = (log) => log.some(l => l.startsWith('walk:'));
 
@@ -598,8 +598,73 @@ test('overlap 22c (R2 M1): the walk ends 7 px short with neither hit in reach: o
     w.state.moving = false;
     w.pendingOverlapWalk.update(t0 + 800);
     assert.ok(!w.log.some(l => l.startsWith('alert')), 'no dead-end message: ' + w.log.join());
-    assert.equal(w.pendingTapUse.get()?.obj?.id, 'printout', 'handed over to the normal far click');
     assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 3, 'which walks');
+    // A walk only (review R3 m1): nothing is armed to be used on arrival, and nothing is used or opened
+    assert.equal(w.pendingTapUse.get(), null, 'nothing armed for arrival');
+    assert.equal(w.pendingOverlapWalk.get(), null);
+    assert.ok(!w.log.some(l => l.startsWith('use:') || l.startsWith('menu') || l.startsWith('sit:')), w.log.join());
+    // ...and arriving does nothing either
+    player.x += 1; w.state.moving = false;
+    w.pendingTapUse.update(t0 + 2000);
+    assert.ok(!w.log.some(l => l.startsWith('use:')), 'no use on arrival: ' + w.log.join());
+});
+
+test('overlap 22c2 (R3 m3): the hand-over to a topmost NPC walks toward her and arms nothing', () => {
+    const player = { x: 300, y: 300 };
+    const guard = npc('guard', 100, 100, { depth: 60 });
+    const w = world({ player, npcs: [guard], objects: [copierAt()] });
+    w.overlapStoppedShort([guard, w.win.rooms.r1.objects.copier]);
+    assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 1, w.log.join());
+    assert.equal(w.log[0], 'walk:119,155', 'walkTowardNpc\'s stop-short point (an object stand point differs)');
+    assert.equal(w.pendingTapUse.get(), null);
+    assert.ok(!w.log.some(l => l.startsWith('alert') || l.startsWith('talk') || l.startsWith('use:')), w.log.join());
+});
+
+test('overlap 22c3 (R3 m3): the hand-over to a topmost door walks to the door, no door opened', () => {
+    const player = { x: 300, y: 300 };
+    const door = doorAt('door1', 100, 100);
+    const w = world({ player, doors: [door], objects: [copierAt()] });
+    w.overlapStoppedShort([door, w.win.rooms.r1.objects.copier]);
+    assert.deepEqual(w.log, ['walk:100,132'], 'one tile below a north door (walkToDoor)');
+    assert.equal(w.pendingTapUse.get(), null);
+});
+
+test('overlap 22c4 (R3 m3, D27): a hostile in the room means the old toast and no walk', () => {
+    const player = { x: 300, y: 300 };
+    const thug = npc('thug', 40, 40, { depth: 60 });
+    const w = world({ player, npcs: [thug], objects: [copierAt()], hostile: ['thug'] });
+    w.overlapStoppedShort([w.win.rooms.r1.objects.copier]);
+    assert.ok(w.log.some(l => l.startsWith('alert')), 'the toast: ' + w.log.join());
+    assert.ok(!walkedTo(w.log), 'no walk in a fight: ' + w.log.join());
+    assert.equal(w.pendingTapUse.get(), null);
+});
+
+test('overlap 22c5 (R3 m3): a hit in reach means the old toast and no walk', () => {
+    const player = { x: 110, y: 110 };
+    const w = world({ player, objects: [copierAt(), printoutAt()] });
+    const o = w.win.rooms.r1.objects;
+    w.ovr.out = new Set(['copier']);   // the printout is in reach
+    w.overlapStoppedShort([o.copier, o.printout]);
+    assert.ok(w.log.some(l => l.startsWith('alert')), w.log.join());
+    assert.ok(!walkedTo(w.log), w.log.join());
+});
+
+test('overlap 22f2 (R3 m4): overlapReachSpan covers a wide object, a wall-mounted object and a static NPC body; doors give null', () => {
+    const player = { x: 0, y: 0, body: { center: { x: 0, y: 31 } } };   // fx 0, fy 31
+    const w = world({ player });
+    // A 128 px wide object, origin 0.5: its left and right edges
+    const desk = sprite('desk', 300, 80, 128, 40, { originX: 0.5, originY: 0.5 });
+    assert.deepEqual(w.overlapReachSpan(desk), { left: 236, right: 364, top: 80, bottom: 80 });
+    // A wall-mounted one gives its vertical extent too
+    const board = sprite('board', 200, 100, 40, 52, { originX: 0.5, originY: 0.5, data: { wallMounted: true } });
+    const wm = w.overlapReachSpan(board);
+    assert.ok(wm && wm.top < wm.bottom, JSON.stringify(wm));
+    // A static NPC: the body rectangle moved into the sprite frame by the body offset
+    const guard = npc('guard', 100, 100, { _staticNpc: true, body: { x: 90, y: 110, width: 20, height: 16 } });
+    assert.deepEqual(w.overlapReachSpan(guard), { left: 90, right: 110, top: 79, bottom: 95 });
+    // A walking NPC and a door are measured from their centre
+    assert.equal(w.overlapReachSpan(npc('walker', 100, 100)), null);
+    assert.equal(w.overlapReachSpan(doorAt('d', 10, 10)), null);
 });
 
 test('overlap 22d (R2 M1): a second click within 8 px of the stand point with nothing in reach is never the toast: a step, or the far click', () => {
@@ -676,7 +741,8 @@ test('overlap 22: the overlap watcher: silent on arrival in reach, says why when
     w2.pendingOverlapWalk.update(t2 + 1000);                      // retry spent, still nothing in reach: hand over (R2 M1)
     assert.ok(!w2.log.some(l => l.startsWith('alert')), 'no dead-end toast: ' + w2.log.join());
     assert.equal(w2.pendingOverlapWalk.get(), null);
-    assert.equal(w2.pendingTapUse.get()?.obj?.id, 'printout', 'the normal far click on the topmost hit');
+    assert.equal(w2.pendingTapUse.get(), null, 'a walk only: nothing used on arrival (R3 m1)');
+    assert.equal(w2.log.filter(l => l.startsWith('walk:')).length, 3, 'the hand-over walks');
     const p3 = { x: 200, y: 200 };
     const w3 = world({ player: p3, objects: [copierAt(), printoutAt()] });
     w3.tap(118, 108);

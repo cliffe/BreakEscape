@@ -3100,7 +3100,8 @@ const pendingOverlapWalk = createPendingTapUse({
 });
 const RETRY_GRACE_MS = 300;
 // The overlap walk ended (retry spent) with nothing in reach: hand over to the normal single far click
-// on the topmost hit, which has its own approach logic (review R2 M1). In a fight, or with a hit
+// on the topmost hit, which has its own approach logic (review R2 M1). It only walks: nothing is
+// used or opened on arrival, the next click does that (review R3 m1). In a fight, or with a hit
 // in reach, the old message.
 function overlapStoppedShort(hits) {
     const live = (hits || []).filter(stillThere);
@@ -3112,7 +3113,7 @@ function overlapStoppedShort(hits) {
     } else if (top._isNPC) {
         walkTowardNpc(top);
     } else {
-        walkToObjectThenUse(top);
+        walkToObjectThenUse(top, { walkOnly: true });   // nothing is used on arrival (review R3 m1)
     }
 }
 if (typeof window !== 'undefined') {
@@ -3161,11 +3162,16 @@ function tapAlphaAt(scene) {
 
 // Walk until an out-of-reach object is in reach, then use it; a chair is sat on instead
 // (seating.js). The stand point is tap-pick.js objectStandPoint.
-function walkToObjectThenUse(obj) {
+function walkToObjectThenUse(obj, { walkOnly = false } = {}) {
     const player = window.player;
     if (!player) return;
     const target = objectStandPoint(obj, player, standPointDeps(player));
     if (!target) return;
+    // The overlap hand-over (review R3 m1): a walk only, the player's next click decides
+    if (walkOnly) {
+        movePlayerToPoint(target.x, target.y, { avoidNpcs: true });
+        return;
+    }
     // A far object of another room (a wall row two rooms share, a doorway) is only walked
     // to, as before: it is not used on arrival (code review R1 m1)
     const ownRoom = sameRoomFrom(playerFeet(player), obj);

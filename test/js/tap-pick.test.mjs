@@ -648,26 +648,23 @@ test('overlap 11b: overlapStandPoint steps the reach margin 12, 8, 4, 0 over wal
 
 test('overlap 11c: overlapStandPoint picks the cell with the most slack at the winning margin, ties to the shortest walk', () => {
     const player = { x: 0, y: 0 };
-    const reach = 20;
-    const inReachFrom = (p, h, margin = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= reach - margin;
-    const findCell = (x, y) => ({ x, y });
-    // Two hits 8 px apart: at margin 12 (reach 8) many cells pass, the nearest to the player sits on the
-    // edge of both circles; the cell midway between them (100,4) is 4 px inside both, the most slack
-    const p = overlapStandPoint([{ id: 'a', x: 100, y: 0 }, { id: 'b', x: 100, y: 8 }], { x: 100, y: 4 }, player,
-        { range: 32, inReachFrom, findCell });
-    assert.deepEqual(p, { x: 100, y: 4 });
-    // Equal slack goes to the shorter walk: hits mirrored about the player's row give two equal cells
     const hits = [{ id: 'a', x: 100, y: -4 }, { id: 'b', x: 100, y: 4 }];
-    const tie = overlapStandPoint(hits, { x: 100, y: 0 }, { x: 0, y: 0 },
-        { range: 32, inReachFrom, findCell: (x, y) => (Math.abs(x - 100) === 4 && y === 0 ? { x, y } : null) });
-    assert.deepEqual(tie, { x: 96, y: 0 }, 'x 96 and 104 tie on slack; 96 is the shorter walk');
+    // Each walkable cell has a made-up room (the biggest margin it passes); all below 12, where slack is ranked
+    const mk = (room) => {
+        const key = (p) => `${p.x},${p.y}`;
+        return { range: 32, inReachFrom: (p, h, m = 12) => (room[key(p)] ?? -1000) >= m, findCell: (x, y) => (key({ x, y }) in room ? { x, y } : null) };
+    };
+    const more = overlapStandPoint(hits, { x: 100, y: 0 }, player, mk({ '72,0': 8, '84,0': 11 }));
+    assert.deepEqual(more, { x: 84, y: 0 }, 'more room beats the shorter walk');
+    const tie = overlapStandPoint(hits, { x: 100, y: 0 }, player, mk({ '72,0': 8, '84,0': 8 }));
+    assert.deepEqual(tie, { x: 72, y: 0 }, 'equal room goes to the shorter walk');
 });
 
 test('overlap 11d (R5 m1): slack beats walk length only within 48 px of the nearest passing cell', () => {
     const player = { x: 0, y: 0 };
     const hits = [{ id: 'a', x: 100, y: -4 }, { id: 'b', x: 100, y: 4 }];
     // Each walkable cell has a made-up room (the biggest margin it passes); other points pass nothing
-    const room = { '72,0': 14, '132,28': 100, '80,0': 20 };
+    const room = { '72,0': 8, '132,28': 11, '80,0': 11 };   // all below 12, so slack is ranked (the cap is 12)
     const key = (p) => `${p.x},${p.y}`;
     const inReachFrom = (p, h, m = 12) => (room[key(p)] ?? -1000) >= m;
     const cells = (list) => (x, y) => (list.includes(`${x},${y}`) ? { x, y } : null);
@@ -678,6 +675,46 @@ test('overlap 11d (R5 m1): slack beats walk length only within 48 px of the near
     // (80,0) is 20 away: within 48 px of the nearest, so its extra room still wins
     const close = overlapStandPoint(hits, { x: 100, y: 0 }, player, { range: 32, inReachFrom, findCell: cells(['72,0', '80,0']) });
     assert.deepEqual(close, { x: 80, y: 0 });
+});
+
+test('overlap 11m (R3 m5): slack above 12 is not ranked: the shorter walk wins', () => {
+    const player = { x: 60, y: 0 };
+    const hits = [{ id: 'a', x: 100, y: -4 }, { id: 'b', x: 100, y: 4 }];
+    const room = { '72,0': 12, '92,0': 40 };
+    const key = (p) => `${p.x},${p.y}`;
+    const inReachFrom = (p, h, m = 12) => (room[key(p)] ?? -1000) >= m;
+    const findCell = (x, y) => (key({ x, y }) in room ? { x, y } : null);
+    const p = overlapStandPoint(hits, { x: 100, y: 0 }, player, { range: 32, inReachFrom, findCell });
+    assert.deepEqual(p, { x: 72, y: 0 }, 'a cell with 40 px of room does not beat one with 12');
+});
+
+test('overlap 11n (R3 m2): ranked by risk: a clear-line cell at margin 12 or 8, then a no-line one at 12 or 8, then the thin margins', () => {
+    const slackOf = (p, hs) => Math.min(...hs.map(h => 32 - Math.hypot(p.x - h.x, p.y - h.y)));
+    const inReachFrom = (p, h, m = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= 32 - m;
+    const findCell = (x, y, r) => (r === 0 ? { x: Math.round(x / 4) * 4, y: Math.round(y / 4) * 4 } : null);
+    const occupied = (p) => p.x % 4 !== 0 || p.y % 4 !== 0;   // only lattice cells compete
+    const a = { id: 'a', x: 100, y: 0 }, b = { id: 'b', x: 140, y: 0 };
+    const run = (pathClear) => overlapStandPoint([a, b], { x: 120, y: 0 }, { x: 121.3, y: 201.7 },
+        { range: 32, inReachFrom, findCell, pathClear, occupied, wallClear: () => true });
+    // The review's probe: lines only at the rim (slack under 4); the centre has 12 slack and no line
+    const r = run((q) => slackOf(q, [a, b]) < 4);
+    assert.ok(r && slackOf(r, [a, b]) >= 12, `the no-line wide-margin cell beats the thin clear-line one: ${JSON.stringify(r)} slack ${r && slackOf(r, [a, b])}`);
+    // A clear line at margin 8 still beats a no-line cell at 12? No: the order is 12 clear, 8 clear, 12 none
+    const r2 = run((q) => slackOf(q, [a, b]) >= 8);
+    assert.ok(r2 && slackOf(r2, [a, b]) >= 8 && run(() => true), JSON.stringify(r2));
+    // No line anywhere (the live Grace/Marek shape): still a joint cell, not null
+    const r3 = run(() => false);
+    assert.ok(r3 && inReachFrom(r3, a, 0) && inReachFrom(r3, b, 0), JSON.stringify(r3));
+});
+
+test('overlap 11o (R3 n1): the no-line fallback takes the cell with the most slack, not the shortest walk', () => {
+    const player = { x: 60, y: 0 };
+    const hits = [{ id: 'a', x: 100, y: -4 }, { id: 'b', x: 100, y: 4 }];
+    const room = { '72,0': 8, '84,0': 11 };
+    const key = (p) => `${p.x},${p.y}`;
+    const p = overlapStandPoint(hits, { x: 100, y: 0 }, player, { range: 32, inReachFrom: (q, h, m = 12) => (room[key(q)] ?? -1000) >= m,
+        findCell: (x, y) => (key({ x, y }) in room ? { x, y } : null), pathClear: () => false });
+    assert.deepEqual(p, { x: 84, y: 0 });
 });
 
 test('overlap 11e (R5 m2/m3): the lattice stays inside the hits\' reach boxes, is not built when a named point has margin 12, and skips cells with no path', () => {

@@ -237,6 +237,11 @@ export function soleHit({ allHits } = {}, isSeat = () => false) {
 
 /** Reach margins an overlap stand point is judged with, widest first (px inside the range) */
 export const OVERLAP_MARGINS = [12, 8, 4, 0];
+// Slack above this only buys a longer walk (review R3 m5): at 12 px inside the range the 8 px
+// arrival error is covered with 4 px spare
+const ARRIVAL_SLACK_CAP = 12;
+// [margin, allow a cell with no clear straight line]
+const OVERLAP_RANKING = [[12, false], [8, false], [12, true], [8, true], [4, false], [0, false], [4, true], [0, true]];
 
 /**
  * Where to stand so every hit of a far overlap is in reach (overlap plan D2): at each margin in
@@ -298,7 +303,8 @@ export function overlapStandPoint(hits, click, player, deps) {
             // height, a static NPC's body), not only its centre (review R2 m1)
             let sp = null;
             try { sp = deps.reachSpan?.(h) || null; } catch (e) { sp = null; }
-            const sl = sp ? sp.left : h.x, sr = sp ? sp.right : h.x, st = sp ? sp.top : h.y, sb = sp ? sp.bottom : h.y;
+            const sl = sp ? Math.min(sp.left, h.x) : h.x, sr = sp ? Math.max(sp.right, h.x) : h.x;
+            const st = sp ? Math.min(sp.top, h.y) : h.y, sb = sp ? Math.max(sp.bottom, h.y) : h.y;
             x0 = Math.max(x0, sl - r + fx); x1 = Math.min(x1, sr + r + fx);
             y0 = Math.max(y0, st - r + fy); y1 = Math.min(y1, sb + r + fy);
         }
@@ -327,7 +333,7 @@ export function overlapStandPoint(hits, click, player, deps) {
     const walkOf = (p) => Math.hypot(p.x - fromPt.x, p.y - fromPt.y);
     // Slack beats walk length only within MAX_EXTRA_WALK px of the nearest qualifying cell (code
     // review R5 m1): a cell across a desk island with 1 px more slack must not win
-    const MAX_SLACK = 24;
+    const MAX_SLACK = ARRIVAL_SLACK_CAP;
     // Walk length is the straight line from the feet, not a path length (review R2 m3): the
     // pathfinder (findWorldPath) is asynchronous and this runs inside one click, and a path per
     // candidate cell would be hundreds of queries. A cell behind furniture is at least filtered
@@ -353,20 +359,19 @@ export function overlapStandPoint(hits, click, player, deps) {
         // None has a straight clear line, but the walk pathfinds around furniture (live check: the
         // lounge desks blocked every line to the only cells where Grace and Marek were both in
         // reach): the shortest walk is still better than no joint stand point
-        return fallback ? pass[0].p : null;
+        return fallback ? near[0].p : null;
     };
     const namedPool = named.map(p => ({ p, walk: walkOf(p) }));
     // A named point with the widest margin wins outright; the lattice is only built when none has it
     const wide = pick(namedPool, OVERLAP_MARGINS[0]);
     if (wide) return wide;
     const pool = [...namedPool, ...lattice()];
-    // Every margin with cells that have a clear line first; a cell with none ranks below all of them
-    // (review R2 m2)
-    for (const fallback of [false, true]) {
-        for (const margin of OVERLAP_MARGINS) {
-            const p = pick(pool, margin, fallback);
-            if (p) return p;
-        }
+    // Ranked by risk (review R3 m2): a clear line at the wide margins, then no line at the wide
+    // margins, then the thin margins. A margin-0 cell can end 8 px out of reach; a no-line cell at
+    // margin 12 was reached 14 of 14 times live (the pathfinder walks round furniture)
+    for (const [margin, fallback] of OVERLAP_RANKING) {
+        const p = pick(pool, margin, fallback);
+        if (p) return p;
     }
     return null;
 }
