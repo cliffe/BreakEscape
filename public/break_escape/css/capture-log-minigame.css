@@ -27,14 +27,14 @@
     background: var(--ui-surface, #1c2438); border: 2px solid var(--ui-line, #4c5b80); overflow-wrap: anywhere; }
 .signin-row.capture-log-new { padding-right: 56px; }
 .signin-row .capture-log-new-mark { position: absolute; top: 6px; right: 6px; margin-left: 0; }
-.signin-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.signin-tag { display: inline-block; padding: 0 6px; font-size: 16px; line-height: 22px; white-space: nowrap;
+.signin-row-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.signin-row-tag { display: inline-block; padding: 0 6px; font-size: 16px; line-height: 22px; white-space: nowrap;
     border: 2px solid var(--ui-accent, #8fb3ff); border-radius: 0; }
-.signin-tag-kind { background: var(--ui-accent, #8fb3ff); color: #10141f; }
-.signin-tag-source { background: transparent; color: var(--ui-accent, #8fb3ff); }
-.signin-title { font-size: 20px; }
+.signin-row-tag-kind { background: var(--ui-accent, #8fb3ff); color: #10141f; }
+.signin-row-tag-source { background: transparent; color: var(--ui-accent, #8fb3ff); }
+.signin-row-title { font-size: 20px; }
 .signin-subtitle, .signin-line { font-size: 18px; opacity: 0.85; }
 .signin-use { font-size: 18px; }
 .signin-secret { font-size: 20px; letter-spacing: 1px; }
 .signin-row-greyed { opacity: 0.55; border-style: dashed; }
-.signin-row-greyed .signin-tag-kind { background: transparent; color: var(--ui-text, #eef1f8); border-color: var(--ui-line, #4c5b80); }
+.signin-row-greyed .signin-row-tag-kind { background: transparent; color: var(--ui-text, #eef1f8); border-color: var(--ui-line, #4c5b80); }

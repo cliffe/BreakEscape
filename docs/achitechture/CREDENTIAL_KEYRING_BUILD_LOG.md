@@ -1237,3 +1237,5 @@ The capture log's Sign-ins list (plan 8.7, R13). The labs' captures view is unch
 
 README_scenario_design.md notes the two sections, `rowTag`, `rowSource` and the "Findings" section against the "Finding" tag. docs/IDEAS_BACKLOG.md has the engagement report idea (masked Sign-ins rows in the report).
 
+
+**Run 4.** The capture log row classes are now `signin-row-title`, `signin-row-tags`, `signin-row-tag`, `signin-row-tag-kind` and `signin-row-tag-source`, so they no longer collide with the sign-in screen's `.signin-title`, `.signin-tags` and `.signin-tag` in `password-minigame.css` (the screen's classes are untouched). The Sign-ins banner is now "Sign-ins captured or found. Shown in full here, masked in the report." (the earlier wording took 3 to 4 lines at 390x844; two shorter drafts still took 3). `signin-fit.mjs` with `K3D_ONLY=1` passes all four sizes (banner 2 lines at 390x844). Shots are in `tmp/handover/ac0/k3d-shots/` in the main checkout. Plan 8.7 quotes the new banner text.

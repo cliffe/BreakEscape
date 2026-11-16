@@ -399,7 +399,7 @@ async function measureCaptureLog(page, size) {
             for (const row of root.querySelectorAll('.signin-row')) {
                 const rr = row.getBoundingClientRect();
                 if (row.scrollWidth > row.clientWidth + 1) { out.ok = false; out.notes.push(`${row.dataset.key} overflows by ${row.scrollWidth - row.clientWidth}px`); }
-                for (const t of row.querySelectorAll('.signin-tag, .capture-log-new-mark')) {
+                for (const t of row.querySelectorAll('.signin-row-tag, .capture-log-new-mark')) {
                     const tr = t.getBoundingClientRect();
                     if (tr.left < rr.left - 1 || tr.right > rr.right + 1) { out.ok = false; out.notes.push(`${row.dataset.key}: "${t.textContent}" outside its row`); }
                 }
@@ -411,7 +411,7 @@ async function measureCaptureLog(page, size) {
             if (size[0] === 390 && out.banners.some(n => n > 2)) { out.ok = false; out.notes.push(`a banner takes ${Math.max(...out.banners)} lines at 390x844`); }
             out.window = `${Math.round(wr.width)}x${Math.round(wr.height)}`;
             out.scrolls = root.scrollHeight > root.clientHeight + 1;
-            out.tags = four ? [...root.querySelectorAll('[data-key="account:lord"] .signin-tag')].map(t => t.textContent) : [];
+            out.tags = four ? [...root.querySelectorAll('[data-key="account:lord"] .signin-row-tag')].map(t => t.textContent) : [];
         } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
         return out;
     }, { label: LABEL_32, size });

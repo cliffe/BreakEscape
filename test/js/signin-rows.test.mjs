@@ -301,9 +301,9 @@ test('buildSignInRow draws tags and text as textContent, and marks the secret no
         keyring: { entries: [], captures: { ian_page: meta('password', { account: 'ian', source: 'phished' }) } }
     });
     const { row, secretNode } = buildSignInRow(signins[0]);
-    assert.equal(row.querySelectorAll('.signin-tag-kind').length, 1);
-    assert.equal(row.querySelector('.signin-tag-kind').textContent, 'Captured password');
-    assert.equal(row.querySelector('.signin-tag-source').textContent, 'Phished');
+    assert.equal(row.querySelectorAll('.signin-row-tag-kind').length, 1);
+    assert.equal(row.querySelector('.signin-row-tag-kind').textContent, 'Captured password');
+    assert.equal(row.querySelector('.signin-row-tag-source').textContent, 'Phished');
     assert.equal(row.querySelectorAll('b').length, 0);
     assert.ok(secretNode.classList.contains('lpb-captures-secret'));
     assert.equal(secretNode.textContent, 'hunter2');

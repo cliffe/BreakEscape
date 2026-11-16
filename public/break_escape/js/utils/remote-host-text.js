@@ -233,7 +233,7 @@ export const SOURCE_TAG_TEXT = Object.freeze({
 
 export const SIGNINS_HEADING = 'Sign-ins';
 export const CAPTURES_HEADING = 'Captures';
-export const SIGNINS_BANNER_TEXT = 'Sign-ins this engagement has captured or found. Captured passwords show in full here and masked in the report.';
+export const SIGNINS_BANNER_TEXT = 'Sign-ins captured or found. Shown in full here, masked in the report.';
 export const CAPTURES_ROWS_BANNER_TEXT = 'PINs, footholds and findings this engagement has recorded.';
 
 /** The use line of each row (8.7). Every field is a template field, never free text. */

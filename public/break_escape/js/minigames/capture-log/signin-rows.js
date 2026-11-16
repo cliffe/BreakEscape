@@ -229,15 +229,15 @@ export function buildSignInRow(r) {
     const row = el('li', 'signin-row');
     row.dataset.rowType = r.type;
     if (r.greyed) row.classList.add('signin-row-greyed');
-    const tags = el('div', 'signin-tags');
+    const tags = el('div', 'signin-row-tags');
     for (const k of r.kinds || []) {
-        const t = el('span', 'signin-tag signin-tag-kind', rowKindName(k));
+        const t = el('span', 'signin-row-tag signin-row-tag-kind', rowKindName(k));
         t.dataset.kind = k;
         tags.appendChild(t);
     }
-    for (const s of r.sources || []) tags.appendChild(el('span', 'signin-tag signin-tag-source', s));
+    for (const s of r.sources || []) tags.appendChild(el('span', 'signin-row-tag signin-row-tag-source', s));
     row.appendChild(tags);
-    if (r.title) row.appendChild(el('div', 'signin-title', r.title));
+    if (r.title) row.appendChild(el('div', 'signin-row-title', r.title));
     if (r.subtitle && r.subtitle !== r.title) row.appendChild(el('div', 'signin-subtitle', r.subtitle));
     let secretNode = null;
     if (r.use != null && r.use !== '') {

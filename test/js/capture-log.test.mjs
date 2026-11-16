@@ -533,7 +533,7 @@ function stubKeyring(answer) {
 const headings = () => [...device().root.querySelectorAll('.capture-log-heading')].map(n => n.textContent);
 const banner = (section) => device().root.querySelector(`[data-section="${section}"] .capture-log-banner`)?.textContent ?? null;
 const rowText = (key) => device().root.querySelector(`[data-key="${key}"]`)?.textContent ?? '';
-const tagsOf = (key) => [...device().root.querySelectorAll(`[data-key="${key}"] .signin-tag`)].map(n => n.textContent);
+const tagsOf = (key) => [...device().root.querySelectorAll(`[data-key="${key}"] .signin-row-tag`)].map(n => n.textContent);
 
 test('K3d: the device asks GET /keyring on open (no credentials declared) and builds Sign-ins and Captures from it', async () => {
     reset({ globals: { se_captures: structuredClone(K3D_CAPTURES) } });
@@ -545,7 +545,7 @@ test('K3d: the device asks GET /keyring on open (no credentials declared) and bu
     assert.equal(calls.length, 1, 'one background GET /keyring on open');
     assert.equal(calls[0].pcId, null, 'the no-screen ask');
     assert.deepEqual(headings(), ['Sign-ins', 'Captures']);
-    assert.match(banner('signins'), /^Sign-ins this engagement has captured or found\./);
+    assert.match(banner('signins'), /^Sign-ins captured or found\./);
     assert.equal(banner('captures'), 'PINs, footholds and findings this engagement has recorded.');
     // One row per account (two captures), one per connecting entry; the file waits until opened
     assert.deepEqual(keysIn('signins'), ['account:lord', 'cred:rdp_fin']);
