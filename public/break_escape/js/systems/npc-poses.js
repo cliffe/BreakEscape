@@ -274,6 +274,7 @@ export class NpcPoses {
     /** Drop a pose: back to the idle when the sprite still shows it. */
     release(id, b) {
         this.pending.delete(id);
+        if (b) b._poseHoldFacing = false;   // face_player may turn the NPC again
         const key = this.active.get(id);
         if (!key) return;
         this.active.delete(id);
@@ -326,7 +327,7 @@ export class NpcPoses {
                 if (rec && obj && !rec.turned && !facesObject(b, obj)) {
                     const lead = wantedPose({ s, obj, usingMs: 0, seated: false, npc: w.npcManager?.getNPC?.(id), facing: true });
                     const to = directionToObject(b, obj);
-                    if ((lead === 'use' || lead === 'phone') && to) b.direction = to;
+                    if ((lead === 'use' || lead === 'phone') && to) { b.direction = to; b._poseHoldFacing = true; }
                 }
                 if (rec) rec.turned = true;
                 const name = wantedPose({

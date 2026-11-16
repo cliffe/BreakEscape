@@ -41,7 +41,7 @@ result.phone = null; result.rings = 0;
 for (let i = 0; i < 360 && !result.phone; i++) {
     await page.waitForTimeout(500);
     const st = await page.evaluate(() => { const b = window.npcBehaviorManager.getBehavior('tom'), s = window.npcNeedsSystem.getState('tom'); return { seated: !!b._seat, idle: s.mode === 'idle' && !s.job && !s.call }; });
-    if (!st.seated && st.idle && i % 12 === 0) { result.rings++; await page.evaluate(() => window.__test.interact('spare_phone', { approach: false }).catch(() => null)); }
+    if (st.idle && i % 12 === 0) { result.rings++; await page.evaluate(() => window.__test.interact('spare_phone', { approach: false }).catch(() => null)); }
     const sn = await snap('tom');
     if (/pose_phone/.test(sn.anim || '')) result.phone = { ...sn, shot: await shot('tom-phone', 'tom'), trigger: 'spare desk phone interact -> desk_phone_ring:tom_phone, Tom standing' };
 }

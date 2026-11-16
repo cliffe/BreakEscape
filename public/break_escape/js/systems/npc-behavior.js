@@ -1174,6 +1174,7 @@ export class NPCBehavior {
 
     facePlayer(playerPos) {
         if (!this.config.facePlayer || !playerPos) return;
+        if (this._poseHoldFacing) return; // turned to its machine or phone for a pose (npc-poses.js)
         if (!this.canSeePlayerToFace(playerPos)) return; // wall between
 
         const { x: nx, y: ny } = this.npcBodyPos();

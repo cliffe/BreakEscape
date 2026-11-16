@@ -444,3 +444,27 @@ test('pass: a seated colleague on the phone keeps the sit frame (the seat is dro
     assert.equal(b.direction, 'left');
     assert.equal(poses.active.size, 0);
 });
+
+test('pass: the turn holds face_player off until the pose is released', async () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    const { poses, b, s } = rig({ poseKeys: keys });
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b._poseHoldFacing, true);
+    // face_player (executeState) would turn the NPC back to the player every tick; it must not
+    globalThis.window ||= globalThis;
+    const { NPCBehavior } = await import('../../public/break_escape/js/systems/npc-behavior.js');
+    {
+        const fake = { config: { facePlayer: true }, _poseHoldFacing: true, direction: 'down',
+            canSeePlayerToFace: () => true, npcBodyPos: () => ({ x: 0, y: 0 }), calculateDirection: () => 'up',
+            playAnimation() {} };
+        NPCBehavior.prototype.facePlayer.call(fake, { x: 0, y: -50 });
+        assert.equal(fake.direction, 'down', 'held');
+        fake._poseHoldFacing = false;
+        NPCBehavior.prototype.facePlayer.call(fake, { x: 0, y: -50 });
+        assert.equal(fake.direction, 'up', 'free again');
+    }
+    s.job = null;
+    poses.update();
+    assert.equal(b._poseHoldFacing, false);
+});
