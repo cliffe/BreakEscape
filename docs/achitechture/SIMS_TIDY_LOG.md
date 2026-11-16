@@ -593,3 +593,37 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
   scenarios/test_needs_sims/scenario.json.erb`, then `git worktree remove` it (detached, no branch).
 - Gotcha: a wait loop of `until ! pgrep -f "needs-tour-regression.mjs 611"` matches its own command line and
   never ends; match on `node tools/playtest/...` with the game id outside the loop's own text.
+
+## Handover 11 (row 6 causes found, driver fixed; yield hold and mutual-pin fix in progress; stopped at the context guard)
+
+- Row 6 causes (tours in scratchpad ab/fix/; the needs log `t` runs at four times the stall/sample `c` clock):
+  - 6117: the driver set Sanjay's social need to 35 straight after the rota read, while Grace was drinking
+    at the cooler and Marek (avoids '*') waited. Sanjay went to chat with Grace; his npc_use_started armed
+    Rosa's coupled cooler break (scenario.json.erb 734 and 965, 30 s cooldowns), hers re-armed his, and the
+    pair held the cooler from t 811 to 1187. Marek's first walk then timed out (20 s minimum deadline,
+    npc-needs.js 3370) in kitchen-lane traffic; Sanjay's avoid armed outcast_pending at t 1523, as the
+    180 s wait ended. The scenario already sets Sanjay's social need when Marek leaves for the cooler
+    (Sanjay's npc_left_post:marek mapping, line 733), so the bump was never needed.
+  - 6116: same early bump and cooler hold, and the player's park walked into the lane between Tom
+    (-33,84) and Grace (3,84); its NPC-avoiding search found nothing (len 0) twice, and it stood at
+    (-30,87) for the whole wait. Sanjay (t 990 to 1038) and then Marek (thirst walk from t 987, timeout
+    at 1075 at (4,84)) could not get past it.
+  - Main code to write up, not fix: the Sanjay and Rosa coupling can hold the cooler for minutes and shut
+    out any NPC that avoids '*'; the 20 s needs walk deadline is short for a lane with traffic.
+- Commit ade76b7fe (driver): parkByCooler waits up to 20 s for the lane (x -70..48, y 64..108) to clear
+  before each of up to four tries (aim, then cells a tile W/N/S/E), and a player still in the lane walks
+  back to where it started; the row 6 social bump is gone (only the level is recorded). Not yet run live.
+- Commit b5a337735 (WIP, engine): three-NPC lane sim (scratchpad lane/sim.mjs; run `node sim.mjs`) showed
+  (a) a yielder's step took it just past AVOID_LOOKAHEAD_PX, `_avoid` cleared, it walked back in and met
+  the same NPC after a fresh 3 s wait, over and over (no one through in 90 s); (b) two pinned NPCs both
+  held for ever. Fix: `_avoid.yieldTo/yieldUntil` keep the yield to the same NPC within
+  AVOID_YIELD_HOLD_PX (96) for up to AVOID_YIELD_HOLD_MS (10 s); `pinned` is recomputed on every step;
+  equal pins fall back to avoidanceYieldsTo. Sim now: all three-NPC cases clear in 15 to 35 s with 3 to 4
+  yield handovers. Two-against-two cases still do not clear in the sim (it may be a sim artefact: its
+  room offsets and instant detours are crude; check before trusting it). npc-local-avoidance 33 of 33.
+- Next: (1) turn the sim's three-NPC case into a node test in npc-local-avoidance.test.mjs (all reach
+  their targets, at most 4 handovers); look at the two-against-two sim cases. (2) bin/test-js, then the
+  Rails suite alone. (3) server on :3093 by hand, 3+ fresh games of the tour with DOORWAY_LOG=1, rows 5
+  and 6 and headon.py. (4) R6 Outcomes in SIMS_TIDY_REVIEW_R6.md (A/B table from handover 10, yield fix
+  rationale, the row 6 causes above), commit. (5) baseline worktree clean-up (handover 10 commands).
+- No server running from this session.
