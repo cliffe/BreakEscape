@@ -924,7 +924,10 @@ export default class NPCManager {
 
     const fire = () => {
       // A ring mapping does not wait for the minigame to close: the ringer's table decides (2.9).
-      if (!config.ring && window.MinigameFramework?.currentMinigame) {
+      // Nor does an interrupt video call: it goes on to _queueScriptedConversation, which
+      // closes the open minigame (or queues behind a scripted conversation).
+      const cutsIn = config.interrupt === true && config.conversationMode === 'video-call';
+      if (!config.ring && !cutsIn && window.MinigameFramework?.currentMinigame) {
         pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
         return;
       }
@@ -950,10 +953,13 @@ export default class NPCManager {
    * together. Now it waits in a queue and opens once the first, and any minigame
    * opened from it, has closed.
    * @param {{ npcId: string, label: string, sceneType: string, params: Function,
-   *   startDelayMs?: number, beforeOpen?: Function, onStart?: Function, opening?: boolean }} conv
+   *   startDelayMs?: number, beforeOpen?: Function, onStart?: Function, opening?: boolean,
+   *   interrupt?: boolean }} conv
    *   params() builds the minigame params when it opens. beforeOpen() runs just before
    *   (false: drop it). onStart(minigame) runs after. opening: a timedConversation,
    *   which holds the mission brief popup while queued (hasPendingOpeningConversation).
+   *   interrupt: a minigame the player opens during the start delay is closed and this
+   *   opens anyway, instead of waiting behind it (video-call mappings that set it).
    */
   _queueScriptedConversation(conv) {
     const framework = window.MinigameFramework;
@@ -989,6 +995,16 @@ export default class NPCManager {
         // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
         // to the queue so it is not lost.
         if (window.MinigameFramework?.currentMinigame) {
+          // interrupt (an opt-in video-call mapping, m02 R4 M1): the call is meant to
+          // cut in before the player acts in the minigame they just opened (Ghost's
+          // offer before the recovery console choice). Close that minigame and open,
+          // as every scripted call did before the busy-guard. The drop check runs
+          // first, so a decision made inside the delay still drops the call and the
+          // minigame is left alone.
+          if (conv.interrupt && !conv.dropIfBusy) {
+            this._interruptAndOpen(conv, 'the minigame the player opened during the start delay');
+            return;
+          }
           this._scriptedCall = null;
           if (conv.dropIfBusy) {
             console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: player is in a minigame (auto-challenge, re-fires on next sighting)`);
@@ -1013,6 +1029,14 @@ export default class NPCManager {
     console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) waits: ${this._scriptedCall?.npcId || 'another'}'s conversation is starting or open`);
     this._scriptedCallQueue.push(conv);
     this._pumpScriptedCallQueue();
+  }
+
+  /**
+   * The one truth test for every skipIfGlobal (timed messages, timedConversations and
+   * video-call mappings): set means truthy, so a string or count global works too.
+   */
+  _skipGlobalSet(name) {
+    return !!window.gameState?.globalVariables?.[name];
   }
 
   /** An event-mapping phone call (see _queueScriptedConversation). */
@@ -1063,15 +1087,41 @@ export default class NPCManager {
     if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
   }
 
+  /**
+   * interrupt: close the open minigame and open conv in its place. The drop check
+   * (beforeOpen) runs first, so a call that would be dropped leaves the minigame alone.
+   * Never used over a scripted conversation: callers check _scriptedCallBusy() first.
+   */
+  _interruptAndOpen(conv, what) {
+    if (conv.beforeOpen && conv.beforeOpen() === false) {
+      this._scriptedCall = null;
+      if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+      return;
+    }
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) interrupts: closing ${what}`);
+    this._scriptedCall = { npcId: conv.npcId, minigame: null };
+    window.MinigameFramework.endMinigame(false, null);
+    this._openScriptedConversation({ ...conv, beforeOpen: null });
+  }
+
   // A queued conversation opens when none is starting or open, no minigame is open
   // (the player may have gone from the call to the notepad and back) and the player is
-  // not knocked out (startMinigame would refuse it, and it would be lost)
+  // not knocked out (startMinigame would refuse it, and it would be lost). One marked
+  // interrupt does not wait for a minigame that is not a scripted conversation: it
+  // closes it and opens (it still waits behind another scripted conversation).
   _pumpScriptedCallQueue() {
     if (this._scriptedCallTimer) return;
     const tick = () => {
       this._scriptedCallTimer = null;
       if (!this._scriptedCallQueue.length) return;
       const framework = window.MinigameFramework;
+      const head = this._scriptedCallQueue[0];
+      if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
+          head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
+        this._scriptedCallQueue.shift();
+        this._interruptAndOpen(head, 'the open minigame (queued call)');
+        return;
+      }
       if (!framework || this._scriptedCallBusy() || framework.currentMinigame ||
           window.playerIsKnockedOut?.()) {
         this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
@@ -1183,6 +1233,8 @@ export default class NPCManager {
         endingCheck:   mapping.endingCheck === true,    // this mapping opens the ending/debrief: warn first (systems/ending-check.js)
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
+        skipIfGlobal:  mapping.skipIfGlobal  || null,   // video-call: no call if this global is set at the event or when the call opens
+        interrupt:     mapping.interrupt === true,      // video-call: close a minigame opened during the start delay and open anyway
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
         callLabel:     mapping.callLabel     || null,   // phone-chat voiced call: caption under the caller's name
         ring:          mapping.ring          || null,   // phone-chat: an incoming call that rings (plan 3.1)
@@ -1850,13 +1902,30 @@ export default class NPCManager {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
 
+        // skipIfGlobal already set at the event: no call, and the open minigame is left
+        // alone (the queue below would close it first). Same check as a timedConversation.
+        if (config.skipIfGlobal && this._skipGlobalSet(config.skipIfGlobal)) {
+          console.log(`📵 video call for ${npcId} (${eventPattern}) skipped: ${config.skipIfGlobal} is set`);
+          return;
+        }
+
         // Closes whatever is open and opens 500 ms later, or waits behind another
-        // scripted conversation (_queueScriptedConversation)
+        // scripted conversation (_queueScriptedConversation). interrupt: it also closes
+        // a minigame the player opens during those 500 ms.
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          interrupt: config.interrupt === true,
+          // skipIfGlobal: a call that waited (behind an open minigame or another call) is
+          // dropped if the global became set meanwhile (m02 P9).
+          beforeOpen: () => {
+            if (config.skipIfGlobal && this._skipGlobalSet(config.skipIfGlobal)) {
+              console.log(`📵 video call for ${npcId} (${eventPattern}) dropped at open: ${config.skipIfGlobal} is set`);
+              return false;
+            }
+          },
           params: () => ({
             npcId: npc.id,
             startKnot: knotToUse,
@@ -2461,8 +2530,7 @@ export default class NPCManager {
 
     // Skip if a guard global is already truthy (e.g. don't nag about ESD after it's been pressed).
     if (message.skipIfGlobal) {
-      const globalValue = window.gameState?.globalVariables?.[message.skipIfGlobal];
-      if (globalValue) {
+      if (this._skipGlobalSet(message.skipIfGlobal)) {
         console.log(`[NPCManager] Skipping timed message from ${message.npcId}: global '${message.skipIfGlobal}' is already set`);
         return;
       }
@@ -2494,7 +2562,7 @@ export default class NPCManager {
         useTTS: npc.npcType === 'person' && !!npc.voice,
         // Same guard as at delivery: if the global is set by the time it's released, drop it
         stillValid: message.skipIfGlobal
-          ? () => !window.gameState?.globalVariables?.[message.skipIfGlobal]
+          ? () => !this._skipGlobalSet(message.skipIfGlobal)
           : undefined
       });
     }
@@ -2513,8 +2581,7 @@ export default class NPCManager {
     // Skip this conversation if a guard global variable is already truthy.
     // Used to prevent replaying one-shot cutscenes (e.g. opening briefing) on session resume.
     if (conversation.skipIfGlobal) {
-      const globalValue = window.gameState?.globalVariables?.[conversation.skipIfGlobal];
-      if (globalValue) {
+      if (this._skipGlobalSet(conversation.skipIfGlobal)) {
         console.log(`[NPCManager] Skipping timed conversation for ${conversation.npcId}: global '${conversation.skipIfGlobal}' is already set`);
         return;
       }
@@ -2557,7 +2624,7 @@ export default class NPCManager {
       opening: true,
       beforeOpen: () => {
         // Queued behind another scene: its guard may have been set meanwhile
-        if (conversation.skipIfGlobal && window.gameState?.globalVariables?.[conversation.skipIfGlobal]) {
+        if (conversation.skipIfGlobal && this._skipGlobalSet(conversation.skipIfGlobal)) {
           console.log(`[NPCManager] Skipping timed conversation for ${conversation.npcId}: global '${conversation.skipIfGlobal}' is already set`);
           return false;
         }
