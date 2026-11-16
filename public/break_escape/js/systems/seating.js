@@ -29,6 +29,7 @@
  */
 
 import { walkBoxClear, pathClear, chairRect, localStandGrid, nearestCell, floodStandCells, sweepBlock } from './seat-box.js';
+import { breathRows, breathDown, updateBreath as spriteUpdateBreath, endBreath, prefersReducedMotion } from './sprite-breath.js';
 
 export const COMPASS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
 const REAR = new Set(['north', 'north-east', 'north-west']);
@@ -82,89 +83,16 @@ function sitHip(textureKey, facing) {
     return [h[0] + d.x, h[1] + d.y];
 }
 
-// ---- breathing: a seated figure's head and shoulders sink 1px and rise again on a slow
-// cycle. The seated frames are single PixelLab rotations (breathing-idle is redrawn
-// frame to frame and drawn at another scale, so it can't be reused). While "down", the
-// sitter is cropped to the rows below the cut and an image of the rows above it is drawn
-// 1px lower, so nothing leaves a gap. Each sitter gets its own phase. Off under reduced
-// motion and while a needs NPC types (the typing bob moves the whole figure instead).
-const BREATH_MS = 3600;            // one breath
-const BREATH_DOWN = [0.5, 0.9];    // the part of the cycle with head and shoulders down
-const BREATH_CUT = 0.42;           // share of the figure's height, from the top, that moves
-const breathRowsCache = new Map(); // `${texture}|${frame}` -> { top, cut } or null
+// ---- breathing (systems/sprite-breath.js): a seated figure's head and shoulders sink 1px and
+// rise again on a slow cycle. Off under reduced motion and while a needs NPC types (the typing
+// bob moves the whole figure instead). breathRows and breathDown stay exported from here.
+export { breathRows, breathDown };
+// Tests (test/js/sprite-breath.test.mjs pins the seated output against a recorded trace)
+export { updateBreath as updateSeatedBreath, endBreath as endSeatedBreath };
 
-/** Opaque top row of a frame and the cut row just under the shoulders. */
-export function breathRows(textureKey, frameName) {
-    const k = `${textureKey}|${frameName}`;
-    if (breathRowsCache.has(k)) return breathRowsCache.get(k);
-    let rows = null;
-    try {
-        const tm = window.game?.textures;
-        const frame = tm?.getFrame(textureKey, frameName);
-        if (frame && tm.getPixelAlpha) {
-            let top = -1, bottom = -1;
-            for (let y = 0; y < frame.height; y++) {
-                for (let x = 0; x < frame.width; x++) {
-                    if (tm.getPixelAlpha(x, y, textureKey, frameName) > 0) { if (top < 0) top = y; bottom = y; break; }
-                }
-            }
-            if (top >= 0 && bottom - top > 8) rows = { top, cut: top + Math.round(BREATH_CUT * (bottom - top)) };
-        }
-    } catch (e) { /* no breathing for this frame */ }
-    breathRowsCache.set(k, rows);
-    return rows;
-}
-
-/** Pure: is a sitter with this phase breathing out (head and shoulders down) at `now` ms? */
-export function breathDown(now, phase) {
-    const t = ((((now + phase) % BREATH_MS) + BREATH_MS) % BREATH_MS) / BREATH_MS;
-    return t >= BREATH_DOWN[0] && t < BREATH_DOWN[1];
-}
-
-/**
- * Draw `sprite` breathing (or still, when `on` is false). `holder` keeps the per-sitter
- * state ({ img, phase, crop }); endBreath(holder, sprite) when the sitter gets up.
- */
+/** Seated breathing: the moving image sits a tenth of a seat depth step above the sitter. */
 function updateBreath(holder, sprite, on) {
-    if (!holder || !sprite?.active) return;
-    const b = holder.breath || (holder.breath = { img: null, phase: Math.random() * BREATH_MS, crop: null });
-    const now = sprite.scene?.time?.now ?? performance.now();
-    // A glow (postFX) can't be copied onto the image, so those sitters keep still.
-    const fx = sprite.postFX?.list?.length > 0;
-    const rows = on && !fx && sprite.visible && !prefersReducedMotion()
-        ? breathRows(sprite.texture.key, sprite.frame.name) : null;
-    if (!rows || !breathDown(now, b.phase)) {
-        if (b.img) b.img.setVisible(false);
-        if (b.crop) { sprite.setCrop(); b.crop = null; }
-        return;
-    }
-    const w = sprite.frame.width, h = sprite.frame.height;
-    const crop = `${sprite.frame.name}|${rows.cut}`;
-    if (b.crop !== crop) { sprite.setCrop(0, rows.cut, w, h - rows.cut); b.crop = crop; }
-    if (!b.img) {
-        b.img = sprite.scene.add.image(0, 0, sprite.texture.key, sprite.frame.name);
-        sprite.once('destroy', () => { b.img?.destroy(); b.img = null; });
-    }
-    const img = b.img;
-    if (img.frame.name !== sprite.frame.name || img.texture.key !== sprite.texture.key) img.setTexture(sprite.texture.key, sprite.frame.name);
-    img.setCrop(0, 0, w, rows.cut)
-        .setOrigin(sprite.originX, sprite.originY)
-        .setScale(sprite.scaleX, sprite.scaleY)
-        .setFlip(sprite.flipX, sprite.flipY)
-        .setPosition(sprite.x, sprite.y + sprite.scaleY)
-        .setAlpha(sprite.alpha)
-        .setDepth(sprite.depth + SEAT_DEPTH_STEP / 10)
-        .setVisible(true);
-    if (sprite.isTinted) img.setTint(sprite.tintTopLeft, sprite.tintTopRight, sprite.tintBottomLeft, sprite.tintBottomRight);
-    else if (img.isTinted) img.clearTint();
-}
-
-function endBreath(holder, sprite) {
-    const b = holder?.breath;
-    if (!b) return;
-    b.img?.destroy();
-    if (b.crop && sprite?.active) sprite.setCrop();
-    holder.breath = null;
+    spriteUpdateBreath(holder, sprite, on, SEAT_DEPTH_STEP / 10);
 }
 
 // Seat point per facing for each chair shape. front: [x, y, w, h] strips of the chair
@@ -1799,13 +1727,6 @@ export function needsStop(ns) {
 
 export const TYPING_BOB_MS = 600;
 
-let reducedMotionQuery;
-function prefersReducedMotion() {
-    try {
-        if (reducedMotionQuery === undefined) reducedMotionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)') || null;
-        return reducedMotionQuery?.matches === true;
-    } catch (e) { return false; }
-}
 
 /**
  * Pure: the seated typing bob (OFFICE_LIFE_PLAN 2.12), 0 or 1 px. Only while the NPC's job is
