@@ -10,8 +10,10 @@
  *                                 or written. Returns [{ speakerId, text }] or null while the story
  *                                 JSON is still loading (the first call starts the load).
  *   say(npcId, line, info)        speaks a line in that NPC's voice through its own TTSManager:
- *                                 only an NPC with a voice, only in the player's room (room-hearing
- *                                 level 1), quieter with distance, one line at a time (an audio
+ *                                 only an NPC with a voice, in the player's room or the next room
+ *                                 through an OPEN door (x0.4), quieter with distance down to a floor
+ *                                 (chatterVolume, D34), the volume passed to the TTS manager and
+ *                                 followed while the line plays, one line at a time (an audio
  *                                 queue, on top of the needs system's speech lock, because real clips
  *                                 can outrun the bubble). Muted when barks' sound is off. The bubble
  *                                 is the subtitle, so a missing clip (a keyless server's 503) changes
@@ -24,11 +26,12 @@
  * co-speaker's line. A line with no prefix belongs to the owner, or to a `# speaker:npc:<id>` tag.
  * What is sent to /tts is the text after the prefix.
  */
-import { hearingLevel } from './room-hearing.js';
+import { openDoorHearing, chatterVolume } from './room-hearing.js';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const STALE_MS = 8000;   // a queued line that waited longer than this is dropped, not spoken late
 const LOG_CAP = 100;
+const VOLUME_TICK_MS = 250;   // while a line plays, its volume follows the player (D34)
 
 /** Pure: "Name: text" as [name, text]; [null, line] without a prefix (InkLineWalker.split_prefix). */
 export function splitPrefix(line) {
@@ -201,10 +204,24 @@ export class NpcChatterVoice {
         return win().npcBarkSystem?.soundEnabled === false;
     }
 
+    /** The hearing factor: 1 in the player's room, 0.4 through an open door, 0 otherwise (shut door, a wall). */
     _hearing(npcId) {
-        if (this.deps.npcRoom) return this.deps.npcRoom(npcId) === this.deps.playerRoom?.() ? 1 : 0;
-        const roomId = win().npcBehaviorManager?.getBehavior?.(npcId)?.roomId;
-        return hearingLevel(roomId);
+        if (this.deps.hearing) return this.deps.hearing(npcId);
+        if (this.deps.npcRoom) {
+            const nr = this.deps.npcRoom(npcId), pr = this.deps.playerRoom?.();
+            return this.deps.doorHearing ? this.deps.doorHearing(nr, pr) : (nr === pr ? 1 : 0);
+        }
+        const w = win();
+        const roomId = w.npcBehaviorManager?.getBehavior?.(npcId)?.roomId;
+        const pr = w.currentPlayerRoom;
+        return openDoorHearing(roomId, pr, w.rooms, w.gameScenario?.rooms?.[pr]?.connections);
+    }
+
+    /** The volume now: the distance curve times the door factor; 0 when it cannot be heard. */
+    _volumeFor(npcId) {
+        const h = this._hearing(npcId);
+        if (!(h > 0)) return 0;
+        return chatterVolume(this._distance(npcId)) * h;
     }
 
     _distance(npcId) {
@@ -240,9 +257,7 @@ export class NpcChatterVoice {
         const base = { at: now, npcId, text: line, knot: info.knot || null, topic: info.topic || null };
         if (!npc || !npc.voice) { this._note({ ...base, spoken: false, reason: 'no_voice' }); return this.queue; }
         if (this._muted()) { this._note({ ...base, spoken: false, reason: 'muted' }); return this.queue; }
-        if (this._hearing(npcId) < 1) { this._note({ ...base, spoken: false, reason: 'other_room' }); return this.queue; }
-        const d = this._distance(npcId);
-        const volume = Number.isFinite(d) ? Math.max(0.35, Math.min(1, 1 - d / 400)) : 1;
+        if (!(this._hearing(npcId) > 0)) { this._note({ ...base, spoken: false, reason: 'other_room' }); return this.queue; }
         const gen = this.gen.get(npcId) || 0;
         const live = () => (this.gen.get(npcId) || 0) === gen;
         this.queue = this.queue.then(async () => {
@@ -250,14 +265,19 @@ export class NpcChatterVoice {
             if (!live()) { this._note({ ...base, spoken: false, reason: 'cancelled' }); return; }
             if (t - now > STALE_MS) { this._note({ ...base, spoken: false, reason: 'stale' }); return; }
             const mgr = await this._ttsFor(npcId);
+            // Worked out when the line starts, not when it was queued: the player may have moved
+            const volume = this._volumeFor(npcId);
+            if (!(volume > 0)) { this._note({ ...base, spoken: false, reason: 'other_room' }); return; }
             this._note({ ...base, spoken: true, volume: Math.round(volume * 100) / 100 });
-            const ms = await mgr.play(npcId, line);
+            const ms = await mgr.play(npcId, line, { volume });
             if (!ms) return;   // no clip (keyless server, quota): the bubble already carries the line
             if (!live()) { try { mgr.stop?.(); } catch (e) { /* ok */ } return; }   // hung up while it loaded
-            try { if (mgr.audio) mgr.audio.volume = volume; } catch (e) { /* routed audio ignores it */ }
             await new Promise(r => {
-                const timer = setTimeout(() => { this.current = null; r(); }, ms);
-                this.current = { npcId, mgr, text: line, done: () => { clearTimeout(timer); this.current = null; r(); } };
+                // Follow the player: walk off and it fades, leave the room and it stops being heard
+                const follow = setInterval(() => { try { mgr.setDistanceGain?.(this._volumeFor(npcId)); } catch (e) { /* ok */ } }, VOLUME_TICK_MS);
+                const end = () => { clearTimeout(timer); clearInterval(follow); this.current = null; r(); };
+                const timer = setTimeout(end, ms);
+                this.current = { npcId, mgr, text: line, done: end };
             });
         }).catch(() => {});
         return this.queue;
