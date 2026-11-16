@@ -76,6 +76,7 @@ test('R2 m1: closing the inventory keeps the chat counted until the chat has res
 const { MinigameFramework } = await import('../../public/break_escape/js/minigames/framework/minigame-manager.js');
 const { ContainerMinigame: RealContainer } = await import('../../public/break_escape/js/minigames/container/container-minigame.js').catch(() => ({}));
 const { MinigameScene } = await import('../../public/break_escape/js/minigames/framework/base-minigame.js');
+const { RFIDMinigame: RealRFID } = await import('../../public/break_escape/js/minigames/rfid/rfid-minigame.js').catch(() => ({}));
 
 class FakeChild extends MinigameScene {
     constructor(container, params) { super(container, params); this.mode = params?.mode; this.npcId = params?.npcId; }
@@ -152,6 +153,7 @@ test('R3 M1: container complete() marks the return and the framework keeps it', 
     assert.equal(window.pendingConversationReturn.returning, true, 'flagged as returning');
     await new Promise(r => setTimeout(r, 150));
     delete window.returnToConversationAfterNPCInventory;
+    window.pendingConversationReturn = null;
 });
 
 test('R3 M1: a failed open through showNPCInventory clears the pending return', async () => {
@@ -227,4 +229,134 @@ test('R3 m3: the card reader return keeps the chat counted until it restarts', a
     await new Promise(r => setTimeout(r, 120));
     assert.deepEqual(started, [['person-chat', 'tom']]);
     assert.equal(win.pendingConversationReturn, null);
+});
+
+
+// ---- R4 (POSE_FIXES_REVIEW_R4.md) ----
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function settleFrame() {
+    const fw = frame();
+    fw.CHAT_RETURN_SETTLE_MS = 30;
+    window.pendingContainerReturn = null;
+    return fw;
+}
+// The container's hand-over to a reader: the real complete() with pendingContainerReturn set
+function handOver(fw) {
+    const mg = fw.startMinigame('container', null, { mode: 'npc', npcId: 'tom' });
+    window.pendingContainerReturn = { containerItem: {}, contents: [], npcOptions: { mode: 'npc', npcId: 'tom' } };
+    RealContainer.prototype.complete.call(Object.assign(mg, { mode: 'npc' }), false);
+    return mg;
+}
+
+test('R4 M1: a hand-over to a reader that is then closed by a hit leaves the NPC free', async () => {
+    const fw = settleFrame();
+    handOver(fw);
+    assert.ok(window.pendingConversationReturn, 'kept through the hand-over');
+    fw.startMinigame('other', null, {});   // the notes reader
+    window.pendingContainerReturn = null;  // returnToContainerAfterNotes({ reopen: false }) spends it
+    fw.forceCloseMinigame();               // the hit
+    fw.startMinigame('other', null, {});   // an unrelated lockpick
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'the record is dropped');
+    assert.ok(free(), 'free during the lockpick');
+    fw.forceCloseMinigame();
+    assert.ok(free());
+});
+
+test('R4 M1: a text file reader closed by a conversation or room change leaves the NPC free', async () => {
+    const fw = settleFrame();
+    handOver(fw);
+    fw.startMinigame('other', null, {});   // the text file reader
+    window.pendingContainerReturn = null;  // text-file-minigame.js cleanup on a non-own close
+    fw.startMinigame('person-chat', null, { npcId: 'ana' });   // a conversation with someone else displaces it
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null);
+    assert.equal(createEngineWorld().inChatWith('tom'), false, 'not in a chat with Tom');
+});
+
+test('R4 M1: an item that opens nothing (or something that never returns to a container) leaves the NPC free', async () => {
+    const fw = settleFrame();
+    handOver(fw);   // nothing opens: no phone, no reader
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'nothing opened');
+    assert.ok(free());
+    // a phone/workstation that opens and later closes with no container return
+    const fw2 = settleFrame();
+    handOver(fw2);
+    fw2.startMinigame('other', null, {});
+    window.pendingContainerReturn = null;
+    fw2.endMinigame(true, null);
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null);
+    assert.ok(free());
+});
+
+test('R4 M1: controls, the record stays while a reader is open, the inventory reopens, or the chat is returning', async () => {
+    let fw = settleFrame();
+    handOver(fw);
+    fw.startMinigame('other', null, {});   // reader still open, container return pending
+    await wait(80);
+    assert.ok(window.pendingConversationReturn, 'a reader started from the inventory keeps it');
+    assert.equal(createEngineWorld().inChatWith('tom'), true);
+    fw.forceCloseMinigame();
+    window.pendingContainerReturn = null;
+    // the reader closed normally and the container reopened in npc mode
+    fw = settleFrame();
+    handOver(fw);
+    fw.startMinigame('other', null, {});
+    fw.endMinigame(true, null);            // notes closes; reopen scheduled
+    window.pendingContainerReturn = null;  // returnToContainerAfterNotes spends it...
+    fw.startMinigame('container', null, { mode: 'npc', npcId: 'tom' });   // ...and reopens the inventory
+    await wait(80);
+    assert.ok(window.pendingConversationReturn, 'the reopened inventory keeps it');
+    fw.forceCloseMinigame();
+    // a chat that is coming back
+    fw = settleFrame();
+    window.pendingConversationReturn = { npcId: 'tom', type: 'person-chat', returning: true };
+    fw.startMinigame('other', null, {});
+    fw.endMinigame(true, null);
+    await wait(80);
+    assert.ok(window.pendingConversationReturn, 'returning is left to its own restart');
+});
+
+test('R4 m1: the container hand-over to a reader keeps the pending return (the flag is checked)', () => {
+    const fw = settleFrame();
+    handOver(fw);
+    assert.ok(window.pendingConversationReturn, 'complete() with pendingContainerReturn marks the hand-over');
+    window.pendingConversationReturn = null;
+});
+
+test('R4 M2: the real card reader complete() keeps the chat and restarts it (clone_keycard)', async () => {
+    assert.ok(RealRFID, 'the real RFIDMinigame is importable');
+    const fw = frame();
+    const mg = fw.startMinigame('rfid', null, {});
+    const restarted = [];
+    window.returnToConversationAfterRFID = () => { restarted.push(window.pendingConversationReturn?.npcId); };
+    RealRFID.prototype.complete.call(mg, true);
+    assert.ok(window.pendingConversationReturn, 'the pending chat survives the reader closing');
+    assert.equal(window.pendingConversationReturn.returning, true);
+    assert.equal(createEngineWorld().inChatWith('tom'), true, 'Tom stays in the chat through the gap');
+    await wait(150);
+    assert.deepEqual(restarted, ['tom'], 'the chat restart ran');
+    delete window.returnToConversationAfterRFID;
+    window.pendingConversationReturn = null;
+});
+
+test('R4 m2: a superseded reader or inventory flags and restarts nothing', async () => {
+    for (const [Real, scene, extra] of [[RealRFID, 'rfid', {}], [RealContainer, 'container', { mode: 'npc', npcId: 'tom' }]]) {
+        const fw = frame();
+        const old = fw.startMinigame(scene, null, extra);
+        old.mode = 'npc';
+        fw.currentMinigame = new FakeOther(null, {});   // a fresh minigame has taken over
+        const fresh = { npcId: 'tom', type: 'person-chat' };
+        window.pendingConversationReturn = fresh;
+        let restarted = 0;
+        window.returnToConversationAfterRFID = window.returnToConversationAfterNPCInventory = () => { restarted++; };
+        Real.prototype.complete.call(old, true);
+        await wait(150);
+        assert.equal(fresh.returning, undefined, scene + ': the new record is not flagged');
+        assert.equal(restarted, 0, scene + ': no chat restarted over the new minigame');
+        delete window.returnToConversationAfterRFID; delete window.returnToConversationAfterNPCInventory;
+        window.pendingConversationReturn = null;
+    }
 });

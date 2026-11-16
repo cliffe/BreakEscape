@@ -228,6 +228,36 @@ export const MinigameFramework = {
         if (isChild && ending._returnsToChat !== true) window.pendingConversationReturn = null;
     },
 
+    /**
+     * The one clearing point for a pending chat return that nothing will resume
+     * (POSE_FIXES_REVIEW_R4 M1). A note, file or other item opened from the NPC's inventory
+     * hands the chat on to a reader; if the reader is closed by a hit, a knockout, a
+     * conversation or a room change, or the item never returns to a container, no later end
+     * names the record. So every minigame end that leaves a record behind queues one check a
+     * moment later (long enough for the 100 ms container reopen): the record stays only while
+     * the chat is coming back (`returning`), the NPC inventory or card reader is open, or a
+     * reader started from the inventory is still open (pendingContainerReturn). Otherwise it
+     * names nobody and is dropped.
+     */
+    CHAT_RETURN_SETTLE_MS: 400,
+
+    _queueChatReturnSettle() {
+        if (typeof window === 'undefined') return;
+        const rec = window.pendingConversationReturn;
+        if (!rec || rec.returning === true) return;
+        setTimeout(() => this._settleChatReturn(rec), this.CHAT_RETURN_SETTLE_MS);
+    },
+
+    _settleChatReturn(rec) {
+        if (typeof window === 'undefined' || window.pendingConversationReturn !== rec) return;
+        if (rec.returning === true) return;
+        const cur = this.currentMinigame;
+        const open = !!cur && !cur._ending;
+        if (open && (cur.mode === 'npc' || cur._sceneType === 'rfid')) return;
+        if (open && window.pendingContainerReturn) return;
+        window.pendingConversationReturn = null;
+    },
+
     endMinigame(success, result) {
         console.log('endMinigame called with success:', success, 'result:', result);
         if (this.currentMinigame && this.currentMinigame._ending) {
@@ -321,6 +351,7 @@ export const MinigameFramework = {
             if (!this.currentMinigame) {
                 document.querySelectorAll('.minigame-container:not([data-external])').forEach(el => el.remove());
             }
+            this._queueChatReturnSettle();
             // Barks held back while the minigame was open play now (D5)
             this._updateBarkLayer();
             if (!this.currentMinigame) {

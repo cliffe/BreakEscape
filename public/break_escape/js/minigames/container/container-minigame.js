@@ -2036,6 +2036,10 @@ export class ContainerMinigame extends MinigameScene {
      * Override to handle returning to conversation for NPC inventory mode
      */
     complete(success) {
+        // A superseded instance is ignored by the base class: flag and restart nothing (R4 m2)
+        if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {
+            return super.complete(success);
+        }
         // If in NPC mode, return to the conversation instead of just closing
         if (this.mode === 'npc') {
             // Check if we're in the middle of transitioning to another minigame (e.g., notes)

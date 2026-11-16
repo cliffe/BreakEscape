@@ -738,6 +738,11 @@ export class RFIDMinigame extends MinigameScene {
     }
 
     complete(success) {
+        // A superseded instance (a late timer after a hit closed this reader and another opened)
+        // must not flag or restart anybody's chat; the base class ignores it (R4 m2)
+        if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {
+            return super.complete(success, this.gameResult);
+        }
         // Check if we need to return to conversation
         if (window.pendingConversationReturn && window.returnToConversationAfterRFID) {
             console.log('Returning to conversation after RFID minigame');
