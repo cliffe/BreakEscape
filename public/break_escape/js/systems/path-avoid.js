@@ -159,6 +159,31 @@ export function crossesAvoidRect(x1, y1, x2, y2, rects, { halfWidth = 9, margin 
 // ── Room leash (OFFICE_LIFE_PLAN 7.2, slice 2a) ─────────────────────────────
 
 /**
+ * Cells a path search avoids round seated chairs (sims tidy item 1). A seated NPC's chair is held
+ * still but is left out of the world grid (it moves once they stand), so each search avoids it
+ * instead, padded as avoidCells pads. A rect within one cell of an end is skipped whole (the
+ * walker's own chair, a seat being walked to); the end cells, and padding cells within two cells
+ * of an end, stay open (a home beside a seated colleague). ends: [{x, y}] world points.
+ */
+export function seatedAvoidCells(rects, gridBounds, grid, ends = []) {
+    const { minX, minY, step } = gridBounds;
+    const at = (v, m) => Math.floor((v - m) / step);
+    const endCells = ends.map(p => ({ cx: at(p.x, minX), cy: at(p.y, minY) }));
+    const out = [];
+    for (const r of rects) {
+        if (ends.some(p => inRect(p.x, p.y, r, step))) continue;
+        const bx1 = at(r.left, minX), bx2 = at(r.right - 1, minX), by1 = at(r.top, minY), by2 = at(r.bottom - 1, minY);
+        for (const c of avoidCells([r], gridBounds, grid)) {
+            const pad = c.cx < bx1 || c.cx > bx2 || c.cy < by1 || c.cy > by2;
+            if (endCells.some(e => (e.cx === c.cx && e.cy === c.cy)
+                || (pad && Math.abs(e.cx - c.cx) <= 2 && Math.abs(e.cy - c.cy) <= 2))) continue;
+            out.push(c);
+        }
+    }
+    return out;
+}
+
+/**
  * A room's floor by the player's room rule (core/rooms.js updatePlayerRoom): the full width, from
  * two tiles below the top (the wall rows) to the bottom edge. `room` is a window.rooms entry
  * ({ position, map: { widthInPixels, heightInPixels } }). Null when the room has no map yet.
