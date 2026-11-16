@@ -5496,6 +5496,112 @@
         "panelPorts": { "type": "array", "description": "Pentest B1: this object is a patch panel. Each entry is a port; an entry with no jack is an unpatched port.", "items": { "type": "object", "required": ["port"], "additionalProperties": false, "properties": { "port": { "type": "integer", "minimum": 1, "maximum": 24 }, "label": { "type": "string", "maxLength": 3 }, "desk": { "type": "string" }, "jack": { "type": "string", "description": "Id of a top-level networkJack in the same room." } } } },
         "rogueDevice": { "type": "boolean", "description": "Networks 3.3: a takeable item with an id that can be planted in a jack. Not droppable." },
         "wifiAp": { "type": "boolean", "description": "Slice 9.3b (Wi-Fi, 5.3): true marks this object a Wi-Fi access point on its network (which must define a wifi block). Its click is the join flow; it is not a sign-in host, a jack or a lock." },
+        "wifiTwin": { "type": "boolean", "description": "Physical pentest A1 (4.3): true marks the planted rogue access point. Its click opens the rogue-ap console minigame (Recon, Clone, Log) through the minigame registry. It is not a jack, an access point to join or a lock." },
+        "apScan": {
+          "type": "array",
+          "description": "Physical pentest A1 (E0.6): the rogue-ap console's authored Wi-Fi scan, one row per network. Shown with textContent. Start on an inScope row writes cloneGlobals and then the chosen apPortal template's setGlobals; an out-of-scope row shows refusal and writes nothing.",
+          "items": {
+            "type": "object",
+            "required": ["ssid"],
+            "properties": {
+              "ssid": { "type": "string", "minLength": 1 },
+              "security": { "type": "string", "description": "Shown as authored, e.g. WPA2." },
+              "signal": { "type": "integer", "minimum": 0, "maximum": 4, "description": "Signal bars, 0 to 4." },
+              "clients": { "type": "integer", "minimum": 0 },
+              "inScope": { "type": "boolean", "description": "false refuses a clone of this network (a neighbour, not the client)." },
+              "refusal": { "type": "string", "description": "The console line when an out-of-scope row is started." },
+              "cloneGlobals": { "type": "object", "description": "Globals written when this row is cloned, name to value. Authored, not engine text.", "additionalProperties": { "type": ["boolean", "number", "string"] } },
+              "cloneLog": {
+                "description": "The Log line for a clone of this row: one string, or an object keyed by apPortal template id.",
+                "oneOf": [
+                  { "type": "string" },
+                  { "type": "object", "additionalProperties": { "type": "string" } }
+                ]
+              },
+              "knownClients": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["npcId"],
+                  "properties": { "npcId": { "type": "string" }, "label": { "type": "string" } },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "anyOf": [
+              { "properties": { "inScope": { "enum": [false] } }, "required": ["inScope", "refusal"] },
+              { "properties": { "inScope": { "enum": [true] } }, "required": ["cloneLog"] }
+            ],
+            "patternProperties": { "^_": {} },
+            "additionalProperties": false
+          }
+        },
+        "apPortal": {
+          "type": "object",
+          "description": "Physical pentest A1 (E0.6): the rogue-ap console's portal templates. Each page is rendered by the landing page builder's renderer in build mode (no form controls).",
+          "required": ["templates"],
+          "properties": {
+            "templates": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["id", "label", "page"],
+                "properties": {
+                  "id": { "type": "string", "minLength": 1 },
+                  "label": { "type": "string", "minLength": 1 },
+                  "setGlobals": { "type": "object", "description": "Globals written after the row's cloneGlobals when this template is started. Authored, not engine text.", "additionalProperties": { "type": ["boolean", "number", "string"] } },
+                  "page": {
+                    "type": "object",
+                    "properties": {
+                      "brands": { "type": "array", "items": { "$ref": "#/definitions/socialLandingBrand" } },
+                      "domainOptions": { "type": "array", "items": { "$ref": "#/definitions/socialLandingMenuOption" } },
+                      "wordings": { "type": "array", "items": { "type": "object", "x-free-data": true } },
+                      "fields": { "type": "array", "items": { "type": "string" } },
+                      "purposes": { "type": "array", "items": { "type": "object", "x-free-data": true } },
+                      "logos": { "type": "array", "items": { "type": "object", "x-free-data": true } },
+                      "fieldLabels": { "type": "object", "additionalProperties": { "type": "string" } },
+                      "choices": {
+                        "type": "object",
+                        "properties": {
+                          "brand": { "type": "string" },
+                          "purpose": { "type": "string" },
+                          "domainId": { "type": "string" },
+                          "wording": { "type": "string" },
+                          "fields": { "type": "array", "items": { "type": "string" } },
+                          "logo": { "type": ["string", "boolean"] },
+                          "padlock": { "type": "boolean" }
+                        },
+                        "patternProperties": { "^_": {} },
+                        "additionalProperties": false
+                      }
+                    },
+                    "patternProperties": { "^_": {} },
+                    "additionalProperties": false
+                  }
+                },
+                "patternProperties": { "^_": {} },
+                "additionalProperties": false
+              }
+            }
+          },
+          "patternProperties": { "^_": {} },
+          "additionalProperties": false
+        },
+        "apCaptureLog": {
+          "type": "array",
+          "description": "Physical pentest A1 (E0.6): rogue-ap console Log lines, each shown (with the NPC's headshot) once its global is true.",
+          "items": {
+            "type": "object",
+            "required": ["global", "text"],
+            "properties": {
+              "global": { "type": "string", "minLength": 1 },
+              "text": { "type": "string", "minLength": 1 },
+              "npcId": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
         "portSecurity": { "type": "boolean", "description": "Networks 9.3b (port security): on a networkJack, the switch port refuses an unknown device. The device goes in, no foothold is given, and it stays in the inventory. Only valid on a jack; cannot be combined with wifiAp." },
         "portSecurityMessage": { "type": "string", "description": "Networks 9.3b (port security): the line shown when a secured jack refuses a device. Needs portSecurity: true. A default naming the fix (disable unused ports) is used when absent." },
         "transfer": { "type": "string", "enum": ["copy", "move", "both"], "description": "Access model 5.1: what a takeable file on a sign-in desktop allows. Default both." },

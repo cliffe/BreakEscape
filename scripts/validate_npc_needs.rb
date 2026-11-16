@@ -91,6 +91,7 @@ module ValidateNpcNeeds
       issues << "⚠️ WARNING: room '#{room_id}' ambientSound '#{room['ambientSound']}' is not a sound the game loads (sound-manager.js): without roomTone it fades the ambient loop out (from this room and from rooms next to it that reach it first); with roomTone it counts as no bed."
     end
     issues << '❌ ERROR: roomTone must be true or false.' if json.key?('roomTone') && ![true, false].include?(json['roomTone'])
+    issues << '❌ ERROR: faintChatter must be true or false.' if json.key?('faintChatter') && ![true, false].include?(json['faintChatter'])
     table = room_tone_table
     map = json['roomToneTypes']
     if json.key?('roomToneTypes')

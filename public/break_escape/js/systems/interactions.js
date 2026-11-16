@@ -950,6 +950,14 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A planted rogue access point (physical pentest A1, 4.3): its click opens the rogue-ap
+    // console (Recon, Clone, Log) through the starter registry. It never runs the generic flow
+    // below (no triggerOnInteract, no pickup); the console writes its own globals.
+    if (sprite.scenarioData.wifiTwin === true) {
+        startRegisteredMinigame('rogue-ap', sprite);
+        return;
+    }
+
     // A patch panel (pentest slice B1, 5.4): an object with panelPorts opens the patch-panel
     // minigame, whose ports plant through networkLinks.interactJack.
     // A locked panel goes through the normal unlock flow first and opens on the next click.
