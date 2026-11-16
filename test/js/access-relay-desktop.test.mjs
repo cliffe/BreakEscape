@@ -61,7 +61,7 @@ const { openLoginSignIn, interactLoginPc, openLoginPc, openRelayDesktop, relayLo
 const { PcSessions } = await imp('systems/pc-sessions.js');
 const { Keyring } = await imp('systems/keyring.js');
 const { ContainerMinigame, folderRouteQuery } = await imp('minigames/container/container-minigame.js');
-const { endedAssistMessage } = await imp('utils/remote-host-text.js');
+const { endedAssistMessage, RELAY_FOLDER_UNAVAILABLE_TEXT } = await imp('utils/remote-host-text.js');
 
 const startAction = (id) => { document.querySelector('.pc-start-btn').click(); document.getElementById(`pc-start-${id}`).click(); };
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
@@ -227,6 +227,7 @@ test('a 403 on the relay desktop drops the session and closes to the world with 
     assert.equal(current(), null);
     assert.equal(signInScreens.length, 0, 'never the sign-in screen');
     assert.ok(alerts.some(a => a[0] === 'Jake Brooks ended the remote assist.'));
+    assert.ok(!alerts.some(a => a[0] === RELAY_FOLDER_UNAVAILABLE_TEXT), 'no folder toast when the assist ended');
 });
 
 test('a folder under the relay desktop names relay=1, and its Close reopens the relay desktop', async () => {
@@ -260,6 +261,11 @@ test('a reason-less folder 403 under a live relay closes the folder only; the re
     assert.equal(sessions.isRelay('jake_pc'), true, 'the relay is kept');
     assert.ok(current() instanceof ContainerMinigame && current().relay, 'the relay desktop is open again');
     assert.ok(!alerts.some(a => /ended the remote assist/.test(a[0])), 'no ended line');
+    // R3 t2: exactly one folder fetch and one desktop fetch (no double fetch)
+    assert.equal(fetches.filter(u => /jake_docs/.test(u)).length, 1, 'one folder fetch');
+    assert.equal(fetches.filter(u => /jake_pc\?relay=1/.test(u)).length, 1, 'one desktop fetch');
+    // R3 t3: a really locked folder says so once the desktop is back
+    assert.deepEqual(alerts.filter(a => a[0] === RELAY_FOLDER_UNAVAILABLE_TEXT).length, 1, 'the folder toast');
 });
 
 test('a reason-less folder 403 after the assist ended: the reopened desktop says so', async () => {

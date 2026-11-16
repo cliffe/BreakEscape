@@ -961,10 +961,16 @@ test('R3 t1: a sync PUT that never answers is inside the same cap, so the chain 
     kr.askTimeoutMs = 30;
     let hang = true;
     window.stateSync = { syncConfirmed: () => (hang ? new Promise(() => {}) : Promise.resolve()) };
-    const t0 = Date.now();
+    const realNow = Date.now, frozen = realNow();
+    const t0 = realNow();
     const getsBefore = keyringGets().length;
-    assert.equal(await kr.refresh(), null, 'the hung PUT spends the cap and the refresh gives up');
-    assert.ok(Date.now() - t0 < 1000, 'well inside a second');
+    // R3 t1: freeze the clock for the hung refresh, so a reverted fix always has the whole cap
+    // left for a GET (setTimeout still fires on real time after 30 ms)
+    Date.now = () => frozen;
+    try {
+        assert.equal(await kr.refresh(), null, 'the hung PUT spends the cap and the refresh gives up');
+    } finally { Date.now = realNow; }
+    assert.ok(realNow() - t0 < 1000, 'well inside a second');
     // K3c R2 t1: no GET at all once the PUT has spent the cap (a GET sent with a sliver left
     // could beat its own timeout and return [] instead of null)
     assert.equal(keyringGets().length, getsBefore, 'no GET while the PUT hangs');

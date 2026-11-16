@@ -9,6 +9,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT } from '../../utils/remote-host-text.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
@@ -154,6 +155,8 @@ export function networkScreenKind(item) {
 if (typeof window !== 'undefined') window.networkScreenKind = networkScreenKind;
 
 // The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
+// Set when a relay folder 403 closes the folder; the reopened relay desktop reads and clears it
+let pendingRelayFolderNote = null;
 export const PC_OFF_TEXT = 'This PC is off.';
 
 /**
@@ -586,6 +589,8 @@ export class ContainerMinigame extends MinigameScene {
                 // reason for a locked or powered-off folder, so the reopened relay desktop decides
                 // whether the assist ended or the PC is off (K3c R2 m1)
                 if (response.status === 403 && this.sourcePcId && window.pcSessions?.isRelay?.(this.sourcePcId)) {
+                    // Said only if the reopened desktop answers 200 (a really locked folder)
+                    pendingRelayFolderNote = this.sourcePcId;
                     this.complete(false);
                     return [];
                 }
@@ -632,6 +637,8 @@ export class ContainerMinigame extends MinigameScene {
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
+            const folderNote = pendingRelayFolderNote === pcId;
+            pendingRelayFolderNote = null;
             let refusal = null;
             if (response.status === 403) {
                 try { refusal = await response.json(); } catch (e) { /* no body */ }
@@ -694,6 +701,7 @@ export class ContainerMinigame extends MinigameScene {
                 this._unregisterDesktop = window.pcSessions.registerDesktop(pcId, (message, reason) => this.closeForSessionEnd(message, reason));
             }
             window.pcSessions?.desktopOpened?.(pcId);
+            if (folderNote && this.relay) window.gameAlert?.(RELAY_FOLDER_UNAVAILABLE_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 2500);
             return data.contents || [];
         } catch (error) {
             console.error('Failed to load the sign-in desktop:', error);

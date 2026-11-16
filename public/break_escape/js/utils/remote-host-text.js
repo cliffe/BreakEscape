@@ -25,6 +25,9 @@ export const remoteNotPermittedMessage = (host) => `That account can't sign in o
 /** A remote sign-in refused because the host has locked the account. */
 export const remoteLockedOutMessage = (host) => `${named(host)} has locked this account.`;
 
+/** A folder on a live remote assist that is really locked: the folder closes and the desktop says so. */
+export const RELAY_FOLDER_UNAVAILABLE_TEXT = 'Folder unavailable.';
+
 /**
  * The remote sign-in screen's state lines (keyring plan 5.2, K0), each at most two lines of
  * GNF 16px in the 306px message box at 390x844 with the longest host in play.

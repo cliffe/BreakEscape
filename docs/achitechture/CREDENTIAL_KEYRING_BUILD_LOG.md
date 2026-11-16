@@ -1198,3 +1198,12 @@ Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R2.md, verdict FIX (m1, t1).
 - t1 fixed: `keyring.js` refresh() returns null with no GET once the PUT cap's timer has fired (the timeout error carries `deadlineHit`; other sync errors still ask anyway). The R3 t1 test now asserts zero GETs during the hang.
 - Mutation checks: with the two engine files restored from HEAD, three access-relay-desktop tests fail (the reason-less live-relay folder test and the off and not_responding folder tests). With keyring.js reverted, the R3 t1 test failed in 2 of 6 runs (the flake itself), so it shows only intermittently.
 - Tests: access-relay-desktop 21/21 (capped), keyring-client 72/72 in 10 of 10 consecutive runs.
+
+## K3c run 7 (R3 nits)
+
+Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R3.md, verdict LAND (nits t1, t2, t3).
+
+- t1: the PUT-cap test in keyring-client.test.mjs freezes `Date.now` for the hung refresh, so a reverted fix always sends the GET. With keyring.js reverted to 75c028a16 the test fails 5 of 5 runs; with the fix, 10 of 10 passes.
+- t2: the reason-less live-relay folder test asserts one folder fetch and one desktop fetch.
+- t3: a relay folder 403 sets a pending note; the reopened relay desktop shows "Folder unavailable." (`RELAY_FOLDER_UNAVAILABLE_TEXT` in utils/remote-host-text.js, through gameAlert) only when it answers 200. The ended-assist test asserts no such toast.
+- Tests: access-relay-desktop 21/21 (capped).
