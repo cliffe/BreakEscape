@@ -219,3 +219,24 @@ test('settle grace: stamped on clockNow() and a far-future stamp is clamped', ()
         assert.ok(b._settleGraceUntil <= b.clockNow() + 600, `clamped (${b._settleGraceUntil})`);
     });
 });
+
+// Delta-2 minor 1: arrival on a bump belongs to walkers with patrol waypoints only, as on main.
+test('arrival on a bump: a walker without patrol waypoints does not arrive (either handler)', () => {
+    for (const handler of [
+        (b, other) => handleNPCCollision(b.sprite, other),
+        (b) => handleNPCPlayerCollision(b.sprite, { x: 170, y: 170, body: { center: { x: 170, y: 170 } } }),
+    ]) {
+        const { b, other } = setup();
+        b.config.patrol.waypoints = [];
+        let arrived = 0;
+        b._stopOnArrival = true; b._goToStayDest = { x: 180, y: 174 };
+        b._triggerGoToStayArrival = () => { arrived++; };
+        quiet(() => {
+            b.scene.time.now = 100000;
+            handler(b, other);                 // first contact (updatePatrol is not run: it has its own arrival)
+            b.scene.time.now = 100400;
+            handler(b, other);                 // a later bump
+        });
+        assert.equal(arrived, 0, 'no arrival for a walker without waypoints');
+    }
+});
