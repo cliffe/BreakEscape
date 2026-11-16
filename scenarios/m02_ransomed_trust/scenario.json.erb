@@ -1458,8 +1458,13 @@ boardroom_pin = "0417"
 <%# Pass 4: the offer has to come BEFORE the console choice it is meant to change.
     It used to fire on initiate_backup_recovery, after the source was already locked
     in. Now it cuts in the first time the player uses the console once it can restore
-    (manifest in hand). The video call closes the console; the player reopens it with
-    Ghost's answer known. ghost_offer_made is set by the knot, so a reload can't replay it. %>
+    (manifest in hand). object_interacted fires just before the console opens, so the
+    console is open by the end of the call's 500 ms start delay; interrupt: true closes
+    it then and the call plays (without it the call would wait until the console
+    closed, after the choice). The player reopens the console with Ghost's answer
+    known. skipIfGlobal is the backstop: a decision made inside those 500 ms drops the
+    call. ghost_offer_made is set by the knot, so a reload can't replay it.
+    The second ask needs interrupt too, for the same reason. %>
             {
               "eventPattern": "object_interacted",
               "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made && !globalVars.ransom_decision_made",
@@ -1467,7 +1472,8 @@ boardroom_pin = "0417"
               "conversationMode": "video-call",
               "voiced": true,
               "targetKnot": "on_recovery_console",
-              "skipIfGlobal": "ransom_decision_made"
+              "skipIfGlobal": "ransom_decision_made",
+              "interrupt": true
             },
             {
               "_comment": "Second and last ask, for a player who said 'I need time to think': the next console use.",
@@ -1477,7 +1483,8 @@ boardroom_pin = "0417"
               "conversationMode": "video-call",
               "voiced": true,
               "targetKnot": "on_console_again",
-              "skipIfGlobal": "ransom_decision_made"
+              "skipIfGlobal": "ransom_decision_made",
+              "interrupt": true
             },
             {
               "eventPattern": "global_variable_changed:offline_keys_recovered",

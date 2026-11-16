@@ -408,6 +408,127 @@ test('skipIfGlobal: the global flipping true while the call waits in the queue d
     } finally { t.restore(); }
 });
 
+// The real P9 route: nothing is open at the event (object_interacted fires before the
+// console opens), the console opens inside the 500 ms start delay, and the start-delay
+// busy-guard defers the call behind it rather than the queue path above.
+const consoleMinigame = () => ({ type: 'backup-recovery', _ending: false, params: {} });
+
+test('skipIfGlobal: P9 through the start delay: console opened in the delay, decision made, call dropped and not saved', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = false;
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made', once: true });
+        assert.equal(t.m._scriptedCallQueue.length, 0, 'nothing open at the event: start delay, not the queue');
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;   // the console opens inside the delay
+        t.runAll(4);
+        assert.equal(videoCalls(t).length, 0, 'deferred behind the console');
+        assert.equal(con._ending, false, 'the console is left open');
+        assert.equal(t.m._scriptedCallQueue.length, 1, 'deferred to the queue');
+        window.gameState.globalVariables.ransom_decision_made = true;
+        t.fw.currentMinigame = null;
+        t.runAll();
+        assert.equal(videoCalls(t).length, 0, 'dropped at open');
+        assert.equal(t.m._scriptedCallQueue.length, 0);
+        assert.equal(t.m.scriptedConversationActive(), false);
+        assert.deepEqual(t.m.exportTriggeredEvents(), {}, 'a dropped onceOnly call is not saved');
+        assert.ok(t.m.triggeredEvents.has('ghost:object_interacted:console:0'), 'the in-session count is spent');
+        assert.equal(t.m.triggeredEvents.get('ghost:object_interacted:console:0')?.persist, undefined);
+    } finally { t.restore(); }
+});
+
+test('skipIfGlobal: already set at the event: the open minigame is not closed and no call is placed (m3)', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = true;
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made', once: true });
+        assert.equal(t.fw.currentMinigame, con, 'the console stays open');
+        assert.equal(con._ending, false);
+        assert.equal(t.m.scriptedConversationActive(), false, 'no call is starting');
+        t.fw.currentMinigame = null;
+        t.runAll();
+        assert.equal(videoCalls(t).length, 0);
+        assert.equal(t.m._scriptedCallQueue.length, 0);
+        assert.deepEqual(t.m.exportTriggeredEvents(), {}, 'not saved');
+    } finally { t.restore(); }
+});
+
+test('skipIfGlobal: a non-boolean global counts as set, as for timed messages (m4)', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.backup_recovery_source = 'offline_keys';
+        fireCall(t.m, { skipIfGlobal: 'backup_recovery_source' });
+        t.runAll();
+        assert.equal(videoCalls(t).length, 0);
+    } finally { t.restore(); }
+});
+
+test('interrupt: _buildMappingConfig carries it, false by default', () => {
+    const t = setup();
+    try {
+        assert.equal(t.m._buildMappingConfig({ eventPattern: 'x', interrupt: true }, 0).interrupt, true);
+        assert.equal(t.m._buildMappingConfig({ eventPattern: 'x' }, 0).interrupt, false);
+    } finally { t.restore(); }
+});
+
+test('interrupt: a minigame opened during the start delay is closed and the call opens (M1)', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = false;
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made', interrupt: true, once: true });
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;
+        t.runAll(1);
+        assert.equal(con._ending, true, 'the console was closed');
+        assert.equal(videoCalls(t).length, 1, 'the call opened at once');
+        assert.equal(videoCalls(t)[0].params.startKnot, 'on_console');
+        assert.equal(t.m._scriptedCallQueue.length, 0, 'nothing queued');
+        assert.equal(t.m.scriptedConversationActive(), true, 'the call is the open scripted scene');
+        // The call ends; the player reopens the console with nothing left over
+        t.fw.endMinigame();
+        assert.equal(t.m.scriptedConversationActive(), false);
+        const again = t.fw.startMinigame('backup-recovery', null, {});
+        t.runAll();
+        assert.equal(t.fw.currentMinigame, again, 'the reopened console is not closed by anything pending');
+        assert.equal(videoCalls(t).length, 1, 'no second call');
+    } finally { t.restore(); }
+});
+
+test('interrupt: without it the call waits behind the minigame opened in the delay', () => {
+    const t = setup();
+    try {
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made' });
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;
+        t.runAll(4);
+        assert.equal(con._ending, false, 'the console is left open');
+        assert.equal(videoCalls(t).length, 0);
+        assert.equal(t.m._scriptedCallQueue.length, 1);
+        t.fw.currentMinigame = null;
+        t.runAll();
+        assert.equal(videoCalls(t).length, 1, 'opens once the console closes');
+    } finally { t.restore(); }
+});
+
+test('interrupt: a decision made inside the delay still drops the call, and the console is left alone', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = false;
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made', interrupt: true, once: true });
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;
+        window.gameState.globalVariables.ransom_decision_made = true;
+        t.runAll();
+        assert.equal(con._ending, false, 'the console (on its outcome screen) is not closed');
+        assert.equal(videoCalls(t).length, 0);
+        assert.equal(t.m._scriptedCallQueue.length, 0);
+        assert.equal(t.m.scriptedConversationActive(), false);
+        assert.deepEqual(t.m.exportTriggeredEvents(), {});
+    } finally { t.restore(); }
+});
+
 test('skipIfGlobal: a video call without it opens even when that global is true', () => {
     const t = setup();
     try {

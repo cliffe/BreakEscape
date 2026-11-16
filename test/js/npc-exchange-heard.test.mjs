@@ -489,6 +489,6 @@ test('validator: an exchange longer than EXCHANGE_MAX_MS is a warning; a short o
     assert.match(long[0], /WARNING/);
     assert.match(long[0], /about 65\.0 s, over the 60 s/);
     assert.ok(!issues.some(s => s.includes("'ex_short' runs")), 'the short knot is fine');
-    // the fixture long lines also raise the 40-character bubble warning (validator-exchange-line-length.test.mjs); not this test's point
+    // the fixture long lines also raise the 40-character bubble error (validator-exchange-line-length.test.mjs); not this test's point
     assert.deepEqual(issues.filter(s => s.includes('ex_') && !s.includes('a bubble holds')).length, 1, issues.join('\n'));
 });

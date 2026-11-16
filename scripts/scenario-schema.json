@@ -5124,6 +5124,8 @@
         "resume": {"type": "boolean", "description": "phone-chat: reopen the saved thread, with no knot jump."},
         "voiced": {"type": "boolean", "description": "phone-chat: speak the NPC's lines through TTS."},
         "ring": {"x-id-map": false, "description": "phone-chat: an incoming call that rings, true or a ring config."},
+        "skipIfGlobal": {"type": "string", "description": "video-call only: no call if this global is truthy at the event, and the call is dropped if it became truthy while the call waited. The mapping's setGlobal, completeTask and other effects have already run at the event."},
+        "interrupt": {"type": "boolean", "description": "video-call only: a minigame the player opens during the call's 500 ms start delay is closed and the call opens, instead of waiting behind it (npc-manager.js _queueScriptedConversation)."},
         "unlockDoor": {"x-id-map": false, "description": "A room id, or a list of them, whose door the server unlocks when this fires (npc-game-bridge.js). The server also reads it to allow the unlock (game.rb), so keep it even where the mapping never fires."},
         "emitEvent": {"type": "string", "description": "An event to emit when the mapping fires."},
         "emitEventData": {"type": "object", "x-id-map": false, "description": "The payload sent with emitEvent."}
