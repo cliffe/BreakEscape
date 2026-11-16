@@ -2939,10 +2939,10 @@ export class NPCNeedsSystem {
         if (info?.faint) this._faintLine = { npcId, until };
         else if (this._faintLine && until > this._faintLine.until) this._faintLine = null;
         // R3 M1: whether a line is a background voice is decided here, once, from what the player
-        // hears, so no call site can miss it: out of earshot and not a faint draw or a desk call.
+        // hears, so no call site can miss it: out of earshot and not a faint draw (a desk call is only voiced when overheard).
         // A `secret` line (a priority mutter such as login_aloud) that is not overheard is not voiced
         // at all (the voice drops it); an overheard one is voiced in full, exactly as before.
-        const unheard = !info?.overheard && !info?.faint && !info?.call;
+        const unheard = !info?.overheard && !info?.faint;
         if (typeof this.world.speak === 'function') {
             try { this.world.speak(npcId, line, { ...info, unheard, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
         }

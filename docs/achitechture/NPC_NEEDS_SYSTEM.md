@@ -662,7 +662,7 @@ during the walk home (exists). Player-facing behaviour:
   a scripted bark. While a person-chat or phone-chat is open, or a minigame opened from one (its
   `returnTo` names the chat; the chat is suspended under it), by the live minigame's scene type and
   not the sticky type, no chatter is overheard, voiced or toasted, and room tone ducks too. A priority
-  mutter that carries a secret (`login_aloud`) the player does not overhear is not voiced at all. The scenario flag `"faintChatter":
+  mutter that carries a secret (`login_aloud`) the player does not overhear is not voiced at all. That line is a cue ("it's on the note"), not the credential: the credential comes from the server on a heard listening tick, and the window stays open after the line, so a player who walks into earshot after a silent cue can still get "Overheard" (the q42 design; playtesters should not report it). Authoring rule: credentials and secrets go only in priority mutters, never in exchange or pool lines, because out of earshot those are background voices (heard through an open door with no heard credit); the validator's V11 warns on a pool line that names one. The scenario flag `"faintChatter":
   false` and the player's "Background voices" switch in the music widget turn every background voice off. An
   exchange line voiced out of earshot keeps the lock, shows a dimmed bubble and is a background voice
   too (the same switch, the same 0.5 scale), though no full line cuts it. Design, tests and

@@ -195,7 +195,6 @@
 }
 
 .mw-toggle-btn[aria-pressed="true"] {
-  border-color: #00aaff;
   color: #00aaff;
 }
 

@@ -614,6 +614,9 @@ test('R3 M1: _speak derives unheard from overheard, once, for every caller; a he
     o.sys._speak('ann', 'Faint.', o.sys.clockMs + 1000, { topic: 'cooler', overheard: false, faint: true });
     o.sys._speak('ann', 'Call.', o.sys.clockMs + 1000, { call: true, overheard: true });
     assert.deepEqual(o.st.spoken.map(s => !!s.info.unheard), [true, false, false, false]);
+    // R4 m1: no separate `call` clause; a call is overheard by construction, so it is never unheard
+    o.sys._speak('ann', 'Call, out of earshot.', o.sys.clockMs + 1000, { call: true, overheard: false });
+    assert.equal(!!o.st.spoken.at(-1).info.unheard, true, 'the derivation reads overheard and faint only');
 });
 
 test('R3 M1: a login_aloud mutter out of earshot is marked secret and unheard; in earshot it is neither', () => {
@@ -656,7 +659,7 @@ test('R3 M1: a secret line that is not overheard plays no audio (beside the spea
     assert.equal(calls.length, 0, 'no audio in any of the four');
     assert.ok(v.log.every(e => e.spoken === false), 'each is logged as not spoken');
     assert.equal(v.log.at(-1).reason, 'secret_unheard');
-    await v.say('a', 'Heard password.', { secret: true, overheard: true });
+    await v.say('a', 'Heard cue.', { secret: true, overheard: true });
     assert.equal(calls.length, 1);
     assert.equal(calls[0].v, 1);
 });

@@ -348,7 +348,7 @@ export class NpcChatterVoice {
         if (this.conversationOpen()) { this._note({ ...base, spoken: false, reason: 'conversation' }); return this.queue; }
         // R3 M1: a secret line (a priority mutter such as login_aloud) the player does not overhear is
         // not voiced at all: no faint version and no through-door version, so the player never hears
-        // a password that earns no heard credit. Its bubble is an ordinary unheard bubble.
+        // the cue where the listening window cannot credit it. (The line is a cue, not the credential.) Its bubble is an ordinary unheard bubble.
         if (info.secret && !info.overheard) { this._note({ ...base, spoken: false, reason: 'secret_unheard' }); return this.queue; }
         const faint = !!info.faint;
         // R2 M1: an exchange line voiced out of earshot is a background voice too (switch, faint level),

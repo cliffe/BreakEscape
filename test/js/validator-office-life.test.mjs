@@ -1,4 +1,4 @@
-// scripts/validate_office_life.rb, V1 to V5, V7 and V8 (OFFICE_LIFE_MISSIONS_PLAN.md section 4).
+// scripts/validate_office_life.rb, V1 to V5, V7 and V8 and V11 (OFFICE_LIFE_MISSIONS_PLAN.md section 4).
 // Fixture scenarios per rule, the campaign scope (V2, V4 and V5 only for m01 to m10, or with
 // --campaign), and the corpus pins the plan asks for: V5 gives 0 errors on m01 to m10 as they
 // stand, and V2, V4 and V5 say nothing on the labs and test scenarios that use office life on
@@ -450,4 +450,16 @@ test('corpus: forced into campaign scope, lab_physical_pentest gives its 3 real 
     assertHas(errs, "'global_variable_changed:kp_creds_captured' on 'hampshire' completes required task(s) grab_creds from global 'kp_creds_captured'");
     assertHas(errs, "'item_dropped:kit_deviceB' on 'lord' completes required task(s) drop_usb");
     assertHas(errs, "'npc_used:usb_target_pc' on 'lord' completes required task(s) usb_foothold");
+});
+
+// ── V11 ────────────────────────────────────────────────────────────────────────────────────
+
+test('V11: a chatter pool line that names a credential warns; an ordinary line does not', { skip }, () => {
+    const s = scenario({ npcs: [
+        worker({ chatter: { coffee: ['The password is on the note.', 'Fresh pot.'] } })
+    ], extra: { chatter: { cooler: ['Passcode is 4411, ha.'] } } });
+    const out = check(s);
+    assertHas(out, `V11: NPC 'gary' chatter 'coffee' line "The password is on the note." names a credential`);
+    assertHas(out, `V11: scenario chatter 'cooler' line "Passcode is 4411, ha." names a credential`);
+    assertNot(out, 'Fresh pot.');
 });
