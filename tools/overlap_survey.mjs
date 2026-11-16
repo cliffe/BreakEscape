@@ -5,12 +5,12 @@
 //        [--new m02_ransomed_trust] [--sample test_needs_sims=5800] [--out survey.json] [--exe <chrome>]
 //
 // --game name=gid   a game already made on the keyless server (tools/playtest/new-game.rb).
-// --new name        makes the game first by running new-game.rb (needs BREAK_ESCAPE_STANDALONE=true and
+// --new name        makes the game by running new-game.rb with every room unlocked (needs BREAK_ESCAPE_STANDALONE=true and
 //                   BUNDLE_PATH in the environment, like the other playtest tools; never runs a db: task).
 // --sample name=gid also samples the scenario's NPC positions every 10 s over one routine cycle
 //                   (--sample-seconds, default 120) and counts how often an NPC's figure overlaps an
 //                   object's pixels.
-// For every room (enterRoom) it counts pairs of interactable things whose OPAQUE pixels intersect
+// For every room (loadRoom) it counts pairs of interactable things whose OPAQUE pixels intersect
 // (objects, NPCs where they stand at load, shut doors), by room and by type pair, lists sprites whose
 // alpha could not be read (a sprite whose texture cannot be sampled counts as no overlap), and
 // lists rooms with a hostile NPC at load. Output: JSON on stdout (and --out), plus a readable summary.
@@ -42,8 +42,8 @@ export function parseArgs(argv) {
 }
 
 /** Page-side survey of the room the player is in. Returns plain data. */
-function surveyRoomInPage() {
-    const r = window.rooms?.[window.currentPlayerRoom];
+function surveyRoomInPage(roomId) {
+    const r = window.rooms?.[roomId];
     if (!r) return null;
     const things = [], unreadable = [], hostile = [];
     const add = (id, type, s) => { if (s && s.visible !== false && s.getBounds) things.push({ id, type, s }); };
@@ -123,10 +123,12 @@ export async function surveyGame(chromium, exe, port, name, gid, { sampleSeconds
     try {
         const ids = await page.evaluate(() => Object.keys(window.gameScenario.rooms));
         for (const id of ids) {
-            await page.evaluate(([r]) => window.__test.enterRoom(r, { timeoutMs: 25000 }), [id]).catch(() => {});
-            await page.waitForTimeout(1200);
-            const s = await page.evaluate(surveyRoomInPage);
-            if (!s) { res.rooms[id] = { note: 'not loaded' }; continue; }
+            // loadRoom, not enterRoom: the room is read where it stands, without walking the player there.
+            // The server refuses a locked room, so a game made by --new has every room unlocked.
+            await page.evaluate(r => window.loadRoom(r), id).catch(() => {});
+            await page.waitForTimeout(800);
+            const s = await page.evaluate(surveyRoomInPage, id);
+            if (!s) { res.rooms[id] = { note: 'not loaded (locked or missing)' }; continue; }
             res.rooms[id] = { things: s.things, pairs: s.pairs };
             res.totals.rooms++; res.totals.things += s.things; res.totals.pairs += s.pairs.length;
             for (const p of s.pairs) res.byTypePair[p.types] = (res.byTypePair[p.types] || 0) + 1;
@@ -163,9 +165,16 @@ async function main() {
     const { chromium } = await import('playwright');
     const jobs = o.games.map(g => [...g.split('='), 0]);
     for (const n of o.news) {
-        const outp = execFileSync('bundle', ['exec', 'rails', 'runner', 'tools/playtest/new-game.rb', n], { env: { ...process.env, PLAYTEST_PORT: String(o.port) }, encoding: 'utf8' });
-        const gid = /GAME_ID=(\d+)/.exec(outp)?.[1];
-        if (!gid) { console.error(`no game made for ${n}`); continue; }
+        const make = (extra) => /GAME_ID=(\d+)/.exec(execFileSync('bundle', ['exec', 'rails', 'runner', 'tools/playtest/new-game.rb', n, ...extra],
+            { env: { ...process.env, PLAYTEST_PORT: String(o.port) }, encoding: 'utf8' }))?.[1];
+        // One plain game to read the room ids, then the one that is surveyed, with every room unlocked
+        const first = make([]);
+        if (!first) { console.error(`no game made for ${n}`); continue; }
+        const probe = await bootGame(chromium, o.exe, o.port, first);
+        const ids = await probe.page.evaluate(() => Object.keys(window.gameScenario.rooms));
+        await probe.browser.close();
+        const gid = make(ids.flatMap(r => ['--unlock', r]));
+        if (!gid) { console.error(`no unlocked game made for ${n}`); continue; }
         jobs.push([n, gid, 0]);
     }
     for (const s of o.samples) jobs.push([...s.split('='), o.sampleSeconds]);
