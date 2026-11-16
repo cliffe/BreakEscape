@@ -34,6 +34,9 @@ def check_capture_log(json_data)
     end
   end
 
+  # ---- Sign-ins list row fields (K3d, plan 8.7) ----
+  check_capture_row_fields(json_data, err, warn)
+
   # ---- Authored capture strings are bounded (sync deltas R2, 6a) ----
   # A note is at most MAX_CAPTURE_NOTE_CHARS code points; roleLabel, address and host at most
   # MAX_CAPTURE_FIELD_CHARS; a target id at most MAX_CAPTURE_TARGET_CHARS. The server stores each
@@ -411,4 +414,51 @@ def capture_log_secret_strings(json_data, holders)
     end
   end
   out.to_a
+end
+
+# The authored rowTag and rowSource on a capture writer, and a capture address that names two
+# account holders. Mirrors CaptureModel.capture_row_meta: rowTag must be one of the writer kind's
+# tags (credential: password, pin; foothold: foothold, finding), rowSource only "phished" and only
+# on a credential capture. A mapping on an NPC with a usePayload gives a plain and an overlaid
+# candidate, so each message is reported once.
+def check_capture_row_fields(json_data, err, warn)
+  cm = BreakEscape::CaptureModel
+  seen = Set.new
+  once = lambda do |level, msg|
+    level.call(msg) if seen.add?(msg)
+  end
+  cm.all_capture_candidates(json_data).each do |cand|
+    fields = cand[:fields]
+    source = cand[:source] || {}
+    kind = fields['kind'].to_s
+    tid = fields['targetId'].to_s[0, 40]
+    tags = cm::ROW_TAGS[kind]
+
+    unless source[:row_tag].nil?
+      tag = source[:row_tag]
+      if !tag.is_a?(String) || !cm::ROW_TAGS.values.flatten.include?(tag)
+        once.call(err, "capture \"#{tid}\" has rowTag #{tag.is_a?(String) ? "\"#{tag[0, 20]}\"" : '(not a string)'}: " \
+                       'it must be password, pin, foothold or finding')
+      elsif tags && !tags.include?(tag)
+        once.call(err, "capture \"#{tid}\" has rowTag \"#{tag}\" on a #{kind} capture: " \
+                       "a #{kind} capture takes #{tags.join(' or ')}")
+      end
+    end
+
+    unless source[:row_source].nil?
+      row_source = source[:row_source]
+      if row_source != 'phished'
+        once.call(err, "capture \"#{tid}\" has rowSource #{row_source.is_a?(String) ? "\"#{row_source[0, 20]}\"" : '(not a string)'}: " \
+                       'the only allowed value is "phished"')
+      elsif kind == 'foothold'
+        once.call(err, "capture \"#{tid}\" has rowSource on a foothold capture: a foothold row carries " \
+                       'no source tag, so remove it')
+      end
+    end
+
+    next unless kind == 'credential' && cm.ambiguous_account_address?(json_data, fields['address'])
+
+    once.call(warn, "ambiguous capture address on \"#{tid}\": two or more account holders share that username, " \
+                    'so the Sign-ins list cannot join the capture to an account')
+  end
 end

@@ -820,6 +820,49 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
   end
 
+  # K3d (plan 8.7): the captures map in a GET /keyring answer carries a tag, a source and an
+  # account id, never a value.
+  KEYRING_PATH = '/break_escape/games/1/keyring'.freeze
+
+  test 'K3d: a captures entry with only tag, source and account gives no finding' do
+    body = { 'rev' => 'abc123', 'entries' => [], 'captures' => {
+      'jake' => { 'tag' => 'password', 'source' => 'phished', 'account' => 'jake' },
+      'cupboard' => { 'tag' => 'pin', 'source' => 'recorded' }
+    } }
+    assert_empty scan(body, path: KEYRING_PATH, data: CRED_SCENARIO)
+  end
+
+  test 'K3d: a captures entry with any other key is reported, by target id and never the value' do
+    body = { 'rev' => 'abc123', 'entries' => [], 'captures' => {
+      'cupboard' => { 'tag' => 'pin', 'source' => 'recorded', 'secret' => '48213' },
+      'jake' => { 'tag' => 'password', 'source' => 'recorded', 'note' => 'a note' }
+    } }
+    findings = scan(body, path: KEYRING_PATH, data: CRED_SCENARIO)
+    assert_equal [[1, 'keyring_capture_key', 'capture:cupboard'], [1, 'keyring_capture_key', 'capture:jake']],
+                 summary(findings).sort_by(&:last)
+    assert_equal ['$.captures.cupboard.secret', '$.captures.jake.note'], findings.map(&:json_path).sort
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('48213') })
+  end
+
+  test 'K3d: a captures entry that is not an object is reported' do
+    body = { 'rev' => 'abc123', 'entries' => [], 'captures' => { 'cupboard' => '48213' } }
+    assert_equal [[1, 'keyring_capture_key', 'capture:cupboard']],
+                 summary(scan(body, path: KEYRING_PATH, data: CRED_SCENARIO))
+  end
+
+  test 'K3d: a captures key on another response is not a keyring answer' do
+    body = { 'captures' => { 'cupboard' => { 'tag' => 'pin', 'secret' => 'x' } } }
+    assert_empty scan(body, data: CRED_SCENARIO)
+  end
+
+  # K3d: the Sign-ins rows are capture log page text (a dom row); the existing password and
+  # capture-secret rules already apply to it.
+  test 'K3d: Sign-ins row text with an account password is reported unless the capture is served' do
+    row = [['dom.jsonl', 1, { 'dom' => "Sign-ins\nJake Lee\n#{JAKE_PASSWORD}", 'label' => 'capture log' }]]
+    assert_equal [[1, 'password', 'npc:jake']], summary(AccessLeakScanner.new(scenario, served_npcs: []).scan(row))
+    assert_empty AccessLeakScanner.new(scenario, served_npcs: ['jake']).scan(row)
+  end
+
   # A game that reports a fixed set of credential ids as holding (the scanner reads @game once).
   # captured: the NPC ids it reports as captured accounts (account_capture_usernames).
   class HeldGame
