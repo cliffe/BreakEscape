@@ -616,6 +616,7 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         save(o);
         render();
         o.openTimer = c.setTimeout(() => finishOpen(o), SCRIPTED_CALL_START_MS);
+        call('answering', o);   // the player's phone comes up during the wait
         // Emit last, once the state is settled: a handler may re-enter the ringer.
         if (!o.answeredEmitted) {
             o.answeredEmitted = true;
