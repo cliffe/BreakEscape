@@ -226,6 +226,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "THE NEXT HOSPITAL: somewhere on the 214-site survey, still running St. Catherine's build", "style": "warning", "condition": "globalVars.danny_named_sites !== true" },
           { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "FFION REES, WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
+          { "text": "WHITEHAT STAFF: A COLLEAGUE OF HERS STRUCK BY DAY", "style": "warning", "condition": "globalVars.wh_staff_upset === true && globalVars.receptionist_ko !== true && !globalVars.zainab_ko && !globalVars.yusuf_ko" },
+          { "text": "ZAINAB HUSSAIN AND YUSUF DEMIR, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.zainab_ko === true && globalVars.yusuf_ko === true" },
+          { "text": "ZAINAB HUSSAIN, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.zainab_ko === true && globalVars.yusuf_ko !== true" },
+          { "text": "YUSUF DEMIR, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.yusuf_ko === true && globalVars.zainab_ko !== true" },
           { "text": "PERFECT STEALTH: past the night guard unseen, with no excuses and no bribes", "style": "entry", "condition": "globalVars.guard_detection_count === 0 && globalVars.exec_office_entered === true && globalVars.guard_knocked_out !== true && globalVars.guard_told_safetynet !== true && globalVars.guard_bribed !== true && globalVars.guard_challenged !== true" },
           { "text": "" },
           { "text": "THE ARCHITECT: identity still unknown. Phase 2 looms.", "style": "warning" },
@@ -541,6 +545,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     ]
   },
 
+<%# Office life (office_life/SLICE3_4.md): presets for the reception coffee station and the hallway cooler. %>
+  "officePresets": true,
+
   "startRoom": "reception_lobby",
 
   "startItemsInInventory": [
@@ -631,6 +638,22 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["victoria_computer"],
           "puzzle_graph_optional": true
+        },
+<%# Office life (SLICE3_4.md): the reception coffee station claims the drawn sprite (no position).
+    useSeconds 17 (preset 12) so a coffee trip is long enough to read as a break. offWhen stops
+    every use once the day staff are upset. zainab_laptop is Zainab's seat object (no preset);
+    the screen habit is slice 4. %>
+        {
+          "type": "coffee_station1", "id": "reception_coffee", "name": "Reception Coffee Station", "takeable": false,
+          "offWhen": "wh_staff_upset",
+          "observations": "A pod machine on the side table, a stack of paper cups beside it.",
+          "affordance": { "useSeconds": 17 }
+        },
+        {
+          "type": "laptop1", "id": "zainab_laptop", "name": "Zainab's Laptop", "takeable": false,
+          "position": { "x": 5.0, "y": 8.7 },
+          "observations": "A laptop open on the low table in front of the sofa.",
+          "affordance": false
         }
       ],
       "npcs": [
@@ -763,6 +786,66 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "puzzle_graph_and_with": "rfid_cloner"
             }
           ]
+        },
+<%# Office life (SLICE3_4.md): two WhiteHat staff by day, hidden at the night turn. Each has four hide
+    mappings: the clone_call_done change (onceOnly), the plain room entries of reception and hallway
+    (so a reload re-hides), and a first-frame one (previousRoom === null) for a reload in reception.
+    Placeholder ink, no spoken text. %>
+        {
+          "id": "zainab_hussain",
+          "displayName": "Zainab Hussain",
+          "npcType": "person",
+          "position": { "x": 4.6, "y": 7.9 },
+          "spriteSheet": "zainab_hussain",
+          "spriteTalk": "assets/characters/zainab_hussain_talk.png",
+          "spriteVisemes": "assets/characters/zainab_hussain_visemes.png",
+          "avatar": "assets/characters/zainab_hussain_headshot.png",
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_zainab_hussain.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "zainab_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "needsHome": "zainab_laptop",
+          "needsRooms": ["reception_lobby", "main_hallway"],
+          "needsCompany": { "groups": ["wh_day_staff"] },
+          "needs": {
+            "caffeine": { "initial": 60, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
+            "thirst": { "initial": 70, "decayPerMin": 3, "urgentAt": 30 }
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.clone_call_done === true", "setVisible": false },
+            { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.clone_call_done === true", "setVisible": false },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false }
+          ],
+          "observations": "A WhiteHat analyst on a visitor-room sofa with a laptop on her knee."
+        },
+        {
+          "id": "yusuf_demir",
+          "displayName": "Yusuf Demir",
+          "npcType": "person",
+          "position": { "x": 3.3, "y": 8.7 },
+          "spriteSheet": "yusuf_demir",
+          "spriteTalk": "assets/characters/yusuf_demir_talk.png",
+          "spriteVisemes": "assets/characters/yusuf_demir_visemes.png",
+          "avatar": "assets/characters/yusuf_demir_headshot.png",
+          "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_yusuf_demir.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "yusuf_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "needsHome": { "room": "reception_lobby", "x": 3.3, "y": 8.75 },
+          "needsRooms": ["reception_lobby", "main_hallway"],
+          "needsCompany": { "groups": ["wh_day_staff"] },
+          "needs": {
+            "caffeine": { "initial": 55, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
+            "thirst": { "initial": 75, "decayPerMin": 3, "urgentAt": 30 }
+          },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.clone_call_done === true", "setVisible": false },
+            { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.clone_call_done === true", "setVisible": false },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false }
+          ],
+          "observations": "A WhiteHat engineer in the club chair, waiting on a call."
         },
         {
           "id": "agent_0x99",
@@ -1224,7 +1307,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true,
               "completeTask": "lore_fragment_3",
               "unlockTask": "decode_directive"
-            }
+            },
+<%# Office life (SLICE3_4.md): a hit on either day staff member, a KO of one, or Ffion knocked out by
+    day sets wh_staff_upset, which switches off the reception coffee station and hallway cooler. Text
+    only. Appended last so no saved onceOnly handler index moves. %>
+            { "eventPattern": "npc_attacked:zainab_hussain", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
+            { "eventPattern": "npc_attacked:yusuf_demir", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:zainab_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:yusuf_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:receptionist_ko", "condition": "value === true && globalVars.clone_call_done !== true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } }
           ]
         },
         {
@@ -1419,7 +1510,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         "north": "server_room",
         "east": "executive_wing_hallway"
       },
-      "objects": [],
+<%# Office life (SLICE3_4.md): the hallway water cooler claims the drawn sprite (no position). %>
+      "objects": [
+        { "type": "water_cooler1", "id": "hallway_cooler", "name": "Water Cooler", "takeable": false,
+          "offWhen": "wh_staff_upset",
+          "observations": "A water cooler by the wall, a stack of paper cones on top." }
+      ],
       "npcs": []
     },
 
@@ -2088,6 +2184,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "victoria_test_answer": "",
     "cloner_glimpsed": false,
     "cloner_deflection": "",
+    "wh_staff_upset": false,
+    "zainab_ko": false,
+    "yusuf_ko": false,
     "afternoon_goodbye": ""
   }
 }
