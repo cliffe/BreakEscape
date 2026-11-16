@@ -60,3 +60,26 @@ That is consistent with R8's finding that those lines come from the returning-st
 occur without the R8 fixes. Two clean games do not prove it is gone. No doorway stuck line is graded as a finding.
 
 Raw output: `scratchpad/r9/tour-6155*`, `scratchpad/r9/tour-6156*`.
+
+## R9 Outcomes
+
+The one finding (m1, yield count carry and reset untested) is closed by tests only; the engine code is unchanged.
+
+**New assertions in `test/js/npc-local-avoidance.test.mjs`** (46 pass, 0 fail, up from 44):
+- R8 m1 test: `yieldCount` is set to 4 before the re-target and is still 4 after it.
+- New test, hold expiry: with the count at 4 and the hold run out, the next step starts a new hold with a count of 1
+  (reset to 0, then the step is counted), not 5.
+- New test, change of opponent: with the count at 4 and the hold still running, a different NPC in the way gives
+  `yieldTo` of the new id and a count of 1.
+
+**Mutation checks** (each reverted with `git checkout -- public/break_escape/js/systems/npc-behavior.js`; `git diff --stat`
+then showed that file unchanged):
+
+| Mutation | Result |
+|---|---|
+| Re-target copy at :1599 changed to `yieldCount: 0` | 1 failure: the R8 m1 test (45 pass, 1 fail) |
+| Reset removed at :1776 (`a.yieldCount = 0;` deleted) | 2 failures: both new reset tests (44 pass, 2 fail) |
+
+**Suites** after merging main (`b2fdbd4f8`, no conflicts; main only changed `tools/wt-clean.sh`):
+- `bin/test-js`: Files: 712 passed, 0 failed, 712 total.
+- Rails (`bin/rails test`): 2940 runs, 48173 assertions, 0 failures, 0 errors, 3 skips.
