@@ -152,5 +152,16 @@
     "reviewBy": "2026-12-10",
     "approved": "2026-11-12: ceo_exfil phone targetKnot",
     "note": "Design edit: each mapping sets a global and the ink hub gets a conditional option for it."
+  },
+  {
+    "scenario": "scenarios/lab_physical_pentest/scenario.json.erb",
+    "stage": "common",
+    "match": "two capture routes write targetId \"door_admin\"",
+    "count": 1,
+    "owner": "devices track",
+    "added": "2026-11-16",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-16: A2 R1 decision, shared door_admin target",
+    "note": "The drop box route and the Wi-Fi route each file door_admin from a pc_signed_in mapping split on footholdId, so only one ever fires per game. The validator cannot see the split."
   }
 ]
