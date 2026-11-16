@@ -169,8 +169,8 @@
 }
 
 .rogue-ap .rogue-ap-signal-icon {
-    width: 32px;
-    height: 32px;
+    width: 22px;
+    height: 16px;
     image-rendering: pixelated;
 }
 
@@ -259,7 +259,7 @@
 
 .rogue-ap .rogue-ap-status.is-refused {
     color: #ffb3a8;
-    border-left: 4px solid #ffb3a8;
+    border-left: 2px solid #ffb3a8;
     padding-left: 8px;
 }
 
@@ -278,8 +278,8 @@
         line-height: 20px;
     }
     .rogue-ap .rogue-ap-signal-icon {
-        width: 16px;
-        height: 16px;
+        width: 11px;
+        height: 8px;
     }
     .rogue-ap .rogue-ap-headshot {
         width: 32px;

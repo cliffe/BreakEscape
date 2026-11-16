@@ -5526,6 +5526,10 @@
                 }
               }
             },
+            "anyOf": [
+              { "properties": { "inScope": { "enum": [false] } }, "required": ["inScope", "refusal"] },
+              { "not": { "properties": { "inScope": { "enum": [false] } }, "required": ["inScope"] }, "required": ["cloneLog"] }
+            ],
             "patternProperties": { "^_": {} },
             "additionalProperties": false
           }

@@ -171,6 +171,39 @@ module BreakEscape
       plant_ap
       bootstrap_scenario
       refute_includes response.body, PSK
+      refute_includes response.body, KIERAN_PASSWORD
+    end
+
+    test 'the reception room data never carries the PSK or the password, before or after the plant' do
+      setup_game
+      get game_path('room/reception'), as: :json
+      assert_response :success, response.body
+      refute_includes response.body, PSK
+      refute_includes response.body, KIERAN_PASSWORD
+      plant_ap
+      get game_path('room/reception'), as: :json
+      assert_response :success, response.body
+      refute_includes response.body, PSK
+      refute_includes response.body, KIERAN_PASSWORD
+    end
+
+    test 'the NPC USB habit never picks the rogue AP kit (item definition)' do
+      data = scenario
+      kit = data['startItemsInInventory'].find { |i| i['id'] == 'kit_rogue_ap' }
+      stick = { 'type' => 'usb', 'id' => 'kieran_stick', 'name' => 'Kieran stick' }
+      data['rooms']['reception']['npcs'] = [
+        { 'id' => 'kieran', 'habits' => { 'usb' => { 'every' => 2 } }, 'itemsHeld' => [kit, stick] }
+      ]
+      ids = BreakEscape::AccessWork.usb_habit_sticks(data).map { |_npc, s| s['id'] }
+      assert_equal ['kieran_stick'], ids
+      data['rooms']['reception']['npcs'][0]['itemsHeld'] = [kit]
+      assert_equal [], BreakEscape::AccessWork.usb_habit_sticks(data)
+    end
+
+    # E0.4 adds the validator warning for a rogue AP whose clone target is off every access list
+    # (the inline variant: Kieran off hot_desk_people). Enable this when E0.4 merges.
+    test 'inline variant: Kieran off the access list fires the E0.4 warning' do
+      skip 'waits for E0.4 (the validator warning for a holderless target)'
     end
 
     # ----- joining: wrong SSID, guest key, neighbour SSID, the box itself -----
@@ -353,6 +386,18 @@ module BreakEscape
     def join(ap_id, key)
       post game_path('network/join'), params: { ap_id: ap_id, key: key }, as: :json
       response.parsed_body
+    end
+
+    test 'the reception room data never carries the PSK or the password, before or after the plant' do
+      get game_path('room/reception'), as: :json
+      assert_response :success, response.body
+      refute_includes response.body, psk
+      refute_includes response.body, kieran_password
+      plant_ap
+      get game_path('room/reception'), as: :json
+      assert_response :success, response.body
+      refute_includes response.body, psk
+      refute_includes response.body, kieran_password
     end
 
     test 'the staff PSK is drawn per game and the key capture serves that game\'s own value' do

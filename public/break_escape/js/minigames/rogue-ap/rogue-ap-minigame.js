@@ -1,5 +1,5 @@
 // The pocket rogue AP's own web console (physical pentest devices plan 4.1 step 4, 4.3, 4.4).
-// A planted object with `wifiTwin: true` opens it (interactions.js calls window.rogueAp.open).
+// A planted object with `wifiTwin: true` opens it (interactions.js starts it with startRegisteredMinigame('rogue-ap', sprite)).
 //
 //   Recon  the authored scan (apScan): SSID, security, signal, client count, known clients with
 //          their headshots.
@@ -123,6 +123,8 @@ export class RogueApMinigame extends MinigameScene {
         const d = win().eventDispatcher;
         for (const [name, fn] of this._globalHandlers) d?.off?.(name, fn);
         this._globalHandlers = [];
+        this._resizeObserver?.disconnect();
+        this._resizeObserver = null;
         super.cleanup?.();
     }
 
@@ -149,6 +151,8 @@ export class RogueApMinigame extends MinigameScene {
     }
 
     render() {
+        // Keep the scroll on a same-tab redraw, so a refusal or clone line below Start stays in view.
+        const keep = this._renderedTab === this.tab ? this.pane.scrollTop : 0;
         for (const t of TABS) {
             const b = this.tabButtons[t.id];
             const on = t.id === this.tab;
@@ -160,7 +164,8 @@ export class RogueApMinigame extends MinigameScene {
         if (this.tab === 'recon') this.renderRecon();
         else if (this.tab === 'clone') this.renderClone();
         else this.renderLog();
-        this.pane.scrollTop = 0;
+        this._renderedTab = this.tab;
+        this.pane.scrollTop = keep;
         this.updateScrollCue();
     }
 
@@ -168,7 +173,14 @@ export class RogueApMinigame extends MinigameScene {
     updateScrollCue() {
         const p = this.pane;
         if (!p || !this.more) return false;
-        const more = (p.scrollHeight - p.clientHeight - p.scrollTop) > 2;
+        let more = (p.scrollHeight - p.clientHeight - p.scrollTop) > 2;
+        if (more && p.lastElementChild) {
+            // Margin or padding can leave a few pixels to scroll after the last row is fully in view:
+            // nothing is hidden then, so no cue. Skipped when there is no layout (both edges at 0).
+            const lastBottom = p.lastElementChild.getBoundingClientRect().bottom;
+            const paneBottom = p.getBoundingClientRect().bottom;
+            if ((lastBottom || paneBottom) && lastBottom <= paneBottom + 1) more = false;
+        }
         this.more.hidden = !more;
         return more;
     }
@@ -278,6 +290,8 @@ export class RogueApMinigame extends MinigameScene {
         const preview = el('div', 'rogue-ap-preview pixel-scroll');
         this.renderPreview(preview);
         pane.appendChild(preview);
+        // The preview's logo can load or fail after this render and change its height: re-check the cue.
+        this.watchPreview(preview);
 
         const startRow = el('div', 'rogue-ap-start-row');
         const start = el('button', 'rogue-ap-start rogue-ap-button', START_TEXT);
@@ -287,13 +301,23 @@ export class RogueApMinigame extends MinigameScene {
         startRow.appendChild(start);
         pane.appendChild(startRow);
 
-        const status = el('p', 'rogue-ap-status');
-        status.setAttribute('role', 'status');
+        // Only when there is a line to show: a hidden last child has no layout box, which would
+        // hide the "More below" cue while Start is still below the fold.
         if (this.status) {
+            const status = el('p', 'rogue-ap-status');
+            status.setAttribute('role', 'status');
             status.textContent = this.status.text;
             status.classList.toggle('is-refused', this.status.refused);
-        } else status.hidden = true;
-        pane.appendChild(status);
+            pane.appendChild(status);
+        }
+    }
+
+    watchPreview(preview) {
+        this._resizeObserver?.disconnect();
+        this._resizeObserver = null;
+        if (typeof ResizeObserver === 'undefined') return;
+        this._resizeObserver = new ResizeObserver(() => this.updateScrollCue());
+        this._resizeObserver.observe(preview);
     }
 
     renderPreview(host) {
@@ -341,6 +365,9 @@ export class RogueApMinigame extends MinigameScene {
             this.gameResult = { ...this.lastClone };
         }
         this.render();
+        const line = this.pane.querySelector('.rogue-ap-status');
+        if (line && typeof line.scrollIntoView === 'function') line.scrollIntoView({ block: 'nearest' });
+        this.updateScrollCue();
         return fx;
     }
 
