@@ -2124,7 +2124,7 @@ export class NPCNeedsSystem {
         }
         const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard, faint });
         if (!pick) return;
-        this._showSaying(s, pick, topic, objectId, opts?.minMs);
+        this._showSaying(s, pick, topic, objectId, opts?.minMs, !!opts?.always);
     }
 
     /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
@@ -2256,7 +2256,7 @@ export class NPCNeedsSystem {
     }
 
     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
-    _showSaying(s, pick, topic, objectId, minMs = 0) {
+    _showSaying(s, pick, topic, objectId, minMs = 0, secret = false) {
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
@@ -2264,7 +2264,7 @@ export class NPCNeedsSystem {
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
         // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
         // long as the words, so the next line on the floor can start when this one ends
-        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard, faint: !!pick.faint, radius });
+        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard, faint: !!pick.faint, secret, radius });
         if (h.overheard) {
             this._emit(`npc_overheard:${s.npcId}`, {
                 speakerId: s.npcId, partnerId: null, topic, lineId: picture ? `picture:${picture}` : `${topic}:${idx}`, line, picture, objectId,
@@ -2938,8 +2938,13 @@ export class NPCNeedsSystem {
         // D34: a faint line is remembered so a line that matters can take the lock back from it
         if (info?.faint) this._faintLine = { npcId, until };
         else if (this._faintLine && until > this._faintLine.until) this._faintLine = null;
+        // R3 M1: whether a line is a background voice is decided here, once, from what the player
+        // hears, so no call site can miss it: out of earshot and not a faint draw or a desk call.
+        // A `secret` line (a priority mutter such as login_aloud) that is not overheard is not voiced
+        // at all (the voice drops it); an overheard one is voiced in full, exactly as before.
+        const unheard = !info?.overheard && !info?.faint && !info?.call;
         if (typeof this.world.speak === 'function') {
-            try { this.world.speak(npcId, line, { ...info, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
+            try { this.world.speak(npcId, line, { ...info, unheard, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
         }
     }
 
@@ -4405,7 +4410,7 @@ export class NPCNeedsSystem {
                 c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot, faint: exHears && !h.overheard };
                 c.ex.i++;
                 if (h.overheard) c.ex.heardLines++;
-                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, unheard: c.current.faint, radius: this._chatRadius(c, l.speakerId) });
+                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, radius: this._chatRadius(c, l.speakerId) });
                 const pa = this.world.npcPos(partnerId);
                 if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
                 const data = {
@@ -5095,22 +5100,30 @@ export function planWithRoutes(plan, routes) {
 }
 
 /**
+ * Is a person-chat or phone-chat open? The one rule, used by the engine world below (what the
+ * player overhears), by the chatter voice and by room tone (R3 m3: it lived in room-hearing.js with
+ * an inline copy here; this file has no imports, so every other module can take it from here).
+ * Read the open minigame's own scene type (stamped by the minigame manager), never the sticky
+ * `currentConversationMinigameType`: that stays 'phone-chat' after a call closes, because only
+ * person-chat clears it. `returnTo` covers a minigame opened from inside a conversation (a cloner,
+ * a lockpick): the chat is suspended under it and still counts as open (R2 m8). `w` is the window.
+ */
+export function conversationOpen(w = (typeof window !== 'undefined' ? window : {})) {
+    const mg = w.MinigameFramework?.currentMinigame;
+    if (!mg) return false;
+    const chat = t => t === 'person-chat' || t === 'phone-chat';
+    return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
+}
+const conversationOpenIn = conversationOpen;
+
+/**
  * The world as the needs system sees it, read from the running engine through
  * window. Each method is small so the stub in the node tests mirrors it.
  */
 export function createEngineWorld() {
     const W = () => (typeof window !== 'undefined' ? window : {});
-    // R1 m4: is a person-chat or phone-chat open? Inline (the live minigame's scene type, never the
-    // sticky currentConversationMinigameType), so a gate rule does not hang off the audio module
-    const conversationOpen = () => {
-        // Same rule as conversationOpen in room-hearing.js (kept inline to avoid a new import and a
-        // test harness copy-list change): change both together. returnTo covers a minigame opened
-        // from inside a conversation (R2 m8).
-        const mg = W().MinigameFramework?.currentMinigame;
-        if (!mg) return false;
-        const chat = t => t === 'person-chat' || t === 'phone-chat';
-        return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
-    };
+    // R1 m4: is a person-chat or phone-chat open? One shared rule, exported above (R3 m3)
+    const conversationOpen = () => conversationOpenIn(W());
     const TILE = 32;
     const centreOf = (sp) => {
         if (sp.body?.center) return { x: sp.body.center.x, y: sp.body.center.y };

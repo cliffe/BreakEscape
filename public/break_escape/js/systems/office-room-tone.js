@@ -12,9 +12,8 @@
  *   - room_tone_started:<roomId>, once per room, when the room's own bed (step 1 or 2) first plays.
  * startSound and outputSound are played by npc-office-visuals.js under the same gate.
  */
-import { seededRoll } from './npc-needs.js';
+import { seededRoll, conversationOpen } from './npc-needs.js';
 import { roomToneOn, USE_SOUND_SCALE } from './npc-office-visuals.js';
-import { conversationOpen } from './room-hearing.js';
 
 export { roomToneOn };
 export const SPOT_SLOT_MS = 20000;

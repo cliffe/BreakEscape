@@ -44,20 +44,3 @@ export function chatterVolume(d, { near = CHATTER_NEAR, far = CHATTER_FAR, floor
     if (d >= far) return floor;
     return 1 - (1 - floor) * ((d - near) / (far - near));
 }
-
-/**
- * Is a person-chat or phone-chat open? Used by room tone (duck the bed) and by chatter (nobody
- * overhears, voices or toasts chatter while the player is in a conversation). Read the open
- * minigame's own scene type (stamped by the minigame manager), never the sticky
- * `currentConversationMinigameType`: that stays 'phone-chat' after a call closes, because only
- * person-chat clears it. `w` is the window (injectable for tests).
- */
-export function conversationOpen(w = (typeof window !== 'undefined' ? window : {})) {
-    const mg = w.MinigameFramework?.currentMinigame;
-    if (!mg) return false;
-    // R2 m8: a minigame opened from inside a conversation (a cloner, a lockpick) leaves the chat
-    // suspended under it: its returnTo names the chat, so the conversation still counts as open.
-    // The inline copy in npc-needs.js `createEngineWorld` must stay in step with this one.
-    const chat = t => t === 'person-chat' || t === 'phone-chat';
-    return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
-}

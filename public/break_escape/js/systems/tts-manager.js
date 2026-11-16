@@ -61,10 +61,12 @@ class TTSManager {
      * @param {Object} [options]
      * @param {string|null} [options.delivery] - the line's #delivery: note (tts-delivery.js), never shown
      * @param {number} [options.volume] - 0..1 distance volume for this line (chatter, D34); 1 = full
+     * @param {Function|null} [options.cancelled] - asked once the clip has loaded and before its first
+     *   sample: true means the caller gave up on it (R3 m1), so it is dropped unplayed and null returned
      * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable or if a later
      *   play() took over while this one was loading (it then leaves the audio element alone)
      */
-    async play(npcId, text, { delivery = null, volume = 1 } = {}) {
+    async play(npcId, text, { delivery = null, volume = 1, cancelled = null } = {}) {
         const seq = ++this.playSeq;
         // A later play() owns the element once it has started: a superseded call must not set
         // src (that fires 'emptied' on the newer clip) or play its own line over it
@@ -128,6 +130,7 @@ class TTSManager {
                 this.audio.addEventListener('error', onError);
             });
             if (superseded()) return null;
+            if (cancelled && cancelled()) { this.stop(); return null; }   // R3 m1: given up on while it loaded: never audible
 
             this.currentText = text;
             this.playing = true;

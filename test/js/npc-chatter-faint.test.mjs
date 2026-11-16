@@ -6,9 +6,9 @@
 // Run with: node --max-old-space-size=2048 test/js/npc-chatter-faint.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { NPCNeedsSystem, NEEDS_TICK_MS, requiredGlobalsHold, createEngineWorld } from '../../public/break_escape/js/systems/npc-needs.js';
+import { NPCNeedsSystem, NEEDS_TICK_MS, requiredGlobalsHold, createEngineWorld, conversationOpen } from '../../public/break_escape/js/systems/npc-needs.js';
 import { NpcChatterVoice } from '../../public/break_escape/js/systems/npc-needs-chatter.js';
-import { conversationOpen, openDoorHearing } from '../../public/break_escape/js/systems/room-hearing.js';
+import { openDoorHearing } from '../../public/break_escape/js/systems/room-hearing.js';
 import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 const thirsty = () => ({ thirst: { decayPerMin: 1, urgentAt: 50, initial: 20, jitterPct: 0 } });
@@ -603,4 +603,157 @@ test('R2 m9: a faint clip that loads after its abort is muted before it is stopp
     const i = order.findIndex(e => e[0] === 'stop');
     assert.ok(i > 0, 'the late clip was stopped');
     assert.deepEqual(order[i - 1], ['gain', 0], 'muted first, so no blip');
+});
+
+// ── Round 3 ─────────────────────────────────────────────────────────────────────────────────────
+
+test('R3 M1: _speak derives unheard from overheard, once, for every caller; a heard line is not unheard', () => {
+    const o = office({ ear: { overheard: false, distance: 600 }, faint: 0 });
+    o.sys._speak('ann', 'Out of earshot.', o.sys.clockMs + 1000, { topic: 'cooler', overheard: false });
+    o.sys._speak('ann', 'Heard.', o.sys.clockMs + 1000, { topic: 'cooler', overheard: true });
+    o.sys._speak('ann', 'Faint.', o.sys.clockMs + 1000, { topic: 'cooler', overheard: false, faint: true });
+    o.sys._speak('ann', 'Call.', o.sys.clockMs + 1000, { call: true, overheard: true });
+    assert.deepEqual(o.st.spoken.map(s => !!s.info.unheard), [true, false, false, false]);
+});
+
+test('R3 M1: a login_aloud mutter out of earshot is marked secret and unheard; in earshot it is neither', () => {
+    const o = office({ ear: { overheard: false, distance: 300 }, faint: 0.5 });
+    o.sys.mutter('ann', 'login_aloud');
+    const far = o.st.spoken.at(-1);
+    assert.ok(far, 'the line is still handed to the world (the bubble and lock are unchanged)');
+    assert.equal(far.info.overheard, false);
+    assert.equal(far.info.secret, true);
+    assert.equal(far.info.unheard, true);
+    assert.equal(far.info.faint, false, 'a priority mutter is never drawn faint');
+    assert.equal(o.emitted('npc_overheard:').length, 0, 'no heard credit');
+    const o2 = office({ ear: { overheard: true, distance: 40 } });
+    o2.sys.mutter('ann', 'login_aloud');
+    const near = o2.st.spoken.at(-1);
+    assert.equal(near.info.overheard, true);
+    assert.ok(!near.info.unheard);
+    assert.equal(o2.emitted('npc_overheard:').length, 1, 'heard credit exactly as on main');
+});
+
+test('R3 M1: a secret line that is not overheard plays no audio (beside the speaker, through a door, switch on or off); overheard plays in full', async () => {
+    const st = { off: false };
+    const calls = [];
+    const w = { npcRoom: 'office', dist: 20 };
+    const v = new NpcChatterVoice({
+        getNpc: id => ({ id, voice: {} }), allNpcs: () => [], muted: () => false, faintOff: () => st.off,
+        npcRoom: () => w.npcRoom, playerRoom: () => 'office',
+        doorHearing: (nr, pr) => openDoorHearing(nr, pr, rooms, { north: 'kitchen' }),
+        distance: () => w.dist, conversation: () => false,
+        makeTts: () => ({ play: async (n, l, o) => { calls.push({ l, v: o.volume }); return 40; }, setDistanceGain() {}, stop() {} })
+    });
+    const secret = { secret: true, unheard: true, overheard: false };
+    await v.say('a', 'Beside, switch on.', secret);
+    w.npcRoom = 'kitchen'; w.dist = 200;
+    await v.say('a', 'Next room, open door.', secret);
+    st.off = true;
+    await v.say('a', 'Next room, switch off.', secret);
+    w.npcRoom = 'office'; w.dist = 20;
+    await v.say('a', 'Beside, switch off.', secret);
+    assert.equal(calls.length, 0, 'no audio in any of the four');
+    assert.ok(v.log.every(e => e.spoken === false), 'each is logged as not spoken');
+    assert.equal(v.log.at(-1).reason, 'secret_unheard');
+    await v.say('a', 'Heard password.', { secret: true, overheard: true });
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].v, 1);
+});
+
+test('R3 m4: the scenario flag faintChatter: false silences unheard exchange lines too', async () => {
+    const calls = [];
+    const prev = globalThis.window, had = 'window' in globalThis;
+    globalThis.window = { gameScenario: { faintChatter: false } };
+    try {
+        const v = new NpcChatterVoice({
+            getNpc: id => ({ id, voice: {} }), allNpcs: () => [], muted: () => false,
+            npcRoom: () => 'office', playerRoom: () => 'office', distance: () => 20, conversation: () => false,
+            makeTts: () => ({ play: async (n, l, o) => { calls.push(o.volume); return 40; }, setDistanceGain() {}, stop() {} })
+        });
+        await v.say('a', 'Unheard exchange line.', { knot: 'ex', unheard: true });
+        assert.equal(calls.length, 0);
+        assert.equal(v.log.at(-1).reason, 'background_off');
+        assert.equal(v.faintVolume('a'), 0);
+        await v.say('a', 'Heard exchange line.', { knot: 'ex', overheard: true });
+        assert.equal(calls.length, 1, 'a heard line is unaffected');
+    } finally { if (had) globalThis.window = prev; else delete globalThis.window; }
+});
+
+test('R3 m3: conversationOpen has one source (npc-needs.js); the adapter and the chatter voice agree with it on every shape', () => {
+    const shapes = [
+        [{ _sceneType: 'person-chat' }, true],
+        [{ _sceneType: 'phone-chat' }, true],
+        [{ _sceneType: 'lockpicking', params: { returnTo: { sceneType: 'person-chat' } } }, true],
+        [{ _sceneType: 'lockpicking', params: { returnTo: { sceneType: 'phone-chat' } } }, true],
+        [{ _sceneType: 'lockpicking', params: { returnTo: { sceneType: 'lockpicking' } } }, false],
+        [{ _sceneType: 'lockpicking' }, false],
+        [{ constructor: { name: 'PersonChatMinigame' } }, true],
+        [{ constructor: { name: 'PhoneChatMinigame' } }, true],
+        [{ constructor: { name: 'LockpickingMinigamePhaser' }, _sceneType: 'lockpicking' }, false],
+        [null, false]
+    ];
+    const prev = globalThis.window, had = 'window' in globalThis;
+    try {
+        for (const [mg, want] of shapes) {
+            const { win } = engine({ conv: { open: false } });
+            win.npcManager = { npcs: new Map([['ann', { id: 'ann', _sprite: { x: 10, y: 10 }, roomId: 'office' }]]), getNPC: id => win.npcManager.npcs.get(id) };
+            win.npcBehaviorManager = { getBehavior: () => ({ sprite: { body: { center: { x: 10, y: 10 }, enable: true } }, roomId: 'office' }) };
+            win.MinigameFramework = { currentMinigame: mg };
+            assert.equal(conversationOpen(win), want, JSON.stringify(mg) + ' (shared)');
+            globalThis.window = win;
+            const adapter = createEngineWorld();
+            assert.equal(adapter.playerHears('ann', 160).overheard, !want, JSON.stringify(mg) + ' (adapter)');
+            const v = new NpcChatterVoice({ getNpc: id => ({ id, voice: {} }), muted: () => false, npcRoom: () => 'o', playerRoom: () => 'o', distance: () => 5 });
+            assert.equal(v.conversationOpen(), want, JSON.stringify(mg) + ' (voice)');
+        }
+    } finally { if (had) globalThis.window = prev; else delete globalThis.window; }
+});
+
+test('R3 m1: a faint clip whose abort lands before it is audible never starts', async () => {
+    // The real TTSManager.play, extracted, on a stub audio element: cancelled() is asked after the
+    // metadata wait and before the first sample, so an aborted late clip is never played
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/tts-manager.js', import.meta.url), 'utf8');
+    const m = src.match(/\n    async play\(([^)]*)\) \{\n([\s\S]*?)\n    \}\n\n    \/\*\*\n     \* Preload/);
+    assert.ok(m, 'play found');
+    const play = new Function('ApiClient', 'MusicController', `return async function (${m[1]}) {\n${m[2]}\n};`);
+    const rig = () => {
+        const events = {};
+        const log = [];
+        const audio = {
+            src: '', duration: 1, addEventListener: (e, f) => { events[e] = f; setTimeout(() => events.loadedmetadata?.(), 5); },
+            removeEventListener() {}, play: async () => { log.push('play'); }, pause() { log.push('pause'); }, removeAttribute() {}
+        };
+        const mgr = {
+            audio, enabled: true, volume: 1, preloadCache: new Map(), playing: false, _hasSrc: false, playSeq: 0,
+            stop() { log.push('stop'); this.playing = false; }, _setActiveFXProfile() {}, _resolveFXProfile() {}, _ensureAudioContext() {},
+            _cacheKey: (a, b) => a + b, _alignLipSync() {}, setDistanceGain: g => log.push(['gain', g])
+        };
+        mgr.play = play({ getTTS: async () => new Blob(['x']) }, { context: null });
+        return { mgr, log };
+    };
+    const a = rig();
+    assert.equal(await a.mgr.play('n', 'line', { volume: 0.3, cancelled: () => true }), null);
+    assert.ok(!a.log.includes('play'), 'audio.play() was never called');
+    assert.ok(!a.log.some(e => Array.isArray(e) && e[1] > 0), 'and no level was set');
+    const b = rig();
+    assert.ok(await b.mgr.play('n', 'line', { volume: 0.3, cancelled: () => false }) > 0);
+    assert.ok(b.log.includes('play'), 'an uncancelled clip plays');
+});
+
+test('R3 m1: the chatter voice hands play a cancelled() that follows the abort token', async () => {
+    let cancelled, resolve;
+    const v = new NpcChatterVoice({
+        getNpc: id => ({ id, voice: {} }), allNpcs: () => [], muted: () => false,
+        npcRoom: () => 'office', playerRoom: () => 'office', distance: () => 300, conversation: () => false,
+        makeTts: () => ({ play: (n, l, o) => { if (l === 'faint') { cancelled = o.cancelled; return new Promise(r => { resolve = r; }); } return Promise.resolve(40); }, setDistanceGain() {}, stop() {} })
+    });
+    const f = v.say('a', 'faint', { faint: true });
+    await wait(30);
+    assert.equal(typeof cancelled, 'function');
+    assert.equal(cancelled(), false);
+    await v.say('b', 'full', { overheard: true });
+    assert.equal(cancelled(), true, 'a full line aborts the faint one, and play sees it');
+    resolve(0); await f;
 });

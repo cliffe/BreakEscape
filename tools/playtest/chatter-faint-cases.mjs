@@ -157,12 +157,12 @@ export async function runFaint({ page, errs, sleep, info, mode }) {
         try { s._speak(npc, 'Was that parcel for you?', s.clockMs + 3000, { topic: 'coffee', knot: 'proof_ex', overheard: false, unheard }); } finally { if (wb) wb.deferChatterVoice = keep; }
         return npc;
     }, [npc, unheard]);
-    const sw = await page.evaluate(() => { const b = document.getElementById('mw-bg-chatter'); b.click(); return { flag: window.backgroundChatter, label: b.textContent, pressed: b.getAttribute('aria-pressed') }; });
+    const sw = await page.evaluate(() => { const b = document.getElementById('mw-bg-chatter'); b.click(); return { flag: window.backgroundChatter, pressed: b.getAttribute('aria-pressed') }; });
     await page.evaluate(() => window.__snap());
     await exLine('sanjay', true); await sleep(1500);
     await rec('9a_switch_off_unheard_exchange', { sw, logged: await page.evaluate(() => window.npcChatterVoice.log.slice(-1)[0]?.reason ?? null) });
     await idle();
-    const sw2 = await page.evaluate(() => { const b = document.getElementById('mw-bg-chatter'); b.click(); return { flag: window.backgroundChatter, label: b.textContent, pressed: b.getAttribute('aria-pressed') }; });
+    const sw2 = await page.evaluate(() => { const b = document.getElementById('mw-bg-chatter'); b.click(); return { flag: window.backgroundChatter, pressed: b.getAttribute('aria-pressed') }; });
     await exLine('sanjay', true); await sleep(1500);
     await rec('9b_switch_on_unheard_exchange', { sw2 });
     await idle(); await page.evaluate(() => window.__snap());
@@ -190,6 +190,40 @@ export async function runFaint({ page, errs, sleep, info, mode }) {
     await sleep(800);
     const closed10 = await page.evaluate(() => ({ cur: window.MinigameFramework.currentMinigame?._sceneType || null, conv: window.npcChatterVoice.conversationOpen() }));
     console.log('10 closed', JSON.stringify(closed10));
+
+    // 11. R3 M1: a priority mutter (login_aloud, which carries a secret) from the next room through
+    //     the open door is silent and earns no heard credit; the same mutter with the player in
+    //     earshot is voiced in full and is credited. The pool is set on the page copy only.
+    await page.evaluate(() => {
+        const sc = window.gameScenario; sc.chatter = { ...(sc.chatter || {}), login_aloud: ['Proof only: the password is on the sticky note.'] };
+        const s = window.npcNeedsSystem;
+        if (!s.__proofEmits) { s.__proofEmits = []; const em = s._emit.bind(s); s._emit = (n, d) => { s.__proofEmits.push(n); return em(n, d); }; }
+        window.__mutter = npc => {
+            const wb = window.npcWorldBubbles, keep = wb?.deferChatterVoice;
+            if (wb) wb.deferChatterVoice = () => false;
+            const st = s.states.get(npc); st.saying = null; s._speechUntil = 0; s.__proofEmits.length = 0;
+            try { s._sayMutter(st, 'login_aloud'); } finally { if (wb) wb.deferChatterVoice = keep; }
+            return { said: st.saying?.line ? 'line' : (st.saying?.picture ? 'picture' : null), emits: s.__proofEmits.filter(n => n.startsWith('npc_overheard') || n.startsWith('npc_mutter')) };
+        };
+    });
+    await page.evaluate(() => window.__test.enterRoom('kitchen')); await sleep(1500);
+    const who11 = await page.evaluate(() => [...window.npcNeedsSystem.states.keys()]);
+    let door11 = null;
+    for (const id of who11) { const f = await fv(id); if (f.hearing > 0 && f.hearing < 1) { door11 = { id, ...f }; break; } }
+    if (door11) {
+        await page.evaluate(() => window.__snap());
+        const m11a = await page.evaluate(id => window.__mutter(id), door11.id);
+        await sleep(1500);
+        await rec('11a_login_aloud_next_room_open_door', { speaker: door11.id, hearing: door11.hearing, mutter: m11a, logged: await page.evaluate(() => window.npcChatterVoice.log.slice(-1)[0]?.reason ?? null) });
+        await idle(); await page.evaluate(() => window.__snap());
+    } else console.log('11a: no NPC heard through the door');
+    await page.evaluate(() => window.__test.enterRoom('office')); await sleep(1500);
+    const near11 = await page.evaluate(() => { const ids = [...window.npcNeedsSystem.states.keys()]; return window.__place(ids[1] || ids[0], ids[0], 60) && ids[0]; });
+    await page.evaluate(() => window.__snap());
+    const m11b = await page.evaluate(id => window.__mutter(id), near11);
+    await sleep(1500);
+    await rec('11b_login_aloud_in_earshot', { speaker: near11, dist: Math.round(await page.evaluate(id => window.npcChatterVoice._distance(id), near11)), mutter: m11b, logged: await page.evaluate(() => window.npcChatterVoice.log.slice(-1)[0] || null) });
+    await idle(); await page.evaluate(() => window.__snap());
 
     out.errors = errs;
     console.log(JSON.stringify({ errors: errs }));

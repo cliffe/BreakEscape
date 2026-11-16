@@ -26,7 +26,8 @@
  * co-speaker's line. A line with no prefix belongs to the owner, or to a `# speaker:npc:<id>` tag.
  * What is sent to /tts is the text after the prefix.
  */
-import { openDoorHearing, chatterVolume, conversationOpen, CHATTER_NEAR } from './room-hearing.js';
+import { openDoorHearing, chatterVolume, CHATTER_NEAR } from './room-hearing.js';
+import { conversationOpen } from './npc-needs.js';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const STALE_MS = 8000;   // a queued line that waited longer than this is dropped, not spoken late
@@ -254,6 +255,8 @@ export class NpcChatterVoice {
 
     /** R1 m7: the player's "Background voices" switch (background lines only; heard lines are unaffected). */
     _faintOff() {
+        // R3 m4: the scenario flag "faintChatter": false turns every background voice off too
+        if (win().gameScenario?.faintChatter === false) return true;
         if (this.deps.faintOff) return !!this.deps.faintOff();
         return win().backgroundChatter === false;
     }
@@ -343,6 +346,10 @@ export class NpcChatterVoice {
         if (!npc || !npc.voice) { this._note({ ...base, spoken: false, reason: 'no_voice' }); return this.queue; }
         if (this._muted()) { this._note({ ...base, spoken: false, reason: 'muted' }); return this.queue; }
         if (this.conversationOpen()) { this._note({ ...base, spoken: false, reason: 'conversation' }); return this.queue; }
+        // R3 M1: a secret line (a priority mutter such as login_aloud) the player does not overhear is
+        // not voiced at all: no faint version and no through-door version, so the player never hears
+        // a password that earns no heard credit. Its bubble is an ordinary unheard bubble.
+        if (info.secret && !info.overheard) { this._note({ ...base, spoken: false, reason: 'secret_unheard' }); return this.queue; }
         const faint = !!info.faint;
         // R2 M1: an exchange line voiced out of earshot is a background voice too (switch, faint level),
         // but it is not faint: it keeps the lock and no full line cuts it
@@ -378,7 +385,7 @@ export class NpcChatterVoice {
             this._note({ ...base, spoken: true, faint, volume: Math.round(volume * 100) / 100 });
             const n = (this._playN.get(npcId) || 0) + 1;
             this._playN.set(npcId, n);
-            const loading = Promise.resolve(mgr.play(npcId, line, { volume }));
+            const loading = Promise.resolve(mgr.play(npcId, line, { volume, cancelled: tok ? () => tok.abort : null }));
             let ms;
             if (tok) {
                 // R1 m2: a faint line given way to while it loads does not hold the queue: race the
@@ -387,8 +394,10 @@ export class NpcChatterVoice {
                 const aborted = new Promise(r => { tok.onAbort = () => r(0); });
                 ms = await Promise.race([loading, aborted]);
                 if (tok.abort) {
-                    // R2 m9: muted first, so a clip that starts late is not heard as a click
-                loading.then(() => { if (this._playN.get(npcId) === n) { try { mgr.setDistanceGain?.(0, true); mgr.stop?.(); } catch (e) { /* ok */ } } }).catch(() => {});
+                    // R3 m1: `cancelled` makes play() itself return before the first sample, so a late
+                    // clip normally never starts; this is the backstop for one that was already playing
+                    // (muted first, then stopped, unless a newer line has started on this voice)
+                    loading.then(() => { if (this._playN.get(npcId) === n) { try { mgr.setDistanceGain?.(0, true); mgr.stop?.(); } catch (e) { /* ok */ } } }).catch(() => {});
                 }
             } else ms = await loading;
             dropTok();

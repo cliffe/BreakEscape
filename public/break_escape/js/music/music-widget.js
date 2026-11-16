@@ -208,7 +208,7 @@ export class MusicWidget {
                 </div>
                 <div class="mw-vol-row">
                     <button type="button" class="mw-btn mw-toggle-btn" id="mw-bg-chatter" aria-pressed="true"
-                            title="Faint voices of NPCs chatting out of earshot (heard lines are unaffected)">Background voices: on</button>
+                            title="Faint voices of NPCs chatting out of earshot (heard lines are unaffected)">Background voices</button>
                 </div>
             </div>
         `;
@@ -277,7 +277,7 @@ export class MusicWidget {
         const setBg = on => {
             window.backgroundChatter = !!on;
             bgChatter.setAttribute('aria-pressed', on ? 'true' : 'false');
-            bgChatter.textContent = `Background voices: ${on ? 'on' : 'off'}`;
+            // R3 m2: one signal for a screen reader (aria-pressed); the marker and colour show it to the eye
         };
         let bgOn = true;
         try { bgOn = localStorage.getItem('be_bg_chatter') !== 'off'; } catch (_) { /* storage blocked */ }

@@ -175,25 +175,36 @@
   background: #111;
 }
 
-/* A switch button (Background voices): on reads in the accent colour with a filled face, off is
-   dim and flat, so the two states differ by look as well as by word. 2px square borders, no radius. */
+/* A switch button (Background voices). Both states are a full-strength button with a solid 2px
+   border, like the ones above it (off is a real choice, not a disabled control). The state shows as
+   an 8px marker drawn in CSS, filled when on and hollow when off (as dusting.css marks a pressed
+   toggle), and the on text is the accent colour. 2px square borders, no radius. */
 .mw-toggle-btn {
   white-space: nowrap;
-  font-size: 11px;
-  letter-spacing: 0;
+}
+
+.mw-toggle-btn::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  margin-right: 6px;
+  vertical-align: baseline;
 }
 
 .mw-toggle-btn[aria-pressed="true"] {
-  background: #06283a;
   border-color: #00aaff;
   color: #00aaff;
 }
 
+.mw-toggle-btn[aria-pressed="true"]::before {
+  background: currentColor;
+}
+
 .mw-toggle-btn[aria-pressed="false"] {
-  background: #161616;
-  border-color: #333;
-  border-style: dashed;
-  color: #666;
+  color: #ccc;
 }
 
 .mw-btn:disabled {
