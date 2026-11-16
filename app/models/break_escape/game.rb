@@ -1291,9 +1291,39 @@ module BreakEscape
       # Write the carry entry first so it rides remove_item_from_room!'s save!: a
       # second save! after that one would not see the nested jsonb mutation as dirty.
       player_state_will_change!
-      carry[npc_id] = { 'itemId' => item_id, 'fromRoom' => from_room }
+      entry = { 'itemId' => item_id, 'fromRoom' => from_room }
+      # slice C C1: remember where the object was lying, so a reload mid-carry puts it
+      # back there, not at its scenario spot. The position is read from the server's own
+      # stored copy (objects_added) before remove_item_from_room! deletes it, never from
+      # the request. Only a placed copy (a player drop or a put-down) has one; an object
+      # picked up from its scenario spot has none, and end_stranded_carries! keeps the
+      # scenario position for it.
+      from_pos = sanitised_carry_position(from_room, item_id)
+      entry['fromPos'] = from_pos if from_pos
+      carry[npc_id] = entry
       remove_item_from_room!(from_room, item_id)
       true
+    end
+
+    # The pick-up position of a placed copy, read from the room's objects_added record
+    # (the drop and put-down paths write it there). Keep only the coordinate keys those
+    # paths write (x, y, px, py, elevation), each a valid coordinate; drop every other
+    # key, so no client-supplied field rides into the stored carry. nil when the object
+    # has no stored placement or no key survives the check.
+    def sanitised_carry_position(room_id, item_id)
+      added = player_state.dig('room_states', room_id, 'objects_added')
+      return nil unless added.is_a?(Array)
+
+      stored = added.find { |o| o.is_a?(Hash) && o['id'] == item_id }
+      pos = stored && stored['position']
+      return nil unless pos.is_a?(Hash)
+
+      cleaned = {}
+      %w[x y px py elevation].each do |k|
+        v = pos[k]
+        cleaned[k] = v if valid_ko_coord?(v)
+      end
+      cleaned.presence
     end
 
     # Put down: the NPC sets the carried object down in to_room at position. Confirms
@@ -1680,11 +1710,13 @@ module BreakEscape
     end
 
     # End every stored carry by putting its object back where it was picked up
-    # (fromRoom, scenario position) and dropping the entry. The client then sees the
-    # object on the floor and the NPC is free to carry again. Mirrors put_down_carried!
-    # (add to objects_added, keep the origin objects_removed), so nothing duplicates.
-    # Resuming the walk mid-carry is future work (plan slice C). Returns whether it
-    # changed anything.
+    # (fromRoom, at fromPos when the entry has one, else the scenario position) and
+    # dropping the entry. The client then sees the object on the floor and the NPC is
+    # free to carry again. Mirrors put_down_carried! (add to objects_added, keep the
+    # origin objects_removed), so nothing duplicates. An object the player has already
+    # taken into their inventory gets no floor copy (the same guard the carry actions
+    # use), so a stranded delivery entry drops without duplicating the item. Returns
+    # whether it changed anything.
     def end_stranded_carries!
       carry = player_state['npcCarry']
       return false unless carry.is_a?(Hash) && carry.any?
@@ -1697,11 +1729,16 @@ module BreakEscape
           item_id = entry['itemId']
           from_room = entry['fromRoom']
           info = item_id.is_a?(String) ? carriable_object_index[item_id] : nil
-          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String)
+          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String) &&
+             !carried_item_in_inventory?(item_id)
             room_state = (player_state['room_states'][from_room] ||=
               { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} })
             item = info['object'].deep_dup.except('texture')
                        .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+            # slice C C1: a placed copy goes back to the spot it was lying on, not its
+            # scenario position. fromPos is the sanitised server record from pick-up.
+            from_pos = entry['fromPos']
+            item['position'] = from_pos if from_pos.is_a?(Hash) && from_pos.any?
             room_state['objects_added'].reject! { |o| o['id'] == item_id }
             room_state['objects_added'] << item
           end

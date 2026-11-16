@@ -464,7 +464,9 @@ module BreakEscape
       # this for a player-dropped device. It used to 422; now it is accepted.
       carry('grace', 'office_mugs', room: 'kitchen')
       assert_response :success
-      assert_equal({ 'itemId' => 'office_mugs', 'fromRoom' => 'kitchen' }, carry_state['grace'])
+      # slice C: the kitchen copy was put down at a known position, so the carry now
+      # captures that spot as fromPos (a reload would return the mug there).
+      assert_equal({ 'itemId' => 'office_mugs', 'fromRoom' => 'kitchen', 'fromPos' => { 'px' => 50, 'py' => 60 } }, carry_state['grace'])
       assert_not room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }, 'mug left the kitchen floor'
       assert npc_held('office', 'grace').any? { |i| i['id'] == 'office_mugs' }, 'served in the hand again'
     end
@@ -530,10 +532,13 @@ module BreakEscape
       assert_equal 1, landed.size, 'mug back on the office floor exactly once'
       assert_not npc_held('office', 'grace').to_a.any? { |i| i['id'] == 'office_mugs' }, 'no longer served in the hand'
 
-      # The NPC is free to carry again afterwards.
+      # The NPC is free to carry again afterwards. The put-back wrote the scenario copy
+      # (with its scenario position) into objects_added, so the re-carry now captures that
+      # position as fromPos; it is the same scenario spot, so a further reload is unchanged.
       carry('grace', 'office_mugs')
       assert_response :success
-      assert_equal({ 'itemId' => 'office_mugs', 'fromRoom' => 'office' }, carry_state['grace'], 'carries again after the reload')
+      assert_equal 'office', carry_state['grace']['fromRoom'], 'carries again after the reload'
+      assert_equal({ 'x' => 4, 'y' => 7 }, carry_state['grace']['fromPos'], 'the scenario spot, captured as fromPos')
     end
 
     # === R3 m3: delivery to the player clears the carry =======================
@@ -561,6 +566,180 @@ module BreakEscape
       assert_equal false, g.put_down_carried!('kitchen', 'grace', 'office_mugs'), 'put-down refused: already taken'
       assert_equal false, g.ko_drop_carried!('office', 'grace', 'office_mugs'), 'KO drop refused: already taken'
       assert_not room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }, 'not duplicated into the kitchen'
+    end
+
+    # === slice C: a reload puts a carry back where it was lying ================
+
+    # Drop the mug into a non-scenario room at a known position, the shape a player drop
+    # or a put-down leaves: the mug sits in that room's objects_added with a position and
+    # is marked removed from its origin office.
+    def place_drop(room, position, item_id: 'office_mugs')
+      g = @game.reload
+      dropped = MUG.deep_dup.merge('position' => position)
+      g.player_state['room_states'] ||= {}
+      g.player_state['room_states']['office'] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+      g.player_state['room_states']['office']['objects_removed'] |= [item_id]
+      g.player_state['room_states'][room] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+      g.player_state['room_states'][room]['objects_added'] << dropped
+      g.save!
+      g
+    end
+
+    # C1 test 1 (fails on main): a reload mid-carry of a placed copy puts the object back
+    # at the spot it was lying on, not at its scenario position in the wrong room.
+    test 'a reload puts a carried placed copy back at its drop position, not its scenario spot' do
+      build
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_response :success
+      assert_equal({ 'x' => 6.4, 'y' => 5.1 }, carry_state['grace']['fromPos'], 'drop position captured from the server record')
+
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+
+      assert carry_state.blank?, 'stranded carry ended'
+      landed = room_objects('kitchen').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, landed.size, 'mug back in the kitchen exactly once'
+      assert_equal({ 'x' => 6.4, 'y' => 5.1 }, landed.first['position'], 'at the drop spot, not the office scenario spot (4,7)')
+      assert_not room_objects('office').any? { |o| o['id'] == 'office_mugs' }, 'the office does not also serve it'
+    end
+
+    # C1 test 2: a carry from the object's own scenario spot still restores the scenario
+    # position (no fromPos is stored for it).
+    test 'a reload puts a carry from the scenario spot back at the scenario position' do
+      build
+      carry('grace', 'office_mugs')
+      assert_nil carry_state['grace']['fromPos'], 'no fromPos for an object taken from its scenario spot'
+
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+
+      landed = room_objects('office').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, landed.size, 'mug back in the office once'
+      assert_equal({ 'x' => 4, 'y' => 7 }, landed.first['position'], 'the scenario position is kept')
+    end
+
+    # C1 test 3: a hostile stored position keeps only valid coordinate keys; extra and
+    # out-of-range values never reach fromPos or the put-back object.
+    test 'a hostile stored drop position is sanitised: only valid coordinate keys survive' do
+      build
+      place_drop('kitchen', {
+                   'x' => 5.0, 'y' => 'nope', 'px' => 1_000_000, 'py' => 60.0, 'elevation' => 30,
+                   'flags' => { 'opens_lock' => 'vault_key' }, 'type' => 'key'
+                 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_response :success
+      assert_equal({ 'x' => 5.0, 'py' => 60.0, 'elevation' => 30 }, carry_state['grace']['fromPos'],
+                   'string y, out-of-range px and the extra keys dropped')
+
+      get scenario_game_url(@game), as: :json
+      landed = room_objects('kitchen').find { |o| o['id'] == 'office_mugs' }
+      assert_equal({ 'x' => 5.0, 'py' => 60.0, 'elevation' => 30 }, landed['position'], 'only valid keys on the put-back position')
+      assert_nil landed['flags'], 'no extra keys carried onto the object'
+      assert_equal 'dirty_mugs1', landed['type'], 'type from the scenario definition, not the stored position'
+    end
+
+    # C1 test 4: a client cannot supply fromPos. A carry_object body with fromPos (or
+    # position) is ignored; a sync delta with an npcCarry fromPos writes nothing.
+    test 'a client-sent fromPos on carry_object is ignored; the server derives it' do
+      build
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      post update_room_game_url(@game), params: {
+        roomId: 'kitchen', actionType: 'carry_object',
+        data: { npcId: 'grace', itemId: 'office_mugs', fromPos: { 'x' => 99, 'y' => 99 }, position: { 'x' => 88, 'y' => 88 } }
+      }, as: :json
+      assert_response :success
+      assert_equal({ 'x' => 6.4, 'y' => 5.1 }, carry_state['grace']['fromPos'], 'server-derived value, not the client body')
+    end
+
+    test 'a sync delta carrying an npcCarry fromPos writes nothing' do
+      build
+      body = { npcCarry: { 'grace' => { 'itemId' => 'office_mugs', 'fromRoom' => 'office', 'fromPos' => { 'x' => 99, 'y' => 99 } } } }
+      put sync_state_game_url(@game), params: body.merge(clientTs: 1000), as: :json
+      assert_response :success
+      assert carry_state.blank?, 'no carry minted by a forged sync'
+    end
+
+    # C1 test 5: the stored entry stays bounded. At most itemId, fromRoom, fromPos; a
+    # repeat carry is a no-op; a second bootstrap does not write.
+    test 'a carry entry with fromPos stays bounded and a repeat carry is a no-op' do
+      build
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_equal %w[itemId fromRoom fromPos].sort, carry_state['grace'].keys.sort, 'only the three fields'
+
+      first = carry_state.deep_dup
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_response :success
+      assert_equal first, carry_state, 'a repeat carry does not change the entry'
+    end
+
+    test 'a second bootstrap after the carry ended does not write again' do
+      build
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      get scenario_game_url(@game), as: :json
+      after_first = room_objects('kitchen').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, after_first.size
+      get scenario_game_url(@game), as: :json
+      assert_equal 1, room_objects('kitchen').select { |o| o['id'] == 'office_mugs' }.size, 'still exactly one, not re-added'
+    end
+
+    # C1 test 6: an entry whose object is now in the inventory is dropped at bootstrap
+    # with no floor copy added.
+    test 'a stranded carry whose object the player already holds is dropped with no floor copy' do
+      build
+      carry('grace', 'office_mugs')
+      g = @game.reload
+      g.player_state['inventory'] = [{ 'id' => 'office_mugs' }]
+      g.save!
+
+      get scenario_game_url(@game), as: :json
+      assert_response :success
+      assert carry_state.blank?, 'entry dropped'
+      assert_not room_objects('office').any? { |o| o['id'] == 'office_mugs' }, 'no floor copy added for an item in the inventory'
+    end
+
+    # C1 test 7: the three non-reload ends still delete an entry that has fromPos and add
+    # the object once at their own position, never at fromPos.
+    test 'put-down, consume and KO drop still end an entry that has fromPos, at their own position' do
+      build('encounteredNPCs' => %w[grace])
+      # put-down
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert carry_state['grace']['fromPos'], 'fromPos stored'
+      put_down('grace', 'office_mugs', room: 'office', position: { px: 12, py: 34 })
+      assert_response :success
+      assert_nil carry_state['grace'], 'put-down cleared the entry'
+      landed = room_objects('office').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, landed.size
+      assert_equal({ 'px' => 12, 'py' => 34 }, landed.first['position'], 'put-down position, not fromPos')
+
+      # consume
+      build
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      consume('grace', 'office_mugs')
+      assert_response :success
+      assert_nil carry_state['grace'], 'consume cleared the entry'
+      assert_not room_objects('kitchen').any? { |o| o['id'] == 'office_mugs' }, 'consumed, no floor copy'
+
+      # KO drop
+      build('encounteredNPCs' => %w[grace])
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      g = @game.reload
+      g.player_state['room_states']['office']['npc_states']['grace'] = { 'isKO' => true, 'currentHP' => 0 }
+      g.save!
+      post update_room_game_url(@game), params: {
+        roomId: 'office', actionType: 'ko_drop_carried',
+        data: { npcId: 'grace', itemId: 'office_mugs', position: { px: 77, py: 88 } }
+      }, as: :json
+      assert_response :success
+      assert_nil carry_state['grace'], 'KO drop cleared the entry'
+      dropped = room_objects('office').select { |o| o['id'] == 'office_mugs' }
+      assert_equal 1, dropped.size
+      assert_equal({ 'px' => 77, 'py' => 88 }, dropped.first['position'], 'KO drop position, not fromPos')
     end
   end
 end
