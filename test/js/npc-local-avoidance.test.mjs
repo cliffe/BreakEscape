@@ -229,7 +229,9 @@ function headOn({ self = 'zoe', other = 'amy', otherPinned = false, otherAt = 28
     window.player = undefined;
     const otherBody = { enable: true, immovable: false, center: { x: otherAt, y: 0 } };
     window.rooms = { r: { npcSprites: [{ npcId: other, body: otherBody }] } };
-    window.npcBehaviorManager = { getBehavior: () => ({ _avoidIsBusy: () => true, _avoidIsPinned: () => otherPinned }) };
+    // the other NPC is on a job and following its path (coming through: R7 M1)
+    window.npcBehaviorManager = { getBehavior: () => ({ _avoidIsBusy: () => true, _avoidIsPinned: () => otherPinned,
+        _avoidIsWalking: () => true }) };
     const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }), findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };
     const b = walker({ id: self, busy: true, pathfinder: pf });
     return { b, otherBody };
@@ -483,7 +485,7 @@ test('R2 m1: no needs nudge with the player beside, from a walkable cell, or ont
 // could both end up pinned and hold for ever. Drives the real _handleBlockerAhead for every NPC
 // with a crude lane: |x| <= 100 is one body wide (y 0); beyond it each NPC has its own room offset,
 // where a detour is found and bodies pass side by side.
-function laneRun(spec, { laneHalf = 100, gap = 20, maxMs = 60000 } = {}) {
+function laneRun(spec, { laneHalf = 100, gap = 20, maxMs = 60000, dt = 50 } = {}) {
     const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
         findWorldPath: (sx, sy, ex, ey, cb) => cb(Math.abs(sx) > laneHalf ? [{ x: ex, y: ey }] : null) };
     const ws = spec.map(([id, x, tx], i) => {
@@ -492,7 +494,7 @@ function laneRun(spec, { laneHalf = 100, gap = 20, maxMs = 60000 } = {}) {
         const body = { enable: true, immovable: false, center: { x, y: 0 }, velocity: { x: 0, y: 0 },
             setVelocity(vx, vy) { this.velocity.x = vx; this.velocity.y = vy; } };
         Object.assign(b, { npcId: id, scene: { time: { now: 0 } }, sprite: { x, y: 0, body, npcId: id },
-            direction: 'right', isMoving: true, config: { patrol: { enabled: true, speed: 90 } },
+            currentState: 'patrol', direction: 'right', isMoving: true, config: { patrol: { enabled: true, speed: 90 } },
             patrolTarget: { x: tx, y: off }, _off: off, pathIndex: 0, pathFollowingActive: true,
             _stopOnArrival: true, pathfindingManager: pf, playAnimation: () => {} });
         b.currentPath = [b.patrolTarget];
@@ -501,7 +503,7 @@ function laneRun(spec, { laneHalf = 100, gap = 20, maxMs = 60000 } = {}) {
     window.player = undefined;
     window.rooms = { r: { npcSprites: ws.map(w => w.sprite) } };
     window.npcBehaviorManager = { getBehavior: id => ws.find(w => w.npcId === id) };
-    const dt = 50, log = { handovers: 0, maxPinned: 0, done: {} };
+    const log = { handovers: 0, maxPinned: 0, done: {} };
     let last = null;
     for (let t = 100000; t < 100000 + maxMs; t += dt) {
         for (const w of ws) {
@@ -536,6 +538,179 @@ test('R6: three NPCs in a one-body lane all get through, with a few yield handov
         `every NPC reaches its target within 60 s (reached: ${JSON.stringify(log.done)})`);
     assert.ok(log.handovers <= 6, `the yield settles instead of oscillating (${log.handovers} handovers)`);
     assert.ok(log.maxPinned < 2, 'two NPCs are never both pinned');
+    window.rooms = {};
+    window.npcBehaviorManager = undefined;
+});
+
+// Sims tidy R7 m3: the same lane at a 16 ms step (60 fps without the manager's 50 ms throttle)
+test('R7 m3: the three-NPC lane also clears at a 16 ms step', () => {
+    const log = quiet(() => laneRun([['amy', -30, 300], ['bob', 10, -300], ['cat', 30, -300]], { dt: 16 }));
+    assert.deepEqual(Object.keys(log.done).sort(), ['amy', 'bob', 'cat'],
+        `every NPC reaches its target within 60 s (reached: ${JSON.stringify(log.done)})`);
+    assert.ok(log.handovers <= 6, `the yield settles instead of oscillating (${log.handovers} handovers)`);
+    assert.ok(log.maxPinned < 2, 'two NPCs are never both pinned');
+    window.rooms = {};
+    window.npcBehaviorManager = undefined;
+});
+
+// Sims tidy R7 M1: a waypoint patrol that met an NPC standing still in a one-body gap backed off a
+// whole step at a time, walked back in and met it again, for ever: each step moved it past the
+// stall (4 px) and stuck (16 px) thresholds, and its still spells were shorter than their windows.
+// Runs the real updatePatrol (so _patrolStalled and _checkPathStuck take part) against a body
+// that never moves; no detour exists. The patrol must give up on the leg (re-target) and must not
+// pace to and fro.
+test('R7 M1: a waypoint patrol against an NPC that never moves re-targets instead of pacing', () => {
+    window.__npcAvoidOff = false;
+    window.player = undefined;
+    const still = { enable: true, immovable: false, center: { x: 60, y: 0 }, velocity: { x: 0, y: 0 } };
+    window.rooms = { r: { npcSprites: [{ npcId: 'amy', body: still }] } };
+    window.npcBehaviorManager = { getBehavior: () => ({ _avoidIsBusy: () => false, _avoidIsPinned: () => false,
+        _avoidIsWalking: () => false }) };
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }), findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };
+    const b = walker({ id: 'zoe', target: { x: 400, y: 0 }, pathfinder: pf });
+    b.currentState = 'patrol';
+    b.config.patrol = { enabled: true, speed: 100, changeDirectionInterval: 3000,
+        waypoints: [{ x: 400, y: 0 }, { x: -400, y: 0 }] };
+    b.patrolTarget = { x: 400, y: 0, dwellTime: 0 };
+    b.currentPath = [{ x: 400, y: 0 }];
+    b.patrolReachedTime = 0;
+    b._drawPatrolPathDebug = () => {}; b._clearPatrolPathDebug = () => {};
+    let retargetAt = null;
+    b.chooseNewPatrolTarget = (t) => { retargetAt ??= t; b.patrolTarget = null; b.currentPath = []; };
+    const vel = b._vel, c = b.sprite.body.center;
+    const t0 = 100000;
+    b.lastPatrolChange = t0;
+    let steps = 0, minX = Infinity, maxXAfterMeet = -Infinity, met = false;
+    quiet(() => {
+        for (let t = t0; t < t0 + 30000 && retargetAt === null; t += 50) {
+            b.scene.time.now = t;
+            b.updatePatrol(t, 50);
+            if (b._avoid?.backoffUntil > t && b._avoid.backoffFrom && b._avoid.backoffUntil - t > 650) steps++;
+            c.x = Math.min(c.x + vel.x * 0.05, still.center.x - 20);   // the standing body stops it
+            c.y += vel.y * 0.05; b.sprite.x = c.x;
+            if (b._avoid) met = true;
+            if (met) { minX = Math.min(minX, c.x); maxXAfterMeet = Math.max(maxXAfterMeet, c.x); }
+        }
+    });
+    assert.ok(met, 'the patrol met the standing NPC');
+    assert.ok(retargetAt !== null && retargetAt - t0 < 15000,
+        `the patrol gives up on the leg and re-targets (re-target at ${retargetAt === null ? 'never' : retargetAt - t0} ms)`);
+    assert.equal(steps, 0, 'no whole back-off steps from a body that is not coming through');
+    assert.ok(maxXAfterMeet - minX < 16, `no pacing to and fro (range ${(maxXAfterMeet - minX).toFixed(1)} px)`);
+    window.rooms = {};
+    window.npcBehaviorManager = undefined;
+});
+
+test('R7 M1: a walker still backs off a whole step from an NPC walking towards it with no path', () => {
+    const { b, otherBody } = headOn();
+    window.npcBehaviorManager = { getBehavior: () => ({ _avoidIsBusy: () => true, _avoidIsPinned: () => false,
+        _avoidIsWalking: () => false }) };
+    otherBody.velocity = { x: -40, y: 0 };   // heading at zoe
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.ok(b._avoid.backoffUntil > t, 'a whole step');
+    assert.ok(b._vel.x < 0);
+});
+
+// Sims tidy R7 m1: the back-off step looked only at the blocker ahead, so it pushed the player
+// behind back (or walked through them by a wall). Now the ground behind is checked first.
+test('R7 m1: with the player behind, the yielder does not step back; it is pinned instead', () => {
+    const { b } = headOn();
+    window.player = { body: { enable: true, center: { x: -26, y: 0 } } };   // right behind zoe
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.ok(!(b._avoid.backoffUntil > t), 'no back-off step started');
+    assert.equal(b._vel.x, 0, 'standing, not moving into the player');
+    assert.equal(b._avoidIsPinned(), true, 'pinned, so the other NPC yields');
+    // the player well away to the side: the step runs as before
+    const { b: b2 } = headOn();
+    window.player = { body: { enable: true, center: { x: -26, y: 80 } } };
+    t = 200000;
+    b2._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b2._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b2._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.ok(b2._vel.x < 0, 'stepping back with nobody behind');
+    window.player = undefined;
+});
+
+test('R7 m1: a wall right behind pins the yielder too', () => {
+    const { b } = headOn();
+    let probe = null;
+    b.pathfindingManager.hasWorldPhysicsLineOfSight = (x1, y1, x2, y2) => { probe = { x2, y2 }; return false; };
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.ok(probe && probe.x2 < 0, 'the probe looks behind (away from the blocker)');
+    assert.equal(b._vel.x, 0);
+    assert.equal(b._avoidIsPinned(), true);
+});
+
+// Sims tidy R7 m2: _avoid (pin, yield hold) was cleared only inside _handleBlockerAhead, so an
+// NPC that stopped walking while pinned stayed pinned, and every NPC that met it yielded to it.
+function pinnedZoe() {
+    const { b } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });       // a step that gains nothing
+    t += AVOID_BACKOFF_MS + 10; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.equal(b._avoidIsPinned(), true);
+    return b;
+}
+
+test('R7 m2: arriving, facing the player, idling, a timeout and a new walk all drop the pin', () => {
+    window.seating = null;
+    const exits = {
+        arrive: z => z._triggerGoToStayArrival(),
+        waypointDone: z => { z.currentState = 'patrol'; z.config.patrol.changeDirectionInterval = 3000;
+            z._drawPatrolPathDebug = () => {}; z._clearPatrolPathDebug = () => {};
+            z.lastPatrolChange = 200000; z.patrolTarget = { x: 3, y: 0 }; z.currentPath = [{ x: 3, y: 0 }]; z.pathIndex = 0;
+            z._stopOnArrival = false; window.rooms = {}; z.updatePatrol(200000, 50); },
+        facePlayer: z => z.executeState('face_player', 200000, 50, { x: 20, y: 0 }),
+        idle: z => z.executeState('idle', 200000, 50, null),
+        timeout: z => z.cancelMove(),
+        newMove: z => z.goToAndStay(-200, 0, 90, { owner: 'needs' }),
+        newPatrolLeg: z => { z.config.patrol.waypoints = [{ worldX: -200, worldY: 0 }]; z.pathfindingManager = null;
+            z.chooseWaypointTarget(200000); },
+    };
+    for (const [name, exit] of Object.entries(exits)) {
+        const z = pinnedZoe();
+        z._clearPatrolPathDebug = () => {};
+        z.facePlayer = () => {};
+        quiet(() => exit(z));
+        assert.equal(z._avoid, null, `${name} clears the avoidance state`);
+        assert.equal(z._avoidIsPinned(), false, `${name}: no stale pin`);
+    }
+});
+
+test('R7 m2: a stale pin no longer makes others yield', () => {
+    const z = pinnedZoe();
+    // amy (lower id, keeps priority between equals) meets zoe standing still
+    const zBody = { enable: true, immovable: false, center: { x: 28, y: 0 }, velocity: { x: 0, y: 0 } };
+    window.rooms = { r: { npcSprites: [{ npcId: 'zoe', body: zBody }] } };
+    window.npcBehaviorManager = { getBehavior: () => z };
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }), findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };
+    const meet = () => {
+        const amy = walker({ id: 'amy', busy: true, pathfinder: pf });
+        let u = 300000;
+        amy._handleBlockerAhead(u, { x: 400, y: 0 });
+        u += 700; amy._handleBlockerAhead(u, { x: 400, y: 0 });
+        u += 2600; amy._handleBlockerAhead(u, { x: 400, y: 0 });
+        const first = amy._vel.x;   // a yielder nudges away here
+        u += 50; amy._handleBlockerAhead(u, { x: 400, y: 0 });
+        return { first, then: amy._vel.x };   // the priority side squeezes on here
+    };
+    z.currentState = 'idle';
+    const stale = meet();
+    assert.ok(stale.first < 0 && stale.then <= 0, 'with the stale pin (the old behaviour) amy gives way to zoe');
+    quiet(() => z.executeState('idle', 200000, 50, null));   // zoe stops walking
+    const fresh = meet();
+    assert.ok(fresh.first >= 0 && fresh.then > 0, 'with the pin dropped amy keeps priority and squeezes on');
     window.rooms = {};
     window.npcBehaviorManager = undefined;
 });
