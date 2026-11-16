@@ -80,7 +80,7 @@ const carriedWorld = re => page.evaluate(re => {
     const out = [];
     for (const [rid, room] of Object.entries(window.rooms || {})) for (const [k, o] of Object.entries(room.objects || {})) {
         const id = String(o.objectId || o.scenarioData?.id || k);
-        if (rx.test(id)) out.push({ room: rid, id, x: Math.round(o.x), y: Math.round(o.y), visible: o.visible });
+        if (rx.test(id)) out.push({ room: rid, id, x: Math.round(o.x), y: Math.round(o.y), cx: Math.round(o.x + (o.displayWidth || 0) / 2), cy: Math.round(o.y + (o.displayHeight || 0) / 2), visible: o.visible });
     }
     return out;
 }, re.source);
