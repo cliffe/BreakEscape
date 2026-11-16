@@ -2260,7 +2260,7 @@ export class NPCNeedsSystem {
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
-        s.saying = { line, picture, topic, objectId, until, radius };
+        s.saying = { line, picture, topic, objectId, until, radius, faint: !!pick.faint };
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
         // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
         // long as the words, so the next line on the floor can start when this one ends
@@ -4405,7 +4405,7 @@ export class NPCNeedsSystem {
                 c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot, faint: exHears && !h.overheard };
                 c.ex.i++;
                 if (h.overheard) c.ex.heardLines++;
-                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, radius: this._chatRadius(c, l.speakerId) });
+                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, unheard: c.current.faint, radius: this._chatRadius(c, l.speakerId) });
                 const pa = this.world.npcPos(partnerId);
                 if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
                 const data = {
@@ -4494,7 +4494,7 @@ export class NPCNeedsSystem {
         }
         // A grumble (slice 14) is a one-off line with no partner
         const say = this.states.get(npcId)?.saying;
-        if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs };
+        if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs, faint: !!say.faint };
         return null;
     }
 
@@ -5103,9 +5103,13 @@ export function createEngineWorld() {
     // R1 m4: is a person-chat or phone-chat open? Inline (the live minigame's scene type, never the
     // sticky currentConversationMinigameType), so a gate rule does not hang off the audio module
     const conversationOpen = () => {
+        // Same rule as conversationOpen in room-hearing.js (kept inline to avoid a new import and a
+        // test harness copy-list change): change both together. returnTo covers a minigame opened
+        // from inside a conversation (R2 m8).
         const mg = W().MinigameFramework?.currentMinigame;
         if (!mg) return false;
-        return ['person-chat', 'phone-chat'].includes(mg._sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
+        const chat = t => t === 'person-chat' || t === 'phone-chat';
+        return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
     };
     const TILE = 32;
     const centreOf = (sp) => {

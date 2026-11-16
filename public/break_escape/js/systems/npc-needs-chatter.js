@@ -33,7 +33,7 @@ const STALE_MS = 8000;   // a queued line that waited longer than this is droppe
 const LOG_CAP = 100;
 const VOLUME_TICK_MS = 250;   // while a line plays, its volume follows the player (D34)
 const FADE_MS = 300;          // a faint line given way to a full one fades out over this long
-const FAINT_MAX = 0.5;        // R1 m1: a faint line never plays louder than this, whatever the distance (a dark room, a walk-up)
+const FAINT_MAX = 0.5;        // R2 m1: a background voice plays at this share of the distance curve (0.5 beside the speaker, falling with distance)
 const BARK_DUCK = 0.25;       // a faint line under a scripted bark plays at this share of its volume
 
 /** Pure: "Name: text" as [name, text]; [null, line] without a prefix (InkLineWalker.split_prefix). */
@@ -234,16 +234,25 @@ export class NpcChatterVoice {
     faintVolume(npcId, radius) {
         const npc = this._npc(npcId);
         if (!npc || !npc.voice || this._muted() || this.conversationOpen()) return 0;
-        if (this._faintOff()) return 0;
         if (!(this._hearing(npcId) > 0)) return 0;
         this._setRadius(npcId, radius);
         const { far } = this._curve(npcId);
         const d = this._distance(npcId);
         if (Number.isFinite(d) && d > far) return 0;
-        return Math.min(this._volumeFor(npcId), FAINT_MAX);
+        return this._backgroundLevel(npcId);
     }
 
-    /** R1 m7: the player's "Background chatter" switch (faint lines only; heard lines are unaffected). */
+    /**
+     * R2 M1: the one place every background voice gets its volume: a faint ambient line and an
+     * exchange line voiced out of earshot. 0 when the player's "Background voices" switch is off;
+     * otherwise the distance curve (and door factor) scaled by FAINT_MAX. Heard lines never come here.
+     */
+    _backgroundLevel(npcId) {
+        if (this._faintOff()) return 0;
+        return this._volumeFor(npcId) * FAINT_MAX;
+    }
+
+    /** R1 m7: the player's "Background voices" switch (background lines only; heard lines are unaffected). */
     _faintOff() {
         if (this.deps.faintOff) return !!this.deps.faintOff();
         return win().backgroundChatter === false;
@@ -335,6 +344,9 @@ export class NpcChatterVoice {
         if (this._muted()) { this._note({ ...base, spoken: false, reason: 'muted' }); return this.queue; }
         if (this.conversationOpen()) { this._note({ ...base, spoken: false, reason: 'conversation' }); return this.queue; }
         const faint = !!info.faint;
+        // R2 M1: an exchange line voiced out of earshot is a background voice too (switch, faint level),
+        // but it is not faint: it keeps the lock and no full line cuts it
+        const background = faint || !!info.unheard;
         this._setRadius(npcId, info.radius);
         const tok = faint ? { abort: false, onAbort: null } : null;
         if (tok) this._faintToks.add(tok);
@@ -354,11 +366,15 @@ export class NpcChatterVoice {
             if (tok?.abort) { dropTok(); this._note({ ...base, spoken: false, reason: 'preempted' }); return; }
             // Worked out when the line starts, not when it was queued: the player may have moved
             const level = () => {
-                const v = this._volumeFor(npcId);
-                return faint ? Math.min(v, FAINT_MAX) * (this._barkPlaying() ? BARK_DUCK : 1) : v;
+                if (!background) return this._volumeFor(npcId);
+                return this._backgroundLevel(npcId) * (faint && this._barkPlaying() ? BARK_DUCK : 1);
             };
             const volume = level();
-            if (!(volume > 0)) { dropTok(); this._note({ ...base, spoken: false, reason: 'other_room' }); return; }
+            if (!(volume > 0)) {
+                dropTok();
+                this._note({ ...base, spoken: false, reason: background && this._faintOff() ? 'background_off' : 'other_room' });
+                return;
+            }
             this._note({ ...base, spoken: true, faint, volume: Math.round(volume * 100) / 100 });
             const n = (this._playN.get(npcId) || 0) + 1;
             this._playN.set(npcId, n);
@@ -371,7 +387,8 @@ export class NpcChatterVoice {
                 const aborted = new Promise(r => { tok.onAbort = () => r(0); });
                 ms = await Promise.race([loading, aborted]);
                 if (tok.abort) {
-                    loading.then(() => { if (this._playN.get(npcId) === n) { try { mgr.stop?.(); } catch (e) { /* ok */ } } }).catch(() => {});
+                    // R2 m9: muted first, so a clip that starts late is not heard as a click
+                loading.then(() => { if (this._playN.get(npcId) === n) { try { mgr.setDistanceGain?.(0, true); mgr.stop?.(); } catch (e) { /* ok */ } } }).catch(() => {});
                 }
             } else ms = await loading;
             dropTok();
@@ -385,6 +402,13 @@ export class NpcChatterVoice {
                 const follow = setInterval(() => {
                     try {
                         if (this.current?.fading) return;
+                        // R2 M1: the switch turned off mid-line stops a background voice
+                        if (background && this._faintOff()) {
+                            mgr.stop?.();
+                            this._note({ at: this.deps.now ? this.deps.now() : Date.now(), npcId, text: line, spoken: false, reason: 'background_off' });
+                            end();
+                            return;
+                        }
                         if (this.conversationOpen()) {
                             mgr.stop?.();
                             this._note({ at: this.deps.now ? this.deps.now() : Date.now(), npcId, text: line, spoken: false, reason: 'conversation' });
@@ -400,7 +424,7 @@ export class NpcChatterVoice {
                 const timer = setTimeout(end, ms);
                 const cur = this.current = { npcId, mgr, text: line, faint, done: end };
             });
-        }).catch(() => {});
+        }).catch(() => { dropTok(); });   // R2 m7: a load that throws releases its abort token
         return this.queue;
     }
 }

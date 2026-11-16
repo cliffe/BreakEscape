@@ -55,5 +55,9 @@ export function chatterVolume(d, { near = CHATTER_NEAR, far = CHATTER_FAR, floor
 export function conversationOpen(w = (typeof window !== 'undefined' ? window : {})) {
     const mg = w.MinigameFramework?.currentMinigame;
     if (!mg) return false;
-    return ['person-chat', 'phone-chat'].includes(mg._sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
+    // R2 m8: a minigame opened from inside a conversation (a cloner, a lockpick) leaves the chat
+    // suspended under it: its returnTo names the chat, so the conversation still counts as open.
+    // The inline copy in npc-needs.js `createEngineWorld` must stay in step with this one.
+    const chat = t => t === 'person-chat' || t === 'phone-chat';
+    return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
 }
