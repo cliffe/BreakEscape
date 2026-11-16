@@ -8,6 +8,8 @@
  *   - drink: consumables.js useConsumable, for a drink (coffee, tea, energy drink ...), DRINK_MS
  *   - use: interactions.js handleObjectInteraction, a world object (not an inventory item),
  *     USE_MS, after the caller has turned the player to face it; never delays the interaction
+ *   - phone lead-in: openWithPhoneLead(open) at the calls the player starts (interactions.js,
+ *     npc-barks.js), phoneLead() where a wait already exists (ringer answer, scripted calls)
  *   - phone: minigame-manager.js, when a phone-style minigame opens (PHONE_SCENES: phone chat,
  *     its calls, and a person-chat video call) the phone pose shows and holds while it is open,
  *     then PHONE_CLOSE_MS after it closes
@@ -27,6 +29,8 @@ import { updateBreath, endBreath } from './sprite-breath.js';
 export const USE_MS = 500;
 export const DRINK_MS = 1600;
 export const PHONE_CLOSE_MS = 600;
+export const PHONE_LEAD_MS = 300;       // the phone pose shows this long before a player-opened phone minigame
+const SCRIPTED_CALL_START_MS = 500;      // the wait the ringer and event calls already have before opening
 
 const COMPASS = Object.freeze({
     right: 'east', left: 'west', up: 'north', down: 'south',
@@ -54,6 +58,11 @@ export class PlayerPoses {
         this.cur = null;        // { name, key, until, hold }
         this.holder = {};       // sprite-breath.js holder
         this.phoneScene = null; // the open phone-style minigame instance
+        this.phoneWanted = false; // a phone-style minigame is open: keep trying to show the phone
+        this.phoneShown = false;  // the phone pose showed while it was open
+        this.leadPending = false; // openWithPhoneLead is waiting to open
+        this.dead = false;        // the scene shut down
+        this.timer = (fn, ms) => setTimeout(fn, ms);
         this.log = [];          // [{ t, pose }] on and off, newest last (tests, debug)
     }
 
@@ -123,35 +132,78 @@ export class PlayerPoses {
 
     drink() { return this.show('drink', DRINK_MS); }
 
-    /** A world interaction (not an inventory item): a short use. */
+    /** A world object interaction (not an inventory item, NPC, seat or container sprite): a short use. */
     use(sprite) {
         const w = win();
         if (!sprite || (w.inventory?.items || []).includes(sprite) || sprite.inInventory) return false;
+        if (sprite._isNPC || sprite.isSwivelChair) return false;
+        if (w.seating?.isSeat?.(sprite)) return false;
+        if (String(sprite.objectId || '').startsWith('temp_')) return false;   // a container's temporary sprite
+        if (w.MinigameFramework?.currentMinigame) return false;
         if (this.cur?.hold) return false;   // a phone minigame is open
         return this.show('use', USE_MS);
     }
 
+    /**
+     * Open a phone-style minigame the player started: the phone pose shows, then `open` runs
+     * PHONE_LEAD_MS later. A second call during the lead is dropped (returns true). The open is
+     * dropped when another minigame opened, the player was knocked out or the scene went. With no
+     * pose frames (or a pose blocked now) `open` runs at once and its result is returned.
+     */
+    openWithPhoneLead(open) {
+        if (this.leadPending) return true;
+        if (!this.show('phone', PHONE_LEAD_MS + 500)) return open();
+        this.leadPending = true;
+        this.timer(() => {
+            this.leadPending = false;
+            const w = win();
+            if (this.dead || w.playerPoses !== this || !this._player()) return;
+            if (w.MinigameFramework?.currentMinigame) return;
+            if (w.playerIsKnockedOut?.() || w.playerHealth?.isKO?.()) return;
+            try { open(); } catch (e) { console.error('phone lead-in open failed', e); }
+        }, PHONE_LEAD_MS);
+        return true;
+    }
+
+    /** The phone pose for a minigame that already waits before it opens (a ringing call, a scripted call). */
+    phoneLead() { return this.show('phone', SCRIPTED_CALL_START_MS + 500); }
+
+    _wantPhone() {
+        if (this.phoneWanted && !this.cur && !this.blocked()) {
+            this.phoneShown = this.show('phone', 0, { hold: true }) || this.phoneShown;
+        }
+    }
+
     onMinigameStart(sceneType, params, instance) {
-        if (!isPhoneScene(sceneType, params)) return false;
+        if (!isPhoneScene(sceneType, params)) {
+            // A use or drink pose does not stay up behind another minigame; a held phone does
+            if (this.cur && !this.cur.hold) this.release();
+            return false;
+        }
         this.phoneScene = instance || true;
-        return this.show('phone', 0, { hold: true });
+        this.phoneWanted = true;
+        this.phoneShown = this.show('phone', 0, { hold: true });
+        return this.phoneShown;
     }
 
     onMinigameEnd(instance) {
         if (!this.phoneScene || (instance && this.phoneScene !== true && instance !== this.phoneScene)) return false;
         this.phoneScene = null;
+        this.phoneWanted = false;
+        const shown = this.phoneShown;
+        this.phoneShown = false;
         if (this.cur?.name === 'phone') {
             this.cur.hold = false;
             this.cur.until = this._now() + PHONE_CLOSE_MS;
             return true;
         }
-        return this.show('phone', PHONE_CLOSE_MS);
+        return shown ? this.show('phone', PHONE_CLOSE_MS) : false;
     }
 
     /** Per frame (postupdate). */
     update() {
         const cur = this.cur;
-        if (!cur) return;
+        if (!cur) { this._wantPhone(); return; }
         const p = this._player();
         if (!p) { this.cur = null; return; }
         // Replaced (walking, a turn, a fight, sitting): the pose is over, the new animation stays
@@ -162,7 +214,11 @@ export class PlayerPoses {
             if (p.anims?.currentAnim?.key === cur.key && !p.isMoving) p.anims.play(`idle-${p.direction || 'down'}`, true);
             return;
         }
-        if (!cur.hold && this._now() >= cur.until) { this.release(); return; }
+        if (!cur.hold && this._now() >= cur.until) {
+            this.release();
+            this._wantPhone();   // a drink during a phone chat: the phone comes back
+            return;
+        }
         updateBreath(this.holder, p, true);
     }
 }
@@ -173,6 +229,7 @@ export function installPlayerPoses(scene) {
     if (w.playerPoses?.scene === scene) return w.playerPoses;
     const inst = new PlayerPoses(scene);
     w.playerPoses = inst;
+    scene?.events?.once?.('shutdown', () => { inst.dead = true; });
     scene?.events?.on?.('postupdate', () => { try { inst.update(); } catch (e) { /* never break a frame */ } });
     return inst;
 }
