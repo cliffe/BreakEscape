@@ -278,3 +278,16 @@ Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an
 ```
 
 Signed off by the devices orchestrator, 2026-11-16. Owner: devices build. The pocket rogue AP start item (`kit_rogue_ap`, type `rogue_ap`) has no `assets/objects/rogue_ap.png` yet: its art is slice A3, which waits on the user's approval of the mock-ups. The item carries `sprite: "drop_box1"`, so it renders in game; only the type-sprite check fires. Remove this entry when A3 lands.
+
+## 2026-11-16: A2 R1 decision, shared door_admin target
+
+```json
+{
+  "scenario": "scenarios/lab_physical_pentest/scenario.json.erb",
+  "stage": "common",
+  "match": "two capture routes write targetId \"door_admin\"",
+  "count": 1
+}
+```
+
+Signed off by the devices orchestrator, 2026-11-16 (A2 review round 1). Owner: devices build. The drop box route and the Wi-Fi route each file the `door_admin` capture from a `pc_signed_in` mapping split on `footholdId`, so only one of them fires in a game. The validator reads the two writers without the split and reports a duplicate target. Intended design: one door-controller finding, reached by either route.
