@@ -804,6 +804,20 @@ function noClickMoveGuard() {
  * (MinigameFramework.startMinigame), so a click would silently do nothing.
  * Better to say so than to look like a flaky failure.
  */
+/**
+ * True when the only thing over the canvas is the overlap menu (#be-interaction-menu-overlay):
+ * keys then belong to the menu, so pressKey delivers them. Any other blocking UI (a modal, a
+ * session overlay, a minigame) keeps the refusal.
+ */
+function overlapMenuIsTheBlocker() {
+    if (!interactionMenuState()) return false;
+    if (activeMinigameSummary() || sessionOverlayShowing()) return false;
+    // Nothing but the menu's own overlay may sit on top of the page
+    const top = document.elementsFromPoint
+        ? document.elementsFromPoint(window.innerWidth / 2, window.innerHeight / 2)[0] : null;
+    return !!top?.closest?.('#be-interaction-menu-overlay');
+}
+
 function blockedByMinigame() {
     const mg = activeMinigameSummary();
     if (mg) {
@@ -1739,11 +1753,20 @@ const bridge = {
 
     /** Send an arbitrary key to the main world. */
     async pressKey(key, opts) {
-        const blocked = blockedByMinigame();
-        if (blocked) return blocked;
+        // Keys 1-9, the arrows, Enter and Escape go to the overlap menu when it is the open blocking UI
+        const toMenu = overlapMenuIsTheBlocker();
+        if (!toMenu) {
+            const blocked = blockedByMinigame();
+            if (blocked) return blocked;
+        }
         await rawPressKey(key, opts?.holdMs);
         await sleepFrames(2);
         const result = { ok: true, key };
+        if (toMenu) {
+            result.toMenu = true;
+            const menu = interactionMenuState();
+            result.menu = menu ? { open: true, items: menu.items.length } : { open: false };
+        }
         logAction('pressKey', { key }, result);
         return result;
     },

@@ -42,7 +42,8 @@ writeFileSync(join(sysBridge, 'input.js'),
     `export const clickWorld = async (x, y) => { ${G}.__clicks.push([x, y]); if (${G}.__onClick) await ${G}.__onClick(x, y); return true; };\n` +
     'export const isWorldPointOnScreen = () => true;\nexport const getScene = () => null;\n' +
     `export const clickElement = (el) => { ${G}.__clickedEls?.push(el); el?.onClick?.(); };\n` +
-    ['pressKey', 'keyDown', 'keyUp', 'worldToClient'].map(n => `export const ${n} = () => {};`).join('\n') + '\n');
+    `export const pressKey = async (k) => { (${G}.__keys ||= []).push(k); };\n` +
+    ['keyDown', 'keyUp', 'worldToClient'].map(n => `export const ${n} = () => {};`).join('\n') + '\n');
 writeFileSync(join(sysBridge, 'wait.js'),
     `export const waitForMovementEnd = async () => { if (${G}.__duringMove) await ${G}.__duringMove(); return { ok: true, elapsedMs: 1 }; };\n` +
     ['waitUntil', 'waitForGlobal', 'waitForEvent', 'waitFrames', 'waitForMinigame', 'waitForMinigameClosed']
@@ -446,4 +447,40 @@ test('closeInteractionMenu clicks the X, and says so when no menu is open', asyn
     assert.equal(r.ok, true);
     assert.equal(globalThis.__clickedEls[0], x);
     document.querySelector = () => null;
+});
+
+test('pressKey: keys reach the overlap menu when it is the open blocking UI, and other blocking UIs still refuse', async () => {
+    reset();
+    globalThis.__keys = [];
+    // Nothing open: an ordinary key goes through
+    assert.equal((await bridge.pressKey('1')).ok, true);
+    assert.deepEqual(globalThis.__keys, ['1']);
+    // The menu open, its overlay the topmost thing: delivered, and the result says it went to the menu
+    globalThis.__keys = [];
+    globalThis.__menu = { open: true, items: [{ index: 0 }, { index: 1 }] };
+    globalThis.__detect = () => ({ blocking: true, tag: 'DIV' });
+    const overlay = { closest: (sel) => (sel === '#be-interaction-menu-overlay' ? {} : null) };
+    document.elementsFromPoint = () => [overlay];
+    for (const k of ['2', 'ArrowDown', 'Enter', 'Escape']) {
+        const r = await bridge.pressKey(k);
+        assert.equal(r.ok, true, k);
+        assert.equal(r.toMenu, true);
+    }
+    assert.deepEqual(globalThis.__keys, ['2', 'ArrowDown', 'Enter', 'Escape']);
+    // The menu open but another modal on top of it: refused
+    globalThis.__keys = [];
+    document.elementsFromPoint = () => [{ closest: () => null }];
+    const refused = await bridge.pressKey('1');
+    assert.equal(refused.ok, false);
+    assert.equal(refused.reason, 'blocking-ui');
+    // A blocking UI with no menu: refused; a minigame with the menu open: refused
+    globalThis.__menu = null;
+    assert.equal((await bridge.pressKey('1')).reason, 'blocking-ui');
+    globalThis.__menu = { open: true, items: [] };
+    document.elementsFromPoint = () => [overlay];
+    globalThis.__mg = { id: 'mg' };
+    assert.equal((await bridge.pressKey('1')).reason, 'minigame-active');
+    assert.deepEqual(globalThis.__keys, []);
+    globalThis.__detect = null;
+    document.elementsFromPoint = () => [];
 });

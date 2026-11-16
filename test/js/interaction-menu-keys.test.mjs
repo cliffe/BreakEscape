@@ -376,8 +376,75 @@ test('menuPlacement: beside the tapped box on the side with more room, level wit
     const low = { left: 40, top: 560, right: 350, bottom: 700 };
     const a = menuPlacement(menu, view, low);
     assert.ok(a.y + menu.height <= low.top && !overlap(menu, a, low), JSON.stringify(a));
-    // Nowhere clear: null, the caller keeps its usual spot
-    assert.equal(menuPlacement({ width: 380, height: 800 }, view, { left: 100, top: 300, right: 200, bottom: 400 }), null);
+    // Nowhere clear: the least-cover spot, and it says so
+    const tight = menuPlacement({ width: 380, height: 800 }, view, { left: 100, top: 300, right: 200, bottom: 400 });
+    assert.equal(tight.covered, true);
+    assert.ok(tight.x >= 0 && tight.y >= 0 && tight.x + 380 <= 390 && tight.y + 800 <= 844, 'on screen');
+});
+
+const ovl = (m, at, box) => Math.max(0, Math.min(at.x + m.width, box.right) - Math.max(at.x, box.left))
+    * Math.max(0, Math.min(at.y + m.height, box.bottom) - Math.max(at.y, box.top));
+
+test('menuPlacement: the live 6074 numbers (312x327 menu, PC [170,398,26,22] and cup) leave 0 px under the menu and 8 px clear', () => {
+    const view = { width: 390, height: 844 };
+    const menu = { width: 312, height: 327 };
+    // The PC and a cup above and left of it: the union is what is avoided
+    const pc = { left: 170, top: 398, right: 196, bottom: 420 };
+    const cup = { left: 120, top: 380, right: 136, bottom: 396 };
+    const union = { left: Math.min(pc.left, cup.left), top: Math.min(pc.top, cup.top), right: Math.max(pc.right, cup.right), bottom: Math.max(pc.bottom, cup.bottom) };
+    for (const margin of [8, 16]) {
+        const r = menuPlacement(menu, view, union, margin);
+        assert.equal(r.covered, false, JSON.stringify(r));
+        assert.equal(ovl(menu, r, pc), 0);
+        assert.equal(ovl(menu, r, cup), 0);
+        // at least `margin` px between the menu and the union on the side it chose
+        const gapX = Math.max(union.left - (r.x + menu.width), r.x - union.right);
+        const gapY = Math.max(union.top - (r.y + menu.height), r.y - union.bottom);
+        assert.ok(Math.max(gapX, gapY) >= margin, `clearance ${Math.max(gapX, gapY)} < ${margin}`);
+        assert.ok(r.x >= 0 && r.x + menu.width <= 390 && r.y >= 0 && r.y + menu.height <= 844, 'on screen');
+    }
+    // The old behaviour put it at y 76 (bottom 403) over the PC: that spot is covered
+    assert.ok(ovl(menu, { x: 32, y: 76 }, pc) > 0);
+});
+
+test('menuPlacement: a union taller than half the screen goes beside it, or when too wide falls back to least cover', () => {
+    const view = { width: 390, height: 844 };
+    // Tall and narrow on the left: beside, on the right, level with the middle
+    const tall = { left: 10, top: 100, right: 60, bottom: 600 };
+    const menu = { width: 200, height: 300 };
+    const r = menuPlacement(menu, view, tall);
+    assert.equal(r.covered, false);
+    assert.ok(r.x >= tall.right + 8);
+    // Tall and wide: nowhere clear; least cover, reported, still on screen
+    const big = { left: 10, top: 100, right: 380, bottom: 700 };
+    const f = menuPlacement(menu, view, big);
+    assert.equal(f.covered, true);
+    assert.equal(f.cover, ovl(menu, f, big));
+    assert.ok(f.x >= 0 && f.x + menu.width <= 390 && f.y >= 0 && f.y + menu.height <= 844);
+    // Nothing else on screen covers less
+    for (let x = 8; x <= 182; x += 6) for (let y = 8; y <= 536; y += 6) assert.ok(ovl(menu, { x, y }, big) >= f.cover, `(${x},${y}) covers less`);
+});
+
+test('menuPlacement: screen edges - a box on the edge, a menu as big as the screen, a box off-centre keep the menu on screen', () => {
+    const view = { width: 390, height: 844 };
+    const menu = { width: 200, height: 300 };
+    for (const box of [
+        { left: 0, top: 0, right: 30, bottom: 30 }, { left: 360, top: 0, right: 390, bottom: 30 },
+        { left: 0, top: 814, right: 30, bottom: 844 }, { left: 360, top: 814, right: 390, bottom: 844 },
+        { left: 150, top: 0, right: 240, bottom: 40 }, { left: 150, top: 800, right: 240, bottom: 844 }
+    ]) {
+        const r = menuPlacement(menu, view, box);
+        assert.equal(r.covered, false, JSON.stringify([box, r]));
+        assert.equal(ovl(menu, r, box), 0);
+        assert.ok(r.x >= 8 && r.x + menu.width <= 390 - 8 && r.y >= 8 && r.y + menu.height <= 844 - 8, `edge ${JSON.stringify([box, r])}`);
+    }
+    // A menu larger than the screen is centred, not pushed off a side
+    const huge = menuPlacement({ width: 500, height: 900 }, view, { left: 100, top: 100, right: 150, bottom: 150 });
+    assert.equal(huge.covered, true);
+    assert.ok(huge.x <= 0 && huge.y <= 0);
+    // The clearance grows with the margin (the HUD zoom)
+    const m = menuPlacement(menu, view, { left: 20, top: 400, right: 120, bottom: 460 }, 24);
+    assert.ok(m.x >= 120 + 24);
 });
 
 test('showInteractionMenu: on touch the menu with an avoid box sits clear of it; on desktop the box is ignored', () => {
