@@ -479,7 +479,8 @@ test('each port state class maps to its sprite, and the sprites and strip ship a
     assert.doesNotMatch(css, /--pp-light/, 'dead variable gone');
     assert.doesNotMatch(rule('.patch-panel-port:hover'), /#9ee6ff/, 'hover is not the held boot cyan');
     const mark = /\.patch-panel-port\.pp-state-held::after,\s*\.pp-swatch-state-held::after\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-    assert.match(mark, /width:\s*calc\(4px \* var\(--pp-scale\)\)/);
+    assert.match(mark, /width:\s*calc\(3px \* var\(--pp-scale\)\)/);
+    assert.match(mark, /height:\s*calc\(2px \* var\(--pp-scale\)\)/, 'a bar, not the managed tag\'s square');
     assert.match(mark, /border:\s*calc\(1px \* var\(--pp-scale\)\) solid #0c1018/);
     assert.match(mark, /background:\s*#ffffff/);
     assert.match(mark, /left:\s*0;\s*top:\s*0/, 'top left, clear of the light and the managed tag');
@@ -496,6 +497,14 @@ test('the legend names each state key once: "managed" is the M VLAN, "Port secur
     const labels = LEGEND.map((l) => l.label);
     assert.ok(labels.includes('Your box') && labels.includes('Not patched') && labels.includes('Port security'));
     assert.equal(labels.filter((l) => /managed/i.test(l)).length, 1);
+});
+
+test('the legend cannot set the frame width: the grid does, the legend wraps inside it', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const legend = /\.patch-panel-legend\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(legend, /flex-wrap:\s*wrap/);
+    assert.match(legend, /width:\s*0;/);
+    assert.match(legend, /min-width:\s*100%/);
 });
 
 test('registration and wiring sit in index.js and the page', () => {

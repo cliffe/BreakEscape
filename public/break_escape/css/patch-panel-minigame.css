@@ -172,8 +172,8 @@
 }
 
 /* Your box: the held sprite differs from "patched" only by colour, so a solid white square with a
-   dark outline marks it too (4 source px, 1 source px outline), top left over the boot where the
-   link light (top right) and the managed tag (bottom right) are not. It sits inside the port's
+   dark outline marks it too: a 3x2 source px bar with a 1 source px outline, top left, so its
+   position and shape both differ from the managed tag (a square with a dark centre, bottom right). It sits inside the port's
    border, so the port size does not change. The legend swatch reuses it at its own scale. */
 .patch-panel-port.pp-state-held::after,
 .pp-swatch-state-held::after {
@@ -182,8 +182,8 @@
     left: 0;
     top: 0;
     box-sizing: content-box;
-    width: calc(4px * var(--pp-scale));
-    height: calc(4px * var(--pp-scale));
+    width: calc(3px * var(--pp-scale));
+    height: calc(2px * var(--pp-scale));
     border: calc(1px * var(--pp-scale)) solid #0c1018;
     background: #ffffff;
     pointer-events: none;
@@ -226,6 +226,10 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    /* The port grid sets the frame's width: the legend wraps inside it and never widens it.
+       width 0 with min-width 100% removes its single-line width from the frame's shrink-to-fit. */
+    width: 0;
+    min-width: 100%;
     gap: 4px 16px;
     margin-top: 8px;
     font-size: 16px;
