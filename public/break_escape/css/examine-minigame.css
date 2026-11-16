@@ -81,11 +81,14 @@
         padding: 12px;
         gap: 10px;
     }
+    /* Pixel fonts draw crisply on their own grid: Press Start 2P at multiples of 8, GNF at
+       multiples of 8 from 16. 16px is the smallest crisp size of either, so the phone keeps
+       the name at 16 (it was 13, off the grid) and the body at 16 (it was 18, off the grid). */
     .examine-name {
-        font-size: 13px;
+        font-size: 16px;
     }
     .examine-observations,
     .examine-text {
-        font-size: 18px;
+        font-size: 16px;
     }
 }
