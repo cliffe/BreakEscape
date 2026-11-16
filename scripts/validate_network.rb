@@ -11,6 +11,7 @@ require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/capture_model'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/npc_habits/clues'
@@ -141,6 +142,9 @@ def check_network_model(json_data, scenario_dir = nil)
     device_entries << [item, "startItemsInInventory[#{i}]", :start] if item.is_a?(Hash)
   end
   BreakEscape::DeclaredGrants.for(json_data).each { |grant| device_entries << [grant['item'], grant['path'], :grant] }
+  # Item definitions by id, for the capture-proof checks below (before the device filter).
+  capture_item_defs = {}
+  device_entries.each { |item, _p, _h| capture_item_defs[item['id'].to_s] ||= item if item.is_a?(Hash) && item['id'].is_a?(String) }
   device_entries.select! { |item, _path, _home| nm.rogue_device?(item) }
   device_entries.each do |item, path, home|
     where = "rogue device at '#{path}'"
@@ -171,6 +175,24 @@ def check_network_model(json_data, scenario_dir = nil)
   if device_entries.any? && jacks.empty?
     warn.call("the scenario has a rogue device (#{quote_list.call(device_entries.map { |i, p, _| i['id'] || p })}) " \
               'but no jack to plant it in.')
+  end
+
+  # A planted proof on a non-jack object names a kit the object takes by id; a rogueDevice flag
+  # would offer that kit to every jack as well (held_rogue_device).
+  cm = BreakEscape::CaptureModel
+  plain_objects = all_objects.map { |e| e[:object] }
+  cm.each_capture_writer(json_data) do |capture, _kind, path, _owner|
+    proof = capture['proof']
+    next unless cm.proof_kind(proof) == 'planted'
+
+    on = proof['on']
+    next if on && plain_objects.any? { |o| o['id'].to_s == on.to_s && nm.jack?(o) }
+
+    item = capture_item_defs[proof['planted'].to_s]
+    next unless item && nm.rogue_device?(item)
+
+    warn.call("#{path}/proof: planted \"#{proof['planted']}\" carries rogueDevice but is planted on a non-jack object; " \
+              'a rogue device is offered to every jack. Drop rogueDevice from this item')
   end
 
   # ---- Headless hosts (3.4) ----
@@ -214,7 +236,15 @@ def check_network_model(json_data, scenario_dir = nil)
     next unless psk.is_a?(String) && !psk.strip.empty?
 
     warn.call("'networks/#{net_id}/wifi' psk is shorter than eight characters.") if psk.length < 8
-    unless readable.include?(psk)
+    capture_writers_of_psk = cm.each_capture_writer(json_data).select { |cap, _k, _p, _o| cap['secret'] == psk }
+    if capture_writers_of_psk.any? { |cap, *_| cap['proof'].nil? }
+      warn.call("'networks/#{net_id}/wifi' psk is the secret of a capture writer that carries no proof; the server " \
+                'never serves it, so the tablet stays blank. Give the writer a proof')
+    end
+    proven = capture_writers_of_psk.any? do |cap, *_|
+      cm.proof_satisfiable?(cap['proof'], capture_item_defs, plain_objects, nil)
+    end
+    unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.
       sets = BreakEscape::NpcHabits::Clues.set_member_texts(json_data).select { |t| t[:text].to_s.include?(psk) }
       if sets.any?

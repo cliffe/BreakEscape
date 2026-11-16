@@ -74,8 +74,16 @@ def check_capture_log(json_data)
     err.call("#{entry[:path]}: a proof on an add_capture action is not read: put it on the account holder as captureProof")
   end
   shorthands = cm.shorthand_proofs(json_data)
+  account_passwords = cm.room_npc_list(json_data).filter_map do |holder|
+    holder['creds']['password'] if cm.account_holder?(holder) && cm.present_string?(holder['creds']['password'])
+  end.to_set
+  # A holderless proof is allowed when it carries a non-account secret (the staff Wi-Fi key,
+  # written by a phone NPC): it is checked like any other proof, with no holder.
+  holderless_key = lambda do |entry|
+    entry[:holder].nil? && cm.present_string?(entry[:secret]) && !account_passwords.include?(entry[:secret])
+  end
   shorthands.each do |entry|
-    next if entry[:holder]
+    next if entry[:holder] || holderless_key.call(entry)
 
     err.call("#{entry[:path]}: this proof resolves to no account holder (its capture's address names no " \
              'account, and the mapping is not on one): put it on the account holder as captureProof')
@@ -219,7 +227,33 @@ def check_capture_log(json_data)
     end
     list.each_with_index { |proof, i| check_proof.call(proof, "#{entry[:path]}/captureProof[#{i}]", npc) }
   end
-  shorthands.each { |entry| check_proof.call(entry[:proof], entry[:path], entry[:holder]) if entry[:holder] }
+  shorthands.each do |entry|
+    check_proof.call(entry[:proof], entry[:path], entry[:holder]) if entry[:holder] || holderless_key.call(entry)
+  end
+
+  # A non-account secret written on an account holder's own mappings is never served:
+  # build_authored_capture_secrets skips writers owned by holders. Put the writer on an NPC
+  # with no creds.
+  holder_set = holders
+  cm.each_capture_writer(json_data) do |capture, kind, path, owner|
+    next unless kind == :mapping && owner.is_a?(Hash) && holder_set.any? { |npc| npc.equal?(owner) }
+    next unless cm.present_string?(capture['secret']) && !account_passwords.include?(capture['secret'])
+
+    warn.call("#{path}: this capture writes a secret that is no account password (targetId \"#{capture['targetId']}\") " \
+              "on account holder \"#{owner['id']}\"; the server skips writers owned by an account holder, so " \
+              'the secret is never served. Move the writer to an NPC with no creds')
+  end
+
+  # An account holder with a proof whose password opens nothing is served with no proof at all.
+  room_npcs.each do |entry|
+    npc = entry[:npc]
+    next unless ai.account?(npc) && npc['captureProof'].is_a?(Array) && !npc['captureProof'].empty?
+    next if opens_something.call(npc)
+
+    warn.call("#{npc['id']} (#{entry[:path]}): captureProof is set but the password opens nothing (no lock, no sign-in " \
+              'PC or share access list admits this account), so it is served with no proof at all. List the account ' \
+              'on a PC or share, or drop the proof')
+  end
 
   # ---- When the rule is strict ----
   strict = cm.declares_proofs?(json_data)

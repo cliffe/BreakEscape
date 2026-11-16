@@ -281,3 +281,119 @@ test('M2: a credential capture on an account holder for a different target with 
         addCapture: { targetId: 'drop_lure', kind: 'foothold', host: 'Accounts PC' } });
     assertNot(issues(foot), 'but names no address');
 });
+
+// ---- E0.4: holderless key proofs, and the two holder warnings ----
+
+const PSK = 'quiet-harbour-77';
+// A phone NPC with no creds, whose mapping writes a Wi-Fi key capture with a planted proof.
+function withKeyWriter(sc, extra = {}) {
+    sc.rooms.office.npcs.push({ id: 'hax', npcType: 'phone',
+        eventMappings: [{ eventPattern: 'q', addCapture: cap('staff_wifi_key',
+            { secret: PSK, proof: { planted: 'kit_logger', on: 'chris_desk' }, ...extra }) }] });
+    return sc;
+}
+const keyWriter = sc => npc(sc, 'hax').eventMappings[0].addCapture;
+
+test('E0.4: a holderless proof with a non-account secret and a satisfiable plant passes', { skip }, () => {
+    const list = issues(withKeyWriter(clean()));
+    assert.deepEqual(errors(list), []);
+    assertNot(list, 'resolves to no account holder');
+});
+
+test('E0.4: a holderless proof with no secret is still an error', { skip }, () => {
+    const sc = withKeyWriter(clean());
+    delete keyWriter(sc).secret;
+    assertHas(errors(issues(sc)), 'resolves to no account holder');
+});
+
+test('E0.4: a holderless proof whose secret is an account password is still an error', { skip }, () => {
+    const sc = withKeyWriter(clean());
+    keyWriter(sc).secret = PASSWORD;
+    assertHas(errors(issues(sc)), 'resolves to no account holder');
+});
+
+test('E0.4: a holderless proof naming a missing item is an error', { skip }, () => {
+    const sc = withKeyWriter(clean());
+    keyWriter(sc).proof = { planted: 'no_item', on: 'chris_desk' };
+    assertHas(errors(issues(sc)), 'which is no item in the scenario');
+});
+
+test('E0.4: a holderless planted proof on an object that does not consume the item is an error', { skip }, () => {
+    const sc = withKeyWriter(clean());
+    keyWriter(sc).proof = { planted: 'kit_logger', on: 'chris_pc' };
+    assertHas(errors(issues(sc)), 'needs a room object with an id and a triggerOnInteract list');
+});
+
+test('E0.4: a non-account secret on an account holder\'s own mapping is a warning (never served)', { skip }, () => {
+    const sc = clean();
+    npc(sc, 'chris').eventMappings.push({ eventPattern: 'k', addCapture: cap('staff_wifi_key', { secret: PSK }) });
+    const list = issues(sc);
+    assertHas(warnings(list), 'staff_wifi_key');
+    assertHas(warnings(list), 'never served');
+    assertNot(list, PSK);
+});
+
+test('E0.4: the same key writer on a phone NPC with no creds raises no such warning', { skip }, () => {
+    assertNot(warnings(issues(withKeyWriter(clean()))), 'never served');
+});
+
+test('E0.4: an account the holder password of which is the secret is not a non-account secret', { skip }, () => {
+    const sc = clean();
+    npc(sc, 'chris').eventMappings[0].addCapture.secret = PASSWORD;
+    assertNot(warnings(issues(sc)), 'never served');
+});
+
+test('E0.4: a holder with a proof whose password opens nothing is a warning', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'chris_pc').access = { people: ['mel'] };
+    const list = issues(sc);
+    assertHas(warnings(list), 'chris (rooms/office/npcs[0]): captureProof is set but');
+    assertNot(list, PASSWORD);
+});
+
+test('E0.4: a holder admitted by a PC access list raises no admitted-nowhere warning', { skip }, () => {
+    assertNot(warnings(issues(clean())), 'captureProof is set but');
+});
+
+test('E0.4: a holder whose password opens a lock raises no admitted-nowhere warning', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'chris_pc').access = { people: ['mel'] };
+    sc.rooms.office.objects.push({ id: 'drawer', type: 'safe', name: 'Drawer', locked: true, lockType: 'password', requires: PASSWORD });
+    assertNot(warnings(issues(sc)), 'captureProof is set but');
+});
+
+test('E0.4: a holder admitted by a share access list raises no admitted-nowhere warning', { skip }, () => {
+    const sc = clean();
+    obj(sc, 'chris_pc').access = { people: ['mel'] };
+    sc.networks = { lan: { name: 'LAN' } };
+    sc.resources = { fs: { kind: 'file_share', name: 'Share', host: 'FS01', network: 'lan', access: { people: ['chris'] } } };
+    assertNot(warnings(issues(sc)), 'captureProof is set but');
+});
+
+test('E0.4: a holder whose only PC has no access list raises no admitted-nowhere warning', { skip }, () => {
+    const sc = clean();
+    delete obj(sc, 'chris_pc').access;
+    assertNot(warnings(issues(sc)), 'captureProof is set but');
+});
+
+test('E0.4: CaptureModel.proof_satisfiable? agrees with the validator on each kind', { skip }, () => {
+    const script = `require ${JSON.stringify(join(root, 'lib/break_escape/capture_model.rb'))}
+      cm = BreakEscape::CaptureModel
+      items = { 'kit' => { 'id' => 'kit', 'droppable' => true }, 'stick' => { 'id' => 'stick' } }
+      objs = [
+        { 'id' => 'desk', 'requiresItem' => 'kit', 'consumesItem' => true, 'triggerOnInteract' => [] },
+        { 'id' => 'jack1', 'networkJack' => true },
+        { 'id' => 'pc1', 'lockType' => 'login' }
+      ]
+      p = ->(proof, holder = nil) { cm.proof_satisfiable?(proof, items, objs, holder) }
+      puts JSON.generate([
+        p.({ 'planted' => 'kit', 'on' => 'desk' }), p.({ 'planted' => 'kit' }), p.({ 'planted' => 'stick' }),
+        p.({ 'planted' => 'stick', 'on' => 'jack1' }), p.({ 'planted' => 'kit', 'on' => 'nowhere' }),
+        p.({ 'planted' => 'ghost' }), p.({ 'dropped' => 'kit' }), p.({ 'dropped' => 'stick' }),
+        p.({ 'session' => 'pc1' }), p.({ 'session' => 'desk' }), p.({ 'bogus' => 1 })
+      ])`;
+    const r = spawnSync('ruby', ['-rjson', '-e', script], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()),
+        [true, true, true, true, false, false, true, false, true, false, false]);
+});
