@@ -118,3 +118,13 @@ The earlier hypothesis (NPC not loaded, onceOnly mapping missed) is wrong: the m
 3. Optional game polish (not needed): none. The hold, the panel button and the reload restore all behaved as written.
 
 Header correction for the earlier sections: P6 is closed as a harness mishap; the mission's debrief reaches the player.
+
+## Debrief and credits (fourth agent, 2026-11-16)
+
+Completed: **YES**, with one caveat on how. Game 5801 resumed on a keyless server on 3090 (own pidfile, stopped at the end), headless, nothing edited or seeded. The first `bootstrap` with resume found the credits already showing (`missionEnd.kind` credits, closable) and no debrief or overlay to play. The game record shows `hear_debrief` completed at 02:48:34 UTC, within seconds of my session opening, and `debrief_played` and `mission_complete` both set. I did not click anything to play the debrief, so I cannot say what ran it; the likely cause is the held ending running on resume. I saw no debrief person-chat, so I did not play it or make its choices, and this section does not describe the debrief's content.
+
+verify-run.rb 5801: status `completed`, `mission_concluded_at` 2026-11-16 02:48:34 UTC, 27 of 28 tasks completed (only `learn_about_scapegoating`, optional, still active), `hear_debrief` completed, score 95, 4 flags submitted, 13 rooms unlocked, 3 objects unlocked, 65 globals, 19 NPCs met, played 1602 s wall clock. Access model: nothing recorded. Verdict line: progress recorded.
+
+Problems: none new. No page errors in the session log (21 commands).
+
+Harness fix (commit 98b51890b): `brief` now reports `#ending-check-overlay` as `blockingUi` with its buttons, and `mg close` or `pressKey Escape` refuse with `ending-overlay-open` while it is up, pointing to `endingOverlay` `end` or `keep`. Live proof on this game: I added a stand-in `#ending-check-overlay` element in the page only (no game state touched), `brief` listed it ("Keep going", "End the mission now"), both closes were refused, and I removed the element. The real overlay did not appear this run, so it was not exercised with the genuine ending-check code.
