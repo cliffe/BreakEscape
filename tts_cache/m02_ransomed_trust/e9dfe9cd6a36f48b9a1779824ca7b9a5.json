@@ -1,0 +1,13 @@
+{
+  "key": "e9dfe9cd6a36f48b9a1779824ca7b9a5",
+  "npc": "hodan_warsame",
+  "text": "If the bed manager rings, you haven't seen me. I'm owed five minutes.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:31Z"
+}

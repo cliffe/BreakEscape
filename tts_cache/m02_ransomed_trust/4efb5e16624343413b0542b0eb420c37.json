@@ -1,0 +1,13 @@
+{
+  "key": "4efb5e16624343413b0542b0eb420c37",
+  "npc": "ernesto_bautista",
+  "text": "Nobody notices the porter, normally. Tonight they're all waiting on me.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:41Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e18a39030276738646d5ff61762e5468",
+  "npc": "hodan_warsame",
+  "text": "You lost? Everyone's lost tonight.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:11:39Z"
+}
