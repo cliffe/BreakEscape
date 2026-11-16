@@ -56,6 +56,7 @@ import { unreachableMessage, notRespondingMessage } from '../utils/remote-host-t
 export const NO_DEVICE_HINT = 'You have nothing to plug into this port.';
 export const LINK_GONE_MESSAGE = 'The link is gone.';
 export const PLANT_LABEL = 'Plug it in';
+export const LEAVE_LABEL = 'Leave it';
 // The network view's button that takes a planted box back out (opened at its jack only)
 export const UNPLUG_LABEL = 'Unplug';
 // A dropped-device implant answered not_ready asks again this many times, this far apart, so a
@@ -402,7 +403,7 @@ export class NetworkLinks {
         const jackName = data.name || 'this port';
         const text = resolveObjectField(data, 'jackConfirm', `Plug ${deviceName} into ${jackName}?`)
             || `Plug ${deviceName} into ${jackName}?`;
-        const ok = typeof confirm === 'function' ? await confirm(text, PLANT_LABEL, 'Cancel', { plainText: true }) : false;
+        const ok = typeof confirm === 'function' ? await confirm(text, PLANT_LABEL, LEAVE_LABEL, { plainText: true }) : false;
         if (!ok) return { action: 'cancelled' };
         return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name, jackSprite: sprite });
     }
