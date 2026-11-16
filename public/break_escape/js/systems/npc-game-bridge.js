@@ -387,12 +387,19 @@ export class NPCGameBridge {
             };
 
             // Pass additional NPC context through the minigame
-            window.startContainerMinigame(containerItem, itemsToShow, false, null, {
-                mode: 'npc',
-                npcId: npcId,
-                npcDisplayName: npc.displayName,
-                npcAvatar: npc.avatar
-            });
+            try {
+                window.startContainerMinigame(containerItem, itemsToShow, false, null, {
+                    mode: 'npc',
+                    npcId: npcId,
+                    npcDisplayName: npc.displayName,
+                    npcAvatar: npc.avatar
+                });
+            } finally {
+                // An open that did not happen (or threw) would leave the record naming a chat
+                // nothing will resume (R3 M1)
+                const cur = window.MinigameFramework?.currentMinigame;
+                if (!cur || cur._ending || cur.mode !== 'npc') window.pendingConversationReturn = null;
+            }
 
             const result = { success: true, npcId, itemCount: itemsToShow.length };
             this._logAction('showNPCInventory', { npcId, filterTypes }, result);

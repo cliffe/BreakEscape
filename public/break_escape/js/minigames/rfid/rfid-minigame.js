@@ -738,9 +738,18 @@ export class RFIDMinigame extends MinigameScene {
     }
 
     complete(success) {
+        // A superseded instance (a late timer after a hit closed this reader and another opened)
+        // must not flag or restart anybody's chat; the base class ignores it (R4 m2)
+        if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {
+            return super.complete(success, this.gameResult);
+        }
         // Check if we need to return to conversation
         if (window.pendingConversationReturn && window.returnToConversationAfterRFID) {
             console.log('Returning to conversation after RFID minigame');
+            // Handing back to the chat: the framework keeps the pending return, and the NPC
+            // stays in chat until the restart (R3 m3)
+            this._returnsToChat = true;
+            window.pendingConversationReturn.returning = true;
             setTimeout(() => {
                 window.returnToConversationAfterRFID();
             }, 100);
@@ -802,27 +811,28 @@ export function returnToConversationAfterRFID() {
     if (window.pendingConversationReturn) {
         const conversationState = window.pendingConversationReturn;
 
-        // Clear the pending return state
-        window.pendingConversationReturn = null;
-
+        // Keep the pending return until the chat has restarted, so the NPC (npc-needs
+        // inChatWith) never sees a gap (the same pattern as the NPC inventory, R3 m3)
         console.log('Restoring conversation:', conversationState);
 
         // Restart the appropriate conversation minigame
-        if (window.MinigameFramework) {
+        if (!window.MinigameFramework) {
+            window.pendingConversationReturn = null;
+        } else if (!conversationState.resuming) {
+            conversationState.resuming = true;
             // Small delay to ensure RFID minigame is fully closed
             setTimeout(() => {
-                if (conversationState.type === 'person-chat') {
-                    // Restart person-chat minigame
-                    window.MinigameFramework.startMinigame('person-chat', null, {
-                        npcId: conversationState.npcId,
-                        fromTag: true  // Flag to indicate resuming from tag action
-                    });
-                } else if (conversationState.type === 'phone-chat') {
-                    // Restart phone-chat minigame
-                    window.MinigameFramework.startMinigame('phone-chat', null, {
-                        npcId: conversationState.npcId,
-                        fromTag: true
-                    });
+                try {
+                    if (conversationState.type === 'person-chat' || conversationState.type === 'phone-chat') {
+                        window.MinigameFramework.startMinigame(conversationState.type, null, {
+                            npcId: conversationState.npcId,
+                            fromTag: true  // Flag to indicate resuming from tag action
+                        });
+                    }
+                } catch (err) {
+                    console.warn('Could not resume the chat with', conversationState.npcId, 'after the card reader:', err);
+                } finally {
+                    if (window.pendingConversationReturn === conversationState) window.pendingConversationReturn = null;
                 }
             }, 50);
         }
