@@ -952,7 +952,12 @@ export function handleObjectInteraction(sprite) {
 
     // A patch panel (pentest slice B1, 5.4): an object with panelPorts opens the patch-panel
     // minigame, whose ports plant through networkLinks.interactJack.
+    // A locked panel goes through the normal unlock flow first and opens on the next click.
     if (Array.isArray(sprite.scenarioData.panelPorts)) {
+        if (sprite.scenarioData.locked === true) {
+            handleUnlock(sprite, 'item');
+            return;
+        }
         window.startPatchPanelMinigame?.(sprite.scenarioData);
         return;
     }
