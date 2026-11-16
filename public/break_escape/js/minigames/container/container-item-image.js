@@ -53,7 +53,7 @@ export function containerImageUrl(containerItem, imageKey) {
     // A share has no sprite of its own: "network_share" names no picture file, and its
     // header showed a broken image with the alt text (UX feedback slice 2a, main3-08)
     const data = containerItem?.scenarioData;
-    if (data?.type === 'network_share' && !containerItem?.texture?.key) return data.iconImage || SHARE_ICON;
+    if ((data?.type === 'network_share' || data?.type === 'folder') && !containerItem?.texture?.key) return data.iconImage || SHARE_ICON;
     const key = containerItem?.texture?.key;
     if (key) return objectUrl(KEY_TO_FILE[key] || key);
     // Opened from the tray: show the picture the tray shows

@@ -591,6 +591,25 @@ test('8.1 keyboard screen, picker known: the unlisted keyring account is added, 
     assert.equal(q('.signin-found-label').textContent, 'passwords.txt');
 });
 
+test('D50: the chosen-account line names the kinds of knowledge, in the same words at the keyboard and remotely', () => {
+    setup();
+    openKeyboard({ picker: 'known', tiles: [TILES[0]], keyring: [LENA_CAPTURED, JAKE_FOUND] });
+    tileFor('lfox').click();
+    const atKeyboard = q('#signin-selected').textContent;
+    assert.equal(atKeyboard, 'Lena Fox (lfox), Captured password');
+    tileFor('jjones').click();
+    assert.match(q('#signin-selected').textContent, /\(jjones\), Password in a file$/);
+    const mg = openRemote();
+    answerRemote(mg, { keyring: [LENA_CAPTURED] });
+    tileFor('lfox').click();
+    assert.equal(q('#signin-selected').textContent, atKeyboard, 'the remote screen uses the same wording');
+    // The shared helper: no kinds leaves the plain name line, several are joined in order
+    assert.equal(text.chosenAccountLine({ username: 'sokafor', displayName: 'Sam Okafor', kinds: [] }), 'Sam Okafor (sokafor)');
+    assert.equal(text.chosenAccountLine({ username: 'lfox', displayName: 'Lena Fox', kinds: ['captured', 'saved_connection'] }),
+        'Lena Fox (lfox), Captured password, Saved connection');
+    assert.equal(text.chosenAccountLine(null), '');
+});
+
 test('8.1 keyboard screen, picker false: the typed form stays and no keyring tile shows', () => {
     setup();
     openKeyboard({ picker: false, tiles: [], keyring: [LENA_CAPTURED, JAKE_FOUND] });
