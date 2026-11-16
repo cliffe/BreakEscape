@@ -442,12 +442,16 @@ test('corpus: V2, V4 and V5 report nothing on the labs and test scenarios that u
     for (const id of ids) assert.deepEqual(out[id].filter(l => /office life V[245]:/.test(l)), [], id);
 });
 
-test('corpus: forced into campaign scope, lab_physical_pentest gives its 3 real V5 errors', { skip }, () => {
+test('corpus: forced into campaign scope, lab_physical_pentest gives its 5 real V5 errors', { skip }, () => {
     // Proves V5 on real data, including the global chain (kp_creds_captured set by a workstation mapping).
     const out = corpus(['lab_physical_pentest'], 'scenario_id: id, campaign: true').lab_physical_pentest;
     const errs = out.filter(l => l.startsWith('❌') && l.includes('V5'));
-    assert.equal(errs.length, 3, errs.join('\n'));
+    assert.equal(errs.length, 5, errs.join('\n'));
     assertHas(errs, "'global_variable_changed:kp_creds_captured' on 'hampshire' completes required task(s) grab_creds from global 'kp_creds_captured'");
     assertHas(errs, "'item_dropped:kit_deviceB' on 'lord' completes required task(s) drop_usb");
     assertHas(errs, "'npc_used:usb_target_pc' on 'lord' completes required task(s) usb_foothold");
+    // The rogue AP route (pentest A2): Kieran picking the copy on his laptop files the harvest.
+    // Labs are outside campaign scope, so this is by design there.
+    assertHas(errs, "'npc_used:kieran_laptop' on 'ruth' completes required task(s) wireless_harvest");
+    assertHas(errs, "'npc_used:kieran_laptop' on 'kieran' completes required task(s) wireless_harvest");
 });
