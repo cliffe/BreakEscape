@@ -195,6 +195,9 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText, { n
         btn.setAttribute('role', 'menuitem');
         if (c.disabled) btn.setAttribute('aria-disabled', 'true');
         btn.type = 'button';
+        // What the entry is, for the test bridge (systems/test-bridge/state.js interactionMenuState)
+        btn.dataset.kind = c.kind || 'action';
+        if (c.entityId) btn.dataset.entityId = String(c.entityId);
 
         // Icon: a plain image, or one frame cropped from a sprite sheet, scaled up
         // to the 64px display box (DISPLAY/cell). Both the sheet and the frame
