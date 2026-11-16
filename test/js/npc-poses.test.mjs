@@ -423,7 +423,7 @@ test('pass: an NPC with no use frames still turns but shows nothing; a chat-bloc
     assert.equal(b.direction, 'up', 'a poseless atlas is never turned');
     assert.equal(b._poseHoldFacing, undefined);
     assert.equal(poses.active.size, 0);
-    // Frames for another pose only (drink, no use): it turns to the machine, shows the drink lead-in as nothing
+    // Frames for another pose only (phone, no use): it turns to the machine, shows the drink lead-in as nothing
     const r2 = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
     r2.b.direction = 'up';
     r2.poses.update();
