@@ -365,6 +365,9 @@ async function measureCaptureLog(page, size) {
             if (!four || (four.kinds.length + four.sources.length) !== 4) { out.ok = false; out.notes.push('fixture: no four-tag row'); }
             MF.startMinigame('capture-log', null, { title: 'Capture log', holderId: '__signin_fit_none__' });
             const scene = MF.currentMinigame;
+            // The device's background GET /keyring and secrets answers redraw it from the game's
+            // own (empty) state: hold the fixture in place while it is measured and shot
+            scene.redraw = () => {};
             const root = scene.root;
             root.textContent = '';
             const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
