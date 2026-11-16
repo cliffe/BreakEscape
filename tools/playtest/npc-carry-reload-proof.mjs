@@ -141,6 +141,15 @@ async function runNeedsSims() {
     report.steps.preReload = { grace: await npcState('grace'), office: await fetchRoom('office', RE), kitchen: await fetchRoom('kitchen', RE) };
 
     report.steps.reload = await reload(RE);
+    // A reload restarts the player in the office with only the office loaded, and the needs
+    // system sees only loaded rooms (README step 2): the washing-up tray, the water and the
+    // rest spots are all in the kitchen and lounge. So walk through both doors again, as a
+    // real player would, or Grace has no target and parks every need with no_source.
+    // REENTER=0 skips this, for a control run that shows the gap.
+    report.steps.reEnter = [];
+    if (process.env.REENTER !== '0') {
+        for (const r of ['kitchen', 'office', 'lounge', 'office']) report.steps.reEnter.push([r, (await page.evaluate(r => window.__test.enterRoom(r), r).catch(e => ({ err: String(e) })))?.ok ?? null]);
+    }
     report.steps.afterReload = { office: await fetchRoom('office', RE), kitchen: await fetchRoom('kitchen', RE), grace: await npcState('grace') };
 
     // The NPC re-notices the object and repeats the carry (no driver call).
