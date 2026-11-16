@@ -7,6 +7,7 @@ module BreakEscape
     include NetworkAccess
     include CaptureProofs
     include CredentialKeyring
+    include CredentialLogin
     include NpcFrustration
     include SocialFeed
     include Wearables
@@ -1726,7 +1727,8 @@ module BreakEscape
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
       cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
-        unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries?
+        unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries? ||
+        credential_end_globals_stale?
     end
 
     # True when a carry is still stored at load time. A reload lands on the bootstrap
@@ -1761,6 +1763,9 @@ module BreakEscape
       # cannot resume an in-flight carry, so put each carried object back on the floor
       # and free the NPC.
       changed = end_stranded_carries! || changed
+      # Keyring K2 (plan 7.1): cache the end-global map for the sync merge and end any invite whose
+      # global is already true.
+      changed = record_credential_end_globals!(scenario: scenario) || changed
       changed
     end
 
@@ -2875,7 +2880,11 @@ module BreakEscape
       # Review R1 m1: the server time each guest record was written, for the server's own lock
       'guestSessionsAt' => {},
       # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
-      'feedRevealed' => {}
+      'feedRevealed' => {},
+      # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): invites the NPC has ended (grow-only, at most 64)
+      # and the cached { global => [credId] } map the sync merge reads in place of scenario_data.
+      # Server-written only, never read from a sync body and never sent to the client.
+      'endedCredentials' => [], 'credentialEndGlobals' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -3292,10 +3301,10 @@ module BreakEscape
         end
 
         login_failures.delete(key)
-        start_login_session!(pc['id'], npc, 'password', foothold: foothold)
+        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold)
         save!
         answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold)
-        return { status: :ok, body: { success: true }.merge(answer) }
+        return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
       end
 
       record_login_failure!(pc, key, account: !npc.nil?)
@@ -3340,8 +3349,9 @@ module BreakEscape
       return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
-      # A session already held here (a password sign-in) is never replaced by a claim
-      return refusal.call('a session is already held at this PC') if access_sessions[pc['id'].to_s].is_a?(Hash)
+      # A session already held here (a password sign-in) is never replaced by a claim. A relay
+      # session is not held at the keyboard (keyring K2, plan 3.8): a claim replaces it.
+      return refusal.call('a session is already held at this PC') if session_held_at_keyboard?(pc['id'])
 
       owner = login_pc_owner(pc)
       return refusal.call('no owner') unless owner
@@ -3364,9 +3374,9 @@ module BreakEscape
       end
 
       Rails.logger.info "[BreakEscape] login claim at #{pc['id']} for #{owner['id']}; client globals: #{globals.inspect}"
-      start_login_session!(pc['id'], owner, 'claim')
+      ended = start_login_session!(pc['id'], owner, 'claim')
       save!
-      { status: :ok, body: { success: true }.merge(login_session_answer(owner, 'claim')) }
+      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(login_session_answer(owner, 'claim')), ended) }
     end
 
     # Slice 9.2 sub-slice L (6.6): whether loginLockouts holds this NPC's normalised username at
@@ -3409,8 +3419,8 @@ module BreakEscape
       return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
-      # 2. no session held here
-      return refusal.call('a session is already held at this PC') if access_sessions[pc['id'].to_s].is_a?(Hash)
+      # 2. no session held here (a relay session does not count: keyring K2, plan 3.8)
+      return refusal.call('a session is already held at this PC') if session_held_at_keyboard?(pc['id'])
 
       # 3. a guest record
       guests = player_state['guestSessions']
@@ -3448,9 +3458,9 @@ module BreakEscape
         return refusal.call('the guest session has timed out')
       end
 
-      start_login_session!(pc['id'], guest, 'claim')
+      ended = start_login_session!(pc['id'], guest, 'claim')
       save!
-      { status: :ok, body: { success: true }.merge(login_session_answer(guest, 'claim')) }
+      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(login_session_answer(guest, 'claim')), ended) }
     end
 
     # POST /logout: no checks (section 6). The PC is named as /login names it (id or
@@ -3485,10 +3495,10 @@ module BreakEscape
     # write that committed after this record was loaded (a pagehide PUT /sync_state, say)
     # is kept rather than overwritten with the stale player_state.
     def end_claimed_sessions!
-      return if claimed_session_ids.empty?
+      return if reload_ended_session_ids.empty?
 
       with_lock do
-        claimed = claimed_session_ids
+        claimed = reload_ended_session_ids
         next if claimed.empty?
 
         player_state['sessions'] = access_sessions.except(*claimed)
@@ -3503,10 +3513,35 @@ module BreakEscape
       access_sessions.select { |_pc_id, session| session.is_a?(Hash) && session['via'] == 'claim' }.keys
     end
 
+    # The sessions a reload ends (keyring K2, plan 3.8): every claim, and every relay session
+    # (the shared screen closes on reload; the invite itself is still held).
+    def reload_ended_session_ids
+      access_sessions.select do |_pc_id, session|
+        session.is_a?(Hash) && (session['via'] == 'claim' || relay_session?(session))
+      end.keys
+    end
+
+    # A session the holder's keyboard sees as held: any session but a relay (keyring K2, 3.8).
+    def session_held_at_keyboard?(pc_id)
+      session = access_sessions[pc_id.to_s]
+      session.is_a?(Hash) && !relay_session?(session)
+    end
+
+    # A sign-in answer gains endedPcIds when the sign-in replaced a session and the prune that
+    # followed ended any onward ones (keyring K2, plan 3.8). Absent otherwise, so the common
+    # answer is unchanged.
+    def with_ended_pc_ids(body, ended)
+      ended = Array(ended)
+      ended.empty? ? body : body.merge(endedPcIds: ended)
+    end
+
     # { pcId => { npcId, username, displayName, via } } for the scenario response (5.3).
     def sessions_for_client
       access_sessions.each_with_object({}) do |(pc_id, session), out|
         next unless session.is_a?(Hash)
+        # The bootstrap ends relay sessions in the same request (end_claimed_sessions!), so
+        # it never hands one to the client (keyring K2, plan 3.8)
+        next if relay_session?(session)
 
         answer = session_for_client(pc_id)
         out[pc_id] = answer if answer
@@ -3521,7 +3556,8 @@ module BreakEscape
       npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
       return nil unless npc && self.class.account_holder?(npc)
 
-      answer = login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
+      answer = login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'],
+                                                         relay: relay_session?(session), credential: session['credential'])
       answer['locked'] = true if session_locked?(session)
       answer
     end
@@ -3955,7 +3991,9 @@ module BreakEscape
       info = find_login_pc(pc_id)
       reason =
         if info && host_service_off?(info[:object])
-          access_sessions[pc_id]['foothold'].present? ? 'not_responding' : 'off'
+          # Any remote route field (foothold, from, relay) means the PC is not at hand (K2, 3.8)
+          s = access_sessions[pc_id]
+          s['foothold'].present? || remote_route_session?(s) ? 'not_responding' : 'off'
         else
           'unreachable'
         end
@@ -4084,21 +4122,40 @@ module BreakEscape
       lockouts << key
     end
 
-    def start_login_session!(pc_id, npc, via, foothold: nil)
+    # Writes the one session slot at a PC and returns the ids of the onward sessions that
+    # ended because this sign-in replaced a session there (keyring K2, plan 3.8: the prune runs
+    # after the write, so a relay replacing a pivot ends the sessions beyond it). [] when the
+    # slot was empty. The caller saves and answers the ids as endedPcIds.
+    #
+    # Keyring K2: credential: (a registry id) with via 'credential', and the route: foothold:
+    # or relay: true (K4 adds from:). A relay sign-in is not recorded in signedInPcs, so it
+    # never proves a `session` credential or completes a sign-in task.
+    def start_login_session!(pc_id, npc, via, foothold: nil, credential: nil, relay: false)
       # A password (or remote) sign-in at a PC ends a guest session there (review R1 M1): one
       # screen holds one session. A claim is the guest's own session, or an owner's at an owned PC.
+      # A relay sign-in keeps that rule (one screen, one session; plan 7.2).
       end_guest_session_at!(pc_id) unless via == 'claim'
       player_state['sessions'] = access_sessions
-      player_state['sessions'][pc_id.to_s] = { 'id' => npc['id'], 'via' => via }
+      replaced = player_state['sessions'][pc_id.to_s].is_a?(Hash)
+      record = { 'id' => npc['id'], 'via' => via }
+      record['credential'] = credential.to_s if credential.present?
       # A session opened over the network records its foothold (slice 9.3a, 4.1)
-      player_state['sessions'][pc_id.to_s]['foothold'] = foothold if foothold.present?
-      player_state['signedInPcs'] = signed_in_pcs
-      player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
+      record['foothold'] = foothold if foothold.present?
+      record['relay'] = true if relay
+      player_state['sessions'][pc_id.to_s] = record
+      unless relay
+        player_state['signedInPcs'] = signed_in_pcs
+        player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
+      end
+      replaced ? prune_unreachable_sessions! : []
     end
 
     # A remote session (slice 9.3a, 4.4) adds remote, footholdId and host, the PC's label,
     # because its room may never have loaded. A local session's answer is unchanged.
-    def login_session_answer(npc, via, pc_id: nil, foothold: nil)
+    #
+    # Keyring K2 (plan 3.8): a credential session adds its kind and label; a relay session adds
+    # relay: true and the host (remote stays absent: the mirror reads it as remote: false).
+    def login_session_answer(npc, via, pc_id: nil, foothold: nil, relay: false, credential: nil)
       answer = {
         'npcId' => npc['id'],
         'username' => npc['creds']['username'],
@@ -4111,6 +4168,11 @@ module BreakEscape
       portrait = self.class.npc_talk_portrait(npc)
       answer['portrait'] = portrait if portrait
       answer['avatar'] = npc['avatar'] if npc['avatar'].is_a?(String) && !npc['avatar'].empty?
+      answer.merge!(credential_session_fields(credential)) if credential.present?
+      if relay
+        pc = find_login_pc(pc_id)&.dig(:object)
+        return answer.merge('relay' => true, 'host' => pc ? host_label(pc) : pc_id.to_s)
+      end
       return answer unless foothold.present?
 
       pc = find_login_pc(pc_id)&.dig(:object)

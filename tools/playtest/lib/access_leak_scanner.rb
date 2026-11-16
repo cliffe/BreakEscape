@@ -741,15 +741,17 @@ class AccessLeakScanner
     shared = ctx[:npc_workaround] ? heard_share_password(body) : nil
     # A GET /keyring answer's implicit capture entries carry the captured account's own
     # password, just as GET /capture_secrets does. Exempt the `password` field on a
-    # `source: "capture"` entry (owner's own game only); a registry-sourced entry is not
-    # exempted, so a password on one is still flagged.
+    # `source: "capture"` entry only when its id is `<npcId>.password` for an account the
+    # recorded state serves as captured (Game#account_capture_usernames) and the password found
+    # there is that NPC's own (carry-in m3): the `source` label alone exempts nothing. A
+    # registry-sourced entry is never exempted, so a password on one is still flagged.
     keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
-        next if keyring_capture_paths && keyring_capture_paths.include?(json_path)
+        next if keyring_capture_paths && owners.include?(keyring_capture_paths[json_path])
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
@@ -1226,19 +1228,39 @@ class AccessLeakScanner
     body['entries']
   end
 
-  # The JSON paths of the `password` field on every `source: "capture"` keyring entry, so
-  # scan_passwords can exempt the captured account's own value there (and only there).
+  # { JSON path => npc id } for the `password` field on every `source: "capture"` keyring entry
+  # whose id is `<npcId>.password` for an account the recorded state serves as captured, so
+  # scan_passwords can exempt that NPC's own value there (and only there). An entry labelled
+  # capture under any other id, or for an account not captured, maps to nothing.
   def keyring_capture_password_paths(body)
     entries = keyring_entries_in(body)
-    return Set.new if entries.nil?
+    return {} if entries.nil?
 
-    paths = Set.new
+    captured = captured_account_ids
+    paths = {}
     entries.each_with_index do |entry, i|
       next unless entry.is_a?(Hash) && entry['source'].to_s == 'capture' && entry['password'].is_a?(String)
 
-      paths << "$.entries[#{i}].password"
+      id = entry['id'].to_s
+      next unless id.end_with?('.password')
+
+      npc_id = id.delete_suffix('.password')
+      paths["$.entries[#{i}].password"] = npc_id if captured.include?(npc_id)
     end
     paths
+  end
+
+  # The NPC ids whose capture the recorded state serves (Game#account_capture_usernames, the
+  # reader the server's implicit keyring entries use), read once from the game at scan time;
+  # empty when the game cannot say, so nothing is exempted.
+  def captured_account_ids
+    return @captured_account_ids if defined?(@captured_account_ids)
+
+    usernames =
+      if @game.respond_to?(:account_capture_usernames, true)
+        @game.send(:account_capture_usernames)
+      end
+    @captured_account_ids = usernames.is_a?(Hash) ? usernames.keys.map(&:to_s).to_set : Set.new
   end
 
   # The registry credential ids whose proof holds in the recorded state, from the game read once at
