@@ -25,6 +25,21 @@ module BreakEscape
       )
     end
 
+    test "rooms_connected? matches an exit that lists several rooms" do
+      @game.scenario_data = {
+        "startRoom" => "hall",
+        "rooms" => {
+          "hall" => { "connections" => { "north" => ["office", "kitchen"] } },
+          "office" => { "connections" => {} },
+          "kitchen" => { "connections" => {} },
+          "vault" => { "connections" => {} }
+        }
+      }
+      assert @game.send(:rooms_connected?, "hall", "kitchen")
+      assert @game.send(:rooms_connected?, "office", "hall")
+      refute @game.send(:rooms_connected?, "hall", "vault")
+    end
+
     test "should belong to player and mission" do
       assert @game.player
       assert @game.mission
