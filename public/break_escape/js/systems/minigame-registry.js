@@ -32,7 +32,9 @@ const BUILT_IN = {
     'mail_terminal':       { fn: 'startMailClientMinigame',     unavailable: 'Mail terminal unavailable.' },
     'exercise-station':    { start: startExerciseStation,        unavailable: 'Station unavailable.' },
     // q35: a Friendface phone opens the feed (systems/friendface-phone.js)
-    'phone_friendface':    { fn: 'startFriendfacePhone',        unavailable: 'Phone unavailable.' }
+    'phone_friendface':    { fn: 'startFriendfacePhone',        unavailable: 'Phone unavailable.' },
+    // Physical pentest A1: the planted rogue AP's console (wifiTwin objects, interactions.js)
+    'rogue-ap':            { fn: 'startRogueApMinigame',        unavailable: 'Rogue AP console unavailable.' }
 };
 
 const registry = new Map(Object.entries(BUILT_IN));

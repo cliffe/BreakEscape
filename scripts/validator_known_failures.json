@@ -152,5 +152,16 @@
     "reviewBy": "2026-12-10",
     "approved": "2026-11-12: ceo_exfil phone targetKnot",
     "note": "Design edit: each mapping sets a global and the ink hub gets a conditional option for it."
+  },
+  {
+    "scenario": "scenarios/test_access_devices/scenario.json.erb",
+    "stage": "common",
+    "match": "has type 'rogue_ap' but no matching sprite found",
+    "count": 1,
+    "owner": "devices build (AC0)",
+    "added": "2026-11-16",
+    "reviewBy": "2026-12-10",
+    "approved": "2026-11-16: rogue_ap sprite waits on A3 art (user approval pending)",
+    "note": "A3 adds assets/objects/rogue_ap.png; remove this entry when it lands."
   }
 ]
