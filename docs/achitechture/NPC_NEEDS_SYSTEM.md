@@ -634,7 +634,7 @@ during the walk home (exists). Player-facing behaviour:
   rule, `_chatRadius`: the object's `overhearRadius`, else the `overhearRadius` of that speaker's
   pool for the chat's topic, else 160 px (`OVERHEAR_RADIUS`). Bark turns, the exchange start gate
   and the exchange-line heard check all use it. It is stricter than the voice layer, which plays a
-  spoken line anywhere in the player's room at a volume that falls with distance; an author who
+  faint line from out of earshot (see "Faint chatter" below) at a volume that falls with distance; an author who
   wants the whole of a room to count sets `overhearRadius` on the chatter object (the schema accepts
   it on an affordance).
 - **Spent only when heard (E7).** A bark turn takes a line from the bag, and starts the speaker's
@@ -650,6 +650,23 @@ during the walk home (exists). Player-facing behaviour:
   the overlap left (`_pickBark`'s `maxMs`, checked on the bag's next line before it is drawn): one
   that would outlast the overlap gives a picture if that fits, or ends the chat, with the bag and
   the cooldown untouched.
+- **Faint chatter (D34, option c).** Out of earshot is not silent. A bark turn, grumble or mutter
+  the player cannot hear in full, but within the falloff range (full volume to the pool's
+  `overhearRadius`, fading to a floor at 3 times it) or next door through an open door (x0.4), still
+  draws a bag line and is voiced faintly (the distance curve times 0.5, so at most 0.5 and still falling with distance), with a dimmed bubble; a faint grumble or mutter dims its bubble the same way. It never counts as
+  heard: no `npc_overheard`, no `heard_<knot>`, no room-tone duck, so E9 and every gate are unchanged.
+  It spends only its own throttle (`faintQuietUntil`, 25 s), not the chatter cooldown, so the E7 rule
+  above still holds: the speaker has a line ready when the player walks up. A faint line never waits
+  for or takes the speech lock from another line, and gives the lock to any line the player hears
+  in full (bark, exchange line, desk call, mutter) at once, fading its voice in 0.3 s. It ducks under
+  a scripted bark. While a person-chat or phone-chat is open, or a minigame opened from one (its
+  `returnTo` names the chat; the chat is suspended under it), by the live minigame's scene type and
+  not the sticky type, no chatter is overheard, voiced or toasted, and room tone ducks too. A priority
+  mutter that carries a secret (`login_aloud`) the player does not overhear is not voiced at all. That line is a cue ("it's on the note"), not the credential: the credential comes from the server on a heard listening tick, and the window stays open after the line, so a player who walks into earshot after a silent cue can still get "Overheard" (the q42 design; playtesters should not report it). Authoring rule: credentials and secrets go only in priority mutters, never in exchange or pool lines, because out of earshot those are background voices (heard through an open door with no heard credit); the validator's V11 warns on a pool line that names one. The scenario flag `"faintChatter":
+  false` and the player's "Background voices" switch in the music widget turn every background voice off. An
+  exchange line voiced out of earshot keeps the lock, shows a dimmed bubble and is a background voice
+  too (the same switch, the same 0.5 scale), though no full line cuts it. Design, tests and
+  live proof: `CHATTER_FALLOFF.md`.
 - **Cooldown.** After a spoken line the NPC stays quiet for `chatterCooldownMin` needs-clock minutes
   (NPC field, default 5). Pictures never start or wait for it.
 - **Speech lock.** One global lock (`_speechUntil`, across rooms): bark and exchange turns wait for

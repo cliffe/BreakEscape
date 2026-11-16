@@ -37,6 +37,7 @@ const FACE_SIGHT_MS = 150;
 export const NPC_STUCK_MS = 4000;
 export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
 const NPC_STUCK_GAP_MS = 500;
+const SETTLE_GRACE_MS = 600;       // after a settle ends, contact may not start another for this long
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
 const NPC_NUDGE_OWN_CELL_PX = 6;    // half an 8 px grid cell's diagonal: the nearest walkable centre is the body's own cell
 const NPC_NUDGE_BODY_PX = 14;       // a needs nudge keeps this far from another moving body's centre
@@ -384,12 +385,31 @@ export class NPCBehaviorManager {
         // Always record the desired visibility on the NPC data so sprite creation
         // (room not yet loaded) honours it instead of behavior.initiallyHidden.
         const npcData = window.npcManager?.getNPC(npcId);
+        const wasRecordedHidden = window.npcManager?.isHiddenByMapping?.(npcId) === true;
+        const wasHidden = wasRecordedHidden
+            || npcData?.isVisible === false
+            || this.behaviors.get(npcId)?.sprite?.visible === false;
         if (npcData) {
             npcData.isVisible = visible;
         }
         // Saved with the state sync and re-applied when the NPC registers after a reload,
         // whether or not its sprite exists yet; a onceOnly reveal doesn't replay (N2)
         window.npcManager?.recordNpcVisibility?.(npcId, visible);
+
+        // The fight music follows the count of hostiles that can attack. Hiding a conscious
+        // hostile can leave none (music handler re-checks on npc_hidden); revealing one brings
+        // the fight back, as a restored hostile is announced after a reload.
+        const hostileSys = window.npcHostileSystem;
+        if (hostileSys?.isNPCHostile?.(npcId) && !hostileSys.isNPCKO?.(npcId)) {
+            if (!visible) {
+                // Only a real change: a repeat hide (reload, room_entered) must not re-run the
+                // all_hostiles_ko check. A never-shown initiallyHidden hostile has no record yet,
+                // so its first hide still emits.
+                if (!wasRecordedHidden) window.eventDispatcher?.emit?.('npc_hidden', { npcId, wasHostile: true });
+            } else if (wasHidden) {
+                hostileSys.announceRestoredHostile?.(npcId, this.behaviors.get(npcId)?.config?.hostile);
+            }
+        }
 
         const behavior = this.behaviors.get(npcId);
         const sprite = behavior?.sprite;
@@ -408,6 +428,13 @@ export class NPCBehaviorManager {
         sprite.setAlpha(visible ? 1 : 0);
         if (sprite.body) {
             sprite.body.enable = visible;
+        }
+        // A startHostile NPC created hidden turns hostile on its first reveal, so the one
+        // npc_hostile_state_changed fires with it on screen (see the NPCBehavior constructor)
+        // (a KO'd pending NPC stays down: clear the flag either way)
+        if (visible && behavior._startHostileOnReveal) {
+            behavior._startHostileOnReveal = false;
+            if (!window.npcHostileSystem?.isNPCKO?.(npcId)) behavior.setHostile(true);
         }
         // If revealing and patrol is configured, enable it
         if (visible && behavior.config.patrol.waypoints?.length > 0) {
@@ -560,11 +587,26 @@ export class NPCBehavior {
                 this.hostile = true;
                 if (!restored.ko) {
                     this.sprite?.setTint?.(0xff6666);
-                    window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    // A hostile a mapping hid can't attack: announce it when it is revealed
+                    // (setNPCVisible), not now, or the fight music would start for nobody
+                    // (or whose sprite starts hidden, a restored initiallyHidden hostile)
+                    if (this.sprite?.visible !== false) {
+                        window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    } else {
+                        // Counted and announced must agree: until the reveal it neither counts
+                        // (anyHostilesAlive) nor cues the music (R3 m3)
+                        window.npcManager?.recordNpcVisibility?.(npcId, false);
+                    }
                 }
             }
         } else if (this.config.hostile.startHostile) {
-            this.setHostile(true);
+            if (this.sprite?.visible === false) {
+                // Hidden at creation (initiallyHidden or a mapping): hostile only once shown, so
+                // it neither cues the fight music nor counts as a live hostile while unseen
+                this._startHostileOnReveal = true;
+            } else {
+                this.setHostile(true);
+            }
         }
 
         console.log(`✅ Behavior initialized for ${npcId} in room ${this.roomId}`);
@@ -1216,11 +1258,22 @@ export class NPCBehavior {
             this.settleEndTime = time + this.settleDuration;
         }
 
+        // The settle grace is stamped and read on clockNow() (npc-sprites settleGraceRunning), so a
+        // stamp from another clock must not outlive one grace: it would switch off settling and
+        // avoidance for this walker. Pull it back like settleEndTime.
+        if (this._settleGraceUntil) {
+            const graceNow = this.clockNow();
+            if (this._settleGraceUntil - graceNow > SETTLE_GRACE_MS) this._settleGraceUntil = graceNow + SETTLE_GRACE_MS;
+        }
+
         // If settling after collision, pause patrol briefly to let physics settle
         if (this.isSettling) {
             if (time >= this.settleEndTime) {
                 // Settling complete, resume patrol
                 this.isSettling = false;
+                // A walker still touching a body that will not move away would re-settle on the
+                // next overlap callback, before its velocity ever moved it: the grace lets it walk.
+                this._settleGraceUntil = this.clockNow() + SETTLE_GRACE_MS;
                 console.log(`✅ [${this.npcId}] Finished settling, resuming patrol`);
             } else {
                 // Still settling - don't move, just idle
@@ -3231,10 +3284,14 @@ export class NPCBehavior {
      */
     triggerSettling(time) {
         if (!this.isSettling) {
+            // Just after a settle: no new one, so contact that outlasts the pause (a face_player
+            // NPC or the player standing against the walker) cannot hold it still for ever.
+            if (this._settleGraceUntil > time) return false;
             this.isSettling = true;
             this.settleEndTime = time + this.settleDuration;
             console.log(`⏸️ [${this.npcId}] Settling after collision for ${this.settleDuration}ms`);
         }
+        return true;
     }
 
     /**
@@ -3449,6 +3506,10 @@ export class NPCBehavior {
     }
 
     setHostile(hostile) {
+        // an explicit change replaces the deferred start; a calm set must be saved, since the
+        // early return below records nothing and a reload would re-apply startHostile (R3 m1)
+        if (!hostile && this._startHostileOnReveal) window.npcHostileSystem?.recordCalm?.(this.npcId);
+        this._startHostileOnReveal = false;
         if (this.hostile === hostile) return; // No change
         if (hostile) window.seating?.unseatNPC?.(this);
 
