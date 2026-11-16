@@ -9,7 +9,7 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { RELAY_FOLDER_UNAVAILABLE_TEXT } from '../../utils/remote-host-text.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT, notRespondingMessage, unreachableMessage } from '../../utils/remote-host-text.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
@@ -666,6 +666,23 @@ export class ContainerMinigame extends MinigameScene {
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && this.fromRoute) {
+                // Same reasons as a foothold desktop (K3b R1 m4, K3c): unreachable and not_responding
+                // keep the session and close with the route line; any other 403 means no session
+                // is held, so the copy is dropped. Never the keyboard sign-in screen. A running trip
+                // says the line itself (landed); with none the line is said here.
+                const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
+                if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = reason;
+                this.complete(false);
+                if (!window.networkLinks?.trip) {
+                    const host = this.networkDetail().host;
+                    const line = reason === 'unreachable' ? unreachableMessage(host)
+                        : (reason === 'not_responding' ? notRespondingMessage(host) : `Your session on ${host || 'that host'} has ended.`);
+                    window.gameAlert?.(line, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                }
                 return null;
             }
             if (response.status === 403 && this.relay && ['off', 'not_responding'].includes(refusal?.reason)) {
