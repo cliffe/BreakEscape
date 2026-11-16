@@ -15,6 +15,7 @@ const css = readFileSync(join(here, '../../public/break_escape/css/awareness-ski
 const dir = mkdtempSync(join(tmpdir(), 'social-episode-views-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
+    'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js', 'minigames/landing-page-builder/landing-page-model.js', 'minigames/inbox-triage/triage-scoring.js',

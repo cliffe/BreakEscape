@@ -830,3 +830,56 @@ test('R8 m3: a waypoint patrol held in a one against three lane stands and re-ta
     assert.ok(stalledAt !== null && stalledAt < 15000, `the stall check fires within 15 s (at ${stalledAt})`);
     assert.ok(steps <= AVOID_YIELD_MAX_STEPS, `no more than the capped back-off steps (${steps})`);
 });
+
+// Patrol minors: a waypoint patrol meets a player who stands still in its lane (T100 live check,
+// waypoint_fast stood for about 87 s). Drives the real updatePatrol with a crude physics step: the
+// player's body stops the NPC 20 px short of it, as the collision would.
+function playerLaneRun({ detour, maxMs = 30000 }) {
+    window.__npcAvoidOff = false;
+    window.rooms = {};
+    window.npcBehaviorManager = undefined;
+    const player = { body: { enable: true, center: { x: 80, y: 0 }, velocity: { x: 0, y: 0 } } };
+    window.player = player;
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb) => cb(detour ? [{ x: sx + 10, y: -48 }, { x: ex, y: -48 }, { x: ex, y: ey }] : null) };
+    const b = walker({ id: 'fast', target: { x: 400, y: 0 }, pathfinder: pf });
+    b.currentState = 'patrol';
+    b.config.patrol = { enabled: true, speed: 160, changeDirectionInterval: 3000,
+        waypoints: [{ x: 400, y: 0 }, { x: 0, y: 0 }] };
+    b.patrolTarget = { x: 400, y: 0, dwellTime: 0 };
+    b.currentPath = [{ x: 400, y: 0 }];
+    b.patrolReachedTime = 0;
+    b._drawPatrolPathDebug = () => {}; b._clearPatrolPathDebug = () => {};
+    const out = { retargetAt: null, passedAt: null, detoured: false };
+    const real = b.chooseNewPatrolTarget;
+    b.chooseNewPatrolTarget = (t) => { out.retargetAt ??= t; b.patrolTarget = null; b.currentPath = []; };
+    const vel = b._vel, c = b.sprite.body.center;
+    const t0 = 100000;
+    b.lastPatrolChange = t0;
+    quiet(() => {
+        for (let t = t0; t < t0 + maxMs && out.retargetAt === null && out.passedAt === null; t += 50) {
+            b.scene.time.now = t;
+            b.updatePatrol(t, 50);
+            const nx = c.x + vel.x * 0.05, ny = c.y + vel.y * 0.05;
+            const inLane = Math.abs(ny - player.body.center.y) < 24;
+            c.x = (inLane && nx > player.body.center.x - 20 && c.x <= player.body.center.x) ? Math.max(c.x, Math.min(nx, player.body.center.x - 20)) : nx;
+            c.y = ny; b.sprite.x = c.x; b.sprite.y = c.y;
+            if (Math.abs(c.y) > 24) out.detoured = true;
+            if (c.x > player.body.center.x + 30) out.passedAt = t - t0;
+        }
+    });
+    if (out.retargetAt !== null) out.retargetAt -= t0;
+    window.player = undefined;
+    return out;
+}
+
+test('patrol minors: a waypoint patrol blocked by a still player on open floor detours past it', () => {
+    const r = playerLaneRun({ detour: true });
+    assert.ok(r.passedAt !== null && r.passedAt < 15000, `it gets past the still player (passed at ${r.passedAt} ms)`);
+    assert.ok(r.detoured, 'by leaving the lane');
+});
+
+test('patrol minors: with no way round a still player, a waypoint patrol re-targets after its stall window', () => {
+    const r = playerLaneRun({ detour: false });
+    assert.ok(r.retargetAt !== null && r.retargetAt < 15000, `re-target at ${r.retargetAt} ms`);
+});
