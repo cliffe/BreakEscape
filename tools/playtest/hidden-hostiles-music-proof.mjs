@@ -88,7 +88,7 @@ const cues = page => page.evaluate(() => window.__cues || []);
 
 if (route === 'reserve') {
   expect('start: reserve guard hidden, not hostile', await reserve(page), { hostile: false, ko: false, hiddenByMapping: false });
-  expect('start: reserve guard sprite is hidden', await page.evaluate(() => !!window.__test.getState && (window.npcManager.getNPC('reserve_guard')?.isVisible === false || window.npcManager.getNPC('reserve_guard')?.behavior?.initiallyHidden === true)), true);
+  expect('start: reserve guard sprite is hidden', await page.evaluate(() => window.npcBehaviorManager?.behaviors?.get('reserve_guard')?.sprite?.visible), false);
   await ko('fight_guard');
   expect('lobby guard KO with the reserve guard hidden: all_hostiles_ko fires', await music(page), 'noir');
   await sleep(2500);   // let the state sync before the reload
