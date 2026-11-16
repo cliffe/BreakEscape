@@ -304,7 +304,7 @@ test('pending use: a menu or confirm opening on the way drops it (busy)', () => 
 test('overlap walk: the watcher retries once with an exact final leg; player.js honours opts.exact', () => {
     const g = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(g, /movePlayerToPoint\(r\.stand\.x, r\.stand\.y, \{ avoidNpcs: true, exact: true \}\)/);
-    assert.match(g, /if \(!r\.stand \|\| r\.used\) return true;/, 'one retry, then today\'s behaviour');
+    assert.match(g, /if \(r\.used\) return Date\.now\(\) >= r\.settleAt;/, 'one retry, then today\'s behaviour');
     const p = readFileSync(join(js, 'core/player.js'), 'utf8');
     assert.match(p, /playerExactArrival = !!opts\?\.exact;/);
     assert.match(p, /const arriveAt = exactLeg \? EXACT_ARRIVAL : ARRIVAL_THRESHOLD;/);
