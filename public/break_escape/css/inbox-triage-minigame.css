@@ -323,6 +323,11 @@
     .triage-client .tri-toolbar { flex-wrap: wrap; }
     /* C-X7: at narrow widths the stepper is one sideways-scrolling row, not a wrapped block. */
     .tri-steps { flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; }
+    /* Title and close X share the first row (X in the top-right corner); the stepper takes the
+       row below and scrolls sideways, so the X never wraps onto a row of its own. */
+    .triage-client .tri-title { order: 1; flex: 1 1 0; }
+    .triage-client .tri-toolbar .se-overlay-close { order: 2; margin-left: auto; }
+    .triage-client .tri-steps { order: 3; }
     .tri-panel { padding: 10px; }
     .tri-result > .tri-result-body { padding: 10px 10px 6px; }
     .tri-result > .tri-result-bar { padding: 0 10px 10px; }
