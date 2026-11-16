@@ -1523,6 +1523,61 @@ test('sweepDoorwayChairs (R5 m2): the anchor clears once the foot leaves every d
     } finally { rig.restore(); }
 });
 
+// R6 m1: the cap must not outlive a real move. The rig's 0, 3, 6, 3 swing caps the chair first.
+const capChair = (chair, t0 = 1000) => {
+    const xs = [5, 8, 11, 8];
+    let t = t0;
+    for (let n = 0; n < 24; n++, t += 1000) {
+        chair.x = xs[n % 4];
+        seating.sweepDoorwayChairs(t);
+        for (let i = 0; i < 12; i++) seating.updateGlides();
+    }
+    return t;
+};
+const sweepFor = (t, n) => {
+    for (let k = 0; k < n; k++, t += 1000) {
+        seating.sweepDoorwayChairs(t);
+        for (let i = 0; i < 12; i++) seating.updateGlides();
+    }
+    return t;
+};
+const glideCount = rig => rig.log.filter(l => l.ev === 'chair_out_of_doorway').length;
+
+test('sweepDoorwayChairs (R6 m1): a capped chair shoved more than a chair width along the gap gets fresh tries', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        let t = capChair(chair);
+        assert.equal(glideCount(rig), 9, 'capped');
+        assert.ok(chair._doorSweep?.capped);
+        t = sweepFor(t, 2); // a still, capped chair stays capped
+        assert.equal(glideCount(rig), 9, 'no glide while it has not moved');
+        chair.x = -20; chair.y = 85; // 25 px along the gap, to the kitchen side
+        sweepFor(t, 3);
+        assert.ok(glideCount(rig) > 9, 'glides again after a real move');
+        assert.ok(!chair._doorSweep?.capped, 'cap cleared');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R6 m1): a capped chair sat on, carried out and back in, then let go gets fresh tries', () => {
+    const chair = doorChair(5, 79);
+    const beh = { amara: { _seat: null } };
+    const rig = doorSweepRig([chair], { behaviors: beh });
+    try {
+        let t = capChair(chair);
+        assert.equal(glideCount(rig), 9, 'capped');
+        chair.seatedBy = 'amara'; beh.amara._seat = { chair };
+        chair.x = 200; chair.y = 200; // rolled out while sat on: never seen resting outside the gaps
+        t = sweepFor(t, 3);
+        chair.x = -10; chair.y = 80; // and back into the gap
+        t = sweepFor(t, 2);
+        assert.equal(glideCount(rig), 9, 'no glide while sat on');
+        beh.amara._seat = null; chair.seatedBy = undefined; // let go
+        sweepFor(t, 3);
+        assert.ok(glideCount(rig) > 9, 'glides again once let go');
+    } finally { rig.restore(); }
+});
+
 test('sweepDoorwayChairs: a chair sat on, fetched, mounted, gliding or moving stays; once a second at most', () => {
     const make = () => doorChair(8, 79);
     const cases = {

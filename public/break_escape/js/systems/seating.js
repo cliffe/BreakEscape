@@ -1864,10 +1864,13 @@ export function sweepDoorwayChairs(now = Date.now()) {
     const rects = doorGapRects(doors);
     if (!rects.length) return;
     for (const chair of chairs) {
-        if (!chair?.body || !chair.active || glides.has(chair) || state?.chair === chair) continue;
+        if (!chair?.body || !chair.active || glides.has(chair)) continue;
+        // R6 m1: a chair in use (the player's, or an NPC's seat, fetch or seat move) is left alone and
+        // its sweep state dropped, so once it is let go it starts again with fresh tries
+        if (state?.chair === chair) { chair._doorSweep = undefined; continue; }
         if (Math.hypot(chair.body.velocity.x, chair.body.velocity.y) > 1) continue;
         const by = chair.seatedBy ? window.npcBehaviorManager?.getBehavior?.(chair.seatedBy) : null;
-        if (by && (by._seat?.chair === chair || by._fetch?.chair === chair || by._seatMove?.chair === chair)) continue;
+        if (by && (by._seat?.chair === chair || by._fetch?.chair === chair || by._seatMove?.chair === chair)) { chair._doorSweep = undefined; continue; }
         const f = bodyFeet(chair);
         const half = { w: chair.body.width / 2, h: chair.body.height / 2 };
         const spot = doorwayChairSpot(f, rects, half, (x, y) => chairSpotClear(chair, x, y, half));
@@ -1881,9 +1884,14 @@ export function sweepDoorwayChairs(now = Date.now()) {
         // edge, still counts as the same try; a move further than that starts the count again.
         // R5 m1: a foot that swings back and forth past the anchor resets it each time; `total` and `capped`
         // survive the reset, so at DOOR_SWEEP_MAX_TRIES the chair is left alone (one log line).
+        // R6 m1: a capped chair whose foot has since moved more than a chair's width from where it was
+        // capped (shoved along the gap, say) has really moved, so it starts again with fresh tries. The
+        // swing the cap is for is a few px, well inside that.
         let sw = chair._doorSweep;
+        if (sw?.capped && Math.hypot(f.x - sw.capX, f.y - sw.capY) > Math.max(chair.body.width, chair.body.height)) sw = undefined;
         if (!sw || Math.hypot(f.x - sw.fromX, f.y - sw.fromY) > DOOR_SWEEP_SAME_PX) {
-            sw = chair._doorSweep = { fromX: f.x, fromY: f.y, tries: 0, gaveUp: !!sw?.capped && !!sw.gaveUp, total: sw?.total || 0, capped: !!sw?.capped };
+            sw = chair._doorSweep = { fromX: f.x, fromY: f.y, tries: 0, gaveUp: !!sw?.capped && !!sw.gaveUp, total: sw?.total || 0,
+                capped: !!sw?.capped, capX: sw?.capX, capY: sw?.capY };
         }
         if (!spot.to) {
             const key = from.join(',');
@@ -1897,7 +1905,7 @@ export function sweepDoorwayChairs(now = Date.now()) {
         if (sw.capped || sw.total >= DOOR_SWEEP_MAX_TRIES || sw.tries >= DOOR_SWEEP_TRIES) {
             if (!sw.gaveUp) {
                 sw.gaveUp = true;
-                if (sw.total >= DOOR_SWEEP_MAX_TRIES) sw.capped = true;
+                if (sw.total >= DOOR_SWEEP_MAX_TRIES && !sw.capped) { sw.capped = true; sw.capX = f.x; sw.capY = f.y; }
                 window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_in_doorway_no_spot', { chair: id, at: from, tries: sw.tries });
             }
             continue;
