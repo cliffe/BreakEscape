@@ -473,6 +473,11 @@ export function preload() {
     this.load.image('power_socket_off2', 'objects/power_socket_off2.png');
     this.load.image('power_socket_drop1', 'objects/power_socket_drop1.png');
     this.load.image('power_socket_drop_off1', 'objects/power_socket_drop_off1.png');
+    this.load.image('rogue_ap', 'objects/rogue_ap.png');
+    this.load.image('rogue_ap_planted', 'objects/rogue_ap_planted.png');
+    this.load.image('lw_staff_ap', 'objects/lw_staff_ap.png');
+    this.load.image('lw_guest_ap', 'objects/lw_guest_ap.png');
+    this.load.image('lw_guest_card', 'objects/lw_guest_card.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');

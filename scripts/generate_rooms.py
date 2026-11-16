@@ -1150,6 +1150,8 @@ WALL_MOUNTED_EXTRAS = {
     "power_socket_off",
     "power_socket_drop",
     "power_socket_drop_off",
+    "lw_staff_ap",
+    "lw_guest_ap",
 }
 
 
