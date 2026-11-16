@@ -301,9 +301,9 @@ async function confirmEffect(sinceSeq, { settleFrames = 6, timeoutMs = 4000 } = 
 // 'SIEM Console' opens 'SIEM Dashboard'), so it records the object, NPC or door
 // handed to the engine's own handlers and compares ids. Installed lazily because
 // interactions.js and doors.js assign these globals after the bridge loads.
-// A door's own click zone calls handleDoorInteraction directly, not through
-// window, so a door the zone opened leaves no record; the scene's tap-gather
-// does go through window, which is the path that opened a neighbouring door.
+// Every door click reaches window.handleDoorInteraction through the scene's
+// pointer handler (the door zone keeps only the cursor), so a door a click
+// opened is recorded like an object or an NPC.
 const engineTargets = [];
 // gameDisplay / gameConfirm calls, so an overlay can be tied to the handler that
 // raised it. A message the game shows on a timer lands outside any handler.
@@ -711,6 +711,69 @@ function pickedTarget(entity) {
             matches: entity ? id === entity.id : undefined };
     }
     return null;
+}
+
+// The interaction menu's entries and their labels (ui/interaction-menu.js).
+function menuButtons() {
+    return Array.from(document.querySelectorAll?.('#be-interaction-menu .be-im-item') || []);
+}
+function menuLabelOf(el) {
+    return (el.querySelector?.('.be-im-label')?.innerText || el.innerText || '').trim().split('\n')[0];
+}
+/**
+ * The menu entry `which` names: an index, `{ id }`, or a label (exact first,
+ * ignoring case, then a substring only one entry holds). Returns `{ el }` or
+ * `{ error, matches? }`.
+ */
+function pickMenuButton(items, which) {
+    if (typeof which === 'number') return items[which] ? { el: items[which] } : { error: `no-menu-item:${which}` };
+    if (which && typeof which === 'object') {
+        const el = items.find(b => b.dataset?.entityId === String(which.id));
+        return el ? { el } : { error: `no-menu-item:${which.id}` };
+    }
+    const needle = String(which ?? '').trim().toLowerCase();
+    const exact = items.filter(b => menuLabelOf(b).toLowerCase() === needle);
+    if (exact.length === 1) return { el: exact[0] };
+    const pool = exact.length > 1 ? exact : items.filter(b => menuLabelOf(b).toLowerCase().includes(needle));
+    if (pool.length === 1) return { el: pool[0] };
+    if (pool.length > 1) return { error: 'ambiguous-menu-item', matches: pool.map(menuLabelOf) };
+    return { error: `no-menu-item:${which}` };
+}
+// interact()'s pick from the menu: by id when the entries carry ids, else by name.
+function chooseEntityInMenu(entity, id) {
+    const wanted = entity?.id || id;
+    if (wanted && menuButtons().some(b => b.dataset?.entityId === String(wanted))) {
+        return bridge.chooseInteractionMenu({ id: wanted });
+    }
+    return bridge.chooseInteractionMenu(entity?.name || id);
+}
+/**
+ * interact() after its click started an overlap walk: wait for the walk to end,
+ * click the same point again and choose the target from the menu. When that
+ * second click acts at once (only one thing came into reach) on something else,
+ * fail with `wrong-target`, naming what acted.
+ */
+async function overlapWalkThenChoose(entity, id, aim, timeoutMs) {
+    await waitForMovementEnd({ timeoutMs });
+    const sinceSeq = currentSeq();
+    interactStartT = performance.now();
+    await clickWorld(aim.x, aim.y);
+    await sleepFrames(4);
+    if (interactionMenuState()) {
+        const menuSeq = currentSeq();
+        const picked = await chooseEntityInMenu(entity, id);
+        return picked.ok
+            ? withConfirmation({ id, mode: 'overlap-walk-then-menu', chose: picked.chose, entity }, await confirmEffect(menuSeq), entity)
+            : fail('interaction-menu-open', { id, menu: interactionMenuState(), entity, reasonDetail: picked.reason });
+    }
+    const result = withConfirmation({ id, mode: 'overlap-walk-then-acted', entity }, await confirmEffect(sinceSeq), entity);
+    if (result.mismatch) {
+        result.reason = 'wrong-target';
+        result.hint = `The click walked to an overlap of "${entity.name || id}" and its neighbours, but on arrival only `
+            + `${result.opened ? `"${result.opened.title || result.opened.id}"` : `${result.engineTarget?.kind} "${result.engineTarget?.id}"`} `
+            + 'was in reach and it acted. Close it, then moveToNear(id) and interact again.';
+    }
+    return result;
 }
 
 /**
@@ -1306,13 +1369,20 @@ const bridge = {
         // which can sit inside a neighbour's hit box (see aim.js).
         aim = aimPointFor(entity);
         await clickWorld(aim.x, aim.y);
+        // A far click on several things' pixels walks to where all are in reach and
+        // acts on nothing (overlap walk); the next click on the same point opens the menu.
+        const overlapWalk = !!(typeof window.__pendingOverlapWalk === 'function' && window.__pendingOverlapWalk());
 
         // The click may have raised the disambiguation menu instead of acting,
         // if other interactables were within tap slop. Pick our target from it.
         await sleepFrames(4);
+        if (overlapWalk && !interactionMenuState()) {
+            const r = await overlapWalkThenChoose(entity, id, aim, timeoutMs);
+            return done(r);
+        }
         if (interactionMenuState()) {
             const menuSeq = currentSeq();
-            const picked = await bridge.chooseInteractionMenu(entity.name || id);
+            const picked = await chooseEntityInMenu(entity, id);
             const result = picked.ok
                 ? withConfirmation({ id, mode: 'via-interaction-menu', chose: picked.chose, entity }, await confirmEffect(menuSeq), entity)
                 : fail('interaction-menu-open', { id, menu: interactionMenuState(), entity });
@@ -1336,9 +1406,8 @@ const bridge = {
         // neighbouring door's lock, an NPC). Clicking again would discard that
         // record, so report it now rather than a misleading out-of-range.
         const early = activeMinigameSummary();
-        // A door's own click zone calls handleDoorInteraction directly and a lock
-        // minigame opens synchronously, so nothing is recorded; the minigame's own
-        // lock names its door, which ties it to the click (or not).
+        // A lock minigame the click opened with no record (an older engine, or a
+        // lock opened by a timer) is tied to the click by the door its lock names.
         const earlyChk = early && !engineTargets.some(r => r.t >= interactStartT)
             ? checkEngineTarget(entity, early) : null;
         if (earlyChk && earlyChk.verified) {
@@ -1399,7 +1468,7 @@ const bridge = {
         await sleepFrames(4);
         if (interactionMenuState()) {
             const menuSeq = currentSeq();
-            const picked = await bridge.chooseInteractionMenu(after.name || id);
+            const picked = await chooseEntityInMenu(after, id);
             const r2 = picked.ok
                 ? withConfirmation({ id, mode: 'approached-then-menu', chose: picked.chose, entity: after }, await confirmEffect(menuSeq), after)
                 : fail('interaction-menu-open', { id, menu: interactionMenuState(), entity: after });
@@ -1410,25 +1479,39 @@ const bridge = {
     },
 
     /**
-     * Pick an entry from the tap-disambiguation menu by index or label
-     * substring, by clicking the real menu item.
+     * Pick an entry from the tap-disambiguation menu by clicking the real menu
+     * item: a 0-based index, `{ id }` (the entity id an entry acts on, as
+     * interactionMenuState lists it), or a label. A label matches the entry's
+     * label exactly first (ignoring case), then as a substring that only one
+     * entry holds; more than one fails with `ambiguous-menu-item`.
      */
     async chooseInteractionMenu(indexOrLabel) {
         const menu = interactionMenuState();
         if (!menu) return fail('no-interaction-menu-open');
-        const items = Array.from(document.querySelectorAll('.be-im-item'));
-        let el;
-        if (typeof indexOrLabel === 'number') {
-            el = items[indexOrLabel];
-        } else {
-            const needle = String(indexOrLabel).toLowerCase();
-            el = items.find(i => (i.innerText || '').toLowerCase().includes(needle));
+        const items = menuButtons();
+        const picked = pickMenuButton(items, indexOrLabel);
+        if (picked.error) {
+            const result = fail(picked.error, { menu, ...(picked.matches ? { matches: picked.matches } : {}) });
+            logAction('chooseInteractionMenu', { indexOrLabel }, result);
+            return result;
         }
-        if (!el) return fail(`no-menu-item:${indexOrLabel}`, { menu });
+        const el = picked.el;
         clickElementDom(el);
         await sleepFrames(4);
-        const result = { ok: true, chose: (el.innerText || '').trim().split('\n')[0] };
+        const result = { ok: true, chose: menuLabelOf(el), id: el.dataset?.entityId || null };
         logAction('chooseInteractionMenu', { indexOrLabel }, result);
+        return result;
+    },
+
+    /** Close the interaction menu as a player does, by clicking its X. */
+    async closeInteractionMenu() {
+        if (!interactionMenuState()) return fail('no-interaction-menu-open');
+        const x = document.querySelector('#be-interaction-menu .be-im-close');
+        if (!x) return fail('no-close-button', { hint: 'The menu has no X; press Escape (pressKey("Escape")).' });
+        clickElementDom(x);
+        await sleepFrames(2);
+        const result = { ok: !interactionMenuState() };
+        logAction('closeInteractionMenu', {}, result);
         return result;
     },
 
@@ -1670,8 +1753,13 @@ const bridge = {
         const blocked = blockedByMinigame();
         if (blocked) return blocked;
         const ok = await clickWorld(x, y);
+        const walking = !!(typeof window.__pendingOverlapWalk === 'function' && window.__pendingOverlapWalk());
         await sleepFrames(2);
         const result = { ok, x, y };
+        // What the click did that a caller cannot see from here: opened the menu, or walked
+        const menu = interactionMenuState();
+        if (menu) result.menu = menu;
+        if (walking || window.player?.isMoving) result.walked = true;
         logAction('clickAt', { x, y }, result);
         return result;
     },

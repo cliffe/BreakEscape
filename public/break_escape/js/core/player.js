@@ -923,6 +923,30 @@ export function startHoldWalk() {
     holdWalkStartTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
 }
 
+/**
+ * Stop a click-to-move walk where the player stands (the pick menu opening, overlap plan D13),
+ * clearing what the keyboard's cancel clears and showing the idle pose, so a walk under way
+ * cannot carry him into another room while he chooses.
+ */
+export function stopClickToMove() {
+    isMoving = false;
+    targetPoint = null;
+    playerPath = [];
+    playerPathIndex = 0;
+    playerFollowingPath = false;
+    playerFinalGoal = null;
+    holdWalkActive = false;
+    if (!player) return;
+    try { player.body?.setVelocity?.(0, 0); } catch (e) { /* no body yet */ }
+    if (player.isMoving) {
+        player.isMoving = false;
+        const currentAnim = player.anims?.currentAnim?.key || '';
+        if (!/punch|jab|death|taking-punch/.test(currentAnim)) {
+            try { player.anims.play(`idle-${getAnimationKey(player.direction)}`, true); } catch (e) { /* no anims */ }
+        }
+    }
+}
+
 /** Stop continuous hold-to-walk (called on pointer release). */
 export function stopHoldWalk() {
     holdWalkActive = false;

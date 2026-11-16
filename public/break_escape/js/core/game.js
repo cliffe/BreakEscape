@@ -1,17 +1,18 @@
 // IMPORTANT: version must match all other imports of rooms.js — mismatched ?v= strings
 // create separate module instances with separate rooms objects, causing state to diverge.
 import { initializeRooms, calculateWorldBounds, calculateRoomPositions, createRoom, revealRoom, updatePlayerRoom, rooms } from './rooms.js';
-import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, player, isMoving as playerIsMoving } from './player.js';
+import { createPlayer, updatePlayerMovement, movePlayerToPoint, facePlayerToward, startHoldWalk, stopHoldWalk, stopClickToMove, player, isMoving as playerIsMoving } from './player.js';
 import { resumeSpawnFor } from './resume-spawn.js';
 import { setHeldFormatVersion, showBootstrapRefusal } from '../format-guard.js';
 import { initializeInventory, processInitialInventoryItems, registerTrayRule, refreshInventoryTray } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
+import { aimX, reachX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { preloadPixelFont } from '../utils/pixel-text.js';
-import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
+import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, tickInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
+import { menuIconsFor } from '../ui/menu-icons.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { introduceScenario } from '../utils/helpers.js';
@@ -41,14 +42,14 @@ import { installFriendfacePhones } from '../systems/friendface-phone.js'; // q35
 import { socialOverlayParams } from '../minigames/framework/social-overlay.js';
 import { installSocialFeed } from '../systems/social-feed.js'; // Access slice 9.2 C (8.3): revealed posts in place before the browser can open
 import { getTutorialManager } from '../systems/tutorial-manager.js';
-import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE } from '../utils/constants.js';
+import { TILE_SIZE, SPRITE_PADDING_BOTTOM_ATLAS, SPRITE_PADDING_BOTTOM_LEGACY, DOOR_INTERACTION_RANGE, INTERACTION_RANGE, ARRIVAL_THRESHOLD } from '../utils/constants.js';
 import { initScenarioMusicEvents } from '../music/scenario-music-events.js';
 import { ScenarioTimerUI } from '../ui/scenario-timer.js';  // [Phase 5] Countdown timer HUD widget
 import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  // [Phase 5] Timer event dispatcher
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
 import { createPendingGateWalk } from '../systems/pending-gate-walk.js';  // A far click on an open gate, re-checked in reach
-import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used
+import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, overlapRetryTarget, seatsGiveWay } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used; overlaps ask
 import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
@@ -2277,6 +2278,8 @@ export async function create() {
     this.input.on('pointerdown', (pointer) => {
         pendingGateWalk.clear(); // any new click replaces a far click on a gate
         pendingTapUse.clear();   // ...and a far tap on an object
+        clearOverlapWalk();   // ...and a far tap on an overlap (overlap plan D2)
+        window.__overlapStand = null; window.__overlapRetried = null;   // the live proofs read these per click
         // Check if a minigame is currently running - if so, don't process main game clicks
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
             console.log('Minigame is running, ignoring main game click', {
@@ -2307,30 +2310,22 @@ export async function create() {
             return;
         }
 
-        // If the tap lands near several interactable entities that are all within
-        // reach (e.g. a memo lying right next to an NPC), don't guess — show a
-        // disambiguation menu listing each by its observation text. This fixes the
-        // "can't pick up items next to characters" problem, especially on touch.
-        // An NPC walking away gives way to an object under the same tap: a tap on the PC its
-        // owner has just left is for the PC (q55 d). Dropped from the pick list when an object
-        // was gathered too; and when only leaving NPCs were gathered (the PC just out of reach)
-        // they are skipped, so the object branch below uses or walks to the PC.
-        // An owner on the move from her own PC under the tap gives way too (review R2 m1).
+        // A tap goes to the thing under the pointer (tap-pick.js). An in-reach thing acts at once;
+        // two or more in reach under or near the tap open the pick-one menu; out of reach, the
+        // player only walks (the user's rule: no "walk over and use it" entries).
+        // Order (overlap plan D1): a hostile under the tap first (D12); then, outside a fight, a far
+        // overlap: two or more things whose own opaque pixels hold the tap, none in reach, walks to
+        // a spot where all are in reach and stops (D2); then the in-reach gather (a far object or NPC
+        // under the tap drops in-reach things only near it, C3 U3 and UX access finding 6; seats
+        // give way to a far object, D6); then a far click on one thing, picked by pixels (D4), or
+        // today's NPC, object and door branches. An NPC walking away gives way to an object under
+        // the same tap (q55 d). Her figure counts with a 2 px slop (R2 m5); a FAR object of her room
+        // drawn above her and opaque at the tap covers her there (R2 M2); an in-reach one does not,
+        // so both are in the menu (D5). An in-reach object under the tap on its own pixels drops
+        // NPCs not under it (R2 m1).
         const objectsUnderTap = findObjectsAtPosition(worldX, worldY).filter(o => o.interactable && !o.isSwivelChair);
         const objectUnderTap = () => objectsUnderTap.length > 0;
         const tapObjectIds = objectsUnderTap.map(objectIdOf);
-        // A tap goes to the thing under the pointer (tap-pick.js): an out-of-reach object whose
-        // bounds hold the tap drops the in-reach things that are only near the tap (Kim's phone
-        // beside her stick, C3 U3); one also under the tap (an owner seated over her PC) stays
-        // and the far object joins it in the menu as walk-then-use (UX access finding 6).
-        // Seats and objects of another room never do this. An out-of-reach NPC of the player's
-        // room drops them too when the tap is on her figure, not just her frame (one walking away
-        // gives way), and is then walked to by the NPC branch. An in-reach NPC counts as under
-        // the tap only on her figure, and then wins (no far entries); an in-reach hostile wins
-        // outright (code review R1 M1). Her figure counts with a 2 px slop (R2 m5); an object
-        // of her room drawn above her and opaque at the tap covers her there, near or far, so
-        // the tap is the object's (R2 M2, npcYieldsToObject), and an in-reach object under
-        // the tap on its own pixels drops NPCs not under it (R2 m1, tapPickList).
         const feetAtTap = window.player ? playerFeet(window.player) : null;
         const onPixels = (sprite) => opaqueAt(sprite, worldX, worldY, tapAlphaAt(this));
         const npcOnFigure = (sprite) => opaqueNear(sprite, worldX, worldY, tapAlphaAt(this));
@@ -2342,43 +2337,124 @@ export async function create() {
             isSeat: (o) => !!window.seating?.isSeat(o),
             sameRoom: sameRoomAsPlayer
         };
-        const { farObjects, farNpcs } = farUnderTap({ objectsUnderTap, npcUnderTap: findNPCAtPosition(worldX, worldY) }, {
-            inReach: (o) => isObjectInInteractionRange(o),
-            isSeat: (o) => !!window.seating?.isSeat(o),
-            sameRoom: sameRoomAsPlayer,
-            npcOnFigure,
-            givesWay: (npc) => npcGivesWay(window.player, npc, tapObjectIds)
-        });
-        const tapTests = { onPixels, npcOnFigure, npcCovered: (npc) => npcYieldsToObject(npc, objectsUnderTap, yieldDeps) };
-        const gathered = tapPickList(gatherInteractablesNearClick(worldX, worldY, tapObjectIds, tapTests), farObjects, farObjectCandidate, farNpcs);
-        let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gathered));
-        if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
-            nearbyInteractables = [];
-        }
-        if (nearbyInteractables.length > 1) {
-            const nativeEvent = pointer.event || {};
-            showInteractionMenu(nearbyInteractables, nativeEvent.clientX, nativeEvent.clientY);
-            return;
-        }
-        // Exactly one in-reach interactable near the tap — act on it directly using
-        // the same tap-slop tolerance as the menu, so the player doesn't have to land
-        // the tap precisely on a small item to interact with it.
-        if (nearbyInteractables.length === 1) {
-            nearbyInteractables[0].onSelect();
-            return;
+        // Every NPC whose frame holds the tap, nearest centre first
+        const npcsUnderTap = findNPCsAtPosition(worldX, worldY);
+        // A hostile under the tap, in the player's room (R4 m4: a frame spills over a shared wall).
+        // In reach, her frame holding the tap is enough and she is struck. Far, only her figure
+        // counts, and only when nothing in reach is under the tap (today's rule): the gather runs
+        // first and she is walked towards when it finds nothing (D12).
+        const hostileAtTap = npcsUnderTap.find(n => yieldDeps.hostile(n) && sameRoomAsPlayer(n)
+            && (isObjectInInteractionRange(n) || npcOnFigure(n))) || null;
+        const hostileInReach = hostileAtTap && isObjectInInteractionRange(hostileAtTap) ? hostileAtTap : null;
+        // In a fight the overlap walk and the pixel pick (D4) are off and menus do not hold keys
+        const fight = !!hostileAtTap || roomHasActiveHostile();
+        let onlyHit = null;
+        let farFirst = null;
+        if (!hostileInReach) {
+            if (!fight) {
+                const alphaAt = tapAlphaAt(this);
+                const { allHits, menuHits } = pixelHits({
+                    objectsUnderTap: findObjectsAtPosition(worldX, worldY), npcsUnderTap, doorUnderTap: findDoorAtPosition(worldX, worldY)
+                }, {
+                    // Strict: a sprite whose alpha cannot be read is never a pixel hit (D3)
+                    onPixels: (s) => opaqueAt(s, worldX, worldY, alphaAt, { unreadable: false }),
+                    npcOnFigure: (s) => opaqueNear(s, worldX, worldY, alphaAt, undefined, { unreadable: false }),
+                    sameRoom: sameRoomAsPlayer,
+                    isSeat: isSeatOrSwivel,
+                    givesWay: (npc) => npcGivesWay(window.player, npc, tapObjectIds),
+                    hostile: yieldDeps.hostile,
+                    stackKey: hitStackKey
+                });
+                // D1 rule 3: a far overlap. Walk to where every hit is in reach and stop; the next
+                // click there opens the menu. No menu and nothing used on arrival. When no walkable
+                // cell reaches every hit there is nothing to wait for: it is one far click on the
+                // topmost hit, walked to and used on arrival like any far click (orchestrator
+                // decision, handover 3 item 2).
+                let noJoint = false;
+                if (menuHits.length > 1 && !menuHits.some(inReachNow)) {
+                    const standDeps = { ...standPointDeps(window.player), inReachFrom, reachSpan: overlapReachSpan, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc, pathClear: lineClearFromFeet };
+                    // Margins 12, 8, 4, 0 over walkable cells
+                    const joint = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps);
+                    if (joint) {
+                        if (!feetWithin(joint, ARRIVAL_THRESHOLD)) {
+                            movePlayerToPoint(joint.x, joint.y, { avoidNpcs: true });
+                            overlapRetry = { stand: joint, used: false };
+                            window.__overlapStand = { stand: joint, joint: true };   // read by the live proofs
+                            pendingOverlapWalk.arm(menuHits, Date.now());
+                            return;
+                        }
+                        // The feet are already within the 8 px arrival of the stand point with nothing in
+                        // reach (a second click after the walk ended short): one step past it, else the
+                        // far click on the topmost hit. Never a toast and a dead end (review R2 M1)
+                        overlapRetry = { stand: joint, used: false };
+                        const step = overlapRetryNext(menuHits);
+                        if (step) {
+                            overlapRetry.used = true;
+                            overlapRetry.stepAt = Date.now();
+                            window.__overlapStand = { stand: joint, joint: true };
+                            window.__overlapRetried = { from: playerFeet(window.player), to: step };
+                            movePlayerToPoint(step.x, step.y, { avoidNpcs: true });
+                            pendingOverlapWalk.arm(menuHits, Date.now());
+                            return;
+                        }
+                        overlapRetry = { stand: null, used: false };
+                    }
+                    noJoint = true;
+                    window.__overlapStand = { stand: joint || null, joint: false };   // read by the live proofs
+                }
+                onlyHit = noJoint ? menuHits[0] : soleHit({ allHits }, isSeatOrSwivel);   // D4, used when nothing in reach takes the tap
+            }
+            const { farObjects, farNpcs } = farUnderTap({ objectsUnderTap, npcsUnderTap }, {
+                inReach: (o) => isObjectInInteractionRange(o),
+                isSeat: (o) => !!window.seating?.isSeat(o),
+                sameRoom: sameRoomAsPlayer,
+                npcOnFigure,
+                givesWay: (npc) => npcGivesWay(window.player, npc, tapObjectIds)
+            });
+            // Only a far object hides her: an in-reach one over her shares the menu (D5)
+            const farObjectsUnderTap = objectsUnderTap.filter(o => !isObjectInInteractionRange(o));
+            const tapTests = { onPixels, npcOnFigure, npcCovered: (npc) => npcYieldsToObject(npc, farObjectsUnderTap, yieldDeps) };
+            const nearClick = gatherInteractablesNearClick(worldX, worldY, tapObjectIds, tapTests);
+            const gathered = tapPickList(nearClick, farObjects, farNpcs);
+            if (seatsGiveWay(nearClick.filter(c => !c.hostile), farObjects)) farFirst = farObjects[0];   // D6
+            let nearbyInteractables = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(gathered));
+            if (nearbyInteractables.length && nearbyInteractables.every(c => c.leavingNpc) && objectUnderTap()) {
+                nearbyInteractables = [];
+            }
+            if (nearbyInteractables.length > 1) {
+                // Opening the menu stops a walk under way (D13), outside a fight
+                if (!fight) stopClickToMove();
+                showTapMenu(nearbyInteractables, pointer, { fight, scene: this });
+                return;
+            }
+            // Exactly one in-reach interactable near the tap: act on it directly, with the same
+            // tap slop as the menu, so a small item need not be hit exactly.
+            if (nearbyInteractables.length === 1) {
+                nearbyInteractables[0].onSelect();
+                return;
+            }
         }
 
-        // Check for NPC sprites at the clicked position first. One walking away from the
-        // player gives way to an interactable object under the same tap (q55 d).
-        let npcAtPosition = findNPCAtPosition(worldX, worldY);
-        if (npcAtPosition && objectUnderTap() && npcGivesWay(window.player, npcAtPosition, tapObjectIds)) {
-            npcAtPosition = null;
+        // The NPC under the tap: a hostile (struck in reach, walked towards far: D12); the one far
+        // thing hit on its pixels when that is an NPC (D4); else the nearest frame, as before. One
+        // walking away from the player gives way to an interactable object under the same tap (q55 d).
+        let npcAtPosition = null;
+        let yieldTo = null;
+        if (hostileAtTap) {
+            npcAtPosition = hostileAtTap;
+        } else if (onlyHit) {
+            npcAtPosition = onlyHit._isNPC ? onlyHit : null;
+        } else {
+            npcAtPosition = npcsUnderTap[0] ?? null;
+            if (npcAtPosition && objectUnderTap() && npcGivesWay(window.player, npcAtPosition, tapObjectIds)) {
+                npcAtPosition = null;
+            }
+            // An object drawn over her where the tap is, or a tap on the empty part of her frame
+            // over an object, is for the object (code review R1 m3; tap-pick.js). The object she
+            // gives way to goes first in the object branch below (R2 n5).
+            yieldTo = npcAtPosition ? npcYieldTarget(npcAtPosition, objectsUnderTap, yieldDeps) : null;
+            if (yieldTo) npcAtPosition = null;
         }
-        // An object drawn over her where the tap is, or a tap on the empty part of her frame
-        // over an object, is for the object (code review R1 m3; tap-pick.js). The object she
-        // gives way to goes first in the object branch below (R2 n5).
-        const yieldTo = npcAtPosition ? npcYieldTarget(npcAtPosition, objectsUnderTap, yieldDeps) : null;
-        if (yieldTo) npcAtPosition = null;
         if (npcAtPosition) {
             if (isObjectInInteractionRange(npcAtPosition)) {
                 // NPC is in range - face toward them then interact.
@@ -2388,32 +2464,13 @@ export async function create() {
                     window.tryInteractWithNPC(npcAtPosition);
                 }
             } else {
-                // NPC is out of range - move toward them, stopping just short.
-                const spriteCenterToBottom = npcAtPosition.height * (1 - (npcAtPosition.originY || 0.5));
-                const paddingOffset = npcAtPosition.isAtlas ? SPRITE_PADDING_BOTTOM_ATLAS : SPRITE_PADDING_BOTTOM_LEGACY;
-                const npcBottomY = npcAtPosition.y + spriteCenterToBottom - paddingOffset;
-                const dx = npcAtPosition.x - player.x;
-                const dy = npcBottomY - player.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance > 0) {
-                    const stopShortOffset = TILE_SIZE * 0.75;
-                    const normalizedDx = dx / distance;
-                    const normalizedDy = dy / distance;
-                    let stand = { x: npcAtPosition.x - normalizedDx * stopShortOffset,
-                                  y: npcBottomY - normalizedDy * stopShortOffset };
-                    // Through a wall, "stop short on my side" lands behind the wall:
-                    // walk round to a spot on the NPC's side instead (interaction-walls.js)
-                    if (!wallClearFrom(stand, npcAtPosition)) {
-                        stand = findClearStandPoint(npcAtPosition, player, window.pathfindingManager, INTERACTION_RANGE) || stand;
-                    }
-                    movePlayerToPoint(stand.x, stand.y);
-                }
+                walkTowardNpc(npcAtPosition);
             }
             return;
         }
         
         // Check for objects at the clicked position
-        const objectsAtPosition = findObjectsAtPosition(worldX, worldY);
+        const objectsAtPosition = onlyHit?.doorProperties ? [] : findObjectsAtPosition(worldX, worldY);
         
         if (objectsAtPosition.length > 0) {
             const player = window.player;
@@ -2431,7 +2488,10 @@ export async function create() {
                 // A takeable item under the tap comes before a chair drawn above it, so a far
                 // tap on a stick under a chair walks to the stick, not the seat (USB R3 m1)
                 const ordered = takeablesBeforeChairs(objectsAtPosition, o => !!o.isSwivelChair || !!window.seating?.isSeat(o));
-                const tapOrder = yieldTo ? [yieldTo, ...ordered.filter(o => o !== yieldTo)] : ordered;
+                // First: the one far thing hit on its pixels (D4), then a far object an in-reach seat
+                // gives way to (D6), then the object an NPC gives way to (R2 n5)
+                const lead = (onlyHit && !onlyHit._isNPC && !onlyHit.doorProperties ? onlyHit : null) || farFirst || yieldTo;
+                const tapOrder = lead ? [lead, ...ordered.filter(o => o !== lead)] : ordered;
                 for (const obj of tapOrder) {
                     if (obj.interactable && window.handleObjectInteraction) {
                         if (isObjectInInteractionRange(obj)) {
@@ -2454,7 +2514,7 @@ export async function create() {
         // Check for door sprites at the clicked position.
         // Doors are not in room.objects, so they fall through the object check above and
         // would otherwise cause the player to walk straight into the wall.
-        const doorAtPosition = findDoorAtPosition(worldX, worldY);
+        const doorAtPosition = onlyHit?.doorProperties ? onlyHit : findDoorAtPosition(worldX, worldY);
         if (doorAtPosition) {
             const player = window.player;
             if (player) {
@@ -2476,31 +2536,10 @@ export async function create() {
                     // through only if the gate still lets him by on arrival (pending-gate-walk.js):
                     // a passing guard's hold can end on the way (code review R1 m2)
                     if (through) pendingGateWalk.arm(doorAtPosition, Date.now());
-                    // Out of range — navigate to the nearest free tile on the player's
-                    // side of the door rather than using a generic player→door vector.
-                    // For N/S doors the wall is horizontal, so we offset vertically;
-                    // for E/W doors the wall is vertical, so we offset horizontally.
-                    const dir = doorAtPosition.doorProperties.direction;
-                    let targetX, targetY;
-                    if (dir === 'north' || dir === 'south') {
-                        // Stop one tile from the bottom edge of the door (the interaction face).
-                        // The sprite uses center-origin so bottom edge = y + TILE_SIZE/2.
-                        // From the south: one tile below the bottom edge.
-                        // From the north: one tile above the bottom edge (middle of sprite).
-                        targetX = doorAtPosition.x;
-                        targetY = player.y < doorAtPosition.y
-                            ? doorAtPosition.y - TILE_SIZE / 2   // player is north of door
-                            : doorAtPosition.y + TILE_SIZE;      // player is south of door
-                    } else {
-                        // E/W door: stop one tile to the player's X-side
-                        targetX = player.x < doorAtPosition.x
-                            ? doorAtPosition.x - TILE_SIZE   // player is west of door
-                            : doorAtPosition.x + TILE_SIZE;  // player is east of door
-                        targetY = doorAtPosition.y;
-                    }
-                    movePlayerToPoint(targetX, targetY);
+                    walkToDoor(doorAtPosition);
                 }
-                // In-range case: the door zone already fired handleDoorInteraction — no action needed.
+                // In range: the scene handler owns door clicks (D10; the zone only shows the cursor)
+                else if (window.handleDoorInteraction) window.handleDoorInteraction(doorAtPosition);
                 return;
             }
         }
@@ -2663,6 +2702,10 @@ export function update(time, delta) {
     pendingGateWalk.update(Date.now());
     // A far tap on an object: used once the walk there ends in reach
     pendingTapUse.update(Date.now());
+    // A far tap on an overlap: says why when the walk ends with nothing in reach
+    pendingOverlapWalk.update(Date.now());
+    // An open pick-one menu: greys entries whose target went, closes on a room change or fight
+    tickInteractionMenu(Date.now());
 
     // Where the player and NPCs have been, for "walking away" (q55 d, interaction-reach.js)
     walkAwayTracker.sample(window.player, allNpcSprites, Date.now());
@@ -2840,6 +2883,9 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                     underTap: hitsBounds(obj),
                     // On the object's own pixels: what the player points at (R2 m1)
                     onObjectPixels: hitsBounds(obj) && (onPixels ? onPixels(obj) : true),
+                    // Menu order is topmost first (D14); kind and id name the entry for the bridge
+                    depth: obj.depth || 0, inReach: true, kind: 'object', entityId: data.id || obj.objectId || obj.name || null,
+                    sprite: obj,
                     onSelect: () => useObjectInReach(obj)
                 });
             });
@@ -2866,6 +2912,9 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                     hostile: !!hostile,
                     underTap: hitsBounds(sprite) && (npcOnFigure ? npcOnFigure(sprite) : true)
                         && !(npcCovered && npcCovered(sprite)),
+                    inBounds: hitsBounds(sprite),
+                    depth: sprite.depth || 0, inReach: true, kind: 'npc', entityId: sprite.npcId || null,
+                    sprite,
                     onSelect: () => {
                         facePlayerToward(sprite.x, sprite.y);
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
@@ -2898,6 +2947,9 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                     label: door.doorProperties.door_sign || 'Door',
                     detail: door.doorProperties.locked ? 'Locked' : null,
                     icon: openHandIcon(),
+                    depth: door.depth || 0, inReach: true, kind: 'door',
+                    entityId: `door:${door.doorProperties.roomId}->${door.doorProperties.connectedRoom}`,
+                    sprite: door,
                     onSelect: () => {
                         if (window.handleDoorInteraction) window.handleDoorInteraction(door);
                     }
@@ -2951,19 +3003,148 @@ const pendingTapUse = createPendingTapUse({
     isMoving: () => playerIsMoving,
     use: (obj) => useObjectInReach(obj),
     feet: () => (window.player ? playerFeet(window.player) : null),
-    // The walk was blocked: say so, not drop the use silently (code review R2 m4)
-    onBlocked: () => window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500),
-    // The walk ended out of reach: say so, not drop the use silently (code review R3 m1)
-    onStoppedShort: () => window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Can't reach it from here.", 'info', '', 2500),
-    // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog;
-    // or the player cannot move (knocked out, game over, frozen), so no toast (R3 m2)
-    busy: () => !!window.MinigameFramework?.currentMinigame || isInteractionMenuOpen()
-        || (typeof document !== 'undefined' && !!document.querySelector?.('.game-confirm-overlay'))
-        || !!window.playerHealth?.isKO?.() || !!window.player?.disableMovement
+    onBlocked: () => tapWalkBlocked(),
+    onStoppedShort: () => tapWalkStoppedShort(),
+    busy: () => tapWalkBusy()
 });
+// A far NPC: walk towards her, stopping just short (also the overlap walk's hand-over)
+function walkTowardNpc(npc) {
+    // NPC is out of range - move toward them, stopping just short.
+    const spriteCenterToBottom = npc.height * (1 - (npc.originY || 0.5));
+    const paddingOffset = npc.isAtlas ? SPRITE_PADDING_BOTTOM_ATLAS : SPRITE_PADDING_BOTTOM_LEGACY;
+    const npcBottomY = npc.y + spriteCenterToBottom - paddingOffset;
+    const dx = npc.x - player.x;
+    const dy = npcBottomY - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > 0) {
+        const stopShortOffset = TILE_SIZE * 0.75;
+        const normalizedDx = dx / distance;
+        const normalizedDy = dy / distance;
+        let stand = { x: npc.x - normalizedDx * stopShortOffset,
+                      y: npcBottomY - normalizedDy * stopShortOffset };
+        // Through a wall, "stop short on my side" lands behind the wall:
+        // walk round to a spot on the NPC's side instead (interaction-walls.js)
+        if (!wallClearFrom(stand, npc)) {
+            stand = findClearStandPoint(npc, player, window.pathfindingManager, INTERACTION_RANGE) || stand;
+        }
+        movePlayerToPoint(stand.x, stand.y);
+    }
+}
+
+// The span a hit's reach is measured to, in the player sprite's coordinates (tap-pick.js m1): a scenario
+// object's width (reachX), a wall-mounted one's height (reachY), a static NPC's body rectangle (npc-reach.js)
+function overlapReachSpan(h) {
+    if (!h || h.doorProperties) return null;
+    const p = window.player;
+    if (h._isNPC) {
+        const b = h._staticNpc ? h.body : null;
+        if (!b || !(b.width > 0) || !(b.height > 0)) return null;
+        const fx = p?.body ? p.body.center.x - p.x : 0;
+        const fy = p?.body ? p.body.center.y - p.y : 0;
+        return { left: b.x - fx, right: b.x + b.width - fx, top: b.y - fy, bottom: b.y + b.height - fy };
+    }
+    const far = 1000000;   // clamps to the span's near end, whichever side
+    return { left: reachX(h, -far), right: reachX(h, far), top: reachY(h, -far), bottom: reachY(h, far) };
+}
+
+// A far tap on an overlap (overlap plan D2): walks to where every hit is in reach and uses
+// nothing on arrival; says why when the walk is blocked or ends with none in reach
+let overlapRetry = { stand: null, used: false };
+// The retry step's target, or null when there is none to take (no stand point, already used, the
+// feet at it, or no cell past it that moves the feet and keeps every hit in reach). The walk's
+// arrival test is 8 px, so the target is aimed past the stand point (overlapRetryTarget).
+function overlapRetryNext(hits) {
+    const r = overlapRetry;
+    const player = window.player;
+    if (!r.stand || r.used || !player) return null;
+    const feet = playerFeet(player);
+    if (feetWithin(r.stand, 1)) return null;
+    const d = standPointDeps(player);
+    return overlapRetryTarget(feet, r.stand, hits.filter(stillThere), {
+        inReachFrom, findCell: d.findCell, arrival: ARRIVAL_THRESHOLD, occupied: standsInsideNpc,
+        sameRoom: d.sameRoom   // a doorway overlap must not step the feet over the room line
+    });
+}
+function clearOverlapWalk() {
+    pendingOverlapWalk.clear();
+    overlapRetry = { stand: null, used: false };
+}
+const pendingOverlapWalk = createPendingTapUse({
+    inReach: (hits, now = Date.now()) => {
+        if (!hits.some(inReachNow)) return false;
+        // The retry step waits on the pathfinder (not moving yet): keep the watcher for a moment
+        // rather than clearing it before the step starts (review R2 n6)
+        if (overlapRetry.stepAt && !playerIsMoving && !overlapRetry.sawMove && now - overlapRetry.stepAt < RETRY_GRACE_MS) return false;
+        if (hits.filter(stillThere).every(inReachNow)) return true;
+        // Stopped with only some hits in reach: one more step to the stand point (onPartial),
+        // then today's behaviour (finish with whatever is in reach)
+        return !overlapRetryNext(hits);
+    },
+    onPartial: (hits, now = Date.now()) => {
+        // The path is found a frame or two after the click: not moving yet is not "stopped". Wait
+        // RETRY_GRACE_MS after the last progress before spending the retry (live c10: it fired
+        // at the click, from the start point, and the real stop had none left)
+        const pend = pendingOverlapWalk.get();
+        if (pend && now - pend.progressAt < RETRY_GRACE_MS) return false;
+        // With some hit in reach or none: the target keeps every hit in reach, so either is safe
+        const t = overlapRetryNext(hits);
+        if (!t) return false;
+        overlapRetry.used = true;
+        overlapRetry.stepAt = now;
+        window.__overlapRetried = { from: playerFeet(window.player), to: t };   // read by the live proofs
+        movePlayerToPoint(t.x, t.y, { avoidNpcs: true });
+        return true;
+    },
+    alive: (hits) => Array.isArray(hits) && hits.some(stillThere),
+    isMoving: () => { if (playerIsMoving && overlapRetry.stepAt) overlapRetry.sawMove = true; return playerIsMoving; },
+    use: () => {},
+    feet: () => (window.player ? playerFeet(window.player) : null),
+    onBlocked: () => tapWalkBlocked(),
+    onStoppedShort: (hits) => overlapStoppedShort(hits),
+    busy: () => tapWalkBusy()
+});
+const RETRY_GRACE_MS = 300;
+// The overlap walk ended (retry spent) with nothing in reach: hand over to the normal single far click
+// on the topmost hit, which has its own approach logic (review R2 M1). It only walks: nothing is
+// used or opened on arrival, the next click does that (review R3 m1). In a fight, or with a hit
+// in reach, the old message.
+function overlapStoppedShort(hits) {
+    const live = (hits || []).filter(stillThere);
+    const top = live[0];
+    if (!top || live.some(inReachNow) || roomHasActiveHostile()) { tapWalkStoppedShort(); return; }
+    window.__overlapStand = { ...(window.__overlapStand || {}), handedOver: top.npcId || top.name || true };
+    if (top.doorProperties) {
+        walkToDoor(top);
+    } else if (top._isNPC) {
+        walkTowardNpc(top);
+    } else {
+        walkToObjectThenUse(top, { walkOnly: true });   // nothing is used on arrival (review R3 m1)
+    }
+}
 if (typeof window !== 'undefined') {
     window.__pendingTapUse = () => pendingTapUse.get();
-    window.__clearPendingTapUse = () => pendingTapUse.clear();   // the E key (player.js)
+    window.__pendingOverlapWalk = () => pendingOverlapWalk.get();
+    // The E key (player.js) and the bridge's no-click moves drop both
+    window.__clearPendingTapUse = () => { pendingTapUse.clear(); clearOverlapWalk(); };
+    window.roomHasActiveHostile = () => roomHasActiveHostile();
+}
+
+// The walk was blocked: say so, not drop the use silently (code review R2 m4)
+function tapWalkBlocked() {
+    window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500);
+}
+
+// The walk ended out of reach: say so, not drop the use silently (code review R3 m1)
+function tapWalkStoppedShort() {
+    window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Can't reach it from here.", 'info', '', 2500);
+}
+
+// Something else took over on the way: a minigame, the pick-one menu or a confirm dialog;
+// or the player cannot move (knocked out, game over, frozen), so no toast (R3 m2)
+function tapWalkBusy() {
+    return !!window.MinigameFramework?.currentMinigame || isInteractionMenuOpen()
+        || (typeof document !== 'undefined' && !!document.querySelector?.('.game-confirm-overlay'))
+        || !!window.playerHealth?.isKO?.() || !!window.player?.disableMovement;
 }
 
 // An NPC within about a tile of the player's feet (a blocked walk's message)
@@ -2986,19 +3167,16 @@ function tapAlphaAt(scene) {
 
 // Walk until an out-of-reach object is in reach, then use it; a chair is sat on instead
 // (seating.js). The stand point is tap-pick.js objectStandPoint.
-function walkToObjectThenUse(obj) {
+function walkToObjectThenUse(obj, { walkOnly = false } = {}) {
     const player = window.player;
     if (!player) return;
-    const pfm = window.pathfindingManager;
-    const target = objectStandPoint(obj, player, {
-        range: INTERACTION_RANGE,
-        reachY: (o, y) => reachY(o, y),   // a tall wall-mounted object: its nearest part (interaction-reach.js)
-        findCell: pfm?.findNearestWalkableWorldCell ? (x, y, r) => pfm.findNearestWalkableWorldCell(x, y, r) : null,
-        wallClear: (p, o) => wallClearFrom(p, o),
-        // Stand on the object's own side of a shared strip (UX slice 15 R2, M1)
-        sameRoom: (p, o) => sameRoomFrom({ x: p.x, y: p.y, half: playerFeet(player)?.half, isPlayer: true }, o)
-    });
+    const target = objectStandPoint(obj, player, standPointDeps(player));
     if (!target) return;
+    // The overlap hand-over (review R3 m1): a walk only, the player's next click decides
+    if (walkOnly) {
+        movePlayerToPoint(target.x, target.y, { avoidNpcs: true });
+        return;
+    }
     // A far object of another room (a wall row two rooms share, a doorway) is only walked
     // to, as before: it is not used on arrival (code review R1 m1)
     const ownRoom = sameRoomFrom(playerFeet(player), obj);
@@ -3013,69 +3191,220 @@ function walkToObjectThenUse(obj) {
     else if (ownRoom) pendingTapUse.arm(obj, Date.now());
 }
 
-// A far object in the tap's pick list (beside something in reach under the same tap)
-function farObjectCandidate(obj) {
-    const data = obj.scenarioData || {};
-    const obs = worldObservations(data, resolveObjectField(data, 'observations', obj.observations || null), window.pcSessions);
-    // A sign-in PC someone is using says so: picking it explains, and does not walk (R2 m3)
-    const userAt = !window.seating?.isSeat(obj) ? window.pcInUseBy?.(obj) : null;
-    const user = userAt ? (window.npcManager?.getNPC?.(userAt)?.displayName || userAt) : null;
-    // Says why choosing it walks (code review R1 n3)
-    const lead = user ? `${user} is using it.` : 'Walk over and use it.';
+// objectStandPoint's deps for the player (a far tap's walk, the overlap walk)
+function standPointDeps(player) {
+    const pfm = window.pathfindingManager;
     return {
-        label: data.name || obj.name || 'Item',
-        detail: obs ? `${lead} ${obs}` : lead,
-        icon: openHandIcon(),
-        isObject: true,
-        isChair: false,
-        underTap: true,
-        far: true,
-        onSelect: () => walkToObjectThenUse(obj)
+        range: INTERACTION_RANGE,
+        reachY: (o, y) => reachY(o, y),   // a tall wall-mounted object: its nearest part (interaction-reach.js)
+        findCell: pfm?.findNearestWalkableWorldCell ? (x, y, r) => pfm.findNearestWalkableWorldCell(x, y, r) : null,
+        wallClear: (p, o) => wallClearFrom(p, o),
+        // Stand on the object's own side of a shared strip (UX slice 15 R2, M1)
+        sameRoom: (p, o) => sameRoomFrom({ x: p.x, y: p.y, half: playerFeet(player)?.half, isPlayer: true }, o)
     };
 }
 
+// A seat or swivel prop: never a menu hit, and gives way to anything else under the tap (D6)
+function isSeatOrSwivel(o) {
+    return !!o?.isSwivelChair || !!window.seating?.isSeat(o);
+}
+
+// Identical stacked copies collapse to one entry (D9): name, texture, frame and observations
+function hitStackKey(h) {
+    if (!h || h._isNPC || h.doorProperties) return null;
+    const data = h.scenarioData || {};
+    return [data.name || h.name || '', h.texture?.key || '', h.frame?.name ?? '', data.observations ?? h.observations ?? ''].join('|');
+}
+
+// The player-like position whose feet stand at `point` (the reach check reads the sprite position)
+function playerAtFeet(point) {
+    const p = window.player;
+    const dx = p?.body ? p.body.center.x - p.x : 0;
+    const dy = p?.body ? p.body.center.y - p.y : 0;
+    return { x: point.x - dx, y: point.y - dy, body: { center: { x: point.x, y: point.y }, halfHeight: p?.body?.halfHeight } };
+}
+
+// In reach from a stand point, with a margin for a walk that ends up to ARRIVAL_THRESHOLD short (D2)
+function inReachFrom(point, hit, margin = ARRIVAL_THRESHOLD + 4) {
+    if (!point || !hit) return false;
+    const from = playerAtFeet(point);
+    if (hit.doorProperties) return Math.hypot(hit.x - from.x, hit.y - from.y) <= DOOR_INTERACTION_RANGE - margin;
+    return isObjectInInteractionRange(hit, from, INTERACTION_RANGE - margin);
+}
+
+// A lattice stand point the player can walk to: a clear straight line from the feet (the walk's
+// own direct-route test). The cheap stand-in for a path query, which is asynchronous.
+function lineClearFromFeet(p) {
+    const pfm = window.pathfindingManager;
+    const f = window.player ? playerFeet(window.player) : null;
+    if (!pfm?.hasPlayerLineOfSight || !f || !p) return true;
+    try { return !!pfm.hasPlayerLineOfSight(f.x, f.y, p.x, p.y, null, { avoidNpcs: true }); } catch (e) { return true; }
+}
+
+// The player's body at feet point p would overlap an NPC's body (the walk could not end there)
+function standsInsideNpc(p) {
+    const player = window.player;
+    // The player's search avoids a berth round a movable NPC: a stand point in it has no path (live c10).
+    // Only when the walk needs that search: player.js tries the straight line first (and the search
+    // never avoids the player's own cell), so a cell beside her with a clear line is still reachable.
+    if (p && !lineClearFromFeet(p)) {
+        const f = player ? playerFeet(player) : null;
+        if (window.pathfindingManager?.isPlayerAvoidedCell?.(p.x, p.y, f?.x, f?.y)) return true;
+    }
+    const rects = window.pathfindingManager?.getNpcBodyRects?.();
+    const b = player?.body;
+    if (!rects?.length || !b || !p) return false;
+    const hw = (b.halfWidth ?? b.width / 2) - 1;
+    const hh = (b.halfHeight ?? b.height / 2) - 1;
+    return rects.some(r => p.x + hw > r.left && p.x - hw < r.right && p.y + hh > r.top && p.y - hh < r.bottom);
+}
+
+// In reach from where the player stands: the gather's own measures
+function inReachNow(hit) {
+    const p = window.player;
+    if (!p || !hit) return false;
+    if (hit.doorProperties) return Math.hypot(hit.x - p.x, hit.y - p.y) <= DOOR_INTERACTION_RANGE;
+    return isObjectInInteractionRange(hit);
+}
+
+// The feet are within d of p, by the walk's own (strict) arrival test (R4 n5)
+function feetWithin(p, d) {
+    const f = window.player ? playerFeet(window.player) : null;
+    return !!(f && p) && Math.hypot(f.x - p.x, f.y - p.y) < d;
+}
+
+// A hit of the overlap walk is still there to reach
+function stillThere(h) {
+    if (!h || h.destroyed || h.active === false || h.visible === false) return false;
+    if (h.doorProperties) return !h.doorProperties.open;
+    if (h._isNPC) return !(h.npcId && window.npcHostileSystem?.isNPCKO?.(h.npcId));
+    return !!h.interactable;
+}
+
+// A hostile NPC, not knocked out, standing in the player's room now (D12). NPC sprites stay in
+// their spawn room's list, so every loaded room is checked and her current room read.
+function roomHasActiveHostile() {
+    const p = window.player;
+    const hs = window.npcHostileSystem;
+    if (!p || !hs?.isNPCHostile) return false;
+    const feet = playerFeet(p);
+    return allNpcSprites().some(s => s.npcId && s.visible !== false && hs.isNPCHostile(s.npcId)
+        && !hs.isNPCKO?.(s.npcId) && sameRoomFrom(feet, s));
+}
+
+// Where a far door click walks: one tile from the door on the player's side
+function walkToDoor(door) {
+    const player = window.player;
+    if (!player || !door) return;
+    // For N/S doors the wall is horizontal, so we offset vertically; for E/W doors the wall is
+    // vertical, so we offset horizontally.
+    const dir = door.doorProperties.direction;
+    let targetX, targetY;
+    if (dir === 'north' || dir === 'south') {
+        // Stop one tile from the bottom edge of the door (the interaction face). The sprite uses
+        // centre origin, so bottom edge = y + TILE_SIZE/2. From the south: one tile below the
+        // bottom edge. From the north: one tile above the bottom edge (middle of sprite).
+        targetX = door.x;
+        targetY = player.y < door.y ? door.y - TILE_SIZE / 2 : door.y + TILE_SIZE;
+    } else {
+        // E/W door: stop one tile to the player's X-side
+        targetX = player.x < door.x ? door.x - TILE_SIZE : door.x + TILE_SIZE;
+        targetY = door.y;
+    }
+    movePlayerToPoint(targetX, targetY);
+}
+
+// Why a pick-one menu entry can no longer be chosen ("Gone.", "Out of reach."), or null (7.1)
+function menuEntryState(target) {
+    if (!stillThere(target)) return 'Gone.';
+    if (target._isNPC && window.npcHostileSystem?.isNPCHostile?.(target.npcId)) return 'Gone.';
+    if (!inReachNow(target)) return 'Out of reach.';
+    return null;
+}
+
+// The tap's pick-one menu: topmost first (D14), opened at the finger on touch (6.3)
+function showTapMenu(list, pointer, { fight = false, scene = null } = {}) {
+    const sorted = list.map((c, i) => [c, i])
+        .sort((a, b) => ((b[0].depth || 0) - (a[0].depth || 0)) || (a[1] - b[1]))
+        .map(pair => pair[0]);
+    const ev = pointer?.event || {};
+    const finger = ev.changedTouches?.[0] || ev.touches?.[0] || null;
+    let cx = finger ? finger.clientX : ev.clientX;
+    let cy = finger ? finger.clientY : ev.clientY;
+    if (!Number.isFinite(cx) || !Number.isFinite(cy)) {
+        const canvas = pointer?.manager?.canvas;
+        const rect = canvas?.getBoundingClientRect?.();
+        if (rect && canvas.width && canvas.height) {
+            cx = rect.left + (pointer.x * rect.width) / canvas.width;
+            cy = rect.top + (pointer.y * rect.height) / canvas.height;
+        }
+    }
+    // Each world thing shows its own sprite at 2x (NPCs their headshot), and each entry checks
+    // its target while the menu is open (7.1)
+    const icons = menuIconsFor(sorted);
+    sorted.forEach((c, i) => {
+        if (icons[i]) c.icon = icons[i];
+        if (c.sprite && !c.check) c.check = () => menuEntryState(c.sprite);
+    });
+    const touch = !!pointer?.wasTouch;
+    showInteractionMenu(sorted, cx, cy, undefined, {
+        numberKeys: !fight, keyboard: !fight, touch, holdKeys: !fight,
+        avoid: touch ? tappedScreenBox(sorted, pointer, scene) : null   // a phone menu goes beside them (6.3)
+    });
+}
+
+// The client-pixel box round the tapped things' sprites, or null when it cannot be worked out
+function tappedScreenBox(list, pointer, scene) {
+    try {
+        const cam = scene?.cameras?.main;
+        const canvas = pointer?.manager?.canvas;
+        const rect = canvas?.getBoundingClientRect?.();
+        if (!cam || !rect || !canvas.width || !canvas.height) return null;
+        const view = cam.worldView;
+        const zoom = cam.zoom || 1;
+        const box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+        for (const c of list) {
+            const bounds = c.sprite?.getBounds?.();
+            if (!bounds) continue;
+            box.left = Math.min(box.left, bounds.left); box.top = Math.min(box.top, bounds.top);
+            box.right = Math.max(box.right, bounds.right); box.bottom = Math.max(box.bottom, bounds.bottom);
+        }
+        if (!Number.isFinite(box.left)) return null;
+        const scaleX = rect.width / canvas.width;
+        const scaleY = rect.height / canvas.height;
+        const toX = (wx) => rect.left + (wx - view.x) * zoom * scaleX;
+        const toY = (wy) => rect.top + (wy - view.y) * zoom * scaleY;
+        return { left: toX(box.left), top: toY(box.top), right: toX(box.right), bottom: toY(box.bottom) };
+    } catch (e) { return null; }
+}
+
 /**
- * Find an NPC sprite at the clicked position
+ * Every NPC sprite whose frame holds the clicked position, nearest centre first. Knocked-out
+ * NPCs lie on the ground and do not intercept clicks meant for movement past them.
  * @param {number} worldX - World X coordinate
  * @param {number} worldY - World Y coordinate
- * @returns {Object|null} NPC sprite if found, null otherwise
+ * @returns {Array<Object>}
  */
-function findNPCAtPosition(worldX, worldY) {
-    let closestNPC = null;
-    let closestDistance = Infinity;
+function findNPCsAtPosition(worldX, worldY) {
+    const found = [];
     const koSystem = window.npcHostileSystem;
-
-    // Check all rooms for NPC sprites at the given position
-    Object.entries(window.rooms).forEach(([roomId, room]) => {
-        if (room.npcSprites && Array.isArray(room.npcSprites)) {
-            room.npcSprites.forEach(npcSprite => {
-                if (npcSprite && !npcSprite.destroyed && npcSprite.visible) {
-                    // Skip KO'd NPCs — they lie on the ground and shouldn't intercept
-                    // clicks meant for movement past them.
-                    if (koSystem && npcSprite.npcId && koSystem.isNPCKO(npcSprite.npcId)) return;
-                    // Get NPC bounds
-                    const bounds = npcSprite.getBounds();
-                    
-                    // Check if click is within bounds
-                    if (worldX >= bounds.left && worldX <= bounds.right && 
-                        worldY >= bounds.top && worldY <= bounds.bottom) {
-                        // Calculate distance from click to NPC center
-                        const dx = worldX - npcSprite.x;
-                        const dy = worldY - npcSprite.y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        
-                        // Keep the closest NPC
-                        if (distance < closestDistance) {
-                            closestDistance = distance;
-                            closestNPC = npcSprite;
-                        }
-                    }
-                }
-            });
-        }
+    Object.values(window.rooms || {}).forEach(room => {
+        if (!room.npcSprites || !Array.isArray(room.npcSprites)) return;
+        room.npcSprites.forEach(npcSprite => {
+            if (!npcSprite || npcSprite.destroyed || !npcSprite.visible) return;
+            if (koSystem && npcSprite.npcId && koSystem.isNPCKO(npcSprite.npcId)) return;
+            const bounds = npcSprite.getBounds();
+            if (worldX >= bounds.left && worldX <= bounds.right && worldY >= bounds.top && worldY <= bounds.bottom) {
+                found.push([npcSprite, Math.hypot(worldX - npcSprite.x, worldY - npcSprite.y)]);
+            }
+        });
     });
-    
-    return closestNPC;
+    return found.sort((a, b) => a[1] - b[1]).map(pair => pair[0]);
+}
+
+/** The NPC sprite at the clicked position with the nearest centre, or null. */
+function findNPCAtPosition(worldX, worldY) {
+    return findNPCsAtPosition(worldX, worldY)[0] ?? null;
 }
 
 /**

@@ -139,7 +139,7 @@ export function maybeShowObjectActionMenu(sprite) {
     if (window.isInteractionMenuOpen && window.isInteractionMenuOpen()) return false;
     if (!window.showInteractionMenu) return false;
 
-    window.showInteractionMenu(actions, undefined, undefined, 'Choose an action…');
+    window.showInteractionMenu(actions, undefined, undefined, 'Choose an action…', { holdKeys: !window.roomHasActiveHostile?.() });
     return true;
 }
 

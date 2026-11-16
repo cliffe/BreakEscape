@@ -2316,13 +2316,15 @@ export function tryInteractWithNPC(npcSprite) {
 // Simple range check for click-based interactions (no direction offset).
 // Returns true if the given sprite is within INTERACTION_RANGE of the player centre
 // and no wall stands between them (so a click through a wall walks there instead).
-export function isObjectInInteractionRange(sprite) {
-    const player = window.player;
+// `from` is any player-like { x, y, body: { center, halfHeight } } (a stand point the overlap walk
+// is judging, overlap plan 4.1) and `range` a stricter reach; one argument means the player now.
+export function isObjectInInteractionRange(sprite, from = undefined, range = INTERACTION_RANGE) {
+    const player = from ?? window.player;
     if (!player || !sprite) return false;
     const dx = reachX(sprite, player.x) - player.x;
     const dy = reachY(sprite, player.y) - player.y; // a tall wall-mounted object: its nearest part
     const distSq = dx * dx + dy * dy;
-    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;
+    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > range * range) return false;
     return interactionLineClear(player, sprite);
 }
 

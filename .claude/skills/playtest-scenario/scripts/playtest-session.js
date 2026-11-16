@@ -76,6 +76,7 @@ const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
 const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
+const { installToastCapture } = require('./toast-capture');
 const { createResponseCapture } = require('./response-capture');
 const endingGuard = require('./ending-overlay-guard');
 
@@ -205,29 +206,7 @@ const vmSteps = createVmSteps({
   // raised during load. Watches the whole document for added .notification
   // nodes (the container, #notification-container, may not exist yet) and
   // records their text; the `toasts` command returns and clears the list.
-  await page.addInitScript(() => {
-    window.__toastLog = [];
-    const grab = (el) => {
-      if (!el || el.nodeType !== 1 || window.__toastSeen?.has(el)) return;
-      const list = el.matches?.('.notification') ? [el] : [...(el.querySelectorAll?.('.notification') || [])];
-      for (const n of list) {
-        (window.__toastSeen ||= new WeakSet());
-        if (window.__toastSeen.has(n)) continue;
-        window.__toastSeen.add(n);
-        const q = (sel) => n.querySelector(sel)?.innerText?.trim() || '';
-        window.__toastLog.push({
-          at: Date.now(),
-          type: ['success', 'warning', 'error', 'info'].find(t => n.classList.contains(t)) || undefined,
-          title: q('.notification-title'),
-          message: q('.notification-message') || (n.innerText || '').trim()
-        });
-      }
-    };
-    const start = () => new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(grab)))
-      .observe(document.documentElement, { childList: true, subtree: true });
-    if (document.documentElement) start();
-    else document.addEventListener('DOMContentLoaded', start, { once: true });
-  });
+  await page.addInitScript(installToastCapture);
 
   // Disable HTTP cache. A game JS file edited between runs (e.g. a bridge fix
   // applied while iterating) can otherwise be served from a prior Playwright

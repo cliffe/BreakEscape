@@ -210,7 +210,7 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         detail: e.disabled ? e.reason : undefined,
         disabled: !!e.disabled,
         onSelect: () => actions[e.id]?.()
-    })), x, y, el.scenarioData?.name || el.alt || 'Item', { numberKeys: true });
+    })), x, y, el.scenarioData?.name || el.alt || 'Item', { numberKeys: true, holdKeys: !w.roomHasActiveHostile?.() });
     return true;
 }
 

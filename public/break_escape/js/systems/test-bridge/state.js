@@ -273,12 +273,16 @@ function successScreenState() {
  */
 function interactionMenuState() {
     if (!window.isInteractionMenuOpen?.()) return null;
-    const items = Array.from(document.querySelectorAll('.be-im-item')).map((el, i) => ({
+    const items = Array.from(document.querySelectorAll('#be-interaction-menu .be-im-item')).map((el, i) => ({
         index: i,
+        // The entity the entry acts on (object id, NPC id, "door:<room>-><room>"), null for an action
+        id: el.dataset?.entityId || null,
+        kind: el.dataset?.kind || 'action',
         label: (el.querySelector('.be-im-label')?.innerText || el.innerText || '').trim(),
-        detail: (el.querySelector('.be-im-detail')?.innerText || '').trim() || null
+        detail: (el.querySelector('.be-im-detail')?.innerText || '').trim() || null,
+        disabled: el.getAttribute?.('aria-disabled') === 'true'
     }));
-    return { open: true, items, hint: 'Choose with __test.chooseInteractionMenu(index|label).' };
+    return { open: true, items, hint: 'Choose with __test.chooseInteractionMenu(index | label | { id }); close with __test.closeInteractionMenu().' };
 }
 
 function playerState() {
