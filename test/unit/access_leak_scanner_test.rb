@@ -794,4 +794,113 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       post_rows(['GET', LOCKOUT_SCENARIO, { 'note' => 'try sam_pc|anything' }])
     )
   end
+
+  # Credential keyring (CREDENTIAL_KEYRING_PLAN.md, section 6.1).
+  CRED_SCENARIO = { 'credentials' => { 'ops_rdp' => { 'kind' => 'saved_connection' },
+                                       'ops_pw' => { 'kind' => 'password' } } }.freeze
+
+  test 'K1: a credentials key in any response is reported' do
+    findings = scan({ 'credentials' => { 'ops_rdp' => { 'kind' => 'saved_connection' } } }, data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_registry', 'credentials']], summary(findings)
+  end
+
+  test 'K1: a registry password credential carrying its password value is reported' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry', 'password' => 'Hunter2-xyz' }
+    ] }
+    findings = scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_password_value', 'credential:ops_pw']], summary(findings)
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('Hunter2-xyz') })
+  end
+
+  test 'K1: a captured account entry may carry its password; it is not a registry leak' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => 'Biscuit2019' }
+    ] }
+    assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+  end
+
+  # A game that reports a fixed set of credential ids as holding (the scanner reads @game once).
+  class HeldGame
+    def initialize(held)
+      @held = held
+    end
+
+    def credential_proof_holds?(id, _entry)
+      @held.include?(id)
+    end
+  end
+
+  test 'K1: a registry credential whose proof does not hold is reported, a held one is not' do
+    game = HeldGame.new(%w[ops_rdp])
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_rdp', 'kind' => 'saved_connection', 'source' => 'registry' },
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry' }
+    ] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200, 'body' => body }]]
+    findings = AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(rows)
+    assert_equal [[1, 'credential_unheld', 'credential:ops_pw']], summary(findings)
+  end
+
+  test 'K1: with no game the unheld check does not run' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry' }
+    ] }
+    assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+  end
+
+  # Item 1: a GET /keyring capture entry carries the captured account's own password, as GET
+  # /capture_secrets does; it is exempt (owner's own game). A registry-sourced entry is not.
+  test 'K1: a captured account keyring entry with its password is exempt for the owner' do
+    keyring = '/break_escape/games/1/keyring'
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => JAKE_PASSWORD }
+    ] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => body }]]
+    assert_empty AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(rows), 'capture-sourced password is allowed'
+
+    # The same password on a registry-sourced entry is still a leak.
+    reg = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake_pw', 'kind' => 'password', 'source' => 'registry', 'password' => JAKE_PASSWORD }
+    ] }
+    reg_rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => reg }]]
+    findings = AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(reg_rows)
+    assert_includes summary(findings), [1, 'password', 'npc:jake'], 'a registry entry password is flagged'
+  end
+
+  # A held keyring entry's label/foundIn are an intended disclosure; the sign-in item's name can
+  # match them. Held-ness comes from the same proof check as credential_unheld.
+  def keyring_signin_scan(entry, held:)
+    data = scenario.merge('credentials' => { 'jake_pw_note' => { 'kind' => 'password' } })
+    body = { 'rev' => 'abc123', 'entries' => [entry] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200, 'body' => body }]]
+    AccessLeakScanner.new(data, game: HeldGame.new(held)).scan(rows)
+  end
+
+  test 'K1: a held keyring entry whose label and foundIn equal a sign-in item name gives no finding' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt', 'foundIn' => 'Local notes on this PC.txt' }
+    assert_empty keyring_signin_scan(entry, held: %w[jake_pw_note])
+  end
+
+  test 'K1: an unheld keyring entry whose label equals a sign-in item name is still flagged' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt' }
+    assert_equal [[1, 'signin_content', 'item:jake_local'], [1, 'credential_unheld', 'credential:jake_pw_note']],
+                 summary(keyring_signin_scan(entry, held: [])).sort_by(&:last).reverse
+  end
+
+  test 'K1: file body text in a held keyring entry is still flagged' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt', 'body' => 'PC-LOCAL-SECRET-TEXT' }
+    assert_equal [[1, 'signin_content', 'item:jake_local']], summary(keyring_signin_scan(entry, held: %w[jake_pw_note]))
+  end
+
+  # R2 m3: the item-level `credential` field is server-only (both client filters strip it), so it is
+  # a second guard flagging it in any client response.
+  test 'K1: an item-level credential field in any response is reported' do
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'f', 'type' => 'text_file', 'credential' => 'lena_rdp' }] } },
+                    data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_field', 'credential']], summary(findings)
+  end
 end
