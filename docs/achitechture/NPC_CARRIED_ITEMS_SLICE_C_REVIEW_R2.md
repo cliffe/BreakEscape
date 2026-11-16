@@ -109,3 +109,28 @@ test for (a) and (b) and one unit case for (c).
   report 2925 runs, 0 failures.
 
 R2: 0/0/4
+
+## Outcomes
+
+Fixes in `1aebf2793`.
+
+- **m1.** `applyScenarioObjectPosition` (`rooms.js`) now refuses tile `x`/`y` that are non-finite,
+  negative or beyond the room size (`v * TILE_SIZE <= width`/`height`, edge inclusive), keeping
+  the random spot. With no room size passed the tile values are trusted, as before. On the server,
+  `sanitised_carry_position` drops a tile pair when either value is beyond `CARRY_TILE_BOUND`
+  (200); no room geometry is added there.
+- **m2.** `elevation` is kept only within `CARRY_ELEVATION_RANGE` (0..256). Scenarios use 18 to 40
+  (grep of `scenarios/`), and none is negative.
+- **m3.** `createSpriteAtRandomPosition` now calls `roomPixelSize(map)`; the duplicate probe is gone.
+- **m4.** Added: JS cases for out-of-room tile values and a non-finite `py` beside an in-room `px`,
+  a source check for m3; controller tests for an out-of-range tile pair, an out-of-range
+  elevation, elevation alone, elevation beside a half pair, and a valid tile pair beside bad
+  `px`/`py`.
+
+Old-code check (code change reverted with `git apply -R`, tests kept): the JS m1 and m3 tests and
+the controller m1 and m2 tests fail. The m4a, m4b and m4c tests pin behaviour the old code already
+had (the review said they passed by reading), so they do not fail on it by design.
+
+Suites: `bin/test-js` 687 files passed, 0 failed; `bin/rails test` 2930 runs, 47560 assertions,
+0 failures, 0 errors, 3 skips (run with `BUNDLE_PATH` pointing at the main tree's
+`vendor/bundle`, Ruby 2.7.8); rubocop on `game.rb` and the carry controller test, no offences.
