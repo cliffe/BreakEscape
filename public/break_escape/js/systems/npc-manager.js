@@ -2211,6 +2211,15 @@ export default class NPCManager {
     if (entry) entry.isVisible = !!visible;
   }
 
+  /**
+   * True when a setVisible mapping has hidden this NPC (recorded false, and restored
+   * after a reload). An NPC that starts hidden and was never revealed or hidden by a
+   * mapping has no record, so this is false for it.
+   */
+  isHiddenByMapping(npcId) {
+    return this._npcVisibility.get(npcId) === false;
+  }
+
   /** { npcId: bool } for the server (state-sync.js). */
   exportNpcVisibility() {
     return Object.fromEntries(this._npcVisibility);

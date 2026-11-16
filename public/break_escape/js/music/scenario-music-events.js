@@ -157,7 +157,9 @@ if (typeof window !== 'undefined') window.startEndingReplayMusic = startEndingRe
 
 /**
  * Check whether any still-alive hostile NPC exists.
- * Returns true if at least one NPC is hostile AND not KO'd.
+ * Returns true if at least one NPC is hostile AND not KO'd AND not hidden by a
+ * setVisible:false mapping (a hidden NPC cannot attack, so it cannot keep a fight going).
+ * An NPC that merely starts hidden has no recorded state and still counts.
  *
  * @returns {boolean}
  */
@@ -167,6 +169,7 @@ function anyHostilesAlive() {
     const npcs = window.npcManager.getAllNPCs(); // Array of NPC objects
     for (const npc of npcs) {
         const npcId = npc.id;
+        if (window.npcManager.isHiddenByMapping?.(npcId)) continue;
         if (
             window.npcHostileSystem.isNPCHostile(npcId) &&
             !window.npcHostileSystem.isNPCKO(npcId)
@@ -416,13 +419,17 @@ export function initScenarioMusicEvents(scenario) {
         const { trigger } = entry;
 
         if (trigger === 'all_hostiles_ko') {
-            // Special virtual trigger: listen to every npc_ko and check remaining hostiles
+            // Special virtual trigger: listen to every npc_ko and npc_hidden and check remaining hostiles
             const handler = (data) => {
                 if (anyHostilesAlive()) return; // still fighting
                 switchIfConditionMet(entry, data);
             };
             window.eventDispatcher.on('npc_ko', handler);
             _cleanupFns.push(() => window.eventDispatcher.off('npc_ko', handler));
+            // Hiding the last conscious hostile (setVisible:false) ends the fight too; the
+            // emitter only fires for a hostile, not KO'd NPC, so a peaceful hide never switches
+            window.eventDispatcher.on('npc_hidden', handler);
+            _cleanupFns.push(() => window.eventDispatcher.off('npc_hidden', handler));
             console.log(`${TAG} Registered 'all_hostiles_ko' (via npc_ko) → '${entry.track || entry.playlist}'`);
 
         } else {
