@@ -33,8 +33,8 @@ module BreakEscape
       data
     end
 
-    def build(player_state = {}, **opts)
-      build_network_game({ 'encounteredNPCs' => %w[sam lena ian jake] }.merge(player_state), token_scenario(**opts))
+    def build(player_state = {}, expires_min = 4)
+      build_network_game({ 'encounteredNPCs' => %w[sam lena ian jake] }.merge(player_state), token_scenario(expires_min: expires_min))
     end
 
     def state
@@ -161,7 +161,7 @@ module BreakEscape
     end
 
     test 'an invalid expiresMin fails closed' do
-      build({}, expires_min: 0)
+      build({}, 0)
       with_foothold
       assert_equal true, token_row['expired']
       cred_login('lena_pc', 'lena_token', foothold: OFFICE)
@@ -300,14 +300,17 @@ module BreakEscape
       assert_empty state['sessions']
     end
 
-    test 'a typed sign-in at the PC after expiry replaces the session and answers tokenExpiredPcIds' do
+    test 'a typed sign-in at the PC after expiry replaces the session in its slot, naming nothing ended' do
       build
       signed_in_with_token
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
       expire!
       body = sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
       assert_response :success, response.body
-      assert_equal ['lena_pc'], body['endedPcIds'] if body.key?('endedPcIds')
+      refute body.key?('endedPcIds'), 'the new session pivots in its place, so sv_fs02 stays'
+      refute body.key?('tokenExpiredPcIds')
       assert_equal 'password', state['sessions']['lena_pc']['via']
+      assert state['sessions'].key?('sv_fs02')
     end
 
     test 'unplugging the proof foothold before expiry ends the session, without tokenExpiredPcIds' do
