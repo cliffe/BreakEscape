@@ -54,6 +54,9 @@ export const MinigameFramework = {
             return null;
         }
 
+        // A tap or key menu left open would sit over the minigame
+        window.closeInteractionMenu?.();
+
         // If there's already a minigame running, end it first
         // (a minigame already mid-end, i.e. we were called from its onComplete, is
         // finished: ending it again would re-run cleanup and its callback)
