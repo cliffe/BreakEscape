@@ -82,7 +82,7 @@ let playerFinalGoal = null;    // Original click destination (world coords); cle
 // tap's walk, so its straight-line shortcuts go round standing NPCs (tap pick review R3 m1)
 let playerLosOpts = null;
 // A direct walk's stall watch (directWalkStall): armed only on movePlayerToPoint's straight walk
-let directWalk = { armed: false, frames: 0, lastDist: undefined, replanned: false };
+let directWalk = { armed: false, hist: [], replanned: false };
 let waypointApproach = { target: null, distSq: Infinity }; // last frame's distance to targetPoint
 let pathDebugGraphics = null;  // Phaser Graphics object used to draw the path overlay
 
@@ -783,7 +783,7 @@ export function movePlayerToPoint(x, y, opts = null) {
     const replan = !!opts?.replan; // a stalled direct walk going through the grid once (R1 m4)
     if (!replan) window.seating?.onMoveIntent(); // a static chair: hop off first
     playerLosOpts = opts?.avoidNpcs ? { avoidNpcs: true } : null;
-    directWalk = { armed: false, frames: 0, lastDist: undefined, replanned: replan };
+    directWalk = { armed: false, hist: [], replanned: replan };
     const worldBounds = gameRef.physics.world.bounds;
 
     // Ensure coordinates are within bounds
@@ -1463,9 +1463,10 @@ function updatePlayerMouseMovement() {
     // purpose, so cancelling movement here would just be re-engaged next frame,
     // flickering between walk and idle animations. Physics already holds them at the wall.
     // A straight walk from movePlayerToPoint first watches for a stall: line of sight was checked
-    // once, against fixed bodies, and a chair turns solid when its sitter mounts (R1 m4). Blocked
-    // or stuck for DIRECT_WALK_STALL_FRAMES, it replans through the grid once; after that a
-    // contact stops it as before.
+    // once, against fixed bodies, and a chair turns solid when its sitter mounts (R1 m4). With
+    // under 5 px gained towards the goal over DIRECT_WALK_STALL_FRAMES it replans through the grid
+    // once; blocked on one axis while sliding along a wall still gains ground, so that walk goes on.
+    // After the replan a contact stops it as before.
     if (!playerFollowingPath && !holdWalkActive && directWalk.armed) {
         const verdict = directWalkStall(directWalk, { blocked: player.body.blocked.none === false, dist: Math.sqrt(distanceSq) });
         if (verdict === 'wait') return;

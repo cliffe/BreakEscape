@@ -136,25 +136,27 @@ export function lastPinnedIndex(path, from = 0) {
     return -1;
 }
 
-/** Frames a direct (straight-line) player walk may be blocked, or make no progress, before it replans. */
+/** Frames over which a direct (straight-line) player walk must gain ground before it counts as stalled. */
 export const DIRECT_WALK_STALL_FRAMES = 10;
 
 /**
  * One frame of a direct player walk's stall watch (sims tidy R1 m4). The straight walk is chosen
  * once, on line of sight, and line of sight ignores movable bodies: a wheeled chair turns solid when
- * its sitter mounts, so the walk can meet it later (game 5793, Amara's chair). `st` is
- * { frames, lastDist, replanned }, kept per walk. Returns:
- *  'ok'     moving on;
- *  'wait'   blocked or no progress, fewer than DIRECT_WALK_STALL_FRAMES in a row (keep pushing);
- *  'replan' the stall reached the limit: route through the grid, once per walk;
+ * its sitter mounts, so the walk can meet it later (game 5793, Amara's chair). `st` is per walk
+ * ({ replanned }, plus the distance history it keeps in `hist`). A stall is a real one: over the last
+ * `limit` frames the distance to the target fell by less than `limit * minStep` px. Being blocked on
+ * one axis while sliding along a wall towards the target gains ground, so it is not a stall.
+ * Returns:
+ *  'ok'     moving freely;
+ *  'wait'   blocked but not (yet) stalled: keep pushing (a slide along a wall goes on);
+ *  'replan' stalled: route through the grid, once per walk;
  *  'stop'   blocked after the replan was used (the old stop on contact).
  */
 export function directWalkStall(st, { blocked, dist }, { limit = DIRECT_WALK_STALL_FRAMES, minStep = 0.5 } = {}) {
-    const progress = Number.isFinite(st.lastDist) ? st.lastDist - dist : Infinity;
-    st.lastDist = dist;
-    st.frames = (blocked || progress < minStep) ? (st.frames || 0) + 1 : 0;
+    const h = st.hist || (st.hist = []);
+    h.push(dist);
+    if (h.length > limit + 1) h.shift();
     if (st.replanned) return blocked ? 'stop' : 'ok';
-    if (st.frames === 0) return 'ok';
-    if (st.frames >= limit) { st.replanned = true; return 'replan'; }
-    return 'wait';
+    if (h.length > limit && h[0] - dist < limit * minStep) { st.replanned = true; return 'replan'; }
+    return blocked ? 'wait' : 'ok';
 }

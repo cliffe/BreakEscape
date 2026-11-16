@@ -1323,12 +1323,12 @@ test('doorGapRects (R1 m1): both sprites of one doorway merge into one gap centr
     assert.deepEqual(seating.doorGapRects([null, { direction: 'west' }]), [], 'no position: no gap');
 });
 
-test('doorwayChairCandidates: straight out, a tile further and a tile sideways each way, then a tile sideways; near side first', () => {
+test('doorwayChairCandidates: a tile beyond straight out and a tile sideways each way, then a tile sideways; near side first; straight out itself is not offered', () => {
     const r = seating.doorGapRects(KITCHEN_DOORS)[0];
     assert.deepEqual(seating.doorwayChairCandidates({ x: 8, y: 79 }, r, { w: 11, h: 6 }),
-        [{ x: 67, y: 79 }, { x: 99, y: 47 }, { x: 99, y: 111 }, { x: 67, y: 47 }, { x: 67, y: 111 }]);
-    assert.deepEqual(seating.doorwayChairCandidates({ x: -8, y: 90 }, r, { w: 11, h: 6 }).slice(0, 3),
-        [{ x: -67, y: 90 }, { x: -99, y: 122 }, { x: -99, y: 58 }], 'kitchen side, lower half: down first');
+        [{ x: 99, y: 47 }, { x: 99, y: 111 }, { x: 67, y: 47 }, { x: 67, y: 111 }]);
+    assert.deepEqual(seating.doorwayChairCandidates({ x: -8, y: 90 }, r, { w: 11, h: 6 }).slice(0, 2),
+        [{ x: -99, y: 122 }, { x: -99, y: 58 }], 'kitchen side, lower half: down first');
     assert.deepEqual(seating.doorwayChairCandidates({ x: 100, y: 79 }, r), [], 'not in the gap');
 });
 
@@ -1337,15 +1337,31 @@ test('doorwayChairSpot: refuses lane and blocked spots, takes the first clear on
     const half = { w: 11, h: 6 };
     const tried = [];
     const all = seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => { tried.push([x, y]); return true; });
-    assert.deepEqual(all, { to: { x: 99, y: 47 }, index: 1 }, 'straight out is in the approach lane (the 5817 walk_rerouted spot): refused');
+    assert.deepEqual(all, { to: { x: 99, y: 47 }, index: 0 }, 'the first candidate, a tile beyond straight out and a tile up');
     assert.deepEqual(tried, [[99, 47]], 'the lane is checked before the box test');
-    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => y > 100), { to: { x: 99, y: 111 }, index: 2 });
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, (x, y) => y > 100), { to: { x: 99, y: 111 }, index: 1 });
     assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, rects, half, () => false), { to: null }, 'nothing clear');
     assert.equal(seating.doorwayChairSpot({ x: 120, y: 79 }, rects, half, () => true), null, 'not in a gap');
     // A second doorway's lane counts too
     const two = [...rects, ...seating.doorGapRects([{ roomId: 'office', connectedRoom: 'hall', direction: 'south', worldX: 96, worldY: 128 }])];
-    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, two, half, () => true), { to: { x: 67, y: 47 }, index: 3 },
+    assert.deepEqual(seating.doorwayChairSpot({ x: 8, y: 79 }, two, half, () => true), { to: { x: 67, y: 47 }, index: 2 },
         'the hall lane (x 80..112, y 48..208) takes (99,47) and (99,111): box x 88..110 overlaps it');
+});
+
+test('doorwayChairSpot: the straight-out point would always be in its own lane (why it is not a candidate)', () => {
+    // Any foot inside a gap: the chair box at foot.y overlaps the gap's band, and straight out
+    // (half gap + half chair + DOOR_CLEAR_PX) stays within the DOOR_LANE_PX lane, so the lane rule refuses it.
+    const half = { w: 11, h: 6 };
+    for (const door of [...KITCHEN_DOORS, { roomId: 'office', connectedRoom: 'hall', direction: 'south', worldX: 96, worldY: 128 }]) {
+        const r = seating.doorGapRects([door])[0];
+        const lane = seating.doorLaneRect(r);
+        for (const foot of [{ x: r.x0 + 1, y: r.y0 + 1 }, { x: (r.x0 + r.x1) / 2 + 1, y: (r.y0 + r.y1) / 2 + 1 }, { x: r.x1 - 1, y: r.y1 - 1 }]) {
+            const c = seating.doorGapExit(foot, [r], half);
+            const overlaps = c.x + half.w > lane.x0 && c.x - half.w < lane.x1 && c.y + half.h > lane.y0 && c.y - half.h < lane.y1;
+            assert.ok(overlaps, `straight out from ${JSON.stringify(foot)} sits in the lane`);
+            assert.ok(!seating.doorwayChairCandidates(foot, r, half).some(p => p.x === c.x && p.y === c.y), 'and is not offered');
+        }
+    }
 });
 
 /** A resting swivel chair whose feet are (x, y), with its own stub physics world. */
@@ -1386,7 +1402,7 @@ test('sweepDoorwayChairs (R1 M1): a resting chair in the gap glides to a clear s
     try {
         seating.sweepDoorwayChairs(1000);
         assert.deepEqual(seating.glideTarget(chair), { x: 99, y: 111 }, 'y 47 is off the floor (the wall rows): the next spot');
-        assert.deepEqual(rig.log, [{ who: 'chair', ev: 'chair_out_of_doorway', chair: 'chair_8_79', from: [8, 79], to: [99, 111], spot: 2 }]);
+        assert.deepEqual(rig.log, [{ who: 'chair', ev: 'chair_out_of_doorway', chair: 'chair_8_79', from: [8, 79], to: [99, 111], spot: 1 }]);
         assert.equal(chair.x, 8, 'no teleport: it glides');
     } finally { rig.restore(); }
 });

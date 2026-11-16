@@ -123,12 +123,13 @@ test('a path that never meets a doorway is unchanged', () => {
 
 // Sims tidy R1 m4: a direct player walk up x 220 meets Amara's chair, which turned solid when she
 // mounted after the walk began (games 5748 and 5793).
-test('directWalkStall: a chair that turns solid mid-walk; blocked for 10 frames replans once, then a contact stops', () => {
+test('directWalkStall: a chair that turns solid mid-walk; ten frames with no ground gained replans once, then a contact stops', () => {
     assert.equal(DIRECT_WALK_STALL_FRAMES, 10);
-    const st = { frames: 0, lastDist: undefined, replanned: false };
-    let dist = 100;
-    for (let i = 0; i < 20; i++) { dist -= 2; assert.equal(directWalkStall(st, { blocked: false, dist }), 'ok', `walking, frame ${i}`); }
-    // Amara mounts: the chair is solid in the lane; the feet stop with 60 px to go
+    const st = { replanned: false };
+    let dist = 200;
+    // 6 px a frame: walking speed at the headless 20 fps
+    for (let i = 0; i < 20; i++) { dist -= 6; assert.equal(directWalkStall(st, { blocked: false, dist }), 'ok', `walking, frame ${i}`); }
+    // Amara mounts: the chair is solid in the lane; the feet stop with 80 px to go
     const verdicts = [];
     for (let i = 0; i < 10; i++) verdicts.push(directWalkStall(st, { blocked: true, dist }));
     assert.deepEqual(verdicts, [...new Array(9).fill('wait'), 'replan'], 'nine frames of pushing, then one replan');
@@ -137,16 +138,39 @@ test('directWalkStall: a chair that turns solid mid-walk; blocked for 10 frames 
     assert.equal(directWalkStall(st, { blocked: false, dist: dist - 2 }), 'ok');
 });
 
-test('directWalkStall: no progress without a contact counts too; a brief bump does not replan', () => {
-    const st = { frames: 0, lastDist: undefined, replanned: false };
-    assert.equal(directWalkStall(st, { blocked: false, dist: 50 }), 'ok', 'first frame: no baseline yet');
-    for (let i = 0; i < 9; i++) assert.equal(directWalkStall(st, { blocked: false, dist: 50 - i * 0.1 }), 'wait');
-    assert.equal(directWalkStall(st, { blocked: false, dist: 48 }), 'ok', 'progress again (over 0.5 px) resets the count');
-    const b = { frames: 0, lastDist: undefined, replanned: false };
-    for (let i = 0; i < 5; i++) directWalkStall(b, { blocked: true, dist: 40 });
-    assert.equal(directWalkStall(b, { blocked: false, dist: 38 }), 'ok', 'a five-frame bump, then free');
-    for (let i = 0; i < 9; i++) assert.equal(directWalkStall(b, { blocked: true, dist: 38 }), 'wait', 'the count started again');
-    assert.equal(directWalkStall(b, { blocked: true, dist: 38 }), 'replan');
+test('directWalkStall: sliding along a wall while blocked on one axis gains ground and never replans; the corner does', () => {
+    const st = { replanned: false };
+    let dist = 150;
+    const slide = [];
+    // Blocked on x every frame, sliding in y: the distance still falls 3 px a frame
+    for (let i = 0; i < 40; i++) { dist -= 3; slide.push(directWalkStall(st, { blocked: true, dist })); }
+    assert.ok(slide.every(v => v === 'wait'), 'forty blocked frames of slide: all wait (keep walking), no replan');
+    assert.equal(st.replanned, false);
+    // The slide ends in a corner: no more ground
+    const corner = [];
+    for (let i = 0; i < 10; i++) corner.push(directWalkStall(st, { blocked: true, dist }));
+    assert.deepEqual(corner.slice(0, 9), [...new Array(8).fill('wait'), 'replan'],
+        'the replan fires once the window holds under 5 px of gain (the last slide frame plus eight in the corner)');
+    // A shallow slide (0.4 px a frame, 4 px over the window) is a stall too
+    const sh = { replanned: false };
+    let d2 = 100, v2 = [];
+    for (let i = 0; i < 11; i++) { d2 -= 0.4; v2.push(directWalkStall(sh, { blocked: true, dist: d2 })); }
+    assert.equal(v2[10], 'replan');
+});
+
+test('directWalkStall: no ground gained without a contact counts too; a brief bump does not replan', () => {
+    const st = { replanned: false };
+    const v = [];
+    for (let i = 0; i < 11; i++) v.push(directWalkStall(st, { blocked: false, dist: 50 - i * 0.1 }));
+    assert.deepEqual(v, [...new Array(10).fill('ok'), 'replan'], 'free but held (pushing a chair, say): 1 px over the window');
+    const b = { replanned: false };
+    let d = 100;
+    for (let i = 0; i < 10; i++) { d -= 6; directWalkStall(b, { blocked: false, dist: d }); }
+    const bump = [];
+    for (let i = 0; i < 5; i++) bump.push(directWalkStall(b, { blocked: true, dist: d }));
+    for (let i = 0; i < 10; i++) { d -= 6; bump.push(directWalkStall(b, { blocked: false, dist: d })); }
+    assert.ok(!bump.includes('replan'), 'a five-frame bump, then free: no replan');
+    assert.equal(b.replanned, false);
 });
 
 test('player.js: only the straight walk arms the stall watch; the replan skips line of sight and counts itself', () => {

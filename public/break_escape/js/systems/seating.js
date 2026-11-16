@@ -1759,9 +1759,12 @@ export function doorLaneRect(r) {
 }
 
 /**
- * Where a chair in a door gap may go, best first: straight out to the side its foot is on (clear of
- * the gap by its half size plus DOOR_CLEAR_PX, doorGapExit), then a tile further out and a tile to
- * each side, then a tile to each side; the side nearer the foot (the nearer wall strip) first.
+ * Where a chair in a door gap may go, best first, measured from the straight-out point (doorGapExit:
+ * clear of the gap by its half size plus DOOR_CLEAR_PX, on the side its foot is on): a tile further
+ * out and a tile to each side, then a tile to each side; the side nearer the foot (the nearer wall
+ * strip) first. The straight-out point itself is not offered: the foot is inside the gap's band, so a
+ * chair there always overlaps that doorway's approach lane (doorLaneRect) and doorwayChairSpot would
+ * refuse it every time (sims tidy R1 fix round).
  */
 export function doorwayChairCandidates(foot, r, half = { w: 11, h: 6 }) {
     const first = doorGapExit(foot, [r], half);
@@ -1770,13 +1773,13 @@ export function doorwayChairCandidates(foot, r, half = { w: 11, h: 6 }) {
     if (r.side) {
         const s = Math.sign(first.x - (r.x0 + r.x1) / 2) || 1;
         const d = foot.y <= (r.y0 + r.y1) / 2 ? [-1, 1] : [1, -1];
-        return [first,
+        return [
             { x: first.x + s * T, y: foot.y + d[0] * T }, { x: first.x + s * T, y: foot.y + d[1] * T },
             { x: first.x, y: foot.y + d[0] * T }, { x: first.x, y: foot.y + d[1] * T }];
     }
     const s = Math.sign(first.y - (r.y0 + r.y1) / 2) || 1;
     const d = foot.x <= (r.x0 + r.x1) / 2 ? [-1, 1] : [1, -1];
-    return [first,
+    return [
         { x: foot.x + d[0] * T, y: first.y + s * T }, { x: foot.x + d[1] * T, y: first.y + s * T },
         { x: foot.x + d[0] * T, y: first.y }, { x: foot.x + d[1] * T, y: first.y }];
 }
