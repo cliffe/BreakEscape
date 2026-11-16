@@ -410,8 +410,53 @@ test('no pose frames: a phone chat does no per-frame pose work', () => {
     r.poses.onMinigameStart('phone-chat', {}, {});
     reads = 0;
     for (let i = 0; i < 10; i++) r.poses.update();
-    assert.equal(r.poses.phoneWanted, false);
     assert.equal(reads, 0);
+});
+
+test('a direction without phone frames does not switch the pose off for the whole call', () => {
+    const r = leadRig();
+    r.player.direction = 'up';
+    const had = r.poses.has.bind(r.poses);
+    let missing = true;
+    r.poses.has = (n) => (n === 'phone' && missing ? false : had(n));
+    r.poses.onMinigameStart('phone-chat', {}, {});
+    r.poses.update();
+    assert.equal(r.poses.cur, null, 'no frames for this direction: no pose');
+    assert.equal(r.poses.phoneWanted, true, 'still wanted');
+    missing = false;
+    r.poses.update();
+    assert.equal(r.poses.cur?.name, 'phone', 'the pose comes back once the frames exist');
+});
+
+test('a reinstall cancels a queued lead timer and clears the phone state', () => {
+    const r = leadRig();
+    const handlers = [];
+    r.scene.events = { once: (n, f) => { if (n === 'shutdown') handlers.push(f); }, on() {} };
+    window.playerPoses = null;
+    const inst = installPlayerPoses(r.scene);
+    const timers = [];
+    inst.timer = (fn, ms) => timers.push({ fn, ms });
+    let opened = 0;
+    inst.openWithPhoneLead(() => { opened++; });
+    inst.onMinigameStart('phone-chat', {}, {});
+    assert.equal(timers.length, 1);
+    handlers.forEach(f => f());
+    assert.equal(installPlayerPoses(r.scene), inst);
+    assert.equal(inst.cur, null);
+    assert.equal(inst.phoneScene, null);
+    assert.equal(inst.phoneWanted, false);
+    assert.equal(inst.phoneShown, false);
+    // The stale timer fires with no new lead, then with a new lead pending
+    timers[0].fn();
+    assert.equal(opened, 0);
+    let second = 0;
+    inst.openWithPhoneLead(() => { second++; });
+    assert.equal(timers.length, 2);
+    timers[0].fn();
+    assert.equal(second, 0, 'the stale timer does not run the new lead early');
+    assert.equal(inst.leadPending, true);
+    timers[1].fn();
+    assert.equal(second, 1);
 });
 
 test('sprite swap with a phone held: the pose ends, the new atlas shows the phone again if it has frames', () => {

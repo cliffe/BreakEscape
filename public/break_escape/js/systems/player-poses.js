@@ -62,6 +62,7 @@ export class PlayerPoses {
         this.phoneShown = false;  // the phone pose showed while it was open
         this.leadPending = false; // openWithPhoneLead is waiting to open
         this.leadOpen = null;     // the open it will run (the newest call's)
+        this.leadId = 0;          // bumped on a reinstall: an older lead timer then does nothing
         this.dead = false;        // the scene shut down
         this.timer = (fn, ms) => setTimeout(fn, ms);
         this.log = [];          // [{ t, pose }] on and off, newest last (tests, debug)
@@ -159,10 +160,13 @@ export class PlayerPoses {
         if (!this.show('phone', PHONE_LEAD_MS + 500)) return open();
         this.leadPending = true;
         this.leadOpen = open;
+        const id = ++this.leadId;
         this.timer(() => {
+            if (id !== this.leadId) return;   // a reinstall made this timer stale
             this.leadPending = false;
             const run = this.leadOpen;
             this.leadOpen = null;
+            if (!run) return;
             const w = win();
             if (this.dead || w.playerPoses !== this || !this._player()) return;
             if (w.MinigameFramework?.currentMinigame) return;
@@ -188,7 +192,9 @@ export class PlayerPoses {
             return false;
         }
         this.phoneScene = instance || true;
-        this.phoneWanted = this.has('phone');   // no frames: no per-frame work
+        // Decided per frame by _wantPhone (has() is one animation lookup, checked before
+        // anything dearer), so a direction without frames only skips that frame
+        this.phoneWanted = true;
         this.phoneShown = this.show('phone', 0, { hold: true });
         return this.phoneShown;
     }
@@ -237,7 +243,17 @@ export function installPlayerPoses(scene) {
     if (w.playerPoses?.scene === scene) {
         // A restart of the same scene: the instance lives on, so undo what the shutdown marked
         const same = w.playerPoses;
-        if (same.dead) { same.dead = false; same.leadPending = false; same.leadOpen = null; live(same); }
+        if (same.dead) {
+            same.dead = false;
+            same.leadPending = false;
+            same.leadOpen = null;
+            same.leadId++;   // a lead timer queued before the restart must not fire
+            same.cur = null;
+            same.phoneScene = null;
+            same.phoneWanted = false;
+            same.phoneShown = false;
+            live(same);
+        }
         return same;
     }
     const inst = new PlayerPoses(scene);

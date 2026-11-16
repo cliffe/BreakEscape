@@ -86,3 +86,21 @@ acceptable.
 `bin/test-js` run in full on the worktree at HEAD: 685 test files passed, 0 failed, 685 total.
 
 R4: 0/0/3
+
+## Outcomes
+
+- **m-A fixed.** `onMinigameStart` now sets `phoneWanted = true` for any phone-style minigame. `_wantPhone`
+  already checks `has('phone')` (one animation lookup) before `blocked()`, so a direction without frames
+  skips only that frame and the pose returns when frames exist. The no-frames test still proves zero
+  behaviour-map reads; a new test covers a direction with no frames that later gains them.
+- **m-B fixed.** Each lead takes a token (`leadId`); a timer whose token is stale returns at once, and a
+  timer with no `leadOpen` returns before the `try`. The reinstall branch bumps `leadId` and clears `cur`,
+  `phoneScene`, `phoneWanted` and `phoneShown`. New test queues a lead through `openWithPhoneLead`, starts a
+  phone chat, shuts down and reinstalls, then fires the stale timer with and without a new lead pending and
+  asserts nothing opens early and the phone state is clear.
+- **m-C: reworded, not changed.** Keeping the first open's `startKnot` would mean choosing between two
+  different threads or running both, which is a behaviour change for a rare 300 ms overlap. The R3 outcome
+  for m4 now says the superseded open and its `startKnot` jump are dropped while its thread stays in the
+  phone.
+
+R4 outcome: 0/0/0 open.
