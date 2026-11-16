@@ -122,7 +122,18 @@ module BreakEscape
       return false unless info && info[:room_id]
 
       room = room_data(info[:room_id])
-      room.is_a?(Hash) && (!room['locked'] || room_unlocked?(info[:room_id])) && path_unlocked?(info[:path])
+      room.is_a?(Hash) && (!room['locked'] || room_unlocked?(info[:room_id])) &&
+        path_unlocked?(info[:path]) && panel_unlocked?(info, room)
+    end
+
+    # A patch-panel port (panelOf) is reached only through its panel, so a locked panel gates
+    # it like a locked container above it (Pentest B1). Any other object passes.
+    def panel_unlocked?(info, room)
+      panel_id = info[:object].is_a?(Hash) ? info[:object]['panelOf'] : nil
+      return true if panel_id.blank?
+
+      found = network_object_in(room['objects'], panel_id.to_s, [])
+      found ? path_unlocked?(found[:path] + [found[:object]]) : false
     end
 
     # The first rogue device the server inventory holds, in scenario order, or the one

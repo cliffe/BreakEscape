@@ -179,6 +179,9 @@ import { EsdPushbuttonMinigame } from './esd-pushbutton/esd-pushbutton-minigame.
 // and not a registry entry
 import { NetworkViewMinigame, startNetworkViewMinigame } from './network-view/network-view-minigame.js';
 
+// The patch panel (pentest slice B1): opened by the interactions.js branch for an object with panelPorts
+import { PatchPanelMinigame, startPatchPanelMinigame } from './patch-panel/patch-panel-minigame.js';
+
 // Register minigames
 MinigameFramework.registerScene('lockpicking', LockpickingMinigamePhaser); // Use Phaser version as default
 MinigameFramework.registerScene('lockpicking-phaser', LockpickingMinigamePhaser); // Keep explicit phaser name
@@ -238,6 +241,7 @@ MinigameFramework.registerScene('cryptex', CryptexMinigame);
 MinigameFramework.registerScene('combination', CombinationMinigame);
 MinigameFramework.registerScene('examine', ExamineMinigame);
 MinigameFramework.registerScene('network-view', NetworkViewMinigame);
+MinigameFramework.registerScene('patch-panel', PatchPanelMinigame);
 
 // Make minigame functions available globally
 window.startNotesMinigame = startNotesMinigame;
@@ -259,3 +263,4 @@ window.startSisConfigThresholdMinigame = startSisConfigThresholdMinigame;
 window.startNetworkArchitectureMinigame = startNetworkArchitectureMinigame;
 window.startForensicDataPlatformMinigame = startForensicDataPlatformMinigame;
 window.startNetworkViewMinigame = startNetworkViewMinigame;
+window.startPatchPanelMinigame = startPatchPanelMinigame;
