@@ -790,3 +790,20 @@ test('panelPorts: an entry names a missing jack, a non-jack, or a jack for anoth
     assertHas(errors(issues(panelScenario(o => { delete o[1].networkJack; }))), 'not a networkJack');
     assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'lan_port'; o[1].panelPorts = []; }))), 'panelOf names');
 });
+test('panelPorts: a repeated port number or the same jack listed twice is an error', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[1].port = 1; }))), 'lists port 1 more than once');
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[2].jack = 'lan_port'; }))), "lists jack 'lan_port' more than once");
+    assertNot(errors(issues(panelScenario())), 'more than once');
+});
+test('panelOf: a panel port that is not a networkJack is refused, and the texture message names sprite only', () => {
+    const list = errors(issues(panelScenario(o => { delete o[2].networkJack; })));
+    assertHas(list, 'has panelOf but is not a networkJack');
+    assertNot(errors(issues(panelScenario(o => { o[2].sprite = 'x'; }))), "'sprite' or 'type'");
+});
+test('the full validator reports 0 errors on test_access_devices', () => {
+    const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_access_devices/scenario.json.erb', '--skip-ink', '--no-graph'], {
+        cwd: root, encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr + r.stdout.slice(-2000));
+    assert.match(r.stdout, /Result: 0 errors/);
+});

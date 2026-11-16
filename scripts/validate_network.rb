@@ -152,7 +152,7 @@ def check_network_model(json_data, scenario_dir = nil)
       elsif !Array(panel['panelPorts']).any? { |pp| pp.is_a?(Hash) && pp['jack'] == o['id'] }
         err.call("#{where} has panelOf '#{o['panelOf']}', but that object does not list it in panelPorts.")
       end
-      err.call("#{where} has panelOf and a 'sprite' or 'type' texture; a panel port has no sprite.") if o.key?('sprite')
+      err.call("#{where} has panelOf and a 'sprite' texture; a panel port has no sprite.") if o.key?('sprite')
       err.call("#{where} has panelOf and a position; a panel port has none.") if %w[x y position].any? { |k| o.key?(k) }
       err.call("#{where} has panelOf but is not a networkJack; a panel port is a jack.") unless nm.jack?(o)
     end
@@ -164,8 +164,20 @@ def check_network_model(json_data, scenario_dir = nil)
         err.call("#{pwhere} has panelPorts that is not an array.")
         next
       end
+      seen_ports = {}
+      seen_jacks = {}
       panel['panelPorts'].each do |pp|
-        next unless pp.is_a?(Hash) && pp.key?('jack')
+        next unless pp.is_a?(Hash)
+
+        if pp.key?('port')
+          err.call("#{pwhere} lists port #{pp['port']} more than once.") if seen_ports[pp['port']]
+          seen_ports[pp['port']] = true
+        end
+        if pp.key?('jack')
+          err.call("#{pwhere} lists jack '#{pp['jack']}' more than once.") if seen_jacks[pp['jack']]
+          seen_jacks[pp['jack']] = true
+        end
+        next unless pp.key?('jack')
 
         jack = by_id[pp['jack']]
         if jack.nil?
