@@ -33,6 +33,7 @@ const FALLBACK = {
   '915x412 cryptex': { rung: 3, side: 'lane-side', width: 240, top: 176, left: 659, controls: 1 },
   '390x844 siem-dashboard': { rung: 3, side: 'lane', controls: 2 },
   '390x844 log-filter': { rung: 3, side: 'lane-side', width: 358, top: 112, controls: 1 },
+  '800x600 backup-recovery': { rung: 3, side: 'lane-side', width: 768, top: 88, left: 16, controls: 1, titles: 0 },   // Batch 4: tiles fill the panel, see the test below
   '360x740 dusting': { rung: 2, side: 'left', width: 240, top: 8, left: 16 }   // R3: the canvas is no control; the error alone is in the test below
 };
 
@@ -325,4 +326,37 @@ test('combination 390x844 and episode-runner 360x740: the error alone is clear; 
     assert.equal(pair.rung, 3, `${size} ${name} pair`);
     assert.deepEqual(hits(pair, c.xs), [], `${size} ${name} pair: X`);
   }
+});
+
+// ------------------------------------------------------------------ Batch 4: 800x600
+
+test('backup-recovery 800x600: the tiles fill the panel, so one tile is covered at rung 3 (the least possible); the X and the heading stay clear and the tile is still clickable below the toast', () => {
+  const c = get('800x600', 'backup-recovery');
+  for (const [what, s] of [['warning', spotFor(c)], ['error', errorSpot(c)]]) {
+    assert.equal(s.name, 'fallback', what);
+    assert.equal(s.rung, 3, what);
+    assert.equal(s.covers.controls, 1, `${what}: the first tile only`);
+    assert.deepEqual(hits(s, c.xs), [], `${what}: X`);
+    assert.deepEqual(hits(s, c.titles), [], `${what}: heading`);
+    // The tile is one button: the toast ends above its bottom edge, so part of it can be clicked
+    const tile = c.controls.find(k => k.listRow === false && k.left === 38 && k.top === 96);
+    assert.ok(tile && s.top + s.height < tile.bottom - 20, `${what}: tile bottom stays clear`);
+  }
+  // No place is clear for any toast (there is no band as tall as one), so rung 3 is the floor
+  const none = (w) => toastSpot({ vw: c.vw, vh: c.vh, lane: c.lane, z: c.z, heightAt: () => w, titles: c.titles, xs: c.xs,
+    controls: c.controls, canvases: c.canvases, clearOnly: true });
+  assert.equal(none(115), null);
+  assert.equal(none(60), null, 'even a 60 px block has no band: the panel is wall to wall');
+});
+
+test('cryptex 800x600: the warning or the error alone has a clear place; only the pair has none and takes rung 3', () => {
+  const c = get('800x600', 'cryptex');
+  for (const [what, s] of [['warning', spotFor(c)], ['error', errorSpot(c)]]) {
+    assert.equal(s.rung, 0, what);
+    assert.deepEqual(hits(s, nonList(c)), [], what);
+    assert.deepEqual([s.side, s.left, s.top, s.width], ['centre', 160, 56, 480], what);
+  }
+  const pair = errorSpot(c, { pair: true });
+  assert.equal(pair.rung, 3);
+  assert.deepEqual(hits(pair, c.xs), []);
 });
