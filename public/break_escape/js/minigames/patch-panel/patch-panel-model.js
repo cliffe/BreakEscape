@@ -49,7 +49,8 @@ export const NARROW_W = 344;
  * Pick the layout for a viewport. Rule: the largest scale in {4, 3} at which 2 rows of 12 fit
  * both W and H; else the largest at which 4 rows of 6 fit; else 6 rows of 4 at scale 3. When
  * nothing fits by height, the widest shape that fits W is drawn in a scrolling area
- * (scroll: true, which shows the "More below" cue), at its largest scale that fits W; below
+ * (scroll: true, which shows the "More below" cue), at its largest scale that fits W less the
+ * 16 px scrollbar (SCROLLBAR_PX); below
  * W 344 that is 6 rows of 4 at scale 3.
  * Returns { rows, perRow, scale, width, height, scroll, W, H } with width and height in CSS px.
  */

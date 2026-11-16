@@ -386,6 +386,23 @@ test('UI PC 2 (N05): Unplug in the view restores the tray, ends the foothold, em
     assert.deepEqual(toasts, []);
 });
 
+test('R3 m2: a plant that fails with a 403 or a 500 toasts and returns the error result; quiet does not toast', async () => {
+    const cases = [[403, "You can't reach that port from here."], [500, 'The port did not respond. Try again.']];
+    for (const [status, message] of cases) {
+        await reset({ items: [box] });
+        window.ApiClient.networkPlant = async () => { const e = new Error('x'); e.status = status; e.body = {}; throw e; };
+        const out = await links.interactJack(jackSprite());
+        assert.deepEqual(out, { action: 'error', status, message });
+        assert.deepEqual(toasts, [message], `a ${status} toasts the message`);
+        assert.equal(held('kit_dropbox').length, 1, 'the device stays in the tray');
+        await reset({ items: [box] });
+        window.ApiClient.networkPlant = async () => { const e = new Error('x'); e.status = status; e.body = {}; throw e; };
+        const quiet = await links.interactJack(jackSprite(), { quiet: true });
+        assert.deepEqual(quiet, { action: 'error', status, message });
+        assert.deepEqual(toasts, [], `quiet: a ${status} shows no toast`);
+    }
+});
+
 test('UI PC 2 fix round 1 (m2): a refused Unplug from the view comes back as a message and shows no toast', async () => {
     await reset({ planted: true });
     withStarters();
