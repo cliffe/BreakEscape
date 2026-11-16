@@ -23,7 +23,7 @@ MSG = (
     "3. Then continue without waiting for the user. Before launching anything, ask "
     "yourself: is it possible to parallelise further? List every thread that could move now "
     "(each stream's next round, reviews, fixes, live checks, playtests) and launch all that "
-    "don't touch the same files, typically 5 or 6 agents rather than 1 or 2. Only stop for "
+    "don't touch the same files. Only stop for "
     "decisions that are genuinely the user's (send those to the decisions page)."
 )
 
