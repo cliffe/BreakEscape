@@ -70,3 +70,25 @@ Live on :3095 (keyless, game 6188 from new-game.rb, headless, setFPS(20), fixed 
 
 - In 3 of 5 runs the page's game clock stopped after about 10 to 14 s (`scene.time.now` constant), so those rows prove nothing. This is the harness loop, not the NPC.
 - In the one run with a live clock, from about 50 s waypoint_fast stood at (175,161) for 20 s: v 0, `pathIndex` 0, `_avoid` null, `_playerBeside` true (player 44 px away), waypoint_with_face 18 px away, and its target and path changed every 5 s or so (re-targets that never moved it). `isSettling` was not recorded in that run, so it is not known whether this is the settle (the fix should prevent it) or the local-avoidance and stall-reset path (`_checkPathStuck` re-armed by `_playerBeside`, `_stuckWatch` reset on each new path). Next step: rerun with `isSettling`, `_settleGraceUntil` and `_stuckWatch` in the row (scratchpad `stall-live2.mjs` has the first two) and a game clock that stays live.
+
+## 4. Second stand-still: cause found and fixed (avoidance re-plan inside the settle grace)
+
+### The page clock
+
+Cause of the stopped game clock: the harness, not the NPC and not `body.reset`. It pressed Escape six times to dismiss UI, and Escape toggles the game menu, which calls `scene.scene.pause()` (`ui/game-menu.js` `open()`). Depending on timing the sixth press left the menu open, so the scene was PAUSED (`scene.sys.settings.status` 6) while the game loop still ran: `scene.time.now` stood still, the NPCs froze, and every row after that proved nothing. Fix in the harness: no Escape presses. It calls `__test.dismissBlockingUi()`, then checks `scene.sys.isPaused()` and presses Escape once more only if the scene is paused, aborting if it still is. Every row now logs the scene status and the loop state, and the analysis checks that `scene.time.now` advanced. Clock live in all 9 runs since (scratchpad `stall-live4.mjs` and later). Only the player is teleported.
+
+### Reproduction
+
+Game 6330 (new-game.rb, :3095, keyless, headless, setFPS(20), fixed steps on), player parked at (170,170) beside waypoint_with_face, logged each second with `isSettling`, the grace, `_playerBeside`, `_avoid`, path and blocker fields. Stand-still reproduced in 3 of 6 runs (about 100 s in), clock live in each: waypoint_fast at (173,160), v 0, `pathIndex` 0, `_avoid` null, `isSettling` false half the time, target and path changing every second, the walker touching waypoint_with_face (face_player, 12 to 16 px).
+
+An in-page ring buffer (wrapped `updatePatrol`, `triggerSettling`, `_planMovePath`) showed the early return. After a settle ends the 600 ms grace lets `triggerSettling` return false, but `handleNPCCollision` (and `handleNPCPlayerCollision`) did more than settle: on every overlap frame they inserted an avoidance waypoint, cleared `currentPath`, set `patrolTarget` null, set `_needsPathRecalc` and called `chooseWaypointTarget`. The next `updatePatrol` took the `_needsPathRecalc` branch, re-planned, and returned before the path-following code that sets the velocity. With contact on every physics frame that happens before each behaviour update, so the walker never reached the path-following branch: velocity 0, `pathIndex` 0, a new target each second, `_stuckWatch` re-armed by `_playerBeside`. The settle fix of section 3 stopped the velocity being zeroed but not this.
+
+### Fix and test
+
+Both collision handlers return right after the settle step while the grace is running (`settleGraceRunning` in `npc-sprites.js`: not settling and `_settleGraceUntil` still ahead). The walker follows the path planned at the first contact and pulls away; after the grace, new contact re-plans as before.
+
+Test: `test/js/npc-patrol-settle.test.mjs`, "settle grace: contact inside the grace does not wipe the path and replan every frame". It fails on the old code (avoidance re-plans during the grace, walker does not move) and passes now. The earlier settle tests used an empty `window.rooms`, which skipped the avoidance block, so they could not see this.
+
+### Live proof of the fix
+
+Same setup, 3 runs on the fixed code: 120 s, 120 s and 110 s, clock live, longest stand-still 3 s, 4 s and 5 s. The 5 s one (run 3) is the deliberate player-wait: `_handleBlockerAhead` held the walker for the parked player, then `_patrolStalled` re-targeted and it walked on; `isSettling` and the grace were not involved. No stand-still of the settle or avoidance kind.
