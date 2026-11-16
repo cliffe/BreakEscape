@@ -292,6 +292,9 @@ export class Keyring {
         this._trayIds = ids;
         if (before) {
             const now = new Set(list);
+            // The entry goes with its item: forget it now, so a drop and a quick retake before the
+            // answer returns still toasts (K3c R1 m1). The answer-side check is the backstop.
+            for (const [id, item] of this._announced) if (item && before.has(item) && !now.has(item)) this._announced.delete(id);
             const added = list.some(id => !before.has(id));
             const held = new Set(this.latest.map(e => e?.heldItem).filter(Boolean));
             const removedHeld = [...before].some(id => !now.has(id) && held.has(id));
@@ -345,7 +348,9 @@ export class Keyring {
             }
             known.add(e.id);
             if (this._findIds !== null && !this._announced.has(e.id) && findKindToasts(e)) fresh.push(e);
-            this._announced.set(e.id, typeof e.heldItem === 'string' && e.heldItem ? e.heldItem : null);
+            // Keep the known tray item when a later answer omits it (K3c R1 m2). A find with no
+            // tray item (a non-held kind) is never forgotten: it toasts once per page.
+            this._announced.set(e.id, (typeof e.heldItem === 'string' && e.heldItem ? e.heldItem : null) || this._announced.get(e.id) || null);
         }
         // Forget an id only when its tray item has left the tray (an unknown tray keeps it)
         const tray = this._trayIds === null ? null : new Set(this._trayIds ? this._trayIds.split('|') : []);
@@ -375,9 +380,11 @@ export class Keyring {
     /** The conversation closed: the held finds as one toast. */
     releaseHeld() {
         if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
-        // A held find the latest answer no longer names (dropped meanwhile) is not toasted
+        // A held find is dropped only once forgotten (its tray item left the tray); an answer that
+        // briefly lacks it keeps it (K3c R1 M1). Without a known tray the latest answer decides.
         const live = this._findIds;
-        const held = live ? this._held.filter(e => live.has(e.id)) : this._held;
+        const held = this._trayIds !== null ? this._held.filter(e => this._announced.has(e.id))
+            : live ? this._held.filter(e => live.has(e.id)) : this._held;
         this._held = [];
         return held.length ? this.showFinds(held) : Promise.resolve(null);
     }

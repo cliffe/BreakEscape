@@ -1153,3 +1153,14 @@ Commit 888f48af3. Part B (the relay with its 9.1 fixtures, and the K2 m4 folder 
 - Reconnect toast: `noteFinds` now checks a page-life `_announced` map (id to its held tray item) in place of the previous answer's ids. An id is forgotten only when an answer lacks it and its tray item is out of the tray (an unknown tray keeps it), so an answer that briefly lacks an entry does not toast it again, and dropping and retaking a file still does. Entries with no held item are never forgotten. Held finds are one per id, and at release a find the latest no-screen answer no longer names is left out. The new tests failed on the old code before the fix.
 - route_ended: a `pc-sessions` test covers two hosts in one toast, one host, an open desktop closed with its own host's line, and the unplug keeping its line. The live proof should also exercise `route_ended` (a sign-in that prunes a session through another route).
 - Tests: `bin/test-js` 716 files passed. No Rails files touched.
+
+## K3c run 3 (part A review fixes)
+
+Review R1 of part A (B0 M1 m2 t2), all applied in keyring.js and the tests.
+
+- M1: `releaseHeld` drops a held find only once it is forgotten (no longer in `_announced`); with an unknown tray the latest answer still decides. An answer that briefly lacks a held find no longer loses its toast.
+- m1: `trayChanged` forgets `_announced` ids by their heldItem when the item leaves the tray, so a drop and a quick retake before the answer returns still toasts. The answer-side check stays as the backstop.
+- m2: a later answer without `heldItem` keeps the known item. Finds with no tray item (non-held kinds) toast once per page; a code comment says so.
+- t1: new test where the sync PUT takes half of the cap and the GET hangs; the GET gets only the rest. t2: the no-rev retry test now uses a 400 ms deadline (a fresh one would be about 520), so the margin is 80 ms each way.
+- Added test/js/api-client-login-credential.test.mjs for `loginWithCredential` (relay: true only when asked, relay wins over foothold, non-boolean relay ignored).
+- Tests: keyring-client 71 (was 66), api-client-login-credential 3.

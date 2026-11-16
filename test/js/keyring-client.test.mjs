@@ -979,11 +979,87 @@ test('R3 t2: the no-rev retry shares the first ask\'s deadline, not a fresh one'
         return new Promise(() => {});
     };
     const t0 = Date.now();
-    await assert.rejects(kr.fetch(null, { timeoutMs: 160 }), /timed out/);
+    await assert.rejects(kr.fetch(null, { timeoutMs: 400 }), /timed out/);
     const spent = Date.now() - t0;
     assert.equal(keyringGets().length, 2, 'the retry went out');
-    assert.ok(spent < 260, `one 160 ms deadline in all (took ${spent} ms; a fresh one would be about 280)`);
+    assert.ok(spent < 480, `one 400 ms deadline in all (took ${spent} ms; a fresh one would be about 520)`);
     assert.ok(retrySignal?.aborted, 'the retry is aborted at the deadline');
+});
+
+test('K3c R1 t1: the GET gets only the time the sync PUT left of the cap', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    kr.askTimeoutMs = 200;
+    window.stateSync = { syncConfirmed: () => new Promise(r => setTimeout(r, 100)) };   // spends half the cap
+    let signal = null;
+    window.ApiClient.keyring = (pcId, opts = {}) => { signal = opts.signal; return new Promise(() => {}); };
+    const t0 = Date.now();
+    assert.equal(await kr.refresh(), null, 'the hung GET gives up');
+    const spent = Date.now() - t0;
+    assert.ok(signal?.aborted, 'and its request is aborted');
+    assert.ok(spent < 260, `one 200 ms cap for PUT and GET together (took ${spent} ms; a fresh cap for the GET would be about 300)`);
+});
+
+test('K3c R1 M1: a held find is still toasted once when the latest answer briefly lacks it', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' }, { entries: [RDP], rev: 'r3' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.trayChanged([ITEM]); await settle();   // r1: the find is held
+    assert.equal(alerts.length, 0, 'held while talking');
+    await kr.refresh(); await settle();             // r2: lacks it, the file is still in the tray
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'exactly one toast');
+    await kr.refresh(); await settle();             // r3: back
+    assert.deepEqual(toasts(), [RDP_FOUND], 'and none when it returns');
+});
+
+test('K3c R1 M1: a held find whose file left the tray is dropped at the close', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.trayChanged([ITEM]); await settle();
+    await kr.trayChanged([]); await settle();
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [], 'dropped meanwhile: no toast');
+});
+
+test('K3c R1 m1: a drop and a retake before the answer returns still toasts the retake', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' });
+    await kr.prime();
+    await kr.trayChanged([ITEM]); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND]);
+    const pending = [];
+    window.ApiClient.keyring = (pcId, opts = {}) => { calls.push(['keyring', pcId, opts.rev ?? null]); const d = deferred(); pending.push(d); return d.promise; };
+    kr.trayChanged([]); await settle();        // ask A goes out
+    kr.trayChanged([ITEM]); await settle();    // retaken before A returns: ask B queued
+    assert.equal(pending.length, 1, 'only A is out');
+    pending[0].resolve({ entries: [], rev: 'r2' }); await settle();
+    assert.equal(pending.length, 2, 'B goes out after A');
+    pending[1].resolve({ entries: [RDP], rev: 'r3' }); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND, RDP_FOUND], 'the retake toasts again');
+});
+
+test('K3c R1 m2: a later answer without heldItem keeps the known item, so the find is still forgotten with it', async () => {
+    setup();
+    const kr = window.keyring;
+    const { heldItem, ...bare } = RDP;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [bare], rev: 'r2' }, { entries: [RDP], rev: 'r3' });
+    await kr.prime();
+    await kr.trayChanged([ITEM]); await settle();   // r1: toast
+    await kr.refresh(); await settle();             // r2: same id, no heldItem
+    await kr.trayChanged([]); await settle();       // the file leaves (latest names no heldItem: no ask)
+    await kr.trayChanged([ITEM]); await settle();   // r3: back
+    assert.deepEqual(toasts(), [RDP_FOUND, RDP_FOUND], 'a retaken file toasts again');
 });
 
 test('reconnect: an answer that briefly lacks a held find does not toast it again; drop and retake does', async () => {
