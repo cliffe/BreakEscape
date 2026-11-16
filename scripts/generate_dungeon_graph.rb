@@ -21,6 +21,7 @@ Encoding.default_external = Encoding::UTF_8
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
+require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
@@ -1614,6 +1615,51 @@ aim_edges.select { |e| e[:story_gate] }.each do |e|
   end
 end
 aim_edges.each { |e| e.delete(:gates); e.delete(:story_gate); e.delete(:root) }
+
+# ---------------------------------------------------------------------------
+# Credential registry (CREDENTIAL_KEYRING_PLAN.md, section 6.1). Each built credential is a key
+# node; an edge runs from its proof source (a held item, a reachable foothold or a PC session) to
+# the credential, and from the credential to each sign-in PC that accepts it. Drawn only for a
+# scenario that declares a `credentials` registry, so other graphs are unchanged.
+# ---------------------------------------------------------------------------
+BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
+  cred_kind = cred_entry['kind']
+  next unless BreakEscape::CredentialModel.kind_built?(cred_kind)
+
+  cred_npc = BreakEscape::CredentialModel.account_npc(scenario, cred_entry['account'])
+  next unless cred_npc
+
+  cred_node = "cred_#{nid(cid)}"
+  cred_user = cred_npc.dig('creds', 'username')
+  add_node(cred_node, "#{cred_npc['displayName'] || cred_npc['id']} #{cred_kind.tr('_', ' ')}<br/>(#{cred_user})", 'key')
+
+  cred_proof = cred_entry['proof']
+  case BreakEscape::CredentialModel.proof_kind(cred_proof)
+  when 'held'
+    cred_def = BreakEscape::CredentialModel.item_definition(scenario, cred_proof['held'])
+    if cred_def
+      cred_src = "cred_src_#{nid(cred_proof['held'])}"
+      add_node(cred_src, (cred_def['name'] || cred_proof['held']).to_s, 'item')
+      add_edge(cred_src, cred_node)
+    end
+  when 'foothold'
+    cred_jack = "jack_#{nid(cred_proof['foothold'])}"
+    add_edge(cred_jack, cred_node) if $nodes.key?(cred_jack)
+  when 'session'
+    cred_sess = "lock_#{cred_proof['session']}"
+    add_edge(cred_sess, cred_node) if $nodes.key?(cred_sess)
+  when 'planted', 'dropped'
+    # A capture proof; the capture and social sections already show how the secret is earned.
+  end
+
+  BreakEscape::CredentialModel.pcs_accepting(scenario, cid).each do |cred_pc|
+    cred_pc_lock = "lock_#{cred_pc['id']}"
+    unless $nodes.key?(cred_pc_lock)
+      add_node(cred_pc_lock, "#{cred_pc['name'] || cred_pc['id']}<br/>#{LOCK_TYPE_LABELS[cred_pc['lockType']] || 'Lock'}", 'lock')
+    end
+    add_edge(cred_node, cred_pc_lock)
+  end
+end
 
 # ---------------------------------------------------------------------------
 # Integrated graph: puzzle + aims + bridge edges

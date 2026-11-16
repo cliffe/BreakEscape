@@ -35,6 +35,7 @@ require_relative '../lib/break_escape/format_upgrade'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/capture_model'
+require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/phish_score'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
@@ -7091,6 +7092,274 @@ def fake_check_buildable?(page_def, target_id)
   false
 end
 
+def check_credentials(json_data)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  creds = json_data['credentials']
+  return issues unless creds.is_a?(Hash)
+
+  cm = BreakEscape::CredentialModel
+  ai = BreakEscape::AccessIdentities
+  capm = BreakEscape::CaptureModel
+  nm = BreakEscape::NetworkModel
+  err  = ->(msg) { issues << "❌ ERROR: credentials: #{msg}" }
+  warn = ->(msg) { issues << "⚠️ WARNING: credentials: #{msg}" }
+  info = ->(msg) { issues << "ℹ️ INFO: credentials: #{msg}" }
+
+  # Account holders and sign-in PCs, by id.
+  accounts_by_id = cm.room_npcs(json_data).select { |n| ai.account?(n) }.to_h { |n| [n['id'].to_s, n] }
+  pcs = cm.sign_in_pcs(json_data)
+  pcs_by_id = pcs.to_h { |pc| [pc['id'].to_s, pc] }
+  headless_pc_ids = pcs.select { |pc| nm.headless?(pc) }.map { |pc| pc['id'].to_s }.to_set
+
+  # Foothold ids any jack, access point or implant/grant can create. The runtime only ever keys
+  # player_state['footholds'] by the prefixed forms (plan 9.1 authors "jack_comms_port"): a jack is
+  # "jack_<jackId>" (foothold_id_for), a Wi-Fi AP is "wifi_<network>" (wifi_foothold_id), an implant
+  # is "implant_<pc>". A proof must name one of those to fire live. `foothold_ids` holds the runtime
+  # (prefixed) forms a proof may name; `bare_foothold_ids` holds the matching bare source ids, so a
+  # proof written with a bare id can be told apart and warned about rather than passed (R2 m1).
+  foothold_ids = Set.new
+  bare_foothold_ids = Set.new
+  nm.jacks(json_data).each do |e|
+    jid = e[:object]['id'].to_s
+    next if jid.empty?
+
+    bare_foothold_ids << jid
+    foothold_ids << "jack_#{jid}"
+  end
+  nm.wifi_aps(json_data).each do |e|
+    ap = e[:object]
+    bare_foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id']
+    foothold_ids << "wifi_#{e[:network]}" if e[:network]
+  end
+  # A grant_foothold action (scripted or a player implant) grants its foothold through POST
+  # /network/implant, whose runtime id is "implant_<pc>" (implant_foothold_id_for). The runtime
+  # keys the foothold by that prefixed id; the bare PC id is tracked only to warn on a proof that
+  # names it (R1 m4, R2 m1). The runtime reads player_state['footholds'].
+  nm.grant_foothold_actions(json_data).each do |a|
+    pc = a[:pc].to_s
+    next if pc.empty?
+
+    bare_foothold_ids << pc
+    foothold_ids << "implant_#{pc}"
+  end
+
+  declared_globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'].keys.map(&:to_s).to_set : Set.new
+
+  notes_family = %w[notes notes2 notes4 notes5].to_set
+  always_allowed = BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.to_set
+  # Client-built decor cups (games_controller DECOR_CUP_TYPES, mirrored by DeclaredGrants::DECOR_CUPS)
+  # have no scenario lookup either, so a credential on one would be keyed on a client-chosen id (R3 m1).
+  decor_cups = BreakEscape::DeclaredGrants::DECOR_CUPS.to_set
+
+  # Count and id-pattern checks over the raw map (not the 64-capped reader).
+  err.call("more than #{cm::MAX_ENTRIES} entries (#{creds.size}); the server reads only the first #{cm::MAX_ENTRIES} by sorted id.") if creds.size > cm::MAX_ENTRIES
+  creds.each_key do |id|
+    err.call("credential id '#{id}' is outside the pattern ^[a-z][a-z0-9_]{0,63}$.") unless id.is_a?(String) && id.match?(cm::ID_PATTERN)
+  end
+
+  # Every item carrying a `credential`, by path (for the item-field checks).
+  cred_items = []
+  walk_items = lambda do |node, path|
+    case node
+    when Hash
+      if node['type'].is_a?(String) && node['credential'].is_a?(String)
+        cred_items << { item: node, path: path }
+      end
+      node.each { |k, v| walk_items.call(v, "#{path}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk_items.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk_items.call(json_data, '')
+
+  # policy accepts checks (independent of the registry).
+  policies = json_data['policies'].is_a?(Hash) ? json_data['policies'] : {}
+  used_policy_names = Set.new
+  pcs.each do |pc|
+    used_policy_names << (cm.present_string?(pc['policy']) ? pc['policy'] : json_data['defaultPolicy']).to_s
+  end
+  policies.each do |pname, policy|
+    next unless policy.is_a?(Hash) && policy.key?('accepts')
+
+    list = policy['accepts']
+    if list.is_a?(Array)
+      list.each do |k|
+        err.call("policy '#{pname}' accepts an unknown kind '#{k}'.") unless cm::KINDS.key?(k)
+      end
+      warn.call("policy '#{pname}' accepts a list without 'password'; password is always accepted anyway, so the list is misleading.") unless list.include?('password')
+    end
+    warn.call("policy '#{pname}' sets 'accepts' but no PC uses it.") unless used_policy_names.include?(pname.to_s)
+  end
+
+  # unlock_object tasks, for the "relay sign-in never completes it" warning.
+  invite_connect_pcs = creds.select { |_id, e| e.is_a?(Hash) && e['kind'] == 'assist_invite' }
+                            .filter_map { |_id, e| e['connectsTo'].to_s if cm.present_string?(e['connectsTo']) }.to_set
+  if !invite_connect_pcs.empty? && json_data['objectives'].is_a?(Array)
+    json_data['objectives'].each do |obj|
+      Array(obj.is_a?(Hash) ? obj['tasks'] : nil).each do |task|
+        next unless task.is_a?(Hash) && task['type'] == 'unlock_object'
+
+        target = task['targetObject'] || task['target'] || task['object']
+        warn.call("an unlock_object task targets '#{target}', an assist_invite's connectsTo; a relay sign-in never completes it.") if invite_connect_pcs.include?(target.to_s)
+      end
+    end
+  end
+
+  creds.each do |id, entry|
+    next unless entry.is_a?(Hash)
+
+    kind = entry['kind']
+    label = "credential '#{id}'"
+
+    # Kind.
+    if !cm::KINDS.key?(kind)
+      err.call("#{label} has an unknown kind '#{kind}'.")
+    elsif !cm.kind_built?(kind)
+      hint = kind == 'token' ? 'not supported until K5' : 'not supported until phase 3'
+      err.call("#{label} kind '#{kind}' is #{hint}.")
+    end
+
+    # Account.
+    npc = accounts_by_id[entry['account'].to_s]
+    err.call("#{label} account '#{entry['account']}' is not an account holder.") unless npc
+
+    # connectsTo.
+    connecting = cm.connecting?(kind)
+    connects_to = entry['connectsTo']
+    if kind == 'password'
+      err.call("#{label} is a password and must not set connectsTo.") if entry.key?('connectsTo')
+    elsif connecting
+      if !cm.present_string?(connects_to)
+        err.call("#{label} is a connecting kind and must set connectsTo.")
+      elsif !pcs_by_id.key?(connects_to.to_s)
+        err.call("#{label} connectsTo '#{connects_to}' is not a sign-in PC.")
+      elsif kind == 'assist_invite' && headless_pc_ids.include?(connects_to.to_s)
+        err.call("#{label} is an assist_invite whose connectsTo '#{connects_to}' is headless; there is no screen to share.")
+      end
+    end
+
+    # foundIn.
+    if kind == 'password'
+      err.call("#{label} is a password and must set foundIn.") unless cm.present_string?(entry['foundIn'])
+    elsif entry.key?('foundIn')
+      err.call("#{label} sets foundIn, which is only allowed on a password.")
+    end
+
+    # endsOnGlobal.
+    if entry.key?('endsOnGlobal')
+      if kind != 'assist_invite'
+        err.call("#{label} sets endsOnGlobal, which is only allowed on an assist_invite.")
+      elsif !declared_globals.include?(entry['endsOnGlobal'].to_s)
+        err.call("#{label} endsOnGlobal '#{entry['endsOnGlobal']}' names no declared globalVariable.")
+      end
+    end
+
+    # proof.
+    proof = entry['proof']
+    pk = cm.proof_kind(proof)
+    if pk.nil?
+      err.call("#{label} proof must name exactly one of #{cm::PROOF_KINDS.join(', ')}.")
+    else
+      case pk
+      when 'session'
+        session_pc = proof['session'].to_s
+        if !pcs_by_id.key?(session_pc)
+          err.call("#{label} proof session '#{session_pc}' is not a sign-in PC.")
+        elsif kind == 'assist_invite' && connects_to.to_s == session_pc
+          warn.call("#{label} proof is a session on the invite's own connectsTo; a relay sign-in never satisfies it.")
+        end
+      when 'held'
+        item_id = proof['held'].to_s
+        definition = cm.item_definition(json_data, item_id)
+        if definition.nil?
+          err.call("#{label} proof held '#{item_id}' names no item in the held scope.")
+        else
+          placeable = definition['takeable'] == true
+          grant_ids = BreakEscape::DeclaredGrants.for(json_data).map { |g| g['item'].is_a?(Hash) ? g['item']['id'].to_s : nil }.compact.to_set
+          held_in_itemsheld = cm.room_npcs(json_data).any? { |n| Array(n['itemsHeld']).any? { |i| i.is_a?(Hash) && i['id'].to_s == item_id } }
+          start_ids = Array(json_data['startItemsInInventory']).filter_map { |i| i['id'].to_s if i.is_a?(Hash) }.to_set
+          reachable = placeable || grant_ids.include?(item_id) || held_in_itemsheld || start_ids.include?(item_id)
+          err.call("#{label} proof held '#{item_id}' can never hold: the item is not takeable and is in no declared grant, NPC itemsHeld or start inventory.") unless reachable
+
+          # Item-field and cross-reference checks on the definition.
+          if notes_family.include?(definition['type'])
+            err.call("#{label} held item '#{item_id}' is a notes-family type ('#{definition['type']}'); it never reaches the tray, so use text_file.")
+          elsif always_allowed.include?(definition['type'])
+            err.call("#{label} held item '#{item_id}' is an always-allowed type ('#{definition['type']}'); the client could build one, so use text_file.")
+          end
+          if definition['credential'].to_s != id.to_s
+            warn.call("#{label} proof held '#{item_id}' but that item does not carry credential '#{id}' (it carries '#{definition['credential']}').")
+          end
+          if kind == 'assist_invite' && grant_ids.include?(item_id) && !held_in_itemsheld
+            warn.call("#{label} is an assist_invite whose code is a declared grant; it can be claimed at once. Give it from the NPC's itemsHeld through an ink gift.")
+          end
+          if kind == 'saved_connection' && grant_ids.include?(item_id) && !placeable && !held_in_itemsheld && !start_ids.include?(item_id)
+            warn.call("#{label} is a saved_connection placed only by a declared grant; a tampered client can claim it at once. Place it in a room, on a desktop or in a share.")
+          end
+        end
+      when 'foothold'
+        fid = proof['foothold'].to_s
+        if foothold_ids.include?(fid)
+          # Runtime (prefixed) form: fires live.
+        elsif bare_foothold_ids.include?(fid)
+          warn.call("#{label} proof foothold '#{fid}' names a bare source id; the runtime only keys footholds by the prefixed form (jack_, wifi_ or implant_), so this proof can never fire. Use 'jack_#{fid}', 'wifi_<network>' or 'implant_#{fid}' as the source requires.")
+        else
+          err.call("#{label} proof foothold '#{fid}' names no foothold any jack, access point or implant action can create.")
+        end
+      when 'planted', 'dropped'
+        # Capture proofs; reachability is covered by the capture model's own checks.
+      end
+    end
+
+    # Warnings that need the account and PC.
+    if npc && connecting && pcs_by_id.key?(connects_to.to_s)
+      pc = pcs_by_id[connects_to.to_s]
+      warn.call("#{label} connectsTo '#{connects_to}' whose access list does not admit account '#{entry['account']}'.") unless cm.pc_admits_account?(pc, npc)
+      policy = cm.policy_for(json_data, pc)
+      if kind == 'saved_connection' && policy.is_a?(Hash) && policy['maxAttempts']
+        info.call("#{label} connectsTo '#{connects_to}' whose policy sets maxAttempts; a lockout there refuses the connection for the rest of the game (lockouts never expire), so it must not be the only route to something the mission needs.")
+      end
+    end
+
+    # No machine accepts this credential.
+    if npc && (kind == 'password' || connecting)
+      warn.call("#{label} is accepted by no machine: no sign-in PC's policy accepts kind '#{kind}', admits the account and (for a connecting kind) is its connectsTo.") if cm.pcs_accepting(json_data, id).empty?
+    end
+
+    # A saved_connection whose connectsTo nothing can reach.
+    if kind == 'saved_connection' && pcs_by_id.key?(connects_to.to_s) && foothold_ids.empty?
+      warn.call("#{label} is a saved_connection but no foothold or access point can reach its connectsTo.")
+    end
+  end
+
+  # Items carrying a credential: the registry id must exist, and its entry's proof must be `held`
+  # on that item.
+  cred_items.each do |rec|
+    item = rec[:item]
+    cid = item['credential'].to_s
+    entry = creds[cid]
+    if !entry.is_a?(Hash)
+      err.call("item '#{item['id'] || item['name']}' names credential '#{cid}', which is not a registry id.")
+      next
+    end
+    if notes_family.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is a notes-family type ('#{item['type']}'); use text_file.")
+    elsif always_allowed.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is an always-allowed type ('#{item['type']}'); use text_file.")
+    elsif decor_cups.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is a decor-cup type ('#{item['type']}'); the server cannot look it up in the scenario, so use text_file.")
+    end
+    held_id = entry['proof'].is_a?(Hash) ? entry['proof']['held'].to_s : nil
+    unless held_id && held_id == item['id'].to_s
+      warn.call("item '#{item['id'] || item['name']}' carries credential '#{cid}' but that entry's proof is not held on this item.")
+    end
+  end
+
+  issues
+end
+
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -8373,6 +8642,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   end
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
+  run.call('check_credentials') { check_credentials(json_data) }
   run.call('check_gated_door_credit') { check_gated_door_credit(json_data) }
   run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }

@@ -1,0 +1,257 @@
+{
+  "scenario": "test_access_keyring",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "lock_ops_pc",
+      "label": "SV-OPS-01<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "lock_lena_pc",
+      "label": "Lena's PC<br/>Sign-in",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "signin_lena",
+      "label": "Lena Fox sign-in<br/>(lfox)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_ian",
+      "label": "Ian Shaw sign-in<br/>(ishaw)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "comms_room",
+      "label": "Comms room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "signin_jake",
+      "label": "Jake Brooks sign-in<br/>(jbrooks)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "finance_room",
+      "label": "Finance",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "device_kit_dropbox",
+      "label": "Network drop box<br/>(rogue device)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "jack_comms_port",
+      "label": "Spare wall port<br/>Network jack",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "net_office_lan",
+      "label": "Harbour office LAN<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "net_server_lan",
+      "label": "Server network<br/>Network",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "pivot_lena_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "pivot_ops_pc",
+      "label": "+",
+      "kind": "gate",
+      "optional": false
+    },
+    {
+      "id": "cred_jake_pw_note",
+      "label": "Jake Brooks password<br/>(jbrooks)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_lena_rdp",
+      "label": "Lena Fox saved connection<br/>(lfox)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_lena_rdp_file",
+      "label": "HB-FIN-02.rdp",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "cred_ops_cookie",
+      "label": "Ian Shaw saved connection<br/>(ishaw)",
+      "kind": "key",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "comms_room",
+      "to": "lock_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "finance_room",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "signin_lena",
+      "soft": false
+    },
+    {
+      "from": "signin_lena",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "signin_ian",
+      "soft": false
+    },
+    {
+      "from": "signin_ian",
+      "to": "lock_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "finance_room",
+      "to": "signin_jake",
+      "soft": false
+    },
+    {
+      "from": "signin_jake",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "device_kit_dropbox",
+      "soft": false
+    },
+    {
+      "from": "comms_room",
+      "to": "jack_comms_port",
+      "soft": false
+    },
+    {
+      "from": "device_kit_dropbox",
+      "to": "jack_comms_port",
+      "soft": false
+    },
+    {
+      "from": "jack_comms_port",
+      "to": "net_office_lan",
+      "soft": false
+    },
+    {
+      "from": "net_office_lan",
+      "to": "lock_lena_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_server_lan",
+      "to": "lock_ops_pc",
+      "soft": false,
+      "label": "exposes"
+    },
+    {
+      "from": "net_office_lan",
+      "to": "net_server_lan",
+      "soft": true,
+      "label": "link",
+      "undirected": true
+    },
+    {
+      "from": "net_office_lan",
+      "to": "pivot_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_lena_pc",
+      "to": "pivot_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_lena_pc",
+      "to": "net_server_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "net_server_lan",
+      "to": "pivot_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "lock_ops_pc",
+      "to": "pivot_ops_pc",
+      "soft": false
+    },
+    {
+      "from": "pivot_ops_pc",
+      "to": "net_office_lan",
+      "soft": false,
+      "label": "pivot"
+    },
+    {
+      "from": "lobby",
+      "to": "comms_room",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "finance_room",
+      "soft": false
+    },
+    {
+      "from": "lock_lena_pc",
+      "to": "cred_jake_pw_note",
+      "soft": false
+    },
+    {
+      "from": "cred_jake_pw_note",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_lena_rdp_file",
+      "to": "cred_lena_rdp",
+      "soft": false
+    },
+    {
+      "from": "cred_lena_rdp",
+      "to": "lock_lena_pc",
+      "soft": false
+    }
+  ]
+}
