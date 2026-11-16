@@ -55,7 +55,7 @@ export const TAG_TEXT = Object.freeze({
  * The badge image per glyph group, in one place. The plug glyph's own art (badge-plug.png) is
  * not drawn yet, so the plug group reuses the key badge until it is.
  */
-export const BADGE_FILE = Object.freeze({ key: 'badge-key.png', plug: 'badge-key.png' });
+export const BADGE_FILE = Object.freeze({ key: 'badge-key.png', plug: 'badge-plug.png' });
 
 /** The badge image path for a glyph group. */
 export function badgeSrc(group) {
