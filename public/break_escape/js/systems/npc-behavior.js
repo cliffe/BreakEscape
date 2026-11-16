@@ -93,6 +93,12 @@ export const AVOID_YIELD_HOLD_MS = 10000;
 // R7 m1: before a step it checks the ground behind (the player, or a wall within
 // AVOID_BACKOFF_BEHIND_PX); with either there it counts as pinned instead of stepping.
 const AVOID_BACKOFF_BEHIND_PX = TILE_SIZE * 0.75;
+// R8 m3: after this many back-off steps to the same NPC inside one yield hold, a yielder stands
+// instead of stepping again, so a queue that cannot clear (one against three in a one-body lane)
+// stops pacing and a waypoint patrol's stall check can re-target, as on main.
+export const AVOID_YIELD_MAX_STEPS = 6;
+// R8 m2: a body, for the player-behind check (a back-off step moves AVOID_BACKOFF_MS at the squeeze speed)
+const AVOID_BODY_PX = 20;
 
 /**
  * The nearest blocker that lies AHEAD of a walker on its heading, or null.
@@ -1581,6 +1587,21 @@ export class NPCBehavior {
         return !!this._stopOnArrival;
     }
 
+    /**
+     * A new patrol target starts a new walk: no pin, no back-off step in progress. A yield hold
+     * that is still running survives (R8 m1), so a random patrol's 3 s re-target does not walk
+     * it straight back into the NPC it just gave way to.
+     */
+    _resetAvoidForNewTarget(time) {
+        const a = this._avoid;
+        if (a?.yieldTo && time < a.yieldUntil) {
+            this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0,
+                yieldTo: a.yieldTo, yieldUntil: a.yieldUntil, yieldCount: a.yieldCount || 0 };
+        } else {
+            this._avoid = null;
+        }
+    }
+
     /** Pinned in a head-on meeting: its back-off gained no ground, so others yield to it. */
     _avoidIsPinned() {
         return !!this._avoid?.pinned;
@@ -1598,7 +1619,9 @@ export class NPCBehavior {
      */
     _avoidBackBlocked(pos, dir, blockers) {
         const player = blockers.filter(b => b.isPlayer);
-        if (player.length && nearestBlockerAhead(pos, dir, player)) return true;
+        // Reach: the whole step plus a body; lane: a body each side (R8 m2)
+        const step = AVOID_BACKOFF_MS * AVOID_SQUEEZE_FACTOR * (this.config.patrol.speed || 0) / 1000;
+        if (player.length && nearestBlockerAhead(pos, dir, player, step + AVOID_BODY_PX, AVOID_BODY_PX - 1)) return true;
         const pfm = this.pathfindingManager || window.pathfindingManager;
         if (typeof pfm?.hasWorldPhysicsLineOfSight !== 'function') return false;
         return !pfm.hasWorldPhysicsLineOfSight(pos.x, pos.y,
@@ -1750,11 +1773,18 @@ export class NPCBehavior {
                     a.since = time; a.gaveUp = false; a.repathAfter = 0;
                     return true;
                 }
+                if (a.yieldTo !== hit.id || time >= a.yieldUntil) { a.yieldTo = hit.id; a.yieldUntil = time + AVOID_YIELD_HOLD_MS; a.yieldCount = 0; }
+                if ((a.yieldCount || 0) >= AVOID_YIELD_MAX_STEPS) {
+                    // Gave way to this NPC often enough and it still has not cleared (R8 m3): stand, as
+                    // main does, so a waypoint patrol's stall check can re-target
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                a.yieldCount = (a.yieldCount || 0) + 1;
                 // One step of AVOID_BACKOFF_MS straight away from the blocker; re-assessed when it ends
                 a.backoffFrom = { x: pos.x, y: pos.y };
                 a.backoffTo = { x: pos.x + dx / d * AVOID_BACKOFF_REACH_PX, y: pos.y + dy / d * AVOID_BACKOFF_REACH_PX };
                 a.backoffUntil = time + AVOID_BACKOFF_MS;
-                if (a.yieldTo !== hit.id) { a.yieldTo = hit.id; a.yieldUntil = time + AVOID_YIELD_HOLD_MS; }
                 this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
                 return true;
             }
@@ -1881,7 +1911,7 @@ export class NPCBehavior {
      * Choose target from waypoint list (single-room or multi-room)
      */
     chooseWaypointTarget(time) {
-        this._avoid = null;   // a new walk starts with no pin or yield hold (R7 m2)
+        this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
         // Handle multi-room routes
         if (this.config.patrol.multiRoom && this.config.patrol.route && this.config.patrol.route.length > 0) {
             this.chooseWaypointTargetMultiRoom(time);
@@ -2451,7 +2481,7 @@ export class NPCBehavior {
      * Choose random patrol target (original behavior)
      */
     chooseRandomPatrolTarget(time) {
-        this._avoid = null;   // a new walk starts with no pin or yield hold (R7 m2)
+        this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
         // Ensure we have the latest pathfinding manager reference
         const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
         

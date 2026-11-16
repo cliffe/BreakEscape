@@ -33,7 +33,7 @@ const quiet = fn => {
 };
 const mod = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 const { NPCBehavior } = mod.default;
-const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX, AVOID_BACKOFF_MS } = mod;
+const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX, AVOID_BACKOFF_MS, AVOID_YIELD_MAX_STEPS } = mod;
 
 // ── nearestBlockerOnPath: "ahead" follows the path for the look-ahead ──────────
 
@@ -713,4 +713,74 @@ test('R7 m2: a stale pin no longer makes others yield', () => {
     assert.ok(fresh.first >= 0 && fresh.then > 0, 'with the pin dropped amy keeps priority and squeezes on');
     window.rooms = {};
     window.npcBehaviorManager = undefined;
+});
+
+// Sims tidy R8 m1: a random patrol re-targets every changeDirectionInterval and that wiped its
+// yield hold in the middle of a back-off, so it could walk straight back into the NPC it gave way to.
+test('R8 m1: a random patrol re-target keeps the yield hold but drops the pin and the step', () => {
+    const { b } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });   // back-off starts
+    assert.ok(b._avoid.backoffUntil > t && b._avoid.yieldTo === 'amy');
+    const until = b._avoid.yieldUntil;
+    b.roomId = 'r';
+    b.pathfindingManager = { getRandomPatrolTarget: () => ({ x: 300, y: 0 }),
+        findNearestWalkableStartCell: (x, y) => ({ x, y }), findWorldPath: () => {} };
+    b.chooseRandomPatrolTarget(t + 100);
+    assert.equal(b._avoid.yieldTo, 'amy', 'the yield hold survives the re-target');
+    assert.equal(b._avoid.yieldUntil, until);
+    assert.ok(!b._avoid.backoffUntil, 'the step in progress is dropped');
+    assert.ok(!b._avoid.pinned);
+    // a hold that has run out is dropped, as before
+    b.chooseRandomPatrolTarget(until + 1000);
+    assert.equal(b._avoid, null);
+});
+
+// Sims tidy R8 m2: the player check behind a back-off reached 42 px in a 13 px lane, but a step
+// moves 31 to 34 px, so a player at 45 px behind, or 16 px off the line, was walked into.
+test('R8 m2: the player 45 px behind, or 16 px off the line, stops the back-off step', () => {
+    const cases = { 'straight behind at 45 px': { x: -45, y: 0 }, '16 px off the line': { x: -26, y: 16 } };
+    for (const [name, at] of Object.entries(cases)) {
+        const { b } = headOn();
+        window.player = { body: { enable: true, center: at } };
+        let t = 100000;
+        b._handleBlockerAhead(t, { x: 400, y: 0 });
+        t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+        t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });
+        assert.ok(!(b._avoid.backoffUntil > t), `${name}: no step`);
+        assert.equal(b._avoidIsPinned(), true, `${name}: pinned`);
+    }
+    // well clear (a step plus a body away, or 30 px off the line): the step runs
+    for (const at of [{ x: -90, y: 0 }, { x: -26, y: 30 }]) {
+        const { b } = headOn();
+        window.player = { body: { enable: true, center: at } };
+        let t = 100000;
+        b._handleBlockerAhead(t, { x: 400, y: 0 });
+        t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+        t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });
+        assert.ok(b._avoid.backoffUntil > t, `player at ${at.x},${at.y}: the step runs`);
+    }
+    window.player = undefined;
+});
+
+// Sims tidy R8 m3: with a third body queued behind, the yielder stepped back for ever, each step
+// moving more than 4 px, so a waypoint patrol's stall check never fired. After a few steps to the
+// same NPC it stands, as on main, and the stall check re-targets.
+test('R8 m3: a waypoint patrol held in a one against three lane stands and re-targets', () => {
+    const { b, otherBody } = headOn();
+    b.config.patrol.changeDirectionInterval = 3000;
+    b.config.patrol.waypoints = [{ worldX: 400, worldY: 0 }];
+    const c = b.sprite.body.center, dt = 50;
+    let stalledAt = null, steps = 0, lastStep = 0;
+    for (let t = 100000; t < 130000; t += dt) {
+        otherBody.center.x = c.x + 28;   // the NPC ahead is pushed on by the queue behind it
+        b._handleBlockerAhead(t, b.patrolTarget);
+        if (b._avoid?.backoffUntil > t && b._avoid.backoffUntil !== lastStep) { steps++; lastStep = b._avoid.backoffUntil; }
+        c.x += b._vel.x * dt / 1000;
+        if (b._patrolStalled(t)) { stalledAt = t - 100000; break; }
+    }
+    assert.ok(stalledAt !== null && stalledAt < 15000, `the stall check fires within 15 s (at ${stalledAt})`);
+    assert.ok(steps <= AVOID_YIELD_MAX_STEPS, `no more than the capped back-off steps (${steps})`);
 });
