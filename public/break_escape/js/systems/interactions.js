@@ -950,6 +950,14 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A planted rogue access point (physical pentest A1, 4.3): its click opens the rogue-ap
+    // console (Recon, Clone, Log) through the starter registry. It never runs the generic flow
+    // below (no triggerOnInteract, no pickup); the console writes its own globals.
+    if (sprite.scenarioData.wifiTwin === true) {
+        startRegisteredMinigame('rogue-ap', sprite);
+        return;
+    }
+
     // A network link item in the tray (slice 9.3a, 4.1): its own click opens the network
     // view for its foothold. It has no menu, no contents and is never dropped.
     if (sprite.scenarioData.type === 'network_link') {
