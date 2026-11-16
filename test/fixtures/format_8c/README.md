@@ -50,3 +50,8 @@ re-made the same way: the ab14d1926 lab template with this branch's own lab edit
 in `git diff fc4b4d8a5 08a3073e8 -- scenarios/lab_physical_pentest/`, nothing from 8b or 8c), rendered
 with `srand(1)` on a detached ab14d1926 worktree and run through `NpcHabits.expand!`. The diff from the
 previous fixture is only those tailgating edits.
+
+Note (A2, 2026-11-16): the lab now renders a per-game `@random_password` (the staff Wi-Fi key). The
+corpus test pins it to `FixedPw1` in `live_render` (SecureRandom ignores `srand`), and the lab loader
+fixture carries that same value. The fixture was refreshed by overlaying the A2 lab content (Kieran's
+account, networks, rogue AP kit, objectives, hints) on the frozen format-2 loader output.
