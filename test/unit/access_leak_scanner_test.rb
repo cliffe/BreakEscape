@@ -848,4 +848,31 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     ] }
     assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
   end
+
+  # Item 1: a GET /keyring capture entry carries the captured account's own password, as GET
+  # /capture_secrets does; it is exempt (owner's own game). A registry-sourced entry is not.
+  test 'K1: a captured account keyring entry with its password is exempt for the owner' do
+    keyring = '/break_escape/games/1/keyring'
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => JAKE_PASSWORD }
+    ] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => body }]]
+    assert_empty AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(rows), 'capture-sourced password is allowed'
+
+    # The same password on a registry-sourced entry is still a leak.
+    reg = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake_pw', 'kind' => 'password', 'source' => 'registry', 'password' => JAKE_PASSWORD }
+    ] }
+    reg_rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => reg }]]
+    findings = AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(reg_rows)
+    assert_includes summary(findings), [1, 'password', 'npc:jake'], 'a registry entry password is flagged'
+  end
+
+  # R2 m3: the item-level `credential` field is server-only (both client filters strip it), so it is
+  # a second guard flagging it in any client response.
+  test 'K1: an item-level credential field in any response is reported' do
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'f', 'type' => 'text_file', 'credential' => 'lena_rdp' }] } },
+                    data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_field', 'credential']], summary(findings)
+  end
 end

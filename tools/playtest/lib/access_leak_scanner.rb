@@ -349,7 +349,8 @@ class AccessLeakScanner
     'lockout_unrecorded' => 'a lockout the server\'s check did not record',
     'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
     'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
-    'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer'
+    'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
+    'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)'
   }.freeze
 
   private
@@ -717,7 +718,8 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
-      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone')
+      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
+      keyring: method == 'GET' && path.end_with?('/keyring')
     }
   end
 
@@ -737,11 +739,17 @@ class AccessLeakScanner
 
     note = ctx[:login_accounts] ? served_note_password(body) : nil
     shared = ctx[:npc_workaround] ? heard_share_password(body) : nil
+    # A GET /keyring answer's implicit capture entries carry the captured account's own
+    # password, just as GET /capture_secrets does. Exempt the `password` field on a
+    # `source: "capture"` entry (owner's own game only); a registry-sourced entry is not
+    # exempted, so a password on one is still flagged.
+    keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
+        next if keyring_capture_paths && keyring_capture_paths.include?(json_path)
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
@@ -1188,6 +1196,9 @@ class AccessLeakScanner
   def scan_credentials(body, add)
     walk_hashes(body, '$') do |hash, path|
       add.call('credential_registry', 'credentials', safe_path("#{path}.credentials")) if hash.key?('credentials')
+      # The item-level `credential` field is server-only: both client filters strip it, so it
+      # must never reach the browser. A second guard on the field R1 m1 flagged (K1 R2 m3).
+      add.call('credential_field', 'credential', safe_path("#{path}.credential")) if hash['credential'].is_a?(String)
     end
 
     entries = keyring_entries_in(body)
@@ -1213,6 +1224,21 @@ class AccessLeakScanner
     return nil unless body.is_a?(Hash) && body.key?('rev') && body['entries'].is_a?(Array)
 
     body['entries']
+  end
+
+  # The JSON paths of the `password` field on every `source: "capture"` keyring entry, so
+  # scan_passwords can exempt the captured account's own value there (and only there).
+  def keyring_capture_password_paths(body)
+    entries = keyring_entries_in(body)
+    return Set.new if entries.nil?
+
+    paths = Set.new
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'capture' && entry['password'].is_a?(String)
+
+      paths << "$.entries[#{i}].password"
+    end
+    paths
   end
 
   # The registry credential ids whose proof holds in the recorded state, from the game read once at
