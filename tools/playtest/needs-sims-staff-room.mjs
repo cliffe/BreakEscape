@@ -318,7 +318,7 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
                 const key = JSON.stringify([rec.target, rec.kind, rec.phase, rec.moving]);
                 if (key !== last) { window.__jodieJobs.push(rec); last = key; }
                 if (rec.target === 'staff_lockers' && moving && rec.phase !== 'using') {
-                    clearInterval(iv); window.__tripHit = rec; window.game.loop.sleep();
+                    clearInterval(iv); window.__tripHit = rec; window.game.sys.game.loop.sleep();
                 }
             }, 50);
             window.__tripWatch = iv;
@@ -328,21 +328,21 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
             if (hit) {
                 r.trip_icon = await page.evaluate(() => {
                     const sp = window.npcBehaviorManager.getBehavior('jodie').sprite, out = [];
-                    for (const sc of window.game.scene.scenes) for (const o of sc.children?.list || []) {
+                    for (const sc of window.game.sys.game.scene.scenes) for (const o of sc.children?.list || []) {
                         const k = o.texture?.key || '';
                         if (o.visible && k.startsWith('icon:') && Math.hypot(o.x - sp.x, o.y - sp.y) < 64) out.push({ key: k, x: Math.round(o.x), y: Math.round(o.y), alpha: +(o.alpha ?? 1).toFixed(2) });
                     }
                     return { ...window.__tripHit, icons: out, paused_for_screenshot: true };
                 });
                 await shot('02a-jodie-locker-trip');
-                await page.evaluate(() => window.game.loop.wake());
+                await page.evaluate(() => window.game.sys.game.loop.wake());
             }
             evs = await events();
             if (!shotLockers && evs.some(e => e.ev === 'npc_use_started:staff_lockers')) { await t(1500); await shot('02-jodie-at-lockers'); r.light_while_at_lockers = await light(); shotLockers = true; }
             if (evs.some(e => e.ev === 'npc_used:staff_lockers')) break;
             await t(1000);
         }
-        await page.evaluate(() => { clearInterval(window.__tripWatch); if (window.game.loop.sleeping) window.game.loop.wake(); });
+        await page.evaluate(() => { clearInterval(window.__tripWatch); if (window.game.sys.game.loop.sleeping) window.game.sys.game.loop.wake(); });
         r.jodie_jobs = await page.evaluate(() => window.__jodieJobs);
         const used = evs.find(e => e.ev === 'npc_used:staff_lockers');
         const callHeard = evs.find(e => e.ev === 'npc_exchange_heard:exchange_job_called');
