@@ -588,6 +588,13 @@ function roomPixelSize(map) {
 function applyScenarioObjectPosition(sprite, scenarioPos, roomPos, roomSize) {
     if (!sprite || !scenarioPos || typeof scenarioPos !== 'object') return;
     const hasTile = scenarioPos.x !== undefined || scenarioPos.y !== undefined;
+    // A tile value outside the room (tampered or stale) keeps the random spot, as px/py does.
+    // Without a room size the tile value is trusted, as before.
+    const tileOk = (v, limit) => v === undefined
+        || (Number.isFinite(v) && (!roomSize || (v >= 0 && v * TILE_SIZE <= limit)));
+    const tilesOk = tileOk(scenarioPos.x, roomSize && roomSize.width)
+        && tileOk(scenarioPos.y, roomSize && roomSize.height);
+    if (hasTile && !tilesOk) return;
     if (scenarioPos.x !== undefined) sprite.x = Math.round(roomPos.x + scenarioPos.x * TILE_SIZE);
     if (scenarioPos.y !== undefined) sprite.y = Math.round(roomPos.y + scenarioPos.y * TILE_SIZE);
     if (!hasTile && Number.isFinite(scenarioPos.px) && Number.isFinite(scenarioPos.py) && roomSize
@@ -607,28 +614,8 @@ function applyScenarioObjectPosition(sprite, scenarioPos, roomPos, roomSize) {
  * - 2 tiles (64px) + 16px from bottom, plus sprite height to prevent overlap with southern room walls
  */
 function createSpriteAtRandomPosition(scenarioObj, position, roomId, index, map) {
-    // Get actual room dimensions from the tilemap
-    let roomWidth = 10 * TILE_SIZE;   // fallback
-    let roomHeight = 10 * TILE_SIZE;  // fallback
-
-    if (map) {
-        let width, height;
-        if (map.json) {
-            width = map.json.width;
-            height = map.json.height;
-        } else if (map.data) {
-            width = map.data.width;
-            height = map.data.height;
-        } else {
-            width = map.width;
-            height = map.height;
-        }
-
-        if (width && height) {
-            roomWidth = width * TILE_SIZE;
-            roomHeight = height * TILE_SIZE;
-        }
-    }
+    // Get actual room dimensions from the tilemap (shared with the position bound)
+    const { width: roomWidth, height: roomHeight } = roomPixelSize(map);
 
     // Get sprite texture dimensions to calculate proper placement
     let spriteHeight = TILE_SIZE;  // fallback to 1 tile if texture not found

@@ -103,6 +103,31 @@ test('px/py on the room edge is inside; non-finite stays refused with a room siz
     assert.deepEqual([n.x, n.y], [999, 777]);
 });
 
+test('tile x/y outside the room keep the fallback position (m1)', () => {
+    for (const pos of [{ x: 99999, y: 3 }, { x: 3, y: 99999 }, { x: -1, y: 3 }, { x: 21, y: 3 }, { x: NaN, y: 3 }]) {
+        const s = sprite();
+        place(s, pos, room);
+        assert.deepEqual([s.x, s.y], [999, 777], JSON.stringify(pos));
+    }
+    const edge = sprite();
+    place(edge, { x: 20, y: 15 }, room);
+    assert.deepEqual([edge.x, edge.y], [640 + 640, 320 + 480], 'the far edge is inside');
+});
+
+test('px inside the room with a non-finite py keeps the fallback position (m4c)', () => {
+    for (const py of [Infinity, undefined, 'x']) {
+        const s = sprite();
+        place(s, { px: 900, py }, room);
+        assert.deepEqual([s.x, s.y], [999, 777], String(py));
+    }
+});
+
+test('createSpriteAtRandomPosition takes its room size from roomPixelSize (m3)', () => {
+    const body = src.slice(end, src.indexOf('\n}\n', end));
+    assert.match(body, /roomPixelSize\(map\)/);
+    assert.doesNotMatch(body, /map\.json|map\.data|10 \* TILE_SIZE/);
+});
+
 test('without a room size, px/py is not trusted', () => {
     const s = sprite();
     placeRaw(s, { px: 900, py: 500 }, room);

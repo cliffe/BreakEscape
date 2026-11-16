@@ -649,6 +649,42 @@ module BreakEscape
       assert_equal({ 'px' => 131.5, 'py' => 60.0, 'elevation' => 30 }, landed['position'])
     end
 
+    test 'a stored tile pair far outside any room is dropped (m1)' do
+      build
+      place_drop('kitchen', { 'x' => 99_999, 'y' => 3 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_response :success
+      assert_nil carry_state['grace']['fromPos']
+    end
+
+    test 'a stored elevation outside the small range is dropped, a normal one kept (m2)' do
+      build
+      place_drop('kitchen', { 'px' => 131.5, 'py' => 60.0, 'elevation' => 100_000 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_equal({ 'px' => 131.5, 'py' => 60.0 }, carry_state['grace']['fromPos'])
+    end
+
+    test 'a stored elevation with no complete pair yields no position (m4a)' do
+      build
+      place_drop('kitchen', { 'elevation' => 30 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_nil carry_state['grace']['fromPos'], 'elevation alone'
+    end
+
+    test 'a stored elevation beside a half pair yields no position (m4a)' do
+      build
+      place_drop('kitchen', { 'x' => 5.0, 'elevation' => 30 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_nil carry_state['grace']['fromPos'], 'elevation beside a half pair'
+    end
+
+    test 'a valid tile pair is kept beside a bad px/py pair (m4b)' do
+      build
+      place_drop('kitchen', { 'x' => 6.4, 'y' => 5.1, 'px' => 1_000_000, 'py' => 60.0, 'elevation' => 30 })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_equal({ 'x' => 6.4, 'y' => 5.1, 'elevation' => 30 }, carry_state['grace']['fromPos'])
+    end
+
     # C1 test 4: a client cannot supply fromPos. A carry_object body with fromPos (or
     # position) is ignored; a sync delta with an npcCarry fromPos writes nothing.
     test 'a client-sent fromPos on carry_object is ignored; the server derives it' do

@@ -1197,6 +1197,10 @@ module BreakEscape
 
     # Object types that may never be carried even with a needsTag: keys and the
     # credential family. The structural lock-field checks below catch the rest.
+    # Stored carry positions: generous bounds that only reject tampering. Scenario
+    # elevations run 18..40; tile x/y are room-relative.
+    CARRY_TILE_BOUND = 200
+    CARRY_ELEVATION_RANGE = [0, 256].freeze
     CARRY_DISQUALIFYING_TYPES = %w[key keycard credential password badge smartcard rfid_card].freeze
 
     # { item_id => { 'room' => room_id, 'object' => scenario_def } } for every
@@ -1363,10 +1367,15 @@ module BreakEscape
       cleaned = {}
       [%w[x y], %w[px py]].each do |pair|
         next unless pair.all? { |k| valid_ko_coord?(pos[k]) }
+        # Tile coordinates are room-relative, so bound them generously (no room geometry here).
+        next if pair == %w[x y] && pair.any? { |k| pos[k].abs > CARRY_TILE_BOUND }
 
         pair.each { |k| cleaned[k] = pos[k] }
       end
-      cleaned['elevation'] = pos['elevation'] if cleaned.any? && valid_ko_coord?(pos['elevation'])
+      elevation = pos['elevation']
+      if cleaned.any? && valid_ko_coord?(elevation) && elevation.between?(*CARRY_ELEVATION_RANGE)
+        cleaned['elevation'] = elevation
+      end
       cleaned.presence
     end
 
