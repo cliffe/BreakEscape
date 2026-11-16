@@ -1054,3 +1054,43 @@ A first server mutation (removing `present_string?`) survived because password r
 2. Wording per 8.2: capture-log pointer when a capture log is held, else "Saved connection found: {label} for {displayName} on {host}." and "{displayName}'s password is in {label}."; more than two: two then "and N more"; captured entries silent; a `foundIn` entry waits for `noteOpened`; an NPC give's find is held until the conversation closes. An `assist_invite` gets no toast before K3c.
 3. Tests go in `test/js/keyring-client.test.mjs` (same harness: `setup()`, the `alerts` list, `window.ApiClient.keyring` answers).
 4. Live proof of Connect (R1, R3, R5b) is still a separate agent.
+
+### K3b run 3 (part B, find toasts)
+
+Tip before this run `dc8268916`.
+
+**Built**
+- `systems/keyring.js`: the first answer with no screen (the page-start prime) is the baseline and toasts nothing. Every later no-screen answer (`fetch(null)`, whoever asked: a trigger's `refresh()` or Connect) goes through `noteFinds`, which diffs it against the previous one and gives one toast for the new entries. A registry password whose file has not been opened here (`findWaiting`, the same test as `foundVisible`) is left out of the ids, so it counts as new once its file is opened. Captures, assist invites and any other kind are silent (`FIND_KINDS = ['saved_connection', 'password']`; K3c adds `assist_invite`). While `window.currentConversationNPCId` is set, finds are held and released as one toast on `conversation_closed:*`, or by a 500 ms poll when the flag clears with no close event (the mail runner sets it too).
+- Triggers in `listen()`: `pc_signed_in` then `pc_desktop_opened` for the same PC (one ask once the desktop is open; a desktop reopened on a held session asks nothing); `network_foothold_gained` (plant, implant and Wi-Fi join each emit it once); `trayChanged` (see deviations); `noteOpened(id)` asks only when a waiting entry is found in that file. Each ask is one GET with `rev`, usually `unchanged`.
+- `utils/remote-host-text.js`: `savedConnectionFoundMessage`, `passwordInFileFoundMessage`, `findMoreLine`, `findLine(entry)` and `findToastText(entries)` ("no capture log" lines of 8.2; the capture log wording is K3d).
+- Toasts go through `window.gameAlert(message, 'info', '', 7000, { plainText: true, brief: true })`. Checked: `showNotification` treats every toast as plain text unless `options.html === true`, and sets the title with `textContent` and the message with text nodes (`setPlainLines`). A test drives a label and a name holding markup through the real `notifications.js` and finds no element made from them.
+- Nothing written to globals, player state or storage; no POST.
+- Backlog: the gift toast's emoji (`chat-helpers.js:141`) logged in `docs/IDEAS_BACKLOG.md`.
+- No new static imports (the text module is loaded by dynamic import, as Connect does, and is already in the harness copy list).
+
+**Tests** `test/js/keyring-client.test.mjs`, now 51 cases (13 new): the find strings word for word; baseline at load (one GET, no rev, no toast); rev reuse and `unchanged`; a failed prime leaves the next answer as the baseline; wording per kind, two in one toast, more than two as two then "and 1 more" (an invite and a capture in the same answer not counted); captures and invites silent; the `foundIn` wait (no toast, another file asks nothing, its file asks once with rev, toast on the `unchanged` answer, shown once); an entry waiting at load is revealed by the prime and never toasts; the hold during a conversation (two finds, one toast after `conversation_closed:*`, timer cleared); release by the poll; the sign-in and foothold triggers; no writes; markup in a label stays text. Two part A tests changed with the tray rule and the longer listener list.
+
+**Mutation results** (each broken in turn, restored from a copy)
+
+| Mutation | Caught by |
+|---|---|
+| grouping ("and N more" branch removed) | the grouping case |
+| capture silence (capture filter removed in both the keyring and `findLine`) | 3 cases (strings, grouping, silence) |
+| `foundIn` wait (`findWaiting` skipped) | the `foundIn` wait case |
+| conversation hold (`inConversation` check removed) | both hold cases |
+
+The capture filter sits in two places (`findKindToasts` and `findLine`); removing only one is not caught because the other still keeps the toast silent. Left as a double guard.
+
+**Deviations**
+- `trayChanged` now asks on any add (an item's `credential` never reaches the client, so any add may be one) and on a removal only when the removed id is some entry's `heldItem` in the latest answer. Part A asked on any change of the id set.
+- The toast has no title and passes `brief: true`, so the phone's two-line clamp never cuts a grouped toast.
+- "and N more" has no full stop, as in 8.2's wording. Each name line keeps its own.
+- The diff is against the previous answer, as 8.2 says, so dropping a .rdp and taking it again toasts again.
+- A failed prime means the next good answer is the baseline and toasts nothing, so a find made before that answer is silent. Nothing is stored, so this follows the reload rule of 8.1.
+
+**HANDOVER (live proof)**
+Beats R1, R3 and R5b are in the section 9.1 table of the plan (`grep "| R1 |"`), on new games of `test_access_keyring`:
+1. R1: at Sam's keyboard take HB-FIN-02.rdp: the toast reads "Saved connection found: HB-FIN-02.rdp for Lena Fox on HB-FIN-02." If the .rdp is given in ink, the toast appears only once the conversation closes, after the gift's own toast.
+2. R3: on Lena's desktop, no toast for Jake until passwords.txt is opened; then "Jake Brooks's password is in passwords.txt." once (the label is the registry entry's; check it), and the "In file" tag (K3a).
+3. R5b: Connect SV-OPS-01.rdp from the tray (part A); taking it gives its find toast first.
+4. Check the network tab: one GET /keyring per trigger, usually `unchanged`; no writes. Shots at the four sizes, including a grouped toast if a beat yields three finds at once; `verify-run.rb`.

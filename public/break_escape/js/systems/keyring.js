@@ -18,6 +18,15 @@
  * held item proves (by the row's `heldItem`, since an item's own `credential` never reaches the
  * client), the tray menu offers Connect for it, and `connect(el)` runs steps 1 to 8.
  *
+ * The find toasts (plan 8.2, part B): the first answer with no screen (the page-start prime, or
+ * the first later one when the prime failed) is the baseline. After it, each no-screen answer
+ * is diffed against the previous one, and registry entries new since then give one toast
+ * (`findToastText`). Captures, assist invites (until K3c) and other kinds stay silent; a password
+ * in a file waits until its file is opened here. While a conversation is open (an NPC give) the
+ * toast is held until it closes. The asks come from `listen()`: a sign-in once its desktop has
+ * opened, a tray change, a plant, implant or Wi-Fi join (network_foothold_gained), and
+ * `noteOpened` of a file a waiting entry is found in. Nothing is written to globals or state.
+ *
  * No static imports: main.js imports it once (so the opened set exists from page start) and
  * unlock-system.js loads it by dynamic import, so no test harness copy list grows. Connect loads
  * its text by dynamic import.
@@ -61,6 +70,10 @@ export function connectRoute(entry) {
     return null;
 }
 
+/** How long a find toast stays up, and how often a held one checks for the conversation's close. */
+export const FIND_TOAST_MS = 7000;
+export const FIND_HOLD_POLL_MS = 500;
+
 export class Keyring {
     constructor() {
         this.cache = new Map();
@@ -74,11 +87,22 @@ export class Keyring {
         this.connecting = null;
         this._listening = null;
         this._trayIds = null;
+        // The find toasts (part B): the ids of the last no-screen answer that are not waiting
+        // (null until the baseline), the files waiting entries are found in, the finds held for
+        // an open conversation, and the PCs signed in whose desktop has not opened yet
+        this._findIds = null;
+        this._waitingFor = new Set();
+        this._held = [];
+        this._holdTimer = null;
+        this._signedInPcs = new Set();
     }
 
     /** An item opened in this page (container-minigame's file hooks call this). */
     noteOpened(id) {
-        if (typeof id === 'string' && id) this.opened.add(id);
+        if (typeof id !== 'string' || !id) return null;
+        this.opened.add(id);
+        // A file an entry is found in: ask again (usually `unchanged`), and the entry now shows
+        return this._waitingFor.has(id) ? this.refresh() : null;
     }
 
     hasOpened(id) { return this.opened.has(id); }
@@ -129,6 +153,7 @@ export class Keyring {
         // A rev the cache lost (or an odd answer): ask once more without it
         if (!entries) entries = this.remember(key, await api.keyring(pcId, { foothold }), { primed });
         if (!entries) throw new Error('keyring answer unusable');
+        if (!pcId && !foothold) this.noteFinds(entries);
         return entries;
     }
 
@@ -165,16 +190,35 @@ export class Keyring {
         if (!d || typeof d.on !== 'function' || this._listening === d) return false;
         this._listening = d;
         d.on('inventory_changed', (data) => this.trayChanged(data?.items));
+        // A sign-in asks once its desktop has opened (a desktop reopened on a held session does not)
+        d.on('pc_signed_in', (data) => { if (data?.pcId) this._signedInPcs.add(data.pcId); });
+        d.on('pc_desktop_opened', (data) => { if (data?.pcId && this._signedInPcs.delete(data.pcId)) this.refresh(); });
+        // A plant, an implant and a Wi-Fi join each emit this once
+        d.on('network_foothold_gained', () => this.refresh());
+        d.on('conversation_closed:*', () => this.releaseHeld());
         return true;
     }
 
-    /** The tray's items changed: one GET (usually `unchanged`) when the set of ids differs. */
+    /**
+     * The tray's items changed: one GET (usually `unchanged`) when an item was added (an item's
+     * `credential` never reaches the client, so any add may be one) or an item the latest answer
+     * names as `heldItem` was removed. Other removals (a drunk coffee) ask nothing.
+     */
     trayChanged(items) {
         if (!credentialsDeclared()) return null;
-        const ids = (Array.isArray(items) ? items : [])
-            .map(i => i?.scenarioData?.id).filter(id => typeof id === 'string' && id).sort().join('|');
+        const list = (Array.isArray(items) ? items : [])
+            .map(i => i?.scenarioData?.id).filter(id => typeof id === 'string' && id).sort();
+        const ids = list.join('|');
         if (ids === this._trayIds) return null;
+        const before = this._trayIds === null ? null : new Set(this._trayIds ? this._trayIds.split('|') : []);
         this._trayIds = ids;
+        if (before) {
+            const now = new Set(list);
+            const added = list.some(id => !before.has(id));
+            const held = new Set(this.latest.map(e => e?.heldItem).filter(Boolean));
+            const removedHeld = [...before].some(id => !now.has(id) && held.has(id));
+            if (!added && !removedHeld) return null;
+        }
         return this.refresh();
     }
 
@@ -182,6 +226,68 @@ export class Keyring {
     async refresh() {
         try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
         try { return await this.fetch(null); } catch (e) { return null; }
+    }
+
+    /** A registry password not yet shown: its file has not been opened here (foundVisible). */
+    findWaiting(entry) {
+        return entry?.kind === 'password' && entry.source !== 'capture' && !this.foundVisible(entry);
+    }
+
+    /**
+     * Diff one no-screen answer against the previous one (plan 8.2): the first is the baseline
+     * and toasts nothing; after it, entries new since the previous answer give one toast. A
+     * waiting entry is left out of the ids, so it counts as new once its file is opened.
+     * Answers the new entries that have a find line, for tests.
+     */
+    noteFinds(entries) {
+        const list = Array.isArray(entries) ? entries : [];
+        const known = new Set();
+        const waitingFor = new Set();
+        const fresh = [];
+        for (const e of list) {
+            if (!e || typeof e.id !== 'string') continue;
+            if (this.findWaiting(e)) {
+                if (typeof e.foundIn === 'string' && e.foundIn) waitingFor.add(e.foundIn);
+                continue;
+            }
+            known.add(e.id);
+            if (this._findIds !== null && !this._findIds.has(e.id) && findKindToasts(e)) fresh.push(e);
+        }
+        this._findIds = known;
+        this._waitingFor = waitingFor;
+        if (fresh.length) this.announceFinds(fresh);
+        return fresh;
+    }
+
+    /** One toast for these finds now, or held while a conversation is open. */
+    announceFinds(entries) {
+        if (inConversation()) {
+            this._held.push(...entries);
+            if (!this._holdTimer) {
+                this._holdTimer = setInterval(() => { if (!inConversation()) this.releaseHeld(); }, FIND_HOLD_POLL_MS);
+            }
+            return null;
+        }
+        return this.showFinds(entries);
+    }
+
+    /** The conversation closed: the held finds as one toast. */
+    releaseHeld() {
+        if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
+        const held = this._held;
+        this._held = [];
+        return held.length ? this.showFinds(held) : Promise.resolve(null);
+    }
+
+    /** gameAlert with plain text (textContent): labels and names are author text. */
+    async showFinds(entries) {
+        let t;
+        try { t = await import('../utils/remote-host-text.js'); } catch (e) { return null; }
+        const message = t.findToastText(entries);
+        if (!message) return null;
+        // No title and `brief`, so the phone's two-line clamp never cuts a grouped toast
+        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, { plainText: true, brief: true }); } catch (e) { /* no notification layer */ }
+        return message;
     }
 
     /** The entry a held tray item proves for Connect, from the latest answer, or null. */
@@ -327,6 +433,17 @@ export class Keyring {
             return false;
         });
     }
+}
+
+/** The kinds with a find toast today (K3c adds 'assist_invite'); a capture is always silent. */
+export const FIND_KINDS = ['saved_connection', 'password'];
+function findKindToasts(entry) {
+    return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);
+}
+
+/** An NPC conversation is open (person or phone chat set this while the ink runs). */
+function inConversation() {
+    return typeof window !== 'undefined' && !!window.currentConversationNPCId;
 }
 
 let shared = null;

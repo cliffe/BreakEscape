@@ -514,7 +514,7 @@ test('connect picks the entry for its own item when several saved connections ar
     assert.equal(posts()[0][2], 'k_rdp');
 });
 
-test('trayChanged asks once per changed set of tray ids, and a screen-free refresh flushes first', async () => {
+test('trayChanged asks on an add or a heldItem removal, once per changed set of tray ids, and a screen-free refresh flushes first', async () => {
     setup();
     const kr = window.keyring;
     const items = (...ids) => ids.map(id => ({ scenarioData: { id } }));
@@ -523,10 +523,11 @@ test('trayChanged asks once per changed set of tray ids, and a screen-free refre
     assert.deepEqual(calls.map(c => c[0]), ['sync', 'keyring']);
     assert.equal(kr.trayChanged(items('b', 'a')), null, 'the same set in another order: no ask');
     assert.equal(kr.trayChanged(items('a', 'b')), null);
-    await kr.trayChanged(items('a', 'b', 'c'));
-    assert.equal(calls.filter(c => c[0] === 'keyring').length, 2);
-    await kr.trayChanged(items('a'));
-    assert.equal(calls.filter(c => c[0] === 'keyring').length, 3);
+    await kr.trayChanged(items('a', 'b', 'c', 'lena_rdp_file'));
+    assert.equal(calls.filter(c => c[0] === 'keyring').length, 2, 'an add asks');
+    assert.equal(kr.trayChanged(items('a', 'b', 'lena_rdp_file')), null, 'removing an item no entry holds asks nothing');
+    await kr.trayChanged(items('a', 'b'));
+    assert.equal(calls.filter(c => c[0] === 'keyring').length, 3, 'removing a heldItem asks');
     window.gameScenario = {};
     assert.equal(kr.trayChanged(items('z')), null, 'a scenario without credentials never asks');
 });
@@ -538,7 +539,8 @@ test('listen hooks inventory_changed once per dispatcher and asks through trayCh
     const kr = window.keyring;
     assert.equal(kr.listen(), true);
     assert.equal(kr.listen(), false);
-    assert.deepEqual(handlers.map(h => h[0]), ['inventory_changed']);
+    assert.deepEqual(handlers.map(h => h[0]),
+        ['inventory_changed', 'pc_signed_in', 'pc_desktop_opened', 'network_foothold_gained', 'conversation_closed:*']);
     handlers[0][1]({ items: [{ scenarioData: { id: 'lena_rdp_file' } }] });
     await settle();
     assert.equal(calls.filter(c => c[0] === 'keyring').length, 1);
@@ -554,4 +556,212 @@ test('a failed refresh never throws', async () => {
 test('openCredentialSignIn ignores a call with no pc or foothold', () => {
     setup();
     assert.equal(openCredentialSignIn({ pcId: 'lena_pc' }), undefined);
+});
+
+// ── Part B: the find toasts (plan 8.2 second bullet, 8.5 "find toasts") ───────────────────────
+const JAKE = { username: 'jsmith', displayName: 'Jake Smith', npcId: 'jake' };
+const PW = { id: 'k_pw', kind: 'password', source: 'registry', label: 'passwords.txt', account: JAKE, host: 'HB-FIN-03', connectsTo: 'jake_pc', foundIn: 'passwords_txt' };
+const CAPTURED = { id: 'k_cap', kind: 'password', source: 'capture', label: 'Captured', account: JAKE, host: 'HB-FIN-03', connectsTo: 'jake_pc' };
+const RDP_FOUND = 'Saved connection found: HB-FIN-02.rdp for Lena Fox on HB-FIN-02.';
+const RDP2_FOUND = 'Saved connection found: HB-FIN-03.rdp for Lena Fox on HB-FIN-03.';
+const PW_FOUND = "Jake Smith's password is in passwords.txt.";
+const keyringGets = () => calls.filter(c => c[0] === 'keyring');
+const answers = (...list) => { let i = 0; keyringAnswer = () => list[Math.min(i++, list.length - 1)]; };
+const finds = () => alerts.filter(a => a[1] === 'info' && a[4]?.brief === true);
+
+test('8.5 find strings are exactly the plan text', () => {
+    assert.equal(text.savedConnectionFoundMessage({ label: 'HB-FIN-02.rdp', displayName: 'Lena Fox', host: 'HB-FIN-02' }), RDP_FOUND);
+    assert.equal(text.passwordInFileFoundMessage({ label: 'passwords.txt', displayName: 'Jake Smith' }), PW_FOUND);
+    assert.equal(text.findMoreLine(3), 'and 3 more');
+    assert.equal(text.findLine(RDP), RDP_FOUND);
+    assert.equal(text.findLine(PW), PW_FOUND);
+    assert.equal(text.findLine(CAPTURED), null, 'a capture has no find line');
+    assert.equal(text.findLine(INVITE), null, 'no invite toast before K3c');
+});
+
+test('find toasts: the page-start prime is the baseline and toasts nothing', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, OTHER_RDP], rev: 'r2' });
+    await kr.prime();
+    await settle();
+    assert.deepEqual(keyringGets(), [['keyring', null, null]], 'one GET at load, no rev yet');
+    assert.equal(alerts.length, 0, 'what was held at load toasts nothing');
+    await kr.refresh();
+    await settle();
+    assert.deepEqual(toasts(), [RDP2_FOUND], 'only the new entry');
+    assert.deepEqual(alerts[0].slice(1), ['info', '', 7000, { plainText: true, brief: true }], 'plain text, no title, never clamped');
+});
+
+test('find toasts: the next ask sends the rev, and an unchanged answer toasts nothing', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP], rev: 'r1' }, { unchanged: true, rev: 'r1' });
+    await kr.prime();
+    await kr.refresh();
+    await settle();
+    assert.deepEqual(keyringGets(), [['keyring', null, null], ['keyring', null, 'r1']], 'one GET per trigger, rev reused');
+    assert.equal(alerts.length, 0);
+});
+
+test('find toasts: a failed prime leaves the next answer as the baseline', async () => {
+    setup();
+    const kr = window.keyring;
+    let n = 0;
+    keyringAnswer = () => { if (n++ === 0) throw new Error('offline'); return n === 2 ? { entries: [RDP], rev: 'r1' } : { entries: [RDP, OTHER_RDP], rev: 'r2' }; };
+    await kr.prime();
+    await kr.refresh();
+    await settle();
+    assert.equal(alerts.length, 0, 'the first good answer is the baseline');
+    await kr.refresh();
+    await settle();
+    assert.deepEqual(toasts(), [RDP2_FOUND]);
+});
+
+test('find toasts: one per kind, two in one toast, more than two names two then "and N more"', async () => {
+    setup();
+    const kr = window.keyring;
+    kr.opened.add('passwords_txt');
+    const PW2 = { ...PW, id: 'k_pw2', label: 'notes.txt', account: { username: 'aa', displayName: 'Ana Abara' }, foundIn: 'passwords_txt' };
+    const PW3 = { ...PW, id: 'k_pw3', label: 'old.txt', foundIn: 'passwords_txt' };
+    answers({ entries: [], rev: 'r0' }, { entries: [PW], rev: 'r1' }, { entries: [PW, RDP, OTHER_RDP], rev: 'r2' },
+        { entries: [PW, RDP, OTHER_RDP, PW2, PW3, INVITE, CAPTURED, { ...RDP, id: 'k_rdp9', label: 'X.rdp' }], rev: 'r3' });
+    await kr.prime();
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), [PW_FOUND], 'password in a file');
+    await kr.refresh(); await settle();
+    assert.equal(toasts()[1], `${RDP_FOUND}\n${RDP2_FOUND}`, 'two at once: both, one toast');
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 3, 'one toast per answer');
+    assert.equal(toasts()[2],
+        "Ana Abara's password is in notes.txt.\nJake Smith's password is in old.txt.\nand 1 more",
+        'three toastable finds: two named, then "and 1 more" (the invite and the capture are not counted)');
+});
+
+test('find toasts: a capture and an assist invite stay silent', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, CAPTURED, INVITE, { ...RDP, id: 'k_rdpc', source: 'capture' }], rev: 'r2' });
+    await kr.prime();
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 0);
+});
+
+test('find toasts: a password in a file waits until its file is opened, then asks once with rev', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP], rev: 'r1' }, { entries: [RDP, PW], rev: 'r2' }, { unchanged: true, rev: 'r2' });
+    await kr.prime();
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 0, 'not opened yet: no toast');
+    assert.equal(kr.noteOpened('some_other_file'), null, 'another file asks nothing');
+    assert.equal(keyringGets().length, 2);
+    await kr.noteOpened('passwords_txt');
+    await settle();
+    assert.deepEqual(keyringGets()[2], ['keyring', null, 'r2'], 'one GET, with rev');
+    assert.deepEqual(toasts(), [PW_FOUND], 'the unchanged answer shows it now');
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 1, 'shown once');
+});
+
+test('find toasts: an entry waiting at load still waits for its file (no prime reveal for a failed prime)', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP, PW], rev: 'r1' });
+    await kr.prime(); await settle();
+    assert.equal(alerts.length, 0, 'the prime reveals and never toasts');
+    assert.equal(kr.noteOpened('passwords_txt'), null, 'earned before the page: not waiting, no ask');
+});
+
+test('find toasts: a find during a conversation is held until it closes, then one toast', async () => {
+    setup();
+    const handlers = new Map();
+    window.eventDispatcher = { emit: () => {}, on: (n, f) => handlers.set(n, f) };
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [RDP, OTHER_RDP], rev: 'r2' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    // The ink gift lands in the tray: the tray change asks
+    handlers.get('inventory_changed')({ items: [{ scenarioData: { id: 'lena_rdp_file' } }] });
+    await settle();
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 0, 'nothing beside the gift\'s own toast');
+    handlers.get('conversation_closed:*')({ npcId: 'lena' });
+    await settle();
+    assert.deepEqual(toasts(), [`${RDP_FOUND}\n${RDP2_FOUND}`], 'both held finds in one toast after the close');
+    assert.equal(kr._holdTimer, null, 'the hold timer is cleared');
+    window.currentConversationNPCId = null;
+});
+
+test('find toasts: a held find is released when the conversation flag clears with no close event', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 0);
+    window.currentConversationNPCId = null;
+    await new Promise(r => setTimeout(r, 600));
+    await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND]);
+    assert.equal(kr._holdTimer, null);
+});
+
+test('find toasts: the triggers ask once each (sign-in once its desktop opens, a foothold gained)', async () => {
+    setup();
+    const handlers = new Map();
+    window.eventDispatcher = { emit: () => {}, on: (n, f) => handlers.set(n, f) };
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { unchanged: true, rev: 'r0' });
+    await kr.prime(); await settle();
+    handlers.get('pc_desktop_opened')({ pcId: 'lena_pc' });
+    await settle();
+    assert.equal(keyringGets().length, 1, 'a desktop reopened with no sign-in asks nothing');
+    handlers.get('pc_signed_in')({ pcId: 'lena_pc' });
+    await settle();
+    assert.equal(keyringGets().length, 1, 'the sign-in waits for its desktop');
+    handlers.get('pc_desktop_opened')({ pcId: 'lena_pc' });
+    await settle();
+    assert.equal(keyringGets().length, 2, 'one ask once the desktop is open');
+    handlers.get('pc_desktop_opened')({ pcId: 'lena_pc' });
+    await settle();
+    assert.equal(keyringGets().length, 2, 'only once per sign-in');
+    handlers.get('network_foothold_gained')({ footholdId: 'jack_comms_port' });
+    await settle();
+    assert.equal(keyringGets().length, 3, 'a plant, implant or join asks once');
+    assert.equal(keyringGets()[2][2], 'r0', 'with rev');
+});
+
+test('find toasts: nothing is written to globals or player state', async () => {
+    setup();
+    const kr = window.keyring;
+    kr.opened.add('passwords_txt');
+    window.gameState = { globalVariables: { a: 1 }, inventory: [] };
+    const before = JSON.stringify(window.gameState);
+    const writes = [];
+    window.stateSync = { syncConfirmed: async () => {}, sync: () => writes.push('sync'), queue: () => writes.push('queue') };
+    window.ApiClient.post = async () => writes.push('post');
+    window.ApiClient.put = async () => writes.push('put');
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP, PW, OTHER_RDP], rev: 'r1' });
+    await kr.prime();
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 1);
+    assert.equal(JSON.stringify(window.gameState), before);
+    assert.deepEqual(writes, []);
+    assert.equal(posts().length, 0);
+});
+
+test('find toasts reach the DOM as text: a label with markup is not parsed', async () => {
+    setup();
+    const { gameAlert } = await imp('systems/notifications.js');
+    window.gameAlert = gameAlert;
+    document.body.innerHTML = '<div id="notification-container"></div>';
+    const kr = window.keyring;
+    const evil = { ...RDP, id: 'k_evil', label: '<img src=x onerror="window.pwned=1">.rdp', account: { username: 'x', displayName: '<b>Bob</b>' } };
+    answers({ entries: [], rev: 'r0' }, { entries: [evil], rev: 'r1' });
+    await kr.prime();
+    await kr.refresh(); await settle();
+    assert.equal(document.querySelector('.notification img, .notification b'), null, 'no element from author text');
+    assert.match(document.body.textContent, /Saved connection found: <img src=x onerror="window.pwned=1">.rdp for <b>Bob<\/b> on HB-FIN-02\./);
 });
