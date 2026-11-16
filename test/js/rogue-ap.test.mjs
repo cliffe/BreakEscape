@@ -603,3 +603,12 @@ test('hint 1 is gated on ap_twin_staff, read when the delay is up (R3 m1)', () =
     assert.equal(holds({ ap_twin_staff: true, kp_twin_captured: true }), false);
     assert.equal(holds({ ap_twin_staff: true, kp_twin_account_captured: true }), false);
 });
+
+test('hint 2 is cancelled by switching back to the key page inside the minute (A2 R2 t4)', () => {
+    const erb = readFileSync(join(here, '../../scenarios/test_access_devices/scenario.json.erb'), 'utf8');
+    const m = erb.match(/"eventPattern": "global_variable_changed:ap_portal_account", "condition": "([^"]+)"[^\n]*\n\s*"bark": "Your copy now asks/);
+    assert.ok(m, 'the sign-in hint mapping exists');
+    const holds = (globalVars, value = true) => new Function('value', 'globalVars', `return (${m[1]});`)(value, globalVars);
+    assert.equal(holds({ ap_portal_account: true, ap_twin_staff: true }), true, 'still on the sign-in page');
+    assert.equal(holds({ ap_portal_account: false, ap_twin_staff: true }), false, 'back on the key page within the minute');
+});
