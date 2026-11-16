@@ -2024,6 +2024,6 @@
   <image source="../objects/lw_guest_ap.png" width="16" height="16"/>
  </tile>
  <tile id="684">
-  <image source="../objects/lw_guest_card.png" width="16" height="16"/>
+  <image source="../objects/lw_guest_card.png" width="16" height="22"/>
  </tile>
 </tileset>
