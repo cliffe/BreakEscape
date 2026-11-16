@@ -156,8 +156,8 @@ test('hidden state survives a reload (export, restore, register)', () => {
 });
 
 // Build a real NPCBehavior for a restored-hostile NPC (what a reload does)
-function restoreBehavior(c, id) {
-    const sprite = { x: 0, y: 0, displayWidth: 32, displayHeight: 32, originX: 0.5, originY: 0.5,
+function restoreBehavior(c, id, visible = true) {
+    const sprite = { x: 0, y: 0, visible, displayWidth: 32, displayHeight: 32, originX: 0.5, originY: 0.5,
         body: { offset: { x: 0, y: 0 }, halfWidth: 8, halfHeight: 8 }, setTint() {} };
     window.npcHostileSystem.takeRestoredHostility = () => ({ hostile: true, ko: false });
     return new NPCBehavior(id, sprite, { hostile: {} }, {}, {});
@@ -166,7 +166,7 @@ function restoreBehavior(c, id) {
 test('M2: a restored hostile hidden by a mapping is not announced on reload', () => {
     const c = setup(['a', 'b']);
     c.m.restoreNpcVisibility({ b: false });
-    restoreBehavior(c, 'b');
+    restoreBehavior(c, 'b', false);   // npc-sprites.js hides the sprite for a hidden record
     assert.deepEqual(announced, [], 'no hostile event, so no fight music for a hidden NPC');
 });
 
@@ -179,7 +179,7 @@ test('M2: a restored hostile that is not hidden is still announced on reload', (
 test('M2 then reveal: reload with the NPC hidden, later revealed, announces once on the reveal', () => {
     const c = setup(['a', 'b']); mapHide(c.m, 'b');
     c.m.restoreNpcVisibility({ b: false });
-    restoreBehavior(c, 'b');
+    restoreBehavior(c, 'b', false);
     assert.deepEqual(announced, []);
     day();
     assert.deepEqual(announced, ['b']);
@@ -275,7 +275,7 @@ test('M1 reload after the reveal: hostility restored, visible, announced once', 
 });
 
 test('M1 reload: a restored hostile on a hidden sprite with no mapping record waits for the reveal', () => {
-    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    const c = setup(['a', 'r'], { hostile: ['a', 'r'], threat: true });
     c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
     startHostileBehavior(c, 'r', false, { hostile: true, ko: false });
     assert.deepEqual(announced, [], 'hidden, so not announced at room load');

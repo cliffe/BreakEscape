@@ -384,7 +384,8 @@ export class NPCBehaviorManager {
         // Always record the desired visibility on the NPC data so sprite creation
         // (room not yet loaded) honours it instead of behavior.initiallyHidden.
         const npcData = window.npcManager?.getNPC(npcId);
-        const wasHidden = window.npcManager?.isHiddenByMapping?.(npcId) === true
+        const wasRecordedHidden = window.npcManager?.isHiddenByMapping?.(npcId) === true;
+        const wasHidden = wasRecordedHidden
             || npcData?.isVisible === false
             || this.behaviors.get(npcId)?.sprite?.visible === false;
         if (npcData) {
@@ -400,7 +401,10 @@ export class NPCBehaviorManager {
         const hostileSys = window.npcHostileSystem;
         if (hostileSys?.isNPCHostile?.(npcId) && !hostileSys.isNPCKO?.(npcId)) {
             if (!visible) {
-                window.eventDispatcher?.emit?.('npc_hidden', { npcId, wasHostile: true });
+                // Only a real change: a repeat hide (reload, room_entered) must not re-run the
+                // all_hostiles_ko check. A never-shown initiallyHidden hostile has no record yet,
+                // so its first hide still emits.
+                if (!wasRecordedHidden) window.eventDispatcher?.emit?.('npc_hidden', { npcId, wasHostile: true });
             } else if (wasHidden) {
                 hostileSys.announceRestoredHostile?.(npcId, this.behaviors.get(npcId)?.config?.hostile);
             }
@@ -423,6 +427,12 @@ export class NPCBehaviorManager {
         sprite.setAlpha(visible ? 1 : 0);
         if (sprite.body) {
             sprite.body.enable = visible;
+        }
+        // A startHostile NPC created hidden turns hostile on its first reveal, so the one
+        // npc_hostile_state_changed fires with it on screen (see the NPCBehavior constructor)
+        if (visible && behavior._startHostileOnReveal) {
+            behavior._startHostileOnReveal = false;
+            behavior.setHostile(true);
         }
         // If revealing and patrol is configured, enable it
         if (visible && behavior.config.patrol.waypoints?.length > 0) {
@@ -577,13 +587,20 @@ export class NPCBehavior {
                     this.sprite?.setTint?.(0xff6666);
                     // A hostile a mapping hid can't attack: announce it when it is revealed
                     // (setNPCVisible), not now, or the fight music would start for nobody
-                    if (!window.npcManager?.isHiddenByMapping?.(npcId)) {
+                    // (or whose sprite starts hidden, a restored initiallyHidden hostile)
+                    if (this.sprite?.visible !== false) {
                         window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
                     }
                 }
             }
         } else if (this.config.hostile.startHostile) {
-            this.setHostile(true);
+            if (this.sprite?.visible === false) {
+                // Hidden at creation (initiallyHidden or a mapping): hostile only once shown, so
+                // it neither cues the fight music nor counts as a live hostile while unseen
+                this._startHostileOnReveal = true;
+            } else {
+                this.setHostile(true);
+            }
         }
 
         console.log(`✅ Behavior initialized for ${npcId} in room ${this.roomId}`);
@@ -3448,6 +3465,7 @@ export class NPCBehavior {
     }
 
     setHostile(hostile) {
+        this._startHostileOnReveal = false;   // an explicit change replaces the deferred start
         if (this.hostile === hostile) return; // No change
         if (hostile) window.seating?.unseatNPC?.(this);
 
