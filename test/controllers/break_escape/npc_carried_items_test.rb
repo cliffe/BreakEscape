@@ -666,7 +666,8 @@ module BreakEscape
         place_drop('kitchen', stored)
         carry('grace', 'office_mugs', room: 'kitchen')
         assert_response :success
-        assert_equal expected, carry_state['grace']['fromPos']
+        actual = carry_state['grace']['fromPos']
+        expected.nil? ? assert_nil(actual) : assert_equal(expected, actual)
       end
     end
 
