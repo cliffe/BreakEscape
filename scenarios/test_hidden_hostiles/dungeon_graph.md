@@ -4,9 +4,11 @@
 
 Engine check (hidden hostiles and music).
 
-1. The fight music (threat) plays: two guards start hostile.
-2. Try the vault door: the day guard is hidden (setVisible false).
-3. Knock out the other guard: the fight music ends (noir), though the hidden guard is still hostile and conscious.
+Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko plays noir.
+1. Enter the annex: the day guard (hostile) turns up and the fight music (threat) plays.
+2. Try the vault door (night): the day guard is hidden (setVisible false). Knock out the lobby guard: the fight music ends, though the hidden guard is still hostile and conscious. Or knock out the lobby guard first and then try the vault door: hiding the last conscious hostile ends the fight too.
+3. Reload: the hidden guard does not bring the fight music back when the annex loads.
+4. Try the closet door (dawn): the day guard is shown again and the fight music returns.
 
 ## Scenario Statistics
 
@@ -15,10 +17,10 @@ Engine check (hidden hostiles and music).
 | Story aims | 0 |
 | Total tasks | 0 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 1 |
+| Physical locks | 2 |
 | AND-gate convergences | 0 |
-| Rooms | 1 |
-| Puzzle graph nodes / edges | 2 / 1 |
+| Rooms | 4 |
+| Puzzle graph nodes / edges | 6 / 3 |
 | Story graph nodes / edges | 0 / 0 |
 
 ## Critical Path
@@ -75,12 +77,17 @@ flowchart TD
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_closet["Closet<br/>PIN lock"]
+  closet("Closet")
   lobby("Lobby")
+  annex("Annex")
 
   door_vault --> vault
+  door_closet --> closet
+  lobby --> annex
 
-  class door_vault lock
-  class vault,lobby room
+  class door_vault,door_closet lock
+  class vault,closet,lobby,annex room
   class node_start start
 ```
 
@@ -137,12 +144,17 @@ flowchart TD
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_closet["Closet<br/>PIN lock"]
+  closet("Closet")
   lobby("Lobby")
+  annex("Annex")
 
   door_vault --> vault
+  door_closet --> closet
+  lobby --> annex
 
-  class door_vault lock
-  class vault,lobby room
+  class door_vault,door_closet lock
+  class vault,closet,lobby,annex room
   class node_start start
 ```
 
@@ -173,11 +185,15 @@ flowchart TD
 
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
+  annex("Annex")
+  closet["Closet<br/>(locked)"]
 
   lobby --> vault
+  lobby --> annex
+  lobby --> closet
 
-  class lobby room
-  class vault lock
+  class lobby,annex room
+  class vault,closet lock
   class node_start start
 ```
 
@@ -208,15 +224,21 @@ flowchart TD
 
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
+  annex("Annex")
+  closet["Closet<br/>(locked)"]
   rc_npc_guard_1("Guard")
-  rc_npc_day_guard_2("Day Guard")
+  rc_npc_clerk_2("Clerk")
+  rc_npc_day_guard_3("Day Guard")
 
   lobby --> vault
+  lobby --> annex
+  lobby --> closet
   lobby --> rc_npc_guard_1
-  lobby --> rc_npc_day_guard_2
+  lobby --> rc_npc_clerk_2
+  annex --> rc_npc_day_guard_3
 
-  class lobby room
-  class vault lock
-  class rc_npc_guard_1,rc_npc_day_guard_2 npc
+  class lobby,annex room
+  class vault,closet lock
+  class rc_npc_guard_1,rc_npc_clerk_2,rc_npc_day_guard_3 npc
   class node_start start
 ```

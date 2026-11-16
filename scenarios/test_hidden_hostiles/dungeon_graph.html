@@ -71,8 +71,8 @@
   <h1>test_hidden_hostiles — dependency graph</h1>
   <p class="sub">Engine check (hidden hostiles and music).
 
-1. The fight music (threat) plays: two guards start hostile.
-2. Try the vault door: the day guard is hidden…</p>
+Music: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko plays noir.
+1. Enter the annex: the…</p>
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="puzzle"     onclick="showTab('puzzle',this)">Puzzle Graph</button>
     <button class="tab-btn"        data-tab="story"      onclick="showTab('story',this)">Story Aims</button>
@@ -143,9 +143,9 @@
       <tr><th>Optional tasks</th><td class="val">0 / 0</td></tr>
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
-      <tr><th>Physical locks (puzzle)</th><td class="val">1</td></tr>
-      <tr><th>Rooms</th><td class="val">1</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">2 / 1</td></tr>
+      <tr><th>Physical locks (puzzle)</th><td class="val">2</td></tr>
+      <tr><th>Rooms</th><td class="val">4</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">6 / 3</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">0 / 0</td></tr>
     </table>
   </div>
@@ -176,12 +176,17 @@
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_closet["Closet<br/>PIN lock"]
+  closet("Closet")
   lobby("Lobby")
+  annex("Annex")
 
   door_vault --> vault
+  door_closet --> closet
+  lobby --> annex
 
-  class door_vault lock
-  class vault,lobby room
+  class door_vault,door_closet lock
+  class vault,closet,lobby,annex room
   class node_start start`,
       story:      `flowchart TD
 
@@ -224,12 +229,17 @@
 
   door_vault["Vault<br/>PIN lock"]
   vault("Vault")
+  door_closet["Closet<br/>PIN lock"]
+  closet("Closet")
   lobby("Lobby")
+  annex("Annex")
 
   door_vault --> vault
+  door_closet --> closet
+  lobby --> annex
 
-  class door_vault lock
-  class vault,lobby room
+  class door_vault,door_closet lock
+  class vault,closet,lobby,annex room
   class node_start start`,
       rooms:      `flowchart TD
 
@@ -253,11 +263,15 @@
 
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
+  annex("Annex")
+  closet["Closet<br/>(locked)"]
 
   lobby --> vault
+  lobby --> annex
+  lobby --> closet
 
-  class lobby room
-  class vault lock
+  class lobby,annex room
+  class vault,closet lock
   class node_start start`,
       contents:   `flowchart TD
 
@@ -281,16 +295,22 @@
 
   lobby("Lobby")
   vault["Vault<br/>(locked)"]
+  annex("Annex")
+  closet["Closet<br/>(locked)"]
   rc_npc_guard_1("Guard")
-  rc_npc_day_guard_2("Day Guard")
+  rc_npc_clerk_2("Clerk")
+  rc_npc_day_guard_3("Day Guard")
 
   lobby --> vault
+  lobby --> annex
+  lobby --> closet
   lobby --> rc_npc_guard_1
-  lobby --> rc_npc_day_guard_2
+  lobby --> rc_npc_clerk_2
+  annex --> rc_npc_day_guard_3
 
-  class lobby room
-  class vault lock
-  class rc_npc_guard_1,rc_npc_day_guard_2 npc
+  class lobby,annex room
+  class vault,closet lock
+  class rc_npc_guard_1,rc_npc_clerk_2,rc_npc_day_guard_3 npc
   class node_start start`
     };
     const rendered = {};

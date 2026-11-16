@@ -384,12 +384,27 @@ export class NPCBehaviorManager {
         // Always record the desired visibility on the NPC data so sprite creation
         // (room not yet loaded) honours it instead of behavior.initiallyHidden.
         const npcData = window.npcManager?.getNPC(npcId);
+        const wasHidden = window.npcManager?.isHiddenByMapping?.(npcId) === true
+            || npcData?.isVisible === false
+            || this.behaviors.get(npcId)?.sprite?.visible === false;
         if (npcData) {
             npcData.isVisible = visible;
         }
         // Saved with the state sync and re-applied when the NPC registers after a reload,
         // whether or not its sprite exists yet; a onceOnly reveal doesn't replay (N2)
         window.npcManager?.recordNpcVisibility?.(npcId, visible);
+
+        // The fight music follows the count of hostiles that can attack. Hiding a conscious
+        // hostile can leave none (music handler re-checks on npc_hidden); revealing one brings
+        // the fight back, as a restored hostile is announced after a reload.
+        const hostileSys = window.npcHostileSystem;
+        if (hostileSys?.isNPCHostile?.(npcId) && !hostileSys.isNPCKO?.(npcId)) {
+            if (!visible) {
+                window.eventDispatcher?.emit?.('npc_hidden', { npcId, wasHostile: true });
+            } else if (wasHidden) {
+                hostileSys.announceRestoredHostile?.(npcId, this.behaviors.get(npcId)?.config?.hostile);
+            }
+        }
 
         const behavior = this.behaviors.get(npcId);
         const sprite = behavior?.sprite;
@@ -560,7 +575,11 @@ export class NPCBehavior {
                 this.hostile = true;
                 if (!restored.ko) {
                     this.sprite?.setTint?.(0xff6666);
-                    window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    // A hostile a mapping hid can't attack: announce it when it is revealed
+                    // (setNPCVisible), not now, or the fight music would start for nobody
+                    if (!window.npcManager?.isHiddenByMapping?.(npcId)) {
+                        window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    }
                 }
             }
         } else if (this.config.hostile.startHostile) {
