@@ -90,7 +90,8 @@ const STARTERS = {
     'page-builder': 'startLandingPageBuilder',
     'report-workstation': 'startEngagementReport',
     'mail_terminal': 'startMailClientMinigame',
-    'phone_friendface': 'startFriendfacePhone'
+    'phone_friendface': 'startFriendfacePhone',
+    'rogue-ap': 'startRogueApMinigame'
 };
 function reset() {
     alerts.length = 0; calls.length = 0; stationCalls.length = 0;
