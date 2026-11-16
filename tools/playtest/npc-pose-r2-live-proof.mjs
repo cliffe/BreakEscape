@@ -78,6 +78,22 @@ if (extra === 'forceclose') {
     await page.evaluate(() => window.MinigameFramework.forceCloseMinigame());
     await page.waitForTimeout(600);
     R.m1fc.after = await tom();
+    // A real hit while the inventory is open (player-damage-interrupt: complete(false), so the chat resumes);
+    // closing that chat must leave Tom free
+    R.m1fc.hasHealth = await page.evaluate(() => !!(window.playerHealth && window.playerHealth.damage));
+    if (R.m1fc.hasHealth) {
+        await page.evaluate(() => window.__test.interact('tom').catch(() => null));
+        await page.waitForTimeout(800);
+        await page.evaluate(() => { window.__test.minigame.close(); return window.npcGameBridge.showNPCInventory('tom'); });
+        await page.waitForTimeout(800);
+        R.m1fc.hitDuring = await tom();
+        await page.evaluate(() => window.playerHealth.damage(1));
+        await page.waitForTimeout(1500);
+        R.m1fc.hitAfter = await tom();
+        await page.evaluate(() => { try { window.__test.minigame.close(); } catch (e) {} window.MinigameFramework.forceCloseMinigame(); });
+        await page.waitForTimeout(800);
+        R.m1fc.hitFree = await tom();
+    }
 }
 R.errs = errs;
 // Pass or fail (R3 m1)
@@ -94,6 +110,7 @@ const checks = {
 if (extra === 'forceclose') {
     checks.m1fc_in_chat_while_open = !!R.m1fc.during && R.m1fc.during.chat === true && !!R.m1fc.during.pending;
     checks.m1fc_free_after = !!R.m1fc.after && R.m1fc.after.chat === false && R.m1fc.after.pending === false;
+    if (R.m1fc.hasHealth) checks.m1fc_free_after_hit = !!R.m1fc.hitFree && R.m1fc.hitFree.chat === false && R.m1fc.hitFree.pending === false;
 }
 R.checks = checks;
 const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
