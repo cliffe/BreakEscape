@@ -89,7 +89,11 @@ const coffeeBusy = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay']
 // Activity Board hangs on the back wall (x 210..250, y 13..65) and reads from the floor at about
 // (212..220, 75), but moveToNear aims behind the wall (y 41) and stopped at y 103 to 104 in row 3
 // on games 5657 and 5658 (sims tidy item 1)
-const BOARD_FRONT = [220, 76];
+// Row 3 (sims tidy item 1, probe on 5748): from (200,176) the straight walk up x 220 stops with the
+// feet at y 134 (the sprite at y 103) against Amara, seated in her pulled-out chair at box
+// 217..239 x 118..129. The path grid leaves seated NPCs and their chairs out, so the planner sees a
+// clear column. Go up x 200, west of her, first: `front` may be a list of waypoints
+const BOARD_FRONT = [[200, 104], [220, 76]];
 const read = async (id, mids = [[232, 176], [200, 176], [264, 176]], front = null) => {
     const tries = [];
     for (let i = 0; i < 3; i++) {
@@ -103,8 +107,12 @@ const read = async (id, mids = [[232, 176], [200, 176], [264, 176]], front = nul
         const [mx, my] = mids[i];
         const mid = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 20000, pointer: false }), [mx, my]).catch(e => ({ err: String(e) }));
         await t(300);
-        const mv = front
-            ? await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 30000, pointer: false }), front).catch(e => ({ err: String(e) }))
+        let mv = null;
+        if (front) for (const pt of (Array.isArray(front[0]) ? front : [front])) {
+            mv = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 30000, pointer: false }), pt).catch(e => ({ err: String(e) }));
+        }
+        mv = front
+            ? mv
             : await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
         await t(400);
         const r = await page.evaluate(id => window.__test.interact(id), id).catch(e => ({ err: String(e) }));

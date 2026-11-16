@@ -110,3 +110,48 @@ Games this session (keyless :3093): 5655, 5656, 5657, 5658, 5691, 5693. Scratch:
   job.targetId === 'staff_lockers' and isMoving at a 1 s poll; check the job shape on her walk
   (maybe the target id differs or phase is 'walking' with a different field). 02-jodie-at-lockers
   exists but was taken at the lockers, not on the trip.
+
+## Handover 3 (third session stopped at the context guard)
+
+Games this session (keyless :3093): 5730 (posts probe), 5731 (tour, page load timed out, not used),
+5733 (after tour), 5748 (board probe). One unrecorded id from the first new-game call was not driven.
+Scratch: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/sims-tidy3/
+(posts.mjs, board3.mjs, tour-5733/, board3-5748.json/png). The worktree has no .bundle/config: start
+rails with BUNDLE_PATH=<main checkout>/vendor/bundle.
+
+### Item 3: done and proved (397597ba6)
+- Cause of 5691: the needs state registers with home null; the seat check ran before the first needs
+  tick, and the guard only tested `home.provisional`, so the wait never held. `postHomePending(stop,
+  home, now)` waits while home is null or provisional (unit test).
+- The 140 px chair (office_chair-white-2-rotate3_157 at 234,168) is no NPC's post chair: 44 px from
+  Amara's home, outside NEAR_CHAIR 36. Marek (coordinate home, no desk chair) fetches it on 5730; Tom
+  got there first on 5656. The claim rule keeps them apart.
+- After tour 5733: Tom fetch_start at 1 s, seated at 5 s, no mount_stuck (before 5691: 0 s, 18 s).
+
+### Item 2: two fixes in, partly proved
+- e131ef703: a resting chair whose foot is in a door gap slides out to its own side, 24 px clear of
+  the mouth, once a second (`doorGapRect`, `doorGapExit`, `sweepDoorwayChairs`, log
+  `chair_out_of_doorway`). Unit tests. 5733 had no chair in the doorway, so the sweep was not seen firing.
+- bd54ae5cb: tour rows 5 and 6 park 80 px off the cooler (`parkByCooler`). 5733: both rows pass, no
+  Sanjay return_stuck at the cooler.
+- OPEN: Marek seated at (42..64,122..133) still turns Rosa back at the kitchen doorway's office end
+  (5733 walk_rerouted at 47..49,84), and Marek himself walk_stuck at (77..89,134) between Sanjay's
+  seat and loose chair 152. Grace return_stuck at (254,100) beside seated Amara (217..239 x 118..129).
+  Not fixed. Options: Marek as a stander (no fetch), or his post moved off the aisle (scenario).
+
+### Item 1: cause found, driver fix written, NOT proved live
+- Probe 5748: `arrivedAt` (220,103) is the sprite; the feet are at y 134, against Amara's seated chair
+  (immovable, box 217..239 x 118..129). The path grid is clear there: seated NPCs and their chairs are
+  not in it, so the planner walks straight up x 220.
+- Driver change (committed with this note): BOARD_FRONT is now waypoints [[200,104],[220,76]]. Next:
+  run the tour and check row 3. Engine follow-up to consider: the player's click path also ignores
+  seated NPCs.
+
+### Item 4: driver change committed (bdced76e0), not run
+- job_beat now watches Jodie's job every 50 ms in the page, logs each change (r.jodie_jobs), and on
+  her first moving frame with target staff_lockers sleeps the game loop for the shot
+  (02a-jodie-locker-trip), then wakes it. Run it with GL=1 on a fresh game. If it never fires,
+  jodie_jobs shows the real job shape on the trip.
+
+### Suites
+bin/test-js 681 of 681 (run alongside tour 5733). test/js/seating.test.mjs 59 of 59.
