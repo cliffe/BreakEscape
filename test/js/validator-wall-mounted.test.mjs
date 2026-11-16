@@ -54,12 +54,14 @@ test('a type outside WALL_MOUNTED_EXTRAS warns', { skip }, () => {
   assert.match(w[0], /WARNING.*'b'.*not a wall-mounted type/);
 });
 
-test('an explicit position below the back wall warns; on the wall, at the floor line or with no position is quiet', { skip }, () => {
+test('an explicit position at or below the back wall floor line warns; on the wall or with no position is quiet', { skip }, () => {
   const w = check({ objects: [{ ...socket, id: 'floor', position: { x: 4, y: 5 } }] });
   assert.equal(w.length, 1);
   assert.match(w[0], /WARNING.*'floor'.*position\.y 5.*not on a wall/);
   assert.deepEqual(check({ objects: [
     { ...socket, id: 'a', position: { x: 4, y: 0.5 } },
-    { ...socket, id: 'b', position: { x: 4, y: 2 } },
     { ...socket, id: 'c' }] }), []);
+  const edge = check({ objects: [{ ...socket, id: 'edge', position: { x: 4, y: 2 } }] });
+  assert.equal(edge.length, 1);
+  assert.match(edge[0], /WARNING.*'edge'.*position\.y 2/);
 });

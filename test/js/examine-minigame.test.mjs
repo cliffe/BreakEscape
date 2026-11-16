@@ -382,21 +382,22 @@ test('read in place: hostile name, observations and text are escaped once (five 
     assert.equal(msg, `<em>${ESC}</em>\n\n${ESC}`);
 });
 
-test('phone body text is 24px GNF, the conversation dialogue size; desktop stays 20px; the name stays 16px Press Start 2P', () => {
+test('phone body text is 24px GNF, the conversation dialogue size; the name stays 16px Press Start 2P', () => {
     const src = readFileSync(join(here, '../../public/break_escape/css/examine-minigame.css'), 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '');
     const size = (block, sel) => {
         const m = block.match(new RegExp(`${sel.replace(/\./g, '\\.')}[^{}]*\\{[^}]*font-size:\\s*(\\d+)px`));
         return m ? Number(m[1]) : null;
     };
-    const at = src.indexOf('@media (max-width: 480px)');
+    const at = src.indexOf('@media (max-width: 600px)');
     assert.ok(at > 0, 'a phone block exists');
     const desktop = src.slice(0, at), phone = src.slice(at);
-    assert.equal(size(desktop, '.examine-text'), 20);
-    assert.equal(size(desktop, '.examine-observations'), 20);
     assert.equal(size(phone, '.examine-text'), 24);
     assert.equal(size(phone, '.examine-observations'), 24);
     assert.equal(size(phone, '.examine-name'), 16);
     assert.match(desktop, /\.examine-name\s*\{[^}]*Press Start 2P/);
-    assert.equal(24 % 8, 0, 'GNF is crisp at multiples of 8 from 16');
+    assert.equal(size(phone, '.examine-text') % 8, 0, 'GNF is crisp at multiples of 8 from 16');
+    assert.equal(size(phone, '.examine-observations') % 8, 0);
+    assert.doesNotMatch(src, /\.examine-(text|observations)[^{}]*\{[^}]*font-family/, 'body text inherits GNF');
+    assert.doesNotMatch(src, /font-style:\s*italic/, 'GNF has no italic');
 });

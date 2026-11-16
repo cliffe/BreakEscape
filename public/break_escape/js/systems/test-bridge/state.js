@@ -680,8 +680,8 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
         }
     }
     // The same for a tall wall-mounted target: reachY measures to the nearest part of its
-    // height, so the ring is also centred down its left and right edges and its bottom edge,
-    // not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
+    // height, so the rings are centred on a grid of points down the sprite (every x centre
+    // against every y centre), not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
     const centresY = [targetY];
     const h = target && target.scenarioData?.wallMounted === true
         ? (target.displayHeight ?? target.height ?? 0) : 0;
@@ -692,6 +692,15 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             const cy = top + (h * i) / n;
             if (!centresY.some(v => Math.abs(v - cy) < 0.5)) centresY.push(cy);
         }
+    }
+    // Cap the grid of centres (x times y) so a wide, tall target cannot cost thousands of
+    // standable() calls per pass; thin both axes evenly (always keeping the first).
+    const MAX_CENTRES = 24;
+    const thin = (arr, keep) => arr.length <= keep ? arr
+        : Array.from({ length: keep }, (_, i) => arr[Math.round(i * (arr.length - 1) / (keep - 1))]);
+    while (centres.length * centresY.length > MAX_CENTRES) {
+        if (centres.length >= centresY.length) centres.splice(0, centres.length, ...thin(centres, centres.length - 1));
+        else centresY.splice(0, centresY.length, ...thin(centresY, centresY.length - 1));
     }
     for (const centreX of centres)
     for (const centreY of centresY)
