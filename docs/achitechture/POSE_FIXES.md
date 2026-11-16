@@ -66,3 +66,5 @@ Live (keyless :3094, games 6435 to 6437, headless, setFPS(20), fixed steps; need
 - **m2.** Both `complete()` overrides (`rfid-minigame.js`, `container-minigame.js`) hand a superseded instance straight to the base class before flagging or scheduling a restart. Tested for both; removing the RFID guard fails the test.
 - **m3.** `npc-pose-r2-live-proof.mjs` now asserts the chat resumed after the hit (`m1fc_hit_chat_resumed`).
 - **Live proof:** a third argument `itemexit` opens a note from Tom's inventory mid-chat and closes it by a hit and by a force close; Tom must be free, stay free during an unrelated minigame and return to his schedule.
+
+R4 results: bin/test-js 731 files passed, 0 failed; Rails 3109 runs, 0 failures, 0 errors, 4 skips. Live (keyless :3092, game 6491, `npc-pose-r2-live-proof.mjs 6491 3092 itemexit`): all checks pass for both routes (a hit, a force close): the note reader held Tom in chat, after the exit Tom was not in chat with nothing pending, stayed free during an unrelated minigame, and went back to his schedule.
