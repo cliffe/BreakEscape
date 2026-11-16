@@ -451,3 +451,47 @@ and schema changes are inert without a `credentials` key):
 - The validator has no `known_top_level`/`known_item_fields` list; the schema is the one source.
 - Running `scripts/validate_scenario.rb` without `--no-graph` regenerates `dungeon_graph.*`; use
   `--no-graph` for smoke runs (the smoke scenario lived in the scratchpad, so nothing tracked moved).
+
+## K1 run 2: tests, tooling and docs (handover)
+
+Branch `build/keyring-k1`. This run did the run-1 "Remaining" items except the two it was told to
+leave (the `test_access_keyring` scenario and the live proof). Committed in order:
+
+1. **`tools/playtest/lib/access_leak_scanner.rb`** (+ `test/unit/access_leak_scanner_test.rb`):
+   `scan_credentials` flags a response carrying a `credentials` key (the server-only registry), a
+   registry password keyring entry carrying its `password` value, and a registry keyring entry whose
+   proof does not hold in the recorded state (from `@game.credential_proof_holds?`, read once at scan
+   time, nil when no game is given). Captured-account entries (source `capture`) may still carry a
+   password. `require_relative` of `credential_model` added. 5 new tests; 50 runs / 277 assertions / 0 F.
+2. **`test/controllers/break_escape/capture_secrets_unchanged_test.rb`**: golden check that GET
+   /capture_secrets bytes are identical with and without a `credentials` block, before and after a
+   capture, and carry no `credentials` key. 4 runs / 14 assertions / 0 F.
+3. **`test/controllers/break_escape/sync_payload_size_test.rb`**: bootstrap carries no `credentials`;
+   GET /keyring at the 64-entry cap (saved_connection entries, one held foothold) is well under 16 KB;
+   a matching-rev repeat is a few bytes. 3 runs / 10 assertions / 0 F.
+4. **`test/js/validator-credentials.test.mjs`**: one fixture per `check_credentials` error (24) and
+   warning (11) and the one info line, through the real Ruby validator (`$PROGRAM_NAME='x'; require`
+   then `check_credentials(STDIN)`), plus a clean baseline. 37 tests / 0 F. No new engine import, so no
+   harness copy-list change.
+5. **`scripts/generate_dungeon_graph.rb`**: a credentials section before the integrated-graph
+   assembly. Each built credential is a `cred_<id>` key node; edges run proof source (`cred_src_<item>`
+   held item, `jack_<id>` foothold, `lock_<pc>` session) -> credential -> each accepting PC
+   (`lock_<pcId>`, created if absent, matching `access_lock_node`). Verified on a scratch scenario
+   (nodes/edges present, no crash); outputs went to the scratchpad, no tracked `dungeon_graph.*` moved.
+6. **Docs**: `README_scenario_design.md` gains a "Credentials (the keyring)" subsection under Key &
+   Access Items (registry, kinds, proofs, policy `accepts`, the item `credential` and its type/placement
+   rule, the ink-gift path for an invite, the relay invariant) and the timer bullet now says a reload
+   resumes a timer from its saved running time (was "restarts"). Three `docs/IDEAS_BACKLOG.md` entries
+   (connection icon; later kinds RFID/one-time code/key file; optional per-entry teaching line).
+
+Still open (left for a later run, per the run-2 brief): the `test_access_keyring` scenario (old list
+item 5) and the live proof on :3062 (old list item 8).
+
+Notes for the next agent:
+- `CREDENTIAL_KEYRING_PLAN.md` section 6.1's note still points at `README_scenario_design.md:2753` for
+  the timer claim; the real bullet is near line 2779 and is now corrected. The plan's own line
+  reference was not touched.
+- Process slip, fully remediated: the README timer/section edits first landed in the MAIN tree by
+  absolute path, not the worktree. The main-tree edits were reversed (surgically, by Edit; a
+  `git checkout --` revert was refused by the safety classifier) and reapplied in the worktree; the
+  main tree's `README_scenario_design.md` is clean again. Worth a glance to confirm.
