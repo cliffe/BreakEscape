@@ -401,6 +401,28 @@ test('R5 m1: a stale pendingContainerReturn from another container does not keep
     window.pendingContainerReturn = null;
 });
 
+test('R5 delta m1: a record with no npcId is not kept by an absent container npcId', async () => {
+    const fw = settleFrame();
+    fw.startMinigame('person-chat', null, { npcId: 'tom' });
+    window.pendingConversationReturn = { type: 'person-chat' };   // no npcId; pendingContainerReturn is null
+    fw.startMinigame('other', null, {});   // displaces the chat, queuing the settle
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, null, 'dropped, undefined must not equal undefined');
+    fw.forceCloseMinigame();
+});
+
+test('R5 delta m2: a parent suspended for a child queues no settle', async () => {
+    const fw = settleFrame();
+    const mg = fw.startMinigame('other', null, {});
+    const rec = { npcId: 'tom', type: 'person-chat' };
+    window.pendingConversationReturn = rec;
+    mg._suspendedForChild = true;
+    fw.endMinigame(true, null);
+    await wait(80);
+    assert.equal(window.pendingConversationReturn, rec, 'the record is left to the child');
+    window.pendingConversationReturn = null;
+});
+
 test('R5 m3: a throwing cleanup cannot skip the settle', async () => {
     const fw = settleFrame();
     const mg = fw.startMinigame('other', null, {});

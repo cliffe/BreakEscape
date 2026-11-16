@@ -257,7 +257,8 @@ export const MinigameFramework = {
         if (open && (cur.mode === 'npc' || (cur._sceneType === 'rfid' && cur.params?.mode === 'clone'))) return;
         // A reader started from THIS NPC's inventory; a stale return from any other container
         // does not count
-        const fromInventory = window.pendingContainerReturn?.npcOptions?.npcId === rec.npcId;
+        const fromInventory = rec.npcId != null
+            && window.pendingContainerReturn?.npcOptions?.npcId === rec.npcId;
         if (open && fromInventory) return;
         // An interactionWarning confirm for an inventory item is a dialog, not a minigame:
         // look again once it is answered
