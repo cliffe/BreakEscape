@@ -627,3 +627,36 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
   and 6 and headon.py. (4) R6 Outcomes in SIMS_TIDY_REVIEW_R6.md (A/B table from handover 10, yield fix
   rationale, the row 6 causes above), commit. (5) baseline worktree clean-up (handover 10 commands).
 - No server running from this session.
+
+## Handover 12
+
+- Branch tip ba95f6403 (R7 fixes on a1f07151f). Main not merged yet. No server running from this session.
+- Done in ba95f6403 (npc-behavior.js, test/js/npc-local-avoidance.test.mjs; 41 of 41 pass):
+  - M1: `_dynamicBlockers` now carries `walking` (`_avoidIsWalking()`: patrol state, following a path)
+    and the body velocity. In `_handleBlockerAhead`, `coming(b)` = walking, or velocity towards us. A
+    yielder backs off a whole step only from a blocker that is coming; against a standing one it runs
+    main's old one-update nudge and resets the wait (so `_patrolStalled` and the stuck watch re-target).
+    The yield hold also counts the held NPC only while it is coming.
+  - m1: before a step, `_avoidBackBlocked` checks the player in the lane behind (look-ahead 42 px) and a
+    wall within 24 px (`hasWorldPhysicsLineOfSight`, centre ray); either way: pinned, no step, re-wait.
+  - m2: `_avoid = null` in executeState for any state but patrol, the seated and chat early returns in
+    update(), waypoint path complete, `_triggerGoToStayArrival`, `cancelMove`, `goToAndStay`,
+    `chooseWaypointTarget`, `chooseRandomPatrolTarget`.
+  - Tests: existing headOn mock gains `_avoidIsWalking: () => true`; laneRun gains `currentState:
+    'patrol'` and a `dt` option. New: R7 m3 (lane at 16 ms), R7 M1 updatePatrol against a body that never
+    moves (re-target, no steps, no pacing), M1 velocity-only coming case, m1 player behind, m1 wall behind,
+    m2 exits clear the pin, m2 stale pin no longer makes others yield.
+- Open, in order:
+  1. Prove the new M1 test fails on a1f07151f (copy HEAD~1's npc-behavior.js into a scratch js tree, point
+     a copy of the test at it). Not yet done.
+  2. Scratch sim /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/lane/sim.mjs:
+     its behaviours lack `currentState: 'patrol'`; add it (as in laneRun) or every NPC reads as standing,
+     then run `node sim.mjs` and compare with the R6 figures (three-NPC cases 15 to 35 s, 3 or 4 handovers;
+     two against two never clears).
+  3. Commit, `git merge --no-edit main` (main 8bcfbc85d or later), commit the merge.
+  4. bin/test-js, then the Rails suite alone (command in the brief).
+  5. Live proof on :3093 (keyless server by hand, record PID): test_needs_sims x2 with
+     needs-tour-regression.mjs rows 1/3/5/6; test-npc-waypoints x1 watched 120 s with scratchpad watch.mjs.
+     Kill the PID, confirm the port is closed.
+  6. R7 Outcomes section in SIMS_TIDY_REVIEW_R7.md, commit.
+- Gotcha: Bash calls often got no classifier verdict this session; retry once, use Read/Edit meanwhile.
