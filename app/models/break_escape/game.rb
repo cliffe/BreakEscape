@@ -673,8 +673,10 @@ module BreakEscape
       return unless item.is_a?(Hash)
 
       data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
-      # Drop any client-supplied value up front (forgeable field).
+      # Drop any client-supplied value up front (forgeable field). K4: the display-only `connect`
+      # marker is recomputed on every serve, so a stored copy never keeps one.
       data.delete('credential')
+      data.delete('connect')
 
       # The notepad and decor cups are client-built (no scenario lookup), so their id is
       # client-chosen: never stamp a credential on them (R3 m1; the validator also errors).

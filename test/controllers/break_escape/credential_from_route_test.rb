@@ -45,11 +45,13 @@ module BreakEscape
     end
 
     def hold(*ids)
+      @game.reload
       @game.player_state['inventory'] = Array(@game.player_state['inventory']) + ids.map { |id| KS.held(id) }
       @game.save!
     end
 
     def seed_sessions(sessions)
+      @game.reload
       @game.player_state['sessions'] = sessions
       @game.player_state['signedInPcs'] = sessions.reject { |_k, v| v['relay'] }.keys
       @game.save!
@@ -581,12 +583,12 @@ module BreakEscape
 
       body = add_item('text_file', 'lena_rdp_file', 'HB-FIN-02.rdp')
       assert_response :success, response.body
-      assert_marker(find_all(body, 'lena_rdp_file'), true, 'take answer')
+      find_all(body, 'lena_rdp_file').each { |item| refute item.key?('credential'), 'take answer' }
       refute_includes response.body, 'lena_rdp"'
       hold('jake_assist_code')
       boot = bootstrap_scenario
-      assert_marker(find_all(boot['inventory'] || boot, 'lena_rdp_file'), true, 'bootstrap inventory')
-      assert_marker(find_all(boot['inventory'] || boot, 'jake_assist_code'), false, 'an assist invite')
+      assert_marker(find_all(boot['playerInventory'], 'lena_rdp_file'), true, 'bootstrap inventory')
+      assert_marker(find_all(boot['playerInventory'], 'jake_assist_code'), false, 'an assist invite')
       assert_equal 'lena_rdp', state['inventory'].find { |i| i['id'] == 'lena_rdp_file' }['credential'],
                    'the stored copy keeps its credential and gains no marker'
       refute state['inventory'].find { |i| i['id'] == 'lena_rdp_file' }.key?('connect')
