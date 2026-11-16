@@ -1808,6 +1808,18 @@ module BreakEscape
       true
     end
 
+    # Keyring K4 (plan 9 Client): `connect: true` on a served item whose authored credential is a
+    # saved connection, set from the scenario's registry before the credential id is stripped.
+    # Display only (the sign-in still proves `held` server-side); any other `connect` is dropped.
+    def mark_saved_connection!(obj)
+      obj.delete('connect')
+      id = obj['credential']
+      return unless id.is_a?(String)
+
+      entry = CredentialModel.registry(scenario_data)[id]
+      obj['connect'] = true if entry.is_a?(Hash) && entry['kind'] == 'saved_connection'
+    end
+
     def filter_inventory_for_client!(obj)
       case obj
       when Hash
@@ -1820,6 +1832,9 @@ module BreakEscape
         # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
         # the `held` proof reads it from the stored inventory, the client never needs it (K3 draws
         # Connect from GET /keyring), so it never rides a client inventory copy or echo (R1 m1).
+        # K4 (plan 9 Client): a saved connection carries display-only `connect: true` instead, so
+        # the file's dialog can offer Connect; never the credential id.
+        mark_saved_connection!(obj)
         obj.delete('credential')
         obj.delete('requires') if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
         obj.each_value { |value| filter_inventory_for_client!(value) }
@@ -6983,7 +6998,9 @@ module BreakEscape
         # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
         # a credential item left loose in a room, on a desktop or in a share is served through this
         # filter, so strip the field here too (R1 m1). The `held` proof reads it only from the
-        # stored inventory, never from a client payload.
+        # stored inventory, never from a client payload. K4: a saved connection carries
+        # display-only `connect: true` instead (plan 9 Client), so a desktop can offer Connect.
+        mark_saved_connection!(obj)
         obj.delete('credential')
 
         # Networks (slice 9.3a, section 6): membership never ships, and a jack's link

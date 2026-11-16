@@ -532,6 +532,66 @@ module BreakEscape
       refute state['sessions'].key?('jake_pc')
     end
 
+    # ---- the display-only connect marker (plan 9 Client) ------------------------------------
+
+    def find_all(node, id, out = [])
+      case node
+      when Hash
+        out << node if node['id'] == id
+        node.each_value { |v| find_all(v, id, out) }
+      when Array
+        node.each { |v| find_all(v, id, out) }
+      end
+      out
+    end
+
+    def marker_scenario
+      data = scenario
+      lobby = data['rooms']['lobby']
+      # A forged marker on an item with no credential, and one on a password note, never ship
+      lobby['objects'] << { 'id' => 'decoy_note', 'type' => 'text_file', 'name' => 'decoy.txt', 'takeable' => true,
+                            'connect' => true, 'text' => 'decoy' }
+      lobby['objects'] << { 'id' => 'pw_note', 'type' => 'text_file', 'name' => 'pw.txt', 'takeable' => true,
+                            'credential' => 'jake_pw_note', 'connect' => true, 'text' => 'pw' }
+      data
+    end
+
+    def assert_marker(items, connect, context)
+      refute_empty items, context
+      items.each do |item|
+        refute item.key?('credential'), "#{context}: the credential id never ships"
+        if connect
+          assert_equal true, item['connect'], context
+        else
+          refute item.key?('connect'), context
+        end
+      end
+    end
+
+    test 'a served saved connection carries connect true and no credential id; other items carry no connect' do
+      build({}, marker_scenario)
+      get room_game_url(@game, room_id: 'lobby'), as: :json
+      assert_response :success
+      room = response.parsed_body
+      assert_marker(find_all(room, 'lena_rdp_file'), true, 'room lena_rdp_file')
+      assert_marker(find_all(room, 'ops_rdp_file'), true, 'room ops_rdp_file in the crate')
+      assert_marker(find_all(room, 'decoy_note'), false, 'room decoy_note')
+      assert_marker(find_all(room, 'pw_note'), false, 'room pw_note (a password kind)')
+      refute_includes response.body, 'lena_rdp"', 'the credential id is in no room answer'
+
+      body = add_item('text_file', 'lena_rdp_file', 'HB-FIN-02.rdp')
+      assert_response :success, response.body
+      assert_marker(find_all(body, 'lena_rdp_file'), true, 'take answer')
+      refute_includes response.body, 'lena_rdp"'
+      hold('jake_assist_code')
+      boot = bootstrap_scenario
+      assert_marker(find_all(boot['inventory'] || boot, 'lena_rdp_file'), true, 'bootstrap inventory')
+      assert_marker(find_all(boot['inventory'] || boot, 'jake_assist_code'), false, 'an assist invite')
+      assert_equal 'lena_rdp', state['inventory'].find { |i| i['id'] == 'lena_rdp_file' }['credential'],
+                   'the stored copy keeps its credential and gains no marker'
+      refute state['inventory'].find { |i| i['id'] == 'lena_rdp_file' }.key?('connect')
+    end
+
     # ---- scope: no credentials registry ------------------------------------------------------
 
     test 'a from param in a scenario without credentials is refused on every route' do
