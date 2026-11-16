@@ -345,7 +345,7 @@ test('E8: with a reachable side the two pair as before', () => {
 function rig({ scenario = {}, state, room = 'office', minigame = null }) {
     const mk = () => {
         const o = { x: 0, y: 0, visible: true, data: {}, scene: null, calls: [], width: 60, height: 12,
-            setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
+            setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setAlpha(a) { o.alpha = a; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
             setSize() { return o; }, setTexture() { o.width = 16; o.height = 16; return o; },
             setText(t) { o.text = t; return o; }, setDepth() { return o; }, setScale() { return o; },
             setData(k, v) { o.data[k] = v; return o; },

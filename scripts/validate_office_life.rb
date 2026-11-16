@@ -10,6 +10,7 @@
 #   V5  required content triggered only by office life         error, campaign only
 #   V7  chatter line repeating a pool line, a bark or the opener   warning
 #   V8  sync budget (section 7)          sync_budget_lines(json) info; warning above a cap
+#   V11 chatter pool line that names a credential              warning (secrets belong in priority mutters only)
 #   V10 pools, exchanges and calls nothing can trigger (check_v10, below V8; warnings only)
 #
 # V6 is the rake task app:break_escape:tts:office_lines (BreakEscape::TtsOfficeLines) and V9 is
@@ -59,7 +60,7 @@ module ValidateOfficeLife
   # Literals with an office-life stem that are events but not office life (combat, KO, story,
   # conversation, inventory, scripted patrol), so never a V5 trigger.
   OFFICE_LIFE_EVENT_EXCLUSIONS = %w[
-    npc_ko npc_attacked npc_became_hostile npc_hostile_changed npc_hostile_state_changed
+    npc_ko npc_hidden npc_attacked npc_became_hostile npc_hostile_changed npc_hostile_state_changed
     npc_influence_changed npc_items_changed npc_reported npc_arrived npc_used_object npc_used_object_done
     item_picked_up item_unlocked item_consumed item_removed_from_scene
   ].freeze
@@ -96,6 +97,7 @@ module ValidateOfficeLife
     issues = []
     check_npc_arrived(w, issues)                         # V3
     check_chatter_repeats(w, issues)                     # V7
+    check_pool_credentials(w, issues)                    # V11
     check_sync_budget(w, issues)                         # V8 (warnings above a cap)
     if campaign?(scenario_id, campaign)
       check_story_npcs_leave(w, issues)                  # V2
@@ -735,6 +737,23 @@ module ValidateOfficeLife
       end
       issues << "⚠️ WARNING: office life V7: #{where} repeats an existing bark word for word." if barks.include?(key)
       issues << "⚠️ WARNING: office life V7: #{where} matches the first line of its ink opener." if who != 'scenario' && openers[who] == key
+    end
+  end
+
+  # ── V11: credentials stay out of chatter pools (R4 m2) ──────────────────────────────────────
+  # Only a priority mutter (login_aloud) is `secret`: out of earshot it plays nothing. A pool line
+  # that is not overheard is a background voice and can be heard through an open door with no heard
+  # credit, so it must not carry a credential. Exchange lines live in ink and are not read here.
+  CREDENTIAL_WORDS = /\b(password|passcode|passphrase|pin\s*(?:code|number)?\s+(?:is|was)|login\s+(?:is|details)|username\s+is)\b/i.freeze
+
+  def self.check_pool_credentials(w, issues)
+    pools = ScenarioChatter.pools(w.json['chatter']).flat_map { |topic, ls| ls.map { |l| ['scenario', topic, l] } }
+    pools += w.npcs.flat_map { |_r, n| ScenarioChatter.pools(n['chatter']).flat_map { |topic, ls| ls.map { |l| [n['id'], topic, l] } } }
+    pools.each do |who, topic, line|
+      next unless line.to_s.match?(CREDENTIAL_WORDS)
+
+      issues << "⚠️ WARNING: office life V11: #{who == 'scenario' ? 'scenario' : "NPC '#{who}'"} chatter '#{topic}' line \"#{line}\" names a credential. " \
+                'Credentials and secrets go only in priority mutters (login_aloud), never in pool or exchange lines.'
     end
   end
 

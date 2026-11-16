@@ -10,7 +10,7 @@ import { NpcWorldBubbles } from '../../public/break_escape/js/systems/npc-world-
 
 function mk(scene) {
     const o = { x: 0, y: 0, visible: true, data: {}, scene, text: '', width: 60, height: 12,
-        setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
+        setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setAlpha(a) { o.alpha = a; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
         setTexture(k) { o.textureKey = k; return o; }, setText(t) { o.text = t; return o; }, setDepth() { return o; },
         setData(k, v) { o.data[k] = v; return o; }, getData(k) { return o.data[k]; },
         clear() { return o; }, fillStyle() { return o; }, lineStyle() { return o; }, fillRect() { return o; },
@@ -99,5 +99,19 @@ test('bag bark with no partner: one bubble; picture chat: one bubble holding the
         speech.update();
         assert.equal(sprites.sanjay.interactionIndicator.visible, true, 'talk icon back after the line');
         assert.equal(sprites.rosa.interactionIndicator.visible, false, 'never shows a talk icon that was not up');
+    } finally { delete globalThis.window; }
+});
+
+test('D34: a faint ambient line shows as a dimmed bubble; a full one at full opacity', () => {
+    try {
+        const { sprites, talking } = rig();
+        const speech = new NpcWorldBubbles({ fontsReady: true });
+        talking.set('sanjay', { line: 'Is it Friday yet?', partnerId: 'rosa', topic: 'cooler', faint: true });
+        speech.update();
+        assert.equal(speech.bubbles.get('sanjay').box.alpha, 0.6, 'dimmed');
+        assertOneBubble(onScreen(speech, sprites), 'faint');
+        talking.set('sanjay', { line: 'Is it Friday yet?', partnerId: 'rosa', topic: 'cooler' });
+        speech.update();
+        assert.equal(speech.bubbles.get('sanjay').box.alpha, 1, 'full opacity again');
     } finally { delete globalThis.window; }
 });

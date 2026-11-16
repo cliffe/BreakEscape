@@ -112,6 +112,9 @@ const LINE = 0x1b2a41;
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
+/** D34: opacity of the bubble over a faint ambient line (out of earshot, voiced quietly). */
+export const FAINT_ALPHA = 0.6;
+
 /** The bubbles' depth now: above the light map when lighting is on, else under the flash and ghost. */
 export function bubbleDepth() {
     return win().lightingSystem ? BUBBLE_DEPTH : BUBBLE_DEPTH_UNLIT;
@@ -1044,7 +1047,7 @@ export class NpcWorldBubbles {
                 // loop below, as for another room (R5 n2)
                 if (!this._onCamera(sprite)) continue;
                 cands.push({ npcId: id, distance: this._distance(sprite) });
-                info.set(id, { sprite, line: st.talking.line, picture: st.talking.picture || null, partnerId: st.talking.partnerId, bark: false });
+                info.set(id, { sprite, line: st.talking.line, picture: st.talking.picture || null, partnerId: st.talking.partnerId, bark: false, faint: !!st.talking.faint });
             }
         }
         const order = pickShown(cands);
@@ -1085,7 +1088,7 @@ export class NpcWorldBubbles {
         }
         const taken = [...this._hudRects(view, first?.scene), ...(head ? [{ ...head, soft: true }] : [])];
         for (const id of order) {
-            const { sprite, line, picture, partnerId, bark } = info.get(id);
+            const { sprite, line, picture, partnerId, bark, faint } = info.get(id);
             let bb = this.bubbles.get(id);
             if (!bb || !bb.box.scene) { bb = this._make(sprite.scene); this.bubbles.set(id, bb); }
             this._render(bb, line, picture);
@@ -1107,6 +1110,7 @@ export class NpcWorldBubbles {
             const depth = bubbleDepth();   // follows lighting on or off (R4 n2)
             if (bb.box.depth !== depth) bb.box.setDepth(depth);
             bb.box.setPosition(pos.x, pos.y).setVisible(true);
+            bb.box.setAlpha(faint ? FAINT_ALPHA : 1);   // D34: a faint line reads as background
             // m8: the speaker's action icon and thought bubble go in the same frame as the bubble
             // shows (the icon layer updates before this pass)
             try { win().npcActionIcons?.hideFor?.(id); } catch (e) { /* icons never break a frame */ }

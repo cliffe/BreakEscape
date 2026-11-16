@@ -1368,6 +1368,21 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
     return true; // Direction is safe
 }
 
+/** Does this walker have patrol waypoints? Only those arrive on a bump (the arrival guards below). */
+function hasPatrolWaypoints(behavior) {
+    const w = behavior?.config?.patrol?.waypoints;
+    return Array.isArray(w) && w.length > 0;
+}
+
+/**
+ * Is the walker inside the grace that follows a settle (see triggerSettling)?
+ * @private exported for unit tests
+ */
+export function settleGraceRunning(npcBehavior, npcSprite) {
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
+    return !npcBehavior.isSettling && npcBehavior._settleGraceUntil > gameTime;
+}
+
 /**
  * The settle guard (game 5347): a walker touching another NPC settles (stops, then re-plans)
  * unless that body is held (immovable: seated, or held still using something), which cannot
@@ -1377,8 +1392,7 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
 export function settleOnContact(npcBehavior, npcSprite, otherNPC) {
     if (otherNPC?.body?.immovable) return false;
     const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) npcSprite.body.setVelocity(0, 0);
+    if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) npcSprite.body.setVelocity(0, 0);
     return true;
 }
 
@@ -1418,6 +1432,18 @@ export function handleNPCCollision(npcSprite, otherNPC) {
     // the contact (game 5347: Marek against seated Sanjay's corner for 70 s). Physics
     // separation slides the walker along it instead.
     const otherHeld = !settleOnContact(npcBehavior, npcSprite, otherNPC);
+
+    // Inside the grace after a settle the walker is meant to walk off the contact. The avoidance
+    // waypoint below clears its path and sets _needsPathRecalc, and updatePatrol returns for that
+    // before it moves the body, so redoing it on every overlap frame kept a walker against a
+    // face_player NPC still for ever (game 6330).
+    // A goToAndStay walker with patrol waypoints that is close enough still arrives inside the grace
+    // (not up to 600 ms late). Walkers without waypoints never arrived on a bump, and still do not.
+    if (hasPatrolWaypoints(npcBehavior) && npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+        if (typeof npcBehavior._triggerGoToStayArrival === 'function') npcBehavior._triggerGoToStayArrival();
+        return;
+    }
+    if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     // (face_player is also a valid patrolling state, just with player-facing behavior)
@@ -1474,9 +1500,8 @@ export function handleNPCCollision(npcSprite, otherNPC) {
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior && !otherHeld) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        // Ensure velocity is zero while settling
-        if (npcSprite.body) {
+        // Ensure velocity is zero while settling (not in the grace after a settle: see triggerSettling)
+        if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
             npcSprite.body.setVelocity(0, 0);
         }
     }
@@ -1582,8 +1607,9 @@ export function handleNPCCollision(npcSprite, otherNPC) {
  * 
  * @param {Phaser.Sprite} npcSprite - NPC sprite that collided with player
  * @param {Phaser.Sprite} player - Player sprite
+ * @private exported for unit tests
  */
-function handleNPCPlayerCollision(npcSprite, player) {
+export function handleNPCPlayerCollision(npcSprite, player) {
     if (!npcSprite || !player || npcSprite.destroyed || player.destroyed) {
         return;
     }
@@ -1603,10 +1629,18 @@ function handleNPCPlayerCollision(npcSprite, player) {
     // ALWAYS trigger settling on collision, regardless of patrol type
     // This prevents NPCs from being pushed across the room by pausing their behavior briefly
     const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) {
+    if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
         npcSprite.body.setVelocity(0, 0);
     }
+
+    // The same grace as the NPC-to-NPC handler: no avoidance re-plan while the walker pulls away.
+    // A goToAndStay walker with patrol waypoints that is close enough still arrives inside the grace
+    // (not up to 600 ms late). Walkers without waypoints never arrived on a bump, and still do not.
+    if (hasPatrolWaypoints(npcBehavior) && npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+        if (typeof npcBehavior._triggerGoToStayArrival === 'function') npcBehavior._triggerGoToStayArrival();
+        return;
+    }
+    if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     const isValidPatrolState = npcBehavior.currentState === 'patrol' || npcBehavior.currentState === 'face_player';
@@ -1661,9 +1695,8 @@ function handleNPCPlayerCollision(npcSprite, player) {
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        // Ensure velocity is zero while settling
-        if (npcSprite.body) {
+        // Ensure velocity is zero while settling (not in the grace after a settle: see triggerSettling)
+        if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
             npcSprite.body.setVelocity(0, 0);
         }
     }

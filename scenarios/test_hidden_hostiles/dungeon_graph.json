@@ -1,0 +1,76 @@
+{
+  "scenario": "test_hidden_hostiles",
+  "start_room": "lobby",
+  "nodes": [
+    {
+      "id": "door_vault",
+      "label": "Vault<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "vault",
+      "label": "Vault",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_cellar",
+      "label": "Cellar<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "cellar",
+      "label": "Cellar",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_closet",
+      "label": "Closet<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "closet",
+      "label": "Closet",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "lobby",
+      "label": "Lobby",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "annex",
+      "label": "Annex",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_vault",
+      "to": "vault",
+      "soft": false
+    },
+    {
+      "from": "door_cellar",
+      "to": "cellar",
+      "soft": false
+    },
+    {
+      "from": "door_closet",
+      "to": "closet",
+      "soft": false
+    },
+    {
+      "from": "lobby",
+      "to": "annex",
+      "soft": false
+    }
+  ]
+}
