@@ -1175,3 +1175,17 @@ Commits f12debc43, 9dcef946e, 4c00b6955, c070ab1bc on `build/keyring-k3c`.
 - K2 m4 choice: a no-route folder open under a foothold session keeps today's behaviour (`session_admits?` only); the client sends `foothold=` when its session went through one.
 - Loop found and fixed: `sourcePcId` falls back to the desktop's own `loginPcId`, so the relay desktop's Close met the "folder from a relay desktop" branch of `reportNetworkExit` and reopened itself on every close, without end. That is what ran the test process out of memory. Now the relay desktop returns early and the folder branch needs no `loginPcId`. A guard test covers it. Run `test/js/access-relay-desktop.test.mjs` only under `ulimit -v 2000000` with `--max-old-space-size=300`.
 - `screen-states.js`: a relay session paints the sprite locked. Still to do: the relay desktop in `signin-fit.mjs` at the four sizes (needs a server), and the keyring.js hooks (Connect calls `openRelayDesktop`; the prompt-end trigger keys on `hasRelay()`).
+
+## K3c run 5 (relay hooks and R1 fixes)
+
+Commits afd895cd2, be5982573, 04f7b596c, then 83f8b83ac on `build/keyring-k3c`.
+
+- afd895cd2: `keyring.js` Connect handles `assist_invite` (relay route `{ relay: true }`, then `openRelayDesktop`); the prompt-end trigger syncs while a relay is held (armed by a relay sign-in or Connect, disarmed once `hasRelay()` is false); invite find line in `remote-host-text.js`. be5982573: new `keyring-relay-hooks.test.mjs` plus invite cases in keyring-client and inventory-menu. 04f7b596c: part A R2 (`releaseHeld` shows every held find while no tray change is seen, wider timing margins).
+- R1 review (tmp/handover/ac0/K3C_RELAY_REVIEW_R1.md), verdict FIX:
+  - M1 fixed: after a reload the server holds the relay but the mirror is empty. Connect now falls through to `signInWithCredential(pcId, id, { relay: true })` (the server replaces the identical record) instead of calling `openRelayDesktop` on nothing. A held mirror still opens with no POST. Test in `access-relay-desktop.test.mjs` uses the real `pc-sessions`, `keyring.js` and `openRelayDesktop`; the old hooks test that passed only through a stub was rewritten to expect the POST.
+  - m1 fixed: a 403 with reason `off` or `not_responding` on a relay desktop or relay folder keeps the relay and shows the PC-off line (a folder close reopens the desktop, which shows it). Other 403s still end the assist. Four tests.
+  - t1 fixed: the folder route check calls `Game#relay_session?`. t4 fixed: tests name the holder Jake Brooks (jbrooks) as the fixture does.
+  - Left as notes: t2 (the prompt-end trigger skips a same-value write only when the event has `oldValue`; emitters without it still call `sync()`, which state-sync coalesces, so no loop or storm; revisit only if a live proof shows bursts). t3 (relay desktop in `tools/playtest/signin-fit.mjs` at the four sizes; needs a server).
+- Checks that failed before the fix: the five new access-relay-desktop tests fail with the two engine files reverted.
+- Tests: access-relay-desktop 20/20 (capped), keyring-relay-hooks 16/16, keyring-client 72/72 (one timing flake in the R3 t1 PUT-cap test on a first run, clean on two reruns), pc-sessions 58/58, inventory-menu 28/28, keyring_folder_route_test.rb 7 runs, 0 failures.
+- Open: live proof of Connect after a reload and a powered-off relay PC; signin-fit relay sizes (t3); full `bin/test-js` not rerun after these fixes.

@@ -89,3 +89,8 @@ Reopen loop was real engine behaviour (relay desktop's own Close reopened itself
 ### Run 5 (unit tests for the relay desktop)
 - Added relay tests: pc-sessions.test.mjs (+13, incl. relayEndedMessage == endedAssistMessage and a header check), pc-taskbar.test.mjs (+6), screen-states.test.mjs (+2), objectives-signin-pc.test.mjs (+1). Each was shown to fail with its engine line reverted. pc-sessions.js header now has a "Relay sessions" paragraph. No new harness copy-list entries were needed. No bugs found.
 - Still open: signin-fit relay sizes; keyring.js hooks are another agent's.
+
+### Run 5 (relay hooks and R1 fixes)
+- Hooks built in afd895cd2, tested in be5982573, part A R2 in 04f7b596c; R1 fixes in 83f8b83ac (M1 re-sign-in by relay when the server holds a relay with no mirror; m1 off/not_responding 403 keeps the relay; t1 relay_session?; t4 names). Details in the build log "K3c run 5".
+- Open: t2 (same-value skip needs `oldValue`; leave unless a live proof shows sync bursts), t3 (signin-fit relay sizes, needs a server), live proof of reload then Connect and of a powered-off relay PC, full bin/test-js rerun, AC0 review round 2.
+- keyring-client "R3 t1: a sync PUT that never answers" can flake once under load; passes on rerun.
