@@ -5550,10 +5550,10 @@
                     "properties": {
                       "brands": { "type": "array", "items": { "$ref": "#/definitions/socialLandingBrand" } },
                       "domainOptions": { "type": "array", "items": { "$ref": "#/definitions/socialLandingMenuOption" } },
-                      "wordings": { "type": "array", "items": { "type": "object" } },
-                      "fields": { "type": "array" },
-                      "purposes": { "type": "array", "items": { "type": "object" } },
-                      "logos": { "type": "array", "items": { "type": "object" } },
+                      "wordings": { "type": "array", "items": { "type": "object", "x-free-data": true } },
+                      "fields": { "type": "array", "items": { "type": "string" } },
+                      "purposes": { "type": "array", "items": { "type": "object", "x-free-data": true } },
+                      "logos": { "type": "array", "items": { "type": "object", "x-free-data": true } },
                       "fieldLabels": { "type": "object", "additionalProperties": { "type": "string" } },
                       "choices": {
                         "type": "object",
