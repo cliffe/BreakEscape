@@ -105,3 +105,35 @@ constants above the old comment, or below the `CARRY_DISQUALIFYING_TYPES` line.
 - `bin/test-js` full: 687 files passed, 0 failed.
 
 R3: 0/1/2
+
+## Outcomes
+
+Fixes in `b4cbf5961`.
+
+- **M1 fixed.** History: the 15 values were written as pixels. Until `b879edf33` (8 April 2026)
+  `rooms.js` read only a top-level `x`/`y` on dynamic tables (as pixels); ordinary objects ignored a
+  scenario x/y entirely and were placed by the Tiled map. That commit switched the object form to
+  tiles (`position.x * TILE_SIZE`), after which these values landed about 8000 px off the room, and
+  slice C's bound turned that into a random spot. They never worked as tiles. The list was 15, not 13:
+  it included the two dynamic tables `Executive Desk` (50,50) and `CEO Desk` (60,80) in
+  `test_table_items`, which the findings text had set aside. All 15 are rewritten as tiles in free
+  floor (interior x 1..8, y 2..8), clear of the desks and shelves in each Tiled map:
+  - `test-rfid`: Security Notice (7,5); Success Note (3,8); CEO Keycard (7,8).
+  - `test-rfid-multiprotocol`: Protocol Guide (5,5); RFID Flipper (7,5); Success EM4100 (5,6);
+    Success MIFARE Weak (5,6); Success MIFARE Custom (4,6); Test Corporate Badge (5,5); Success All
+    Levels (3,8); Executive Card (6,8); Master Override Card (8,8).
+  - `test_table_items`: Floor Safe (8,8); Executive Desk (4,4); CEO Desk (4,7) (desk origin is its
+    top-left corner, 78 x 61 px). Two text strings that quoted the old pixel position are updated.
+  The new test `test/unit/scenario_object_tile_bounds_test.rb` renders every scenario and asserts
+  each object-form `x`/`y` fits its room type's map (503 values checked). It reports all 15 against
+  the old data and passes on the new. `test_objectives` and `test_simple_success` were not touched
+  and the test does not flag them. Validator on the three scenarios: 0 errors. No browser render was
+  done; spots were chosen from the Tiled object layers, and random furniture pools mean a spot cannot
+  be proved clear without one.
+- **m1 fixed.** The server keeps a stored tile pair only when both values are within `0..64`
+  (`CARRY_TILE_BOUND = 64`, three times the largest room). Three controller tests added (negative, 65,
+  and the 0 and 64 edges kept).
+- **m2 fixed.** The `CARRY_DISQUALIFYING_TYPES` comment sits directly above that constant again.
+
+Suites at `b4cbf5961`: `bin/test-js` 687 passed, 0 failed; full Rails 2934 runs, 48069
+assertions, 0 failures, 0 errors, 3 skips; rubocop clean on the changed Ruby files.
