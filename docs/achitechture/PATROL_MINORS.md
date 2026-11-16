@@ -94,3 +94,28 @@ Test: `test/js/npc-patrol-settle.test.mjs`, "settle grace: contact inside the gr
 Same setup, 3 runs on the fixed code: 120 s, 120 s and 110 s, clock live, longest stand-still 3 s, 4 s and 5 s. The 5 s one (run 3) is the deliberate player-wait: `_handleBlockerAhead` held the walker for the parked player, then `_patrolStalled` re-targeted and it walked on; `isSettling` and the grace were not involved. No stand-still of the settle or avoidance kind.
 
 Suites on the fix commit (105d8e945 plus doc): `bin/test-js` 717 passed, 0 failed; `bin/rails test` 3003 runs, 48495 assertions, 0 failures, 0 errors, 3 skips. Server on :3095 stopped.
+
+### Delta minors
+
+The delta review (`PATROL_MINORS_REVIEW_DELTA.md`) found 0 blocking, 0 major and 4 minor. All four are dealt with.
+
+1. **Player handler untested.** `handleNPCPlayerCollision` is now exported and `test/js/npc-patrol-settle.test.mjs` has a mirror of the NPC case ("the player collision handler does not replan inside the grace either"). It needs `window.player.currentRoom`, otherwise the handler returns before the avoidance block and the test proves nothing. Checked by removing the `settleGraceRunning` return from the player handler: the test fails with "no avoidance re-plan while the settle grace is running", and passes again with the guard restored.
+2. **Go-to-stay arrival inside the grace.** Fixed rather than excused. Both handlers now run the `collisionArrives` check straight after the settle step, before the grace return, so a goToAndStay walker close to its destination arrives at once instead of up to 600 ms later. The existing guard further down is untouched. Test: "a goToAndStay walker arrives inside the grace, not 600 ms later", run against both handlers.
+3. **One clock for the grace.** `_settleGraceUntil` is stamped with `clockNow()` (it was the `time` argument) and `updatePatrol` clamps it to `clockNow() + SETTLE_GRACE_MS`, the same way it clamps `settleEndTime`. Test: stamp on a scene clock that differs from the `time` argument, then a stamp of 1.8e12 is pulled back.
+4. **More live runs.** `tools/playtest/patrol-stall-live.mjs` (the fixed harness: no Escape presses, scene paused check, setFPS(20) with fixed steps on, headless). Keyless server on :3095 only, game 6364 from new-game.rb, `test-npc-waypoints`, 120 s each, clock confirmed advancing in every run, no page errors. `park` resets the player to (156,169) beside waypoint_with_face each second. `ahead` puts the player on waypoint_fast's current patrol target every 500 ms, so the player-collision and player-wait code run. Longest stand-still is the longest stretch of identical position with zero velocity in the 1 s rows.
+
+| Run | Mode | Longest still | Settle or grace flag in the stretch | Player beside | Reading |
+|---|---|---|---|---|---|
+| 1 | park | 2 s | yes | no | brief settle, then moved |
+| 2 | park | 2 s | no | yes | player wait |
+| 3 | park | 2 s | no | yes | player wait |
+| 4 | park | 3 s | yes | no | settle plus grace plus re-plan, then moved |
+| 5 | park | 2 s | yes | no | brief settle, then moved |
+| 6 | park | 2 s | no | no | avoidance back-off |
+| 7 | ahead | 4 s | no | yes | player wait |
+| 8 | ahead | 4 s | no | yes | player wait |
+| 9 | ahead | 3 s | yes | no | settle plus grace, then moved |
+
+Telling the two apart: a deliberate player wait has `_playerBeside` true and no settle or grace in the stretch (runs 2, 3, 7, 8; the 4 s ones end at the 5 s `_patrolStalled` re-target). A settle stall would show `isSettling` or a grace for far longer than 300 ms plus 600 ms and a path that is wiped every second. The settle-flagged stretches (runs 1, 4, 5, 9) are 2 to 3 s at 1 s sampling, which is one settle and its grace, and the walker then moves on. The stand-still seen before the fix was 87 to 100 s. None of the nine runs is near that. Run 7 and 8 are the first live exercise of the player-collision half.
+
+Suites on the code commit 4ed0eb388: `bin/test-js` 717 files passed, 0 failed; `bin/rails test` 3003 runs, 48495 assertions, 0 failures, 0 errors, 3 skips. No db task was run. Server on :3095 stopped.
