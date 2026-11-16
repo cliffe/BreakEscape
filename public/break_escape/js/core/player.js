@@ -169,6 +169,8 @@ export async function updatePlayerSprite(newSpriteKey) {
     punchDirections.forEach(dir => {
         animKeysToDestroy.push(`cross-punch_${dir}`);
         animKeysToDestroy.push(`lead-jab_${dir}`);
+        // Pose frames (systems/player-poses.js): a new atlas without them must not keep the old ones
+        for (const pose of ['drink', 'use', 'phone']) animKeysToDestroy.push(`pose_${pose}_${dir}`);
     });
     
     animKeysToDestroy.forEach(key => {

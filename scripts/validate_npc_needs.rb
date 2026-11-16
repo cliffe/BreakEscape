@@ -52,6 +52,7 @@ module ValidateNpcNeeds
     check_queues(json, npcs, objs, issues)
     npcs.each { |room_id, npc| check_npc(json, npc, room_id, objs, issues, npcs) }
     check_swivel(npcs, issues)
+    check_poses(npcs, objs, issues)
     check_lock_habits(json, npcs, objs, issues, screen_habits)
     check_off_when(json, npcs, objs, issues)
     check_print_habits(json, npcs, objs, issues)
@@ -589,6 +590,52 @@ module ValidateNpcNeeds
       if needs_npc && npc.dig('los', 'enabled') == true && npc['swivel'] != false
         issues << "⚠️ WARNING: #{where} is a needs NPC with los.enabled; the idle swivel would turn its sight cone, so it never swivels. Set swivel: false to say so."
       end
+    end
+  end
+
+  # NPC poses (docs/achitechture/NPC_POSES.md): `poses` on an NPC with no needs does nothing; a
+  # listed pose the NPC's atlas has no frames for is silent at run time; affordance.pose or
+  # affordance.machine on an object that satisfies no need: no use brings an NPC there.
+  POSE_NAMES = %w[drink use phone].freeze
+  CHARACTER_ASSETS = File.expand_path('../public/break_escape/assets/characters', __dir__)
+
+  def self.atlas_poses(key)
+    path = key.is_a?(String) && File.join(CHARACTER_ASSETS, "#{File.basename(key)}.json")
+    return nil unless path && File.file?(path)
+
+    frames = JSON.parse(File.read(path))['frames']
+    names = frames.is_a?(Hash) ? frames.keys : Array(frames).map { |f| f.is_a?(Hash) ? f['filename'] : nil }
+    names.compact.filter_map { |n| n[/\Apose_([a-z]+)_/, 1] }.uniq
+  rescue JSON::ParserError, SystemCallError
+    nil
+  end
+
+  def self.check_poses(npcs, objs, issues)
+    npcs.each do |_, npc|
+      next unless npc.key?('poses')
+
+      where = "NPC '#{npc['id']}'"
+      needs_npc = npc['needs'].is_a?(Hash) || npc['interests'].is_a?(Hash)
+      unless needs_npc
+        issues << "⚠️ WARNING: #{where} sets poses but has no needs; poses show only during needs uses and calls, so it does nothing."
+        next
+      end
+      next unless npc['poses'].is_a?(Array)
+
+      have = atlas_poses(npc['spriteSheet'])
+      next unless have
+
+      missing = npc['poses'].select { |n| POSE_NAMES.include?(n) } - have
+      next if missing.empty?
+
+      issues << "⚠️ WARNING: #{where} lists poses #{missing.join(', ')} but its atlas '#{npc['spriteSheet']}' has no pose_#{missing.first} frames; the idle shows instead (import them with --pose-from)."
+    end
+    objs.each do |o|
+      aff = o.data['affordance']
+      next unless aff.is_a?(Hash) && (aff.key?('pose') || aff.key?('machine'))
+      next unless Array(aff['satisfies']).empty?
+
+      issues << "⚠️ WARNING: object '#{o.id || o.data['name']}' sets affordance.pose/machine but satisfies no need, so no needs NPC uses it and the pose never shows."
     end
   end
 

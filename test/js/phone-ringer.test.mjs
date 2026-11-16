@@ -13,7 +13,7 @@ const dataUrl = (s) => 'data:text/javascript;base64,' + Buffer.from(s).toString(
 const R = await import(dataUrl(src));
 const {
     createPhoneRinger, RING_TIMEOUT_MS, UNTIL_ANSWERED_NUDGE_MS, AUTO_ANSWER_MS,
-    HIT_QUIET_MS, HOLD_MAX_MS, SCRIPTED_CALL_START_MS, TICK_MS, RERING_AFTER_LOAD_MS, CALL_GONE_AFTER_MS,
+    HIT_QUIET_MS, HOLD_MAX_MS, RETRY_OPEN_MS, SCRIPTED_CALL_START_MS, TICK_MS, RERING_AFTER_LOAD_MS, CALL_GONE_AFTER_MS,
 } = R;
 
 // ---- fakes -------------------------------------------------------------------------
@@ -1752,4 +1752,34 @@ test('R5 m2: a non-forced offer for the connected knot is dropped; another knot 
     assert.equal(s.ringer.queueLength(), 0);
     assert.equal(s.ringer.offer(offer({ knot: 'call_b' })), 'queued');
     assert.equal(s.ringer.queueLength(), 1);
+});
+
+// ---- Player phone pose (systems/player-poses.js) --------------------------------------
+
+test('answering: the adapter hook runs once on answer, before the call opens, and again on a retried open', () => {
+    const calls = [];
+    const s = setup({}, (adapter, ctx) => { adapter.answering = () => calls.push(ctx.log.filter((e) => e[0] === 'openCall').length); });
+    s.ringer.offer(offer());
+    s.clock.advance(1000);
+    assert.equal(calls.length, 0, 'not while ringing');
+    s.ringer.answer('ceo');
+    assert.deepEqual(calls, [0], 'once, with no openCall yet');
+    connect(s);
+    assert.equal(s.count('openCall'), 1);
+    assert.deepEqual(calls, [0], 'not again at the open');
+    // A refused open that is retried raises the phone again
+    const r = setup({ openResult: false }, (adapter) => { adapter.answering = () => calls.push('retry'); });
+    calls.length = 0;
+    r.ringer.offer(offer());
+    r.ringer.answer('ceo');
+    connect(r);
+    r.clock.advance(RETRY_OPEN_MS);
+    assert.ok(calls.length >= 2, 'the retry through beginOpen calls it again');
+    // An adapter without the hook, or one that throws, is harmless
+    const t = setup();
+    t.ringer.offer(offer());
+    assert.equal(t.ringer.answer('ceo'), true);
+    const u = setup({}, (adapter) => { adapter.answering = () => { throw new Error('x'); }; });
+    u.ringer.offer(offer());
+    assert.equal(u.ringer.answer('ceo'), true);
 });
