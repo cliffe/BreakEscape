@@ -2002,6 +2002,18 @@ function slideChairFootTo(chair, x, y) {
  * at (235,172), her chair's foot (200,186), 37.7 px; she stood at her desk for good). Elsewhere,
  * or farther off (a script moved it), the feet.
  */
+/**
+ * Whether a post seat should wait for the home cell: the stop is the post and the home is not
+ * resolved yet (null before the needs system's first tick, or provisional at the spawn feet), and
+ * POST_HOME_WAIT_MS of needs clock have not passed. Tour 5691: the seat check ran before the first
+ * needs tick (home null), fetched from the spawn spot against the desk and hit mount_stuck.
+ */
+export function postHomePending(stop, home, now) {
+    if (!stop?.post) return false;
+    if (home && !home.provisional) return false;
+    return (now ?? 0) < POST_HOME_WAIT_MS;
+}
+
 export function needsSeatRef(feet, stop, home) {
     if (stop?.post && home && Number.isFinite(home.x) && Number.isFinite(home.y)
         && Math.hypot(home.x - feet.x, home.y - feet.y) <= POST_SNAP) {
@@ -2143,7 +2155,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const now = window.npcNeedsSystem?.clockMs ?? 0;
     // At the post, the first try waits (a while) for the home cell: a provisional home is the
     // spawn feet, which can sit against a desk (SIMS_TIDY_LOG.md item 3)
-    if (stop.post && ns?.home?.provisional && now < POST_HOME_WAIT_MS) return false;
+    if (postHomePending(stop, ns?.home, now)) return false;
     // Tried at this stop already: elsewhere that's final; at the post, try again now and then
     const retry = behavior._seatStopKey === stop.key;
     if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)

@@ -1230,8 +1230,20 @@ test('seatWalkWaypoints: drops points at the start and the spot, collapses strai
 test('a post seat waits for a resolved home before its first try (SIMS_TIDY_LOG.md item 3)', async () => {
     const { readFileSync } = await import('node:fs');
     const src = readFileSync(new URL('../../public/break_escape/js/systems/seating.js', import.meta.url), 'utf8');
-    assert.match(src, /if \(stop\.post && ns\?\.home\?\.provisional && now < POST_HOME_WAIT_MS\) return false;/);
-    assert.ok(src.indexOf('POST_HOME_WAIT_MS) return false') < src.indexOf('behavior._seatStopKey = stop.key'),
+    assert.match(src, /if \(postHomePending\(stop, ns\?\.home, now\)\) return false;/);
+    assert.ok(src.indexOf('postHomePending(stop, ns?.home, now)) return false') < src.indexOf('behavior._seatStopKey = stop.key'),
         'the wait comes before the stop is marked tried, so the first try is not spent');
     assert.match(src, /m\.route = planSeatWalk\(behavior, chair, f, opts\.ref\)/);
+});
+
+test('postHomePending: a post seat waits while the home is null or provisional, up to the wait', () => {
+    const post = { post: true, key: 'at:desk' };
+    assert.equal(seating.postHomePending(post, null, 0), true, 'home null before the first needs tick: wait');
+    assert.equal(seating.postHomePending(post, undefined, 1000), true, 'no home yet: wait');
+    assert.equal(seating.postHomePending(post, { x: 96, y: 192, provisional: true }, 4999), true, 'provisional: wait');
+    assert.equal(seating.postHomePending(post, { x: 96, y: 192, provisional: true }, 5000), false, 'wait over');
+    assert.equal(seating.postHomePending(post, null, 5000), false, 'wait over with no home');
+    assert.equal(seating.postHomePending(post, { x: 92, y: 164 }, 0), false, 'resolved home: no wait');
+    assert.equal(seating.postHomePending({ post: false, key: 'at:x' }, null, 0), false, 'not the post: no wait');
+    assert.equal(seating.postHomePending(null, null, 0), false, 'no stop');
 });
