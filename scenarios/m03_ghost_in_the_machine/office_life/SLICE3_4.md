@@ -24,3 +24,25 @@ Status: nothing built yet. This agent spent its budget reading; no scenario file
 ## Not done
 
 Slices 3 and 4 in full, all plan checks, live checks, suites, the commits per slice. Report this handover to the caller.
+
+## Slice 3 results (built; commit 41100e95a plus a spawn tweak)
+
+Built in scenario.json.erb: `officePresets`, `reception_coffee` (coffee_station1, useSeconds 17, offWhen wh_staff_upset), `hallway_cooler` (water_cooler1 in main_hallway, offWhen wh_staff_upset), `zainab_laptop` (laptop1, affordance false, no habit yet), NPCs `zainab_hussain` (needsHome zainab_laptop) and `yusuf_demir` (needsHome tile 3.47,8.38 in the club chair), needsRooms reception_lobby + main_hallway, group wh_day_staff, hostile leash, globalVarOnKO zainab_ko / yusuf_ko. Each has four hide mappings (clone_call_done change onceOnly, room_entered reception and hallway plain, first-frame `previousRoom === null` one). `wh_staff_upset` is set by appended agent_0x99 mappings (npc_attacked, both KO globals, receptionist_ko before the night turn). Credits warnings added. Placeholder ink files compile.
+Checks: ink compiles (0 failed), validator 0 errors (12 warnings, all new ones from the two NPCs: cooler has no chatter lines, queue cells outside room because the sprite is Tiled-claimed, V4 attack probe not yet passed), `--office-summary` diff = the two new NPCs only, lock_key_diff empty, door alignment OK.
+
+Measured (live, game 6482, keyless :3091, bridge `needs.set` to force each trip, player parked at reception door):
+- Coffee, 5 trips: real away 22.5 to 24.2 s, expectedAwayMs 19263 to 20556 (with useSeconds 17).
+- Cooler alone, 4 clean trips: real 34.2 to 37.5 s, expectedAwayMs 22134 to 22932.
+- Cooler paired (both thirsty): real 38.5 to 53.2 s, expectedAwayMs 24054 to 24618.
+- Recommended `lockIfAwayOverSeconds` 21.3 (coffee max 20.6 stays open, cooler min 22.1 locks).
+- The cooler is in main_hallway, which is lazy-loaded: until the player has entered the hallway once, thirst parks as `no_source`. Cooler trips only happen after that.
+
+The 54 s return: not a queue or cooler cell. The reception to hallway door gap is one body wide (feet 41 to 55), so a pair goes through single file; the second user waits about 8 s going out and about 9 s coming back. In one run Zainab stood 120 s at (53,43) just inside the door, "returning", while my probe parked the player at (48,77) in the door lane (probe artifact plus single-file gap). Not fixed. A check with the player parked by Ffion (`PARK=1 b.mjs`) did not finish; redo it. Options if it matters: stagger pair trips, or widen the lane in the room dressing.
+
+Live results: both staff at posts, visible (done). Five coffee trips and cooler trips (done, above). `wh_staff_upset` off-switch: debugKO zainab_hussain, then Yusuf's caffeine and thirst both park as `no_source` (done; KO was the debug shortcut, not a fight). NOT done: night-turn hide, hide after reload, fight music with them hidden. The conference door is RFID locked, so reaching the night turn needs Ffion's badge or Victoria's card (KO Ffion, pick up the badge, open the door, KO Victoria via debugKO, then enter main_hallway). NOT done: bin/test-js and Rails suites. Main merged at 74f89371c (contains d1afb3be8) before the spawn tweak.
+
+## Slice 4 handover
+
+- Use `lockIfAwayOverSeconds` 21.3 on Zainab's habit (`habits.screen.lockChance 1`). `zainab_laptop` already exists, owner not yet set: add `workstation: true`, `owner`, `observationVariants` (amara_pc pattern).
+- Her laptop sits on the glass table at tile 5.0, 8.7; her post is the sofa west seat (sprite settles at 172,241).
+- Probe scripts: scratchpad `p/lib.mjs`, `b.mjs` (trips, args: gameId kind rounds both; env PARK=1), `e.mjs`, `d.mjs`. They are in the old agent's scratchpad and may be gone.
