@@ -200,9 +200,15 @@ export function showNotification(message, type = 'info', title = '', duration = 
  * A toast that is on its way out (closing, or pulled back behind a panel) does not count.
  */
 export function findShownDuplicate(container, message, type, title, options = {}) {
+    return findSameToast(container, message, type, title, options, false);
+}
+
+// pending true: the same toast still waiting to show over a panel (toast-pending, plan 2.5)
+function findSameToast(container, message, type, title, options, pending) {
     const mode = toastRenderMode(options);
     const shown = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
     return shown.find((el) => el._toast && !el._toast.pulled && !el._toast.closing
+        && (el._toast.pending === true) === pending
         && el._toast.message === message && el._toast.type === type && el._toast.title === title
         && sameRenderMode(toastRenderMode(el._toast), mode)) || null;
 }
@@ -243,6 +249,205 @@ function laneYieldHandler(notification) {
     };
 }
 
+// ---- Warnings and errors over an open panel (toast plan 2.5 to 2.7) ----
+// ui/hud-lanes.js alone can measure the panel, so it decides when a waiting warning or error
+// shows (its answers come in through el._onReplace); this file owns every timer, so no toast
+// waits on hud-lanes answering well. Without hud-lanes, toasts show at once as before.
+export const TOAST_WATCHDOG_MS = 500;        // no answer at all by then: show it
+export const TOAST_HARD_RELEASE_MS = 5500;   // shown by then whatever the answers (D6)
+export const WARNING_WAIT_MS = 5000;         // a warning behind errors is answered again by then
+const PANEL_TOAST_TYPES = new Set(['warning', 'error']);
+
+function hudLanesActive() {
+    return typeof window !== 'undefined' && typeof window.hudLanesRelayout === 'function' && !window.__hudLanesDisabled;
+}
+
+function relayoutLanes() {
+    try { if (hudLanesActive()) window.hudLanesRelayout(); } catch (e) { /* the hard release stands behind it */ }
+}
+
+// Errors first: with hud-lanes present an error goes before the first toast in the container
+// that is not an error (pending and closing ones included), so a cut at the bottom of the block
+// never falls on an error. A toast already in the right place is not moved.
+function placeInOrder(container, notification) {
+    if (notification._toast?.type !== 'error' || typeof container?.insertBefore !== 'function') {
+        if (notification.parentNode !== container) container.appendChild(notification);
+        return;
+    }
+    const all = [...container.querySelectorAll('.notification')];
+    const at = all.indexOf(notification);
+    if (at >= 0 && all.slice(0, at).every((el) => el._toast?.type === 'error')) return;
+    const firstOther = all.find((el) => el !== notification && el._toast?.type !== 'error');
+    if (firstOther) container.insertBefore(notification, firstOther);
+    else if (at < 0) container.appendChild(notification);
+}
+
+// Every shown error wakes the lanes when its floor is reached, so a toast told to wait behind
+// it is answered again then (plan 2.6 item 6). Re-armed by a duplicate restart.
+function armErrorFloor(notification) {
+    clearTimeout(notification._floorTimer);
+    notification._floorTimer = null;
+    const t = notification._toast;
+    if (!t || t.type !== 'error' || t.pending || !hudLanesActive()) return;
+    const due = (t.shownAt || Date.now()) + ERROR_TOAST_MIN_MS - Date.now();
+    notification._floorTimer = setTimeout(() => { notification._floorTimer = null; relayoutLanes(); }, Math.max(0, due));
+}
+
+function cancelSwap(notification) {
+    clearTimeout(notification._swapTimer);
+    notification._swapTimer = null;
+    notification._swap = null;
+}
+
+function clearPendingTimers(notification) {
+    for (const k of ['_watchdogTimer', '_hardTimer', '_deadlineTimer']) {
+        clearTimeout(notification[k]);
+        notification[k] = null;
+    }
+    cancelSwap(notification);
+}
+
+// When a shown toast may be replaced: up 1.5 s for a warning, 5 s for an error
+function floorOf(older) {
+    const o = older._toast;
+    return (o.shownAt || 0) + (o.type === 'error' ? ERROR_TOAST_MIN_MS : TOAST_STAGGER_MS);
+}
+
+// A waiting toast shows: its countdown starts now, the lanes place it, and only then it slides in
+function releaseToast(notification) {
+    const t = notification._toast;
+    if (!t || !t.pending || t.closing) return;
+    clearPendingTimers(notification);
+    t.pending = false;
+    notification.classList.remove('toast-pending');
+    if (notification.parentNode) placeInOrder(notification.parentNode, notification);
+    t.shownAt = Date.now();
+    if (t.duration > 0) startCountdown(notification, t.duration);
+    armErrorFloor(notification);
+    // The relayout's frame is queued first, so the toast is placed before its slide-in starts
+    relayoutLanes();
+    const show = () => { if (!t.closing) notification.classList.add('show'); };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(show);
+        // rAF does not run in a hidden tab: the backstop keeps the toast from expiring unseen (R1 n2)
+        setTimeout(show, 50);
+    } else setTimeout(show, 10);
+}
+
+// Replace `older` once it has been up its floor, keyed on the pair (older, floor time)
+function scheduleSwap(notification, older) {
+    const floor = floorOf(older);
+    if (notification._swap && notification._swap.older === older && notification._swap.floor === floor) return;
+    cancelSwap(notification);
+    notification._swap = { older, floor };
+    notification._swapTimer = setTimeout(() => runSwap(notification), Math.max(0, floor - Date.now()));
+}
+
+function runSwap(notification) {
+    const swap = notification._swap;
+    notification._swapTimer = null;
+    if (!swap || !notification._toast?.pending) return;
+    const { older } = swap;
+    if (older._toast && !older._toast.closing) {
+        // A duplicate restart moved its floor after the swap was set: wait for the new one
+        if (floorOf(older) > Date.now()) {
+            notification._swap = null;
+            scheduleSwap(notification, older);
+            return;
+        }
+        removeNotification(older);
+    }
+    notification._swap = null;
+    releaseToast(notification);
+}
+
+// hud-lanes' answer for a waiting toast: 'stack' (show now), 'wait', or a shown toast to replace
+function replaceHandler(notification) {
+    return (answer) => {
+        const t = notification._toast;
+        if (!t || !t.pending || t.closing) return;
+        clearTimeout(notification._watchdogTimer);
+        notification._watchdogTimer = null;
+        if (answer === 'stack') releaseToast(notification);
+        else if (answer && typeof answer === 'object' && answer._toast) scheduleSwap(notification, answer);
+        else cancelSwap(notification);
+    };
+}
+
+// hud-lanes: two warnings shown over a panel with no clear place for both; the older one goes
+// once it has been up TOAST_STAGGER_MS (plan 2.5, "Panel opens with toasts shown")
+function supersedeHandler(notification) {
+    return (on = true) => {
+        const t = notification._toast;
+        if (!on) {   // the panel closed or room appeared: the older warning stays (review R1 m2)
+            clearTimeout(notification._supersedeTimer);
+            notification._supersedeTimer = null;
+            return;
+        }
+        if (!t || t.closing || t.pending || notification._supersedeTimer) return;
+        notification._supersedeTimer = setTimeout(() => {
+            notification._supersedeTimer = null;
+            if (!t.closing) removeNotification(notification);
+        }, Math.max(0, floorOf(notification) - Date.now()));
+    };
+}
+
+// At most one warning waits: a newer one replaces it (it was announced when it arrived)
+function dropWaitingWarnings(container, keep) {
+    const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
+    all.forEach((el) => {
+        const t = el._toast;
+        if (el === keep || !t || !t.pending || t.closing || t.type !== 'warning') return;
+        clearPendingTimers(el);
+        t.pending = false;
+        t.closing = true;
+        if (el.parentNode) el.parentNode.removeChild(el);
+    });
+}
+
+// Screen readers hear every toast once (plan 2.7): errors in an alert region, the rest in a
+// polite one. The regions sit on body (never in the toast container, which the lanes measure)
+// and are looked up by id on each use. Emptied first and filled a tick later, so the same text
+// twice is read twice. Nothing here may break a toast.
+function announceToast(type, text) {
+    try {
+        if (typeof document === 'undefined') return;
+        const body = document.body;
+        if (!body?.appendChild) return;
+        const id = type === 'error' ? 'toast-live-alert' : 'toast-live-polite';
+        let region = typeof document.getElementById === 'function' ? document.getElementById(id) : null;
+        if (!region) {
+            region = document.createElement('div');
+            region.id = id;
+            region.className = 'toast-live-region';
+            if (type === 'error') {
+                region.setAttribute?.('role', 'alert');
+            } else {
+                region.setAttribute?.('aria-live', 'polite');
+                region.setAttribute?.('aria-atomic', 'true');
+            }
+            body.appendChild(region);
+        }
+        region.textContent = '';
+        setTimeout(() => {
+            try {
+                const r = document.getElementById(id);
+                if (r) r.textContent = text;
+            } catch (e) { /* not announced */ }
+        }, 0);
+    } catch (e) { /* not announced */ }
+}
+
+function spokenText(notification, title, message, plainText, verbatim) {
+    const plainOf = (sel, raw) => {
+        const t = notification.querySelector?.(sel)?.textContent;
+        return typeof t === 'string' && t ? t : String(raw).replace(/<[^>]*>/g, ' ');
+    };
+    const head = !title ? '' : (plainText ? displayDashes(title) : plainOf('.notification-title', title));
+    const body = plainText ? (verbatim ? String(message) : displayDashes(message)) : plainOf('.notification-message', message);
+    return (head ? `${head}: ${body}` : body).replace(/\s+/g, ' ').trim();
+}
+
 // Plain text into an element: textContent per line, a <br> element between lines.
 function setPlainLines(el, text) {
     String(text).split('\n').forEach((line, i) => {
@@ -268,12 +473,12 @@ const waitingToasts = [];
 
 /**
  * Toasts on screen that count towards the limit: not closing, not pulled back behind a
- * panel, and timed. A toast that stays until closed (duration 0: the Key Ring, the Mission
+ * panel, not waiting to show over one (toast-pending), and timed. A toast that stays until closed (duration 0: the Key Ring, the Mission
  * Brief fallback) is left out, or one the player leaves open would halve the limit for good.
  */
 export function shownToasts(container) {
     const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
-    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && el._toast.duration > 0);
+    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && !el._toast.pending && el._toast.duration > 0);
 }
 
 /** Number of info and success toasts waiting for a free place. */
@@ -368,9 +573,19 @@ function renderNotification(message, type, title, duration, seen = false, option
     // The same toast raised again while it is still on screen (a refusal hint clicked
     // three times) restarts its countdown instead of stacking a copy.
     // (A timed toast and one that stays until closed are not the same toast.)
+    // A repeat of a toast still waiting over a panel only refreshes its time: its countdown has
+    // not started (toast plan 2.5, "Duplicates")
+    const waiting = findSameToast(notificationContainer, message, type, title, options, true);
+    if (waiting && (duration > 0) === (waiting._toast.duration > 0)) {
+        waiting._toast.duration = duration;
+        return waiting;
+    }
     const same = findShownDuplicate(notificationContainer, message, type, title, options);
     if (same && (duration > 0) === (same._toast.duration > 0)) {
         same._toast.shownAt = Date.now();
+        // An error seen again keeps its 5 s floor from now; the lanes answer again with it
+        armErrorFloor(same);
+        relayoutLanes();
         if (duration > 0) {
             same._toast.duration = duration;
             if (same._yieldLeft != null) {
@@ -397,9 +612,13 @@ function renderNotification(message, type, title, duration, seen = false, option
         return null;
     }
 
+    // A warning or error over an open panel waits, unshown, until hud-lanes has a place for it
+    // or one of the timers below shows it (toast plan 2.6)
+    const overPanel = PANEL_TOAST_TYPES.has(type) && hudLanesActive() && fullScreenPanelOpen();
+
     // Create notification element
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.className = overPanel ? `notification ${type} toast-pending` : `notification ${type}`;
     
     // Create notification content
     let notificationContent = '';
@@ -409,7 +628,7 @@ function renderNotification(message, type, title, duration, seen = false, option
     }
     notificationContent += plainText ? '<div class="notification-message"></div>'
         : `<div class="notification-message">${displayDashes(message).replace(/\n/g, "<br>")}</div>`;
-    notificationContent += `<div class="notification-close">×</div>`;
+    notificationContent += `<button type="button" class="notification-close" aria-label="Close">×</button>`;
     
     if (duration > 0) {
         notificationContent += `<div class="notification-progress"></div>`;
@@ -428,35 +647,71 @@ function renderNotification(message, type, title, duration, seen = false, option
     // A short line with no title (a finished task on a phone, objectives-manager.js): its text
     // is never cut, so the task's name can always be read (review R1 M2)
     if (options?.brief === true) notification.classList.add('brief');
-    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
+    notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim };
     notification._onLaneYield = laneYieldHandler(notification);
-    
-    // Add to container
-    notificationContainer.appendChild(notification);
-    
-    // Show notification with animation
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-    
-    // Progress bar and removal after the duration, if one is set
-    if (duration > 0) startCountdown(notification, duration);
-    
-    // Add close button event listener
+    if (hudLanesActive()) notification._onSupersede = supersedeHandler(notification);
+
+    // Add to container: errors first while hud-lanes places the block, else at the end
+    if (hudLanesActive()) placeInOrder(notificationContainer, notification);
+    else notificationContainer.appendChild(notification);
+
+    if (overPanel) {
+        notification._toast.pending = true;
+        notification._toast.arrivedAt = Date.now();
+        if (type === 'warning') dropWaitingWarnings(notificationContainer, notification);
+        notification._onReplace = replaceHandler(notification);
+        notification._watchdogTimer = setTimeout(() => {
+            notification._watchdogTimer = null;
+            releaseToast(notification);
+        }, TOAST_WATCHDOG_MS);
+        notification._hardTimer = setTimeout(() => releaseToast(notification), TOAST_HARD_RELEASE_MS);
+        if (type === 'warning') notification._deadlineTimer = setTimeout(relayoutLanes, WARNING_WAIT_MS);
+        relayoutLanes();
+    } else {
+        // Show notification with animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        // Progress bar and removal after the duration, if one is set
+        if (duration > 0) startCountdown(notification, duration);
+        armErrorFloor(notification);
+    }
+    announceToast(type, spokenText(notification, title, message, plainText, verbatim));
+
+    // The X is a real button. Enter and Space stop at it: the PIN pad's document handler
+    // would cancel the click on Enter and submit the PIN. Click is added last (some test
+    // stubs keep only the last listener) and takes no event.
     const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.addEventListener('keydown', (e) => {
+        if (e?.key === 'Enter' || e?.key === ' ') e?.stopPropagation?.();
+    });
+    closeBtn.addEventListener('keyup', (e) => {
+        if (e?.key === ' ') e?.stopPropagation?.();
+    });
     closeBtn.addEventListener('click', () => {
         removeNotification(notification);
     });
-    
+
     return notification;
 }
 
 // Remove a notification with animation
 export function removeNotification(notification) {
     clearTimeout(notification._hideTimer);
-    if (notification._toast) notification._toast.closing = true;
+    clearTimeout(notification._floorTimer);
+    clearTimeout(notification._supersedeTimer);
+    clearPendingTimers(notification);
+    if (notification._toast) {
+        notification._toast.closing = true;
+        notification._toast.pending = false;
+    }
     notification.classList.remove('show');
-    
+    // The 300 ms fade keeps it in the container, in flow: it must not take a click meant for a
+    // control under it (the close X is pointer-events: auto in the stylesheet, so it needs its own)
+    if (notification.style) notification.style.pointerEvents = 'none';
+    const closeBtn = notification.querySelector?.('.notification-close');
+    if (closeBtn?.style) closeBtn.style.pointerEvents = 'none';
+
     // Remove from DOM after animation
     setTimeout(() => {
         if (notification.parentNode) {

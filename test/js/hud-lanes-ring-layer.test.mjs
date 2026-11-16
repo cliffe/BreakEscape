@@ -57,13 +57,6 @@ test('no spot clear of controls: the original top centre', () => {
   assert.deepEqual(ringLayerSpot(full), { name: 'default', top: 12, left: 20 });
 });
 
-test('a toast in the notify lane is avoided', () => {
-  const s0 = ringLayerSpot(PIN_915);
-  const toast = B(s0.left, s0.top, s0.left + 360, s0.top + 92);
-  const s = ringLayerSpot({ ...PIN_915, toasts: [toast] });
-  assert.ok(!overlaps(s, PIN_915.size, toast));
-});
-
 test('the below spot is clamped to the viewport (review R2 n3: the clamp is reached)', () => {
   // Bottom row y 190..284 is blocked across the width, so both bottom spots fail. Under the frame
   // is y 288 (control bottom 284 + 4 margin is clear), which would run off a 300px screen: the
@@ -77,32 +70,13 @@ test('the below spot is clamped to the viewport (review R2 n3: the clamp is reac
   assert.deepEqual(roomy, { name: 'below', top: 68, left: 16 });
 });
 
-test('R2 m3: with a toast in the lane the banner goes just under the lowest toast, not over the X', () => {
-  // EHR console at 390x844: bottom blocked by a button row, lane spot covered by a warning toast
-  const ehr = { vw: 390, vh: 844, size: { width: 358, height: 94 }, lane: { top: 84, left: 16, width: 358 },
-    titles: [B(20, 20, 370, 75)], controls: [B(320, 30, 360, 70), B(20, 90, 370, 150), B(127, 705, 263, 757)],
-    frame: B(10, 10, 380, 830) };
-  const toast = B(16, 84, 374, 227);
-  const noToast = ringLayerSpot({ ...ehr, controls: [B(320, 30, 360, 70), B(127, 705, 263, 757), B(20, 650, 370, 840)], toasts: [] });
-  assert.equal(noToast.name, 'lane');
-  const blocked = { ...ehr, controls: [B(320, 30, 360, 70), B(20, 650, 370, 840), B(20, 90, 370, 100)], toasts: [toast] };
-  const s = ringLayerSpot(blocked);
-  assert.equal(s.name, 'lane-below');
-  assert.equal(s.top, 235);
-  assert.ok(!overlaps(s, ehr.size, B(320, 30, 360, 70)), 'the X stays clear');
-  assert.ok(!overlaps(s, ehr.size, toast));
-  // too low for the screen: falls back
-  const squeezed = ringLayerSpot({ ...blocked, vh: 300 });
-  assert.notEqual(squeezed.name, 'lane-below');
-});
-
 test('no minigame boxes: the banner stays top centre', () => {
   assert.deepEqual(ringLayerSpot({ vw: 915, vh: 412, size: { width: 360, height: 92 } }), { name: 'default', top: 12, left: 278 });
 });
 
 test('the lanes module places #phone-ring-layer after the other lanes and watches it', () => {
   const src = readFileSync(join(root, 'ui/hud-lanes.js'), 'utf8');
-  assert.match(src, /const ringSpot = placeRingLayer\(doc, win, lanes\);\s*win\.__hudLanes/);
+  assert.match(src, /const ringSpot = placeRingLayer\(doc, win, lanes, measure\);\s*const block = placeNotifyBlock\(doc, win, lanes, measure, prevBlock, ringSpot\);\s*win\.__hudLanes/);
   assert.match(src, /getElementById\('phone-ring-layer'\)/);
   assert.match(src, /mo\.observe\(ring, \{ childList: true/);
   assert.match(src, /MINIGAME_TITLES = \[[^\n]*console-titlebar[^\n]*minigame-close-button/);
@@ -207,24 +181,5 @@ test('R2 m2: a control added inside the open minigame while the banner rings mov
   await tick();
   assert.equal(layer.style.top, '', 'inline placing cleared');
   handle.stop();
-  r.win.close();
-});
-
-test('R2 m3 follow-up: a toast mid-slide (translateY -20px) is measured where it settles', () => {
-  const r = rig();
-  pinScene(r);
-  const layer = r.add('<div id="phone-ring-layer"></div>', [278, 12, 638, 104]);
-  r.add('<div class="incoming-call"></div>', [278, 12, 638, 104], layer);
-  const container = r.add('<div id="notification-container"></div>', [0, 0, 0, 0]);
-  // Mid-slide box 200..284; settled it is 220..304, which the bottom spot (304) would touch
-  r.add('<div class="notification show" style="transform: matrix(1, 0, 0, 1, 0, -20)"></div>', [278, 200, 638, 284], container);
-  const orig = r.win.Element.prototype.getBoundingClientRect;
-  r.win.Element.prototype.getBoundingClientRect = function () {
-    if (this.id === 'phone-ring-layer') return { left: 278, top: 12, right: 638, bottom: 104, width: 360, height: 92 };
-    return orig.call(this);
-  };
-  applyLanes(r.doc, r.win);
-  const spot = r.win.__hudLanes.ringSpot;
-  assert.ok(!overlaps(spot, { width: 360, height: 92 }, B(278, 216, 638, 308)), JSON.stringify(spot));   // settled box plus the 4px margin
   r.win.close();
 });
