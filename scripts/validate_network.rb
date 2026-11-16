@@ -241,8 +241,9 @@ def check_network_model(json_data, scenario_dir = nil)
       warn.call("'networks/#{net_id}/wifi' psk is the secret of a capture writer that carries no proof; the server " \
                 'never serves it, so the tablet stays blank. Give the writer a proof')
     end
+    served_writers = cm.served_capture_writers(json_data)
     proven = capture_writers_of_psk.any? do |cap, *_|
-      cm.proof_satisfiable?(cap['proof'], capture_item_defs, plain_objects, nil)
+      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plain_objects, nil)
     end
     unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.

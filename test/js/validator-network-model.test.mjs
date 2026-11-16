@@ -763,6 +763,7 @@ const KEY = 'quiet-harbour-77';
 function keyCaptureScenario(proof) {
     const sc = wifiClean();
     sc.networks.guest_wifi.wifi.psk = KEY;
+    sc.social = { captures: { revealSecret: true } };
     room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
     room(sc, 'lobby').objects.push(
         { id: 'kit_ap', type: 'usb', name: 'Pocket AP', takeable: true },
@@ -787,6 +788,32 @@ test('E0.4: a key with no capture writer is still unreadable', { skip }, () => {
 test('E0.4: a key whose capture proof cannot be satisfied is still unreadable', { skip }, () => {
     const list = issues(keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' }));
     assertHas(warnings(list), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer is not served when social.captures.revealSecret is off, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    delete sc.social.captures.revealSecret;
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer addressed to an account username is not served, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.push({ id: 'ann', npcType: 'person', creds: { username: 'ann.b', password: 'Ann-Pass-901' } });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.address = 'Ann.B';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer owned by an account holder is not served, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').creds = { username: 'hax.h', password: 'Hax-Pass-902' };
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: only the first writer of a target id is served', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' });
+    room(sc, 'lobby').npcs.push({ id: 'hax2', npcType: 'phone', eventMappings: [{ eventPattern: 'r',
+        addCapture: { targetId: 'staff_wifi_key', kind: 'credential', secret: KEY, proof: { planted: 'kit_ap', on: 'ap_spot' } } }] });
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
 });
 
 test('E0.4: a key writer with no proof is a warning (the server never serves it)', { skip }, () => {

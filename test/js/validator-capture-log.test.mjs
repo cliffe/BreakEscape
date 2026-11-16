@@ -395,5 +395,80 @@ test('E0.4: CaptureModel.proof_satisfiable? agrees with the validator on each ki
     const r = spawnSync('ruby', ['-rjson', '-e', script], { encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
     assert.equal(r.status, 0, r.stderr);
     assert.deepEqual(JSON.parse(r.stdout.trim().split('\n').pop()),
-        [true, true, true, true, false, false, true, false, true, false, false]);
+        [true, true, false, true, false, false, true, false, true, false, false]);
+});
+
+// ---- R1 fixes ----
+
+test('R1 m3: an add_capture action on an account holder, with a non-account secret, warns', { skip }, () => {
+    const sc = clean();
+    npc(sc, 'chris').eventMappings.push({ eventPattern: 'k',
+        actions: [{ type: 'add_capture', capture: cap('staff_wifi_key', { secret: PSK }) }] });
+    const list = issues(sc);
+    assertHas(warnings(list), 'on account holder "chris"');
+    assertHas(warnings(list), 'never served');
+});
+
+test('R1 m3: a writer addressed to an account username, with a non-account secret, warns', { skip }, () => {
+    const sc = withKeyWriter(clean(), { address: 'C.H' });
+    assertHas(warnings(issues(sc)), 'addressed to the account "C.H"');
+});
+
+test('R1 m3: an account-addressed writer whose secret is that account password does not warn', { skip }, () => {
+    const sc = withKeyWriter(clean(), { address: 'c.h', secret: PASSWORD });
+    assertNot(warnings(issues(sc)), 'never served');
+});
+
+test('R1 t3: a holderless session proof that other accounts share words the warning without "another"', { skip }, () => {
+    const sc = withKeyWriter(clean());
+    keyWriter(sc).proof = { session: 'mel_pc' };
+    obj(sc, 'mel_pc').access = { roles: ['staff'] };
+    const w = warnings(issues(sc)).filter(x => x.includes('npcs[3]'));
+    assertHas(w, 'after any of these accounts signs in there');
+    assertNot(w, 'after another account');
+});
+
+test('R1 M2: a planted proof with no `on` and only a jack is an error, as the helper says', { skip }, () => {
+    const sc = withKeyWriter(clean());
+    sc.rooms.office.objects = sc.rooms.office.objects.filter(o => o.id !== 'chris_desk');
+    sc.rooms.office.objects.push({ id: 'jack1', type: 'pc', name: 'Jack', networkJack: true });
+    npc(sc, 'chris').captureProof = [{ dropped: 'kit_qr' }];
+    keyWriter(sc).proof = { planted: 'kit_logger' };
+    assertHas(errors(issues(sc)), 'needs a room object with an id and a triggerOnInteract list');
+});
+
+test('R1 M2 parity: check_proof and proof_satisfiable? agree on every shorthand proof', { skip }, () => {
+    const proofs = [
+        { planted: 'kit_logger', on: 'chris_desk' }, { planted: 'kit_logger' }, { planted: 'kit_logger', on: 'jack1' },
+        { planted: 'kit_logger', on: 'chris_pc' }, { planted: 'kit_logger', on: 'nowhere' }, { planted: 'ghost' },
+        { planted: 'kit_qr' }, { dropped: 'kit_qr' }, { dropped: 'kit_logger' }, { dropped: 'ghost' },
+        { session: 'chris_pc' }, { session: 'chris_desk' }, { session: 'nowhere' }, { bogus: 1 }
+    ];
+    const withJack = clean();
+    withJack.rooms.office.objects.push({ id: 'jack1', type: 'pc', name: 'Jack', networkJack: true });
+    const noDesk = clean();
+    noDesk.rooms.office.objects = noDesk.rooms.office.objects.filter(o => o.id !== 'chris_desk');
+    noDesk.rooms.office.objects.push({ id: 'jack1', type: 'pc', name: 'Jack', networkJack: true });
+    npc(noDesk, 'chris').captureProof = [{ dropped: 'kit_qr' }];
+    const script = `require ${JSON.stringify(join(root, 'scripts/validate_capture_log.rb'))}
+      scenarios = JSON.parse(STDIN.read)
+      out = []
+      scenarios.each do |base|
+        JSON.parse(${JSON.stringify(JSON.stringify(proofs))}).each do |proof|
+          sc = JSON.parse(JSON.generate(base))
+          sc['rooms']['office']['npcs'] << { 'id' => 'hax', 'npcType' => 'phone', 'eventMappings' => [{ 'eventPattern' => 'q',
+            'addCapture' => { 'targetId' => 'staff_wifi_key', 'kind' => 'credential', 'secret' => 'quiet-harbour-77', 'proof' => proof } }] }
+          errs = check_capture_log(sc).select { |s| s.start_with?('❌') && s.include?('staff_wifi_key') == false && s.include?('/proof') }
+          objs = sc['rooms'].values.flat_map { |r| r['objects'] || [] }
+          sat = BreakEscape::CaptureModel.proof_satisfiable?(proof, capture_log_item_definitions(sc), objs, nil)
+          out << [proof, errs.empty?, sat]
+        end
+      end
+      puts JSON.generate(out)`;
+    const r = spawnSync('ruby', ['-rjson', '-e', script], {
+        input: JSON.stringify([withJack, noDesk]), encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' } });
+    assert.equal(r.status, 0, r.stderr);
+    const rows = JSON.parse(r.stdout.trim().split('\n').pop());
+    assert.equal(rows.length, proofs.length * 2);
+    for (const [proof, noError, sat] of rows) assert.equal(noError, sat, `disagree on ${JSON.stringify(proof)}`);
 });

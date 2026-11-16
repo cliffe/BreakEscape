@@ -229,3 +229,14 @@ test('playtest-session.js wires --capture-responses through the module', () => {
   assert.match(src, /responseCapture\.endCommand\(\)/);
   assert.match(src, /await responseCapture\.flush\(\)/);
 });
+
+test('R1 t2: an empty action_type is kept as Rails keeps it, not replaced by actionType', async () => {
+  const { file, cap } = fresh();
+  const INV = '/break_escape/games/7/inventory';
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: '', actionType: 'remove', item: { id: 'kit' }, used_on: '', usedOn: 'desk' }) }));
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: null, actionType: 'remove', item: { id: 'kit' }, usedOn: 'desk' }) }));
+  await cap.flush();
+  const got = lines(file);
+  assert.deepEqual(got[0].inv, { action: null, itemId: 'kit', usedOn: null });
+  assert.deepEqual(got[1].inv, { action: 'remove', itemId: 'kit', usedOn: 'desk' }, 'null falls through, as Ruby || does');
+});

@@ -435,7 +435,7 @@ module BreakEscape
     end
 
     # Whether a proof can be met in this scenario, as the server records it: a planted proof
-    # needs a network jack (when on names one, or on is absent) or a room object with an id, a
+    # needs the network jack that on names, or a room object with an id, a
     # triggerOnInteract list and a requiresItem that takes the item; a dropped proof needs a
     # droppable item; a session proof needs a sign-in PC (lockType login). item_defs is
     # { itemId => definition }, objects the room object hashes. holder (an account holder NPC
@@ -452,10 +452,12 @@ module BreakEscape
 
         on = proof['on']
         return false if on && objects.none? { |o| o['id'].to_s == on.to_s }
-        return true if objects.any? { |o| (on.nil? || o['id'].to_s == on.to_s) && o['networkJack'] == true }
+        # A jack plant is recorded only against the jack it names: with no `on` the server reads
+        # plantedItems alone (capture_proof_holds?), and only a non-jack plant writes that.
+        return true if on && objects.any? { |o| o['id'].to_s == on.to_s && o['networkJack'] == true }
 
         objects.any? do |o|
-          present_string?(o['id']) && (on.nil? || o['id'] == on) && object_takes_item?(o, item)
+          present_string?(o['id']) && (on.nil? || o['id'].to_s == on.to_s) && object_takes_item?(o, item)
         end
       when 'dropped'
         item = item_defs[proof['dropped'].to_s]
@@ -465,6 +467,36 @@ module BreakEscape
       else
         false
       end
+    end
+
+    # The capture writers whose secret the server can serve, in the server's order: the mirror of
+    # Game#build_authored_capture_secrets (first eligible writer per target id; a writer owned by an
+    # account holder, or addressed to an account username, is skipped) behind
+    # Game#capture_secrets_for_client's reveal gate (social.captures.revealSecret). Writers are
+    # the identical hashes each_capture_writer yields. A usePayload writer is not listed (it comes
+    # after the mapping and action writers server-side, and the validators read these only).
+    def served_capture_writers(data)
+      return [] unless reveal_secret?(data)
+
+      holders = room_npc_list(data).select { |npc| account_holder?(npc) }
+      usernames = holders.map { |npc| normalise_username(npc['creds']['username']) }.to_set
+      seen = {}
+      each_capture_writer(data).filter_map do |capture, _kind, _path, owner|
+        next if owner && holders.any? { |npc| npc.equal?(owner) }
+
+        id = capture['targetId']
+        next unless present_string?(id) && id.is_a?(String) && !id.empty? && capture['secret'].is_a?(String) && !capture['secret'].empty?
+        next if capture['address'].is_a?(String) && usernames.include?(normalise_username(capture['address']))
+        next if seen[id]
+
+        seen[id] = true
+        capture
+      end
+    end
+
+    # Whether the server can serve this capture writer's secret (see served_capture_writers).
+    def served_capture_writer?(data, capture)
+      served_capture_writers(data).any? { |c| c.equal?(capture) }
     end
 
     # --- Server-owned capture record (sync deltas R2, 6a) -------------------------------------

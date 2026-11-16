@@ -20,6 +20,12 @@ class CaptureProofSatisfiableTest < ActiveSupport::TestCase
     assert sat('planted' => 'kit')
   end
 
+  test 'a planted proof with no on is not met by a jack alone (the server reads plantedItems only)' do
+    refute sat({ 'planted' => 'stick' }, [JACK])
+    refute sat({ 'planted' => 'kit' }, [JACK, PC])
+    assert sat({ 'planted' => 'stick', 'on' => 'jack1' }, [JACK])
+  end
+
   test 'planted fails for a missing item, a missing object, a non-consuming object' do
     refute sat('planted' => 'ghost')
     refute sat('planted' => 'kit', 'on' => 'nowhere')
@@ -52,5 +58,45 @@ class CaptureProofSatisfiableTest < ActiveSupport::TestCase
     entry = CM.shorthand_proofs(data).first
     assert_nil entry[:holder]
     assert_equal 'abc-123', entry[:secret]
+  end
+
+  def served(data)
+    CM.served_capture_writers(data)
+  end
+
+  def served_data(npcs, reveal: true)
+    d = { 'rooms' => { 'r' => { 'npcs' => npcs } } }
+    d['social'] = { 'captures' => { 'revealSecret' => true } } if reveal
+    d
+  end
+
+  def writer(npc_id, target, secret, **extra)
+    { 'id' => npc_id, 'npcType' => 'phone', 'eventMappings' => [
+      { 'eventPattern' => 'q', 'addCapture' => { 'targetId' => target, 'kind' => 'credential', 'secret' => secret }.merge(extra) }
+    ] }
+  end
+
+  test 'served_capture_writers lists the first eligible writer per target when revealSecret is on' do
+    data = served_data([writer('a', 't', 'one-secret'), writer('b', 't', 'two-secret'), writer('c', 'u', 'three-secret')])
+    assert_equal %w[one-secret three-secret], served(data).map { |c| c['secret'] }
+  end
+
+  test 'served_capture_writers is empty when revealSecret is off' do
+    assert_empty served(served_data([writer('a', 't', 'one-secret')], reveal: false))
+  end
+
+  test 'served_capture_writers skips a holder-owned writer and an account-addressed one' do
+    holder = writer('h', 't', 'one-secret').merge('creds' => { 'username' => 'Hal', 'password' => 'p' })
+    addressed = writer('b', 't', 'two-secret', 'address' => ' hal ')
+    data = served_data([holder, addressed, writer('c', 't', 'three-secret')])
+    assert_equal %w[three-secret], served(data).map { |c| c['secret'] }
+  end
+
+  test 'served_capture_writers skips an action writer owned by a holder and a writer with no secret' do
+    holder = { 'id' => 'h', 'creds' => { 'username' => 'hal' }, 'eventMappings' => [
+      { 'eventPattern' => 'q', 'actions' => [{ 'type' => 'add_capture', 'capture' => { 'targetId' => 't', 'secret' => 'zz-secret' } }] }
+    ] }
+    data = served_data([holder, writer('b', 't', ''), writer('c', 't', 'real-secret')])
+    assert_equal %w[real-secret], served(data).map { |c| c['secret'] }
   end
 end
