@@ -2048,6 +2048,7 @@ def cmd_import(args):
     if args.offline:
         # Rebuild from the last download, e.g. after `fix`. Overrides are reapplied.
         root = export_root_for(key)
+        drop_unlisted_poses(root, getattr(args, "poses", None))
         if not args.keep_white:
             clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
         apply_overrides(key, root)
@@ -2157,17 +2158,32 @@ def take_pose_from_state(root, pose_root, pose_char, name):
 
 def parse_pose_from(values, stored=None):
     """--pose-from name=<state id or URL>, repeatable, merged over the manifest's stored
-    poses (a new value for one name replaces only that name). Returns {name: state ref}."""
+    poses (a new value for one name replaces only that name). `name=` with no state removes
+    that pose. Returns {name: state ref}."""
     poses = dict(stored or {})
     for v in values or []:
         name, sep, ref = v.partition("=")
         name, ref = name.strip(), ref.strip()
-        if not sep or not ref:
-            sys.exit(f"--pose-from takes name=<state id or URL>, got '{v}'")
+        if not sep:
+            sys.exit(f"--pose-from takes name=<state id or URL> (or name= to remove it), got '{v}'")
         if name not in POSE_NAMES:
             sys.exit(f"unknown pose '{name}': use one of {', '.join(POSE_NAMES)}")
-        poses[name] = ref
+        if ref:
+            poses[name] = ref
+        else:
+            poses.pop(name, None)
     return poses
+
+
+def drop_unlisted_poses(root, poses):
+    """Remove pose_<name> frame folders left in an export for names no longer listed (a pose
+    removed with --pose-from name=). Returns the names removed."""
+    gone = []
+    for d in sorted((Path(root) / "animations").glob("pose_*")):
+        if d.is_dir() and d.name[len("pose_"):] not in (poses or {}):
+            shutil.rmtree(d)
+            gone.append(d.name[len("pose_"):])
+    return gone
 
 
 def convert_and_record(args, key, cid, character, export_dir):
@@ -2518,7 +2534,7 @@ def main():
                    help="repeatable: a standing pose state (id or URL) whose 8 rotations become the "
                    "'pose_<NAME>' frames (NAME is drink, use or phone) shown by systems/npc-poses.js "
                    "during office-life uses; flood-filled like every frame, remembered in the manifest "
-                   "(a new value for one name replaces only that name)")
+                   "(a new value for one name replaces only that name; NAME= with no state removes it)")
     p.set_defaults(func=cmd_import)
 
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")

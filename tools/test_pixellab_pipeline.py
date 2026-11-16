@@ -176,7 +176,7 @@ class PoseFromTest(unittest.TestCase):
         self.assertEqual(parse_pose_from(None, None), {})
 
     def test_parse_rejects_bad_values(self):
-        for bad in (["drink"], ["drink="], ["wave=" + "a" * 36]):
+        for bad in (["drink"], ["wave=" + "a" * 36], ["wave="]):
             with self.assertRaises(SystemExit):
                 parse_pose_from(bad)
 
@@ -221,3 +221,130 @@ class StoredImportSettingsTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ------------------------------------------------------------ poses: removal, feet line, drift audit
+
+import json  # noqa: E402
+import types  # noqa: E402
+from unittest import mock  # noqa: E402
+
+import pixellab_pipeline  # noqa: E402
+import pixellab_drift_audit  # noqa: E402
+import convert_pixellab_to_spritesheet as conv  # noqa: E402
+from pixellab_pipeline import drop_unlisted_poses, convert_and_record  # noqa: E402
+
+UUID_A = "a" * 8 + "-aaaa-aaaa-aaaa-" + "a" * 12
+UUID_B = "b" * 8 + "-bbbb-bbbb-bbbb-" + "b" * 12
+
+
+def figure(size=60, top=10, bottom=50, left=25, right=35):
+    """A transparent frame with an opaque block; bbox bottom == bottom."""
+    a = np.zeros((size, size, 4), dtype=np.uint8)
+    a[top:bottom, left:right] = OUTLINE
+    return Image.fromarray(a, "RGBA")
+
+
+class PoseRemovalTest(unittest.TestCase):
+    def test_empty_value_removes_a_stored_pose(self):
+        stored = {"drink": UUID_A, "use": UUID_B}
+        self.assertEqual(parse_pose_from(["drink="], stored), {"use": UUID_B})
+        self.assertEqual(parse_pose_from(["phone="], stored), stored, "removing an absent pose is a no-op")
+        with self.assertRaises(SystemExit):
+            parse_pose_from(["drink"], stored)
+
+    def test_drop_unlisted_pose_folders(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for n in ("drink", "use"):
+                (root / "animations" / f"pose_{n}" / "south").mkdir(parents=True)
+            (root / "animations" / "walk" / "south").mkdir(parents=True)
+            self.assertEqual(drop_unlisted_poses(root, {"use": UUID_B}), ["drink"])
+            self.assertFalse((root / "animations" / "pose_drink").exists())
+            self.assertTrue((root / "animations" / "pose_use").exists())
+            self.assertTrue((root / "animations" / "walk").exists())
+
+    def test_manifest_round_trip(self):
+        """convert_and_record writes poses; a re-import merges and can remove one."""
+        with tempfile.TemporaryDirectory() as tmp:
+            manifest = Path(tmp) / "chars.json"
+            args = types.SimpleNamespace(assets_dir=tmp, force=True, workdir=None, idle_from=None,
+                                         sit_from=None, white_threshold=None, register=False,
+                                         poses={"drink": UUID_A, "phone": UUID_B})
+            with mock.patch.object(pixellab_pipeline, "IMPORT_MANIFEST", manifest), \
+                    mock.patch.object(pixellab_pipeline, "REPO", Path(tmp)), \
+                    mock.patch.object(conv, "process_character", return_value=True):
+                convert_and_record(args, "k", UUID_A, {"name": "K"}, Path(tmp))
+                stored = json.loads(manifest.read_text())["k"]["poses"]
+                self.assertEqual(stored, {"drink": UUID_A, "phone": UUID_B})
+                args.poses = parse_pose_from(["phone="], stored)
+                convert_and_record(args, "k", UUID_A, {"name": "K"}, Path(tmp))
+                self.assertEqual(json.loads(manifest.read_text())["k"]["poses"], {"drink": UUID_A})
+
+
+class PoseFeetLineTest(unittest.TestCase):
+    def data(self, tmp, idle_bottom=48, pose_bottom=50, pose_size=60, walk=True):
+        root = Path(tmp)
+        anims = {}
+
+        def put(anim, direction, img):
+            p = root / anim / direction / "frame_000.png"
+            p.parent.mkdir(parents=True, exist_ok=True)
+            img.save(p)
+            anims.setdefault(anim, {})[direction] = [p]
+        for d in ("south", "east"):
+            put("breathing-idle", d, figure(bottom=idle_bottom if d == "south" else 50))
+            if walk:
+                put("walk", d, figure(bottom=50))
+            put("pose_drink", d, figure(size=pose_size, bottom=pose_bottom))
+        return {"animations": anims}
+
+    def test_pose_frames_do_not_set_the_feet_line(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = conv.frame_offsets(self.data(tmp, pose_bottom=50), 80, 70)[0]
+        with tempfile.TemporaryDirectory() as tmp:
+            low = conv.frame_offsets(self.data(tmp, pose_bottom=58), 80, 70)[0]
+        self.assertEqual(base, low)
+
+    def test_odd_pose_canvas_uses_its_own_feet(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            offsets = conv.frame_offsets(self.data(tmp, pose_size=76, pose_bottom=66), 80, 70)[0]
+        self.assertEqual(offsets[(76, 76)][1], 70 - 66, "feet on the line, not centred")
+
+    def test_pose_aligned_to_the_idle_per_direction(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            shifts = conv.pose_feet_shifts(self.data(tmp, idle_bottom=48, pose_bottom=50))
+        self.assertEqual(shifts, {("pose_drink", "south"): -2})
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(conv.pose_feet_shifts(self.data(tmp, idle_bottom=40, pose_bottom=50)), {},
+                             "a large difference is left alone")
+
+
+class DriftAuditPoseNamesTest(unittest.TestCase):
+    def test_split_frame_name(self):
+        split = pixellab_drift_audit.split_frame_name
+        self.assertEqual(split("pose_drink_south_frame_000"), ("pose_drink", "south", "000"))
+        self.assertEqual(split("walk_south-east_frame_003"), ("walk", "south-east", "003"))
+        self.assertEqual(split("breathing-idle_north_frame_001"), ("breathing-idle", "north", "001"))
+
+    def test_adopt_a_pose_frame(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            assets, ov, root = tmp / "assets", tmp / "ov", tmp / "export"
+            assets.mkdir()
+            ex = figure(size=60, bottom=50)
+            (root / "animations" / "pose_drink" / "south").mkdir(parents=True)
+            ex.save(root / "animations" / "pose_drink" / "south" / "frame_000.png")
+            cell = Image.new("RGBA", (80, 80))
+            cell.paste(ex, (10, 11))
+            cell.putpixel((40, 40), (255, 0, 0, 255))   # the hand edit
+            cell.save(assets / "k.png")
+            (assets / "k.json").write_text(json.dumps({"frames": {"pose_drink_south_frame_000": {
+                "frame": {"x": 0, "y": 0, "w": 80, "h": 80}}}}))
+            with mock.patch.object(pixellab_drift_audit, "ASSETS", assets), \
+                    mock.patch.object(pixellab_drift_audit, "OVERRIDES", ov), \
+                    mock.patch.object(pixellab_drift_audit, "REPO", tmp):
+                pixellab_drift_audit.adopt("k", {"pose_drink_south_frame_000": 1}, root)
+            saved = ov / "k" / "pose_drink" / "south" / "frame_000.png"
+            self.assertTrue(saved.exists())
+            self.assertEqual(Image.open(saved).getpixel((30, 29)), (255, 0, 0, 255))
