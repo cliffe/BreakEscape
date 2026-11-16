@@ -447,7 +447,7 @@ test('menuPlacement: screen edges - a box on the edge, a menu as big as the scre
     assert.ok(m.x >= 120 + 24);
 });
 
-test('showInteractionMenu: on touch the menu with an avoid box sits clear of it; on desktop the box is ignored', () => {
+test('showInteractionMenu: on touch the menu with an avoid box sits clear of it; on desktop a spot that would crowd the box is moved clear', () => {
     Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true });
     Object.defineProperty(window, 'innerHeight', { value: 844, configurable: true });
     const rectOf = () => ({ width: 200, height: 300, left: 0, top: 0, right: 200, bottom: 300 });
@@ -462,7 +462,14 @@ test('showInteractionMenu: on touch the menu with an avoid box sits clear of it;
         closeInteractionMenu();
         showInteractionMenu(entries(), 70, 430, 'Pick', { avoid: box });
         const d = $('#be-interaction-menu');
-        assert.ok(parseInt(d.style.left, 10) < box.right, `desktop: the usual spot over the tap, left ${d.style.left}`);
+        // the usual spot (bottom 414) covers the box, so desktop takes the clear spot too
+        const dl = parseFloat(d.style.left), dt = parseFloat(d.style.top);
+        assert.equal(ovl({ width: 200, height: 300 }, { x: dl, y: dt }, box), 0, `desktop menu at ${dl},${dt} covers the box`);
+        closeInteractionMenu();
+        // with room (the box far from the usual spot) the menu stays near the cursor
+        showInteractionMenu(entries(), 70, 430, 'Pick', { avoid: { left: 250, top: 700, right: 300, bottom: 760 } });
+        const near = $('#be-interaction-menu');
+        assert.equal(parseFloat(near.style.top), 114, `desktop with room keeps the cursor spot, top ${near.style.top}`);
     } finally {
         proto.getBoundingClientRect = orig;
         reset();
@@ -487,4 +494,68 @@ test('menuPlacement: a fallback spot that overlaps nothing but is closer than th
     // A fractional margin is rounded up
     const m = menuPlacement({ width: 100, height: 100 }, { width: 390, height: 844 }, { left: 20, top: 400, right: 120, bottom: 460 }, 8.2);
     assert.ok(m.gap >= 9, `gap ${m.gap}`);
+});
+
+
+test('menuPlacement: fractional rects round away from the box, so the rendered gap is at least the margin', () => {
+    const view = { width: 390, height: 844 };
+    const menu = { width: 312, height: 327 };
+    // Below: avoid.bottom + 8 = 436.49 must become 437, not round to 436 (7.51 px)
+    const high = { left: 120.2, top: 20.3, right: 196.7, bottom: 428.49 };
+    const below = menuPlacement({ width: 312, height: 300 }, view, high, 8);
+    assert.equal(below.covered, false);
+    assert.equal(below.tight, false);
+    assert.ok(Number.isInteger(below.y) && below.y - high.bottom >= 8, `gap ${below.y - high.bottom}`);
+    // Above: avoid.top - 8 - height must floor
+    const low = { left: 120.2, top: 500.6, right: 196.7, bottom: 560.2 };
+    const above = menuPlacement({ width: 312, height: 327.4 }, view, low, 8);
+    assert.ok(Number.isInteger(above.y) && low.top - (above.y + 327.4) >= 8, `gap ${low.top - (above.y + 327.4)}`);
+    // Beside: both directions
+    const narrow = { left: 20.4, top: 400, right: 40.3, bottom: 420 };
+    const right = menuPlacement({ width: 300, height: 200 }, view, narrow, 8);
+    assert.ok(right.x - narrow.right >= 8, `gap ${right.x - narrow.right}`);
+    const farRight = { left: 340.6, top: 400, right: 360.2, bottom: 420 };
+    const left = menuPlacement({ width: 300.3, height: 200 }, view, farRight, 8);
+    assert.ok(farRight.left - (left.x + 300.3) >= 8, `gap ${farRight.left - (left.x + 300.3)}`);
+    // The phone path writes those numbers unrounded
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 844, configurable: true });
+    const proto = window.HTMLElement.prototype;
+    const orig = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = () => ({ width: 312, height: 300, left: 0, top: 0, right: 312, bottom: 300 });
+    try {
+        showInteractionMenu(entries(), 150, 430, 'Pick', { touch: true, avoid: high });
+        const m = $('#be-interaction-menu');
+        assert.ok(parseFloat(m.style.top) - high.bottom >= 8, `rendered gap ${parseFloat(m.style.top) - high.bottom}`);
+        assert.equal(m.dataset.placement, 'clear');
+    } finally {
+        proto.getBoundingClientRect = orig;
+        reset();
+    }
+});
+
+test('showInteractionMenu: a mouse click in a narrow window puts the menu clear of the tapped PC and cup', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 844, configurable: true });
+    const proto = window.HTMLElement.prototype;
+    const orig = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = () => ({ width: 312, height: 327, left: 0, top: 0, right: 312, bottom: 327 });
+    try {
+        const pc = { left: 170, top: 398, right: 196, bottom: 420 };
+        const cup = { left: 120, top: 380, right: 136, bottom: 396 };
+        const union = { left: 120, top: 380, right: 196, bottom: 420 };
+        // The old desktop spot: bottom at tap y - 16, here 398 + 4.8 over the PC
+        showInteractionMenu(entries(), 190, 414.2, 'Pick', { avoid: union });
+        const m = $('#be-interaction-menu');
+        const at = { x: parseFloat(m.style.left), y: parseFloat(m.style.top) };
+        const size = { width: 312, height: 327 };
+        assert.equal(ovl(size, at, pc), 0, `covers the PC at ${at.x},${at.y}`);
+        assert.equal(ovl(size, at, cup), 0, `covers the cup at ${at.x},${at.y}`);
+        assert.equal(m.dataset.placement, 'clear');
+        const gap = Math.max(union.top - (at.y + 327), at.y - union.bottom, union.left - (at.x + 312), at.x - union.right);
+        assert.ok(gap >= 8, `gap ${gap}`);
+    } finally {
+        proto.getBoundingClientRect = orig;
+        reset();
+    }
 });

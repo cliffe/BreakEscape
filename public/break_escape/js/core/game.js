@@ -3349,7 +3349,7 @@ function showTapMenu(list, pointer, { fight = false, scene = null } = {}) {
     const touch = !!pointer?.wasTouch;
     showInteractionMenu(sorted, cx, cy, undefined, {
         numberKeys: !fight, keyboard: !fight, touch, holdKeys: !fight,
-        avoid: touch ? tappedScreenBox(sorted, pointer, scene) : null   // a phone menu goes beside them (6.3)
+        avoid: tappedScreenBox(sorted, pointer, scene)   // the menu goes clear of them (6.3); a desktop one only when its usual place would crowd them
     });
 }
 

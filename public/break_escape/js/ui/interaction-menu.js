@@ -389,28 +389,28 @@ export function menuPlacement(rect, view, avoid, margin = 8) {
     const roomL = avoid.left - margin - margin;
     const roomR = view.width - avoid.right - margin - margin;
     const sides = [];
-    if (roomL >= rect.width) sides.push({ room: roomL, x: avoid.left - margin - rect.width });
-    if (roomR >= rect.width) sides.push({ room: roomR, x: avoid.right + margin });
+    if (roomL >= rect.width) sides.push({ room: roomL, x: Math.floor(avoid.left - margin - rect.width) });
+    if (roomR >= rect.width) sides.push({ room: roomR, x: Math.ceil(avoid.right + margin) });
     if (sides.length) {
         sides.sort((a, b) => b.room - a.room);
-        return done(sides[0].x, cy(midY - rect.height / 2));
+        return done(sides[0].x, Math.round(cy(midY - rect.height / 2)));
     }
     const roomU = avoid.top - margin - margin;
     const roomD = view.height - avoid.bottom - margin - margin;
     const rows = [];
-    if (roomU >= rect.height) rows.push({ room: roomU, y: avoid.top - margin - rect.height });
-    if (roomD >= rect.height) rows.push({ room: roomD, y: avoid.bottom + margin });
+    if (roomU >= rect.height) rows.push({ room: roomU, y: Math.floor(avoid.top - margin - rect.height) });
+    if (roomD >= rect.height) rows.push({ room: roomD, y: Math.ceil(avoid.bottom + margin) });
     if (rows.length) {
         rows.sort((a, b) => b.room - a.room);
-        return done(cx(midX - rect.width / 2), rows[0].y);
+        return done(Math.round(cx(midX - rect.width / 2)), rows[0].y);
     }
 
     // Nowhere clear: the least-cover spot among the four sides and the corners, clamped on screen
     const spots = [
-        [avoid.left - margin - rect.width, midY - rect.height / 2],
-        [avoid.right + margin, midY - rect.height / 2],
-        [midX - rect.width / 2, avoid.top - margin - rect.height],
-        [midX - rect.width / 2, avoid.bottom + margin],
+        [Math.floor(avoid.left - margin - rect.width), Math.round(midY - rect.height / 2)],
+        [Math.ceil(avoid.right + margin), Math.round(midY - rect.height / 2)],
+        [Math.round(midX - rect.width / 2), Math.floor(avoid.top - margin - rect.height)],
+        [Math.round(midX - rect.width / 2), Math.ceil(avoid.bottom + margin)],
         [margin, margin], [maxX, margin], [margin, maxY], [maxX, maxY]
     ];
     let best = null;
@@ -640,11 +640,24 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText,
     let x = (clientX ?? window.innerWidth / 2) - rect.width / 2;
     let y = (clientY ?? window.innerHeight / 2) - rect.height - 16;
 
-    // On a phone the menu goes beside the tapped things, not over them (overlap plan 6.3)
+    // The menu goes beside the tapped things, not over them (overlap plan 6.3). A phone always
+    // uses that spot; a desktop menu keeps its place near the cursor unless that place covers
+    // or crowds them (a narrow window), then it takes the same spot.
     let placed = false;
-    if (touch && avoid) {
+    if (avoid) {
         const hudZoom = parseFloat(window.getComputedStyle(document.documentElement).getPropertyValue('--hud-zoom')) || 1;
-        const spot = menuPlacement(rect, { width: window.innerWidth, height: window.innerHeight }, avoid, margin * Math.max(1, hudZoom));
+        const clearBy = margin * Math.max(1, hudZoom);
+        const view = { width: window.innerWidth, height: window.innerHeight };
+        let useSpot = touch;
+        if (!touch) {
+            // The usual desktop spot, clamped as below, and whether it is within `clearBy` of the box
+            const dx = Math.max(margin, Math.min(x, view.width - rect.width - margin));
+            let dy = y < margin ? (clientY ?? 0) + 16 : y;
+            dy = Math.max(margin, Math.min(dy, view.height - rect.height - margin));
+            useSpot = dx < avoid.right + clearBy && dx + rect.width > avoid.left - clearBy
+                && dy < avoid.bottom + clearBy && dy + rect.height > avoid.top - clearBy;
+        }
+        const spot = useSpot ? menuPlacement(rect, view, avoid, clearBy) : null;
         if (spot) {
             x = spot.x; y = spot.y;
             // Recorded for the tests: whether the menu is clear of the tapped things
@@ -662,8 +675,10 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText,
         if (y < margin) y = margin;
     }
 
-    menuEl.style.left = `${Math.round(x)}px`;
-    menuEl.style.top = `${Math.round(y)}px`;
+    // A placed menu is already whole px on the axis facing the tapped things, rounded away from
+    // them; rounding it again could take back part of the gap
+    menuEl.style.left = `${placed ? x : Math.round(x)}px`;
+    menuEl.style.top = `${placed ? y : Math.round(y)}px`;
     updateMoreCue();
 }
 
