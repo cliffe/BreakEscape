@@ -1,0 +1,35 @@
+{
+  "scenario_brief": "TEST: Access model devices\n\nA test floor for the physical pentest devices (PHYSICAL_PENTEST_DEVICES_PLAN.md). The rogue AP half is in reception: plant the pocket rogue AP in the planter, clone a network from its console and wait for Kieran's laptop. The drop box half sits behind the patch panel.",
+  "endGoal": "Test only: run the device beats.",
+  "startRoom": "reception",
+  "startPosition": { "x": 6, "y": 7 },
+  "npcNeedsSeed": "test_access_devices",
+  "npcWindupMs": 0,
+  "needsDebugOverlay": true,
+
+  "social": { "captures": { "revealSecret": true } },
+
+  "networks": {
+  },
+
+  "globalVariables": {
+  },
+
+  "startItemsInInventory": [
+  ],
+
+  "objectives": [
+  ],
+
+  "rooms": {
+    "reception": {
+      "type": "room_reception",
+      "door_sign": "Reception",
+      "connections": {},
+      "objects": [
+      ],
+      "npcs": [
+      ]
+    }
+  }
+}
