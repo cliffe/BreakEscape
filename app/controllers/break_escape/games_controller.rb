@@ -635,6 +635,13 @@ module BreakEscape
         unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
           return render_error("Container not unlocked: #{container_id}", :forbidden)
         end
+        # Keyring K3c (K2 m4): a folder under a sign-in PC is judged by the route the request
+        # names, as its desktop is. A named route must pass desktop_request_allowed?; a no-route
+        # request at a relay session is refused (the holder's keyboard never reaches the shared
+        # screen). A no-route folder open under a foothold session keeps the session_admits? rule.
+        if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
+          return render json: { error: "PC not reachable: #{located[:scope][:id]}", reason: 'unreachable' }, status: :forbidden
+        end
 
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
       end
@@ -2988,6 +2995,23 @@ module BreakEscape
         from: params[:from].presence&.to_s,
         relay: ActiveModel::Type::Boolean.new.cast(params[:relay]) == true ? true : nil
       }.compact
+    end
+
+    # Keyring K3c (K2 m4): may a folder under the sign-in PC pc_id open by the route this
+    # request names? A named route (relay=1, foothold=, from=) is judged as the desktop is; two
+    # routes conflict; no route is refused only at a relay session.
+    def folder_route_allowed?(pc_id)
+      route = desktop_route_params
+      return false if route == :conflict
+
+      info = @game.find_login_pc(pc_id)
+      return false unless info
+
+      if route.nil?
+        session = @game.access_sessions[pc_id.to_s]
+        return !@game.relay_session?(session)
+      end
+      @game.desktop_request_allowed?(info, route)
     end
 
     # The route a desktop request names (keyring K2, plan 3.8): { relay: true } for relay=1,

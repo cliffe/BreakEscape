@@ -20,11 +20,17 @@
 
   "policies": {
     "finance_desk": { "remote": "allowed" },
-    "pw_only": { "remote": "allowed", "accepts": ["password"] }
+    "pw_only": { "remote": "allowed", "accepts": ["password"] },
+    "jake_desk": { "remote": "blocked", "accepts": ["password", "assist_invite"] }
   },
 
   "globalVariables": {
-    "capture_card_ian": false
+    "capture_card_ian": false,
+    "jake_assist_given": false,
+    "jake_contract_read": false,
+    "jake_assist_armed": false,
+    "jake_ended_assist": false,
+    "jake_timer_ended_assist": false
   },
 
   "credentials": {
@@ -54,6 +60,14 @@
       "label": "SV-OPS-01 admin.rdp",
       "proof": { "held": "ops_rdp_file" }
     },
+    "jake_assist": {
+      "kind": "assist_invite",
+      "account": "jake",
+      "connectsTo": "jake_pc",
+      "label": "Jake's assist code",
+      "proof": { "held": "jake_assist_code" },
+      "endsOnGlobal": "jake_ended_assist"
+    },
     "ops_cookie": {
       "kind": "saved_connection",
       "account": "ian",
@@ -74,8 +88,21 @@
         { "taskId": "k1_held", "title": "K1a: take HB-FIN-02.rdp (a held saved connection)", "type": "custom", "status": "active" },
         { "taskId": "k1_session", "title": "K1b: sign in at Lena's PC (Jake's found password appears)", "type": "unlock_object", "targetObject": "lena_pc", "status": "active" },
         { "taskId": "k1_capture", "title": "K1c: read Ian's capture card (his account is captured)", "type": "custom", "status": "active" },
-        { "taskId": "k1_foothold", "title": "K1d: plant the drop box in the comms port (a foothold proof)", "type": "unlock_object", "targetObject": "comms_port", "status": "active" }
+        { "taskId": "k1_foothold", "title": "K1d: plant the drop box in the comms port (a foothold proof)", "type": "unlock_object", "targetObject": "comms_port", "status": "active" },
+        { "taskId": "k3c_contract", "title": "K3c: read the vendor contract on Jake's PC (reachable only by remote assist)", "type": "custom", "status": "active" }
       ]
+    }
+  ],
+
+  "timers": [
+    {
+      "id": "jake_assist_timer",
+      "label": "Remote assist",
+      "condition": "!globalVars.jake_ended_assist",
+      "delayMs": 90000,
+      "startOnGlobal": "jake_assist_armed",
+      "setGlobal": { "jake_ended_assist": true, "jake_timer_ended_assist": true },
+      "showCountdown": false
     }
   ],
 
@@ -144,7 +171,8 @@
             }
           ],
           "eventMappings": [
-            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'lena_rdp_file'", "onceOnly": true, "completeTask": "k1_held" }
+            { "eventPattern": "item_picked_up:text_file", "condition": "data.itemId === 'lena_rdp_file'", "onceOnly": true, "completeTask": "k1_held" },
+            { "eventPattern": "global_variable_changed:jake_contract_read", "condition": "value === true", "onceOnly": true, "completeTask": "k3c_contract", "setGlobal": { "jake_assist_armed": true } }
           ]
         }
       ]
@@ -240,7 +268,7 @@
     "finance_room": {
       "type": "room_ceo",
       "door_sign": "Finance",
-      "connections": { "west": "lobby" },
+      "connections": { "west": "lobby", "east": "jake_office" },
       "objects": [
         {
           "type": "pc",
@@ -280,6 +308,18 @@
         },
         {
           "type": "notes1",
+          "id": "sign_jake_door",
+          "name": "Sign: Jake's office",
+          "position": { "x": 8, "y": 3 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "K3c. Jake's office is east. The door is locked and the key stays with Jake; he will not give it up.\nThrough the glass panel: a PC labelled HB-FIN-03. Its remote sign-in is off, so the only way onto it is the remote assist code Jake can be talked into giving (ask him on the helpdesk's behalf).",
+          "observations": "A laminated sign by the glass panel in Jake's office door. HB-FIN-03 shows through the glass."
+        },
+        {
+          "type": "notes1",
           "id": "sign_finance",
           "name": "Sign: K1b",
           "position": { "x": 2, "y": 3 },
@@ -304,7 +344,87 @@
           "currentKnot": "start",
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
           "role": "finance",
-          "creds": { "username": "jbrooks", "password": "Vault-Jake-4" }
+          "creds": { "username": "jbrooks", "password": "Vault-Jake-4" },
+          "itemsHeld": [
+            {
+              "type": "text_file",
+              "id": "jake_assist_code",
+              "name": "Remote assist code",
+              "takeable": true,
+              "droppable": false,
+              "credential": "jake_assist",
+              "onPickup": { "setVariable": { "jake_assist_given": true } },
+              "text": "Remote assist code from Jake Brooks (HB-FIN-03). Connect it from your inventory to join his session."
+            },
+            {
+              "type": "key",
+              "id": "jake_office_key",
+              "name": "Jake's office key",
+              "takeable": true,
+              "opens_lock": "jake_office_key",
+              "keyPins": [30, 50, 40, 60],
+              "observations": "The key to Jake's office. Jake keeps it on him and never hands it over in this test."
+            }
+          ],
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:jake_timer_ended_assist", "condition": "value === true", "onceOnly": true, "bark": "I've ended that session. The helpdesk never calls me back." }
+          ]
+        }
+      ]
+    },
+
+    "jake_office": {
+      "type": "room_ceo",
+      "door_sign": "Jake Brooks (HB-FIN-03)",
+      "locked": true,
+      "lockType": "key",
+      "requires": "jake_office_key",
+      "keyPins": [30, 50, 40, 60],
+      "connections": { "west": "finance_room" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "jake_pc",
+          "name": "Jake's PC",
+          "position": { "x": 5, "y": 4 },
+          "host": "HB-FIN-03",
+          "network": "office_lan",
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "loginPicker": "accounts",
+          "policy": "jake_desk",
+          "access": { "people": ["jake"] },
+          "observations": "Jake's workstation. Remote sign-in is off, and the room stays locked, so the only way on is his remote assist session.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "vendor_contract",
+              "name": "vendor_contract.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Vendor contract, Harbour Supplies Ltd (draft).\n\nPayment terms 30 days. Renewal signed off by Jake Brooks.\n\n(K3c: only reachable over remote assist. Reading this completes the last task and starts the invite timer.)",
+              "observations": "A contract file on Jake's desktop.",
+              "onRead": { "setVariable": { "jake_contract_read": true } }
+            },
+            {
+              "type": "folder",
+              "id": "jake_docs",
+              "name": "Documents",
+              "locked": false,
+              "contents": [
+                {
+                  "type": "text_file",
+                  "id": "jake_docs_note",
+                  "name": "meeting_notes.txt",
+                  "takeable": false,
+                  "readable": true,
+                  "text": "Team meeting notes.\n\nAgenda: office move, printer rota, lunch order.",
+                  "observations": "A plain notes file in Jake's Documents folder."
+                }
+              ]
+            }
+          ]
         }
       ]
     }

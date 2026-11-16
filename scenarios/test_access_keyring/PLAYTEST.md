@@ -78,3 +78,14 @@ These extend this scenario and are **not built in K1**:
   (locked), `jake_pc` (`HB-FIN-03`, `remote: blocked`), `jake_assist_code` in Jake's `itemsHeld` with
   an ink gift, `endsOnGlobal`, and a `timers` entry armed on the contract read.
 - **Run B / C / D / E.** Reload with the relay desktop open; unplug; no drop box; token without a take.
+
+## K3c fixtures (relay, R6 to R9, R11)
+
+- Jake's office (`jake_office`, east of Finance) is locked by `jake_office_key`, held by Jake and never given.
+  `jake_pc` (`HB-FIN-03`, policy `jake_desk`: remote blocked, accepts password and assist_invite) holds
+  `vendor_contract.txt`; opening it sets `jake_contract_read`, which completes `k3c_contract` and sets
+  `jake_assist_armed` (Lena's mapping, so it exists from the start room). The 90 second timer
+  `jake_assist_timer` then sets `jake_ended_assist` and `jake_timer_ended_assist`; Jake barks on the latter.
+- Jake's ink offers the helpdesk line (gives `jake_assist_code`, credential `jake_assist`) and, once the contract
+  is read, a suspicious ending that sets `jake_ended_assist`.
+- Not built: the Finance PIN and Sam's office from plan 9.1 (Finance stays open here).

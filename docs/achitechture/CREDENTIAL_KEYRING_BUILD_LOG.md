@@ -1141,3 +1141,80 @@ Tip before this run `0782e1206`. Review: `CREDENTIAL_KEYRING_K3B_REVIEW_R2.md` (
 
 **Live note (no change)**
 - One-click Connect cannot occur with this fixture: the item is droppable (Drop here) and has file text (Examine), so the tray shows the menu. That is correct per 8.2. The one-click path stays covered by the inventory-menu tests.
+
+## K3c run 1 (part A)
+
+Commit 888f48af3. Part B (the relay with its 9.1 fixtures, and the K2 m4 folder route) is still open; see the K3c handover.
+
+- D49 tidy: the `BADGE_FILE` comment in `remote-host-text.js` no longer calls the plug art pending. No test expected `badge-key.png` for plug; a new test pins `badgeSrc` for key, plug and an unknown group.
+- D50: the chosen-account line names the kinds of knowledge on the keyboard screen as well as the remote screen. Both go through `chosenAccountLine(tile)` in `remote-host-text.js`, so the wording is one: "Lena Fox (lfox), Captured password". Test: the same account on both screens gives the same line.
+- R3 t1: `refresh()` sets one deadline (`askTimeoutMs`, 15 s) before the sync PUT; the PUT is raced against it and the GET gets what is left. A PUT that never answers spends the cap and the refresh gives up, so the chain moves on.
+- R3 t2: `fetch` takes a `deadline` (or `timeoutMs`, turned into one); the no-rev retry uses the time left, not a fresh timer.
+- Reconnect toast: `noteFinds` now checks a page-life `_announced` map (id to its held tray item) in place of the previous answer's ids. An id is forgotten only when an answer lacks it and its tray item is out of the tray (an unknown tray keeps it), so an answer that briefly lacks an entry does not toast it again, and dropping and retaking a file still does. Entries with no held item are never forgotten. Held finds are one per id, and at release a find the latest no-screen answer no longer names is left out. The new tests failed on the old code before the fix.
+- route_ended: a `pc-sessions` test covers two hosts in one toast, one host, an open desktop closed with its own host's line, and the unplug keeping its line. The live proof should also exercise `route_ended` (a sign-in that prunes a session through another route).
+- Tests: `bin/test-js` 716 files passed. No Rails files touched.
+
+## K3c run 3 (part A review fixes)
+
+Review R1 of part A (B0 M1 m2 t2), all applied in keyring.js and the tests.
+
+- M1: `releaseHeld` drops a held find only once it is forgotten (no longer in `_announced`); with an unknown tray the latest answer still decides. An answer that briefly lacks a held find no longer loses its toast.
+- m1: `trayChanged` forgets `_announced` ids by their heldItem when the item leaves the tray, so a drop and a quick retake before the answer returns still toasts. The answer-side check stays as the backstop.
+- m2: a later answer without `heldItem` keeps the known item. Finds with no tray item (non-held kinds) toast once per page; a code comment says so.
+- t1: new test where the sync PUT takes half of the cap and the GET hangs; the GET gets only the rest. t2: the no-rev retry test now uses a 400 ms deadline (a fresh one would be about 520), so the margin is 80 ms each way.
+- Added test/js/api-client-login-credential.test.mjs for `loginWithCredential` (relay: true only when asked, relay wins over foothold, non-boolean relay ignored).
+- Tests: keyring-client 71 (was 66), api-client-login-credential 3.
+
+## K3c run 4 (relay client)
+
+Commits f12debc43, 9dcef946e, 4c00b6955, c070ab1bc on `build/keyring-k3c`.
+
+- `pc-sessions.js` holds relay sessions (`relay: true`, `host`) apart from `signedIn`, so a relay sign-in completes no `unlock_object` task and `firstAtPc` is false. `load()` keeps no relay record. `pc_signed_in`, `pc_signed_out` and `pc_desktop_opened` carry `relay: true` and `kind` for a relay. `displaced()` leaves a relay held by the NPC who sat down. The sync answer's `endedRelayPcIds` arrives through an answer-only state-sync part (`relayEnds`, registered from `listen()`; no static import), and `linkDropped(ids, 'relay_ended')` closes an open relay desktop with "{displayName} ended the remote assist." or toasts it. New: `isRelay`, `hasRelay`, `heldAtKeyboard`, `relayAnswer`, `relayEndedLine`. The module stays import-free, so `relayEndedMessage` copies remote-host-text's `endedAssistMessage`; a test that keeps the two equal is still to write.
+- `unlock-system.js`: `heldAtKeyboard` on every keyboard path (`openLoginPc`, `interactLoginPc`, the sign-in screen's current account and close). `relayLockable` and `openRelayDesktop(pcId)`, also on `window`, for Connect.
+- The relay desktop (`container-minigame.js`, `pc-taskbar.js`) fetches with `relay=1`, reads "Remote assist session" and "Using {displayName}'s session ({username})", has one Disconnect (POST /logout, closes with "Disconnected"), lists no shares and shows "Shared drives are not mapped over remote assist.". A 403 closes to the world with the ended line, never the sign-in screen. Folder opens under a sign-in PC name the session's route (`relay=1` or `foothold=`); a share window names none.
+- K2 m4 choice: a no-route folder open under a foothold session keeps today's behaviour (`session_admits?` only); the client sends `foothold=` when its session went through one.
+- Loop found and fixed: `sourcePcId` falls back to the desktop's own `loginPcId`, so the relay desktop's Close met the "folder from a relay desktop" branch of `reportNetworkExit` and reopened itself on every close, without end. That is what ran the test process out of memory. Now the relay desktop returns early and the folder branch needs no `loginPcId`. A guard test covers it. Run `test/js/access-relay-desktop.test.mjs` only under `ulimit -v 2000000` with `--max-old-space-size=300`.
+- `screen-states.js`: a relay session paints the sprite locked. Still to do: the relay desktop in `signin-fit.mjs` at the four sizes (needs a server), and the keyring.js hooks (Connect calls `openRelayDesktop`; the prompt-end trigger keys on `hasRelay()`).
+
+## K3c run 5 (relay hooks and R1 fixes)
+
+Commits afd895cd2, be5982573, 04f7b596c, then 83f8b83ac on `build/keyring-k3c`.
+
+- afd895cd2: `keyring.js` Connect handles `assist_invite` (relay route `{ relay: true }`, then `openRelayDesktop`); the prompt-end trigger syncs while a relay is held (armed by a relay sign-in or Connect, disarmed once `hasRelay()` is false); invite find line in `remote-host-text.js`. be5982573: new `keyring-relay-hooks.test.mjs` plus invite cases in keyring-client and inventory-menu. 04f7b596c: part A R2 (`releaseHeld` shows every held find while no tray change is seen, wider timing margins).
+- R1 review (tmp/handover/ac0/K3C_RELAY_REVIEW_R1.md), verdict FIX:
+  - M1 fixed: after a reload the server holds the relay but the mirror is empty. Connect now falls through to `signInWithCredential(pcId, id, { relay: true })` (the server replaces the identical record) instead of calling `openRelayDesktop` on nothing. A held mirror still opens with no POST. Test in `access-relay-desktop.test.mjs` uses the real `pc-sessions`, `keyring.js` and `openRelayDesktop`; the old hooks test that passed only through a stub was rewritten to expect the POST.
+  - m1 fixed: a 403 with reason `off` or `not_responding` on a relay desktop or relay folder keeps the relay and shows the PC-off line (a folder close reopens the desktop, which shows it). Other 403s still end the assist. Four tests.
+  - t1 fixed: the folder route check calls `Game#relay_session?`. t4 fixed: tests name the holder Jake Brooks (jbrooks) as the fixture does.
+  - Left as notes: t2 (the prompt-end trigger skips a same-value write only when the event has `oldValue`; emitters without it still call `sync()`, which state-sync coalesces, so no loop or storm; revisit only if a live proof shows bursts). t3 (relay desktop in `tools/playtest/signin-fit.mjs` at the four sizes; needs a server).
+- Checks that failed before the fix: the five new access-relay-desktop tests fail with the two engine files reverted.
+- Tests: access-relay-desktop 20/20 (capped), keyring-relay-hooks 16/16, keyring-client 72/72 (one timing flake in the R3 t1 PUT-cap test on a first run, clean on two reruns), pc-sessions 58/58, inventory-menu 28/28, keyring_folder_route_test.rb 7 runs, 0 failures.
+- Open: live proof of Connect after a reload and a powered-off relay PC; signin-fit relay sizes (t3); full `bin/test-js` not rerun after these fixes.
+
+## K3c run 6 (R2 fixes)
+
+Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R2.md, verdict FIX (m1, t1).
+
+- m1 fixed: `container-minigame.js` loadContainerContents. A relay folder 403 now only closes the folder; the reopened relay desktop decides between "assist ended" and "PC is off". The server sends no reason for a locked or powered-off folder (games_controller.rb:634, :3664). The folder tests now use that real reason-less body (`Container not unlocked: jake_docs`) and answer the reopened desktop separately: live relay stays, ended assist shows the ended line, off and not_responding show the PC-off line.
+- t1 fixed: `keyring.js` refresh() returns null with no GET once the PUT cap's timer has fired (the timeout error carries `deadlineHit`; other sync errors still ask anyway). The R3 t1 test now asserts zero GETs during the hang.
+- Mutation checks: with the two engine files restored from HEAD, three access-relay-desktop tests fail (the reason-less live-relay folder test and the off and not_responding folder tests). With keyring.js reverted, the R3 t1 test failed in 2 of 6 runs (the flake itself), so it shows only intermittently.
+- Tests: access-relay-desktop 21/21 (capped), keyring-client 72/72 in 10 of 10 consecutive runs.
+
+## K3c run 7 (R3 nits)
+
+Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R3.md, verdict LAND (nits t1, t2, t3).
+
+- t1: the PUT-cap test in keyring-client.test.mjs freezes `Date.now` for the hung refresh, so a reverted fix always sends the GET. With keyring.js reverted to 75c028a16 the test fails 5 of 5 runs; with the fix, 10 of 10 passes.
+- t2: the reason-less live-relay folder test asserts one folder fetch and one desktop fetch.
+- t3: a relay folder 403 sets a pending note; the reopened relay desktop shows "Folder unavailable." (`RELAY_FOLDER_UNAVAILABLE_TEXT` in utils/remote-host-text.js, through gameAlert) only when it answers 200. The ended-assist test asserts no such toast.
+- Tests: access-relay-desktop 21/21 (capped).
+
+## K3c run 8 (R6 fixes and folder tests)
+
+Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R6.md, verdict LAND (m1, m2, m3, t1).
+
+- m1: `isInteractiveItem` treats a folder as interactive only with a non-empty `contents` array or `hasContents`; an authored `contents: []` stays inert. The locked path is unchanged.
+- m2: the standard (non-desktop) grid uses the desktop rule for a folder's picture: `iconImage`, else `SHARE_ICON`. No more `assets/objects/folder.png`.
+- m3: `check_item_type` in `scripts/validate_scenario.rb` takes an `in_contents` flag; the folder exemption applies only to a folder nested in a container's `contents`. A room-level folder with no sprite errors again.
+- t1: tests in `container-shares.test.mjs` (isInteractiveItem on a folder, desktop icon, standard grid image, `containerImageUrl`) and a new `validator-folder-sprite.test.mjs` (nested folder clean, room-level folder errors, another sprite-less nested type errors).
+- Mutation checks: with the two source files reverted, the isInteractiveItem test, the standard-grid image test and the room-level validator test fail. The desktop-icon and `containerImageUrl` tests cover behaviour already landed in 5a77e794c, so they pass either way.
+- Tests: the 21 test/js files that import or copy container-minigame.js or container-item-image.js (access-relay-desktop capped) 0 failures; keyring_folder_route_test 7 runs, 34 assertions, 0 failures; test_access_keyring validator 0 errors, 4 warnings.
