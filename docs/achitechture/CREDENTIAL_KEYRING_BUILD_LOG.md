@@ -1207,3 +1207,14 @@ Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R3.md, verdict LAND (nits t1, t2, t3).
 - t2: the reason-less live-relay folder test asserts one folder fetch and one desktop fetch.
 - t3: a relay folder 403 sets a pending note; the reopened relay desktop shows "Folder unavailable." (`RELAY_FOLDER_UNAVAILABLE_TEXT` in utils/remote-host-text.js, through gameAlert) only when it answers 200. The ended-assist test asserts no such toast.
 - Tests: access-relay-desktop 21/21 (capped).
+
+## K3c run 8 (R6 fixes and folder tests)
+
+Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R6.md, verdict LAND (m1, m2, m3, t1).
+
+- m1: `isInteractiveItem` treats a folder as interactive only with a non-empty `contents` array or `hasContents`; an authored `contents: []` stays inert. The locked path is unchanged.
+- m2: the standard (non-desktop) grid uses the desktop rule for a folder's picture: `iconImage`, else `SHARE_ICON`. No more `assets/objects/folder.png`.
+- m3: `check_item_type` in `scripts/validate_scenario.rb` takes an `in_contents` flag; the folder exemption applies only to a folder nested in a container's `contents`. A room-level folder with no sprite errors again.
+- t1: tests in `container-shares.test.mjs` (isInteractiveItem on a folder, desktop icon, standard grid image, `containerImageUrl`) and a new `validator-folder-sprite.test.mjs` (nested folder clean, room-level folder errors, another sprite-less nested type errors).
+- Mutation checks: with the two source files reverted, the isInteractiveItem test, the standard-grid image test and the room-level validator test fail. The desktop-icon and `containerImageUrl` tests cover behaviour already landed in 5a77e794c, so they pass either way.
+- Tests: the 21 test/js files that import or copy container-minigame.js or container-item-image.js (access-relay-desktop capped) 0 failures; keyring_folder_route_test 7 runs, 34 assertions, 0 failures; test_access_keyring validator 0 errors, 4 warnings.

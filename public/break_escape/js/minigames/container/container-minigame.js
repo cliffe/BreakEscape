@@ -1343,7 +1343,7 @@ export class ContainerMinigame extends MinigameScene {
             itemImg.className = 'container-content-item';
             // An item may override its icon with an explicit path (e.g. a .zip archive on a
             // desktop that has no object sprite of its own).
-            itemImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
+            itemImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
             itemImg.alt = item.name;
             // No tooltip that repeats the name printed under the item (slice 2a review R1 m1);
             // a share's UNC path, which the label leaves out, is its title below
@@ -1664,7 +1664,7 @@ export class ContainerMinigame extends MinigameScene {
         
         // An unlocked folder on a desktop opens like a locked one after its unlock: the main
         // handler loads its contents (server-side, by route). Without this its icon was inert.
-        if (item.type === 'folder' && (Array.isArray(item.contents) || item.hasContents)) {
+        if (item.type === 'folder' && ((Array.isArray(item.contents) && item.contents.length > 0) || item.hasContents)) {
             return true;
         }
 
