@@ -26,7 +26,7 @@ const copy = (rel) => put(rel, readFileSync(join(js, rel), 'utf8'));
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 for (const rel of ['utils/escape-html.js', 'utils/more-below.js', 'utils/computer-keywords.js', 'utils/pc-monitor.js',
-    'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js', 'minigames/container/container-item-image.js',
+    'utils/npc-headshot.js', 'utils/pc-taskbar.js', 'utils/author-html.js', 'utils/remote-host-text.js', 'minigames/container/container-item-image.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-minigame.js',
     'minigames/text-file/text-file-minigame.js', 'systems/pc-sessions.js']) copy(rel);
 put('utils/conditional-text.js', 'export function resolveObjectField(o, f, d) { return (o && o[f] != null) ? o[f] : d; }\n');
