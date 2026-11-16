@@ -643,3 +643,23 @@ test('K3d: a new capture with a capture log held asks GET /keyring again', async
     await settle(5);
     assert.equal(calls.length, 1);
 });
+
+test('K3d R2: a failed ask after a new capture is retried once after a short wait', async () => {
+    reset({ globals: { se_captures: {} } });
+    const calls = [];
+    let fail = true;
+    window.ApiClient = { keyring: async (pcId, opts) => {
+        calls.push(pcId);
+        if (fail) { fail = false; throw new Error('network down'); }
+        return { rev: 'r8', entries: [], captures: {} };
+    } };
+    await add(HOLDER);
+    window.gameState.globalVariables.se_captures = { lord_qr: structuredClone(K3D_CAPTURES.lord_qr) };
+    window.eventDispatcher.emit('global_variable_changed:se_captures', {});
+    await settle(5);
+    assert.equal(calls.length, 1, 'the first ask failed');
+    await new Promise((r) => setTimeout(r, 2200));
+    assert.equal(calls.length, 2, 'one retry follows, and a good answer needs no more');
+    await new Promise((r) => setTimeout(r, 2200));
+    assert.equal(calls.length, 2);
+});

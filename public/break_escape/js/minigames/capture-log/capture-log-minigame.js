@@ -140,7 +140,23 @@ function onCapturesChanged() {
     if (openScene) { openScene.redraw(); openScene.loadSecrets(); }
     // A new capture changes the server's captures map (its tag and account join): ask again.
     // Only a held capture log lists captures, so no ask is made for a game without one.
-    if (openScene || items().some((it) => it?.scenarioData?.type === HOLDER_TYPE)) askKeyring();
+    if (openScene || items().some((it) => it?.scenarioData?.type === HOLDER_TYPE)) askWithRetry();
+}
+
+export const CAPTURE_ASK_RETRY_MS = 2000;
+let retryTimer = null;
+/**
+ * askKeyring, and when the answer failed or timed out (null) one more ask after a short wait, so
+ * a capture the row guard holds back is not left off the list until some later trigger (K3d R2).
+ * One retry at a time; a retry that fails too is left to the next trigger.
+ */
+function askWithRetry() {
+    return askKeyring().then((answer) => {
+        if (answer !== null || retryTimer) return answer;
+        retryTimer = setTimeout(() => { retryTimer = null; askKeyring(); }, CAPTURE_ASK_RETRY_MS);
+        retryTimer.unref?.();
+        return answer;
+    });
 }
 /** The no-screen keyring answer changed (systems/keyring.js): re-badge and redraw in place. */
 function onKeyringChanged() {

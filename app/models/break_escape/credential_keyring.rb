@@ -67,9 +67,15 @@ module BreakEscape
     # the screen the client is drawing so the server can set forThisPc and accepted; they never
     # assert reach. All reach, sessionHeld and power fields are computed from server-held footholds
     # and sessions only.
-    def keyring_for_client(pc_id: nil, route: nil)
-      entries = implicit_keyring_entries + registry_keyring_entries
-      gained = keyring_gained_map
+    #
+    # The registry entries are built once per call. stamp: true (the GET route) also stamps the
+    # gained time on any newly listed registry entry, taking the game lock only when some are
+    # missing and re-checking just the id set inside it.
+    def keyring_for_client(pc_id: nil, route: nil, stamp: false)
+      registry = registry_keyring_entries
+      with_lock { stamp_keyring_gained!(registry.map { |e| e['id'] }) } if stamp && keyring_gained_pending(registry).any?
+      entries = implicit_keyring_entries + registry
+      gained = keyring_gained_map # server-written only, so an Integer check is enough
       entries.each { |e| e['gainedAt'] = gained[e['id']] if gained[e['id']].is_a?(Integer) }
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
       # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
@@ -86,18 +92,21 @@ module BreakEscape
     end
 
     # Registry entries listed now that have no gained time yet (the Sign-ins list's order).
-    def keyring_gained_pending
+    # Pass the entries (or just their ids) already built to avoid walking the registry again.
+    def keyring_gained_pending(listed = nil)
       known = keyring_gained_map
       return [] if known.size >= KEYRING_GAINED_MAX
 
-      registry_keyring_entries.map { |e| e['id'] }.reject { |id| known.key?(id) }
+      listed ||= registry_keyring_entries
+      listed.map { |e| e.is_a?(Hash) ? e['id'] : e }.reject { |id| known.key?(id) }
     end
 
     # Stamp each newly listed registry entry with the server time it was first listed, one
     # millisecond apart in registry order, so the order is the same after a reload. The caller
-    # holds the game lock (the controller). Returns whether anything was stamped.
-    def stamp_keyring_gained!
-      pending = keyring_gained_pending
+    # holds the game lock. Returns whether anything was stamped. listed is the ids (or entries)
+    # already built; without it the registry is walked.
+    def stamp_keyring_gained!(listed = nil)
+      pending = keyring_gained_pending(listed)
       return false if pending.empty?
 
       map = keyring_gained_map.dup

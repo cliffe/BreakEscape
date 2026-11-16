@@ -1757,9 +1757,10 @@ module BreakEscape
 
     # GET /games/:id/keyring?pc_id=&foothold=&from=&relay=&rev=
     # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6.2): the player's earned credentials,
-    # computed server-side from state the game already keeps. A read apart from stamping a gained time on
-    # each newly listed registry entry (keyringGained), off the with_game_lock list. The registry never reaches the browser; a password value is served only
-    # where GET /capture_secrets already serves it. foothold/from/relay name the screen the client
+    # computed server-side from state the game already keeps. A read apart from stamping a gained
+    # time on each newly listed registry entry (keyringGained), which takes the game lock only when
+    # an entry is missing one. The registry never reaches the browser; a password value is served
+    # only where GET /capture_secrets already serves it. foothold/from/relay name the screen the client
     # is drawing; they never assert reach.
     def keyring
       authorize @game if defined?(Pundit)
@@ -1770,8 +1771,7 @@ module BreakEscape
         elsif params[:foothold].present? then { foothold: params[:foothold].to_s }
         end
       # The one write: stamp newly listed registry entries (under the lock, only when there are any)
-      @game.with_lock { @game.stamp_keyring_gained! } if @game.keyring_gained_pending.any?
-      answer = @game.keyring_for_client(pc_id: params[:pc_id].presence, route: route)
+      answer = @game.keyring_for_client(pc_id: params[:pc_id].presence, route: route, stamp: true)
 
       response.headers['Cache-Control'] = 'no-store'
       if params[:rev].present? && params[:rev].to_s == answer[:rev]
