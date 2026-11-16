@@ -980,7 +980,9 @@ export default class NPCBarkSystem {
 
     // Try MinigameFramework first (if in game with Phaser)
     if (window.MinigameFramework && typeof window.MinigameFramework.startMinigame === 'function') {
-      window.MinigameFramework.startMinigame('phone-chat', null, params);
+      const go = () => window.MinigameFramework.startMinigame('phone-chat', null, params);
+      // The phone pose shows a moment before the phone opens (systems/player-poses.js)
+      if (window.playerPoses?.openWithPhoneLead) window.playerPoses.openWithPhoneLead(go); else go();
       console.log('✅ Opened phone chat via MinigameFramework');
       return;
     }
