@@ -41,6 +41,7 @@ import {
 import { buildSuspectPage } from './landing-page-inspect.js';
 import { captureList, capturesReveal } from '../../systems/captures.js';
 import { buildCaptureRow, captureBannerText, applyCaptureSecrets, loadCaptureSecrets } from '../capture-log/capture-rows.js';
+import { buildStepItems, applyStepStates } from '../helpers/step-stepper.js';
 
 export const PAGES_KEY = 'se_landing_pages';
 export const DRAFTS_KEY = 'se_landing_drafts';
@@ -504,14 +505,11 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     }
 
     _renderSteps() {
-        this.stepStrip.textContent = '';
         const current = this._currentStep();
-        for (const step of STEPS) {
-            const li = h('li', { class: `lpb-step${step.id === current ? ' is-current' : ''}`,
-                'data-step': step.id, 'aria-current': step.id === current ? 'step' : false },
-                h('span', { class: 'lpb-step-label', text: step.label }));
-            this.stepStrip.appendChild(li);
-        }
+        const items = buildStepItems(this.stepStrip, STEPS,
+            { stepClass: 'lpb-step', dataKey: 'step', label: { as: 'span', class: 'lpb-step-label' } });
+        applyStepStates(items, STEPS, { currentClass: 'is-current' },
+            (step) => ({ current: step.id === current }));
     }
 
     _renderPreview() {
