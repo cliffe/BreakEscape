@@ -458,6 +458,7 @@ test('8.1 the teaching line is a toast, once per page per kind, after the first 
     assert.deepEqual(alerts.map(a => a[0]), [teachSaved]);
     assert.equal(alerts[0][1], 'info');
     assert.equal(alerts[0][4].plainText, true);
+    assert.equal(alerts[0][4].whole, true, 'R2 t3: the teaching toast wraps whole');
     // A second success in the same page: no second toast
     mg = openRemote();
     answerRemote(mg, { keyring: [RDP] });

@@ -336,6 +336,18 @@ export function openRemoteSignIn(hostRow, footholdId) {
 }
 
 /**
+ * Connect's refused sign-in (keyring K3b, plan 8.2 step 8): the target's remote sign-in screen
+ * over the foothold Connect used, with the account and the credential chosen and the refusal
+ * (a saved connection's kindRefused or lockout) shown as on the screen itself (8.1).
+ */
+export function openCredentialSignIn({ pcId, host = null, footholdId, username = null, refusal = null } = {}) {
+    if (!pcId || !footholdId) return undefined;
+    const row = remoteRowFor(pcId, footholdId);
+    return openLoginSignIn(remoteLockable({ ...row, host: row?.host || host, name: row?.name || host || pcId }, footholdId),
+        { connect: { username, refusal } });
+}
+
+/**
  * A held remote session's desktop, through its foothold (network-links.js calls this from
  * the view and from openSession; it starts no trip of its own).
  */
@@ -594,7 +606,7 @@ export function openLoginDesktop(lockable) {
  * lockable that does not carry it: a remote screen never asks for or shows the sticky note
  * GET /login_accounts serves at the keyboard (slice 9.1, 5.3).
  */
-export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null } = {}) {
+export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null, connect = null } = {}) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return;
@@ -603,7 +615,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
         : (remoteOpt && remoteOpt.footholdId ? remoteOpt : null);
     if (remote) {
         const remoteLockableFor = data.remote ? lockable : { ...lockable, scenarioData: { ...data, remote: { footholdId: remote.footholdId } } };
-        return openRemoteSignInScreen(remoteLockableFor, { switching, reason });
+        return openRemoteSignInScreen(remoteLockableFor, { switching, reason, connect });
     }
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
     // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
@@ -694,7 +706,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
 }
 
 /** The remote half of openLoginSignIn (4.4): no tiles, the foothold, and the way back (4.3). */
-async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined } = {}) {
+async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined, connect = null } = {}) {
     const data = lockable.scenarioData;
     const pcId = data.id;
     const footholdId = data.remote.footholdId;
@@ -727,8 +739,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             picker: false,
             tiles: [],
             current: held && held.via !== 'claim' ? held : null,
-            // A locked held session pre-chooses its own account, as the local screen does
-            preselect: held && held.via !== 'claim' && held.locked ? held.username : null,
+            // A locked held session pre-chooses its own account, as the local screen does; a
+            // refused Connect (K3b) pre-chooses the credential's account and shows the refusal
+            preselect: connect?.username || (held && held.via !== 'claim' && held.locked ? held.username : null),
+            ...(connect?.refusal ? { connectRefusal: { ...connect.refusal } } : {}),
             remote: { footholdId, linkName },
             host: hostLabel,
             captured: [],
@@ -1669,4 +1683,6 @@ window.openLoginSignIn = openLoginSignIn;
 // The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
 window.openRemoteSignIn = openRemoteSignIn;
 window.openRemoteDesktop = openRemoteDesktop;
+// Connect from the tray (keyring K3b): keyring.js looks this up on window, so it needs no import
+window.openCredentialSignIn = openCredentialSignIn;
 
