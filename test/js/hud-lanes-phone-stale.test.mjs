@@ -183,7 +183,13 @@ test('R4 n2: a toast keeps at most 16 cached heights', () => {
   const fonts = { status: 'a' };
   Object.defineProperty(r.doc, 'fonts', { value: fonts, configurable: true });
   const t = r.container.querySelector('.notification');
-  for (let i = 0; i < 40; i++) { fonts.status = `s${i}`; applyLanes(r.doc, r.win); assert.ok(t._hudLaneH.size <= 16, `size ${t._hudLaneH.size}`); }
-  assert.ok(t._hudLaneH.size >= 1);
+  let most = 0;
+  for (let i = 0; i < 40; i++) {
+    fonts.status = `s${i}`; applyLanes(r.doc, r.win);
+    assert.ok(t._hudLaneH.size <= 16, `size ${t._hudLaneH.size}`);
+    most = Math.max(most, t._hudLaneH.size);
+  }
+  // R5 m1: the cap is exactly 16, not smaller (a cap of 2 would re-clone several widths every pass)
+  assert.equal(most, 16);
   r.win.close();
 });

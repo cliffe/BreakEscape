@@ -749,7 +749,9 @@ function toastHeightAt(doc, t, w, z, container) {
   const key = `${w}@${z}#${renderEnv(doc)}@${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;   // compact padding differs
   if (!t._hudLaneH) t._hudLaneH = new Map();
   if (!t._hudLaneH.has(key)) {
-    if (t._hudLaneH.size >= 16) t._hudLaneH.clear();   // a long drag adds a width per frame (R4 n2)
+    // A long drag adds a width per frame (R4 n2). 16 is well above the 5 to 10 keys one pass
+    // needs (lane widths x rungs), so a steady screen never misses and a drag re-clones in bursts
+    if (t._hudLaneH.size >= 16) t._hudLaneH.clear();
     t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
   }
   return t._hudLaneH.get(key);
