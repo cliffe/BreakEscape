@@ -6,6 +6,7 @@
 //   node tools/playtest/needs-tour-regression.mjs <gameId> [port] [outDir]
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
+import { turnedBackOff, parksAfterOff } from './needs-tour-rows.mjs';
 const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-9-2-h/node_modules/');
 const { chromium } = require('playwright-core');
 const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
@@ -213,8 +214,8 @@ await t(3000);
 report.rows[3].after_off = await page.evaluate(c => window.__ev.filter(e => e.c >= c), offAt);
 // R2 m4: a turn-back is npc_turned_back with reason off; a park (npc_need_parked, say reason no_source)
 // is a different thing and is listed apart, never counted
-report.rows[3].turned_back = [...new Set(report.rows[3].after_off.filter(e => e.ev === 'npc_turned_back' && e.reason === 'off').map(e => e.npcId))];
-report.rows[3].parked = report.rows[3].after_off.filter(e => e.ev === 'npc_need_parked').map(e => ({ npc: e.npcId, reason: e.reason, at: Math.round(e.c / 1000) }));
+report.rows[3].turned_back = turnedBackOff(report.rows[3].after_off);
+report.rows[3].parked = parksAfterOff(report.rows[3].after_off);
 report.rows[3].no_queue_why = q.length ? null : { needs_at_read: report.rows[3].needs_at_read, last_sample: report.rows[3].needs_samples.at(-1) || null, parked: report.rows[3].parked };
 report.rows[3].grumbles = report.rows[3].after_off.filter(e => /^npc_(overheard|chatted)/.test(e.ev) && /grumble/.test(e.topic || '')).map(e => ({ npc: e.npcId, line: e.line || null, picture: e.picture }));
 await page.evaluate(() => window.__test.interact('office_coffee_socket')).catch(() => null); await t(800);
