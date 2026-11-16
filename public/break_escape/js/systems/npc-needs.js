@@ -112,7 +112,9 @@ export function bubbleMs(line) {
 // NPC's `chatter` pools, the scenario's shared `chatter` pools, or an ink exchange knot. The engine
 // has no spoken text of its own: a topic with nothing to say (or a speaker on cooldown) gets picture
 // chat, a speech bubble holding an icon. Lines come from a seeded shuffle-bag per NPC and topic.
-export const CHATTER_COOLDOWN_MIN = 5;     // chatterCooldownMin default: needs-clock minutes between barks
+export // R1 M2: the throttle between one speaker's faint lines (needs-clock ms)
+const FAINT_COOLDOWN_MS = 25000;
+const CHATTER_COOLDOWN_MIN = 5;     // chatterCooldownMin default: needs-clock minutes between barks
 export const PICTURE_MS = 2500;            // a picture-chat bubble shows this long
 export const EXCHANGE_LINE_MAX_MS = 6000;  // an exchange line may be longer than a bark
 export const EXCHANGE_MAX_MS = 60000;      // the pair's overlap is extended by the knot, at most this
@@ -2171,7 +2173,10 @@ export class NPCNeedsSystem {
         const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
         const priority = PRIORITY_MUTTERS.has(topic);
         const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
-        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || ahead))) {
+        // R1 M3: a mutter the player hears in full takes the lock from a faint ambient line (the
+        // order keeps `ahead` first, so the preempt only fires when the mutter is said now)
+        const full = priority || !this._unheard(s, topic);
+        if (this._mutterHeld(npcId) || (lines && (ahead || !this._speechFreeFor(!full)))) {
             const wait = { npcId, topic, since: this.clockMs, lines };
             if (priority) {
                 wait.priority = true;
@@ -2209,7 +2214,8 @@ export class NPCNeedsSystem {
                 else keep.push(w);
                 continue;
             }
-            if (this._speechFree() || late || w.lines === false) this._sayMutter(s, w.topic);
+            const full = PRIORITY_MUTTERS.has(w.topic) || !this._unheard(s, w.topic);
+            if (late || w.lines === false || this._speechFreeFor(!full)) this._sayMutter(s, w.topic);
             else keep.push(w);
         }
         this._mutterWaits = keep;
@@ -2898,10 +2904,14 @@ export class NPCNeedsSystem {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
         // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
         const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
+            && !(faint && s.faintQuietUntil > this.clockMs)
             && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s, topic, pool.lines)]) > maxMs);
         if (ready && this._speechFreeFor(faint)) {
             const idx = this._bagTake(s, topic, pool.lines);
-            s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
+            // R1 M2 (E7): a faint line is not heard, so it spends only its own short throttle and
+            // leaves the full cooldown for when the player walks up
+            if (faint) s.faintQuietUntil = this.clockMs + FAINT_COOLDOWN_MS;
+            else s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
             this._noteSaid(s, pool.lines[idx]);
             return { line: pool.lines[idx], idx, picture: null, pool, faint };
         }

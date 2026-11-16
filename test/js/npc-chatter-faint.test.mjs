@@ -28,7 +28,7 @@ function office({ ear = { overheard: false, distance: 300 }, faint = 0.5, withFa
     w.world.globalHolds = cond => requiredGlobalsHold(cond, st.globals);
     w.world.playerHears = () => (typeof st.ear === 'function' ? st.ear() : st.ear);
     w.world.playerProximity = () => ({ nearby: false, distance: null });
-    w.world.chatterConfig = () => ({ cooler: POOL });
+    w.world.chatterConfig = () => ({ cooler: POOL, login_aloud: POOL });
     w.world.speak = (id, line, info) => st.spoken.push({ id, line, info });
     if (exchange) w.world.exchangeLines = () => [{ speakerId: 'ann', text: 'Was that parcel for you?' }, { speakerId: 'bob', text: 'It was.' }];
     w.world.setGlobal = (n, v) => { st.globals[n] = v; };
@@ -61,7 +61,8 @@ test('out of earshot but within the falloff range, a chat turn draws a line and 
     assert.equal(o.emitted('npc_overheard:').length, 0, 'no npc_overheard for a faint line');
     assert.equal(o.sys._heardUntil || 0, 0, 'room tone does not duck for it');
     assert.equal(o.sys.getState('ann').talking?.faint ?? o.sys.getState(s.id).talking?.faint, true, 'talking carries faint, for the dimmed bubble');
-    assert.ok(o.sys.states.get(s.id).chatterQuietUntil > o.sys.clockMs, 'the cooldown started: the draw used a bag line');
+    assert.ok(!o.sys.states.get(s.id).chatterQuietUntil, 'the full chatter cooldown is not started by a faint line (R1 M2)');
+    assert.ok(o.sys.states.get(s.id).faintQuietUntil > o.sys.clockMs, 'a faint line has its own throttle');
 });
 
 test('with no faint volume (too far, a shut door, a conversation, the scenario flag) the turn is a picture and uses no bag line', () => {
@@ -187,6 +188,44 @@ test('conversationOpen: a phone call that opens and closes (the stale phone-chat
     assert.equal(conversationOpen(w), true);
     w.MinigameFramework.currentMinigame = { constructor: { name: 'Lockpick' } }; w.currentConversationMinigameType = null;
     assert.equal(conversationOpen(w), false, 'another minigame is not a conversation');
+});
+
+test('R1 M1: after a phone call the sticky type does not make a lockpick minigame a conversation', () => {
+    const w = { MinigameFramework: { currentMinigame: { constructor: { name: 'LockpickingMinigamePhaser' }, _sceneType: 'lockpicking' } }, currentConversationMinigameType: 'phone-chat' };
+    assert.equal(conversationOpen(w), false);
+    w.MinigameFramework.currentMinigame = { constructor: { name: 'X' }, _sceneType: 'phone-chat' };
+    assert.equal(conversationOpen(w), true, 'the open minigame\'s own scene type counts');
+    w.MinigameFramework.currentMinigame = { constructor: { name: 'X' }, _sceneType: 'person-chat' };
+    assert.equal(conversationOpen(w), true);
+});
+
+test('R1 M2: a faint line leaves the full cooldown alone, so a heard turn straight after still voices a line', () => {
+    const o = office();
+    o.until(() => o.st.spoken.length > 0, 90000, 'a faint line');
+    const id = o.st.spoken[0].id;
+    assert.ok(!o.sys.states.get(id).chatterQuietUntil);
+    // the player walks up: the next draw for the same speaker is a heard one and is not on cooldown
+    o.st.ear = { overheard: true, distance: 40 };
+    o.sys._speechUntil = 0; o.sys._faintLine = null;
+    const sp = o.sys.states.get(id);
+    sp.faintQuietUntil = o.sys.clockMs + 1000;
+    const pick = o.sys._pickBark(sp, 'cooler', { waitForLock: true });
+    assert.ok(pick.line, 'a real line, not a picture');
+    // and a second faint draw inside the throttle is refused
+    sp.faintQuietUntil = o.sys.clockMs + 20000; sp.chatterQuietUntil = 0;
+    const again = o.sys._pickBark(sp, 'cooler', { faint: true });
+    assert.equal(again.line, null, 'faint throttle holds a second faint line');
+});
+
+test('R1 M3: a mutter (login_aloud) takes the lock from a faint line in the same tick', () => {
+    const o = office();
+    o.until(() => o.st.spoken.length > 0, 90000, 'a faint line');
+    assert.ok(o.sys._faintLine && !o.sys._speechFree());
+    const n = o.st.spoken.length;
+    o.sys.mutter('ann', 'login_aloud');
+    assert.equal(o.sys._mutterWaits.length, 0, 'not queued behind the faint line');
+    assert.ok(o.st.fades.length >= 1, 'the faint voice was faded');
+    assert.ok(o.st.spoken.length >= n);
 });
 
 test('say is silent while a conversation is open, and voices again after a call closes', async () => {
