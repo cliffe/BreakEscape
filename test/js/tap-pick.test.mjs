@@ -636,6 +636,10 @@ test('overlap 11b: overlapStandPoint steps the reach margin 12, 8, 4, 0 over wal
     assert.equal(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { ...base, findCell: (x, y) => (x < 110 ? { x, y } : null) }), null);
     // A wall refuses the only joint cell
     assert.equal(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { ...base, wallClear: () => false }), null);
+    // A cell inside an NPC's body is skipped (the walk cannot end there)
+    const pOcc = overlapStandPoint([a, { id: 'b', x: 124, y: 0 }], { x: 112, y: 0 }, player, { ...base, occupied: (p) => Math.abs(p.x - 112) < 6 && Math.abs(p.y) < 6 });
+    assert.ok(pOcc && !(Math.abs(pOcc.x - 112) < 6 && Math.abs(pOcc.y) < 6), JSON.stringify(pOcc));
+    assert.equal(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { ...base, occupied: () => true }), null);
     // The margin-12 point still comes first when one exists (no lattice detour)
     const c = { id: 'c', x: 110, y: 0 };
     const pc = overlapStandPoint([a, c], { x: 105, y: 0 }, player, base);

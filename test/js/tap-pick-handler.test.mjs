@@ -82,7 +82,7 @@ const HELPERS = ['findObjectsAtPosition',
     'gatherInteractablesNearClick', 'useObjectInReach', 'tapAlphaAt', 'walkToObjectThenUse',
     'findNPCsAtPosition', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer',
     'standPointDeps', 'isSeatOrSwivel', 'hitStackKey', 'playerAtFeet', 'inReachFrom', 'inReachNow', 'farStandPoint',
-    'feetWithin', 'stillThere', 'roomHasActiveHostile', 'walkToDoor', 'showTapMenu', 'tapWalkBlocked',
+    'feetWithin', 'standsInsideNpc', 'stillThere', 'roomHasActiveHostile', 'walkToDoor', 'showTapMenu', 'tapWalkBlocked',
     'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
     'isObjectInInteractionRange', 'sameRoomFrom', 'playerFeet', 'wallClearFrom', 'findClearStandPoint',

@@ -254,6 +254,8 @@ export const OVERLAP_MARGINS = [12, 8, 4, 0];
  *   from a feet point, judged `margin` px inside the range (default 12 when omitted)
  * @param {function(object): boolean} [deps.isDoor]
  * @param {number} [deps.doorRange] - DOOR_INTERACTION_RANGE
+ * @param {function({x:number,y:number}): boolean} [deps.occupied] - the body would stand inside
+ *   someone (an NPC's body): the walk cannot end there, so the point is skipped
  * @returns {?{x:number,y:number}}
  */
 export function overlapStandPoint(hits, click, player, deps) {
@@ -268,7 +270,8 @@ export function overlapStandPoint(hits, click, player, deps) {
         try { p = objectStandPoint(t, player, { ...deps, range }); } catch (e) { p = null; }
         if (p) named.push(p);
     }
-    const allIn = (p, margin) => hits.every(h => deps.inReachFrom(p, h, margin));
+    const occupied = (p) => { try { return !!deps.occupied?.(p); } catch (e) { return false; } };
+    const allIn = (p, margin) => hits.every(h => deps.inReachFrom(p, h, margin)) && !occupied(p);
     let cells = null;   // built once, only when a named point fails
     const lattice = () => {
         if (cells) return cells;

@@ -2363,7 +2363,7 @@ export async function create() {
                 // D1 rule 3: a far overlap. Walk to where every hit is in reach and stop; the next
                 // click there opens the menu. No menu and nothing used on arrival.
                 if (menuHits.length > 1 && !menuHits.some(inReachNow)) {
-                    const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE };
+                    const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc };
                     // Margins 12, 8, 4, 0 over walkable cells; the first hit's own point only when no cell reaches them all
                     const joint = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps);
                     const stand = joint || farStandPoint(menuHits[0]);
@@ -3130,6 +3130,17 @@ function inReachFrom(point, hit, margin = ARRIVAL_THRESHOLD + 4) {
     const from = playerAtFeet(point);
     if (hit.doorProperties) return Math.hypot(hit.x - from.x, hit.y - from.y) <= DOOR_INTERACTION_RANGE - margin;
     return isObjectInInteractionRange(hit, from, INTERACTION_RANGE - margin);
+}
+
+// The player's body at feet point p would overlap an NPC's body (the walk could not end there)
+function standsInsideNpc(p) {
+    const player = window.player;
+    const rects = window.pathfindingManager?.getNpcBodyRects?.();
+    const b = player?.body;
+    if (!rects?.length || !b || !p) return false;
+    const hw = (b.halfWidth ?? b.width / 2) - 1;
+    const hh = (b.halfHeight ?? b.height / 2) - 1;
+    return rects.some(r => p.x + hw > r.left && p.x - hw < r.right && p.y + hh > r.top && p.y - hh < r.bottom);
 }
 
 // In reach from where the player stands: the gather's own measures
