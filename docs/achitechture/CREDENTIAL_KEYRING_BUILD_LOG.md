@@ -978,3 +978,18 @@ Fixes for `CREDENTIAL_KEYRING_K3A_REVIEW_R1.md`, plus two live findings. Tip bef
 | t5 | Comment added at the keyboard filter. | n/a |
 
 **Deferred.** t3 (the keyboard's chosen line naming kinds): a wording change to a shipped screen, wants the owner's pick. `signin-fit.mjs` and the live beats need a server and were not run. Existing games on `test_access_keyring` keep a stored scenario copy, so Ian's button shows "Saved connection" there until a new game.
+
+### Run 7 (R2 fixes, main merge)
+
+Fixes for `CREDENTIAL_KEYRING_K3A_REVIEW_R2.md`. Tip before this run `1ee644f99`; fixes in "Keyring K3a: round 2 fixes", then main (`11f7eee6d`) merged with no conflicts (the harness copy lists merged cleanly).
+
+| Finding | Fix | Test |
+|---|---|---|
+| m1 | `.credential-label-nowrap` is `inline-block` with `max-width: 100%`, `overflow: hidden`, `text-overflow: ellipsis`. `titleCredentialLabels(root)` (pc-taskbar.js) sets each span's `title` to its full text through the DOM, called after the start panel mounts and after the account bar is built. Validator warns when a credential `label` is over 32 characters. | `keyring-signin.test.mjs` "R2 m1" (title via DOM, CSS declarations, no `title=` in markup); `validator-credentials.test.mjs` (33 warns, 32 and a normal label do not). |
+| t3 | `credentialSessionLabel(session)`: an empty or blank label gives "Saved connection", so the desktop line reads "with the saved connection Saved connection" and `credentialSessionLine` is no longer null for it. | The old null assertion became two assertions. |
+| t4 | The plural `route_ended` line is in the plan 8.5 table. | n/a |
+| t2 | Source-level assertion that `TextFileMinigame.init` calls `window.keyring?.noteOpened?.(this.textFileData?.itemId)`. | "R2 t2". |
+
+**In-file toast, live.** `gameAlert` renders ordinary DOM toasts in `#notification-container` (not canvas). Info and success toasts raised while a full-screen panel is open are held in memory (`heldNotifications`) and rendered only when the last panel closes, then shown a few at a time. Closing the PC monitor returns to the network view, which is still a panel, so the toast stays held until that closes too; it then queues behind the task and objective toasts and showed about 8 s later. That is why earlier polls of `document.body.innerText` found nothing. No code fix needed. Screenshot: `scratchpad/k3a-live3/in-file-toast-1280.png` (toast text visible on screen, `show` class, opacity 1). Start panel at 390x844 with the normal label: `startpanel-390.png`, label whole on its own line. A 40-character label at 390 was not measured live.
+
+**Results.** `bin/test-js` 715 files, 0 failed. Rails suite 2996 runs, 0 failures, 0 errors, 3 skips. Rubocop clean on `scripts/validate_scenario.rb`, `credential_keyring.rb` and its test.
