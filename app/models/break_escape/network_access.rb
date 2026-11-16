@@ -275,6 +275,7 @@ module BreakEscape
       }
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << jack_id if first
+      start_token_clocks!(foothold_id) # keyring K5 (plan 10)
       player_state['inventory'] << link_item_for(foothold_id)
       # A worn device planted in a jack comes off (Wearables)
       release_worn_unless_held!
@@ -314,7 +315,7 @@ module BreakEscape
 
       device_id = device.is_a?(Hash) ? device['id'] : nil
       touched = [link_id, device_id]
-      { status: :ok, body: { success: true, endedPcIds: ended }.merge(inventory_answer_fields(delta, touched)) }
+      { status: :ok, body: with_token_expired_pc_ids({ success: true, endedPcIds: ended }.merge(inventory_answer_fields(delta, touched))) }
     end
 
     # ==========================================
@@ -383,6 +384,7 @@ module BreakEscape
       player_state['footholds'][foothold_id] = record
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << ap_object_id if first
+      start_token_clocks!(foothold_id) # keyring K5 (plan 10)
       player_state['inventory'] = Array(player_state['inventory'])
       player_state['inventory'] << link_item_for(foothold_id)
       save!
@@ -526,6 +528,7 @@ module BreakEscape
       player_state['footholds'][foothold_id] = record
       player_state['gainedFootholds'] = gained_footholds
       player_state['gainedFootholds'] << pc_id if first
+      start_token_clocks!(foothold_id) # keyring K5 (plan 10)
       player_state['inventory'] << link_item_for(foothold_id)
       save!
 
@@ -832,6 +835,8 @@ module BreakEscape
         next unless session.is_a?(Hash)
         # Keyring K2 (plan 3.8): a relay session is never a bridge or a down block
         next if relay_session?(session)
+        # K5 (plan 10): nor is an expired token session
+        next if credential_session_expired?(session)
 
         info = find_login_pc(pc_id)
         next unless info
@@ -1007,6 +1012,9 @@ module BreakEscape
       return nil if desktop_request_allowed?(info, route)
 
       pc = info[:object]
+      # Keyring K5 (plan 10): the client maps this to "{label} has expired."
+      return 'expired' if credential_session_expired?(access_sessions[pc['id'].to_s])
+
       foothold_id = route && route[:foothold]
       if route && route[:relay]
         session = access_sessions[pc['id'].to_s]
@@ -1035,7 +1043,8 @@ module BreakEscape
       held = nil
       # A claimed session is physical and not offered over the network (4.3); a relay session
       # is the holder's shared screen and never listed either (keyring K2, plan 3.8)
-      if remote && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session)
+      if remote && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session) &&
+         !credential_session_expired?(session) # K5 (plan 10)
         npc = scenario_room_npc(session['id'])
         if npc && self.class.account_holder?(npc)
           held = { 'username' => npc['creds']['username'], 'displayName' => npc['displayName'] || npc['id'],
@@ -1144,6 +1153,8 @@ module BreakEscape
     def session_route_up?(pc_id, visited = Set.new)
       session = access_sessions[pc_id.to_s]
       return true unless session.is_a?(Hash)
+      # Keyring K5 (plan 10): an expired token session is down
+      return false if credential_session_expired?(session)
 
       info = find_login_pc(pc_id)
       return false if info && host_service_off?(info[:object])
@@ -1214,7 +1225,9 @@ module BreakEscape
       # Keyring K2 (plan 3.8): a relay session is no pivot, so the key names only the pivoting
       # sessions; session keys alone would miss a relay replacing a pivot in the same slot.
       pivots = access_sessions.reject { |_id, session| relay_session?(session) }.keys.map(&:to_s).sort
-      [fid, ignore_outages, network_footholds[fid].to_json, pivots, outages, hosts_off, source_off, sessions_locked,
+      # K5 (plan 10): the expired token sessions, in both variants (a token expiring cuts a pivot)
+      expired_tokens = expired_token_session_ids
+      [fid, ignore_outages, network_footholds[fid].to_json, pivots, outages, hosts_off, source_off, sessions_locked, expired_tokens,
        scenario_data.object_id, scenario_data['networks'].to_json, scenario_data['networkLinks'].to_json]
     end
 
@@ -1383,6 +1396,8 @@ module BreakEscape
         # Keyring K2 (plan 3.8): a relay session is a sink, never a pivot. reach_cache_key
         # keys on the pivoting sessions only, so a relay replacing a pivot misses the cache.
         next if relay_session?(session)
+        # K5 (plan 10): an expired token session is no pivot (reach_cache_key keys on it)
+        next if credential_session_expired?(session)
 
         info = find_login_pc(pc_id)
         next unless info
@@ -1424,7 +1439,8 @@ module BreakEscape
     # fixed point, so a pruned source (or pivot) ends every `from` session chained beyond it in
     # the next round.
     def prune_unreachable_sessions!
-      ended = []
+      # Keyring K5 (plan 10): expired token sessions end first (with_token_expired_pc_ids names them)
+      ended = drop_expired_token_sessions!
       loop do
         sessions = player_state['sessions']
         break unless sessions.is_a?(Hash) && sessions.any?
@@ -1475,6 +1491,9 @@ module BreakEscape
       route = desktop_route(route)
       pc = info[:object]
       session = access_sessions[pc['id'].to_s]
+      # Keyring K5 (plan 10): every route, the keyboard included, is refused at an expired token
+      return false if credential_session_expired?(session)
+
       if route && route[:relay]
         relay_session?(session) && session_route_up?(pc['id'])
       elsif route && route[:from]
