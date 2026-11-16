@@ -1042,11 +1042,11 @@ test('updateSeatedNPC (needs): listening faces the speaker and ends with the lin
     }
 });
 
-test('updateSeatedNPC (needs): no swivel or listening on a call, paired, talking, typing, with los.enabled or swivel false', () => {
+test('updateSeatedNPC (needs): no swivel or listening paired, talking, typing, with los.enabled or swivel false', () => {
     const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
     const speakers = [{ npcId: 'amara', roomId: 'office', x: 200, y: 100, until: 3000 }];
     const cases = {
-        call: { ns: { call: { objectId: 'tom_phone' } } },
+        // (a desk-phone call no longer seats the NPC at all: needsStop is null, see the needsStop tests)
         paired: { partner: 'amara' },
         talking: { talking: { line: 'Hi' } },
         typing: { ns: { mode: 'job', job: { kind: 'use', need: 'work', phase: 'using', targetId: 'tom_pc' } } },
@@ -1669,6 +1669,8 @@ test('needsStop: a colleague answering a desk phone has no stop (stands for the 
         const job = { kind: 'use', phase: 'using', targetId: 'spare_phone', need: null, phone: true };
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job }), null);
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job }), null);
+        // The owner answering its own phone at its desk (a call, no job) stands too
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'idle', atPost: true, job: null, call: { phoneId: 'own_phone', until: 9 } }), null);
         // The ordinary use of a non-phone object still stops
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: { ...job, phone: undefined, targetId: 'coffee' } }).key, 'at:coffee');
         // After the call (returning to the post) it sits again

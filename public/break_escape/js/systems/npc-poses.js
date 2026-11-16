@@ -194,6 +194,7 @@ export class NpcPoses {
         this.breath = new Map();    // npcId -> { breath } (sprite-breath.js holder) while breathing
         this.idleBreathing = false; // debug: every standing idle breathes
         this.settleMs = SETTLE_MS;
+        this.callTurn = new Map();  // npcId -> the s.call already turned to (an owner answering its own phone)
         this.poseCheck = new Map(); // npcId -> { tex, has, at }: does the atlas have any pose frames
     }
 
@@ -325,6 +326,16 @@ export class NpcPoses {
                 // Arriving to use a machine (or answering a phone): face it for the lead pose and keep
                 // face_player off while it lasts. The behaviour turns to the player every tick, so
                 // the turn is made once, and a chat partner can still turn the NPC away afterwards.
+                if (!rec && s.call?.phoneId) {
+                    // The owner answering its own desk phone: no job, so one turn per call
+                    const phone = sys.world?.getObject?.(s.call.phoneId) || null;
+                    if (this.callTurn.get(id) !== s.call) {
+                        this.callTurn.set(id, s.call);
+                        const to = phone && !facesObject(b, phone) ? directionToObject(b, phone) : null;
+                        if (to) b.direction = to;
+                    }
+                    b._poseHoldFacing = true;
+                }
                 if (rec && obj) {
                     const usingMs = Math.max(0, clockMs - rec.at);
                     const lead = wantedPose({ s, obj, usingMs, seated: false, npc: w.npcManager?.getNPC?.(id), facing: true });
@@ -367,7 +378,7 @@ export class NpcPoses {
             this.release(id, mgr.getBehavior?.(id));
             this.active.delete(id);
         }
-        for (const m of [this.useStart, this.pending]) for (const id of [...m.keys()]) if (!seen.has(id)) m.delete(id);
+        for (const m of [this.useStart, this.pending, this.callTurn]) for (const id of [...m.keys()]) if (!seen.has(id)) m.delete(id);
         // Standing idles (opt-in): any NPC with a behaviour, needs or not, showing its idle
         const behaviours = mgr.behaviors instanceof Map ? mgr.behaviors : null;
         for (const [id, h] of [...this.breath]) {

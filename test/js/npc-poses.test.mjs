@@ -468,3 +468,20 @@ test('pass: the turn holds face_player off until the pose is released', async ()
     poses.update();
     assert.equal(b._poseHoldFacing, false);
 });
+
+test('pass: an owner answering its own desk phone (a call, no job) turns to the phone and plays pose_phone', () => {
+    const { poses, b, s, sys } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    const phone = obj('phone1', {});
+    phone._sprite.x = 100; phone._sprite.y = 140;
+    sys.world.getObject = () => phone;
+    s.job = null;
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'left';
+    poses.update();
+    assert.equal(b.direction, 'down');
+    assert.equal(b._poseHoldFacing, true);
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_phone-down');
+    b.direction = 'left';   // turned away mid-call: not turned back
+    poses.update();
+    assert.equal(b.direction, 'left');
+});
