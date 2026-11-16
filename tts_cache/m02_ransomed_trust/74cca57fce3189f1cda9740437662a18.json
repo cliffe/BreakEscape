@@ -1,0 +1,13 @@
+{
+  "key": "74cca57fce3189f1cda9740437662a18",
+  "npc": "hodan_warsame",
+  "text": "Security were after some visitor. Half the building heard it.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:36Z"
+}

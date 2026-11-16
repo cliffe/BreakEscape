@@ -1,0 +1,13 @@
+{
+  "key": "c691e7bb1277f4f0d57d771c956b46fc",
+  "npc": "hodan_warsame",
+  "text": "This cooler's warmer than the sink.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:59Z"
+}

@@ -227,6 +227,9 @@ boardroom_pin = "0417"
           { "text": "DR SARAH KIM: Assaulted in her own office",                       "style": "warning", "condition": "globalVars.dr_kim_ko" },
           { "text": "GARY WHITLOCK: Assaulted at his desk — keycard taken",            "style": "warning", "condition": "globalVars.gary_ko" },
           { "text": "WARD STAFF: Nurse assaulted mid-shift",                           "style": "warning", "condition": "globalVars.ward_nurse_ko || globalVars.raval_ko" },
+          { "text": "ERNESTO BAUTISTA, NIGHT PORTER: Assaulted on shift",             "style": "warning", "condition": "globalVars.ernesto_bautista_ko" },
+          { "text": "HODAN WARSAME, NIGHT DOMESTIC: Assaulted on shift",              "style": "warning", "condition": "globalVars.hodan_warsame_ko" },
+          { "text": "NIGHT STAFF: Porter or domestic struck by the agent",             "style": "warning", "condition": "globalVars.night_staff_attacked && !globalVars.ernesto_bautista_ko && !globalVars.hodan_warsame_ko" },
           { "text": "PATIENT ASSAULTED: A ward patient struck by the agent",           "style": "warning", "condition": "globalVars.patient_assaulted" },
           { "text": "GRAHAM REEVES (badge SC-4471): Identified and detained — cell thread recovered", "style": "entry", "condition": "globalVars.insider_asset_arrested" },
           { "text": "GRAHAM REEVES (badge SC-4471): Walked out of the boardroom — no trace",  "style": "warning", "condition": "globalVars.insider_asset_escaped && !globalVars.insider_asset_arrested && !globalVars.night_security_supervisor_ko" },
@@ -615,6 +618,11 @@ boardroom_pin = "0417"
   },
 
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#c0bdb2" },
+<%# Office life (office_life/PLAN.md 3): presets for the break objects, and room tone in the
+    staff room and IT only (it also gates the boiler and copier sounds). %>
+  "officePresets": true,
+  "roomTone": true,
+  "roomToneTypes": { "room_hospital_staff": "kitchen", "room_hospital_office_it": "quiet_office" },
   "rooms": {
     "reception_lobby": {
       "type": "room_hospital_reception",
@@ -1363,6 +1371,38 @@ boardroom_pin = "0417"
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1200, "message": "What are you doing? That is a patient in a hospital bed. Whatever you think you saw, stop. Now." }
+            },
+<%# Office life (office_life/PLAN.md 2.2, 2.11): the night porter and the night domestic in the
+    staff room can be struck. An attack short of a knock-out sets night_staff_attacked (the
+    exchanges and the three break objects read it); each knock-out has its own global. Text
+    only, no clips. Appended at the end so no saved onceOnly handler index moves. %>
+            {
+              "eventPattern": "npc_attacked:ernesto_bautista",
+              "onceOnly": true,
+              "setGlobal": { "night_staff_attacked": true }
+            },
+            {
+              "eventPattern": "npc_attacked:hodan_warsame",
+              "onceOnly": true,
+              "setGlobal": { "night_staff_attacked": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:ernesto_bautista_ko",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "The night porter is down in the handover room. He has been walking bloods to the wards all night. That is not who we came for." }
+            },
+            {
+              "eventPattern": "global_variable_changed:hodan_warsame_ko",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "The night domestic is down in the handover room. She has been turning beds for the wards all night. That is not who we came for." }
+            },
+            {
+              "eventPattern": "global_variable_changed:night_staff_attacked",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "You just hit one of the night staff in the handover room. They are hospital workers, not the enemy. Leave them be." }
             }
           ]
         },
@@ -1418,24 +1458,33 @@ boardroom_pin = "0417"
 <%# Pass 4: the offer has to come BEFORE the console choice it is meant to change.
     It used to fire on initiate_backup_recovery, after the source was already locked
     in. Now it cuts in the first time the player uses the console once it can restore
-    (manifest in hand). The video call closes the console; the player reopens it with
-    Ghost's answer known. ghost_offer_made is set by the knot, so a reload can't replay it. %>
+    (manifest in hand). object_interacted fires just before the console opens, so the
+    console is open by the end of the call's 500 ms start delay; interrupt: true closes
+    it then and the call plays (without it the call would wait until the console
+    closed, after the choice). The player reopens the console with Ghost's answer
+    known. skipIfGlobal is the backstop: a decision made inside those 500 ms drops the
+    call. ghost_offer_made is set by the knot, so a reload can't replay it.
+    The second ask needs interrupt too, for the same reason. %>
             {
               "eventPattern": "object_interacted",
-              "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made",
+              "condition": "data.objectType === 'backup_recovery' && globalVars.restore_manifest_obtained === true && !globalVars.backup_restore_initiated && !globalVars.ghost_offer_made && !globalVars.ransom_decision_made",
               "onceOnly": true,
               "conversationMode": "video-call",
               "voiced": true,
-              "targetKnot": "on_recovery_console"
+              "targetKnot": "on_recovery_console",
+              "skipIfGlobal": "ransom_decision_made",
+              "interrupt": true
             },
             {
               "_comment": "Second and last ask, for a player who said 'I need time to think': the next console use.",
               "eventPattern": "object_interacted",
-              "condition": "data.objectType === 'backup_recovery' && globalVars.ghost_offer_made === true && !globalVars.ghost_deal_accepted && !globalVars.ghost_deal_refused && !globalVars.backup_restore_initiated",
+              "condition": "data.objectType === 'backup_recovery' && globalVars.ghost_offer_made === true && !globalVars.ghost_deal_accepted && !globalVars.ghost_deal_refused && !globalVars.backup_restore_initiated && !globalVars.ransom_decision_made",
               "onceOnly": true,
               "conversationMode": "video-call",
               "voiced": true,
-              "targetKnot": "on_console_again"
+              "targetKnot": "on_console_again",
+              "skipIfGlobal": "ransom_decision_made",
+              "interrupt": true
             },
             {
               "eventPattern": "global_variable_changed:offline_keys_recovered",
@@ -2059,7 +2108,7 @@ boardroom_pin = "0417"
           },
           "globalVarOnKO": "gary_ko",
           "taskOnKO": "talk_to_gary",
-          "observations": "Gary Whitlock has not moved from that chair since half ten. Four dead terminals in front of him and a printout of his own ignored emails on the desk, which tells you roughly how the night is going.",
+          "observations": "Gary Whitlock has not moved from that chair since half ten. Two dead terminals in front of him and a printout of his own ignored emails on the desk, which tells you roughly how the night is going.",
 <%# Pass 4 (review fix 19): picking his filing cabinet in front of him opens a short
     catch scene that can win him over. 360-degree LOS: it's a small office and he is
     sat in it. Once only, so the next attempt picks normally. Like Val's catch, it
@@ -2069,6 +2118,14 @@ boardroom_pin = "0417"
     sight, the steel filing cabinet beside his locked one hid a player picking it from
     the front (browser check, game 3180), and this catch is meant to always fire. %>
           "los": { "enabled": true, "range": 400, "angle": 360, "visualize": false, "occlusion": false },
+<%# Office life (office_life/PLAN.md 2.1): Gary sips from his own mug at his post and never
+    walks (the mug is his only source; IT's kettle is opted out). swivel false keeps his sight
+    beat as it is. After the conversation in which the keycard changes hands, the copier runs
+    once (appended, so the cabinet catch keeps its handler index). %>
+          "needsHome": "gary_mug",
+          "needsRooms": ["it_department"],
+          "swivel": false,
+          "needs": { "caffeine": { "initial": 60, "decayPerMin": 4, "urgentAt": 35 } },
           "eventMappings": [
             {
               "eventPattern": "lockpick_used_in_view",
@@ -2076,6 +2133,13 @@ boardroom_pin = "0417"
               "conversationMode": "person-chat",
               "condition": "!globalVars.accused_wrong_suspect && data.lockable.scenarioData.id === 'it_filing_cabinet'",
               "onceOnly": true
+            },
+            {
+              "eventPattern": "conversation_closed:gary_whitlock",
+              "condition": "globalVars.cover_burned === true && globalVars.gary_ko !== true",
+              "onceOnly": true,
+              "delayMs": 6000,
+              "needs": { "print": { "producer": "it_photocopier", "forget": true } }
             }
           ],
           "puzzle_graph_actions": [
@@ -2281,8 +2345,25 @@ boardroom_pin = "0417"
           "puzzle_graph_reveals": "ghost_planted_physical_foothold_six_weeks_before_attack"
         },
 <%# Room dressing (m02 only): conditional sprites on room_hospital_office_it. No puzzle role. %>
-        { "type": "kettle", "id": "it_department_kettle", "name": "Department Kettle", "takeable": false, "observations": "A limescaled kettle on the workbench, next to a tea-fund jar with 40p in it." },
-        { "type": "wet_floor_sign", "id": "it_department_wet_floor_sign", "name": "Wet Floor Sign", "takeable": false, "observations": "Under a brown-stained ceiling tile. The drip is slow and steady, and the Estates ticket for it is older than the sign." }
+        { "type": "kettle", "id": "it_department_kettle", "name": "Department Kettle", "takeable": false, "affordance": false, "observations": "A limescaled kettle on the workbench, next to a tea-fund jar with 40p in it." },
+        { "type": "wet_floor_sign", "id": "it_department_wet_floor_sign", "name": "Wet Floor Sign", "takeable": false, "observations": "Under a brown-stained ceiling tile. The drip is slow and steady, and the Estates ticket for it is older than the sign." },
+<%# Office life (office_life/PLAN.md 2.1, 3, 3.1): Gary's mug is his only caffeine source and
+    an at-post job (useFrom aims at his body centre, so he never moves). The copier runs once,
+    by command, after the keycard conversation; the page on its tray is optional flavour. The
+    page is declared last, with an explicit position, since IT's notes sprites are claimed. %>
+        { "type": "dirty_mugs1", "id": "gary_mug", "name": "Gary's Mug", "takeable": false,
+          "position": { "x": 5.6, "y": 4.2 },
+          "observations": "Stone cold. He drinks it anyway.",
+          "private": true, "owner": ["gary_whitlock"],
+          "affordance": { "satisfies": "caffeine", "restores": 30, "useSeconds": 4, "capacity": 1,
+                          "useSound": "drink_gulp", "seat": "stand", "useFrom": { "dx": 0.5, "dy": 1.45 } } },
+        { "type": "photocopier", "id": "it_photocopier", "name": "Photocopier", "takeable": false,
+          "observations": "A floor-standing copier. It needs no network, which makes it one of the few things in here still working." },
+        { "type": "notes", "id": "it_copier_page", "name": "Downtime Fault Log", "takeable": true, "readable": true,
+          "position": { "x": 6.92, "y": 6.55 },
+          "text": "ST. CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG\n\nUse while clinical systems are unavailable.\nOne line per fault. Hand to IT at handover.\n\nTIME | WARD | EQUIPMENT / SYSTEM | FAULT | REPORTED BY\n-----+------+--------------------+-------+------------\n     |      |                    |       |\n     |      |                    |       |\n     |      |                    |       |",
+          "observations": "A blank downtime fault log. The only thing the copier has printed all night.",
+          "outputOf": "it_photocopier", "revealOnGlobal": "it_copier_page_shown" }
       ]
     },
 
@@ -3137,7 +3218,7 @@ boardroom_pin = "0417"
 <%# Room dressing (m02 only): conditional sprites on room_hospital_meeting, so this ordinary
     conference room reads differently from sis01's major incident room. No puzzle role. %>
         { "type": "coat_stand", "id": "conference_coat_stand", "name": "Coat Stand", "takeable": false, "observations": "A coat stand by the wall, with one dark overcoat on it." },
-        { "type": "water_cooler", "id": "conference_water_cooler", "name": "Water Cooler", "takeable": false, "observations": "Half full. The paper cups ran out some time ago." }
+        { "type": "water_cooler", "id": "conference_water_cooler", "name": "Water Cooler", "takeable": false, "affordance": false, "observations": "Half full. The paper cups ran out some time ago." }
       ]
     },
 
@@ -3386,7 +3467,16 @@ boardroom_pin = "0417"
     "staff_room": {
       "type": "room_hospital_staff",
       "chatBackground": "assets/backgrounds/rooms/m02_staff_room_blended.png",
-      "lighting": { "mode": "motion" },
+<%# Night handover room (office_life/PLAN.md, lighting): motion, so it starts lit while the night
+    staff wait here. No flicker: the player crosses this hub and reads the snag list here.
+    Small indicator dots on the break kit (microwave clock, boiler standby). %>
+      "lighting": {
+        "mode": "motion",
+        "emitters": {
+          "staff_microwave": { "color": "#7dffa0", "radius": 4, "intensity": 0.8, "effect": null, "above": true, "offsetX": 7, "offsetY": 0 },
+          "staff_boiler": { "color": "#ffb050", "radius": 5, "intensity": 0.8, "effect": null, "above": true, "offsetX": 6, "offsetY": 11 }
+        }
+      },
       "dimensions": {
         "width": 10,
         "height": 10
@@ -3398,7 +3488,95 @@ boardroom_pin = "0417"
         "west": "conference_room",
         "east": "it_department"
       },
-      "npcs": [],
+<%# Office life (office_life/PLAN.md 2.2): two night staff waiting for radio calls between runs.
+    Ambient: no story duty, nothing held, no clue, no task. Each has their own atlas, talk and
+    viseme sheets and headshot under their id (stage 5; the stage 4 stand-ins were
+    male_telecom_v2 and female_telecom_v2, still on validSprites). The hostile leash keeps a chase inside
+    this room. %>
+      "npcs": [
+        {
+          "id": "ernesto_bautista",
+          "displayName": "Ernesto Bautista",
+          "npcType": "person",
+          "position": { "x": 6.97, "y": 4.85 },
+          "spriteSheet": "ernesto_bautista",
+          "spriteTalk": "assets/characters/ernesto_bautista_talk.png",
+          "spriteVisemes": "assets/characters/ernesto_bautista_visemes.png",
+          "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_ernesto_bautista.json",
+          "currentKnot": "start",
+          "voice": { "name": "Algieba", "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.", "language": "en-GB" },
+          "globalVarOnKO": "ernesto_bautista_ko",
+          "behavior": { "hostile": { "leash": true } },
+<%# Office life (office_life/PLAN.md 2.5 to 2.7): breaks at the boiler and the cooler, shared
+    with Hodan; the microwave alone. Mapped breaks: entering the staff room, the burn, leaving
+    Kim's office, and a cooler break as the player arrives from the ward. The couplings bring
+    the partner to the same object. Every mapping here listens only once the staff room has
+    loaded (npc-lazy-loader.js registers a room's NPCs as it loads). The staff room is IT's only
+    connection, so it has always loaded before the burn; if it had not, mapping 1 on the next
+    entry starts a break and the burn exchange, first in Hodan's list, plays then. %>
+          "needsRooms": ["staff_room"],
+          "needsCompany": { "groups": ["night_staff"] },
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Lab's quiet. That never lasts.", "Thirty years. Never seen it like this.", "Bloods all night. All on foot.", "Tea's stewed. Still hot, mind.", "Same mug since ninety-six.", "Third wheelchair I've chased tonight."],
+            "cooler": ["Cold in that corridor tonight.", "Last cone's always the one with a hole.", "Lift's out again. Stairs it is.", "Water's free, at least."]
+          },
+          "needs": {
+            "caffeine": { "initial": 45, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
+            "thirst": { "initial": 65, "decayPerMin": 3, "urgentAt": 30 },
+            "hunger": { "initial": 70, "decayPerMin": 2, "urgentAt": 30 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:staff_room", "cooldown": 150000, "delayMs": 2000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:gary_whitlock", "condition": "globalVars.cover_burned === true", "onceOnly": true, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:dr_sarah_kim", "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:office_corridor", "condition": "data.previousRoom === 'ward_hall'", "fireOnlyWhenLoaded": true, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'hodan_warsame'", "needs": { "set": { "thirst": 20 } } }
+          ],
+          "observations": "The night porter. A two-way radio on his belt and the soles of his shoes worn nearly through."
+        },
+        {
+          "id": "hodan_warsame",
+          "displayName": "Hodan Warsame",
+          "npcType": "person",
+          "position": { "x": 4.2, "y": 6.1 },
+          "spriteSheet": "hodan_warsame",
+          "spriteTalk": "assets/characters/hodan_warsame_talk.png",
+          "spriteVisemes": "assets/characters/hodan_warsame_visemes.png",
+          "storyPath": "scenarios/m02_ransomed_trust/ink/m02_npc_hodan_warsame.json",
+          "currentKnot": "start",
+          "voice": { "name": "Laomedeia", "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.", "language": "en-GB" },
+          "globalVarOnKO": "hodan_warsame_ko",
+          "behavior": { "hostile": { "leash": true } },
+<%# Office life (office_life/PLAN.md 2.5 to 2.7): boiler and cooler breaks, coupled to Ernesto's. %>
+          "needsRooms": ["staff_room"],
+          "needsCompany": { "groups": ["night_staff"] },
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Four beds turned. Linen's run out.", "Every bed I turn, they want two.", "Matron's lot want it done yesterday.", "Can't feel my hands. Mop water's cold.", "Somebody's had my good mop again.", "Two minutes. Then the stairs again."],
+            "cooler": ["This cooler's warmer than the sink.", "My feet have given up, Ernesto.", "Bed manager's on my radio every hour.", "Floor's done till they call me."]
+          },
+<%# Exchanges (office_life/PLAN.md 6): read in order, the first unheard one whose gates hold
+    plays when the pair meet with the first line's speaker in earshot (Hodan for burned and cleared, Ernesto for the paper night). The knots are in her ink. %>
+          "exchanges": [
+            { "with": "ernesto_bautista", "knot": "night_watch_burned", "requireGlobal": { "cover_burned": true, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false } },
+            { "with": "ernesto_bautista", "knot": "night_watch_cleared", "requireGlobal": { "cover_restored": true, "heard_night_watch_burned": true, "attacked_guard": false, "guard_knocked_out": false, "night_staff_attacked": false, "gary_ko": false, "dr_kim_ko": false, "patient_bed4_deceased": false, "insider_asset_arrested": false, "night_security_supervisor_ko": false, "insider_asset_escaped": false, "insider_ambushed": false } },
+            { "with": "ernesto_bautista", "knot": "night_watch_paper", "requireGlobal": { "night_staff_attacked": false, "patient_bed4_deceased": false } }
+          ],
+          "needs": {
+            "caffeine": { "initial": 65, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
+            "thirst": { "initial": 65, "decayPerMin": 3, "urgentAt": 30 }
+          },
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:staff_boiler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_use_started:staff_cooler", "condition": "data.npcId === 'ernesto_bautista'", "needs": { "set": { "thirst": 20 } } },
+<%# m8 (REVIEW_STAGE5_R1): the one moment the room's people work against the scene. Hodan sits at the clerk's desk; a one-off line when the laptop is taken. Event name is the item type. 37 characters, under the 40 bubble limit. %>
+            { "eventPattern": "item_picked_up:workstation", "condition": "data.itemId === 'ward_clerk_laptop' && !globalVars.night_staff_attacked && !globalVars.hodan_warsame_ko", "onceOnly": true, "bark": "Clerk'll want that back. Just saying.", "barkDelay": 800 }
+          ],
+          "observations": "The night domestic. A radio clipped to her tabard and a bed list written on the back of something else."
+        }
+      ],
       "objects": [
         {
           "type": "notes",
@@ -3459,7 +3637,26 @@ boardroom_pin = "0417"
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "security_office",
           "puzzle_graph_optional": true
-        }
+        },
+<%# Office life (office_life/PLAN.md 2.5, 2.8, 3): the night staff's break objects, claiming the
+    drawn sprites (no position). offWhen stops every use after an attack on either of them.
+    overhearRadius 360 covers the whole room, so a pool line or exchange counts as heard from
+    any floor cell here. The cooler's useFrom is the measured cell (office_life/STAGE4_LIVE.md 5):
+    approach (276, -12), second user (244, -12), 160 px or more from every doorway. %>
+        { "type": "hot_water_boiler", "id": "staff_boiler", "name": "Hot Water Boiler", "takeable": false,
+          "officeType": "kettle", "offWhen": "night_staff_attacked",
+          "observations": "A wall-mounted boiler over the sink. Somebody has written NO KETTLES on the tiles beside it.",
+          "affordance": { "capacity": 2, "chatter": "coffee", "queue": false, "useSeconds": 50, "restores": 40,
+                          "overhearRadius": 360, "useFrom": { "dx": 0, "dy": 2.5 } } },
+        { "type": "water_cooler", "id": "staff_cooler", "name": "Water Cooler", "takeable": false,
+          "offWhen": "night_staff_attacked",
+          "observations": "A water cooler by the door, a stack of paper cones on top.",
+          "affordance": { "capacity": 2, "chatter": "cooler", "queue": false, "useSeconds": 25, "restores": 40,
+                          "overhearRadius": 360, "useFrom": { "dx": 0, "dy": 1 } } },
+        { "type": "microwave", "id": "staff_microwave", "name": "Microwave", "takeable": false,
+          "officeType": "microwave", "offWhen": "night_staff_attacked",
+          "observations": "The staff room microwave. The turntable squeaks.",
+          "affordance": { "useFrom": { "dx": 0.5, "dy": 1.5 } } }
       ]
     },
 
@@ -3608,6 +3805,14 @@ boardroom_pin = "0417"
 
   "globalVariables": {
     "player_name": "Agent 0x00",
+<%# Office life (office_life/PLAN.md 7): the night staff's KO and attack globals. %>
+    "ernesto_bautista_ko": false,
+    "hodan_warsame_ko": false,
+    "night_staff_attacked": false,
+    "it_copier_page_shown": false,
+    "heard_night_watch_burned": false,
+    "heard_night_watch_cleared": false,
+    "heard_night_watch_paper": false,
     "briefing_played": false,
     "mission_started": false,
 <%# ransomware_deployed gates the ransomware_display lockType. Without it the five

@@ -77,6 +77,7 @@ const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
 const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
 const { createResponseCapture } = require('./response-capture');
+const endingGuard = require('./ending-overlay-guard');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -339,7 +340,9 @@ const vmSteps = createVmSteps({
     });
     // openTasks matches the objectives panel (locked tasks hidden); see brief-tasks.js
     const { recentGlobals, ...rest } = b;
-    return { ...rest, ...briefTasks(_aims), recentGlobals };
+    // The ending-check overlay is not in __test's blockingUi; report it so it is not missed.
+    const overlay = await page.evaluate(endingGuard.describeEndingOverlayInPage).catch(() => null);
+    return { ...rest, blockingUi: endingGuard.mergeBlockingUi(rest.blockingUi, overlay), ...briefTasks(_aims), recentGlobals };
   }
 
   /**
@@ -624,6 +627,10 @@ const vmSteps = createVmSteps({
       return r;
     },
     pressKey: async (c) => {
+      if (endingGuard.isEscapeKey(c.key)
+          && await page.evaluate(id => !!document.getElementById(id), endingGuard.ENDING_OVERLAY_ID)) {
+        return { ...endingGuard.REFUSAL };
+      }
       let r = await page.evaluate(k => window.__test.pressKey(k), c.key);
       // The "Continue?" title card is a minigame that takes the keyboard (Space, Enter or a click),
       // but window.__test.pressKey refuses any key while a minigame owns the screen ('minigame-active').
@@ -675,6 +682,10 @@ const vmSteps = createVmSteps({
     },
 
     mg: async (c) => {
+      if (endingGuard.isEscapeStyleMg(c.action, c.args)
+          && await page.evaluate(id => !!document.getElementById(id), endingGuard.ENDING_OVERLAY_ID)) {
+        return { ...endingGuard.REFUSAL };
+      }
       // Containers render "Loading contents..." for a beat. A getState during
       // that window reports an empty container, and a caller concludes the
       // safe is empty. Wait it out first.

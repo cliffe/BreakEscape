@@ -1,15 +1,11 @@
 {
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
   "scenario": "m02_ransomed_trust",
-  "tool": "tools/office_life/lock_key_baseline.rb (interim V9)",
-  "criticalPath": "Talk Your Way In → Get Into IT → Somebody Pulled Your Booking → Turn Their Backdoor Around → Bring The Wards Back",
   "graph": {
     "lockNodes": [
       {
-        "id": "door_it_department",
-        "optional": false
-      },
-      {
-        "id": "door_server_room",
+        "id": "cto_workstation_encrypted",
         "optional": false
       },
       {
@@ -17,11 +13,39 @@
         "optional": false
       },
       {
+        "id": "door_it_department",
+        "optional": false
+      },
+      {
         "id": "door_security_office",
         "optional": false
       },
       {
-        "id": "lock_it_filing_cabinet",
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "ehr_terminal_offline",
+        "optional": false
+      },
+      {
+        "id": "entropy_staging_cache",
+        "optional": false
+      },
+      {
+        "id": "gary_s_workstation",
+        "optional": false
+      },
+      {
+        "id": "lock_database_backup_accessible",
+        "optional": false
+      },
+      {
+        "id": "lock_dr_kim_safe",
+        "optional": false
+      },
+      {
+        "id": "lock_ehr_terminal_ward",
         "optional": false
       },
       {
@@ -29,11 +53,43 @@
         "optional": false
       },
       {
-        "id": "lock_reception_terminal",
+        "id": "lock_entropy_field_case",
         "optional": false
       },
       {
-        "id": "reception_workstation_encrypted",
+        "id": "lock_entropy_staging_cache",
+        "optional": false
+      },
+      {
+        "id": "lock_gary_workstation",
+        "optional": false
+      },
+      {
+        "id": "lock_ghost_lore_unlocked",
+        "optional": false
+      },
+      {
+        "id": "lock_hospital_recovery_console",
+        "optional": false
+      },
+      {
+        "id": "lock_infected_terminal",
+        "optional": false
+      },
+      {
+        "id": "lock_it_filing_cabinet",
+        "optional": false
+      },
+      {
+        "id": "lock_kim_office_terminal",
+        "optional": false
+      },
+      {
+        "id": "lock_press_terminal",
+        "optional": false
+      },
+      {
+        "id": "lock_proftpd_exploitation_unlocked",
         "optional": false
       },
       {
@@ -45,67 +101,7 @@
         "optional": false
       },
       {
-        "id": "lock_ehr_terminal_ward",
-        "optional": false
-      },
-      {
-        "id": "ehr_terminal_offline",
-        "optional": false
-      },
-      {
-        "id": "lock_infected_terminal",
-        "optional": false
-      },
-      {
-        "id": "lock_gary_workstation",
-        "optional": false
-      },
-      {
-        "id": "gary_s_workstation",
-        "optional": false
-      },
-      {
-        "id": "lock_vm_launcher_rooting_for_a_win",
-        "optional": false
-      },
-      {
-        "id": "lock_hospital_recovery_console",
-        "optional": false
-      },
-      {
-        "id": "lock_entropy_field_case",
-        "optional": false
-      },
-      {
-        "id": "sealed_equipment_case",
-        "optional": true
-      },
-      {
-        "id": "lock_entropy_staging_cache",
-        "optional": false
-      },
-      {
-        "id": "entropy_staging_cache",
-        "optional": false
-      },
-      {
-        "id": "pin_locked_safe",
-        "optional": false
-      },
-      {
-        "id": "lock_kim_office_terminal",
-        "optional": false
-      },
-      {
-        "id": "cto_workstation_encrypted",
-        "optional": false
-      },
-      {
-        "id": "lock_dr_kim_safe",
-        "optional": false
-      },
-      {
-        "id": "lock_press_terminal",
+        "id": "lock_reception_terminal",
         "optional": false
       },
       {
@@ -113,25 +109,33 @@
         "optional": false
       },
       {
+        "id": "lock_vm_launcher_rooting_for_a_win",
+        "optional": false
+      },
+      {
+        "id": "pin_locked_safe",
+        "optional": false
+      },
+      {
+        "id": "reception_workstation_encrypted",
+        "optional": false
+      },
+      {
+        "id": "sealed_equipment_case",
+        "optional": true
+      },
+      {
         "id": "security_desk_terminal_encrypted",
-        "optional": false
-      },
-      {
-        "id": "lock_proftpd_exploitation_unlocked",
-        "optional": false
-      },
-      {
-        "id": "lock_database_backup_accessible",
-        "optional": false
-      },
-      {
-        "id": "lock_ghost_lore_unlocked",
         "optional": false
       }
     ],
     "keyNodes": [
       {
-        "id": "npc_bernie_nwosu",
+        "id": "bank_staff_lanyard",
+        "optional": true
+      },
+      {
+        "id": "entropy_key_material",
         "optional": false
       },
       {
@@ -139,16 +143,32 @@
         "optional": false
       },
       {
-        "id": "npc_sister_doyle",
+        "id": "npc_bernie_nwosu",
         "optional": false
       },
       {
-        "id": "bank_staff_lanyard",
-        "optional": true
+        "id": "npc_dr_sarah_kim",
+        "optional": false
       },
       {
         "id": "npc_gary_whitlock",
         "optional": false
+      },
+      {
+        "id": "npc_sister_doyle",
+        "optional": false
+      },
+      {
+        "id": "npc_val_okonkwo",
+        "optional": false
+      },
+      {
+        "id": "offline_backup_encryption_keys",
+        "optional": false
+      },
+      {
+        "id": "security_office_key",
+        "optional": true
       },
       {
         "id": "server_room_keycard",
@@ -159,29 +179,24 @@
         "optional": true
       },
       {
-        "id": "entropy_key_material",
-        "optional": false
-      },
-      {
-        "id": "offline_backup_encryption_keys",
-        "optional": false
-      },
-      {
-        "id": "npc_dr_sarah_kim",
-        "optional": false
-      },
-      {
-        "id": "npc_val_okonkwo",
-        "optional": false
-      },
-      {
-        "id": "security_office_key",
-        "optional": true
-      },
-      {
         "id": "wrapped_contractor_lanyard",
         "optional": true
       }
+    ],
+    "roomNodes": [
+      "conference_room",
+      "dr_kim_office",
+      "emergency_equipment_storage",
+      "hospital_ward",
+      "it_department",
+      "office_corridor",
+      "reception_lobby",
+      "security_office",
+      "server_room",
+      "staff_room",
+      "ward_approach",
+      "ward_hall",
+      "ward_vestibule"
     ],
     "edges": [
       [
@@ -822,160 +837,172 @@
       "id": null,
       "lockType": "pin",
       "locked": true,
-      "requirementHash": "c53a2351fbd5140a"
+      "requirementHash": "d2b825a60bf3ae2d",
+      "requiresHash": "67b39e9b6b39bf5b"
     },
     {
       "path": "/rooms/dr_kim_office/objects[dr_kim_safe]",
       "id": "dr_kim_safe",
       "lockType": "pin",
       "locked": true,
-      "requirementHash": "3883e34ec2528014"
+      "requirementHash": "fbb7ba604a046e67",
+      "requiresHash": "3883e34ec2528014"
     },
     {
       "path": "/rooms/dr_kim_office/objects[kim_office_terminal]",
       "id": "kim_office_terminal",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/emergency_equipment_storage/objects[emergency_storage_safe]",
       "id": "emergency_storage_safe",
       "lockType": "pin",
       "locked": true,
-      "requirementHash": "3883e34ec2528014"
+      "requirementHash": "fbb7ba604a046e67",
+      "requiresHash": "3883e34ec2528014"
     },
     {
       "path": "/rooms/hospital_ward/objects[ehr_terminal_ward]",
       "id": "ehr_terminal_ward",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/it_department",
       "id": null,
       "lockType": "key",
       "locked": true,
-      "requirementHash": "21ad4376eb58bcb4"
+      "requirementHash": "cebab322566dafef",
+      "requiresHash": "3cd8c3a4d29967c4"
     },
     {
       "path": "/rooms/it_department/objects[gary_workstation]",
       "id": "gary_workstation",
       "lockType": "password",
       "locked": true,
-      "requirementHash": "5c1fe8898f39e908"
+      "requirementHash": "a3bf85c9d78a88be",
+      "requiresHash": "5c1fe8898f39e908"
     },
     {
       "path": "/rooms/it_department/objects[infected_terminal]",
       "id": "infected_terminal",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/it_department/objects[it_filing_cabinet]",
       "id": "it_filing_cabinet",
       "lockType": "key",
       "locked": true,
-      "requirementHash": "a560ae87d6be0482"
+      "requirementHash": "99834eeed9332ab3",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/reception_lobby/objects[reception_kiosk_1]",
       "id": "reception_kiosk_1",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/reception_lobby/objects[reception_kiosk_2]",
       "id": "reception_kiosk_2",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/reception_lobby/objects[reception_terminal]",
       "id": "reception_terminal",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/security_office",
       "id": null,
       "lockType": "key",
       "locked": true,
-      "requirementHash": "be44d2576367fc9b"
+      "requirementHash": "1009dd3c466ed063",
+      "requiresHash": "158ca7ad31021cf6"
     },
     {
       "path": "/rooms/security_office/objects[security_desk_terminal]",
       "id": "security_desk_terminal",
       "lockType": "ransomware_display",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "832600875ca7c35a",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/server_room",
       "id": null,
       "lockType": "rfid",
       "locked": true,
-      "requirementHash": "04cf75ab61a6a2b5"
+      "requirementHash": "1c845f8981c4ea81",
+      "requiresHash": "f4bdbe98c5e79ac2"
     },
     {
       "path": "/rooms/server_room/objects[entropy_field_case]",
       "id": "entropy_field_case",
       "lockType": "key",
       "locked": true,
-      "requirementHash": "bb09799688356379"
+      "requirementHash": "726e8633f6d83e1e",
+      "requiresHash": "44136fa355b3678a"
     },
     {
       "path": "/rooms/server_room/objects[entropy_staging_cache]",
       "id": "entropy_staging_cache",
       "lockType": "flag",
       "locked": true,
-      "requirementHash": "44136fa355b3678a"
+      "requirementHash": "12b7e73d44839ff4",
+      "requiresHash": "44136fa355b3678a"
     }
   ],
-  "gatesAccessWearable": [
+  "gates": [
 
   ],
-  "objectives": [
+  "aims": [
     {
       "aimId": "infiltrate_hospital",
       "order": 0,
-      "status": "active",
+      "optional": false,
       "unlockCondition": null,
       "tasks": [
         {
           "taskId": "arrive_at_hospital",
           "type": "enter_room",
-          "targetRoom": "reception_lobby",
-          "status": "active"
+          "targetRoom": "reception_lobby"
         },
         {
           "taskId": "sign_in_at_reception",
           "type": "npc_conversation",
-          "targetNPC": "receptionist",
-          "status": "active"
+          "targetNPC": "receptionist"
         },
         {
           "taskId": "meet_dr_kim",
           "type": "npc_conversation",
-          "targetNPC": "dr_sarah_kim",
-          "status": "active"
+          "targetNPC": "dr_sarah_kim"
         },
         {
           "taskId": "assess_the_ward",
           "type": "enter_room",
-          "targetRoom": "hospital_ward",
-          "status": "active"
+          "targetRoom": "hospital_ward"
         },
         {
           "taskId": "talk_to_ward_nurse",
           "type": "npc_conversation",
           "targetNPC": "ward_nurse",
-          "status": "active",
           "optional": true
         }
       ]
@@ -983,7 +1010,7 @@
     {
       "aimId": "access_it_systems",
       "order": 1,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "aimCompleted": "infiltrate_hospital"
       },
@@ -991,35 +1018,29 @@
         {
           "taskId": "open_it_department",
           "type": "unlock_room",
-          "targetRoom": "it_department",
-          "status": "active"
+          "targetRoom": "it_department"
         },
         {
           "taskId": "talk_to_gary",
           "type": "npc_conversation",
-          "targetNPC": "gary_whitlock",
-          "status": "active"
+          "targetNPC": "gary_whitlock"
         },
         {
           "taskId": "obtain_password_hints",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "decode_ransomware_note",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "learn_about_scapegoating",
           "type": "manual",
-          "status": "locked",
           "optional": true
         },
         {
           "taskId": "investigate_gary_office",
           "type": "manual",
-          "status": "active",
           "optional": true
         }
       ]
@@ -1027,33 +1048,30 @@
     {
       "aimId": "cover_compromised",
       "order": 2,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "globalVariable": "cover_burned"
       },
       "tasks": [
         {
           "taskId": "cover_burned_notified",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "regain_freedom_of_movement",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "access_server_room",
           "type": "enter_room",
-          "targetRoom": "server_room",
-          "status": "active"
+          "targetRoom": "server_room"
         }
       ]
     },
     {
       "aimId": "exploit_entropy_backdoor",
       "order": 3,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "aimCompleted": "cover_compromised"
       },
@@ -1065,9 +1083,6 @@
             "flag_station_dropsite:hospital_backup_server-flag3"
           ],
           "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
           "puzzle_graph_unlocks": "emergency_storage_safe"
         },
         {
@@ -1077,9 +1092,6 @@
             "flag_station_dropsite:hospital_backup_server-flag1"
           ],
           "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "active",
           "puzzle_graph_unlocks": "proftpd_exploitation_unlocked"
         },
         {
@@ -1089,9 +1101,6 @@
             "flag_station_dropsite:hospital_backup_server-flag2"
           ],
           "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "locked",
           "puzzle_graph_unlocks": "database_backup_accessible"
         },
         {
@@ -1101,9 +1110,6 @@
             "flag_station_dropsite:hospital_backup_server-flag4"
           ],
           "targetCount": 1,
-          "currentCount": 0,
-          "showProgress": true,
-          "status": "locked",
           "puzzle_graph_unlocks": [
             "ghost_lore_unlocked",
             "entropy_staging_cache"
@@ -1114,47 +1120,43 @@
     {
       "aimId": "unmask_inside_asset",
       "order": 4,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "globalVariable": "insider_evidence_partial"
       },
       "tasks": [
         {
           "taskId": "unmask_gather_evidence",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "unmask_db_window",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         }
       ]
     },
     {
       "aimId": "identify_inside_asset",
       "order": 5,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "globalVariable": "insider_badge_id_found"
       },
       "tasks": [
         {
           "taskId": "unmask_ghost_badge",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "unmask_identify",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         }
       ]
     },
     {
       "aimId": "recover_offline_keys",
       "order": 6,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "globalVariable": "escrow_safe_known"
       },
@@ -1162,56 +1164,49 @@
         {
           "taskId": "locate_safe",
           "type": "enter_room",
-          "targetRoom": "emergency_equipment_storage",
-          "status": "active"
+          "targetRoom": "emergency_equipment_storage"
         },
         {
           "taskId": "gather_pin_clues",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "crack_safe_pin",
           "type": "unlock_object",
-          "targetObject": "emergency_storage_safe",
-          "status": "active"
+          "targetObject": "emergency_storage_safe"
         }
       ]
     },
     {
       "aimId": "restore_hospital_systems",
       "order": 7,
-      "status": "locked",
+      "optional": false,
       "unlockCondition": {
         "aimCompleted": "exploit_entropy_backdoor"
       },
       "tasks": [
         {
           "taskId": "initiate_backup_recovery",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "make_ransom_decision",
-          "type": "manual",
-          "status": "active"
+          "type": "manual"
         },
         {
           "taskId": "decide_hospital_exposure",
-          "type": "manual",
-          "status": "locked"
+          "type": "manual"
         },
         {
           "taskId": "hear_debrief",
-          "type": "custom",
-          "status": "active"
+          "type": "custom"
         }
       ]
     }
   ],
   "concludeRequires": [
     {
-      "path": "/objectives[7]",
+      "path": "/objectives[restore_hospital_systems]",
       "concludeRequires": {
         "tasksCompleted": [
           "submit_ssh_flag",
@@ -1221,5 +1216,469 @@
         ]
       }
     }
+  ],
+  "placement": {
+    "agent_0x99": "reception_lobby",
+    "agent_nightshade": "reception_lobby",
+    "bank_staff_lanyard": "hospital_ward",
+    "closing_debrief_trigger": "reception_lobby",
+    "combined_recovery": "server_room",
+    "conference_coat_stand": "conference_room",
+    "conference_water_cooler": "conference_room",
+    "contractor_lanyard": "staff_room",
+    "cyberchef_workstation": "server_room",
+    "director_netherton": "reception_lobby",
+    "dr_kim_safe": "dr_kim_office",
+    "dr_sarah_kim": "dr_kim_office",
+    "ehr_terminal_ward": "hospital_ward",
+    "emergency_storage_safe": "emergency_equipment_storage",
+    "emergency_supply_cabinet": "emergency_equipment_storage",
+    "entropy": "server_room",
+    "entropy_asset_tag": "server_room",
+    "entropy_field_case": "server_room",
+    "entropy_key_material": "server_room",
+    "entropy_staging_cache": "server_room",
+    "equipment_deployment_log": "server_room",
+    "escrow": "server_room",
+    "estates_audit_snag_list": "staff_room",
+    "flag_station_dropsite": "server_room",
+    "gary_contractor_lanyard": "it_department",
+    "gary_desk_printouts": "it_department",
+    "gary_recovery_crib": "server_room",
+    "gary_vindication_email": "it_department",
+    "gary_whitlock": "it_department",
+    "gary_workstation": "it_department",
+    "ghost": "reception_lobby",
+    "ghost_keys": "server_room",
+    "ghost_manifesto": "server_room",
+    "ghost_terminal_device": "it_department",
+    "handover_whiteboard": "staff_room",
+    "hospital_recovery_console": "server_room",
+    "infected_terminal": "it_department",
+    "it_department_kettle": "it_department",
+    "it_department_wet_floor_sign": "it_department",
+    "it_filing_cabinet": "it_department",
+    "kim_deferral_reply": "it_department",
+    "kim_office_terminal": "dr_kim_office",
+    "kim_statement": "dr_kim_office",
+    "m02_cyberchef_field_guide": "reception_lobby",
+    "m02_exploitation_field_guide": "reception_lobby",
+    "m02_infoleak_field_note": "reception_lobby",
+    "m02_lockpicking_field_guide": "reception_lobby",
+    "m02_privilege_escalation_field_guide": "reception_lobby",
+    "m02_scanning_exploitation_field_guide": "reception_lobby",
+    "m02_scanning_field_guide": "reception_lobby",
+    "m02_ssh_bruteforce_field_guide": "reception_lobby",
+    "m02_vulnerability_field_guide": "reception_lobby",
+    "manifest": "server_room",
+    "meet_dr_kim": "dr_kim_office",
+    "night_security_supervisor": "conference_room",
+    "offline_backup_encryption_keys": "emergency_equipment_storage",
+    "offline_keys_only": "server_room",
+    "opening_briefing_cutscene": "reception_lobby",
+    "operator_site_note": "server_room",
+    "password_sticky_note": "it_department",
+    "patient_bed2": "hospital_ward",
+    "patient_bed4": "hospital_ward",
+    "patient_bed5": "hospital_ward",
+    "pin_cracker": "server_room",
+    "press_terminal": "conference_room",
+    "press_terminal_system": "conference_room",
+    "ransom_payment": "server_room",
+    "reception_kiosk_1": "reception_lobby",
+    "reception_kiosk_2": "reception_lobby",
+    "reception_terminal": "reception_lobby",
+    "reception_visitor_log": "reception_lobby",
+    "receptionist": "reception_lobby",
+    "roaming_ward_nurse": "hospital_ward",
+    "security_desk_terminal": "security_office",
+    "security_guard_patrol": "office_corridor",
+    "sign_in_at_reception": "reception_lobby",
+    "social_engineer_gary": "it_department",
+    "storage_first_aid_kit": "emergency_equipment_storage",
+    "storage_nitrile_gloves": "emergency_equipment_storage",
+    "storage_stock_check": "emergency_equipment_storage",
+    "talk_to_ward_nurse": "hospital_ward",
+    "val_notebook": "office_corridor",
+    "val_opens_office": "office_corridor",
+    "verified_restore_manifest": "server_room",
+    "vestibule_appointment_card": "ward_vestibule",
+    "vm_launcher_rooting_for_a_win": "server_room",
+    "ward_clerk_laptop": "staff_room",
+    "ward_manual_bp_cuff": "hospital_ward",
+    "ward_nurse": "hospital_ward",
+    "ward_paper_obs_rack": "hospital_ward"
+  },
+  "layout": {
+    "start": "reception_lobby",
+    "adj": {
+      "conference_room": [
+        "staff_room"
+      ],
+      "dr_kim_office": [
+        "staff_room"
+      ],
+      "emergency_equipment_storage": [
+        "hospital_ward"
+      ],
+      "hospital_ward": [
+        "emergency_equipment_storage",
+        "ward_approach",
+        "ward_hall"
+      ],
+      "it_department": [
+        "staff_room"
+      ],
+      "office_corridor": [
+        "security_office",
+        "staff_room",
+        "ward_hall"
+      ],
+      "reception_lobby": [
+        "ward_vestibule"
+      ],
+      "security_office": [
+        "office_corridor",
+        "server_room"
+      ],
+      "server_room": [
+        "security_office"
+      ],
+      "staff_room": [
+        "conference_room",
+        "dr_kim_office",
+        "it_department",
+        "office_corridor"
+      ],
+      "ward_approach": [
+        "hospital_ward",
+        "ward_vestibule"
+      ],
+      "ward_hall": [
+        "hospital_ward",
+        "office_corridor"
+      ],
+      "ward_vestibule": [
+        "reception_lobby",
+        "ward_approach"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "conference_room",
+      "task decide_hospital_exposure (ink of 'press_terminal_system')",
+      "press_terminal_system"
+    ],
+    [
+      "conference_room",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "conference_room",
+      "task unmask_identify (ink of 'night_security_supervisor')",
+      "night_security_supervisor"
+    ],
+    [
+      "conference_room",
+      "task unmask_identify (mapping 'global_variable_changed:insider_identified')",
+      null
+    ],
+    [
+      "dr_kim_office",
+      "task decode_ransomware_note (mapping 'global_variable_changed:decoded_ransomware_note')",
+      null
+    ],
+    [
+      "dr_kim_office",
+      "task gather_pin_clues (mapping 'global_variable_changed:found_safe_pin_clue')",
+      null
+    ],
+    [
+      "dr_kim_office",
+      "task hear_debrief (mapping 'room_entered:dr_kim_office')",
+      null
+    ],
+    [
+      "dr_kim_office",
+      "task meet_dr_kim",
+      "dr_sarah_kim"
+    ],
+    [
+      "dr_kim_office",
+      "task meet_dr_kim (ink of 'dr_sarah_kim')",
+      "dr_sarah_kim"
+    ],
+    [
+      "dr_kim_office",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "emergency_equipment_storage",
+      "task crack_safe_pin",
+      "emergency_storage_safe"
+    ],
+    [
+      "emergency_equipment_storage",
+      "task hear_debrief (mapping 'room_entered:emergency_equipment_storage')",
+      null
+    ],
+    [
+      "emergency_equipment_storage",
+      "task locate_safe",
+      null
+    ],
+    [
+      "hospital_ward",
+      "task assess_the_ward",
+      null
+    ],
+    [
+      "hospital_ward",
+      "task decode_ransomware_note (mapping 'global_variable_changed:decoded_ransomware_note')",
+      null
+    ],
+    [
+      "hospital_ward",
+      "task gather_pin_clues (ink of 'ward_nurse')",
+      "ward_nurse"
+    ],
+    [
+      "hospital_ward",
+      "task hear_debrief (mapping 'room_entered:hospital_ward')",
+      null
+    ],
+    [
+      "it_department",
+      "task decode_ransomware_note (mapping 'global_variable_changed:decoded_ransomware_note')",
+      null
+    ],
+    [
+      "it_department",
+      "task hear_debrief (mapping 'room_entered:it_department')",
+      null
+    ],
+    [
+      "it_department",
+      "task obtain_password_hints (ink of 'gary_whitlock')",
+      "gary_whitlock"
+    ],
+    [
+      "it_department",
+      "task obtain_password_hints (mapping 'global_variable_changed:password_hints_found')",
+      null
+    ],
+    [
+      "it_department",
+      "task open_it_department",
+      null
+    ],
+    [
+      "it_department",
+      "task talk_to_gary",
+      "gary_whitlock"
+    ],
+    [
+      "it_department",
+      "task talk_to_gary (ink of 'gary_whitlock')",
+      "gary_whitlock"
+    ],
+    [
+      "office_corridor",
+      "task hear_debrief (mapping 'room_entered:office_corridor')",
+      null
+    ],
+    [
+      "office_corridor",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task arrive_at_hospital",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task cover_burned_notified (mapping 'objective_task_completed:talk_to_gary')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task decode_ransomware_note (mapping 'global_variable_changed:decoded_ransomware_note')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task gather_pin_clues (mapping 'global_variable_changed:found_safe_pin_clue')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task gather_pin_clues (mapping 'objective_task_completed:crack_safe_pin')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (ink of 'closing_debrief_trigger')",
+      "closing_debrief_trigger"
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (mapping 'room_entered:reception_lobby')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task initiate_backup_recovery (mapping 'global_variable_changed:backup_restore_initiated')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task make_ransom_decision (mapping 'global_variable_changed:backup_recovery_source')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task obtain_password_hints (mapping 'global_variable_changed:gary_ko')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task obtain_password_hints (mapping 'global_variable_changed:password_hints_found')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task sign_in_at_reception",
+      "receptionist"
+    ],
+    [
+      "reception_lobby",
+      "task sign_in_at_reception (ink of 'receptionist')",
+      "receptionist"
+    ],
+    [
+      "reception_lobby",
+      "task unmask_db_window (mapping 'objective_task_completed:submit_proftpd_flag')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task unmask_gather_evidence (mapping 'objective_task_completed:submit_proftpd_flag')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task unmask_ghost_badge (mapping 'objective_task_completed:submit_ghost_log_flag')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task unmask_identify (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "reception_lobby",
+      "task unmask_identify (mapping 'global_variable_changed:insider_identified')",
+      null
+    ],
+    [
+      "security_office",
+      "task decode_ransomware_note (mapping 'global_variable_changed:decoded_ransomware_note')",
+      null
+    ],
+    [
+      "security_office",
+      "task hear_debrief (mapping 'room_entered:security_office')",
+      null
+    ],
+    [
+      "security_office",
+      "task regain_freedom_of_movement (mapping 'room_entered:security_office')",
+      null
+    ],
+    [
+      "security_office",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_rooting_for_a_win"
+    ],
+    [
+      "server_room",
+      "task access_server_room",
+      null
+    ],
+    [
+      "server_room",
+      "task hear_debrief (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task submit_database_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_ghost_log_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_proftpd_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_ssh_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "staff_room",
+      "task gather_pin_clues (mapping 'global_variable_changed:found_safe_pin_clue')",
+      null
+    ],
+    [
+      "staff_room",
+      "task hear_debrief (mapping 'room_entered:staff_room')",
+      null
+    ],
+    [
+      "staff_room",
+      "task unmask_gather_evidence (mapping 'global_variable_changed:insider_evidence_partial')",
+      null
+    ],
+    [
+      "ward_approach",
+      "task hear_debrief (mapping 'room_entered:ward_approach')",
+      null
+    ],
+    [
+      "ward_hall",
+      "task hear_debrief (mapping 'room_entered:ward_hall')",
+      null
+    ],
+    [
+      "ward_vestibule",
+      "task hear_debrief (mapping 'room_entered:ward_vestibule')",
+      null
+    ]
   ]
 }
