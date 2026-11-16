@@ -560,3 +560,36 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
   with `git worktree remove` when done.
 - Left: finish the A/B (3+ games a side), steps 2.5 and 2.6, bin/test-js then the Rails suite, R6 Outcomes
   in SIMS_TIDY_REVIEW_R6.md, commit.
+
+## Handover 10 (R6 M1: A/B done, head-on yield fixed, row 6 still fails 2 of 4; stopped at the context guard)
+
+- A/B (scratchpad ab/, metrics scratchpad jam.py and headon.py; headon = two NPCs with goto jobs within
+  40 px in the passage box for 8 s or more). Branch engine, games 6093, 6094, 6095, 6099, 6100, 6104: a
+  head-on stall in 4 of 6, row 6 failed in the same 4. Baseline engine (detached p-ol-main-baseline) with
+  the branch scenario copied in, games 6101, 6102, 6103: a head-on stall in 1 of 3 (6102, Sanjay east to
+  sanjay_pc against Marek west to the cooler, 522 to 538 s, Rosa joined; row 6 failed). 6096 and 6097
+  (main scenario) none. Row 3 fails on every baseline game, also with the branch scenario (caffeine about 88
+  at the board read against 9 on the branch); not looked into.
+- Cause: main code, npc-behavior.js _handleBlockerAhead (unchanged on the branch). The yielder's back-off
+  lasted one 50 ms update (about 2 px), then the whole 600 ms wait, detour and 2.5 s give-up cycle ran again,
+  so it gave ground at about 1 px a second (6100: Sanjay -31 to -54 over 20 s while Marek inched after him).
+  With a third body behind the yielder it could not back off at all.
+- Fix a2d2c64ab: a back-off step lasts AVOID_BACKOFF_MS (700); when it ends the detour is retried at once and,
+  if none, the next step follows with no new wait; a step that gains under 3 px marks the yielder pinned
+  (`_avoid.pinned`, `_avoidIsPinned`, `pinned` on _dynamicBlockers entries); a pinned NPC stops yielding and
+  one meeting a pinned NPC yields. `_moveAwayFrom` removed (no other users). Four new tests in
+  test/js/npc-local-avoidance.test.mjs (33 of 33 pass); all four fail on the old file.
+- bin/test-js on a2d2c64ab: 712 of 712 files pass. Rails suite not run yet.
+- Live on a2d2c64ab (:3093, fresh games 6115 to 6118, scratchpad ab/fix/): no head-on stall of 8 s in any
+  game; row 5 ok in all four. Row 6: ok in 6115 and 6118, FAILED in 6116 (park retried, dist 285, player
+  stopped at (-30, 87), see_outcast missing) and 6117 (park ok at dist 1, see_outcast missing). 6118 had a
+  3-body box jam 198 to 218 s (grace, rosa, tom), outside row 6. So the head-on stall is gone, row 6 is not.
+- Next: read doorway_samples and needs_log in ab/fix/tour-6116.json and tour-6117.json round row 6 (what held
+  the passage for the 6116 park; why Sanjay never met the outcast in 6117: did he reach the cooler?). If row 6
+  is a separate cause, write it up; then 3 more fresh games if anything changes, the Rails suite, R6 Outcomes
+  (A/B table above) in SIMS_TIDY_REVIEW_R6.md, commit.
+- Servers stopped (PIDs 1295422 :3093, 1295425 :3094, both mine). The baseline worktree still holds the
+  branch scenario copy, uncommitted: `git -C .claude/worktrees/p-ol-main-baseline checkout --
+  scenarios/test_needs_sims/scenario.json.erb`, then `git worktree remove` it (detached, no branch).
+- Gotcha: a wait loop of `until ! pgrep -f "needs-tour-regression.mjs 611"` matches its own command line and
+  never ends; match on `node tools/playtest/...` with the game id outside the loop's own text.
