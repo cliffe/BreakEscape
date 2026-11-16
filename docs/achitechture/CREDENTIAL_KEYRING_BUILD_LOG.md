@@ -1218,3 +1218,30 @@ Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R6.md, verdict LAND (m1, m2, m3, t1).
 - t1: tests in `container-shares.test.mjs` (isInteractiveItem on a folder, desktop icon, standard grid image, `containerImageUrl`) and a new `validator-folder-sprite.test.mjs` (nested folder clean, room-level folder errors, another sprite-less nested type errors).
 - Mutation checks: with the two source files reverted, the isInteractiveItem test, the standard-grid image test and the room-level validator test fail. The desktop-icon and `containerImageUrl` tests cover behaviour already landed in 5a77e794c, so they pass either way.
 - Tests: the 21 test/js files that import or copy container-minigame.js or container-item-image.js (access-relay-desktop capped) 0 failures; keyring_folder_route_test 7 runs, 34 assertions, 0 failures; test_access_keyring validator 0 errors, 4 warnings.
+
+## Slice K4 client half
+
+Branch `build/keyring-k4-client`, JS only (the server half is in the K4 server commits). Plan reference: section 9, Client bullet. Run 1 mapped the sites; runs 2 and 3 wrote the code.
+
+### Run 2
+
+- api-client: `from` beside `foothold` on `login`, `loginAccounts`, `keyring` and `loginWithCredential` (one route at a time).
+- pc-sessions: `fromPcId` and `fromHost` on a session only when the server sent them, so older shapes are unchanged; `signIn` and `signInWithCredential` take `from`; `openedOrder(pcId)` gives the open order Connect uses to pick the most recent source; `displaced()` reads the logout answer's `endedPcIds` and drops those sessions.
+- keyring: `connectRoute(entry, { from, sessions })` picks a `from` row for the desktop Connect was pressed on, else the most recently opened `from` source, then foothold, then relay. The Connect flow opens a held `from` session through `openFromDesktop`. The returnTo watcher now listens for `minigame_ended` (emitted by the minigame manager) instead of polling.
+- unlock-system: `fromLockable`, `openFromDesktop` (also `window.openFromDesktop`); a `from` session shows the remote sign-in screen, which asks `loginAccounts` and the keyring with `{ from }`. The password screen reads "Remote sign-in from {host}".
+- container: `?from=` on the desktop and folder fetches; "Remote session from {host}" lines; the taskbar start panel names the source. A `from` desktop never reopens itself on close (it met the folder branch because its `sourcePcId` is its own PC, the loop K3c fixed for relays); a folder under it reopens it.
+
+### Run 3
+
+- network-links `openSession` and the network view's Open open a `from` session (no foothold) through `openFromDesktop`, still starting a trip.
+- npc-workarounds hands an answer's `endedPcIds` to `pcSessions.linkDropped(ids, 'route_ended')`. The capture log lists a `from` session after the link rows, as "Remote session from {host}".
+- 403 on a `from` desktop (the orchestrator's open choice from run 2). The fetch follows the foothold desktop's reasons: `unreachable` and `not_responding` keep the session, set the exit reason and close; any other 403 drops the local copy (`no_session`). With a trip running, `networkLinks.landed` says the line. With none (the usual case for a desktop route), the container says it: the shared `unreachableMessage` or `notRespondingMessage`, or "Your session on {host} has ended." The keyboard sign-in screen never opens. It reuses the existing exit-reason path and remote-host-text strings; no new shared module.
+
+### Choices
+
+- Copy vs move for Connect: a file not yet held is copied first, or moved when the item is `transfer: "move"`; a held file takes nothing. Connect hands the desktop over (`exitReason` handover) so a foothold trip stays alive, and `returnTo` reopens the desktop only when nothing else is open.
+- Assist invites: Connect is offered for any item the server marks `connect: true` and for any held entry `keyring.connectEntryFor` lists, which covers assist invites as well as saved connections. It is never offered on a relay desktop or a share.
+
+### Tests
+
+New `access-from-desktop.test.mjs` (14: fetch, 403 reasons, trip line, no self-reopen, folder reopen, Connect copy/move/held/failed, offer rules; run capped like the relay one). Added tests in access-remote-signin, pc-sessions (displaced endedPcIds, from fields, open order), network-links, network-view, npc-workarounds and capture-log. access-relay-desktop passes (21) under the ulimit recipe.
