@@ -437,3 +437,17 @@ test('R1 m6: an unheard grumble within the falloff range is a faint line, on the
     assert.equal(sp.info.overheard, false);
     assert.ok(!s.chatterQuietUntil, 'the full cooldown is untouched');
 });
+
+test('R1 m10: a heard grumble is said in the tick that cuts a faint line; an unheard one waits behind it', () => {
+    const o = office();
+    o.until(() => o.st.spoken.length > 0, 90000, 'a faint line');
+    const faintId = o.st.spoken[0].id, other = faintId === 'ann' ? 'bob' : 'ann';
+    const n = o.st.spoken.length;
+    o.sys._speechFreeFor(true);                       // a faint asker: no change
+    assert.equal(o.st.fades.length, 0);
+    o.st.ear = { overheard: true, distance: 40 };
+    o.sys._grumble(o.sys.states.get(other), null, 'cooler', 'cooler', { ignoreCooldown: true });
+    assert.equal(o.st.spoken.length, n + 1, 'said at once');
+    assert.equal(o.st.spoken.at(-1).info.overheard, true);
+    assert.deepEqual(o.st.fades, [faintId], 'the faint voice was told to fade');
+});
