@@ -573,3 +573,70 @@ proof in game. The scenario is ready; the recipe:
 7. Kill only your own PIDs.
 
 Nothing above minor is open. The scenario and all server/validator K1 pieces are on `build/keyring-k1`.
+
+## Run 4: R2 fixes and the held beat's real-path live fix
+
+Base `65f391131` (branch `build/keyring-k1`) merged with `main` `177c13f6a`. The major came from the
+R2 live proof on :3062 (game 5628): the `held` beat could never fire through the real request path.
+
+### Major: held proof re-stamped on store, not trusted from the client
+
+Both client filters strip the item-level `credential` (R1 m1, `filter_inventory_for_client!` and
+`filter_requires_and_contents_recursive`), and `credential` is a `FORGEABLE_ITEM_FIELDS` member, so the
+client posts the taken item back without it and `add_inventory_item!` stored it bare. The keyring's
+`held` proof (`credential_held_proof_holds?`) then never matched; only the unit tests passed, because
+they seed `player_state` directly.
+
+- `app/models/break_escape/game.rb`: new `restamp_item_credential!(item)`. On every store it drops any
+  client-supplied `credential` (forgeable), then restores it from the scenario's own definition
+  (`CredentialModel.item_definition`, matched by type and id, the same identity the `held` proof
+  compares). Stamped onto the level the proof reads (`item['scenarioData'] || item`). Called at the top
+  of `add_inventory_item!` (covering take, `give_item`, container take and NPC hand-over, which all
+  funnel through it) and after the start-items filter in `initialize_player_state`. The strip-to-client
+  behaviour is unchanged.
+- Test (real request path, not seeded): `test/controllers/break_escape/keyring_take_route_test.rb` —
+  POST the item through `/inventory` as the client would (no `credential`), then GET `/keyring` lists
+  it; a plain item with a client-forged `credential` earns no entry; a forged registry id on the real
+  item is overwritten by the authored one. 3 runs / 16 assertions / 0 F.
+
+### Leak scanner (tools/playtest/lib/access_leak_scanner.rb)
+
+- Item 1: a GET `/keyring` capture entry carries the captured account's own password, as
+  `/capture_secrets` does. `response_context` gains a `keyring` flag; `scan_passwords` exempts the
+  `password` field on a `source: "capture"` entry for the owner's own game (`keyring_capture_password_paths`).
+  A registry-sourced entry is not exempted, so a password on one is still flagged.
+- R2 m3: `scan_credentials` also flags a singular item-level `credential` string field in any response
+  (rule `credential_field`), a second guard on the field R1 m1 strips.
+- Tests in `test/unit/access_leak_scanner_test.rb`: capture entry exempt vs registry entry flagged, and
+  the `credential_field` guard. 52 runs / 282 assertions / 0 F.
+
+### R2 findings
+
+- m1 (`scripts/validate_scenario.rb`): the `foothold` proof check accepted bare source ids that can
+  never key `player_state['footholds']` (the runtime only uses `jack_`, `wifi_`, `implant_` forms). Split
+  the set into runtime (prefixed) and bare forms: a prefixed id passes, a bare id now warns ("names a
+  bare source id ... can never fire"), an unknown id still errors. Fixtures updated in
+  `test/js/validator-credentials.test.mjs` (the token case now uses `jack_jack1`; a new W test pins the
+  bare-id warning). 39 tests / 0 F.
+- m2: renamed the new `BreakEscape::SyncPayloadSizeTest` to `KeyringSyncSizeTest`
+  (`test/controllers/break_escape/sync_payload_size_test.rb`), so it no longer reopens and merges with
+  the pre-existing integration test's class under a full run.
+- trivial: plan 9.1's registry table now names `ops_cookie` (the foothold-proof saved connection the
+  scenario ships) instead of the stale `ops_rdp`.
+
+### Tests (run file by file) and lint
+
+- `test/models/break_escape/credential_keyring_test.rb` + `credential_item_field_test.rb`: 23 / 53 / 0 F.
+- `test/controllers/break_escape/keyring_route_test.rb`, `sync_payload_size_test.rb` (controller),
+  `test/integration/sync_payload_size_test.rb`, `capture_secrets_unchanged_test.rb`,
+  `test/unit/credential_model_test.rb`: 31 / 112 / 0 F.
+- `test/controllers/break_escape/keyring_take_route_test.rb`: 3 / 16 / 0 F.
+- `test/unit/access_leak_scanner_test.rb`: 52 / 282 / 0 F.
+- `test/js/validator-credentials.test.mjs`: 39 / 0 F.
+- Validator on `test_access_keyring`: 0 errors, 1 expected warning; dungeon graph regenerated, tracked
+  files unchanged (nothing to restore).
+- `bin/rubocop` clean on all changed Ruby files.
+
+### Live re-proof of the held beat (port 3062)
+
+See the "Run 4 live" subsection appended after the live run.
