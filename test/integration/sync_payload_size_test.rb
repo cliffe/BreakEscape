@@ -18,7 +18,11 @@ module BreakEscape
       'test_access_networks' => 5_833,
       'test-rfid'            => 1_103,
       'lab_social_engineering' => 69_125,
-      'lab_physical_pentest' => 23_762
+      # 2026-11-16, slice A2 (rogue AP, Kieran's account, wireless aim and hints): the lab's
+      # bootstrap measured 26,619 B, so its base is raised from the 23,762 B of 6a834437c to that
+      # figure. The growth is objectives (9,050 B), music, timers and globals; accountProfiles,
+      # networks and every secret are withheld from the bootstrap (checked: none in the body).
+      'lab_physical_pentest' => 26_619
     }.freeze
 
     FIXTURES = File.expand_path('../fixtures/files/sync_bodies', __dir__)
