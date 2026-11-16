@@ -4,6 +4,10 @@
 //                         the annex (no fight music), then reveal the day guard (dawn): fight music back.
 //   route ko-then-hide  : KO the lobby guard first (day guard still fights), then hide the day guard
 //                         (night): the fight ends with no npc_ko after the hide.
+//   route reserve       : the reserve guard (startHostile, initiallyHidden) is hostile only once shown:
+//                         hidden, it plays no fight music and all_hostiles_ko can fire (KO the lobby
+//                         guard: noir); a reload while hidden still gives no cue; the cellar door
+//                         reveals it with exactly one threat cue.
 // Each route needs its own fresh test_hidden_hostiles game (tools/playtest/new-game.rb).
 // Run from inside the worktree so playwright resolves. Headless; setFPS(20), fixed steps on.
 // Every change goes through real paths: door attempts set the night/dawn globals and the day
@@ -13,8 +17,8 @@ import { chromium } from 'playwright';
 const PORT = Number(process.env.PORT || 3093), BASE = `http://127.0.0.1:${PORT}`;
 const gameId = Number(process.argv[2]);
 const route = process.argv[3];
-if (!gameId || !['hide-then-ko', 'ko-then-hide'].includes(route)) {
-  console.error('usage: hidden-hostiles-music-proof.mjs <gameId> <hide-then-ko|ko-then-hide>'); process.exit(2);
+if (!gameId || !['hide-then-ko', 'ko-then-hide', 'reserve'].includes(route)) {
+  console.error('usage: hidden-hostiles-music-proof.mjs <gameId> <hide-then-ko|ko-then-hide|reserve>'); process.exit(2);
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const out = { gameId, route, steps: [] };
@@ -70,6 +74,37 @@ const ko = async id => { out[`ko_${id}`] = await page.evaluate(i => window.__tes
 
 await boot(`${BASE}/break_escape/games/${gameId}?skip_resume=1`);
 out.startPlaylist = await music(page);   // recorded, not judged: depends on load order in the start room
+
+const reserve = page => page.evaluate(() => {
+  const id = 'reserve_guard';
+  return { hostile: window.npcHostileSystem.isNPCHostile(id), ko: window.npcHostileSystem.isNPCKO(id),
+    hiddenByMapping: window.npcManager.isHiddenByMapping(id) };
+});
+const countCues = page => page.evaluate(() => {
+  window.__cues = [];
+  window.eventDispatcher.on('npc_hostile_state_changed', d => { if (d?.isHostile) window.__cues.push(d.npcId); });
+});
+const cues = page => page.evaluate(() => window.__cues || []);
+
+if (route === 'reserve') {
+  expect('start: reserve guard hidden, not hostile', await reserve(page), { hostile: false, ko: false, hiddenByMapping: false });
+  expect('start: reserve guard sprite is hidden', await page.evaluate(() => !!window.__test.getState && (window.npcManager.getNPC('reserve_guard')?.isVisible === false || window.npcManager.getNPC('reserve_guard')?.behavior?.initiallyHidden === true)), true);
+  await ko('fight_guard');
+  expect('lobby guard KO with the reserve guard hidden: all_hostiles_ko fires', await music(page), 'noir');
+  await sleep(2500);   // let the state sync before the reload
+  await boot(`${BASE}/break_escape/games/${gameId}?skip_resume=1`);
+  expect('reload while hidden: still not hostile', await reserve(page), { hostile: false, ko: false, hiddenByMapping: false });
+  expect('reload while hidden: no fight music', await music(page), 'noir');
+  await countCues(page);
+  await tryDoor('cellar');
+  expect('cellar: reserve guard revealed and hostile', (await reserve(page)).hostile, true);
+  expect('cellar: exactly one threat cue for the reserve guard', await cues(page), ['reserve_guard']);
+  expect('cellar: the reveal brings the fight music', await music(page), 'threat');
+  out.failed = failed;
+  console.log(JSON.stringify({ gameId, route, failed }));
+  await browser.close();
+  process.exit(failed ? 1 : 0);
+}
 
 await enter('annex');
 expect('annex entered: day guard hostile and visible, fight music', { p: await music(page), d: (({ hostile, ko }) => ({ hostile, ko }))(await day(page)) },

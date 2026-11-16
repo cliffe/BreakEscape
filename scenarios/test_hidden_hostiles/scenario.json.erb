@@ -1,12 +1,13 @@
 {
   "scenario_id": "test_hidden_hostiles",
   "scenario_name": "Test: hidden hostiles and fight music",
-  "scenario_brief": "Engine check (hidden hostiles and music).\n\nMusic: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko plays noir.\n1. Enter the annex: the day guard (hostile) turns up and the fight music (threat) plays.\n2. Try the vault door (night): the day guard is hidden (setVisible false). Knock out the lobby guard: the fight music ends, though the hidden guard is still hostile and conscious. Or knock out the lobby guard first and then try the vault door: hiding the last conscious hostile ends the fight too.\n3. Reload: the hidden guard does not bring the fight music back when the annex loads.\n4. Try the closet door (dawn): the day guard is shown again and the fight music returns.",
+  "scenario_brief": "Engine check (hidden hostiles and music).\n\nMusic: game_loaded plays noir, any hostile turning plays threat, all_hostiles_ko plays noir.\n1. Enter the annex: the day guard (hostile) turns up and the fight music (threat) plays.\n2. Try the vault door (night): the day guard is hidden (setVisible false). Knock out the lobby guard: the fight music ends, though the hidden guard is still hostile and conscious. Or knock out the lobby guard first and then try the vault door: hiding the last conscious hostile ends the fight too.\n3. Reload: the hidden guard does not bring the fight music back when the annex loads.\n4. Try the closet door (dawn): the day guard is shown again and the fight music returns.\n5. The reserve guard (startHostile, initiallyHidden) is in the lobby but unseen. While it is hidden it is not hostile, plays no fight music and does not stop all_hostiles_ko (knock out the lobby guard: calm music). Reload while it is hidden: still no cue. Try the cellar door: the reserve guard appears, turns hostile and the fight music plays once.",
   "endGoal": "Check that anyHostilesAlive skips an NPC hidden by a setVisible mapping.",
   "startRoom": "lobby",
   "globalVariables": {
     "night": false,
-    "dawn": false
+    "dawn": false,
+    "reserve": false
   },
   "music": {
     "events": [
@@ -35,7 +36,8 @@
       "connections": {
         "north": "vault",
         "east": "annex",
-        "west": "closet"
+        "west": "closet",
+        "south": "cellar"
       },
       "npcs": [
         {
@@ -58,6 +60,34 @@
           }
         },
         {
+          "id": "reserve_guard",
+          "displayName": "Reserve Guard",
+          "npcType": "person",
+          "position": {
+            "x": 7,
+            "y": 3
+          },
+          "spriteSheet": "female_security_guard_v2",
+          "storyPath": "scenarios/ink/generic-npc.json",
+          "currentKnot": "start",
+          "behavior": {
+            "initiallyHidden": true,
+            "hostile": {
+              "startHostile": true,
+              "chaseSpeed": 60,
+              "attackDamage": 1
+            }
+          },
+          "eventMappings": [
+            {
+              "_comment": "Revealed by the cellar door attempt (m10's reinforcements): hostile only from this moment.",
+              "eventPattern": "global_variable_changed:reserve",
+              "condition": "value === true",
+              "setVisible": true
+            }
+          ]
+        },
+        {
           "id": "clerk",
           "displayName": "Clerk",
           "npcType": "person",
@@ -76,6 +106,15 @@
               "onceOnly": true,
               "setGlobal": {
                 "night": true
+              }
+            },
+            {
+              "_comment": "Trying the cellar door reveals the reserve guard.",
+              "eventPattern": "door_unlock_attempt",
+              "condition": "data.connectedRoom === 'cellar'",
+              "onceOnly": true,
+              "setGlobal": {
+                "reserve": true
               }
             },
             {
@@ -144,6 +183,17 @@
           ]
         }
       ],
+      "objects": []
+    },
+    "cellar": {
+      "type": "room_office",
+      "door_sign": "Cellar",
+      "locked": true,
+      "lockType": "pin",
+      "requires": "9999",
+      "connections": {
+        "north": "lobby"
+      },
       "objects": []
     },
     "closet": {
