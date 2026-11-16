@@ -209,6 +209,12 @@ test('E: an item carries a credential but is an always-allowed type', { skip }, 
     "carries a credential but is an always-allowed type ('notepad')");
 });
 
+test('E: an item carries a credential but is a decor-cup type (R3 m1)', { skip }, () => {
+  const item = { id: 'f', type: 'office-misc-cup', name: 'x', credential: 'c1' };
+  assertErr(issues(sc({ c1: PW_OK }, { objects: [PC(), item] })),
+    "carries a credential but is a decor-cup type ('office-misc-cup')");
+});
+
 // ── warnings ─────────────────────────────────────────────────────────────────────────────────────
 
 test('W: a policy accepts a list without password', { skip }, () => {

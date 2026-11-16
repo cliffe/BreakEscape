@@ -640,3 +640,11 @@ they seed `player_state` directly.
 ### Live re-proof of the held beat (port 3062)
 
 See the "Run 4 live" subsection appended after the live run.
+
+## Run 5 (R3 minors)
+
+- **m1**: the notepad and decor-cup add paths have no collectible lookup, so a credential on one would be keyed on a client-chosen id. `check_credentials` now errors on a credential item of a decor-cup type (the always-allowed error already existed); both lists are read from `DeclaredGrants` (`ALWAYS_ALLOWED`, `DECOR_CUPS`), which mirror the controller constants. `restamp_item_credential!` also returns early for those types, so no credential is stamped on them. Fixture in `validator-credentials.test.mjs`; unit test in `test/models/break_escape/keyring_restamp_test.rb`.
+- **m2**: new test that a start-inventory item with a credential is stamped by `initialize_player_state`. Not covered, carried to K2: a credential item taken from container contents or received through an NPC's `itemsHeld` (no cheap harness for those paths).
+- **m3** (carry-in to K2, no code change): the leak scanner's capture exemption trusts the entry's `source` label, so a mislabelled `source` would exempt a password entry.
+- **Trivial**: the validator's bare-id foothold warning now says `wifi_<network>`.
+- Tests: keyring_restamp 2 runs/5 assertions; keyring_take_route 3/16; keyring_route 6/19; credential_keyring 18/43; `validator-credentials.test.mjs` 40 pass. Rubocop clean. `test_access_keyring` validates with 0 errors, 1 warning.

@@ -7149,6 +7149,9 @@ def check_credentials(json_data)
 
   notes_family = %w[notes notes2 notes4 notes5].to_set
   always_allowed = BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.to_set
+  # Client-built decor cups (games_controller DECOR_CUP_TYPES, mirrored by DeclaredGrants::DECOR_CUPS)
+  # have no scenario lookup either, so a credential on one would be keyed on a client-chosen id (R3 m1).
+  decor_cups = BreakEscape::DeclaredGrants::DECOR_CUPS.to_set
 
   # Count and id-pattern checks over the raw map (not the 64-capped reader).
   err.call("more than #{cm::MAX_ENTRIES} entries (#{creds.size}); the server reads only the first #{cm::MAX_ENTRIES} by sorted id.") if creds.size > cm::MAX_ENTRIES
@@ -7301,7 +7304,7 @@ def check_credentials(json_data)
         if foothold_ids.include?(fid)
           # Runtime (prefixed) form: fires live.
         elsif bare_foothold_ids.include?(fid)
-          warn.call("#{label} proof foothold '#{fid}' names a bare source id; the runtime only keys footholds by the prefixed form (jack_, wifi_ or implant_), so this proof can never fire. Use 'jack_#{fid}', 'wifi_#{fid}' or 'implant_#{fid}' as the source requires.")
+          warn.call("#{label} proof foothold '#{fid}' names a bare source id; the runtime only keys footholds by the prefixed form (jack_, wifi_ or implant_), so this proof can never fire. Use 'jack_#{fid}', 'wifi_<network>' or 'implant_#{fid}' as the source requires.")
         else
           err.call("#{label} proof foothold '#{fid}' names no foothold any jack, access point or implant action can create.")
         end
@@ -7345,6 +7348,8 @@ def check_credentials(json_data)
       err.call("item '#{item['id'] || item['name']}' carries a credential but is a notes-family type ('#{item['type']}'); use text_file.")
     elsif always_allowed.include?(item['type'])
       err.call("item '#{item['id'] || item['name']}' carries a credential but is an always-allowed type ('#{item['type']}'); use text_file.")
+    elsif decor_cups.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is a decor-cup type ('#{item['type']}'); the server cannot look it up in the scenario, so use text_file.")
     end
     held_id = entry['proof'].is_a?(Hash) ? entry['proof']['held'].to_s : nil
     unless held_id && held_id == item['id'].to_s

@@ -675,6 +675,11 @@ module BreakEscape
       # Drop any client-supplied value up front (forgeable field).
       data.delete('credential')
 
+      # The notepad and decor cups are client-built (no scenario lookup), so their id is
+      # client-chosen: never stamp a credential on them (R3 m1; the validator also errors).
+      return if BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.include?(data['type'].to_s)
+      return if BreakEscape::DeclaredGrants::DECOR_CUPS.include?(data['type'].to_s)
+
       # Look up by id, exactly as the `held` proof matches (def_id == data['id']).
       item_id = data['id'].to_s
       return if item_id.empty?
