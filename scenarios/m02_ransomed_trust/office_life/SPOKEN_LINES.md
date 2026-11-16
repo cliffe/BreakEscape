@@ -108,7 +108,7 @@ The cooler pools stay at 4: one cooler break in nine in the R4 run, so they do n
 
 ### D30 (a), 2026-11-16: paper night exchange reordered
 
-`night_watch_paper` is now 4 lines and Ernesto opens it. Hodan's question "How many lab runs is that now, Ernesto?" is dropped. Ernesto's two lines changed: "Eleven lab runs tonight. Every result in an envelope." (was "Eleven. Every result in an envelope.") and "Hospital runs on legs. Ours." (was "...legs tonight. Ours."). Counts against 76: **2 changed, 1 removed**, so **75 clips in all**. The three superseded clips are in `tmp/delete/tts_m02_d30/`.
+`night_watch_paper` is now 4 lines and Ernesto opens it. Hodan's question "How many lab runs is that now, Ernesto?" is dropped. Ernesto's two lines changed: "Eleven lab runs tonight. All on paper." (38 characters; was "Eleven. Every result in an envelope.", then "Eleven lab runs tonight. Every result in an envelope." at 53, over the 40-character bubble rule, shortened after R2 m1) and "Hospital runs on legs. Ours." (was "...legs tonight. Ours."). Counts against 76: **2 changed, 1 removed**, so **75 clips in all**. The three superseded clips are in `tmp/delete/tts_m02_d30/`.
 
 ### To voice
 

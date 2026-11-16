@@ -41,7 +41,7 @@ Variant B: the player stays for the whole 4-line paper exchange, then plays Gary
 
 Total B: 3 of 3 PASS (3 runs, not 5, because each run takes about 6.5 minutes; A has 4).
 
-Note on B. The script's built-in `pass` printed false for all three. Its criteria were stale: it waited for 5 paper lines (the exchange is 4 since D30 (a)) and required that the burn exchange not play in the running break. That second rule came from game 5593, where the burn waited for the next meeting. In all three runs here the burn exchange plays in the running break straight after the player re-enters, then does not repeat in the next break. Nothing is lost or heard twice, so I count it as a PASS; it is a change from 5593 that the owner may want to know about (it matches variant A and the 5564 result).
+Note on B. The script's built-in `pass` printed false for all three. Its criteria were stale: it waited for 5 paper lines (the exchange is 4 since D30 (a)) and required that the burn exchange not play in the running break. That second rule came from game 5593, where the burn waited for the next meeting. CORRECTION (R2 review m2): this reading was wrong. The B script waited for 5 paper lines, so it always ran its 50 s timeout, and Gary's close landed 66 to 68 s after the use began, after the first break had ended. The close started a NEW break, and the burn exchange played at once in that new meeting. Nothing changed in the one-exchange-per-meeting rule. These three runs tested "break over, Gary's close starts a new break, burn plays at once", which passes, but not the PLAN 10.2 case (`PLAN.md:400`). That case is covered in the section "R2 reruns of variant B" below.
 
 ## Total
 

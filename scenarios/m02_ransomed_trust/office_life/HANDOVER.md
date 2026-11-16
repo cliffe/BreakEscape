@@ -1,6 +1,6 @@
 # m02 office life: stage 5 R5 live checks done (2026-11-16)
 
-- m4 (5 of 5 PASS) and m5 (variant A 4 of 4, variant B 3 of 3 PASS) are in `STAGE5_LIVE_R5.md`, run on the lobby start by adjacent hops with access unlocked through `new-game.rb --unlock`. In variant B the burn exchange now plays in the running break (5593 deferred it); no fault found.
+- m4 (5 of 5 PASS) and m5 (variant A 4 of 4, variant B 3 of 3 PASS) are in `STAGE5_LIVE_R5.md`, run on the lobby start by adjacent hops with access unlocked through `new-game.rb --unlock`. The variant B runs (corrected after R2) started a NEW break after Gary's close, because the script waited for 5 paper lines and timed out at 50 s; they did not test the running-break case, which is rerun in `STAGE5_LIVE_R5.md`. No fault found.
 
 # m02 office life: D30 (a) built and all lines voiced, handover 2026-11-16
 

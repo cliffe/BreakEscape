@@ -100,3 +100,12 @@ Weak: variant B (m2). The m8 bark is proved by the `showBark` call (5671), not b
 - `bin/test-js`: 682 files passed, 0 failed.
 
 R2: 0/0/4
+
+## R2 Outcomes
+
+| Item | Outcome |
+|---|---|
+| m1 | Fixed. Ernesto's opener is now "Eleven lab runs tonight. All on paper." (38 characters), recompiled and voiced (new clip `4384341637cae514c4ded57732bd4c64`; the 53-character clip moved to `tmp/delete/tts_m02_r2/`). `check_exchanges` in `scripts/validate_npc_needs.rb` now errors on an exchange line over 40 spoken characters, with tests in `test/js/validator-exchange-line-length.test.mjs`. |
+| m2 | Corrected in `STAGE5_LIVE_R5.md`, `REVIEW_STAGE5_R1.md` and `HANDOVER.md`. Live reruns of the running-break case are in `STAGE5_LIVE_R5.md`. |
+| m3 | Fixed in `scenario.json.erb` and `PLAN.md`. |
+| m4 | Left as is, owner's call; not raised. |

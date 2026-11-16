@@ -103,7 +103,7 @@ Hodan Warsame: Checks out with who, though?
 
 // Their own night: a hospital running on paper and legs.
 === night_watch_paper ===
-Ernesto Bautista: Eleven lab runs tonight. Every result in an envelope.
+Ernesto Bautista: Eleven lab runs tonight. All on paper.
 Hodan Warsame: My bed list's on the back of a menu.
 Ernesto Bautista: Hospital runs on legs. Ours.
 Hodan Warsame: Don't let them hear you enjoying it.
