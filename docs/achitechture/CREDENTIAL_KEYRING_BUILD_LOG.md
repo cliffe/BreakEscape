@@ -993,3 +993,31 @@ Fixes for `CREDENTIAL_KEYRING_K3A_REVIEW_R2.md`. Tip before this run `1ee644f99`
 **In-file toast, live.** `gameAlert` renders ordinary DOM toasts in `#notification-container` (not canvas). Info and success toasts raised while a full-screen panel is open are held in memory (`heldNotifications`) and rendered only when the last panel closes, then shown a few at a time. Closing the PC monitor returns to the network view, which is still a panel, so the toast stays held until that closes too; it then queues behind the task and objective toasts and showed about 8 s later. That is why earlier polls of `document.body.innerText` found nothing. No code fix needed. Screenshot: `scratchpad/k3a-live3/in-file-toast-1280.png` (toast text visible on screen, `show` class, opacity 1). Start panel at 390x844 with the normal label: `startpanel-390.png`, label whole on its own line. A 40-character label at 390 was not measured live.
 
 **Results.** `bin/test-js` 715 files, 0 failed. Rails suite 2996 runs, 0 failures, 0 errors, 3 skips. Rubocop clean on `scripts/validate_scenario.rb`, `credential_keyring.rb` and its test.
+
+## Slice K3b
+
+### K3b run 1 (part A, Connect): code built, client tests half done
+
+Stopped at the context limit. Tip before this run `427680566`.
+
+**Built**
+- Server (a deviation, see below): `credential_keyring.rb` `registry_connecting_entry` adds `heldItem` (the `proof.held` item id) to a connecting row, ended rows included. Test in `keyring_route_test.rb` (9 runs, 0 failures).
+- `systems/keyring.js`: `CONNECT_KINDS` (`saved_connection`; K3c adds `assist_invite`), `connectRoute(entry)` (foothold today, with marked hooks for K4 `from` and K3c relay), `latest` (entries of the most recent usable answer, `unchanged` included), `connectEntryFor(itemId)`, `listen()` on `inventory_changed` (called from `prime()`), `trayChanged(items)` (one GET when the set of tray ids changes), `refresh()`, `connect(el, { returnTo, text })` with the in-flight guard (`connecting`), steps 1 to 8 in `_connect`, and `watchScreensClose(returnTo)` (polls `MinigameFramework.currentMinigame`; gives up waiting after 3 s if nothing opened). Text loads by dynamic import, so no harness copy list grows.
+- `utils/remote-host-text.js`: `CONNECT_FAILED_TEXT`, `trayUnreachableMessage(host)` (8.5 lines).
+- `systems/unlock-system.js`: `openCredentialSignIn({ pcId, host, footholdId, username, refusal })` on `window`; `openLoginSignIn` and `openRemoteSignInScreen` take `connect`, which sets `signIn.preselect` and `signIn.connectRefusal`.
+- `password-minigame.js`: `takeConnectRefusalTile(pending)` and `showConnectRefusal(tile)` in `setRemoteAccounts`: once the account's tile carries the credential (or nothing is pending), the account is chosen; `kind_refused` greys the button and shows the 8.5 line; `locked_out` goes through `signInLockedOut`.
+- `systems/inventory-menu.js`: `connectMenuEntry`, `trayClickIsConnect`, `CONNECTING_TEXT`; `[Connect, (Drop here), Examine]`; no menu and a direct Connect when not droppable and nothing to read; Connect icon is the tray picture; greyed "Connecting..." while one runs. No new static import (reads `window.keyring`).
+- `test/js/inventory-menu.test.mjs`: 7 K3b cases (28 pass).
+
+**Deviations**
+- Server change: the item-level `credential` is stripped from every client copy (R1 m1), and keyring rows named no item, so the client had no way to tell which tray item proves which entry. `heldItem` is only on rows whose held proof already holds, so it names an item the player carries. No other server change.
+- `returnTo` has no trip to ride (Connect starts none), so `watchScreensClose` polls the minigame layer. Only K4 will pass it.
+- Direct Connect uses `heldItemHasText` (what Examine would show: observations or text), the menu's existing rule, rather than observations alone.
+- A refused Connect's screen chooses the account only when its tile arrives; with no tile (picker hides it) the typed form keeps the pre-filled name and the line still shows.
+
+**HANDOVER (next run, in order)**
+1. Write `test/js/keyring-client.test.mjs` (Connect half of the 8.2 list). Harness: copy the setup of `keyring-signin.test.mjs` (lines 1 to 120: temp dir copy list, `setup()`, `sceneStub()`, `openLinks()`). Cases: flush (`stateSync.syncConfirmed`) before the GET (record order); steps 1 to 7 each with its exact text and no POST; step 2 named from the tray item's `name`; step 5 calls `openRemoteDesktop(pcId, foothold)` with the session's foothold; step 8 posts `{ foothold }` and opens the desktop, teaching toast once per kind across two Connects; `endedPcIds` reach `linkDropped` with `route_ended`; 403 `not_responding`, 403 unreachable, 422 `remoteBlocked` races; network failure after the GET gives step 1's text; `kind_refused` and `locked_out` call `openCredentialSignIn` with username and refusal, and through the real `openLoginSignIn` the screen chooses Lena's tile, greys the button and shows the line (use the real `PasswordMinigame` like `openRemote()` there, or `sceneStub` and assert `params.signIn.connectRefusal`); `not_permitted` toast; double click: the second `connect` resolves `busy` and one POST; `returnTo` runs once after the screen closes (mock timers); `trayChanged` asks once per changed id set; `connectEntryFor` ignores `assist_invite`.
+2. Mutation checks for each group (as K3a run 4), restore with `git checkout -- <file>`.
+3. `bin/test-js` (not yet run this slice; `keyring-signin` 53 pass and `inventory-menu` 28 pass after the edits), then `bin/rails test test/controllers/break_escape/keyring_route_test.rb` and rubocop on `credential_keyring.rb`.
+4. Live proof (separate agent): R1 Connect beats on a new `test_access_keyring` game.
+5. Part B: the find toasts (8.2 second bullet). `latest`, `listen()` and `trayChanged` are the place to diff for new entries; `heldItem` lets part B tell a tray add of a credential item.

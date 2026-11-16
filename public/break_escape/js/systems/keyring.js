@@ -14,8 +14,13 @@
  * Only a scenario that declares credentials (window.gameScenario.credentialsDeclared) asks the
  * server; elsewhere every call is a no-op and the screens are unchanged.
  *
- * No imports: main.js imports it once (so the opened set exists from page start) and
- * unlock-system.js loads it by dynamic import, so no test harness copy list grows.
+ * Slice K3b adds Connect from the tray (plan 8.2): `connectEntryFor(itemId)` names the entry a
+ * held item proves (by the row's `heldItem`, since an item's own `credential` never reaches the
+ * client), the tray menu offers Connect for it, and `connect(el)` runs steps 1 to 8.
+ *
+ * No static imports: main.js imports it once (so the opened set exists from page start) and
+ * unlock-system.js loads it by dynamic import, so no test harness copy list grows. Connect loads
+ * its text by dynamic import.
  */
 
 export const SCREEN_KEYBOARD = 'keyboard';
@@ -36,6 +41,26 @@ export function entryTagKind(entry) {
     return typeof entry.kind === 'string' ? entry.kind : null;
 }
 
+/** The kinds Connect runs for. K3c adds 'assist_invite' here, with its relay route in connectRoute. */
+export const CONNECT_KINDS = ['saved_connection'];
+
+/** How long Connect waits for its screen to appear before it gives up watching for the close. */
+export const RETURN_TO_OPEN_WAIT_MS = 3000;
+export const RETURN_TO_POLL_MS = 250;
+
+/**
+ * The route Connect signs in by (plan 8.2 step 8): K4's `from` first, then footholds, then
+ * (K3c) the relay. Today only a foothold route is built, so the other two are skipped.
+ */
+export function connectRoute(entry) {
+    const routes = Array.isArray(entry?.routes) ? entry.routes : [];
+    // K4: a { from } route goes first here, once pc-sessions can post it
+    const foothold = routes.find(r => r && typeof r.foothold === 'string' && r.foothold);
+    if (foothold) return { foothold: foothold.foothold };
+    // K3c: { relay: true } for an assist_invite goes here
+    return null;
+}
+
 export class Keyring {
     constructor() {
         this.cache = new Map();
@@ -43,6 +68,12 @@ export class Keyring {
         this.firstAnswerIds = null;
         this.taught = new Set();
         this._primed = null;
+        // The entries of the most recent usable answer, whatever screen asked (Connect's menu)
+        this.latest = [];
+        // The tray item a Connect is running for, or null (the in-flight guard)
+        this.connecting = null;
+        this._listening = null;
+        this._trayIds = null;
     }
 
     /** An item opened in this page (container-minigame's file hooks call this). */
@@ -73,11 +104,14 @@ export class Keyring {
         if (!answer || typeof answer !== 'object') return null;
         if (answer.unchanged === true) {
             const hit = this.cache.get(key);
-            return hit && hit.rev === answer.rev ? hit.entries : null;
+            if (!hit || hit.rev !== answer.rev) return null;
+            this.latest = hit.entries;
+            return hit.entries;
         }
         if (!Array.isArray(answer.entries)) return null;
         const entries = answer.entries.filter(e => e && typeof e === 'object' && typeof e.id === 'string');
         this.cache.set(key, { rev: typeof answer.rev === 'string' ? answer.rev : null, entries });
+        this.latest = entries;
         // Only the page-start prime fixes the reload set; a screen's answer never does (R1 m1)
         if (primed && this.firstAnswerIds === null) this.firstAnswerIds = new Set(entries.map(e => e.id));
         return entries;
@@ -104,6 +138,7 @@ export class Keyring {
      */
     prime() {
         if (!credentialsDeclared()) return Promise.resolve(null);
+        this.listen();
         if (!this._primed) {
             this._primed = this.fetch(null, { primed: true }).catch(() => {
                 // A failed prime is the stricter case: nothing counts as earned before this page
@@ -119,6 +154,156 @@ export class Keyring {
         if (!entry || entry.kind !== 'password' || entry.source === 'capture') return true;
         if (this.firstAnswerIds?.has(entry.id)) return true;
         return typeof entry.foundIn === 'string' && this.opened.has(entry.foundIn);
+    }
+
+    /**
+     * Ask again when the tray's items change (K3b): a taken or dropped .rdp adds or removes its
+     * entry, and the tray menu reads `latest`. Idempotent per dispatcher.
+     */
+    listen() {
+        const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (!d || typeof d.on !== 'function' || this._listening === d) return false;
+        this._listening = d;
+        d.on('inventory_changed', (data) => this.trayChanged(data?.items));
+        return true;
+    }
+
+    /** The tray's items changed: one GET (usually `unchanged`) when the set of ids differs. */
+    trayChanged(items) {
+        if (!credentialsDeclared()) return null;
+        const ids = (Array.isArray(items) ? items : [])
+            .map(i => i?.scenarioData?.id).filter(id => typeof id === 'string' && id).sort().join('|');
+        if (ids === this._trayIds) return null;
+        this._trayIds = ids;
+        return this.refresh();
+    }
+
+    /** One GET /keyring with no screen, after the pending sync; never throws. */
+    async refresh() {
+        try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+        try { return await this.fetch(null); } catch (e) { return null; }
+    }
+
+    /** The entry a held tray item proves for Connect, from the latest answer, or null. */
+    connectEntryFor(itemId) {
+        if (typeof itemId !== 'string' || !itemId) return null;
+        return this.latest.find(e => e.heldItem === itemId && CONNECT_KINDS.includes(e.kind)) || null;
+    }
+
+    /**
+     * Connect from the tray (plan 8.2). Flushes the pending sync, asks GET /keyring, then:
+     *   1. the GET fails: "Connect could not reach the game server. Try again.";
+     *   2. no entry for the item: "{label} no longer works." with the tray item's name;
+     *   3. ended (an assist invite, K3c): "{displayName} ended the remote assist.";
+     *   4. targetOff: notRespondingMessage(host);
+     *   5. sessionHeld: the desktop by the session's route;
+     *   6. remoteBlocked: the remote-off sentence;
+     *   7. no route: "{host} can't be reached from here. You need a way onto its network.";
+     *   8. sign in by the route, then the desktop and the teaching toast once per kind; the
+     *      403/422 races answer as 4, 6 and 7; a policy or lockout refusal opens the remote
+     *      sign-in screen with the account and the credential chosen; not permitted is a toast.
+     * No network-view trip starts. `returnTo({ reason })` runs once the screens it opened have
+     * all closed. A second call while one runs does nothing. Resolves to { outcome } for tests.
+     */
+    async connect(el, { returnTo = null, text = null } = {}) {
+        const data = el?.scenarioData;
+        const itemId = data?.id;
+        if (!itemId) return { outcome: 'none' };
+        if (this.connecting) return { outcome: 'busy' };
+        this.connecting = itemId;
+        try {
+            const t = text || await import('../utils/remote-host-text.js');
+            return await this._connect(data, t, typeof returnTo === 'function' ? returnTo : null);
+        } finally {
+            this.connecting = null;
+        }
+    }
+
+    async _connect(data, t, returnTo) {
+        const w = window;
+        const title = data.name || 'Connect';
+        const toast = (msg, outcome, type = 'error') => {
+            try { w.gameAlert?.(msg, type, title, 4000, { plainText: true }); } catch (e) { /* no notification layer */ }
+            return { outcome, message: msg };
+        };
+        const opened = (outcome, extra = {}) => {
+            if (returnTo) this.watchScreensClose(returnTo);
+            return { outcome, ...extra };
+        };
+
+        try { await w.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+        let entries;
+        try { entries = await this.fetch(null); } catch (e) {
+            return toast(t.CONNECT_FAILED_TEXT, 'fetch_failed');
+        }
+        const entry = entries.find(e => e.heldItem === data.id && CONNECT_KINDS.includes(e.kind));
+        if (!entry) return toast(t.noLongerWorksMessage(data.name), 'missing');
+        const host = entry.host || entry.connectsTo;
+        const pcId = entry.connectsTo;
+        const displayName = entry.account?.displayName || entry.account?.username || null;
+        if (entry.ended === true) return toast(t.endedAssistMessage(displayName), 'ended');
+        if (entry.targetOff === true) return toast(t.notRespondingMessage(host), 'target_off');
+        if (entry.sessionHeld === true) {
+            const held = w.pcSessions?.get?.(pcId);
+            const foothold = held?.footholdId || connectRoute(entry)?.foothold || null;
+            w.openRemoteDesktop?.(pcId, foothold);
+            return opened('session_held', { foothold });
+        }
+        if (entry.remoteBlocked === true) return toast(t.remoteOffMessage(host), 'remote_blocked');
+        const route = connectRoute(entry);
+        if (!route) return toast(t.trayUnreachableMessage(host), 'no_route');
+
+        const result = await w.pcSessions.signInWithCredential(pcId, entry.id, route);
+        if (result?.ok) {
+            // signInWithCredential has already handed any endedPcIds to linkDropped (route_ended)
+            w.openRemoteDesktop?.(pcId, route.foothold);
+            if (this.teachOnce(entry.kind)) {
+                const line = t.teachLine(entry.kind, { displayName });
+                if (line) { try { w.gameAlert?.(line, 'info', '', 8000, { plainText: true }); } catch (e) { /* none */ } }
+            }
+            return opened('signed_in', { route });
+        }
+        if (result?.error) {
+            if (result.status === 403 && result.serverReason === 'not_responding') return toast(t.notRespondingMessage(host), 'target_off');
+            if (result.status === 403) return toast(t.trayUnreachableMessage(host), 'no_route');
+            return toast(t.CONNECT_FAILED_TEXT, 'login_failed');
+        }
+        const reason = result?.reason;
+        if (reason === 'remote_blocked') return toast(t.remoteOffMessage(host), 'remote_blocked');
+        if (reason === 'not_permitted') return toast(t.remoteNotPermittedMessage(host), 'not_permitted');
+        if (entry.kind === 'saved_connection' && (reason === 'kind_refused' || reason === 'locked_out')) {
+            // The target's remote sign-in screen, the account and the credential chosen, the refusal shown
+            w.openCredentialSignIn?.({
+                pcId, host, footholdId: route.foothold, username: entry.account?.username || null,
+                refusal: {
+                    credentialId: entry.id, reason, kind: result.kind || entry.kind,
+                    attemptsLeft: result.attemptsLeft ?? null, message: result.message || null
+                }
+            });
+            return opened('signin_screen', { reason });
+        }
+        // K3c: an assist invite's kind_refused or ended maps to 8.5's toast here
+        const line = t.credentialRefusalLine(reason, { host, label: data.name, displayName, kind: result?.kind || entry.kind });
+        return toast(line || t.CONNECT_FAILED_TEXT, reason || 'refused');
+    }
+
+    /**
+     * returnTo for Connect (plan 8.2): no trip carries it, so watch the minigame layer and call
+     * returnTo({ reason: 'closed' }) once the screens Connect opened have all closed (or never
+     * opened within RETURN_TO_OPEN_WAIT_MS).
+     */
+    watchScreensClose(returnTo, { every = RETURN_TO_POLL_MS, openWait = RETURN_TO_OPEN_WAIT_MS } = {}) {
+        const w = window;
+        const started = Date.now();
+        let seen = false;
+        const timer = setInterval(() => {
+            const open = !!w.MinigameFramework?.currentMinigame;
+            if (open) { seen = true; return; }
+            if (!seen && Date.now() - started < openWait) return;
+            clearInterval(timer);
+            try { returnTo({ reason: 'closed' }); } catch (e) { console.warn('[keyring] returnTo threw', e); }
+        }, every);
+        return timer;
     }
 
     /**

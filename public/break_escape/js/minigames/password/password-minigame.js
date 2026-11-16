@@ -1946,9 +1946,55 @@ export class PasswordMinigame extends MinigameScene {
         // The chosen account may not be in the rebuilt row (N2): back to the row, nothing hidden kept.
         // Not while a sign-in is in flight: the outcome decides (see _submitSignInOnce).
         if (!this._signingIn) this.dropChosenIfGone();
+        const connectTile = this.takeConnectRefusalTile(pending);
         if (st.selected === null && !typing && !locked) st.other = !this.signInTilesOffered();
         this.renderSignInForm({ quiet: late });
+        if (connectTile !== undefined) this.showConnectRefusal(connectTile);
         return true;
+    }
+
+    /**
+     * A refused Connect (keyring K3b, plan 8.2 step 8) opened this screen: once the account's tile
+     * carries the credential (or every list has answered), choose that account and answer the tile
+     * (or null, the typed form keeping the pre-filled name). Undefined until then, and after.
+     */
+    takeConnectRefusalTile(pending) {
+        const s = this.signIn;
+        const r = s?.connectRefusal;
+        if (!r || s.connectRefusalShown) return undefined;
+        const tile = s.preselect ? this.signInTileFor(s.preselect) : null;
+        const ready = tile && Array.isArray(tile.credentials) && tile.credentials.some(c => c.id === r.credentialId);
+        if (!ready && pending) return undefined;
+        s.connectRefusalShown = true;
+        if (!tile) return null;
+        const st = this.signInState;
+        st.selected = tile.username;
+        st.other = false;
+        st.otherPicked = false;
+        if (this.usernameField) this.usernameField.value = '';
+        return tile;
+    }
+
+    /** The refusal Connect met, shown as this screen shows its own (8.1): greyed button, lockout, line. */
+    showConnectRefusal(tile) {
+        const r = this.signIn?.connectRefusal;
+        if (!r) return;
+        const host = this.signInHost();
+        if (r.reason === 'locked_out') {
+            this.signInLockedOut({ ok: false, reason: 'locked_out', message: r.message, attemptsLeft: r.attemptsLeft });
+            return;
+        }
+        const cred = (tile?.credentials || []).find(c => c.id === r.credentialId) || null;
+        if (r.reason === 'kind_refused' && cred) {
+            cred.accepted = false;
+            const box = this.gameContainer?.querySelector?.('#signin-ways');
+            if (box) delete box.dataset.for;
+            this.renderSignInWays(tile);
+        }
+        const line = credentialRefusalLine(r.reason, {
+            host: cred?.host || host, label: cred?.label, displayName: tile?.displayName, kind: r.kind || cred?.kind
+        });
+        if (line) this.setSignInMessage(line, 'error');
     }
 
     /** The chosen tile is no longer in the row (N2): forget it and the typed values. True if dropped. */

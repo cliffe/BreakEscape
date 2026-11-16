@@ -91,6 +91,12 @@ module BreakEscape
       assert_equal true, e['accepted']
     end
 
+    test 'a held-proof entry names its tray item (K3b Connect), a session-proven one names none' do
+      entries = keyring['entries']
+      assert_equal 'lena_rdp_file', entries.find { |x| x['id'] == 'lena_rdp' }['heldItem']
+      refute entries.find { |x| x['id'] == 'jake_pw_note' }.key?('heldItem')
+    end
+
     test 'the scenario answer carries credentialsDeclared and never the registry' do
       get "/break_escape/games/#{@game.id}/scenario", as: :json
       assert_response :success

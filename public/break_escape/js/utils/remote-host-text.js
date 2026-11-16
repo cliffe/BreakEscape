@@ -119,6 +119,9 @@ export const kindRefusedMessage = (kind, host) => {
 export const kindRefusedShort = (host) => `${named(host)}: type the password.`;
 export const endedAssistMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
 export const noLongerWorksMessage = (label) => `${label || 'That sign-in'} no longer works.`;
+// Connect from the tray (K3b, plan 8.2 and 8.5)
+export const CONNECT_FAILED_TEXT = 'Connect could not reach the game server. Try again.';
+export const trayUnreachableMessage = (host) => `${named(host)} can't be reached from here. You need a way onto its network.`;
 
 /** The teaching toast per kind, shown once per page after the first successful use (8.1). */
 export function teachLine(kind, { displayName } = {}) {
