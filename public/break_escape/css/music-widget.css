@@ -202,7 +202,9 @@
   background: currentColor;
 }
 
-.mw-toggle-btn[aria-pressed="false"] {
+/* Off keeps the grey text and hollow marker, but not on hover: a hovered switch takes the same
+   accent border and text as the buttons beside it, and the marker still shows the state. */
+.mw-toggle-btn[aria-pressed="false"]:not(:hover) {
   color: #ccc;
 }
 
