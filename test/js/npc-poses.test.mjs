@@ -417,10 +417,32 @@ test('pass: the turn uses the object centre, eight directions (down-right of the
 
 test('pass: an NPC with no use frames still turns but shows nothing; a chat-blocked NPC does not turn', () => {
     const { poses, b, chat } = rig({ poseKeys: [poseAnimKey('ana', 'wave', 'down')] });
+    // No use, drink or phone frames at all: the pose module touches nothing, so no turn either
     b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'up', 'a poseless atlas is never turned');
+    assert.equal(b._poseHoldFacing, undefined);
+    assert.equal(poses.active.size, 0);
+    // Frames for another pose only (drink, no use): it turns to the machine, shows the drink lead-in as nothing
+    const r2 = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    r2.b.direction = 'up';
+    r2.poses.update();
+    assert.equal(r2.b.direction, 'down', 'has some pose frames: turns to the machine');
+    assert.equal(r2.poses.active.size, 0, 'but shows no use pose without use frames');
     chat(true);
+    b.direction = 'up';
     poses.update();
     assert.equal(b.direction, 'up', 'in a conversation: left alone');
+    const r3 = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+    r3.b.direction = 'up';
+    r3.chat(true);
+    r3.poses.update();
+    assert.equal(r3.b.direction, 'up', 'a chat-blocked NPC with pose frames does not turn');
+    // Control: the same NPC, no chat, does turn (so the assertion above can fail)
+    const r4 = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+    r4.b.direction = 'up';
+    r4.poses.update();
+    assert.equal(r4.b.direction, 'down', 'control: without a chat it turns to the machine');
 });
 
 test('pass: a colleague answering a phone turns to it and plays pose_phone', () => {
@@ -443,6 +465,14 @@ test('pass: a seated colleague on the phone keeps the sit frame (the seat is dro
     poses.update();
     assert.equal(b.direction, 'left');
     assert.equal(poses.active.size, 0);
+    // Control: the same colleague, standing, turns and plays the pose (so the assertions above can fail)
+    const r2 = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    r2.s.job = { need: null, kind: 'use', phase: 'using', targetId: 'phone', phone: true };
+    r2.s.call = { phoneId: 'phone', until: 9999 };
+    r2.b.direction = 'left';
+    r2.poses.update();
+    assert.equal(r2.b.direction, 'down', 'control: standing, it turns');
+    assert.equal(r2.poses.active.size, 1, 'control: and the pose plays');
 });
 
 test('pass: the turn holds face_player off until the pose is released', async () => {
@@ -484,4 +514,79 @@ test('pass: an owner answering its own desk phone (a call, no job) turns to the 
     b.direction = 'left';   // turned away mid-call: not turned back
     poses.update();
     assert.equal(b.direction, 'left');
+});
+
+// ── R1 fixes ───────────────────────────────────────────────────────────────────────────────
+test('R1 M1: the hold is narrow: on for the use lead and for a phone call, off once the drink starts', () => {
+    const { poses, b, sys } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'down')] });
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b._poseHoldFacing, true, 'holds for the lead');
+    sys.clockMs = USE_LEAD_MS + 10;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-down');
+    assert.equal(b._poseHoldFacing, false, 'the drink needs no facing: face_player may turn the NPC to the player');
+});
+
+test('R1 M1/m5: the hold is released on chat start, pose end, interruption, hostility, KO and reload', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    const started = () => { const r = rig({ poseKeys: keys }); r.b.direction = 'up'; r.poses.update(); assert.equal(r.b._poseHoldFacing, true); return r; };
+    { const r = started(); r.chat(true); r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'chat start'); }
+    { const r = started(); r.s.job = null; r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'pose end'); }
+    { const r = started(); r.b.isMoving = true; r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'interruption (moving)'); }
+    { const r = started(); r.b.currentState = 'chase'; r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'interruption (chase)'); }
+    { const r = started(); globalThis.npcHostileSystem = { isNPCHostile: () => true, isNPCKO: () => false }; r.poses.update();
+      assert.equal(r.b._poseHoldFacing, false, 'hostility'); globalThis.npcHostileSystem = null; }
+    { const r = started(); globalThis.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: () => true }; r.poses.update();
+      assert.equal(r.b._poseHoldFacing, false, 'knocked out'); globalThis.npcHostileSystem = null; }
+    // Reload: the flag lives on the behaviour object and is never saved; a new behaviour and pose module start clear
+    { const fresh = rig({ poseKeys: keys }); assert.ok(!fresh.b._poseHoldFacing, 'a fresh behaviour holds nothing'); }
+    // An NPC with no pose frames never gets the flag
+    { const r = rig({ poseKeys: [] }); r.b.direction = 'up'; r.poses.update(); assert.ok(!r.b._poseHoldFacing, 'poseless'); }
+});
+
+test('R1 m1: the hold is cleared on the pose loop exits that skip release()', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    // A real settle window, so the pose is only pending when the exit happens
+    const setup = () => { const r = rig({ poseKeys: keys, settleMs: 150 }); r.b.direction = 'up'; r.poses.update();
+        assert.equal(r.b._poseHoldFacing, true); assert.equal(r.poses.active.size, 0, 'pending, not shown'); return r; };
+    { // the texture changes and the frames are gone while the pose is pending
+        const r = setup(); r.b.sprite.texture = { key: 'other_atlas' }; keys.length = 0;
+        r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'mayPose false'); keys.push(poseAnimKey('ana', 'use', 'down')); }
+    { // the NPC leaves the needs states while pending
+        const r = setup(); r.sys.states.delete('ana'); r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'left states'); }
+    { // office visuals switched off while pending
+        const r = setup(); globalThis.gameScenario = { officeVisuals: false }; r.poses.update();
+        assert.equal(r.b._poseHoldFacing, false, 'officeVisuals false'); globalThis.gameScenario = {}; }
+});
+
+test('R1 m2: an owner mid own-desk use who answers the phone turns to the phone, not the PC', () => {
+    const { poses, b, s, sys } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'right')] });
+    const pc = obj('pc', {}); pc._sprite.x = 100; pc._sprite.y = 140;          // below
+    const phone = obj('phone1', {}); phone._sprite.x = 140; phone._sprite.y = 100;   // to the right
+    sys.world.getObject = id => (id === 'phone' ? phone : pc);
+    s.job = { need: 'work', kind: 'use', phase: 'using', targetId: 'pc' };
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'right', 'facing the phone');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_phone-right');
+});
+
+test('R1 M1: chat start turns a held NPC to the player (NPCBehavior.faceForChat)', async () => {
+    globalThis.window ||= globalThis;
+    const { NPCBehavior } = await import('../../public/break_escape/js/systems/npc-behavior.js');
+    assert.equal(typeof NPCBehavior.prototype.faceForChat, 'function');
+    const fake = { config: { facePlayer: true }, _poseHoldFacing: true, direction: 'up', npcBodyPos: () => ({ x: 0, y: 0 }),
+        calculateDirection: (dx, dy) => (dy > 0 ? 'down' : 'up'), playAnimation(st, d) { this.played = `${st}-${d}`; } };
+    NPCBehavior.prototype.faceForChat.call(fake, { x: 0, y: 50 });
+    assert.equal(fake.direction, 'down', 'turned to the player despite the hold');
+    assert.equal(fake._poseHoldFacing, false, 'hold released');
+    assert.equal(fake.played, 'idle-down');
+    // A chat with an NPC that has no face_player config leaves it alone
+    const quiet = { config: { facePlayer: false }, _poseHoldFacing: true, direction: 'up', npcBodyPos: () => ({ x: 0, y: 0 }),
+        calculateDirection: () => 'down', playAnimation() {} };
+    NPCBehavior.prototype.faceForChat.call(quiet, { x: 0, y: 50 });
+    assert.equal(quiet.direction, 'up');
+    assert.equal(quiet._poseHoldFacing, false, 'but the hold is still released');
 });

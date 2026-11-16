@@ -1662,20 +1662,55 @@ test('a routed seat walk goes leg by leg: through the waypoint, then the work sp
     }
 });
 
-test('needsStop: a colleague answering a desk phone has no stop (stands for the call), whether or not at the post', () => {
-    const prev = window.npcManager;
+test('needsStop: a desk-phone call has no stop only when the NPC has pose_phone frames (stands for the call)', () => {
+    const prev = { m: window.npcManager, p: window.npcPoses };
     window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    const job = { kind: 'use', phase: 'using', targetId: 'spare_phone', need: null, phone: true };
+    const owner = { npcId: 'c', mode: 'idle', atPost: true, job: null, call: { phoneId: 'own_phone', until: 9 } };
     try {
-        const job = { kind: 'use', phase: 'using', targetId: 'spare_phone', need: null, phone: true };
+        // With phone frames: a colleague (at the post or not) and the owner stand for the call
+        window.npcPoses = { hasPhonePose: id => id === 'c' };
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job }), null);
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job }), null);
-        // The owner answering its own phone at its desk (a call, no job) stands too
-        assert.equal(seating.needsStop({ npcId: 'c', mode: 'idle', atPost: true, job: null, call: { phoneId: 'own_phone', until: 9 } }), null);
+        assert.equal(seating.needsStop(owner), null);
         // The ordinary use of a non-phone object still stops
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: { ...job, phone: undefined, targetId: 'coffee' } }).key, 'at:coffee');
         // After the call (returning to the post) it sits again
         assert.equal(seating.needsStop({ npcId: 'c', mode: 'returning', atPost: true, job: null }).key, 'at:own_pc');
+        // No phone frames (or no pose module): exactly as on main, the NPC keeps its post stop and stays seated
+        for (const poses of [{ hasPhonePose: () => false }, undefined]) {
+            window.npcPoses = poses;
+            assert.equal(seating.needsStop(owner).key, 'at:own_pc', 'owner stays at its post for the call');
+            assert.equal(seating.needsStop({ ...owner, npcId: 'c' }).post, true);
+            assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job }).key, 'at:spare_phone',
+                'a poseless colleague uses the phone as on main');
+        }
     } finally {
-        window.npcManager = prev;
+        window.npcManager = prev.m; window.npcPoses = prev.p;
     }
+});
+
+test('a chat that hangs up a call keeps the NPC standing; it sits only after the chat closes (M2)', () => {
+    const rig = labSeatRig(235);
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    const prev = window.npcPoses;
+    window.npcPoses = { hasPhonePose: () => true };
+    try {
+        // On the call: no stop, so the stop key is clear (the NPC stands)
+        ns.call = { phoneId: 'staff_pc_2', until: 99 };
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), false);
+        assert.equal(rig.behavior._seatStopKey, null);
+        // The player starts a chat: the call is hung up, the home stop is back (a fresh stop)
+        ns.call = null;
+        window.npcNeedsSystem.world.inChatWith = () => true;
+        for (let i = 0; i < 5; i++) {
+            window.npcNeedsSystem.clockMs += 1000;
+            assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'standing through the chat');
+        }
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move while a chat is open');
+        assert.ok(!rig.behavior._seat, 'not seated');
+        // The chat closes: now it goes back to its chair
+        window.npcNeedsSystem.world.inChatWith = () => false;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the re-seat starts after the chat');
+    } finally { window.npcPoses = prev; rig.restore(); }
 });
