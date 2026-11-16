@@ -74,6 +74,38 @@ export function pcHostName(pcData, session = null) {
  * `account` is { kind: 'session', name, username, npcId, claimed } or
  * { kind: 'desktopUser', name, character } or null.
  */
+/**
+ * The desktop's second account line for a keyring credential session (K3a 8.1): "with the saved
+ * connection {label}". Null for any other session. Plain text: the caller escapes it.
+ */
+export function credentialSessionLine(session) {
+    if (!session || session.via !== 'credential') return null;
+    if (session.kind === 'saved_connection') return `with the saved connection ${credentialSessionLabel(session)}`;
+    return null;
+}
+
+/** The label a credential session shows: its own, else the generic name the sign-in screen uses. */
+export function credentialSessionLabel(session) {
+    return typeof session?.label === 'string' && session.label.trim() ? session.label : 'Saved connection';
+}
+
+/** Full label as the tooltip of each cut-off label span. Set through the DOM, never as markup. */
+export function titleCredentialLabels(root) {
+    root?.querySelectorAll?.('.credential-label-nowrap').forEach((el) => { el.title = el.textContent; });
+}
+
+/**
+ * The credential line as safe HTML with the label in a no-break span, so a label such as
+ * "HB-FIN-02.rdp" never splits at its hyphen: the line may wrap before the label, not inside it.
+ */
+export function credentialLineHtml(session) {
+    const line = credentialSessionLine(session);
+    if (!line) return '';
+    const label = credentialSessionLabel(session);
+    const lead = line.slice(0, line.length - label.length);
+    return `${escapeHtml(displayDashes(lead))}<span class="credential-label-nowrap">${escapeHtml(displayDashes(label))}</span>`;
+}
+
 export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
     const signIn = pcData?.lockType === 'login' || !!session;
     let account = null;
@@ -85,6 +117,8 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
                 username: session.username || '',
                 npcId: session.npcId || null,
                 claimed: session.via === 'claim',
+                // A keyring credential session names how it signed in (K3a 8.1)
+                ...(credentialSessionLine(session) ? { credentialLine: credentialSessionLine(session), credentialHtml: credentialLineHtml(session) } : {}),
                 // The picture's source from the server's session answer, so an NPC whose room is
                 // not loaded still has its headshot (fix round 1, M2)
                 ...(session.portrait ? { portrait: session.portrait } : {}),
@@ -170,7 +204,8 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
             <span class="pc-headshot pc-start-headshot" aria-hidden="true"></span>
             <span class="pc-start-who">
                 <span class="pc-start-name">${escapeHtml(displayDashes(a.name))}</span>${a.kind === 'session' && a.username ? `
-                <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}
+                <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}${a.credentialLine ? `
+                <span class="pc-start-credential">${a.credentialHtml || escapeHtml(displayDashes(a.credentialLine))}</span>` : ''}
             </span>
         </div>` : '';
     const lines = `<span class="pc-start-line pc-start-host">${escapeHtml(displayDashes(m.host))}</span>`
@@ -327,6 +362,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     if (!root || !doc) return null;
     const holder = doc.createElement('div');
     holder.innerHTML = pcStartPanelHtml(model, shareIcon ? { shareIcon } : {}) + pcTaskbarHtml(model, { windowTitle, takeable });
+    titleCredentialLabels(holder);
     const panel = holder.querySelector('.pc-start-panel');
     const taskbar = holder.querySelector('.pc-taskbar');
     root.appendChild(panel);

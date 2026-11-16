@@ -603,6 +603,7 @@ Lines:
 | wrong PC (a tampered-client answer only: a sign-in screen offers only credentials for its own PC and Connect posts only to `connectsTo`) | "This connection is for another PC." | |
 | ended | "{displayName} ended the remote assist." | |
 | route ended (`linkDropped` reason `route_ended`; unplug keeps "Unplugged. Your session on {host} ended.") | "Your session on {host} ended: the session it went through was closed." | |
+| route ended, several hosts (same reason) | "Your sessions on {A} and {B} ended: the sessions they went through were closed." (three or more: "{A}, {B} and {C}") | |
 | no longer works | "{label} no longer works." (`{label}` from the tray item's `name`) | |
 | keyboard, two or more lists failed | "This PC's sign-in details could not be loaded." | |
 | Connect failed | "Connect could not reach the game server. Try again." | |

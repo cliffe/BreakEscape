@@ -856,3 +856,140 @@ Suites: K2 files (credential_keyring, credential_sessions, credential_login, syn
 ### Live proof result
 
 Saved-connection half PASS on games 6168 and 6169: honest sign-in, generic refusal across 9 tampered forms, wrongPc, nothing counted, 0 leaks, 0 page errors. The `ops_cookie` kindRefused case is unreachable in `test_access_keyring`: `ops_pc` is on server_lan and the drop box reaches only office_lan, so the 403 (not reachable) comes first. It needs a pivot when the scenario is extended. Forged items are refused at `/inventory` before any sign-in. The relay half waits on plan 9.1.
+
+## Slice K3a: the sign-in screen (run 1 handover, no code yet)
+
+Run 1 read the plan (3, 5.2, 6.2, 7, 8.1, 8.4, 8.5, 9.1), the K0 client and K2 notes, and the code below. It then hit the context limit before editing. Nothing is built. The next run starts from this design. Each point was checked against the code at `bb075aa10`.
+
+### Where each piece lives
+- **Client never knows `credentials` is declared**: the bootstrap deletes it (`game.rb` ~2353), and GET /keyring sends implicit captured entries even in shipped scenarios. Proposal: add a capability flag beside `sessionLockingSupported` (`games_controller.rb` ~443): `filtered['credentialsDeclared'] = @game.scenario_data['credentials'].is_a?(Hash) && any?`. It is a static bootstrap field, not player_state. Add a Rails test next to the `sessionLockingSupported` one (`test/controllers/break_escape/access_model_login_test.rb`), with false for a shipped scenario. The client reads `window.gameScenario?.credentialsDeclared === true`.
+- **`systems/keyring.js` (new, no imports)**: the cache keyed by `pcId|route` with `rev`, the opened `foundIn` set (`noteOpened(id)`), `firstAnswerIds` (entries in the page's first successful answer show at once, which covers the reload case), `teachOnce(kind)`, and `screenEntries(entries, { pcId, screen: 'keyboard'|'foothold' })`. Keyboard: password only. Foothold: password plus `saved_connection` with `forThisPc`. Never `assist_invite`. A registry password waits until `foundIn` is opened or the entry was in the first answer. It sets `window.keyring`. To avoid growing about 35 harness copy lists, load it with a **dynamic** `import('./keyring.js')` in `unlock-system.js`, as `captures.js` is loaded there (only when `credentialsDeclared`). Also add one static import in `main.js`, so the opened set exists from page start. `core/game.js` and `unlock-system.js` are copied by many harnesses: do not add static imports there.
+- **Opened file hook**: `container-minigame.js` `handleInteractiveItem` (~1573) and `openFileInPlace` (~1505): `window.keyring?.noteOpened?.(item.id)`. No import.
+- **`api-client.js`**: `keyring(pcId, { foothold, rev })` -> GET `/keyring?pc_id=&foothold=&rev=`; `loginWithCredential(pcId, credential, { foothold })` -> POST /login `{ pc_id, credential, foothold }`. Never send `relay: false` (K2 t2).
+- **`pc-sessions.js`**: `signInWithCredential` mirrors `signIn` (~278). On 422 it maps `wrongPc`, `kindRefused`, `notPermitted`, `lockedOut`, `ended`, and the generic body (no flag) to reason `no_longer_works`. 403s go through as errors with `serverReason`. On success it keeps `via: 'credential'`, `kind`, `label` and `route` from the answer, and `load()` keeps `kind`/`label` too (`session_for_client` sends them, with `footholdId` for the route: K2 t4, read `footholdId`). Hand the answer's `endedPcIds` to `linkDropped` in both `signIn` paths (K2 7/3.8).
+- **`password-minigame.js`**: extend `mergeRemoteTiles` with a `keyring` list. Tag kinds: `captured` (source capture), `in_file` (registry password) and `saved_connection`. The tile gains `credentials[]` `{ id, label, accepted, host }`, `found[]` `{ label }`, and `password` from a captured entry. `setRemoteAccounts` takes `keyring` and `keyringFailed`. `remoteStateLine`: keyring failed alone gives "Your found sign-ins could not be loaded."; any two failed give `remoteBothFailedLine`. The keyboard screen gains `setKeyringEntries` (merge with picker rules, tags on keyboard tiles only when declared) and its own failed lines. The chosen line: a `.signin-ways` box at the top of `#signin-form` (own scroller with the "More below" cue) holds the credential buttons (`<span class="signin-cred-fixed">Connect with</span> <span class="signin-cred-label">` ellipsis, full kind and teach in `title`). A refused one gets `aria-disabled="true"` with a short reason under it. Then two-line found rows. Clicking a greyed button puts the full reason in the message line. Teach toasts go out once per page per kind after success (typed in-file sign-in included).
+- **`utils/remote-host-text.js`**: add tags and full names to `TAG_TEXT` (`in_file` "In file", `saved_connection` "Saved" with group `plug`, `assist_invite`, `token`) and the 8.5 lines (refused short and full, wrong PC, no longer works, keyring failed, keyboard both failed, teach lines, "Type the password from").
+- **`unlock-system.js`**: `openRemoteSignInScreen` (~651) gets a third list in the cap (`keyringDone`). `openLoginSignIn` (~573), when declared, fetches `/keyring` alongside `/login_accounts` under `REMOTE_CAPTURES_WAIT_MS`, with a late redraw.
+- **`screen-states.js:83`**: `via !== 'password' && via !== 'credential'`.
+- **Desktop line**: slice 6's start panel has merged, so "with the saved connection {label}" goes in `pc-taskbar.js` `pcStartPanelHtml` under `.pc-start-name` (`pcTaskbarModel` must copy `kind`/`label` from the session), plus `container-minigame.js` `accountBarHtml` (~1012) for the non-monitor path.
+- **Art**: `assets/icons/badge-plug.png`, 8x8 by hand (not built).
+
+### Answers K3a turns into text (from `credential_login.rb`)
+404 not found; 422 generic `{ message: 'Incorrect username or password' }`; 422 `wrongPc`; route 403 `reason` unreachable / not_responding, 422 `remoteBlocked`; 422 `kindRefused: kind`; 422 `notPermitted`; 422 `lockedOut`; 422 `ended`; 200 `login_session_answer` with `kind`, `label`, `remote`, `footholdId`, `host`, `route` and optional `endedPcIds`.
+
+### Open (all of 8.1)
+All code, `test/js/keyring-signin.test.mjs`, `screen-states.test.mjs` cases, `signin-fit.mjs` K3a fixtures, mutation checks, the Rails flag test, bin/test-js, the Rails suite, rubocop, and the live proof on :3063 (R2, R3 sign-in half, R4, R5a).
+
+### Run 2 (code built, tests not yet written)
+
+Run 2 took run 1's four decisions as accepted by the integrator. It stopped at the context limit after the code step.
+
+**Built and committed**
+- Rails: `credentialsDeclared` static bootstrap flag beside `sessionLockingSupported` (`games_controller.rb`), with two tests in `keyring_route_test.rb` (true with credentials, false without; the registry never in the answer). The test was shown to fail with the flag forced true, then restored. Rubocop is clean on both files.
+- `systems/keyring.js` (new, no imports): the `Keyring` class (cache keyed by `pcId|route` with `rev`, opened set via `noteOpened`, `firstAnswerIds`, `teachOnce`, `screenEntries`, `foundVisible`, `prime`), `getKeyring()` sets `window.keyring`. One static import in `main.js`; `unlock-system.js` loads it by dynamic import (`keyringForScreen`).
+- Page-start prime: `core/game.js` calls `window.keyring?.prime?.()` beside `pcSessions.load` (no import). The prime's answer fixes `firstAnswerIds`, so on a fresh page a found password still waits for its file, and after a reload it shows at once. This is a deviation from run 1's note, which had "the page's first successful answer" with no prime.
+- `container-minigame.js`: `noteOpened(item.id)` in `openFileInPlace` and `handleInteractiveItem`, and the account bar's second line.
+- `api-client.js`: `keyring(pcId, { foothold, rev })` and `loginWithCredential(pcId, credential, { foothold })`.
+- `pc-sessions.js`: `signInWithCredential`, exported `credentialRefusalReason` (generic 422 gives `no_longer_works`), `kind`/`label` kept on sign-in, `load()` and `publicSession`, and `_dropEnded(endedPcIds)` in both sign-in paths.
+- `remote-host-text.js`: the `TAG_TEXT` kinds, `BADGE_FILE` + `badgeSrc` (the plug group reuses `badge-key.png`; this is the one place to change), and the 8.5 lines plus `credentialRefusalLine` and `teachLine`.
+- `password-minigame.js`: `mergeRemoteTiles` takes `keyring` (tile `credentials[]`, `found[]`, `keyPassword`), `keyringTagKind`, `mergeKeyboardTiles`, `credentialButtonTitle`; the `#signin-ways` box with `#signin-ways-more` at the top of `#signin-form`; `renderSignInWays` (DOM nodes, textContent only), `fitSignInWays`, `useCredential`, `teachAfter`, `keyboardTiles`, `keyboardStateLine`, `setKeyringEntries`; `remoteStateLine` counts three failures; the typed sign-in teaches `in_file`. Test state carries the tile `credentials`/`found` and `keyring`.
+- `unlock-system.js`: `keyringForScreen`, the third list in the remote cap (`keyringDone`), and the keyboard keyring alongside `/login_accounts` under `REMOTE_CAPTURES_WAIT_MS` with a late `setKeyringEntries`.
+- `screen-states.js`: `signedInVia` covers `password` and `credential`.
+- `pc-taskbar.js`: `credentialSessionLine`, the model's `credentialLine` and `.pc-start-credential` in `pcStartPanelHtml`.
+- CSS: the ways box, buttons, refused and found lines, keyboard tags (`password-minigame.css`), `.pc-start-credential` (`pc-monitor.css`), `.desktop-account-credential` (`container-minigame.css`).
+
+**Deviations and choices to check**
+- The keyboard with picker `false` keeps the typed form and shows no keyring tiles. Under `accounts`, unlisted keyring accounts are dropped. Under `known`, they are added.
+- The desktop template lines use `escapeHtml` inside the existing HTML templates (that file's own practice); the sign-in ways use textContent.
+- A server `kind_refused` greys the button from then on and shows the full line.
+
+**Not done (next run, in order)**
+1. Run `bin/test-js` (it passed 712/712 after the main.js import, before the password-minigame, unlock-system, taskbar and CSS edits) and fix any fallout.
+2. Write `test/js/keyring-signin.test.mjs` (the plan 8.1 list) and the `screen-states.test.mjs` cases. Show each failing once by a temporary mutation, then restore.
+3. Add the K3a fixtures to `tools/playtest/signin-fit.mjs`.
+4. Run the full Rails suite and bin/test-js again, then commit.
+5. Live proof on :3063 (R2, R3 sign-in half, R4, R5a), or hand it over.
+
+**Open for the user**: `badge-plug.png` art (the plug group shows the key badge until then).
+
+### Run 3 (partial: tests written, mutations and suites still to do)
+
+Run 3 stopped at the context limit after step 2's writing. Commits `d42e4d7ce` and `fdab5f7c1` on `build/keyring-k3a`.
+
+**Done**
+- bin/test-js on `d4ecac8b4`: 711 of 712 files passed. The one failure, `pc-monitor-frame.test.mjs` (E06 card CSS), was the test, not the code: it sliced the CSS from the E06 marker to the end of the file, so the K3a rules (which set `border-radius: 0`) fell inside the check. The slice now ends at the K3a comment (`d42e4d7ce`). No ERR_MODULE_NOT_FOUND: keyring.js loads by dynamic import, as designed.
+- `test/js/keyring-signin.test.mjs`: 46 tests, all passing. Own harness (real password-minigame, unlock-system, keyring, pc-sessions, pc-taskbar, remote-host-text, api-client, network-links). Covers: tag kinds and `credentialsDeclared`; usable kinds per screen (invite never, other-PC and ended dropped); the In file wait and the reload case; `rev`/unchanged/lost-rev fetch; teachOnce; api-client request shapes (no `relay`); one tile per account and the picker rules (accounts/known/typed/false) for remote and keyboard; tags, two-tag "+N", badges; ways box (buttons with "Connect with" whole, title, Password always present, found lines); greyed refused button (aria-disabled, short reason, click shows the full reason, no request); credential sign-in route and session kind/label; teaching toast once per kind (and typed in_file); every 8.5 refusal text (wrongPc, kindRefused x2, notPermitted, lockedOut, ended, remoteBlocked, generic, 403 x2); server kindRefused greys the button; keyring failed lines (alone and combined); markup shown as text; keyboard screen picker false/accounts/known, no-credentials unchanged, failed lines, late redraw; remote loading (route, one layout, In file filter, cap and late relayout, failure, no call without credentials); keyboard loading (passwords only, cap, late `setKeyringEntries`, failure); start panel line (escaped, other sessions none); reload keeps kind/label; `endedPcIds` to `linkDropped` in both sign-in paths; 403/bad answer fail closed.
+- `screen-states.test.mjs`: two credential cases added (26 pass).
+- Bugs in K3a code found: none so far. Observation, not changed: a keyring answer that arrives after the player chose a tile does not fill the Password field (the test pins that it does not overwrite).
+
+**Not done (next run, in order)**
+1. Mutation checks: for each group of tests, break the source once (for example `signedInVia` back to `=== 'password'`, drop `_dropEnded`, make `screenEntries` list `assist_invite`, remove the `foundVisible` check, change `kindRefusedShort`, drop the third list from `paint`'s `both`), confirm the test fails, restore with `git checkout -- <file>`. Record each here.
+2. `tools/playtest/signin-fit.mjs` K3a fixtures (plan 8.1 worst cases) and run if headless.
+3. bin/test-js again, full Rails suite, rubocop on changed Ruby files.
+4. Live proof on :3063; `badge-plug.png` art for the user (the plug group still shows the key badge).
+
+### Run 4 (mutation evidence, fixtures, suites)
+
+**Mutation evidence.** Each row: one temporary change to the K3a source, `keyring-signin.test.mjs` plus `screen-states.test.mjs` run, source restored with `git checkout -- <file>` (`git diff --stat` empty after each). 12 mutations, 12 caught.
+
+| # | Mutation | File | Tests failing |
+|---|----------|------|---------------|
+| 1 | Keyring entries each get their own tile (no reuse of the account's tile) | password-minigame.js | 22 (merge one tile per account, keyboard and remote screens, ways box) |
+| 2 | Picker `accounts` keeps unlisted accounts | password-minigame.js | 3 (merge picker rules, keyboard merge, keyboard screen) |
+| 3 | `kindRefusedShort` text changed | remote-host-text.js | 2 (greyed refused button, server kindRefused) |
+| 4 | `wrongPc` no longer mapped in `credentialRefusalReason` | pc-sessions.js | 2 (wrongPc text, reason mapping) |
+| 5 | Sign-in body key `credential` renamed | api-client.js | 1 (request shapes) |
+| 6 | `_dropEnded` no longer calls `linkDropped` | pc-sessions.js | 1 (endedPcIds in both sign-in paths) |
+| 7 | `signedInVia` back to password only | screen-states.js | 2 (credential session counts as signed in, held across leave) |
+| 8 | `screenEntries` lists `assist_invite` | keyring.js | 1 (usable kinds per screen) |
+| 9 | `foundVisible` always true | keyring.js | 2 (In file waits for its file, remote loading filter) |
+| 10 | Start panel line not escaped | pc-taskbar.js | 1 (start panel line, escaped) |
+| 11 | Credential button label set as HTML | password-minigame.js | 1 (author text is text) |
+| 12 | `credentialSessionLine` returns null | pc-taskbar.js | 2 (start panel line, reload keeps kind and label) |
+
+**Fixtures.** `tools/playtest/signin-fit.mjs` gains `ways-longest` (three long-label saved connections, one refused, two found passwords), `ways-refused-short` (one greyed connection with its short reason) and `keyring-both-failed` (the combined failed line). A new `expectWays` check fails when the ways box is not shown, its first button sits outside the visible area, "Connect with" is cut, a scrolling box has no "More below" cue, or the Password field is missing. Not run: the script needs a keyless server and a browser, and this run had no servers. To run it: start the keyless server on a free port (AGENTS.md) and `PORT=<port> node tools/playtest/signin-fit.mjs` (add `SHOTS=<dir>` for screenshots). Syntax checked with `node --check`.
+
+**Suites** (tip before this entry `f0927b3ad` plus the fix below)
+- `bin/test-js`: 713 files, 713 passed, 0 failed.
+- Rails full suite: 2995 runs, 48452 assertions, 1 failure, 0 errors, 3 skips. The failure was fallout from K3a: `sync_payload_size_test.rb` "the bootstrap scenario carries no credentials key" refuted the substring `credentials` anywhere in the body, which now matches the `credentialsDeclared` flag. The test now refutes the `"credentials":` key instead (the registry still cannot reach the browser). The file re-run: 3 runs, 0 failures. Not a second full run.
+- rubocop on the changed Ruby files (`games_controller.rb`, `keyring_route_test.rb`) and the fixed test: no offences.
+
+**Open**
+- Live proof on :3063 (R2, R3 sign-in half, R4, R5a) and the `signin-fit.mjs` run, both needing a server.
+- `assets/icons/badge-plug.png` art for the user (8x8 by hand); the plug group shows the key badge until then.
+
+### Run 6 (R1 fixes)
+
+Fixes for `CREDENTIAL_KEYRING_K3A_REVIEW_R1.md`, plus two live findings. Tip before this run `dc53512c4`.
+
+| Finding | Fix | Test |
+|---|---|---|
+| M1 | `linkDropped(endedPcIds, reason = 'unplugged')` in `pc-sessions.js`. `_dropEnded` and the sign-out prune pass `route_ended`; the `network_device_unplugged` listener passes `unplugged`. New `routeEndedMessage(hosts)` gives the 8.5 line ("Your session on {host} ended: the session it went through was closed."); an open desktop of a pruned session closes with the same line, an unplug keeps "The link dropped". | `keyring-signin.test.mjs` "M1 plan 8.3": toast text in the credential and password paths, several hosts, default reason keeps the unplug line, open desktop wording. |
+| m1 | `remember(key, answer, { primed })`: only the prime fixes `firstAnswerIds`; a failed prime sets it to an empty set (the stricter case). | "R1 m1": prime rejects, then a screen answer; the found password stays hidden until `noteOpened`. Also a screen answer ahead of a slow prime. Two older tests now call `prime()` first, as the page does. |
+| m2 | `noteOpened` also runs on a successful `takeItem` (copy or move) and in `TextFileMinigame.init` (any reader, including the inventory). | `container-transfer-dialog.test.mjs`: Open, Copy, Move and a plain click each record the id; Cancel records none. Removing the container hooks fails it (checked: 1 failure). The text-file hook has no test (no harness for that minigame loads cheaply). |
+| m3 | `screenEntries` needs `forThisPc === true`; `accepted` is `e.accepted === true`. | "R1 m3": connectsTo alone is not listed; a missing `accepted` stays greyed. |
+| m4 | The ways box and its "more" cue now follow `.signin-selected-row`. | Ordering assertions added to the ways test. `signin-fit.mjs` not run (no server): the first button still being in view at the four sizes is unconfirmed. |
+| Live: raw id | Server `credential_label`: the entry's own `label`, else the item name, else empty (never `connectsTo`). Client `credentialLabel`: empty or an id equal to `connectsTo` becomes "Saved connection" (8.5 full name). `test_access_keyring` `ops_cookie` gets `"label": "SV-OPS-01.rdp"` (plan 9.1 already gives `lena_token` a `label`). | "R1 live" client test; `credential_keyring_test.rb` label precedence. |
+| Live: wrapped label | `credentialLineHtml` wraps the label in `.credential-label-nowrap` (`white-space: nowrap`), used by the start panel and the account bar. The line wraps before the label only. | start panel and account bar assertions. 390 width not measured live. |
+| Live: in_file toast | Real `notifications.js` held-queue path: held while a panel is open, shown once after it closes. No fix needed. | "R1 5". |
+| t1 | `.signin-cred` takes `minigame-button` outside a monitor. | none (CSS class). |
+| t2 | `greyedShown` dropped from `credentialRefusalLine`. | old assertion removed. |
+| t4 | Account bar line tested, label escaped. | `container-transfer-dialog.test.mjs`. |
+| t5 | Comment added at the keyboard filter. | n/a |
+
+**Deferred.** t3 (the keyboard's chosen line naming kinds): a wording change to a shipped screen, wants the owner's pick. `signin-fit.mjs` and the live beats need a server and were not run. Existing games on `test_access_keyring` keep a stored scenario copy, so Ian's button shows "Saved connection" there until a new game.
+
+### Run 7 (R2 fixes, main merge)
+
+Fixes for `CREDENTIAL_KEYRING_K3A_REVIEW_R2.md`. Tip before this run `1ee644f99`; fixes in "Keyring K3a: round 2 fixes", then main (`11f7eee6d`) merged with no conflicts (the harness copy lists merged cleanly).
+
+| Finding | Fix | Test |
+|---|---|---|
+| m1 | `.credential-label-nowrap` is `inline-block` with `max-width: 100%`, `overflow: hidden`, `text-overflow: ellipsis`. `titleCredentialLabels(root)` (pc-taskbar.js) sets each span's `title` to its full text through the DOM, called after the start panel mounts and after the account bar is built. Validator warns when a credential `label` is over 32 characters. | `keyring-signin.test.mjs` "R2 m1" (title via DOM, CSS declarations, no `title=` in markup); `validator-credentials.test.mjs` (33 warns, 32 and a normal label do not). |
+| t3 | `credentialSessionLabel(session)`: an empty or blank label gives "Saved connection", so the desktop line reads "with the saved connection Saved connection" and `credentialSessionLine` is no longer null for it. | The old null assertion became two assertions. |
+| t4 | The plural `route_ended` line is in the plan 8.5 table. | n/a |
+| t2 | Source-level assertion that `TextFileMinigame.init` calls `window.keyring?.noteOpened?.(this.textFileData?.itemId)`. | "R2 t2". |
+
+**In-file toast, live.** `gameAlert` renders ordinary DOM toasts in `#notification-container` (not canvas). Info and success toasts raised while a full-screen panel is open are held in memory (`heldNotifications`) and rendered only when the last panel closes, then shown a few at a time. Closing the PC monitor returns to the network view, which is still a panel, so the toast stays held until that closes too; it then queues behind the task and objective toasts and showed about 8 s later. That is why earlier polls of `document.body.innerText` found nothing. No code fix needed. Screenshot: `scratchpad/k3a-live3/in-file-toast-1280.png` (toast text visible on screen, `show` class, opacity 1). Start panel at 390x844 with the normal label: `startpanel-390.png`, label whole on its own line. A 40-character label at 390 was not measured live.
+
+**Results.** `bin/test-js` 715 files, 0 failed. Rails suite 2996 runs, 0 failures, 0 errors, 3 skips. Rubocop clean on `scripts/validate_scenario.rb`, `credential_keyring.rb` and its test.

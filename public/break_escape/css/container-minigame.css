@@ -1090,3 +1090,10 @@
     padding: 8px 8px 32px;
     gap: 32px 8px;
 }
+
+/* Credential keyring K3a (8.1): the account bar's second line for a saved-connection session */
+.desktop-account-credential {
+    display: block;
+    color: #9fb0bf;
+    overflow-wrap: anywhere;
+}

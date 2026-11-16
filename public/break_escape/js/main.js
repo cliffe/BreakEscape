@@ -45,6 +45,8 @@ import './systems/room-state-sync.js';
 // Import global state sync (persists gameState.globalVariables to server every 30s)
 import { StateSync } from './state-sync.js';
 import { installCaptureClient } from './systems/capture-client.js';
+// Credential keyring K3a: window.keyring and its opened-file set exist from page start
+import './systems/keyring.js';
 
 // Import Music Controller and Widget
 import MusicController from './music/music-controller.js';

@@ -67,6 +67,21 @@ module BreakEscape
       entries.find { |e| e['id'] == id }
     end
 
+    # --- label (K3a R1) -----------------------------------------------------------------------
+
+    test 'a connecting credential label is its own label, else its item name, else empty and never the connectsTo id' do
+      @game.scenario_data['credentials']['ops_cookie'] = { 'kind' => 'saved_connection', 'account' => 'lena', 'connectsTo' => 'jake_pc',
+                                                           'proof' => { 'foothold' => 'jack1' } }
+      @game.player_state['footholds'] = { 'jack1' => { 'via' => 'jack', 'network' => 'office_lan', 'source' => 'comms_port', 'seq' => 1 } }
+      e = entry('ops_cookie')
+      assert e, 'the foothold proof holds'
+
+      assert_equal '', e['label'], 'no label and no held item: empty, so the screen uses its generic wording'
+      refute_equal 'jake_pc', e['label']
+      @game.scenario_data['credentials']['ops_cookie']['label'] = 'SV-OPS-01.rdp'
+      assert_equal 'SV-OPS-01.rdp', entry('ops_cookie')['label']
+    end
+
     # --- held proof ---------------------------------------------------------------------------
 
     test 'a held saved connection proves held and drops when the item leaves the inventory' do

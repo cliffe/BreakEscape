@@ -43,8 +43,24 @@ export const remoteBothFailedLine = (host) => `${named(host)}'s sign-in details 
  * chosen line.
  */
 export const TAG_TEXT = Object.freeze({
-    captured: Object.freeze({ tag: 'Captured', full: 'Captured password', group: 'key' })
+    captured: Object.freeze({ tag: 'Captured', full: 'Captured password', group: 'key' }),
+    // Keyring K3a (8.5): a password in a file, a saved connection, a remote assist invite, a token
+    in_file: Object.freeze({ tag: 'In file', full: 'Password in a file', group: 'key' }),
+    saved_connection: Object.freeze({ tag: 'Saved', full: 'Saved connection', group: 'plug' }),
+    assist_invite: Object.freeze({ tag: 'Assist', full: 'Remote assist', group: 'plug' }),
+    token: Object.freeze({ tag: 'Token', full: 'Session token', group: 'plug' })
 });
+
+/**
+ * The badge image per glyph group, in one place. The plug glyph's own art (badge-plug.png) is
+ * not drawn yet, so the plug group reuses the key badge until it is.
+ */
+export const BADGE_FILE = Object.freeze({ key: 'badge-key.png', plug: 'badge-key.png' });
+
+/** The badge image path for a glyph group. */
+export function badgeSrc(group) {
+    return `/break_escape/assets/icons/${BADGE_FILE[group] || BADGE_FILE.key}`;
+}
 
 /** The tags drawn on a tile for these kinds, in order: at most two, the second "+N" past two. */
 export function tileTagLabels(kinds) {
@@ -87,3 +103,45 @@ export function nowrapHostsHtml(text, esc) {
 
 /** The scroll cue's words for a remote tile row that outgrows its box. Same words as utils/more-below.js (a test pins them). */
 export const REMOTE_MORE_BELOW_TEXT = 'More below';
+
+// Keyring K3a (plan 8.5): credential lines on the sign-in screens. Every field is a template
+// field filled from the entry or the PC, never free text; no pronoun for the account holder.
+export const KEYRING_FAILED_TEXT = 'Your found sign-ins could not be loaded.';
+export const KEYBOARD_BOTH_FAILED_TEXT = "This PC's sign-in details could not be loaded.";
+export const FOUND_PASSWORD_LEAD_TEXT = 'Type the password from';
+export const CONNECT_WITH_TEXT = 'Connect with';
+export const WRONG_PC_TEXT = 'This connection is for another PC.';
+export const kindRefusedMessage = (kind, host) => {
+    if (kind === 'assist_invite') return `${named(host)} does not allow remote assistance.`;
+    return `${named(host)} always asks for the password, so a saved one is ignored.`;
+};
+/** The one-line short form under a greyed button (fits 306px of GNF 16px with the longest host). */
+export const kindRefusedShort = (host) => `${named(host)}: type the password.`;
+export const endedAssistMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
+export const noLongerWorksMessage = (label) => `${label || 'That sign-in'} no longer works.`;
+
+/** The teaching toast per kind, shown once per page after the first successful use (8.1). */
+export function teachLine(kind, { displayName } = {}) {
+    const who = displayName || 'the account holder';
+    if (kind === 'in_file') return 'People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file.';
+    if (kind === 'saved_connection') return `The password is saved inside this file, so opening it signs you in as ${who}. A policy that always asks for the password stops it.`;
+    if (kind === 'assist_invite') return `${who} let you into the session. Check who is asking before you share access.`;
+    return null;
+}
+
+/**
+ * The error line for a credential sign-in's refusal (8.5), by pc-sessions' reason. A policy
+ * refusal gets its full line here (a greyed button never posts, so none is shown twice).
+ */
+export function credentialRefusalLine(reason, { host, label, displayName, kind } = {}) {
+    switch (reason) {
+    case 'kind_refused': return kindRefusedMessage(kind, host);
+    case 'wrong_pc': return WRONG_PC_TEXT;
+    case 'not_permitted': return remoteNotPermittedMessage(host);
+    case 'locked_out': return remoteLockedOutMessage(host);
+    case 'remote_blocked': return remoteOffMessage(host);
+    case 'ended': return endedAssistMessage(displayName);
+    case 'no_longer_works': return noLongerWorksMessage(label);
+    default: return null;
+    }
+}

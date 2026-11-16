@@ -91,6 +91,20 @@ module BreakEscape
       assert_equal true, e['accepted']
     end
 
+    test 'the scenario answer carries credentialsDeclared and never the registry' do
+      get "/break_escape/games/#{@game.id}/scenario", as: :json
+      assert_response :success
+      assert_equal true, response.parsed_body['credentialsDeclared']
+      refute response.parsed_body.key?('credentials'), 'the registry stays on the server'
+    end
+
+    test 'a scenario without credentials answers credentialsDeclared false' do
+      @game.update_columns(scenario_data: @game.scenario_data.except('credentials'))
+      get "/break_escape/games/#{@game.id}/scenario", as: :json
+      assert_response :success
+      assert_equal false, response.parsed_body['credentialsDeclared']
+    end
+
     test "another player's game answers as GET /capture_secrets does (forbidden)" do
       other = Game.create!(mission: @game.mission, player: break_escape_demo_users(:other_user)).reload
       get game_path(other.id, 'keyring'), as: :json

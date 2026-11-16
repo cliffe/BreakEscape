@@ -537,7 +537,10 @@ test('UI PC 2 (E06): the chosen account, the fields, Sign in and the message are
 
 test('UI PC 2 (E06): the card CSS: one 2px frame, no chips inside it, the plain password panel the same', () => {
     const t = css('password-minigame.css');
-    const sec = t.slice(t.indexOf('/* ── One sign-in card (UI PC 2'));
+    // The E06 section only: the keyring rules (K3a) follow it and may set border-radius: 0
+    const from = t.indexOf('/* ── One sign-in card (UI PC 2');
+    const to = t.indexOf('/* Credential keyring K3a');
+    const sec = t.slice(from, to > from ? to : undefined);
     assert.ok(sec.length > 100);
     const card = sec.match(/\.pc-screen-area \.signin-card,\s*\.pc-screen-area \.pc-lock-panel \{[^}]*\}/)[0];
     assert.match(card, /border: 2px solid #2a3a48;/);

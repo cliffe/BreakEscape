@@ -192,6 +192,45 @@ test('Open shows the file without taking it', async () => {
     assert.ok(opened[0].pcScreen && opened[0].pcScreen.pcId, 'the PC screen is handed on');
 });
 
+test('keyring K3a R1 m2: Open, Copy and Move each mark the file opened for an "In file" tag; a click on a readable item does too', async () => {
+    const opened = () => window.keyring.opened;
+    const withKeyring = () => { window.keyring = { opened: [], noteOpened(id) { this.opened.push(id); } }; };
+    // Open in the transfer dialog
+    let mg = await openDesktop(); withKeyring();
+    window.handleObjectInteraction = () => {};
+    icon('Server rota.txt').click(); choose('Open');
+    assert.deepEqual(opened(), ['ian_rota']);
+    // Copy to inventory (a takeable file copied: the case that never called a hook)
+    mg = await openDesktop(); withKeyring();
+    icon('Server rota.txt').click(); choose('Copy to inventory'); await settle();
+    assert.deepEqual(opened(), ['ian_rota'], 'copied');
+    // Move to inventory
+    mg = await openDesktop(); withKeyring();
+    icon('VPN notes.txt').click(); choose('Move to inventory'); await settle();
+    assert.deepEqual(opened(), ['ian_vpn_notes'], 'moved');
+    // A file that is not takeable opens on a click
+    mg = await openDesktop(); withKeyring();
+    icon('Staff handbook.txt').click(); await settle();
+    assert.deepEqual(opened(), ['staff_handbook'], 'a plain click on a readable item');
+    // Cancel marks nothing
+    mg = await openDesktop(); withKeyring();
+    icon('Server rota.txt').click(); choose('Cancel');
+    assert.deepEqual(opened(), []);
+    window.keyring = undefined;
+});
+
+test('keyring K3a R1 t4: the account bar of a credential session names the saved connection, label escaped and kept whole', async () => {
+    const mg = await openDesktop();
+    sessions.sessions.get('hot_desk').via = 'credential';
+    sessions.sessions.get('hot_desk').kind = 'saved_connection';
+    sessions.sessions.get('hot_desk').label = '<b>HB-FIN-02.rdp</b>';
+    const html = mg.accountBarHtml();
+    assert.match(html, /<span class="desktop-account-credential">with the saved connection <span class="credential-label-nowrap">&lt;b&gt;HB-FIN-02\.rdp&lt;\/b&gt;<\/span><\/span>/);
+    assert.equal(html.includes('<b>HB'), false);
+    sessions.sessions.get('hot_desk').via = 'password';
+    assert.equal(mg.accountBarHtml().includes('desktop-account-credential'), false);
+});
+
 test('a plain PC desktop (not a sign-in PC) keeps today\'s behaviour: no dialog, no source_pc_id', async () => {
     const plain = { scenarioData: { id: 'old_pc', type: 'pc', name: 'Old PC', locked: false } };
     await openDesktop({ item: plain });

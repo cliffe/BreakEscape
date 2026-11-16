@@ -67,6 +67,8 @@ export class TextFileMinigame extends MinigameScene {
     init() {
         // Call parent init to set up basic UI structure
         super.init();
+        // Keyring K3a (R1 m2): reading a file anywhere (desktop, world, inventory) opens it
+        try { window.keyring?.noteOpened?.(this.textFileData?.itemId); } catch (e) { /* no keyring */ }
         if (this.pcScreen) this.mountMonitor();
         
         // Customize the header
