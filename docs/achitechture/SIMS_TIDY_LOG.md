@@ -528,3 +528,35 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
 - Games this session (keyless :3093): 6024 (probe), 6032 (probe), 6035 (live read proof), 6036 (tour). Server and
   tour stopped; temporary af5344f84 worktree removed.
 - Gotcha: __test.interact reports ok on any stray event; check object_interacted itself.
+
+## Handover 9 (R6 fixes: merge, m1, m2 done; M1 A/B half done, stopped at the context guard)
+
+- Step 1: `git merge --no-edit main` (8dce8782f) clean, merge commit 686f48eb2. Main's T96 only moved the
+  berth box into `_npcBerthBoxes`; findWorldPath still adds the seated-chair cells after `_avoidNPCPositions`
+  and clears them in the finally, so the seated path is unchanged.
+- m1 fixed, dce0b40a3: in sweepDoorwayChairs a chair in use (player's, or an NPC's seat, fetch or seat move)
+  drops `_doorSweep`; a capped chair whose foot moved more than a chair width (max body w/h) from where it
+  was capped starts again. Not DOOR_SWEEP_SAME_PX: the R5 m1 swing is 6 px peak to peak, so 4 px would undo
+  the cap. Two new tests in test/js/seating.test.mjs (the cap2 probe cases A and B) fail on the old code;
+  seating.test.mjs 77 of 77 pass.
+- m2 fixed, 663603791: parkByCooler waits 3 s, then aims at the first walkable neighbouring cell a tile
+  from the aim (west, north, south, east); result has `alt`. Same commit adds DOORWAY_LOG=1 (one-second
+  doorway samples with each NPC's job, plus the full needs log, in the tour JSON).
+- M1 A/B so far (scratchpad ab/, analysis script scratchpad jam.py; jam = 3+ NPCs in x -70..32,
+  y 70..100 for 10 s+). Branch :3093 games 6093, 6094: both jammed, row 6 failed in both (6093 276-329 s,
+  four NPCs, player parked in the mouth at (-30, 87); 6094 295-309 s, Sanjay east to sanjay_pc meets Marek
+  west to the cooler head on, both at velocity 0 inching). Baseline :3094 games 6096, 6097: no jam, rows 5
+  and 6 ok, but row 3 fails there (main's board has no wallMounted), so main sees less kitchen traffic.
+  Confounded: next, run the baseline engine with the branch scenario (copy the branch
+  scenarios/test_needs_sims/scenario.json.erb into the baseline worktree uncommitted, make games there,
+  `git checkout` it after). Main's interaction-reach.js already supports wallMounted.
+- Unplayed games: 6095 (branch), 6098 (baseline, main scenario).
+- Mechanism seen: a head-on meeting in the 24 px single-lane kitchen passage (walls y 60..68 and 92..100,
+  x -32..32). The stall watch (npc-needs.js _watchWalk/_watchReturn, main code) reroutes round bodies every
+  3 s, finds no other lane, and neither NPC backs out. Likely a main issue in npc-needs.js, outside this
+  slice; if the engine A/B confirms that, write it up (no fix) and add a node test of the mechanism if one fits.
+- Servers stopped (PIDs 1171202 :3093, 1171203 :3094). Baseline worktree
+  .claude/worktrees/p-ol-main-baseline (detached at 8dce8782f, clean) left in place for the A/B; remove it
+  with `git worktree remove` when done.
+- Left: finish the A/B (3+ games a side), steps 2.5 and 2.6, bin/test-js then the Rails suite, R6 Outcomes
+  in SIMS_TIDY_REVIEW_R6.md, commit.
