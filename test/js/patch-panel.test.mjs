@@ -388,3 +388,11 @@ test('registration and wiring sit in index.js and the page', () => {
     const erb = readFileSync(join(here, '../../app/views/break_escape/games/show.html.erb'), 'utf8');
     assert.ok(erb.indexOf('patch-panel-minigame.css') > erb.indexOf('device-frame.css'));
 });
+
+test('interactions.js opens the panel for an object with panelPorts, after the wifiAp branch and before network_link', () => {
+    const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    const branch = src.indexOf('Array.isArray(sprite.scenarioData.panelPorts)');
+    assert.ok(branch > src.indexOf('sprite.scenarioData.wifiAp === true'));
+    assert.ok(branch < src.indexOf("sprite.scenarioData.type === 'network_link'"));
+    assert.match(src.slice(branch, branch + 160), /window\.startPatchPanelMinigame\?\.\(sprite\.scenarioData\);\s*return;/);
+});
