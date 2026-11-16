@@ -56,7 +56,7 @@
   },
 
   "startItemsInInventory": [
-    { "type": "rogue_ap", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
+    { "type": "rogue_ap", "sprite": "drop_box1", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
       "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Plant it in reception, then set it up from its console." },
     { "type": "page-builder", "id": "captures_terminal", "name": "Harvested Credentials",
       "sprite": "tablet", "takeable": true,
@@ -114,7 +114,7 @@
           "id": "planted_rogue_ap",
           "name": "Planted rogue AP",
           "sprite": "drop_box1",
-          "position": { "x": 8.5, "y": 3.9 },
+          "position": { "x": 8.5, "y": 4.8 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -243,12 +243,12 @@
               "addCapture": { "targetId": "staff_wifi_key", "roleLabel": "Ledgerwell Ltd, reception", "kind": "credential", "host": "Ledgerwell-Staff, rogue access point", "address": "Ledgerwell-Staff", "secret": "<%= @random_password %>", "note": "Kieran's laptop picked the copy and the Wi-Fi key page took the key (proof: planted).", "proof": { "planted": "kit_rogue_ap", "on": "rogue_ap_spot" } },
               "setGlobal": { "kp_twin_captured": true },
               "completeTask": "wireless_harvest" },
-            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true", "onceOnly": true, "cooldown": 0,
-              "completeTask": "opt_rogue_ap" },
             { "eventPattern": "global_variable_changed:kp_twin_captured", "condition": "value === true", "onceOnly": true,
-              "bark": "That is the staff Wi-Fi key. Read it on your tablet, then try it on the staff access point." },
+              "bark": "That is the staff Wi-Fi key. Read it on your tablet, then try it on the staff access point.",
+              "completeTask": "opt_rogue_ap" },
             { "eventPattern": "global_variable_changed:kp_twin_account_captured", "condition": "value === true", "onceOnly": true,
-              "bark": "That is Kieran's sign-in. Read it on your tablet and try it at the hot desk." },
+              "bark": "That is Kieran's sign-in. Read it on your tablet and try it at the hot desk.",
+              "completeTask": "opt_rogue_ap_account" },
             { "eventPattern": "global_variable_changed:ap_twin_staff", "condition": "value === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
               "bark": "Nothing has picked your copy yet. Kieran's laptop is the likely one; give him a minute." },
             { "eventPattern": "network_joined", "condition": "data.apId === 'lw_staff_ap'", "onceOnly": true,
@@ -285,9 +285,7 @@
               "bark": "The Wi-Fi dropped again, and this time it wanted my Ledgerwell sign-in, so I typed that in.",
               "addCapture": { "targetId": "kieran", "roleLabel": "Ledgerwell Ltd, reception", "kind": "credential", "address": "k.doyle", "host": "Ledgerwell-Staff, rogue access point", "note": "Typed his staff sign-in into the rogue AP's sign-in page (proof: planted)." },
               "setGlobal": { "kp_twin_account_captured": true },
-              "completeTask": "wireless_harvest" },
-            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account === true", "onceOnly": true, "cooldown": 0,
-              "completeTask": "opt_rogue_ap_account" }
+              "completeTask": "wireless_harvest" }
           ]
         }
       ]
