@@ -103,4 +103,13 @@ Run on the worktree at HEAD `a736d34ae`:
 - `python3 -m unittest tools.test_pixellab_pipeline`: 25 tests, OK.
 - The worktree has no `vendor/bundle`; Ruby tools ran with `BUNDLE_PATH` pointing at the main checkout's bundle.
 
+
+## Outcomes
+
+- **M1** (validator test depends on dropped art): fixed by `663fa30fe`; the has-poses case reads a fixture atlas.
+- **m1** (per-frame pose work with no pose art): fixed by `42187041e`; a per-texture `_mayPose` cache skips the work,
+  with a 2 s recheck of a "no". Round 6 found one residual minor (use record reset on skip), see
+  `NPC_POSES_REVIEW_R6.md`.
+- **m2** (breath holder left after reinstall): fixed by `42187041e`; the reinstall branch sets `holder = {}`.
+
 R5: 0/1/2
