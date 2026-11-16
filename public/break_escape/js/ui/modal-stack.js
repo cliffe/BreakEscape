@@ -34,9 +34,19 @@ function dropListenerIfIdle() {
 /**
  * Register an open overlay. `close` must dismiss it (and settle its promise).
  * Returns an unregister function; call it whenever the overlay goes away.
+ * `yieldsToNext`: the overlay closes as soon as another one registers (the pick-one
+ * interaction menu: a confirm opening over it would otherwise leave Esc closing the
+ * menu the player cannot see first). Each flagged close unregisters itself and splices
+ * the stack, so a copy is walked.
  */
-export function registerModal(close) {
-    const entry = { close };
+export function registerModal(close, { yieldsToNext = false } = {}) {
+    for (const earlier of [...stack]) {
+        if (!earlier.yieldsToNext) continue;
+        try { earlier.close(); } catch (e) { /* a broken close must not stop the new overlay */ }
+        const i = stack.indexOf(earlier);
+        if (i !== -1) stack.splice(i, 1);
+    }
+    const entry = { close, yieldsToNext: !!yieldsToNext };
     stack.push(entry);
     ensureListener();
     return () => {

@@ -11,7 +11,8 @@ import { aimX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { preloadPixelFont } from '../utils/pixel-text.js';
-import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
+import { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu, tickInteractionMenu, openHandIcon, jabHandIcon, talkIcon } from '../ui/interaction-menu.js';
+import { menuIconsFor } from '../ui/menu-icons.js';
 import { resolveObjectField, evaluateGlobalCondition } from '../utils/conditional-text.js';
 import { worldObservations } from '../utils/pc-observations.js';
 import { introduceScenario } from '../utils/helpers.js';
@@ -2694,6 +2695,8 @@ export function update(time, delta) {
     pendingTapUse.update(Date.now());
     // A far tap on an overlap: says why when the walk ends with nothing in reach
     pendingOverlapWalk.update(Date.now());
+    // An open pick-one menu: greys entries whose target went, closes on a room change or fight
+    tickInteractionMenu(Date.now());
 
     // Where the player and NPCs have been, for "walking away" (q55 d, interaction-reach.js)
     walkAwayTracker.sample(window.player, allNpcSprites, Date.now());
@@ -2873,6 +2876,7 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                     onObjectPixels: hitsBounds(obj) && (onPixels ? onPixels(obj) : true),
                     // Menu order is topmost first (D14); kind and id name the entry for the bridge
                     depth: obj.depth || 0, inReach: true, kind: 'object', entityId: data.id || obj.objectId || obj.name || null,
+                    sprite: obj,
                     onSelect: () => useObjectInReach(obj)
                 });
             });
@@ -2901,6 +2905,7 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                         && !(npcCovered && npcCovered(sprite)),
                     inBounds: hitsBounds(sprite),
                     depth: sprite.depth || 0, inReach: true, kind: 'npc', entityId: sprite.npcId || null,
+                    sprite,
                     onSelect: () => {
                         facePlayerToward(sprite.x, sprite.y);
                         if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
@@ -2935,6 +2940,7 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                     icon: openHandIcon(),
                     depth: door.depth || 0, inReach: true, kind: 'door',
                     entityId: `door:${door.doorProperties.roomId}->${door.doorProperties.connectedRoom}`,
+                    sprite: door,
                     onSelect: () => {
                         if (window.handleDoorInteraction) window.handleDoorInteraction(door);
                     }
@@ -3175,6 +3181,14 @@ function walkToDoor(door) {
     movePlayerToPoint(targetX, targetY);
 }
 
+// Why a pick-one menu entry can no longer be chosen ("Gone.", "Out of reach."), or null (7.1)
+function menuEntryState(target) {
+    if (!stillThere(target)) return 'Gone.';
+    if (target._isNPC && window.npcHostileSystem?.isNPCHostile?.(target.npcId)) return 'Gone.';
+    if (!inReachNow(target)) return 'Out of reach.';
+    return null;
+}
+
 // The tap's pick-one menu: topmost first (D14), opened at the finger on touch (6.3)
 function showTapMenu(list, pointer, { fight = false } = {}) {
     const sorted = list.map((c, i) => [c, i])
@@ -3192,6 +3206,13 @@ function showTapMenu(list, pointer, { fight = false } = {}) {
             cy = rect.top + (pointer.y * rect.height) / canvas.height;
         }
     }
+    // Each world thing shows its own sprite at 2x (NPCs their headshot), and each entry checks
+    // its target while the menu is open (7.1)
+    const icons = menuIconsFor(sorted);
+    sorted.forEach((c, i) => {
+        if (icons[i]) c.icon = icons[i];
+        if (c.sprite && !c.check) c.check = () => menuEntryState(c.sprite);
+    });
     showInteractionMenu(sorted, cx, cy, undefined, {
         numberKeys: !fight, keyboard: !fight, touch: !!pointer?.wasTouch, holdKeys: !fight
     });

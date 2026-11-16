@@ -83,12 +83,13 @@ const HELPERS = ['findObjectsAtPosition',
     'findNPCsAtPosition', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer',
     'standPointDeps', 'isSeatOrSwivel', 'hitStackKey', 'playerAtFeet', 'inReachFrom', 'inReachNow', 'farStandPoint',
     'feetWithin', 'stillThere', 'roomHasActiveHostile', 'walkToDoor', 'showTapMenu', 'tapWalkBlocked',
-    'tapWalkStoppedShort', 'tapWalkBusy'];
+    'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
     'isObjectInInteractionRange', 'sameRoomFrom', 'playerFeet', 'wallClearFrom', 'findClearStandPoint',
     'movePlayerToPoint', 'facePlayerToward', 'startHoldWalk', 'showInteractionMenu', 'isInteractionMenuOpen',
     'closeInteractionMenu', 'resolveObjectField', 'worldObservations', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
-    'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE', 'ARRIVAL_THRESHOLD', 'stopClickToMove'];
+    'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE', 'ARRIVAL_THRESHOLD', 'stopClickToMove',
+    'menuIconsFor'];
 const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
     'createPendingTapUse', 'aimX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
@@ -155,6 +156,7 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
         pendingGateWalk: { clear() {}, arm() {} },
         doorGates: { walkThroughTarget: () => null },
         isObjectInInteractionRange: (s, from = player, range = RANGE) => Math.hypot(s.x - from.x, s.y - from.y) <= range,
+        menuIconsFor: (list) => list.map(c => (c.sprite ? { src: `icon:${c.sprite.id}` } : null)),
         stopClickToMove: () => { state.stopped = (state.stopped || 0) + 1; state.moving = false; },
         ARRIVAL_THRESHOLD: 8,
         sameRoomFrom: (from, t) => roomOf(from) === roomOf(t),
