@@ -11,7 +11,8 @@ import { MinigameScene } from '../framework/base-minigame.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
 import {
-    chooseLayout, rowsOf, entriesByPort, portState, portLabel, vlanClass, findJack
+    chooseLayout, rowsOf, entriesByPort, portState, portLabel, vlanClass, findJack,
+    hasRangeLabels, rangeLabel
 } from './patch-panel-model.js';
 
 export const SCENE_TYPE = 'patch-panel';
@@ -109,7 +110,12 @@ export class PatchPanelMinigame extends MinigameScene {
 
     entries() { return entriesByPort(this.panel.panelPorts); }
 
-    jackFor(entry) { return entry?.jack ? findJack(win().gameScenario, entry.jack) : null; }
+    // Where the live engine keeps jack data: rooms[*].panelJacks (panelOf jacks, stored by
+    // core/rooms.js) and rooms[*].objects[*].scenarioData (world jacks). The bootstrap scenario has
+    // no room objects; window.gameScenario is only a fallback.
+    jackFor(entry) {
+        return entry?.jack ? findJack(entry.jack, { rooms: win().rooms, scenario: win().gameScenario }) : null;
+    }
 
     heldAt(jackId) { return jackId ? win().networkLinks?.heldAt?.(jackId) || null : null; }
 
@@ -140,30 +146,57 @@ export class PatchPanelMinigame extends MinigameScene {
         return layout;
     }
 
+    /**
+     * Draw the ports. The strips are rebuilt only when rows, ports per row or scale change; any
+     * other call updates each button's class, data-state and aria-label in place, so keyboard
+     * focus survives a click or a resize that keeps the layout.
+     */
     drawPorts(layout) {
-        this.grid.replaceChildren();
+        const key = `${layout.rows}x${layout.perRow}@${layout.scale}`;
         const entries = this.entries();
-        for (const row of rowsOf(layout)) {
-            const strip = el('div', 'patch-panel-strip');
-            for (const port of row) strip.appendChild(this.portButton(port, entries[port]));
-            this.grid.appendChild(strip);
+        if (this.layoutKey !== key) {
+            this.layoutKey = key;
+            const focused = this.grid.querySelector('.patch-panel-port:focus')?.dataset.port;
+            this.grid.replaceChildren();
+            for (const row of rowsOf(layout)) {
+                const wrap = el('div', 'patch-panel-row');
+                if (hasRangeLabels(layout.perRow)) wrap.appendChild(el('div', 'patch-panel-range', rangeLabel(row)));
+                const strip = el('div', 'patch-panel-strip');
+                for (const port of row) strip.appendChild(this.portButton(port, entries[port]));
+                wrap.appendChild(strip);
+                this.grid.appendChild(wrap);
+            }
+            if (focused) this.grid.querySelector(`[data-port="${focused}"]`)?.focus?.();
+            return;
+        }
+        for (const btn of this.grid.querySelectorAll('.patch-panel-port')) {
+            const port = Number(btn.dataset.port);
+            this.paintPort(btn, port, entries[port]);
         }
     }
 
     portButton(port, entry) {
+        const btn = el('button', 'patch-panel-port');
+        btn.type = 'button';
+        btn.dataset.port = String(port);
+        btn.appendChild(el('span', 'patch-panel-socket'));
+        btn.appendChild(el('span', 'patch-panel-label'));
+        btn.addEventListener('click', () => this.clickPort(port));
+        this.paintPort(btn, port, entry);
+        return btn;
+    }
+
+    /** Set a button's state class, data-state, label text and accessible name. */
+    paintPort(btn, port, entry) {
         const state = this.stateOf(entry);
         const label = portLabel(entry, port);
         const vlan = vlanClass(label);
-        const btn = el('button', `patch-panel-port pp-state-${state}${vlan ? ` pp-vlan-${vlan}` : ''}`);
-        btn.type = 'button';
-        btn.dataset.port = String(port);
+        btn.className = `patch-panel-port pp-state-${state}${vlan ? ` pp-vlan-${vlan}` : ''}`;
         btn.dataset.state = state;
         const desk = entry?.desk ? `, ${entry.desk}` : '';
         btn.setAttribute('aria-label', `Port ${port}, ${label}${desk}, ${stateText(state)}`);
-        btn.appendChild(el('span', 'patch-panel-socket'));
-        btn.appendChild(el('span', 'patch-panel-label', label));
-        btn.addEventListener('click', () => this.clickPort(port));
-        return btn;
+        const text = btn.querySelector('.patch-panel-label');
+        if (text && text.textContent !== label) text.textContent = label;
     }
 
     /** "More below" while the ports run past the scroll area's bottom edge. */
@@ -220,12 +253,19 @@ export class PatchPanelMinigame extends MinigameScene {
 
         // A pseudo sprite: the panel has no sprite for the jack. interactJack opens the view for
         // a planted port (atJack), else asks through gameConfirm and plants.
-        const result = await links.interactJack({ scenarioData: jack });
+        // quiet: the footer shows a refusal, so the toast would say it twice
+        const result = await links.interactJack({ scenarioData: jack }, { quiet: true });
         if (this.gameState?.isActive === false || win().MinigameFramework?.currentMinigame !== this) return result;
         if (result?.action === 'refused' && result.reason === 'port_security') {
-            this.setFooter(resolveObjectField(jack, 'portSecurityMessage', PORT_SECURITY_FALLBACK) || PORT_SECURITY_FALLBACK);
+            this.setFooter(resolveObjectField(jack, 'portSecurityMessage', PORT_SECURITY_FALLBACK)
+                || result.message || PORT_SECURITY_FALLBACK);
         } else if (result?.action === 'cancelled') {
             this.setFooter(`${label}${desk}: left alone`);
+        } else if (result?.action === 'planted' || result?.action === 'already') {
+            // A later plant opens no view (first is false): say what the port is now
+            this.relayout();
+            this.setFooter(`${label}${desk}: ${stateText(this.stateOf(entry))}`);
+            return result;
         }
         this.relayout();
         return result;

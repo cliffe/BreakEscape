@@ -12,8 +12,21 @@ const STRIP_EXTRA_PX = 4;
 /** Source px across a row of n ports, margins included: 172 for 12, 88 for 6, 60 for 4. */
 export const rowWidthSource = (perRow) => PITCH_PX * perRow + STRIP_EXTRA_PX;
 
-/** CSS px a row takes down the screen: ports, their label line and the gap (5.4). */
-export const rowHeightPx = (scale) => PORT_PX * scale + (scale >= 4 ? 36 : 28);
+/** Height of the small range label above each strip of the 4 rows of 6 (VT323 16 px, no gap). */
+export const RANGE_LABEL_PX = 16;
+
+/** True for the shape that prints a port range above each strip (4 rows of 6, 5.4). */
+export const hasRangeLabels = (perRow) => perRow === 6;
+
+/**
+ * CSS px a row takes down the screen: ports, their label line and the gap (5.4), plus the range
+ * label when the row has one (perRow 6).
+ */
+export const rowHeightPx = (scale, perRow = 12) =>
+    PORT_PX * scale + (scale >= 4 ? 36 : 28) + (hasRangeLabels(perRow) ? RANGE_LABEL_PX : 0);
+
+/** The text above a strip: "1-6", "7-12" ... for the first and last port of the row. */
+export const rangeLabel = (row) => (row.length ? `${row[0]}-${row[row.length - 1]}` : '');
 
 /** Height the title bar, legend, footer and gutters take (5.4: 204 on wide screens, 214 narrow). */
 export const overheadPx = (contentWidth) => (contentWidth >= 480 ? 204 : 214);
@@ -26,10 +39,15 @@ const SHAPES = [
     { rows: 4, perRow: 6 }
 ];
 
+/** Below this W the 4 rows of 6 (at least 264 wide) are no longer offered in the scroll fallback. */
+export const NARROW_W = 344;
+
 /**
  * Pick the layout for a viewport. Rule: the largest scale in {4, 3} at which 2 rows of 12 fit
- * both W and H; else the largest at which 4 rows of 6 fit; else 6 rows of 4 at scale 3; else
- * the same inside a scrolling area (scroll: true, which shows the "More below" cue).
+ * both W and H; else the largest at which 4 rows of 6 fit; else 6 rows of 4 at scale 3. When
+ * nothing fits by height, the widest shape that fits W is drawn in a scrolling area
+ * (scroll: true, which shows the "More below" cue), at its largest scale that fits W; below
+ * W 344 that is 6 rows of 4 at scale 3.
  * Returns { rows, perRow, scale, width, height, scroll, W, H } with width and height in CSS px.
  */
 export function chooseLayout(vw, vh) {
@@ -38,7 +56,7 @@ export function chooseLayout(vw, vh) {
     const make = (rows, perRow, scale, scroll) => ({
         rows, perRow, scale, scroll, W, H,
         width: rowWidthSource(perRow) * scale,
-        height: rows * rowHeightPx(scale)
+        height: rows * rowHeightPx(scale, perRow)
     });
     for (const { rows, perRow } of SHAPES) {
         for (const scale of [4, 3]) {
@@ -48,6 +66,14 @@ export function chooseLayout(vw, vh) {
     }
     const last = make(6, 4, 3, false);
     if (last.width <= W && last.height <= H) return last;
+    if (W >= NARROW_W) {
+        for (const { rows, perRow } of SHAPES) {
+            for (const scale of [4, 3]) {
+                const fit = make(rows, perRow, scale, true);
+                if (fit.width <= W) return fit;
+            }
+        }
+    }
     return { ...last, scroll: true };
 }
 
@@ -101,11 +127,28 @@ export function vlanClass(label) {
     return 'dvgm'.includes(c) && c ? c : '';
 }
 
-/** Find a jack's object data by id across the scenario's rooms (null when absent). */
-export function findJack(scenario, jackId) {
+/**
+ * Find a jack's object data by id, from where the live engine keeps it (the bootstrap scenario
+ * holds no room objects, so scenario.rooms is only a last resort for tests and older callers):
+ *   1. rooms[*].panelJacks[id]            panelOf jacks, stored by core/rooms.js (no sprite)
+ *   2. rooms[*].objects[*].scenarioData   world jacks, which keep their sprites
+ *   3. scenario.rooms[*].objects[]        a full scenario, when one is supplied
+ * Returns null when the jack is held nowhere.
+ */
+export function findJack(jackId, { rooms = null, scenario = null } = {}) {
     if (!jackId) return null;
+    for (const room of Object.values(rooms || {})) {
+        const stored = room?.panelJacks?.[jackId];
+        if (stored) return stored;
+    }
+    for (const room of Object.values(rooms || {})) {
+        for (const obj of Object.values(room?.objects || {})) {
+            if (obj?.scenarioData?.id === jackId) return obj.scenarioData;
+        }
+    }
     for (const room of Object.values(scenario?.rooms || {})) {
-        for (const obj of room?.objects || []) if (obj?.id === jackId) return obj;
+        if (!Array.isArray(room?.objects)) continue;
+        for (const obj of room.objects) if (obj?.id === jackId) return obj;
     }
     return null;
 }

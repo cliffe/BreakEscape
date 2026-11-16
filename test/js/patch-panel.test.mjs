@@ -38,7 +38,7 @@ const { PatchPanelMinigame, UNPATCHED_MESSAGE, NO_DEVICE_FALLBACK, startPatchPan
     await imp('minigames/patch-panel/patch-panel-minigame.js');
 const { NetworkLinks, PLANT_LABEL, LEAVE_LABEL } = await imp('systems/network-links.js');
 const { gameConfirm } = await imp('systems/notifications.js');
-const { chooseLayout, portState, portLabel, vlanClass, entriesByPort, rowsOf, findJack } = model;
+const { chooseLayout, portState, portLabel, vlanClass, entriesByPort, rowsOf, findJack, rangeLabel, rowHeightPx } = model;
 
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
@@ -50,7 +50,7 @@ test('chooseLayout gives each row of the 5.4 table its layout, scale, width and 
         [800, 600, 2, 12, 4, 688, 168, false],
         [915, 412, 2, 12, 4, 688, 168, false],
         [640, 360, 2, 12, 3, 516, 128, false],
-        [360, 740, 4, 6, 3, 264, 256, false]
+        [360, 740, 4, 6, 3, 264, 320, false]
     ];
     for (const [vw, vh, nRows, perRow, scale, width, height, scroll] of rows) {
         const l = chooseLayout(vw, vh);
@@ -61,15 +61,43 @@ test('chooseLayout gives each row of the 5.4 table its layout, scale, width and 
 });
 
 test('chooseLayout falls back to 4 rows of 6 at scale 4, then 6 rows of 4, then a scrolling area', () => {
-    // W = 400 (narrow-ish) fits 4 rows of 6 at scale 4 (352) and tall enough for 4 x 84 = 336
-    let l = chooseLayout(480, 600);
+    // W = 400 fits 4 rows of 6 at scale 4 (352 wide) and 4 x 100 = 400 tall (H 426)
+    let l = chooseLayout(480, 640);
     assert.deepEqual([l.rows, l.perRow, l.scale, l.scroll], [4, 6, 4, false]);
     // W = 260 is under the 264 that 4 rows of 6 need at scale 3: 6 rows of 4 (180 wide, 384 tall)
     l = chooseLayout(340, 620);
     assert.deepEqual([l.rows, l.perRow, l.scale, l.width, l.height, l.scroll], [6, 4, 3, 180, 384, false]);
-    // Too short for any layout: the same 6 x 4 in a scroll area
+    // Too short for any layout and W under 344: the same 6 x 4 in a scroll area
     l = chooseLayout(340, 400);
     assert.deepEqual([l.rows, l.perRow, l.scale, l.scroll], [6, 4, 3, true]);
+});
+
+test('when nothing fits by height, the widest shape that fits W scrolls (6 x 4 only below W 344)', () => {
+    // 640x300: W 560 takes 2 rows of 12 at scale 3 (516 wide) in a scroll area
+    let l = chooseLayout(640, 300);
+    assert.deepEqual([l.rows, l.perRow, l.scale, l.width, l.scroll], [2, 12, 3, 516, true]);
+    // 1000x200: W 920 takes 2 rows of 12 at scale 4
+    l = chooseLayout(1000, 200);
+    assert.deepEqual([l.rows, l.perRow, l.scale, l.scroll], [2, 12, 4, true]);
+    // W 400, too short: 4 rows of 6 at scale 4 (352)
+    l = chooseLayout(480, 250);
+    assert.deepEqual([l.rows, l.perRow, l.scale, l.scroll], [4, 6, 4, true]);
+    // W 344 is the edge: 4 rows of 6 at scale 3; W 343 gives 6 x 4
+    l = chooseLayout(424, 200);
+    assert.deepEqual([l.W, l.rows, l.perRow, l.scale, l.scroll], [344, 4, 6, 3, true]);
+    l = chooseLayout(423, 200);
+    assert.deepEqual([l.W, l.rows, l.perRow, l.scroll], [343, 6, 4, true]);
+});
+
+test('the 4 rows of 6 add a 16 px range label to each row; other shapes add none', () => {
+    assert.equal(rowHeightPx(3, 12), 64);
+    assert.equal(rowHeightPx(3, 6), 80);
+    assert.equal(rowHeightPx(4, 6), 100);
+    assert.equal(rowHeightPx(3, 4), 64);
+    assert.equal(rangeLabel([7, 8, 9, 10, 11, 12]), '7-12');
+    // 360x740 (H 526) still fits 4 rows of 6 with no More below
+    const l = chooseLayout(360, 740);
+    assert.ok(l.height <= l.H && !l.scroll);
 });
 
 test('overhead is 204 from W 480 and 214 below it', () => {
@@ -121,23 +149,34 @@ const box = { type: 'pc', id: 'kit_dropbox', name: 'Network drop box', rogueDevi
 const officeNet = { id: 'lw_voice', name: 'Voice network' };
 const foothold = { id: 'jack_voice_port', via: 'jack', name: 'Drop box: voice', itemId: 'netlink_jack_voice_port',
     sourceId: 'voice_port', network: officeNet };
-const SCENARIO = {
-    rooms: { room_comms: { objects: [
-        { id: 'p3_patch_panel', name: 'Patch panel', interactable: true, panelPorts: [
-            { port: 1, label: 'D01', desk: 'Reception', jack: 'network_port' },
-            { port: 2, label: 'V02', desk: 'Open desk 1', jack: 'voice_port' },
-            { port: 3, label: 'G03', desk: 'Guest lounge', jack: 'guest_port' },
-            { port: 4, label: 'M04', desk: 'Finance', jack: 'secured_port' },
-            { port: 5, label: 'D05', desk: 'Spare' }
-        ] },
-        { id: 'network_port', name: 'Wall port', networkJack: true, jackConfirm: 'Plug the box into the data port?', requiresItemHint: 'Bring the drop box.' },
-        { id: 'voice_port', name: 'Voice port', networkJack: true, panelOf: 'p3_patch_panel', jackConfirm: 'Plug it into the voice port?' },
-        { id: 'guest_port', name: 'Guest port', networkJack: true, panelOf: 'p3_patch_panel' },
-        { id: 'secured_port', name: 'Managed port', networkJack: true, portSecurity: { allow: ['x'] }, portSecurityMessage: 'The switch only takes registered machines.' }
-    ] } }
+const PANEL = { id: 'p3_patch_panel', name: 'Patch panel', interactable: true, panelPorts: [
+    { port: 1, label: 'D01', desk: 'Reception', jack: 'network_port' },
+    { port: 2, label: 'V02', desk: 'Open desk 1', jack: 'voice_port' },
+    { port: 3, label: 'G03', desk: 'Guest lounge', jack: 'guest_port' },
+    { port: 4, label: 'M04', desk: 'Finance', jack: 'secured_port' },
+    { port: 5, label: 'D05', desk: 'Spare' }
+] };
+const JACKS = {
+    network_port: { id: 'network_port', name: 'Wall port', networkJack: true, jackConfirm: 'Plug the box into the data port?', requiresItemHint: 'Bring the drop box.' },
+    voice_port: { id: 'voice_port', name: 'Voice port', networkJack: true, panelOf: 'p3_patch_panel', jackConfirm: 'Plug it into the voice port?' },
+    guest_port: { id: 'guest_port', name: 'Guest port', networkJack: true, panelOf: 'p3_patch_panel' },
+    secured_port: { id: 'secured_port', name: 'Managed port', networkJack: true, portSecurity: { allow: ['x'] }, portSecurityMessage: 'The switch only takes registered machines.' }
 };
+// What the live game holds (window.gameScenario is the bootstrap copy: rooms with no objects).
+// panelOf jacks sit on rooms[id].panelJacks (core/rooms.js); world jacks keep their sprites.
+const BOOTSTRAP = { rooms: { room_comms: { type: 'room_comms', connections: {}, door_sign: 'Comms', hasPresentNpc: false } } };
+const liveRooms = () => ({
+    room_comms: {
+        objects: {
+            p3_patch_panel: { scenarioData: PANEL },
+            network_port: { scenarioData: JACKS.network_port },
+            secured_port: { scenarioData: JACKS.secured_port }
+        },
+        panelJacks: { voice_port: JACKS.voice_port, guest_port: JACKS.guest_port }
+    }
+});
 
-let started, events, plants, plantError, confirmTexts, links, opened, items, keepConfirmOpen;
+let toasts, started, events, plants, plantError, confirmTexts, links, opened, items, keepConfirmOpen;
 
 function framework() {
     return {
@@ -181,9 +220,10 @@ function setup({ hold = true, vw = 1280, vh = 720 } = {}) {
     dom.window.innerHeight = vh;
     items = hold ? [{ scenarioData: box }] : [];
     window.inventory = { items };
-    window.gameScenario = SCENARIO;
+    window.gameScenario = BOOTSTRAP;
     window.eventDispatcher = { emit: (n, d) => events.push([n, d]) };
-    window.gameAlert = () => {};
+    toasts = [];
+    window.gameAlert = (m) => { toasts.push(m); };
     window.ApiClient = {
         async networkPlant(jackId, deviceId) {
             plants.push([jackId, deviceId]);
@@ -191,7 +231,7 @@ function setup({ hold = true, vw = 1280, vh = 720 } = {}) {
             return { success: true, foothold, added: [], removed: [deviceId], first: true };
         }
     };
-    window.rooms = {};
+    window.rooms = liveRooms();
     window.gameConfirm = (...args) => { confirmTexts.push(args); return gameConfirm(...args); };
     window.MinigameFramework = framework();
     links = new NetworkLinks();
@@ -200,7 +240,7 @@ function setup({ hold = true, vw = 1280, vh = 720 } = {}) {
     const realOpen = links.open.bind(links);
     links.open = (id, opts) => { opened.push([id, opts]); return realOpen(id, opts); };
     window.startNetworkViewMinigame = (footholdId) => window.MinigameFramework.startMinigame('network-view', null, { footholdId });
-    return startPatchPanelMinigame(SCENARIO.rooms.room_comms.objects[0]);
+    return startPatchPanelMinigame(PANEL);
 }
 
 const port = (n) => document.querySelector(`[data-port="${n}"]`);
@@ -225,7 +265,7 @@ test('the panel draws 24 ports with text labels, a legend row and the shared dev
 });
 
 test('scenario text goes in as text, never markup', () => {
-    const hostile = { ...SCENARIO.rooms.room_comms.objects[0], name: '<img src=x onerror=1>', panelPorts: [{ port: 1, label: '<b>', desk: '<i>x</i>' }] };
+    const hostile = { ...PANEL, name: '<img src=x onerror=1>', panelPorts: [{ port: 1, label: '<b>', desk: '<i>x</i>' }] };
     setup();
     window.MinigameFramework.startMinigame('patch-panel', null, { panel: hostile });
     assert.equal(document.querySelector('.patch-panel img'), null);
@@ -375,10 +415,42 @@ test('_applyJackLookById is a no-op for a port with no sprite', () => {
     assert.doesNotThrow(() => links._applyJackLookById('no_such_port'));
 });
 
-test('findJack scans every room for the id', () => {
-    assert.equal(findJack(SCENARIO, 'voice_port').panelOf, 'p3_patch_panel');
-    assert.equal(findJack(SCENARIO, 'nope'), null);
-    assert.equal(findJack(null, 'voice_port'), null);
+test('findJack reads panelJacks and world-jack sprites; a bootstrap scenario alone finds nothing', () => {
+    const rooms = liveRooms();
+    assert.equal(findJack('voice_port', { rooms }).panelOf, 'p3_patch_panel');
+    assert.equal(findJack('secured_port', { rooms }).portSecurityMessage, 'The switch only takes registered machines.');
+    assert.equal(findJack('nope', { rooms }), null);
+    assert.equal(findJack('voice_port', { scenario: BOOTSTRAP }), null);
+    assert.equal(findJack('voice_port', {}), null);
+    assert.equal(findJack('', { rooms }), null);
+    // a full scenario is only a fallback
+    const full = { rooms: { r: { objects: [JACKS.guest_port] } } };
+    assert.equal(findJack('guest_port', { scenario: full }).id, 'guest_port');
+});
+
+test('with a bootstrap-shaped scenario every port the live engine holds reads patched, managed or unpatched', () => {
+    setup();
+    assert.equal(window.gameScenario.rooms.room_comms.objects, undefined);
+    assert.deepEqual([1, 2, 3, 4, 5].map(n => port(n).dataset.state), ['patched', 'patched', 'patched', 'managed', 'unpatched']);
+});
+
+test('a reload that restores a planted port (heldAt) shows it held, from the same lookup', () => {
+    setup();
+    links.load([foothold], ['voice_port']);
+    document.body.innerHTML = '';
+    const m = startPatchPanelMinigame(PANEL);
+    assert.equal(document.querySelector('[data-port="2"]').dataset.state, 'held');
+    assert.ok(m);
+});
+
+test('the CSS never uses --pp-scale bare as a length (it is unitless)', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const uses = [...css.matchAll(/var\(--pp-scale\)/g)];
+    assert.ok(uses.length > 0);
+    for (const u of uses) {
+        const before = css.slice(Math.max(0, u.index - 12), u.index);
+        assert.match(before, /\d(\.\d+)?px \* $/, `bare var(--pp-scale) near: ${css.slice(Math.max(0, u.index - 40), u.index + 20)}`);
+    }
 });
 
 test('registration and wiring sit in index.js and the page', () => {
@@ -395,4 +467,60 @@ test('interactions.js opens the panel for an object with panelPorts, after the w
     assert.ok(branch > src.indexOf('sprite.scenarioData.wifiAp === true'));
     assert.ok(branch < src.indexOf("sprite.scenarioData.type === 'network_link'"));
     assert.match(src.slice(branch, branch + 160), /window\.startPatchPanelMinigame\?\.\(sprite\.scenarioData\);\s*return;/);
+});
+
+test('the 4 rows of 6 print a range label above each row', () => {
+    setup({ vw: 480, vh: 640 });
+    const ranges = [...document.querySelectorAll('.patch-panel-range')].map(n => n.textContent);
+    assert.deepEqual(ranges, ['1-6', '7-12', '13-18', '19-24']);
+    setup();
+    assert.equal(document.querySelectorAll('.patch-panel-range').length, 0);
+});
+
+test('a port-security refusal shows once: in the footer, with no toast', async () => {
+    const m = setup();
+    plantError = Object.assign(new Error('x'), { status: 422, body: { reason: 'port_security', error: 'server words' } });
+    const pending = m.clickPort(4);
+    await settle();
+    confirmButton('ok').click();
+    const r = await pending;
+    assert.equal(r.message, 'server words');
+    assert.equal(footer(), 'The switch only takes registered machines.');
+    assert.deepEqual(toasts, []);
+});
+
+test('a later plant (not the first) leaves the panel open and the footer says the box is in', async () => {
+    const m = setup();
+    window.ApiClient.networkPlant = async (jackId, deviceId) => {
+        plants.push([jackId, deviceId]);
+        return { success: true, foothold, added: [], removed: [deviceId], first: false };
+    };
+    const pending = m.clickPort(2);
+    await settle();
+    confirmButton('ok').click();
+    const r = await pending;
+    assert.equal(r.action, 'planted');
+    assert.equal(window.MinigameFramework.currentMinigame, m, 'no view opened');
+    assert.equal(port(2).dataset.state, 'held');
+    assert.equal(footer(), 'V02, Open desk 1: your box is plugged in');
+});
+
+test('a click or a same-layout resize updates ports in place and keeps keyboard focus', async () => {
+    const m = setup();
+    const btn = port(2);
+    btn.focus();
+    assert.equal(document.activeElement, btn);
+    m.relayout();
+    assert.equal(port(2), btn, 'the same node');
+    assert.equal(document.activeElement, btn);
+    links.load([foothold], ['voice_port']);
+    m.relayout();
+    assert.equal(port(2), btn);
+    assert.equal(btn.dataset.state, 'held');
+    assert.match(btn.getAttribute('aria-label'), /your box is plugged in/);
+    // a layout change does rebuild, and refocuses the same port number
+    dom.window.innerWidth = 360; dom.window.innerHeight = 740;
+    dom.window.dispatchEvent(new dom.window.Event('resize'));
+    assert.notEqual(port(2), btn);
+    assert.equal(document.activeElement, port(2));
 });

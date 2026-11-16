@@ -44,6 +44,22 @@
     align-items: center;
 }
 
+/* A row: an optional range label (the 4 rows of 6 only), then the strip */
+.patch-panel-row {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.patch-panel-range {
+    height: 16px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    line-height: 16px;
+    text-align: center;
+    color: #a3adbf;
+}
+
 /* A row: the strip's 3 source px margins, ports on a 14 px pitch, the label line under them */
 .patch-panel-strip {
     display: flex;
@@ -59,7 +75,7 @@
     flex: 0 0 auto;
     width: calc(12px * var(--pp-scale));
     height: calc(12px * var(--pp-scale));
-    margin: 0 var(--pp-scale);
+    margin: 0;
     padding: 0;
     border: 2px solid var(--pp-edge);
     border-radius: 0;
@@ -67,6 +83,10 @@
     color: #e6ebf2;
     cursor: pointer;
     image-rendering: pixelated;
+}
+
+.patch-panel-port + .patch-panel-port {
+    margin-left: calc(2px * var(--pp-scale));
 }
 
 .patch-panel-port:hover {
@@ -126,10 +146,10 @@
 .patch-panel-port.pp-state-held .patch-panel-socket::after {
     content: '';
     position: absolute;
-    right: calc(var(--pp-scale) / 2);
-    top: calc(var(--pp-scale) / 2);
-    width: var(--pp-scale);
-    height: var(--pp-scale);
+    right: calc(0.5px * var(--pp-scale));
+    top: calc(0.5px * var(--pp-scale));
+    width: calc(1px * var(--pp-scale));
+    height: calc(1px * var(--pp-scale));
     background: var(--pp-light);
 }
 
@@ -140,7 +160,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: var(--pp-scale);
+    height: calc(1px * var(--pp-scale));
     background: var(--pp-m);
 }
 
