@@ -20,6 +20,7 @@ const js = join(root, 'public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-engine-r5-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
+    'minigames/helpers/step-stepper.js',
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/landing-page-builder/landing-page-render.js',
