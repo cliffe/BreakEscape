@@ -310,4 +310,96 @@ module BreakEscape
       refute secrets.key?('staff_wifi_key')
     end
   end
+
+  # The same server paths against the real test_access_devices scenario: the staff PSK is
+  # drawn per game (<%= @random_password %>), and the key capture's secret is the same draw.
+  class AccessDevicesRogueApScenarioTest < ActionDispatch::IntegrationTest
+    include Engine.routes.url_helpers
+    include NetworkRequests
+
+    GUEST_PSK = 'Visitor-Pebble-2026'.freeze
+
+    setup do
+      @mission = Mission.create!(name: 'test_access_devices', display_name: 'Access devices', published: true, difficulty_level: 1)
+      @game = Game.create!(mission: @mission, player: break_escape_demo_users(:test_user)).reload
+    end
+
+    def psk(game = @game)
+      game.scenario_data.dig('networks', 'office_lan', 'wifi', 'psk')
+    end
+
+    def kieran_password
+      Game.scenario_room_npcs(@game.scenario_data).find { |npc| npc['id'] == 'kieran' }['creds']['password']
+    end
+
+    def record_capture(target_id, address)
+      captures = { target_id => { 'targetId' => target_id, 'kind' => 'credential', 'address' => address, 'at' => 1 } }
+      put game_path('sync_state'), params: { globalVariables: { 'se_captures' => captures } }, as: :json
+      assert_response :success, response.body
+    end
+
+    def secrets
+      get game_path('capture_secrets'), as: :json
+      assert_response :success, response.body
+      response.parsed_body['secrets'] || {}
+    end
+
+    def plant_ap
+      post game_path('inventory'), params: { action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' },
+                                   as: :json
+      assert_response :success, response.body
+    end
+
+    def join(ap_id, key)
+      post game_path('network/join'), params: { ap_id: ap_id, key: key }, as: :json
+      response.parsed_body
+    end
+
+    test 'the staff PSK is drawn per game and the key capture serves that game\'s own value' do
+      other = Game.create!(mission: @mission, player: break_escape_demo_users(:test_user)).reload
+      assert_match(/\A\S{8}\z/, psk)
+      refute_equal psk, psk(other), 'two games drew the same PSK'
+      assert_includes held_ids, 'kit_rogue_ap'
+
+      record_capture('staff_wifi_key', 'Ledgerwell-Staff')
+      refute secrets.key?('staff_wifi_key'), 'served before the plant'
+      refute_includes response.body, psk
+      sync_globals('ap_planted' => true, 'ap_twin_staff' => true)
+      refute secrets.key?('staff_wifi_key'), 'served on forged console globals'
+
+      plant_ap
+      assert_equal psk, secrets['staff_wifi_key']
+      refute_includes response.body, psk(other)
+    end
+
+    test 'the served key joins the staff Wi-Fi; the card key and a neighbour SSID do not' do
+      plant_ap
+      refute join('lw_staff_ap', GUEST_PSK)['success']
+      refute join('Corrigan-Dental', psk)['success']
+      refute join('planted_rogue_ap', psk)['success']
+      body = join('lw_staff_ap', psk)
+      assert body['success'], body.inspect
+      assert_equal 'wifi_office_lan', body.dig('foothold', 'id')
+      guest = join('lw_guest_ap', GUEST_PSK)
+      assert guest['success'], guest.inspect
+      entry = network_view('wifi_lw_guest')['footholds'].find { |f| f['id'] == 'wifi_lw_guest' }
+      assert_equal [], Array(entry && entry['hosts']), 'the guest network reaches nothing'
+    end
+
+    test "Kieran's password is withheld before the plant and signs in at the hot desk after it" do
+      record_capture('kieran', 'k.doyle')
+      refute secrets.key?('kieran')
+      refute_includes response.body, kieran_password
+      plant_ap
+      assert_equal kieran_password, secrets['kieran']
+      assert sign_in('hot_desk_pc', 'k.doyle', kieran_password)['success'], response.body
+    end
+
+    test 'the bootstrap carries neither the PSK nor the password' do
+      bootstrap_scenario
+      assert_response :success
+      refute_includes response.body, psk
+      refute_includes response.body, kieran_password
+    end
+  end
 end
