@@ -170,6 +170,8 @@ export const MinigameFramework = {
         const MinigameClass = this.registeredScenes[sceneType];
         this.currentMinigame = new MinigameClass(container, params);
         this.currentMinigame._sceneType = sceneType;
+        // The player's phone pose for a phone-style minigame (systems/player-poses.js)
+        try { window.playerPoses?.onMinigameStart?.(sceneType, params, this.currentMinigame); } catch (e) { /* cosmetic */ }
         this._updateBarkLayer();
         // A task or pickup toast raised just before this opened waits for it to close
         // (notifications.js; m07 confirmation N1)
@@ -220,6 +222,7 @@ export const MinigameFramework = {
         if (this.currentMinigame) {
             const ending = this.currentMinigame;
             ending._ending = true;
+            try { window.playerPoses?.onMinigameEnd?.(ending); } catch (e) { /* cosmetic */ }
             // Held toasts wait a moment: a panel reopened a tick after this one closes would
             // otherwise pull them back and show them twice (notifications.js PANEL_SETTLE_MS)
             window.settleAfterPanelClose?.();

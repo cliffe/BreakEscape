@@ -1931,6 +1931,8 @@ export async function create() {
     // Create player first like in original
     createPlayer(this);
     installSeating(this);
+    // Player poses (docs/achitechture/NPC_POSES.md): drink, use and phone frames when the player's atlas has them
+    import('../systems/player-poses.js').then(m => m.installPlayerPoses(this)).catch(e => console.warn('player poses failed', e));
     installBehindWallFade(this);
 
     // Store player globally for access from other modules
@@ -2090,6 +2092,8 @@ export async function create() {
                     import('../systems/npc-office-visuals.js').then(m => m.installNpcOfficeVisuals(sceneRef)).catch(e => console.warn('npc office visuals failed', e))
                         // Room tone (slice 20): only with "roomTone": true; loads its table, then a bed at spawn
                         .then(() => import('../systems/office-room-tone.js')).then(m => m.installOfficeRoomTone(sceneRef)).catch(e => console.warn('room tone failed', e));
+                    // NPC poses (docs/achitechture/NPC_POSES.md): drink, use and phone frames during uses, when the atlas has them
+                    import('../systems/npc-poses.js').then(m => m.installNpcPoses(sceneRef)).catch(e => console.warn('npc poses failed', e));
                     import('../systems/npc-world-bubbles.js').then(m => m.installNpcWorldBubbles(sceneRef)).catch(e => console.warn('npc speech bubbles failed', e));
                     import('../systems/npc-needs-chatter.js').then(m => m.installNpcChatterVoice()).catch(e => console.warn('npc voiced chatter failed', e));
                     // Left-card consequence (left-card-consequence.js, §3.3b): runs an object's

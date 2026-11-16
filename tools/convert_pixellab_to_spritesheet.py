@@ -43,6 +43,10 @@ def normalize_anim_type(raw_name):
     """
     # Strip trailing -XXXXXXXX hash (8 hex chars)
     name = re.sub(r'-[0-9a-f]{8}$', '', raw_name)
+    # Pose frames (pipeline --pose-from) keep their underscore: 'pose_drink' stays
+    # 'pose_drink', so the frames are pose_drink_<direction>_frame_000 (systems/npc-poses.js).
+    if name.lower().startswith('pose_'):
+        return name.lower()
     # PascalCase_With_Underscores → lowercase-hyphen
     name = name.replace('_', '-').lower()
     # PixelLab uses the bare name 'animation' for unrecognised animations, which are walk cycles
@@ -179,13 +183,19 @@ def frame_offsets(character_data, canvas, feet_y):
     # feet line and centre. Take the median per frame size, so one odd strip (or a patched
     # frame) can't shift the whole character.
     samples = {}
-    # 'sit' frames (seated pose) don't share the standing feet line, so they never set it.
+    pose_samples = {}
+    # 'sit' frames (seated pose) and 'pose_*' frames (one-frame standing poses from another
+    # state) don't set the feet line: the standing animations alone do. A pose frame size that
+    # no standing frame shares falls back to the pose frames' own feet (a standing pose has
+    # the same feet as the idle).
     for anim_type, directions in anims.items():
-        if anim_type == 'sit':
+        if anim_type == 'sit' or anim_type.startswith('pose_'):
             for frames in directions.values():
                 for f in frames:
                     with Image.open(f) as img:
                         samples.setdefault(img.size, [])
+                        if anim_type != 'sit':
+                            pose_samples.setdefault(img.size, []).append(img.getbbox())
             continue
         for frames in directions.values():
             if not frames:
@@ -199,7 +209,7 @@ def frame_offsets(character_data, canvas, feet_y):
         return {size: (0, 0) for size in samples}, next(iter(samples))
     offsets = {}
     for (w, h), boxes in samples.items():
-        boxes = [b for b in boxes if b]
+        boxes = [b for b in boxes if b] or [b for b in pose_samples.get((w, h), []) if b]
         if not boxes:
             offsets[(w, h)] = ((canvas - w) // 2, (canvas - h) // 2)
             continue
@@ -207,6 +217,42 @@ def frame_offsets(character_data, canvas, feet_y):
         centre_x = sorted((b[0] + b[2]) // 2 for b in boxes)[len(boxes) // 2]
         offsets[(w, h)] = (canvas // 2 - centre_x, feet_y - feet)
     return offsets, (canvas, canvas)
+
+
+POSE_FEET_MAX_SHIFT = 4
+
+
+def pose_feet_shifts(character_data):
+    """
+    Vertical shifts for pose frames, keyed by (anim_type, direction), so a pose stands on the
+    same feet line as that direction's idle. A pose state's rotations share the base
+    rotations' feet, but PixelLab's breathing-idle is often drawn 1 or 2 px higher (south most
+    of all), so without this the NPC drops when a pose starts. Measured against the idle's
+    first frame of the same size; shifts larger than POSE_FEET_MAX_SHIFT are ignored (a pose
+    with a raised foot or a held item below the feet is left where it is).
+    """
+    anims = character_data['animations']
+    idle = next((anims[a] for a in ('breathing-idle', 'idle') if a in anims), None)
+    if idle is None:
+        idle = next((d for a, d in anims.items() if 'idle' in a), None)
+    shifts = {}
+    if not idle:
+        return shifts
+    for anim_type, directions in anims.items():
+        if not anim_type.startswith('pose_'):
+            continue
+        for direction, frames in directions.items():
+            ref = (idle.get(direction) or [None])[0]
+            if not frames or not ref:
+                continue
+            with Image.open(ref) as a, Image.open(frames[0]) as b:
+                ba, bb = a.getbbox(), b.getbbox()
+                if a.size != b.size or not ba or not bb:
+                    continue
+                dy = ba[3] - bb[3]
+            if dy and abs(dy) <= POSE_FEET_MAX_SHIFT:
+                shifts[(anim_type, direction)] = dy
+    return shifts
 
 
 def create_sprite_sheet(character_data, output_path, padding=2,
@@ -238,6 +284,10 @@ def create_sprite_sheet(character_data, output_path, padding=2,
     
     # Get frame dimensions (assume all frames are same size)
     offsets, (frame_width, frame_height) = frame_offsets(character_data, canvas, feet_y)
+    padded = set(offsets.values()) != {(0, 0)}
+    shifts = pose_feet_shifts(character_data) if padded else {}
+    for (anim_type, direction), dy in sorted(shifts.items()):
+        print(f"  {anim_type} {direction}: {dy:+d} px to the idle's feet line")
     if list(offsets.values()) != [(0, 0)]:
         for size, off in offsets.items():
             print(f"  Placing {size[0]}x{size[1]} frames on {frame_width}x{frame_height} at offset {off}")
@@ -268,6 +318,7 @@ def create_sprite_sheet(character_data, output_path, padding=2,
         with Image.open(frame_path) as frame_img:
             frame_img = frame_img.convert('RGBA')
             ox, oy = offsets[frame_img.size]
+            oy += shifts.get((metadata['animation'], metadata['direction']), 0)
             # Paste through a cell-sized layer so an oversized frame can't bleed into neighbours
             cell = Image.new('RGBA', (frame_width, frame_height), (0, 0, 0, 0))
             cell.paste(frame_img, (ox, oy))
