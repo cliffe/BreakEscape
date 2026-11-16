@@ -108,7 +108,8 @@ test('freeing the lane brings the block back: lane place, maxHeight none, class 
   assert.equal(r.win.__hudLanes.notifyAway, false);
   assert.equal(px(r.container.style.top), Math.round(n.top));
   assert.equal(px(r.container.style.left), Math.round(n.left));
-  assert.equal(r.container.style.maxHeight, 'none');
+  // The flip settles in the same call (R3 m1), so the lane's own clamp is back, not the away 'none'
+  assert.equal(px(r.container.style.maxHeight), Math.round(n.maxHeight));
   assert.ok(!r.container.querySelector('.placed-over-panel'));
   r.win.close();
 });
@@ -245,12 +246,14 @@ test('R1 m2: hud-lanes tells every shown warning each pass whether it is superse
   a._onSupersede = (on) => calls.push(['a', on]);
   b._onSupersede = (on) => calls.push(['b', on]);
   applyLanes(r.doc, r.win);
-  assert.deepEqual(calls, [['a', true], ['b', false]], 'older superseded, newer kept');
+  assert.deepEqual(calls.slice(0, 2), [['a', true], ['b', false]], 'older superseded, newer kept');
+  assert.ok(calls.slice(2).every(([w, on], i) => on === (w === 'a')), 'a second pass in the same call (the away flip) says the same');
   calls.length = 0;
   r.win.MinigameFramework = { currentMinigame: null };
   r.doc.querySelector('.minigame-container').remove();
   applyLanes(r.doc, r.win);
-  assert.deepEqual(calls, [['a', false], ['b', false]], 'panel closed: the removal is withdrawn');
+  assert.deepEqual(calls.slice(-2), [['a', false], ['b', false]], 'panel closed: the removal is withdrawn');
+  assert.ok(calls.every(([, on]) => on === false), 'and nothing is re-armed (the flip runs a second pass in the same call)');
   r.win.close();
 });
 

@@ -32,7 +32,8 @@ const FALLBACK = {
   '915x412 log-filter': { rung: 3, side: 'left', width: 240, top: 176, controls: 1 },
   '915x412 cryptex': { rung: 3, side: 'lane-side', width: 240, top: 176, left: 659, controls: 1 },
   '390x844 siem-dashboard': { rung: 3, side: 'lane', controls: 2 },
-  '390x844 log-filter': { rung: 3, side: 'lane-side', width: 358, top: 112, controls: 1 }
+  '390x844 log-filter': { rung: 3, side: 'lane-side', width: 358, top: 112, controls: 1 },
+  '360x740 dusting': { rung: 2, side: 'left', width: 240, top: 8, left: 16 }   // R3: the canvas is no control; the error alone is in the test below
 };
 
 test('every case without a fallback lands clear of titles, the X, non-list controls and canvases', () => {
@@ -46,7 +47,7 @@ test('every case without a fallback lands clear of titles, the X, non-list contr
   }
 });
 
-test('the six no-place cases take the rungs of plan 2.4', () => {
+test('the no-place cases take the rungs of plan 2.4', () => {
   for (const [key, want] of Object.entries(FALLBACK)) {
     const [size, name] = key.split(' ');
     const s = spotFor(get(size, name));
@@ -282,4 +283,46 @@ test('banner source: no lane-below and no toasts in ringLayerSpot', () => {
   const body = src.slice(src.indexOf('export function ringLayerSpot'), src.indexOf('// ------------------------------------------------------------ toasts over an open panel'));
   assert.ok(body.length > 100);
   assert.doesNotMatch(body, /lane-below|toasts/);
+});
+
+// ------------------------------------------------------------------ R3: sweep A classification
+
+const errorSpot = (c, { pair = false, ...more } = {}) => toastSpot({ vw: c.vw, vh: c.vh, lane: c.lane, z: c.z,
+  heightAt: pair ? heightOf(c, true) : (w) => c.heights.error[w], titles: c.titles, xs: c.xs, controls: c.controls, canvases: c.canvases, ...more });
+const nonList = (c) => [...c.titles, ...c.xs, ...c.controls.filter(k => !k.listRow), ...c.canvases];
+
+test('backup-recovery 1280x800: the warning or the error alone keeps clear of every control (only the text bar is covered); the pair has no place and takes rung 3', () => {
+  const c = get('1280x800', 'backup-recovery');
+  for (const [what, s] of [['warning', spotFor(c)], ['error', errorSpot(c)]]) {
+    assert.equal(s.rung, 0, what);
+    assert.deepEqual(hits(s, nonList(c)), [], what);
+    assert.deepEqual([s.left, s.top, s.width], [660, 368, 600], `${what}: the place measured live`);
+  }
+  const pair = errorSpot(c, { pair: true });
+  assert.equal(pair.rung, 3);
+  assert.equal(pair.covers.controls, 1);
+  assert.equal(pair.covers.titles, 0);
+});
+
+test('dusting 360x740: no clear place and no rung-1 place (the canvas fills the gap), so the toast takes rung 2 over the canvas, never rung 3 over it as a control', () => {
+  const c = get('360x740', 'dusting');
+  assert.equal(c.canvases.length, 1);
+  assert.ok(!c.controls.some(k => k.left === c.canvases[0].left && k.top === c.canvases[0].top), 'the canvas is not also a control');
+  const s = errorSpot(c);
+  assert.equal(s.rung, 2);
+  assert.deepEqual([s.side, s.top, s.width], ['lane-side', 72, 328]);
+  assert.equal(s.covers.titles, 0);
+  assert.deepEqual(hits(s, c.xs), []);
+});
+
+test('combination 390x844 and episode-runner 360x740: the error alone is clear; the pair never covers the X', () => {
+  for (const [size, name] of [['390x844', 'combination'], ['360x740', 'episode-runner']]) {
+    const c = get(size, name);
+    const one = errorSpot(c);
+    assert.equal(one.rung, 0, `${size} ${name}`);
+    assert.deepEqual(hits(one, nonList(c)), [], `${size} ${name}`);
+    const pair = errorSpot(c, { pair: true });
+    assert.equal(pair.rung, 3, `${size} ${name} pair`);
+    assert.deepEqual(hits(pair, c.xs), [], `${size} ${name} pair: X`);
+  }
 });

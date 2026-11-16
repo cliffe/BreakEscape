@@ -118,6 +118,19 @@ test('the X is collected in titles and xs; play canvases are collected, the conv
   r.win.close();
 });
 
+test('a focusable play canvas is a canvas only, not also a control', () => {
+  const r = rig();
+  const mg = r.add('<div class="minigame-container"></div>', [78, 20, 838, 380]);
+  r.add('<div class="minigame-game-container"></div>', [78, 20, 838, 380], mg);
+  r.add('<canvas class="dusting-canvas" tabindex="0" role="img"></canvas>', [120, 80, 520, 360], mg);
+  r.add('<button class="act">Done</button>', [600, 340, 700, 370], mg);
+  const m = measureMinigame(r.doc, r.win);
+  assert.equal(m.canvases.length, 1);
+  assert.equal(find(m.controls, [120, 80, 520, 360]), undefined);
+  assert.ok(find(m.controls, [600, 340, 700, 370]), 'a button is still a control');
+  r.win.close();
+});
+
 function popup(r, id = 'laptop-popup') {
   const pop = r.add(`<div id="${id}" style="display: block"></div>`, [40, 20, 1240, 780]);
   const frame = r.add('<div class="laptop-frame"></div>', [40, 20, 1240, 780], pop);

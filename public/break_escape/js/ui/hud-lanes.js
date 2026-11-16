@@ -626,6 +626,9 @@ export function measureMinigame(doc, win, cursor = null) {
     const add = (el) => {
       if (seen.has(el) || el.closest?.('#phone-ring-layer')) return;
       seen.add(el);
+      // A play canvas is a canvas, not also a control (the dusting canvas has tabindex and was
+      // counted as both, which ruled out the place that covers a canvas rather than a control)
+      if (el.tagName === 'CANVAS' && !el.classList.contains('person-chat-portrait')) return;
       const r = shownRect(el);
       if (r && (!area || r.width * r.height <= area / 2)) controls.push({ ...boxOf(r), listRow: isListRow(el, mg, frameEl, frameH) });
     };
@@ -879,16 +882,17 @@ export function failOpenToasts(doc, win) {
  */
 export function applyLanes(doc = document, win = window, opts = {}) {
   const before = !!win.__hudLanes?.notifyAway;
-  let r = applyLanesPass(doc, win, opts);
+  const shared = { panel: null };   // the panel's boxes, measured once for both passes
+  let r = applyLanesPass(doc, win, { ...opts, shared });
   if (r.block.away !== before) {
     const mid = r.block.away;
-    r = applyLanesPass(doc, win, opts);
+    r = applyLanesPass(doc, win, { ...opts, shared });
     if (r.block.away !== mid) win.__hudLanesStarted?.relayout?.();
   }
   return r;
 }
 
-function applyLanesPass(doc, win, { cursor = null } = {}) {
+function applyLanesPass(doc, win, { cursor = null, shared = { panel: null } } = {}) {
   placeHearts(doc);
   const m = measureHud(doc, win);
   // The toast block placed away from the lane over a panel counts as 0 in the lane sums (toast
@@ -1061,8 +1065,7 @@ function applyLanesPass(doc, win, { cursor = null } = {}) {
     speech.dataset.lane = 'message';
   }
   // One measure of the open panel per relayout, shared by the banner and the toast block
-  let panel = null;
-  const measure = () => (panel ||= measureMinigame(doc, win, cursor));
+  const measure = () => (shared.panel ||= measureMinigame(doc, win, cursor));
   const ringSpot = placeRingLayer(doc, win, lanes, measure);
   const block = placeNotifyBlock(doc, win, lanes, measure, prevBlock, ringSpot);
   win.__hudLanes = { measured: m, lanes, ringSpot, notifyAway: block.away, notifySpot: block.spot, toastSpot, pendingAnswers };
