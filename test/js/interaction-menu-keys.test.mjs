@@ -468,3 +468,23 @@ test('showInteractionMenu: on touch the menu with an avoid box sits clear of it;
         reset();
     }
 });
+
+test('menuPlacement: a fallback spot that overlaps nothing but is closer than the margin is tight, not clear', () => {
+    // The review's case: 360 px wide, zoom 1, a 326x365 menu, a tall union; y 427.7 leaves a 3.7 px gap
+    const view = { width: 360, height: 800.7 };
+    const menu = { width: 326, height: 365 };
+    const avoid = { left: 183, top: 132, right: 250, bottom: 424 };
+    const r = menuPlacement(menu, view, avoid, 8);
+    assert.equal(r.cover, 0, JSON.stringify(r));
+    assert.equal(r.covered, false);
+    assert.ok(r.gap < 8, `gap ${r.gap}`);
+    assert.ok(Math.abs(r.gap - 3.7) < 0.5, `gap ${r.gap}`);
+    assert.equal(r.tight, true, 'not reported clear');
+    // A genuinely clear spot has a gap of at least the margin and is not tight
+    const clear = menuPlacement({ width: 200, height: 300 }, { width: 390, height: 844 }, { left: 20, top: 400, right: 120, bottom: 460 }, 8);
+    assert.equal(clear.tight, false);
+    assert.ok(clear.gap >= 8, `gap ${clear.gap}`);
+    // A fractional margin is rounded up
+    const m = menuPlacement({ width: 100, height: 100 }, { width: 390, height: 844 }, { left: 20, top: 400, right: 120, bottom: 460 }, 8.2);
+    assert.ok(m.gap >= 9, `gap ${m.gap}`);
+});

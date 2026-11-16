@@ -473,6 +473,17 @@ test('pressKey: keys reach the overlap menu when it is the open blocking UI, and
     const refused = await bridge.pressKey('1');
     assert.equal(refused.ok, false);
     assert.equal(refused.reason, 'blocking-ui');
+    // A modal opened underneath the menu (the menu is on top, a modal sits below it): refused
+    globalThis.__keys = [];
+    document.elementsFromPoint = () => [overlay, { closest: () => null, tagName: 'DIV' }, { tagName: 'CANVAS' }];
+    const under = await bridge.pressKey('a');
+    assert.equal(under.ok, false);
+    assert.equal(under.reason, 'blocking-ui');
+    assert.deepEqual(globalThis.__keys, []);
+    // The menu over the bare canvas is still the only blocker
+    document.elementsFromPoint = () => [overlay, { closest: () => null, tagName: 'CANVAS' }];
+    assert.equal((await bridge.pressKey('2')).toMenu, true);
+    globalThis.__keys = [];
     // A blocking UI with no menu: refused; a minigame with the menu open: refused
     globalThis.__menu = null;
     assert.equal((await bridge.pressKey('1')).reason, 'blocking-ui');

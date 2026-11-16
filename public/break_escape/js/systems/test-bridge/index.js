@@ -799,12 +799,6 @@ function noClickMoveGuard() {
 }
 
 /**
- * Refuse main-world actions while a minigame owns the screen.
- * The engine has literally disabled scene input in that state
- * (MinigameFramework.startMinigame), so a click would silently do nothing.
- * Better to say so than to look like a flaky failure.
- */
-/**
  * True when the only thing over the canvas is the overlap menu (#be-interaction-menu-overlay):
  * keys then belong to the menu, so pressKey delivers them. Any other blocking UI (a modal, a
  * session overlay, a minigame) keeps the refusal.
@@ -812,12 +806,24 @@ function noClickMoveGuard() {
 function overlapMenuIsTheBlocker() {
     if (!interactionMenuState()) return false;
     if (activeMinigameSummary() || sessionOverlayShowing()) return false;
-    // Nothing but the menu's own overlay may sit on top of the page
-    const top = document.elementsFromPoint
-        ? document.elementsFromPoint(window.innerWidth / 2, window.innerHeight / 2)[0] : null;
-    return !!top?.closest?.('#be-interaction-menu-overlay');
+    // Nothing but the menu's own overlay may sit between the page and the viewer: walk the whole
+    // stack at the screen centre down to the canvas, so a modal under the menu also refuses
+    if (!document.elementsFromPoint) return false;
+    const stack = document.elementsFromPoint(window.innerWidth / 2, window.innerHeight / 2);
+    if (!stack.length) return false;
+    for (const el of stack) {
+        if (el?.tagName === 'CANVAS' || el?.tagName === 'BODY' || el?.tagName === 'HTML') break;
+        if (!el?.closest?.('#be-interaction-menu-overlay')) return false;
+    }
+    return true;
 }
 
+/**
+ * Refuse main-world actions while a minigame owns the screen.
+ * The engine has literally disabled scene input in that state
+ * (MinigameFramework.startMinigame), so a click would silently do nothing.
+ * Better to say so than to look like a flaky failure.
+ */
 function blockedByMinigame() {
     const mg = activeMinigameSummary();
     if (mg) {
