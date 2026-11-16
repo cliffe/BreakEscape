@@ -53,17 +53,19 @@ Compatibility: colleagues who get on. Yusuf is the careful one, Zainab is dry ab
 
 A hidden NPC is `blocked` in the needs tick and its job is aborted (`npc-needs.js:1414` to `:1420`). `setVisible` state is saved and restored on reload (`core/game.js:1811` to `:1816`), which is the main guard after a reload; mappings 1 and 2 do not fire again then. On the first frame `room_entered:<start room>` fires once with `previousRoom` null (`core/rooms.js:3195` to `:3226`), and whether NPC mappings are registered by then is measured in stage 4. Mapping 3 covers the case where they are not, from the player's first room change.
 
-**Ffion knocked out by day.** The badge KO route stays open. A mapping on `npc_ko:ffion_rees` with `globalVars.mission_phase !== 'act2_infiltration'` sets `wh_staff_witnessed` and sends each staffer home with `patrolOverride.targetTile` set to its post, where the script holds it (a scripted walk suspends needs). Yusuf plays one bark. HaX gets one text: "Reception had company. Get the badge and get out." The staff neither fight nor leave the room: either would add a fight or a walk to an alternative badge route. Both machines carry `offWhen` on `wh_staff_witnessed`, so no chatter or exchange plays over an unconscious receptionist. Credits get one `warning` line for this outcome.
+**Ffion knocked out by day.** The badge KO route stays open. A mapping on `npc_ko:ffion_rees` with `globalVars.mission_phase !== 'act2_infiltration'` sets `wh_staff_witnessed`. Two further mappings on the same event, one per staffer and each conditioned on that staffer's own attack global being unset, send them home with `patrolOverride.targetTile` set to the post, where the script holds them (a scripted walk suspends needs). A hostile staffer is left to the hostile behaviour. Yusuf plays one bark. HaX gets one text: "Reception had company. Get the badge and get out." The staff neither fight nor leave the room: either would add a fight or a walk to an alternative badge route. Both machines carry `offWhen` on `wh_staff_witnessed`, so no chatter or exchange plays over an unconscious receptionist. Credits get one `warning` line for this outcome.
 
-**Attacks.** Hitting either staffer sets `wh_staff_attacked` (a mapping on `npc_attacked:<id>`, the m02 pattern); both machines go off on it; HaX texts once ("Leave the staff alone. You're here to clone cards, not start fights."); the credits carry a `warning` line for a staff KO and one for an attack without KO. Ffion's own KO handling is unchanged.
+**Attacks.** Hitting either staffer sets `wh_staff_attacked` and that staffer's own `zainab_attacked` or `yusuf_attacked` (mappings on `npc_attacked:<id>`, the m02 pattern); both machines go off on `wh_staff_attacked`; HaX texts once ("Leave the staff alone. You're here to clone cards, not start fights."); the credits carry a `warning` line for a staff KO and one for an attack without KO. Ffion's own KO handling is unchanged. A hostile staffer is leashed to the room they were hit in, which may be reception, the start room and the badge room: a player who punches one deals with them before talking to Ffion. That is self-inflicted and matches m02.
+
+**A hostile staffer at the night turn.** A staffer who was attacked and is still conscious when `mission_phase` flips is hidden like the other. m03's music uses `all_hostiles_ko` (`scenario.json.erb:162` to `:165`), whose handler waits while `anyHostilesAlive()` is true (`music/scenario-music-events.js:418` to `:424`). Stage 1 reads that function and the hostile tick. If either counts a hidden NPC, the engine branch gains a second part: a hidden NPC is neither hostile-alive nor able to attack (section 11).
 
 ## 3. Rooms and objects
 
-Set scenario `officePresets: true` and check V1 for every object that gains a preset (a `pc` with no `lockType` gains a desk preset).
+Set scenario `officePresets: true`. It applies across the whole scenario, so stage 0 lists every object V1 says gains a preset (a `pc` with no `lockType` gains a desk preset), including story objects such as `phone4` and `usb_bowl1` in reception and the night rooms' PCs. Each story object is opted out through the schema's object-level opt-out, or its preset is kept only if it changes nothing the player can do.
 
 | Room | Change | Notes |
 |---|---|---|
-| `reception_lobby` (`:586`, start, always loaded) | Declare Tiled `coffee_station1` (at 262,230) as `reception_coffee`, **no `position`**: capacity 2, `chatter: "coffee"`, `affordance.overhearRadius: 360`, object-level `offWhen` on `wh_staff_attacked` and on `wh_staff_witnessed`. Hand-write `useFrom` and `queue.cells` after measuring. New object `zainab_laptop` (sprite `laptop1`, on the glass coffee table): `type: "pc"`, `workstation: true`, `owner: "zainab_hussain"`, no `lockType`, not takeable, readable lore only (section 4). | Keep every use cell, queue cell and walk clear of the doorway north to the hallway and of Ffion's desk cell. Declare any same-image twin of `coffee_station1` in the room as well. |
+| `reception_lobby` (`:586`, start, always loaded) | Declare Tiled `coffee_station1` (at 262,230) as `reception_coffee`, **no `position`**: capacity 2, `chatter: "coffee"`, `affordance.overhearRadius: 360`, object-level `offWhen` on `wh_staff_attacked` and on `wh_staff_witnessed`. Hand-write `useFrom` and `queue.cells` after measuring. New object `zainab_laptop` (sprite `laptop1`, on the glass coffee table): `type: "pc"`, `workstation: true`, `owner: "zainab_hussain"`, no `lockType`, not takeable, not solid (a table-top object that must not block the sofa approach), readable lore only (section 4). | Keep every use cell, queue cell and walk clear of the doorway north to the hallway and of Ffion's desk cell. Declare any same-image twin of `coffee_station1` in the room as well. |
 | `main_hallway` (`:1398`, loads when the player walks north; motion light) | Declare Tiled `water_cooler1` (at 192,74) as `hallway_cooler`, no `position`: capacity 2, `chatter: "cooler"`, `overhearRadius: 360`, same `offWhen`. | The night-transition trigger room. No new `room_entered:main_hallway` mapping apart from the re-hide in section 2. The cooler is live only after the hallway has loaded; until then thirst finds no source and parks. |
 | all other rooms | none | `needsRooms` keeps the pair out. |
 
@@ -78,11 +80,12 @@ Needs (starting values, tuned in stage 4):
 | Yusuf | caffeine | 6 | 30 | 85 | 15% |
 | Yusuf | thirst | 3 | 30 | 90 | 15% |
 
-The first natural coffee trip falls six to nine minutes in, well after the briefing. Mapped breaks bring the pair together sooner when the player is around (each with `delayMs: 2000` and the condition `globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_attacked && !globalVars.wh_staff_witnessed`):
+The first natural coffee trip falls six to nine minutes in, well after the briefing; natural thirst would take 16 to 20 minutes, which the day act may never reach. Mapped breaks give each machine one paired visit while the player is around. Each has `delayMs: 2000` and the condition `globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_attacked && !globalVars.wh_staff_witnessed`:
 
-- `conversation_closed:ffion_rees`, `cooldown: 120000`: Yusuf `needs: { set: { caffeine: 20 } }`.
-- `room_entered:reception_lobby` with `data.previousRoom === 'main_hallway'`, `cooldown: 150000`: Zainab `caffeine: 20`.
-- One-way coupling: `npc_use_started:reception_coffee` with `data.npcId === 'yusuf_demir'` sets Zainab's caffeine to 20 (`cooldown: 120000`). The cooler is not coupled; a pair there is chance.
+- Coffee (short trip, laptop left open): `conversation_closed:ffion_rees`, `cooldown: 120000`, sets Yusuf `needs: { set: { caffeine: 20 } }`. Coupled one way: `npc_use_started:reception_coffee` with `data.npcId === 'yusuf_demir'` sets Zainab's caffeine to 20 (`cooldown: 120000`).
+- Cooler (long trip, laptop locked): `room_entered:reception_lobby` with `data.previousRoom === 'main_hallway'`, `cooldown: 150000`, sets Zainab `thirst: 20`. The hallway has loaded by then, so the cooler is live. Coupled one way: `npc_use_started:hallway_cooler` with `data.npcId === 'zainab_hussain'` sets Yusuf's thirst to 20 (`cooldown: 150000`). The player, just back in reception, sees the locked laptop and can hear the pair faintly through the open door.
+
+No mapping is added on `room_entered:main_hallway` apart from the re-hide. Stage 4 measures the staff's lanes with the player standing at Ffion's approach cell, so a player talking to her does not jam the walk to the coffee station.
 
 ## 4. Levers
 
@@ -94,7 +97,7 @@ One lever, optional content only.
 "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 45 } }
 ```
 
-A coffee trip inside reception is short and leaves it open. A cooler trip to the hallway is long and locks it. There is no password anyone can learn, so a locked laptop stays shut; the lesson is the one the course teaches (lock the screen when you walk away, even for a minute). If she comes back while the player is at it, `npc_caught_at_post:zainab_hussain` plays one bark (`cooldown: 30000`).
+A coffee trip inside reception is short and leaves it open. A cooler trip to the hallway is long and locks it. The 45 s threshold is a starting value: stage 4 measures `expectedAwayMs` (from `npc_left_post`) and the real time away for both trips, five tries each, and sets the threshold between them. The open window should last at least 20 seconds, which the paired coffee chat gives; if it does not, the coffee station's use time is raised for this object only. There is no password anyone can learn, so a locked laptop stays shut; the lesson is the one the course teaches (lock the screen when you walk away, even for a minute). If she comes back while the player is at it, `npc_caught_at_post:zainab_hussain` plays one bark (`cooldown: 30000`).
 
 What it shows (written in stage 3 and checked against this list): her week of client-site jobs, a reminder from Victoria that client data stays on client kit, and Zainab's own unanswered message to the team asking who "the after-hours lot" are. It holds no password, PIN, card number, key code, server room detail, `Sterling2010`, `5829`, VM flag or hint to any of them, and no route to `receptionist_badge`, `victoria_keycard_clone`, the exec office key lock, the safe or the drop site. Neither staffer carries a card, keycard or key; their lanyards are part of the sprite only.
 
@@ -180,14 +183,14 @@ Count: 16 pool lines, 11 exchange lines, about 22 conversation lines, 2 barks: a
 |---|---|---|
 | NPC visibility records | 2 | `setVisible` state for each new NPC |
 | KO globals | 2 | `zainab_ko`, `yusuf_ko`; monotonic |
-| Attack and witness globals | 2 | `wh_staff_attacked`, `wh_staff_witnessed`; monotonic |
+| Attack and witness globals | 4 | `wh_staff_attacked`, `zainab_attacked`, `yusuf_attacked`, `wh_staff_witnessed`; monotonic |
 | Workstation globals | 2 | `zainab_laptop_owner_away`, `zainab_laptop_screen_locked`; non-monotonic, last write wins is fine because nothing on the server reads them for a lock |
 | `heard_` keys | 3 | one per exchange; monotonic |
 | `onceOnly` mapping records | 2 | the two HaX texts |
 | Ink state | 2 | one small conversation state per new NPC; bounded |
 | Office-life items | 0 | nothing takeable |
 
-Fifteen bounded scalar keys, each sent as a per-key delta when it changes. Nothing grows. Needs levels are not synced; a reload resets them to the posts.
+Seventeen bounded scalar keys, each sent as a per-key delta when it changes. Nothing grows. Needs levels are not synced; a reload resets them to the posts.
 
 ## 8. Field names
 
@@ -222,11 +225,13 @@ Live office-life checks (five tries each at walking pace, a fresh game each):
 7. Ffion KO by day with both present: both walk to their posts and stay, bark, HaX text, no exchange, badge on the floor as before.
 8. Terry's LOS window, the server room and the conference room never see a staffer (`window.__test.needs`).
 
-Reload checks: reload by day (staff back at posts, `heard_` keys kept, an unplayed exchange can still play); reload after the card is cloned and before the hallway; reload at night (staff stay hidden in reception and the hallway).
+9. Attack one staffer by day and leave them conscious; clone the card; at night, KO Terry: the music returns from the fight playlist, and the hidden staffer never attacks.
 
-Expected lock and key diff: empty.
+Reload checks: reload by day (staff back at posts, `heard_` keys kept, an unplayed exchange can still play); reload after the card is cloned and before the hallway; reload at night (staff stay hidden in reception and the hallway). A reload in the middle of an exchange that the player has overheard at least one line of loses the rest (the cut exchange sets `heard_<knot>`); that is accepted.
 
-## 11. Engine change E-m03-1: no overhearing during a conversation
+Expected lock and key diff: empty, apart from at most one unlocked readable node for `zainab_laptop` if the graph lists unlocked PCs.
+
+## 11. Engine change E-m03-1: no overhearing during a conversation (and, if needed, hidden NPCs are not hostile)
 
 Gap: `world.playerHears` (`npc-needs.js:5403` to `:5418`) checks room, radius, light and line of sight only, and `npcChatterVoice.say` (`npc-needs-chatter.js:237` to `:265`) has no minigame check. Exchange lines are voiced at once. In m03 the briefing, Ffion's conversations and the night scene all run in reception, the pair's room.
 
@@ -236,6 +241,10 @@ Tests:
 - Unit (node, `bin/test-js`): `playerHears` false with a stubbed person-chat open, false with phone-chat, true with none and with an unrelated minigame; an exchange run entirely under an open chat sets no `heard_` key and is offered again.
 - Test scenario `scenarios/test_chatter_conversation_mute/`: a pair at a capacity-2 cooler with high starting thirst and one exchange with no gate, plus a talkable NPC in the same room.
 - Live proof on a keyless server from the engine worktree: open the conversation before the pair meets; no `/tts` request and no `npc_overheard` while it is open; close it; the exchange plays and sets `heard_`. Regression: `test_needs_sims` pairs still talk.
+
+Possible second part (only if stage 1 finds it needed, section 2): `anyHostilesAlive()` and the hostile tick skip hidden NPCs. Unit test: a hidden, conscious hostile does not hold back `all_hostiles_ko` and does not attack. The same test scenario gains a hostile NPC hidden by a mapping, for the live check.
+
+Fallback if the change is refused or slips: post both staff in the hallway beside the cooler and leave reception to Ffion (the long reception dwell and the laptop lever are lost), or keep the reception posts, start the needs high and drop the Ffion-conversation break. Either keeps chatter out of the room where the conversations run.
 
 ## 12. Staged implementation
 
