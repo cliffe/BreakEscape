@@ -641,6 +641,12 @@ module BreakEscape
     def add_inventory_item!(item)
       player_state['inventory'] ||= []
 
+      # `credential` is a forgeable field (stripped from every client contribution and
+      # by both client filters), so a stored take never carries it. Re-stamp it here
+      # from the scenario's own definition, matched by type and id, so the keyring's
+      # `held` proof can match. A client-supplied value is never trusted (K1 live fix).
+      restamp_item_credential!(item)
+
       # Check if item already exists in inventory (by id or combination of type and name)
       item_exists = inventory_includes?(item)
 
@@ -652,6 +658,34 @@ module BreakEscape
       else
         Rails.logger.info "[BreakEscape] Item already in inventory, skipping: #{item['type']} / #{item['name']}"
       end
+    end
+
+    # Re-stamp a stored inventory item's `credential` from the scenario's own definition
+    # (CredentialModel.item_definition, matched by type and id), never from the client.
+    # `credential` is forgeable, so any client-supplied value is dropped first; the
+    # authored value is restored only when the definition is the scenario's own item of
+    # the same type. Stamps onto the same level the keyring `held` proof reads
+    # (`inv['scenarioData'] || inv`). Without this, both client filters strip `credential`
+    # on the way out and the client posts the item back without it, so the `held` proof
+    # could never match through the real request path (K1 live fix).
+    def restamp_item_credential!(item)
+      return unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      # Drop any client-supplied value up front (forgeable field).
+      data.delete('credential')
+
+      # Look up by id, exactly as the `held` proof matches (def_id == data['id']).
+      item_id = data['id'].to_s
+      return if item_id.empty?
+
+      definition = BreakEscape::CredentialModel.item_definition(scenario_data, item_id)
+      return unless definition.is_a?(Hash)
+      return unless definition['type'].to_s == data['type'].to_s
+      return unless definition['id'].to_s == item_id
+
+      credential = definition['credential']
+      data['credential'] = credential if BreakEscape::CredentialModel.present_string?(credential)
     end
 
     # A deep copy of a stored inventory item without saved_cards, for any item an
@@ -7077,6 +7111,9 @@ module BreakEscape
             if item.is_a?(Hash)
               copy = item.deep_dup
               filter_requires_and_contents_recursive(copy)
+              # The filter strips `credential` (forgeable); restore it from the scenario's
+              # own definition so a credential start item still proves `held` (K1 live fix).
+              restamp_item_credential!(copy)
               self.player_state['inventory'] << copy
             else
               self.player_state['inventory'] << item
