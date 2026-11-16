@@ -794,4 +794,58 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       post_rows(['GET', LOCKOUT_SCENARIO, { 'note' => 'try sam_pc|anything' }])
     )
   end
+
+  # Credential keyring (CREDENTIAL_KEYRING_PLAN.md, section 6.1).
+  CRED_SCENARIO = { 'credentials' => { 'ops_rdp' => { 'kind' => 'saved_connection' },
+                                       'ops_pw' => { 'kind' => 'password' } } }.freeze
+
+  test 'K1: a credentials key in any response is reported' do
+    findings = scan({ 'credentials' => { 'ops_rdp' => { 'kind' => 'saved_connection' } } }, data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_registry', 'credentials']], summary(findings)
+  end
+
+  test 'K1: a registry password credential carrying its password value is reported' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry', 'password' => 'Hunter2-xyz' }
+    ] }
+    findings = scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_password_value', 'credential:ops_pw']], summary(findings)
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('Hunter2-xyz') })
+  end
+
+  test 'K1: a captured account entry may carry its password; it is not a registry leak' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => 'Biscuit2019' }
+    ] }
+    assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+  end
+
+  # A game that reports a fixed set of credential ids as holding (the scanner reads @game once).
+  class HeldGame
+    def initialize(held)
+      @held = held
+    end
+
+    def credential_proof_holds?(id, _entry)
+      @held.include?(id)
+    end
+  end
+
+  test 'K1: a registry credential whose proof does not hold is reported, a held one is not' do
+    game = HeldGame.new(%w[ops_rdp])
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_rdp', 'kind' => 'saved_connection', 'source' => 'registry' },
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry' }
+    ] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200, 'body' => body }]]
+    findings = AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(rows)
+    assert_equal [[1, 'credential_unheld', 'credential:ops_pw']], summary(findings)
+  end
+
+  test 'K1: with no game the unheld check does not run' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry' }
+    ] }
+    assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+  end
 end
