@@ -51,3 +51,25 @@ Captured through the harness's `pageerror` and `console.error` listener (drained
 - Beat 5 is untested, and beat 4's delay is not measured in-game.
 - Beat 7 used game 5727, created with a room unlock. The unlock changes only which door is open.
 - The run used a headless browser on a loaded machine, so timings are rough.
+
+## Consumable beats (2026-11-16, build/ol-poses-code at 69d7c884f)
+
+Setup: keyless Rails dev server on 127.0.0.1:3092 from this worktree, gems from the main checkout's vendor bundle (BUNDLE_PATH). Game 5737 (test_needs_sims, mission id 236, from `new-game.rb`). Headless browser through `playtest-session.js`, `setFPS(20)` with fixed steps, read back as `fixedStep: true, fps: 20`. Player sprite is the scenario default, with no pose frames on this branch.
+
+| Beat | Result | Evidence |
+| --- | --- | --- |
+| D1. Drink a coffee from the inventory | NOT TESTED (as specified) | See below |
+| D2. A needs NPC without poses drinks | NOT TESTED | See below |
+
+**D1.** The scenario has no takeable coffee, so the brief's pick-up step cannot happen here. Every cup and coffee object in `scenarios/*` is `takeable: false` (Neil's, Eli's, Cal's and the office cups in test_needs_sims and test_needs_attack).
+
+- Seeding a coffee through the engine's `give_item` grant (`window.applyActions`, which calls `addToInventory`) was rejected by the server with `Item not found in scenario: coffee`. The inventory stayed at four items.
+- The inventory Cake is food and opens a menu with "Drop here" and "Examine", with no "Use" entry, so it is not a usable stand-in for a drink.
+
+What was seen: before and during the Cake menu the animation key stayed `idle-down`, and `window.playerPoses.cur` stayed null. No sound and no console error came from the hook over 1.5 s. This does not test a drink. The drink pose path is `consumables.js` (the `kind === 'drink'` branch of `useConsumable`), so it is still unproven on this branch. Not checked: the item leaving the inventory, the `drink_gulp` sound, and the pose key at 500 ms.
+
+**D2.** The probe did not reach the NPC sprites. `window.npcManager.npcs` is a Map, and the lookup returned no animation key for amara, tom, grace, sanjay or marek, so the sampler recorded nothing usable over about two minutes. `window.npcPoses.active` was 0 throughout. No drink sound was seen, but the sound hook records only `sm.play` calls, so that is not evidence either way.
+
+Next run: find the NPC's Phaser sprite (probably through the scene's NPC group, not the manager map), and use a scenario that has a takeable coffee, or add one to a test scenario in a separate change.
+
+Errors: `console.error` hook installed on the page from before the Cake test, no entries.
