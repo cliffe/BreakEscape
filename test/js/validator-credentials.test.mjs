@@ -77,7 +77,7 @@ test('E: unknown kind', { skip }, () => {
 });
 
 test('E: a kind that is not built yet (token)', { skip }, () => {
-  assertErr(issues(sc({ c1: { kind: 'token', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack1' } }, _j: PW_OK },
+  assertErr(issues(sc({ c1: { kind: 'token', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack_jack1' } }, _j: PW_OK },
     { objects: [PC(), JACK] })), "kind 'token' is not supported until K5");
 });
 
@@ -173,6 +173,17 @@ test('a foothold proof naming an implant-created foothold is accepted (R1 m4)', 
     { c1: { kind: 'saved_connection', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'implant_lena_pc' } } },
     { top: { timers: [{ id: 't', actions: [{ type: 'grant_foothold', pc: 'lena_pc' }] }] } }
   ));
+  assert.ok(!has(errors(l), 'names no foothold'), `unexpected foothold error in:\n${l.join('\n')}`);
+});
+
+test('W: a foothold proof naming a bare source id warns (never fires live) (R2 m1)', { skip }, () => {
+  // The jack's source id is 'jack1'; the runtime keys the foothold by 'jack_jack1', so a proof
+  // naming the bare id can never fire. It must warn, not pass and not error.
+  const l = issues(sc(
+    { c1: { kind: 'saved_connection', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack1' } } },
+    { objects: [PC(), JACK] }
+  ));
+  assertWarn(l, "proof foothold 'jack1' names a bare source id");
   assert.ok(!has(errors(l), 'names no foothold'), `unexpected foothold error in:\n${l.join('\n')}`);
 });
 

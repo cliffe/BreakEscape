@@ -7113,32 +7113,35 @@ def check_credentials(json_data)
   pcs_by_id = pcs.to_h { |pc| [pc['id'].to_s, pc] }
   headless_pc_ids = pcs.select { |pc| nm.headless?(pc) }.map { |pc| pc['id'].to_s }.to_set
 
-  # Foothold ids any jack, access point or implant/grant can create. A proof names the runtime
-  # foothold key (plan 9.1 authors "jack_comms_port"): a jack is "jack_<jackId>" (foothold_id_for),
-  # a Wi-Fi AP is "wifi_<network>" (wifi_foothold_id), an implant is "implant_<pc>". Accept the
-  # bare source id too, so a proof written either way is not falsely rejected (a safe superset).
+  # Foothold ids any jack, access point or implant/grant can create. The runtime only ever keys
+  # player_state['footholds'] by the prefixed forms (plan 9.1 authors "jack_comms_port"): a jack is
+  # "jack_<jackId>" (foothold_id_for), a Wi-Fi AP is "wifi_<network>" (wifi_foothold_id), an implant
+  # is "implant_<pc>". A proof must name one of those to fire live. `foothold_ids` holds the runtime
+  # (prefixed) forms a proof may name; `bare_foothold_ids` holds the matching bare source ids, so a
+  # proof written with a bare id can be told apart and warned about rather than passed (R2 m1).
   foothold_ids = Set.new
+  bare_foothold_ids = Set.new
   nm.jacks(json_data).each do |e|
     jid = e[:object]['id'].to_s
     next if jid.empty?
 
-    foothold_ids << jid
+    bare_foothold_ids << jid
     foothold_ids << "jack_#{jid}"
   end
   nm.wifi_aps(json_data).each do |e|
     ap = e[:object]
-    foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id']
+    bare_foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id']
     foothold_ids << "wifi_#{e[:network]}" if e[:network]
   end
   # A grant_foothold action (scripted or a player implant) grants its foothold through POST
-  # /network/implant, whose runtime id is "implant_<pc>" (implant_foothold_id_for). Accept both
-  # the bare PC id and that implant id, so a proof foothold naming an implant-created foothold is
-  # not falsely rejected (R1 m4). A safe superset: the runtime reads player_state['footholds'].
+  # /network/implant, whose runtime id is "implant_<pc>" (implant_foothold_id_for). The runtime
+  # keys the foothold by that prefixed id; the bare PC id is tracked only to warn on a proof that
+  # names it (R1 m4, R2 m1). The runtime reads player_state['footholds'].
   nm.grant_foothold_actions(json_data).each do |a|
     pc = a[:pc].to_s
     next if pc.empty?
 
-    foothold_ids << pc
+    bare_foothold_ids << pc
     foothold_ids << "implant_#{pc}"
   end
 
@@ -7295,7 +7298,13 @@ def check_credentials(json_data)
         end
       when 'foothold'
         fid = proof['foothold'].to_s
-        err.call("#{label} proof foothold '#{fid}' names no foothold any jack, access point or implant action can create.") unless foothold_ids.include?(fid)
+        if foothold_ids.include?(fid)
+          # Runtime (prefixed) form: fires live.
+        elsif bare_foothold_ids.include?(fid)
+          warn.call("#{label} proof foothold '#{fid}' names a bare source id; the runtime only keys footholds by the prefixed form (jack_, wifi_ or implant_), so this proof can never fire. Use 'jack_#{fid}', 'wifi_#{fid}' or 'implant_#{fid}' as the source requires.")
+        else
+          err.call("#{label} proof foothold '#{fid}' names no foothold any jack, access point or implant action can create.")
+        end
       when 'planted', 'dropped'
         # Capture proofs; reachability is covered by the capture model's own checks.
       end
