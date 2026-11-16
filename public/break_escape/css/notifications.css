@@ -8,7 +8,8 @@
     right: 20px;
     width: 600px;
     max-width: 90%;
-    z-index: 2000;
+    /* Above the laptop, lab and VM popups (2000): a tie fell to DOM order and hid toasts behind the lab sheet */
+    z-index: 2001;
     font-family: 'Press Start 2P';
     pointer-events: none;
 }
