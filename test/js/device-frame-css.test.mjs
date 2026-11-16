@@ -13,6 +13,8 @@ const rule = /\.device-frame\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
 test('the frame edge is 16px per side: a 16px border with the 9-slice (slice 8, 16px, stretch), no padding', () => {
     assert.match(rule, /border:\s*16px solid/);
     assert.match(rule, /padding:\s*0;/);
+    assert.match(rule, /border:\s*16px solid transparent/, 'fallback border is transparent');
+    assert.match(rule, /--device-frame-gap:\s*6px/);
     assert.match(rule, /border-image:\s*var\(--device-frame-art\) 8 fill \/ 16px \/ 0 stretch;/);
     assert.match(rule, /max-width:\s*calc\(100vw - 32px\)/);
     assert.match(rule, /max-height:\s*calc\(100dvh - 32px\)/);

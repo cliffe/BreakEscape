@@ -462,12 +462,40 @@ test('each port state class maps to its sprite, and the sprites and strip ship a
         assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [12, 12], state);
     }
     const strip = readFileSync(join(here, '../../public/break_escape/assets/ui/devices/patch_strip.png'));
-    assert.deepEqual([strip.readUInt32BE(16), strip.readUInt32BE(20)], [7, 18]);
-    assert.match(css, /patch_strip\.png'\) 0 3 fill/);
-    assert.match(css, /clip-path:\s*inset\(calc\(3px \* var\(--pp-scale\)\) 0\)/, 'strip clipped to the 12 port rows: no height added');
+    assert.deepEqual([strip.readUInt32BE(16), strip.readUInt32BE(20)], [7, 18], 'the approved strip stays');
+    const row = readFileSync(join(here, '../../public/break_escape/assets/ui/devices/patch_strip_row.png'));
+    assert.deepEqual([row.readUInt32BE(16), row.readUInt32BE(20)], [7, 12], 'the strip is the 12 port rows');
+    assert.match(css, /patch_strip_row\.png'\) 0 3 fill/);
+    assert.doesNotMatch(css, /clip-path:\s*inset/, 'no clip: the strip is already the port rows');
+    assert.match(css, /::before \{[^}]*top:\s*0;\s*height:\s*calc\(12px \* var\(--pp-scale\)\)/s, 'strip is 12 source rows from the top');
     assert.match(css, /border:\s*calc\(1px \* var\(--pp-scale\)\) solid transparent/, 'VLAN border is 1 source px');
     assert.doesNotMatch(css, /patch-panel-socket/, 'the CSS-drawn socket is gone');
+    const rule = (sel) => [...css.matchAll(new RegExp('(?:^|\\n)' + sel.replace(/[.]/g, '\\.') + '\\s*\\{([^}]*)\\}', 'g'))].map((m) => m[1]).join('\n');
+    const port = rule('.patch-panel-port');
+    assert.match(port, /background:\s*url\('[^']*patch_port_empty\.png'\) 0 0 \/ 100% 100% no-repeat/, 'sprite fills the port, no repeat');
+    assert.match(port, /background-origin:\s*border-box/);
+    assert.match(port, /image-rendering:\s*pixelated/);
+    assert.match(rule('.patch-panel-port.pp-state-empty'), /border-color:\s*transparent/);
+    assert.doesNotMatch(css, /--pp-light/, 'dead variable gone');
+    assert.doesNotMatch(rule('.patch-panel-port:hover'), /#9ee6ff/, 'hover is not the held boot cyan');
+    const mark = /\.patch-panel-port\.pp-state-held::after,\s*\.pp-swatch-state-held::after\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(mark, /width:\s*calc\(4px \* var\(--pp-scale\)\)/);
+    assert.match(mark, /border:\s*calc\(1px \* var\(--pp-scale\)\) solid #0c1018/);
+    assert.match(mark, /background:\s*#ffffff/);
+    assert.match(mark, /left:\s*0;\s*top:\s*0/, 'top left, clear of the light and the managed tag');
+    for (const k of ['held', 'managed', 'unpatched']) {
+        assert.match(rule('.pp-swatch-state-' + k), new RegExp('patch_port_' + k + '\\.png'), 'legend swatch uses the sprite: ' + k);
+    }
+    assert.match(rule('.pp-swatch-state-unpatched'), /border-style:\s*dashed;\s*border-color:\s*#8a96aa/);
+    assert.match(css, /\.pp-swatch-state-held,[^{]*\{[^}]*--pp-scale:\s*1;[^}]*background-size:\s*100% 100%/s);
     assert.doesNotMatch(css, /border-radius:\s*[1-9]/);
+});
+
+test('the legend names each state key once: "managed" is the M VLAN, "Port security" the managed state', async () => {
+    const { LEGEND } = await import('../../public/break_escape/js/minigames/patch-panel/patch-panel-minigame.js');
+    const labels = LEGEND.map((l) => l.label);
+    assert.ok(labels.includes('Your box') && labels.includes('Not patched') && labels.includes('Port security'));
+    assert.equal(labels.filter((l) => /managed/i.test(l)).length, 1);
 });
 
 test('registration and wiring sit in index.js and the page', () => {

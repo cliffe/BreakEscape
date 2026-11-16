@@ -31,6 +31,7 @@ export const LEGEND = [
     { cls: 'g', label: 'G guest' },
     { cls: 'm', label: 'M managed' },
     { cls: 'state-held', label: 'Your box' },
+    { cls: 'state-managed', label: 'Port security' },
     { cls: 'state-unpatched', label: 'Not patched' }
 ];
 

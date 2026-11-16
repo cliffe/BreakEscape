@@ -9,20 +9,25 @@
    heads) and B (rubber corner boots). To swap, change --device-frame-art below, one line.
 
    Use: put .device-frame on the element that wraps the device's content (title bar, body,
-   footer). The frame wraps its content with no empty band; size the content, not the frame. */
+   footer). The frame has no padding of its own; content keeps --device-frame-gap clear of the
+   bezel (the patch panel on its title and footer, the rogue AP as padding). Size the content, not
+   the frame. */
 
 .device-frame {
     --device-frame-edge: #8a96aa;
     --device-frame-face: #1b212e;
     --device-frame-art: url('/break_escape/assets/ui/devices/device_frame_b.png');
     --device-frame-text: #e6ebf2;
+    /* Clear space between the art's bezel and the content: the 9-slice leaves 4px of face, and
+       6px more keeps text and controls off the recess line. Title, footer and padded content use it. */
+    --device-frame-gap: 6px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     max-width: calc(100vw - 32px);
     max-height: calc(100dvh - 32px);
     padding: 0;
-    border: 16px solid var(--device-frame-edge);
+    border: 16px solid transparent;
     border-image: var(--device-frame-art) 8 fill / 16px / 0 stretch;
     border-radius: 0;
     box-shadow: none;

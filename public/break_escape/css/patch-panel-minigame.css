@@ -19,7 +19,6 @@
     --pp-m: #c060c0;
     --pp-edge: #8a96aa;
     --pp-socket: #0c1018;
-    --pp-light: #5fe08a;
     --pp-box: #9ee6ff;
     font-family: 'VT323', monospace;
     font-size: 20px;
@@ -27,7 +26,7 @@
 }
 
 .patch-panel > .device-frame-title {
-    padding-left: 6px;
+    padding-left: var(--device-frame-gap);
     padding-right: 36px;
 }
 
@@ -72,20 +71,20 @@
     margin: 0;
 }
 
-/* The metal strip behind the ports: the 7x18 art as a horizontal 3-slice (3 px caps), clipped to
-   its middle 12 rows so it takes no height (the 3 px above and below would grow every row). */
+/* The metal strip behind the ports: patch_strip_row.png, 7x12 (the approved 7x18 strip's top
+   highlight row, middle rows and bottom shade row), as a horizontal 3-slice with 3 px caps. It is
+   the same 12 source rows as the ports, so it adds no height. */
 .patch-panel-strip::before {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(-3px * var(--pp-scale));
-    height: calc(18px * var(--pp-scale));
-    clip-path: inset(calc(3px * var(--pp-scale)) 0);
+    top: 0;
+    height: calc(12px * var(--pp-scale));
     box-sizing: border-box;
     border-style: solid;
     border-width: 0 calc(3px * var(--pp-scale));
-    border-image: url('/break_escape/assets/ui/devices/patch_strip.png') 0 3 fill / 0 calc(3px * var(--pp-scale)) / 0 stretch;
+    border-image: url('/break_escape/assets/ui/devices/patch_strip_row.png') 0 3 fill / 0 calc(3px * var(--pp-scale)) / 0 stretch;
     image-rendering: pixelated;
     pointer-events: none;
 }
@@ -113,8 +112,9 @@
 }
 
 .patch-panel-port:hover {
-    outline: 2px solid #9ee6ff;
-    outline-offset: 0;
+    /* amber-white is in no port sprite's palette, and the 2px offset keeps it off the art */
+    outline: 2px solid #ffe27a;
+    outline-offset: 2px;
 }
 
 .patch-panel-port:focus-visible {
@@ -169,6 +169,24 @@
 
 .patch-panel-port.pp-state-empty {
     border-color: transparent;
+}
+
+/* Your box: the held sprite differs from "patched" only by colour, so a solid white square with a
+   dark outline marks it too (4 source px, 1 source px outline), top left over the boot where the
+   link light (top right) and the managed tag (bottom right) are not. It sits inside the port's
+   border, so the port size does not change. The legend swatch reuses it at its own scale. */
+.patch-panel-port.pp-state-held::after,
+.pp-swatch-state-held::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    box-sizing: content-box;
+    width: calc(4px * var(--pp-scale));
+    height: calc(4px * var(--pp-scale));
+    border: calc(1px * var(--pp-scale)) solid #0c1018;
+    background: #ffffff;
+    pointer-events: none;
 }
 
 .patch-panel-port.pp-state-unpatched .patch-panel-label,
@@ -234,12 +252,35 @@
 .pp-swatch-v { border-color: var(--pp-v); }
 .pp-swatch-g { border-color: var(--pp-g); }
 .pp-swatch-m { border-color: var(--pp-m); }
-.pp-swatch-state-held { background: var(--pp-box); }
-.pp-swatch-state-unpatched { border-style: dashed; border-color: #566176; }
+
+/* State keys show the port itself: its sprite at 1x (12 px, so a legend row stays 16 px high),
+   with the same CSS cues as the port. --pp-scale is 1 here so the held mark and the borders are
+   the port's, at the same scale as the sprite. */
+.pp-swatch-state-held,
+.pp-swatch-state-managed,
+.pp-swatch-state-unpatched {
+    --pp-scale: 1;
+    position: relative;
+    width: calc(12px * var(--pp-scale));
+    height: calc(12px * var(--pp-scale));
+    border: calc(1px * var(--pp-scale)) solid transparent;
+    background-color: transparent;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-origin: border-box;
+    image-rendering: pixelated;
+}
+.pp-swatch-state-held { background-image: url('/break_escape/assets/ui/devices/patch_port_held.png'); }
+.pp-swatch-state-managed { background-image: url('/break_escape/assets/ui/devices/patch_port_managed.png'); }
+.pp-swatch-state-unpatched {
+    background-image: url('/break_escape/assets/ui/devices/patch_port_unpatched.png');
+    border-style: dashed;
+    border-color: #8a96aa;
+}
 
 .patch-panel-footer {
     flex: 0 0 auto;
-    padding-left: 6px;
+    padding-left: var(--device-frame-gap);
     margin-top: 8px;
     min-height: 20px;
     font-size: 20px;
