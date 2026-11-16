@@ -2042,11 +2042,19 @@ export class ContainerMinigame extends MinigameScene {
             // If pendingContainerReturn exists, it means we should return to container, not conversation
             if (window.pendingContainerReturn) {
                 console.log('Container minigame (NPC mode) closing - but pendingContainerReturn exists, so just closing');
+                // The hand-over continues the chat chain: keep the pending return
+                this._returnsToChat = true;
                 // Just close normally - we'll return to container after the next minigame
                 super.complete(success);
             } else {
                 console.log('Container minigame (NPC mode) closing - returning to conversation');
                 
+                // The framework keeps the pending return for a close that hands back to the chat
+                // and drops it for any other end (minigame-manager _dropStrandedChatReturn)
+                const canReturn = !!window.returnToConversationAfterNPCInventory;
+                this._returnsToChat = canReturn;
+                if (canReturn && window.pendingConversationReturn) window.pendingConversationReturn.returning = true;
+
                 // Call the parent complete to close the minigame
                 super.complete(success);
                 
@@ -2251,6 +2259,9 @@ export function returnToConversationAfterNPCInventory() {
                             fromTag: true  // Flag to indicate we're resuming from a tag action
                         });
                     }
+                } catch (err) {
+                    // The chat cannot be restored: say so, rather than losing it silently (R3 m2)
+                    console.warn('Could not resume the chat with', conversationState.npcId, 'after the NPC inventory:', err);
                 } finally {
                     if (window.pendingConversationReturn === conversationState) window.pendingConversationReturn = null;
                 }

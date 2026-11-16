@@ -619,9 +619,11 @@ test('R2 m4: hasPhonePose follows the frames, the poses list and officeVisuals',
 test('R2 m3: hasPhonePose is false when officeVisuals is false', () => {
     const { poses } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
     assert.equal(poses.hasPhonePose('ana'), true, 'control: visuals on');
+    const hadScenario = Object.prototype.hasOwnProperty.call(globalThis, 'gameScenario');
+    const prevScenario = globalThis.gameScenario;
     globalThis.gameScenario = { officeVisuals: false };
     try { assert.equal(poses.hasPhonePose('ana'), false, 'visuals off: the pose never shows, so the call must not stand the NPC'); }
-    finally { globalThis.gameScenario = {}; }
+    finally { if (hadScenario) globalThis.gameScenario = prevScenario; else delete globalThis.gameScenario; }
 });
 
 // The NPCBehavior.update chat block, run on a bare object: only the parts under test are real

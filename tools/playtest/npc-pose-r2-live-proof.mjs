@@ -2,10 +2,11 @@
 // m1: a chat that opens the NPC's inventory and resumes keeps Tom standing (no seat move) until the whole conversation closes.
 // m2: after a chat, _chatFaced is clear while Tom is seated, and a chat opened as he steps off his chair for a call turns him to the player.
 // Headless, setFPS(20) with fixed steps on. node tools/playtest/npc-pose-r2-live-proof.mjs <gameId> <port>
+// Exits 1 if any check fails (R3 m1). A third argument 'forceclose' adds the R3 M1 case: a hit while the
+// inventory is open from a chat must leave Tom free.
 import { chromium } from 'playwright';
-const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
-const [gid, port] = process.argv.slice(2);
-const browser = await chromium.launch({ headless: true, executablePath: EXEC });
+const [gid, port, extra] = process.argv.slice(2);
+const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1200, height: 800 } });
 const errs = []; page.on('pageerror', e => errs.push(String(e).slice(0, 200)));
 await page.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch (e) {} });
@@ -63,6 +64,40 @@ await page.waitForTimeout(1200);
 R.m2.chat2 = await tom();
 R.m2.turned = R.m2.chat2.dir === R.m2.chat2.toPlayer;
 await page.evaluate(() => window.__test.minigame.close()).catch(() => null);
+// ---- M1 (R3): a force-closed inventory leaves Tom free
+if (extra === 'forceclose') {
+    R.m1fc = {};
+    R.m1fc.waitSeated = await waitFor(t => t.seated && !t.call, 40000);
+    await page.evaluate(() => window.__test.moveToNear('tom').catch(() => null));
+    R.m1fc.open = await page.evaluate(() => window.__test.interact('tom').then(r => !!r.ok).catch(e => String(e).slice(0, 100)));
+    await page.waitForTimeout(800);
+    R.m1fc.bridge = await page.evaluate(() => { window.__test.minigame.close(); return window.npcGameBridge.showNPCInventory('tom'); });
+    await page.waitForTimeout(800);
+    R.m1fc.during = await tom();
+    // A forced close with no complete(): the framework path player-damage-interrupt uses when there is none
+    await page.evaluate(() => window.MinigameFramework.forceCloseMinigame());
+    await page.waitForTimeout(600);
+    R.m1fc.after = await tom();
+}
 R.errs = errs;
+// Pass or fail (R3 m1)
+const checks = {
+    m1_open: R.m1.open === true,
+    m1_inventory_standing: R.m1.inventory.everSeatedOrMoving === 0 && R.m1.inventory.allChat,
+    m1_no_gap: R.m1.afterClose.everNotChat === 0 && R.m1.afterClose.everSeatedOrMoving === 0,
+    m1_resumed: !!R.m1.resumed,
+    m1_still_standing: !!R.m1.stillStanding && !R.m1.stillStanding.seated && !R.m1.stillStanding.seatMove && R.m1.stillStanding.chat,
+    m2_seated_clear: !!R.m1.reseated && R.m2.seatedChatFaced === false,
+    m2_turned: R.m2.turned === true,
+    no_page_errors: errs.length === 0
+};
+if (extra === 'forceclose') {
+    checks.m1fc_in_chat_while_open = !!R.m1fc.during && R.m1fc.during.chat === true && !!R.m1fc.during.pending;
+    checks.m1fc_free_after = !!R.m1fc.after && R.m1fc.after.chat === false && R.m1fc.after.pending === false;
+}
+R.checks = checks;
+const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
 console.log(JSON.stringify(R, null, 1));
+console.log(failed.length ? `FAIL: ${failed.join(', ')}` : 'PASS: all checks');
 await browser.close();
+process.exit(failed.length ? 1 : 0);

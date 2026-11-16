@@ -216,6 +216,18 @@ export const MinigameFramework = {
         document.body.classList.toggle('minigame-holds-barks', this.holdsBarks());
     },
 
+    /**
+     * A child opened from a chat (the NPC's inventory, the card reader) leaves a pending return
+     * to that chat. If the child ends any way but complete() handing back to it (force close,
+     * displaced by another scene), nothing would ever clear the record and the NPC would stay
+     * "in chat" for the session (POSE_FIXES_REVIEW_R3 M1).
+     */
+    _dropStrandedChatReturn(ending) {
+        if (typeof window === 'undefined' || !window.pendingConversationReturn) return;
+        const isChild = ending.mode === 'npc' || ending._sceneType === 'rfid';
+        if (isChild && ending._returnsToChat !== true) window.pendingConversationReturn = null;
+    },
+
     endMinigame(success, result) {
         console.log('endMinigame called with success:', success, 'result:', result);
         if (this.currentMinigame && this.currentMinigame._ending) {
@@ -225,6 +237,7 @@ export const MinigameFramework = {
         if (this.currentMinigame) {
             const ending = this.currentMinigame;
             ending._ending = true;
+            this._dropStrandedChatReturn(ending);
             try { window.playerPoses?.onMinigameEnd?.(ending); } catch (e) { /* cosmetic */ }
             // Held toasts wait a moment: a panel reopened a tick after this one closes would
             // otherwise pull them back and show them twice (notifications.js PANEL_SETTLE_MS)

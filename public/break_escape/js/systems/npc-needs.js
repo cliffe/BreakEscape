@@ -5340,11 +5340,15 @@ export function createEngineWorld() {
         },
         inChatWith(id) {
             // A chat that handed over to a child minigame (the NPC's inventory, the card reader) and
-            // will resume counts as open the whole time: pendingConversationReturn is set for the
-            // child's life and cleared only after the chat restarts (container-minigame.js)
-            const back = W().pendingConversationReturn;
-            if (back && back.npcId === id && (back.type || 'person-chat') === 'person-chat') return true;
+            // will resume counts as open the whole time. A pending return counts only while the
+            // chat is coming back (back.returning: the child completed and the restart is queued,
+            // cleared once the chat has restarted) or a minigame is actually open. One left behind
+            // by a force close, a displaced child or a failed open names nobody
+            // (R3 M1; the framework also clears it when the child ends any other way).
             const mg = W().MinigameFramework?.currentMinigame;
+            const back = W().pendingConversationReturn;
+            if (back && back.npcId === id && (back.type || 'person-chat') === 'person-chat'
+                && (back.returning === true || (mg && !mg._ending))) return true;
             if (!mg) return false;
             // Base on the open minigame's own npcId: person-chat swaps
             // currentConversationNPCId briefly around nested calls.
