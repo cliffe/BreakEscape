@@ -529,6 +529,95 @@ test('interrupt: a decision made inside the delay still drops the call, and the 
     } finally { t.restore(); }
 });
 
+// The queued path: the call waited behind another scripted conversation that was starting;
+// by the time the queue pumps, the player has the console open.
+function queueBehindStartingCall(t, extra) {
+    t.m._scriptedCall = { npcId: 'reed', minigame: null };   // another call inside its start delay
+    fireCall(t.m, extra);
+    assert.equal(t.m._scriptedCallQueue.length, 1, 'queued behind the starting call');
+    t.m._scriptedCall = null;                                  // that call was itself deferred or dropped
+    const con = consoleMinigame();
+    t.fw.currentMinigame = con;
+    return con;
+}
+
+test('interrupt, queued path: the pump closes the console and opens the call', () => {
+    const t = setup();
+    try {
+        const con = queueBehindStartingCall(t, { skipIfGlobal: 'ransom_decision_made', interrupt: true });
+        t.runAll(2);
+        assert.equal(con._ending, true, 'the console was closed');
+        assert.equal(videoCalls(t).length, 1);
+        assert.equal(t.m._scriptedCallQueue.length, 0);
+    } finally { t.restore(); }
+});
+
+test('interrupt, queued path: without it the call keeps waiting behind the console', () => {
+    const t = setup();
+    try {
+        const con = queueBehindStartingCall(t, { skipIfGlobal: 'ransom_decision_made' });
+        t.runAll(4);
+        assert.equal(con._ending, false);
+        assert.equal(videoCalls(t).length, 0);
+        assert.equal(t.m._scriptedCallQueue.length, 1);
+    } finally { t.restore(); }
+});
+
+test('interrupt, queued path: the decision made while queued drops it without closing the console', () => {
+    const t = setup();
+    try {
+        const con = queueBehindStartingCall(t, { skipIfGlobal: 'ransom_decision_made', interrupt: true });
+        window.gameState.globalVariables.ransom_decision_made = true;
+        t.runAll(4);
+        assert.equal(con._ending, false);
+        assert.equal(videoCalls(t).length, 0);
+        assert.equal(t.m._scriptedCallQueue.length, 0);
+        assert.equal(t.m.scriptedConversationActive(), false);
+    } finally { t.restore(); }
+});
+
+test('interrupt never cuts into another scripted conversation: it waits behind it', () => {
+    const t = setup();
+    try {
+        const hax = t.fw.startMinigame('person-chat', null, { npcId: 'reed' });
+        t.m._scriptedCall = { npcId: 'reed', minigame: hax };
+        fireCall(t.m, { interrupt: true });
+        t.runAll(4);
+        assert.equal(hax._ending, false, 'the open scripted conversation is left alone');
+        assert.equal(videoCalls(t).length, 0);
+        t.fw.endMinigame();
+        t.runAll();
+        assert.equal(videoCalls(t).length, 1, 'opens after it');
+    } finally { t.restore(); }
+});
+
+test('interrupt, delayMs path: when the delay is up the console is closed and the call opens', () => {
+    const t = setup();
+    try {
+        t.m._scheduleDelayedMapping('ghost', 'object_interacted:console', callConfig({ delayMs: 1000, interrupt: true, skipIfGlobal: 'ransom_decision_made' }), {});
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;
+        t.runAll(3);
+        assert.equal(con._ending, true, 'the console was closed');
+        assert.equal(videoCalls(t).length, 1);
+    } finally { t.restore(); }
+});
+
+test('interrupt, delayMs path: without it the mapping waits for the console to close', () => {
+    const t = setup();
+    try {
+        t.m._scheduleDelayedMapping('ghost', 'object_interacted:console', callConfig({ delayMs: 1000, skipIfGlobal: 'ransom_decision_made' }), {});
+        const con = consoleMinigame();
+        t.fw.currentMinigame = con;
+        t.runAll(4);
+        assert.equal(con._ending, false);
+        assert.equal(videoCalls(t).length, 0);
+        t.fw.currentMinigame = null;
+        t.runAll();
+        assert.equal(videoCalls(t).length, 1);
+    } finally { t.restore(); }
+});
+
 test('skipIfGlobal: a video call without it opens even when that global is true', () => {
     const t = setup();
     try {

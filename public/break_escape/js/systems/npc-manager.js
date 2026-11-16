@@ -924,7 +924,10 @@ export default class NPCManager {
 
     const fire = () => {
       // A ring mapping does not wait for the minigame to close: the ringer's table decides (2.9).
-      if (!config.ring && window.MinigameFramework?.currentMinigame) {
+      // Nor does an interrupt video call: it goes on to _queueScriptedConversation, which
+      // closes the open minigame (or queues behind a scripted conversation).
+      const cutsIn = config.interrupt === true && config.conversationMode === 'video-call';
+      if (!config.ring && !cutsIn && window.MinigameFramework?.currentMinigame) {
         pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
         return;
       }
@@ -999,14 +1002,7 @@ export default class NPCManager {
           // first, so a decision made inside the delay still drops the call and the
           // minigame is left alone.
           if (conv.interrupt && !conv.dropIfBusy) {
-            if (conv.beforeOpen && conv.beforeOpen() === false) {
-              this._scriptedCall = null;
-              if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
-              return;
-            }
-            console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) interrupts: closing the minigame the player opened during the start delay`);
-            window.MinigameFramework.endMinigame(false, null);
-            this._openScriptedConversation({ ...conv, beforeOpen: null });
+            this._interruptAndOpen(conv, 'the minigame the player opened during the start delay');
             return;
           }
           this._scriptedCall = null;
@@ -1091,15 +1087,41 @@ export default class NPCManager {
     if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
   }
 
+  /**
+   * interrupt: close the open minigame and open conv in its place. The drop check
+   * (beforeOpen) runs first, so a call that would be dropped leaves the minigame alone.
+   * Never used over a scripted conversation: callers check _scriptedCallBusy() first.
+   */
+  _interruptAndOpen(conv, what) {
+    if (conv.beforeOpen && conv.beforeOpen() === false) {
+      this._scriptedCall = null;
+      if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+      return;
+    }
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) interrupts: closing ${what}`);
+    this._scriptedCall = { npcId: conv.npcId, minigame: null };
+    window.MinigameFramework.endMinigame(false, null);
+    this._openScriptedConversation({ ...conv, beforeOpen: null });
+  }
+
   // A queued conversation opens when none is starting or open, no minigame is open
   // (the player may have gone from the call to the notepad and back) and the player is
-  // not knocked out (startMinigame would refuse it, and it would be lost)
+  // not knocked out (startMinigame would refuse it, and it would be lost). One marked
+  // interrupt does not wait for a minigame that is not a scripted conversation: it
+  // closes it and opens (it still waits behind another scripted conversation).
   _pumpScriptedCallQueue() {
     if (this._scriptedCallTimer) return;
     const tick = () => {
       this._scriptedCallTimer = null;
       if (!this._scriptedCallQueue.length) return;
       const framework = window.MinigameFramework;
+      const head = this._scriptedCallQueue[0];
+      if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
+          head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
+        this._scriptedCallQueue.shift();
+        this._interruptAndOpen(head, 'the open minigame (queued call)');
+        return;
+      }
       if (!framework || this._scriptedCallBusy() || framework.currentMinigame ||
           window.playerIsKnockedOut?.()) {
         this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
