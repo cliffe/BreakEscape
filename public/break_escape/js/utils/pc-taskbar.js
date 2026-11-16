@@ -74,6 +74,18 @@ export function pcHostName(pcData, session = null) {
  * `account` is { kind: 'session', name, username, npcId, claimed } or
  * { kind: 'desktopUser', name, character } or null.
  */
+/**
+ * The desktop's second account line for a keyring credential session (K3a 8.1): "with the saved
+ * connection {label}". Null for any other session. Plain text: the caller escapes it.
+ */
+export function credentialSessionLine(session) {
+    if (!session || session.via !== 'credential') return null;
+    if (session.kind === 'saved_connection' && typeof session.label === 'string' && session.label) {
+        return `with the saved connection ${session.label}`;
+    }
+    return null;
+}
+
 export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
     const signIn = pcData?.lockType === 'login' || !!session;
     let account = null;
@@ -85,6 +97,8 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
                 username: session.username || '',
                 npcId: session.npcId || null,
                 claimed: session.via === 'claim',
+                // A keyring credential session names how it signed in (K3a 8.1)
+                ...(credentialSessionLine(session) ? { credentialLine: credentialSessionLine(session) } : {}),
                 // The picture's source from the server's session answer, so an NPC whose room is
                 // not loaded still has its headshot (fix round 1, M2)
                 ...(session.portrait ? { portrait: session.portrait } : {}),
@@ -170,7 +184,8 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
             <span class="pc-headshot pc-start-headshot" aria-hidden="true"></span>
             <span class="pc-start-who">
                 <span class="pc-start-name">${escapeHtml(displayDashes(a.name))}</span>${a.kind === 'session' && a.username ? `
-                <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}
+                <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}${a.credentialLine ? `
+                <span class="pc-start-credential">${escapeHtml(displayDashes(a.credentialLine))}</span>` : ''}
             </span>
         </div>` : '';
     const lines = `<span class="pc-start-line pc-start-host">${escapeHtml(displayDashes(m.host))}</span>`

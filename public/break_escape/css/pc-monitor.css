@@ -748,3 +748,9 @@
     padding-top: 0;
     padding-bottom: 0;
 }
+
+/* Credential keyring K3a (8.1): "with the saved connection {label}" under the signed-in name */
+.pc-monitor .pc-start-credential {
+    color: #9fb0bf;
+    overflow-wrap: anywhere;
+}

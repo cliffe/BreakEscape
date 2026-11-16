@@ -879,3 +879,35 @@ Run 1 read the plan (3, 5.2, 6.2, 7, 8.1, 8.4, 8.5, 9.1), the K0 client and K2 n
 
 ### Open (all of 8.1)
 All code, `test/js/keyring-signin.test.mjs`, `screen-states.test.mjs` cases, `signin-fit.mjs` K3a fixtures, mutation checks, the Rails flag test, bin/test-js, the Rails suite, rubocop, and the live proof on :3063 (R2, R3 sign-in half, R4, R5a).
+
+### Run 2 (code built, tests not yet written)
+
+Run 2 took run 1's four decisions as accepted by the integrator. It stopped at the context limit after the code step.
+
+**Built and committed**
+- Rails: `credentialsDeclared` static bootstrap flag beside `sessionLockingSupported` (`games_controller.rb`), with two tests in `keyring_route_test.rb` (true with credentials, false without; the registry never in the answer). The test was shown to fail with the flag forced true, then restored. Rubocop is clean on both files.
+- `systems/keyring.js` (new, no imports): the `Keyring` class (cache keyed by `pcId|route` with `rev`, opened set via `noteOpened`, `firstAnswerIds`, `teachOnce`, `screenEntries`, `foundVisible`, `prime`), `getKeyring()` sets `window.keyring`. One static import in `main.js`; `unlock-system.js` loads it by dynamic import (`keyringForScreen`).
+- Page-start prime: `core/game.js` calls `window.keyring?.prime?.()` beside `pcSessions.load` (no import). The prime's answer fixes `firstAnswerIds`, so on a fresh page a found password still waits for its file, and after a reload it shows at once. This is a deviation from run 1's note, which had "the page's first successful answer" with no prime.
+- `container-minigame.js`: `noteOpened(item.id)` in `openFileInPlace` and `handleInteractiveItem`, and the account bar's second line.
+- `api-client.js`: `keyring(pcId, { foothold, rev })` and `loginWithCredential(pcId, credential, { foothold })`.
+- `pc-sessions.js`: `signInWithCredential`, exported `credentialRefusalReason` (generic 422 gives `no_longer_works`), `kind`/`label` kept on sign-in, `load()` and `publicSession`, and `_dropEnded(endedPcIds)` in both sign-in paths.
+- `remote-host-text.js`: the `TAG_TEXT` kinds, `BADGE_FILE` + `badgeSrc` (the plug group reuses `badge-key.png`; this is the one place to change), and the 8.5 lines plus `credentialRefusalLine` and `teachLine`.
+- `password-minigame.js`: `mergeRemoteTiles` takes `keyring` (tile `credentials[]`, `found[]`, `keyPassword`), `keyringTagKind`, `mergeKeyboardTiles`, `credentialButtonTitle`; the `#signin-ways` box with `#signin-ways-more` at the top of `#signin-form`; `renderSignInWays` (DOM nodes, textContent only), `fitSignInWays`, `useCredential`, `teachAfter`, `keyboardTiles`, `keyboardStateLine`, `setKeyringEntries`; `remoteStateLine` counts three failures; the typed sign-in teaches `in_file`. Test state carries the tile `credentials`/`found` and `keyring`.
+- `unlock-system.js`: `keyringForScreen`, the third list in the remote cap (`keyringDone`), and the keyboard keyring alongside `/login_accounts` under `REMOTE_CAPTURES_WAIT_MS` with a late `setKeyringEntries`.
+- `screen-states.js`: `signedInVia` covers `password` and `credential`.
+- `pc-taskbar.js`: `credentialSessionLine`, the model's `credentialLine` and `.pc-start-credential` in `pcStartPanelHtml`.
+- CSS: the ways box, buttons, refused and found lines, keyboard tags (`password-minigame.css`), `.pc-start-credential` (`pc-monitor.css`), `.desktop-account-credential` (`container-minigame.css`).
+
+**Deviations and choices to check**
+- The keyboard with picker `false` keeps the typed form and shows no keyring tiles. Under `accounts`, unlisted keyring accounts are dropped. Under `known`, they are added.
+- The desktop template lines use `escapeHtml` inside the existing HTML templates (that file's own practice); the sign-in ways use textContent.
+- A server `kind_refused` greys the button from then on and shows the full line.
+
+**Not done (next run, in order)**
+1. Run `bin/test-js` (it passed 712/712 after the main.js import, before the password-minigame, unlock-system, taskbar and CSS edits) and fix any fallout.
+2. Write `test/js/keyring-signin.test.mjs` (the plan 8.1 list) and the `screen-states.test.mjs` cases. Show each failing once by a temporary mutation, then restore.
+3. Add the K3a fixtures to `tools/playtest/signin-fit.mjs`.
+4. Run the full Rails suite and bin/test-js again, then commit.
+5. Live proof on :3063 (R2, R3 sign-in half, R4, R5a), or hand it over.
+
+**Open for the user**: `badge-plug.png` art (the plug group shows the key badge until then).

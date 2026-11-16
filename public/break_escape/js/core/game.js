@@ -1762,6 +1762,8 @@ export async function create() {
     // sessions survive a reload, a claimed one ends (pc-sessions.js load).
     pcSessions.load(gameScenario.sessions || {}, gameScenario.signedInPcs || [],
         { lockingSupported: gameScenario.sessionLockingSupported === true });
+    // Keyring K3a: the page-start keyring answer (only with credentials declared; no import)
+    try { window.keyring?.prime?.(); } catch (e) { /* no keyring */ }
     // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
     // <jackId>_planted before any room loads; no request.
     networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);
