@@ -1,5 +1,6 @@
 // The validator's wallMounted check: a socket is quiet; an NPC, a non-interactable prop and a
-// type outside WALL_MOUNTED_EXTRAS (scripts/generate_rooms.py) each draw a warning.
+// type outside WALL_MOUNTED_EXTRAS (scripts/generate_rooms.py) each draw a warning, as does an
+// explicit position below the back wall (y over 2 tiles).
 // Run with: node test/js/validator-wall-mounted.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -51,4 +52,14 @@ test('a type outside WALL_MOUNTED_EXTRAS warns', { skip }, () => {
   const w = check({ objects: [{ type: 'bookcase', id: 'b', wallMounted: true, interactable: true }] });
   assert.equal(w.length, 1);
   assert.match(w[0], /WARNING.*'b'.*not a wall-mounted type/);
+});
+
+test('an explicit position below the back wall warns; on the wall, at the floor line or with no position is quiet', { skip }, () => {
+  const w = check({ objects: [{ ...socket, id: 'floor', position: { x: 4, y: 5 } }] });
+  assert.equal(w.length, 1);
+  assert.match(w[0], /WARNING.*'floor'.*position\.y 5.*not on a wall/);
+  assert.deepEqual(check({ objects: [
+    { ...socket, id: 'a', position: { x: 4, y: 0.5 } },
+    { ...socket, id: 'b', position: { x: 4, y: 2 } },
+    { ...socket, id: 'c' }] }), []);
 });

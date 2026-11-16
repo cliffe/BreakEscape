@@ -594,6 +594,10 @@ end
 # measured to the nearest part of the sprite's height (interaction-reach.js reachY). Warn where it
 # sits on something it cannot help: an NPC, an object with interactable: false, or a type that is
 # not one of generate_rooms.py's WALL_MOUNTED_EXTRAS (read from that file, so there is one list).
+# An object given an explicit position (tiles from the room's top-left) whose y is below the back
+# wall's floor line (2 tiles) is not on a wall either: reach would be measured to a sprite that
+# stands on the floor. Objects with no position take the room template's slot and are not judged.
+WALL_MOUNTED_MAX_Y = 2.0
 WALL_MOUNTED_EXTRAS_FILE = File.join(File.expand_path('..', __dir__), 'scripts', 'generate_rooms.py')
 
 def wall_mounted_extras
@@ -617,6 +621,8 @@ def check_wall_mounted(json_data, extras = wall_mounted_extras)
           'the object has interactable: false, so nothing reaches for it'
         elsif extras && !extras.include?(o['type'].to_s.sub(/\d+\z/, ''))
           "type '#{o['type']}' is not a wall-mounted type (WALL_MOUNTED_EXTRAS in scripts/generate_rooms.py)"
+        elsif o['position'].is_a?(Hash) && o['position']['y'].is_a?(Numeric) && o['position']['y'] > WALL_MOUNTED_MAX_Y
+          "position.y #{o['position']['y']} is below the back wall's floor line (#{WALL_MOUNTED_MAX_Y.to_i} tiles), so the object is not on a wall"
         end
         next unless why
         issues << "⚠️ WARNING: rooms/#{rid}/#{key}[#{i}] '#{o['id'] || o['name']}': wallMounted is set but #{why}. " \
