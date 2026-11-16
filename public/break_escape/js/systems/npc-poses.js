@@ -25,8 +25,16 @@
  * conversation with the player, hostility, a knock-out, a hit or attack
  * animation, or any movement; the idle comes back when it drops.
  *
- * No static imports (so no test harness copy lists change); core/game.js imports it.
+ * Breathing (D24, systems/sprite-breath.js): a pose frame breathes like a seated frame, the
+ * head and shoulders sinking 1px on a 3.6 s cycle. Standing idles can breathe too, opt-in and
+ * off by default (they already play PixelLab's breathing-idle): `"idleBreathing": true` on
+ * the NPC, or window.npcPoses.idleBreathing = true for every NPC (debug).
+ *
+ * One static import, sprite-breath.js (no imports of its own): a test harness that copies this
+ * file must copy that one too. core/game.js imports this module dynamically.
  */
+
+import { updateBreath, endBreath } from './sprite-breath.js';
 
 export const POSE_NAMES = Object.freeze(['drink', 'use', 'phone']);
 export const DRINK_NEEDS = Object.freeze(['caffeine', 'thirst']);
@@ -38,6 +46,7 @@ export const MACHINE_RE = /(coffee|kettle|cooler|boiler|copier|printer|microwave
 // face_player is no blocker: it only turns the NPC, and the pose follows b.direction
 const BLOCKING_STATES = new Set(['maintain_space', 'chase', 'flee']);
 const BLOCKING_ANIM_RE = /(attack|punch|-jab-|-hit-|death)/;
+const IDLE_ANIM_RE = /-idle-/;
 
 const win = () => (typeof window !== 'undefined' ? window : globalThis);
 const asList = (v) => (Array.isArray(v) ? v : (v === undefined || v === null ? [] : [v]));
@@ -113,6 +122,31 @@ export class NpcPoses {
         this.active = new Map();    // npcId -> pose anim key being shown
         this.useStart = new Map();  // npcId -> { job, at } (needs clock ms when `using` was first seen)
         this.log = [];              // [{ t, npcId, pose, key }] pose on/off, newest last (tests, debug)
+        this.breath = new Map();    // npcId -> { breath } (sprite-breath.js holder) while breathing
+        this.idleBreathing = false; // debug: every standing idle breathes
+    }
+
+    /** Breathe this NPC's sprite this frame; `on` false ends it (crop and image removed). */
+    _breathe(id, b, on) {
+        const sprite = b?.sprite;
+        if (!on) {
+            const h = this.breath.get(id);
+            if (!h) return;
+            endBreath(h, sprite);
+            this.breath.delete(id);
+            // Sat down this frame: seating.js breathes the same sprite and has already set its
+            // crop; ours just cleared it, so make seating set it again next frame.
+            if (b?._seat?.breath) b._seat.breath.crop = null;
+            return;
+        }
+        let h = this.breath.get(id);
+        if (!h) { h = {}; this.breath.set(id, h); }
+        updateBreath(h, sprite, true);
+    }
+
+    /** Does this NPC's standing idle breathe? Opt-in: NPC idleBreathing, or the debug switch. */
+    idleBreathes(npcRecord) {
+        return this.idleBreathing === true || npcRecord?.idleBreathing === true;
     }
 
     _usingMs(id, s, clockMs) {
@@ -133,6 +167,7 @@ export class NpcPoses {
         const key = this.active.get(id);
         if (!key) return;
         this.active.delete(id);
+        this._breathe(id, b, false);
         this._note(id, null, key);
         if (!b?.sprite || b.sprite.destroyed) return;
         if (b.sprite.anims?.currentAnim?.key === key) {
@@ -146,19 +181,20 @@ export class NpcPoses {
         const w = win();
         const sys = w.npcNeedsSystem;
         const mgr = w.npcBehaviorManager;
-        if (!sys?.states || !mgr) return;
-        const clockMs = Number(sys.clockMs) || 0;
+        if (!mgr) return;
+        const clockMs = Number(sys?.clockMs) || 0;
         const seen = new Set();
-        for (const [id, s] of sys.states) {
+        const blockedFor = (id, b) => poseBlocked(b, {
+            hostile: !!w.npcHostileSystem?.isNPCHostile?.(id),
+            ko: !!w.npcHostileSystem?.isNPCKO?.(id),
+            inChat: !!sys?.world?.inChatWith?.(id)
+        });
+        for (const [id, s] of (sys?.states || [])) {
             seen.add(id);
             const b = mgr.getBehavior?.(id);
             if (!b) { this.active.delete(id); continue; }
             const usingMs = this._usingMs(id, s, clockMs);
-            const blocked = poseBlocked(b, {
-                hostile: !!w.npcHostileSystem?.isNPCHostile?.(id),
-                ko: !!w.npcHostileSystem?.isNPCKO?.(id),
-                inChat: !!sys.world?.inChatWith?.(id)
-            });
+            const blocked = blockedFor(id, b);
             let key = null;
             let pose = null;
             if (!blocked) {
@@ -176,8 +212,27 @@ export class NpcPoses {
                 b.lastAnimationKey = key;
             }
             if (this.active.get(id) !== key) { this.active.set(id, key); this._note(id, pose, key); }
+            this._breathe(id, b, true);
         }
         for (const id of [...this.active.keys()]) if (!seen.has(id)) this.active.delete(id);
+        // Standing idles (opt-in): any NPC with a behaviour, needs or not, showing its idle
+        const behaviours = mgr.behaviors instanceof Map ? mgr.behaviors : null;
+        for (const [id, h] of [...this.breath]) {
+            if (this.active.has(id)) continue;
+            const b = mgr.getBehavior?.(id);
+            if (!b?.sprite || b.sprite.destroyed) { this.breath.delete(id); continue; }
+            if (!behaviours) this._idleBreath(id, b, blockedFor);
+        }
+        if (behaviours) for (const [id, b] of behaviours) if (!this.active.has(id)) this._idleBreath(id, b, blockedFor);
+    }
+
+    _idleBreath(id, b, blockedFor) {
+        const sprite = b?.sprite;
+        if (!sprite || sprite.destroyed) return;
+        const wants = this.idleBreathes(win().npcManager?.getNPC?.(id))
+            && IDLE_ANIM_RE.test(sprite.anims?.currentAnim?.key || '') && !blockedFor(id, b);
+        if (wants) this._breathe(id, b, true);
+        else if (this.breath.has(id)) this._breathe(id, b, false);
     }
 }
 
