@@ -177,7 +177,7 @@ module BreakEscape
       # The tray item that proves it (K3b): the client never sees an item's `credential` (it is
       # stripped on the way out), so Connect finds its entry by this id. Only a held proof names
       # one, and only once the proof holds, so it is an item the player is carrying.
-      held_item = entry.dig('proof', 'held')
+      held_item = CredentialModel.proof_kind(entry['proof']) == 'held' ? entry.dig('proof', 'held') : nil
       row['heldItem'] = held_item if CredentialModel.present_string?(held_item)
 
       is_ended = kind == 'assist_invite' && ended.include?(id)

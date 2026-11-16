@@ -73,6 +73,9 @@ export function connectRoute(entry) {
 /** How long a find toast stays up, and how often a held one checks for the conversation's close. */
 export const FIND_TOAST_MS = 7000;
 export const FIND_HOLD_POLL_MS = 500;
+/** A failed page-start prime is tried again this many times, this far apart (R1 m3). */
+export const PRIME_RETRIES = 3;
+export const PRIME_RETRY_MS = 5000;
 
 export class Keyring {
     constructor() {
@@ -91,6 +94,15 @@ export class Keyring {
         // (null until the baseline), the files waiting entries are found in, the finds held for
         // an open conversation, and the PCs signed in whose desktop has not opened yet
         this._findIds = null;
+        // Background asks: each is numbered when sent, and an answer older than one already
+        // applied is dropped (R1 m1). `_queued` is the ask not yet sent, which later triggers
+        // join; `_running` is the chain, so asks go out one at a time.
+        this._askSeq = 0;
+        this._appliedSeq = 0;
+        this._queued = null;
+        this._running = null;
+        this.primeRetries = PRIME_RETRIES;
+        this.primeRetryMs = PRIME_RETRY_MS;
         this._waitingFor = new Set();
         this._held = [];
         this._holdTimer = null;
@@ -149,11 +161,24 @@ export class Keyring {
         const api = typeof window !== 'undefined' ? (window.ApiClient || window.APIClient) : null;
         if (!api?.keyring) throw new Error('keyring not available');
         const key = Keyring.cacheKey(pcId, { foothold });
-        let entries = this.remember(key, await api.keyring(pcId, { foothold, rev: this.revFor(key) }), { primed });
+        const background = !pcId && !foothold;
+        const seq = background ? ++this._askSeq : 0;
+        // An answer to an older background ask than one already applied is dropped whole
+        const stale = () => background && seq < this._appliedSeq;
+        const first = await api.keyring(pcId, { foothold, rev: this.revFor(key) });
+        if (stale()) return this.latest;
+        let entries = this.remember(key, first, { primed });
         // A rev the cache lost (or an odd answer): ask once more without it
-        if (!entries) entries = this.remember(key, await api.keyring(pcId, { foothold }), { primed });
+        if (!entries) {
+            const again = await api.keyring(pcId, { foothold });
+            if (stale()) return this.latest;
+            entries = this.remember(key, again, { primed });
+        }
         if (!entries) throw new Error('keyring answer unusable');
-        if (!pcId && !foothold) this.noteFinds(entries);
+        if (background) {
+            this._appliedSeq = seq;
+            this.noteFinds(entries);
+        }
         return entries;
     }
 
@@ -168,10 +193,26 @@ export class Keyring {
             this._primed = this.fetch(null, { primed: true }).catch(() => {
                 // A failed prime is the stricter case: nothing counts as earned before this page
                 if (this.firstAnswerIds === null) this.firstAnswerIds = new Set();
+                this.retryPrime();
                 return null;
             });
         }
         return this._primed;
+    }
+
+    /**
+     * Try the baseline GET again on a short timer, so it is normally in place before the first
+     * real find (R1 m3). Stops at the first answer (the prime's or any trigger's) or after
+     * `primeRetries` tries. If none lands, the next answer is the baseline, as before.
+     */
+    retryPrime(left = this.primeRetries) {
+        if (left <= 0 || this._findIds !== null) return null;
+        this._retryTimer = setTimeout(async () => {
+            this._retryTimer = null;
+            if (this._findIds !== null) return;
+            try { await this.fetch(null); } catch (e) { this.retryPrime(left - 1); }
+        }, this.primeRetryMs);
+        return this._retryTimer;
     }
 
     /** A registry password shows only once its file was opened here, or it was in the first answer. */
@@ -223,9 +264,18 @@ export class Keyring {
     }
 
     /** One GET /keyring with no screen, after the pending sync; never throws. */
-    async refresh() {
-        try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
-        try { return await this.fetch(null); } catch (e) { return null; }
+    refresh() {
+        // Triggers in the same tick, before the request is sent, share it (R1 m1)
+        if (this._queued) return this._queued;
+        const after = this._running || Promise.resolve();
+        const ask = after.then(async () => {
+            try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+            this._queued = null;
+            try { return await this.fetch(null); } catch (e) { return null; }
+        });
+        this._queued = ask;
+        this._running = ask;
+        return ask;
     }
 
     /** A registry password not yet shown: its file has not been opened here (foundVisible). */
@@ -238,6 +288,8 @@ export class Keyring {
      * and toasts nothing; after it, entries new since the previous answer give one toast. A
      * waiting entry is left out of the ids, so it counts as new once its file is opened.
      * Answers the new entries that have a find line, for tests.
+     * The capture filter here (findKindToasts) and in findLine (remote-host-text.js) is a double
+     * guard on purpose: either alone keeps a capture silent.
      */
     noteFinds(entries) {
         const list = Array.isArray(entries) ? entries : [];
@@ -285,8 +337,8 @@ export class Keyring {
         try { t = await import('../utils/remote-host-text.js'); } catch (e) { return null; }
         const message = t.findToastText(entries);
         if (!message) return null;
-        // No title and `brief`, so the phone's two-line clamp never cuts a grouped toast
-        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, { plainText: true, brief: true }); } catch (e) { /* no notification layer */ }
+        // No title and `whole` (clamp lift only), so a grouped toast is never cut on a phone
+        try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, { plainText: true, whole: true }); } catch (e) { /* no notification layer */ }
         return message;
     }
 
@@ -359,19 +411,26 @@ export class Keyring {
         const route = connectRoute(entry);
         if (!route) return toast(t.trayUnreachableMessage(host), 'no_route');
 
+        if (typeof w.pcSessions?.signInWithCredential !== 'function') return toast(t.CONNECT_FAILED_TEXT, 'login_failed');
         const result = await w.pcSessions.signInWithCredential(pcId, entry.id, route);
         if (result?.ok) {
             // signInWithCredential has already handed any endedPcIds to linkDropped (route_ended)
             w.openRemoteDesktop?.(pcId, route.foothold);
             if (this.teachOnce(entry.kind)) {
                 const line = t.teachLine(entry.kind, { displayName });
-                if (line) { try { w.gameAlert?.(line, 'info', '', 8000, { plainText: true }); } catch (e) { /* none */ } }
+                if (line) { try { w.gameAlert?.(line, 'info', '', 8000, { plainText: true, whole: true }); } catch (e) { /* none */ } }
             }
             return opened('signed_in', { route });
         }
         if (result?.error) {
-            if (result.status === 403 && result.serverReason === 'not_responding') return toast(t.notRespondingMessage(host), 'target_off');
-            if (result.status === 403) return toast(t.trayUnreachableMessage(host), 'no_route');
+            if (result.status === 403) {
+                // POST /login 403 reasons: 'not_responding' (target off), 'off' (switched off),
+                // 'unreachable' or none (the route does not reach it). Anything else is not a
+                // network problem, so it gets the Connect failure line (R1 m4).
+                const why = result.serverReason;
+                if (why === 'not_responding' || why === 'off') return toast(t.notRespondingMessage(host), 'target_off');
+                if (!why || why === 'unreachable') return toast(t.trayUnreachableMessage(host), 'no_route');
+            }
             return toast(t.CONNECT_FAILED_TEXT, 'login_failed');
         }
         const reason = result?.reason;
@@ -437,6 +496,7 @@ export class Keyring {
 
 /** The kinds with a find toast today (K3c adds 'assist_invite'); a capture is always silent. */
 export const FIND_KINDS = ['saved_connection', 'password'];
+// The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
     return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);
 }

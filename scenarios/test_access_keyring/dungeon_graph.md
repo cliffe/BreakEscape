@@ -16,7 +16,7 @@ A test floor for the credential keyring (CREDENTIAL_KEYRING_PLAN.md, slice K1). 
 | Physical locks | 3 |
 | AND-gate convergences | 0 |
 | Rooms | 5 |
-| Puzzle graph nodes / edges | 18 / 27 |
+| Puzzle graph nodes / edges | 22 / 30 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -90,7 +90,11 @@ flowchart TD
   cred_jake_pw_note{"Jake Brooks password<br/>(jbrooks)"}
   cred_lena_rdp{"Lena Fox saved connection<br/>(lfox)"}
   cred_src_lena_rdp_file{"HB-FIN-02.rdp"}
+  cred_lena_rdp_gift{"Lena Fox saved connection<br/>(lfox)"}
+  cred_src_lena_rdp_gift{"HB-FIN-02 copy.rdp"}
   cred_ops_cookie{"Ian Shaw saved connection<br/>(ishaw)"}
+  cred_ops_rdp{"Ian Shaw saved connection<br/>(ishaw)"}
+  cred_src_ops_rdp_file{"SV-OPS-01.rdp"}
 
   comms_room --> lock_ops_pc
   finance_room --> lock_lena_pc
@@ -119,12 +123,15 @@ flowchart TD
   cred_jake_pw_note --> lock_lena_pc
   cred_src_lena_rdp_file --> cred_lena_rdp
   cred_lena_rdp --> lock_lena_pc
+  cred_src_lena_rdp_gift --> cred_lena_rdp_gift
+  cred_lena_rdp_gift --> lock_lena_pc
+  cred_src_ops_rdp_file --> cred_ops_rdp
 
   class lock_ops_pc,lock_lena_pc,jack_comms_port lock
-  class signin_lena,signin_ian,signin_jake,device_kit_dropbox,cred_jake_pw_note,cred_lena_rdp,cred_ops_cookie key
+  class signin_lena,signin_ian,signin_jake,device_kit_dropbox,cred_jake_pw_note,cred_lena_rdp,cred_lena_rdp_gift,cred_ops_cookie,cred_ops_rdp key
   class lobby,comms_room,finance_room,net_office_lan,net_server_lan room
   class pivot_lena_pc,pivot_ops_pc gate
-  class cred_src_lena_rdp_file item
+  class cred_src_lena_rdp_file,cred_src_lena_rdp_gift,cred_src_ops_rdp_file item
   class node_start start
 ```
 
@@ -198,7 +205,11 @@ flowchart TD
   cred_jake_pw_note{"Jake Brooks password<br/>(jbrooks)"}
   cred_lena_rdp{"Lena Fox saved connection<br/>(lfox)"}
   cred_src_lena_rdp_file{"HB-FIN-02.rdp"}
+  cred_lena_rdp_gift{"Lena Fox saved connection<br/>(lfox)"}
+  cred_src_lena_rdp_gift{"HB-FIN-02 copy.rdp"}
   cred_ops_cookie{"Ian Shaw saved connection<br/>(ishaw)"}
+  cred_ops_rdp{"Ian Shaw saved connection<br/>(ishaw)"}
+  cred_src_ops_rdp_file{"SV-OPS-01.rdp"}
   aim_keyring_beats{{"Watch the keyring fill"}}
 
   comms_room --> lock_ops_pc
@@ -228,13 +239,16 @@ flowchart TD
   cred_jake_pw_note --> lock_lena_pc
   cred_src_lena_rdp_file --> cred_lena_rdp
   cred_lena_rdp --> lock_lena_pc
+  cred_src_lena_rdp_gift --> cred_lena_rdp_gift
+  cred_lena_rdp_gift --> lock_lena_pc
+  cred_src_ops_rdp_file --> cred_ops_rdp
   lock_lena_pc -.-> aim_keyring_beats
 
   class lock_ops_pc,lock_lena_pc,jack_comms_port lock
-  class signin_lena,signin_ian,signin_jake,device_kit_dropbox,cred_jake_pw_note,cred_lena_rdp,cred_ops_cookie key
+  class signin_lena,signin_ian,signin_jake,device_kit_dropbox,cred_jake_pw_note,cred_lena_rdp,cred_lena_rdp_gift,cred_ops_cookie,cred_ops_rdp key
   class lobby,comms_room,finance_room,net_office_lan,net_server_lan room
   class pivot_lena_pc,pivot_ops_pc gate
-  class cred_src_lena_rdp_file item
+  class cred_src_lena_rdp_file,cred_src_lena_rdp_gift,cred_src_ops_rdp_file item
   class aim_keyring_beats aim
   class node_start start
 ```
@@ -307,15 +321,17 @@ flowchart TD
   rc_lena_rdp_file_2{"HB-FIN-02.rdp"}
   rc_sign_lobby_3{"Sign: Start here"}
   rc_npc_lena_fox_4("Lena Fox")
-  rc_comms_port_5{"Spare wall port"}
-  rc_ops_pc_6{"SV-OPS-01"}
-  rc_capture_note_ian_7{"Capture card: Ian"}
-  rc_sign_comms_8{"Sign: K1c and K1d"}
-  rc_npc_ian_shaw_9("Ian Shaw")
-  rc_lena_pc_10[["Lena's PC"]]
-  rc_lena_passwords_txt_11{"passwords.txt"}
-  rc_sign_finance_12{"Sign: K1b"}
-  rc_npc_jake_brooks_13("Jake Brooks")
+  rc_lena_rdp_gift_5{"HB-FIN-02 copy.rdp"}
+  rc_comms_port_6{"Spare wall port"}
+  rc_ops_pc_7{"SV-OPS-01"}
+  rc_capture_note_ian_8{"Capture card: Ian"}
+  rc_sign_comms_9{"Sign: K1c and K1d"}
+  rc_npc_ian_shaw_10("Ian Shaw")
+  rc_lena_pc_11[["Lena's PC"]]
+  rc_lena_passwords_txt_12{"passwords.txt"}
+  rc_ops_rdp_file_13{"SV-OPS-01.rdp"}
+  rc_sign_finance_14{"Sign: K1b"}
+  rc_npc_jake_brooks_15("Jake Brooks")
 
   lobby --> comms_room
   lobby --> finance_room
@@ -323,19 +339,21 @@ flowchart TD
   lobby --> rc_lena_rdp_file_2
   lobby --> rc_sign_lobby_3
   lobby --> rc_npc_lena_fox_4
-  comms_room --> rc_comms_port_5
-  comms_room --> rc_ops_pc_6
-  comms_room --> rc_capture_note_ian_7
-  comms_room --> rc_sign_comms_8
-  comms_room --> rc_npc_ian_shaw_9
-  finance_room --> rc_lena_pc_10
-  rc_lena_pc_10 --> rc_lena_passwords_txt_11
-  finance_room --> rc_sign_finance_12
-  finance_room --> rc_npc_jake_brooks_13
+  rc_npc_lena_fox_4 --> rc_lena_rdp_gift_5
+  comms_room --> rc_comms_port_6
+  comms_room --> rc_ops_pc_7
+  comms_room --> rc_capture_note_ian_8
+  comms_room --> rc_sign_comms_9
+  comms_room --> rc_npc_ian_shaw_10
+  finance_room --> rc_lena_pc_11
+  rc_lena_pc_11 --> rc_lena_passwords_txt_12
+  rc_lena_pc_11 --> rc_ops_rdp_file_13
+  finance_room --> rc_sign_finance_14
+  finance_room --> rc_npc_jake_brooks_15
 
   class lobby,comms_room,finance_room room
-  class rc_kit_dropbox_1,rc_lena_rdp_file_2,rc_sign_lobby_3,rc_comms_port_5,rc_ops_pc_6,rc_capture_note_ian_7,rc_sign_comms_8,rc_lena_passwords_txt_11,rc_sign_finance_12 item
-  class rc_npc_lena_fox_4,rc_npc_ian_shaw_9,rc_npc_jake_brooks_13 npc
-  class rc_lena_pc_10 container
+  class rc_kit_dropbox_1,rc_lena_rdp_file_2,rc_sign_lobby_3,rc_lena_rdp_gift_5,rc_comms_port_6,rc_ops_pc_7,rc_capture_note_ian_8,rc_sign_comms_9,rc_lena_passwords_txt_12,rc_ops_rdp_file_13,rc_sign_finance_14 item
+  class rc_npc_lena_fox_4,rc_npc_ian_shaw_10,rc_npc_jake_brooks_15 npc
+  class rc_lena_pc_11 container
   class node_start start
 ```

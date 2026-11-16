@@ -272,6 +272,7 @@ test('step 8: the teaching toast shows once per kind in this page, word for word
     await window.keyring.connect(ITEM);
     assert.deepEqual(toasts(), ['The password is saved inside this file, so opening it signs you in as Lena Fox. A policy that always asks for the password stops it.']);
     assert.equal(alerts[0][1], 'info');
+    assert.deepEqual(alerts[0][4], { plainText: true, whole: true }, 'the long teaching line is read whole on a phone');
     assert.ok(calls.findIndex(c => c[0] === 'desktop') >= 0);
     await window.keyring.connect(ITEM);
     assert.equal(alerts.length, 1, 'a second Connect of the same kind does not teach again');
@@ -305,6 +306,10 @@ test('step 8 races: 403 not_responding, 403 unreachable and 422 remoteBlocked an
         [refusal(403, { reason: 'not_responding' }), 'target_off', 'HB-FIN-02 is not responding.'],
         [refusal(403, { reason: 'unreachable' }), 'no_route', "HB-FIN-02 can't be reached from here. You need a way onto its network."],
         [refusal(403, {}), 'no_route', "HB-FIN-02 can't be reached from here. You need a way onto its network."],
+        [refusal(403, { reason: 'off' }), 'target_off', 'HB-FIN-02 is not responding.'],
+        // Any other 403 reason is not a network problem (R1 m4)
+        [refusal(403, { reason: 'no_session' }), 'login_failed', 'Connect could not reach the game server. Try again.'],
+        [refusal(403, { reason: 'future_token_check' }), 'login_failed', 'Connect could not reach the game server. Try again.'],
         [refusal(422, { remoteBlocked: true }), 'remote_blocked', 'Remote sign-in is off on HB-FIN-02.']
     ];
     for (const [err, outcome, message] of cases) {
@@ -567,7 +572,7 @@ const RDP2_FOUND = 'Saved connection found: HB-FIN-03.rdp for Lena Fox on HB-FIN
 const PW_FOUND = "Jake Smith's password is in passwords.txt.";
 const keyringGets = () => calls.filter(c => c[0] === 'keyring');
 const answers = (...list) => { let i = 0; keyringAnswer = () => list[Math.min(i++, list.length - 1)]; };
-const finds = () => alerts.filter(a => a[1] === 'info' && a[4]?.brief === true);
+const finds = () => alerts.filter(a => a[1] === 'info' && a[4]?.whole === true);
 
 test('8.5 find strings are exactly the plan text', () => {
     assert.equal(text.savedConnectionFoundMessage({ label: 'HB-FIN-02.rdp', displayName: 'Lena Fox', host: 'HB-FIN-02' }), RDP_FOUND);
@@ -590,7 +595,7 @@ test('find toasts: the page-start prime is the baseline and toasts nothing', asy
     await kr.refresh();
     await settle();
     assert.deepEqual(toasts(), [RDP2_FOUND], 'only the new entry');
-    assert.deepEqual(alerts[0].slice(1), ['info', '', 7000, { plainText: true, brief: true }], 'plain text, no title, never clamped');
+    assert.deepEqual(alerts[0].slice(1), ['info', '', 7000, { plainText: true, whole: true }], 'plain text, no title, clamp lifted only (no brief)');
 });
 
 test('find toasts: the next ask sends the rev, and an unchanged answer toasts nothing', async () => {
@@ -764,4 +769,118 @@ test('find toasts reach the DOM as text: a label with markup is not parsed', asy
     await kr.refresh(); await settle();
     assert.equal(document.querySelector('.notification img, .notification b'), null, 'no element from author text');
     assert.match(document.body.textContent, /Saved connection found: <img src=x onerror="window.pwned=1">.rdp for <b>Bob<\/b> on HB-FIN-02\./);
+});
+
+// ── K3b round 1 fixes ────────────────────────────────────────────────────────────────────────
+const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+
+test('m1: an older background answer applied after a newer one is dropped (one toast, latest keeps the newer)', async () => {
+    setup();
+    const kr = window.keyring;
+    const pending = [];
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    window.ApiClient.keyring = (pcId, opts = {}) => { calls.push(['keyring', pcId, opts.rev ?? null]); const d = deferred(); pending.push(d); return d.promise; };
+    const a = kr.fetch(null);   // the older ask
+    const b = kr.fetch(null);   // the newer ask
+    await settle();
+    pending[1].resolve({ entries: [RDP], rev: 'r2' });   // newer answered first
+    await b; await settle();
+    pending[0].resolve({ entries: [], rev: 'r1' });      // the older answer arrives late
+    await a; await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'one toast');
+    assert.deepEqual(kr.latest.map(e => e.id), ['k_rdp'], 'latest keeps the newer entries');
+    assert.ok(kr.connectEntryFor('lena_rdp_file'), 'the tray still finds its Connect entry');
+    window.ApiClient.keyring = async () => ({ entries: [RDP], rev: 'r2' });
+    await kr.refresh(); await settle();
+    assert.equal(alerts.length, 1, 'and the next ask does not find the .rdp "new" again');
+});
+
+test('m1: triggers in the same tick share one request, and a later trigger waits its turn', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    const before = keyringGets().length;
+    const p1 = kr.refresh(); const p2 = kr.refresh();
+    assert.equal(p1, p2, 'the same promise');
+    await p1;
+    assert.equal(keyringGets().length - before, 1, 'one GET for both');
+    // a trigger that arrives while a request is on the wire asks again after it, never beside it
+    const gates = [];
+    let inFlight = 0, maxInFlight = 0;
+    window.ApiClient.keyring = async (pcId, opts = {}) => {
+        calls.push(['keyring', pcId, opts.rev ?? null]);
+        inFlight++; maxInFlight = Math.max(maxInFlight, inFlight);
+        const d = deferred(); gates.push(d); await d.promise; inFlight--;
+        return { entries: [], rev: 'r0' };
+    };
+    const c1 = kr.refresh();
+    await settle();
+    const c2 = kr.refresh();
+    await settle();
+    assert.equal(gates.length, 1, 'the second waits for the first');
+    gates[0].resolve();
+    await c1; await settle();
+    gates[1].resolve();
+    await c2;
+    assert.equal(maxInFlight, 1);
+    assert.equal(gates.length, 2);
+});
+
+test('m2: the find toast and the teaching toast lift the clamp only, no brief', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' });
+    await kr.prime();
+    await kr.refresh(); await settle();
+    assert.equal(alerts[0][4].whole, true);
+    assert.equal(alerts[0][4].brief, undefined);
+    // notifications.js: `whole` adds the class and nothing of brief's priority
+    const { showNotification } = await imp('systems/notifications.js');
+    document.body.innerHTML = '<div id="notification-container"></div>';
+    const el = showNotification(RDP_FOUND, 'info', '', 0, { plainText: true, whole: true });
+    assert.ok(el.classList.contains('whole'));
+    assert.ok(!el.classList.contains('brief'));
+    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/css/notifications.css'), 'utf8');
+    assert.match(css, /\.notification\.whole \.notification-message[\s\S]*?line-clamp: none/);
+});
+
+test('m3: a failed prime is tried again on a timer, so the first real find still toasts', async () => {
+    setup();
+    const kr = window.keyring;
+    kr.primeRetryMs = 5;
+    let n = 0;
+    keyringAnswer = () => { n++; if (n === 1) throw new Error('offline'); return { entries: [], rev: 'r0' }; };
+    await kr.prime();
+    assert.equal(kr._findIds, null, 'the prime failed');
+    await new Promise(r => setTimeout(r, 40));
+    assert.ok(kr._findIds instanceof Set, 'the retry set the baseline');
+    assert.equal(alerts.length, 0);
+    keyringAnswer = () => ({ entries: [RDP], rev: 'r1' });
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'the first find toasts');
+});
+
+test('m3: retries stop after the set number when the server stays down', async () => {
+    setup();
+    const kr = window.keyring;
+    kr.primeRetryMs = 3; kr.primeRetries = 2;
+    keyringAnswer = () => { throw new Error('offline'); };
+    await kr.prime();
+    await new Promise(r => setTimeout(r, 60));
+    assert.equal(keyringGets().length, 3, 'the prime and two retries');
+    assert.equal(kr._findIds, null, 'today\'s rule is the last resort');
+});
+
+test('t2: no pcSessions gives the failure toast, not a rejection', async () => {
+    setup();
+    window.pcSessions = undefined;
+    const r = await window.keyring.connect(ITEM);
+    assert.equal(r.outcome, 'login_failed');
+    assert.deepEqual(toasts(), ['Connect could not reach the game server. Try again.']);
+});
+
+test('t4: findLine itself keeps a capture silent (the second of the two guards)', () => {
+    assert.equal(text.findLine({ ...RDP, source: 'capture' }), null);
 });

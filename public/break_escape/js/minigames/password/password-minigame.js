@@ -2237,7 +2237,7 @@ export class PasswordMinigame extends MinigameScene {
         if (!kr?.teachOnce?.(kind)) return;
         const line = teachLine(kind, { displayName: session?.displayName || session?.username });
         if (!line) return;
-        try { window.gameAlert?.(line, 'info', '', 8000, { plainText: true }); } catch (e) { /* no notification layer */ }
+        try { window.gameAlert?.(line, 'info', '', 8000, { plainText: true, whole: true }); } catch (e) { /* no notification layer */ }
     }
 
     /**

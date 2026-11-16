@@ -133,6 +133,7 @@ export const passwordInFileFoundMessage = ({ label, displayName } = {}) =>
 export const findMoreLine = (n) => `and ${n} more`;
 
 /** One find's line by kind, or null for a kind with no find toast yet (assist invites until K3c). */
+// The capture check here is paired with findKindToasts in systems/keyring.js (a double guard).
 export function findLine(entry) {
     if (!entry || typeof entry !== 'object' || entry.source === 'capture') return null;
     const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo };

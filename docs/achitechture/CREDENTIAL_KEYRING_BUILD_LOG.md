@@ -1094,3 +1094,33 @@ Beats R1, R3 and R5b are in the section 9.1 table of the plan (`grep "| R1 |"`),
 2. R3: on Lena's desktop, no toast for Jake until passwords.txt is opened; then "Jake Brooks's password is in passwords.txt." once (the label is the registry entry's; check it), and the "In file" tag (K3a).
 3. R5b: Connect SV-OPS-01.rdp from the tray (part A); taking it gives its find toast first.
 4. Check the network tab: one GET /keyring per trigger, usually `unchanged`; no writes. Shots at the four sizes, including a grouped toast if a beat yields three finds at once; `verify-run.rb`.
+
+### K3b run 4 (R1 fixes, fixtures)
+
+Tip before this run `e1d5a3ff3`. Review: `CREDENTIAL_KEYRING_K3B_REVIEW_R1.md` (B0 M0 m4 t4).
+
+**Fixed**
+- m1: background (no-screen) asks are numbered when sent and an answer older than one already applied is dropped whole (`_askSeq`, `_appliedSeq` in `fetch`). `refresh()` joins any ask not yet sent (same-tick triggers share one GET, so opening passwords.txt sends one) and chains later asks one at a time, so a trigger that arrives while a request is on the wire asks again after it, never beside it. Tests: out-of-order answers (one toast, `latest` keeps the newer), coalescing, no two in flight.
+- m2: `options.whole` in `notifications.js` adds a `whole` class that lifts the phone two-line clamp (`notifications.css`) and nothing else (no `brief` priority, no shown-limit skip). Used by the find toast and by both teaching toasts (Connect and K3a's `teachAfter`). Test: options, class, CSS rule.
+- m3: a failed prime retries the baseline GET `PRIME_RETRIES` (3) times `PRIME_RETRY_MS` (5 s) apart (`retryPrime`), stopping at the first answer. If none lands, the next answer is the baseline as before. Tests: retry then a find toasts; retries stop.
+- m4: POST /login 403 reasons found in the models: `not_responding` (credential_login.rb), `off` (game.rb, typed sign-in), `unreachable` or none (the "PC not reachable" body has no reason). Now `not_responding`/`off` give the not-responding line, `unreachable`/none give "can't be reached from here", any other reason gives `CONNECT_FAILED_TEXT`. Tests for each, plus two unknown reasons.
+- t2: a missing `pcSessions` toasts `CONNECT_FAILED_TEXT`. Test.
+- t3: `credential_keyring.rb` reads `heldItem` only when `CredentialModel.proof_kind(proof) == 'held'`.
+- t4: comments at both capture filters (`findKindToasts`, `findLine`) naming the double guard, plus a direct `findLine` test on a capture.
+- t1 goes to the K4 notes: emit one `minigame_ended` from `minigame-manager.js`'s end `finally`, replace `watchScreensClose`'s poll with it, and note two overlapping Connects with `returnTo` would run two watchers (the in-flight guard prevents it today).
+
+**Fixtures** (`scenarios/test_access_keyring/scenario.json.erb`, plan 9.1)
+- `ops_rdp_file` (SV-OPS-01.rdp) on Lena's desktop, takeable and droppable, credential `ops_rdp` (saved_connection for Ian, `connectsTo: ops_pc`, `proof.held`), no observations and no text, so a tray click is Connect. SV-OPS-01 takes `pw_only`, so Connect is the R5b policy refusal.
+- `lena_rdp_gift` (HB-FIN-02 copy.rdp) in Lena's `itemsHeld`, credential `lena_rdp_gift` (saved_connection for Lena on `lena_pc`, held), droppable. A new once-only choice in `ink/lena.ink` ("Could I have a copy of that connection file?", compiled to `lena.json`) gives it with `#give_item:text_file:lena_rdp_gift`, so a find arrives mid-conversation. Plain ink text, no TTS.
+- Validator: 0 errors, 4 warnings. New: two "droppable without a needsTag" (the two items) and `ops_rdp` "accepted by no machine" (the refusal fixture, same as the existing `ops_cookie`).
+
+**Tests** keyring-client 58, inventory-menu 28, keyring-signin 53, Rails keyring route/take/model 34 runs 0 failures, full Rails suite 3000 runs 0 failures 3 skips, rubocop clean on the changed Ruby, bin/test-js 716 files, 0 failed.
+
+**HANDOVER (live recheck)**
+Reachable now, on a new game of `test_access_keyring`:
+1. Single GET: sign in at Lena's PC (sticky note, Finance is east of the lobby) and open passwords.txt: one `GET /keyring?rev=` for the open, not two.
+2. R5b and one-click Connect: on Lena's desktop take SV-OPS-01.rdp (the find toast "Saved connection found: SV-OPS-01.rdp for Ian Shaw on SV-OPS-01."), plant the drop box in the comms port (north of the lobby; the drop box is in the lobby), then click the tray item: no menu (nothing to examine), Connect runs. Expect the SV-OPS-01 remote screen with the saved-connection refusal under the greyed button.
+3. NPC-give hold: talk to Lena (lobby), choose "Could I have a copy of that connection file?". The gift's own toast shows first, and the find toast "Saved connection found: HB-FIN-02 copy.rdp for Lena Fox on HB-FIN-02." only after the conversation closes. Also a Connect target.
+4. Drop: with either new item droppable, Drop here from the tray goes through the server; check the entry leaves GET /keyring (heldItem gone) and Connect on a stale tray click says "{label} no longer works.".
+5. Phone shots (390x844): the find toast and the teaching toast now wrap whole (class `whole`); a warning or objective toast is not pushed aside by a find (it no longer carries `brief`).
+6. Failed prime: block GET /keyring for the first 5 s of a page, then allow it: the first real find still toasts.

@@ -105,9 +105,33 @@
       "optional": false
     },
     {
+      "id": "cred_lena_rdp_gift",
+      "label": "Lena Fox saved connection<br/>(lfox)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_lena_rdp_gift",
+      "label": "HB-FIN-02 copy.rdp",
+      "kind": "item",
+      "optional": false
+    },
+    {
       "id": "cred_ops_cookie",
       "label": "Ian Shaw saved connection<br/>(ishaw)",
       "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_ops_rdp",
+      "label": "Ian Shaw saved connection<br/>(ishaw)",
+      "kind": "key",
+      "optional": false
+    },
+    {
+      "id": "cred_src_ops_rdp_file",
+      "label": "SV-OPS-01.rdp",
+      "kind": "item",
       "optional": false
     }
   ],
@@ -251,6 +275,21 @@
     {
       "from": "cred_lena_rdp",
       "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_lena_rdp_gift",
+      "to": "cred_lena_rdp_gift",
+      "soft": false
+    },
+    {
+      "from": "cred_lena_rdp_gift",
+      "to": "lock_lena_pc",
+      "soft": false
+    },
+    {
+      "from": "cred_src_ops_rdp_file",
+      "to": "cred_ops_rdp",
       "soft": false
     }
   ]
