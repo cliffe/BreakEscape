@@ -261,6 +261,19 @@
           "_comment": "Slice 19: the lever. Using it rings Tom's phone (a ring while it rings or during a call is ignored)."
         },
         {
+          "type": "m10_tool_roll1",
+          "id": "marek_tool_roll",
+          "name": "Marek's tool roll",
+          "owner": "marek",
+          "private": true,
+          "takeable": false,
+          "interactable": false,
+          "position": { "x": 2.0, "y": 5.4, "elevation": 24 },
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "A contractor's tool roll, laid out on the desk: crimpers, a punch-down tool and a cable tester.",
+          "_comment": "Sims tidy R1: Marek's face point. His needsHome is this object, so he sits at the south side of the south-west desk (office_desk1_91, sprite 30..108 x 166..205, shared at the back with Tom's PC and Grace's laptop) facing north to the desk, as the other staff face theirs; a coordinate home had no face point and he sat facing the west wall (game 5827). The desk is crowded (Tom's badge and phone sit within a tile), so the roll is not interactable: a click near the desk never opens it in place of the badge or the phone. No needs preset, so it is no source for anyone."
+        },
+        {
           "type": "pc",
           "id": "sanjay_pc",
           "owner": "sanjay",
@@ -731,8 +744,8 @@
           "currentKnot": "start",
           "voice": { "name": "Orus", "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.", "language": "en-GB" },
           "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
-          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His post is the south side of the spare desk in the south-west (2.15, 6.65), with a chair he fetches (loose chair 155 from the south floor; 152 by Sanjay is at Sanjay's post, so not his). Sims tidy item 2: seated at the old post (1.65, 4.0) in the aisle west of Sanjay, he turned Rosa back at the office end of the kitchen doorway and wedged himself between Sanjay's seat and loose chair 152 (game 5733). The new seat is out of every walk: the south-west corner is a dead end, more than two tiles (Sanjay's avoid radius) from any source Sanjay uses. Earlier posts: the north-west corner, the bottom-left corner (design review R3 M3: his walk to the kitchen passed behind Sanjay's chair and wedged there) and beside the coffee station until slice 10 put the queue there. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
-          "needsHome": { "room": "office", "x": 2.15, "y": 6.65 },
+          "_comment": "Slice 8 (OFFICE_LIFE_PLAN 7.3): the outcast. avoids '*' acts both ways: nobody shares the cooler with him or chats with him. His post is the south side of the south-west desk, given by his tool roll on it (needsHome marek_tool_roll, useFrom 0,1, so he faces the desk; sims tidy R1), with a chair he fetches (loose chair 155 from the south floor; 152 by Sanjay is at Sanjay's post, so not his). Sims tidy item 2: seated at the old post (1.65, 4.0) in the aisle west of Sanjay, he turned Rosa back at the office end of the kitchen doorway and wedged himself between Sanjay's seat and loose chair 152 (game 5733). The new seat is out of every walk: the south-west corner is a dead end, more than two tiles (Sanjay's avoid radius) from any source Sanjay uses. Earlier posts: the north-west corner, the bottom-left corner (design review R3 M3: his walk to the kitchen passed behind Sanjay's chair and wedged there) and beside the coffee station until slice 10 put the queue there. His thirst is slow so he goes only when the Kitchen Rota is read (or after about half an hour). Slice 10: a slow caffeine need too; when Tom joins the coffee queue Marek wants one, so he queues behind Tom, in silence.",
+          "needsHome": "marek_tool_roll",
           "needsSpeed": 80,
           "needsCompany": { "avoids": ["*"], "avoidRadius": 0 },
           "needs": {
