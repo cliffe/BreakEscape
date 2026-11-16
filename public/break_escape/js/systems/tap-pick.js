@@ -212,7 +212,7 @@ export function pixelHits({ objectsUnderTap = [], npcsUnderTap = [], doorUnderTa
     let hostileHit = null;
     for (const n of npcsUnderTap || []) {
         if (!shown(n) || !sameRoom(n) || !deps.npcOnFigure(n)) continue;
-        if (hostile(n)) { hostileHit = hostileHit || n; hits.push(n); continue; }
+        if (hostile(n)) { hostileHit = hostileHit || n; continue; }   // a hostile never joins a menu (D27)
         if (!givesWay(n)) hits.push(n);
     }
     if (doorUnderTap && shown(doorUnderTap) && !doorOpen(doorUnderTap) && deps.onPixels(doorUnderTap)) hits.push(doorUnderTap);
@@ -257,6 +257,9 @@ export const OVERLAP_MARGINS = [12, 8, 4, 0];
  *   from a feet point, judged `margin` px inside the range (default 12 when omitted)
  * @param {function({x:number,y:number}): boolean} [deps.pathClear] - the player can walk to a lattice
  *   cell (a clear straight line from the feet); a cell it rejects is skipped for the next
+ * @param {function(object): ?{left:number,right:number,top:number,bottom:number}} [deps.reachSpan] - the
+ *   span a hit's reach is measured to, in the player sprite's coordinates (a wide object's width, a
+ *   wall-mounted object's height, a static NPC's body); absent, the hit's centre
  * @param {function(object): boolean} [deps.isDoor]
  * @param {number} [deps.doorRange] - DOOR_INTERACTION_RANGE
  * @param {function({x:number,y:number}): boolean} [deps.occupied] - the body would stand inside
@@ -291,8 +294,13 @@ export function overlapStandPoint(hits, click, player, deps) {
         let x0 = -Infinity, y0 = -Infinity, x1 = Infinity, y1 = Infinity;
         for (const h of hits) {
             const r = rangeFor(h);
-            x0 = Math.max(x0, h.x - r + fx); x1 = Math.min(x1, h.x + r + fx);
-            y0 = Math.max(y0, h.y - r + fy); y1 = Math.min(y1, h.y + r + fy);
+            // The span the hit's reach is measured to (a wide object's width, a wall fixture's
+            // height, a static NPC's body), not only its centre (review R2 m1)
+            let sp = null;
+            try { sp = deps.reachSpan?.(h) || null; } catch (e) { sp = null; }
+            const sl = sp ? sp.left : h.x, sr = sp ? sp.right : h.x, st = sp ? sp.top : h.y, sb = sp ? sp.bottom : h.y;
+            x0 = Math.max(x0, sl - r + fx); x1 = Math.min(x1, sr + r + fx);
+            y0 = Math.max(y0, st - r + fy); y1 = Math.min(y1, sb + r + fy);
         }
         const from = { x: player.x + fx, y: player.y + fy };
         const seen = new Set();
@@ -320,9 +328,18 @@ export function overlapStandPoint(hits, click, player, deps) {
     // Slack beats walk length only within MAX_EXTRA_WALK px of the nearest qualifying cell (code
     // review R5 m1): a cell across a desk island with 1 px more slack must not win
     const MAX_SLACK = 24;
+    // Walk length is the straight line from the feet, not a path length (review R2 m3): the
+    // pathfinder (findWorldPath) is asynchronous and this runs inside one click, and a path per
+    // candidate cell would be hundreds of queries. A cell behind furniture is at least filtered
+    // by pathClear; the cap keeps a detour small.
     const MAX_EXTRA_WALK = 48;
-    const reachable = (c) => !c.lattice || typeof deps.pathClear !== 'function' || !!deps.pathClear(c.p);
-    const pick = (pool, margin) => {
+    const reachable = (c) => {
+        if (!c.lattice || typeof deps.pathClear !== 'function') return true;
+        if (c.clear === undefined) c.clear = !!deps.pathClear(c.p);   // once per cell, across the two passes
+        return c.clear;
+    };
+    // fallback: allow a lattice cell with no clear straight line (last resort, see below)
+    const pick = (pool, margin, fallback = false) => {
         const pass = pool.filter(c => allIn(c.p, margin)).sort((a, b) => a.walk - b.walk);
         if (!pass.length) return null;
         const near = pass.filter(c => c.walk <= pass[0].walk + MAX_EXTRA_WALK);
@@ -336,16 +353,20 @@ export function overlapStandPoint(hits, click, player, deps) {
         // None has a straight clear line, but the walk pathfinds around furniture (live check: the
         // lounge desks blocked every line to the only cells where Grace and Marek were both in
         // reach): the shortest walk is still better than no joint stand point
-        return pass[0].p;
+        return fallback ? pass[0].p : null;
     };
     const namedPool = named.map(p => ({ p, walk: walkOf(p) }));
     // A named point with the widest margin wins outright; the lattice is only built when none has it
     const wide = pick(namedPool, OVERLAP_MARGINS[0]);
     if (wide) return wide;
     const pool = [...namedPool, ...lattice()];
-    for (const margin of OVERLAP_MARGINS) {
-        const p = pick(pool, margin);
-        if (p) return p;
+    // Every margin with cells that have a clear line first; a cell with none ranks below all of them
+    // (review R2 m2)
+    for (const fallback of [false, true]) {
+        for (const margin of OVERLAP_MARGINS) {
+            const p = pick(pool, margin, fallback);
+            if (p) return p;
+        }
     }
     return null;
 }
@@ -366,6 +387,7 @@ export function overlapStandPoint(hits, click, player, deps) {
  * @param {function(number, number, number=): ?{x:number,y:number}} [deps.findCell]
  * @param {number} [deps.arrival=8]
  * @param {function({x:number,y:number}): boolean} [deps.occupied]
+ * @param {function({x:number,y:number}, object): boolean} [deps.sameRoom] - the cell is in the hit's room
  * @returns {?{x:number,y:number}}
  */
 export function overlapRetryTarget(feet, stand, hits, deps) {
@@ -385,6 +407,7 @@ export function overlapRetryTarget(feet, stand, hits, deps) {
         if (Math.hypot(c.x - feet.x, c.y - feet.y) <= arrival) continue;
         if (!hits.every(h => deps.inReachFrom(c, h, 0))) continue;
         if (deps.occupied?.(c)) continue;
+        if (deps.sameRoom && !hits.every(h => deps.sameRoom(c, h))) continue;
         return { x: c.x, y: c.y };
     }
     return null;
@@ -578,11 +601,11 @@ export function createPendingTapUse(deps) {
                 }
                 return;
             }
-            if (deps.inReach(o)) { pending = null; deps.use(o); return; }
+            if (deps.inReach(o, now)) { pending = null; deps.use(o); return; }
             // Stopped with part of the target in reach: one more step may be started (overlap walk)
             if (deps.onPartial) {
                 let more = false;
-                try { more = !!deps.onPartial(o); } catch (e) { more = false; }
+                try { more = !!deps.onPartial(o, now); } catch (e) { more = false; }
                 if (more) { p.progressAt = now; p.feet = feetNow(); return; }
             }
             if (still > STOPPED_SHORT_MS) {

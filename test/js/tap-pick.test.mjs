@@ -733,6 +733,84 @@ test('overlap 11f (R5 M1): the retry target lies past the stand point, far enoug
     assert.equal(overlapRetryTarget(stand, stand, hits, { inReachFrom, findCell }), null, 'already there');
 });
 
+test('overlap 11g (R2 m1): the lattice box follows each hit\'s reach span, so a wide desk and a monitor at its far end still get a joint cell', () => {
+    const player = { x: 0, y: 200 };
+    const findCell = (x, y) => ({ x: Math.round(x / 4) * 4, y: Math.round(y / 4) * 4 });
+    const A = { id: 'A', x: 100, y: 0, w: 128 }, B = { id: 'B', x: 170, y: 0, w: 32 };
+    // reach to the nearest x of each span (interaction-reach.js reachX); a desk west of x=166 hides the named points
+    const reach = (p, h, m = 12) => { const nx = Math.max(h.x - h.w / 2, Math.min(p.x, h.x + h.w / 2)); return p.x >= 166 && Math.hypot(p.x - nx, p.y - h.y) <= 32 - m; };
+    const reachSpan = (h) => ({ left: h.x - h.w / 2, right: h.x + h.w / 2, top: h.y, bottom: h.y });
+    const base = { range: 32, inReachFrom: reach, findCell };
+    // Centres only: the boxes (68..132 and 138..202) never meet and no cell is found
+    assert.equal(overlapStandPoint([A, B], { x: 160, y: 0 }, player, base), null, 'without spans the box is empty');
+    const p = overlapStandPoint([A, B], { x: 160, y: 0 }, player, { ...base, reachSpan });
+    assert.ok(p && reach(p, A, 0) && reach(p, B, 0), JSON.stringify(p));
+});
+
+test('overlap 11h (R2 m2): a cell with no clear line ranks below every clear-line cell, across margins', () => {
+    const player = { x: 0, y: 200 };
+    const a = { id: 'a', x: 100, y: 0 }, b = { id: 'b', x: 140, y: 0 };
+    const findCell = (x, y) => ({ x: Math.round(x / 4) * 4, y: Math.round(y / 4) * 4 });
+    const inReachFrom = (p, h, m = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= 32 - m;
+    // Only the y > 0 cells have a clear line; the y = 0 cells reach both at margin 12, the y = 4 ones at 8
+    const r = overlapStandPoint([a, b], { x: 120, y: 0 }, player, { range: 32, inReachFrom, findCell, pathClear: (q) => q.y > 0 });
+    assert.ok(r && r.y > 0, `the clear-line cell wins even at a lower margin: ${JSON.stringify(r)}`);
+    assert.equal(inReachFrom(r, a, 8) && inReachFrom(r, b, 8), true);
+});
+
+test('overlap 11i (R2 m3): walk length is the straight line from the feet, not a path length (pinned)', () => {
+    // A cell 40 px away in a straight line wins on slack over the nearest one, whatever route a path
+    // to it would take: the pathfinder is asynchronous and the only hook is pathClear (a yes or no)
+    const player = { x: 0, y: 0 };
+    const hits = [{ id: 'a', x: 100, y: 0 }, { id: 'b', x: 100, y: 0 }];
+    const inReachFrom = (p, h, m = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= 30 - m;
+    const cells = (set) => (x, y) => (set.includes(`${x},${y}`) ? { x, y } : null);
+    const p = overlapStandPoint(hits, { x: 100, y: 0 }, player, { range: 32, inReachFrom, findCell: cells(['72,0', '108,0']) });
+    assert.deepEqual(p, { x: 108, y: 0 }, 'more slack within the 48 px straight-line extra beats the shorter walk');
+    assert.equal(overlapStandPoint.length, 4);
+});
+
+test('overlap 11j (R2 m4): the lattice box moves with the body offset: the feet are lower than the sprite', () => {
+    const player = { x: 0, y: 0, body: { center: { x: 0, y: 31 } } };   // fy = 31
+    const a = { id: 'a', x: 100, y: 0 }, b = { id: 'b', x: 140, y: 0 };
+    const asked = [];
+    const findCell = (x, y, r) => { if (r === 0) asked.push([x, y]); return { x, y }; };
+    // The reach origin is the sprite position; the feet are fy lower, so a stand cell (feet) at y reaches from y - 31
+    const inReachFrom = (p, h, m = 12) => Math.hypot(p.x - h.x, (p.y - 31) - h.y) <= 32 - m;
+    const r = overlapStandPoint([a, b], { x: 120, y: 31 }, player, { range: 32, inReachFrom, findCell });
+    assert.ok(asked.length > 0 && asked.every(([x, y]) => y >= -32 + 31 && y <= 32 + 31), JSON.stringify(asked.slice(0, 3)));
+    assert.ok(r && inReachFrom(r, a, 0) && inReachFrom(r, b, 0), JSON.stringify(r));
+    assert.ok(Math.abs(r.y - 31) <= 4, `feet about 31 px below the hits' y: ${JSON.stringify(r)}`);
+});
+
+test('overlap 11k (R2 n2): the retry target skips a cell outside the hits\' room', () => {
+    const hits = [{ id: 'a', x: 100, y: 0 }, { id: 'b', x: 100, y: 10 }];
+    const stand = { x: 80, y: 5 }, feet = { x: 73, y: 5 };
+    const inReachFrom = (p, h, m = 0) => Math.hypot(p.x - h.x, p.y - h.y) <= 32 - m;
+    const findCell = (x, y) => ({ x, y });
+    assert.deepEqual(overlapRetryTarget(feet, stand, hits, { inReachFrom, findCell }), { x: 90, y: 5 });
+    const t = overlapRetryTarget(feet, stand, hits, { inReachFrom, findCell, sameRoom: (c) => c.x <= 84 });
+    assert.ok(t && t.x <= 84, JSON.stringify(t));
+    assert.equal(overlapRetryTarget(feet, stand, hits, { inReachFrom, findCell, sameRoom: () => false }), null);
+});
+
+test('overlap 11l (R2 n7): the retry skips a cell inside an NPC body', () => {
+    const hits = [{ id: 'a', x: 100, y: 0 }];
+    const stand = { x: 80, y: 5 }, feet = { x: 73, y: 5 };
+    const inReachFrom = (p, h, m = 0) => Math.hypot(p.x - h.x, p.y - h.y) <= 32 - m;
+    const findCell = (x, y) => ({ x, y });
+    const t = overlapRetryTarget(feet, stand, hits, { inReachFrom, findCell, occupied: (c) => c.x > 86 });
+    assert.ok(t && t.x <= 86, JSON.stringify(t));
+});
+
+test('overlap 10b (R2 n5): a hostile NPC never joins the hits', () => {
+    const n = hs('npcA', 60, 60, 80, 80, { _isNPC: true });
+    const o = hs('obj', 60, 60, 80, 80, { interactable: true });
+    const r = pixelHits({ objectsUnderTap: [o], npcsUnderTap: [n] }, hitDeps(100, 100, { hostile: () => true }));
+    assert.equal(r.hostileHit, n);
+    assert.ok(!r.allHits.includes(n) && !r.menuHits.includes(n), 'no hostile in allHits or menuHits');
+});
+
 test('pending use: onPartial starts one more step and keeps the walk pending (R5 n3)', () => {
     const steps = [];
     let moving = false, inReach = false;

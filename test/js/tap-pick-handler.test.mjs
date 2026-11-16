@@ -83,7 +83,7 @@ const HELPERS = ['findObjectsAtPosition',
     'findNPCsAtPosition', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer',
     'standPointDeps', 'isSeatOrSwivel', 'hitStackKey', 'playerAtFeet', 'inReachFrom', 'inReachNow',
     'feetWithin', 'standsInsideNpc', 'stillThere', 'roomHasActiveHostile', 'walkToDoor', 'showTapMenu', 'tapWalkBlocked',
-    'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState', 'overlapRetryNext', 'clearOverlapWalk', 'lineClearFromFeet', 'tappedScreenBox'];
+    'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState', 'overlapRetryNext', 'clearOverlapWalk', 'walkTowardNpc', 'overlapStoppedShort', 'overlapReachSpan', 'lineClearFromFeet', 'tappedScreenBox'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
     'isObjectInInteractionRange', 'sameRoomFrom', 'playerFeet', 'wallClearFrom', 'findClearStandPoint',
     'movePlayerToPoint', 'facePlayerToward', 'startHoldWalk', 'showInteractionMenu', 'isInteractionMenuOpen',
@@ -92,12 +92,13 @@ const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pend
     'menuIconsFor'];
 const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
-    'createPendingTapUse', 'aimX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
+    'createPendingTapUse', 'aimX', 'reachX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
     'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon', 'pixelHits', 'soleHit', 'overlapStandPoint', 'overlapRetryTarget',
     'seatsGiveWay'];
 const body = [
     ...HELPERS.map(fnSource),
     stmtSource('const pendingTapUse = createPendingTapUse({'),
+    'const RETRY_GRACE_MS = 300;',
     'let overlapRetry = { stand: null, used: false };',
     stmtSource('const pendingOverlapWalk = createPendingTapUse({'),
     `const handler = ${handlerSource()};`,
@@ -132,6 +133,7 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
     const log = [];
     const sprites = new Map([...objects, ...npcs].map(s => [s.id, s]));
     const state = { menuOpen: false, moving: false };
+    const ovr = { out: new Set() };   // ids forced out of reach from where the player stands
     const win = {
         player, currentPlayerRoom: roomOf(player),
         rooms: { r1: { objects: Object.fromEntries(objects.map(o => [o.id, o])), npcSprites: npcs, doorSprites: doors } },
@@ -156,7 +158,7 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
         get playerIsMoving() { return state.moving; },
         pendingGateWalk: { clear() {}, arm() {} },
         doorGates: { walkThroughTarget: () => null },
-        isObjectInInteractionRange: (s, from = player, range = RANGE) => Math.hypot(s.x - from.x, s.y - from.y) <= range,
+        isObjectInInteractionRange: (s, from = player, range = RANGE) => !(from === player && ovr.out.has(s.id)) && Math.hypot(s.x - from.x, s.y - from.y) <= range,
         menuIconsFor: (list) => list.map(c => (c.sprite ? { src: `icon:${c.sprite.id}` } : null)),
         stopClickToMove: () => { state.stopped = (state.stopped || 0) + 1; state.moving = false; },
         ARRIVAL_THRESHOLD: 8,
@@ -181,7 +183,7 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
     };
     const { handler, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom } = factory.call(scene, deps);
     const tap = (x, y) => handler.call(scene, { x, y, rightButtonDown: () => false, event: {} });
-    return { tap, log, state, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom, win, deps };
+    return { ovr, tap, log, state, pendingTapUse, pendingOverlapWalk, roomHasActiveHostile, inReachFrom, win, deps };
 }
 const walkedTo = (log) => log.some(l => l.startsWith('walk:'));
 
@@ -577,9 +579,82 @@ test('overlap 22b (R5 M1): a walk that ends 7 px short with one hit out of reach
     assert.ok(w.pendingOverlapWalk.get(), 'still waiting on the retry step');
     // ...and only one: back at rest still short, it finishes with what is in reach
     w.state.moving = false;
-    w.pendingOverlapWalk.update(Date.now() + 200);
+    w.pendingOverlapWalk.update(Date.now() + 700);
     assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 2, 'no second retry');
     assert.equal(w.pendingOverlapWalk.get(), null);
+});
+
+test('overlap 22c (R2 M1): the walk ends 7 px short with neither hit in reach: one retry step, then the far click on the topmost hit', () => {
+    const player = { x: 200, y: 200 };
+    const w = world({ player, objects: [copierAt(), printoutAt()] });
+    w.tap(118, 108);
+    const stand = w.log.find(l => l.startsWith('walk:')).slice(5).split(',').map(Number);
+    player.x = stand[0] + 5; player.y = stand[1] + 5; w.state.moving = false;
+    w.ovr.out = new Set(['copier', 'printout']);
+    const t0 = Date.now();
+    w.pendingOverlapWalk.update(t0 + 100);
+    assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 2, 'the retry step: ' + w.log.join());
+    assert.ok(w.pendingOverlapWalk.get(), 'pending while the step runs');
+    w.state.moving = false;
+    w.pendingOverlapWalk.update(t0 + 800);
+    assert.ok(!w.log.some(l => l.startsWith('alert')), 'no dead-end message: ' + w.log.join());
+    assert.equal(w.pendingTapUse.get()?.obj?.id, 'printout', 'handed over to the normal far click');
+    assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 3, 'which walks');
+});
+
+test('overlap 22d (R2 M1): a second click within 8 px of the stand point with nothing in reach is never the toast: a step, or the far click', () => {
+    const player = { x: 200, y: 200 };
+    const w = world({ player, objects: [copierAt(), printoutAt()] });
+    w.tap(118, 108);
+    const stand = w.log.find(l => l.startsWith('walk:')).slice(5).split(',').map(Number);
+    player.x = stand[0] + 5; player.y = stand[1] + 5; w.state.moving = false;
+    w.ovr.out = new Set(['copier', 'printout']);
+    w.log.length = 0;
+    w.tap(118, 108);
+    assert.ok(!w.log.some(l => l.startsWith('alert')), 'no toast: ' + w.log.join());
+    assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 1, 'it walks (past the stand point): ' + w.log.join());
+    assert.ok(w.pendingOverlapWalk.get(), 'and watches the step');
+    // No cell to step to (the pathfinder finds none at radius 1): the normal far click on the topmost hit
+    const w2 = world({ player: { x: 200, y: 200 }, objects: [copierAt(), printoutAt()] });
+    w2.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y, r) => (r === 1 ? null : { x, y }) };
+    w2.tap(118, 108);
+    const s2 = w2.log.find(l => l.startsWith('walk:')).slice(5).split(',').map(Number);
+    const p2 = w2.deps.player; p2.x = s2[0] + 5; p2.y = s2[1] + 5; w2.state.moving = false;
+    w2.ovr.out = new Set(['copier', 'printout']);
+    w2.log.length = 0;
+    w2.tap(118, 108);
+    assert.ok(!w2.log.some(l => l.startsWith('alert')), 'no toast: ' + w2.log.join());
+    assert.equal(w2.pendingOverlapWalk.get(), null);
+    assert.equal(w2.pendingTapUse.get()?.obj?.id, 'printout');
+});
+
+test('overlap 22e (R2 n6): a retry step still waiting on the pathfinder is not dropped; it is after the grace', () => {
+    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10 });
+    const player = { x: 400, y: 115 };
+    const w = world({ player, objects: [wide('a', 100), wide('b', 156)] });
+    w.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }) };
+    w.tap(158, 110);
+    const stand = w.log.find(l => l.startsWith('walk:')).slice(5).split(',').map(Number);
+    player.x = stand[0] + 7; player.y = stand[1]; w.state.moving = false;
+    const t0 = Date.now();
+    w.pendingOverlapWalk.update(t0 + 100);         // the retry starts; the player is not moving yet
+    w.state.moving = false;
+    w.pendingOverlapWalk.update(t0 + 200);         // inside the grace: still pending
+    assert.ok(w.pendingOverlapWalk.get(), 'kept while the step is not under way');
+    w.pendingOverlapWalk.update(t0 + 600);         // grace over: finishes with what is in reach
+    assert.equal(w.pendingOverlapWalk.get(), null);
+});
+
+test('overlap 22f (R2 n1): the live-proof hooks are cleared at the start of each click', () => {
+    const player = { x: 200, y: 200 };
+    const w = world({ player, objects: [copierAt(), printoutAt()] });
+    w.tap(118, 108);
+    assert.equal(w.win.__overlapStand?.joint, true);
+    w.win.__overlapRetried = { stale: true };
+    player.x = 112; player.y = 112; w.state.moving = false;
+    w.tap(300, 300);                               // a plain floor click
+    assert.equal(w.win.__overlapStand, null);
+    assert.equal(w.win.__overlapRetried, null);
 });
 
 test('overlap 22: the overlap watcher: silent on arrival in reach, says why when stopped or blocked, cleared by a click', () => {
@@ -594,8 +669,14 @@ test('overlap 22: the overlap watcher: silent on arrival in reach, says why when
     const p2 = { x: 200, y: 200 };
     const w2 = world({ player: p2, objects: [copierAt(), printoutAt()] });
     w2.tap(118, 108); w2.state.moving = false;
-    w2.pendingOverlapWalk.update(Date.now() + 500);
-    assert.ok(w2.log.includes("alert:Can't reach it from here."), w2.log.join());
+    const t2 = Date.now();
+    w2.pendingOverlapWalk.update(t2 + 500);                       // nothing in reach: the one retry step
+    assert.equal(w2.log.filter(l => l.startsWith('walk:')).length, 2, w2.log.join());
+    w2.state.moving = false;
+    w2.pendingOverlapWalk.update(t2 + 1000);                      // retry spent, still nothing in reach: hand over (R2 M1)
+    assert.ok(!w2.log.some(l => l.startsWith('alert')), 'no dead-end toast: ' + w2.log.join());
+    assert.equal(w2.pendingOverlapWalk.get(), null);
+    assert.equal(w2.pendingTapUse.get()?.obj?.id, 'printout', 'the normal far click on the topmost hit');
     const p3 = { x: 200, y: 200 };
     const w3 = world({ player: p3, objects: [copierAt(), printoutAt()] });
     w3.tap(118, 108);

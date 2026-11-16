@@ -7,7 +7,7 @@ import { setHeldFormatVersion, showBootstrapRefusal } from '../format-guard.js';
 import { initializeInventory, processInitialInventoryItems, registerTrayRule, refreshInventoryTray } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
+import { aimX, reachX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { preloadPixelFont } from '../utils/pixel-text.js';
@@ -2279,6 +2279,7 @@ export async function create() {
         pendingGateWalk.clear(); // any new click replaces a far click on a gate
         pendingTapUse.clear();   // ...and a far tap on an object
         clearOverlapWalk();   // ...and a far tap on an overlap (overlap plan D2)
+        window.__overlapStand = null; window.__overlapRetried = null;   // the live proofs read these per click
         // Check if a minigame is currently running - if so, don't process main game clicks
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
             console.log('Minigame is running, ignoring main game click', {
@@ -2371,7 +2372,7 @@ export async function create() {
                 // decision, handover 3 item 2).
                 let noJoint = false;
                 if (menuHits.length > 1 && !menuHits.some(inReachNow)) {
-                    const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc, pathClear: lineClearFromFeet };
+                    const standDeps = { ...standPointDeps(window.player), inReachFrom, reachSpan: overlapReachSpan, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc, pathClear: lineClearFromFeet };
                     // Margins 12, 8, 4, 0 over walkable cells
                     const joint = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps);
                     if (joint) {
@@ -2380,13 +2381,26 @@ export async function create() {
                             overlapRetry = { stand: joint, used: false };
                             window.__overlapStand = { stand: joint, joint: true };   // read by the live proofs
                             pendingOverlapWalk.arm(menuHits, Date.now());
-                        } else {
-                            window.gameAlert?.("Can't reach it from here.", 'info', '', 2500);
+                            return;
                         }
-                        return;
+                        // The feet are already within the 8 px arrival of the stand point with nothing in
+                        // reach (a second click after the walk ended short): one step past it, else the
+                        // far click on the topmost hit. Never a toast and a dead end (review R2 M1)
+                        overlapRetry = { stand: joint, used: false };
+                        const step = overlapRetryNext(menuHits);
+                        if (step) {
+                            overlapRetry.used = true;
+                            overlapRetry.stepAt = Date.now();
+                            window.__overlapStand = { stand: joint, joint: true };
+                            window.__overlapRetried = { from: playerFeet(window.player), to: step };
+                            movePlayerToPoint(step.x, step.y, { avoidNpcs: true });
+                            pendingOverlapWalk.arm(menuHits, Date.now());
+                            return;
+                        }
+                        overlapRetry = { stand: null, used: false };
                     }
                     noJoint = true;
-                    window.__overlapStand = { stand: null, joint: false };   // read by the live proofs
+                    window.__overlapStand = { stand: joint || null, joint: false };   // read by the live proofs
                 }
                 onlyHit = noJoint ? menuHits[0] : soleHit({ allHits }, isSeatOrSwivel);   // D4, used when nothing in reach takes the tap
             }
@@ -2450,26 +2464,7 @@ export async function create() {
                     window.tryInteractWithNPC(npcAtPosition);
                 }
             } else {
-                // NPC is out of range - move toward them, stopping just short.
-                const spriteCenterToBottom = npcAtPosition.height * (1 - (npcAtPosition.originY || 0.5));
-                const paddingOffset = npcAtPosition.isAtlas ? SPRITE_PADDING_BOTTOM_ATLAS : SPRITE_PADDING_BOTTOM_LEGACY;
-                const npcBottomY = npcAtPosition.y + spriteCenterToBottom - paddingOffset;
-                const dx = npcAtPosition.x - player.x;
-                const dy = npcBottomY - player.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-                if (distance > 0) {
-                    const stopShortOffset = TILE_SIZE * 0.75;
-                    const normalizedDx = dx / distance;
-                    const normalizedDy = dy / distance;
-                    let stand = { x: npcAtPosition.x - normalizedDx * stopShortOffset,
-                                  y: npcBottomY - normalizedDy * stopShortOffset };
-                    // Through a wall, "stop short on my side" lands behind the wall:
-                    // walk round to a spot on the NPC's side instead (interaction-walls.js)
-                    if (!wallClearFrom(stand, npcAtPosition)) {
-                        stand = findClearStandPoint(npcAtPosition, player, window.pathfindingManager, INTERACTION_RANGE) || stand;
-                    }
-                    movePlayerToPoint(stand.x, stand.y);
-                }
+                walkTowardNpc(npcAtPosition);
             }
             return;
         }
@@ -3012,6 +3007,46 @@ const pendingTapUse = createPendingTapUse({
     onStoppedShort: () => tapWalkStoppedShort(),
     busy: () => tapWalkBusy()
 });
+// A far NPC: walk towards her, stopping just short (also the overlap walk's hand-over)
+function walkTowardNpc(npc) {
+    // NPC is out of range - move toward them, stopping just short.
+    const spriteCenterToBottom = npc.height * (1 - (npc.originY || 0.5));
+    const paddingOffset = npc.isAtlas ? SPRITE_PADDING_BOTTOM_ATLAS : SPRITE_PADDING_BOTTOM_LEGACY;
+    const npcBottomY = npc.y + spriteCenterToBottom - paddingOffset;
+    const dx = npc.x - player.x;
+    const dy = npcBottomY - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance > 0) {
+        const stopShortOffset = TILE_SIZE * 0.75;
+        const normalizedDx = dx / distance;
+        const normalizedDy = dy / distance;
+        let stand = { x: npc.x - normalizedDx * stopShortOffset,
+                      y: npcBottomY - normalizedDy * stopShortOffset };
+        // Through a wall, "stop short on my side" lands behind the wall:
+        // walk round to a spot on the NPC's side instead (interaction-walls.js)
+        if (!wallClearFrom(stand, npc)) {
+            stand = findClearStandPoint(npc, player, window.pathfindingManager, INTERACTION_RANGE) || stand;
+        }
+        movePlayerToPoint(stand.x, stand.y);
+    }
+}
+
+// The span a hit's reach is measured to, in the player sprite's coordinates (tap-pick.js m1): a scenario
+// object's width (reachX), a wall-mounted one's height (reachY), a static NPC's body rectangle (npc-reach.js)
+function overlapReachSpan(h) {
+    if (!h || h.doorProperties) return null;
+    const p = window.player;
+    if (h._isNPC) {
+        const b = h._staticNpc ? h.body : null;
+        if (!b || !(b.width > 0) || !(b.height > 0)) return null;
+        const fx = p?.body ? p.body.center.x - p.x : 0;
+        const fy = p?.body ? p.body.center.y - p.y : 0;
+        return { left: b.x - fx, right: b.x + b.width - fx, top: b.y - fy, bottom: b.y + b.height - fy };
+    }
+    const far = 1000000;   // clamps to the span's near end, whichever side
+    return { left: reachX(h, -far), right: reachX(h, far), top: reachY(h, -far), bottom: reachY(h, far) };
+}
+
 // A far tap on an overlap (overlap plan D2): walks to where every hit is in reach and uses
 // nothing on arrival; says why when the walk is blocked or ends with none in reach
 let overlapRetry = { stand: null, used: false };
@@ -3026,7 +3061,8 @@ function overlapRetryNext(hits) {
     if (feetWithin(r.stand, 1)) return null;
     const d = standPointDeps(player);
     return overlapRetryTarget(feet, r.stand, hits.filter(stillThere), {
-        inReachFrom, findCell: d.findCell, arrival: ARRIVAL_THRESHOLD, occupied: standsInsideNpc
+        inReachFrom, findCell: d.findCell, arrival: ARRIVAL_THRESHOLD, occupied: standsInsideNpc,
+        sameRoom: d.sameRoom   // a doorway overlap must not step the feet over the room line
     });
 }
 function clearOverlapWalk() {
@@ -3034,29 +3070,51 @@ function clearOverlapWalk() {
     overlapRetry = { stand: null, used: false };
 }
 const pendingOverlapWalk = createPendingTapUse({
-    inReach: (hits) => {
+    inReach: (hits, now = Date.now()) => {
         if (!hits.some(inReachNow)) return false;
+        // The retry step waits on the pathfinder (not moving yet): keep the watcher for a moment
+        // rather than clearing it before the step starts (review R2 n6)
+        if (overlapRetry.stepAt && !playerIsMoving && !overlapRetry.sawMove && now - overlapRetry.stepAt < RETRY_GRACE_MS) return false;
         if (hits.filter(stillThere).every(inReachNow)) return true;
         // Stopped with only some hits in reach: one more step to the stand point (onPartial),
         // then today's behaviour (finish with whatever is in reach)
         return !overlapRetryNext(hits);
     },
-    onPartial: (hits) => {
-        const t = hits.some(inReachNow) ? overlapRetryNext(hits) : null;
+    onPartial: (hits, now = Date.now()) => {
+        // With some hit in reach or none: the target keeps every hit in reach, so either is safe
+        const t = overlapRetryNext(hits);
         if (!t) return false;
         overlapRetry.used = true;
+        overlapRetry.stepAt = now;
         window.__overlapRetried = { from: playerFeet(window.player), to: t };   // read by the live proofs
         movePlayerToPoint(t.x, t.y, { avoidNpcs: true });
         return true;
     },
     alive: (hits) => Array.isArray(hits) && hits.some(stillThere),
-    isMoving: () => playerIsMoving,
+    isMoving: () => { if (playerIsMoving && overlapRetry.stepAt) overlapRetry.sawMove = true; return playerIsMoving; },
     use: () => {},
     feet: () => (window.player ? playerFeet(window.player) : null),
     onBlocked: () => tapWalkBlocked(),
-    onStoppedShort: () => tapWalkStoppedShort(),
+    onStoppedShort: (hits) => overlapStoppedShort(hits),
     busy: () => tapWalkBusy()
 });
+const RETRY_GRACE_MS = 300;
+// The overlap walk ended (retry spent) with nothing in reach: hand over to the normal single far click
+// on the topmost hit, which has its own approach logic (review R2 M1). In a fight, or with a hit
+// in reach, the old message.
+function overlapStoppedShort(hits) {
+    const live = (hits || []).filter(stillThere);
+    const top = live[0];
+    if (!top || live.some(inReachNow) || roomHasActiveHostile()) { tapWalkStoppedShort(); return; }
+    window.__overlapStand = { ...(window.__overlapStand || {}), handedOver: top.npcId || top.name || true };
+    if (top.doorProperties) {
+        walkToDoor(top);
+    } else if (top._isNPC) {
+        walkTowardNpc(top);
+    } else {
+        walkToObjectThenUse(top);
+    }
+}
 if (typeof window !== 'undefined') {
     window.__pendingTapUse = () => pendingTapUse.get();
     window.__pendingOverlapWalk = () => pendingOverlapWalk.get();
