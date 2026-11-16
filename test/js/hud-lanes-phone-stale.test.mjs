@@ -132,3 +132,16 @@ test('m1: the fail-open path cancels an armed supersede', () => {
   assert.ok(calls.includes(false), JSON.stringify(calls));
   assert.equal(armed, null, 'the armed timer was cleared');
 });
+
+test('R3 n2: a UI theme switch measures the phone texts again; at rest nothing is cloned', () => {
+  const r = rig();
+  r.bark('Sam: hi');
+  applyLanes(r.doc, r.win);
+  const n = r.clones();
+  applyLanes(r.doc, r.win);
+  assert.equal(r.clones(), n, 'at rest');
+  r.doc.documentElement.dataset.uiTheme = 'pixel';
+  applyLanes(r.doc, r.win);
+  assert.equal(r.clones(), n + 1, 'one clone after the theme changes');
+  r.win.close();
+});

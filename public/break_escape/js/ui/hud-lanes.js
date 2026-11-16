@@ -741,8 +741,12 @@ function cloneHeightAt(doc, el, w, z, { keepId = false, fontFrom = null } = {}) 
 }
 
 /** A toast's height at screen width `w`, cached on the toast by width and zoom (its text never changes). */
+// What else changes a clone's height without touching the DOM it copies: the web font arriving
+// (the fallback font wraps differently) and a UI theme switch (themed padding and borders)
+const renderEnv = (doc) => `${doc.fonts?.status || ''}${doc.documentElement?.dataset?.uiTheme || ''}`;
+
 function toastHeightAt(doc, t, w, z, container) {
-  const key = `${w}@${z}@${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;   // compact padding differs
+  const key = `${w}@${z}#${renderEnv(doc)}@${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;   // compact padding differs
   if (!t._hudLaneH) t._hudLaneH = new Map();
   if (!t._hudLaneH.has(key)) t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
   return t._hudLaneH.get(key);
@@ -797,7 +801,7 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
     const phoneSig = phoneEl
       ? Array.from(phoneEl.children).map(b => [b.textContent, b._removing ? 'r' : '', b.classList.contains('hud-lane-yield') ? 'y' : '',
         b.querySelector?.('.npc-bark-head')?.hidden === false ? 'h' : '', b.style?.display || ''].join('\u0002')).join('\u0001')
-        + `|${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`
+        + `|${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}|${renderEnv(doc)}`
       : '';
     if (phoneEl && phoneEl._hudLaneSig !== phoneSig) { phoneEl._hudLaneSig = phoneSig; phoneEl._hudLaneH = new Map(); }
     const phoneH = (w) => {
