@@ -65,3 +65,20 @@ Fix: correct the 2268 line, and either list the remaining m10 hides with a one-l
 - Hostility changes: a hidden NPC that turns hostile (ink tag while hidden is not possible; a mapping could) does not count, which matches its inability to attack (`npc-behavior.js:878`).
 - player_state: the branch adds no synced field. `npcVisibility` is a map keyed by NPC id, capped by `MAX_NPC_VISIBILITY` on the server (`game.rb:5649-5662`), so it does not grow with play. It is sent whole on every sync when non-empty (`state-sync.js:484-485`); that predates this branch.
 - No new static import, so no harness copy list changes. `node --max-old-space-size=2048 test/js/hostiles-hidden-music.test.mjs`: 4 of 4 pass.
+
+## R1 outcomes
+
+Fixed on `build/ol-hidden-hostiles` (commit "Hidden hostiles music: hiding the last hostile ends the fight, ..." and the doc commit after it). Notes in `HIDDEN_HOSTILES_MUSIC.md`.
+
+| Finding | Outcome |
+| --- | --- |
+| M1 | Fixed. `setNPCVisible(false)` emits `npc_hidden { npcId, wasHostile: true }` for a hostile, not KO'd NPC; the `all_hostiles_ko` handler listens to it as well as `npc_ko`. Live: game 6352, KO then hide ends the fight. |
+| M2 | Fixed. The `NPCBehavior` constructor skips `announceRestoredHostile` while `isHiddenByMapping` is true. Live: game 6351, after the reload the annex loads with the hidden guard and the playlist stays `noir`. |
+| m1 | Fixed. A reveal of a hidden, hostile, not KO'd NPC calls `announceRestoredHostile` (`restored: true`). Live: game 6351, the closet door (dawn) brings `threat` back. |
+| m2 | Fixed. Hides go through `_setupEventMappings` and the real `setNPCVisible`; assertions are on the playlist, with a KO as a positive control. |
+| m3 | Fixed. `game_loaded` is `noir`, a hostile turning is `threat`, the day guard is in the annex (loaded after the start room), a peaceful clerk carries the night and dawn door triggers, and both orders are run (separate fresh games). |
+| m4 | Fixed. The proof takes a route, asserts every step and exits 1 on a mismatch; doors are picked by id (`door:lobby->vault`). The m10 read script is kept as is. |
+| m5 | Fixed in the doc: the 2268 line is corrected and the full m10 hide list (31 literal lines plus the generated closing hides) is tabled with a reading each. |
+| m6 | Not fixed, recorded. Announce-on-reveal does not cover the `startHostile` emit at behaviour creation, so the hidden reinforcements can still start the fight music early. Follow-up described in the doc. |
+
+Tests: seven of twelve in `test/js/hostiles-hidden-music.test.mjs` fail against the source at 5bfb95a5d. The live proof fails one check per route against it (games 6355, 6356). No new static import, so no harness copy list changes.
