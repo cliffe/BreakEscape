@@ -1992,9 +1992,9 @@ module BreakEscape
 
       return false unless room1 && room2
 
-      # Check if room1 has connection to room2
-      room1_connections = room1['connections']&.values || []
-      room2_connections = room2['connections']&.values || []
+      # An exit may name one room or a list of rooms (several doors on one wall)
+      room1_connections = (room1['connections']&.values || []).flat_map { |v| Array(v) }
+      room2_connections = (room2['connections']&.values || []).flat_map { |v| Array(v) }
 
       room1_connections.include?(room2_id) || room2_connections.include?(room1_id)
     end
