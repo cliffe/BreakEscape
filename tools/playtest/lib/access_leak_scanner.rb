@@ -1413,7 +1413,10 @@ class AccessLeakScanner
     return if scoped.empty?
 
     hits = Hash.new { |h, k| h[k] = [] }
+    disclosed = ctx[:keyring] ? held_keyring_disclosure_paths(body) : []
     each_string(body) do |str, json_path|
+      next if disclosed.any? { |p| json_path == p || json_path.start_with?("#{p}[") }
+
       scoped.each do |item_id, info|
         hits[item_id] << json_path if content_match?(str, info[:strings])
       end
@@ -1429,6 +1432,24 @@ class AccessLeakScanner
       rule = { profile: 'profile_content', stick: 'stick_content' }.fetch(info[:scope], 'signin_content')
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
+  end
+
+  # The JSON paths of the `label` and `foundIn` fields on GET /keyring registry entries whose proof
+  # holds: the keyring serves them on purpose once the proof holds, so a label equal to a sign-in
+  # item's name (a "passwords.txt" note) is not sign-in content. An unheld entry is not exempted
+  # (credential_unheld flags it too), and no other field (a file body) is. Empty without a game.
+  def held_keyring_disclosure_paths(body)
+    entries = keyring_entries_in(body)
+    held = credential_proof_held_ids
+    return [] if entries.nil? || held.nil?
+
+    paths = []
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry' && held.include?(entry['id'].to_s)
+
+      paths << "$.entries[#{i}].label" << "$.entries[#{i}].foundIn"
+    end
+    paths
   end
 
   # A folder inside a sign-in PC or profile (a locked archive) opened by /unlock: the server

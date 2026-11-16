@@ -868,6 +868,34 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_includes summary(findings), [1, 'password', 'npc:jake'], 'a registry entry password is flagged'
   end
 
+  # A held keyring entry's label/foundIn are an intended disclosure; the sign-in item's name can
+  # match them. Held-ness comes from the same proof check as credential_unheld.
+  def keyring_signin_scan(entry, held:)
+    data = scenario.merge('credentials' => { 'jake_pw_note' => { 'kind' => 'password' } })
+    body = { 'rev' => 'abc123', 'entries' => [entry] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200, 'body' => body }]]
+    AccessLeakScanner.new(data, game: HeldGame.new(held)).scan(rows)
+  end
+
+  test 'K1: a held keyring entry whose label and foundIn equal a sign-in item name gives no finding' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt', 'foundIn' => 'Local notes on this PC.txt' }
+    assert_empty keyring_signin_scan(entry, held: %w[jake_pw_note])
+  end
+
+  test 'K1: an unheld keyring entry whose label equals a sign-in item name is still flagged' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt' }
+    assert_equal [[1, 'signin_content', 'item:jake_local'], [1, 'credential_unheld', 'credential:jake_pw_note']],
+                 summary(keyring_signin_scan(entry, held: [])).sort_by(&:last).reverse
+  end
+
+  test 'K1: file body text in a held keyring entry is still flagged' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt', 'body' => 'PC-LOCAL-SECRET-TEXT' }
+    assert_equal [[1, 'signin_content', 'item:jake_local']], summary(keyring_signin_scan(entry, held: %w[jake_pw_note]))
+  end
+
   # R2 m3: the item-level `credential` field is server-only (both client filters strip it), so it is
   # a second guard flagging it in any client response.
   test 'K1: an item-level credential field in any response is reported' do
