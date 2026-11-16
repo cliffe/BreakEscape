@@ -384,3 +384,63 @@ test('frames that appear mid-use keep the use clock: the lead is not restarted',
     poses.update();
     assert.equal(b.sprite.anims.currentAnim.key, drinkKey, 'straight to the drink, not a fresh use lead');
 });
+
+// ── pose fixes: turn to the object on arrival; a colleague on a phone call stands ──────────
+test('pass: arriving turned away from the machine, the NPC turns to it and the use pose shows', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'up'), poseAnimKey('ana', 'drink', 'down')];
+    const { poses, b, sys, played } = rig({ poseKeys: keys });
+    b.direction = 'up';   // came in facing away; the machine is below
+    poses.update();
+    assert.equal(b.direction, 'down', 'turned to face the machine');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down', 'the use lead plays');
+    sys.clockMs = USE_LEAD_MS + 10;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-down');
+    // turned away later (paired with a colleague behind): not turned back again
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'up');
+    assert.equal(played.filter(k => k.includes('pose_use')).length, 1);
+});
+
+test('pass: the turn uses the object centre, eight directions (down-right of the NPC)', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down-right')];
+    const { poses, b } = rig({ poseKeys: keys });
+    // The machine's centre is down-right of the NPC, its x/y (top-left) is not
+    const sp = globalThis.npcNeedsSystem.world.getObject()._sprite;
+    sp.x = 80; sp.y = 90; sp.getCenter = () => ({ x: 139, y: 137 });
+    b.direction = 'up-left';
+    poses.update();
+    assert.equal(b.direction, 'down-right');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down-right');
+});
+
+test('pass: an NPC with no use frames still turns but shows nothing; a chat-blocked NPC does not turn', () => {
+    const { poses, b, chat } = rig({ poseKeys: [poseAnimKey('ana', 'wave', 'down')] });
+    b.direction = 'up';
+    chat(true);
+    poses.update();
+    assert.equal(b.direction, 'up', 'in a conversation: left alone');
+});
+
+test('pass: a colleague answering a phone turns to it and plays pose_phone', () => {
+    const keys = [poseAnimKey('ana', 'phone', 'down')];
+    const { poses, b, s } = rig({ poseKeys: keys });
+    s.job = { need: null, kind: 'use', phase: 'using', targetId: 'phone', phone: true };
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'left';
+    poses.update();
+    assert.equal(b.direction, 'down', 'facing the phone');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_phone-down');
+    assert.deepEqual(poses.log.map(e => e.pose), ['phone']);
+});
+
+test('pass: a seated colleague on the phone keeps the sit frame (the seat is dropped by seating, not here)', () => {
+    const { poses, b, s } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')], seat: { chair: {} } });
+    s.job = { need: null, kind: 'use', phase: 'using', targetId: 'phone', phone: true };
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'left';
+    poses.update();
+    assert.equal(b.direction, 'left');
+    assert.equal(poses.active.size, 0);
+});

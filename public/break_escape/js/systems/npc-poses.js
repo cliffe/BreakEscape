@@ -110,6 +110,22 @@ export function facesObject(b, obj) {
     return facesWithin(b.direction || 'down', directionTo(dx, dy));
 }
 
+/**
+ * The direction from a behaviour's feet to the needs object's centre, or null when either has
+ * no position or they coincide. The turn an NPC makes on arriving to use a machine.
+ */
+export function directionToObject(b, obj) {
+    const o = obj?._sprite;
+    const sp = b?.sprite;
+    if (!o || !sp || !Number.isFinite(o.x) || !Number.isFinite(sp.x)) return null;
+    const c = o.getCenter?.();
+    const ox = Number.isFinite(c?.x) ? c.x : o.x;
+    const oy = Number.isFinite(c?.y) ? c.y : o.y;
+    const dx = ox - sp.x, dy = oy - sp.y;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return null;
+    return directionTo(dx, dy);
+}
+
 /** Does this NPC's record allow this pose? (`poses`: false none; a list only those.) */
 export function npcAllows(npcRecord, name) {
     const p = npcRecord?.poses;
@@ -305,6 +321,14 @@ export class NpcPoses {
                     if (rec.obj === undefined) rec.obj = sys.world?.getObject?.(s.job.targetId) || null;
                     obj = rec.obj;
                 }
+                // Arriving to use a machine (or answer a phone): turn to it once, so the lead pose
+                // plays. After that the behaviour may turn away (a chat partner) and is left alone.
+                if (rec && obj && !rec.turned && !facesObject(b, obj)) {
+                    const lead = wantedPose({ s, obj, usingMs: 0, seated: false, npc: w.npcManager?.getNPC?.(id), facing: true });
+                    const to = directionToObject(b, obj);
+                    if ((lead === 'use' || lead === 'phone') && to) b.direction = to;
+                }
+                if (rec) rec.turned = true;
                 const name = wantedPose({
                     s, obj, usingMs: rec ? Math.max(0, clockMs - rec.at) : 0, seated: false,
                     npc: w.npcManager?.getNPC?.(id), facing: facesObject(b, obj)

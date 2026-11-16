@@ -1661,3 +1661,19 @@ test('a routed seat walk goes leg by leg: through the waypoint, then the work sp
         rig.restore();
     }
 });
+
+test('needsStop: a colleague answering a desk phone has no stop (stands for the call), whether or not at the post', () => {
+    const prev = window.npcManager;
+    window.npcManager = { getNPC: () => ({ needsHome: 'own_pc' }) };
+    try {
+        const job = { kind: 'use', phase: 'using', targetId: 'spare_phone', need: null, phone: true };
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job }), null);
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: true, job }), null);
+        // The ordinary use of a non-phone object still stops
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'job', atPost: false, job: { ...job, phone: undefined, targetId: 'coffee' } }).key, 'at:coffee');
+        // After the call (returning to the post) it sits again
+        assert.equal(seating.needsStop({ npcId: 'c', mode: 'returning', atPost: true, job: null }).key, 'at:own_pc');
+    } finally {
+        window.npcManager = prev;
+    }
+});

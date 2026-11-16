@@ -2009,6 +2009,8 @@ export const FETCH_CLAIM_MS = 60000;
 export function needsStop(ns) {
     const home = window.npcManager?.getNPC?.(ns.npcId)?.needsHome;
     const homeId = typeof home === 'string' ? home : null;
+    // A colleague answering a ringing desk phone stands for the call (pose_phone), even by a chair
+    if (ns.mode === 'job' && ns.job?.phone && ns.job.phase === 'using') return null;
     // Own-desk work never leaves the post (npc-needs _atOwnPost): the home stop in every phase
     // (start, goto_target, using) and on the one `returning` tick after it, so the key never
     // changes and the NPC stays seated (OFFICE_LIFE_PLAN 2.11)
