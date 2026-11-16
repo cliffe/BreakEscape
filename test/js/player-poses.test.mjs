@@ -17,7 +17,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(js, rel)).href);
-const { PlayerPoses, isPhoneScene, playerPoseKey, USE_MS, DRINK_MS, PHONE_CLOSE_MS, PHONE_LEAD_MS } = await imp('systems/player-poses.js');
+const { PlayerPoses, installPlayerPoses, isPhoneScene, playerPoseKey, USE_MS, DRINK_MS, PHONE_CLOSE_MS, PHONE_LEAD_MS } = await imp('systems/player-poses.js');
 
 const ALL = ['drink', 'use', 'phone'].flatMap(n => ['south', 'north', 'east', 'west', 'north-east', 'north-west', 'south-east', 'south-west'].map(d => `pose_${n}_${d}`));
 
@@ -286,7 +286,7 @@ test('openWithPhoneLead: a second tap during the lead does not open twice', () =
     r.timers[0].fn();
     assert.equal(r.opened, 1);
     // After it, a new tap works again
-    r.poses.leadPending = false;
+    assert.equal(r.poses.leadPending, false, 'the timer cleared it');
     window.MinigameFramework = undefined;
     r.poses.openWithPhoneLead(r.open);
     assert.equal(r.timers.length, 2);
@@ -345,19 +345,92 @@ test('phoneLead: shows the pose for the existing wait, no callback', () => {
     assert.equal(leadRig({ poseKeys: [] }).poses.phoneLead(), false);
 });
 
-test('lead-in call sites: interactions, barks, ringer answer and scripted calls', () => {
+test('lead-in call sites: interactions and barks (hard to drive alone, so source checks)', () => {
     const read = (f) => readFileSync(join(js, f), 'utf8');
     const inter = read('systems/interactions.js');
     assert.equal(inter.split('openWithPhoneLead(go)').length - 1, 2, 'both phone-object opens');
     assert.match(read('systems/npc-barks.js'), /openWithPhoneLead\(go\)/);
-    assert.match(read('minigames/phone-chat/phone-ringer.js'), /call\('answering', o\)/);
-    assert.match(read('minigames/phone-chat/phone-ringer-dom.js'), /answering\(\) \{[^}]*phoneLead/);
-    const mgr = read('systems/npc-manager.js');
-    const fn = mgr.slice(mgr.indexOf('_queueScriptedConversation(conv) {'));
-    const lead = fn.indexOf('phoneLead?.()');
-    assert.ok(lead > fn.indexOf('framework.endMinigame') && lead < fn.indexOf('setTimeout(() => {'), 'inside the start-delay branch');
-    assert.ok(lead > fn.indexOf('if (!conv.startDelayMs)'), 'not for an immediate open');
-    // Not at the sites the design leaves alone
-    const def = mgr.indexOf('  _openScriptedConversation(conv) {');
-    assert.ok(!/phoneLead|openWithPhoneLead/.test(mgr.slice(def, def + 900)));
+    // The ringer hook and the scripted-call site have behaviour tests below and in the ringer and queue suites
+});
+
+test('openWithPhoneLead: a minigame already open at the tap opens at once, no timer, held phone kept', () => {
+    const r = leadRig();
+    r.poses.onMinigameStart('phone-chat', {}, { id: 'a' });   // phone chat A is open
+    assert.equal(r.poses.cur.hold, true);
+    window.MinigameFramework = { currentMinigame: { id: 'a' } };
+    try {
+        assert.equal(r.poses.openWithPhoneLead(r.open), 'opened');
+        assert.equal(r.opened, 1);
+        assert.equal(r.timers.length, 0);
+        assert.equal(r.poses.leadPending, false);
+        assert.equal(r.poses.cur.hold, true, 'the held phone pose is not swapped for a timed one');
+        r.poses.onMinigameEnd({ id: 'a' });
+        r.poses.onMinigameStart('phone-chat', {}, { id: 'b' });   // the swap to B
+        assert.equal(r.poses.cur.hold, true);
+        assert.equal(r.poses.cur.name, 'phone');
+    } finally { delete window.MinigameFramework; }
+});
+
+test('openWithPhoneLead: a different open during the lead replaces the pending one (newest wins)', () => {
+    const r = leadRig();
+    const ran = [];
+    r.poses.openWithPhoneLead(() => ran.push('first'));
+    assert.equal(r.poses.openWithPhoneLead(() => ran.push('second')), true);
+    assert.equal(r.timers.length, 1, 'no second timer');
+    r.timers[0].fn();
+    assert.deepEqual(ran, ['second']);
+});
+
+test('a reused instance after a scene restart is alive again and its lead-in opens', () => {
+    const r = leadRig();
+    const handlers = {};
+    r.scene.events = { once: (n, f) => { (handlers[n] ||= []).push(f); }, on() {} };
+    window.playerPoses = null;
+    const inst = installPlayerPoses(r.scene);
+    assert.equal(window.playerPoses, inst);
+    handlers.shutdown.forEach(f => f());
+    assert.equal(inst.dead, true);
+    inst.leadPending = true;   // as if a lead was pending at the shutdown
+    assert.equal(installPlayerPoses(r.scene), inst, 'the same instance is reused');
+    assert.equal(inst.dead, false);
+    assert.equal(inst.leadPending, false);
+    assert.equal(handlers.shutdown.length, 2, 'a fresh shutdown listener');
+    const timers = [];
+    inst.timer = (fn) => timers.push(fn);
+    let opened = 0;
+    inst.openWithPhoneLead(() => { opened++; });
+    timers[0]();
+    assert.equal(opened, 1);
+});
+
+test('no pose frames: a phone chat does no per-frame pose work', () => {
+    const r = leadRig({ poseKeys: [] });
+    let reads = 0;
+    window.npcBehaviorManager = { get behaviors() { reads++; return new Map(); } };
+    r.poses.onMinigameStart('phone-chat', {}, {});
+    reads = 0;
+    for (let i = 0; i < 10; i++) r.poses.update();
+    assert.equal(r.poses.phoneWanted, false);
+    assert.equal(reads, 0);
+});
+
+test('sprite swap with a phone held: the pose ends, the new atlas shows the phone again if it has frames', () => {
+    const swap = (r) => { r.player.anims.play('idle-down'); };
+    // The new atlas has no pose frames
+    let r = leadRig();
+    r.poses.onMinigameStart('phone-chat', {}, {});
+    assert.equal(r.poses.cur.name, 'phone');
+    r.scene.anims.get = () => null;
+    swap(r);
+    r.poses.update(); r.poses.update();
+    assert.equal(r.poses.cur, null);
+    assert.equal(r.player.anims.currentAnim.key, 'idle-down');
+    // The new atlas has the frames: the phone comes back
+    r = leadRig();
+    r.poses.onMinigameStart('phone-chat', {}, {});
+    swap(r);
+    r.poses.update(); r.poses.update();
+    assert.equal(r.poses.cur?.name, 'phone');
+    assert.equal(r.poses.cur.hold, true);
+    assert.equal(r.player.anims.currentAnim.key, 'pose_phone_south');
 });

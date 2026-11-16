@@ -61,6 +61,7 @@ export class PlayerPoses {
         this.phoneWanted = false; // a phone-style minigame is open: keep trying to show the phone
         this.phoneShown = false;  // the phone pose showed while it was open
         this.leadPending = false; // openWithPhoneLead is waiting to open
+        this.leadOpen = null;     // the open it will run (the newest call's)
         this.dead = false;        // the scene shut down
         this.timer = (fn, ms) => setTimeout(fn, ms);
         this.log = [];          // [{ t, pose }] on and off, newest last (tests, debug)
@@ -146,21 +147,27 @@ export class PlayerPoses {
 
     /**
      * Open a phone-style minigame the player started: the phone pose shows, then `open` runs
-     * PHONE_LEAD_MS later. A second call during the lead is dropped (returns true). The open is
-     * dropped when another minigame opened, the player was knocked out or the scene went. With no
-     * pose frames (or a pose blocked now) `open` runs at once and its result is returned.
+     * PHONE_LEAD_MS later. A second call during the lead replaces the pending open (the newest
+     * wins, one open at the original time; returns true). The open is dropped when another
+     * minigame opened during the lead, the player was knocked out or the scene went. With a
+     * minigame already open at the call, no pose frames, or a pose blocked now, `open` runs at
+     * once and its result is returned.
      */
     openWithPhoneLead(open) {
-        if (this.leadPending) return true;
+        if (this.leadPending) { this.leadOpen = open; return true; }
+        if (win().MinigameFramework?.currentMinigame) return open();
         if (!this.show('phone', PHONE_LEAD_MS + 500)) return open();
         this.leadPending = true;
+        this.leadOpen = open;
         this.timer(() => {
             this.leadPending = false;
+            const run = this.leadOpen;
+            this.leadOpen = null;
             const w = win();
             if (this.dead || w.playerPoses !== this || !this._player()) return;
             if (w.MinigameFramework?.currentMinigame) return;
             if (w.playerIsKnockedOut?.() || w.playerHealth?.isKO?.()) return;
-            try { open(); } catch (e) { console.error('phone lead-in open failed', e); }
+            try { run(); } catch (e) { console.error('phone lead-in open failed', e); }
         }, PHONE_LEAD_MS);
         return true;
     }
@@ -169,7 +176,7 @@ export class PlayerPoses {
     phoneLead() { return this.show('phone', SCRIPTED_CALL_START_MS + 500); }
 
     _wantPhone() {
-        if (this.phoneWanted && !this.cur && !this.blocked()) {
+        if (this.phoneWanted && !this.cur && this.has('phone') && !this.blocked()) {
             this.phoneShown = this.show('phone', 0, { hold: true }) || this.phoneShown;
         }
     }
@@ -181,7 +188,7 @@ export class PlayerPoses {
             return false;
         }
         this.phoneScene = instance || true;
-        this.phoneWanted = true;
+        this.phoneWanted = this.has('phone');   // no frames: no per-frame work
         this.phoneShown = this.show('phone', 0, { hold: true });
         return this.phoneShown;
     }
@@ -226,10 +233,16 @@ export class PlayerPoses {
 /** Install once per scene (core/game.js, after the player). Returns the instance. */
 export function installPlayerPoses(scene) {
     const w = win();
-    if (w.playerPoses?.scene === scene) return w.playerPoses;
+    const live = (inst) => scene?.events?.once?.('shutdown', () => { inst.dead = true; });
+    if (w.playerPoses?.scene === scene) {
+        // A restart of the same scene: the instance lives on, so undo what the shutdown marked
+        const same = w.playerPoses;
+        if (same.dead) { same.dead = false; same.leadPending = false; same.leadOpen = null; live(same); }
+        return same;
+    }
     const inst = new PlayerPoses(scene);
     w.playerPoses = inst;
-    scene?.events?.once?.('shutdown', () => { inst.dead = true; });
+    live(inst);
     scene?.events?.on?.('postupdate', () => { try { inst.update(); } catch (e) { /* never break a frame */ } });
     return inst;
 }

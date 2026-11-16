@@ -218,3 +218,19 @@ They are good. Gaps besides m3:
 | minor | m1 per-frame work with no frames; m2 dead instance on scene restart; m3 text-only call-site tests; m4 second open during the lead lost |
 
 R3: 0/1/4
+
+## Outcomes
+
+All five findings and the suggested sprite-swap test are fixed. No live run: the fixes add no
+new timing (the lead is still 300 ms, only the early-open and replace paths changed).
+
+| Finding | Outcome | Test |
+| --- | --- | --- |
+| M1 | `openWithPhoneLead` calls `open()` at once, with no timer and no pose swap, when a minigame is already open at the tap. A held phone stays held through the swap. | minigame open before the tap: opens synchronously, no timer, `cur.hold` kept, swap to a second chat keeps the hold |
+| m1 | `phoneWanted` is set from `has('phone')`, and `_wantPhone` checks `has('phone')` before `blocked()`. An atlas without pose frames does no per-frame work. | ten `update()` passes with a counting `behaviors` getter: zero reads |
+| m2 | `installPlayerPoses` on a reused instance clears `dead`, `leadPending` and `leadOpen` and registers a fresh shutdown listener. | install, shutdown, install again, lead-in opens |
+| m3 | The ringer and npc-manager text checks are replaced by behaviour tests. Ringer (`phone-ringer.test.mjs`): `answering` runs once on answer before `openCall`, again on a retried open, and a missing or throwing hook is harmless. npc-manager (`scripted-conversation-queue.test.mjs`): `phoneLead` is called for a phone call and a video call with a start delay, and not for a plain person-chat or a delay-0 timed conversation. The interactions.js and npc-barks.js source checks stay. | as described |
+| m4 | Chosen: the newest open wins. A second call during the lead replaces the pending open (`leadOpen`); one timer, one open, at the original 300 ms. The second caller's notification is removed as before, but its thread is the one that opens, so nothing is lost; the superseded first open is the one dropped. Queueing both was rejected: the second would displace the first within the same frame, so the player would see the same result. | two different opens, one timer, only the second runs |
+| Sprite swap | Added both halves: new atlas without frames (pose ends, idle stays) and with frames (phone shown again). | as described |
+
+The double-tap test no longer resets `leadPending` by hand; it asserts the timer cleared it.
