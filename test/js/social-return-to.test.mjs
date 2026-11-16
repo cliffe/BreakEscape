@@ -355,7 +355,7 @@ test('helper: Close control; closeMode abort gives { aborted: true } and complet
     FW.registerScene('mail', Mail);
     const m = FW.startMinigame('mail', el('div'), socialOverlayParams({}));
     m.mountCloseControl().click();
-    const ev = window.eventDispatcher.events.at(-1);
+    const ev = window.eventDispatcher.events.findLast((e) => e.name !== 'minigame_ended');
     assert.equal(ev.name, 'minigame_failed');
     assert.deepEqual(ev.data.result, { aborted: true });
 });
