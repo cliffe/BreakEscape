@@ -4,7 +4,7 @@
 - The exchange line-length check is now a WARNING. It becomes an error once AC0's build/lab-pentest-bubbles lands.
 - The full playthrough is complete: game 5801, verify-run 27 of 28 tasks, score 95, credits reached (`STAGE5_PLAYTHROUGH.md`, "Debrief and credits").
 - P6 (debrief not appearing) was a harness artefact, the ending warning overlay holding it; fixed in the playtest harness by 98b51890b.
-- P9 (Ghost's popup showing only "End of conversation") and the laptop pick-up overlay are already on main and have been handed to AC0. Do not reopen them as office life bugs. Kim's "boardroom code again?" option is by design.
+- P9 (Ghost's popup showing only "End of conversation") and the laptop pick-up overlay were handed to AC0. P9 was fixed on this branch in 721f0616b, at AC0's request (see the P9 section below). Do not reopen them as office life bugs. Kim's "boardroom code again?" option is by design.
 - Running-break live criterion accepted at three tries (`PLAN.md` section 10.2).
 
 # m02 office life: stage 5 R5 live checks done (2026-11-16)

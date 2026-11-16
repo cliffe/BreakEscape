@@ -346,3 +346,74 @@ test('timedConversation: the NPC entry\'s videoCall / conversationMode reach the
         assert.equal(plain.videoLabel, null);
     } finally { t.restore(); }
 });
+
+// ── event mapping: video-call skipIfGlobal ─────────────────────────────────────────
+// A video call queued behind an open minigame is dropped if the named global is true when it
+// finally opens (m02 P9: Ghost's console call after the recovery decision).
+const callConfig = (extra = {}) => ({ conversationMode: 'video-call', targetKnot: 'on_console', cooldown: 0, handlerIndex: 0, ...extra });
+const fireCall = (m, extra) => m._handleEventMapping('ghost', 'object_interacted:console', callConfig(extra), {});
+const videoCalls = (t) => t.opened.filter((o) => o.type === 'person-chat' && o.params.videoCall === true);
+
+test('skipIfGlobal: _buildMappingConfig carries it through, and defaults to null', () => {
+    const t = setup();
+    try {
+        assert.equal(t.m._buildMappingConfig({ eventPattern: 'x', skipIfGlobal: 'ransom_decision_made' }, 0).skipIfGlobal, 'ransom_decision_made');
+        assert.equal(t.m._buildMappingConfig({ eventPattern: 'x' }, 0).skipIfGlobal, null);
+    } finally { t.restore(); }
+});
+
+test('skipIfGlobal: global already true at open time drops the call, nothing opens or stays queued', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = true;
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made' });
+        t.runAll();
+        assert.equal(videoCalls(t).length, 0);
+        assert.equal(t.opened.length, 0);
+        assert.equal(t.m._scriptedCallQueue.length, 0);
+        assert.equal(t.m.scriptedConversationActive(), false);
+    } finally { t.restore(); }
+});
+
+test('skipIfGlobal: global false opens the call as before', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = false;
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made' });
+        t.runAll();
+        assert.equal(videoCalls(t).length, 1);
+        assert.equal(videoCalls(t)[0].params.startKnot, 'on_console');
+    } finally { t.restore(); }
+});
+
+test('skipIfGlobal: the global flipping true while the call waits in the queue drops it (P9)', () => {
+    const t = setup();
+    try {
+        // The console minigame is open when the event fires; the call waits behind it
+        t.fw.currentMinigame = { type: 'console', _ending: false, params: {} };
+        window.gameState.globalVariables.ransom_decision_made = false;
+        t.m._scriptedCall = { npcId: 'reed', minigame: t.fw.currentMinigame };
+        fireCall(t.m, { skipIfGlobal: 'ransom_decision_made' });
+        t.runAll(4);
+        assert.equal(videoCalls(t).length, 0, 'still waiting');
+        assert.equal(t.m._scriptedCallQueue.length, 1, 'queued');
+        // The player makes the decision, then closes the console
+        window.gameState.globalVariables.ransom_decision_made = true;
+        t.fw.currentMinigame = null;
+        t.m._scriptedCall = null;
+        t.runAll();
+        assert.equal(videoCalls(t).length, 0, 'dropped at open');
+        assert.equal(t.m._scriptedCallQueue.length, 0, 'nothing stays queued');
+        assert.equal(t.m.scriptedConversationActive(), false);
+    } finally { t.restore(); }
+});
+
+test('skipIfGlobal: a video call without it opens even when that global is true', () => {
+    const t = setup();
+    try {
+        window.gameState.globalVariables.ransom_decision_made = true;
+        fireCall(t.m, {});
+        t.runAll();
+        assert.equal(videoCalls(t).length, 1);
+    } finally { t.restore(); }
+});
