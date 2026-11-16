@@ -327,8 +327,11 @@ function releaseToast(notification) {
     // The relayout's frame is queued first, so the toast is placed before its slide-in starts
     relayoutLanes();
     const show = () => { if (!t.closing) notification.classList.add('show'); };
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(show);
-    else setTimeout(show, 10);
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(show);
+        // rAF does not run in a hidden tab: the backstop keeps the toast from expiring unseen (R1 n2)
+        setTimeout(show, 50);
+    } else setTimeout(show, 10);
 }
 
 // Replace `older` once it has been up its floor, keyed on the pair (older, floor time)
@@ -374,8 +377,13 @@ function replaceHandler(notification) {
 // hud-lanes: two warnings shown over a panel with no clear place for both; the older one goes
 // once it has been up TOAST_STAGGER_MS (plan 2.5, "Panel opens with toasts shown")
 function supersedeHandler(notification) {
-    return () => {
+    return (on = true) => {
         const t = notification._toast;
+        if (!on) {   // the panel closed or room appeared: the older warning stays (review R1 m2)
+            clearTimeout(notification._supersedeTimer);
+            notification._supersedeTimer = null;
+            return;
+        }
         if (!t || t.closing || t.pending || notification._supersedeTimer) return;
         notification._supersedeTimer = setTimeout(() => {
             notification._supersedeTimer = null;

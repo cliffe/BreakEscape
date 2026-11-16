@@ -694,12 +694,16 @@ function phoneOpenIn(doc) {
  * with the zoom `z` of the element's container, so the answer is in screen px as the boxes are.
  * The host goes on `body`, never inside a lane container (it would add to the lane sums).
  */
+const MEASURE_HOST_ATTR = 'data-hud-measure';
+const isMeasureHost = (n) => n?.nodeType === 1 && n.hasAttribute?.(MEASURE_HOST_ATTR);
+
 function cloneHeightAt(doc, el, w, z, { keepId = false, fontFrom = null } = {}) {
   const body = doc.body;
   if (!body?.appendChild) return 0;
   const host = doc.createElement('div');
   host.style.cssText = 'position: fixed; left: -9000px; top: 0; visibility: hidden; pointer-events: none;';
   host.style.zoom = String(z);
+  host.setAttribute(MEASURE_HOST_ATTR, '1');   // the lanes' own body observer ignores it
   if (fontFrom) {
     const cs = gcs(fontFrom);
     for (const k of ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing']) if (cs[k]) host.style[k] = cs[k];
@@ -717,7 +721,7 @@ function cloneHeightAt(doc, el, w, z, { keepId = false, fontFrom = null } = {}) 
 
 /** A toast's height at screen width `w`, cached on the toast by width and zoom (its text never changes). */
 function toastHeightAt(doc, t, w, z, container) {
-  const key = `${w}@${z}`;
+  const key = `${w}@${z}@${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;   // compact padding differs
   if (!t._hudLaneH) t._hudLaneH = new Map();
   if (!t._hudLaneH.has(key)) t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
   return t._hudLaneH.get(key);
@@ -765,11 +769,16 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
     const z = zoomOf(el);
     const gapOf = (t) => { const mb = parseFloat(gcs(t).marginBottom); return (Number.isFinite(mb) ? mb : 10) * z; };
     const texts = phoneOpen ? Array.from(phoneEl.querySelectorAll('.npc-bark')).filter(b => !b._removing && !b.classList.contains('hud-lane-yield')) : [];
-    const phoneCache = new Map();
+    // Kept on the phone container across passes: keyed by width, zoom and compact flag, and dropped
+    // when the texts change (count or content), so a text at rest costs no clone (review R1 M1)
+    const phoneSig = texts.map(b => b.textContent).join('\u0001') + `|${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;
+    if (phoneEl && phoneEl._hudLaneSig !== phoneSig) { phoneEl._hudLaneSig = phoneSig; phoneEl._hudLaneH = new Map(); }
     const phoneH = (w) => {
       if (!texts.length) return 0;
-      if (!phoneCache.has(w)) phoneCache.set(w, cloneHeightAt(doc, phoneEl, w, zoomOf(phoneEl), { keepId: true, fontFrom: phoneEl }));
-      return phoneCache.get(w);
+      const cache = phoneEl._hudLaneH || (phoneEl._hudLaneH = new Map());
+      const key = `${w}@${zoomOf(phoneEl)}`;
+      if (!cache.has(key)) cache.set(key, cloneHeightAt(doc, phoneEl, w, zoomOf(phoneEl), { keepId: true, fontFrom: phoneEl }));
+      return cache.get(key);
     };
     // The toasts' part: heights plus one gap between each pair; the phone texts start one gap below
     const toastsPart = (list, w) => list.reduce((h, t, i) => h + toastHeightAt(doc, t, w, z, el) + (i ? gapOf(t) : 0), 0);
@@ -787,16 +796,18 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
       spotFor: (list) => !!toastSpot({ ...spotArgs, heightAt: heightFor(list.map(x => x.el)), clearOnly: true }) });
     // Two warnings shown over the panel with no clear place for both (a panel opened over
     // them): the older goes once it has been up 1.5 s, the warning rule of plan 2.5
-    if (spotArgs) {
-      const warns = shownEls.filter(t => t._toast?.type === 'warning');
-      if (warns.length > 1 && !toastSpot({ ...spotArgs, heightAt: heightFor(shownEls), clearOnly: true })) {
-        const newest = warns.reduce((a, b) => ((b._toast.shownAt || 0) >= (a._toast.shownAt || 0) ? b : a));
-        for (const t of warns) if (t !== newest) { try { t._onSupersede?.(); } catch (e) { /* gone */ } }
-      }
+    // A pass where the condition no longer holds (the panel closed, room appeared) cancels it.
+    const warns = shownEls.filter(t => t._toast?.type === 'warning');
+    const superseded = new Set();
+    if (spotArgs && warns.length > 1 && !toastSpot({ ...spotArgs, heightAt: heightFor(shownEls), clearOnly: true })) {
+      const newest = warns.reduce((a, b) => ((b._toast.shownAt || 0) >= (a._toast.shownAt || 0) ? b : a));
+      for (const t of warns) if (t !== newest) superseded.add(t);
     }
+    for (const t of warns) { try { t._onSupersede?.(superseded.has(t)); } catch (e) { /* gone */ } }
     const stacked = new Set(answers.filter(a => a.answer === 'stack').map(a => a.el));
     const blockEls = all.filter(t => shownEls.includes(t) || stacked.has(t));
     let res = { away: false, spot: null };
+    let placed = false;
     if (panelOpen && (blockEls.length || texts.length)) {
       const spot = toastSpot({ ...spotArgs, heightAt: heightFor(blockEls), current: prev.away ? prev.spot : null });
       if (spot && spot.name !== 'lane') {
@@ -812,10 +823,13 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
           phoneEl.style.maxHeight = 'none';
         }
         setClass(new Set(blockEls));
-        res = { away: true, spot };
+        // A fallback place that is the lane's own box is still the lane: the sums keep counting it (R1 n1)
+        const atLane = Math.round(spot.left) === Math.round(n.left) && Math.round(spot.top) === Math.round(n.top) && Math.round(spot.width) === Math.round(n.width);
+        res = { away: !atLane, spot };
+        placed = true;
       } else res.spot = spot;
     }
-    if (!res.away) { toLane([el, phoneEl]); setClass(new Set()); }
+    if (!placed) { toLane([el, phoneEl]); setClass(new Set()); }
     answerAll(answers);
     return res;
   } catch (e) {
@@ -1087,7 +1101,10 @@ export function startHudLanes(doc = document, win = window) {
   }) : null;
   const panelRo = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(() => { cursor.dirty = null; throttled(); }) : null;
   const syncPanelWatch = () => {
-    const up = !!doc.querySelector('#phone-ring-layer .incoming-call, #notification-container .notification');
+    // Only while a toast or the banner shows over an open panel (review R1 n3): lane toasts with
+    // nothing open do not attach observers to hidden scene DOM
+    const up = (!!doc.querySelector('#phone-ring-layer .incoming-call') || !!doc.querySelector('#notification-container .notification'))
+      && (panelOpenIn(doc, win) || !!doc.querySelector('#phone-ring-layer .incoming-call'));
     const want = up ? [...doc.querySelectorAll('.minigame-container'),
       ...POPUP_ROOTS.map(sel => doc.querySelector(sel)).filter(el => el && shownRect(el))] : [];
     if (want.length === watching.length && want.every((el, i) => el === watching[i])) return;
@@ -1125,7 +1142,12 @@ export function startHudLanes(doc = document, win = window) {
     const ring = doc.getElementById('phone-ring-layer');
     if (ring && !attached.has(ring)) { attached.add(ring); mo.observe(ring, { childList: true, attributes: true, attributeFilter: ['class'] }); }
   };
-  mo = new win.MutationObserver(() => { watch(); attach(); relayout(); });
+  mo = new win.MutationObserver((records) => {
+    // The measuring hosts come and go on body; that must not queue another pass (review R1 M1)
+    const real = records.some(r => ![...r.addedNodes, ...r.removedNodes].every(isMeasureHost) || (!r.addedNodes.length && !r.removedNodes.length));
+    if (!real) return;
+    watch(); attach(); relayout();
+  });
   mo.observe(doc.body, { childList: true });
   watch();
   attach();

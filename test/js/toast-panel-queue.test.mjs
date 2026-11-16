@@ -46,10 +46,10 @@ function start({ room = 1, mode = 'rules', panel = true } = {}) {
     const answers = mode === 'wait' ? pending.map((el) => ({ el, answer: 'wait' }))
       : pendingAnswers({ block: shown.map(info), pending: pending.map(info), now: Date.now(), panelOpen: globalThis.__panelOpen === true,
         spotFor: (list) => list.length <= lanes.room });
-    if (globalThis.__panelOpen && shown.length > lanes.room) {
-      const warns = shown.filter((t) => t._toast.type === 'warning');
-      warns.slice(0, -1).forEach((t) => t._onSupersede?.());
-    }
+    // As hud-lanes: every shown warning is told each pass whether it is superseded (R1 m2)
+    const warns = shown.filter((t) => t._toast.type === 'warning');
+    const over = globalThis.__panelOpen && shown.length > lanes.room;
+    warns.forEach((t, i) => t._onSupersede?.(over && i < warns.length - 1));
     for (const { el, answer } of answers) el._onReplace?.(answer);
   };
   window.hudLanesRelayout = () => {
@@ -362,6 +362,23 @@ test('two warnings shown when a panel opens with no room for both: the older goe
   assert.ok(isShown(w1) && isShown(w2));
   await tickTo(1530);
   assert.ok(w1._toast.closing && isShown(w2));
+  end(lanes);
+});
+
+test('the panel closing before the 1.5 s floor cancels the older warning\'s removal (review R1 m2)', async () => {
+  const lanes = start({ room: 1, panel: false });
+  const w1 = await raise(0, 'one', 'warning', 20000);
+  const w2 = await raise(100, 'two', 'warning', 20000);
+  globalThis.__panelOpen = true;
+  await tickTo(300);
+  window.hudLanesRelayout();
+  await tickTo(500);
+  assert.ok(w1._supersedeTimer, 'the removal is scheduled while the panel is open');
+  globalThis.__panelOpen = false;
+  window.hudLanesRelayout();
+  await tickTo(3000);
+  assert.ok(!w1._supersedeTimer, 'cancelled');
+  assert.ok(isShown(w1) && isShown(w2), 'both warnings stay once the panel has closed');
   end(lanes);
 });
 

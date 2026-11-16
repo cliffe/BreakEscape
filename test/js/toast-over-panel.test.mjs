@@ -232,3 +232,71 @@ test('mutations inside the panel 10 ms apart give one relayout plus a trailing o
   h.stop();
   r.win.close();
 });
+
+// ---- review R1 m2, n1, n3 and the workstation popup frame
+
+test('R1 m2: hud-lanes tells every shown warning each pass whether it is superseded, and withdraws it when the panel closes', () => {
+  const r = rig();
+  pinScene(r);
+  const calls = [];
+  const a = r.toast('warning', 380);
+  const b = r.toast('warning', 380);
+  b._toast.shownAt += 10;
+  a._onSupersede = (on) => calls.push(['a', on]);
+  b._onSupersede = (on) => calls.push(['b', on]);
+  applyLanes(r.doc, r.win);
+  assert.deepEqual(calls, [['a', true], ['b', false]], 'older superseded, newer kept');
+  calls.length = 0;
+  r.win.MinigameFramework = { currentMinigame: null };
+  r.doc.querySelector('.minigame-container').remove();
+  applyLanes(r.doc, r.win);
+  assert.deepEqual(calls, [['a', false], ['b', false]], 'panel closed: the removal is withdrawn');
+  r.win.close();
+});
+
+test('R1 n1: a fallback place that is the lane\'s own box still counts as the lane, not away', () => {
+  const r = rig(1280, 800);
+  // Four buttons, one per quarter of the screen (each under half of it, so none is a backdrop):
+  // every place covers a control, so the answer is a fallback, and the lane covers the fewest
+  const mg = r.add('<div class="minigame-container"></div>', [0, 0, 1280, 800]);
+  for (const b of [[0, 0, 640, 400], [640, 0, 1280, 400], [0, 400, 640, 800], [640, 400, 1280, 800]]) r.add('<button>a</button>', b, mg);
+  r.toast('warning', 100);
+  applyLanes(r.doc, r.win);
+  const { notifySpot: spot, lanes, notifyAway } = r.win.__hudLanes;
+  assert.equal(spot.name, 'fallback', JSON.stringify(spot));
+  assert.deepEqual([spot.left, spot.top, spot.width], [lanes.notify.left, lanes.notify.top, lanes.notify.width], 'the fallback is at the lane box');
+  assert.equal(notifyAway, false);
+  r.win.close();
+});
+
+test('R1 n3: lane toasts with no panel open do not attach the panel watch', async () => {
+  const r = rig();
+  r.win.MinigameFramework = {};
+  const mg = r.add('<div class="minigame-container" data-external="1" style="display:none"></div>', [0, 0, 1, 1]);
+  let observed = 0;
+  const MO = r.win.MutationObserver;
+  r.win.MutationObserver = class extends MO { observe(t, o) { if (t === mg) observed++; return super.observe(t, o); } };
+  r.toast('warning', 100);
+  const h = startHudLanes(r.doc, r.win);
+  await new Promise((res) => setTimeout(res, 120));
+  assert.equal(observed, 0, 'the hidden scene container is not watched');
+  h.stop(); r.win.close();
+});
+
+test('workstation popup (CyberChef, lab): the iframe fills 96vw x 96vh and is no canvas, so the toast stays in the lane over it (plan D1, 2.2)', () => {
+  const r = rig(1280, 800);
+  const pop = r.add('<div id="laptop-popup" style="display: block"></div>', [26, 16, 1254, 784]);
+  const screen = r.add('<div class="laptop-screen"></div>', [26, 16, 1254, 784], pop);
+  r.add('<div class="title-bar"></div>', [26, 16, 1254, 62], screen);
+  r.add('<button class="minigame-close-button">x</button>', [1210, 22, 1240, 54], screen);
+  r.add('<iframe></iframe>', [26, 62, 1254, 784], screen);
+  r.win.MinigameFramework = {};
+  const m = measureMinigame(r.doc, r.win);
+  assert.deepEqual(m.canvases, [], 'an iframe is not collected as a canvas');
+  r.toast('warning', 100);
+  applyLanes(r.doc, r.win);
+  assert.equal(r.win.__hudLanes.notifyAway, false, 'the lane is clear of the title bar and the X: no move');
+  // No place beside the frame: the popup leaves a 2vw (26 px) and 2vh (16 px) margin, under
+  // the 240 px minimum toast width and the toast height, so the lane over the iframe is the answer
+  r.win.close();
+});
