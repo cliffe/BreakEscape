@@ -370,3 +370,17 @@ test('an atlas without pose frames: checked once, no per-frame pose work, looked
     poses.update();
     assert.equal(b.sprite.anims.currentAnim.key, useKey);
 });
+
+test('frames that appear mid-use keep the use clock: the lead is not restarted', () => {
+    const { poses, b, sys, scene } = rig({ poseKeys: [] });
+    b.sprite.texture = { key: 'ana_v1' };
+    poses.update();
+    sys.clockMs = USE_LEAD_MS + 10;   // the use has run past its lead with no frames
+    poses.update();
+    const drinkKey = poseAnimKey('ana', 'drink', 'down');
+    const get = scene.anims.get;
+    scene.anims.get = (k) => (k === drinkKey || k === poseAnimKey('ana', 'use', 'down') || get(k) ? { frames: [{}] } : null);
+    scene.time.now = POSE_RECHECK_MS + 1;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, drinkKey, 'straight to the drink, not a fresh use lead');
+});

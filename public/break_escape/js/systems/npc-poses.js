@@ -290,7 +290,7 @@ export class NpcPoses {
             const b = mgr.getBehavior?.(id);
             if (!b) { this.active.delete(id); this.pending.delete(id); continue; }
             if (!this.active.has(id) && !this._mayPose(id, b, now)) {
-                this.useStart.delete(id);
+                this._useRec(id, s, clockMs, false);   // keep the use clock, so frames that appear mid-use keep its lead
                 this.pending.delete(id);
                 continue;
             }
