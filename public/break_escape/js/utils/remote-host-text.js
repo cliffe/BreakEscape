@@ -52,8 +52,8 @@ export const TAG_TEXT = Object.freeze({
 });
 
 /**
- * The badge image per glyph group, in one place. The plug glyph's own art (badge-plug.png) is
- * not drawn yet, so the plug group reuses the key badge until it is.
+ * The badge image per glyph group, in one place: the key badge for passwords, the plug badge
+ * (D49) for connection files. An unknown group falls back to the key badge.
  */
 export const BADGE_FILE = Object.freeze({ key: 'badge-key.png', plug: 'badge-plug.png' });
 
@@ -82,6 +82,17 @@ export function tileBadgeGroups(kinds) {
 /** The full kind names of these kinds, for a tile's title and the chosen line (plan 8.5). */
 export function tileFullNames(kinds) {
     return (Array.isArray(kinds) ? kinds : []).map(k => TAG_TEXT[k]?.full || String(k));
+}
+
+/**
+ * The chosen account's line (D50): "Lena Fox (lfox)", then the full names of the kinds of
+ * knowledge held for it ("Lena Fox (lfox), Captured password"). One wording for the keyboard
+ * screen and the remote screen. Empty with no tile.
+ */
+export function chosenAccountLine(tile) {
+    if (!tile) return '';
+    const kinds = Array.isArray(tile.kinds) && tile.kinds.length ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
+    return `${tile.displayName || tile.username} (${tile.username})${kinds}`;
 }
 
 /**

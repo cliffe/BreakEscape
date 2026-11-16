@@ -949,3 +949,79 @@ test('R2 t1: a background ask that never answers times out, so the chain moves o
     assert.deepEqual(after.map(e => e.id), ['k_rdp'], 'a later ask is answered');
     assert.deepEqual(toasts(), [RDP_FOUND]);
 });
+
+test('R3 t1: a sync PUT that never answers is inside the same cap, so the chain moves on', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    kr.askTimeoutMs = 30;
+    let hang = true;
+    window.stateSync = { syncConfirmed: () => (hang ? new Promise(() => {}) : Promise.resolve()) };
+    const t0 = Date.now();
+    assert.equal(await kr.refresh(), null, 'the hung PUT spends the cap and the refresh gives up');
+    assert.ok(Date.now() - t0 < 1000, 'well inside a second');
+    hang = false;
+    answers({ entries: [RDP], rev: 'r1' });
+    const after = await kr.refresh(); await settle();
+    assert.deepEqual(after.map(e => e.id), ['k_rdp'], 'a later refresh is answered');
+});
+
+test('R3 t2: the no-rev retry shares the first ask\'s deadline, not a fresh one', async () => {
+    setup();
+    const kr = window.keyring;
+    let n = 0, retrySignal = null;
+    window.ApiClient.keyring = (pcId, opts = {}) => {
+        calls.push(['keyring', pcId, opts.rev ?? null]);
+        // The first answer is unusable after most of the budget; the retry never answers
+        if (++n === 1) return new Promise(r => setTimeout(() => r({ unusable: true }), 120));
+        retrySignal = opts.signal;
+        return new Promise(() => {});
+    };
+    const t0 = Date.now();
+    await assert.rejects(kr.fetch(null, { timeoutMs: 160 }), /timed out/);
+    const spent = Date.now() - t0;
+    assert.equal(keyringGets().length, 2, 'the retry went out');
+    assert.ok(spent < 260, `one 160 ms deadline in all (took ${spent} ms; a fresh one would be about 280)`);
+    assert.ok(retrySignal?.aborted, 'the retry is aborted at the deadline');
+});
+
+test('reconnect: an answer that briefly lacks a held find does not toast it again; drop and retake does', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' }, { entries: [RDP], rev: 'r1' }, { entries: [], rev: 'r2' }, { entries: [RDP], rev: 'r3' },
+        { entries: [], rev: 'r4' }, { entries: [RDP], rev: 'r5' });
+    await kr.prime();
+    await kr.trayChanged([ITEM]); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'the first find toasts');
+    // A reconnect: one answer without the entry while the file is still in the tray, then it is back
+    await kr.refresh(); await settle();
+    await kr.refresh(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'no second toast for the same file');
+    // The file leaves the tray (its entry goes with it), then is taken again
+    await kr.trayChanged([]); await settle();
+    await kr.trayChanged([ITEM]); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND, RDP_FOUND], 'retaking a dropped file toasts again');
+});
+
+test('reconnect: a find held during a conversation is one line however often it is held, and a dropped one is not toasted', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [RDP, OTHER_RDP], rev: 'r0' }, { entries: [RDP], rev: 'r1' });
+    await kr.prime();
+    window.currentConversationNPCId = 'lena';
+    kr.announceFinds([RDP, OTHER_RDP]);
+    kr.announceFinds([RDP]);
+    assert.deepEqual(kr._held.map(e => e.id), ['k_rdp', 'k_rdp2'], 'held once each');
+    await kr.refresh(); await settle();   // OTHER_RDP left the answer meanwhile
+    window.currentConversationNPCId = null;
+    await kr.releaseHeld(); await settle();
+    assert.deepEqual(toasts(), [RDP_FOUND], 'one line, the dropped find left out');
+});
+
+test('D49: the plug group draws its own badge; an unknown group falls back to the key badge', () => {
+    assert.equal(text.BADGE_FILE.plug, 'badge-plug.png');
+    assert.equal(text.badgeSrc('plug'), '/break_escape/assets/icons/badge-plug.png');
+    assert.equal(text.badgeSrc('key'), '/break_escape/assets/icons/badge-key.png');
+    assert.equal(text.badgeSrc('nope'), '/break_escape/assets/icons/badge-key.png');
+});

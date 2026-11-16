@@ -19,7 +19,7 @@ import {
     remoteTypedLine, remoteHeadlessLine, remoteAccountsFailedLine, remoteBothFailedLine,
     notRespondingMessage, unreachableMessage, remoteOffMessage, remoteNotPermittedMessage, remoteLockedOutMessage,
     KEYRING_FAILED_TEXT, KEYBOARD_BOTH_FAILED_TEXT, FOUND_PASSWORD_LEAD_TEXT, CONNECT_WITH_TEXT,
-    kindRefusedMessage, kindRefusedShort, credentialRefusalLine, teachLine
+    kindRefusedMessage, kindRefusedShort, credentialRefusalLine, teachLine, chosenAccountLine
 } from '../../utils/remote-host-text.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
@@ -2043,10 +2043,8 @@ export class PasswordMinigame extends MinigameScene {
         const selectedEl = this.gameContainer.querySelector('#signin-selected');
         const tile = st.other ? null : this.signInTileFor(st.selected);
         if (selectedEl) {
-            // A tagged remote tile names its kinds in full too: "Lena Fox (lfox), Captured password"
-            const kinds = tile && this.signIn?.remote && Array.isArray(tile.kinds) && tile.kinds.length
-                ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
-            selectedEl.textContent = tile ? `${tile.displayName || tile.username} (${tile.username})${kinds}` : '';
+            // A tagged tile names its kinds in full, at the keyboard and remotely alike (D50)
+            selectedEl.textContent = chosenAccountLine(tile);
             show(selectedEl, !!tile);
         }
         this.applySelectedHeadshot(tile);

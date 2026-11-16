@@ -769,3 +769,39 @@ test('lockSession never attempts to lock a password-free claim/guest session', a
     assert.equal(posted, false, 'no POST /lock_session is sent for a password-free session');
     assert.equal(s.isLocked('jake_pc'), false);
 });
+
+test('route_ended: one host, two hosts, an open desktop closed with the line; an unplug keeps its own line', () => {
+    const toastsSeen = [];
+    window.gameAlert = (m) => toastsSeen.push(m);
+    const s = setup();
+    s.sessions.set('a_pc', { npcId: 'a', username: 'a', via: 'password', host: 'HB-FIN-02' });
+    s.sessions.set('b_pc', { npcId: 'b', username: 'b', via: 'password', host: 'HB-FIN-03' });
+    s.sessions.set('c_pc', { npcId: 'c', username: 'c', via: 'password', host: 'HB-FIN-04' });
+    const closed = [];
+    s.registerDesktop('c_pc', (message, reason) => closed.push([message, reason]));
+    assert.deepEqual(s.linkDropped(['a_pc', 'b_pc', 'c_pc'], 'route_ended'), ['a_pc', 'b_pc', 'c_pc']);
+    assert.deepEqual(toastsSeen, ['Your sessions on HB-FIN-02 and HB-FIN-03 ended: the sessions they went through were closed.'],
+        'one toast names the hosts with no open desktop');
+    assert.deepEqual(closed, [['Your session on HB-FIN-04 ended: the session it went through was closed.', 'link_dropped']],
+        'the open desktop closes with its own host\'s line');
+    assert.equal(named('pc_signed_out').length, 3);
+    // One host
+    toastsSeen.length = 0;
+    s.sessions.set('a_pc', { npcId: 'a', username: 'a', via: 'password', host: 'HB-FIN-02' });
+    s.linkDropped(['a_pc'], 'route_ended');
+    assert.deepEqual(toastsSeen, ['Your session on HB-FIN-02 ended: the session it went through was closed.']);
+    // An unplug keeps its line, at the toast and on an open desktop
+    toastsSeen.length = 0;
+    closed.length = 0;
+    s.sessions.set('a_pc', { npcId: 'a', username: 'a', via: 'password', host: 'HB-FIN-02' });
+    s.sessions.set('c_pc', { npcId: 'c', username: 'c', via: 'password', host: 'HB-FIN-04' });
+    s.registerDesktop('c_pc', (message, reason) => closed.push([message, reason]));
+    s.linkDropped(['a_pc', 'c_pc']);
+    assert.deepEqual(toastsSeen, [unplugEndedMessage(['HB-FIN-02'])]);
+    assert.match(closed[0][0], /link dropped/i);
+    // Unknown ids drop nothing and toast nothing
+    toastsSeen.length = 0;
+    assert.deepEqual(s.linkDropped(['nope'], 'route_ended'), []);
+    assert.deepEqual(toastsSeen, []);
+    delete window.gameAlert;
+});

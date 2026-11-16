@@ -79,6 +79,15 @@ export const PRIME_RETRY_MS = 5000;
 // A background ask that has not answered by then is given up on, so the chain moves on (R2 t1)
 export const ASK_TIMEOUT_MS = 15000;
 
+/** Waits for `promise` until `deadline` (ms since the epoch; 0 waits as long as it takes). */
+function beforeDeadline(promise, deadline) {
+    if (!(deadline > 0)) return Promise.resolve(promise);
+    let timer;
+    const left = Math.max(0, deadline - Date.now());
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timed out')), left); });
+    return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timer));
+}
+
 export class Keyring {
     constructor() {
         this.cache = new Map();
@@ -96,6 +105,11 @@ export class Keyring {
         // (null until the baseline), the files waiting entries are found in, the finds held for
         // an open conversation, and the PCs signed in whose desktop has not opened yet
         this._findIds = null;
+        // Every find id this page has seen past the baseline or toasted, with the tray item it
+        // is held by (null for none). An id leaves only once it is missing from an answer AND its
+        // tray item is out of the tray, so an answer that briefly lacks an entry (a reconnect,
+        // a sync race) never toasts it again, while dropping and retaking a file still does.
+        this._announced = new Map();
         // Background asks: each is numbered when sent, and an answer older than one already
         // applied is dropped (R1 m1). `_queued` is the ask not yet sent, which later triggers
         // join; `_running` is the chain, so asks go out one at a time.
@@ -160,7 +174,7 @@ export class Keyring {
      * GET /keyring for a screen. Resolves to the entries; throws when the request fails, and
      * when the answer is unusable, so the caller shows the "could not be loaded" line.
      */
-    async fetch(pcId, { foothold, primed = false, timeoutMs = 0 } = {}) {
+    async fetch(pcId, { foothold, primed = false, timeoutMs = 0, deadline = 0 } = {}) {
         const api = typeof window !== 'undefined' ? (window.ApiClient || window.APIClient) : null;
         if (!api?.keyring) throw new Error('keyring not available');
         const key = Keyring.cacheKey(pcId, { foothold });
@@ -173,12 +187,17 @@ export class Keyring {
             if (!primed || this.firstAnswerIds !== null || !Array.isArray(answer?.entries)) return;
             this.firstAnswerIds = new Set(answer.entries.filter(e => e && typeof e.id === 'string').map(e => e.id));
         };
+        // One deadline for the whole fetch, the no-rev retry included (R3 t2): a caller's
+        // `deadline` (refresh's, which also covers the sync PUT) or now plus `timeoutMs`
+        const until = deadline > 0 ? deadline : (timeoutMs > 0 ? Date.now() + timeoutMs : 0);
         const ask = (opts) => {
-            if (!(timeoutMs > 0)) return api.keyring(pcId, opts);
+            if (!(until > 0)) return api.keyring(pcId, opts);
+            const left = until - Date.now();
+            if (left <= 0) return Promise.reject(new Error('keyring ask timed out'));
             const ctl = typeof AbortController === 'function' ? new AbortController() : null;
             let timer;
             const timeout = new Promise((_, reject) => {
-                timer = setTimeout(() => { try { ctl?.abort(); } catch (e) { /* none */ } reject(new Error('keyring ask timed out')); }, timeoutMs);
+                timer = setTimeout(() => { try { ctl?.abort(); } catch (e) { /* none */ } reject(new Error('keyring ask timed out')); }, left);
             });
             return Promise.race([api.keyring(pcId, ctl ? { ...opts, signal: ctl.signal } : opts), timeout])
                 .finally(() => clearTimeout(timer));
@@ -289,8 +308,11 @@ export class Keyring {
         const ask = after.then(async () => {
             // First, so a trigger that arrives during the sync PUT builds a later ask that carries its change (R2 m1a)
             this._queued = null;
-            try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
-            try { return await this.fetch(null, { timeoutMs: this.askTimeoutMs }); } catch (e) { return null; }
+            // One cap for the sync PUT and the GET together (R3 t1): a PUT that never answers
+            // cannot hold the chain, and the GET gets only what the PUT left of it
+            const deadline = this.askTimeoutMs > 0 ? Date.now() + this.askTimeoutMs : 0;
+            try { await beforeDeadline(window.stateSync?.syncConfirmed?.(), deadline); } catch (e) { /* ask anyway */ }
+            try { return await this.fetch(null, { deadline }); } catch (e) { return null; }
         });
         this._queued = ask;
         this._running = ask;
@@ -322,7 +344,13 @@ export class Keyring {
                 continue;
             }
             known.add(e.id);
-            if (this._findIds !== null && !this._findIds.has(e.id) && findKindToasts(e)) fresh.push(e);
+            if (this._findIds !== null && !this._announced.has(e.id) && findKindToasts(e)) fresh.push(e);
+            this._announced.set(e.id, typeof e.heldItem === 'string' && e.heldItem ? e.heldItem : null);
+        }
+        // Forget an id only when its tray item has left the tray (an unknown tray keeps it)
+        const tray = this._trayIds === null ? null : new Set(this._trayIds ? this._trayIds.split('|') : []);
+        for (const [id, item] of this._announced) {
+            if (!known.has(id) && item && tray && !tray.has(item)) this._announced.delete(id);
         }
         this._findIds = known;
         this._waitingFor = waitingFor;
@@ -333,7 +361,9 @@ export class Keyring {
     /** One toast for these finds now, or held while a conversation is open. */
     announceFinds(entries) {
         if (inConversation()) {
-            this._held.push(...entries);
+            // One held line per id, however many answers named it
+            const heldIds = new Set(this._held.map(e => e.id));
+            for (const e of entries) if (!heldIds.has(e.id)) { heldIds.add(e.id); this._held.push(e); }
             if (!this._holdTimer) {
                 this._holdTimer = setInterval(() => { if (!inConversation()) this.releaseHeld(); }, FIND_HOLD_POLL_MS);
             }
@@ -345,7 +375,9 @@ export class Keyring {
     /** The conversation closed: the held finds as one toast. */
     releaseHeld() {
         if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
-        const held = this._held;
+        // A held find the latest answer no longer names (dropped meanwhile) is not toasted
+        const live = this._findIds;
+        const held = live ? this._held.filter(e => live.has(e.id)) : this._held;
         this._held = [];
         return held.length ? this.showFinds(held) : Promise.resolve(null);
     }
