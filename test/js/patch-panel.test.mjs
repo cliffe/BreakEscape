@@ -507,6 +507,18 @@ test('the legend cannot set the frame width: the grid does, the legend wraps ins
     assert.match(legend, /min-width:\s*100%/);
 });
 
+test('the title cannot set the frame width and wraps in the room left of the X (8px+ gap)', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const bar = /\.patch-panel > \.device-frame-title\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(bar, /width:\s*0;/);
+    assert.match(bar, /min-width:\s*100%/);
+    assert.ok(Number(/padding-right:\s*(\d+)px/.exec(bar)?.[1]) >= 40, 'room for the X plus a gap');
+    const text = /\.patch-panel-title\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(text, /min-width:\s*0;/);
+    assert.match(text, /flex:\s*1 1 0/);
+    assert.match(text, /overflow-wrap:\s*anywhere/);
+});
+
 test('registration and wiring sit in index.js and the page', () => {
     const idx = readFileSync(join(js, 'minigames/index.js'), 'utf8');
     assert.match(idx, /registerScene\('patch-panel', PatchPanelMinigame\)/);

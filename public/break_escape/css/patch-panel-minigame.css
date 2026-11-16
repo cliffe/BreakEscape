@@ -27,7 +27,18 @@
 
 .patch-panel > .device-frame-title {
     padding-left: var(--device-frame-gap);
-    padding-right: 36px;
+    box-sizing: border-box;
+    padding-right: 44px;
+    /* The ports set the frame width, not the title: width 0 with min-width 100% takes the title
+       out of the frame's shrink-to-fit, and the text wraps in the room left of the X. */
+    width: 0;
+    min-width: 100%;
+}
+
+.patch-panel-title {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .patch-panel-scroll {
