@@ -1,5 +1,6 @@
 /* The patch panel (docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md 5.4). It draws inside
-   .device-frame (device-frame.css). Ports are 2px-border buttons with CSS sockets: 12 source px
+   .device-frame (device-frame.css). Ports are buttons wearing a hand-drawn 12x12 sprite per state
+   (assets/ui/devices/patch_port_*.png) under a 1 source px VLAN-colour border: 12 source px
    on a 14 px pitch, scaled by --pp-scale (3 or 4, set by chooseLayout). Colour is a second cue;
    every port carries its text label. Labels and the footer are VT323, the title Press Start 2P
    (set by .device-frame-title). */
@@ -62,6 +63,7 @@
 
 /* A row: the strip's 3 source px margins, ports on a 14 px pitch, the label line under them */
 .patch-panel-strip {
+    position: relative;
     display: flex;
     justify-content: center;
     box-sizing: content-box;
@@ -69,17 +71,37 @@
     margin: 0;
 }
 
+/* The metal strip behind the ports: the 7x18 art as a horizontal 3-slice (3 px caps), clipped to
+   its middle 12 rows so it takes no height (the 3 px above and below would grow every row). */
+.patch-panel-strip::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(-3px * var(--pp-scale));
+    height: calc(18px * var(--pp-scale));
+    clip-path: inset(calc(3px * var(--pp-scale)) 0);
+    box-sizing: border-box;
+    border-style: solid;
+    border-width: 0 calc(3px * var(--pp-scale));
+    border-image: url('/break_escape/assets/ui/devices/patch_strip.png') 0 3 fill / 0 calc(3px * var(--pp-scale)) / 0 stretch;
+    image-rendering: pixelated;
+    pointer-events: none;
+}
+
 .patch-panel-port {
     position: relative;
+    z-index: 1;
     box-sizing: border-box;
     flex: 0 0 auto;
     width: calc(12px * var(--pp-scale));
     height: calc(12px * var(--pp-scale));
     margin: 0;
     padding: 0;
-    border: 2px solid var(--pp-edge);
+    border: calc(1px * var(--pp-scale)) solid transparent;
     border-radius: 0;
-    background: #2b3446;
+    background: url('/break_escape/assets/ui/devices/patch_port_empty.png') 0 0 / 100% 100% no-repeat;
+    background-origin: border-box;
     color: #e6ebf2;
     cursor: pointer;
     image-rendering: pixelated;
@@ -97,16 +119,6 @@
 .patch-panel-port:focus-visible {
     outline: 2px solid #ffffff;
     outline-offset: 2px;
-}
-
-/* The socket: a dark square set into the port */
-.patch-panel-socket {
-    position: absolute;
-    left: calc(2px * var(--pp-scale) - 2px);
-    right: calc(2px * var(--pp-scale) - 2px);
-    top: calc(3px * var(--pp-scale) - 2px);
-    bottom: calc(2px * var(--pp-scale) - 2px);
-    background: var(--pp-socket);
 }
 
 /* The label sits under the port, centred on its 14 px column */
@@ -140,41 +152,22 @@
 .patch-panel-port.pp-vlan-g { border-color: var(--pp-g); }
 .patch-panel-port.pp-vlan-m { border-color: var(--pp-m); }
 
-/* Link light on a live port: a square at the socket's top right */
-.patch-panel-port.pp-state-patched .patch-panel-socket::after,
-.patch-panel-port.pp-state-managed .patch-panel-socket::after,
-.patch-panel-port.pp-state-held .patch-panel-socket::after {
-    content: '';
-    position: absolute;
-    right: calc(0.5px * var(--pp-scale));
-    top: calc(0.5px * var(--pp-scale));
-    width: calc(1px * var(--pp-scale));
-    height: calc(1px * var(--pp-scale));
-    background: var(--pp-light);
-}
+/* One sprite per state. The sprite's outer ring is neutral grey; the CSS border above it is the VLAN
+   colour (live ports) or a dashed grey (unpatched). The link light, tag and box are in the art. */
+.patch-panel-port.pp-state-empty { background-image: url('/break_escape/assets/ui/devices/patch_port_empty.png'); }
+.patch-panel-port.pp-state-unpatched { background-image: url('/break_escape/assets/ui/devices/patch_port_unpatched.png'); }
+.patch-panel-port.pp-state-patched { background-image: url('/break_escape/assets/ui/devices/patch_port_patched.png'); }
+.patch-panel-port.pp-state-managed { background-image: url('/break_escape/assets/ui/devices/patch_port_managed.png'); }
+.patch-panel-port.pp-state-held { background-image: url('/break_escape/assets/ui/devices/patch_port_held.png'); }
 
-/* A managed port wears a tag: a notch across the socket's bottom */
-.patch-panel-port.pp-state-managed .patch-panel-socket::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: calc(1px * var(--pp-scale));
-    background: var(--pp-m);
-}
-
-/* The box in the port: a lit block filling the socket */
-.patch-panel-port.pp-state-held .patch-panel-socket {
-    background: var(--pp-box);
-}
-
-/* Unpatched and empty: dim, with no light */
-.patch-panel-port.pp-state-unpatched,
-.patch-panel-port.pp-state-empty {
-    background: #1f2635;
+/* Unpatched and empty: no VLAN colour; the unpatched ring is dashed over the art's neutral ring */
+.patch-panel-port.pp-state-unpatched {
     border-style: dashed;
-    border-color: #566176;
+    border-color: #8a96aa;
+}
+
+.patch-panel-port.pp-state-empty {
+    border-color: transparent;
 }
 
 .patch-panel-port.pp-state-unpatched .patch-panel-label,

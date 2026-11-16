@@ -453,6 +453,23 @@ test('the CSS never uses --pp-scale bare as a length (it is unitless)', () => {
     }
 });
 
+test('each port state class maps to its sprite, and the sprites and strip ship at native size', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    for (const state of ['empty', 'unpatched', 'patched', 'managed', 'held']) {
+        const re = new RegExp(`\\.patch-panel-port\\.pp-state-${state}\\s*\\{\\s*background-image:\\s*url\\('/break_escape/assets/ui/devices/patch_port_${state}\\.png'\\)`);
+        assert.match(css, re, state);
+        const png = readFileSync(join(here, `../../public/break_escape/assets/ui/devices/patch_port_${state}.png`));
+        assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [12, 12], state);
+    }
+    const strip = readFileSync(join(here, '../../public/break_escape/assets/ui/devices/patch_strip.png'));
+    assert.deepEqual([strip.readUInt32BE(16), strip.readUInt32BE(20)], [7, 18]);
+    assert.match(css, /patch_strip\.png'\) 0 3 fill/);
+    assert.match(css, /clip-path:\s*inset\(calc\(3px \* var\(--pp-scale\)\) 0\)/, 'strip clipped to the 12 port rows: no height added');
+    assert.match(css, /border:\s*calc\(1px \* var\(--pp-scale\)\) solid transparent/, 'VLAN border is 1 source px');
+    assert.doesNotMatch(css, /patch-panel-socket/, 'the CSS-drawn socket is gone');
+    assert.doesNotMatch(css, /border-radius:\s*[1-9]/);
+});
+
 test('registration and wiring sit in index.js and the page', () => {
     const idx = readFileSync(join(js, 'minigames/index.js'), 'utf8');
     assert.match(idx, /registerScene\('patch-panel', PatchPanelMinigame\)/);
