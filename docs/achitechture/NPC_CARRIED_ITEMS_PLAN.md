@@ -46,11 +46,10 @@ Design as built, differences from the plan:
 - The npcCarry jsonb write needs `player_state_will_change!` before the save: an
   intermediate save in `remove_item_from_room!` otherwise reset dirty tracking and
   the nested entry was dropped.
-- The sync merge (`merge_npc_carry!`) validates against the allowlist only when
-  scenario_data is loaded; the narrow sync load rebuilds the entry from known keys
-  (extra keys dropped, bounded by the NPC count), and the serve path re-validates
-  every stored carry, so a non-carriable stored entry is inert (never served, put
-  down or consumed).
+- There is no sync merge for carries: `merge_npc_carry!` was removed on main
+  (`cf40b8e54`) and an `npcCarry` delta in a sync is ignored. Carries are written only by
+  the four `update_room` carry actions, and the serve path re-validates every stored
+  carry, so a non-carriable stored entry is inert (never served, put down or consumed).
 
 Commits (branch build/ol-carry): slice A `d86a1bacc`, slice B `018b240b9`,
 persistence fix + Rails tests `1956a6e84`, JS test `b8f8801b0`.

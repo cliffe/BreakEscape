@@ -621,7 +621,7 @@ module BreakEscape
 
     # C1 test 3: a hostile stored position keeps only valid coordinate keys; extra and
     # out-of-range values never reach fromPos or the put-back object.
-    test 'a hostile stored drop position is sanitised: only valid coordinate keys survive' do
+    test 'a hostile stored drop position is sanitised: only complete valid pairs survive' do
       build
       place_drop('kitchen', {
                    'x' => 5.0, 'y' => 'nope', 'px' => 1_000_000, 'py' => 60.0, 'elevation' => 30,
@@ -629,14 +629,24 @@ module BreakEscape
                  })
       carry('grace', 'office_mugs', room: 'kitchen')
       assert_response :success
-      assert_equal({ 'x' => 5.0, 'py' => 60.0, 'elevation' => 30 }, carry_state['grace']['fromPos'],
-                   'string y, out-of-range px and the extra keys dropped')
+      assert_nil carry_state['grace']['fromPos'], 'no complete pair: x/y and px/py are each half bad, so none is kept'
 
       get scenario_game_url(@game), as: :json
       landed = room_objects('kitchen').find { |o| o['id'] == 'office_mugs' }
-      assert_equal({ 'x' => 5.0, 'py' => 60.0, 'elevation' => 30 }, landed['position'], 'only valid keys on the put-back position')
       assert_nil landed['flags'], 'no extra keys carried onto the object'
       assert_equal 'dirty_mugs1', landed['type'], 'type from the scenario definition, not the stored position'
+    end
+
+    test 'a stored drop position keeps a valid pair and drops a bad half pair beside it' do
+      build
+      place_drop('kitchen', { 'x' => 5.0, 'y' => 'nope', 'px' => 131.5, 'py' => 60.0, 'elevation' => 30, 'type' => 'key' })
+      carry('grace', 'office_mugs', room: 'kitchen')
+      assert_response :success
+      assert_equal({ 'px' => 131.5, 'py' => 60.0, 'elevation' => 30 }, carry_state['grace']['fromPos'])
+
+      get scenario_game_url(@game), as: :json
+      landed = room_objects('kitchen').find { |o| o['id'] == 'office_mugs' }
+      assert_equal({ 'px' => 131.5, 'py' => 60.0, 'elevation' => 30 }, landed['position'])
     end
 
     # C1 test 4: a client cannot supply fromPos. A carry_object body with fromPos (or

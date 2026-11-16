@@ -13,9 +13,15 @@
 // A fresh game per beat, from tools/playtest/new-game.rb. Drive only ids printed in this run.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
-const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-ol-carry-c/node_modules/');
+// node_modules: this repo's own (script location), or PLAYWRIGHT_NODE_MODULES when the
+// checkout has none (a worktree can point at the main checkout's). Browser: set
+// PLAYWRIGHT_CHROMIUM_EXECUTABLE (or CHROMIUM); the default is the cached headless shell.
+const REPO_ROOT = new URL('../../', import.meta.url).pathname;
+const NODE_MODULES = (process.env.PLAYWRIGHT_NODE_MODULES || `${REPO_ROOT}node_modules`).replace(/\/?$/, '/');
+const require = createRequire(NODE_MODULES);
 const { chromium } = require('playwright-core');
-const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
+const EXEC = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || process.env.CHROMIUM
+    || `${process.env.HOME}/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell`;
 const [scenario, gid, port = '3091', point = 'T1', outFile = `./reload-${scenario}-${point}-${gid}.json`] = process.argv.slice(2);
 if (!scenario || !gid) { console.error('usage: npc-carry-reload-proof.mjs <scenario> <gameId> <port> <point> [outFile]'); process.exit(2); }
 

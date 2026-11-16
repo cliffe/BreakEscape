@@ -1348,8 +1348,10 @@ module BreakEscape
     # The pick-up position of a placed copy, read from the room's objects_added record
     # (the drop and put-down paths write it there). Keep only the coordinate keys those
     # paths write (x, y, px, py, elevation), each a valid coordinate; drop every other
-    # key, so no client-supplied field rides into the stored carry. nil when the object
-    # has no stored placement or no key survives the check.
+    # key, so no client-supplied field rides into the stored carry. Coordinates are kept
+    # only as complete valid pairs (x with y, px with py), and elevation only alongside a
+    # kept pair, so a half pair never rebuilds the object half at its pick-up spot and half
+    # at random. nil when the object has no stored placement or no pair survives.
     def sanitised_carry_position(room_id, item_id)
       added = player_state.dig('room_states', room_id, 'objects_added')
       return nil unless added.is_a?(Array)
@@ -1359,10 +1361,12 @@ module BreakEscape
       return nil unless pos.is_a?(Hash)
 
       cleaned = {}
-      %w[x y px py elevation].each do |k|
-        v = pos[k]
-        cleaned[k] = v if valid_ko_coord?(v)
+      [%w[x y], %w[px py]].each do |pair|
+        next unless pair.all? { |k| valid_ko_coord?(pos[k]) }
+
+        pair.each { |k| cleaned[k] = pos[k] }
       end
+      cleaned['elevation'] = pos['elevation'] if cleaned.any? && valid_ko_coord?(pos['elevation'])
       cleaned.presence
     end
 
