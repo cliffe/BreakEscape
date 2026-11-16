@@ -25,6 +25,18 @@
  * dropped"). A refusal because the PC's policy blocks remote sign-in (422 remoteBlocked)
  * emits pc_signin_failed with reason remote_blocked.
  *
+ * Relay sessions (keyring K3c, plan 8.3). An assist invite signed in with
+ * signInWithCredential(pcId, id, { relay: true }) joins the account holder's own session on
+ * their PC. It is held in the same slot and carries relay: true and host (never remote or
+ * footholdId); it is not the player's own sign-in there, so it never enters signedIn and
+ * firstAtPc is false. At the PC's own keyboard it counts as no session (heldAtKeyboard), the
+ * server never sends one on load (load() skips it), and the holder sitting down at their own
+ * PC does not displace it. The account holder ending the assist arrives in the state-sync
+ * answer's endedRelayPcIds (read by hookSyncAnswer, an answer-only part): each named relay
+ * session is dropped with no request and emits pc_signed_out reason relay_ended, and an open
+ * relay desktop closes with "<name> ended the remote assist." (a toast when none is open).
+ * Events for a relay carry relay: true and kind.
+ *
  * Events (each also as `<name>:<pcId>`):
  *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId }
  *                      a sign-in (or the second half of a switch). previousNpcId is the account
@@ -104,6 +116,12 @@ export function routeEndedMessage(hosts = []) {
         ? `Your session on ${names} ended: the session it went through was closed.`
         : `Your sessions on ${names} ended: the sessions they went through were closed.`;
 }
+/**
+ * The line a relay desktop closes with when the account holder ends the assist (keyring K3c,
+ * plan 8.3; on-screen text, never voiced). This module stays import-free, so the text is a
+ * copy of remote-host-text.js endedAssistMessage; a test keeps the two equal.
+ */
+export const relayEndedMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 export const displacedMessage = (name) => `${name || 'Someone'} has signed in at this PC`;
 
@@ -135,6 +153,9 @@ function publicSession(pcId, s) {
     const out = { pcId, npcId: s.npcId ?? null, username: s.username ?? null, displayName: s.displayName ?? null, via: s.via ?? null };
     // Only a remote session carries remote, footholdId and host, as on the server (4.4)
     if (s.remote === true) Object.assign(out, { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null });
+    // A relay session (keyring K3c, 8.3) is the account holder's own session, joined by an
+    // assist invite: relay and host, never remote or footholdId
+    if (s.relay === true) Object.assign(out, { relay: true, host: s.host ?? null });
     // A guest claim says so, so its desktop can say how it ends (UX access R1 finding 5)
     if (s.guest === true) out.guest = true;
     // A locked session (UI slice 6) stays held but needs the password again; the open flow
@@ -164,6 +185,11 @@ function pictureFields(s) {
     };
 }
 
+/** The relay fields of a server session entry (keyring K3c): only a relay one carries them. */
+function relayFields(s) {
+    return s && s.relay === true ? { relay: true, host: s.host ?? null } : {};
+}
+
 /** The remote fields of a server session entry (4.4): only a remote one carries them. */
 function remoteFields(s) {
     if (!s || s.remote !== true) return { remote: false, footholdId: null, host: null };
@@ -182,6 +208,8 @@ export class PcSessions {
         // a reader; the container return shows it (container-minigame.js, review M2)
         this.endedUnseen = new Map();
         this._listening = null;
+        // The state-sync instance whose answers this mirror reads (endedRelayPcIds, K3c)
+        this._syncHooked = null;
     }
 
     /**
@@ -190,6 +218,7 @@ export class PcSessions {
      * gets its own listeners.
      */
     listen() {
+        this.hookSyncAnswer();
         const dispatcher = typeof window !== 'undefined' ? window.eventDispatcher : null;
         if (!dispatcher || typeof dispatcher.on !== 'function' || this._listening === dispatcher) return false;
         this._listening = dispatcher;
@@ -197,10 +226,34 @@ export class PcSessions {
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
         dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged'));
         // 9.2 H (6.4): an NPC sitting down, or leaving a borrowed session, ends the player's there
-        const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId)); };
+        // The NPC's id goes too: the holder of a relay session sitting down keeps it (K3c, 8.3)
+        const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId), d.npcId ?? null); };
         dispatcher.on('npc_sat_at:*', sat);
         dispatcher.on('npc_borrowed_session:*', sat);
         return true;
+    }
+
+    /**
+     * Read the sync answer's endedRelayPcIds (keyring K3c, 8.3): the account holder ended the
+     * assist, so each relay session named there ends with relay_ended. Registers an answer-only
+     * part on window.stateSync (no body, so it never makes a sync send anything); idempotent
+     * per state-sync instance. Called from listen(). Returns true when a hook is in place.
+     */
+    hookSyncAnswer() {
+        const sync = typeof window !== 'undefined' ? window.stateSync : null;
+        if (!sync || typeof sync.registerPart !== 'function') return false;
+        if (this._syncHooked === sync) return true;
+        this._syncHooked = sync;
+        sync.registerPart('relayEnds', { onAnswer: (answer) => this.relayAnswer(answer) });
+        return true;
+    }
+
+    /** A sync answer: end the relay sessions it names in endedRelayPcIds. Returns the pcIds dropped. */
+    relayAnswer(answer) {
+        const ids = Array.isArray(answer?.endedRelayPcIds) ? answer.endedRelayPcIds.filter(id => typeof id === 'string' && id) : [];
+        // Only relay sessions: a stray id never ends a keyboard or foothold session
+        const relays = ids.filter(id => this.sessions.get(id)?.relay === true);
+        return relays.length ? this.linkDropped(relays, 'relay_ended') : [];
     }
 
     _emit(name, data) {
@@ -235,6 +288,9 @@ export class PcSessions {
                 this._endRestoredClaim(pcId, s);
                 continue;
             }
+            // The server never sends a relay session on load (K3c, 8.3); one that came anyway is
+            // not held here, has no signedIn entry and arms nothing. Re-entry is by Connect.
+            if (s.relay === true) continue;
             this.sessions.set(pcId, {
                 npcId: s.npcId ?? null,
                 username: s.username ?? null,
@@ -282,6 +338,27 @@ export class PcSessions {
     }
 
     has(pcId) { return this.sessions.has(pcId); }
+
+    /** The relay ended line for this display name (screens read it here, so the text has one home on the client side). */
+    relayEndedLine(displayName) { return relayEndedMessage(displayName); }
+
+    /** True when the session held at pcId is a relay (an assist invite, K3c). */
+    isRelay(pcId) { return this.sessions.get(pcId)?.relay === true; }
+
+    /** True while any relay session is held (keyring.js arms its prompt-end sync trigger on it). */
+    hasRelay() {
+        for (const s of this.sessions.values()) if (s.relay === true) return true;
+        return false;
+    }
+
+    /**
+     * A session the player can use at pcId's own keyboard (K3c, 3.8 and 8.3): a relay session
+     * is the holder's, reached only by Connect, so at the keyboard it counts as none.
+     */
+    heldAtKeyboard(pcId) {
+        const s = this.sessions.get(pcId);
+        return !!s && s.relay !== true;
+    }
 
     get(pcId) {
         const s = this.sessions.get(pcId);
@@ -370,13 +447,15 @@ export class PcSessions {
      *       (the generic 422 body: the credential no longer signs in)
      *   { ok: false, reason: 'error', error: true, status, message, serverReason }  (403/404/no answer)
      */
-    async signInWithCredential(pcId, credentialId, { foothold = null } = {}) {
+    async signInWithCredential(pcId, credentialId, { foothold = null, relay = false } = {}) {
         this.listen();
         const api = apiClient();
         if (!api?.loginWithCredential) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         let body;
         try {
-            body = await api.loginWithCredential(pcId, credentialId, foothold ? { foothold } : {});
+            // A relay (an assist invite, K3c) names relay only; never relay: false
+            const route = relay === true ? { relay: true } : (foothold ? { foothold } : {});
+            body = await api.loginWithCredential(pcId, credentialId, route);
         } catch (err) {
             const b = err?.body || {};
             if (err?.status === 422) {
@@ -405,7 +484,8 @@ export class PcSessions {
             ...credentialFields(body),
             ...(body.route && typeof body.route === 'object' ? { route: body.route } : {}),
             ...pictureFields(body),
-            ...remoteFields(body)
+            ...remoteFields(body),
+            ...relayFields(body)
         };
         this._replace(pcId, session);
         this._dropEnded(body.endedPcIds, pcId);
@@ -517,9 +597,11 @@ export class PcSessions {
      * POST /logout, pc_signed_out with reason displaced, and an open desktop closes with
      * "<name> has signed in at this PC". Resolves false when the player held none there.
      */
-    async displaced(pcId, name) {
+    async displaced(pcId, name, npcId = null) {
         const previous = this.sessions.get(pcId);
         if (!previous) return false;
+        // The holder sitting down at his own PC does not end the relay he invited the player into (K3c, 8.3)
+        if (previous.relay === true && npcId && previous.npcId === npcId) return false;
         this.sessions.delete(pcId);
         const message = displacedMessage(name);
         this._closeDesktop(pcId, message, 'displaced');
@@ -538,13 +620,16 @@ export class PcSessions {
 
     _replace(pcId, session) {
         const previous = this.sessions.get(pcId);
-        const firstAtPc = !this.signedIn.has(pcId);
+        // A relay is the holder's session, not the player's sign-in there: signedIn (and so
+        // unlock_object tasks) never counts it (K3c, 8.3)
+        const relay = session.relay === true;
+        const firstAtPc = !relay && !this.signedIn.has(pcId);
         if (previous) {
             this.sessions.delete(pcId);
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch', ...this._remoteOf(previous) });
         }
         this.sessions.set(pcId, { remote: false, footholdId: null, host: null, ...session, restored: false, firstAtPc });
-        this.signedIn.add(pcId);
+        if (!relay) this.signedIn.add(pcId);
         this._emit('pc_signed_in', {
             pcId, npcId: session.npcId, username: session.username, via: session.via,
             previousNpcId: previous?.npcId ?? null, firstAtPc, ...this._remoteOf(session)
@@ -627,6 +712,7 @@ export class PcSessions {
      * get one toast naming their hosts. Returns the pcIds dropped.
      */
     linkDropped(endedPcIds = [], reason = 'unplugged') {
+        if (reason === 'relay_ended') return this._relayEnded(endedPcIds);
         const routeEnded = reason === 'route_ended';
         const dropped = [];
         const unseen = [];
@@ -652,6 +738,34 @@ export class PcSessions {
     }
 
     /**
+     * The account holder ended the assist (the sync answer's endedRelayPcIds, K3c 8.3): each
+     * relay session is dropped with no request (the server has ended it), emits pc_signed_out
+     * reason relay_ended, and an open relay desktop closes with "{displayName} ended the remote
+     * assist."; with no desktop open the same line is a toast. Returns the pcIds dropped.
+     */
+    _relayEnded(endedPcIds = []) {
+        const dropped = [];
+        for (const pcId of (Array.isArray(endedPcIds) ? endedPcIds : [])) {
+            const previous = this.sessions.get(pcId);
+            if (!previous) continue;
+            this.sessions.delete(pcId);
+            dropped.push(pcId);
+            const message = relayEndedMessage(previous.displayName);
+            const open = this.desktops.has(pcId);
+            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'relay_ended', ...this._remoteOf(previous) });
+            if (open) {
+                this._closeDesktop(pcId, message, 'relay_ended');
+            } else {
+                try {
+                    // The display name is author text: plain text, never markup
+                    if (typeof window !== 'undefined') window.gameAlert?.(message, 'info', '', 5000, { plainText: true });
+                } catch (e) { /* no notification layer */ }
+            }
+        }
+        return dropped;
+    }
+
+    /**
      * A sign-in desktop's answer from GET /container carries the session in the scenario
      * response's shape (4.4). A keyboard fetch clears a remote session's foothold on the
      * server, so the answer has no remote: the local copy follows. No event.
@@ -659,12 +773,19 @@ export class PcSessions {
     settle(pcId, session) {
         const s = this.sessions.get(pcId);
         if (!s || !session || typeof session !== 'object') return false;
+        // A relay session stays a relay: its desktop is only ever fetched with relay=1
+        if (s.relay === true) return true;
         Object.assign(s, remoteFields(session));
         return true;
     }
 
-    /** The event fields of a remote session ({ remote: true, footholdId }); nothing for a local one. */
+    /**
+     * The event fields of a remote session ({ remote: true, footholdId }), or of a relay
+     * ({ relay: true, kind }, K3c 8.3, so a mapping can tell the two apart); nothing for a
+     * local one.
+     */
     _remoteOf(s) {
+        if (s?.relay === true) return { relay: true, kind: typeof s.kind === 'string' && s.kind ? s.kind : null };
         return s?.remote === true ? { remote: true, footholdId: s.footholdId ?? null } : {};
     }
 

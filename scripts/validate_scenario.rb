@@ -3171,7 +3171,7 @@ def check_common_issues(json_data, valid_item_types = nil)
   # Recursive helper: check item type and all nested contents/itemsHeld
   # A type is valid if an exact asset file exists, OR if any numbered/variant file starting with
   # that type name exists (e.g. type "safe" is valid when safe1.png, safe2.png etc. exist).
-  check_item_type = lambda do |item, item_path|
+  check_item_type = lambda do |item, item_path, in_contents = false|
     if valid_item_types && item['type']
       t = item['type']
       exact_match = valid_item_types.include?(t)
@@ -3181,11 +3181,15 @@ def check_common_issues(json_data, valid_item_types = nil)
       # sprite must be a picture in assets/objects/ (laptop1 until the content plan supplies
       # capture_log.png).
       engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && valid_item_types.include?(item['sprite'])
+      # A folder is a desktop-only entry inside a PC or share (container minigame); it has no
+      # world sprite, so it needs no picture in assets/objects/. Only a folder nested in a
+      # container's contents is exempt: a room-level folder is drawn in the world and needs one.
+      engine_type ||= t == 'folder' && in_contents
       unless exact_match || variant_match || engine_type
         issues << "❌ ERROR: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end
     end
-    item['contents']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/contents[#{i}]") }
+    item['contents']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/contents[#{i}]", true) }
     item['itemsHeld']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/itemsHeld[#{i}]") }
   end
   start_room_id = json_data['startRoom']
