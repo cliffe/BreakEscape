@@ -200,30 +200,29 @@ export function stackMembers(heights, laneMax, gap = LANE_GAP) {
 /**
  * Where the incoming-call banner goes while a minigame is open (UI backlog 5d, review R1 M1).
  * `titles` and `controls` are the boxes of the minigame's headings and of everything the player
- * can press or must read (buttons, inputs, the PIN display); `toasts` are the notify lane's toasts
- * showing now. Spots, tried in order, the first that touches none of them wins:
+ * can press or must read (buttons, inputs, the PIN display). Toasts are not obstacles: the banner
+ * is placed first and the toasts keep clear of it (toastSpot), so the two never chase each other.
+ * Spots, tried in order, the first that touches none of them wins:
  *   1. bottom   the bottom centre (where the tutorial step panel's banner sits, phone-ring.css)
  *   1. bottom   then the bottom right
  *   2. below    just under the minigame's frame (`frame`), kept inside the viewport
  *   3. lane     the right-hand end of the notify lane
- *   4. lane-below  the same spot moved under the lowest toast showing, if that is clear and on screen
  * With none clear, the top centre where it always sat: a covered title costs less than a covered key.
  * With no minigame boxes at all it stays top centre. Boxes are grown by `margin` (default 4px).
  * @param {{vw:number, vh:number, size:{width:number,height:number},
  *          titles?:Array<{left,top,right,bottom}>, controls?:Array<{left,top,right,bottom}>,
- *          toasts?:Array<{left,top,right,bottom}>, frame?:{left,top,right,bottom}|null,
+ *          frame?:{left,top,right,bottom}|null,
  *          lane?:{top:number,left:number,width:number}, top?:number, edge?:number, margin?:number}} a
- * @returns {{name:'default'|'bottom'|'below'|'lane'|'lane-below', top:number, left:number}}
+ * @returns {{name:'default'|'bottom'|'below'|'lane', top:number, left:number}}
  */
-export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], toasts = [], frame = null, lane,
+export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], frame = null, lane,
   top = 12, edge = SIDE_GUTTER, margin = 4 } = {}) {
   const w = Math.max(0, size?.width || 0);
   const h = Math.max(0, size?.height || 0);
   const centre = Math.round((vw - w) / 2);
   const blockers = [...titles, ...controls];
   if (!blockers.length) return { name: 'default', top, left: centre };
-  const hits = (l, tp) => blockers.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin)
-    || toasts.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin);
+  const hits = (l, tp) => blockers.some(r => l < r.right + margin && r.left < l + w + margin && tp < r.bottom + margin && r.top < tp + h + margin);
   const tryAt = (name, l, tp) => (hits(l, tp) ? null : { name, top: tp, left: l });
   const fit = (y) => Math.round(vh > 0 ? Math.max(0, Math.min(y, vh - h - edge)) : y);
   const bottom = fit(vh - h - edge);
@@ -233,9 +232,6 @@ export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], to
   if (lane) {
     const laneLeft = Math.round(Math.max(lane.left, lane.left + lane.width - w));
     spots.push(tryAt('lane', laneLeft, lane.top));
-    // A toast in the lane: try just under the lowest one before giving up and covering a title
-    const under = toasts.length ? Math.round(Math.max(...toasts.map(r => r.bottom)) + LANE_GAP) : null;
-    if (under !== null && (vh <= 0 || under + h <= vh - edge)) spots.push(tryAt('lane-below', laneLeft, under));
   }
   return spots.find(Boolean) || { name: 'default', top, left: centre };
 }
@@ -246,6 +242,7 @@ export const TOAST_SPOT_MARGIN = 4;     // px kept round every blocker
 export const TOAST_SPOT_STEP = 8;       // px between the tops tried
 export const TOAST_SPOT_EDGE = 8;       // px kept from the viewport's top and bottom
 export const TOAST_SPOT_WIDTHS = [480, 360, 240];   // narrower widths tried, times the HUD zoom
+export const PANEL_THROTTLE_MS = 100;   // changes inside an open panel re-place at most this often
 
 const overlaps = (l, t, w, h, m) => (r) => l < r.right + m && r.left < l + w + m && t < r.bottom + m && r.top < t + h + m;
 const areaOver = (l, t, w, h, r) => Math.max(0, Math.min(l + w, r.right) - Math.max(l, r.left))
@@ -550,6 +547,18 @@ const MINIGAME_CONTROLS = ['button', 'input', 'textarea', 'select', 'a[href]', '
 
 function boxOf(r) { return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; }
 
+// The pointer-cursor scan, cached per element (toast plan 2.8): `cursor` is { map: WeakMap,
+// dirty: null | Node[] }; null re-reads everything, otherwise only elements inside a node named
+// in the panel's mutation records are read again. Without a cache every element is read.
+function pointerCursor(el, cursor) {
+  if (!cursor) return gcs(el).cursor === 'pointer';
+  const d = cursor.dirty;
+  if (d === null || !cursor.map.has(el) || d.some(n => n === el || n.contains?.(el))) {
+    cursor.map.set(el, gcs(el).cursor === 'pointer');
+  }
+  return cursor.map.get(el);
+}
+
 // The workstation popups (CyberChef, lab sheets) are plain DOM outside any .minigame-container
 const POPUP_ROOTS = ['#laptop-popup', '#lab-popup'];
 // A scrolling list counts as one only while its scroller is under this share of the frame's height
@@ -589,7 +598,7 @@ function isListRow(el, root, frameEl, frameH) {
  * conversation portrait) and the frame to place a banner under. Shown elements only; an element
  * over half the screen (a clickable backdrop) is no control.
  */
-export function measureMinigame(doc, win) {
+export function measureMinigame(doc, win, cursor = null) {
   const titles = [];
   const xs = [];
   const controls = [];
@@ -621,7 +630,7 @@ export function measureMinigame(doc, win) {
       if (r && (!area || r.width * r.height <= area / 2)) controls.push({ ...boxOf(r), listRow: isListRow(el, mg, frameEl, frameH) });
     };
     mg.querySelectorAll(MINIGAME_CONTROLS.join(', ')).forEach(add);
-    mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && gcs(el).cursor === 'pointer') add(el); });
+    mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && pointerCursor(el, cursor)) add(el); });
     for (const c of mg.querySelectorAll('canvas')) {
       if (c.classList.contains('person-chat-portrait')) continue;
       const r = shownRect(c);
@@ -643,33 +652,20 @@ export function measureMinigame(doc, win) {
   return { titles, xs, controls, canvases, frame };
 }
 
-// A toast slides in and out with a translateY (notifications.css), so its box mid-slide is up to
-// 20px off where it settles, and nothing re-places the banner when the slide ends. The vertical
-// shift is taken back out, so the banner is placed against the settled box.
-function settledBox(el, r) {
-  const m = /^matrix\(([^)]*)\)$/.exec(gcs(el).transform || '');
-  const ty = m ? parseFloat(m[1].split(',')[5]) : 0;
-  const b = boxOf(r);
-  if (Number.isFinite(ty) && ty) { b.top -= ty; b.bottom -= ty; }
-  return b;
-}
-
-function placeRingLayer(doc, win, lanes) {
+function placeRingLayer(doc, win, lanes, measure) {
   const layer = doc.getElementById('phone-ring-layer');
   if (!layer) return null;
   const clear = () => { for (const k of ['top', 'left', 'transform']) if (layer.style[k]) layer.style[k] = ''; };
   // Only a banner over a minigame needs placing; the tutorial step panel has its own spot (CSS)
   if (!shownRect(layer.querySelector('.incoming-call')) || layer.classList.contains('under-tutorial')) { clear(); return null; }
-  const mg = measureMinigame(doc, win);
-  const toasts = [];
-  for (const el of doc.querySelectorAll('#notification-container .notification')) {
-    const r = shownRect(el);
-    if (r && !el.classList.contains('hud-lane-yield')) toasts.push(settledBox(el, r));
-  }
+  const mg = measure();
   clear();                                   // measure the banner where the CSS puts it
   const box = layer.getBoundingClientRect();
   const spot = ringLayerSpot({ vw: win.innerWidth, vh: win.innerHeight, size: { width: box.width, height: box.height },
-    titles: mg.titles, controls: mg.controls, toasts, frame: mg.frame, lane: lanes.notify });
+    titles: mg.titles, controls: mg.controls, frame: mg.frame, lane: lanes.notify });
+  // The banner's box once placed, for the toasts to keep clear of
+  spot.box = spot.name === 'default' ? boxOf(box)
+    : { left: spot.left, top: spot.top, right: spot.left + box.width, bottom: spot.top + box.height };
   if (spot.name === 'default') return spot;
   layer.style.transform = 'none';
   setPx(layer, 'top', spot.top);
@@ -677,10 +673,174 @@ function placeRingLayer(doc, win, lanes) {
   return spot;
 }
 
+// ------------------------------------------------- the toast block over an open panel
+
+/** A minigame (not ending) or a workstation popup is open: overlay-open.js fullScreenPanelOpen. */
+function panelOpenIn(doc, win) {
+  const m = win.MinigameFramework?.currentMinigame;
+  if (m && !m._ending) return true;
+  return POPUP_ROOTS.some((sel) => {
+    const el = doc.querySelector(sel);
+    return !!el && !!el.style && el.style.display !== '' && el.style.display !== 'none';
+  });
+}
+
+function phoneOpenIn(doc) {
+  return !!shownRect(doc.querySelector('[data-minigame="phone-chat"]'));
+}
+
+/**
+ * An element's height (screen px) laid out at screen width `w`: a clone inside a hidden host
+ * with the zoom `z` of the element's container, so the answer is in screen px as the boxes are.
+ * The host goes on `body`, never inside a lane container (it would add to the lane sums).
+ */
+function cloneHeightAt(doc, el, w, z, { keepId = false, fontFrom = null } = {}) {
+  const body = doc.body;
+  if (!body?.appendChild) return 0;
+  const host = doc.createElement('div');
+  host.style.cssText = 'position: fixed; left: -9000px; top: 0; visibility: hidden; pointer-events: none;';
+  host.style.zoom = String(z);
+  if (fontFrom) {
+    const cs = gcs(fontFrom);
+    for (const k of ['fontFamily', 'fontSize', 'lineHeight', 'letterSpacing']) if (cs[k]) host.style[k] = cs[k];
+  }
+  const c = el.cloneNode(true);
+  if (!keepId) c.removeAttribute?.('id');
+  c.classList.remove('toast-pending', 'hud-lane-yield');
+  if (c.classList.contains('notification')) c.classList.add('show', 'placed-over-panel');
+  Object.assign(c.style, { position: 'static', transform: 'none', transition: 'none', boxSizing: 'border-box',
+    width: `${w / z}px`, maxHeight: 'none', top: 'auto', left: 'auto' });
+  host.appendChild(c);
+  body.appendChild(host);
+  try { return Math.ceil(c.getBoundingClientRect().height || 0); } finally { host.remove(); }
+}
+
+/** A toast's height at screen width `w`, cached on the toast by width and zoom (its text never changes). */
+function toastHeightAt(doc, t, w, z, container) {
+  const key = `${w}@${z}`;
+  if (!t._hudLaneH) t._hudLaneH = new Map();
+  if (!t._hudLaneH.has(key)) t._hudLaneH.set(key, cloneHeightAt(doc, t, w, z, { fontFrom: container }));
+  return t._hudLaneH.get(key);
+}
+
+function clearBlockPlacing(el) {
+  for (const k of ['top', 'left', 'right', 'bottom', 'width', 'maxHeight']) if (el.style[k]) el.style[k] = '';
+}
+
+/**
+ * The notify lane's toasts while a panel is open (toast plan 2.3 to 2.6): one block (the toast
+ * container, and the phone-text container under it over the phone) placed by toastSpot, the
+ * class `placed-over-panel` on each toast in it while it is away from the lane, and an answer
+ * (pendingAnswers) for every toast waiting with `toast-pending`. Runs after the banner is
+ * placed. `prev` is the last pass's { away, spot }. Returns the new { away, spot }.
+ */
+function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
+  const el = doc.getElementById('notification-container');
+  if (!el) return { away: false, spot: null };
+  const n = lanes.notify;
+  const phoneEl = doc.getElementById('npc-bark-container');
+  const toLane = (members) => {
+    for (const m of members) {
+      if (!m) continue;
+      if (prev.away) { setPx(m, 'top', n.top); setPx(m, 'left', n.left); setPx(m, 'width', n.width); m.style.maxHeight = 'none'; }
+    }
+  };
+  const setClass = (on) => {
+    for (const t of el.querySelectorAll('.notification')) {
+      const want = on.has(t);
+      if (t.classList.contains('placed-over-panel') !== want) t.classList.toggle('placed-over-panel', want);
+    }
+  };
+  const answerAll = (answers) => {
+    for (const { el: t, answer } of answers) {
+      try { t._onReplace?.(answer); } catch (e) { /* the toast went meanwhile */ }
+    }
+  };
+  try {
+    const all = Array.from(el.querySelectorAll('.notification'));
+    const shownEls = all.filter(t => !t.classList.contains('toast-pending') && !t._toast?.closing && !t.classList.contains('hud-lane-yield'));
+    const pendingEls = all.filter(t => t.classList.contains('toast-pending') && !t._toast?.closing);
+    const panelOpen = panelOpenIn(doc, win);
+    const phoneOpen = panelOpen && phoneOpenIn(doc) && !!phoneEl;
+    const z = zoomOf(el);
+    const gapOf = (t) => { const mb = parseFloat(gcs(t).marginBottom); return (Number.isFinite(mb) ? mb : 10) * z; };
+    const texts = phoneOpen ? Array.from(phoneEl.querySelectorAll('.npc-bark')).filter(b => !b._removing && !b.classList.contains('hud-lane-yield')) : [];
+    const phoneCache = new Map();
+    const phoneH = (w) => {
+      if (!texts.length) return 0;
+      if (!phoneCache.has(w)) phoneCache.set(w, cloneHeightAt(doc, phoneEl, w, zoomOf(phoneEl), { keepId: true, fontFrom: phoneEl }));
+      return phoneCache.get(w);
+    };
+    // The toasts' part: heights plus one gap between each pair; the phone texts start one gap below
+    const toastsPart = (list, w) => list.reduce((h, t, i) => h + toastHeightAt(doc, t, w, z, el) + (i ? gapOf(t) : 0), 0);
+    const heightFor = (list) => (w) => {
+      const tp = toastsPart(list, w);
+      const ph = phoneH(w);
+      return ph ? tp + (list.length ? gapOf(list[list.length - 1]) : 0) + ph : tp;
+    };
+    const mg = panelOpen ? measure() : null;
+    const banner = ringSpot?.box && shownRect(doc.querySelector('#phone-ring-layer .incoming-call')) ? ringSpot.box : null;
+    const spotArgs = mg ? { vw: win.innerWidth, vh: win.innerHeight, lane: n, z, titles: mg.titles, xs: mg.xs,
+      controls: mg.controls, canvases: mg.canvases, banner } : null;
+    const info = (t) => ({ el: t, type: t._toast?.type, shownAt: t._toast?.shownAt, arrivedAt: t._toast?.arrivedAt, duration: t._toast?.duration });
+    const answers = pendingAnswers({ block: shownEls.map(info), pending: pendingEls.map(info), now: Date.now(), panelOpen,
+      spotFor: (list) => !!toastSpot({ ...spotArgs, heightAt: heightFor(list.map(x => x.el)), clearOnly: true }) });
+    const stacked = new Set(answers.filter(a => a.answer === 'stack').map(a => a.el));
+    const blockEls = all.filter(t => shownEls.includes(t) || stacked.has(t));
+    let res = { away: false, spot: null };
+    if (panelOpen && (blockEls.length || texts.length)) {
+      const spot = toastSpot({ ...spotArgs, heightAt: heightFor(blockEls), current: prev.away ? prev.spot : null });
+      if (spot && spot.name !== 'lane') {
+        setPx(el, 'top', spot.top);
+        setPx(el, 'left', spot.left);
+        setPx(el, 'width', spot.width);
+        if (spot.maxHeight != null) setPx(el, 'maxHeight', spot.maxHeight); else el.style.maxHeight = 'none';
+        if (phoneOpen) {
+          const below = blockEls.length ? toastsPart(blockEls, spot.width) + gapOf(blockEls[blockEls.length - 1]) : 0;
+          setPx(phoneEl, 'top', spot.top + below);
+          setPx(phoneEl, 'left', spot.left);
+          setPx(phoneEl, 'width', spot.width);
+          phoneEl.style.maxHeight = 'none';
+        }
+        setClass(new Set(blockEls));
+        res = { away: true, spot };
+      } else res.spot = spot;
+    }
+    if (!res.away) { toLane([el, phoneEl]); setClass(new Set()); }
+    answerAll(answers);
+    return res;
+  } catch (e) {
+    // Fail open: the block goes back to the lane and every waiting toast shows (2.6 item 8)
+    try { toLane([el, phoneEl]); setClass(new Set()); } catch (e2) { /* nothing more to do */ }
+    answerAll(Array.from(el.querySelectorAll('.notification.toast-pending')).map(t => ({ el: t, answer: 'stack' })));
+    console.debug('[hud-lanes] toast block', e);
+    return { away: false, spot: null };
+  }
+}
+
+/**
+ * The relayout itself failed (rAF catch, 2.6 item 8): the toast container goes back to its
+ * stylesheet spot at the top right and every waiting toast shows there.
+ */
+export function failOpenToasts(doc, win) {
+  const el = doc.getElementById('notification-container');
+  if (win?.__hudLanes) win.__hudLanes.notifyAway = false;
+  if (!el) return;
+  clearBlockPlacing(el);
+  for (const t of el.querySelectorAll('.notification')) {
+    t.classList.remove('placed-over-panel');
+    if (t.classList.contains('toast-pending')) { try { t._onReplace?.('stack'); } catch (e) { /* gone */ } }
+  }
+}
+
 /** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
-export function applyLanes(doc = document, win = window) {
+export function applyLanes(doc = document, win = window, { cursor = null } = {}) {
   placeHearts(doc);
   const m = measureHud(doc, win);
+  // The toast block placed away from the lane over a panel counts as 0 in the lane sums (toast
+  // plan 2.7); the sums run before it is placed, so they read the last pass's answer
+  const prevBlock = { away: !!win.__hudLanes?.notifyAway, spot: win.__hudLanes?.notifySpot || null };
+  const awayPhone = prevBlock.away && phoneOpenIn(doc);
   const toastsEl = doc.getElementById('notification-container');
   const phoneEl = doc.getElementById('npc-bark-container');
   const captionEl = doc.getElementById('hud-info-label');
@@ -709,10 +869,11 @@ export function applyLanes(doc = document, win = window) {
   if (clearAllEl && seenClearAll > 0) clearAllEl._laneH = seenClearAll;
   const clearAllH = clearAllEl ? (seenClearAll || clearAllEl._laneH || 0) : 0;
   const phoneSum = (hidden) => {
+    if (awayPhone) return 0;
     const shown = textH.slice(hidden).filter(h => h > 0);
     return sum(shown) + (shown.length >= 2 && clearAllH ? clearAllH + LANE_GAP : 0);
   };
-  const toastH = contentOf(toastsEl);
+  const toastH = prevBlock.away ? 0 : contentOf(toastsEl);
   const speechH = contentOf(speechEl);
   m.notifyContent = sum([toastH, phoneSum(0)]);
   m.messageContent = sum([cap.h, speechH]);
@@ -720,7 +881,7 @@ export function applyLanes(doc = document, win = window) {
   // One at a time when space is short (H1 option A): see laneYields for the order
   const free = Math.max(0, (m.vh - lanes.message.bottom) - lanes.notify.top);
   const budget = Math.floor(free * laneBudgetShare(m));
-  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: textH, phoneExtra: clearAllH }, budget);
+  const y = laneYields({ caption: cap.h, speech: speechH, toasts: toastH, phone: awayPhone ? [] : textH, phoneExtra: awayPhone ? 0 : clearAllH }, budget);
   if (captionEl && y.caption !== cap.was) captionEl.classList.toggle('hud-lane-yield', y.caption);
   // Hidden texts are the oldest y.phoneHidden (empty heights are not counted by laneYields)
   let toHide = y.phoneHidden;
@@ -744,7 +905,8 @@ export function applyLanes(doc = document, win = window) {
   // have stepped aside above; next the other toasts step aside, oldest first (their countdown
   // waits, notifications.js), and they stay aside while a brief line shows. Then the notify lane
   // gets the brief line's height whole (notifyFloor). With no brief line they all come back.
-  const toastEls = toastsEl ? Array.from(toastsEl.querySelectorAll('.notification')).filter(el => !el._toast?.closing) : [];
+  const toastEls = toastsEl ? Array.from(toastsEl.querySelectorAll('.notification'))
+    .filter(el => !el._toast?.closing && !el.classList.contains('toast-pending')) : [];
   const yieldToast = (el, hide) => {
     if (el.classList.contains('hud-lane-yield') === hide) return;
     el.classList.toggle('hud-lane-yield', hide);
@@ -805,7 +967,7 @@ export function applyLanes(doc = document, win = window) {
   const toasts = doc.getElementById('notification-container');
   const phone = doc.getElementById('npc-bark-container');
   const n = lanes.notify;
-  const nHeights = [toasts ? toasts.scrollHeight * zoomOf(toasts) : 0, 0];
+  const nHeights = [toasts && !prevBlock.away ? toasts.scrollHeight * zoomOf(toasts) : 0, 0];
   const nStack = stackMembers(nHeights, n.maxHeight);
   [toasts, phone].forEach((el, i) => {
     if (!el) return;
@@ -844,9 +1006,15 @@ export function applyLanes(doc = document, win = window) {
     speech.style.overflow = 'hidden';
     speech.dataset.lane = 'message';
   }
-  const ringSpot = placeRingLayer(doc, win, lanes);
-  win.__hudLanes = { measured: m, lanes, ringSpot };
-  return { measured: m, lanes };
+  // One measure of the open panel per relayout, shared by the banner and the toast block
+  let panel = null;
+  const measure = () => (panel ||= measureMinigame(doc, win, cursor));
+  const ringSpot = placeRingLayer(doc, win, lanes, measure);
+  const block = placeNotifyBlock(doc, win, lanes, measure, prevBlock, ringSpot);
+  win.__hudLanes = { measured: m, lanes, ringSpot, notifyAway: block.away, notifySpot: block.spot, toastSpot, pendingAnswers };
+  // A changed answer changes the lane sums: one more pass settles them, and a further one changes nothing
+  if (block.away !== prevBlock.away) win.__hudLanesStarted?.relayout?.();
+  return { measured: m, lanes, block };
 }
 
 /**
@@ -856,27 +1024,75 @@ export function applyLanes(doc = document, win = window) {
  */
 export function startHudLanes(doc = document, win = window) {
   if (win.__hudLanesStarted) return win.__hudLanesStarted;
+  // `queued` is true exactly while a frame for applyLanes is queued; an explicit call queues one
+  // unless one already is. The panel throttle below has its own timer and never touches it.
   let queued = false;
+  const cursor = { map: new WeakMap(), dirty: null };
+  const perf = win.performance;
+  const run = () => {
+    queued = false;
+    const timing = !!win.__hudLanesTiming && typeof perf?.mark === 'function';
+    if (timing) perf.mark('hud-lanes-relayout-start');
+    try {
+      applyLanes(doc, win, { cursor });
+      syncPanelWatch();
+    } catch (e) {
+      console.debug('[hud-lanes]', e);
+      try { failOpenToasts(doc, win); } catch (e2) { /* the toasts' own hard release stands behind this */ }
+    }
+    // From here only what the panel observers report is read again
+    cursor.dirty = watching.length ? [] : null;
+    if (timing) {
+      try {
+        perf.mark('hud-lanes-relayout-end');
+        perf.measure('hud-lanes-relayout', 'hud-lanes-relayout-start', 'hud-lanes-relayout-end');
+      } catch (e) { /* no user timing */ }
+      perf.clearMarks?.('hud-lanes-relayout-start');
+      perf.clearMarks?.('hud-lanes-relayout-end');
+    }
+  };
   const relayout = () => {
     if (queued) return;
     queued = true;
-    win.requestAnimationFrame(() => { queued = false; try { applyLanes(doc, win); syncMinigameWatch(); } catch (e) { console.debug('[hud-lanes]', e); } });
+    win.requestAnimationFrame(run);
   };
   win.addEventListener('resize', relayout);
-  // While the banner is placed over an open minigame, a control added inside it (a view switch,
-  // a confirm step) re-places the banner; the observer is dropped when either goes (review R2 m2)
-  let mgObs = null;
-  let mgTarget = null;
-  const syncMinigameWatch = () => {
-    const shown = !!doc.querySelector('#phone-ring-layer .incoming-call');
-    const mg = shown ? doc.querySelector('.minigame-container') : null;
-    if (mg === mgTarget) return;
-    mgObs?.disconnect();
-    mgObs = null;
-    mgTarget = mg;
-    if (mg && typeof win.MutationObserver === 'function') {
-      mgObs = new win.MutationObserver(() => relayout());
-      mgObs.observe(mg, { childList: true, subtree: true });
+  // Changes inside an open panel re-place the banner and the toasts at most once per
+  // PANEL_THROTTLE_MS, with a trailing call so the last state is always placed (toast plan 2.8)
+  let thrTimer = null;
+  let thrLast = -Infinity;
+  const throttled = () => {
+    if (thrTimer) return;
+    const wait = PANEL_THROTTLE_MS - (Date.now() - thrLast);
+    if (wait <= 0) { thrLast = Date.now(); relayout(); return; }
+    thrTimer = setTimeout(() => { thrTimer = null; thrLast = Date.now(); relayout(); }, wait);
+  };
+  // While a toast or the banner shows, every minigame container and the shown popup are watched:
+  // anything that appears, moves or changes class inside re-places them. The set is re-checked
+  // on every relayout, so a container shown later is picked up; observers are only re-attached
+  // when it changes.
+  let watching = [];
+  const panelMo = typeof win.MutationObserver === 'function' ? new win.MutationObserver((records) => {
+    if (cursor.dirty) for (const r of records) cursor.dirty.push(r.target);
+    throttled();
+  }) : null;
+  const panelRo = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(() => { cursor.dirty = null; throttled(); }) : null;
+  const syncPanelWatch = () => {
+    const up = !!doc.querySelector('#phone-ring-layer .incoming-call, #notification-container .notification');
+    const want = up ? [...doc.querySelectorAll('.minigame-container'),
+      ...POPUP_ROOTS.map(sel => doc.querySelector(sel)).filter(el => el && shownRect(el))] : [];
+    if (want.length === watching.length && want.every((el, i) => el === watching[i])) return;
+    panelMo?.disconnect();
+    panelRo?.disconnect();
+    cursor.dirty = null;
+    watching = want;
+    for (const el of want) {
+      panelMo?.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class', 'hidden', 'disabled'] });
+      if (panelRo) {
+        panelRo.observe(el);
+        const frame = el.querySelector('.minigame-game-container, .laptop-screen');
+        if (frame) panelRo.observe(frame);
+      }
     }
   };
   const ro = typeof win.ResizeObserver === 'function' ? new win.ResizeObserver(relayout) : null;
@@ -905,7 +1121,11 @@ export function startHudLanes(doc = document, win = window) {
   watch();
   attach();
   relayout();
-  win.__hudLanesStarted = { relayout, stop: () => { ro?.disconnect(); mo.disconnect(); mgObs?.disconnect(); mgObs = null; mgTarget = null; win.removeEventListener('resize', relayout); win.__hudLanesStarted = null; } };
+  win.__hudLanesStarted = { relayout, stop: () => {
+    ro?.disconnect(); mo.disconnect(); panelMo?.disconnect(); panelRo?.disconnect(); watching = [];
+    clearTimeout(thrTimer); thrTimer = null;
+    win.removeEventListener('resize', relayout); win.__hudLanesStarted = null;
+  } };
   win.hudLanesRelayout = relayout;
   return win.__hudLanesStarted;
 }

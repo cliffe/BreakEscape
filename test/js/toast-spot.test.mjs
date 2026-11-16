@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { toastSpot, pendingAnswers, outermostBoxes, TOAST_SPOT_MARGIN } from '../../public/break_escape/js/ui/hud-lanes.js';
+import { toastSpot, pendingAnswers, outermostBoxes, TOAST_SPOT_MARGIN, ringLayerSpot } from '../../public/break_escape/js/ui/hud-lanes.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { cases } = JSON.parse(readFileSync(join(here, 'fixtures/toast-boxes.json'), 'utf8'));
@@ -253,4 +253,33 @@ test('errors are answered before warnings whatever the arrival order; no panel: 
   assert.deepEqual(order, ['e', 'w']);
   const block = [{ el: el('e1'), type: 'error', shownAt: T0, duration: 0 }, { el: el('e2'), type: 'error', shownAt: T0, duration: 0 }];
   assert.deepEqual(answersOf({ block, pending: [{ el: el('e'), type: 'error', arrivedAt: T0 }], now: T0, spotFor: never, panelOpen: false }), { e: 'stack' });
+});
+
+// ---- the banner (ringLayerSpot) no longer treats toasts as obstacles; the toast avoids the banner
+const RB = (left, top, right, bottom) => ({ left, top, right, bottom });
+const EHR390 = { vw: 390, vh: 844, size: { width: 358, height: 94 }, lane: { top: 84, left: 16, width: 358 },
+  titles: [RB(20, 20, 370, 75)], frame: RB(10, 10, 380, 830) };
+
+test('banner: a toast in the lane is ignored and there is no lane-below spot', () => {
+  const controls = [RB(320, 30, 360, 70), RB(20, 650, 370, 840), RB(20, 90, 370, 100)];
+  const toast = RB(16, 84, 374, 227);
+  const s = ringLayerSpot({ ...EHR390, controls, toasts: [toast] });
+  assert.notEqual(s.name, 'lane-below');
+  assert.deepEqual(s, ringLayerSpot({ ...EHR390, controls }), 'the same answer with or without toasts');
+  const free = ringLayerSpot({ ...EHR390, controls: [RB(320, 30, 360, 70), RB(20, 650, 370, 840)], toasts: [toast] });
+  assert.equal(free.name, 'lane', 'the lane spot is taken even under a toast');
+  assert.equal(free.top, 84);
+});
+
+test('banner: with every spot blocked it falls back to the top centre last', () => {
+  const controls = [RB(0, 60, 390, 844)];
+  const s = ringLayerSpot({ ...EHR390, controls, toasts: [] });
+  assert.deepEqual(s, { name: 'default', top: 12, left: 16 });
+});
+
+test('banner source: no lane-below and no toasts in ringLayerSpot', () => {
+  const src = readFileSync(join(here, '../../public/break_escape/js/ui/hud-lanes.js'), 'utf8');
+  const body = src.slice(src.indexOf('export function ringLayerSpot'), src.indexOf('// ------------------------------------------------------------ toasts over an open panel'));
+  assert.ok(body.length > 100);
+  assert.doesNotMatch(body, /lane-below|toasts/);
 });
