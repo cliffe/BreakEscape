@@ -3181,6 +3181,9 @@ def check_common_issues(json_data, valid_item_types = nil)
       # sprite must be a picture in assets/objects/ (laptop1 until the content plan supplies
       # capture_log.png).
       engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && valid_item_types.include?(item['sprite'])
+      # A folder is a desktop-only entry inside a PC or share (container minigame); it has no
+      # world sprite, so it needs no picture in assets/objects/.
+      engine_type ||= t == 'folder'
       unless exact_match || variant_match || engine_type
         issues << "❌ ERROR: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end
