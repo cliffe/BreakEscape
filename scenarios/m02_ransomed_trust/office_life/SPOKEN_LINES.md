@@ -106,12 +106,10 @@ From `REVIEW_STAGE5_R1.md` and the owner's calls. Counts against the 71 above so
 
 The cooler pools stay at 4: one cooler break in nine in the R4 run, so they do not repeat inside 15 minutes.
 
+### D30 (a), 2026-11-16: paper night exchange reordered
+
+`night_watch_paper` is now 4 lines and Ernesto opens it. Hodan's question "How many lab runs is that now, Ernesto?" is dropped. Ernesto's two lines changed: "Eleven lab runs tonight. Every result in an envelope." (was "Eleven. Every result in an envelope.") and "Hospital runs on legs. Ours." (was "...legs tonight. Ours."). Counts against 76: **2 changed, 1 removed**, so **75 clips in all**. The three superseded clips are in `tmp/delete/tts_m02_d30/`.
+
 ### To voice
 
-None of the office-life clips has audio yet (D2). New in this round, the four above plus the m8 bark (5 in all):
-
-1. Ernesto, coffee: Same mug since ninety-six.
-2. Ernesto, coffee: Third wheelchair I've chased tonight.
-3. Hodan, coffee: Somebody's had my good mop again.
-4. Hodan, coffee: Two minutes. Then the stairs again.
-5. Hodan, one-off bark on taking the ward clerk's laptop (`scenario.json.erb`, her `eventMappings`, `item_picked_up:workstation`): Clerk'll want that back. Just saying. (37 characters; the first draft, "Ward clerk'll want that back. Just saying.", was 42.)
+None. All 75 office-life clips are voiced and committed under `tts_cache/m02_ransomed_trust/` (the 5 R4/m8 lines and the 2 D30 exchange lines were voiced on 2026-11-16).

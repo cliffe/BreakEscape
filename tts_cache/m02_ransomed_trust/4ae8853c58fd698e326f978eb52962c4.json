@@ -1,0 +1,13 @@
+{
+  "key": "4ae8853c58fd698e326f978eb52962c4",
+  "npc": "ernesto_bautista",
+  "text": "Eleven lab runs tonight. Every result in an envelope.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T01:35:46Z"
+}
