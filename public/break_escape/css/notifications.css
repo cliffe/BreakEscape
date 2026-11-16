@@ -13,18 +13,15 @@
     pointer-events: none;
 }
 
-/* The phone (400px, centred) keeps warnings such as "You're being hit!" on top. A
-   600px toast ran over the unread badge in its header (m06 confirmation F3), so
-   while the phone is open the column stops 12px right of the phone's edge. zoom
-   scales vw too, hence the divide. */
-body:has([data-minigame="phone-chat"]) #notification-container {
-    width: max(240px, calc((50vw - 212px) / var(--hud-zoom, 1) - 20px));
-}
+/* The phone (400px, centred) keeps warnings such as "You're being hit!" on top. Its width
+   is set inline by ui/hud-lanes.js (applyLanes keeps the lane right of the phone, m06 F3;
+   placeNotifyBlock moves the block off the phone's controls). */
 
 .notification {
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
-    padding: 15px 20px;
+    /* 48 px on the right: room for the close X (a 30 px button 8 px in) */
+    padding: 15px 48px 15px 20px;
     margin-bottom: 10px;
     box-shadow: none;
     transition: all 0.3s ease;
@@ -52,20 +49,32 @@ body:has([data-minigame="phone-chat"]) #notification-container {
     display: none !important;
 }
 
+/* Over a panel a toast waits here until ui/hud-lanes.js finds it a place (toast-pending,
+   notifications.js): no box, so it adds nothing to the lane sums. Important: utilities.css
+   .show is display block !important. */
+.notification.toast-pending {
+    display: none !important;
+}
+
+/* Unthemed frame: a 2 px border in the type's colour, the left side kept as a 4 px stripe */
 .notification.info {
-    border-left: 4px solid #3498db;
+    border: 2px solid #3498db;
+    border-left-width: 4px;
 }
 
 .notification.success {
-    border-left: 4px solid #2ecc71;
+    border: 2px solid #2ecc71;
+    border-left-width: 4px;
 }
 
 .notification.warning {
-    border-left: 4px solid #f39c12;
+    border: 2px solid #f39c12;
+    border-left-width: 4px;
 }
 
 .notification.error {
-    border-left: 4px solid #e74c3c;
+    border: 2px solid #e74c3c;
+    border-left-width: 4px;
 }
 
 .notification-title {
@@ -82,16 +91,69 @@ body:has([data-minigame="phone-chat"]) #notification-container {
 
 .notification-close {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    background: #e74c3c;
+    color: white;
+    border: 4px solid #c0392b;
+    border-radius: 0;
     cursor: pointer;
+    font-family: 'Press Start 2P', monospace;
     font-size: 18px;
-    color: #aaa;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: auto;
 }
 
+/* The close X looks like every other close X (.game-modal-close unthemed, the themed list in
+   ui-themes.css). The body of a toast lets clicks through; only the X takes them. */
 .notification-close:hover {
-    color: white;
+    background: #c0392b;
+}
+
+.notification-close:active {
+    background: #a93226;
+}
+
+/* Touch: 14 px of invisible target round the X. With the themed 6 px border that is an 18 px
+   padding box plus 28, 46 px; unthemed (4 px border) 22 plus 28, 50 px. */
+@media (max-width: 600px), (pointer: coarse) {
+    .notification-close::after {
+        content: '';
+        position: absolute;
+        inset: -14px;
+        background: transparent;
+    }
+}
+
+/* No slide for players who ask for less motion */
+@media (prefers-reduced-motion: reduce) {
+    .notification,
+    .notification.show {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* Screen-reader regions for toasts (notifications.js): read, never seen */
+.toast-live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
 }
 
 .notification-progress {
@@ -108,7 +170,7 @@ body:has([data-minigame="phone-chat"]) #notification-container {
    error explains a refusal and may take three; a verbatim toast (a password to copy) is never
    cut. ui/hud-lanes.js sets body.hud-compact. */
 body.hud-compact .notification {
-    padding: 10px 40px 10px 14px;
+    padding: 10px 48px 10px 14px;
     margin-bottom: 8px;
 }
 body.hud-compact .notification-title {
@@ -138,6 +200,23 @@ body.hud-compact .notification.brief {
 body.hud-compact .notification.brief .notification-message {
     display: block;
     -webkit-line-clamp: none;
+    line-clamp: none;
+    overflow: visible;
+}
+
+/* Over an open panel (placed-over-panel, set by ui/hud-lanes.js) the toast is placed clear of
+   the panel's title and controls, so on a phone its title wraps and its message is never cut.
+   Selectors at least as specific as the clamp rules above, and after them. */
+body.hud-compact .notification.placed-over-panel .notification-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+}
+body.hud-compact .notification.placed-over-panel:not(.verbatim) .notification-message,
+body.hud-compact .notification.warning.placed-over-panel:not(.verbatim) .notification-message,
+body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notification-message {
+    display: block;
+    -webkit-line-clamp: unset;
     line-clamp: none;
     overflow: visible;
 }
