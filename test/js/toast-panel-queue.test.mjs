@@ -140,7 +140,8 @@ test('a warning released from waiting ends up after the errors', async () => {
   await raise(600, 'e2', 'error');
   await tickTo(700);
   assert.deepEqual(order(), ['e1', 'e2', 'careful']);
-  await tickTo(5200);
+  // e1 goes at 5020 and the room is still full; the warning's own 5 s wait ends at 5300
+  await tickTo(5400);
   assert.ok(isShown(w));
   assert.deepEqual(order().slice(-1), ['careful']);
   end(lanes);
@@ -241,7 +242,9 @@ test('warning behind three errors: shows by 5.6 s and before any error has gone 
   const w = await raise(600, 'careful', 'warning');
   let shownAtMs = null;
   await tickTo(5700, () => { watch(); if (shownAtMs == null && isShown(w)) shownAtMs = at(); });
-  assert.ok(shownAtMs != null && shownAtMs <= 5600, `warning shown at ${shownAtMs}`);
+  // The warning's own 5 s wait ends at 5600 (arrival 600); the deadline timer fires on time and the
+  // answer comes from the relayout one frame (16 ms) later, seen on the next 10 ms step.
+  assert.ok(shownAtMs != null && shownAtMs <= 5600 + 16 + 10, `warning shown at ${shownAtMs}`);
   assert.deepEqual(early, []);
   end(lanes);
 });
