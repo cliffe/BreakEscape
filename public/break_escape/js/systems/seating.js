@@ -1763,10 +1763,79 @@ function npcStandSpot(behavior, chair, seat, facing, at) {
 }
 
 /**
+ * A door's gap, where feet pass between two rooms: 32 px each side of the door line along the
+ * crossing axis (both rooms' wall depth), 16 px each side across it. A side (east/west) door at x 0,
+ * y 80 gives x -32..32, y 64..96 (the kitchen doorway in test_needs_sims: wall strips 60..68 and
+ * 92..100, feet band 73..87). Null without a position.
+ */
+export function doorGapRect(door) {
+    const x = door?.worldX, y = door?.worldY;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    const side = door.direction === 'east' || door.direction === 'west';
+    return side ? { x0: x - 32, x1: x + 32, y0: y - 16, y1: y + 16, side: true }
+                : { x0: x - 16, x1: x + 16, y0: y - 32, y1: y + 32, side: false };
+}
+
+const DOOR_CLEAR_PX = 24;
+
+/**
+ * Where a chair whose foot is in a door gap goes: straight out along the crossing axis to the side
+ * its foot is already on, clear of the gap by its own half size plus DOOR_CLEAR_PX (so it doesn't sit
+ * in the doorway's mouth either). Null when the foot is
+ * not in any gap. Pure (SIMS_TIDY_LOG.md item 2: Sanjay's reserved chair, pushed about by
+ * walkers, came to rest in the kitchen doorway at foot (13,79) and turned Rosa back twice).
+ */
+export function doorGapExit(foot, rects, half = { w: 11, h: 6 }) {
+    for (const r of rects) {
+        if (!r || foot.x <= r.x0 || foot.x >= r.x1 || foot.y <= r.y0 || foot.y >= r.y1) continue;
+        if (r.side) {
+            const mid = (r.x0 + r.x1) / 2, out = (r.x1 - r.x0) / 2 + half.w + DOOR_CLEAR_PX;
+            return { x: foot.x >= mid ? mid + out : mid - out, y: foot.y };
+        }
+        const mid = (r.y0 + r.y1) / 2, out = (r.y1 - r.y0) / 2 + half.h + DOOR_CLEAR_PX;
+        return { x: foot.x, y: foot.y >= mid ? mid + out : mid - out };
+    }
+    return null;
+}
+
+const DOOR_SWEEP_MS = 1000;
+let doorSweepAt = 0;
+
+/**
+ * Once a second: a resting chair whose foot is in a door gap slides out of it. A chair someone is
+ * sitting on, fetching or mounting, the player's chair and a gliding chair are left alone.
+ */
+function sweepDoorwayChairs() {
+    const now = Date.now();
+    if (now < doorSweepAt) return;
+    doorSweepAt = now + DOOR_SWEEP_MS;
+    const chairs = window.chairs;
+    if (!Array.isArray(chairs) || !chairs.length) return;
+    const rects = [];
+    for (const room of Object.values(window.rooms || {})) {
+        for (const d of room?.doorSprites || []) { const r = doorGapRect(d?.doorProperties); if (r) rects.push(r); }
+    }
+    if (!rects.length) return;
+    for (const chair of chairs) {
+        if (!chair?.body || !chair.active || glides.has(chair) || state?.chair === chair) continue;
+        if (Math.hypot(chair.body.velocity.x, chair.body.velocity.y) > 1) continue;
+        const by = chair.seatedBy ? window.npcBehaviorManager?.getBehavior?.(chair.seatedBy) : null;
+        if (by && (by._seat?.chair === chair || by._fetch?.chair === chair || by._seatMove?.chair === chair)) continue;
+        const f = bodyFeet(chair);
+        const to = doorGapExit(f, rects, { w: chair.body.width / 2, h: chair.body.height / 2 });
+        if (!to) continue;
+        slideChairFootTo(chair, to.x, to.y);
+        window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_out_of_doorway',
+            { chair: chair.objectId || chair.texture?.key, from: [Math.round(f.x), Math.round(f.y)], to: [Math.round(to.x), Math.round(to.y)] });
+    }
+}
+
+/**
  * Called from NPCBehavior.update(). Returns true when the NPC is seated and the
  * rest of its behaviour should be skipped this tick.
  */
 export function updateSeatedNPC(behavior, playerPos) {
+    sweepDoorwayChairs();
     if (behavior?._seatMove?.stage === 'step') return advanceSeatMove(behavior);
     const ns = window.npcNeedsSystem?.states?.get?.(behavior?.npcId);
     if (ns) return updateNeedsSeat(behavior, ns, playerPos);

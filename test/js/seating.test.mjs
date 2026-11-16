@@ -1247,3 +1247,20 @@ test('postHomePending: a post seat waits while the home is null or provisional, 
     assert.equal(seating.postHomePending({ post: false, key: 'at:x' }, null, 0), false, 'not the post: no wait');
     assert.equal(seating.postHomePending(null, null, 0), false, 'no stop');
 });
+
+test('doorGapRect: side and front doors give their gaps', () => {
+    assert.deepEqual(seating.doorGapRect({ direction: 'west', worldX: 0, worldY: 80 }), { x0: -32, x1: 32, y0: 64, y1: 96, side: true });
+    assert.deepEqual(seating.doorGapRect({ direction: 'north', worldX: 160, worldY: 0 }), { x0: 144, x1: 176, y0: -32, y1: 32, side: false });
+    assert.equal(seating.doorGapRect({ direction: 'east' }), null, 'no position');
+});
+
+test('doorGapExit: a chair foot in a door gap goes out to its own side, clear of the mouth', () => {
+    const side = seating.doorGapRect({ direction: 'west', worldX: 0, worldY: 80 });
+    // Sanjay's reserved chair in tour 5658: foot (13,79), office side of the kitchen doorway
+    assert.deepEqual(seating.doorGapExit({ x: 13, y: 79 }, [side], { w: 11, h: 6 }), { x: 67, y: 79 });
+    assert.deepEqual(seating.doorGapExit({ x: -5, y: 85 }, [side], { w: 11, h: 6 }), { x: -67, y: 85 }, 'kitchen side');
+    assert.equal(seating.doorGapExit({ x: 92, y: 129 }, [side]), null, 'at its desk: stays');
+    assert.equal(seating.doorGapExit({ x: 13, y: 100 }, [side]), null, 'below the gap: stays');
+    const front = seating.doorGapRect({ direction: 'south', worldX: 160, worldY: 320 });
+    assert.deepEqual(seating.doorGapExit({ x: 158, y: 310 }, [null, front], { w: 11, h: 6 }), { x: 158, y: 258 }, 'front door: out north');
+});
