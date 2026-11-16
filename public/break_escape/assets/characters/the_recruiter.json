@@ -82,7 +82,7 @@
     },
     "breathing-idle_north-east_frame_000": {
       "frame": {
-        "x": 164,
+        "x": 0,
         "y": 82,
         "w": 80,
         "h": 80
@@ -102,7 +102,7 @@
     },
     "breathing-idle_north-east_frame_001": {
       "frame": {
-        "x": 246,
+        "x": 82,
         "y": 82,
         "w": 80,
         "h": 80
@@ -122,7 +122,7 @@
     },
     "breathing-idle_north-east_frame_002": {
       "frame": {
-        "x": 328,
+        "x": 164,
         "y": 82,
         "w": 80,
         "h": 80
@@ -142,7 +142,7 @@
     },
     "breathing-idle_north-east_frame_003": {
       "frame": {
-        "x": 410,
+        "x": 246,
         "y": 82,
         "w": 80,
         "h": 80
@@ -162,8 +162,8 @@
     },
     "breathing-idle_north-west_frame_000": {
       "frame": {
-        "x": 0,
-        "y": 164,
+        "x": 328,
+        "y": 82,
         "w": 80,
         "h": 80
       },
@@ -182,8 +182,8 @@
     },
     "breathing-idle_north-west_frame_001": {
       "frame": {
-        "x": 82,
-        "y": 164,
+        "x": 410,
+        "y": 82,
         "w": 80,
         "h": 80
       },
@@ -202,8 +202,8 @@
     },
     "breathing-idle_north-west_frame_002": {
       "frame": {
-        "x": 164,
-        "y": 164,
+        "x": 492,
+        "y": 82,
         "w": 80,
         "h": 80
       },
@@ -222,8 +222,8 @@
     },
     "breathing-idle_north-west_frame_003": {
       "frame": {
-        "x": 246,
-        "y": 164,
+        "x": 574,
+        "y": 82,
         "w": 80,
         "h": 80
       },
@@ -282,8 +282,8 @@
     },
     "breathing-idle_north_frame_002": {
       "frame": {
-        "x": 0,
-        "y": 82,
+        "x": 492,
+        "y": 0,
         "w": 80,
         "h": 80
       },
@@ -302,8 +302,8 @@
     },
     "breathing-idle_north_frame_003": {
       "frame": {
-        "x": 82,
-        "y": 82,
+        "x": 574,
+        "y": 0,
         "w": 80,
         "h": 80
       },
@@ -322,8 +322,8 @@
     },
     "breathing-idle_south-east_frame_000": {
       "frame": {
-        "x": 164,
-        "y": 246,
+        "x": 328,
+        "y": 164,
         "w": 80,
         "h": 80
       },
@@ -342,8 +342,8 @@
     },
     "breathing-idle_south-east_frame_001": {
       "frame": {
-        "x": 246,
-        "y": 246,
+        "x": 410,
+        "y": 164,
         "w": 80,
         "h": 80
       },
@@ -362,8 +362,8 @@
     },
     "breathing-idle_south-east_frame_002": {
       "frame": {
-        "x": 328,
-        "y": 246,
+        "x": 492,
+        "y": 164,
         "w": 80,
         "h": 80
       },
@@ -382,8 +382,8 @@
     },
     "breathing-idle_south-east_frame_003": {
       "frame": {
-        "x": 410,
-        "y": 246,
+        "x": 574,
+        "y": 164,
         "w": 80,
         "h": 80
       },
@@ -403,7 +403,7 @@
     "breathing-idle_south-west_frame_000": {
       "frame": {
         "x": 0,
-        "y": 328,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -423,7 +423,7 @@
     "breathing-idle_south-west_frame_001": {
       "frame": {
         "x": 82,
-        "y": 328,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -443,7 +443,7 @@
     "breathing-idle_south-west_frame_002": {
       "frame": {
         "x": 164,
-        "y": 328,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -463,7 +463,7 @@
     "breathing-idle_south-west_frame_003": {
       "frame": {
         "x": 246,
-        "y": 328,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -482,7 +482,7 @@
     },
     "breathing-idle_south_frame_000": {
       "frame": {
-        "x": 328,
+        "x": 0,
         "y": 164,
         "w": 80,
         "h": 80
@@ -502,7 +502,7 @@
     },
     "breathing-idle_south_frame_001": {
       "frame": {
-        "x": 410,
+        "x": 82,
         "y": 164,
         "w": 80,
         "h": 80
@@ -522,8 +522,8 @@
     },
     "breathing-idle_south_frame_002": {
       "frame": {
-        "x": 0,
-        "y": 246,
+        "x": 164,
+        "y": 164,
         "w": 80,
         "h": 80
       },
@@ -542,8 +542,8 @@
     },
     "breathing-idle_south_frame_003": {
       "frame": {
-        "x": 82,
-        "y": 246,
+        "x": 246,
+        "y": 164,
         "w": 80,
         "h": 80
       },
@@ -563,7 +563,7 @@
     "breathing-idle_west_frame_000": {
       "frame": {
         "x": 328,
-        "y": 328,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -583,7 +583,7 @@
     "breathing-idle_west_frame_001": {
       "frame": {
         "x": 410,
-        "y": 328,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -602,8 +602,8 @@
     },
     "breathing-idle_west_frame_002": {
       "frame": {
-        "x": 0,
-        "y": 410,
+        "x": 492,
+        "y": 246,
         "w": 80,
         "h": 80
       },
@@ -622,8 +622,488 @@
     },
     "breathing-idle_west_frame_003": {
       "frame": {
+        "x": 574,
+        "y": 246,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_east_frame_000": {
+      "frame": {
+        "x": 0,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_north-east_frame_000": {
+      "frame": {
+        "x": 164,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_north-west_frame_000": {
+      "frame": {
+        "x": 246,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_north_frame_000": {
+      "frame": {
+        "x": 82,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_south-east_frame_000": {
+      "frame": {
+        "x": 410,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_south-west_frame_000": {
+      "frame": {
+        "x": 492,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_south_frame_000": {
+      "frame": {
+        "x": 328,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_drink_west_frame_000": {
+      "frame": {
+        "x": 574,
+        "y": 328,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_east_frame_000": {
+      "frame": {
+        "x": 0,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_north-east_frame_000": {
+      "frame": {
+        "x": 164,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_north-west_frame_000": {
+      "frame": {
+        "x": 246,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_north_frame_000": {
+      "frame": {
         "x": 82,
         "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_south-east_frame_000": {
+      "frame": {
+        "x": 410,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_south-west_frame_000": {
+      "frame": {
+        "x": 492,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_south_frame_000": {
+      "frame": {
+        "x": 328,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_phone_west_frame_000": {
+      "frame": {
+        "x": 574,
+        "y": 410,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_east_frame_000": {
+      "frame": {
+        "x": 0,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_north-east_frame_000": {
+      "frame": {
+        "x": 164,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_north-west_frame_000": {
+      "frame": {
+        "x": 246,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_north_frame_000": {
+      "frame": {
+        "x": 82,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_south-east_frame_000": {
+      "frame": {
+        "x": 410,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_south-west_frame_000": {
+      "frame": {
+        "x": 492,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_south_frame_000": {
+      "frame": {
+        "x": 328,
+        "y": 492,
+        "w": 80,
+        "h": 80
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 80
+      },
+      "sourceSize": {
+        "w": 80,
+        "h": 80
+      }
+    },
+    "pose_use_west_frame_000": {
+      "frame": {
+        "x": 574,
+        "y": 492,
         "w": 80,
         "h": 80
       },
@@ -647,8 +1127,8 @@
     "image": "the_recruiter.png",
     "format": "RGBA8888",
     "size": {
-      "w": 490,
-      "h": 490
+      "w": 654,
+      "h": 572
     },
     "scale": "1"
   },
@@ -700,6 +1180,78 @@
       "breathing-idle_west_frame_001",
       "breathing-idle_west_frame_002",
       "breathing-idle_west_frame_003"
+    ],
+    "pose_drink_east": [
+      "pose_drink_east_frame_000"
+    ],
+    "pose_drink_north": [
+      "pose_drink_north_frame_000"
+    ],
+    "pose_drink_north-east": [
+      "pose_drink_north-east_frame_000"
+    ],
+    "pose_drink_north-west": [
+      "pose_drink_north-west_frame_000"
+    ],
+    "pose_drink_south": [
+      "pose_drink_south_frame_000"
+    ],
+    "pose_drink_south-east": [
+      "pose_drink_south-east_frame_000"
+    ],
+    "pose_drink_south-west": [
+      "pose_drink_south-west_frame_000"
+    ],
+    "pose_drink_west": [
+      "pose_drink_west_frame_000"
+    ],
+    "pose_phone_east": [
+      "pose_phone_east_frame_000"
+    ],
+    "pose_phone_north": [
+      "pose_phone_north_frame_000"
+    ],
+    "pose_phone_north-east": [
+      "pose_phone_north-east_frame_000"
+    ],
+    "pose_phone_north-west": [
+      "pose_phone_north-west_frame_000"
+    ],
+    "pose_phone_south": [
+      "pose_phone_south_frame_000"
+    ],
+    "pose_phone_south-east": [
+      "pose_phone_south-east_frame_000"
+    ],
+    "pose_phone_south-west": [
+      "pose_phone_south-west_frame_000"
+    ],
+    "pose_phone_west": [
+      "pose_phone_west_frame_000"
+    ],
+    "pose_use_east": [
+      "pose_use_east_frame_000"
+    ],
+    "pose_use_north": [
+      "pose_use_north_frame_000"
+    ],
+    "pose_use_north-east": [
+      "pose_use_north-east_frame_000"
+    ],
+    "pose_use_north-west": [
+      "pose_use_north-west_frame_000"
+    ],
+    "pose_use_south": [
+      "pose_use_south_frame_000"
+    ],
+    "pose_use_south-east": [
+      "pose_use_south-east_frame_000"
+    ],
+    "pose_use_south-west": [
+      "pose_use_south-west_frame_000"
+    ],
+    "pose_use_west": [
+      "pose_use_west_frame_000"
     ]
   }
 }
