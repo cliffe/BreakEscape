@@ -419,3 +419,7 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
    chair_in_doorway_no_spot lines (tools/playtest/needs-tour-regression.mjs).
 4. Live proofs on :3093 (tools/playtest/start-keyless-server.sh, tools/playtest/new-game.rb), then
    R1 Outcomes and Handover 6.
+- bin/test-js on 5c5df47d0: 686 of 687; door-gates failed because its path-avoid stub had no
+  `seatedBodyCellKeys` export (a80f4ddb0 imports it). Stub fixed in the next commit; door-gates then
+  passes on its own. The full suite has not been rerun after that fix: rerun it first.
+- No server was started and no game was made this session.
