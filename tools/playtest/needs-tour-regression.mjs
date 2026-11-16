@@ -84,6 +84,24 @@ await page.evaluate(() => {
         return orig(npc, ev, extra);
     };
 });
+// DOORWAY_LOG=1 (sims tidy R6 M1): once a second of wall time, every NPC body within the kitchen
+// doorway's neighbourhood (x -96..64, y 56..128) with its needs job, and at the end the needs log
+if (process.env.DOORWAY_LOG === '1') await page.evaluate(() => {
+    window.__door = [];
+    setInterval(() => {
+        try {
+            if (window.__door.length >= 3000) return;
+            const ns = window.npcNeedsSystem, out = [];
+            for (const room of Object.values(window.rooms || {})) for (const sp of room.npcSprites || []) {
+                const c = sp.body?.center; if (!c || c.x < -96 || c.x > 64 || c.y < 56 || c.y > 128) continue;
+                const st = ns.getState(sp.npcId), j = st?.job;
+                out.push({ npc: sp.npcId, at: [Math.round(c.x), Math.round(c.y)], v: [Math.round(sp.body.velocity.x), Math.round(sp.body.velocity.y)], held: !!sp.body.immovable, job: j ? `${j.need}:${j.targetId}:${j.phase}` : null });
+            }
+            const p = window.player?.body?.center;
+            if (out.length) window.__door.push({ c: Math.round(ns.clockMs / 100) / 10, player: p && [Math.round(p.x), Math.round(p.y)], npcs: out });
+        } catch (e) {}
+    }, 1000);
+});
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const done = () => page.evaluate(() => Object.values(window.objectivesManager?.taskIndex || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 /** Wait up to `ms` of needs clock (and 4x that of wall time) until every task in `want` has ticked. */
@@ -241,16 +259,27 @@ async function parkByCooler() {
         let r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
         let p = window.player.body.center;
         // Sims tidy R4: the walk can stall far from the aim (seen at (-36, 87) against (-196, 292)); one re-approach
-        let retried = false;
-        // R5 M1: moveTo can report ok while short of the aim (row 6: ok at 260 px off), so retry on distance alone
+        let retried = false, alt = null;
+        // R5 M1: moveTo can report ok while short of the aim (row 6: ok at 260 px off), so retry on distance alone.
+        // R6 m2: the same walk straight away met the same blockage (NPCs in the kitchen doorway); wait 3 s
+        // for them to move on, then aim at one neighbouring cell of the aim instead (the first walkable
+        // one a tile away, west, north, south, then east), still in view of the cooler
         if (Math.hypot(p.x - aim.x, p.y - aim.y) >= 24) {
             retried = true;
-            r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
+            await new Promise(res => setTimeout(res, 3000));
+            for (const [dx, dy] of [[-32, 0], [0, -32], [0, 32], [32, 0]]) {
+                const c = pm?.findNearestWalkableWorldCell?.(aim.x + dx, aim.y + dy, 1);
+                if (c && Math.hypot(c.x - aim.x, c.y - aim.y) >= 16) { alt = c; break; }
+            }
+            const goal = alt || aim;
+            r = await window.__test.moveTo(goal.x, goal.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
             p = window.player.body.center;
         }
-        const dist = Math.round(Math.hypot(p.x - aim.x, p.y - aim.y));
+        const goal = alt || aim;
+        const dist = Math.round(Math.hypot(p.x - goal.x, p.y - goal.y));
         return { retried, ok: dist < 24, dist, cooler: [Math.round(cell.x), Math.round(cell.y)],
-                 aim: [Math.round(aim.x), Math.round(aim.y)], player: [Math.round(p.x), Math.round(p.y)] };
+                 aim: [Math.round(aim.x), Math.round(aim.y)], alt: alt && [Math.round(alt.x), Math.round(alt.y)],
+                 player: [Math.round(p.x), Math.round(p.y)] };
     }, COOLER_OFFSET).catch(e => ({ ok: false, err: String(e).slice(0, 120) }));
 }
 
@@ -326,6 +355,10 @@ report.stuck = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e
 report.first_sat = await page.evaluate(() => { const o = {}; for (const e of window.__ev) if (e.ev === 'npc_sat' && !(e.npcId in o)) o[e.npcId] = Math.round(e.c / 1000); return o; });
 report.seating = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(fetch_start|fetch_end|seat_move_end|seat_gave_up)$/.test(e.ev)).map(e => ({ s: Math.round(e.t / 4), npc: e.npc, ev: e.ev, reason: e.reason, stage: e.stage, phase: e.phase, x: e.x, y: e.y })));
 await page.screenshot({ path: `${outDir}/tour-${gid}.png` });
+if (process.env.DOORWAY_LOG === '1') {
+    report.doorway_samples = await page.evaluate(() => window.__door || []);
+    report.needs_log = await page.evaluate(() => window.npcNeedsSystem.getLog());
+}
 fs.writeFileSync(`${outDir}/tour-${gid}.json`, JSON.stringify(report, null, 1));
 console.log(JSON.stringify({ gid, row1: report.rows[1].ok, row3: report.rows[3].ok, row3_queued: q, row3_turned_back: report.rows[3].turned_back, row3_grumbles: report.rows[3].grumbles, row5: report.rows[5].ok, row6: report.rows[6].ok, rooms: report.rooms, stuck: report.stuck, tom_sat: report.first_sat.tom ?? null, marek: { chair: report.marek.chair, facing: report.marek.facing }, sweeps: report.doorway_sweeps.length, replans: report.player_walk_replans, row6_doors: (report.rows[6].doors?.doors || []).map(d => `${d.room}:${d.direction}@${d.worldX},${d.worldY}`), seated_through: report.player_searches.filter(r => r.through?.length).length, reruns: report.player_searches.filter(r => r.rerun).length, errs: errs.length }));
 await page.goto('about:blank');
