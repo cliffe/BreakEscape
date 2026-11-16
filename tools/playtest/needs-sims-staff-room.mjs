@@ -306,6 +306,20 @@ if (beat === 'job_beat' || beat === 'boiler_cross') {
         const t0 = Date.now(); let shotLockers = false;
         while (Date.now() - t0 < 150000) {
             evs = await events();
+            // Her locker trip shows the upkeep icon (icon:npc-upkeep, a red toolbox): shoot the walk
+            if (!r.trip_icon && evs.some(e => e.ev === 'npc_exchange_heard:exchange_job_called') && !evs.some(e => e.ev === 'npc_use_started:staff_lockers')) {
+                const ic = await page.evaluate(() => {
+                    const j = window.npcBehaviorManager?.getBehavior?.('jodie'), sp = j?.sprite, out = [];
+                    if (!sp) return null;
+                    for (const sc of window.game.scene.scenes) for (const o of sc.children?.list || []) {
+                        const k = o.texture?.key || '';
+                        if (o.visible && k.startsWith('icon:') && Math.hypot(o.x - sp.x, o.y - sp.y) < 64) out.push({ key: k, x: Math.round(o.x), y: Math.round(o.y), alpha: +(o.alpha ?? 1).toFixed(2) });
+                    }
+                    const st = window.npcNeedsSystem.getState('jodie');
+                    return { jodie: [Math.round(sp.x), Math.round(sp.y)], moving: !!j.isMoving, job: st?.job ? { target: st.job.targetId, phase: st.job.phase } : null, icons: out };
+                });
+                if (ic?.job?.target === 'staff_lockers' && ic.moving) { r.trip_icon = ic; await shot('02a-jodie-locker-trip'); }
+            }
             if (!shotLockers && evs.some(e => e.ev === 'npc_use_started:staff_lockers')) { await t(1500); await shot('02-jodie-at-lockers'); r.light_while_at_lockers = await light(); shotLockers = true; }
             if (evs.some(e => e.ev === 'npc_used:staff_lockers')) break;
             await t(1000);

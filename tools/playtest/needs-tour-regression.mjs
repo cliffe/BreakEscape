@@ -40,6 +40,32 @@ await page.evaluate(() => {
     const ed = window.eventDispatcher; window.__ev = []; const orig = ed.emit.bind(ed);
     ed.emit = (ev, data) => { try { if (/^npc_(turned_back|need_parked|overheard|chatted|sat$)/.test(ev) && window.__ev.length < 400) window.__ev.push({ c: window.npcNeedsSystem.clockMs, ev, npcId: data?.npcId || data?.speakerId, reason: data?.reason, line: data?.line, picture: !!data?.picture, topic: data?.topic }); } catch (e) {} return orig(ev, data); };
 });
+// Stall snapshots (sims tidy item 2): on each stall line, what is within 64 px of the NPC: the
+// player, other NPC bodies, chairs and static bodies, with their boxes
+await page.evaluate(() => {
+    const ns = window.npcNeedsSystem; window.__stalls = []; const orig = ns._log.bind(ns);
+    const box = b => [Math.round(b.left), Math.round(b.top), Math.round(b.right), Math.round(b.bottom)];
+    ns._log = (npc, ev, extra) => {
+        try {
+            if (/^(return_stuck|walk_stuck|walk_rerouted|return_resumed)$/.test(ev) && window.__stalls.length < 200) {
+                const sp = window.npcBehaviorManager?.getBehavior?.(npc)?.sprite, c = sp?.body?.center;
+                const near = []; const R = 64;
+                if (c) {
+                    const pb = window.player?.body;
+                    if (pb && Math.hypot(pb.center.x - c.x, pb.center.y - c.y) < R) near.push({ player: box(pb) });
+                    for (const room of Object.values(window.rooms || {})) for (const o of room.npcSprites || []) {
+                        const b = o.body; if (o !== sp && b?.center && Math.hypot(b.center.x - c.x, b.center.y - c.y) < R) near.push({ npc: o.npcId, box: box(b), held: !!b.immovable, seated: !!window.npcBehaviorManager?.getBehavior?.(o.npcId)?._seat });
+                    }
+                    for (const ch of window.chairs || []) { const b = ch.body; if (b?.center && Math.hypot(b.center.x - c.x, b.center.y - c.y) < R) near.push({ chair: ch.objectId, box: box(b), seatedBy: ch.seatedBy || null }); }
+                    window.game.physics.world.staticBodies.iterate(b => { if (b.enable && b.center && Math.hypot(b.center.x - c.x, b.center.y - c.y) < R) near.push({ static: b.gameObject?.objectId || b.gameObject?.name || b.gameObject?.texture?.key || '?', box: box(b) }); });
+                }
+                const p = window.player?.body?.center;
+                window.__stalls.push({ c: Math.round(ns.clockMs / 100) / 10, npc, ev, at: c && [Math.round(c.x), Math.round(c.y)], room: window.npcBehaviorManager?.getBehavior?.(npc)?.roomId, player: p && [Math.round(p.x), Math.round(p.y)], playerRoom: window.currentPlayerRoom, near });
+            }
+        } catch (e) {}
+        return orig(npc, ev, extra);
+    };
+});
 const clock = () => page.evaluate(() => window.npcNeedsSystem.clockMs);
 const done = () => page.evaluate(() => Object.values(window.objectivesManager?.taskIndex || {}).filter(x => x.status === 'completed' || x.status === 'completing').map(x => x.taskId || x.id));
 /** Wait up to `ms` of needs clock (and 4x that of wall time) until every task in `want` has ticked. */
@@ -59,7 +85,12 @@ const coffeeBusy = () => page.evaluate(() => ['amara', 'tom', 'marek', 'sanjay']
 // false, so no fresh queue formed), so a failed walk or read is tried again, up to three times
 // `mids` orders the mid-office points tried first (row 3 starts at 200,176: Amara's chair stands
 // in the aisle north of 232,176 and stopped every first try there, the sims tidy pass)
-const read = async (id, mids = [[232, 176], [200, 176], [264, 176]]) => {
+// `front` (optional): a floor point in front of the lever to walk to instead of moveToNear. The
+// Activity Board hangs on the back wall (x 210..250, y 13..65) and reads from the floor at about
+// (212..220, 75), but moveToNear aims behind the wall (y 41) and stopped at y 103 to 104 in row 3
+// on games 5657 and 5658 (sims tidy item 1)
+const BOARD_FRONT = [220, 76];
+const read = async (id, mids = [[232, 176], [200, 176], [264, 176]], front = null) => {
     const tries = [];
     for (let i = 0; i < 3; i++) {
         // Round 7 (5436: every read from the coffee station ended still-out-of-range): walk to open
@@ -72,7 +103,9 @@ const read = async (id, mids = [[232, 176], [200, 176], [264, 176]]) => {
         const [mx, my] = mids[i];
         const mid = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 20000, pointer: false }), [mx, my]).catch(e => ({ err: String(e) }));
         await t(300);
-        const mv = await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
+        const mv = front
+            ? await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 30000, pointer: false }), front).catch(e => ({ err: String(e) }))
+            : await page.evaluate(id => window.__test.moveToNear(id, { timeoutMs: 30000 }), id).catch(e => ({ err: String(e) }));
         await t(400);
         const r = await page.evaluate(id => window.__test.interact(id), id).catch(e => ({ err: String(e) }));
         await t(1200); await closeUi();
@@ -103,7 +136,7 @@ console.log('row 1', JSON.stringify(report.rows[1]));
 // Row 3: once the queue has cleared, a fresh one from the Activity Board; switch the coffee off while
 // two wait in line, then back on
 for (let i = 0; i < 120 && await coffeeBusy(); i++) await t(1000);
-report.rows[3] = { board: await read('activity_board', [[200, 176], [264, 176], [232, 176]]) };
+report.rows[3] = { board: await read('activity_board', [[200, 176], [264, 176], [232, 176]], BOARD_FRONT) };
 await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
 // The README switches the socket off while Tom and Marek wait in line: wait for two in the queue
 // (one after 90 s), and read the board again once if nobody has queued by then
@@ -113,7 +146,7 @@ while (Date.now() - cq < 150000) {
     q = await queued();
     if (q.length >= 2 || (q.length >= 1 && Date.now() - cq > 90000)) break;
     if (!q.length && Date.now() - cq > 75000 && !report.rows[3].board2) {
-        report.rows[3].board2 = await read('activity_board', [[200, 176], [264, 176], [232, 176]]);
+        report.rows[3].board2 = await read('activity_board', [[200, 176], [264, 176], [232, 176]], BOARD_FRONT);
         await page.evaluate(() => window.__test.moveToNear('office_coffee_socket', { timeoutMs: 30000 })).catch(() => null);
     }
     await t(500);
@@ -139,7 +172,7 @@ for (const r of ['kitchen', 'office', 'lounge', 'office']) report.rooms.push([r,
 
 // Row 5: the Activity Board again, then stand by the water cooler in the kitchen
 for (let i = 0; i < 120 && await coffeeBusy(); i++) await t(1000);
-report.rows[5] = { board: await read('activity_board') };
+report.rows[5] = { board: await read('activity_board', undefined, BOARD_FRONT) };
 await page.evaluate(() => window.__test.enterRoom('kitchen')).catch(() => null);
 await page.evaluate(() => window.__test.moveToNear('water_cooler', { timeoutMs: 20000 })).catch(() => null);
 report.rows[5].wait = await waitTasks(['see_chat', 'hear_rota_exchange'], 180000);
@@ -161,6 +194,7 @@ report.rows[6].wait = await waitTasks(['see_outcast'], 180000);
 report.rows[6].ok = report.rows[6].wait.ok;
 console.log('row 6', JSON.stringify(report.rows[6]));
 
+report.stalls = await page.evaluate(() => window.__stalls);
 report.stuck = await page.evaluate(() => window.npcNeedsSystem.getLog().filter(e => /^(return_stuck|walk_stuck)$/.test(e.ev)).map(e => ({ t: e.t, npc: e.npc, ev: e.ev, x: e.x, y: e.y })));
 // Seating: every NPC's first time seated (needs clock, s) and the fetch and seat-move ends (the
 // needs log's t is in 250 ms ticks), for the sims tidy pass's Tom check

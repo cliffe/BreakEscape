@@ -55,3 +55,58 @@ Branch build/ol-sims-tidy (from main 177c13f6a). Scenario scenarios/test_needs_s
 ### Games
 Created this session: 5633 (tour, partial), 5634 (geometry), 5640 and 5645 (Tom traces), plus one
 unrecorded id from the first new-game call, which was not driven.
+
+## Handover 2 (second session stopped at the context limit)
+
+Games this session (keyless :3093): 5655, 5656, 5657, 5658, 5691, 5693. Scratch:
+/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/sims-tidy2/
+(tomtrace.mjs with `home` in its log filter, board.mjs, tour JSONs, item4/ shots).
+
+### Item 3: committed bd2b3a61e, partly proved
+- seating.js: `seatWalkClear` (18 x 10 box every 4 px, last 8 px not checked) and `seatWalkWaypoints`
+  (pure, unit-tested); `planSeatWalk` plans a sync grid route when the line is blocked; the `walk`
+  stage goes leg by leg (log line `seat_walk_routed`). updateNeedsSeat: at the post the first try
+  waits for a resolved home, up to POST_HOME_WAIT_MS = 5000 (needs clock), before the stop is marked
+  tried. Three tests in test/js/seating.test.mjs. bin/test-js: 680 of 681; validator-office-life
+  failed under load (two live runs going) and passes alone, 32 of 32.
+- Before (old seating.js, game 5655, quiet trace): fetch at 0.25 s from the provisional spot,
+  walk_stuck at 4 s, seated at 18 s. Before tour 5657: tom_sat 18, walk_stuck 3 (tom x2, grace, all in
+  the kitchen doorway corridor at y 84).
+- After, quiet trace 5656: home_resolved and fetch_start both at 1.25 s, seated at 5.3 s. After tour
+  5658: tom_sat 5, walk_stuck 0, one Sanjay return_stuck.
+- Route only (home wait set to 0, game 5655): `seat_walk_routed legs 4`, no walk_stuck, the walk
+  reaches the spot, then `mount_stuck` at (98,190): the provisional spawn spot against the desk is
+  not seatable, so the home wait is the fix that matters; the route removes the walk stall.
+- OPEN: tour 5691 (after) shows tom_sat 18 again: fetch_start at s 0 from (96,192), mount_stuck at
+  5 s. So the home wait did not hold on that run. Check whether `stop.post` is false for that first
+  stop, or the home resolved at tick 0 to a spot that is still against the desk (log the ref in
+  fetch_start). Also in 5656 Tom fetched office_chair-white-2-rotate3_157 from (234,168), 140 px
+  away; check that chair is not another NPC's.
+
+### Item 1: not proved; board read from (200,176) fails in every run
+- Board activity_board: x 210..250, y 13..65 (back wall). Probe board.mjs on 5655 at game start:
+  reads work from the floor at (212..220, 75); moveToNear aims behind the wall (y 41) and returns
+  arrived-but-outside-plain-range.
+- Tours 5657, 5658, 5691: in row 3 the player stops at (212..228, 103..104) from every mid point
+  (moveToNear, and in 5691 the new driver `BOARD_FRONT` moveTo(220,76), reason `stuck`). Amara sits
+  in her pulled-out chair at (228,123) then. Row 5 (later) reads fine, the player at (220,37).
+  Next: snapshot every body between y 64 and 104, x 190..260, at the row 3 stop (something is in the
+  aisle north of the player only then).
+
+### Item 2: stall snapshots in the tour driver (report.stalls), committed with this note
+- After tour 5658: no kitchen doorway stall. Two rosa walk_rerouted at (39..41,84), office end of the
+  doorway: Grace in the corridor, and Sanjay's reserved chair office_chair-white-1-rotate8_153 parked at
+  box (2..24, 68..79), inside the gap (feet band 73..87). Player in the kitchen far away.
+- Sanjay return_stuck at (-244,254) in the kitchen: the player stood beside him at the water cooler
+  (box -257..-239 x 239..249): a driver cause (rows 5 and 6 park at moveToNear water_cooler).
+- Tour 5691: stalls moved to (44..64,138) in the office (tom x3, grace), round Marek seated at
+  (42..64,122..133) in chair rotate3_157 and loose chairs; player in the kitchen. Not the player.
+- The (+/-19,80) park suspect is not supported: no doorway stall had the player within 64 px.
+  Options for the chair-in-gap and seated-in-aisle stalls are not written yet.
+
+### Item 4: shot not taken
+- job_beat on 5693 (GL=1): Jodie took the lockers (start 14.5 s after the call), job cleared; shots
+  01..06 in sims-tidy2/item4/. The new `02a-jodie-locker-trip` hook never fired: it needs
+  job.targetId === 'staff_lockers' and isMoving at a 1 s poll; check the job shape on her walk
+  (maybe the target id differs or phase is 'walking' with a different field). 02-jodie-at-lockers
+  exists but was taken at the lockers, not on the trip.
