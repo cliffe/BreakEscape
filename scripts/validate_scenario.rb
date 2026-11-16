@@ -7117,7 +7117,17 @@ def check_credentials(json_data)
   foothold_ids = Set.new
   nm.jacks(json_data).each { |e| foothold_ids << e[:object]['id'].to_s if e[:object]['id'] }
   nm.wifi_aps(json_data).each { |ap| foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id'] }
-  nm.grant_foothold_actions(json_data).each { |a| foothold_ids << a[:pc].to_s unless a[:pc].to_s.empty? }
+  # A grant_foothold action (scripted or a player implant) grants its foothold through POST
+  # /network/implant, whose runtime id is "implant_<pc>" (implant_foothold_id_for). Accept both
+  # the bare PC id and that implant id, so a proof foothold naming an implant-created foothold is
+  # not falsely rejected (R1 m4). A safe superset: the runtime reads player_state['footholds'].
+  nm.grant_foothold_actions(json_data).each do |a|
+    pc = a[:pc].to_s
+    next if pc.empty?
+
+    foothold_ids << pc
+    foothold_ids << "implant_#{pc}"
+  end
 
   declared_globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'].keys.map(&:to_s).to_set : Set.new
 

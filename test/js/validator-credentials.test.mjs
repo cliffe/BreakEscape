@@ -166,6 +166,16 @@ test('E: a foothold proof names no foothold', { skip }, () => {
     "proof foothold 'ghost' names no foothold");
 });
 
+test('a foothold proof naming an implant-created foothold is accepted (R1 m4)', { skip }, () => {
+  // A grant_foothold action on lena_pc grants the runtime foothold "implant_lena_pc" through
+  // POST /network/implant; a proof naming it must not draw the "names no foothold" error.
+  const l = issues(sc(
+    { c1: { kind: 'saved_connection', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'implant_lena_pc' } } },
+    { top: { timers: [{ id: 't', actions: [{ type: 'grant_foothold', pc: 'lena_pc' }] }] } }
+  ));
+  assert.ok(!has(errors(l), 'names no foothold'), `unexpected foothold error in:\n${l.join('\n')}`);
+});
+
 test('E: a policy accepts an unknown kind', { skip }, () => {
   const l = issues(sc({ c1: PW_OK }, { objects: [{ ...PC(), policy: 'p1' }], top: { policies: { p1: { accepts: ['wat', 'password'] } } } }));
   assertErr(l, "policy 'p1' accepts an unknown kind 'wat'");
