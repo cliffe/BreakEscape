@@ -240,6 +240,181 @@ export function ringLayerSpot({ vw, vh = 0, size, titles = [], controls = [], to
   return spots.find(Boolean) || { name: 'default', top, left: centre };
 }
 
+// ------------------------------------------------------------ toasts over an open panel
+
+export const TOAST_SPOT_MARGIN = 4;     // px kept round every blocker
+export const TOAST_SPOT_STEP = 8;       // px between the tops tried
+export const TOAST_SPOT_EDGE = 8;       // px kept from the viewport's top and bottom
+export const TOAST_SPOT_WIDTHS = [480, 360, 240];   // narrower widths tried, times the HUD zoom
+
+const overlaps = (l, t, w, h, m) => (r) => l < r.right + m && r.left < l + w + m && t < r.bottom + m && r.top < t + h + m;
+const areaOver = (l, t, w, h, r) => Math.max(0, Math.min(l + w, r.right) - Math.max(l, r.left))
+  * Math.max(0, Math.min(t + h, r.bottom) - Math.max(t, r.top));
+
+/** Controls that are not inside another control's box (a table row and its cells count once). */
+export function outermostBoxes(boxes) {
+  return boxes.filter((a, i) => !boxes.some((b, j) => j !== i && b.left <= a.left && b.top <= a.top
+    && b.right >= a.right && b.bottom >= a.bottom
+    && (b.left < a.left || b.top < a.top || b.right > a.right || b.bottom > a.bottom || j < i)));
+}
+
+/**
+ * Where the notify lane's toast block goes while a panel (a minigame or a workstation popup) is
+ * open. Pure; every number is screen px.
+ *
+ * Blockers: `titles` (headings and the close X), `xs` (the close X on its own), `controls` (boxes;
+ * those with `listRow: true` are rows in a scrolling list and are not avoided), `canvases` (play
+ * canvases) and `banner` (the incoming-call banner, or null).
+ *   1. the lane, at the lane width, when clear (checked first, so a block that moved comes back)
+ *   2. `current`, the block's place now when it is away from the lane, if still clear (no jitter)
+ *   3. the nearest clear place: sides right-aligned to the lane, centred, the 16 px left gutter;
+ *      on each side the lane width then 480, 360 and 240 times `z` (not wider than the lane); for
+ *      each width the tops in 8 px steps, nearest to the lane top first
+ *   4. the fallback rungs, over the same places with the lane first; the X and the banner are
+ *      never covered: (1) cover a title, (2) the fewest canvas pixels, (3) the fewest outermost
+ *      controls (title-free wins a tie), (4) nothing fits whole: the lane column, top just under
+ *      any X or banner in it, cut at the viewport bottom
+ * `heightAt(w)` is the block's height at width `w`. With `clearOnly` the fallback is not tried and
+ * null means no clear place.
+ * @returns {{name:'lane'|'current'|'moved'|'fallback', rung:number, side:string, left:number,
+ *   top:number, width:number, height:number, maxHeight:number|null, covers?:object}|null}
+ */
+export function toastSpot({ vw, vh, lane, z = 1, heightAt, titles = [], xs = [], controls = [], canvases = [],
+  banner = null, current = null, margin = TOAST_SPOT_MARGIN, step = TOAST_SPOT_STEP, edge = TOAST_SPOT_EDGE,
+  gutter = SIDE_GUTTER, clearOnly = false } = {}) {
+  const heights = new Map();
+  const hAt = (w) => {
+    if (!heights.has(w)) { const h = Number(heightAt?.(w)); heights.set(w, Number.isFinite(h) && h > 0 ? Math.ceil(h) : 0); }
+    return heights.get(w);
+  };
+  const ctl = controls.filter(c => !c.listRow);
+  const hard = [...xs, ...(banner ? [banner] : [])];
+  const fits = (p) => p.left >= 0 && p.left + p.width <= vw && p.top >= edge && p.top + p.height <= vh - edge;
+  const clearOf = (p, list) => !list.some(overlaps(p.left, p.top, p.width, p.height, margin));
+  const allBlockers = [...titles, ...hard, ...ctl, ...canvases];
+  const spot = (name, rung, side, left, top, width, extra = {}) => ({ name, rung, side, left: Math.round(left),
+    top: Math.round(top), width, height: hAt(width), maxHeight: null, ...extra });
+
+  const laneW = Math.round(lane.width);
+  const laneP = spot('lane', 0, 'lane', lane.left, lane.top, laneW);
+  if (laneP.height && fits(laneP) && clearOf(laneP, allBlockers)) return laneP;
+  if (current && Number.isFinite(current.top) && Number.isFinite(current.left) && current.width > 0) {
+    const cw = Math.round(current.width);
+    const cur = spot('current', 0, current.side || 'current', current.left, current.top, cw);
+    if (cur.height && fits(cur) && clearOf(cur, allBlockers)) return cur;
+  }
+  const widths = [laneW];
+  for (const base of TOAST_SPOT_WIDTHS) {
+    const w = Math.round(base * z);
+    if (w <= laneW && !widths.includes(w)) widths.push(w);
+  }
+  const sides = [['lane-side', w => lane.left + lane.width - w], ['centre', w => (vw - w) / 2], ['left', () => gutter]];
+  // Every place in search order, lazily (a clear one usually turns up early)
+  function* places() {
+    for (const [side, xf] of sides) {
+      for (const w of widths) {
+        const h = hAt(w);
+        if (!h) continue;
+        const left = Math.round(xf(w));
+        if (left < 0 || left + w > vw) continue;
+        const tops = [];
+        for (let t = edge; t + h <= vh - edge; t += step) tops.push(t);
+        tops.sort((a, b) => Math.abs(a - lane.top) - Math.abs(b - lane.top) || a - b);
+        for (const t of tops) yield spot('moved', 0, side, left, t, w);
+      }
+    }
+  }
+  for (const p of places()) if (clearOf(p, allBlockers)) return p;
+  if (clearOnly) return null;
+
+  // Fallback (2.4): the lane first, then the same places; the X and the banner are hard in every rung
+  const all = [laneP, ...places()].filter(p => p.height && fits(p));
+  const titleHit = (p) => titles.some(overlaps(p.left, p.top, p.width, p.height, margin));
+  const r1 = all.find(p => clearOf(p, [...hard, ...ctl, ...canvases]));
+  if (r1) return { ...r1, name: 'fallback', rung: 1, covers: { titles: titles.filter(overlaps(r1.left, r1.top, r1.width, r1.height, margin)).length } };
+  if (canvases.length) {
+    let best = null;
+    for (const p of all) {
+      if (!clearOf(p, [...hard, ...ctl])) continue;
+      const px = canvases.reduce((a, k) => a + areaOver(p.left, p.top, p.width, p.height, k), 0);
+      if (!best || px < best.px) best = { p, px };
+    }
+    if (best) return { ...best.p, name: 'fallback', rung: 2, covers: { canvasPx: best.px, titles: titleHit(best.p) ? 1 : 0 } };
+  }
+  const outer = outermostBoxes(ctl);
+  let best3 = null;
+  all.forEach((p, i) => {
+    if (!clearOf(p, hard)) return;
+    const n = outer.filter(overlaps(p.left, p.top, p.width, p.height, margin)).length;
+    const tt = titleHit(p) ? 1 : 0;
+    if (!best3 || n < best3.n || (n === best3.n && tt < best3.tt)) best3 = { p, n, tt, i };
+  });
+  if (best3) return { ...best3.p, name: 'fallback', rung: 3, covers: { controls: best3.n, titles: best3.tt } };
+  // Nothing fits whole: the lane column, starting under any X or banner in it, cut at the bottom
+  let top = lane.top;
+  for (const r of hard) {
+    if (lane.left < r.right + margin && r.left < lane.left + laneW + margin && r.top < vh - edge) {
+      top = Math.max(top, Math.ceil(r.bottom + margin));
+    }
+  }
+  if (top > vh - edge - step) top = lane.top;
+  return { ...laneP, name: 'fallback', rung: 4, top: Math.round(top), maxHeight: Math.max(0, Math.round(vh - edge - top)) };
+}
+
+export const TOAST_WARNING_FLOOR_MS = 1500;   // TOAST_STAGGER_MS in notifications.js
+export const TOAST_ERROR_FLOOR_MS = 5000;     // ERROR_TOAST_MIN_MS in notifications.js
+export const TOAST_WARNING_WAIT_MS = 5000;    // a warning behind errors waits no longer than this
+
+/**
+ * The answer for each toast waiting to show over a panel (warnings and errors). Pure.
+ * @param {object} a
+ *   block    the toasts showing now, in container order: [{el, type, shownAt, duration}]
+ *            (closing ones left out by the caller)
+ *   pending  the toasts waiting, in arrival order: [{el, type, arrivedAt}]
+ *   now      Date.now()
+ *   spotFor  (toasts) => truthy when the block made of these toasts has a clear place
+ *   panelOpen  false: every answer is 'stack'
+ * @returns {Array<{el, answer:'stack'|'wait'|object}>} queue order (errors first, then warnings);
+ *   an element answer means "replace that toast at its floor"
+ */
+export function pendingAnswers({ block = [], pending = [], now = Date.now(), spotFor = () => true, panelOpen = true } = {}) {
+  const errorsFirst = [...pending.filter(p => p.type === 'error'), ...pending.filter(p => p.type !== 'error')];
+  if (!panelOpen) return errorsFirst.map(p => ({ el: p.el, answer: 'stack' }));
+  const stacked = [];
+  const targeted = new Set();
+  const out = [];
+  const byShown = (a, b) => (a.shownAt || 0) - (b.shownAt || 0);
+  for (const p of errorsFirst) {
+    let answer;
+    const shownNow = [...block, ...stacked];
+    if (spotFor([...shownNow, p])) answer = 'stack';
+    else {
+      const errors = shownNow.filter(t => t.type === 'error');
+      if (p.type === 'error') {
+        if (errors.length === 0) {
+          const warn = block.filter(t => t.type === 'warning').sort(byShown)[0];
+          answer = warn ? warn.el : 'stack';
+        } else if (errors.length === 1) {
+          answer = 'stack';
+        } else {
+          const target = block.filter(t => t.type === 'error' && t.duration > 0 && !targeted.has(t.el)).sort(byShown)[0];
+          if (target) { targeted.add(target.el); answer = target.el; } else answer = 'wait';
+        }
+      } else {
+        const warn = shownNow.filter(t => t.type === 'warning' && !targeted.has(t.el)).sort(byShown)[0];
+        if (warn) { targeted.add(warn.el); answer = warn.el; }
+        else if (errors.length) {
+          const oldest = Math.min(...errors.map(t => (Number.isFinite(t.shownAt) ? t.shownAt : now)));
+          answer = (now - oldest >= TOAST_ERROR_FLOOR_MS || now - (p.arrivedAt ?? now) >= TOAST_WARNING_WAIT_MS) ? 'stack' : 'wait';
+        } else answer = 'stack';
+      }
+    }
+    if (answer === 'stack') stacked.push({ el: p.el, type: p.type, shownAt: now, duration: p.duration });
+    out.push({ el: p.el, answer });
+  }
+  return out;
+}
+
 /**
  * The arrow pointing from the player towards an off-screen speaker: one of eight compass points
  * ('n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'), or null when either position is unknown or they
