@@ -1064,3 +1064,13 @@ test('UI PC 2 (N05): the Unplug button CSS is pixel art (no radius, no shadow)',
     assert.match(body, /padding:\s*4px 12px/);
     assert.doesNotMatch(body, /border-radius|box-shadow/);
 });
+
+test('phone kind (Pentest B1): own label, icon, group and rank; unknown kinds sort after phones', () => {
+    const src = readFileSync(join(js, 'minigames/network-view/network-view-minigame.js'), 'utf8');
+    assert.match(src, /KIND_LABELS = \{[^}]*phone: 'Phone'/);
+    assert.match(src, /phone: '\/break_escape\/assets\/objects\/phone5\.png'/);
+    assert.match(src, /KIND_GROUPS = \{[^}]*phone: 'Phones'/);
+    const rows = [{ id: 'x', kind: 'camera', name: 'Cam' }, { id: 'ph', kind: 'phone', name: 'LW-PH-RECEP' },
+        { id: 'p', kind: 'printer', name: 'Queue' }, { id: 'h', kind: 'pc', host: 'A' }];
+    assert.deepEqual(displayOrder(rows).map(r => r.id), ['h', 'p', 'ph', 'x']);
+});
