@@ -250,9 +250,20 @@ const areaOver = (l, t, w, h, r) => Math.max(0, Math.min(l + w, r.right) - Math.
 
 /** Controls that are not inside another control's box (a table row and its cells count once). */
 export function outermostBoxes(boxes) {
-  return boxes.filter((a, i) => !boxes.some((b, j) => j !== i && b.left <= a.left && b.top <= a.top
-    && b.right >= a.right && b.bottom >= a.bottom
-    && (b.left < a.left || b.top < a.top || b.right > a.right || b.bottom > a.bottom || j < i)));
+  // Largest first (equal boxes in input order): a box is inside another only if that one comes
+  // earlier, and an inner box of a dropped box is inside the dropped box's keeper too, so each is
+  // tested against the keepers alone
+  const area = (b) => (b.right - b.left) * (b.bottom - b.top);
+  const order = boxes.map((b, i) => i).sort((i, j) => area(boxes[j]) - area(boxes[i]) || i - j);
+  const keep = [];
+  const kept = new Set();
+  for (const i of order) {
+    const a = boxes[i];
+    if (keep.some(b => b.left <= a.left && b.top <= a.top && b.right >= a.right && b.bottom >= a.bottom)) continue;
+    keep.push(a);
+    kept.add(i);
+  }
+  return boxes.filter((a, i) => kept.has(i));
 }
 
 /**
@@ -284,7 +295,8 @@ export function toastSpot({ vw, vh, lane, z = 1, heightAt, titles = [], xs = [],
     if (!heights.has(w)) { const h = Number(heightAt?.(w)); heights.set(w, Number.isFinite(h) && h > 0 ? Math.ceil(h) : 0); }
     return heights.get(w);
   };
-  const ctl = controls.filter(c => !c.listRow);
+  // A box inside another control's box can only be hit with it: the outermost boxes decide
+  const ctl = outermostBoxes(controls.filter(c => !c.listRow));
   const hard = [...xs, ...(banner ? [banner] : [])];
   const fits = (p) => p.left >= 0 && p.left + p.width <= vw && p.top >= edge && p.top + p.height <= vh - edge;
   const clearOf = (p, list) => !list.some(overlaps(p.left, p.top, p.width, p.height, margin));
@@ -338,7 +350,7 @@ export function toastSpot({ vw, vh, lane, z = 1, heightAt, titles = [], xs = [],
     }
     if (best) return { ...best.p, name: 'fallback', rung: 2, covers: { canvasPx: best.px, titles: titleHit(best.p) ? 1 : 0 } };
   }
-  const outer = outermostBoxes(ctl);
+  const outer = ctl;
   let best3 = null;
   all.forEach((p, i) => {
     if (!clearOf(p, hard)) return;
