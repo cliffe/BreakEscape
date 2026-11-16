@@ -52,24 +52,24 @@ Captured through the harness's `pageerror` and `console.error` listener (drained
 - Beat 7 used game 5727, created with a room unlock. The unlock changes only which door is open.
 - The run used a headless browser on a loaded machine, so timings are rough.
 
-## Consumable beats (2026-11-16, build/ol-poses-code at 69d7c884f)
+## Consumable beats (2026-11-16, build/ol-poses-code at c53c46a9c)
 
-Setup: keyless Rails dev server on 127.0.0.1:3092 from this worktree, gems from the main checkout's vendor bundle (BUNDLE_PATH). Game 5737 (test_needs_sims, mission id 236, from `new-game.rb`). Headless browser through `playtest-session.js`, `setFPS(20)` with fixed steps, read back as `fixedStep: true, fps: 20`. Player sprite is the scenario default, with no pose frames on this branch.
+Setup: keyless Rails dev server on 127.0.0.1:3092 from this worktree (gems from the main checkout's vendor bundle), headless Chromium through `playtest-session.js`. Both games are test_needs_sims (mission id 236) from `new-game.rb`:
+
+- Game 5752 (`--start-room kitchen`), D1. No scenario in the repo has a takeable coffee, so a test-only object was added to this game row's own copy of the scenario (kitchen, `office-misc-cup`, `takeable: true`, id `probe_coffee`). No repo file was touched.
+- Game 5750 (default start, office), D2.
+
+Physics on 5750 was set to `setFPS(20)` with `fixedStep` true (read back). On 5752 the `setFPS` call failed (wrong scene lookup) and was not retried: the player stood still for the whole beat, so it does not affect the result. The player and NPC atlases on this branch hold no pose frames.
 
 | Beat | Result | Evidence |
 | --- | --- | --- |
-| D1. Drink a coffee from the inventory | NOT TESTED (as specified) | See below |
-| D2. A needs NPC without poses drinks | NOT TESTED | See below |
+| D1. Player picks up and drinks a cup | PASS | Pick-up by `interact probe_coffee` (approach and click), which put it in the tray at index 4. Drunk by clicking the tray item, which runs the real path (`item_consumed` event). Sounds recorded by a hook on `soundManager.play`: exactly `["drink_gulp"]`. The cup left the tray (ids afterwards: parcel, player_mugs, cake, notepad) and its room object was gone. `console.error` and `error` hooks recorded 0 entries. Player `anims.currentAnim.key` was `idle-up-left` before, 444 ms after the click and at the end (the 50 ms change log held that one entry only). `window.playerPoses.cur` was null throughout. HP was already 100, so no heal toast beyond the drink message. Screenshot `d1-after-drink.png` |
+| D2. NPC uses a drink source | PASS | The needs clock was advanced with `npcNeedsSystem.step(15000)` in chunks (about 8 minutes of game time over roughly 3 minutes). A 100 ms sampler logged every NPC with `job.phase 'using'`: 598 samples, of which caffeine uses were amara (76), tom (130) and marek (80), the rest work, with no thirst use seen. In every sample the sprite key was an idle key (for example `npc-amara-idle-right`, `npc-tom-idle-right`, `npc-marek-idle-right`; a few `null`-need samples of amara's follow-up included one `walk-down-right`). No key contained "pose". `npcPoses.active.size` was 0 in all 598. `console.error` and `error` hooks: 0. Textures: `female_office_worker_v2`, `male_office_worker_v2`, `male_nerd_v2`, `male_telecom_v2`. Screenshot `d2-office.png` |
 
-**D1.** The scenario has no takeable coffee, so the brief's pick-up step cannot happen here. Every cup and coffee object in `scenarios/*` is `takeable: false` (Neil's, Eli's, Cal's and the office cups in test_needs_sims and test_needs_attack).
+Limits:
 
-- Seeding a coffee through the engine's `give_item` grant (`window.applyActions`, which calls `addToInventory`) was rejected by the server with `Item not found in scenario: coffee`. The inventory stayed at four items.
-- The inventory Cake is food and opens a menu with "Drop here" and "Examine", with no "Use" entry, so it is not a usable stand-in for a drink.
+- The sound hook caught no `drink_gulp` during the NPC uses, so NPC drinks make no sound through `soundManager.play` here (or the use sound is played another way). Not checked further.
+- D1 used a test-only cup, because no shipped scenario offers a takeable drink.
+- The 20 fps physics step was not applied on the D1 game (see above).
 
-What was seen: before and during the Cake menu the animation key stayed `idle-down`, and `window.playerPoses.cur` stayed null. No sound and no console error came from the hook over 1.5 s. This does not test a drink. The drink pose path is `consumables.js` (the `kind === 'drink'` branch of `useConsumable`), so it is still unproven on this branch. Not checked: the item leaving the inventory, the `drink_gulp` sound, and the pose key at 500 ms.
-
-**D2.** The probe did not reach the NPC sprites. `window.npcManager.npcs` is a Map, and the lookup returned no animation key for amara, tom, grace, sanjay or marek, so the sampler recorded nothing usable over about two minutes. `window.npcPoses.active` was 0 throughout. No drink sound was seen, but the sound hook records only `sm.play` calls, so that is not evidence either way.
-
-Next run: find the NPC's Phaser sprite (probably through the scene's NPC group, not the manager map), and use a scenario that has a takeable coffee, or add one to a test scenario in a separate change.
-
-Errors: `console.error` hook installed on the page from before the Cake test, no entries.
+Stopped at the end: both browser sessions (5750, 5752) and the :3092 server (its own pid file); nothing is listening on 3092 and no session process remains. :3000 and :3001 were not touched.
