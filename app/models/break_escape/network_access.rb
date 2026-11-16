@@ -1164,7 +1164,10 @@ module BreakEscape
         # a lock cuts the pivot without changing the session keys, so it must key the cache.
         sessions_locked = access_sessions.keys.map(&:to_s).sort.map { |id| session_locked_at?(id) }
       end
-      [fid, ignore_outages, network_footholds[fid].to_json, access_sessions.keys.map(&:to_s).sort, outages, hosts_off, source_off, sessions_locked,
+      # Keyring K2 (plan 3.8): a relay session is no pivot, so the key names only the pivoting
+      # sessions; session keys alone would miss a relay replacing a pivot in the same slot.
+      pivots = access_sessions.reject { |_id, session| relay_session?(session) }.keys.map(&:to_s).sort
+      [fid, ignore_outages, network_footholds[fid].to_json, pivots, outages, hosts_off, source_off, sessions_locked,
        scenario_data.object_id, scenario_data['networks'].to_json, scenario_data['networkLinks'].to_json]
     end
 
@@ -1216,7 +1219,7 @@ module BreakEscape
       access_sessions.filter_map do |pc_id, session|
         next unless session.is_a?(Hash)
         # Keyring K2 (plan 3.8): a relay session is a sink, never a pivot. reach_cache_key
-        # needs no change for it: skipped here, it is no input to the walk.
+        # keys on the pivoting sessions only, so a relay replacing a pivot misses the cache.
         next if relay_session?(session)
 
         info = find_login_pc(pc_id)
