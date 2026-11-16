@@ -13,8 +13,9 @@
 // It draws in the shared device frame (css/device-frame.css). X and Esc close it; there is no
 // Cancel. Every authored or player string goes in with textContent.
 //
-// Result: onComplete(false, { clones }) on close, where clones lists each Start this visit as
-// { ssid, templateId, refused }.
+// Result (the minigame contract in the A1 handover): on close, onComplete(true, { ssid,
+// templateId }) for the last clone this visit, or onComplete(false, { closed: true }) when
+// nothing was cloned. A refusal never counts as a clone.
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { MinigameFramework } from '../framework/minigame-manager.js';
@@ -64,7 +65,8 @@ export class RogueApMinigame extends MinigameScene {
         this.tab = TABS.some((t) => t.id === p.tab) ? p.tab : 'recon';
         this.status = null; // { text, refused }
         this.clones = [];
-        this.gameResult = { clones: this.clones };
+        this.lastClone = null;
+        this.gameResult = { closed: true };
         this._globalHandlers = [];
     }
 
@@ -334,6 +336,10 @@ export class RogueApMinigame extends MinigameScene {
             this.status = { text: cloneLogText(row, template) || `Copy of ${row.ssid} up.`, refused: false };
         }
         this.clones.push({ ssid: row.ssid, templateId: template?.id ?? null, refused: fx.refused });
+        if (!fx.refused) {
+            this.lastClone = { ssid: row.ssid, templateId: template?.id ?? null };
+            this.gameResult = { ...this.lastClone };
+        }
         this.render();
         return fx;
     }
@@ -355,6 +361,13 @@ export class RogueApMinigame extends MinigameScene {
         this.pane.appendChild(list);
     }
 
+    /** X and Esc: success when this visit cloned something. */
+    closeByPlayer() {
+        this.closedByPlayer = true;
+        this.gameResult = this.lastClone ? { ...this.lastClone } : { closed: true };
+        this.complete(!!this.lastClone);
+    }
+
     getTestState() {
         return {
             ...super.getTestState?.(),
@@ -370,19 +383,24 @@ export class RogueApMinigame extends MinigameScene {
     }
 }
 
-/** Open the console for a planted wifiTwin object (interactions.js). */
-export function startRogueAp(obj, extra = {}) {
+/**
+ * Open the console for a planted wifiTwin object (the registry's 'rogue-ap' entry, reached from
+ * interactions.js, ink trigger_minigame and mapping openMinigame). options may carry onComplete.
+ */
+export function startRogueApMinigame(obj, options = {}) {
     const data = obj?.scenarioData || obj || {};
     if (!MinigameFramework.mainGameScene && win().game) MinigameFramework.init(win().game);
-    return MinigameFramework.startMinigame(SCENE_TYPE, null, {
+    const params = {
         title: data.name || 'Rogue AP',
         objectId: data.id || null,
         apScan: data.apScan,
         apPortal: data.apPortal,
-        apCaptureLog: data.apCaptureLog,
-        ...extra
-    });
+        apCaptureLog: data.apCaptureLog
+    };
+    if (typeof options?.onComplete === 'function') params.onComplete = options.onComplete;
+    if (options?.ImageCtor) params.ImageCtor = options.ImageCtor;
+    return MinigameFramework.startMinigame(SCENE_TYPE, null, params);
 }
 
 MinigameFramework.registerScene(SCENE_TYPE, RogueApMinigame);
-if (typeof window !== 'undefined') window.rogueAp = { open: startRogueAp };
+if (typeof window !== 'undefined') window.startRogueApMinigame = startRogueApMinigame;
