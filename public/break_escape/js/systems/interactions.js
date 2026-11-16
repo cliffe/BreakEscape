@@ -841,6 +841,10 @@ export function handleObjectInteraction(sprite) {
     // this interaction (warning shown, or dropped because the player is busy).
     if (maybeInteractionWarning(sprite)) return;
 
+    // A short use pose facing the object when the player's atlas has one (systems/player-poses.js);
+    // cosmetic, the interaction goes on at once
+    try { window.playerPoses?.use?.(sprite); } catch (e) { /* cosmetic */ }
+
     // Emit object interaction event (for NPCs to react)
     if (window.eventDispatcher && sprite.scenarioData) {
         window.eventDispatcher.emit('object_interacted', {
@@ -1800,13 +1804,15 @@ export function handleObjectInteraction(sprite) {
             if (data.npcIds && data.npcIds.length > 0) {
                 console.log('Phone has npcIds, opening phone-chat directly', { npcIds: data.npcIds });
                 // Phone already has NPCs, open directly
-                window.MinigameFramework.startMinigame('phone-chat', null, {
+                const go = () => window.MinigameFramework.startMinigame('phone-chat', null, {
                     phoneId: phoneId,
                     npcIds: data.npcIds,
                     title: data.name || 'Phone',
                     app: data.app,
                     theme: window.npcManager.getNPC(data.npcIds[0])?.phoneTheme
                 });
+                // The phone pose shows a moment before the phone opens (systems/player-poses.js)
+                if (window.playerPoses?.openWithPhoneLead) window.playerPoses.openWithPhoneLead(go); else go();
                 return;
             }
             
@@ -1823,11 +1829,12 @@ export function handleObjectInteraction(sprite) {
                     data.npcIds = [npcId];
                     
                     // Open phone-chat with converted NPC
-                    window.MinigameFramework.startMinigame('phone-chat', null, {
+                    const go = () => window.MinigameFramework.startMinigame('phone-chat', null, {
                         phoneId: phoneId,
                         title: data.name || 'Phone',
                         theme: data.theme
                     });
+                    if (window.playerPoses?.openWithPhoneLead) window.playerPoses.openWithPhoneLead(go); else go();
                 } else {
                     console.error('Failed to convert phone object to virtual NPC');
                 }

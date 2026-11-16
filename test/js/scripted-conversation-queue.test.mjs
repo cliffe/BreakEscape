@@ -383,3 +383,22 @@ test('person-chat displaced while its story loads: startConversation stops, noth
         globalThis.window = prevWindow;
     }
 });
+
+// The player's phone comes up during the 500 ms start wait (systems/player-poses.js)
+test('phone pose lead: phone and video calls with a start delay raise it; a plain person-chat and an immediate open do not', () => {
+    const t = setup();
+    const leads = [];
+    window.playerPoses = { phoneLead: () => { leads.push(1); return true; } };
+    const kinds = [];
+    try {
+        fire(t.m, 'agent_0x99', 'phone-chat', 'gallery_call');
+        kinds.push(leads.length); t.runAll(); t.fw.close(); t.runAll();
+        fire(t.m, 'victoria', 'video-call', 'confront');
+        kinds.push(leads.length); t.runAll(); t.fw.close(); t.runAll();
+        fireIV(t.m, 'marcus', 'noticed');
+        kinds.push(leads.length); t.runAll(); t.fw.close(); t.runAll();
+        timed(t.m, 'len', 'chat');
+        kinds.push(leads.length);
+        assert.deepEqual(kinds, [1, 2, 2, 2], 'phone +1, video +1, plain person-chat +0, timed (delay 0) +0');
+    } finally { delete window.playerPoses; t.restore(); }
+});
