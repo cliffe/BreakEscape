@@ -478,6 +478,7 @@ export function preload() {
     this.load.image('lw_staff_ap', 'objects/lw_staff_ap.png');
     this.load.image('lw_guest_ap', 'objects/lw_guest_ap.png');
     this.load.image('lw_guest_card', 'objects/lw_guest_card.png');
+    this.load.image('rogue_ap_pot', 'objects/rogue_ap_pot.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
