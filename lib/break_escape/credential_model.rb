@@ -17,18 +17,20 @@ module BreakEscape
     module_function
 
     # The kind catalogue (section 3.6). `built` says which kinds this phase ships; a kind not built
-    # is refused by the validator. `token` and `hash` are not built in K1: K5 sets token built and
-    # adds it to DEFAULT_ACCEPTS; phase 3 builds hash.
+    # is refused by the validator. K5 built `token` (section 10); phase 3 builds hash.
     KINDS = {
       'password'         => { built: true,  connects: false },
       'saved_connection' => { built: true,  connects: true, routes: %w[foothold from], honours_lockout: true },
       'assist_invite'    => { built: true,  connects: true, routes: %w[relay],         honours_lockout: false },
-      'token'            => { built: false, connects: true, routes: %w[proof_foothold], honours_lockout: false }, # K5
+      'token'            => { built: true,  connects: true, routes: %w[proof_foothold], honours_lockout: false },
       'hash'             => { built: false } # phase 3
     }.freeze
 
-    # The kinds a PC accepts when its policy names no `accepts` list. token joins in K5.
-    DEFAULT_ACCEPTS = %w[password saved_connection assist_invite].freeze
+    # The kinds a PC accepts when its policy names no `accepts` list.
+    DEFAULT_ACCEPTS = %w[password saved_connection assist_invite token].freeze
+
+    # A token's life in minutes is 1..TOKEN_MAX_MIN (section 10).
+    TOKEN_MAX_MIN = 240
 
     # Exactly one of these keys names a proof (section 3.5).
     PROOF_KINDS = %w[session planted dropped held foothold].freeze
@@ -62,6 +64,25 @@ module BreakEscape
 
       kinds = PROOF_KINDS.select { |k| present_string?(proof[k]) }
       kinds.length == 1 ? kinds.first : nil
+    end
+
+    # A token entry's life in whole minutes (Integer 1..TOKEN_MAX_MIN), or nil when absent or
+    # invalid. A nil answer means the token is treated as expired (fail closed).
+    def token_expires_min(entry)
+      value = entry.is_a?(Hash) ? entry['expiresMin'] : nil
+      return nil unless value.is_a?(Integer)
+      return nil unless value >= 1 && value <= TOKEN_MAX_MIN
+
+      value
+    end
+
+    # The bare foothold id a token's proof names (`proof: { foothold: id }`), or nil when the proof
+    # is not exactly one foothold key. The foothold id carries its prefix (jack_, wifi_, implant_).
+    def token_proof_foothold(entry)
+      proof = entry.is_a?(Hash) ? entry['proof'] : nil
+      return nil unless proof_kind(proof) == 'foothold'
+
+      proof['foothold'].to_s
     end
 
     # The registry: the first MAX_ENTRIES entries by sorted id whose value is a Hash. Server reads
