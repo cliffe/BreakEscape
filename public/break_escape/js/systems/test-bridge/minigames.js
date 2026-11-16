@@ -14,6 +14,7 @@ import { displayDashes } from '../../utils/display-dashes.js';
 import { clickElement, typeInto, keyDown, keyUp, sleepFrames, sleep } from './input.js';
 import { logAction } from './log.js';
 import { activeMinigameSummary } from './state.js';
+import { openWorkstationPopup } from '../../utils/overlay-open.js';
 
 function current() {
     return window.MinigameFramework?.currentMinigame || null;
@@ -483,7 +484,18 @@ export const minigameBridge = {
      */
     async close() {
         const mg = current();
-        if (!mg) return fail('no-active-minigame');
+        if (!mg) {
+            // The CyberChef and lab-sheet popups are plain DOM popups, not minigames: close them
+            // through their own close functions, which re-enable input and drain barks and calls.
+            const popup = openWorkstationPopup();
+            const closeFn = popup === 'laptop' ? window.closeLaptop : popup === 'lab' ? window.closeLabWorkstation : null;
+            if (!closeFn) return fail('no-active-minigame');
+            closeFn();
+            await sleepFrames(2);
+            const result = { ok: true, closed: popup, stillOpen: openWorkstationPopup() !== null, nowActive: null, returnedToContainer: false };
+            logAction('minigame.close', { popup }, result);
+            return result;
+        }
         // The reopen isn't next-frame: notes/text-file/phone viewers reopen
         // their parent container via a real `setTimeout(..., 100)` in their
         // own onComplete (see notes-minigame.js), fired from the CLOSE flow,
