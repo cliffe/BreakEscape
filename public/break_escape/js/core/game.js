@@ -2370,6 +2370,7 @@ export async function create() {
                     if (stand && !feetWithin(stand, ARRIVAL_THRESHOLD)) {
                         movePlayerToPoint(stand.x, stand.y, { avoidNpcs: true });
                         overlapRetry = { stand: joint, used: false };
+                        window.__overlapStand = { stand, joint: !!joint };   // read by the live proofs
                         pendingOverlapWalk.arm(menuHits, Date.now());
                     } else {
                         window.gameAlert?.("Can't reach it from here.", 'info', '', 2500);
