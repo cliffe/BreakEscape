@@ -467,6 +467,31 @@ test('a same-tab redraw keeps the pane scroll, and Start brings the status line 
     }
 });
 
+test('"More below" hides when the last row is fully in view, even with spare scroll', () => {
+    reset();
+    const scene = open();
+    scene.showTab('clone');
+    const pane = scene.pane;
+    const last = pane.lastElementChild;
+    const metrics = { scrollHeight: 400, clientHeight: 300 };
+    Object.defineProperty(pane, 'scrollHeight', { configurable: true, get: () => metrics.scrollHeight });
+    Object.defineProperty(pane, 'clientHeight', { configurable: true, get: () => metrics.clientHeight });
+    pane.scrollTop = 0;
+    pane.getBoundingClientRect = () => ({ top: 0, bottom: 300 });
+    // Content runs well past the bottom edge: the cue shows
+    last.getBoundingClientRect = () => ({ top: 250, bottom: 380 });
+    assert.equal(scene.updateScrollCue(), true);
+    assert.equal(scene.more.hidden, false);
+    // 100px still scrollable by metrics, but the last row ends inside the pane (margin only): no cue
+    last.getBoundingClientRect = () => ({ top: 250, bottom: 296 });
+    assert.equal(scene.updateScrollCue(), false);
+    assert.equal(scene.more.hidden, true);
+    // Nothing to scroll at all: no cue
+    metrics.scrollHeight = 300;
+    assert.equal(scene.updateScrollCue(), false);
+    assert.equal(scene.more.hidden, true);
+});
+
 test('the Wi-Fi icon is drawn at whole multiples of 11x8 and headshots at multiples of 32', () => {
     const css = readFileSync(join(here, '../../public/break_escape/css/rogue-ap.css'), 'utf8');
     const rules = [];

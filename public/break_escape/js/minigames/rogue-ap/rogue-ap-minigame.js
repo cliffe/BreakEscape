@@ -171,7 +171,14 @@ export class RogueApMinigame extends MinigameScene {
     updateScrollCue() {
         const p = this.pane;
         if (!p || !this.more) return false;
-        const more = (p.scrollHeight - p.clientHeight - p.scrollTop) > 2;
+        let more = (p.scrollHeight - p.clientHeight - p.scrollTop) > 2;
+        if (more && p.lastElementChild) {
+            // Margin or padding can leave a few pixels to scroll after the last row is fully in view:
+            // nothing is hidden then, so no cue. Skipped when there is no layout (both edges at 0).
+            const lastBottom = p.lastElementChild.getBoundingClientRect().bottom;
+            const paneBottom = p.getBoundingClientRect().bottom;
+            if ((lastBottom || paneBottom) && lastBottom <= paneBottom + 1) more = false;
+        }
         this.more.hidden = !more;
         return more;
     }
