@@ -550,38 +550,97 @@ const MINIGAME_CONTROLS = ['button', 'input', 'textarea', 'select', 'a[href]', '
 
 function boxOf(r) { return { left: r.left, top: r.top, right: r.right, bottom: r.bottom }; }
 
+// The workstation popups (CyberChef, lab sheets) are plain DOM outside any .minigame-container
+const POPUP_ROOTS = ['#laptop-popup', '#lab-popup'];
+// A scrolling list counts as one only while its scroller is under this share of the frame's height
+export const LIST_FRAME_SHARE = 0.6;
+
+function scrollsY(el) {
+  return /(auto|scroll)/.test(gcs(el).overflowY || '') && el.scrollHeight > el.clientHeight + 1;
+}
+
 /**
- * The boxes in the open minigame(s): headings, controls (the listed selectors plus anything with a
- * pointer cursor), and the frame to place a banner under. Shown elements only; an element over
- * half the screen (a clickable backdrop) is no control.
+ * A control that is a row in a scrolling list (toasts may cover those, 2.2 of the toast plan):
+ * its nearest scrolling ancestor is inside the panel and is not the panel root, the frame or an
+ * ancestor of the frame; that scroller is under LIST_FRAME_SHARE of the frame's height; and the
+ * control, or an ancestor of it below the scroller, is one of at least 3 siblings with the same
+ * tag and class.
+ */
+function isListRow(el, root, frameEl, frameH) {
+  let sc = null;
+  for (let q = el.parentElement; q && q !== root.parentElement; q = q.parentElement) {
+    if (scrollsY(q)) { sc = q; break; }
+  }
+  if (!sc || sc === root || sc === frameEl || (frameEl && sc.contains(frameEl))) return false;
+  if (!(frameH > 0) || sc.clientHeight >= LIST_FRAME_SHARE * frameH) return false;
+  for (let n = el; n && n !== sc; n = n.parentElement) {
+    const par = n.parentElement;
+    if (!par) break;
+    let k = 0;
+    for (const c of par.children) if (c.tagName === n.tagName && c.className === n.className && ++k >= 3) return true;
+  }
+  return false;
+}
+
+/**
+ * The boxes in the open minigame(s) and the shown workstation popup: headings (`titles`, the close
+ * X among them), the close X on its own (`xs`), controls (the listed selectors plus anything with
+ * a pointer cursor; each box carries `listRow`, see isListRow), play `canvases` (not the
+ * conversation portrait) and the frame to place a banner under. Shown elements only; an element
+ * over half the screen (a clickable backdrop) is no control.
  */
 export function measureMinigame(doc, win) {
   const titles = [];
+  const xs = [];
   const controls = [];
+  const canvases = [];
   let frame = null;
   const area = (win.innerWidth || 0) * (win.innerHeight || 0);
+  const grow = (fr) => {
+    frame = frame ? { left: Math.min(frame.left, fr.left), top: Math.min(frame.top, fr.top), right: Math.max(frame.right, fr.right), bottom: Math.max(frame.bottom, fr.bottom) } : boxOf(fr);
+  };
   for (const mg of doc.querySelectorAll('.minigame-container')) {
     if (!shownRect(mg)) continue;
     for (const sel of MINIGAME_TITLES) {
       for (const t of mg.querySelectorAll(sel)) {
         const r = shownRect(t);
-        if (r) titles.push(boxOf(r));
+        if (!r) continue;
+        titles.push(boxOf(r));
+        if (sel === '.minigame-close-button') xs.push(boxOf(r));
       }
     }
+    const anchor = win.MinigameFramework?.currentMinigame?.closeAnchor?.();
+    const frameEl = anchor && mg.contains(anchor) ? anchor : mg.querySelector('.minigame-game-container');
+    const fr = shownRect(frameEl);
+    const frameH = fr ? fr.height : (shownRect(mg)?.height || 0);
     const seen = new Set();
     const add = (el) => {
       if (seen.has(el) || el.closest?.('#phone-ring-layer')) return;
       seen.add(el);
       const r = shownRect(el);
-      if (r && (!area || r.width * r.height <= area / 2)) controls.push(boxOf(r));
+      if (r && (!area || r.width * r.height <= area / 2)) controls.push({ ...boxOf(r), listRow: isListRow(el, mg, frameEl, frameH) });
     };
     mg.querySelectorAll(MINIGAME_CONTROLS.join(', ')).forEach(add);
     mg.querySelectorAll('*').forEach((el) => { if (!seen.has(el) && gcs(el).cursor === 'pointer') add(el); });
-    const anchor = win.MinigameFramework?.currentMinigame?.closeAnchor?.();
-    const fr = shownRect(anchor && mg.contains(anchor) ? anchor : mg.querySelector('.minigame-game-container'));
-    if (fr) frame = frame ? { left: Math.min(frame.left, fr.left), top: Math.min(frame.top, fr.top), right: Math.max(frame.right, fr.right), bottom: Math.max(frame.bottom, fr.bottom) } : boxOf(fr);
+    for (const c of mg.querySelectorAll('canvas')) {
+      if (c.classList.contains('person-chat-portrait')) continue;
+      const r = shownRect(c);
+      if (r) canvases.push(boxOf(r));
+    }
+    if (fr) grow(fr);
   }
-  return { titles, controls, frame };
+  for (const sel of POPUP_ROOTS) {
+    const pop = doc.querySelector(sel);
+    if (!pop || !shownRect(pop)) continue;
+    for (const t of pop.querySelectorAll('.title-bar')) { const r = shownRect(t); if (r) titles.push(boxOf(r)); }
+    for (const x of pop.querySelectorAll('.minigame-close-button')) {
+      const r = shownRect(x);
+      if (r) { titles.push(boxOf(r)); xs.push(boxOf(r)); }
+    }
+    const fr = shownRect(pop.querySelector('.laptop-screen'));
+    if (fr) grow(fr);
+  }
+  return { titles, xs, controls, canvases, frame };
 }
 
 // A toast slides in and out with a translateY (notifications.css), so its box mid-slide is up to
