@@ -1978,21 +1978,40 @@ def clear_white_backgrounds(root, threshold=WHITE_BG_THRESHOLD):
     return frames, pixels
 
 
+def stored_import_key(args, manifest):
+    """The manifest key whose stored settings (idle_from, sit_from, poses, white_threshold) a
+    re-import keeps: the target when it is a key, else --key when that entry is the same
+    character (an import by id or URL with --key of an existing atlas)."""
+    if args.target in manifest:
+        return args.target
+    key = getattr(args, "key", None)
+    if key in manifest and manifest[key].get("character_id") and manifest[key]["character_id"] in str(args.target):
+        return key
+    return None
+
+
+def apply_stored_import_settings(args, manifest):
+    """Fill args from the stored settings of an already-imported key; flags given win."""
+    stored = stored_import_key(args, manifest)
+    if stored is not None:
+        entry = manifest[stored]
+        args.key = args.key or stored
+        args.idle_from = getattr(args, "idle_from", None) or entry.get("idle_from")
+        args.sit_from = getattr(args, "sit_from", None) or entry.get("sit_from")
+        args.poses = parse_pose_from(getattr(args, "pose_from", None), entry.get("poses"))
+        args.white_threshold = getattr(args, "white_threshold", None) or entry.get("white_threshold")
+        args.target = entry["character_id"]
+    if getattr(args, "poses", None) is None:
+        args.poses = parse_pose_from(getattr(args, "pose_from", None))
+
+
 def cmd_import(args):
     """Download a character's ZIP from the API and convert it into a game atlas."""
     sys.path.insert(0, str(REPO / "tools"))
     import zipfile
 
     manifest = json.loads(IMPORT_MANIFEST.read_text()) if IMPORT_MANIFEST.exists() else {}
-    if args.target in manifest:  # an already-imported key
-        args.key = args.key or args.target
-        args.idle_from = args.idle_from or manifest[args.target].get("idle_from")
-        args.sit_from = getattr(args, "sit_from", None) or manifest[args.target].get("sit_from")
-        args.poses = parse_pose_from(getattr(args, "pose_from", None), manifest[args.target].get("poses"))
-        args.white_threshold = args.white_threshold or manifest[args.target].get("white_threshold")
-        args.target = manifest[args.target]["character_id"]
-    if getattr(args, "poses", None) is None:
-        args.poses = parse_pose_from(getattr(args, "pose_from", None))
+    apply_stored_import_settings(args, manifest)
     cid = resolve_character(args.target, args.workdir)
     api = PixelLab()
     character = api.get(f"/characters/{cid}")
