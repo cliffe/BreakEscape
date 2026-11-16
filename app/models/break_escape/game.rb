@@ -1195,6 +1195,12 @@ module BreakEscape
     # are built from the scenario definition, never client fields).
     # ========================================================================
 
+    # Stored carry positions: generous bounds that only reject tampering. Scenario
+    # elevations run 18..40; tile x/y are room-relative, 0 up to the room size (the
+    # largest authored room is 20 tiles wide), so 0..64 is three times that.
+    CARRY_TILE_BOUND = 64
+    CARRY_ELEVATION_RANGE = [0, 256].freeze
+
     # Object types that may never be carried even with a needsTag: keys and the
     # credential family. The structural lock-field checks below catch the rest.
     CARRY_DISQUALIFYING_TYPES = %w[key keycard credential password badge smartcard rfid_card].freeze
@@ -1331,9 +1337,48 @@ module BreakEscape
       # Write the carry entry first so it rides remove_item_from_room!'s save!: a
       # second save! after that one would not see the nested jsonb mutation as dirty.
       player_state_will_change!
-      carry[npc_id] = { 'itemId' => item_id, 'fromRoom' => from_room }
+      entry = { 'itemId' => item_id, 'fromRoom' => from_room }
+      # slice C C1: remember where the object was lying, so a reload mid-carry puts it
+      # back there, not at its scenario spot. The position is read from the server's own
+      # stored copy (objects_added) before remove_item_from_room! deletes it, never from
+      # the request. Only a placed copy (a player drop or a put-down) has one; an object
+      # picked up from its scenario spot has none, and end_stranded_carries! keeps the
+      # scenario position for it.
+      from_pos = sanitised_carry_position(from_room, item_id)
+      entry['fromPos'] = from_pos if from_pos
+      carry[npc_id] = entry
       remove_item_from_room!(from_room, item_id)
       true
+    end
+
+    # The pick-up position of a placed copy, read from the room's objects_added record
+    # (the drop and put-down paths write it there). Keep only the coordinate keys those
+    # paths write (x, y, px, py, elevation), each a valid coordinate; drop every other
+    # key, so no client-supplied field rides into the stored carry. Coordinates are kept
+    # only as complete valid pairs (x with y, px with py), and elevation only alongside a
+    # kept pair, so a half pair never rebuilds the object half at its pick-up spot and half
+    # at random. nil when the object has no stored placement or no pair survives.
+    def sanitised_carry_position(room_id, item_id)
+      added = player_state.dig('room_states', room_id, 'objects_added')
+      return nil unless added.is_a?(Array)
+
+      stored = added.find { |o| o.is_a?(Hash) && o['id'] == item_id }
+      pos = stored && stored['position']
+      return nil unless pos.is_a?(Hash)
+
+      cleaned = {}
+      [%w[x y], %w[px py]].each do |pair|
+        next unless pair.all? { |k| valid_ko_coord?(pos[k]) }
+        # Tile coordinates are room-relative, so bound them to 0..CARRY_TILE_BOUND (no room geometry here).
+        next if pair == %w[x y] && pair.any? { |k| !pos[k].between?(0, CARRY_TILE_BOUND) }
+
+        pair.each { |k| cleaned[k] = pos[k] }
+      end
+      elevation = pos['elevation']
+      if cleaned.any? && valid_ko_coord?(elevation) && elevation.between?(*CARRY_ELEVATION_RANGE)
+        cleaned['elevation'] = elevation
+      end
+      cleaned.presence
     end
 
     # Put down: the NPC sets the carried object down in to_room at position. Confirms
@@ -1720,11 +1765,13 @@ module BreakEscape
     end
 
     # End every stored carry by putting its object back where it was picked up
-    # (fromRoom, scenario position) and dropping the entry. The client then sees the
-    # object on the floor and the NPC is free to carry again. Mirrors put_down_carried!
-    # (add to objects_added, keep the origin objects_removed), so nothing duplicates.
-    # Resuming the walk mid-carry is future work (plan slice C). Returns whether it
-    # changed anything.
+    # (fromRoom, at fromPos when the entry has one, else the scenario position) and
+    # dropping the entry. The client then sees the object on the floor and the NPC is
+    # free to carry again. Mirrors put_down_carried! (add to objects_added, keep the
+    # origin objects_removed), so nothing duplicates. An object the player has already
+    # taken into their inventory gets no floor copy (the same guard the carry actions
+    # use), so a stranded delivery entry drops without duplicating the item. Returns
+    # whether it changed anything.
     def end_stranded_carries!
       carry = player_state['npcCarry']
       return false unless carry.is_a?(Hash) && carry.any?
@@ -1737,11 +1784,16 @@ module BreakEscape
           item_id = entry['itemId']
           from_room = entry['fromRoom']
           info = item_id.is_a?(String) ? carriable_object_index[item_id] : nil
-          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String)
+          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String) &&
+             !carried_item_in_inventory?(item_id)
             room_state = (player_state['room_states'][from_room] ||=
               { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} })
             item = info['object'].deep_dup.except('texture')
                        .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+            # slice C C1: a placed copy goes back to the spot it was lying on, not its
+            # scenario position. fromPos is the sanitised server record from pick-up.
+            from_pos = entry['fromPos']
+            item['position'] = from_pos if from_pos.is_a?(Hash) && from_pos.any?
             room_state['objects_added'].reject! { |o| o['id'] == item_id }
             room_state['objects_added'] << item
           end

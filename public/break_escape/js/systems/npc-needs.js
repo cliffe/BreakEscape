@@ -5640,7 +5640,17 @@ export function createEngineWorld() {
                 Promise.resolve(W().RoomStateSync?.consumeCarried?.(npcId, itemId, npcRoom))
                     .then(ok => {
                         if (ok === false) this._reinstateHeld(npcId, itemId, { sprite: sp, roomId: held.roomId, key: held.key, type: sd.type, name: sd.name });
-                        else { try { sp?.destroy?.(); } catch (e) { /* already gone */ } }
+                        else {
+                            try { sp?.destroy?.(); } catch (e) { /* already gone */ }
+                            // slice C C2: the use's globals (e.g. kp_usb_foothold) are written
+                            // synchronously right after this consume, by the npc_used event mapping
+                            // (npc-manager.js _runMapping: a direct globalVariables write, no sync
+                            // request of its own). They otherwise ride only the periodic delta and the
+                            // pagehide flush, so a tab killed in that gap would leave the object consumed
+                            // server-side with the global unset. Request the debounced near-immediate
+                            // sync (the KO path's) to carry the global promptly.
+                            try { W().stateSync?.requestSoon?.(); } catch (e) { /* no sync in this context */ }
+                        }
                     })
                     .catch(() => {});
             } catch (e) { try { sp?.destroy?.(); } catch (er) { /* ok */ } }
