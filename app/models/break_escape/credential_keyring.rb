@@ -51,9 +51,15 @@ module BreakEscape
         next false unless inv.is_a?(Hash)
         next false if ItemIdentity.client_forged?(inv)
 
-        inv['credential'].to_s == cred_id.to_s &&
-          inv['type'].to_s == def_type &&
-          inv['id'].to_s == def_id
+        # Unwrap the stored shape, as the other inventory readers do (has_key?, the lockpick
+        # check, record_planted_item!): a genuine take is stored flat, but a future path that
+        # stored a credential item as { scenarioData: {...} } must still prove held (R1 m2).
+        data = inv['scenarioData'] || inv
+        next false unless data.is_a?(Hash)
+
+        data['credential'].to_s == cred_id.to_s &&
+          data['type'].to_s == def_type &&
+          data['id'].to_s == def_id
       end
     end
 

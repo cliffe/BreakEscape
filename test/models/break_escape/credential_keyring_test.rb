@@ -94,6 +94,11 @@ module BreakEscape
       refute entry('lena_rdp')
     end
 
+    test 'a credential item stored in the wrapped scenarioData shape proves held (R1 m2)' do
+      inv([{ 'scenarioData' => { 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' } }])
+      assert entry('lena_rdp'), 'the held proof unwraps scenarioData like the other inventory readers'
+    end
+
     # --- session proof ------------------------------------------------------------------------
 
     test 'a session proof holds once the PC is in signedInPcs' do
