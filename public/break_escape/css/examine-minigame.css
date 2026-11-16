@@ -52,7 +52,6 @@
     font-size: 20px;
     line-height: 1.4;
     color: #ecf0f1;
-    font-style: italic;
     align-self: stretch;
 }
 
@@ -76,19 +75,21 @@
     margin-top: 16px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 600px) {
     .examine-panel {
         padding: 12px;
         gap: 10px;
     }
     /* Pixel fonts draw crisply on their own grid: Press Start 2P at multiples of 8, GNF at
-       multiples of 8 from 16. 16px is the smallest crisp size of either, so the phone keeps
-       the name at 16 (it was 13, off the grid) and the body at 16 (it was 18, off the grid). */
+       multiples of 8 from 16, at whole px line heights (24px * 1.5 = 36px). The name stays at 16 (Press Start 2P's smallest crisp size). The
+       body takes 24 on a phone, the same GNF size as the conversation's dialogue text
+       (person-chat-minigame.css), because 16 read too small at 390 wide. */
     .examine-name {
         font-size: 16px;
     }
     .examine-observations,
     .examine-text {
-        font-size: 16px;
+        font-size: 24px;
+        line-height: 1.5;
     }
 }
