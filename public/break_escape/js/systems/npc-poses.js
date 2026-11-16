@@ -322,14 +322,19 @@ export class NpcPoses {
                     if (rec.obj === undefined) rec.obj = sys.world?.getObject?.(s.job.targetId) || null;
                     obj = rec.obj;
                 }
-                // Arriving to use a machine (or answer a phone): turn to it once, so the lead pose
-                // plays. After that the behaviour may turn away (a chat partner) and is left alone.
-                if (rec && obj && !rec.turned && !facesObject(b, obj)) {
-                    const lead = wantedPose({ s, obj, usingMs: 0, seated: false, npc: w.npcManager?.getNPC?.(id), facing: true });
-                    const to = directionToObject(b, obj);
-                    if ((lead === 'use' || lead === 'phone') && to) { b.direction = to; b._poseHoldFacing = true; }
+                // Arriving to use a machine (or answering a phone): face it for the lead pose and keep
+                // face_player off while it lasts. The behaviour turns to the player every tick, so
+                // the turn is made once, and a chat partner can still turn the NPC away afterwards.
+                if (rec && obj) {
+                    const usingMs = Math.max(0, clockMs - rec.at);
+                    const lead = wantedPose({ s, obj, usingMs, seated: false, npc: w.npcManager?.getNPC?.(id), facing: true });
+                    if (lead === 'use' || lead === 'phone') {
+                        const to = rec.turned || facesObject(b, obj) ? null : directionToObject(b, obj);
+                        if (to) b.direction = to;
+                        rec.turned = true;
+                        b._poseHoldFacing = true;
+                    }
                 }
-                if (rec) rec.turned = true;
                 const name = wantedPose({
                     s, obj, usingMs: rec ? Math.max(0, clockMs - rec.at) : 0, seated: false,
                     npc: w.npcManager?.getNPC?.(id), facing: facesObject(b, obj)
