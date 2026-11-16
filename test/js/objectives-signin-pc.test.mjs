@@ -58,6 +58,16 @@ test('pc_signed_in for the target PC completes its unlock_object task, and only 
     assert.equal(status(m, 'loose_task'), 'active', 'a task with no target is not met by a sign-in');
 });
 
+test('K3c (8.3): a relay pc_signed_in meets no unlock_object task; the same event without relay does', async () => {
+    const m = manager();
+    m.dispatcher.fire('pc_signed_in', { pcId: 'ian_pc', npcId: 'ian', username: 'ishaw', via: 'credential', relay: true, firstAtPc: false });
+    await settle();
+    assert.equal(status(m, 'ian_pc_task'), 'active', 'an assist invite is the holder\'s session, not a sign-in');
+    m.dispatcher.fire('pc_signed_in', { pcId: 'ian_pc', npcId: 'ian', username: 'ishaw', via: 'credential', relay: false });
+    await settle();
+    assert.equal(status(m, 'ian_pc_task'), 'completed');
+});
+
 test('on load, a PC in the restored signedInPcs completes its task', async () => {
     const m = manager({ signedIn: ['ian_pc'] });
     await settle();

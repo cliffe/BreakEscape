@@ -83,7 +83,10 @@ export class ScreenStates {
         const found = objectId ? findSprite(objectId) : null;
         if (!found || !this._eligible(found.sprite.scenarioData)) return null;
         const { sprite, roomId } = found;
-        const locked = !!w.workstationState.isLocked(objectId) && !signedInVia(w.pcSessions?.get?.(objectId)?.via);
+        // A relay session (keyring K3c, 3.8) is the holder's, reached only by Connect: the sprite
+        // paints as it would with no session the player holds
+        const held = w.pcSessions?.get?.(objectId);
+        const locked = !!w.workstationState.isLocked(objectId) && !(held?.relay !== true && signedInVia(held?.via));
         // An unset look flag is the base look: a leave that keeps the screen open changes nothing
         if (locked === !!sprite._screenLocked) return null;
 
