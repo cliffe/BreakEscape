@@ -785,6 +785,15 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
     const info = (t) => ({ el: t, type: t._toast?.type, shownAt: t._toast?.shownAt, arrivedAt: t._toast?.arrivedAt, duration: t._toast?.duration });
     const answers = pendingAnswers({ block: shownEls.map(info), pending: pendingEls.map(info), now: Date.now(), panelOpen,
       spotFor: (list) => !!toastSpot({ ...spotArgs, heightAt: heightFor(list.map(x => x.el)), clearOnly: true }) });
+    // Two warnings shown over the panel with no clear place for both (a panel opened over
+    // them): the older goes once it has been up 1.5 s, the warning rule of plan 2.5
+    if (spotArgs) {
+      const warns = shownEls.filter(t => t._toast?.type === 'warning');
+      if (warns.length > 1 && !toastSpot({ ...spotArgs, heightAt: heightFor(shownEls), clearOnly: true })) {
+        const newest = warns.reduce((a, b) => ((b._toast.shownAt || 0) >= (a._toast.shownAt || 0) ? b : a));
+        for (const t of warns) if (t !== newest) { try { t._onSupersede?.(); } catch (e) { /* gone */ } }
+      }
+    }
     const stacked = new Set(answers.filter(a => a.answer === 'stack').map(a => a.el));
     const blockEls = all.filter(t => shownEls.includes(t) || stacked.has(t));
     let res = { away: false, spot: null };
