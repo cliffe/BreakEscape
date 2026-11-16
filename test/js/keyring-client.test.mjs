@@ -305,8 +305,10 @@ test('step 8 races: 403 not_responding, 403 unreachable and 422 remoteBlocked an
     const cases = [
         [refusal(403, { reason: 'not_responding' }), 'target_off', 'HB-FIN-02 is not responding.'],
         [refusal(403, { reason: 'unreachable' }), 'no_route', "HB-FIN-02 can't be reached from here. You need a way onto its network."],
-        [refusal(403, {}), 'no_route', "HB-FIN-02 can't be reached from here. You need a way onto its network."],
+        [refusal(403, { message: 'PC not reachable' }), 'no_route', "HB-FIN-02 can't be reached from here. You need a way onto its network."],
         [refusal(403, { reason: 'off' }), 'target_off', 'HB-FIN-02 is not responding.'],
+        // The Pundit body has no reason and is not a network problem (R2 t2)
+        [refusal(403, { error: 'Not authorized' }), 'login_failed', 'Connect could not reach the game server. Try again.'],
         // Any other 403 reason is not a network problem (R1 m4)
         [refusal(403, { reason: 'no_session' }), 'login_failed', 'Connect could not reach the game server. Try again.'],
         [refusal(403, { reason: 'future_token_check' }), 'login_failed', 'Connect could not reach the game server. Try again.'],
@@ -883,4 +885,67 @@ test('t2: no pcSessions gives the failure toast, not a rejection', async () => {
 
 test('t4: findLine itself keeps a capture silent (the second of the two guards)', () => {
     assert.equal(text.findLine({ ...RDP, source: 'capture' }), null);
+});
+
+// ── K3b round 2 fixes ────────────────────────────────────────────────────────────────────────
+test('R2 m1a: a trigger that arrives during the sync PUT builds a later ask, not a joined one', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    const gates = [];
+    window.stateSync = { syncConfirmed: () => { calls.push(['sync']); const d = deferred(); gates.push(d); return d.promise; } };
+    const before = keyringGets().length;
+    const p1 = kr.refresh();
+    await settle();                       // the ask has started and waits on the sync
+    assert.equal(gates.length, 1);
+    const p2 = kr.refresh();              // a change lands during the PUT
+    assert.notEqual(p1, p2, 'a different ask');
+    await settle();
+    gates[0].resolve();
+    await p1; await settle();
+    assert.equal(gates.length, 2, 'the second ask flushes its own change');
+    gates[1].resolve();
+    await p2;
+    assert.equal(keyringGets().length - before, 2, 'two GETs');
+});
+
+test('R2 m1b: a prime answered after a newer ask still sets the reload set', async () => {
+    setup();
+    const kr = window.keyring;
+    const pending = [];
+    window.ApiClient.keyring = (pcId, opts = {}) => { calls.push(['keyring', pcId, opts.rev ?? null]); const d = deferred(); pending.push(d); return d.promise; };
+    const prime = kr.prime();
+    const later = kr.fetch(null);
+    await settle();
+    pending[1].resolve({ entries: [PW, RDP], rev: 'r2' });
+    await later; await settle();
+    pending[0].resolve({ entries: [PW], rev: 'r1' });
+    await prime; await settle();
+    assert.ok(kr.firstAnswerIds instanceof Set, 'the dropped prime still fixed the reload set');
+    assert.deepEqual([...kr.firstAnswerIds], ['k_pw']);
+    assert.deepEqual(kr.latest.map(e => e.id), ['k_pw', 'k_rdp'], 'latest keeps the newer entries');
+    assert.equal(kr.foundVisible(PW), true, 'a password found before the reload is not hidden');
+});
+
+test('R2 t1: a background ask that never answers times out, so the chain moves on', async () => {
+    setup();
+    const kr = window.keyring;
+    answers({ entries: [], rev: 'r0' });
+    await kr.prime();
+    kr.askTimeoutMs = 15;
+    let signal = null, n = 0;
+    window.ApiClient.keyring = (pcId, opts = {}) => {
+        calls.push(['keyring', pcId, opts.rev ?? null]);
+        if (++n === 1) { signal = opts.signal; return new Promise(() => {}); }
+        return Promise.resolve({ entries: [RDP], rev: 'r1' });
+    };
+    const hung = kr.refresh();
+    const next = kr.refresh();   // joins the same ask
+    assert.equal(await hung, null, 'the hung ask gives up');
+    assert.ok(signal?.aborted, 'and the request is aborted');
+    await next;
+    const after = await kr.refresh(); await settle();
+    assert.deepEqual(after.map(e => e.id), ['k_rdp'], 'a later ask is answered');
+    assert.deepEqual(toasts(), [RDP_FOUND]);
 });

@@ -130,7 +130,7 @@
     },
     {
       "id": "cred_src_ops_rdp_file",
-      "label": "SV-OPS-01.rdp",
+      "label": "SV-OPS-01 admin.rdp",
       "kind": "item",
       "optional": false
     }

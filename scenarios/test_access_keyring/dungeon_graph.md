@@ -94,7 +94,7 @@ flowchart TD
   cred_src_lena_rdp_gift{"HB-FIN-02 copy.rdp"}
   cred_ops_cookie{"Ian Shaw saved connection<br/>(ishaw)"}
   cred_ops_rdp{"Ian Shaw saved connection<br/>(ishaw)"}
-  cred_src_ops_rdp_file{"SV-OPS-01.rdp"}
+  cred_src_ops_rdp_file{"SV-OPS-01 admin.rdp"}
 
   comms_room --> lock_ops_pc
   finance_room --> lock_lena_pc
@@ -209,7 +209,7 @@ flowchart TD
   cred_src_lena_rdp_gift{"HB-FIN-02 copy.rdp"}
   cred_ops_cookie{"Ian Shaw saved connection<br/>(ishaw)"}
   cred_ops_rdp{"Ian Shaw saved connection<br/>(ishaw)"}
-  cred_src_ops_rdp_file{"SV-OPS-01.rdp"}
+  cred_src_ops_rdp_file{"SV-OPS-01 admin.rdp"}
   aim_keyring_beats{{"Watch the keyring fill"}}
 
   comms_room --> lock_ops_pc
@@ -329,7 +329,7 @@ flowchart TD
   rc_npc_ian_shaw_10("Ian Shaw")
   rc_lena_pc_11[["Lena's PC"]]
   rc_lena_passwords_txt_12{"passwords.txt"}
-  rc_ops_rdp_file_13{"SV-OPS-01.rdp"}
+  rc_ops_rdp_file_13{"SV-OPS-01 admin.rdp"}
   rc_sign_finance_14{"Sign: K1b"}
   rc_npc_jake_brooks_15("Jake Brooks")
 

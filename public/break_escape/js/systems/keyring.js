@@ -76,6 +76,8 @@ export const FIND_HOLD_POLL_MS = 500;
 /** A failed page-start prime is tried again this many times, this far apart (R1 m3). */
 export const PRIME_RETRIES = 3;
 export const PRIME_RETRY_MS = 5000;
+// A background ask that has not answered by then is given up on, so the chain moves on (R2 t1)
+export const ASK_TIMEOUT_MS = 15000;
 
 export class Keyring {
     constructor() {
@@ -103,6 +105,7 @@ export class Keyring {
         this._running = null;
         this.primeRetries = PRIME_RETRIES;
         this.primeRetryMs = PRIME_RETRY_MS;
+        this.askTimeoutMs = ASK_TIMEOUT_MS;
         this._waitingFor = new Set();
         this._held = [];
         this._holdTimer = null;
@@ -157,7 +160,7 @@ export class Keyring {
      * GET /keyring for a screen. Resolves to the entries; throws when the request fails, and
      * when the answer is unusable, so the caller shows the "could not be loaded" line.
      */
-    async fetch(pcId, { foothold, primed = false } = {}) {
+    async fetch(pcId, { foothold, primed = false, timeoutMs = 0 } = {}) {
         const api = typeof window !== 'undefined' ? (window.ApiClient || window.APIClient) : null;
         if (!api?.keyring) throw new Error('keyring not available');
         const key = Keyring.cacheKey(pcId, { foothold });
@@ -165,13 +168,28 @@ export class Keyring {
         const seq = background ? ++this._askSeq : 0;
         // An answer to an older background ask than one already applied is dropped whole
         const stale = () => background && seq < this._appliedSeq;
-        const first = await api.keyring(pcId, { foothold, rev: this.revFor(key) });
-        if (stale()) return this.latest;
+        // A dropped page-start answer is still the page-start state: the reload set comes from it (R2 m1b)
+        const noteDropped = (answer) => {
+            if (!primed || this.firstAnswerIds !== null || !Array.isArray(answer?.entries)) return;
+            this.firstAnswerIds = new Set(answer.entries.filter(e => e && typeof e.id === 'string').map(e => e.id));
+        };
+        const ask = (opts) => {
+            if (!(timeoutMs > 0)) return api.keyring(pcId, opts);
+            const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+            let timer;
+            const timeout = new Promise((_, reject) => {
+                timer = setTimeout(() => { try { ctl?.abort(); } catch (e) { /* none */ } reject(new Error('keyring ask timed out')); }, timeoutMs);
+            });
+            return Promise.race([api.keyring(pcId, ctl ? { ...opts, signal: ctl.signal } : opts), timeout])
+                .finally(() => clearTimeout(timer));
+        };
+        const first = await ask({ foothold, rev: this.revFor(key) });
+        if (stale()) { noteDropped(first); return this.latest; }
         let entries = this.remember(key, first, { primed });
         // A rev the cache lost (or an odd answer): ask once more without it
         if (!entries) {
-            const again = await api.keyring(pcId, { foothold });
-            if (stale()) return this.latest;
+            const again = await ask({ foothold });
+            if (stale()) { noteDropped(again); return this.latest; }
             entries = this.remember(key, again, { primed });
         }
         if (!entries) throw new Error('keyring answer unusable');
@@ -269,9 +287,10 @@ export class Keyring {
         if (this._queued) return this._queued;
         const after = this._running || Promise.resolve();
         const ask = after.then(async () => {
-            try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+            // First, so a trigger that arrives during the sync PUT builds a later ask that carries its change (R2 m1a)
             this._queued = null;
-            try { return await this.fetch(null); } catch (e) { return null; }
+            try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+            try { return await this.fetch(null, { timeoutMs: this.askTimeoutMs }); } catch (e) { return null; }
         });
         this._queued = ask;
         this._running = ask;
@@ -429,7 +448,9 @@ export class Keyring {
                 // network problem, so it gets the Connect failure line (R1 m4).
                 const why = result.serverReason;
                 if (why === 'not_responding' || why === 'off') return toast(t.notRespondingMessage(host), 'target_off');
-                if (!why || why === 'unreachable') return toast(t.trayUnreachableMessage(host), 'no_route');
+                // A reason-less 403 reads as unreachable only when it says so; the Pundit
+                // { error: 'Not authorized' } answer is not a network problem (R2 t2)
+                if (why === 'unreachable' || (!why && /not reachable/i.test(String(result.message || '')))) return toast(t.trayUnreachableMessage(host), 'no_route');
             }
             return toast(t.CONNECT_FAILED_TEXT, 'login_failed');
         }

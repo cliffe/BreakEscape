@@ -1124,3 +1124,20 @@ Reachable now, on a new game of `test_access_keyring`:
 4. Drop: with either new item droppable, Drop here from the tray goes through the server; check the entry leaves GET /keyring (heldItem gone) and Connect on a stale tray click says "{label} no longer works.".
 5. Phone shots (390x844): the find toast and the teaching toast now wrap whole (class `whole`); a warning or objective toast is not pushed aside by a find (it no longer carries `brief`).
 6. Failed prime: block GET /keyring for the first 5 s of a page, then allow it: the first real find still toasts.
+
+### K3b run 5 (R2 fixes)
+
+Tip before this run `0782e1206`. Review: `CREDENTIAL_KEYRING_K3B_REVIEW_R2.md` (B0 M0 m2 t3).
+
+**Fixed**
+- m1a: `refresh()` clears `_queued` as the first statement of the ask callback, before the sync await, so a trigger during the sync PUT builds a later ask that carries its own change. Test: second `refresh()` during a pending `syncConfirmed` returns another promise and syncs and GETs again.
+- m1b: when a stale (older than an applied) answer is dropped and it is the page-start prime, `firstAnswerIds` is still set from it (`noteDropped` in `fetch`). Test: prime answered after a newer ask; a password found before the reload is not hidden.
+- t1: the chained background ask has a 15 s cap (`ASK_TIMEOUT_MS`, `askTimeoutMs`): an AbortController signal (`ApiClient.get` and `keyring` now take `signal`) plus a race, so a hung request cannot freeze the chain. Connect's own GET and the prime keep their behaviour (no cap). Test: a hung ask returns null, the request is aborted, a later ask is answered and toasts.
+- t2: a reason-less 403 gets the "can't be reached from here" line only when its message says "not reachable"; the Pundit `{error:'Not authorized'}` body gets the Connect failure line. The old reason-less test row now carries the real server message.
+- t3: keyring-signin asserts K3a's teaching toast passes `whole: true`.
+
+**Fixture**
+- `ops_rdp` and `ops_rdp_file` are relabelled "SV-OPS-01 admin.rdp" so they differ from `ops_cookie` ("SV-OPS-01.rdp") in the sign-in rows and the find toasts. The find toast now reads "Saved connection found: SV-OPS-01 admin.rdp for Ian Shaw on SV-OPS-01." (run 4's handover step 2 names the old label).
+
+**Live note (no change)**
+- One-click Connect cannot occur with this fixture: the item is droppable (Drop here) and has file text (Examine), so the tray shows the menu. That is correct per 8.2. The one-click path stays covered by the inventory-menu tests.
