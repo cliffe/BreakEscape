@@ -2240,6 +2240,8 @@ export function createRoom(roomId, roomData, position) {
 
             // 2. Process each scenario object
             roomData.objects.forEach((scenarioObj, index) => {
+                // A patch-panel jack (panelOf) lives only on the panel's UI, never in the room.
+                if (scenarioObj.panelOf) return;
                 const objType = scenarioObj.type;
 
                 // Handle table objects with explicit tableItems list.
