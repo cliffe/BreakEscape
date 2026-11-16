@@ -81,7 +81,7 @@ function handlerSource() {
 const HELPERS = ['findObjectsAtPosition',
     'gatherInteractablesNearClick', 'useObjectInReach', 'tapAlphaAt', 'walkToObjectThenUse',
     'findNPCsAtPosition', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer',
-    'standPointDeps', 'isSeatOrSwivel', 'hitStackKey', 'playerAtFeet', 'inReachFrom', 'inReachNow', 'farStandPoint',
+    'standPointDeps', 'isSeatOrSwivel', 'hitStackKey', 'playerAtFeet', 'inReachFrom', 'inReachNow',
     'feetWithin', 'standsInsideNpc', 'stillThere', 'roomHasActiveHostile', 'walkToDoor', 'showTapMenu', 'tapWalkBlocked',
     'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
@@ -535,24 +535,27 @@ test('overlap 19: after a walk that stopped short with one hit now in reach, the
     assert.deepEqual(w.log, ['use:printout']);
 });
 
-test('overlap 20: feet already at the stand point with every hit out of reach: a toast, never a second walk', () => {
+test('overlap 20: the only spot found is the player\'s own, hits out of reach: a plain far click on the topmost hit, no toast, no overlap walk', () => {
     const player = { x: 200, y: 200 };
     const w = world({ player, objects: [copierAt(), printoutAt()] });
     w.win.pathfindingManager = { findNearestWalkableWorldCell: () => ({ x: player.x, y: player.y }) };
     w.tap(118, 108);
-    w.tap(118, 108);
-    assert.deepEqual(w.log, ["alert:Can't reach it from here.", "alert:Can't reach it from here."]);
+    assert.ok(walkedTo(w.log));
+    assert.equal(w.pendingOverlapWalk.get(), null);
+    assert.equal(w.pendingTapUse.get()?.obj?.id, 'printout');
+    assert.ok(!w.log.some(l => l.startsWith('alert') || l.startsWith('menu')));
 });
 
-test('overlap 21: no spot reaches every hit: walks to the topmost hit\'s own stand point inside the range (R4 m7)', () => {
+test('overlap 21: no spot reaches every hit: one far click on the topmost hit, walked to and used on arrival, no overlap walk', () => {
     const player = { x: 300, y: 165 };
     const tall = sprite('tall', 100, 100, 10, 80, { depth: 0 });
     const low = sprite('low', 100, 160, 10, 10, { depth: 5 });
     const w = world({ player, objects: [tall, low] });
     w.tap(105, 165);
-    assert.deepEqual(w.log, ['walk:112,160'], 'aimed 12 px short: a walk resting 8 px short is still within 20');
-    assert.deepEqual(w.pendingOverlapWalk.get()?.obj.map(h => h.id), ['low', 'tall']);
-    assert.equal(w.pendingTapUse.get(), null);
+    assert.ok(walkedTo(w.log), 'walks');
+    assert.equal(w.pendingOverlapWalk.get(), null, 'no overlap walk armed');
+    assert.equal(w.pendingTapUse.get()?.obj?.id, 'low', 'the topmost hit is a normal pending use');
+    assert.ok(!w.log.some(l => l.startsWith('menu') || l.startsWith('use')));
 });
 
 test('overlap 22: the overlap watcher: silent on arrival in reach, says why when stopped or blocked, cleared by a click', () => {

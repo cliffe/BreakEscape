@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { JSDOM } from 'jsdom';
+import { readFileSync } from 'node:fs';
 
 for (const k of ['log', 'info', 'warn', 'debug']) console[k] = () => {};
 
@@ -333,4 +334,22 @@ test('the More below cue starts hidden and is not read out', () => {
     assert.equal(more.hidden, true, 'a short list shows no cue');
     assert.equal(more.getAttribute('aria-hidden'), 'true');
     reset();
+});
+
+test('47 an entry with a kind and an entity id shows its label as text; the id is data only (m01 break room chairs: "Sit: chair")', () => {
+    const list = [
+        { label: 'Sit: chair', kind: 'object', entityId: 'break_room_chair_1', onSelect: () => {} },
+        { label: 'Coffee machine', kind: 'object', entityId: 'break_room_coffee', onSelect: () => {} }
+    ];
+    showInteractionMenu(list, 10, 10, 'Which one?');
+    const rows = items();
+    assert.deepEqual(rows.map(b => b.querySelector('.be-im-label').textContent), ['Sit: chair', 'Coffee machine']);
+    assert.equal(rows[0].dataset.entityId, 'break_room_chair_1');
+    assert.ok(!rows[0].textContent.includes('break_room_chair_1'), 'the raw id is never on screen');
+    reset();
+});
+
+test('47 game.js builds a seat\'s menu label as "Sit: <name>", the same as main', () => {
+    const src = readFileSync(join(js, 'core/game.js'), 'utf8');
+    assert.ok(src.includes('label: seat ? `Sit: ${name}` : name,'));
 });

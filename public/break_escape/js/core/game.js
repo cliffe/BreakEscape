@@ -2365,23 +2365,29 @@ export async function create() {
                     stackKey: hitStackKey
                 });
                 // D1 rule 3: a far overlap. Walk to where every hit is in reach and stop; the next
-                // click there opens the menu. No menu and nothing used on arrival.
+                // click there opens the menu. No menu and nothing used on arrival. When no walkable
+                // cell reaches every hit there is nothing to wait for: it is one far click on the
+                // topmost hit, walked to and used on arrival like any far click (orchestrator
+                // decision, handover 3 item 2).
+                let noJoint = false;
                 if (menuHits.length > 1 && !menuHits.some(inReachNow)) {
                     const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc };
-                    // Margins 12, 8, 4, 0 over walkable cells; the first hit's own point only when no cell reaches them all
+                    // Margins 12, 8, 4, 0 over walkable cells
                     const joint = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps);
-                    const stand = joint || farStandPoint(menuHits[0]);
-                    if (stand && !feetWithin(stand, ARRIVAL_THRESHOLD)) {
-                        movePlayerToPoint(stand.x, stand.y, { avoidNpcs: true });
-                        overlapRetry = { stand: joint, used: false };
-                        window.__overlapStand = { stand, joint: !!joint };   // read by the live proofs
-                        pendingOverlapWalk.arm(menuHits, Date.now());
-                    } else {
-                        window.gameAlert?.("Can't reach it from here.", 'info', '', 2500);
+                    if (joint) {
+                        if (!feetWithin(joint, ARRIVAL_THRESHOLD)) {
+                            movePlayerToPoint(joint.x, joint.y, { avoidNpcs: true });
+                            overlapRetry = { stand: joint, used: false };
+                            window.__overlapStand = { stand: joint, joint: true };   // read by the live proofs
+                            pendingOverlapWalk.arm(menuHits, Date.now());
+                        } else {
+                            window.gameAlert?.("Can't reach it from here.", 'info', '', 2500);
+                        }
+                        return;
                     }
-                    return;
+                    noJoint = true;
                 }
-                onlyHit = soleHit({ allHits }, isSeatOrSwivel);   // D4, used when nothing in reach takes the tap
+                onlyHit = noJoint ? menuHits[0] : soleHit({ allHits }, isSeatOrSwivel);   // D4, used when nothing in reach takes the tap
             }
             const { farObjects, farNpcs } = farUnderTap({ objectsUnderTap, npcsUnderTap }, {
                 inReach: (o) => isObjectInInteractionRange(o),
@@ -3153,15 +3159,6 @@ function inReachNow(hit) {
     if (!p || !hit) return false;
     if (hit.doorProperties) return Math.hypot(hit.x - p.x, hit.y - p.y) <= DOOR_INTERACTION_RANGE;
     return isObjectInInteractionRange(hit);
-}
-
-// A far overlap with no spot that reaches every hit walks to the topmost hit's own stand point,
-// judged ARRIVAL_THRESHOLD inside the range so a walk that stops short still reaches it (R4 m7)
-function farStandPoint(hit) {
-    const player = window.player;
-    if (!player || !hit) return null;
-    const range = (hit.doorProperties ? DOOR_INTERACTION_RANGE : INTERACTION_RANGE) - ARRIVAL_THRESHOLD;
-    return objectStandPoint(hit, player, { ...standPointDeps(player), range });
 }
 
 // The feet are within d of p, by the walk's own (strict) arrival test (R4 n5)
