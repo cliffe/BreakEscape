@@ -42,8 +42,13 @@ module BreakEscape
 
     def live_render(name)
       srand(1)
+      # The binding draws its per-game random values from SecureRandom, which srand does not seed.
+      # Pin them so a template that uses them (the lab's Wi-Fi key) renders the same every time and
+      # can be compared with a frozen loader fixture, which carries these same values.
+      binding_obj = ::BreakEscape::Mission::ScenarioBinding.new({})
+      binding_obj.instance_variable_set(:@random_password, 'FixedPw1')
       JSON.parse(ERB.new(File.read("scenarios/#{name}/scenario.json.erb"))
-        .result(::BreakEscape::Mission::ScenarioBinding.new({}).get_binding))
+        .result(binding_obj.get_binding))
     end
 
     def deep_copy(data)
