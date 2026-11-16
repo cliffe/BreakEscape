@@ -1254,9 +1254,12 @@ module BreakEscape
     # physical (a local sign-in, a claim, or a remote session settled at the keyboard) and is
     # never pruned. The caller saves. An outage never prunes (structural_reach ignores them).
     #
-    # Keyring K2 (plan 3.8): iterated to a fixed point, so a session whose pivot has just
-    # become a relay (no longer a pivot) ends together with every session beyond it. Relay
-    # sessions carry no foothold and are never pruned here.
+    # Keyring K2 (plan 3.8): a session whose pivot has just become a relay (no longer a
+    # pivot) ends together with every session beyond it. That comes from reach_session_hosts
+    # skipping a relay, not from the loop: a pruned session sits on a network outside the
+    # reach, so it never fed the reach and one pass is already a fixed point. The loop is kept
+    # as a cheap guard (one extra walk per non-empty prune). Relay sessions carry no foothold
+    # and are never pruned here.
     def prune_unreachable_sessions!
       ended = []
       loop do

@@ -31,12 +31,15 @@ module BreakEscape
       assert_response :success, response.body
     end
 
-    # The same subscriber as capture_proofs_test.rb: full scenario_data column loads only.
+    # Counts every load of the scenario_data column, including a whole-row select of the game.
     def count_scenario_loads
       count = 0
       sub = ActiveSupport::Notifications.subscribe('sql.active_record') do |*, payload|
         sql = payload[:sql].to_s
-        count += 1 if sql.start_with?('SELECT') && sql.include?('"scenario_data"') && !sql.include?('*')
+        # Any load of the scenario_data column: a named select or a whole-row select of the games table
+        named = sql.include?('"scenario_data"')
+        whole_row = sql.include?('"break_escape_games".*') || sql.match?(/\ASELECT\s+\*\s+FROM\s+"break_escape_games"/)
+        count += 1 if sql.start_with?('SELECT') && (named || whole_row)
       end
       yield
       count
@@ -97,6 +100,31 @@ module BreakEscape
       assert_equal ['jake_assist'], state['endedCredentials']
       post game_path('login'), params: { pc_id: 'jake_pc', credential: 'jake_assist', relay: true }, as: :json
       assert_response :unprocessable_entity
+    end
+
+    test 'a client endedCredentials is ignored: a sync with the end global not true cannot revive or forge an end' do
+      build
+      hold('jake_assist_code')
+      bootstrap_scenario
+      sync_globals(KS::END_GLOBAL => true)
+      assert_equal ['jake_assist'], state['endedCredentials']
+
+      put game_path('sync_state'),
+          params: { endedCredentials: [], globalVariables: { KS::END_GLOBAL => false } }, as: :json
+      assert_response :success
+      assert_equal ['jake_assist'], state['endedCredentials'], 'a client list cannot revive an ended invite'
+      post game_path('login'), params: { pc_id: 'jake_pc', credential: 'jake_assist', relay: true }, as: :json
+      assert_response :unprocessable_entity
+      assert_equal true, response.parsed_body['ended']
+    end
+
+    test 'a client endedCredentials naming a forged id never lands' do
+      build
+      bootstrap_scenario
+      put game_path('sync_state'),
+          params: { endedCredentials: %w[forged_id jake_assist], globalVariables: { KS::END_GLOBAL => false } }, as: :json
+      assert_response :success
+      assert_equal [], state['endedCredentials']
     end
 
     test 'a sync body naming the server keys changes neither, and the bootstrap sends neither' do

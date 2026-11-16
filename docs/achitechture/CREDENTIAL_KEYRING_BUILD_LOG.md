@@ -837,3 +837,22 @@ Open:
 - The live proof above (saved-connection half runnable now; relay half after the 9.1 scenario additions).
 - K2 has had no review round yet.
 - The client side of `endedRelayPcIds` (close the relay desktop) belongs to K3c.
+
+## K2 R1 fixes
+
+Review: `CREDENTIAL_KEYRING_K2_REVIEW_R1.md` (SHIP, B0 M0 m4 t4). Every changed test was shown failing on a temporary mutation of the code, then the code was restored from a copy.
+
+- **m1 (fixed).** `prune_unreachable_sessions!` keeps its loop as a cheap guard, with a comment saying one pass is already a fixed point and that a relay-replaces-pivot prune comes from `reach_session_hosts` skipping a relay. No behaviour change. The test is renamed "a relay is no pivot, so the onward session is pruned and the relay is kept". Mutation: removing the `next if relay_session?(session)` line fails it (and the existing relay-at-jake_pc test).
+- **m2 (fixed).** Two sync tests in `sync_end_globals_test.rb`: after the invite ends, a sync with `endedCredentials: []` and the end global false leaves the list holding `jake_assist` and the relay sign-in still answers `ended`; a sync with `endedCredentials: [forged_id, jake_assist]` and the end global false leaves the stored list empty. Mutation: copying `params[:endedCredentials]` into the stored list before the end check fails both.
+- **m3 (fixed).** `count_scenario_loads` now counts any SELECT that names `"scenario_data"` or selects the whole games row (`"break_escape_games".*` or `SELECT * FROM "break_escape_games"`). Mutation: `self.class.find(id).scenario_data` at the top of `apply_credential_end_globals!` fails the zero-load assertion (the old counter skipped `*`).
+- **m4 (deferred to K3c/K4).** A folder under a relay desktop goes through `session_admits?` with no route check. Fixing it means passing the request route into the folder branch and running `desktop_request_allowed?` on the folder's PC, which also changes foothold sessions (the same gap exists today) and needs the client to send the route on folder opens. The gap shows no data the relay does not already show and gives no pivot. Not small, so it is a K3c/K4 item.
+- **Missing test (fixed).** `credential_login_test.rb`: a typed sign-in and an owner claim that each replace a session and answer `endedPcIds: ['sv_fs02']` (the onward session is seeded, with no foothold held; the claim replaces a relay, as a claim can replace nothing else); and a typed sign-in that replaces a session but prunes nothing returns a body byte-identical to a fresh sign-in with no `endedPcIds` key. Mutations: `start_login_session!` returning `[]` fails the two prune tests; `with_ended_pc_ids` always adding the key fails the byte-identity test.
+- **TtsDeliveryTest.** Added `require 'net/http'`. The `Net::HTTPOK` error is order-dependent and does not reproduce when the file runs alone, so no mutation evidence; the require removes the dependency on load order.
+- **Trivials.** t1: no action. t2 (K3a handover): a typed body must omit `relay`, never send `relay: false` (refused). t3 (K3c): `relay=0` on a desktop request answers `:conflict`. t4 (K3a brief): `session_for_client` reports a credential session's route as `footholdId` or `relay: true`, the POST answer as a `route` hash; K3a should read one and the brief should pick it.
+- **with_game_lock.** `login` is in the `with_game_lock` list (`games_controller.rb` ~103), checked by the integrator, so a credential sign-in does not race a concurrent sync.
+
+Suites: K2 files (credential_keyring, credential_sessions, credential_login, sync_end_globals, bootstrap_writers) 70 runs, 0 failures; full Rails suite 2993 runs, 48447 assertions, 0 failures, 0 errors, 3 skips; rubocop on the five changed Ruby files, no offences.
+
+### Live proof result
+
+Saved-connection half PASS on games 6168 and 6169: honest sign-in, generic refusal across 9 tampered forms, wrongPc, nothing counted, 0 leaks, 0 page errors. The `ops_cookie` kindRefused case is unreachable in `test_access_keyring`: `ops_pc` is on server_lan and the drop box reaches only office_lan, so the 403 (not reachable) comes first. It needs a pivot when the scenario is extended. Forged items are refused at `/inventory` before any sign-in. The relay half waits on plan 9.1.

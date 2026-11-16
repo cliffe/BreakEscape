@@ -91,7 +91,7 @@ module BreakEscape
 
     # ---- prune --------------------------------------------------------------------------------
 
-    test 'prune runs to a fixed point and never ends a relay session' do
+    test 'a relay is no pivot, so the onward session is pruned and the relay is kept' do
       @game.player_state['sessions'] = {
         'jake_pc' => { 'id' => 'jake', 'via' => 'credential', 'credential' => 'jake_assist', 'relay' => true },
         'sv_fs02' => { 'id' => 'ian', 'via' => 'password', 'foothold' => OFFICE }

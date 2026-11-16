@@ -235,6 +235,46 @@ module BreakEscape
       refute body.key?('endedPcIds')
     end
 
+    # Plan 3.8 / deviation 1: every replacing sign-in prunes. The stale onward session is seeded (no
+    # foothold is held, so nothing reaches server_net) and the sign-in replaces a session at jake_pc.
+    # A claim replaces only a relay session (a held keyboard session is never replaced by one).
+    def seed_stale_onward_session(jake_session)
+      @game.player_state['sessions'] = {
+        'jake_pc' => jake_session,
+        'sv_fs02' => { 'id' => 'ian', 'via' => 'password', 'foothold' => OFFICE }
+      }
+      @game.save!
+    end
+
+    test 'a typed sign-in that replaces a session answers endedPcIds for what it pruned' do
+      build
+      seed_stale_onward_session({ 'id' => 'jake', 'via' => 'password' })
+      body = sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)
+      assert_response :success, response.body
+      assert_equal ['sv_fs02'], body['endedPcIds']
+      refute state['sessions'].key?('sv_fs02')
+    end
+
+    test 'an owner claim that replaces a session answers endedPcIds for what it pruned' do
+      build
+      seed_stale_onward_session({ 'id' => 'jake', 'via' => 'credential', 'credential' => 'jake_assist', 'relay' => true })
+      body = claim('jake_pc')
+      assert_response :success, response.body
+      assert_equal ['sv_fs02'], body['endedPcIds']
+      refute state['sessions'].key?('sv_fs02')
+    end
+
+    test 'a typed sign-in that replaces a session but prunes nothing is byte-identical to a fresh one' do
+      build
+      sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)
+      assert_response :success
+      fresh = response.body
+      sign_in('jake_pc', 'jbrooks', KS::JAKE_PASSWORD)
+      assert_response :success
+      assert_equal fresh, response.body
+      refute response.parsed_body.key?('endedPcIds')
+    end
+
     # ---- dispatch ---------------------------------------------------------------------------
 
     test 'a typed body carrying relay, and a credential body carrying a username, get the generic refusal, uncounted' do
