@@ -1439,7 +1439,10 @@ module BreakEscape
         if params.key?(:claim)
           # The model refuses a claim that carries a foothold (an unlocked screen is
           # physical), so it is passed on rather than checked here: one place of truth.
-          if params[:claim].to_s == 'owner'
+          if params.key?(:credential)
+            # Keyring K2 (plan 7): claim stays first; claim with credential is the claim refusal
+            { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
+          elsif params[:claim].to_s == 'owner'
             @game.claim_login_session!(pc_id, claim_globals, foothold: foothold)
           elsif params[:claim].to_s == 'guest'
             # Slice 9.2 sub-slice H: a session an NPC left open at a borrowed PC
@@ -1447,6 +1450,18 @@ module BreakEscape
           else
             { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
           end
+        elsif params.key?(:credential)
+          # Keyring K2 (plan 7): a credential body that also types a username or password gets
+          # the generic refusal, uncounted; else the credential branch
+          if params.key?(:username) || params.key?(:password)
+            @game.credential_login_refusal
+          else
+            @game.attempt_credential_login!(pc_id, params[:credential].is_a?(String) ? params[:credential] : nil,
+                                            login_route_params)
+          end
+        elsif params.key?(:relay)
+          # A relay is never a typed sign-in (plan 3.8): the generic refusal, uncounted
+          @game.credential_login_refusal
         else
           @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold)
         end
@@ -2936,8 +2951,9 @@ module BreakEscape
       npc = @game.session_identity(pc['id'])
       return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
 
-      foothold = params[:foothold].presence&.to_s
-      refusal = @game.desktop_refusal(info, foothold)
+      # Keyring K2 (plan 3.8): the route the request names, judged against the server's record
+      route = desktop_route_params
+      refusal = route == :conflict ? 'unreachable' : @game.desktop_refusal(info, route)
       if refusal == 'off'
         # At the keyboard of a switched-off PC (q72): the session is kept, the desktop refused
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
@@ -2947,10 +2963,36 @@ module BreakEscape
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
 
-      @game.settle_session_at_keyboard!(pc['id']) if foothold.nil?
+      @game.settle_session_at_keyboard!(pc['id']) if route.nil?
 
       contents = filter_container_contents('contents' => @game.login_desktop_contents(pc, npc))
       render json: { container_id: container_id, contents: contents, session: @game.session_for_client(pc['id']) }
+    end
+
+    # The route a credential POST /login names (keyring K2, plan 7): foothold, from and relay as
+    # sent, for the model to judge (more than one, or none, is refused there).
+    def login_route_params
+      {
+        foothold: params[:foothold].presence&.to_s,
+        from: params[:from].presence&.to_s,
+        relay: ActiveModel::Type::Boolean.new.cast(params[:relay]) == true ? true : nil
+      }.compact
+    end
+
+    # The route a desktop request names (keyring K2, plan 3.8): { relay: true } for relay=1,
+    # { from: } for from= (K4), { foothold: } for foothold=, nil for none (the keyboard), and
+    # :conflict when more than one is named.
+    def desktop_route_params
+      relay = params[:relay].present? && ActiveModel::Type::Boolean.new.cast(params[:relay]) == true
+      from = params[:from].presence&.to_s
+      foothold = params[:foothold].presence&.to_s
+      named = [relay, from, foothold].count(&:present?)
+      return :conflict if named > 1 || (params[:relay].present? && !relay)
+      return { relay: true } if relay
+      return { from: from } if from
+      return { foothold: foothold } if foothold
+
+      nil
     end
 
     # The workstation globals a claim carries (<id>_screen_locked, <id>_owner_away),

@@ -478,6 +478,9 @@ module BreakEscape
         # A non-foothold session only: a claim or a keyboard sign-in, never a live
         # remote-through-foothold session (testing via alone is wrong, 5.5).
         return implant_not_ready unless session.is_a?(Hash) && session['foothold'].blank?
+        # Keyring K2 (plan 3.8): a relay or `from` session also has a blank foothold, but a
+        # shared screen or a session opened from another desktop never takes a plant.
+        return implant_not_ready if remote_route_session?(session)
         # A locked session still takes an implant, by design: a physical USB plant needs no unlocked screen and reads no account data (slice 6 Lock, integrator ruling).
 
         entry = inventory_item_matching(action[:needs_held])
@@ -813,6 +816,8 @@ module BreakEscape
     def view_session_hosts
       access_sessions.each_with_index.filter_map do |(pc_id, session), seq|
         next unless session.is_a?(Hash)
+        # Keyring K2 (plan 3.8): a relay session is never a bridge or a down block
+        next if relay_session?(session)
 
         info = find_login_pc(pc_id)
         next unless info
@@ -958,11 +963,23 @@ module BreakEscape
     # allowed. 'not_responding': through a foothold that reaches the host, whose own service is
     # off. 'off': at the keyboard of a reachable PC that is off (q72). Else 'unreachable'. The
     # power state is told only where the PC itself could be reached.
-    def desktop_refusal(info, foothold_id)
-      return nil if desktop_request_allowed?(info, foothold_id)
+    #
+    # Keyring K2 (plan 3.8): route is { foothold: } | { from: } | { relay: true } | nil (a bare
+    # foothold id is still read as { foothold: }). A relay request whose record carries `relay`
+    # answers not_responding when the PC is off; every other route refusal is unreachable.
+    def desktop_refusal(info, route)
+      route = desktop_route(route)
+      return nil if desktop_request_allowed?(info, route)
 
       pc = info[:object]
-      if foothold_id.present?
+      foothold_id = route && route[:foothold]
+      if route && route[:relay]
+        session = access_sessions[pc['id'].to_s]
+        return 'not_responding' if relay_session?(session) && host_service_off?(pc)
+      elsif route && route[:from]
+        # K4 builds the `from` route; until then it is refused as unreachable
+        nil
+      elsif foothold_id.present?
         return 'not_responding' if host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && host_service_off?(pc)
       elsif login_pc_reachable?(info) && !NetworkModel.headless?(pc) && host_service_off?(pc)
         return 'off'
@@ -976,12 +993,16 @@ module BreakEscape
       remote = !remote_blocked?(pc)
       session = access_sessions[pc['id'].to_s]
       held = nil
-      # A claimed session is physical and not offered over the network (4.3)
-      if remote && session.is_a?(Hash) && session['via'] == 'password'
+      # A claimed session is physical and not offered over the network (4.3); a relay session
+      # is the holder's shared screen and never listed either (keyring K2, plan 3.8)
+      if remote && session.is_a?(Hash) && session['via'] != 'claim' && !relay_session?(session)
         npc = scenario_room_npc(session['id'])
         if npc && self.class.account_holder?(npc)
           held = { 'username' => npc['creds']['username'], 'displayName' => npc['displayName'] || npc['id'],
-                   'via' => 'password', 'remote' => session['foothold'].present? }
+                   'via' => session['via'].to_s,
+                   'remote' => session['foothold'].present? || session['from'].present? }
+          # K4: a `from` session opens by that route
+          held['route'] = { 'from' => session['from'] } if session['from'].present?
           # UI slice 6: a locked session is still held but refused until the password is
           # entered again; the view marks it Locked rather than offering Open.
           held['locked'] = true if session_locked?(session)
@@ -1083,6 +1104,12 @@ module BreakEscape
 
       info = find_login_pc(pc_id)
       return false if info && host_service_off?(info[:object])
+
+      # Keyring K2 (plan 3.8): a relay session is up while its invite has not ended (and the
+      # PC is on, above). It has no foothold, so it must be judged before the blank return.
+      return !ended_credential?(session['credential']) if relay_session?(session)
+      # K4 judges a `from` session by its source; until then one is never up
+      return false if session['from'].present?
 
       fid = session['foothold']
       return true if fid.blank?
@@ -1188,6 +1215,9 @@ module BreakEscape
     def reach_session_hosts
       access_sessions.filter_map do |pc_id, session|
         next unless session.is_a?(Hash)
+        # Keyring K2 (plan 3.8): a relay session is a sink, never a pivot. reach_cache_key
+        # needs no change for it: skipped here, it is no input to the walk.
+        next if relay_session?(session)
 
         info = find_login_pc(pc_id)
         next unless info
@@ -1220,21 +1250,31 @@ module BreakEscape
     # structural_reach is ended, and their ids returned. A session with a blank foothold is
     # physical (a local sign-in, a claim, or a remote session settled at the keyboard) and is
     # never pruned. The caller saves. An outage never prunes (structural_reach ignores them).
+    #
+    # Keyring K2 (plan 3.8): iterated to a fixed point, so a session whose pivot has just
+    # become a relay (no longer a pivot) ends together with every session beyond it. Relay
+    # sessions carry no foothold and are never pruned here.
     def prune_unreachable_sessions!
-      sessions = player_state['sessions']
-      return [] unless sessions.is_a?(Hash) && sessions.any?
+      ended = []
+      loop do
+        sessions = player_state['sessions']
+        break unless sessions.is_a?(Hash) && sessions.any?
 
-      reachable = Set.new
-      network_footholds.keys.each { |fid| reachable.merge(structural_reach(fid)) }
+        reachable = Set.new
+        network_footholds.keys.each { |fid| reachable.merge(structural_reach(fid)) }
 
-      ended = sessions.select do |pc_id, session|
-        next false unless session.is_a?(Hash) && session['foothold'].present?
+        round = sessions.select do |pc_id, session|
+          next false unless session.is_a?(Hash) && session['foothold'].present?
 
-        info = find_login_pc(pc_id)
-        net = info ? object_network(info[:object]) : nil
-        net.nil? || !reachable.include?(net)
-      end.keys
-      player_state['sessions'] = sessions.except(*ended)
+          info = find_login_pc(pc_id)
+          net = info ? object_network(info[:object]) : nil
+          net.nil? || !reachable.include?(net)
+        end.keys
+        break if round.empty?
+
+        player_state['sessions'] = sessions.except(*round)
+        ended.concat(round)
+      end
       ended
     end
 
@@ -1253,16 +1293,63 @@ module BreakEscape
     # host, the host's policy allows remote sign-in and the session there is not a claim;
     # the room is not consulted. Without: the PC is physically reachable and not headless;
     # the network is not consulted.
-    def desktop_request_allowed?(info, foothold_id)
+    #
+    # Keyring K2 (plan 3.8): route is { foothold: } | { from: } | { relay: true } | nil (a bare
+    # foothold id is read as { foothold: }). A relay or `from` request is checked against the
+    # server's own record: the session must carry that same route field and its route must be
+    # up. Such a request never falls through to the keyboard rule, and a no-route request at a
+    # relay session is refused (the holder's keyboard never opens the shared screen).
+    def desktop_request_allowed?(info, route)
+      route = desktop_route(route)
       pc = info[:object]
-      if foothold_id.present?
-        session = access_sessions[pc['id'].to_s]
-        host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
-          !(session.is_a?(Hash) && session['via'] == 'claim')
+      session = access_sessions[pc['id'].to_s]
+      if route && route[:relay]
+        relay_session?(session) && session_route_up?(pc['id'])
+      elsif route && route[:from]
+        # K4: session['from'] == route[:from] && session_route_up?; not built in K2
+        false
+      elsif route && route[:foothold].present?
+        host_reachable_through?(route[:foothold], pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
+          !(session.is_a?(Hash) && session['via'] == 'claim') && !remote_route_session?(session)
       else
+        return false if relay_session?(session)
+
         # Off is off at the keyboard too (q72): a held session is kept, its desktop refused
         login_pc_reachable?(info) && !NetworkModel.headless?(pc) && !host_service_off?(pc)
       end
+    end
+
+    # The route a desktop request names (keyring K2, plan 3.8): a Hash with one of :foothold,
+    # :from or :relay, or nil for the keyboard. A String is a foothold id (the older callers).
+    def desktop_route(route)
+      case route
+      when nil then nil
+      when String then route.present? ? { foothold: route } : nil
+      when Hash
+        r = route.symbolize_keys
+        if r[:relay] then { relay: true }
+        elsif r[:from].present? then { from: r[:from].to_s }
+        elsif r[:foothold].present? then { foothold: r[:foothold].to_s }
+        end
+      end
+    end
+
+    # A relay session (keyring K2, plan 3.7): an assist invite's shared screen, a sink.
+    def relay_session?(session)
+      session.is_a?(Hash) && session['relay'] == true
+    end
+
+    # A session opened by a relay or `from` route (keyring K2/K4), as opposed to a foothold or
+    # the keyboard. Both carry a blank foothold, so readers that test the foothold alone must
+    # also ask this.
+    def remote_route_session?(session)
+      relay_session?(session) || (session.is_a?(Hash) && session['from'].present?)
+    end
+
+    # Whether a credential has been ended (plan 7.1). endedCredentials is written only by the
+    # server (the 7.1 sync merge and bootstrap writer, a later run); read here without a default.
+    def ended_credential?(cred_id)
+      cred_id.present? && Array(player_state['endedCredentials']).include?(cred_id.to_s)
     end
 
     # A desktop served at the keyboard (4.4): the player is sitting at it now, so the
@@ -1270,6 +1357,9 @@ module BreakEscape
     def settle_session_at_keyboard!(pc_id)
       session = access_sessions[pc_id.to_s]
       return unless session.is_a?(Hash) && session.key?('foothold')
+      # Keyring K2 (plan 3.8): a credential session stays remote at the target's keyboard, so
+      # a saved-connection session still ends on unplug
+      return if session['via'] == 'credential'
 
       player_state['sessions'][pc_id.to_s] = session.except('foothold')
       save!
@@ -1315,6 +1405,8 @@ module BreakEscape
         next false unless session.is_a?(Hash)
         # UI slice 6: a locked session maps no shares until the password is entered again.
         next false if session_locked?(session)
+        # Keyring K2 (plan 3.8): a relay session is no share source
+        next false if relay_session?(session)
 
         info = find_login_pc(pc_id)
         npc = scenario_room_npc(session['id'])
@@ -1339,6 +1431,9 @@ module BreakEscape
     # no contents or an empty list) is never mapped: the view shows its observations.
     def mapped_shares(pc, npc)
       return [] unless pc.is_a?(Hash) && npc.is_a?(Hash)
+      # Keyring K2 (plan 3.8): the relay desktop maps nothing, so find_login_item finds nothing
+      # through it either
+      return [] if relay_session?(access_sessions[pc['id'].to_s])
 
       network = object_network(pc)
       return [] unless network
