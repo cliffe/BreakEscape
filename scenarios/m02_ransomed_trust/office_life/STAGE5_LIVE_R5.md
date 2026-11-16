@@ -46,3 +46,16 @@ Note on B. The script's built-in `pass` printed false for all three. Its criteri
 ## Total
 
 Check 1: 5 of 5 PASS. Check 2: 7 of 7 PASS (A 4, B 3). 12 PASS, 0 FAIL, no page errors in any run. Fewer repeats than the old plan's five per variant for check 2, for time.
+
+## R2 reruns of variant B (PLAN.md:400, running-break case)
+
+Date 2026-11-16, tip 941f2764a. Own keyless server on :3095, started from this worktree and stopped afterwards. Games made with `new-game.rb --unlock` (ward_hall, office_corridor, staff_room, it_department), played from the corridor by adjacent hops, headless, fixed steps on (`fixedStep` true). The B script (`m02-live5/mb5.mjs`) now waits for 4 paper lines and also asserts that no second `npc_use_started:staff_boiler` fires between Gary's close and re-entry.
+
+Case: the player hears the whole paper exchange in the boiler break, crosses to IT, closes Gary's real conversation (`cover_burned` true) while that first break is still running, and walks back in. The burn exchange must not play in that meeting and must play once, in full, at the next meeting.
+
+| Run | Game | Result | Detail |
+|---|---|---|---|
+| B1 | 5850 | PASS | Use began at 102.0 s. Paper 4 of 4 heard (ended 123.0 s). Gary closed at 138.3 s, 36 s into the use; the break ended at 162.8 s, so he closed inside it. Use-start events 2 before re-entry and 2 after (no new break). Burn lines in that meeting: 0. `heard_night_watch_burned` false after the break. Next meeting: burn 3 of 3 heard, flag true. 0 page errors |
+| B2 | 5881 | PASS | Use at 102.8 s, Gary closed at 141.7 s, break ended 163.5 s. Same counts: paper 4 of 4, no new use start, burn 0 in that meeting, then 3 of 3 heard at the next meeting, flag true. 0 page errors |
+
+Total: 2 of 2 PASS. The PLAN 10.2 case now has three tries (5593, 5850, 5881) against the plan's five. The burn exchange waits for the next meeting and is heard once. Fewer than five because each run takes about 3 minutes of game time and the point was to test the corrected case; more can be added if the owner wants the plan's full count.
