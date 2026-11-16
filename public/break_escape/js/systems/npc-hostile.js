@@ -253,6 +253,17 @@ function setNPCHostile(npcId, isHostile, config) {
     applyHostileStats(state, configuredHostileStats(npcId, config));
   }
 
+  // A calm set while the NPC is still pending its first reveal (startHostile, hidden at creation)
+  // cancels that pending start and is saved, so neither the reveal nor a reload turns it hostile
+  // (R4 m3). The behaviour's own setHostile does the same; this covers direct callers.
+  if (!isHostile) {
+    const pending = window.npcBehaviorManager?.getBehavior?.(npcId);
+    if (pending?._startHostileOnReveal) {
+      pending._startHostileOnReveal = false;
+      recordCalm(npcId);
+    }
+  }
+
   const wasHostile = state.isHostile;
   state.isHostile = isHostile;
   if (wasHostile !== isHostile) recordHostility(npcId, state);

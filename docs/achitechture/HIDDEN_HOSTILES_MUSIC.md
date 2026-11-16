@@ -121,3 +121,10 @@ Live proof, keyless server on :3093 from the worktree, `setFPS(20)` with fixed s
 - hide-then-ko, game 6394: 9 of 9 pass (earlier route still passes with the reserve guard in the lobby).
 - ko-then-hide, game 6395: 4 of 4 pass.
 - reserve, game 6396: 8 of 8 pass. Hidden at start: not hostile, sprite hidden. Lobby guard KO'd with the reserve guard hidden: `noir` (`all_hostiles_ko` fires). Reload while hidden: not hostile, still `noir`. Cellar door: hostile, exactly one `npc_hostile_state_changed` for `reserve_guard`, music `threat`.
+
+## Known differences (R4 m2)
+
+A restored hostile on a hidden sprite is recorded hidden (`recordNpcVisibility(id, false)` in the `NPCBehavior` constructor), so it neither counts in `anyHostilesAlive` nor cues the music until a reveal announces it. The same NPC, made hostile by ink while it was hidden and not reloaded, has no visibility record and does count. The two cases differ across a reload on purpose: making them match would mean either hiding every hidden hostile from the count (this breaks the tested rule that a never-touched `initiallyHidden` hostile counts) or recording visibility at every ink turn (wider than this fix). Nothing but `setNPCVisible` reveals a hidden sprite, so the restored case cannot stay stuck.
+
+The restore path also adds one permanent `npcVisibility` key for that NPC to the synced state (one boolean, written once, never removed).
+

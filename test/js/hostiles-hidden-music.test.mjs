@@ -358,3 +358,92 @@ test('R3 m7: ink makes a hidden pending NPC hostile, then the reveal gives one c
     assert.equal(switches.length - before, 0, 'no second npc_hostile_state_changed from setHostile');
     assert.equal(b.hostile, true);
 });
+
+// R4 minors. A real npc-hostile.js instance (not the stub above), loaded through data URLs as
+// npc-hostility-persistence.test.mjs does. `tag` makes each import a separate module instance,
+// which stands in for a page reload.
+import { readFileSync } from 'node:fs';
+const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
+async function realHostileSystem(tag) {
+    const configUrl = dataUrl(readFileSync(join(js, 'config/combat-config.js'), 'utf8'));
+    const eventsUrl = dataUrl(readFileSync(join(js, 'events/combat-events.js'), 'utf8'));
+    const src = readFileSync(join(js, 'systems/npc-hostile.js'), 'utf8')
+        .split("'../config/combat-config.js'").join(`'${configUrl}'`)
+        .split("'../events/combat-events.js'").join(`'${eventsUrl}'`)
+        .split("'./npc-sprites.js'").join(`'${dataUrl('export const getNPCDirection = () => "down";')}'`)
+        .split("'./interaction-walls.js'").join(`'${dataUrl(readFileSync(join(js, 'systems/interaction-walls.js'), 'utf8'))}'`);
+    const mod = await import(dataUrl(`${src}\n// instance ${tag}`));
+    return mod.initNPCHostileSystem();
+}
+
+test('R4 m1: a calm set while hidden survives a reload (real recordCalm, export, restore, constructor)', async () => {
+    // Session 1: a hidden startHostile NPC, calmed while it is still pending
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const sys1 = await realHostileSystem('m1-session1');
+    window.npcHostileSystem = sys1;
+    const b1 = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c.bm.behaviors.set('r', b1);
+    assert.equal(b1._startHostileOnReveal, true, 'pending');
+    b1.setHostile(false);
+    const saved = JSON.parse(JSON.stringify(sys1.exportHostility()));
+    assert.deepEqual(saved.r, { hostile: false, ko: false }, 'the calm was saved by the real recordCalm');
+
+    // Session 2 (reload): fresh hostile system, restore, then the behaviour is made again
+    const c2 = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c2.m.npcs.get('r').isVisible = false; mapReveal(c2, 'r');
+    const sys2 = await realHostileSystem('m1-session2');
+    sys2.restoreHostility(saved);
+    window.npcHostileSystem = sys2;
+    const b2 = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c2.bm.behaviors.set('r', b2);
+    assert.ok(!b2._startHostileOnReveal, 'the restored calm wins over startHostile');
+    assert.equal(b2.hostile, false);
+    day();
+    assert.equal(sys2.isNPCHostile('r'), false, 'still calm after the reveal');
+    assert.deepEqual(switches, [], 'no fight music');
+});
+
+test('R4 m3: ink #hostile:false through the game bridge on a pending NPC is saved and survives the reveal and a reload', async () => {
+    const { NPCGameBridge } = await imp('systems/npc-game-bridge.js');
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const sys = await realHostileSystem('m3-bridge');
+    window.npcHostileSystem = sys;
+    const b = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c.bm.behaviors.set('r', b);
+    const bridge = Object.create(NPCGameBridge.prototype);
+    bridge._logAction = () => {};
+    assert.equal(bridge.setNPCHostile('r', false).success, true);
+    assert.equal(b._startHostileOnReveal, false, 'the pending start is cancelled');
+    assert.deepEqual(sys.exportHostility().r, { hostile: false, ko: false }, 'saved for a reload');
+    day();
+    assert.equal(sys.isNPCHostile('r'), false);
+    assert.deepEqual(switches, []);
+});
+
+test('R4 m3: setNPCHostile(false) called directly on the hostile system also cancels and saves a pending start', async () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const sys = await realHostileSystem('m3-direct');
+    window.npcHostileSystem = sys;
+    const b = new NPCBehavior('r', makeSprite(false), { hostile: { startHostile: true } }, {}, {});
+    c.bm.behaviors.set('r', b);
+    sys.setNPCHostile('r', false);
+    assert.equal(b._startHostileOnReveal, false);
+    assert.deepEqual(sys.exportHostility().r, { hostile: false, ko: false });
+    day();
+    assert.equal(sys.isNPCHostile('r'), false);
+    assert.equal(b.hostile, false);
+    assert.deepEqual(switches, []);
+});
+
+test('R4 m3: setNPCHostile(false) on an NPC with no pending start records nothing new', async () => {
+    const c = setup(['r'], { hostile: [], threat: true });
+    const sys = await realHostileSystem('m3-none');
+    window.npcHostileSystem = sys;
+    const b = new NPCBehavior('r', makeSprite(true), { hostile: {} }, {}, {});
+    c.bm.behaviors.set('r', b);
+    sys.setNPCHostile('r', false);
+    assert.equal(sys.exportHostility().r, undefined);
+});
