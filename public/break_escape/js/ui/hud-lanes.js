@@ -871,8 +871,24 @@ export function failOpenToasts(doc, win) {
   }
 }
 
-/** Place the lane members for one measurement. Exposed for tests and the proof scripts. */
-export function applyLanes(doc = document, win = window, { cursor = null } = {}) {
+/**
+ * Place the lane members for one measurement. Exposed for tests and the proof scripts. When the
+ * block's away answer flips, the lane sums used the old answer, so a second pass runs in the same
+ * frame (R3 m1: otherwise one frame paints the phone texts over the toasts after a panel closes).
+ * It cannot loop: a third pass is queued for the next frame only if the answer flips again.
+ */
+export function applyLanes(doc = document, win = window, opts = {}) {
+  const before = !!win.__hudLanes?.notifyAway;
+  let r = applyLanesPass(doc, win, opts);
+  if (r.block.away !== before) {
+    const mid = r.block.away;
+    r = applyLanesPass(doc, win, opts);
+    if (r.block.away !== mid) win.__hudLanesStarted?.relayout?.();
+  }
+  return r;
+}
+
+function applyLanesPass(doc, win, { cursor = null } = {}) {
   placeHearts(doc);
   const m = measureHud(doc, win);
   // The toast block placed away from the lane over a panel counts as 0 in the lane sums (toast
@@ -1050,8 +1066,6 @@ export function applyLanes(doc = document, win = window, { cursor = null } = {})
   const ringSpot = placeRingLayer(doc, win, lanes, measure);
   const block = placeNotifyBlock(doc, win, lanes, measure, prevBlock, ringSpot);
   win.__hudLanes = { measured: m, lanes, ringSpot, notifyAway: block.away, notifySpot: block.spot, toastSpot, pendingAnswers };
-  // A changed answer changes the lane sums: one more pass settles them, and a further one changes nothing
-  if (block.away !== prevBlock.away) win.__hudLanesStarted?.relayout?.();
   return { measured: m, lanes, block };
 }
 

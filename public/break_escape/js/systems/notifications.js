@@ -706,7 +706,12 @@ export function removeNotification(notification) {
         notification._toast.pending = false;
     }
     notification.classList.remove('show');
-    
+    // The 300 ms fade keeps it in the container, in flow: it must not take a click meant for a
+    // control under it (the close X is pointer-events: auto in the stylesheet, so it needs its own)
+    if (notification.style) notification.style.pointerEvents = 'none';
+    const closeBtn = notification.querySelector?.('.notification-close');
+    if (closeBtn?.style) closeBtn.style.pointerEvents = 'none';
+
     // Remove from DOM after animation
     setTimeout(() => {
         if (notification.parentNode) {

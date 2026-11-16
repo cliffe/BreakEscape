@@ -76,6 +76,28 @@ test('M1: a pass during a text\'s slide-out does not leave its height behind', (
   r.win.close();
 });
 
+test('M1: a text marked leaving, and a clear-all that changes display, each end the cached height', () => {
+  const r = rig();
+  r.bark('one', false);
+  const two = r.bark('two', false);
+  const clear = r.add('<button class="npc-bark-clear-all">Clear</button>', null, r.phone);
+  applyLanes(r.doc, r.win);
+  const sig0 = r.phone._hudLaneSig;
+  const cache0 = r.phone._hudLaneH;
+  two._removing = true;
+  applyLanes(r.doc, r.win);
+  assert.notEqual(r.phone._hudLaneSig, sig0, 'the leaving flag is in the signature');
+  assert.notEqual(r.phone._hudLaneH, cache0, 'and drops the cached heights');
+  two._removing = false;
+  applyLanes(r.doc, r.win);
+  const sig1 = r.phone._hudLaneSig, cache1 = r.phone._hudLaneH;
+  clear.style.display = 'none';
+  applyLanes(r.doc, r.win);
+  assert.notEqual(r.phone._hudLaneSig, sig1, 'the clear-all display is in the signature');
+  assert.notEqual(r.phone._hudLaneH, cache1);
+  r.win.close();
+});
+
 test('m1: a warning that stepped aside still hears that it is not superseded', () => {
   const r = rig();
   const calls = [];
@@ -99,10 +121,14 @@ test('m1: the fail-open path cancels an armed supersede', () => {
   const calls = [];
   const t = r.add('<div class="notification warning show" data-h="100">w</div>', null, r.container);
   t._toast = { type: 'warning', shownAt: Date.now(), duration: 60000 };
-  t._onSupersede = (on) => calls.push(on);
+  // An armed countdown, as notifications.js arms one: cancelled only by being told false
+  let armed = setTimeout(() => {}, 60000);
+  t._onSupersede = (on) => { calls.push(on); if (!on) { clearTimeout(armed); armed = null; } };
   Object.defineProperty(t._toast, 'shownAt', { get() { throw new Error('boom'); } });   // throws inside the block, before the supersede loop
   const dbg = console.debug; console.debug = () => {};
   try { applyLanes(r.doc, r.win); } finally { console.debug = dbg; }
   r.win.close();
+  clearTimeout(armed);
   assert.ok(calls.includes(false), JSON.stringify(calls));
+  assert.equal(armed, null, 'the armed timer was cleared');
 });
