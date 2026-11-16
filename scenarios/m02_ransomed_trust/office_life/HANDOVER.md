@@ -1,3 +1,11 @@
+# m02 office life: D30 (a) built and all lines voiced, handover 2026-11-16
+
+- D30 (a): `night_watch_paper` is now 4 lines, Ernesto opens (`ink/m02_npc_hodan_warsame.ink`, recompiled). Hodan's question dropped; the ink comment now says Hodan opens the first two and Ernesto the paper night. No data or engine change was needed: the NPC record's `exchanges` entry is unchanged, the engine starts an exchange when the player hears the first line's speaker, and the validator has no first-speaker rule. Validator 0 errors, 33 warnings; `lock_key_diff` empty.
+- Voiced: the 2 changed exchange lines plus the 5 queued lines (4 coffee, Hodan's laptop bark) = 7 new clips; 3 superseded clips moved to `tmp/delete/tts_m02_d30/`. Office-life total 75, To voice list empty (`SPOKEN_LINES.md`). The bark is not in `tts:wasted`'s expected set (barks are not extracted), so `wasted` reports that one clip as unrequested; keep it, the endpoint serves it.
+- Live proof: `STAGE5_LIVE.md` "R6 (D30)", game 5725 on :3090: 4 lines in order, all heard, a `/tts` 200 for each.
+- `bin/test-js`: 681 passed, 0 failed.
+- `REVIEW_STAGE5_R1.md` Outcomes: m1 and D1 "D30 (a) built", D2 closed. D30's heard rule is still held.
+
 # m02 office life: stage 5 R1 fixes, handover 2026-11-16 (parts 1 and 2 done; m4, m5 in `STAGE5_LIVE_R5.md`)
 
 Brief: fix `REVIEW_STAGE5_R1.md` findings with the owner's calls (m3 150 s, m2 split, m8 smaller fix, fault log stays takeable, R4 pools to 6). Scratch scripts: session scratchpad `m02-fix1/` (`lib2.mjs` points OUT at `m02-fix1/out/`, `ngr2.sh` makes games on :3090, `seat2.mjs`, `dbg.mjs`, `chairs.mjs`, `radio.cjs`).

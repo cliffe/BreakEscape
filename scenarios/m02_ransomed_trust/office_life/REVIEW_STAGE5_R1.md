@@ -111,7 +111,7 @@ Stage 5 R1: 0/1/8
 | Finding | Outcome |
 |---|---|
 | M1 | Done. The long walkthrough ran in R4 (`STAGE5_LIVE.md`, "R4 walkthrough", game 5626): moveTo between rooms, real Kim and Gary conversations, 26 PASS, 0 FAIL, 0 NOT RUN. The target caveats it raised are in that section. |
-| m1 | Held for D30 (paper exchange order, heard rule). Nothing changed. |
+| m1 | D30 (a) built (2026-11-16): `night_watch_paper` is 4 lines, Ernesto opens, Hodan's question dropped. The heard rule part of D30 is not covered here. |
 | m2 | Fixed (part 1). Ernesto's radio topic is two choices, burned and cleared; recompiled and checked in 5 states. |
 | m3 | Fixed (part 1). Mappings 1 and 3 walk-in cooldown 150000 ms. Mapping 4 stays at 120 s, because the review named only 1 and 3. |
 | m4 | Live check in `STAGE5_LIVE_R5.md` (separate run). |
@@ -119,7 +119,7 @@ Stage 5 R1: 0/1/8
 | m6 | No fault. The silence was the hostile porter knocking the player out during the wait (game-over screen blocked `interact`); the greeting opens in 245 ms after a reload (game 5673). No ink or engine change. |
 | m7 | Fixed (part 1). Baseline recorded as 0 errors, 33 warnings; the timer `onceOnly` fields are left to the m02 owner. |
 | m8 | Fixed (part 2). Hodan's seat cannot move, so she barks once when the clerk's laptop is taken: "Clerk'll want that back. Just saying." (37 characters; the first draft was 42, over the bubble limit). Proved live, game 5671. On the To voice list. |
-| D1 | Held for D30. |
-| D2 | Open. Voicing waits for the owner: 76 clips, none generated. |
+| D1 | D30 (a) built. |
+| D2 | Closed (2026-11-16): all 75 office-life clips are voiced and committed (the 76 less the dropped question). |
 | Carried: copier page `takeable` | Open, does not block the ship. |
 | Carried: struck-only credits line | Added to `docs/IDEAS_BACKLOG.md` as an office-life rollout item. |

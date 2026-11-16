@@ -153,3 +153,17 @@ Part 2:
 Checks run before the commit: `scripts/validate_scenario.rb` for m02 (0 errors, 33 warnings, unchanged); `scripts/lock_key_diff.rb` against `baseline_locks.json` (empty); `bin/test-js` (681 files passed, 0 failed). No ink changed in part 2, so no recompile.
 
 Totals for this section: 2 PASS (m8, m6), 0 FAIL. Games made: 5671, 5673, 5677. The server on :3090 was stopped by its PID.
+
+## R6 (D30)
+
+Keyless server on :3090 (own pidfile, stopped by its PID), headless, `setFPS(20)`, fixed steps on. Game 5725, started in `staff_room` with `it_department`, `staff_room`, `dr_kim_office` and `conference_room` unlocked; `cover_burned` false and nothing heard at the start, so the burn and cleared exchanges stay gated and the paper exchange is next. Script `d30.mjs` in the session scratchpad `m02-d30/`.
+
+| Check | Result | Notes |
+|---|---|---|
+| Paper exchange plays the 4 lines in the new order | PASS | Player at (199, 120) in the staff room, 68 to 69 px from the boiler. `night_watch_paper:0` to `:3` in order: Ernesto "Eleven lab runs tonight. Every result in an envelope.", Hodan "My bed list's on the back of a menu.", Ernesto "Hospital runs on legs. Ours.", Hodan "Don't let them hear you enjoying it." All 4 `overheard: true`; `heard_night_watch_paper` true afterwards. No fifth line, no "How many lab runs" question |
+| Ernesto, the record owner's partner, opens | PASS | The engine starts an exchange when the player hears the first line's speaker (`npc-needs.js` around :4347), not the record owner, so no engine change; the validator has no first-speaker rule |
+| Audio request per clip | PASS | `POST /tts` for each of the 4 lines, each 200 `audio/mpeg`, from a server with no key (so served from `tts_cache`, not generated). The same capture shows the pool lines that played around the exchange also served |
+| First line stands alone | PASS | "Eleven lab runs tonight. Every result in an envelope." reads as a complete statement and a reply to nothing |
+| Page errors | none | |
+
+Note: the capture's response-size field read 0 (a script artefact reading the body after it was handed to the audio element); status and content type are the evidence. Games made: 5725 only. Server on :3090 stopped by its PID; :3000 not touched.
