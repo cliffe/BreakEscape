@@ -1262,6 +1262,8 @@ export function glideChairFootTo(chair, x, y) {
     glides.set(chair, { x, y, still: 0, last: Infinity, frames: 0 });
 }
 export function isGliding(chair) { return glides.has(chair); }
+/** Where a gliding chair's foot is headed, or null. */
+export function glideTarget(chair) { const g = glides.get(chair); return g ? { x: g.x, y: g.y } : null; }
 
 /** One frame of every chair glide (afterPlayerMovement runs it). */
 export function updateGlides() {
@@ -1405,12 +1407,12 @@ function planSeatWalk(behavior, chair, from, ref) {
     const pm = window.pathfindingManager;
     const pf = pm?.worldPathfinder;
     if (!pm?.findWorldPath || !pf || !pm.worldGridBounds) return null;
-    const goal = pm.findNearestWalkableWorldCell?.(ref.x, ref.y, 2) || ref;
+    const goal = pm.findNearestWalkableWorldCell?.(ref.x, ref.y, 2, { avoidSeated: true }) || ref;
     const canSync = !!(pf.enableSync && pf.disableSync);
     let path = null;
     if (canSync) pf.enableSync();
     try {
-        pm.findWorldPath(from.x, from.y, goal.x, goal.y, p => { path = p; });
+        pm.findWorldPath(from.x, from.y, goal.x, goal.y, p => { path = p; }, false, chair?.body ? { keepSeated: [chair.body] } : null);
     } catch (e) {
         path = null;
     } finally {
@@ -1726,23 +1728,133 @@ export function doorGapExit(foot, rects, half = { w: 11, h: 6 }) {
     return null;
 }
 
-const DOOR_SWEEP_MS = 1000;
-let doorSweepAt = 0;
+/**
+ * The door gaps of every door sprite, one per doorway. Each room makes its own sprite for a doorway
+ * (a side doorway's west sprite at room.x + 16, the east one at room.x + width - 16), so the two
+ * can sit apart; sprites that join the same two rooms on the same line are merged into one gap
+ * centred between them, so the exit side is the same whichever sprite is read (sims tidy R1 m1).
+ */
+export function doorGapRects(doors) {
+    const groups = [];
+    for (const d of doors || []) {
+        if (!d || !Number.isFinite(d.worldX) || !Number.isFinite(d.worldY)) continue;
+        const side = d.direction === 'east' || d.direction === 'west';
+        const pair = [d.roomId, d.connectedRoom].map(String).sort().join('|');
+        const g = groups.find(g => g.side === side && g.pair === pair
+            && Math.abs((side ? g.y : g.x) - (side ? d.worldY : d.worldX)) <= 16
+            && Math.abs((side ? g.x : g.y) - (side ? d.worldX : d.worldY)) <= 64);
+        if (g) { g.xs.push(d.worldX); g.ys.push(d.worldY); g.x = avg(g.xs); g.y = avg(g.ys); }
+        else groups.push({ side, pair, direction: d.direction, xs: [d.worldX], ys: [d.worldY], x: d.worldX, y: d.worldY });
+    }
+    return groups.map(g => doorGapRect({ worldX: g.x, worldY: g.y, direction: g.direction }));
+}
+function avg(a) { return a.reduce((n, v) => n + v, 0) / a.length; }
+
+const DOOR_LANE_PX = 48; // how far a doorway's approach lane runs into each room past the gap
+
+/** A doorway's approach lane: the gap band, run DOOR_LANE_PX further into each room. */
+export function doorLaneRect(r) {
+    return r.side ? { x0: r.x0 - DOOR_LANE_PX, x1: r.x1 + DOOR_LANE_PX, y0: r.y0, y1: r.y1 }
+                  : { x0: r.x0, x1: r.x1, y0: r.y0 - DOOR_LANE_PX, y1: r.y1 + DOOR_LANE_PX };
+}
 
 /**
- * Once a second: a resting chair whose foot is in a door gap slides out of it. A chair someone is
- * sitting on, fetching or mounting, the player's chair and a gliding chair are left alone.
+ * Where a chair in a door gap may go, best first: straight out to the side its foot is on (clear of
+ * the gap by its half size plus DOOR_CLEAR_PX, doorGapExit), then a tile further out and a tile to
+ * each side, then a tile to each side; the side nearer the foot (the nearer wall strip) first.
  */
-function sweepDoorwayChairs() {
-    const now = Date.now();
+export function doorwayChairCandidates(foot, r, half = { w: 11, h: 6 }) {
+    const first = doorGapExit(foot, [r], half);
+    if (!first) return [];
+    const T = TILE_PX;
+    if (r.side) {
+        const s = Math.sign(first.x - (r.x0 + r.x1) / 2) || 1;
+        const d = foot.y <= (r.y0 + r.y1) / 2 ? [-1, 1] : [1, -1];
+        return [first,
+            { x: first.x + s * T, y: foot.y + d[0] * T }, { x: first.x + s * T, y: foot.y + d[1] * T },
+            { x: first.x, y: foot.y + d[0] * T }, { x: first.x, y: foot.y + d[1] * T }];
+    }
+    const s = Math.sign(first.y - (r.y0 + r.y1) / 2) || 1;
+    const d = foot.x <= (r.x0 + r.x1) / 2 ? [-1, 1] : [1, -1];
+    return [first,
+        { x: foot.x + d[0] * T, y: first.y + s * T }, { x: foot.x + d[1] * T, y: first.y + s * T },
+        { x: foot.x + d[0] * T, y: first.y }, { x: foot.x + d[1] * T, y: first.y }];
+}
+
+/**
+ * The spot a chair in a door gap moves to: the first candidate whose chair-sized box is clear
+ * (`clear(x, y)`, the caller's box test) and outside every doorway's approach lane. Returns null
+ * when the foot is in no gap, { to: null } when no candidate is clear (leave it, try next second),
+ * else { to, index }. Pure (sims tidy R1 M1).
+ */
+export function doorwayChairSpot(foot, rects, half, clear) {
+    const r = (rects || []).find(r => r && foot.x > r.x0 && foot.x < r.x1 && foot.y > r.y0 && foot.y < r.y1);
+    if (!r) return null;
+    const lanes = rects.filter(Boolean).map(doorLaneRect);
+    const cands = doorwayChairCandidates(foot, r, half);
+    for (let i = 0; i < cands.length; i++) {
+        const c = cands[i];
+        const l = c.x - half.w, rt = c.x + half.w, t = c.y - half.h, b = c.y + half.h;
+        if (lanes.some(z => rt > z.x0 && l < z.x1 && b > z.y0 && t < z.y1)) continue;
+        if (clear(c.x, c.y)) return { to: c, index: i };
+    }
+    return { to: null };
+}
+
+const TILE_PX = 32;
+const DOOR_SWEEP_MS = 1000;
+const DOOR_SPOT_MARGIN = 2;
+let doorSweepAt = 0;
+
+/** For tests: the sweep runs on its next call. */
+export function resetDoorSweep() { doorSweepAt = 0; }
+
+/** Whether (x, y) is on some loaded room's floor (below its two wall rows). */
+function onAnyFloor(x, y) {
+    for (const room of Object.values(window.rooms || {})) {
+        const p = room?.position, m = room?.map;
+        if (!p || !m) continue;
+        if (x >= p.x && x <= p.x + m.widthInPixels && y >= p.y + TILE_PX * 2 && y <= p.y + m.heightInPixels) return true;
+    }
+    return false;
+}
+
+/**
+ * A chair-sized box (plus a 2 px margin) at foot (x, y) overlaps no enabled body but the chair's
+ * own: walls, desks, other chairs, seated or walking NPCs and the player all count.
+ */
+function chairSpotClear(chair, x, y, half) {
+    const world = chair.scene?.physics?.world || window.game?.physics?.world;
+    if (!world) return false;
+    if (window.rooms && Object.keys(window.rooms).length && !onAnyFloor(x, y)) return false;
+    const m = DOOR_SPOT_MARGIN;
+    const l = x - half.w - m, r = x + half.w + m, t = y - half.h - m, b = y + half.h + m;
+    let clear = true;
+    const test = B => {
+        if (!clear || !B?.enable || B === chair.body || B.gameObject === chair) return;
+        if (r > B.left && l < B.right && b > B.top && t < B.bottom) clear = false;
+    };
+    world.staticBodies?.iterate?.(test);
+    if (clear) world.bodies?.iterate?.(test);
+    return clear;
+}
+
+/**
+ * Once a second: a resting chair whose foot is in a door gap glides out of it, to the first clear
+ * spot (doorwayChairSpot). A chair someone is sitting on, fetching or mounting, the player's chair, a
+ * gliding chair and a moving chair are left alone; with no clear spot it stays for the next try.
+ * `now` is for tests.
+ */
+export function sweepDoorwayChairs(now = Date.now()) {
     if (now < doorSweepAt) return;
     doorSweepAt = now + DOOR_SWEEP_MS;
     const chairs = window.chairs;
     if (!Array.isArray(chairs) || !chairs.length) return;
-    const rects = [];
+    const doors = [];
     for (const room of Object.values(window.rooms || {})) {
-        for (const d of room?.doorSprites || []) { const r = doorGapRect(d?.doorProperties); if (r) rects.push(r); }
+        for (const d of room?.doorSprites || []) if (d?.doorProperties) doors.push(d.doorProperties);
     }
+    const rects = doorGapRects(doors);
     if (!rects.length) return;
     for (const chair of chairs) {
         if (!chair?.body || !chair.active || glides.has(chair) || state?.chair === chair) continue;
@@ -1750,11 +1862,23 @@ function sweepDoorwayChairs() {
         const by = chair.seatedBy ? window.npcBehaviorManager?.getBehavior?.(chair.seatedBy) : null;
         if (by && (by._seat?.chair === chair || by._fetch?.chair === chair || by._seatMove?.chair === chair)) continue;
         const f = bodyFeet(chair);
-        const to = doorGapExit(f, rects, { w: chair.body.width / 2, h: chair.body.height / 2 });
-        if (!to) continue;
-        slideChairFootTo(chair, to.x, to.y);
+        const half = { w: chair.body.width / 2, h: chair.body.height / 2 };
+        const spot = doorwayChairSpot(f, rects, half, (x, y) => chairSpotClear(chair, x, y, half));
+        if (!spot) continue;
+        const id = chair.objectId || chair.texture?.key;
+        const from = [Math.round(f.x), Math.round(f.y)];
+        if (!spot.to) {
+            const key = from.join(',');
+            if (chair._doorNoSpotAt !== key) {
+                chair._doorNoSpotAt = key;
+                window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_in_doorway_no_spot', { chair: id, at: from });
+            }
+            continue;
+        }
+        chair._doorNoSpotAt = undefined;
+        glideChairFootTo(chair, spot.to.x, spot.to.y);
         window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_out_of_doorway',
-            { chair: chair.objectId || chair.texture?.key, from: [Math.round(f.x), Math.round(f.y)], to: [Math.round(to.x), Math.round(to.y)] });
+            { chair: id, from, to: [Math.round(spot.to.x), Math.round(spot.to.y)], spot: spot.index });
     }
 }
 
@@ -1985,6 +2109,21 @@ function slideChairFootTo(chair, x, y) {
 }
 
 /**
+ * Whether a post seat should wait for the home cell. The stop is the post and the home is not
+ * resolved yet: null (before the needs system's first tick) always waits; provisional (the spawn
+ * feet, until the home object's room loads) waits POST_HOME_WAIT_MS from `since`, the NPC's first
+ * seat check at this stop, not from needs clock 0, so staff in a room loaded later wait too (sims
+ * tidy R1 M2). Tour 5691: the seat check ran before the first needs tick (home null), fetched from
+ * the spawn spot against the desk and hit mount_stuck.
+ */
+export function postHomePending(stop, home, now, since = 0) {
+    if (!stop?.post) return false;
+    if (!home) return true;
+    if (!home.provisional) return false;
+    return (now ?? 0) - (since ?? 0) < POST_HOME_WAIT_MS;
+}
+
+/**
  * Where a parked needs NPC looks for a chair from. At its post (stop.post) and within POST_SNAP
  * of its home cell, the home cell: a walk ends anywhere within a tile of its target (npc-behavior's
  * arrival tolerance), so the feet can be ~32 px off the cell on the side it came from, and a chair
@@ -1992,18 +2131,6 @@ function slideChairFootTo(chair, x, y) {
  * at (235,172), her chair's foot (200,186), 37.7 px; she stood at her desk for good). Elsewhere,
  * or farther off (a script moved it), the feet.
  */
-/**
- * Whether a post seat should wait for the home cell: the stop is the post and the home is not
- * resolved yet (null before the needs system's first tick, or provisional at the spawn feet), and
- * POST_HOME_WAIT_MS of needs clock have not passed. Tour 5691: the seat check ran before the first
- * needs tick (home null), fetched from the spawn spot against the desk and hit mount_stuck.
- */
-export function postHomePending(stop, home, now) {
-    if (!stop?.post) return false;
-    if (home && !home.provisional) return false;
-    return (now ?? 0) < POST_HOME_WAIT_MS;
-}
-
 export function needsSeatRef(feet, stop, home) {
     if (stop?.post && home && Number.isFinite(home.x) && Number.isFinite(home.y)
         && Math.hypot(home.x - feet.x, home.y - feet.y) <= POST_SNAP) {
@@ -2145,7 +2272,8 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const now = window.npcNeedsSystem?.clockMs ?? 0;
     // At the post, the first try waits (a while) for the home cell: a provisional home is the
     // spawn feet, which can sit against a desk (SIMS_TIDY_LOG.md item 3)
-    if (postHomePending(stop, ns?.home, now)) return false;
+    if (stop.post && behavior._postWaitKey !== stop.key) { behavior._postWaitKey = stop.key; behavior._postWaitSince = now; }
+    if (postHomePending(stop, ns?.home, now, behavior._postWaitSince)) return false;
     // Tried at this stop already: elsewhere that's final; at the post, try again now and then
     const retry = behavior._seatStopKey === stop.key;
     if (retry && (!postSeatRetryDue(stop, behavior._seatTriedAt, now)

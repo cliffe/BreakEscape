@@ -135,3 +135,26 @@ export function lastPinnedIndex(path, from = 0) {
     for (let i = path.length - 1; i >= from; i--) if (path[i] && path[i].pinned) return i;
     return -1;
 }
+
+/** Frames a direct (straight-line) player walk may be blocked, or make no progress, before it replans. */
+export const DIRECT_WALK_STALL_FRAMES = 10;
+
+/**
+ * One frame of a direct player walk's stall watch (sims tidy R1 m4). The straight walk is chosen
+ * once, on line of sight, and line of sight ignores movable bodies: a wheeled chair turns solid when
+ * its sitter mounts, so the walk can meet it later (game 5793, Amara's chair). `st` is
+ * { frames, lastDist, replanned }, kept per walk. Returns:
+ *  'ok'     moving on;
+ *  'wait'   blocked or no progress, fewer than DIRECT_WALK_STALL_FRAMES in a row (keep pushing);
+ *  'replan' the stall reached the limit: route through the grid, once per walk;
+ *  'stop'   blocked after the replan was used (the old stop on contact).
+ */
+export function directWalkStall(st, { blocked, dist }, { limit = DIRECT_WALK_STALL_FRAMES, minStep = 0.5 } = {}) {
+    const progress = Number.isFinite(st.lastDist) ? st.lastDist - dist : Infinity;
+    st.lastDist = dist;
+    st.frames = (blocked || progress < minStep) ? (st.frames || 0) + 1 : 0;
+    if (st.replanned) return blocked ? 'stop' : 'ok';
+    if (st.frames === 0) return 'ok';
+    if (st.frames >= limit) { st.replanned = true; return 'replan'; }
+    return 'wait';
+}
