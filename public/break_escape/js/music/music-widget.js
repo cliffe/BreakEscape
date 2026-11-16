@@ -206,6 +206,10 @@ export class MusicWidget {
                            min="0" max="1" step="0.01" data-lpignore="true">
                     <span class="mw-vol-value" id="mw-vol-master-val">100%</span>
                 </div>
+                <div class="mw-vol-row">
+                    <span class="mw-vol-label" title="Faint voices of NPCs chatting out of earshot (heard lines are unaffected)">Chatter</span>
+                    <button type="button" class="mw-btn" id="mw-bg-chatter" aria-pressed="true">Background voices: on</button>
+                </div>
             </div>
         `;
 
@@ -265,6 +269,23 @@ export class MusicWidget {
             const v = parseFloat(e.target.value);
             document.getElementById('mw-vol-voice-val').textContent = Math.round(v * 100) + '%';
             MusicController.setVoiceVolume(v);
+        });
+
+        // Background chatter: faint, out-of-earshot NPC voices (read by npc-needs-chatter.js, faint lines
+        // only). Saved per browser; on by default.
+        const bgChatter = document.getElementById('mw-bg-chatter');
+        const setBg = on => {
+            window.backgroundChatter = !!on;
+            bgChatter.setAttribute('aria-pressed', on ? 'true' : 'false');
+            bgChatter.textContent = `Background voices: ${on ? 'on' : 'off'}`;
+        };
+        let bgOn = true;
+        try { bgOn = localStorage.getItem('be_bg_chatter') !== 'off'; } catch (_) { /* storage blocked */ }
+        setBg(bgOn);
+        bgChatter.addEventListener('click', () => {
+            const on = !window.backgroundChatter;
+            setBg(on);
+            try { localStorage.setItem('be_bg_chatter', on ? 'on' : 'off'); } catch (_) { /* ok */ }
         });
 
         volMaster.addEventListener('input', e => {

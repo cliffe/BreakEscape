@@ -135,7 +135,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 test('faintVolume: in range, through an open door, beyond the falloff range, no voice, conversation', () => {
     const { v, w } = voiceRig();
-    assert.ok(v.faintVolume('a') > 0.5 && v.faintVolume('a') < 1, 'in range: the curve');
+    assert.ok(v.faintVolume('a') > 0.4 && v.faintVolume('a') <= 0.5, 'in range: the curve, capped at the faint maximum');
     w.dist = 481; assert.equal(v.faintVolume('a'), 0, 'beyond the far radius');
     w.dist = 200; w.npcRoom = 'kitchen';
     assert.ok(Math.abs(v.faintVolume('a') - 0.4 * (1 - 0.85 * 40 / 320)) < 1e-9, 'next room through an open door: x0.4');
@@ -148,11 +148,11 @@ test('faintVolume: in range, through an open door, beyond the falloff range, no 
 test('a faint line is voiced at the faint volume and ducks under a scripted bark', async () => {
     const { v, w, calls } = voiceRig({ dist: 320 });
     await v.say('a', 'Murmur.', { faint: true });
-    assert.equal(calls[0].o.volume, 0.575);
+    assert.equal(calls[0].o.volume, 0.5, 'capped at FAINT_MAX');
     assert.equal(v.log.at(-1).faint, true);
     w.bark = true;
     await v.say('a', 'Murmur two.', { faint: true });
-    assert.equal(calls[1].o.volume, 0.575 * 0.25, 'quieter under a bark');
+    assert.equal(calls[1].o.volume, 0.5 * 0.25, 'quieter under a bark');
     await v.say('a', 'Full line.', { overheard: true });
     assert.equal(calls[2].o.volume, 0.575, 'a full line is not ducked');
 });
@@ -332,4 +332,108 @@ test('an exchange already playing when a chat opens goes on silently and does no
     assert.equal(lines[1].data.overheard, false, 'the second line was not heard');
     assert.equal(o.emitted('npc_overheard:').length, 1, 'only the first');
     assert.equal(o.st.globals.heard_ex_x, true, 'line one was heard in full, so it is heard');
+});
+
+// ── R1 minors ──────────────────────────────────────────────────────────────────────────────────
+
+test('R1 m1: a faint line beside the player (a dark room) never plays above the faint maximum', async () => {
+    const { v, calls } = voiceRig({ dist: 20 });
+    assert.equal(v.faintVolume('a'), 0.5);
+    await v.say('a', 'Murmur.', { faint: true });
+    assert.equal(calls[0].o.volume, 0.5);
+    await v.say('a', 'Full.', { overheard: true });
+    assert.equal(calls[1].o.volume, 1, 'a heard line is unaffected');
+});
+
+test('R1 m2: a faint line given way to while it loads does not hold the queue', async () => {
+    let slow = true;
+    const calls = [], stops = [];
+    const v = new NpcChatterVoice({
+        getNpc: id => ({ id, voice: {} }), allNpcs: () => [], muted: () => false,
+        npcRoom: () => 'office', playerRoom: () => 'office', distance: () => 300,
+        makeTts: () => ({ play: async (n, l) => { calls.push(l); if (slow && l === 'faint') await wait(1000); return 40; }, setDistanceGain() {}, stop: () => stops.push(1) })
+    });
+    const f = v.say('a', 'faint', { faint: true });
+    await wait(30);
+    const t0 = Date.now();
+    slow = false;
+    await v.say('b', 'full', { overheard: true });
+    assert.ok(Date.now() - t0 < 400, 'the full line started without waiting for the 1 s load');
+    assert.deepEqual(calls, ['faint', 'full']);
+    await f;
+    await wait(1100);
+    assert.ok(stops.length >= 1, 'the late clip is stopped when it resolves');
+});
+
+test('R1 m2: a faint line still queued behind another line is aborted too', async () => {
+    const calls = [];
+    const v = new NpcChatterVoice({
+        getNpc: id => ({ id, voice: {} }), allNpcs: () => [], muted: () => false,
+        npcRoom: () => 'office', playerRoom: () => 'office', distance: () => 300,
+        makeTts: () => ({ play: async (n, l) => { calls.push(l); await wait(l === 'first' ? 150 : 5); return 150; }, setDistanceGain() {}, stop() {} })
+    });
+    v.say('a', 'first', { overheard: true });
+    const queued = v.say('b', 'queued faint', { faint: true });
+    await wait(20);
+    await v.say('c', 'full', { overheard: true });
+    await queued;
+    assert.ok(!calls.includes('queued faint'), 'never played');
+});
+
+test('R1 m3: a conversation that opens while the clip loads silences it at once', async () => {
+    const st = { conv: false }, stops = [];
+    const v = new NpcChatterVoice({
+        getNpc: id => ({ id, voice: {} }), allNpcs: () => [], muted: () => false,
+        npcRoom: () => 'office', playerRoom: () => 'office', distance: () => 50,
+        conversation: () => st.conv,
+        makeTts: () => ({ play: async () => { await wait(30); st.conv = true; return 500; }, setDistanceGain() {}, stop: () => stops.push(1) })
+    });
+    await v.say('a', 'line', { overheard: true });
+    assert.equal(stops.length, 1);
+    assert.equal(v.log.at(-1).reason, 'conversation');
+});
+
+test('R1 m5: the curve follows the pool overhear radius', () => {
+    const { v, w } = voiceRig({ dist: 300 });
+    assert.equal(v.faintVolume('a', 360), 0.5, 'inside 360 px: full volume, capped to the faint maximum');
+    w.dist = 1100; assert.equal(v.faintVolume('a', 360), 0, 'beyond 3 x 360');
+    w.dist = 700; assert.ok(v.faintVolume('a', 360) > 0, 'within 3 x 360 = 1080');
+    assert.equal(v.faintVolume('a', 160), 0, 'but beyond the default far radius of 480');
+});
+
+test('R1 m7: the real bark-system mute silences chatter; the Background chatter switch silences faint lines only', () => {
+    const { v } = voiceRig();
+    const w = globalThis;
+    const hadWindow = 'window' in w;
+    const prev = w.window;
+    w.window = { barkSystem: { soundEnabled: false } };
+    const real = new NpcChatterVoice({ getNpc: id => ({ id, voice: {} }), npcRoom: () => 'office', playerRoom: () => 'office', distance: () => 50 });
+    assert.equal(real._muted(), true);
+    w.window = { backgroundChatter: false };
+    assert.equal(real._muted(), false);
+    assert.equal(real.faintVolume('a'), 0, 'switch off: no faint line');
+    if (hadWindow) w.window = prev; else delete w.window;
+    assert.ok(v);
+});
+
+test('R1 m8: an exchange line voiced out of earshot shows dimmed, without losing its place on the lock', () => {
+    const o = office({ exchange: true, ear: { overheard: true, distance: 40 } });
+    o.until(() => o.st.spoken.some(x => x.info.knot), 120000, 'the first exchange line');
+    o.st.ear = { overheard: false, distance: 300 };   // the player walks off
+    o.until(() => o.st.spoken.filter(x => x.info.knot).length >= 2, 60000, 'the second exchange line');
+    const second = o.st.spoken.filter(x => x.info.knot)[1];
+    assert.ok(!second.info.faint, 'not a preemptable faint line');
+    assert.equal(second.info.overheard, false);
+    assert.equal(o.sys.getState(second.id).talking?.faint, true, 'but the bubble is dimmed');
+});
+
+test('R1 m6: an unheard grumble within the falloff range is a faint line, on the faint throttle', () => {
+    const o = office();
+    const s = o.sys.states.get('ann');
+    o.sys._grumble(s, null, 'cooler', 'cooler', {});
+    const sp = o.st.spoken.find(x => x.id === 'ann');
+    assert.ok(sp && POOL.includes(sp.line), 'a line, not a picture');
+    assert.equal(sp.info.faint, true);
+    assert.equal(sp.info.overheard, false);
+    assert.ok(!s.chatterQuietUntil, 'the full cooldown is untouched');
 });
