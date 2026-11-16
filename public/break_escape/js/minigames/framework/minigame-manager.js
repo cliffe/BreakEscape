@@ -368,11 +368,6 @@ export const MinigameFramework = {
             }
             console.log(`Ended minigame with success: ${success}`);
             } finally {
-                // Queued here so a throwing cleanup or onComplete cannot skip it; a parent
-                // handing over to a child leaves the record to the child (POSE_FIXES_REVIEW_R5 m3)
-                if (ending._suspendedForChild !== true) {
-                    try { this._queueChatReturnSettle(); } catch (e) { console.error('chat return settle failed', e); }
-                }
                 // A parent handing over to a child does not end for the ringer's purposes (2.9).
                 // The hook gets the ending minigame: it reads params.ringerCall, _endedByCall and
                 // _callFinished off it.
@@ -381,6 +376,11 @@ export const MinigameFramework = {
                 }
                 // Toasts placed over the panel go back to the lane; waiting ones show (toast plan 2.8)
                 try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
+                // Queued here so a throwing cleanup or onComplete cannot skip it; a parent
+                // handing over to a child leaves the record to the child (POSE_FIXES_REVIEW_R5 m3)
+                if (ending._suspendedForChild !== true) {
+                    try { this._queueChatReturnSettle(); } catch (e) { console.error('chat return settle failed', e); }
+                }
             }
         } else {
             console.log('No current minigame to end');
