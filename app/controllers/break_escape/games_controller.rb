@@ -2982,6 +2982,9 @@ module BreakEscape
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       elsif refusal == 'not_responding'
         return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal == 'expired'
+        # Keyring K5 (plan 10): a session token that has run out; the client says "{label} has expired."
+        return render json: { error: 'Session token expired', reason: 'expired' }, status: :forbidden
       elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
