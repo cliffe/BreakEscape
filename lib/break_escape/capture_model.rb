@@ -131,7 +131,7 @@ module BreakEscape
       creds.is_a?(Hash) && present_string?(creds['username'])
     end
 
-    # Every shorthand proof: [{ proof:, holder: (the account holder NPC or nil), path: }].
+    # Every shorthand proof: [{ proof:, holder: (the account holder NPC or nil), path:, secret: }].
     def shorthand_proofs(data)
       holders = room_npc_list(data).select { |npc| account_holder?(npc) }
       by_username = holders.to_h { |npc| [normalise_username(npc['creds']['username']), npc] }
@@ -143,7 +143,7 @@ module BreakEscape
         elsif owner && holders.any? { |npc| npc.equal?(owner) }
                    owner
         end
-        { proof: capture['proof'], holder: holder, path: "#{path}/proof" }
+        { proof: capture['proof'], holder: holder, path: "#{path}/proof", secret: capture['secret'] }
       end
     end
 
@@ -432,6 +432,39 @@ module BreakEscape
       return false unless obj['triggerOnInteract'].is_a?(Array)
 
       obj['consumesItem'] == true || removes_item?(obj['triggerOnInteract'], names)
+    end
+
+    # Whether a proof can be met in this scenario, as the server records it: a planted proof
+    # needs a network jack (when on names one, or on is absent) or a room object with an id, a
+    # triggerOnInteract list and a requiresItem that takes the item; a dropped proof needs a
+    # droppable item; a session proof needs a sign-in PC (lockType login). item_defs is
+    # { itemId => definition }, objects the room object hashes. holder (an account holder NPC
+    # or nil) is accepted so both validators call it alike; no kind reads it today. Pure.
+    def proof_satisfiable?(proof, item_defs, objects, _holder = nil)
+      kind = proof_kind(proof)
+      return false unless kind
+
+      objects = Array(objects).select { |o| o.is_a?(Hash) }
+      case kind
+      when 'planted'
+        item = item_defs[proof['planted'].to_s]
+        return false unless item
+
+        on = proof['on']
+        return false if on && objects.none? { |o| o['id'].to_s == on.to_s }
+        return true if objects.any? { |o| (on.nil? || o['id'].to_s == on.to_s) && o['networkJack'] == true }
+
+        objects.any? do |o|
+          present_string?(o['id']) && (on.nil? || o['id'] == on) && object_takes_item?(o, item)
+        end
+      when 'dropped'
+        item = item_defs[proof['dropped'].to_s]
+        !item.nil? && item['droppable'] == true
+      when 'session'
+        objects.any? { |o| o['id'].to_s == proof['session'].to_s && o['lockType'] == 'login' }
+      else
+        false
+      end
     end
 
     # --- Server-owned capture record (sync deltas R2, 6a) -------------------------------------

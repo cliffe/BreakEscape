@@ -754,3 +754,67 @@ test('a Wi-Fi key only in set member posts warns about timing; on an own post ou
     w = warnings(issues(sc));
     assert.ok(!w.some(s => s.includes('psk appears')), w.join('\n'));
 });
+
+// ---- E0.4: the Wi-Fi key as a capture secret ----
+
+const KEY = 'quiet-harbour-77';
+// wifiClean() with the staff key unreadable in any note, written by a phone NPC's capture
+// mapping whose proof is a plant on a consuming desk.
+function keyCaptureScenario(proof) {
+    const sc = wifiClean();
+    sc.networks.guest_wifi.wifi.psk = KEY;
+    room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
+    room(sc, 'lobby').objects.push(
+        { id: 'kit_ap', type: 'usb', name: 'Pocket AP', takeable: true },
+        { id: 'ap_spot', type: 'pc', name: 'Socket', requiresItem: 'kit_ap', consumesItem: true, triggerOnInteract: [] });
+    const writer = { eventPattern: 'q', addCapture: { targetId: 'staff_wifi_key', kind: 'credential', secret: KEY } };
+    if (proof) writer.addCapture.proof = proof;
+    room(sc, 'lobby').npcs = [...(room(sc, 'lobby').npcs || []), { id: 'hax', npcType: 'phone', eventMappings: [writer] }];
+    return sc;
+}
+
+test('E0.4: a key with a satisfiable proof-carrying capture writer counts as readable', { skip }, () => {
+    const list = issues(keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' }));
+    assertNot(warnings(list), 'appears nowhere the player can read');
+});
+
+test('E0.4: a key with no capture writer is still unreadable', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs = (room(sc, 'lobby').npcs || []).filter(n => n.id !== 'hax');
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('E0.4: a key whose capture proof cannot be satisfied is still unreadable', { skip }, () => {
+    const list = issues(keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' }));
+    assertHas(warnings(list), 'appears nowhere the player can read');
+});
+
+test('E0.4: a key writer with no proof is a warning (the server never serves it)', { skip }, () => {
+    const list = issues(keyCaptureScenario(null));
+    assertHas(warnings(list), 'carries no proof');
+    assertNot(list, KEY);
+});
+
+test('E0.4: a key writer with a proof raises no such warning', { skip }, () => {
+    assertNot(warnings(issues(keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' }))), 'carries no proof');
+});
+
+test('E0.4: a planted non-jack item that carries rogueDevice is a warning', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').objects.find(o => o.id === 'kit_ap').rogueDevice = true;
+    assertHas(warnings(issues(sc)), 'rogueDevice');
+});
+
+test('E0.4: a planted item with no rogueDevice raises no such warning', { skip }, () => {
+    assertNot(warnings(issues(keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' }))), 'carries rogueDevice');
+});
+
+test('E0.4: a rogue device planted on a jack is not warned about', { skip }, () => {
+    const sc = clean();
+    const jack = room(sc, 'comms_room').objects.find(o => o.networkJack);
+    const dev = Object.values(sc.rooms).flatMap(r => r.objects || []).find(o => o.rogueDevice);
+    assert.ok(jack && dev);
+    sc.rooms.lobby.npcs = [...(sc.rooms.lobby.npcs || []), { id: 'hax', npcType: 'phone', eventMappings: [{ eventPattern: 'q',
+        addCapture: { targetId: 'jackcap', kind: 'foothold', host: 'x', proof: { planted: dev.id, on: jack.id } } }] }];
+    assertNot(warnings(issues(sc)), 'carries rogueDevice');
+});

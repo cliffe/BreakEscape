@@ -170,6 +170,53 @@ test('npcId is left out when the query string names an npc_id (the server takes 
   assert.equal(got[0].query, 'npc_id=lena');
 });
 
+test('every POST /inventory line carries inv read from the request body (E0.3 plant tagging)', async () => {
+  const { file, cap } = fresh();
+  const INV = '/break_escape/games/7/inventory';
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' }) }));
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ actionType: 'remove', item: { id: 'usb_1' }, usedOn: 'desk' }) }));
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'remove', item: { id: 'coffee' } }) }));
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'add', item: { id: 'key_1', type: 'key' } }) }));
+  cap.onResponse(res('/break_escape/games/7/unlock', { method: 'POST', postData: JSON.stringify({ action_type: 'remove', item: { id: 'x' } }) }));
+  cap.onResponse(res(INV, { method: 'GET' }));
+  await cap.flush();
+  const got = lines(file);
+  assert.deepEqual(got[0].inv, { action: 'remove', itemId: 'kit_rogue_ap', usedOn: 'rogue_ap_spot' });
+  assert.deepEqual(got[1].inv, { action: 'remove', itemId: 'usb_1', usedOn: 'desk' }, 'the camelCase names the controller also reads');
+  assert.deepEqual(got[2].inv, { action: 'remove', itemId: 'coffee', usedOn: null });
+  assert.deepEqual(got[3].inv, { action: 'add', itemId: 'key_1', usedOn: null });
+  assert.ok(!('inv' in got[4]), 'only POST /inventory is tagged');
+  assert.ok(!('inv' in got[5]), 'a GET is not tagged');
+  assert.ok(!JSON.stringify(got).includes('"type":"key"'), 'the tag holds only action, item id and used_on, never the request body');
+});
+
+test('inv is null when the inventory request body cannot be read', async () => {
+  const { file, cap } = fresh();
+  const INV = '/break_escape/games/7/inventory';
+  for (const postData of [null, '', 'action_type=remove&item[id]=kit', '"remove"', JSON.stringify(null), JSON.stringify([1]),
+    () => { throw new Error('gone'); }]) {
+    cap.onResponse(res(INV, { method: 'POST', postData }));
+  }
+  await cap.flush();
+  const got = lines(file);
+  assert.equal(got.length, 7);
+  for (const l of got) assert.ok('inv' in l && l.inv === null, `line ${l.n} carries inv: null`);
+});
+
+test('inv is null when the query names a field the controller reads (the query beats the body)', async () => {
+  const { file, cap } = fresh();
+  const body = JSON.stringify({ action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' });
+  const INV = '/break_escape/games/7/inventory';
+  for (const q of ['?used_on=elsewhere', '?usedOn=x', '?item%5Bid%5D=other', '?item=other', '?action_type=add', '?actionType=add', '?x=1;used_on=y']) {
+    cap.onResponse(res(INV + q, { method: 'POST', postData: body }));
+  }
+  cap.onResponse(res(INV + '?itemCount=2', { method: 'POST', postData: body }));
+  await cap.flush();
+  const got = lines(file);
+  assert.deepEqual(got.slice(0, 7).map(l => l.inv), Array(7).fill(null));
+  assert.deepEqual(got[7].inv, { action: 'remove', itemId: 'kit_rogue_ap', usedOn: 'rogue_ap_spot' }, 'an unrelated query name does not decline');
+});
+
 test('playtest-session.js wires --capture-responses through the module', () => {
   const src = readFileSync(join(scripts, 'playtest-session.js'), 'utf8');
   assert.ok(existsSync(join(scripts, 'response-capture.js')));
