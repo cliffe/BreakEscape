@@ -303,12 +303,15 @@ test('pending use: a menu or confirm opening on the way drops it (busy)', () => 
 // ── game.js and player.js wiring ──
 test('game.js: pointerdown builds the far lists with farUnderTap and the pick list with tapPickList', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
-    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse \} from '\.\.\/systems\/tap-pick\.js'/);
-    assert.match(src, /tapPickList\(gatherInteractablesNearClick\(worldX, worldY, tapObjectIds, tapTests\), farObjects, farObjectCandidate, farNpcs\)/);
+    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, seatsGiveWay \} from '\.\.\/systems\/tap-pick\.js'/);
+    assert.match(src, /const nearClick = gatherInteractablesNearClick\(worldX, worldY, tapObjectIds, tapTests\);/);
+    assert.match(src, /tapPickList\(nearClick, farObjects, farNpcs\)/);
+    assert.doesNotMatch(src, /farObjectCandidate/, 'no walk entries (overlap plan D5)');
     assert.match(src, /withoutLeavingNpcsIfObjects\(withoutChairsIfOthers\(gathered\)\)/);
     assert.match(src, /pendingTapUse\.clear\(\)/);
     assert.match(src, /pendingTapUse\.update\(Date\.now\(\)\)/);
-    assert.match(src, /window\.__clearPendingTapUse = \(\) => pendingTapUse\.clear\(\)/);
+    assert.match(src, /window\.__clearPendingTapUse = \(\) => \{ pendingTapUse\.clear\(\); pendingOverlapWalk\.clear\(\); \}/);
+    assert.match(src, /pendingOverlapWalk\.update\(Date\.now\(\)\)/);
 });
 
 test('player.js: the E key drops a far tap\'s pending use before interacting (R1 m4)', () => {
@@ -376,8 +379,10 @@ test('pending use: stopping short out of reach calls onStoppedShort once; a bloc
 test('game.js: busy covers a knocked-out or frozen player; a short stop says so (R3 m1, m2)', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
     const cut = src.slice(src.indexOf('const pendingTapUse = createPendingTapUse({'));
-    assert.match(cut, /busy: [^]*?window\.playerHealth\?\.isKO\?\.\(\)[^]*?window\.player\?\.disableMovement\n\}\);/);
-    assert.match(cut, /onStoppedShort: \(\) => window\.gameAlert\?\.\(npcBesidePlayer\(\) \? "Someone's in the way\." : "Can't reach it from here\."/);
+    assert.match(cut, /busy: \(\) => tapWalkBusy\(\)/);
+    assert.match(cut, /function tapWalkBusy\(\) \{[^]*?window\.playerHealth\?\.isKO\?\.\(\)[^]*?window\.player\?\.disableMovement;\n\}/);
+    assert.match(cut, /onStoppedShort: \(\) => tapWalkStoppedShort\(\)/);
+    assert.match(cut, /function tapWalkStoppedShort\(\) \{\n    window\.gameAlert\?\.\(npcBesidePlayer\(\) \? "Someone's in the way\." : "Can't reach it from here\."/);
 });
 
 test('opaqueAt: flipY mirrors the row; rotation is undone about the origin (R3 n3)', () => {

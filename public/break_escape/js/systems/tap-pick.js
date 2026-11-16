@@ -12,9 +12,14 @@
  *
  * tapPickList() applies the rule: when an out-of-reach interactable object holds the tap
  * in its bounds, in-reach candidates that are only near the tap drop out. Any that are
- * under the tap too (a seated owner drawn over her PC) stay, and the far object joins
- * them in the pick-one menu as "walk there, then use". With none under the tap the list
+ * under the tap too (a seated owner drawn over her PC) stay; a far thing never joins the
+ * pick-one menu (out of reach, the player only walks). With none under the tap the list
  * is empty and the object branch walks to the far object.
+ *
+ * The overlap rule (pixelHits, soleHit, overlapStandPoint): a click on two or more things'
+ * own opaque pixels, all out of reach, walks to a spot where every one is in reach and
+ * stops; the next click there opens the menu. A far click on one thing's pixels goes to
+ * that thing, whatever transparent corner is drawn over it.
  *
  * objectStandPoint() is the walk target for an out-of-reach object, and
  * createPendingTapUse() uses the object once the walk ends in reach.

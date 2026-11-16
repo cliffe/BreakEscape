@@ -594,8 +594,9 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
 
         // Set up interaction zone
         const zone = gameRef.add.zone(doorX, doorY, doorWidth, doorHeight);
+        // The zone only shows the hand cursor: the scene's pointerdown (game.js) owns door clicks,
+        // so a click acts once and an NPC on a door in reach gives the menu (overlap plan D10)
         zone.setInteractive({ useHandCursor: true });
-        zone.on('pointerdown', () => handleDoorInteraction(doorSprite));
 
         doorSprite.interactionZone = zone;
         doorSprites.push(doorSprite);
