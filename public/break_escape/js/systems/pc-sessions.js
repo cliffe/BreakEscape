@@ -25,6 +25,18 @@
  * dropped"). A refusal because the PC's policy blocks remote sign-in (422 remoteBlocked)
  * emits pc_signin_failed with reason remote_blocked.
  *
+ * Relay sessions (keyring K3c, plan 8.3). An assist invite signed in with
+ * signInWithCredential(pcId, id, { relay: true }) joins the account holder's own session on
+ * their PC. It is held in the same slot and carries relay: true and host (never remote or
+ * footholdId); it is not the player's own sign-in there, so it never enters signedIn and
+ * firstAtPc is false. At the PC's own keyboard it counts as no session (heldAtKeyboard), the
+ * server never sends one on load (load() skips it), and the holder sitting down at their own
+ * PC does not displace it. The account holder ending the assist arrives in the state-sync
+ * answer's endedRelayPcIds (read by hookSyncAnswer, an answer-only part): each named relay
+ * session is dropped with no request and emits pc_signed_out reason relay_ended, and an open
+ * relay desktop closes with "<name> ended the remote assist." (a toast when none is open).
+ * Events for a relay carry relay: true and kind.
+ *
  * Events (each also as `<name>:<pcId>`):
  *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId }
  *                      a sign-in (or the second half of a switch). previousNpcId is the account

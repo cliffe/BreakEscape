@@ -44,6 +44,7 @@ const { TextFileMinigame } = await imp('minigames/text-file/text-file-minigame.j
 const { PcSessions } = await imp('systems/pc-sessions.js');
 const taskbarMod = await imp('utils/pc-taskbar.js');
 const { pcTaskbarModel, desktopUserOf, pcHostName, resetTaskbarHeadshots, resetRememberedDesktops, rememberDesktop, PC_SILHOUETTE_URL } = taskbarMod;
+const { pcTaskbarHtml, pcStartPanelHtml, relayAccountText, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_TAG_TEXT, PC_TASKBAR_ICONS } = taskbarMod;
 
 const settle = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
@@ -705,4 +706,75 @@ test('R4: a panel that would scroll as a whole goes compact even when its Places
 
 test('R4: compact on a short screen drops the This PC heading but keeps Places', () => {
     assert.match(R3_CSS, /\.pc-monitor\[data-short\] \.pc-start-compact \.pc-start-section:not\(\.pc-start-places\) \.pc-start-heading \{\s*display:\s*none/);
+});
+
+// ---- keyring K3c: the relay desktop (plan 8.3 and 8.5) ----
+
+const RELAY_SESSION = { username: 'ishaw', displayName: 'Ian Shaw', npcId: 'ian', via: 'credential', relay: true, host: 'HB-FIN-02' };
+
+test('K3c: a relay model has one Disconnect, no shares, a relay flag and the account line', () => {
+    const m = pcTaskbarModel({
+        pcData: { lockType: 'login', name: 'Finance PC' }, session: RELAY_SESSION, lockSupported: true,
+        places: [{ id: 'scanned_inbox', name: 'Scanned-Inbox' }]
+    });
+    assert.equal(m.relay, true);
+    assert.deepEqual(m.actions, ['disconnect']);
+    assert.deepEqual(m.places, []);
+    assert.equal(m.remote, false);
+    assert.equal(m.account.relay, true);
+    assert.equal(m.account.relayLine, "Using Ian Shaw's session (ishaw)");
+    // The relay flag alone (the caller knows) is enough
+    assert.equal(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'credential' }, relay: true }).relay, true);
+});
+
+test('K3c: a non-relay session keeps its actions and places, with no relay marks', () => {
+    const m = pcTaskbarModel({
+        pcData: { lockType: 'login' }, session: { username: 'a', displayName: 'A', via: 'password' }, lockSupported: true,
+        places: [{ id: 'x', name: 'X' }, null]
+    });
+    assert.equal(m.relay, false);
+    assert.deepEqual(m.actions, ['lock', 'switch', 'signout']);
+    assert.equal(m.places.length, 1);
+    assert.equal('relay' in m.account, false);
+    assert.equal('relayLine' in m.account, false);
+});
+
+test('K3c: a relay is never also shown as remote, even with the remote flag or a remote session', () => {
+    const viaFlag = pcTaskbarModel({ pcData: { lockType: 'login' }, session: RELAY_SESSION, remote: true, linkName: 'the jack' });
+    assert.equal(viaFlag.remote, false);
+    assert.equal(viaFlag.linkName, null);
+    const viaSession = pcTaskbarModel({ pcData: { lockType: 'login' }, session: { ...RELAY_SESSION, remote: true } });
+    assert.equal(viaSession.remote, false);
+});
+
+test('K3c: relayAccountText falls back to the account holder and drops an absent username', () => {
+    assert.equal(relayAccountText('Ian Shaw', 'ishaw'), "Using Ian Shaw's session (ishaw)");
+    assert.equal(relayAccountText('', ''), "Using the account holder's session");
+    assert.equal(relayAccountText(null, 'ishaw'), "Using the account holder's session (ishaw)");
+});
+
+test('K3c: the relay taskbar and start panel show the tag, header, account line, no-shares line and Disconnect only', () => {
+    const m = pcTaskbarModel({ pcData: { lockType: 'login', name: 'Finance PC' }, session: RELAY_SESSION, lockSupported: true, places: [{ id: 'x', name: 'X' }] });
+    const bar = pcTaskbarHtml(m);
+    assert.match(bar, new RegExp(`pc-taskbar-relay">${RELAY_TAG_TEXT}<`));
+    const panel = pcStartPanelHtml(m);
+    assert.ok(panel.includes(RELAY_HEADER_TEXT));
+    assert.ok(panel.includes(RELAY_NO_SHARES_TEXT));
+    assert.ok(panel.includes('pc-start-relay'));
+    assert.ok(panel.includes("Using Ian Shaw&#39;s session") || panel.includes("Using Ian Shaw's session") || panel.includes('Using Ian Shaw'));
+    assert.ok(panel.includes('id="pc-start-disconnect"'));
+    assert.ok(panel.includes('>Disconnect<'));
+    assert.ok(panel.includes(PC_TASKBAR_ICONS.disconnect));
+    for (const gone of ['pc-start-lock', 'pc-start-switch', 'pc-start-signout', 'data-place="share"']) assert.equal(panel.includes(gone), false, gone);
+    // A plain session has none of it
+    const plain = pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'password' }, places: [{ id: 'x', name: 'X' }] });
+    assert.equal(pcTaskbarHtml(plain).includes('pc-taskbar-relay'), false);
+    const plainPanel = pcStartPanelHtml(plain);
+    assert.equal(plainPanel.includes(RELAY_HEADER_TEXT), false);
+    assert.equal(plainPanel.includes(RELAY_NO_SHARES_TEXT), false);
+    assert.ok(plainPanel.includes('id="pc-start-signout"'));
+});
+
+test('K3c: the Disconnect icon is the sign-out icon', () => {
+    assert.equal(PC_TASKBAR_ICONS.disconnect, PC_TASKBAR_ICONS.signout);
 });

@@ -18,7 +18,7 @@ const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_esc
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 
 globalThis.window = {};
-const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE, unplugEndedMessage } =
+const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE, unplugEndedMessage, relayEndedMessage } =
     await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
 
 const ACCOUNTS = {
@@ -804,4 +804,201 @@ test('route_ended: one host, two hosts, an open desktop closed with the line; an
     assert.deepEqual(s.linkDropped(['nope'], 'route_ended'), []);
     assert.deepEqual(toastsSeen, []);
     delete window.gameAlert;
+});
+
+// ---- keyring K3c: relay sessions (an assist invite; plan 8.3) ----
+
+const { endedAssistMessage } = await import(dataUrl(readFileSync(join(js, 'utils/remote-host-text.js'), 'utf8')));
+
+const RELAY_BODY = { success: true, npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', relay: true, host: 'HB-FIN-02', kind: 'assist_invite' };
+
+/** A sessions mirror whose loginWithCredential answers `body` and records the route it was sent. */
+function relaySetup(body = RELAY_BODY) {
+    const s = setup();
+    window.ApiClient.loginWithCredential = async (pcId, credentialId, route) => { calls.push(['loginWithCredential', pcId, credentialId, route]); return { ...body }; };
+    return s;
+}
+
+test('the relay ended line is the same text as remote-host-text.js endedAssistMessage', () => {
+    for (const name of ['Ian Shaw', '', null, undefined, 'A <b>Name</b>']) {
+        assert.equal(relayEndedMessage(name), endedAssistMessage(name));
+    }
+    assert.equal(relayEndedMessage('Ian Shaw'), 'Ian Shaw ended the remote assist.');
+    assert.equal(relayEndedMessage(null), 'The account holder ended the remote assist.');
+    assert.equal(setup().relayEndedLine('Ian Shaw'), relayEndedMessage('Ian Shaw'));
+});
+
+test('the pc-sessions.js header describes the relay,', () => {
+    const src = readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8');
+    const header = src.slice(0, src.indexOf('*/'));
+    assert.match(header, /Relay sessions/);
+    assert.match(header, /relay_ended/);
+    assert.match(header, /endedRelayPcIds/);
+});
+
+test('a relay sign-in sends route { relay: true } and never relay: false for a foothold or plain one', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    assert.deepEqual(calls[0][3], { relay: true });
+    calls.length = 0;
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true, foothold: 'jack' });
+    assert.deepEqual(calls[0][3], { relay: true }, 'relay wins over a foothold');
+    calls.length = 0;
+    await s.signInWithCredential('fin_pc', 'inv1', { foothold: 'jack' });
+    assert.deepEqual(calls[0][3], { foothold: 'jack' });
+    calls.length = 0;
+    await s.signInWithCredential('fin_pc', 'inv1');
+    assert.deepEqual(calls[0][3], {});
+    calls.length = 0;
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: false });
+    assert.deepEqual(calls[0][3], {}, 'relay: false is not sent');
+});
+
+test('a relay session is public with relay and host, never remote or footholdId', async () => {
+    const s = relaySetup();
+    const r = await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    assert.equal(r.ok, true);
+    assert.equal(r.session.relay, true);
+    assert.equal(r.session.host, 'HB-FIN-02');
+    assert.equal('remote' in r.session, false);
+    assert.equal('footholdId' in r.session, false);
+    assert.equal(s.isRelay('fin_pc'), true);
+    assert.equal(s.isRelay('other'), false);
+    assert.equal(s.hasRelay(), true);
+    // A plain credential session is not a relay
+    const s2 = relaySetup({ ...RELAY_BODY, relay: undefined, host: undefined });
+    await s2.signInWithCredential('fin_pc', 'inv1');
+    assert.equal(s2.isRelay('fin_pc'), false);
+    assert.equal(s2.hasRelay(), false);
+});
+
+test('a relay sign-in is not the player\'s sign-in there: no signedIn entry, firstAtPc false, event carries relay', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    assert.equal(s.wasSignedIn('fin_pc'), false);
+    const ev = named('pc_signed_in');
+    assert.equal(ev.length, 1);
+    assert.equal(ev[0].firstAtPc, false);
+    assert.equal(ev[0].relay, true);
+    assert.equal(ev[0].kind, 'assist_invite');
+    assert.equal('remote' in ev[0], false);
+});
+
+test('heldAtKeyboard is false for a relay and true for a keyboard session', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    assert.equal(s.heldAtKeyboard('fin_pc'), false);
+    assert.equal(s.has('fin_pc'), true, 'the session is still held');
+    assert.equal(s.heldAtKeyboard('nope'), false);
+    const s2 = setup();
+    await s2.signIn('hot_desk', 'sokafor', 'right-sam');
+    assert.equal(s2.heldAtKeyboard('hot_desk'), true);
+});
+
+test('load never holds a relay session the server sent, and arms nothing', () => {
+    const s = setup();
+    s.load({ fin_pc: { npcId: 'ian', username: 'ishaw', via: 'credential', relay: true, host: 'HB-FIN-02' } }, ['fin_pc']);
+    assert.equal(s.has('fin_pc'), false);
+    assert.equal(s.hasRelay(), false);
+});
+
+test('displaced: the holder sitting down keeps the relay; someone else ends it', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    assert.equal(await s.displaced('fin_pc', 'Ian Shaw', 'ian'), false);
+    assert.equal(s.has('fin_pc'), true);
+    assert.equal(named('pc_signed_out').length, 0);
+    assert.equal(await s.displaced('fin_pc', 'Dana', 'dana'), true);
+    assert.equal(s.has('fin_pc'), false);
+    assert.equal(named('pc_signed_out').at(-1).reason, 'displaced');
+});
+
+test('displaced: a non-relay session of the same NPC still ends (the holder rule is relay only)', async () => {
+    const s = setup();
+    await s.signIn('hot_desk', 'sokafor', 'right-sam');
+    assert.equal(await s.displaced('hot_desk', 'Sam Okafor', 'sam'), true);
+    assert.equal(s.has('hot_desk'), false);
+});
+
+test('relayAnswer ends only relay sessions named in endedRelayPcIds', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    s.sessions.set('kb_pc', { npcId: 'sam', username: 'sokafor', via: 'password' });
+    assert.deepEqual(s.relayAnswer({ endedRelayPcIds: ['kb_pc', 'ghost_pc', '', 7] }), [], 'a keyboard session and unknown ids are left alone');
+    assert.equal(s.has('kb_pc'), true);
+    assert.equal(s.has('fin_pc'), true);
+    assert.deepEqual(s.relayAnswer({}), []);
+    assert.deepEqual(s.relayAnswer(null), []);
+    assert.deepEqual(s.relayAnswer({ endedRelayPcIds: 'fin_pc' }), []);
+    assert.deepEqual(s.relayAnswer({ endedRelayPcIds: ['kb_pc', 'fin_pc'] }), ['fin_pc']);
+    assert.equal(s.has('fin_pc'), false);
+    assert.equal(s.has('kb_pc'), true);
+    const out = named('pc_signed_out');
+    assert.equal(out.length, 1);
+    assert.equal(out[0].reason, 'relay_ended');
+    assert.equal(out[0].relay, true);
+});
+
+test('relay_ended: an open relay desktop closes with the ended line, and no toast; a closed one toasts it', async () => {
+    const toastsSeen = [];
+    window.gameAlert = (m, ...rest) => toastsSeen.push([m, rest[3]]);
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    const closed = [];
+    s.registerDesktop('fin_pc', (message, reason) => closed.push([message, reason]));
+    s.relayAnswer({ endedRelayPcIds: ['fin_pc'] });
+    assert.deepEqual(closed, [['Ian Shaw ended the remote assist.', 'relay_ended']]);
+    assert.deepEqual(toastsSeen, []);
+    // No desktop open: the same line is a plain-text toast
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    s.relayAnswer({ endedRelayPcIds: ['fin_pc'] });
+    assert.deepEqual(toastsSeen, [['Ian Shaw ended the remote assist.', { plainText: true }]]);
+    window.gameAlert = undefined;
+});
+
+test('linkDropped with relay_ended sends no logout and does not use the unplug line', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    const closed = [];
+    s.registerDesktop('fin_pc', (message, reason) => closed.push([message, reason]));
+    calls.length = 0;
+    assert.deepEqual(s.linkDropped(['fin_pc'], 'relay_ended'), ['fin_pc']);
+    assert.equal(calls.some(c => c[0] === 'logout'), false);
+    assert.notEqual(closed[0][0], 'The link dropped');
+    assert.equal(closed[0][1], 'relay_ended');
+});
+
+test('hookSyncAnswer registers one answer-only relayEnds part per sync instance and feeds relayAnswer', async () => {
+    const parts = [];
+    const sync = { registerPart: (name, def) => parts.push([name, def]) };
+    window.stateSync = sync;
+    const s = relaySetup();
+    assert.equal(s.hookSyncAnswer(), true);
+    assert.equal(s.hookSyncAnswer(), true);
+    assert.equal(parts.length, 1, 'idempotent per instance');
+    assert.equal(parts[0][0], 'relayEnds');
+    assert.equal(typeof parts[0][1].onAnswer, 'function');
+    assert.equal('body' in parts[0][1] || 'collect' in parts[0][1], false, 'answer-only: it sends nothing');
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    parts[0][1].onAnswer({ endedRelayPcIds: ['fin_pc'] });
+    assert.equal(s.has('fin_pc'), false);
+    // A new sync instance gets its own registration
+    window.stateSync = { registerPart: (name, def) => parts.push([name, def]) };
+    s.hookSyncAnswer();
+    assert.equal(parts.length, 2);
+    // No sync, or one without registerPart: no hook
+    window.stateSync = undefined;
+    assert.equal(relaySetup().hookSyncAnswer(), false);
+    window.stateSync = {};
+    assert.equal(relaySetup().hookSyncAnswer(), false);
+    window.stateSync = undefined;
+});
+
+test('settle leaves a relay session untouched', async () => {
+    const s = relaySetup();
+    await s.signInWithCredential('fin_pc', 'inv1', { relay: true });
+    assert.equal(s.settle('fin_pc', { remote: true, footholdId: 'jack' }), true);
+    assert.equal(s.isRelay('fin_pc'), true);
+    assert.notEqual(s.sessions.get('fin_pc').remote, true, 'no remote fields are merged into a relay');
+    assert.notEqual(s.sessions.get('fin_pc').footholdId, 'jack');
 });
