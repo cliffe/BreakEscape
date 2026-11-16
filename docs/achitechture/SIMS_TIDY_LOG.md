@@ -382,3 +382,40 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
 - The tour's row 6 snapshot: add each door sprite's doorProperties (worldX, open) and the last
   chair_out_of_doorway lines (tools/playtest/needs-tour-regression.mjs).
 - Live proofs on :3093 (start-keyless-server, own pidfile, new-game.rb), as the R1 brief lists.
+
+## Handover 6b (tests done, stopped at the context guard before the scenario and live work)
+
+### Done
+- 5c5df47d0: the m5 tests. path-seated-chairs (15 tests): a `pfmCond` stub with
+  setDirectionalCondition/removeAllDirectionalConditions whose calculate() reads `.length` when told
+  the search touched a seated cell; rerun when touched, none when untouched (sync and async),
+  conditions cleared, keep rule, seatedBodyCellKeys, avoidSeated snap. seating (69 tests):
+  postHomePending new semantics, a behavioural late-room wait through updateSeatedNPC (home null at
+  needs clock 120000, provisional until 125000), doorGapRects merge (sprites at x -16 and +16, foot
+  (8,79) exits east), doorwayChairCandidates, doorwayChairSpot, sweepDoorwayChairs (glide target,
+  log with spot, blocked spot, no-spot log once, skip rules: seated, fetching, mounting, moving,
+  inactive, gliding; stale reservation moves; once a second), sweep call wiring, two-leg seat walk.
+  path-doorways (12 tests): directWalkStall, player.js wiring.
+- Old-code checks: `git apply -R` of each file's a80f4ddb0 hunk fails the new tests (npc-pathfinding
+  5, path-avoid keep line 1, path-doorways 2, player.js 1, seating 10). Targeted mutations also fail:
+  no `m.leg++`, caller without `_postWaitSince`, no sweep call, no fetch/velocity/glide skip.
+- Not tested: the player's-own-chair skip (`state?.chair`, module state with no test hook).
+- bin/test-js result: see the line appended below.
+
+### Noticed in review (not changed)
+- doorwayChairSpot candidate 0 (straight out) is always refused: the foot is inside the gap's band,
+  so a chair box at foot.y always overlaps that doorway's own lane. Harmless, but the `spot` index in
+  `chair_out_of_doorway` will never be 0. Either drop it or keep it as documentation.
+- directWalkStall counts blocked frames even with progress, so a straight walk sliding along a wall
+  replans after 10 frames rather than stopping on first contact; a straight walk into a clicked
+  object's body now pushes 10 frames, then paths to a snapped cell beside it. Watch for this live.
+
+### Still to do (unchanged from 6a, in order)
+1. Marek face point (scenario only). His post (2.15, 6.65) is the south side of the south-west desk
+   (Tom's badge sits on a desk at (1.75, 5.25), so check the desk extents live first). Add an object
+   on that desk with `affordance.useFrom` dy 1 and set his needsHome to its id; validate.
+2. Late-room home-wait case in test_needs_sims (none exists).
+3. Tour driver row 6 snapshot: door sprites' doorProperties and chair_out_of_doorway /
+   chair_in_doorway_no_spot lines (tools/playtest/needs-tour-regression.mjs).
+4. Live proofs on :3093 (tools/playtest/start-keyless-server.sh, tools/playtest/new-game.rb), then
+   R1 Outcomes and Handover 6.
