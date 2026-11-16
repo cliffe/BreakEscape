@@ -26,6 +26,7 @@
 # 3085 or 3086 and runs no db: task.
 # Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE (default: the chrome-headless-shell in $HOME/.cache/ms-playwright),
 #      RUBY (the ruby for the validator corpus; default /usr/bin/ruby3.2 if present, else ruby on PATH),
+#      BUNDLE_PATH (default: <main checkout>/vendor/bundle when the worktree has no .bundle/config),
 #      TESTS_LOCK (default: <main checkout>/tmp/tests.lock, shared by every session and worktree;
 #      TESTS_LOCK=none runs unlocked, with a warning in summary.txt and on stderr),
 #      TRAIN_CHECK_JS_JOBS (JS files run at once; default 8, lower it on a loaded machine),
@@ -38,6 +39,11 @@ set -uo pipefail
 
 if [ "$#" -ne 3 ]; then echo "usage: $0 <worktree> <outdir> <port>" >&2; exit 2; fi
 WT="$(cd "$1" && pwd)" || exit 2
+# A fresh worktree has no .bundle/config, so bundler would look for gems in the worktree's own
+# vendor/bundle and the server would fail to start. Default to the main checkout's gems.
+if [ -z "${BUNDLE_PATH:-}" ] && [ ! -f "$WT/.bundle/config" ]; then
+  export BUNDLE_PATH="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")/vendor/bundle"
+fi
 mkdir -p "$2" || exit 2
 OUT="$(cd "$2" && pwd)"
 PORT="$3"
