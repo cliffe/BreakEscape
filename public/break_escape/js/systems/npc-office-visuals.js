@@ -32,7 +32,10 @@
  * npc-action-icons.js; the seated typing bob is in seating.js.
  */
 import { TILE_SIZE } from '../utils/constants.js';
-import { hearingLevel, THROUGH_DOOR } from './room-hearing.js';
+import { hearingLevel, THROUGH_DOOR, openDoorHearing } from './room-hearing.js';
+
+// Moved to room-hearing.js (the chatter voice needs it too); kept exported from here for its callers
+export { openDoorHearing };
 import { pixelText, setPixelText, pixelTextBox } from '../utils/pixel-text.js';
 
 /**
@@ -112,23 +115,6 @@ export function lockCuePlan({ how, locked }, { lighting = false } = {}) {
 /** Pure: the hearing factor with ownRoomOnly: 1 only in a known room that is the player's. */
 export function ownRoomHearing(roomId, playerRoom) {
     return !!roomId && !!playerRoom && roomId === playerRoom ? 1 : 0;
-}
-
-/**
- * Pure: the hearing factor for a desk phone's ring (user's decision, 2026-11-07, OFFICE_LIFE_PLAN 12.5):
- * 1 in the player's own room, THROUGH_DOOR (0.4) from a room joined to it by a connection whose door
- * is open (a door that was opened loses its sprite on both sides, so no sprite counts as open), 0 with
- * the door shut, in a room that is not adjacent, or with no known room. `rooms` is window.rooms,
- * `connections` the player's room's scenario connections.
- */
-export function openDoorHearing(roomId, playerRoom, rooms = {}, connections = {}) {
-    if (!roomId || !playerRoom) return 0;
-    if (roomId === playerRoom) return 1;
-    const linked = Object.values(connections || {}).some(v => (Array.isArray(v) ? v : [v]).includes(roomId));
-    if (!linked) return 0;
-    const shut = [playerRoom, roomId].some(r => (rooms?.[r]?.doorSprites || [])
-        .some(d => d && d.active !== false && d.doorProperties && d.doorProperties.connectedRoom === (r === playerRoom ? roomId : playerRoom) && !d.doorProperties.open));
-    return shut ? 0 : THROUGH_DOOR;
 }
 
 /** Pure: a use sound's volume. `distance` in px from the player; `hearing` 0..1. */

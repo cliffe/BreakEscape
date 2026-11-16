@@ -265,3 +265,16 @@ Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an
 ```
 
 **Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): the same held item as the hl_box entry above. Once the player unlocks hl_box and picks the item up, its display name travels with it into playerInventory. The item is only takeable after the hl_box unlock that earns the answer, so this adds no new exposure. Not a filter gap; does not start 6b.
+
+## 2026-11-16: rogue_ap sprite waits on A3 art (user approval pending)
+
+```json
+{
+  "scenario": "scenarios/test_access_devices/scenario.json.erb",
+  "stage": "common",
+  "match": "has type 'rogue_ap' but no matching sprite found",
+  "count": 1
+}
+```
+
+Signed off by the devices orchestrator, 2026-11-16. Owner: devices build. The pocket rogue AP start item (`kit_rogue_ap`, type `rogue_ap`) has no `assets/objects/rogue_ap.png` yet: its art is slice A3, which waits on the user's approval of the mock-ups. The item carries `sprite: "drop_box1"`, so it renders in game; only the type-sprite check fires. Remove this entry when A3 lands.

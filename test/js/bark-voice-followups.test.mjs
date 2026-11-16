@@ -39,7 +39,7 @@ function mk(scene, kind) {
     const o = { kind, x: 0, y: 0, visible: true, data: {}, scene, text: '',
         get width() { return o.kind === 'text' ? Math.max(...String(o.text).split('\n').map(l => l.length), 0) * 7 : 16; },
         get height() { return o.kind === 'text' ? String(o.text).split('\n').length * 16 : 16; },
-        setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
+        setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setAlpha(a) { o.alpha = a; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
         setTexture() { return o; }, setText(t) { o.text = t; return o; }, setDepth() { return o; }, setTint() { return o; },
         setFontSize() { return o; }, destroy() { o.destroyed = true; }, setData(k, v) { o.data[k] = v; return o; },
         getData(k) { return o.data[k]; }, setScale() { return o; } };

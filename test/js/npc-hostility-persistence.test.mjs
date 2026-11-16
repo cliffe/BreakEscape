@@ -267,3 +267,15 @@ test('repeated exports do not grow the KO entry (stable per sync)', () => {
         window.npcManager = savedMgr;
     }
 });
+
+test('R3 m1: recordCalm saves a calm for an NPC that never turned, without an event, and never overwrites', () => {
+    emitted.length = 0;
+    sys.recordCalm('pending_calm');
+    assert.deepEqual(sys.exportHostility().pending_calm, { hostile: false, ko: false });
+    assert.deepEqual(emitted, [], 'no event');
+    sys.setNPCHostile('turned', true);
+    sys.recordCalm('turned');
+    assert.equal(sys.exportHostility().turned.hostile, true, 'an existing record is left alone');
+    sys.recordCalm('');
+    assert.equal(sys.exportHostility()[''], undefined);
+});

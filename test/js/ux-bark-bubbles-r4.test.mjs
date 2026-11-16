@@ -41,7 +41,7 @@ function mk(scene, kind) {
     const o = { kind, x: 0, y: 0, visible: true, data: {}, scene, text: '', depth: 0,
         get width() { return o.kind === 'text' ? Math.max(...String(o.text).split('\n').map(l => l.length), 0) * 7 : 16; },
         get height() { return o.kind === 'text' ? String(o.text).split('\n').length * 16 : 16; },
-        setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
+        setOrigin() { return o; }, setVisible(v) { o.visible = v; return o; }, setAlpha(a) { o.alpha = a; return o; }, setPosition(x, y) { o.x = x; o.y = y; return o; },
         setTexture() { return o; }, setText(t) { o.text = t; return o; }, setDepth(d) { o.depth = d; return o; },
         setData(k, v) { o.data[k] = v; return o; }, getData(k) { return o.data[k]; } };
     for (const m of ['clear', 'fillStyle', 'lineStyle', 'fillRect', 'strokeRect']) o[m] = () => o;

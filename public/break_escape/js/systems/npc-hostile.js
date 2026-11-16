@@ -103,6 +103,7 @@ export function initNPCHostileSystem() {
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
     announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
+    recordCalm: (npcId) => recordCalm(npcId),
     resetHostilesForRespawn: () => resetHostilesForRespawn(),
     redropPending: (npcId) => redropPending(npcId)
   };
@@ -209,6 +210,16 @@ export function takeRestoredHostility(npcId) {
 }
 
 /**
+ * Save "calm" for an NPC that never turned hostile this session, so a reload does not
+ * re-apply its startHostile config (a calm set while the NPC was still hidden, R3 m1).
+ * No event. An NPC that already has a record keeps it.
+ */
+export function recordCalm(npcId) {
+  if (!npcId || hostilityRecord.has(npcId)) return;
+  hostilityRecord.set(npcId, { hostile: false, ko: false });
+}
+
+/**
  * A restored hostile NPC's sprite now exists: tell the rest of the game, as
  * setNPCHostile does when an NPC turns, so its health bar, the threat music
  * and hostility eventMappings come back. Picks up the behavior's combat numbers
@@ -242,9 +253,33 @@ function setNPCHostile(npcId, isHostile, config) {
     applyHostileStats(state, configuredHostileStats(npcId, config));
   }
 
+  // A calm set while the NPC is still pending its first reveal (startHostile, hidden at creation)
+  // cancels that pending start and is saved, so neither the reveal nor a reload turns it hostile
+  // (R4 m3). The behaviour's own setHostile does the same; this covers direct callers.
+  if (!isHostile) {
+    const pending = window.npcBehaviorManager?.getBehavior?.(npcId);
+    if (pending?._startHostileOnReveal) {
+      pending._startHostileOnReveal = false;
+      recordCalm(npcId);
+    }
+  }
+
   const wasHostile = state.isHostile;
   state.isHostile = isHostile;
   if (wasHostile !== isHostile) recordHostility(npcId, state);
+
+  // A hostile turn while the NPC is still hidden (a mapping hid it, or its sprite is hidden)
+  // is recorded but not announced: the threat cue would fire for nobody, and the reveal
+  // (setNPCVisible) announces it again. Re-arm the pending start so the reveal tints it and
+  // gives exactly one cue. A visible NPC is unchanged.
+  if (isHostile && wasHostile !== isHostile) {
+    const hiding = window.npcBehaviorManager?.getBehavior?.(npcId);
+    if (window.npcManager?.isHiddenByMapping?.(npcId) || hiding?.sprite?.visible === false) {
+      if (hiding) hiding._startHostileOnReveal = true;
+      console.log(`⚔️ NPC ${npcId} hostile while hidden: recorded, announced at the reveal`);
+      return true;
+    }
+  }
 
   console.log(`⚔️ NPC ${npcId} hostile: ${wasHostile} → ${isHostile}`);
 

@@ -996,6 +996,22 @@
   filter: saturate(0.6) brightness(0.85);
 }
 
+/* The Background voices switch on the themed skin: the same button face as its neighbours at full
+   strength in both states, no dimming filter (off is a choice, not a disabled control; UX access R1
+   finding 12). The CSS marker in music-widget.css (filled on, hollow off) shows the state; on is
+   the accent colour, off the normal button text. */
+[data-ui-theme] #music-widget-panel .mw-toggle-btn {
+  white-space: nowrap;
+}
+
+[data-ui-theme] #music-widget-panel .mw-toggle-btn[aria-pressed="true"] {
+  color: var(--ui-accent);
+}
+
+[data-ui-theme] #music-widget-panel .mw-toggle-btn[aria-pressed="false"] {
+  color: var(--ui-button-text);
+}
+
 [data-ui-theme] .player-preferences-modal-content .btn:disabled,
 [data-ui-theme] #music-widget-panel .mw-btn:disabled {
   filter: grayscale(1) brightness(0.6);
