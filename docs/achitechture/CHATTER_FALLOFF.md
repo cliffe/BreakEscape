@@ -61,22 +61,23 @@ Volume passed to `play` (test_needs_sims, game 6317). Distances are measured whe
 
 The office is too small to reach the 480 px floor in one room, so the floor is covered by the unit tests. The kitchen door was opened by walking through it (`__test.enterRoom`), and Grace walked to the kitchen on her own. The shut-door row used a stand-in shut door sprite pushed onto the kitchen's door list in the page and then removed, because a real door stays open once opened. The gain node's value followed the set value (for example, set to 0.711 then read back 0.711 after the ease). No page errors.
 
-## Handover (second pass, commit 294b5736c)
+## Faint draw, mute and preempt: live proof (second pass, commit 294b5736c)
 
-Built and unit-tested (node tests only, not yet run live or in the full suites):
+`node tools/playtest/chatter-falloff-proof.mjs <gameId> faint` (cases in `tools/playtest/chatter-faint-cases.mjs`). Same setup as above: keyless server on :3092, fresh test_needs_sims game (6340), headless, `setFPS(20)`, fixed steps on, a 6 second silent clip, the real Web Audio graph and gain node. Waiting for a natural ambient chat turn took more than two minutes with no line, so each case runs the two steps the needs system's chat turn runs, on the live objects: `faintVolume` (through the voice) to decide, then `_pickBark({ faint })` to draw a bag line and `_speak` to hand it to the voice. The bubble layer is told to let the voice through, because no bubble is staged for a hand-drawn line. Only the page changes; no game row or global is written.
 
-- Faint ambient draw: `NPCNeedsSystem` ambient chat turn asks `world.faintVolume(speaker)`; above 0 it draws a bag line with `_pickBark({ faint: true })` (starts the cooldown, never waits for the lock), voices it with `info.faint`, `overheard` stays false (no `npc_overheard`, no `_heardUntil`, E9 and `heard_<knot>` unchanged). `_talking()` carries `faint`.
-- `NpcChatterVoice.faintVolume(npcId)`: voice, sound on, no conversation, hearing > 0 (same room or open door), distance within `CHATTER_FAR` (480 px). Beyond that a turn is a picture as before.
-- Preempt: `_speechFreeFor(faint)`. A faint line holds the lock only until a non-faint asker (ambient bag line the player hears, an exchange line the player hears, a heard desk-call line) takes it; `world.fadeFaint()` fades the voice over 300 ms (`fadeFaint` in the voice, also aborts a faint clip still loading). A full `say` with `info.overheard` calls it too. A faint line ducks to 0.25 under a playing scripted bark (`barkSystem.ttsManagers`).
-- Dimmed bubble: `FAINT_ALPHA` 0.6 in npc-world-bubbles.js. Through an open door there is no bubble (other room), as the plan warned.
-- Scenario flag `"faintChatter": false` (world adapter and `scripts/validate_npc_needs.rb` boolean check).
-- Conversation mute: `conversationOpen()` moved to room-hearing.js (office-room-tone's `chatOpen()` uses it). The voice's `say` is silent while a person-chat or phone-chat is open, checks again in the queue step, and the 250 ms follow tick stops a playing clip. The engine world's `playerHears` returns not overheard and `speak` returns early (no voice, no toast) while it is open, reading it through `window.npcChatterVoice.conversationOpen()` because npc-needs.js has no imports on purpose. No new static import in an engine module that tests copy, so no harness copy list changed.
-- Tests: `test/js/npc-chatter-faint.test.mjs` (16), a dimmed-bubble test in `npc-chatter-one-bubble.test.mjs`, `setAlpha` added to the bubble fakes. Against the old sources (npc-needs.js, npc-needs-chatter.js, npc-world-bubbles.js from 3e2a887c3), tests 1, 6 to 10 and 12 to 15 fail; 2 to 5 and 16 pass (they pin unchanged behaviour); 11 tests the new pure helper.
-- Docs: `scenarios/test_needs_sims/README.md` D34 section steps 5 to 7.
+| Case | Setup | Result (volumes are what `play` received) |
+|---|---|---|
+| 1 Faint from a distance | Sanjay, office, player 270 px away (earshot is 160) | Log: `spoken`, `faint: true`, 0.71. `play` 0.707. Gain node 1 at start, then 0.707 |
+| 2 Faint through an open door | Amara in the office, player in the kitchen after walking through the door, 248 px, hearing 0.4 | `faint: true`, 0.31. `play` 0.307 (curve 0.77 x 0.4) |
+| 3 Person-chat open | Person-chat with Amara open, Tom 247 px away | `faintVolume` 0.771 before, 0 during. The system's `_speak` left no voice log entry and no `play`. A direct `say` was logged `conversation`, not spoken |
+| 4 Phone-chat closed | Phone-chat open then closed | Open: `faintVolume` 0, `say` refused with `conversation`. After close: `faintVolume` 0.768 and a line from Tom voiced at 0.77 (`play` 0.768) |
+| 5 Faint under a full line | Sanjay faint at 0.707, then Amara a full line within earshot | `preempted` logged for Sanjay, his gain set to 0 (faded over 300 ms), then Amara's `play` at 1.0 and her gain at 1 |
+| 6 Faint under a scripted bark | Page-only stand-in made `barkSystem` report a voice playing | Sanjay's faint line 0.177 against 0.709 undamped (0.25 of it) |
 
-Still to do:
+No page errors. The stand-in in case 6 was restored straight after. Case 5 shows the full line taking the voice from a faint one; the unit tests hold the lock logic.
 
-1. Live proof on :3092 (keyless, fresh game from `tools/playtest/new-game.rb test_needs_sims`): add a `faint` mode to `tools/playtest/chatter-falloff-proof.mjs` showing a faint ambient line from a distance (`npcChatterVoice.log` entries with `faint: true`, play volume), the same through the open kitchen door, silence with a person-chat open beside a chatting NPC, chatter back after a phone call closes, a faint line ducking under a full one.
-2. Update the tables above with the live figures.
-3. Run `bin/test-js` once, then `bin/rails test` (RBENV_VERSION=2.7.8, BUNDLE_PATH as in the brief), one after the other. Commit the live-proof script and doc first.
-4. Not done: grumbles and mutters still draw no faint lines (chat turns only); music-widget "Background chatter" toggle (the plan makes it optional); exchange lines unheard-but-voiced still follow the old rule apart from the mute.
+## Status
+
+Built, unit-tested, live-proved (above) and committed. The suites ran after this commit; their figures are in the commit that follows.
+
+Not done: grumbles and mutters draw no faint lines (chat turns only); the music-widget "Background chatter" toggle (optional in the plan); exchange lines that are unheard but voiced still follow the old rule apart from the mute.

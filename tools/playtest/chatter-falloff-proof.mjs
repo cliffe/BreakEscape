@@ -2,7 +2,11 @@
 // blocked by a shut one. Keyless server from the worktree on PORT (default 3092). Headless, setFPS(20)
 // with fixed steps on. Drives only a game id passed in (made by tools/playtest/new-game.rb).
 //
-//   node tools/playtest/chatter-falloff-proof.mjs <gameId> [probe|run]
+//   node tools/playtest/chatter-falloff-proof.mjs <gameId> [probe|run|faint|explore]
+//
+// `faint` (D34 second pass) drives the real ambient chat path and logs the voice's decisions:
+// a faint line from a distance and through the open kitchen door, silence while a person-chat is
+// open, chatter voiced again after a phone-chat closes, and a faint line ducking under a full one.
 //
 // The page is changed in memory only: getTTS returns a short silent clip (the server is keyless),
 // and TTSManager.play / setDistanceGain are wrapped to log the volume each receives. The real
@@ -34,7 +38,7 @@ await page.evaluate(async () => {
     const tm = await import('/break_escape/js/systems/tts-manager.js');
     const api = await import('/break_escape/js/api-client.js').catch(() => null);
     window.__plays = []; window.__gains = [];
-    const wav = () => { const n = 8000, b = new ArrayBuffer(44 + n * 2), v = new DataView(b); const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    const wav = () => { const n = 8000 * (window.__clipSeconds || 1), b = new ArrayBuffer(44 + n * 2), v = new DataView(b); const w = (o, s) => [...s].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
         w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
         v.setUint32(24, 8000, true); v.setUint32(28, 16000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
         for (let i = 0; i < n; i++) v.setInt16(44 + i * 2, Math.round(8000 * Math.sin(i / 8)), true); return new Blob([b], { type: 'audio/wav' }); };
@@ -56,6 +60,11 @@ const info = () => page.evaluate(() => {
 });
 console.log(JSON.stringify(await info(), null, 1));
 if (mode === 'probe') { await browser.close(); process.exit(0); }
+if (mode === 'explore' || mode === 'faint') {
+    const { runFaint } = await import('./chatter-faint-cases.mjs');
+    await runFaint({ page, errs, sleep, info, mode });
+    await browser.close(); process.exit(0);
+}
 
 const out = { cases: [] };
 // Put the player at (x, y) in the current room (page only), say a line as `npc`, read what play() and the gain node got
