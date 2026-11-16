@@ -75,9 +75,124 @@ module BreakEscape
       { rev: keyring_rev(entries), entries: entries }
     end
 
-    # The short digest of the answer (section 6.2): a stable hash of the entries.
+    # The short digest of the answer (section 6.2): a stable hash of the entries. A token's
+    # expiresInS is left out (K5, section 10), so a running token does not change the digest each
+    # second; `expired` turning true does.
     def keyring_rev(entries)
-      Digest::MD5.hexdigest(JSON.generate(entries))[0, 6]
+      digested = entries.map { |e| e.is_a?(Hash) && e.key?('expiresInS') ? e.except('expiresInS') : e }
+      Digest::MD5.hexdigest(JSON.generate(digested))[0, 6]
+    end
+
+    # { credId => seconds left } for each live token entry of an answer, for the controller's
+    # `unchanged` answer (K5, section 10). Empty when there are none.
+    def keyring_live_expires(entries)
+      Array(entries).each_with_object({}) do |e, out|
+        next unless e.is_a?(Hash) && e['kind'] == 'token' && e['expired'] != true && e.key?('expiresInS')
+
+        out[e['id']] = e['expiresInS']
+      end
+    end
+
+    # --- Session tokens (K5, section 10) ---------------------------------------------------
+    #
+    # A token's clock starts when its proof foothold is first gained (start_token_clocks!, called
+    # at the four gain sites in NetworkAccess) or, for a game that held the foothold before K5, at
+    # the first token sign-in (stamp_token_clock!). credentialClock is server-written only,
+    # grow-only, at most MAX_ENTRIES entries, never read from a client body and never sent.
+
+    # The registry entry for cred_id when it is a token, else nil.
+    def token_entry(cred_id)
+      return nil unless CredentialModel.present_string?(cred_id)
+
+      entry = CredentialModel.registry(scenario_data)[cred_id.to_s]
+      entry.is_a?(Hash) && entry['kind'] == 'token' ? entry : nil
+    end
+
+    # Whether a token has run out. Not a token, or a token with no clock yet: false (a game whose
+    # foothold predates K5 reads as freshly issued). An invalid expiresMin: true (fail closed).
+    def token_expired?(cred_id)
+      entry = token_entry(cred_id)
+      return false unless entry
+
+      minutes = CredentialModel.token_expires_min(entry)
+      return true unless minutes
+
+      started = token_clock_at(cred_id)
+      return false unless started
+
+      started + (minutes * 60) <= server_now
+    end
+
+    # Whole seconds a token has left (0 once expired); the full life when it has no clock.
+    def token_expires_in_s(cred_id)
+      entry = token_entry(cred_id)
+      minutes = entry ? CredentialModel.token_expires_min(entry) : nil
+      return 0 unless minutes
+
+      started = token_clock_at(cred_id)
+      return minutes * 60 unless started
+
+      [(started + (minutes * 60) - server_now).ceil, 0].max
+    end
+
+    # The one expiry predicate every reader of a held session uses: a credential session whose
+    # registry entry is a token that has run out.
+    def credential_session_expired?(session)
+      return false unless session.is_a?(Hash) && session['via'] == 'credential'
+
+      token_entry(session['credential']) ? token_expired?(session['credential']) : false
+    end
+
+    # The PC ids of held sessions that are expired tokens, sorted (reach_cache_key's term).
+    def expired_token_session_ids
+      access_sessions.select { |_pc_id, session| credential_session_expired?(session) }.keys.map(&:to_s).sort
+    end
+
+    # Start the clock of each token whose proof is this (prefixed) foothold id and which has no
+    # clock yet. Called right after a gainedFootholds write, before the save. A re-plant never
+    # restarts a clock.
+    def start_token_clocks!(foothold_id)
+      return if foothold_id.blank?
+
+      CredentialModel.registry(scenario_data).each do |id, entry|
+        next unless entry['kind'] == 'token'
+        next unless CredentialModel.token_proof_foothold(entry) == foothold_id.to_s
+
+        stamp_token_clock!(id)
+      end
+    end
+
+    # Stamp one token's clock with server_now when it has none (grow-only, capped).
+    def stamp_token_clock!(cred_id)
+      return unless token_entry(cred_id)
+
+      clock = player_state['credentialClock']
+      clock = {} unless clock.is_a?(Hash)
+      return if clock.key?(cred_id.to_s) || clock.size >= CredentialModel::MAX_ENTRIES
+
+      clock[cred_id.to_s] = server_now
+      player_state['credentialClock'] = clock
+    end
+
+    # End every held session that is an expired token (a write path: prune runs this first).
+    # Returns the PC ids, also kept for with_token_expired_pc_ids. The caller saves.
+    def drop_expired_token_sessions!
+      sessions = player_state['sessions']
+      return [] unless sessions.is_a?(Hash)
+
+      ids = sessions.select { |_pc_id, session| credential_session_expired?(session) }.keys
+      return [] if ids.empty?
+
+      player_state['sessions'] = sessions.except(*ids)
+      @token_expired_pc_ids = (Array(@token_expired_pc_ids) + ids.map(&:to_s)).uniq.first(CredentialModel::MAX_ENTRIES)
+      ids.map(&:to_s)
+    end
+
+    # An answer gains tokenExpiredPcIds (a subset of endedPcIds) when a prune in this request
+    # ended an expired token session. Absent otherwise.
+    def with_token_expired_pc_ids(body)
+      ids = Array(defined?(@token_expired_pc_ids) ? @token_expired_pc_ids : nil)
+      ids.empty? ? body : body.merge(tokenExpiredPcIds: ids)
     end
 
     private
@@ -183,6 +298,8 @@ module BreakEscape
       held_item = CredentialModel.proof_kind(entry['proof']) == 'held' ? entry.dig('proof', 'held') : nil
       row['heldItem'] = held_item if CredentialModel.present_string?(held_item)
 
+      return registry_token_entry(row, id, entry, pc) if kind == 'token'
+
       is_ended = kind == 'assist_invite' && ended.include?(id)
       if is_ended
         row['ended'] = true
@@ -199,6 +316,33 @@ module BreakEscape
       row
     end
 
+    # A token's keyring row (K5, section 10): its one route is the proof foothold, when that
+    # reaches connectsTo. An expired token carries expired: true and no routes.
+    def registry_token_entry(row, id, entry, pc)
+      if token_expired?(id)
+        row['expired'] = true
+        row['routes'] = []
+        row['sessionHeld'] = false
+        return row
+      end
+
+      proof = CredentialModel.token_proof_foothold(entry)
+      routes = proof && pc.is_a?(Hash) && host_reachable_through?(proof, pc) ? [{ 'foothold' => proof }] : []
+      row['routes'] = routes
+      row['sessionHeld'] = credential_session_held?(entry['connectsTo'], id)
+      row['targetOff'] = (pc.is_a?(Hash) && host_service_off?(pc)) if routes.any?
+      row['remoteBlocked'] = pc.is_a?(Hash) && remote_blocked?(pc) ? true : false
+      row['expiresInS'] = token_expires_in_s(id)
+      row
+    end
+
+    # The stored start of a token's clock (a Numeric), or nil.
+    def token_clock_at(cred_id)
+      clock = player_state['credentialClock']
+      value = clock.is_a?(Hash) ? clock[cred_id.to_s] : nil
+      value.is_a?(Numeric) ? value : nil
+    end
+
     # A connecting credential's label: the entry's own `label`, else its held item's authored
     # name, else empty (the screen then uses the generic kind wording; a PC id is never shown).
     # The keyring row and the credential sign-in answer (K2) share it.
@@ -212,8 +356,8 @@ module BreakEscape
     # The routes that reach a connecting credential's connectsTo now (section 6.2). K1 computes held
     # footholds (by seq) for a saved_connection, and the relay for an assist_invite. K4 adds, after
     # the footholds, a { from: pcId } row for each held session whose `from` source and reach
-    # checks hold, by PC id (target power and remote: "blocked" are their own fields). Token's
-    # proof foothold (K5) is not built here.
+    # checks hold, by PC id (target power and remote: "blocked" are their own fields). A token's
+    # route (its proof foothold, K5) is in registry_token_entry.
     def credential_routes(kind, pc)
       case kind
       when 'saved_connection'
