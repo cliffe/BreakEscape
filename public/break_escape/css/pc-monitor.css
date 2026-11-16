@@ -764,3 +764,14 @@
     text-overflow: ellipsis;
     vertical-align: bottom;
 }
+
+/* Credential keyring K3c (8.3): the relay desktop's account line and the no-shares line */
+.pc-monitor .pc-start-relay {
+    color: #9fb0bf;
+    overflow-wrap: anywhere;
+}
+
+.pc-monitor .pc-start-noshares {
+    color: #9fb0bf;
+    padding: 2px 2px 0 10px;
+}

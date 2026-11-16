@@ -25,6 +25,9 @@ export const remoteNotPermittedMessage = (host) => `That account can't sign in o
 /** A remote sign-in refused because the host has locked the account. */
 export const remoteLockedOutMessage = (host) => `${named(host)} has locked this account.`;
 
+/** A folder on a live remote assist that is really locked: the folder closes and the desktop says so. */
+export const RELAY_FOLDER_UNAVAILABLE_TEXT = 'Folder unavailable.';
+
 /**
  * The remote sign-in screen's state lines (keyring plan 5.2, K0), each at most two lines of
  * GNF 16px in the 306px message box at 390x844 with the longest host in play.
@@ -52,10 +55,10 @@ export const TAG_TEXT = Object.freeze({
 });
 
 /**
- * The badge image per glyph group, in one place. The plug glyph's own art (badge-plug.png) is
- * not drawn yet, so the plug group reuses the key badge until it is.
+ * The badge image per glyph group, in one place: the key badge for passwords, the plug badge
+ * (D49) for connection files. An unknown group falls back to the key badge.
  */
-export const BADGE_FILE = Object.freeze({ key: 'badge-key.png', plug: 'badge-key.png' });
+export const BADGE_FILE = Object.freeze({ key: 'badge-key.png', plug: 'badge-plug.png' });
 
 /** The badge image path for a glyph group. */
 export function badgeSrc(group) {
@@ -82,6 +85,17 @@ export function tileBadgeGroups(kinds) {
 /** The full kind names of these kinds, for a tile's title and the chosen line (plan 8.5). */
 export function tileFullNames(kinds) {
     return (Array.isArray(kinds) ? kinds : []).map(k => TAG_TEXT[k]?.full || String(k));
+}
+
+/**
+ * The chosen account's line (D50): "Lena Fox (lfox)", then the full names of the kinds of
+ * knowledge held for it ("Lena Fox (lfox), Captured password"). One wording for the keyboard
+ * screen and the remote screen. Empty with no tile.
+ */
+export function chosenAccountLine(tile) {
+    if (!tile) return '';
+    const kinds = Array.isArray(tile.kinds) && tile.kinds.length ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
+    return `${tile.displayName || tile.username} (${tile.username})${kinds}`;
 }
 
 /**
@@ -130,15 +144,18 @@ export const savedConnectionFoundMessage = ({ label, displayName, host } = {}) =
     `Saved connection found: ${label || 'a file'} for ${displayName || 'an account'} on ${named(host, 'another PC')}.`;
 export const passwordInFileFoundMessage = ({ label, displayName } = {}) =>
     `${displayName || 'An account'}'s password is in ${label || 'a file'}.`;
+export const assistInviteFoundMessage = ({ label, displayName } = {}) =>
+    `${label || 'An invite'}: Connect it from your inventory to join ${displayName || 'an account'}'s session.`;
 export const findMoreLine = (n) => `and ${n} more`;
 
-/** One find's line by kind, or null for a kind with no find toast yet (assist invites until K3c). */
+/** One find's line by kind, or null for a kind with no find toast. */
 // The capture check here is paired with findKindToasts in systems/keyring.js (a double guard).
 export function findLine(entry) {
     if (!entry || typeof entry !== 'object' || entry.source === 'capture') return null;
     const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo };
     if (entry.kind === 'saved_connection') return savedConnectionFoundMessage(fields);
     if (entry.kind === 'password') return passwordInFileFoundMessage(fields);
+    if (entry.kind === 'assist_invite') return assistInviteFoundMessage(fields);
     return null;
 }
 
