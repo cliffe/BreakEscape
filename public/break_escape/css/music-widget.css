@@ -175,6 +175,27 @@
   background: #111;
 }
 
+/* A switch button (Background voices): on reads in the accent colour with a filled face, off is
+   dim and flat, so the two states differ by look as well as by word. 2px square borders, no radius. */
+.mw-toggle-btn {
+  white-space: nowrap;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.mw-toggle-btn[aria-pressed="true"] {
+  background: #06283a;
+  border-color: #00aaff;
+  color: #00aaff;
+}
+
+.mw-toggle-btn[aria-pressed="false"] {
+  background: #161616;
+  border-color: #333;
+  border-style: dashed;
+  color: #666;
+}
+
 .mw-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;

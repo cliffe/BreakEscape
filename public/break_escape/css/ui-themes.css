@@ -996,6 +996,21 @@
   filter: saturate(0.6) brightness(0.85);
 }
 
+/* The Background voices switch on the themed skin: on in the accent colour, off dimmed (the same
+   pair the primary and secondary buttons use) */
+[data-ui-theme] #music-widget-panel .mw-toggle-btn {
+  white-space: nowrap;
+}
+
+[data-ui-theme] #music-widget-panel .mw-toggle-btn[aria-pressed="true"] {
+  color: var(--ui-accent);
+}
+
+[data-ui-theme] #music-widget-panel .mw-toggle-btn[aria-pressed="false"] {
+  color: var(--ui-text-dim);
+  filter: saturate(0.4) brightness(0.7);
+}
+
 [data-ui-theme] .player-preferences-modal-content .btn:disabled,
 [data-ui-theme] #music-widget-panel .mw-btn:disabled {
   filter: grayscale(1) brightness(0.6);

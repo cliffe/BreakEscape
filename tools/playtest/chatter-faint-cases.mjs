@@ -147,6 +147,50 @@ export async function runFaint({ page, errs, sleep, info, mode }) {
     });
     await rec('8_faint_keeps_full_cooldown', r8);
 
+    // 9. R2 M1: the Background voices switch (clicked on the real widget button) silences an unheard
+    //    exchange line; switched on, the same line is voiced at the scaled level
+    await page.evaluate(() => window.__place('sanjay'));
+    const exLine = (npc, unheard) => page.evaluate(([npc, unheard]) => {
+        const s = window.npcNeedsSystem;
+        const wb = window.npcWorldBubbles, keep = wb?.deferChatterVoice;
+        if (wb) wb.deferChatterVoice = () => false;
+        try { s._speak(npc, 'Was that parcel for you?', s.clockMs + 3000, { topic: 'coffee', knot: 'proof_ex', overheard: false, unheard }); } finally { if (wb) wb.deferChatterVoice = keep; }
+        return npc;
+    }, [npc, unheard]);
+    const sw = await page.evaluate(() => { const b = document.getElementById('mw-bg-chatter'); b.click(); return { flag: window.backgroundChatter, label: b.textContent, pressed: b.getAttribute('aria-pressed') }; });
+    await page.evaluate(() => window.__snap());
+    await exLine('sanjay', true); await sleep(1500);
+    await rec('9a_switch_off_unheard_exchange', { sw, logged: await page.evaluate(() => window.npcChatterVoice.log.slice(-1)[0]?.reason ?? null) });
+    await idle();
+    const sw2 = await page.evaluate(() => { const b = document.getElementById('mw-bg-chatter'); b.click(); return { flag: window.backgroundChatter, label: b.textContent, pressed: b.getAttribute('aria-pressed') }; });
+    await exLine('sanjay', true); await sleep(1500);
+    await rec('9b_switch_on_unheard_exchange', { sw2 });
+    await idle(); await page.evaluate(() => window.__snap());
+
+    // 10. R2 m8: a child minigame opened from inside a conversation (person-chat suspended under it)
+    //     keeps chatter muted; closing the child lifts the mute
+    await page.evaluate(() => window.__place('tom'));
+    const open10 = await page.evaluate(async () => {
+        const mf = window.MinigameFramework;
+        mf.startMinigame('person-chat', null, { npcId: 'amara', title: 'Amara' });
+        await new Promise(r => setTimeout(r, 1500));
+        const parent = mf.currentMinigame; parent.params.suspended = true;
+        mf.startMinigame('notes', null, { title: 'Proof child', returnTo: { sceneType: 'person-chat' } });
+        await new Promise(r => setTimeout(r, 1500));
+        const cur = mf.currentMinigame;
+        return { current: cur?._sceneType || null, returnTo: cur?.params?.returnTo?.sceneType || null, conv: window.npcChatterVoice.conversationOpen(), faint: window.npcChatterVoice.faintVolume('tom'), hears: window.npcNeedsSystem.world.playerHears('tom', 160) };
+    });
+    await page.evaluate(() => window.__snap());
+    await page.evaluate(() => { window.npcChatterVoice.say('tom', 'Direct line during child', { overheard: true }); });
+    await sleep(1200);
+    await rec('10_child_minigame_keeps_mute', { open10 });
+    await page.evaluate(() => { const mf = window.MinigameFramework; mf.currentMinigame?.params && (mf.currentMinigame.params.returnTo = null); try { window.__test.minigame.close(); } catch (e) { /* ok */ } });
+    await sleep(1000);
+    await page.evaluate(() => { try { window.MinigameFramework.endMinigame?.(false, null); } catch (e) { /* ok */ } });
+    await sleep(800);
+    const closed10 = await page.evaluate(() => ({ cur: window.MinigameFramework.currentMinigame?._sceneType || null, conv: window.npcChatterVoice.conversationOpen() }));
+    console.log('10 closed', JSON.stringify(closed10));
+
     out.errors = errs;
     console.log(JSON.stringify({ errors: errs }));
 }

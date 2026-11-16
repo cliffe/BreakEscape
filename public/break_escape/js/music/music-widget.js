@@ -207,8 +207,8 @@ export class MusicWidget {
                     <span class="mw-vol-value" id="mw-vol-master-val">100%</span>
                 </div>
                 <div class="mw-vol-row">
-                    <span class="mw-vol-label" title="Faint voices of NPCs chatting out of earshot (heard lines are unaffected)">Chatter</span>
-                    <button type="button" class="mw-btn" id="mw-bg-chatter" aria-pressed="true">Background voices: on</button>
+                    <button type="button" class="mw-btn mw-toggle-btn" id="mw-bg-chatter" aria-pressed="true"
+                            title="Faint voices of NPCs chatting out of earshot (heard lines are unaffected)">Background voices: on</button>
                 </div>
             </div>
         `;
@@ -271,8 +271,8 @@ export class MusicWidget {
             MusicController.setVoiceVolume(v);
         });
 
-        // Background chatter: faint, out-of-earshot NPC voices (read by npc-needs-chatter.js, faint lines
-        // only). Saved per browser; on by default.
+        // Background voices: faint, out-of-earshot NPC voices (read by npc-needs-chatter.js, background
+        // lines only; the flag keeps its old name, window.backgroundChatter). Saved per browser; on by default.
         const bgChatter = document.getElementById('mw-bg-chatter');
         const setBg = on => {
             window.backgroundChatter = !!on;
