@@ -9,7 +9,7 @@ globalThis.window = globalThis.window || {};
 // rebuildWorldGrid makes an EasyStar instance (a CDN global in the browser)
 globalThis.EasyStar = globalThis.EasyStar || { js: class { setGrid() {} setAcceptableTiles() {} enableDiagonals() {} disableCornerCutting() {} } };
 const { NPCPathfindingManager } = await import('../../public/break_escape/js/systems/npc-pathfinding.js');
-const { seatedAvoidCells } = await import('../../public/break_escape/js/systems/path-avoid.js');
+const { seatedAvoidCells, seatedBodyCellKeys } = await import('../../public/break_escape/js/systems/path-avoid.js');
 
 const bounds = { minX: 0, minY: 0, cols: 40, rows: 40, step: 8 };
 const open = () => Array.from({ length: 40 }, () => new Array(40).fill(0));
@@ -28,11 +28,41 @@ test('seatedAvoidCells skips a chair within a cell of an end, and keeps the padd
     const chair = rect(120, 120, 140, 130);
     assert.equal(seatedAvoidCells([chair], bounds, open(), [{ x: 130, y: 126 }, { x: 300, y: 300 }]).length, 0,
         'the walker\'s own chair at the start is not avoided');
-    assert.equal(seatedAvoidCells([chair], bounds, open(), [{ x: 20, y: 20 }, { x: 146, y: 126 }]).length, 0,
-        'a seat being walked to (goal within one cell of the chair) is not avoided');
+    assert.equal(seatedAvoidCells([chair], bounds, open(), [{ x: 20, y: 20 }, { x: 146, y: 126 }], { keep: [chair] }).length, 0,
+        'a seat being walked to (goal within one cell of the chair, in keep) is not avoided');
     const cells = seatedAvoidCells([chair], bounds, open(), [{ x: 20, y: 20 }, { x: 164, y: 126 }]);
     assert.ok(!has(cells, 18, 15), 'padding within two cells of the goal stays open (a home beside a seated colleague)');
     assert.ok(has(cells, 17, 15), 'the chair\'s own cells are still avoided');
+});
+
+test('seatedAvoidCells keep (R1 m3): a goal inside someone else\'s seated chair still avoids it; the start never does', () => {
+    const chair = rect(120, 120, 140, 130), other = rect(200, 200, 220, 210);
+    const cells = seatedAvoidCells([chair], bounds, open(), [{ x: 20, y: 20 }, { x: 130, y: 126 }]);
+    assert.ok(has(cells, 15, 15) && has(cells, 17, 15) && has(cells, 16, 16), 'a click on Amara\'s chair: her chair is still avoided');
+    assert.ok(!has(cells, 16, 15), 'the goal cell itself stays open (the snap moves the goal off it first)');
+    assert.ok(seatedAvoidCells([chair], bounds, open(), [{ x: 20, y: 20 }, { x: 130, y: 126 }], { keep: [other] }).length > 0,
+        'keep holds another chair: this one is still avoided');
+    assert.equal(seatedAvoidCells([chair], bounds, open(), [{ x: 130, y: 126 }, { x: 300, y: 300 }], { keep: [] }).length, 0,
+        'a rect at the start is skipped whatever keep says');
+});
+
+test('seatedBodyCellKeys: the cells a seated chair body covers, no padding', () => {
+    const keys = seatedBodyCellKeys([rect(120, 120, 140, 130)], bounds);
+    assert.deepEqual([...keys].sort(), ['15,15', '15,16', '16,15', '16,16', '17,15', '17,16']);
+});
+
+test('findNearestWalkableWorldCell avoidSeated (R1 m3): a snap moves a goal off a seated chair; without it the cell is kept', () => {
+    window.chairs = [{ seatedBy: 'amara', body: rect(216, 118, 238, 129) }];
+    const pm = new NPCPathfindingManager({ time: { delayedCall() {} } });
+    pm.worldGrid = open(); pm.worldGridBounds = { ...bounds };
+    assert.deepEqual(pm.findNearestWalkableWorldCell(228, 124, 8), { x: 228, y: 124 }, 'the live grid leaves the chair out: kept');
+    const snapped = pm.findNearestWalkableWorldCell(228, 124, 8, { avoidSeated: true });
+    const keys = seatedBodyCellKeys([window.chairs[0].body], bounds);
+    assert.ok(snapped, 'a cell is found');
+    assert.ok(!keys.has(`${Math.floor(snapped.x / 8)},${Math.floor(snapped.y / 8)}`), 'off the seated chair');
+    window.chairs[0].seatedBy = null;
+    assert.deepEqual(pm.findNearestWalkableWorldCell(228, 124, 8, { avoidSeated: true }), { x: 228, y: 124 }, 'nobody sits: kept');
+    window.chairs = undefined;
 });
 
 function pfm(found = () => true) {
@@ -157,5 +187,80 @@ test('async search with no way through even without seated chairs: one rerun onl
     await tick(); await tick(); await tick();
     assert.equal(pm.searches.length, 2, 'no third search');
     assert.deepEqual(got, [null]);
+    window.chairs = undefined;
+});
+
+// Directional conditions (R1 m2): EasyStar 0.4.4 reads a cell's condition (its length) only when the
+// search reaches a neighbour of that cell, so the stub reads them when `touch(n)` says the search got
+// near a seated chair.
+function pfmCond(found = () => true, touch = () => true) {
+    const pm = pfm(found);
+    pm.conditions = new Map();
+    pm.worldPathfinder.setDirectionalCondition = (cx, cy, dirs) => pm.conditions.set(`${cx},${cy}`, dirs);
+    pm.worldPathfinder.removeAllDirectionalConditions = () => pm.conditions.clear();
+    const findPath = pm.worldPathfinder.findPath;
+    pm.worldPathfinder.findPath = function (...a) { findPath.apply(this, a); pm.searches[pm.searches.length - 1].conds = [...pm.conditions.keys()]; };
+    const calc = pm.worldPathfinder.calculate;
+    pm.worldPathfinder.calculate = () => {
+        const n = pm.searches.length;
+        if (touch(n)) for (const c of pm.conditions.values()) assert.equal(c.length, 0, 'the condition allows no direction');
+        calc();
+    };
+    return pm;
+}
+
+test('seated cells go in as directional conditions that allow no direction, not avoid points, and are cleared after', () => {
+    window.chairs = [{ seatedBy: 'amara', body: rect(216, 118, 238, 129) }];
+    const pm = pfmCond(); let got;
+    pm.findWorldPath(220, 176, 220, 76, p => { got = p; });
+    assert.equal(pm.searches.length, 1);
+    assert.ok(pm.searches[0].conds.includes('27,15'), 'the seated chair is a condition');
+    assert.ok(!pm.searches[0].includes('27,15'), 'not an avoid point');
+    assert.equal(pm.conditions.size, 0, 'conditions cleared after the search');
+    assert.ok(got && got.length === 2);
+    window.chairs = undefined;
+});
+
+test('a failed search that touched a seated cell runs again without seated chairs; the caller hears once', () => {
+    window.chairs = [{ seatedBy: 'marek', body: rect(40, 120, 62, 131) }];
+    const pm = pfmCond(n => n > 1, () => true); const got = [];
+    pm.findWorldPath(20, 20, 300, 300, p => got.push(p));
+    assert.equal(pm.searches.length, 2, 'a second search');
+    assert.ok(pm.searches[0].conds.length > 0 && pm.searches[1].conds.length === 0, 'the rerun has no seated cells');
+    assert.equal(got.length, 1);
+    assert.ok(got[0]);
+    assert.equal(pm.conditions.size, 0);
+    window.chairs = undefined;
+});
+
+test('a failed search that never came near a seated cell does not run again (R1 m2)', () => {
+    window.chairs = [{ seatedBy: 'marek', body: rect(40, 120, 62, 131) }];
+    const pm = pfmCond(() => false, () => false); const got = [];
+    pm.findWorldPath(200, 20, 300, 300, p => got.push(p));
+    assert.equal(pm.searches.length, 1, 'one search only');
+    assert.deepEqual(got, [null], 'the caller hears null once');
+    assert.equal(pm.conditions.size, 0, 'conditions cleared');
+    window.chairs = undefined;
+});
+
+test('async: an untouched failed search reports null with no rerun; a touched one reruns from the callback', async () => {
+    window.chairs = [{ seatedBy: 'amara', body: rect(216, 118, 238, 129) }];
+    for (const touched of [false, true]) {
+        const pm = pfmCond(n => touched && n > 1, () => touched);
+        let cb = null;
+        pm.worldPathfinder.findPath = (sx, sy, ex, ey, c) => { cb = c; pm.searches.push({ conds: [...pm.conditions.keys()] }); };
+        pm.worldPathfinder.calculate = () => {
+            const n = pm.searches.length, c = cb;
+            if (touched) for (const d of pm.conditions.values()) void d.length;
+            setTimeout(() => c(touched && n > 1 ? [{ x: 1, y: 1 }, { x: 2, y: 2 }] : null), 0);
+        };
+        const got = [];
+        pm.findWorldPath(200, 176, 220, 76, p => got.push(p), true);
+        await tick(); await tick(); await tick();
+        assert.equal(pm.searches.length, touched ? 2 : 1, touched ? 'touched: rerun' : 'untouched: no rerun');
+        assert.equal(got.length, 1);
+        assert.equal(!!got[0], touched);
+        assert.equal(pm.conditions.size, 0);
+    }
     window.chairs = undefined;
 });

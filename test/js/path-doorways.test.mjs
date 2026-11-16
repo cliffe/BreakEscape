@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'path-doorways-'));
 writeFileSync(join(dir, 'pd.mjs'), readFileSync(join(js, 'systems/path-doorways.js'), 'utf8'));
-const { canonicalDoorway, addDoorway, crossingPoints, insertDoorwayWaypoints, lastPinnedIndex }
+const { canonicalDoorway, addDoorway, crossingPoints, insertDoorwayWaypoints, lastPinnedIndex, directWalkStall, DIRECT_WALK_STALL_FRAMES }
     = await import(pathToFileURL(join(dir, 'pd.mjs')).href);
 
 // lab_tesseract_trials: foyer (0,0) 320x320, common room (320,0) to its east,
@@ -119,4 +119,41 @@ test('a path that never meets a doorway is unchanged', () => {
     const raw = [{ x: 100, y: 200 }, { x: 150, y: 220 }];
     assert.deepEqual(insertDoorwayWaypoints({ x: 90, y: 190 }, raw, doors), raw);
     assert.deepEqual(insertDoorwayWaypoints({ x: 90, y: 190 }, raw, []), raw);
+});
+
+// Sims tidy R1 m4: a direct player walk up x 220 meets Amara's chair, which turned solid when she
+// mounted after the walk began (games 5748 and 5793).
+test('directWalkStall: a chair that turns solid mid-walk; blocked for 10 frames replans once, then a contact stops', () => {
+    assert.equal(DIRECT_WALK_STALL_FRAMES, 10);
+    const st = { frames: 0, lastDist: undefined, replanned: false };
+    let dist = 100;
+    for (let i = 0; i < 20; i++) { dist -= 2; assert.equal(directWalkStall(st, { blocked: false, dist }), 'ok', `walking, frame ${i}`); }
+    // Amara mounts: the chair is solid in the lane; the feet stop with 60 px to go
+    const verdicts = [];
+    for (let i = 0; i < 10; i++) verdicts.push(directWalkStall(st, { blocked: true, dist }));
+    assert.deepEqual(verdicts, [...new Array(9).fill('wait'), 'replan'], 'nine frames of pushing, then one replan');
+    assert.equal(st.replanned, true);
+    assert.equal(directWalkStall(st, { blocked: true, dist }), 'stop', 'after the replan a contact stops the walk');
+    assert.equal(directWalkStall(st, { blocked: false, dist: dist - 2 }), 'ok');
+});
+
+test('directWalkStall: no progress without a contact counts too; a brief bump does not replan', () => {
+    const st = { frames: 0, lastDist: undefined, replanned: false };
+    assert.equal(directWalkStall(st, { blocked: false, dist: 50 }), 'ok', 'first frame: no baseline yet');
+    for (let i = 0; i < 9; i++) assert.equal(directWalkStall(st, { blocked: false, dist: 50 - i * 0.1 }), 'wait');
+    assert.equal(directWalkStall(st, { blocked: false, dist: 48 }), 'ok', 'progress again (over 0.5 px) resets the count');
+    const b = { frames: 0, lastDist: undefined, replanned: false };
+    for (let i = 0; i < 5; i++) directWalkStall(b, { blocked: true, dist: 40 });
+    assert.equal(directWalkStall(b, { blocked: false, dist: 38 }), 'ok', 'a five-frame bump, then free');
+    for (let i = 0; i < 9; i++) assert.equal(directWalkStall(b, { blocked: true, dist: 38 }), 'wait', 'the count started again');
+    assert.equal(directWalkStall(b, { blocked: true, dist: 38 }), 'replan');
+});
+
+test('player.js: only the straight walk arms the stall watch; the replan skips line of sight and counts itself', () => {
+    const src = readFileSync(join(js, 'core/player.js'), 'utf8');
+    assert.match(src, /if \(!replan && pathfindingManager\.hasPlayerLineOfSight\(px, py, x, y, null, playerLosOpts\)\) \{\s*console\.log\([^)]*\);\s*directWalk\.armed = true;/);
+    assert.match(src, /window\.__playerWalkReplans = \(window\.__playerWalkReplans \|\| 0\) \+ 1;\s*movePlayerToPoint\(goal\.x, goal\.y, \{ avoidNpcs: !!playerLosOpts\?\.avoidNpcs, replan: true \}\);/);
+    const stall = src.indexOf('directWalkStall(directWalk');
+    const stop = src.indexOf("if (!playerFollowingPath && !holdWalkActive && player.body.blocked.none === false)");
+    assert.ok(stall > 0 && stall < stop, 'the watch runs before the contact stop');
 });
