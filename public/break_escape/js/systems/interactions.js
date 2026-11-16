@@ -1090,13 +1090,26 @@ export function handleObjectInteraction(sprite) {
         return; // Early return
     }
 
-    // Interactive takeable items: pick up on first interaction, auto-open 1 second later.
+    // Laptop-type tools (workstation, lab workstation, VM launcher, launch device) are only
+    // picked up: they add to the inventory with a notice and are opened from the inventory.
+    // Opening one on its own put its screen over the player and blocked movement (m02 ward
+    // clerk's laptop). The notice is inventory.js pickupToast, shown once by announcePickup.
+    const PICKUP_ONLY_TYPES = new Set([
+        'workstation', 'lab-workstation',
+        'vm-launcher', 'vm_launcher',
+        'launch-device'
+    ]);
+    if (sprite.scenarioData.takeable && PICKUP_ONLY_TYPES.has(sprite.scenarioData.type)) {
+        playUISound('item');
+        Promise.resolve(addToInventory(sprite)).then(res => { window.announcePickup?.(sprite, res); });
+        return;
+    }
+
+    // Phones and terminals: pick up on first interaction, open 1 second later.
     // Covers any item type whose in-inventory interaction opens a minigame or tool.
     // The specific handlers below already handle the takeable=false (in-inventory) case.
     const PICKUP_THEN_INTERACT_TYPES = new Set([
-        'workstation', 'lab-workstation',
-        'vm-launcher', 'vm_launcher',
-        'launch-device', 'phone',
+        'phone',
         'mail_terminal',  // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
         'phone_friendface' // q35: a Friendface phone, opened from inventory
     ]);
@@ -1152,11 +1165,7 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         
-        // Otherwise, try to pick it up and add to inventory
-        console.log('WORKSTATION ADDED TO INVENTORY');
-        playUISound('item');
-        addToInventory(sprite);
-        window.gameAlert(`${sprite.scenarioData.name} added to inventory. You can now use it for cryptographic analysis.`, 'success', 'Item Acquired', 5000);
+        // A takeable one is picked up by the pickup-only branch above.
         return;
     }
     
@@ -1174,11 +1183,7 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         
-        // Otherwise, try to pick it up and add to inventory
-        console.log('LAB WORKSTATION ADDED TO INVENTORY');
-        playUISound('item');
-        addToInventory(sprite);
-        window.gameAlert(`${sprite.scenarioData.name} added to inventory. You can now use it to access lab sheets.`, 'success', 'Item Acquired', 5000);
+        // A takeable one is picked up by the pickup-only branch above.
         return;
     }
     
