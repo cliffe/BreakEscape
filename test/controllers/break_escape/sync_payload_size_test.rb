@@ -5,7 +5,10 @@ module BreakEscape
   # registry, and GET /keyring stays small even at the registry cap. The registry is server-only,
   # stripped from GET /scenario; the keyring answer is a read, bounded by the 64-entry cap, so it
   # never approaches the 16 KB a synced payload must respect.
-  class SyncPayloadSizeTest < ActionDispatch::IntegrationTest
+  # Named distinctly from test/integration/sync_payload_size_test.rb's SyncPayloadSizeTest: two files
+  # under one fully-qualified class name would reopen and merge into one class under a full test run
+  # (R2 m2).
+  class KeyringSyncSizeTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
     MAX_ENTRIES = 64
