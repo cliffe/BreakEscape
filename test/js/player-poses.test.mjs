@@ -440,12 +440,14 @@ test('a reinstall cancels a queued lead timer and clears the phone state', () =>
     inst.openWithPhoneLead(() => { opened++; });
     inst.onMinigameStart('phone-chat', {}, {});
     assert.equal(timers.length, 1);
+    inst.holder.breath = { crop: true };   // a held pose mid-breath when the scene restarts
     handlers.forEach(f => f());
     assert.equal(installPlayerPoses(r.scene), inst);
     assert.equal(inst.cur, null);
     assert.equal(inst.phoneScene, null);
     assert.equal(inst.phoneWanted, false);
     assert.equal(inst.phoneShown, false);
+    assert.deepEqual(inst.holder, {}, 'no breath crop carried over from the old sprite');
     // The stale timer fires with no new lead, then with a new lead pending
     timers[0].fn();
     assert.equal(opened, 0);

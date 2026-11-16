@@ -252,6 +252,7 @@ export function installPlayerPoses(scene) {
             same.phoneScene = null;
             same.phoneWanted = false;
             same.phoneShown = false;
+            same.holder = {};   // a breath crop from the old sprite must not carry over
             live(same);
         }
         return same;
