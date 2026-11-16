@@ -201,3 +201,39 @@ engine `face` field on coordinate homes is the alternative, but it is a new feat
   the kitchen side because of m1. Next run, the row 6 snapshot (541a07a52) should also record each door
   sprite's `doorProperties` (worldX, open) and the last `chair_out_of_doorway` lines, so m1 can be ruled in or
   out.
+
+## R1 Outcomes
+
+Fixes in a80f4ddb0 (first cut), 5c5df47d0 (tests) and 22a9b4866 (two follow-ups); Marek's face point in
+615807990. Suite: `bin/test-js` on c0813f38c, 687 of 687 files pass. Live proofs on a keyless server at
+:3093, games 5967, 5969, 5970, 5971, 5972 (all from new-game.rb), run headless with setFPS(20) and fixed
+steps. Evidence is in the session scratchpad `s7/` (copies in the gitignored `scratchpad/sims-tidy7/` of the worktree).
+
+| # | Fix | Proof |
+|---|-----|-------|
+| M1 | Doorway sweep picks the first clear spot among four candidates (a tile out and a tile sideways each way, then a tile sideways), outside every doorway lane, and glides there. | Live, 5971: a loose chair staged at foot (8,79) in the west kitchen gap; one second later the log reads `chair_out_of_doorway` from [8,74] to [-83,106], spot 1; at rest its box is -94..-72 x 100..111 on open kitchen floor, overlapping no body. Screenshots `sweep-before-5971.png` (chair in the doorway) and `sweep-after-5971.png` (chair on the kitchen floor, clear). Unit tests for candidates, lanes, spot choice and the sweep's skip rules. |
+| M2 | Post home wait runs while `home` is null, then from the NPC's first seat check (`_postWaitSince`). | Live, 5967: the clock passed 9 s before the lounge loaded. Rosa's behaviour appeared at clock 11250 with `home: null` and `_postWaitKey at:rosa_laptop`; home resolved to rosa_laptop (not provisional) at 11500; she sat at 12500. No `fetch_start`, no `mount_stuck`, no walk from the spawn spot (sprite 448,161 to 451,163). Neil's room (it_room) is behind a closed door, `enterRoom('it_room')` returned not ok, so Rosa is the proof. `late.out`. |
+| m1 | Door sprites for one doorway merge into one gap rect. | Live: the kitchen doorway has one sprite only (office west, worldX 16, worldY 80). The kitchen room (loaded, `rooms` = office, kitchen) has no door sprites of its own, so the R1 premise of two sprites 32 px apart does not occur in this layout. The merged gap is one rect, x -16..48, y 64..96 (tour row 6 `doors.gaps`, all three tours). The merge is covered by unit tests with two sprites. |
+| m2 | A failed search reruns without seated chairs only when a seated rect touches the start-goal box. | Unit tests (touched, untouched, async). Live reruns per tour: 4, (not recorded for 5970), 6; each rerun has a seated chair in the search box, so they are expected. No before and after count was taken. |
+| m3 | Goal snap and the keep rule see seated chairs. | Unit tests (keep, avoidSeated snap). |
+| m4 | Direct player walk replans once on a stall: under 5 px gained towards the goal over 10 frames (a slide along a wall keeps walking). | Live, BOARD_ROUTE=direct, 3 tours: `window.__playerWalkReplans` 0, 0, 0. No stuck player walks. The board was read on the first try each time (arrived 219,48; 219,47; 220,46). Unit tests: a 40-frame blocked slide never replans, a corner does, a shallow slide does, a 5-frame bump does not. |
+| m5 | Tests for the sweep wiring, skip rules, two-leg seat walk and the post wait through `updateSeatedNPC`. | Added; the old code fails the new tests (path-doorways 2, seating 4). |
+| m6 | JSDoc moved above needsSeatRef. | Read in the diff. |
+| Marek | `marek_tool_roll` on the south-west desk, `needsHome` its id. | Live, 5932 (earlier): he fetched chair 155 and sat facing north. In the three new tours he sat at 6 s (5969), his first seat is in `first_sat`. |
+
+### Row 6 and the open questions
+
+All three tours pass row 6: the player walks to `kitchen_rota` and reads it (stops at x -21, -21, -14, not
+x 41). The in-page `import('/break_escape/js/systems/seating.js')` works and returns the merged gaps; the
+snapshot has no `chair_out_of_doorway` or `chair_in_doorway_no_spot` lines, and `doorway_sweeps` is empty in
+all three (no chair rested in a gap unprompted). The x 41 stop is therefore not reproduced; no chair was in
+the gap, which fits a rest-in-gap chair that the sweep now clears.
+
+### Findings from the live run, not fixed here
+
+- **Row 3 fails in all three tours** (`see_coffee_off` never confirmed; Tom and Sanjay do turn back, `row3_turned_back` both). It is the coffee-switch-off row, not touched by this branch. Not investigated.
+- **Doorway jam, game 5970:** at needs clock about 375 to 387 Rosa (58,84), Grace (44,84) and Sanjay (6,84) log `walk_rerouted`, then `walk_stuck` x2 and `return_stuck`, all in the kitchen doorway lane at y 84, with no chair near and the player in the kitchen. Three NPCs crossing in the lane at once. The other two tours show no stuck NPC. Evidence: `tour-5970/tour-5970.json` (`stuck`, `stalls`).
+
+### Reproduction notes
+
+Game 5956 was reported dirty by another session; none of these runs used it.

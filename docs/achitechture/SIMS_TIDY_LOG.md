@@ -478,3 +478,19 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
 - Games this session: 5928 (old roll position), 5932 (current). One earlier new-game call printed
   no id (probably 5927). Server on :3093 stopped. Probe scripts: scratchpad/sims-tidy6/probe.mjs
   (Marek and doors), eval.mjs (runs an expression file after a wait).
+
+## Handover 6 (fix round complete: live proofs and write-up done)
+
+- `bin/test-js` on c0813f38c: 687 of 687 files pass.
+- Live, keyless :3093 (stopped), games 5967, 5969 to 5972. Results are in "R1 Outcomes" in
+  SIMS_TIDY_REVIEW_R1.md:
+  - sweep: chair staged at (8,79) moved to (-83,106), spot 1, clear (screenshots in the scratchpad);
+  - doorway merge: the kitchen doorway has one sprite (worldX 16), merged gap x -16..48, y 64..96;
+  - late-room wait: Rosa waited on home null at clock 11250, resolved 11500, sat 12500, no fetch, no mount_stuck;
+  - board approach, BOARD_ROUTE=direct x3 (5969, 5970, 5971): replans 0, board read first try each;
+  - row 6: passes in all three, in-page seating.js import works, no sweep lines.
+- Open, not fixed: row 3 fails in all three tours (see_coffee_off); one doorway NPC jam in 5970 (Rosa,
+  Grace, Sanjay at y 84, walk_stuck and return_stuck, no chair near).
+- Neil's room (it_room) is behind a closed door, so the late-room proof used Rosa only.
+- Game 5956 was reported dirty by another session; not used.
+- Ready for review round 2.
