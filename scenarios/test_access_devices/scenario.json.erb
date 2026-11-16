@@ -115,12 +115,22 @@
       "type": "room_reception",
       "door_sign": "Reception",
       "connections": { "north": "comms" },
+      "lighting": {
+        "emitters": {
+          "lw_staff_ap": { "color": "#2a8cff", "radius": 6, "intensity": 0.6, "effect": "blink", "above": true, "offsetX": 0, "offsetY": -1 },
+          "lw_guest_ap": { "color": "#2a8cff", "radius": 6, "intensity": 0.6, "effect": "blink", "above": true, "offsetX": 0, "offsetY": -1 },
+          "planted_rogue_ap": { "color": "#3fa8ff", "radius": 5, "intensity": 0.7, "effect": "blink", "above": true, "offsetX": -4, "offsetY": 3 }
+        }
+      },
       "objects": [
         {
           "type": "pc",
           "id": "rogue_ap_spot",
           "name": "Waiting-area planter",
-          "sprite": "planter_fig1",
+          "sprite": "rogue_ap_pot",
+          "spriteVariants": [
+            { "condition": "globalVars.ap_planted", "value": "rogue_ap_planted" }
+          ],
           "position": { "x": 8.5, "y": 3 },
           "takeable": false,
           "interactable": true,
@@ -140,8 +150,8 @@
           "type": "pc",
           "id": "planted_rogue_ap",
           "name": "Planted rogue AP",
-          "sprite": "drop_box1",
-          "position": { "x": 9.6, "y": 3 },
+          "sprite": "rogue_ap_planted",
+          "position": { "x": 8.5, "y": 3, "elevation": 3 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -195,7 +205,7 @@
           "type": "pc",
           "id": "lw_staff_ap",
           "name": "Ledgerwell-Staff access point",
-          "sprite": "network_rack1",
+          "sprite": "lw_staff_ap",
           "position": { "x": 5, "y": 2.2 },
           "takeable": false,
           "wifiAp": true,
@@ -206,7 +216,7 @@
           "type": "pc",
           "id": "lw_guest_ap",
           "name": "Ledgerwell-Guest access point",
-          "sprite": "network_rack1",
+          "sprite": "lw_guest_ap",
           "position": { "x": 2, "y": 2.2 },
           "takeable": false,
           "wifiAp": true,
