@@ -495,3 +495,81 @@ Notes for the next agent:
   absolute path, not the worktree. The main-tree edits were reversed (surgically, by Edit; a
   `git checkout --` revert was refused by the safety classifier) and reapplied in the worktree; the
   main tree's `README_scenario_design.md` is clean again. Worth a glance to confirm.
+
+## K1 run 3: R1 minors, the test scenario, and the live-proof handover
+
+Branch `build/keyring-k1`, merged main `8bf39c76e` first (clean). This run fixed the five R1 minors
+(each its own commit, with a test where one made sense), built `test_access_keyring` scoped to K1,
+ran the K1 suites and left the full browser live proof as a handover (budget).
+
+### R1 minors (CREDENTIAL_KEYRING_K1_REVIEW_R1.md), each committed
+
+- **m1** Item-level `credential` is now stripped on the way to the client. `obj.delete('credential')`
+  in `filter_inventory_for_client!` (covers `client_inventory` and `item_for_answer` echoes) and in
+  `filter_requires_and_contents_recursive` (covers a loose or container credential item in a lazy
+  room load). The stored inventory keeps the field, so the `held` proof still reads it. New
+  `test/models/break_escape/credential_item_field_test.rb` (5 tests): stripped from the inventory,
+  the echo and a room load; kept in state; absent from the bootstrap.
+- **m2** `credential_held_proof_holds?` now unwraps `data = inv['scenarioData'] || inv` before reading
+  `credential`/`type`/`id`, as the other inventory readers do. Test: a wrapped-shape item proves held.
+- **m3** The keyring route is honoured. `keyring_pc_openable?(pc_id, route)` scopes `forThisPc`/
+  `accepted` only when the player can open a screen for `pc_id`: a foothold screen needs the foothold
+  to reach the host now, a `from`/`relay` screen is trusted (K4/K2 own their reach), a keyboard screen
+  needs the PC physically reachable. `registry_keyring_entries` loses its unused `pc_id:`. Test: an
+  unopenable `pc_id` adds no scoping fields.
+- **m4** The validator's foothold-proof set now includes the runtime keys an implant/grant creates
+  (`implant_<pc>`), alongside the bare PC id. A follow-up commit also folds the jack and Wi-Fi runtime
+  keys (`jack_<id>`, `wifi_<network>`) into the set and reads the AP id from the entry's object, so a
+  proof written the plan's way (`jack_comms_port`) is accepted and matches `player_state['footholds']`.
+  Safe superset; the existing bare-id fixtures still pass. New validator fixture.
+- **m5** `credential_keyring_test` gains a networks-backed group: a held foothold reaching `lena_pc`
+  lists the route; `targetOff` rides only with a non-empty route and reflects `host_service_off?`;
+  `remoteBlocked` reflects the `connectsTo` policy; `sessionHeld` is true when a session there carries
+  the credential.
+- **Plan ref.** `CREDENTIAL_KEYRING_PLAN.md` 6.1 now points the timer bullet at
+  `README_scenario_design.md:2806` (was 2753; main shifted it). Section 1.1 still names 2753 and is
+  left for a plan-wide pass (out of this run's scope).
+
+### test_access_keyring (plan 9.1, scoped to K1)
+
+`scenarios/test_access_keyring/` (mission.json, scenario.json.erb, PLAYTEST.md, ink for Lena/Jake/Ian,
+dungeon graph). Three rooms (lobby, comms, finance), cast Lena/Jake/Ian. Registry covers the K1 proof
+kinds: `lena_rdp` (saved_connection, `held: lena_rdp_file`), `jake_pw_note` (password, `session:
+lena_pc`, `foundIn: lena_passwords_txt`), `ops_cookie` (saved_connection, `foothold: jack_comms_port`),
+plus Ian's implicit captured entry (capture card + drop box, `captureProof` planted on `comms_port`,
+`revealSecret` on). Validates **0 errors, 1 warning** (`ops_cookie` accepted by no machine, by design,
+as plan 9.1 notes for `ops_rdp`; `pw_only` takes `password` only). PLAYTEST.md lists the K1 beats and
+marks K2 to K5 (the login branch, the sign-in/capture-log UI, `from`/`relay`, the assist invite and
+timer, tokens, Runs B to E) as TODO. The scenario omits the relay/assist and token machinery entirely,
+since those are later slices.
+
+### Tests (run file by file) and lint
+
+- `test/unit/credential_model_test.rb`: 12 runs / 40 assertions / 0 F.
+- `test/models/break_escape/credential_keyring_test.rb`: 18 / 43 / 0 F (was 11; m2, m3 and m5 added).
+- `test/models/break_escape/credential_item_field_test.rb`: 5 / 10 / 0 F (new, m1).
+- `test/controllers/break_escape/keyring_route_test.rb`: 6 / 19 / 0 F.
+- `test/unit/access_leak_scanner_test.rb`: 50 / 277 / 0 F.
+- `test/controllers/break_escape/capture_secrets_unchanged_test.rb`: 4 / 14 / 0 F.
+- `test/controllers/break_escape/sync_payload_size_test.rb`: 3 / 10 / 0 F.
+- `test/js/validator-credentials.test.mjs`: 38 tests / 0 F (was 37; m4 fixture added).
+- `bin/rubocop` clean on every changed Ruby file (game.rb, credential_keyring.rb, validate_scenario.rb,
+  and the two changed test files).
+
+### Live proof (plan 6.5): HANDOVER, not run
+
+Not run this run (budget). It needs the keyless server on :3062 and the browser bridge to earn each
+proof in game. The scenario is ready; the recipe:
+
+1. `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true RBENV_VERSION=2.7.8 BUNDLE_PATH=<repo>/vendor/bundle bundle exec rails server -b 127.0.0.1 -p 3062`
+2. `tools/playtest/new-game.rb test_access_keyring` (bin/rails runner form); drive only that id.
+3. Headless, `window.game.physics.world.setFPS(20)` with fixed steps on.
+4. Show `GET /keyring` empty at start; then gaining `lena_rdp` on taking HB-FIN-02.rdp (K1a),
+   `jake_pw_note` on signing in at Lena's PC (K1b), Ian's implicit entry on reading the card with the
+   drop box planted (K1c), and `ops_cookie` on planting the drop box (K1d). Show `rev` changing and a
+   matching-`rev` request answering `unchanged`. Confirm no `password` except on the capture entry.
+5. Confirm the bootstrap has no `credentials` key and `player_state` does not grow.
+6. Run `tools/playtest/lib/access_leak_scanner.rb` over the game.
+7. Kill only your own PIDs.
+
+Nothing above minor is open. The scenario and all server/validator K1 pieces are on `build/keyring-k1`.
