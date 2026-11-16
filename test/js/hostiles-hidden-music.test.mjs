@@ -37,6 +37,7 @@ function bus() {
 // A real NPCManager and a real NPCBehaviorManager.setNPCVisible, so a setVisible mapping goes
 // through the same path as in play. Hostility is a stub that also records announcements.
 const announced = [];
+const calmed = [];
 function setup(ids, { hostile = ids, ko = [], threat = false } = {}) {
     hostile = [...hostile];
     window.eventDispatcher = bus();
@@ -56,10 +57,12 @@ function setup(ids, { hostile = ids, ko = [], threat = false } = {}) {
                 window.eventDispatcher.emit('npc_hostile_state_changed', { npcId: id, isHostile: true });
             }
         },
-        announceRestoredHostile: (id) => { announced.push(id); return true; }
+        announceRestoredHostile: (id) => { announced.push(id); return true; },
+        recordCalm: (id) => { calmed.push(id); }
     };
     window.npcHostileSystem = sys;
     announced.length = 0;
+    calmed.length = 0;
     switches.length = 0;
     initScenarioMusicEvents({ music: { events: [
         ...(threat ? [{ trigger: 'npc_hostile_state_changed', condition: 'isHostile === true', playlist: 'threat', fade: false }] : []),
@@ -281,4 +284,77 @@ test('M1 reload: a restored hostile on a hidden sprite with no mapping record wa
     assert.deepEqual(announced, [], 'hidden, so not announced at room load');
     day();
     assert.deepEqual(announced, ['r'], 'announced on the reveal');
+});
+
+// R3 minors
+test('R3 m1: a calm set on a pending NPC is recorded so a reload keeps it calm', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const b = startHostileBehavior(c, 'r', false);
+    b.setHostile(false);
+    assert.deepEqual(calmed, ['r'], 'the calm is saved');
+    day();
+    assert.equal(c.sys.isNPCHostile('r'), false, 'still calm after the reveal');
+    assert.deepEqual(switches, []);
+});
+
+test('R3 m1: setHostile(false) on an NPC with no pending start records nothing', () => {
+    const c = setup(['r'], { hostile: [], threat: true });
+    const b = startHostileBehavior(c, 'r', true);   // visible startHostile: hostile at creation
+    calmed.length = 0;
+    b.hostile = false;
+    b.setHostile(false);
+    assert.deepEqual(calmed, []);
+});
+
+test('R3 m2: a reveal does not turn a KO\'d pending NPC hostile', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], ko: ['r'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const b = startHostileBehavior(c, 'r', false);
+    day();
+    assert.equal(b.hostile, false);
+    assert.equal(b._startHostileOnReveal, false, 'flag cleared either way');
+    assert.equal(c.sys.isNPCHostile('r'), false);
+    assert.deepEqual(switches, []);
+});
+
+test('R3 m3: a restored hostile on a hidden sprite with no record is recorded hidden, so it does not count', () => {
+    const c = setup(['a', 'r'], { hostile: ['a', 'r'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    startHostileBehavior(c, 'r', false, { hostile: true, ko: false });
+    assert.equal(c.m.isHiddenByMapping('r'), true, 'counted and announced agree');
+    koEvent('a', c);
+    assert.deepEqual(switches, ['calm'], 'the unseen hostile does not hold the fight');
+    day();
+    assert.deepEqual(announced, ['r'], 'announced on the reveal');
+});
+
+test('R3 m3: a restored hostile on a visible sprite is not recorded hidden', () => {
+    const c = setup(['r'], { hostile: ['r'] });
+    startHostileBehavior(c, 'r', true, { hostile: true, ko: false });
+    assert.equal(c.m.isHiddenByMapping('r'), false);
+});
+
+test('R3 m7: a second reveal of a revealed startHostile NPC gives no second cue', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    startHostileBehavior(c, 'r', false);
+    day();
+    assert.deepEqual(switches, ['threat']);
+    day();
+    assert.deepEqual(switches, ['threat'], 'no second cue');
+    assert.deepEqual(announced, []);
+});
+
+test('R3 m7: ink makes a hidden pending NPC hostile, then the reveal gives one cue', () => {
+    const c = setup(['a', 'r'], { hostile: ['a'], threat: true });
+    c.m.npcs.get('r').isVisible = false; mapReveal(c, 'r');
+    const b = startHostileBehavior(c, 'r', false);
+    c.sys.setNPCHostile('r', true);   // ink #hostile:r goes straight to the hostile system
+    assert.equal(b._startHostileOnReveal, true, 'ink leaves the behaviour flag set');
+    const before = switches.length;
+    day();
+    assert.deepEqual(announced, ['r'], 'the reveal announces the already-hostile NPC');
+    assert.equal(switches.length - before, 0, 'no second npc_hostile_state_changed from setHostile');
+    assert.equal(b.hostile, true);
 });

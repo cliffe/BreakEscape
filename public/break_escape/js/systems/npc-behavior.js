@@ -430,9 +430,10 @@ export class NPCBehaviorManager {
         }
         // A startHostile NPC created hidden turns hostile on its first reveal, so the one
         // npc_hostile_state_changed fires with it on screen (see the NPCBehavior constructor)
+        // (a KO'd pending NPC stays down: clear the flag either way)
         if (visible && behavior._startHostileOnReveal) {
             behavior._startHostileOnReveal = false;
-            behavior.setHostile(true);
+            if (!window.npcHostileSystem?.isNPCKO?.(npcId)) behavior.setHostile(true);
         }
         // If revealing and patrol is configured, enable it
         if (visible && behavior.config.patrol.waypoints?.length > 0) {
@@ -590,6 +591,10 @@ export class NPCBehavior {
                     // (or whose sprite starts hidden, a restored initiallyHidden hostile)
                     if (this.sprite?.visible !== false) {
                         window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    } else {
+                        // Counted and announced must agree: until the reveal it neither counts
+                        // (anyHostilesAlive) nor cues the music (R3 m3)
+                        window.npcManager?.recordNpcVisibility?.(npcId, false);
                     }
                 }
             }
@@ -3465,7 +3470,10 @@ export class NPCBehavior {
     }
 
     setHostile(hostile) {
-        this._startHostileOnReveal = false;   // an explicit change replaces the deferred start
+        // an explicit change replaces the deferred start; a calm set must be saved, since the
+        // early return below records nothing and a reload would re-apply startHostile (R3 m1)
+        if (!hostile && this._startHostileOnReveal) window.npcHostileSystem?.recordCalm?.(this.npcId);
+        this._startHostileOnReveal = false;
         if (this.hostile === hostile) return; // No change
         if (hostile) window.seating?.unseatNPC?.(this);
 

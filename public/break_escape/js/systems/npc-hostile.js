@@ -103,6 +103,7 @@ export function initNPCHostileSystem() {
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
     announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
+    recordCalm: (npcId) => recordCalm(npcId),
     resetHostilesForRespawn: () => resetHostilesForRespawn(),
     redropPending: (npcId) => redropPending(npcId)
   };
@@ -206,6 +207,16 @@ export function takeRestoredHostility(npcId) {
   if (!entry) return null;
   restoredPending.delete(npcId);
   return entry;
+}
+
+/**
+ * Save "calm" for an NPC that never turned hostile this session, so a reload does not
+ * re-apply its startHostile config (a calm set while the NPC was still hidden, R3 m1).
+ * No event. An NPC that already has a record keeps it.
+ */
+export function recordCalm(npcId) {
+  if (!npcId || hostilityRecord.has(npcId)) return;
+  hostilityRecord.set(npcId, { hostile: false, ko: false });
 }
 
 /**
