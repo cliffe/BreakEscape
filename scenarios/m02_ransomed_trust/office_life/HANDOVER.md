@@ -1,10 +1,14 @@
+# m02 office life: stage 5 R5 live checks done (2026-11-16)
+
+- m4 (5 of 5 PASS) and m5 (variant A 4 of 4, variant B 3 of 3 PASS) are in `STAGE5_LIVE_R5.md`, run on the lobby start by adjacent hops with access unlocked through `new-game.rb --unlock`. In variant B the burn exchange now plays in the running break (5593 deferred it); no fault found.
+
 # m02 office life: D30 (a) built and all lines voiced, handover 2026-11-16
 
 - D30 (a): `night_watch_paper` is now 4 lines, Ernesto opens (`ink/m02_npc_hodan_warsame.ink`, recompiled). Hodan's question dropped; the ink comment now says Hodan opens the first two and Ernesto the paper night. No data or engine change was needed: the NPC record's `exchanges` entry is unchanged, the engine starts an exchange when the player hears the first line's speaker, and the validator has no first-speaker rule. Validator 0 errors, 33 warnings; `lock_key_diff` empty.
 - Voiced: the 2 changed exchange lines plus the 5 queued lines (4 coffee, Hodan's laptop bark) = 7 new clips; 3 superseded clips moved to `tmp/delete/tts_m02_d30/`. Office-life total 75, To voice list empty (`SPOKEN_LINES.md`). The bark is not in `tts:wasted`'s expected set (barks are not extracted), so `wasted` reports that one clip as unrequested; keep it, the endpoint serves it.
 - Live proof: `STAGE5_LIVE.md` "R6 (D30)", game 5725 on :3090: 4 lines in order, all heard, a `/tts` 200 for each.
 - `bin/test-js`: 681 passed, 0 failed.
-- `REVIEW_STAGE5_R1.md` Outcomes: m1 and D1 "D30 (a) built", D2 closed. D30's heard rule is still held.
+- `REVIEW_STAGE5_R1.md` Outcomes: m1 and D1 "D30 (a) built", D2 closed. D30's heard rule: the user chose (d), keep today's rule; first lines must stand alone, checked by the editorial pass.
 
 # m02 office life: stage 5 R1 fixes, handover 2026-11-16 (parts 1 and 2 done; m4, m5 in `STAGE5_LIVE_R5.md`)
 

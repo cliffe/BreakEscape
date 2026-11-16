@@ -111,11 +111,11 @@ Stage 5 R1: 0/1/8
 | Finding | Outcome |
 |---|---|
 | M1 | Done. The long walkthrough ran in R4 (`STAGE5_LIVE.md`, "R4 walkthrough", game 5626): moveTo between rooms, real Kim and Gary conversations, 26 PASS, 0 FAIL, 0 NOT RUN. The target caveats it raised are in that section. |
-| m1 | D30 (a) built (2026-11-16): `night_watch_paper` is 4 lines, Ernesto opens, Hodan's question dropped. The heard rule part of D30 is not covered here. |
+| m1 | D30 (a) built (2026-11-16): `night_watch_paper` is 4 lines, Ernesto opens, Hodan's question dropped. D30's heard rule: the user chose (d), keep today's rule; first lines must stand alone, checked by the editorial pass. |
 | m2 | Fixed (part 1). Ernesto's radio topic is two choices, burned and cleared; recompiled and checked in 5 states. |
 | m3 | Fixed (part 1). Mappings 1 and 3 walk-in cooldown 150000 ms. Mapping 4 stays at 120 s, because the review named only 1 and 3. |
-| m4 | Live check in `STAGE5_LIVE_R5.md` (separate run). |
-| m5 | Live check in `STAGE5_LIVE_R5.md` (separate run). |
+| m4 | Live check done, 5 of 5 PASS (game 5760, `STAGE5_LIVE_R5.md`): five walked crossings into IT with Ernesto using the microwave, no stop, no push, closest 10 px. He stands under the microwave facing it on the real art, so `dx` stays 0.5. |
+| m5 | Live check done, 7 of 7 PASS (`STAGE5_LIVE_R5.md`): variant A 4 runs (5759, 5766, 5772, 5779), variant B 3 runs (5754, 5767, 5785), Gary's real conversation setting `cover_burned`. Fewer than five per variant for time. In B the burn exchange now plays in the running break, not the next one as in 5593. |
 | m6 | No fault. The silence was the hostile porter knocking the player out during the wait (game-over screen blocked `interact`); the greeting opens in 245 ms after a reload (game 5673). No ink or engine change. |
 | m7 | Fixed (part 1). Baseline recorded as 0 errors, 33 warnings; the timer `onceOnly` fields are left to the m02 owner. |
 | m8 | Fixed (part 2). Hodan's seat cannot move, so she barks once when the clerk's laptop is taken: "Clerk'll want that back. Just saying." (37 characters; the first draft was 42, over the bubble limit). Proved live, game 5671. On the To voice list. |
