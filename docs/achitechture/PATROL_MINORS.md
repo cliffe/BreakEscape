@@ -37,3 +37,19 @@ Not found: the 87 s stand-still. The likely shape is a spot where no detour exis
 - `bin/test-js`: 712 passed, 0 failed (includes the two new tests).
 - `bin/rails test`: 2940 runs, 48173 assertions, 0 failures, 0 errors, 3 skips.
 - Live check on :3095, keyless, one fresh game (6175, made by tools/playtest/new-game.rb), headless, setFPS(20), fixed steps on. Server stopped; port 3095 closed.
+
+## Handover: waypoint_fast 87 s stand-still (follow-up, not resolved)
+
+Status: not reproduced, no code change. T100 log evidence (wp2.log seq 15 to 23) read; the guess above (squeeze resets the stall mark) is not supported.
+
+What the T100 state shows at the stall, waypoint_fast at (174,174), player at (156,169), waypoint_with_face at (156,164):
+- v = 0, `_avoid` null, state patrol, 350 samples (87 s) at one position.
+- `currentPath` starts at (172,172), 3 px from the NPC, yet `pathIndex` stayed 0. updatePatrol's path-following branch advances the index when within 8 px, so that branch was not running. The squeeze theory needs `_avoid` set, so it does not fit.
+- The path was the same 36 s apart (seq 19 and 23), so it was not being re-planned; `_stuckWatch` was stale (not called), and `lastUnstuckCheck` was current (update() runs).
+- So something returns early before path-following, every frame, with velocity 0.
+
+Leading suspect to check next: `isSettling`. `updatePatrol` returns early with velocity 0 while settling, and `triggerSettling` (npc-behavior.js about 3212) is called from `handleNPCCollision` and three other sites in `npc-sprites.js` (lines 1380, 1477, 1606, 1664). `settleOnContact` already exempts held bodies; a body that is neither held nor pushable, here waypoint_with_face in face_player state (immovable false, 5 px from the player) or the player, may re-collide every frame and re-arm the settle for ever. The guard at the top of updatePatrol only caps `settleEndTime` to `time + settleDuration`, so a re-arm each frame never ends. Check: `settleOnContact` and the player-collision path in npc-sprites.js.
+
+Also noted: calling `body.reset` on an NPC through the page froze the game clock (scene time stopped) in the live page; teleport only the player. Live script: scratchpad `stall-live.mjs` (env PX, PY, SECS). The natural run with the player at (156,169) for 60 s did not stall (waypoint_fast never came within 37 px of the player).
+
+Suggested next step: a node test that puts two NPCs (one in face_player, one patrolling) overlapping, calls `handleNPCCollision` every frame and runs `updatePatrol`, and asserts the walker moves within a second or two; then fix `settleOnContact` or add a settle cap. Live proof: player parked at (156,169) beside waypoint_with_face, watch waypoint_fast for a stand-still over 90 s.
