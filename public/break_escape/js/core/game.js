@@ -2386,6 +2386,7 @@ export async function create() {
                         return;
                     }
                     noJoint = true;
+                    window.__overlapStand = { stand: null, joint: false };   // read by the live proofs
                 }
                 onlyHit = noJoint ? menuHits[0] : soleHit({ allHits }, isSeatOrSwivel);   // D4, used when nothing in reach takes the tap
             }
@@ -3044,6 +3045,7 @@ const pendingOverlapWalk = createPendingTapUse({
         const t = hits.some(inReachNow) ? overlapRetryNext(hits) : null;
         if (!t) return false;
         overlapRetry.used = true;
+        window.__overlapRetried = { from: playerFeet(window.player), to: t };   // read by the live proofs
         movePlayerToPoint(t.x, t.y, { avoidNpcs: true });
         return true;
     },
