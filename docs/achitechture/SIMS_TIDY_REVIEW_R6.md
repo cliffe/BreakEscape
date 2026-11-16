@@ -80,3 +80,108 @@ feet (274, 77), the lowest stand point below it. From there `__test.interact('de
 `inRange: true`, distance 0 (the wallMounted measure), `picked.matches: true`, confirmed by its gameDisplay overlay. The
 player did not move. Amara's caffeine read 57.17 before and 19.67 after, which is the mapping's `set caffeine 20` minus
 under a second of decay. Page errors 0. The memo is in reach and its mapping applies.
+
+## R6 Outcomes
+
+### Head-on stalls, A/B and after the fix
+
+A head-on stall here is two NPC bodies with a goto job within 40 px of each other in the kitchen passage box
+(x -70..32, y 70..100) for 8 s or more. Every run is the tour (`needs-tour-regression.mjs`, rows 1, 3, 5, 6) on a
+fresh test_needs_sims game, keyless server on :3093, setFPS(20) with fixed steps on.
+
+| Engine | Scenario | Games | Head-on stall | Row 6 failed |
+|---|---|---|---|---|
+| branch before the fix (230c13335 line) | branch | 6093, 6094, 6095, 6099, 6100, 6104 | 4 of 6 | 4 of 6 (the same games) |
+| main baseline (8dce8782f) | branch, copied in | 6101, 6102, 6103 | 1 of 3 (6102) | 1 of 3 (6102) |
+| main baseline (8dce8782f) | main | 6096, 6097 | 0 of 2 | 0 of 2 |
+| a2d2c64ab (back-off steps, pin) | branch | 6115, 6116, 6117, 6118 | 0 of 4 | 2 of 4 (6116, 6117) |
+| b5a337735 + driver ade76b7fe (yield hold, pin tie-break) | branch | 6134, 6135, 6136 | 0 of 3 | 0 of 3 |
+
+Row 3 fails on every main-baseline game, with either scenario (caffeine about 88 at the board read against 9 on the
+branch); not looked into. Main's own scenario sends less traffic through the kitchen, which is why the A/B ran the
+branch scenario on the main engine. The stall rate there (1 of 3) shows the head-on yield bug is main code, made more
+frequent by the branch's busier kitchen.
+
+Final runs, per game (park `retried` from the driver's `parkByCooler`):
+
+| Game | Row 1 | Row 3 | Row 5 (park retried) | Row 6 (park retried) | Head-on stalls | Stuck lines |
+|---|---|---|---|---|---|---|
+| 6134 | ok (68 s) | ok | ok (false, dist 2) | ok (false, dist 6), outcast seen after 73 s | none | 0 |
+| 6135 | ok | ok | ok (false, dist 2) | ok (true, dist 5), outcast seen after 119 s | none | 3 |
+| 6136 | ok | ok | ok (false, dist 3) | ok (false, dist 6), outcast seen after 81 s | none | 0 |
+
+In 6135 the row 6 park waited the full 20 s for the lane twice and twice stopped at (-27, 87) and (-32, 87), in the
+mouth of the passage, before the third try (a tile north of the aim) parked at (-192, 258). Marek logged one
+`walk_stuck` at (-15, 84) at t 918 and Tom two `return_stuck` near (-20, 12); the row still passed. The lane wait
+holds the player back from a busy lane but cannot stop it entering one that fills while it walks.
+
+Page errors 0 in all three. Games 6131 to 6133 (probably those ids) were made by new-game.rb with their id lines cut
+from the output, and were never driven.
+
+### Yield fix
+
+a2d2c64ab made a back-off a whole 700 ms step, followed at once by the next one, and pinned a yielder that could not
+gain ground. That cleared the two-NPC stall, but a lane simulation of three NPCs (one walking east against two walking
+west, driven by the real `_handleBlockerAhead`) showed two more ways to lock up:
+
+- A yielder's step took it just past `AVOID_LOOKAHEAD_PX`. The blocker was no longer ahead, `_avoid` cleared, the
+  yielder walked back in and met the same NPC after a fresh wait. It repeated for 90 s with nobody through.
+- Two pinned NPCs facing each other both stopped yielding, so both held for ever.
+
+b5a337735: the yielder records `yieldTo` and `yieldUntil`; for up to `AVOID_YIELD_HOLD_MS` (10 s) after its first step
+it keeps treating that NPC as ahead out to `AVOID_YIELD_HOLD_PX` (96 px, three tiles), so it keeps backing off instead
+of walking back into it. `pinned` is recomputed at the end of every step, so a pin clears as soon as a step gains
+ground. When both sides are pinned (or neither), the usual tie-break `avoidanceYieldsTo` decides, so exactly one
+yields. In the simulation the three-NPC cases clear in 15 to 35 s with 3 or 4 yield handovers. The test
+`R6: three NPCs in a one-body lane all get through, ...` in test/js/npc-local-avoidance.test.mjs runs that case: it
+passes on b5a337735 and fails on a2d2c64ab (no NPC reaches its target in 60 s).
+
+### Known limit: two NPCs against two in one lane
+
+The same simulation with two NPCs walking each way through a one-body lane does not clear, on either version. The
+cause is the design rather than the simulation: yielding is pairwise. The front pair settles who yields, but the NPC
+behind the yielder sees the yielder as a body ahead and waits for it rather than backing off with it, so the queue
+retreats in short steps between waits, the 10 s hold runs out, pins flip, and the front pair meets again. A 20 s or
+30 s hold does not fix it. A fix would need queue-aware yielding (a follower behind a backing-off NPC backs off too),
+which is beyond this round.
+
+Exposure: test_needs_sims has five or more needs NPCs that use the kitchen passage (Tom, Grace, Marek, Sanjay, Rosa),
+so two against two can happen there, although Marek avoids everyone and turns back rather than enter, and the Sanjay
+and Rosa pair set off one after the other, not together. The three final games had no head-on stall of any kind; the pre-fix jams (6093: four NPCs and the
+parked player) were not broken down by walking direction, so whether any was two against two is not known. m02_ransomed_trust
+has three needs NPCs, so its needs walks alone cannot make two against two; sis01_healthcare has none.
+
+### Row 6 causes (6116, 6117)
+
+Both failed for reasons outside the yield code; the driver part is fixed in ade76b7fe.
+
+- 6117: the driver set Sanjay's social need to 35 straight after the rota read, while Grace was drinking at the
+  cooler and Marek (who avoids everyone) waited. Sanjay went to chat with Grace; his `npc_use_started` armed Rosa's
+  coupled cooler break, hers re-armed his, and the pair held the cooler from t 811 to 1187. Marek's first walk then
+  timed out in kitchen-lane traffic (the 20 s minimum needs-walk deadline), and Sanjay's avoid armed `outcast_pending`
+  only at t 1523, after the row's 180 s wait had ended. The scenario already raises Sanjay's social need when Marek
+  leaves for the cooler (his `npc_left_post:marek` mapping), so the driver's bump was never needed. ade76b7fe drops it
+  and records only the level.
+- 6116: the same early bump and cooler hold, plus the player's park walked into the lane between Tom (-33, 84) and
+  Grace (3, 84); its NPC-avoiding search found nothing (path length 0) twice, and the player stood at (-30, 87) for the
+  whole wait. Sanjay (t 990 to 1038) and then Marek (thirst walk from t 987, timed out at 1075 at (4, 84)) could not get
+  past. ade76b7fe makes `parkByCooler` wait up to 20 s for the lane (x -70..48, y 64..108) to clear before each of up
+  to four tries (the aim, then a tile west, north, south and east of it), and walks a player still in the lane back to
+  where it started.
+
+### Main code written up, not fixed
+
+- **Sanjay and Rosa cooler coupling** (test_needs_sims scenario.json.erb, Sanjay's mapping near line 734 and Rosa's
+  near line 965, 30 s cooldowns each): whoever starts using the cooler first sets the other's social need, and each
+  start re-arms the other, so the pair can hold the capacity-2 cooler for minutes. Any NPC that avoids '*' (Marek) is
+  shut out for the whole time. A cap on the pair's repeats, or a longer cooldown than the use time, would break the
+  loop; this is scenario design and needs a decision on how the showcase should look.
+- **20 s needs-walk deadline** (npc-needs.js, the walk deadline's 20 s minimum near line 3370): a walk through the
+  one-body kitchen lane with traffic in it can take longer than 20 s once yields and back-offs run, and a timed-out
+  walk gives up the errand. A deadline that grows with the number of bodies met, or pauses while yielding, would fit
+  busy lanes better.
+
+### Suites
+
+On 9d400d750 (b5a337735 plus the lane test): bin/test-js 712 of 712 files pass (npc-local-avoidance 34 of 34);
+Rails, run alone afterwards, 2940 runs, 48173 assertions, 0 failures, 0 errors, 3 skips.
