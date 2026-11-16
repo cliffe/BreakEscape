@@ -647,7 +647,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "type": "coffee_station1", "id": "reception_coffee", "name": "Reception Coffee Station", "takeable": false,
           "offWhen": "wh_staff_upset",
           "observations": "A pod machine on the side table, a stack of paper cups beside it.",
-          "affordance": { "useSeconds": 19 }
+          "affordance": { "useSeconds": 19, "capacity": 2, "chatter": "coffee", "overhearRadius": 360 }
         },
         {
           "type": "laptop1", "id": "zainab_laptop", "name": "Zainab's Laptop", "takeable": false,
@@ -807,7 +807,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 <%# Office life (SLICE3_4.md): two WhiteHat staff by day, hidden at the night turn. Each has four hide
     mappings: the clone_call_done change (onceOnly), the plain room entries of reception and hallway
     (so a reload re-hides), and a first-frame one (previousRoom === null) for a reload in reception.
-    Placeholder ink, no spoken text. %>
+    Slice 5: short-form conversations and exchange knots in the ink. %>
         {
           "id": "zainab_hussain",
           "displayName": "Zainab Hussain",
@@ -819,12 +819,24 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "avatar": "assets/characters/zainab_hussain_headshot.png",
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_zainab_hussain.json",
           "currentKnot": "start",
+          "voice": { "name": "Achernar", "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.", "language": "en-GB" },
           "globalVarOnKO": "zainab_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": "zainab_laptop",
           "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 23, "_comment": "Slice 4: expectedAwayMs follows the start cell, the route and the use time: coffee 20.5 to 21.8 s (stays open), cooler about 24.2 s or more with its 18 s use (locks). 23 sits between them." } },
           "needsRooms": ["reception_lobby", "main_hallway"],
           "needsCompany": { "groups": ["wh_day_staff"] },
+<%# Slice 5 spoken lines (DIALOGUE_SAMPLE.md, clips 1 to 8 and 17 to 27). Exchanges are heard once; each gate keeps them to the afternoon with all three staff on their feet. %>
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Van's on a yellow line. Two minutes.", "Three sites today. This is my lunch.", "Milk's off again. Who buys the milk?", "Cardiff traffic's worse than Leeds."],
+            "cooler": ["Eight years in vans. I live on water.", "The cups have walked off again.", "Locked my screen. Old habit, that.", "Last site had no signal at all."]
+          },
+          "exchanges": [
+            { "with": "yusuf_demir", "knot": "ex_open_door", "requireGlobal": { "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } },
+            { "with": "yusuf_demir", "knot": "ex_tailgate", "requireGlobal": { "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } },
+            { "with": "yusuf_demir", "knot": "ex_client_sites", "requireGlobal": { "reception_badge_cloned": true, "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } }
+          ],
           "needs": {
             "caffeine": { "initial": 60, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
             "thirst": { "initial": 70, "decayPerMin": 3, "urgentAt": 30 }
@@ -833,7 +845,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "onceOnly": true, "setVisible": false },
             { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.clone_call_done === true", "setVisible": false },
             { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.clone_call_done === true", "setVisible": false },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false }
+            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "npc_caught_at_post:zainab_hussain", "cooldown": 30000, "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset && !globalVars.zainab_ko", "bark": "That's my laptop. Can I help you?" }
           ],
           "observations": "A WhiteHat analyst on a visitor-room sofa with a laptop on her knee."
         },
@@ -848,11 +861,18 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "avatar": "assets/characters/yusuf_demir_headshot.png",
           "storyPath": "scenarios/m03_ghost_in_the_machine/ink/m03_npc_yusuf_demir.json",
           "currentKnot": "start",
+          "voice": { "name": "Alnilam", "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.", "language": "en-GB" },
           "globalVarOnKO": "yusuf_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": { "room": "reception_lobby", "x": 3.3, "y": 8.75 },
           "needsRooms": ["reception_lobby", "main_hallway"],
           "needsCompany": { "groups": ["wh_day_staff"] },
+<%# Slice 5 spoken lines (DIALOGUE_SAMPLE.md, clips 9 to 16 and 48). His exchanges are owned by Zainab. %>
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Client's stuck on the M4. Again.", "Is there any proper coffee left?", "Strong, no sugar. Like my passwords.", "Report's due Friday. It's Thursday."],
+            "cooler": ["Back-to-back calls all morning.", "This cooler wants a service.", "Patching on a Thursday. Brave.", "Bluebirds won, I'm told."]
+          },
           "needs": {
             "caffeine": { "initial": 55, "decayPerMin": 5, "urgentAt": 35, "jitterPct": 10 },
             "thirst": { "initial": 75, "decayPerMin": 3, "urgentAt": 30 }
@@ -861,7 +881,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "onceOnly": true, "setVisible": false },
             { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.clone_call_done === true", "setVisible": false },
             { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.clone_call_done === true", "setVisible": false },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false }
+            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && globalVars.clone_call_done !== true && !globalVars.zainab_ko && !globalVars.yusuf_ko", "onceOnly": true, "bark": "Zainab, ring someone. Now." }
           ],
           "observations": "A WhiteHat engineer in the club chair, waiting on a call."
         },
@@ -1532,7 +1553,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       "objects": [
         { "type": "water_cooler1", "id": "hallway_cooler", "name": "Water Cooler", "takeable": false,
           "offWhen": "wh_staff_upset",
-          "affordance": { "useSeconds": 18 },
+          "affordance": { "useSeconds": 18, "overhearRadius": 360 },
           "observations": "A water cooler by the wall, a stack of paper cones on top." }
       ],
       "npcs": []
@@ -2206,6 +2227,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "wh_staff_upset": false,
     "zainab_ko": false,
     "yusuf_ko": false,
+    "heard_ex_open_door": false,
+    "heard_ex_tailgate": false,
+    "heard_ex_client_sites": false,
     "afternoon_goodbye": ""
   }
 }
