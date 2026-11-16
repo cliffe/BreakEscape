@@ -7221,6 +7221,11 @@ def check_credentials(json_data)
       err.call("#{label} kind '#{kind}' is #{hint}.")
     end
 
+    # Label: the sign-in screen and desktop keep it on one line and cut it with an ellipsis.
+    if entry['label'].is_a?(String) && entry['label'].length > 32
+      warn.call("#{label} label is #{entry['label'].length} characters; over 32 it is cut with an ellipsis on a narrow screen. Shorten it.")
+    end
+
     # Account.
     npc = accounts_by_id[entry['account'].to_s]
     err.call("#{label} account '#{entry['account']}' is not an account holder.") unless npc

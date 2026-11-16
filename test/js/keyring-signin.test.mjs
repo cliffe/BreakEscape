@@ -63,7 +63,7 @@ const { openLoginSignIn, openRemoteSignIn, keyringForScreen, REMOTE_CAPTURES_WAI
 const { NetworkLinks } = await imp('systems/network-links.js');
 const { ApiClient: RealApiClient } = await imp('api-client.js');
 const text = await imp('utils/remote-host-text.js');
-const { credentialSessionLine, pcTaskbarModel, pcStartPanelHtml } = await imp('utils/pc-taskbar.js');
+const { credentialSessionLine, titleCredentialLabels, pcTaskbarModel, pcStartPanelHtml } = await imp('utils/pc-taskbar.js');
 
 const q = (sel) => document.querySelector(sel);
 const visible = (el) => !!el && el.style.display !== 'none' && !el.hidden;
@@ -782,7 +782,9 @@ test('8.1 the start panel names a credential session\'s saved connection under t
     assert.equal(credentialSessionLine(session), 'with the saved connection HB-FIN-02.rdp');
     assert.equal(credentialSessionLine({ ...session, via: 'password' }), null);
     assert.equal(credentialSessionLine({ ...session, kind: 'assist_invite' }), null);
-    assert.equal(credentialSessionLine({ ...session, label: '' }), null);
+    // R2 t3: an empty label uses the generic wording the sign-in screen shows
+    assert.equal(credentialSessionLine({ ...session, label: '' }), 'with the saved connection Saved connection');
+    assert.equal(credentialSessionLine({ ...session, label: '  ' }), 'with the saved connection Saved connection');
     const model = pcTaskbarModel({ pcData: { lockType: 'login', host: 'HB-FIN-02' }, session });
     assert.equal(model.account.credentialLine, 'with the saved connection HB-FIN-02.rdp');
     const html = pcStartPanelHtml(model);
@@ -872,4 +874,23 @@ test('pc-sessions: a credential 403 or no answer is an error carrying the server
     r = await pcSessions.signInWithCredential('lena_pc', 'k_rdp');
     assert.equal(r.ok, false);
     assert.equal(pcSessions.get('lena_pc'), null);
+});
+
+test('R2 m1: the cut-off label span carries the whole label as a DOM title, and the CSS ellipsis rule is present', () => {
+    const els = [{ textContent: '<b>A-very-long-label-that-will-be-cut.rdp</b>', title: '' }];
+    titleCredentialLabels({ querySelectorAll: (sel) => (sel === '.credential-label-nowrap' ? els : []) });
+    assert.equal(els[0].title, '<b>A-very-long-label-that-will-be-cut.rdp</b>');
+    titleCredentialLabels(null);
+    const css = readFileSync(join(here, '../../public/break_escape/css/pc-monitor.css'), 'utf8');
+    const rule = css.match(/\.credential-label-nowrap\s*\{([^}]*)\}/)[1];
+    for (const decl of ['white-space: nowrap', 'max-width: 100%', 'overflow: hidden', 'text-overflow: ellipsis']) {
+        assert.ok(rule.includes(decl), `missing ${decl}`);
+    }
+    const html = pcStartPanelHtml(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection', label: 'x'.repeat(50) } }));
+    assert.equal(html.includes('title='), false, 'the title is set through the DOM, not markup');
+});
+
+test('R2 t2: TextFileMinigame.init records the file as opened', () => {
+    const src = readFileSync(join(here, '../../public/break_escape/js/minigames/text-file/text-file-minigame.js'), 'utf8');
+    assert.match(src, /init\(\)\s*\{[\s\S]*?window\.keyring\?\.noteOpened\?\.\(this\.textFileData\?\.itemId\)/);
 });

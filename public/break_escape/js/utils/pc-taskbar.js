@@ -80,10 +80,18 @@ export function pcHostName(pcData, session = null) {
  */
 export function credentialSessionLine(session) {
     if (!session || session.via !== 'credential') return null;
-    if (session.kind === 'saved_connection' && typeof session.label === 'string' && session.label) {
-        return `with the saved connection ${session.label}`;
-    }
+    if (session.kind === 'saved_connection') return `with the saved connection ${credentialSessionLabel(session)}`;
     return null;
+}
+
+/** The label a credential session shows: its own, else the generic name the sign-in screen uses. */
+export function credentialSessionLabel(session) {
+    return typeof session?.label === 'string' && session.label.trim() ? session.label : 'Saved connection';
+}
+
+/** Full label as the tooltip of each cut-off label span. Set through the DOM, never as markup. */
+export function titleCredentialLabels(root) {
+    root?.querySelectorAll?.('.credential-label-nowrap').forEach((el) => { el.title = el.textContent; });
 }
 
 /**
@@ -93,7 +101,7 @@ export function credentialSessionLine(session) {
 export function credentialLineHtml(session) {
     const line = credentialSessionLine(session);
     if (!line) return '';
-    const label = session.label;
+    const label = credentialSessionLabel(session);
     const lead = line.slice(0, line.length - label.length);
     return `${escapeHtml(displayDashes(lead))}<span class="credential-label-nowrap">${escapeHtml(displayDashes(label))}</span>`;
 }
@@ -354,6 +362,7 @@ export function mountPcTaskbar(root, model, { windowTitle = '', takeable = false
     if (!root || !doc) return null;
     const holder = doc.createElement('div');
     holder.innerHTML = pcStartPanelHtml(model, shareIcon ? { shareIcon } : {}) + pcTaskbarHtml(model, { windowTitle, takeable });
+    titleCredentialLabels(holder);
     const panel = holder.querySelector('.pc-start-panel');
     const taskbar = holder.querySelector('.pc-taskbar');
     root.appendChild(panel);

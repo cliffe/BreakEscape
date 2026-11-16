@@ -10,7 +10,7 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
-import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
+import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
 
 
 
@@ -1065,6 +1065,7 @@ export class ContainerMinigame extends MinigameScene {
                 </div>
             </div>
         `;
+        titleCredentialLabels(this.gameContainer);
 
         if (!this.pcMonitor && this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
             const postit = document.createElement('div');
