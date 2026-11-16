@@ -122,3 +122,75 @@ fixed steps on (confirmed `fixedStep` true), 240 samples over 120 s, player left
 - The player moved 4 px in 2 minutes.
 
 Movement was normal on open floor. This map does not exercise M1 (detours round the standing NPC succeed).
+
+## R7 Outcomes
+
+### Fix summary (ba95f6403, npc-behavior.js and test/js/npc-local-avoidance.test.mjs)
+
+- **M1.** Blockers carry `walking` (patrol state, following a path) and body velocity. A yielder backs off a whole
+  step only from a blocker that is coming through; against a standing one it runs the one-update nudge and resets
+  the wait, so `_patrolStalled` and the stuck watch re-target instead of the NPC pacing. The yield hold counts the
+  held NPC only while it is coming.
+- **m1.** Before a step back, the player in the lane behind (42 px look-ahead) and a wall within 24 px are checked.
+  Either one pins the yielder: no step, re-wait.
+- **m2.** `_avoid` is cleared for any state but patrol, on the seated and chat early returns, on path complete,
+  stay arrival, `cancelMove`, `goToAndStay`, and both target choosers.
+- **m3.** The lane test also runs at a 16 ms step.
+
+### Step 1: fail on the old file
+
+Source restored from the a1f07151f copy of npc-behavior.js, test file unchanged, then put back (tree clean after).
+Old file: 36 pass, 5 fail. Failing on old: "R7 M1: a waypoint patrol against an NPC that never moves re-targets
+instead of pacing", "R7 m1: with the player behind...", "R7 m1: a wall right behind pins the yielder too",
+"R7 m2: arriving, facing the player, idling, a timeout and a new walk all drop the pin", "R7 m2: a stale pin no
+longer makes others yield". Passing on both (mock-only or behaviour already present): "R7 m3: the three-NPC lane
+also clears at a 16 ms step" and "R7 M1: a walker still backs off a whole step from an NPC walking towards it with
+no path" (the second guards against the fix over-reaching). On the fixed file all 41 pass.
+
+### Step 2: lane sim (NPC mocks given `currentState: 'patrol'`)
+
+| Case | Clear times (s) | Handovers |
+|---|---|---|
+| amy@-30, bob@10, cat@30 | 15.5, 17.8, 18.3 | 4 |
+| bob@-30, amy@10, cat@30 | 15.0, 33.2, 35.4 | 4 |
+| cat@-30, amy@10, bob@30 | 15.0, 20.6, 22.9 | 3 |
+| two against two (two orders) | never clears in 90 s | 116 and 119 |
+| one against three | never clears in 90 s | 165 |
+
+The three-NPC cases match R6 (15 to 35 s). Two against two still never clears, as on main (known limit above).
+
+### Step 3: merge
+
+`git merge --no-edit main` merged cleanly (7 files from main, none touched by this branch).
+
+### Step 4: suites (on the merge commit)
+
+- `bin/test-js`: Files 712 passed, 0 failed, 712 total.
+- Rails, run alone: 2940 runs, 48173 assertions, 0 failures, 0 errors, 3 skips.
+
+### Step 5: live proof on :3093 (keyless server, PID 2326807, killed; port confirmed closed)
+
+Headless, `setFPS(20)`, fixed steps on. The first pair of tours (games 6144, 6145) was cut off by a 280 s
+`timeout` I had put on the command (rows 1, 3 passed on both; 6145 also passed row 5), so it is not counted. Fresh
+games 6147 and 6148 ran to the end with `DOORWAY_LOG=1 BOARD_ROUTE=direct`.
+
+| Game | Row 1 | Row 3 | Row 5 | Row 6 | Head-on stalls (>= 8 s) | Stuck lines | Page errors |
+|---|---|---|---|---|---|---|---|
+| 6147 | ok (68 s) | ok (queued tom, marek; both turned back) | ok (26 s) | ok (94 s) | none | none | 0 |
+| 6148 | ok (68 s) | ok (same) | ok (26 s) | ok (65 s) | none | 1 (`return_stuck`, tom at 60, 92, tick 787) | 0 |
+
+test-npc-waypoints, game 6146, 120 s, 240 samples, `fixedStep` true, 0 page errors, 52 detours adopted:
+
+- Stuck lines: 3 (waypoint_slow at (99, 188), waypoint_rectangle at (215, 120), waypoint_slow at (105, 233)), each
+  recovery step 1 only. The last round's baseline was 2.
+- Back-and-forth: the longest still spell was 11 samples for any walking NPC. Back-off samples 0 to 17 and pinned
+  samples 0 to 9 per NPC out of 240, never two pinned together. A crude direction-reversal count (21 to 28 for the
+  triangle, zigzag, dwell and vertical routes) is what those routes do at their corners and line ends; no sustained
+  pacing was seen.
+- Waypoints reached: rectangle 17, triangle 37, dwell 17, zigzag 23, vertical line 20, fast 33, slow 33.
+- Not moving: waypoint_with_face (faces the player, by config) and waypoint_line_horizontal (never moved; no
+  `_avoid` state; same as the R7 review's live check, so the scenario quirk, not this change). Neither counted.
+- Player moved 6 px.
+
+One more stuck line than last round is within the noise of nine patrols in one room; it did not recur and no NPC
+stood still more than about 5.5 s.
