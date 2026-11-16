@@ -650,6 +650,19 @@ test('landing: a Connect target that ends another way clears the mark and lands 
     assert.equal(links.setConnectBack('x'), false, 'no trip, no mark');
 });
 
+test('landing: a refused sign-in screen closing resumes the view and clears the Connect-back mark (K4 R2 M1)', async () => {
+    await tripFromView();
+    links.views.set('jack_comms_port', viewEntry);
+    links.setConnectBack('lena_pc');
+    assert.equal(links.landed('signin', 'close', { pcId: 'door_box' }).landing, 'view');
+    await settle();
+    assert.equal(links.trip.connectBack, null);
+    // so a desktop opened from that view lands on the view, not the source desktop
+    assert.equal(links.landed('desktop', 'close', { pcId: 'door_box' }).landing, 'view');
+    await settle();
+    assert.deepEqual(desktops, []);
+});
+
 test('landing: a file opened from a remote desktop hands over to the reader', async () => {
     await tripFromView();
     assert.equal(links.landed('desktop', 'item').landing, 'handover');

@@ -3001,6 +3001,8 @@ module BreakEscape
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       elsif refusal == 'not_responding'
         return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal == 'no_session'
+        return render json: { error: "PC not reachable: #{container_id}", reason: 'no_session' }, status: :forbidden
       elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end

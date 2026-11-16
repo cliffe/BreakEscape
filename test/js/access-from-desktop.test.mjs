@@ -316,6 +316,36 @@ test('Connect from a foothold desktop on a trip marks the trip to come back here
     assert.deepEqual(marks, [], 'a from desktop marks nothing');
 });
 
+test('Connect-back returnTo acts only while the trip still holds the mark for this desktop, and clears it first (K4 R2 M1)', async () => {
+    const { d } = await connectSetup({ id: 'ops_rdp', name: 'Ops RDP', connect: true }, true);
+    const trip = { connectBack: null };
+    window.networkLinks = { trip, setConnectBack: (id) => { if (!window.networkLinks.trip) return false; window.networkLinks.trip.connectBack = id; return true; } };
+    d.remote = { footholdId: 'f1' };
+    window.MinigameFramework.currentMinigame = d;
+    let rt = null;
+    window.keyring = { connect: async (item, o) => { rt = o.returnTo; return { outcome: 'ok' }; }, connectEntryFor: () => null };
+    window.MinigameFramework.currentMinigame = null;
+    await d.connectFromDesktop({ id: 'ops_rdp', connect: true }, null);
+    assert.equal(trip.connectBack, 'ops_pc');
+    // relay target closed: the watcher reopens this desktop once, mark cleared
+    let before = started.length;
+    rt();
+    assert.equal(started.length, before + 1);
+    assert.equal(trip.connectBack, null, 'cleared before reopening');
+    // a late second call (the watcher kept listening) opens nothing
+    rt();
+    assert.equal(started.length, before + 1, 'mark spent: nothing reopened');
+    // the mark spent by a landing, trip still running: nothing reopened
+    trip.connectBack = null;
+    rt();
+    assert.equal(started.length, before + 1);
+    // trip over: nothing reopened
+    trip.connectBack = 'ops_pc';
+    window.networkLinks.trip = null;
+    rt();
+    assert.equal(started.length, before + 1, 'no trip: nothing reopened');
+});
+
 test('a failed take stops Connect', async () => {
     setup();
     await fromDesktopOpen();

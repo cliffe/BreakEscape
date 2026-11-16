@@ -1206,6 +1206,17 @@ test('an answer with endedPcIds hands them to linkDropped (K4), once', async () 
     assert.deepEqual(dropped, [['ops_pc', 'fin_pc']]);
 });
 
+test('endedPcIds only closes sessions held when the request first left (K4 R2 t3)', async () => {
+    const dropped = [];
+    const { runner } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true, endedPcIds: ['ops_pc', 'fin_pc'] } } });
+    runner.deps.linkDropped = ids => dropped.push(ids);
+    runner.deps.heldPcIds = () => ['ops_pc'];
+    runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.deepEqual(dropped, [['ops_pc']], 'fin_pc was opened after the request left');
+});
+
 test('an answer without endedPcIds drops nothing', async () => {
     const dropped = [];
     const { runner } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true } } });

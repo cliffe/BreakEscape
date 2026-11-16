@@ -595,6 +595,42 @@ module BreakEscape
       assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
     end
 
+    test 'a claim at a source with a session held is refused, so Switch user by claim never has from children to end' do
+      build
+      seed_sessions(
+        'sam_pc' => { 'id' => 'jake', 'via' => 'password' },
+        'lena_pc' => { 'id' => 'lena', 'via' => 'password', 'from' => 'sam_pc' }
+      )
+      body = login(pc_id: 'sam_pc', claim: 'owner', globals: { 'sam_pc_screen_locked' => false, 'sam_pc_owner_away' => true })
+      assert_response :unprocessable_entity
+      assert_equal Game::LOGIN_CLAIM_REFUSED, body['message']
+      assert_equal %w[lena_pc sam_pc], state['sessions'].keys.sort
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
+    end
+
+    test 'a folder under a bare ?from is refused and the from session is untouched' do
+      build
+      hold('lena_rdp_file')
+      lena_from_sam
+      get game_path('container/lena_docs?from')
+      assert_response :forbidden
+      assert_equal 'sam_pc', state['sessions']['lena_pc']['from']
+    end
+
+    test 'a from desktop with no session by that route says no_session; with the route it opens' do
+      build
+      hold('lena_rdp_file')
+      sam_at_keyboard
+      body = get_container('lena_pc', from: 'sam_pc')
+      assert_response :forbidden
+      assert_equal 'no_session', body['reason'], 'nothing held at lena_pc: the client drops its stale copy'
+      typed_from('lena_pc', 'lfox', NS::LENA_PASSWORD, 'sam_pc')
+      get_container('lena_pc', from: 'sam_pc')
+      assert_response :success
+      assert_equal 'no_session', get_container('lena_pc', from: 'jake_pc')['reason'], 'a session held by another route is not this one'
+      assert_response :forbidden
+    end
+
     test 'the bootstrap hands out no from session whose route hangs from a claimed pivot' do
       build
       seed_sessions(

@@ -119,6 +119,9 @@ const LANDINGS = {
     signin: {
         // Closed with no session at that PC: the view. With one (Switch user left with no
         // new sign-in): the desktop of the session still held.
+        // Note (K4 R2 m2): for a `from` target this reopens through the foothold, and that is only
+        // safe because openRemoteDesktop redirects a held `from` session (unlock-system.js); keep
+        // that redirect.
         close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : { resume: true }),
         handover: () => null
     },
@@ -772,6 +775,8 @@ export class NetworkLinks {
             this.leave('foothold_gone');
             return false;
         }
+        // A view that reopens means Connect's screens are done: the mark is spent (K4 R2 M1)
+        trip.connectBack = null;
         this._showView(trip, message);
         return true;
     }
@@ -819,6 +824,11 @@ export class NetworkLinks {
      * no_session, unreachable, link_dropped, displaced, foothold_gone). `detail` may name
      * { pcId, host }. Looks the pair up in the landing table of 4.3. Resolves to the
      * landing taken, for tests.
+     *
+     * The Connect-back mark (setConnectBack) survives a desktop ending only for the four reasons
+     * that hand the player on to another screen (handover, item, switch, share); any other
+     * desktop ending clears it, a close spends it by returning to the marked desktop, and a view
+     * reopening (resume) clears it too.
      */
     landed(screen, reason = 'close', detail = {}) {
         if (!this.trip) return { landing: 'none' };

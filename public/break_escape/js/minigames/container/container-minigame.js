@@ -1700,13 +1700,22 @@ export class ContainerMinigame extends MinigameScene {
         }
         const from = this.sourcePcId;
         const desktop = this.desktopLockable();
+        const marked = this.remote && !!from && !!window.networkLinks?.trip;
         const returnTo = () => {
             if (window.MinigameFramework?.currentMinigame) return;
+            // With the Connect-back mark set this only acts while the trip still holds it for this
+            // desktop: a landing that spent it (or a trip that ended) already did the reopening,
+            // so a late call from the screen watcher does nothing (K4 R2 M1)
+            if (marked) {
+                const nl = window.networkLinks;
+                if (!nl?.trip || nl.trip.connectBack !== from) return;
+                nl.setConnectBack(null);
+            }
             if (desktop && typeof window.startContainerMinigame === 'function') window.startContainerMinigame(desktop, null, false, true);
         };
         this.exitReason = 'handover';
         // A foothold desktop on a running trip: the target's X comes back here, not to the view
-        const marked = this.remote && !!from && !!window.networkLinks?.setConnectBack?.(from);
+        if (marked) window.networkLinks.setConnectBack(from);
         let r;
         try {
             r = await window.keyring.connect({ scenarioData: { id: item.id, name: item.name } }, { from, returnTo });

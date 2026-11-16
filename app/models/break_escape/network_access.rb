@@ -1013,10 +1013,13 @@ module BreakEscape
         return 'not_responding' if relay_session?(session) && host_service_off?(pc)
       elsif route && route[:from]
         # K4: not_responding only when the record carries this route, the route to the target
-        # holds and only the target itself is off; every other `from` refusal is unreachable
+        # holds and only the target itself is off; no_session when this route holds none; every other
+        # `from` refusal is unreachable
         session = access_sessions[pc['id'].to_s]
-        if credentials_declared? && session.is_a?(Hash) && session['from'].to_s == route[:from] &&
-           from_route_refusal(route[:from], pc).nil? && !remote_blocked?(pc) && host_service_off?(pc)
+        # No session by this route (none held, or held by another route): the client's copy is
+        # stale, so say so and it drops it (K4 R2 m4)
+        return 'no_session' unless session.is_a?(Hash) && session['from'].to_s == route[:from]
+        if credentials_declared? && from_route_refusal(route[:from], pc).nil? && !remote_blocked?(pc) && host_service_off?(pc)
           return 'not_responding'
         end
       elsif foothold_id.present?

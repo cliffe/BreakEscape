@@ -1292,3 +1292,16 @@ New `access-from-desktop.test.mjs` (14: fetch, 403 reasons, trip line, no self-r
 - m4 deferred. A re-sign-in at the keyboard in another tab raises no client event, and the server answers `unreachable` (route mismatch), which the client must keep for real unreachable hosts. A correct drop needs the server to answer a distinct reason for a route mismatch; low impact.
 - t1 done: the "or a dropped one" test now tests a dropped answer carrying `endedPcIds`; the `openedOrder` test asserts it is stable across another PC and rises on a new open.
 - t2 done: `sessionEndedMessage` moved to utils/remote-host-text.js (re-exported by network-links.js) and used by the container; no new static import, so no harness copy list changes.
+
+## K4 R2 fixes
+
+Branch `build/keyring-k4` (worktree p-k4), client and server together.
+
+- Client M1 fixed. The Connect-back returnTo (container `connectFromDesktop`) now acts only while the trip still holds `connectBack` for that desktop and clears it before reopening, so a late call from the keyring screen watcher does nothing (the source desktop no longer opens twice, and a relay target's close reopens it once with the mark spent). `networkLinks.resume()` clears the mark, so a refused sign-in screen that closes into the view leaves nothing behind. Two tests (access-from-desktop, network-links) fail on the old code and pass now.
+- Client m1 (lingering watcher with no trip and no mark) deferred: with no trip there is no mark to check, and a safe stop needs the watcher to know who owns the reopen (the trip's own returnTo or Connect's). The M1 fix removes the trip case; the no-trip case is low impact. Not logged to the backlog beyond this line.
+- Client m2: a comment at the `signin` landing row says the reopen through the foothold depends on `openRemoteDesktop` redirecting held `from` sessions. t1: the `landed` doc comment names the keep list and who clears the mark.
+- Server m1: the plan (section 9, Scope) states the accepted deviation: bare `?from` is 400 on the desktop, a well-formed out-of-scope `from` is 403, a folder under a bare `?from` is 403.
+- Server t1: test added for a folder under a bare `?from` (403, record untouched).
+- Server t2: a claim cannot reach Switch user with onward children, because a claim is refused while any session is held at the keyboard (`session_held_at_keyboard?`) and a relay is never a `from` source. The test pins that refusal and the untouched `from` child. Switch user by password and credential stays covered by the existing tests.
+- Server t3 (client guard): the workaround runner snapshots the held PC ids when a job's first request leaves (`heldPcIds`), and an answer's `endedPcIds` closes only those, so a resent answer cannot close a desktop opened since. Test added.
+- m4 done (server only): `desktop_refusal`'s `from` branch answers `no_session` when no session is held at the PC by that route, and the controller sends reason `no_session`; the client already drops its copy on that reason. Test: no session, then another route, then the held route opens.
