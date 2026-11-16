@@ -54,10 +54,11 @@ test('sprite-variant computers (pc3, pc10, pc_desktop) count as PCs; non-compute
     assert.equal(isPcData({ id: 'x', type: 'pc10', lockType: 'login', headless: true }), false);
 });
 
-test('the world menu, the far-object line and the HUD label all go through it', () => {
+test('the world menu and the HUD label go through it (the far-object menu line is gone: D22/D27)', () => {
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(game, /const detail = worldObservations\(data, resolveObjectField\(data, 'observations'/);
-    assert.match(game, /const obs = worldObservations\(data, resolveObjectField\(data, 'observations'/);
+    // D27: no "walk over and use it" entry; an out-of-reach thing under the tap is walked to, never listed
+    assert.doesNotMatch(game, /function farObjectCandidate|Walk over and use it/);
     const label = readFileSync(join(js, 'ui/info-label.js'), 'utf8');
     assert.match(label, /worldObservations\(obj\.scenarioData, text, window\.pcSessions\)/);
 });
