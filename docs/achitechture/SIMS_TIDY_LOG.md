@@ -516,3 +516,15 @@ SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
   reaching the mapping) on main. Check the mapping cooldown and where npc-manager matches object_interacted.
 - Not done: R2 Outcomes section in SIMS_TIDY_REVIEW_R2.md.
 - Servers on :3093 stopped; the temporary worktree removed.
+
+## Handover 8 (row 3 cause found and fixed; one tour re-run left)
+
+- Cause: Activity Board out of reach from the floor (see R2 Outcomes in SIMS_TIDY_REVIEW_R2.md). Fixed with
+  `wallMounted` on the board and a tour driver event-name fix, commit 0e4b26bce, plus the docs commit after it.
+- bin/test-js: Files 689 passed, 0 failed, 689 total (run after the board fix, before the driver helper).
+- Left: rerun `BOARD_ROUTE=direct node tools/playtest/needs-tour-regression.mjs <new game> 3093 <out>` and
+  check row 3 ok true; rerun bin/test-js for the final figure (new test needs-tour-rows added since). The Deadline
+  Memo is also back-wall and was left unmarked (its mapping sets caffeine 20); check it only if it proves unreadable.
+- Games this session (keyless :3093): 6024 (probe), 6032 (probe), 6035 (live read proof), 6036 (tour). Server and
+  tour stopped; temporary af5344f84 worktree removed.
+- Gotcha: __test.interact reports ok on any stray event; check object_interacted itself.

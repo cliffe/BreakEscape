@@ -152,3 +152,20 @@ not something this branch introduced.
 Keyless server on :3093 from the worktree (stopped). Games: 6001 (probe crashed at the row 3 hook, a
 script bug), 6005 (probe stopped at the context guard before row 1 finished). One earlier new-game call
 printed no id (probably 6000); not driven. Scripts in the session scratchpad `r2/`.
+
+## R2 Outcomes
+
+- m1 to m4 fixed in 22a9815ba (direct walk stall in wall time, seated chair body cells, three-glide sweep limit,
+  tour row 3 parks apart from turn-backs). `bin/test-js` after the row 3 fix: Files 689 passed, 0 failed, 689 total.
+- Row 3, cause found: the Activity Board's reach. The board sprite is at 210,13 (40 x 52, top-left origin) and
+  engine reach is measured to the sprite's top edge, so the lowest the player can stand (y 49 to 52) is 36 to 39 px
+  away against a 32 px range. A click only walked, so `object_interacted` never fired and the two mappings
+  (scenario.json.erb:588, :668, caffeine 10) never ran. The tour's read counted a stray event as success, so
+  `read: true` hid it. The same range failure shows at af5344f84, so it is not a regression from this branch;
+  earlier row 3 passes most likely came from natural coffee decay, not the board.
+- Fix (0e4b26bce): `"wallMounted": true` on the Activity Board. Test: test/js/needs-sims-board-reach.test.mjs
+  (2 of 4 fail without the mark). Live, fresh game 6035: real click read, `object_interacted` fired, caffeine 9, 9, 10.
+- Tour, BOARD_ROUTE=direct, game 6036: row 1 ok; row 3 queue formed (tom and marek queued, both turned back with
+  reason off) but the driver reported ok false: it compared the whole event name to `npc_turned_back` while the hook
+  records `npc_turned_back:<id>` (my m4 error). Fixed in needs-tour-rows.mjs with test/js/needs-tour-rows.test.mjs.
+  Row 5 ok. Row 3 ok:true with the fixed driver is not yet re-run.
