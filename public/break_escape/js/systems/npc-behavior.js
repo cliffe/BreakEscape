@@ -37,6 +37,7 @@ const FACE_SIGHT_MS = 150;
 export const NPC_STUCK_MS = 4000;
 export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
 const NPC_STUCK_GAP_MS = 500;
+const SETTLE_GRACE_MS = 600;       // after a settle ends, contact may not start another for this long
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
 const NPC_NUDGE_OWN_CELL_PX = 6;    // half an 8 px grid cell's diagonal: the nearest walkable centre is the body's own cell
 const NPC_NUDGE_BODY_PX = 14;       // a needs nudge keeps this far from another moving body's centre
@@ -1196,11 +1197,22 @@ export class NPCBehavior {
             this.settleEndTime = time + this.settleDuration;
         }
 
+        // The settle grace is stamped and read on clockNow() (npc-sprites settleGraceRunning), so a
+        // stamp from another clock must not outlive one grace: it would switch off settling and
+        // avoidance for this walker. Pull it back like settleEndTime.
+        if (this._settleGraceUntil) {
+            const graceNow = this.clockNow();
+            if (this._settleGraceUntil - graceNow > SETTLE_GRACE_MS) this._settleGraceUntil = graceNow + SETTLE_GRACE_MS;
+        }
+
         // If settling after collision, pause patrol briefly to let physics settle
         if (this.isSettling) {
             if (time >= this.settleEndTime) {
                 // Settling complete, resume patrol
                 this.isSettling = false;
+                // A walker still touching a body that will not move away would re-settle on the
+                // next overlap callback, before its velocity ever moved it: the grace lets it walk.
+                this._settleGraceUntil = this.clockNow() + SETTLE_GRACE_MS;
                 console.log(`✅ [${this.npcId}] Finished settling, resuming patrol`);
             } else {
                 // Still settling - don't move, just idle
@@ -3211,10 +3223,14 @@ export class NPCBehavior {
      */
     triggerSettling(time) {
         if (!this.isSettling) {
+            // Just after a settle: no new one, so contact that outlasts the pause (a face_player
+            // NPC or the player standing against the walker) cannot hold it still for ever.
+            if (this._settleGraceUntil > time) return false;
             this.isSettling = true;
             this.settleEndTime = time + this.settleDuration;
             console.log(`⏸️ [${this.npcId}] Settling after collision for ${this.settleDuration}ms`);
         }
+        return true;
     }
 
     /**
