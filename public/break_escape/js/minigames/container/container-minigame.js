@@ -826,8 +826,12 @@ export class ContainerMinigame extends MinigameScene {
             links?.landed?.('share', reason, {});
             return;
         }
+        // The relay desktop itself closes to the world (K3c, 8.3). Its sourcePcId falls back to
+        // its own loginPcId, so without this its Close met the folder branch below and reopened
+        // the desktop, which reopened on every close (a loop).
+        if (this.relay) return;
         const session = this.sourcePcId ? window.pcSessions?.get?.(this.sourcePcId) : null;
-        if (session?.relay === true) {
+        if (session?.relay === true && !this.loginPcId) {
             // A folder opened from a relay desktop: closed, the relay desktop again (K3c)
             if (reason === 'close' && this.closeWholePc !== true && typeof window.openRelayDesktop === 'function') {
                 const pcId = this.sourcePcId;

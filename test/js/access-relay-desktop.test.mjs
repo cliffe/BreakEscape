@@ -225,10 +225,10 @@ test('a 403 on the relay desktop drops the session and closes to the world with 
     assert.ok(alerts.some(a => a[0] === 'Jake Mercer ended the remote assist.'));
 });
 
-test.skip('a folder under the relay desktop names relay=1, and its Close reopens the relay desktop', async () => {
+test('a folder under the relay desktop names relay=1, and its Close reopens the relay desktop', async () => {
     setup();
     await relayDesktopOpen();
-    const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents' }, sourcePcId: 'jake_pc' };
+    const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents', locked: false }, sourcePcId: 'jake_pc' };
     fetchAnswer = { status: 200, body: { contents: [] } };
     window.startContainerMinigame(folder, null, false, false, { sourcePcId: 'jake_pc' });
     await settle(6);
@@ -242,10 +242,10 @@ test.skip('a folder under the relay desktop names relay=1, and its Close reopens
     assert.ok(fetches.some(u => /\/container\/jake_pc\?relay=1$/.test(u)));
 });
 
-test.skip('a folder 403 under a relay drops it and closes with the ended line', async () => {
+test('a folder 403 under a relay drops it and closes with the ended line', async () => {
     setup();
     await sessions.signInWithCredential('jake_pc', 'jake_assist', { relay: true });
-    const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents' }, sourcePcId: 'jake_pc' };
+    const folder = { scenarioData: { id: 'jake_docs', type: 'folder', name: 'Documents', locked: false }, sourcePcId: 'jake_pc' };
     fetchAnswer = { status: 403, body: { error: 'PC not reachable: jake_pc', reason: 'unreachable' } };
     window.startContainerMinigame(folder, null, false, false, { sourcePcId: 'jake_pc' });
     await settle(6);
@@ -263,17 +263,17 @@ test('folderRouteQuery: relay=1 for a relay, foothold= for a remote session, not
     assert.equal(folderRouteQuery(null, fake({ relay: true })), '');
 });
 
-test.skip('a folder under a foothold session names foothold=; one at the keyboard names no route (K2 m4)', async () => {
+test('a folder under a foothold session names foothold=; one at the keyboard names no route (K2 m4)', async () => {
     setup();
     sessions.sessions.set('lena_pc', { npcId: 'lena', username: 'lfox', via: 'password', remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02' });
     fetchAnswer = { status: 200, body: { contents: [] } };
-    window.startContainerMinigame({ scenarioData: { id: 'lena_docs', type: 'folder', name: 'Docs' }, sourcePcId: 'lena_pc' }, null, false, false, { sourcePcId: 'lena_pc' });
+    window.startContainerMinigame({ scenarioData: { id: 'lena_docs', type: 'folder', name: 'Docs', locked: false }, sourcePcId: 'lena_pc' }, null, false, false, { sourcePcId: 'lena_pc' });
     await settle(6);
     assert.ok(fetches.some(u => /\/container\/lena_docs\?foothold=jack_comms_port$/.test(u)), `fetched ${fetches.join(', ')}`);
     window.MinigameFramework.endMinigame(false, null);
     fetches.length = 0;
     sessions.sessions.set('lena_pc', { npcId: 'lena', username: 'lfox', via: 'password', remote: false, footholdId: null, host: null });
-    window.startContainerMinigame({ scenarioData: { id: 'lena_docs', type: 'folder', name: 'Docs' }, sourcePcId: 'lena_pc' }, null, false, false, { sourcePcId: 'lena_pc' });
+    window.startContainerMinigame({ scenarioData: { id: 'lena_docs', type: 'folder', name: 'Docs', locked: false }, sourcePcId: 'lena_pc' }, null, false, false, { sourcePcId: 'lena_pc' });
     await settle(6);
     assert.ok(fetches.some(u => /\/container\/lena_docs$/.test(u)), `fetched ${fetches.join(', ')}`);
 });
@@ -298,7 +298,7 @@ test('at the holder\'s keyboard the relay is no session: interactLoginPc and ope
     assert.equal(sessions.isRelay('jake_pc'), true, 'the relay is still held');
 });
 
-test.skip('re-entry is by Connect: openRelayDesktop reaches the held relay again after a close', async () => {
+test('re-entry is by Connect: openRelayDesktop reaches the held relay again after a close', async () => {
     setup();
     await relayDesktopOpen();
     current().complete(false);
@@ -307,4 +307,15 @@ test.skip('re-entry is by Connect: openRelayDesktop reaches the held relay again
     assert.equal(openRelayDesktop('jake_pc'), true);
     await settle();
     assert.ok(current()?.relay);
+});
+
+test('loop guard: closing the relay desktop itself reopens nothing (its sourcePcId is its own PC)', async () => {
+    setup();
+    await relayDesktopOpen();
+    const opened = started.length;
+    current().complete(false);
+    await settle(8);
+    assert.equal(current(), null, 'closed to the world');
+    assert.equal(started.length, opened, 'no desktop reopened');
+    assert.equal(fetches.filter(u => /jake_pc/.test(u)).length, 1, 'one desktop fetch only');
 });
