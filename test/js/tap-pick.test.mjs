@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
+import { tapPickList, seatsGiveWay, pixelHits, soleHit, overlapStandPoint, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
 import { withoutChairsIfOthers, withoutLeavingNpcsIfObjects } from '../../public/break_escape/js/systems/interaction-reach.js';
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
@@ -17,36 +17,35 @@ const RANGE = 32;      // INTERACTION_RANGE
 // ── tapPickList on its own ──
 test('tapPickList: nothing far under the tap leaves the list as it was', () => {
     const list = [{ label: 'a' }, { label: 'b', underTap: true }];
-    assert.equal(tapPickList(list, [], () => ({})), list);
-    assert.equal(tapPickList(list, undefined, () => ({})), list);
-    assert.deepEqual(tapPickList(null, [], () => ({})), []);
+    assert.equal(tapPickList(list, []), list);
+    assert.equal(tapPickList(list, undefined), list);
+    assert.deepEqual(tapPickList(null, []), []);
 });
 
 test('tapPickList: a far NPC under the tap drops candidates only near it and joins no menu', () => {
     const near = { label: 'note' }, under = { label: 'memo', underTap: true };
-    assert.deepEqual(tapPickList([near], [], () => ({}), [{ id: 'sarah' }]), []);
-    assert.deepEqual(tapPickList([near, under], [], () => ({}), [{ id: 'sarah' }]).map(c => c.label), ['memo']);
-    assert.deepEqual(tapPickList([near], [], () => ({}), [null]), [near]);
+    assert.deepEqual(tapPickList([near], [], [{ id: 'sarah' }]), []);
+    assert.deepEqual(tapPickList([near, under], [], [{ id: 'sarah' }]).map(c => c.label), ['memo']);
+    assert.deepEqual(tapPickList([near], [], [null]), [near]);
 });
 
-test('tapPickList: a far object under the tap keeps only candidates under the tap, then adds it', () => {
+test('tapPickList: a far object under the tap keeps only candidates under the tap', () => {
     const near = { label: 'phone' }, under = { label: 'owner', underTap: true };
-    const out = tapPickList([near, under], [{ id: 'pc' }], (o) => ({ label: o.id, far: true }));
-    assert.deepEqual(out.map(c => c.label), ['owner', 'pc']);
-    assert.deepEqual(tapPickList([near], [{ id: 'pc' }], (o) => ({ label: o.id })), []);
+    const out = tapPickList([near, under], [{ id: 'pc' }]);
+    assert.deepEqual(out.map(c => c.label), ['owner'], 'no far entry (overlap plan D5)');
+    assert.deepEqual(tapPickList([near], [{ id: 'pc' }]), []);
 });
 
-test('tapPickList with the filters: a leaving owner gives way to the far PC under the same tap', () => {
+test('tapPickList with the filters: a leaving owner over a far PC stays in the list (the handler walks to the PC)', () => {
     const owner = { label: 'owner', underTap: true, leavingNpc: true };
-    const list = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(
-        tapPickList([owner], [{ id: 'pc' }], (o) => ({ label: o.id, isObject: true, underTap: true, far: true }))));
-    assert.deepEqual(list.map(c => c.label), ['pc']);
+    const list = withoutLeavingNpcsIfObjects(withoutChairsIfOthers(tapPickList([owner], [{ id: 'pc' }])));
+    assert.deepEqual(list.map(c => c.label), ['owner']);
 });
 
 test('tapPickList with the filters: an in-reach chair under the tap gives way to the far object', () => {
     const chair = { label: 'chair', underTap: true, isChair: true, isObject: true };
-    const list = withoutChairsIfOthers(tapPickList([chair], [{ id: 'stick' }], (o) => ({ label: o.id, isObject: true, far: true })));
-    assert.deepEqual(list.map(c => c.label), ['stick']);
+    assert.equal(seatsGiveWay([chair], [{ id: 'stick' }]), true);
+    assert.deepEqual(tapPickList([chair], [{ id: 'stick' }]), []);
 });
 
 // ── objectStandPoint: the walk pulled out of pointerdown ──
@@ -188,17 +187,16 @@ test('pending use: clear() drops it (any new tap)', () => {
 test('tapPickList: an in-reach NPC on her figure under the tap wins, far objects join no menu (M1)', () => {
     const sarah = { label: 'sarah', underTap: true, isNpc: true };
     const note = { label: 'note' };
-    assert.deepEqual(tapPickList([sarah, note], [{ id: 'directory' }], (o) => ({ label: o.id, far: true })).map(c => c.label), ['sarah']);
+    assert.deepEqual(tapPickList([sarah, note], [{ id: 'directory' }]).map(c => c.label), ['sarah']);
     // ...and with an in-reach object under the tap too, the in-reach menu stays, no far entry
     const pc = { label: 'pc', underTap: true, isObject: true };
-    assert.deepEqual(tapPickList([sarah, pc], [{ id: 'directory' }], (o) => ({ label: o.id })).map(c => c.label), ['sarah', 'pc']);
+    assert.deepEqual(tapPickList([sarah, pc], [{ id: 'directory' }]).map(c => c.label), ['sarah', 'pc']);
 });
 
-test('tapPickList: an in-reach hostile near the tap leaves the list as gathered (M1)', () => {
+test('tapPickList: a hostile near the tap is dropped (overlap plan D12)', () => {
     const thug = { label: 'thug', isNpc: true, hostile: true };   // not even on his figure
-    const list = [thug];
-    assert.equal(tapPickList(list, [{ id: 'pc' }], (o) => ({ label: o.id })), list);
-    assert.equal(tapPickList(list, [], () => ({}), [{ id: 'far_npc' }]), list);
+    assert.deepEqual(tapPickList([thug], [{ id: 'pc' }]), []);
+    assert.deepEqual(tapPickList([thug], [], [{ id: 'far_npc' }]), []);
 });
 
 // ── opaqueAt: on the figure, not just the frame ──
@@ -431,12 +429,12 @@ test('tapPickList: an in-reach object on its own pixels drops in-reach NPCs not 
     const covered = { label: 'sarah', isNpc: true, underTap: false };
     const onFigure = { label: 'sarah', isNpc: true, underTap: true };
     const chair = { label: 'chair', isObject: true, isChair: true, underTap: true, onObjectPixels: true };
-    assert.deepEqual(tapPickList([memo, covered], [], null), [memo]);
-    assert.deepEqual(tapPickList([memo, onFigure], [], null), [memo, onFigure]);
-    assert.deepEqual(tapPickList([chair, covered], [], null), [chair, covered], 'a chair is not pointed at');
-    assert.deepEqual(tapPickList([{ ...memo, onObjectPixels: false }, covered], [], null).length, 2, 'only near the memo');
+    assert.deepEqual(tapPickList([memo, covered], []), [memo]);
+    assert.deepEqual(tapPickList([memo, onFigure], []), [memo, onFigure]);
+    assert.deepEqual(tapPickList([chair, covered], []), [chair, covered], 'a chair is not pointed at');
+    assert.deepEqual(tapPickList([{ ...memo, onObjectPixels: false }, covered], []).length, 2, 'only near the memo');
     const thug = { label: 'thug', isNpc: true, hostile: true, underTap: false };
-    assert.deepEqual(tapPickList([memo, thug], [], null), [memo, thug], 'a hostile is left as gathered');
+    assert.deepEqual(tapPickList([memo, thug], []), [memo], 'a hostile is dropped');
 });
 
 test('npcYieldTarget: names the object she gives way to (R2 n5)', () => {
@@ -480,4 +478,177 @@ test('player.js and game.js: a far tap\'s walk passes { avoidNpcs } to every pla
     assert.match(player, /smoothWorldPathForPlayer\(cx, cy, path, true, playerLosOpts\)/);
     const game = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.match(game, /movePlayerToPoint\(target\.x, target\.y, \{ avoidNpcs: true \}\)/);
+});
+
+// ── Overlap plan: pixel hits, the sole hit, the overlap stand point (unit tests 1 to 15) ──
+// A sprite at (x, y), origin 0, whose opaque pixels are given by `shape(lx, ly)`
+const hs = (id, x, y, w, h, extra = {}) => ({ id, x, y, width: w, height: h, originX: 0, originY: 0, active: true,
+    visible: true, interactable: true, depth: 0, texture: { key: id }, frame: { name: 0, realWidth: w, realHeight: h }, ...extra });
+const SHAPES = new Map();
+const alphaOf = (lx, ly, key) => (SHAPES.get(key) ? (SHAPES.get(key)(lx, ly) ? 255 : 0) : 255);
+const strictAt = (tx, ty) => (s) => opaqueAt(s, tx, ty, alphaOf, { unreadable: false });
+const strictNear = (tx, ty) => (s) => opaqueNear(s, tx, ty, alphaOf, 2, { unreadable: false });
+const hitDeps = (tx, ty, extra = {}) => ({ onPixels: strictAt(tx, ty), npcOnFigure: strictNear(tx, ty), ...extra });
+// The printout: 16 x 16, a diamond with empty corners; the copier 35 x 46, opaque all over
+SHAPES.set('printout', (lx, ly) => Math.abs(lx - 7.5) + Math.abs(ly - 7.5) <= 8);
+SHAPES.set('npcA', (lx, ly) => lx >= 30 && lx < 50 && ly >= 22 && ly < 62);
+SHAPES.set('npcB', (lx, ly) => lx >= 30 && lx < 50 && ly >= 22 && ly < 62);
+const copier = () => hs('copier', 100, 100, 35, 46, { depth: 10 });
+const printout = () => hs('printout', 110, 100, 16, 16, { depth: 11 });
+
+test('overlap 1: two objects on their pixels are both hits, topmost first', () => {
+    const { allHits, menuHits } = pixelHits({ objectsUnderTap: [copier(), printout()] }, hitDeps(118, 108));
+    assert.deepEqual(allHits.map(h => h.id), ['printout', 'copier']);
+    assert.deepEqual(menuHits.map(h => h.id), ['printout', 'copier']);
+});
+
+test('overlap 2: the printout\'s transparent corner leaves only the copier as a hit', () => {
+    const { allHits } = pixelHits({ objectsUnderTap: [printout(), copier()] }, hitDeps(110.5, 100.5));
+    assert.deepEqual(allHits.map(h => h.id), ['copier']);
+});
+
+test('overlap 3: hidden, inactive, alpha 0 and other-room objects drop; seats are hits but not menu hits', () => {
+    const tap = hitDeps(118, 108, { sameRoom: (o) => o.room !== 'other', isSeat: (o) => !!o.seat });
+    const gone = [hs('a', 100, 100, 35, 46, { visible: false }), hs('b', 100, 100, 35, 46, { active: false }),
+        hs('c', 100, 100, 35, 46, { alpha: 0 }), hs('d', 100, 100, 35, 46, { room: 'other' }),
+        hs('e', 100, 100, 35, 46, { interactable: false })];
+    assert.deepEqual(pixelHits({ objectsUnderTap: gone }, tap).allHits, []);
+    const chair = hs('chair', 100, 100, 35, 46, { seat: true, depth: 20 });
+    const r = pixelHits({ objectsUnderTap: [chair, copier()] }, tap);
+    assert.deepEqual(r.allHits.map(h => h.id), ['chair', 'copier']);
+    assert.deepEqual(r.menuHits.map(h => h.id), ['copier']);
+});
+
+test('overlap 4: NPCs count on their figures; KO, walking away and other-room ones drop', () => {
+    const a = hs('npcA', 60, 60, 80, 80, { _isNPC: true }), b = hs('npcB', 70, 60, 80, 80, { _isNPC: true });
+    assert.deepEqual(pixelHits({ npcsUnderTap: [a, b] }, hitDeps(105, 100)).allHits.map(h => h.id), ['npcA', 'npcB']);
+    // Tap at x 115: off A's figure (x 90-110, plus 2 px), on B's (x 100-120)
+    assert.deepEqual(pixelHits({ npcsUnderTap: [a, b] }, hitDeps(115, 100)).allHits.map(h => h.id), ['npcB']);
+    assert.deepEqual(pixelHits({ npcsUnderTap: [a, b] }, hitDeps(105, 100, { givesWay: (n) => n.id === 'npcA',
+        sameRoom: (n) => n.id !== 'npcB' })).allHits, []);
+});
+
+test('overlap 5: an NPC on her figure under an object opaque at the tap: both hits, either draw order', () => {
+    const n = hs('npcA', 60, 60, 80, 80, { _isNPC: true, depth: 50 });
+    for (const d of [40, 60]) {
+        const o = hs('box', 95, 95, 20, 20, { depth: d });
+        const ids = pixelHits({ objectsUnderTap: [o], npcsUnderTap: [n] }, hitDeps(100, 100)).allHits.map(h => h.id);
+        assert.deepEqual(ids, d > 50 ? ['box', 'npcA'] : ['npcA', 'box']);
+    }
+});
+
+test('overlap 6: an open door drops; a shut door counts on its pixels only', () => {
+    SHAPES.set('door', (lx) => lx >= 4);
+    const door = (open) => hs('door', 100, 100, 32, 32, { doorProperties: { open } });
+    assert.deepEqual(pixelHits({ doorUnderTap: door(true) }, hitDeps(110, 110)).allHits, []);
+    assert.equal(pixelHits({ doorUnderTap: door(false) }, hitDeps(110, 110)).allHits.length, 1);
+    assert.deepEqual(pixelHits({ doorUnderTap: door(false) }, hitDeps(101, 110)).allHits, []);
+});
+
+test('overlap 7: identical stacked copies within 2 px collapse; 3 px apart or different keep both', () => {
+    const key = (o) => `${o.name}|${o.texture.key}|${o.frame.name}|${o.obs}`;
+    const tap = hitDeps(110, 110, { stackKey: key });
+    const sheet = (id, x, extra = {}) => hs(id, x, 100, 30, 30, { name: 'Page', obs: 'A page.', texture: { key: 'page' }, ...extra });
+    assert.equal(pixelHits({ objectsUnderTap: [sheet('p1', 100, { depth: 2 }), sheet('p2', 102)] }, tap).allHits.length, 1);
+    assert.equal(pixelHits({ objectsUnderTap: [sheet('p1', 100, { depth: 2 }), sheet('p2', 102)] }, tap).allHits[0].id, 'p1');
+    assert.equal(pixelHits({ objectsUnderTap: [sheet('p1', 100), sheet('p2', 103)] }, tap).allHits.length, 2);
+    assert.equal(pixelHits({ objectsUnderTap: [sheet('p1', 100), sheet('p2', 101, { obs: 'Other.' })] }, tap).allHits.length, 2);
+    assert.equal(pixelHits({ objectsUnderTap: [sheet('p1', 100), sheet('p2', 101, { texture: { key: 'note' } })] }, tap).allHits.length, 2);
+});
+
+test('overlap 8: unreadable alpha is no hit in the strict form; the old form still answers true', () => {
+    const missing = hs('m', 100, 100, 20, 20, { texture: { key: '__MISSING' } });
+    const nullAlpha = hs('n', 100, 100, 20, 20);
+    const none = () => null;
+    assert.equal(opaqueAt(missing, 105, 105, alphaOf, { unreadable: false }), false);
+    assert.equal(opaqueAt(nullAlpha, 105, 105, none, { unreadable: false }), false);
+    assert.equal(opaqueAt(nullAlpha, 105, 105, none), true);
+    assert.equal(opaqueAt(missing, 105, 105, alphaOf), true);
+    assert.equal(opaqueNear(nullAlpha, 105, 105, none, 2, { unreadable: false }), false);
+    SHAPES.set('slop', (lx) => lx < 5);
+    const slop = hs('slop', 100, 100, 20, 20);
+    assert.equal(opaqueNear(slop, 106, 105, alphaOf, 2, { unreadable: false }), true, 'the slop is kept');
+});
+
+test('overlap 9: soleHit gives the one object, NPC or door; a seat or two hits give null', () => {
+    const o = { id: 'o' }, seat = { id: 's', seat: true };
+    const isSeat = (h) => !!h.seat;
+    assert.equal(soleHit({ allHits: [o] }, isSeat), o);
+    assert.equal(soleHit({ allHits: [{ _isNPC: true }] }, isSeat)._isNPC, true);
+    assert.equal(soleHit({ allHits: [seat] }, isSeat), null);
+    assert.equal(soleHit({ allHits: [o, seat] }, isSeat), null);
+    assert.equal(soleHit({ allHits: [] }, isSeat), null);
+});
+
+test('overlap 10: hostileHit is set when an NPC hit is hostile', () => {
+    const n = hs('npcA', 60, 60, 80, 80, { _isNPC: true });
+    assert.equal(pixelHits({ npcsUnderTap: [n] }, hitDeps(100, 100, { hostile: () => true })).hostileHit, n);
+    assert.equal(pixelHits({ npcsUnderTap: [n] }, hitDeps(100, 100)).hostileHit, null);
+});
+
+test('overlap 11: overlapStandPoint tries the click point, then each hit; skips walls and other rooms; null when none', () => {
+    const player = { x: 0, y: 0 };
+    const a = { id: 'a', x: 100, y: 0 }, b = { id: 'b', x: 110, y: 0 };
+    const near = (p, h, r = 20) => Math.hypot(p.x - h.x, p.y - h.y) <= r;
+    const base = { range: 32, inReachFrom: (p, h) => near(p, h) };
+    // The click point's stand point (16 px short of x 105: x 89) is 11 px from a, 21 from b: misses b
+    const p1 = overlapStandPoint([a, b], { x: 105, y: 0 }, player, { ...base, inReachFrom: (p, h) => near(p, h, 22) });
+    assert.deepEqual(p1, { x: 89, y: 0 });
+    // With 20 px it misses b; a's own stand point (x 84) misses b too; b's (x 94) reaches both
+    assert.deepEqual(overlapStandPoint([a, b], { x: 105, y: 0 }, player, base), { x: 94, y: 0 });
+    // A wall (or another room) refuses that point: objectStandPoint returns none usable there
+    const walled = { ...base, findCell: (x, y) => ({ x, y }), wallClear: (p) => p.x < 90 };
+    const p3 = overlapStandPoint([a, b], { x: 105, y: 0 }, player, walled);
+    assert.ok(p3 === null || p3.x < 90, JSON.stringify(p3));
+    assert.equal(overlapStandPoint([a, { id: 'c', x: 200, y: 0 }], { x: 150, y: 0 }, player, base), null);
+    // A door hit is judged with the door range
+    const seen = [];
+    overlapStandPoint([{ id: 'd', x: 300, y: 0, doorProperties: {} }], { x: 300, y: 0 }, player,
+        { ...base, doorRange: 64, inReachFrom: () => false, findCell: (x, y) => { seen.push(x); return { x, y }; } });
+    assert.ok(seen.includes(268), `door stand point aims half the door range short: ${seen.slice(0, 3)}`);
+});
+
+test('overlap 12: farUnderTap with every NPC under the tap finds the far one on her figure', () => {
+    const a = { id: 'a', on: false }, b = { id: 'b', on: true };
+    const deps = { inReach: () => false, npcOnFigure: (n) => n.on };
+    assert.deepEqual(farUnderTap({ npcsUnderTap: [a, b] }, deps).farNpcs, [b]);
+    assert.deepEqual(farUnderTap({ npcUnderTap: b }, deps).farNpcs, [b], 'the single form still works');
+    assert.deepEqual(farUnderTap({ npcUnderTap: a }, deps).farNpcs, []);
+});
+
+test('overlap 13: tapPickList keeps an in-reach NPC and object under the tap; far things add no entry; hostiles drop', () => {
+    const sarah = { label: 'sarah', isNpc: true, underTap: true };
+    const log_ = { label: 'log', isObject: true, underTap: true, onObjectPixels: true };
+    const near = { label: 'phone', isObject: true };
+    assert.deepEqual(tapPickList([sarah, log_], []).map(c => c.label), ['sarah', 'log']);
+    assert.deepEqual(tapPickList([sarah, log_, near], [{ id: 'pc' }]).map(c => c.label), ['sarah', 'log']);
+    assert.deepEqual(tapPickList([sarah, { label: 'thug', isNpc: true, hostile: true, underTap: true }], []).map(c => c.label), ['sarah']);
+});
+
+test('overlap 14: seatsGiveWay needs an in-reach seat under the tap, nothing else under it, and a far object (R4 m6)', () => {
+    const chair = { label: 'chair', isChair: true, underTap: true };
+    const pc = { label: 'pc', isObject: true, underTap: true };
+    assert.equal(seatsGiveWay([chair], [{ id: 'stick' }]), true);
+    assert.equal(seatsGiveWay([chair, pc], [{ id: 'stick' }]), false);
+    assert.equal(seatsGiveWay([chair], []), false);
+    assert.equal(seatsGiveWay([], [{ id: 'stick' }]), false, 'an empty in-reach set does not give way');
+    assert.equal(seatsGiveWay([{ ...chair, underTap: false }], [{ id: 'stick' }]), false);
+});
+
+test('overlap 15: createPendingTapUse with alive keeps a list target while one hit is there', () => {
+    const used = [];
+    const state = { moving: false, inReach: false };
+    const hits = [{ gone: true }, { gone: false }];
+    const p = createPendingTapUse({ inReach: () => state.inReach, isMoving: () => state.moving, use: (t) => used.push(t),
+        alive: (list) => list.some(h => !h.gone) });
+    p.arm(hits, 0);
+    p.update(100);
+    assert.equal(p.get()?.obj, hits, 'still pending: one hit is there');
+    hits[1].gone = true;
+    p.update(200);
+    assert.equal(p.get(), null);
+    // Without alive: today's object check (a hidden object drops it)
+    const q = createPendingTapUse({ inReach: () => false, isMoving: () => false, use: () => {} });
+    q.arm({ interactable: true, visible: false }, 0); q.update(100);
+    assert.equal(q.get(), null);
 });

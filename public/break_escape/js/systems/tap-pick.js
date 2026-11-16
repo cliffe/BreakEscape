@@ -33,9 +33,13 @@
  * @param {number} worldX
  * @param {number} worldY
  * @param {function(number, number, string, (string|number)): ?number} [alphaAt] - scene.textures.getPixelAlpha
+ * @param {object} [opts]
+ * @param {boolean} [opts.unreadable=true] - the answer when the alpha cannot be read (no test, a
+ *   stand-in texture, a null alpha). The overlap rule passes false: such a sprite is never a pixel
+ *   hit (overlap plan D3); every older caller keeps the bounds answer.
  * @returns {boolean}
  */
-export function opaqueAt(sprite, worldX, worldY, alphaAt) {
+export function opaqueAt(sprite, worldX, worldY, alphaAt, { unreadable = true } = {}) {
     if (!sprite) return false;
     const frame = sprite.frame || {};
     const w = frame.realWidth ?? sprite.width ?? 0;
@@ -56,7 +60,7 @@ export function opaqueAt(sprite, worldX, worldY, alphaAt) {
     const key = sprite.texture?.key;
     // No pixel test without one, or for Phaser's stand-in textures: __MISSING draws only a
     // green outline, so its "figure" would be the outline (code review R2 n4)
-    if (typeof alphaAt !== 'function' || !key || key === '__MISSING' || key === '__DEFAULT') return true;
+    if (typeof alphaAt !== 'function' || !key || key === '__MISSING' || key === '__DEFAULT') return unreadable;
     // Phaser mirrors a flipped frame about its centre: local lx shows texel w - lx (R2 n1)
     if (sprite.flipX) lx = Math.min(w - lx, w - 1);
     if (sprite.flipY) ly = Math.min(h - ly, h - 1);       // the same about the other axis (R3 n3)
@@ -71,7 +75,7 @@ export function opaqueAt(sprite, worldX, worldY, alphaAt) {
     }
     let a = null;
     try { a = alphaAt(fx, fy, key, frame.name); } catch (e) { a = null; }
-    if (a === null || a === undefined) return true;
+    if (a === null || a === undefined) return unreadable;
     return a > 0;
 }
 
@@ -82,13 +86,13 @@ export const NPC_FIGURE_SLOP_PX = 2;
  * NPC_FIGURE_SLOP_PX of it (a 5 x 5 square), so a touch that lands a pixel off her outline
  * still counts as her (code review R2 m5). Objects keep the exact test (opaqueAt).
  */
-export function opaqueNear(sprite, worldX, worldY, alphaAt, slop = NPC_FIGURE_SLOP_PX) {
-    if (opaqueAt(sprite, worldX, worldY, alphaAt)) return true;
+export function opaqueNear(sprite, worldX, worldY, alphaAt, slop = NPC_FIGURE_SLOP_PX, opts = {}) {
+    if (opaqueAt(sprite, worldX, worldY, alphaAt, opts)) return true;
     const sx = Math.abs(sprite?.scaleX ?? 1) || 1;
     const sy = Math.abs(sprite?.scaleY ?? 1) || 1;
     for (let dy = -slop; dy <= slop; dy++) {
         for (let dx = -slop; dx <= slop; dx++) {
-            if ((dx || dy) && opaqueAt(sprite, worldX + dx * sx, worldY + dy * sy, alphaAt)) return true;
+            if ((dx || dy) && opaqueAt(sprite, worldX + dx * sx, worldY + dy * sy, alphaAt, opts)) return true;
         }
     }
     return false;
@@ -100,6 +104,8 @@ export function opaqueNear(sprite, worldX, worldY, alphaAt, slop = NPC_FIGURE_SL
  * @param {object} args
  * @param {Array<object>} args.objectsUnderTap - interactable objects whose bounds hold the tap
  * @param {?object} args.npcUnderTap - the NPC sprite under the tap (findNPCAtPosition), or null
+ * @param {Array<object>} [args.npcsUnderTap] - every NPC whose frame holds the tap (findNPCsAtPosition);
+ *   when given it replaces npcUnderTap, so a far NPC on her figure behind a nearer frame counts
  * @param {object} deps
  * @param {function(object): boolean} deps.inReach
  * @param {function(object): boolean} [deps.isSeat]
@@ -108,51 +114,149 @@ export function opaqueNear(sprite, worldX, worldY, alphaAt, slop = NPC_FIGURE_SL
  * @param {function(object): boolean} [deps.givesWay] - the NPC is walking away (npcGivesWay)
  * @returns {{farObjects: Array<object>, farNpcs: Array<object>}}
  */
-export function farUnderTap({ objectsUnderTap = [], npcUnderTap = null } = {}, deps) {
+export function farUnderTap({ objectsUnderTap = [], npcUnderTap = null, npcsUnderTap = null } = {}, deps) {
     const sameRoom = deps.sameRoom || (() => true);
     const isSeat = deps.isSeat || (() => false);
     const onFigure = deps.npcOnFigure || (() => true);
     const givesWay = deps.givesWay || (() => false);
     const farObjects = (objectsUnderTap || []).filter(o => o && !deps.inReach(o) && !isSeat(o) && sameRoom(o));
-    const farNpcs = npcUnderTap && !deps.inReach(npcUnderTap) && sameRoom(npcUnderTap)
-        && onFigure(npcUnderTap) && !givesWay(npcUnderTap) ? [npcUnderTap] : [];
+    const npcs = Array.isArray(npcsUnderTap) ? npcsUnderTap : (npcUnderTap ? [npcUnderTap] : []);
+    const farNpcs = npcs.filter(n => n && !deps.inReach(n) && sameRoom(n) && onFigure(n) && !givesWay(n));
     return { farObjects, farNpcs };
 }
 
 /**
- * The pick list for a tap. When an out-of-reach object or NPC is under the tap (farUnderTap),
- * in-reach candidates that are only near the tap drop out; those under it stay. Far objects
- * join them as "walk there, then use" entries, unless an in-reach NPC is under the tap (on
- * her figure and not covered there by an object drawn above her, candidate.isNpc): she wins
- * and is talked to, with no menu (Sarah over the far m01 Building Directory, code review R1
- * M1, R2 M2). An in-reach object under the tap on its own pixels (candidate.onObjectPixels)
- * drops in-reach NPCs that are not under the tap, far or not (R2 m1), so a tap on a memo
- * drawn over her opens the memo. An in-reach hostile NPC near the tap wins
- * outright: the list is returned as gathered, so combat is as before (a jab, or the same
- * menu as before when two things in reach share the tap). A far NPC joins no menu: it is
- * walked to, never picked from a list. With nothing in reach under the tap the list is
- * empty and the NPC or object branch walks to the thing under the pointer.
+ * The pick list for a tap: in-reach things only (overlap plan D1 rule 2, D5). When an
+ * out-of-reach object or NPC is under the tap (farUnderTap), in-reach candidates that are only
+ * near the tap drop out and those under it stay; a far thing never joins the list (the user's
+ * rule: out of reach, just walk there). When the only in-reach things under the tap are seats
+ * and a far object is under it too, the list is empty and the object branch walks to the far
+ * object (seatsGiveWay, D6). A hostile NPC never joins a list (D12): the handler strikes or
+ * walks towards one under the tap before it gathers. An in-reach object under the tap on its own
+ * pixels (candidate.onObjectPixels) drops in-reach NPCs that are not under the tap (R2 m1).
+ * With nothing far under the tap the list is returned as kept (the same array when nothing
+ * was dropped).
  *
  * @param {Array<{underTap?:boolean,isNpc?:boolean,hostile?:boolean,isObject?:boolean,isChair?:boolean,onObjectPixels?:boolean}>} candidates - the in-reach pick list near the tap
  * @param {Array<object>} farObjects - out-of-reach interactable objects whose bounds hold the tap
- * @param {function(object): object} toCandidate - a pick-list entry for a far object (walk, then use)
- * @param {Array<object>} [farOthers] - other out-of-reach things under the tap (an NPC)
+ * @param {Array<object>} [farOthers] - other out-of-reach things under the tap (NPCs on their figure)
  * @returns {Array} the pick list
  */
-export function tapPickList(candidates, farObjects, toCandidate, farOthers = []) {
-    const list = Array.isArray(candidates) ? candidates : [];
+export function tapPickList(candidates, farObjects, farOthers = []) {
+    let list = Array.isArray(candidates) ? candidates : [];
     const far = Array.isArray(farObjects) ? farObjects : [];
     const others = Array.isArray(farOthers) ? farOthers.filter(Boolean) : [];
-    if (list.some(c => c && c.hostile)) return list;
+    // Filter only when there is one, so an unchanged list stays the same array (R4 m1)
+    if (list.some(c => c && c.hostile)) list = list.filter(c => !(c && c.hostile));
     // An in-reach object under the tap on its own pixels is what the player points at: an
     // NPC only near the tap, or covered by it there, leaves the list (code review R2 m1)
     const pointedAt = list.some(c => c && c.isObject && !c.isChair && c.onObjectPixels);
     const kept = pointedAt ? list.filter(c => !(c && c.isNpc && !c.underTap)) : list;
     if (!far.length && !others.length) return kept;
-    const under = kept.filter(c => c && c.underTap);
-    if (!under.length) return [];
-    if (under.some(c => c.isNpc)) return under;
-    return [...under, ...far.map(toCandidate)];
+    if (seatsGiveWay(kept, far)) return [];
+    return kept.filter(c => c && c.underTap);
+}
+
+/**
+ * Seats give way (overlap plan D6): true when a far non-seat object is under the tap and every
+ * in-reach thing under the tap is a seat or swivel prop, with at least one of them (R4 m6: an
+ * empty set must not reorder the object branch). The object branch then walks to the far object.
+ *
+ * @param {Array<{underTap?:boolean,isChair?:boolean}>} candidates - the in-reach list
+ * @param {Array<object>} farObjects - far non-seat objects under the tap (farUnderTap)
+ * @returns {boolean}
+ */
+export function seatsGiveWay(candidates, farObjects) {
+    if (!Array.isArray(farObjects) || !farObjects.length) return false;
+    const under = (Array.isArray(candidates) ? candidates : []).filter(c => c && c.underTap);
+    return under.length > 0 && under.every(c => c.isChair);
+}
+
+/**
+ * Every pixel hit under the tap (overlap plan section 3, D3): an object, NPC or shut door whose
+ * own opaque pixels hold the tap, whatever is drawn above it, in the player's room. Stacked
+ * copies collapse (D9). Topmost first (depth, then the order given: objects, NPCs, door).
+ *
+ * @param {object} under
+ * @param {Array<object>} [under.objectsUnderTap] - objects whose bounds hold the tap (every one)
+ * @param {Array<object>} [under.npcsUnderTap] - NPCs whose frame holds the tap (findNPCsAtPosition)
+ * @param {?object} [under.doorUnderTap] - the door whose bounds hold the tap
+ * @param {object} deps
+ * @param {function(object): boolean} deps.onPixels - strict opaqueAt (unreadable is no hit)
+ * @param {function(object): boolean} deps.npcOnFigure - strict opaqueNear
+ * @param {function(object): boolean} [deps.sameRoom]
+ * @param {function(object): boolean} [deps.isSeat] - seats and swivel props
+ * @param {function(object): boolean} [deps.givesWay] - an NPC walking away from the player
+ * @param {function(object): boolean} [deps.doorOpen]
+ * @param {function(object): boolean} [deps.hostile]
+ * @param {function(object): ?string} [deps.stackKey] - name, texture, frame and observations; null never collapses
+ * @returns {{allHits: Array<object>, menuHits: Array<object>, hostileHit: ?object}}
+ */
+export function pixelHits({ objectsUnderTap = [], npcsUnderTap = [], doorUnderTap = null } = {}, deps) {
+    const sameRoom = deps.sameRoom || (() => true);
+    const isSeat = deps.isSeat || (() => false);
+    const givesWay = deps.givesWay || (() => false);
+    const doorOpen = deps.doorOpen || ((d) => !!d?.doorProperties?.open);
+    const hostile = deps.hostile || (() => false);
+    const stackKey = deps.stackKey || (() => null);
+    const shown = (s) => s && !s.destroyed && s.active !== false && s.visible !== false && !(s.alpha <= 0);
+    const hits = [];
+    for (const o of objectsUnderTap || []) {
+        if (shown(o) && o.interactable === true && sameRoom(o) && deps.onPixels(o)) hits.push(o);
+    }
+    let hostileHit = null;
+    for (const n of npcsUnderTap || []) {
+        if (!shown(n) || !sameRoom(n) || !deps.npcOnFigure(n)) continue;
+        if (hostile(n)) { hostileHit = hostileHit || n; hits.push(n); continue; }
+        if (!givesWay(n)) hits.push(n);
+    }
+    if (doorUnderTap && shown(doorUnderTap) && !doorOpen(doorUnderTap) && deps.onPixels(doorUnderTap)) hits.push(doorUnderTap);
+    const order = hits.map((h, i) => [h, i]).sort((a, b) => ((b[0].depth || 0) - (a[0].depth || 0)) || (a[1] - b[1]));
+    const allHits = [];
+    for (const [h] of order) {
+        const k = stackKey(h);
+        const twin = k != null && allHits.some(t => stackKey(t) === k
+            && Math.abs((t.x || 0) - (h.x || 0)) <= 2 && Math.abs((t.y || 0) - (h.y || 0)) <= 2);
+        if (!twin) allHits.push(h);
+    }
+    return { allHits, menuHits: allHits.filter(h => !isSeat(h)), hostileHit };
+}
+
+/**
+ * The one thing a far click acts on (overlap plan D4): the only pixel hit, when it is not a seat
+ * or swivel prop; otherwise null and today's order runs.
+ */
+export function soleHit({ allHits } = {}, isSeat = () => false) {
+    return Array.isArray(allHits) && allHits.length === 1 && !isSeat(allHits[0]) ? allHits[0] : null;
+}
+
+/**
+ * Where to stand so every hit of a far overlap is in reach (overlap plan D2): the click point's
+ * stand point, then each hit's own (topmost first), each from objectStandPoint, keeping the first
+ * from which every hit passes deps.inReachFrom (the real reach with a 12 px margin for a walk
+ * that stops short). Null when none does.
+ *
+ * @param {Array<object>} hits - the menu hits, topmost first
+ * @param {{x:number,y:number}} click
+ * @param {object} player
+ * @param {object} deps - objectStandPoint's deps, plus:
+ * @param {function({x:number,y:number}, object): boolean} deps.inReachFrom
+ * @param {function(object): boolean} [deps.isDoor]
+ * @param {number} [deps.doorRange] - DOOR_INTERACTION_RANGE
+ * @returns {?{x:number,y:number}}
+ */
+export function overlapStandPoint(hits, click, player, deps) {
+    if (!Array.isArray(hits) || !hits.length) return null;
+    const isDoor = deps.isDoor || ((h) => !!h?.doorProperties);
+    const rangeFor = (t) => (isDoor(t) && deps.doorRange ? deps.doorRange : deps.range);
+    const clickRange = hits.every(isDoor) && deps.doorRange ? deps.doorRange : deps.range;
+    const targets = [[{ x: click.x, y: click.y }, clickRange], ...hits.map(h => [h, rangeFor(h)])];
+    for (const [t, range] of targets) {
+        let p = null;
+        try { p = objectStandPoint(t, player, { ...deps, range }); } catch (e) { p = null; }
+        if (p && hits.every(h => deps.inReachFrom(p, h))) return p;
+    }
+    return null;
 }
 
 /**
@@ -306,10 +410,13 @@ const PROGRESS_PX = 2;          // feet movement that counts as progress
  * @param {function(): ?{x:number,y:number}} [deps.feet] - the player's feet, for progress
  * @param {function(object): void} [deps.onBlocked] - the walk was blocked: say why (R2 m4)
  * @param {function(object): void} [deps.onStoppedShort] - the walk ended out of reach: say so (R3 m1)
+ * @param {function(object): boolean} [deps.alive] - the target is still there; replaces the object
+ *   check, so the target can be a list (the overlap walk's hits, overlap plan D2)
  */
 export function createPendingTapUse(deps) {
     let pending = null;
     const busy = deps.busy || deps.minigameOpen || (() => false);
+    const alive = deps.alive || ((o) => !!o && !o.destroyed && o.active !== false && o.visible !== false && !!o.interactable);
     const feetNow = () => { try { return deps.feet?.() || null; } catch (e) { return null; } };
     return {
         arm(obj, at = Date.now()) {
@@ -329,8 +436,7 @@ export function createPendingTapUse(deps) {
                 p.feet = f; p.progressAt = now;
             }
             const still = now - p.progressAt;
-            if (still > PENDING_TAP_USE_MS || !o || o.destroyed || o.active === false
-                || o.visible === false || !o.interactable) { pending = null; return; }
+            if (still > PENDING_TAP_USE_MS || !o || !alive(o)) { pending = null; return; }
             if (busy()) { pending = null; return; }
             if (deps.isMoving()) {
                 if (deps.feet && still > BLOCKED_MS) {
