@@ -1369,6 +1369,15 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
 }
 
 /**
+ * Is the walker inside the grace that follows a settle (see triggerSettling)?
+ * @private exported for unit tests
+ */
+export function settleGraceRunning(npcBehavior, npcSprite) {
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
+    return !npcBehavior.isSettling && npcBehavior._settleGraceUntil > gameTime;
+}
+
+/**
  * The settle guard (game 5347): a walker touching another NPC settles (stops, then re-plans)
  * unless that body is held (immovable: seated, or held still using something), which cannot
  * push and would re-collide every frame. Returns true when it settled.
@@ -1417,6 +1426,12 @@ export function handleNPCCollision(npcSprite, otherNPC) {
     // the contact (game 5347: Marek against seated Sanjay's corner for 70 s). Physics
     // separation slides the walker along it instead.
     const otherHeld = !settleOnContact(npcBehavior, npcSprite, otherNPC);
+
+    // Inside the grace after a settle the walker is meant to walk off the contact. The avoidance
+    // waypoint below clears its path and sets _needsPathRecalc, and updatePatrol returns for that
+    // before it moves the body, so redoing it on every overlap frame kept a walker against a
+    // face_player NPC still for ever (game 6330).
+    if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     // (face_player is also a valid patrolling state, just with player-facing behavior)
@@ -1604,6 +1619,9 @@ function handleNPCPlayerCollision(npcSprite, player) {
     if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
         npcSprite.body.setVelocity(0, 0);
     }
+
+    // The same grace as the NPC-to-NPC handler: no avoidance re-plan while the walker pulls away.
+    if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     const isValidPatrolState = npcBehavior.currentState === 'patrol' || npcBehavior.currentState === 'face_player';

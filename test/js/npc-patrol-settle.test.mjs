@@ -121,3 +121,33 @@ test('settle: contact after the grace has passed settles again, and a settle in 
         assert.equal(b.isSettling, true);
     });
 });
+
+// Live (game 6330, T100 follow-up): the avoidance-waypoint half of the collision handler ran on
+// every overlap frame, also inside the settle grace. It cleared the path and set _needsPathRecalc
+// each frame, and updatePatrol's recalc branch returns before it moves the body, so a walker
+// touching a face_player NPC re-planned for ever and never took a step.
+test('settle grace: contact inside the grace does not wipe the path and replan every frame', () => {
+    const { b, other } = setup();
+    b.roomId = 'r';
+    window.rooms = { r: { position: { x: 0, y: 0 } } };
+    window.pathfindingManager = { findNearestWalkableStartCell: (x, y) => ({ x, y }) };
+    let chooses = 0;
+    b.chooseWaypointTarget = function () { chooses++; this.patrolTarget = { x: 20, y: 174, dwellTime: 0 }; };
+    b._planMovePath = (pfm, sx, sy, tx, ty, cb) => cb([{ x: sx - 30, y: 174 }, { x: 20, y: 174 }]);
+    const t0 = 100000, c = b.sprite.body.center, vel = b._vel;
+    let lastUpdate = -Infinity, graceChooses = 0;
+    quiet(() => {
+        for (let t = t0; t < t0 + 6000; t += 1000 / 60) {
+            b.scene.time.now = t;
+            if (t - lastUpdate >= 50) { lastUpdate = t; b.updatePatrol(t, 50); }
+            const inGrace = b._settleGraceUntil > t;
+            const before = chooses;
+            if (Math.abs(c.x - other.x) < 20) handleNPCCollision(b.sprite, other);
+            if (inGrace) graceChooses += chooses - before;
+            c.x += vel.x / 60; b.sprite.x = c.x;
+        }
+    });
+    delete window.pathfindingManager;
+    assert.equal(graceChooses, 0, 'no avoidance re-plan while the settle grace is running');
+    assert.ok(174 - c.x > 8, `the walker pulled away from the contact (moved ${(174 - c.x).toFixed(1)} px)`);
+});
