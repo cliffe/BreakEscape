@@ -11,19 +11,25 @@
  *
  * What gets which pose (wantedPose, below):
  *   - a desk-phone call (s.call), or a colleague answering a ringing desk phone: phone
- *   - using an object that satisfies caffeine or thirst: drink; at a machine, use for the
- *     first USE_LEAD_MS of the use, then drink
- *   - using any other machine (copier, printer, microwave, vending, keypad, socket, boiler): use
+ *   - using an object that satisfies caffeine or thirst (or a social use of one, such as the
+ *     cooler chat): drink; at a machine the NPC faces, use for the first USE_LEAD_MS, then drink
+ *   - a hunger use at a machine (microwave, vending): use for USE_LEAD_MS while facing it, then none
+ *   - any other machine (copier, shredder, printer, keypad, socket): use while facing it
  *   - anything else (eating, visits, the own desk, social media, sitting): none
+ * `use` shows only while the NPC faces the object (within one compass step); turned to a
+ * colleague or the player it shows drink for a drink, otherwise nothing.
  * An object's `affordance.pose` ("drink", "use", "phone" or false) overrides the mapping.
- * Machines: `affordance.machine` (true or false) when given, else the object's type,
- * officeType or texture key matched against MACHINE_RE.
+ * Machines: `affordance.machine` (true or false) when given, else the resolved office preset
+ * (MACHINE_PRESETS), else the object's type, officeType or texture key matched against
+ * MACHINE_RE (names with table, cup or mug never match).
  * Per NPC: `"poses": false` on the NPC turns them off; a list such as ["phone"] allows only those.
+ * Scenario: `"officeVisuals": false` turns poses off with the rest of the office-life visuals.
  *
  * Seated wins: a seated NPC (seating.js, behavior._seat) keeps its sit frame. The pose holds
  * under a world speech bubble (chatter at the cooler, a phone call's lines) and drops for a
  * conversation with the player, hostility, a knock-out, a hit or attack
- * animation, or any movement; the idle comes back when it drops.
+ * animation, or any movement; the idle comes back when it drops. A pose starts only after the
+ * use has lasted SETTLE_MS, so an NPC about to sit never flashes one first.
  *
  * Breathing (D24, systems/sprite-breath.js): a pose frame breathes like a seated frame, the
  * head and shoulders sinking 1px on a 3.6 s cycle. Standing idles can breathe too, opt-in and
@@ -41,7 +47,17 @@ export const DRINK_NEEDS = Object.freeze(['caffeine', 'thirst']);
 /** ms of `use` at a drinks machine before the drink pose (needs clock). */
 export const USE_LEAD_MS = 3000;
 /** Object type, officeType or texture key that reads as a machine operated by hand. */
-export const MACHINE_RE = /(coffee|kettle|cooler|boiler|copier|printer|microwave|vending|keypad|socket)/i;
+export const MACHINE_RE = /(coffee|kettle|cooler|boiler|copier|printer|microwave|vending|keypad|socket|shredder)/i;
+/** Names that contain a machine word but are not machines (coffee_cups1, glass_coffee_table1). */
+export const NOT_MACHINE_RE = /(table|cup|mug)/i;
+/** Office presets (data/office-presets.json) operated by hand. */
+export const MACHINE_PRESETS = Object.freeze(['coffee', 'kettle', 'cooler', 'microwave', 'copier', 'shredder']);
+/** Needs whose machine use shows `use` only for the lead, then nothing (a microwave meal). */
+export const BRIEF_USE_NEEDS = Object.freeze(['hunger']);
+/** Real ms a pose must be wanted before it first shows (seating sits the NPC within a tick). */
+export const SETTLE_MS = 150;
+/** Behaviour directions, clockwise from right. */
+export const DIRECTIONS = Object.freeze(['right', 'down-right', 'down', 'down-left', 'left', 'up-left', 'up', 'up-right']);
 
 // face_player is no blocker: it only turns the NPC, and the pose follows b.direction
 const BLOCKING_STATES = new Set(['maintain_space', 'chase', 'flee']);
@@ -56,9 +72,40 @@ export function isMachine(obj) {
     if (!obj) return false;
     const aff = obj.affordance || {};
     if (typeof aff.machine === 'boolean') return aff.machine;
+    const preset = obj._sprite?._officeAffordance?.preset || obj.preset;
+    if (typeof preset === 'string') return MACHINE_PRESETS.includes(preset);
     const sd = obj._sprite?.scenarioData || obj.scenarioData || {};
     const names = [sd.type, sd.officeType, obj._sprite?.texture?.key, obj.type];
-    return names.some(n => typeof n === 'string' && MACHINE_RE.test(n));
+    return names.some(n => typeof n === 'string' && MACHINE_RE.test(n) && !NOT_MACHINE_RE.test(n));
+}
+
+/** The behaviour direction ('down', 'up-left', ...) from one point towards another. */
+export function directionTo(dx, dy) {
+    const ax = Math.abs(dx), ay = Math.abs(dy);
+    if (ax > ay * 2) return dx > 0 ? 'right' : 'left';
+    if (ay > ax * 2) return dy > 0 ? 'down' : 'up';
+    if (dy > 0) return dx > 0 ? 'down-right' : 'down-left';
+    return dx > 0 ? 'up-right' : 'up-left';
+}
+
+/** Is `direction` within one compass step of `towards`? */
+export function facesWithin(direction, towards) {
+    const a = DIRECTIONS.indexOf(direction), b = DIRECTIONS.indexOf(towards);
+    if (a < 0 || b < 0) return true;
+    const d = Math.abs(a - b) % 8;
+    return Math.min(d, 8 - d) <= 1;
+}
+
+/** Does a behaviour (sprite and direction) face this needs-world object? Unknown positions: yes. */
+export function facesObject(b, obj) {
+    const o = obj?._sprite;
+    const sp = b?.sprite;
+    if (!o || !sp || !Number.isFinite(o.x) || !Number.isFinite(sp.x)) return true;
+    const ox = Number.isFinite(o.getCenter?.()?.x) ? o.getCenter().x : o.x;
+    const oy = Number.isFinite(o.getCenter?.()?.y) ? o.getCenter().y : o.y;
+    const dx = ox - sp.x, dy = oy - sp.y;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return true;
+    return facesWithin(b.direction || 'down', directionTo(dx, dy));
 }
 
 /** Does this NPC's record allow this pose? (`poses`: false none; a list only those.) */
@@ -72,9 +119,9 @@ export function npcAllows(npcRecord, name) {
 /**
  * The pose a needs NPC wants now, or null. Pure: s is the needs state ({ job, call }),
  * obj the job's target (getObject), usingMs how long the current use has run (needs clock),
- * seated whether it sits, npc its scenario record.
+ * seated whether it sits, npc its scenario record, facing whether the NPC faces the object.
  */
-export function wantedPose({ s, obj = null, usingMs = 0, seated = false, npc = null }) {
+export function wantedPose({ s, obj = null, usingMs = 0, seated = false, npc = null, facing = true }) {
     if (!s || seated) return null;
     const pick = (name) => (name && POSE_NAMES.includes(name) && npcAllows(npc, name) ? name : null);
     const job = s.job;
@@ -87,11 +134,14 @@ export function wantedPose({ s, obj = null, usingMs = 0, seated = false, npc = n
     if (Object.prototype.hasOwnProperty.call(aff, 'pose')) return aff.pose ? pick(aff.pose) : null;
     const machine = isMachine(obj);
     const satisfies = asList(aff.satisfies);
-    if (DRINK_NEEDS.includes(job.need) && satisfies.includes(job.need)) {
-        if (machine && usingMs < USE_LEAD_MS) return pick('use') || pick('drink');
-        return pick('drink');
-    }
-    return machine ? pick('use') : null;
+    const lead = machine && facing && usingMs < USE_LEAD_MS;
+    const drinkNeed = DRINK_NEEDS.includes(job.need) && satisfies.includes(job.need);
+    // A social use of a drinks object (the cooler chat): a cup in hand
+    const socialDrink = job.need === 'social' && satisfies.some(n => DRINK_NEEDS.includes(n));
+    if (drinkNeed || socialDrink) return lead ? (pick('use') || pick('drink')) : pick('drink');
+    if (!machine || !facing) return null;
+    if (BRIEF_USE_NEEDS.includes(job.need)) return lead ? pick('use') : null;
+    return pick('use');
 }
 
 /** The animation key for a pose at a behaviour direction ('down', 'up-left', ...). */
@@ -120,10 +170,17 @@ export class NpcPoses {
     constructor(scene) {
         this.scene = scene;
         this.active = new Map();    // npcId -> pose anim key being shown
-        this.useStart = new Map();  // npcId -> { job, at } (needs clock ms when `using` was first seen)
+        this.useStart = new Map();  // npcId -> { job, at, last, obj } (needs clock; obj looked up once per job)
+        this.pending = new Map();   // npcId -> { name, since } (real ms a pose was first wanted)
         this.log = [];              // [{ t, npcId, pose, key }] pose on/off, newest last (tests, debug)
         this.breath = new Map();    // npcId -> { breath } (sprite-breath.js holder) while breathing
         this.idleBreathing = false; // debug: every standing idle breathes
+        this.settleMs = SETTLE_MS;
+    }
+
+    _now() {
+        const t = this.scene?.time?.now;
+        return Number.isFinite(t) ? t : Date.now();
     }
 
     /** Breathe this NPC's sprite this frame; `on` false ends it (crop and image removed). */
@@ -149,12 +206,21 @@ export class NpcPoses {
         return this.idleBreathing === true || npcRecord?.idleBreathing === true;
     }
 
-    _usingMs(id, s, clockMs) {
+    /**
+     * The use record for this needs state, or null when not `using`. The lead clock pauses
+     * while `paused` (a conversation freezes the use, so it must not run the lead out).
+     */
+    _useRec(id, s, clockMs, paused) {
         const job = s.job;
-        if (!job || job.phase !== 'using') { this.useStart.delete(id); return 0; }
+        if (!job || job.phase !== 'using') { this.useStart.delete(id); return null; }
         let rec = this.useStart.get(id);
-        if (!rec || rec.job !== job) { rec = { job, at: clockMs }; this.useStart.set(id, rec); }
-        return Math.max(0, clockMs - rec.at);
+        if (!rec || rec.job !== job) {
+            rec = { job, at: clockMs, last: clockMs, obj: undefined };
+            this.useStart.set(id, rec);
+        }
+        if (paused) rec.at += Math.max(0, clockMs - rec.last);
+        rec.last = clockMs;
+        return rec;
     }
 
     _note(npcId, pose, key) {
@@ -162,8 +228,18 @@ export class NpcPoses {
         if (this.log.length > 200) this.log.shift();
     }
 
+    /** The idle key the behaviour's playAnimation('idle', direction) computes. */
+    _idleKey(id, b) {
+        const dir = b.direction || 'down';
+        const direct = `npc-${id}-idle-${dir}`;
+        const anims = this.scene?.anims || b.scene?.anims;
+        if ((anims?.get?.(direct)?.frames?.length || 0) > 0 || !dir.includes('left')) return direct;
+        return `npc-${id}-idle-${dir.replace('left', 'right')}`;
+    }
+
     /** Drop a pose: back to the idle when the sprite still shows it. */
     release(id, b) {
+        this.pending.delete(id);
         const key = this.active.get(id);
         if (!key) return;
         this.active.delete(id);
@@ -182,39 +258,63 @@ export class NpcPoses {
         const sys = w.npcNeedsSystem;
         const mgr = w.npcBehaviorManager;
         if (!mgr) return;
+        const off = w.gameScenario?.officeVisuals === false;
         const clockMs = Number(sys?.clockMs) || 0;
+        const now = this._now();
         const seen = new Set();
-        const blockedFor = (id, b) => poseBlocked(b, {
+        const blockedFor = (id, b, inChat = !!sys?.world?.inChatWith?.(id)) => poseBlocked(b, {
             hostile: !!w.npcHostileSystem?.isNPCHostile?.(id),
             ko: !!w.npcHostileSystem?.isNPCKO?.(id),
-            inChat: !!sys?.world?.inChatWith?.(id)
+            inChat
         });
-        for (const [id, s] of (sys?.states || [])) {
+        for (const [id, s] of (off ? [] : (sys?.states || []))) {
             seen.add(id);
             const b = mgr.getBehavior?.(id);
-            if (!b) { this.active.delete(id); continue; }
-            const usingMs = this._usingMs(id, s, clockMs);
-            const blocked = blockedFor(id, b);
+            if (!b) { this.active.delete(id); this.pending.delete(id); continue; }
+            const inChat = !!sys?.world?.inChatWith?.(id);
+            const rec = this._useRec(id, s, clockMs, inChat);
+            const blocked = blockedFor(id, b, inChat);
             let key = null;
             let pose = null;
-            if (!blocked) {
-                const obj = s.job?.targetId ? sys.world?.getObject?.(s.job.targetId) : null;
-                const name = wantedPose({ s, obj, usingMs, seated: false, npc: w.npcManager?.getNPC?.(id) });
+            if (!blocked && (s.call || rec)) {
+                let obj = null;
+                if (rec && s.job?.targetId) {
+                    if (rec.obj === undefined) rec.obj = sys.world?.getObject?.(s.job.targetId) || null;
+                    obj = rec.obj;
+                }
+                const name = wantedPose({
+                    s, obj, usingMs: rec ? Math.max(0, clockMs - rec.at) : 0, seated: false,
+                    npc: w.npcManager?.getNPC?.(id), facing: facesObject(b, obj)
+                });
                 if (name) {
                     const k = poseAnimKey(id, name, b.direction || 'down');
                     if (hasPoseAnim(this.scene || b.scene, k)) { key = k; pose = name; }   // no frames: the idle stays
                 }
             }
             if (!key) { this.release(id, b); continue; }
+            // First pose of a use: wait SETTLE_MS so an NPC about to sit never flashes it
+            if (!this.active.has(id)) {
+                let p = this.pending.get(id);
+                if (!p) { p = { since: now }; this.pending.set(id, p); }
+                if (now - p.since < this.settleMs) continue;
+            }
+            this.pending.delete(id);
             if (b.sprite.anims?.currentAnim?.key !== key) {
                 b.sprite.play(key, true);
                 if (b.sprite.flipX) b.sprite.setFlipX?.(false);
-                b.lastAnimationKey = key;
             }
+            // The behaviour replays the idle whenever its key differs from lastAnimationKey, on
+            // every tick; leave it on the idle it would play so its tick is a no-op.
+            b.lastAnimationKey = this._idleKey(id, b);
             if (this.active.get(id) !== key) { this.active.set(id, key); this._note(id, pose, key); }
             this._breathe(id, b, true);
         }
-        for (const id of [...this.active.keys()]) if (!seen.has(id)) this.active.delete(id);
+        for (const id of [...this.active.keys()]) {
+            if (seen.has(id)) continue;
+            this.release(id, mgr.getBehavior?.(id));
+            this.active.delete(id);
+        }
+        for (const m of [this.useStart, this.pending]) for (const id of [...m.keys()]) if (!seen.has(id)) m.delete(id);
         // Standing idles (opt-in): any NPC with a behaviour, needs or not, showing its idle
         const behaviours = mgr.behaviors instanceof Map ? mgr.behaviors : null;
         for (const [id, h] of [...this.breath]) {

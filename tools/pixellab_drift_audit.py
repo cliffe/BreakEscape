@@ -84,8 +84,7 @@ def audit(key):
     rebuilt = frames(out / f"{key}.png", out / f"{key}.json")
     drift = {}
     for n in sorted(set(committed) | set(rebuilt)):
-        anim, rest = n.split("_", 1)
-        direction, fr = rest.rsplit("_frame_", 1)
+        anim, direction, fr = split_frame_name(n)
         if (ov / anim / direction / f"frame_{fr}.png").exists() or n not in committed:
             continue  # a fix or a new animation not yet built into the atlas: expected
         if n not in rebuilt:
@@ -97,14 +96,21 @@ def audit(key):
     return ("drifted" if drift else "clean"), drift, export_root(EXPORTS / key)
 
 
+def split_frame_name(n):
+    """'<anim>_<direction>_frame_<n>' -> (anim, direction, n). Parsed from the right: animation
+    names can hold underscores (pose_drink), directions (south-east) never do."""
+    stem, fr = n.rsplit("_frame_", 1)
+    anim, direction = stem.rsplit("_", 1)
+    return anim, direction, fr
+
+
 def adopt(key, drift, root):
     committed = frames(ASSETS / f"{key}.png", ASSETS / f"{key}.json")
     for n, px in drift.items():
         if not isinstance(px, int):
             print(f"  skip {n}: {px} (fix by hand)")
             continue
-        anim, rest = n.split("_", 1)
-        direction, fr = rest.rsplit("_frame_", 1)
+        anim, direction, fr = split_frame_name(n)
         ex = Image.open(root / "animations" / anim / direction / f"frame_{fr}.png").convert("RGBA")
         cell = committed[n]
 
