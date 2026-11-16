@@ -5261,6 +5261,11 @@ export function createEngineWorld() {
             };
         },
         inChatWith(id) {
+            // A chat that handed over to a child minigame (the NPC's inventory, the card reader) and
+            // will resume counts as open the whole time: pendingConversationReturn is set for the
+            // child's life and cleared only after the chat restarts (container-minigame.js)
+            const back = W().pendingConversationReturn;
+            if (back && back.npcId === id && (back.type || 'person-chat') === 'person-chat') return true;
             const mg = W().MinigameFramework?.currentMinigame;
             if (!mg) return false;
             // Base on the open minigame's own npcId: person-chat swaps

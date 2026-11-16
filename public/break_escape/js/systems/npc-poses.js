@@ -291,6 +291,7 @@ export class NpcPoses {
 
     /** Does this NPC's atlas have a phone pose, and may it use one? (seating: only then does a call stand it up.) */
     hasPhonePose(id) {
+        if (win().gameScenario?.officeVisuals === false) return false;   // the pose loop does nothing with the visuals off
         const npc = win().npcManager?.getNPC?.(id);
         const scene = this.scene;
         return npcAllows(npc, 'phone') && DIRECTIONS.some(d => hasPoseAnim(scene, poseAnimKey(id, 'phone', d)));

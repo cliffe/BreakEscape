@@ -879,6 +879,11 @@ export class NPCBehavior {
                 return;
             }
 
+            // The once-per-chat turn flag resets whenever no chat is open, even on a frame the seat
+            // code takes over (a seat move, a step off, seated)
+            const needsChat = !!(window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId));
+            if (!needsChat) this._chatFaced = false;
+
             // A seated NPC (scenario "seated", seating.js) holds its chair until a move,
             // hostility or a KO gets it up
             if (window.seating?.updateSeatedNPC?.(this, playerPos)) {
@@ -889,7 +894,7 @@ export class NPCBehavior {
             // Needs NPCs (npc-needs.js) hold still while the player talks to them,
             // even mid-walk: a goToAndStay move never pauses on its own. Scoped to
             // needs NPCs so every other NPC behaves as before.
-            if (window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId)) {
+            if (needsChat) {
                 this._avoid = null;
                 this.sprite.body.setVelocity(0, 0);
                 if (!this._chatFaced) { this._chatFaced = true; this.faceForChat(playerPos); }   // once per chat
@@ -900,7 +905,6 @@ export class NPCBehavior {
                 this.updateDepth();
                 return;
             }
-            this._chatFaced = false;
 
             // Update NPC's current room if they've moved to a different room
             // This allows hostile NPCs to chase across rooms with correct pathfinding

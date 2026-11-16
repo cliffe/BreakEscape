@@ -1714,3 +1714,31 @@ test('a chat that hangs up a call keeps the NPC standing; it sits only after the
         assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the re-seat starts after the chat');
     } finally { window.npcPoses = prev; rig.restore(); }
 });
+
+test('R2 m1: a chat that opens the NPC inventory keeps the NPC standing until the whole conversation closes', async () => {
+    const { createEngineWorld } = await import('../../public/break_escape/js/systems/npc-needs.js');
+    const rig = labSeatRig(235);
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    const prev = { p: window.npcPoses, mf: window.MinigameFramework, pend: window.pendingConversationReturn, ty: window.currentConversationMinigameType };
+    window.currentConversationMinigameType = null;   // person-chat clears it when it hands over
+    window.npcPoses = { hasPhonePose: () => true };
+    // The real world's inChatWith, not a stub: it is the thing that must see the child minigame
+    window.npcNeedsSystem.world.inChatWith = id => createEngineWorld().inChatWith(id);
+    class ContainerMinigame { constructor(npcId) { this.npcId = npcId; } }
+    try {
+        ns.call = null;
+        window.MinigameFramework = { currentMinigame: new ContainerMinigame('pierce') };
+        window.pendingConversationReturn = { npcId: 'pierce', type: 'person-chat' };
+        for (let i = 0; i < 5; i++) {
+            window.npcNeedsSystem.clockMs += 1000;
+            assert.equal(seating.updateSeatedNPC(rig.behavior, null), false, 'standing through the inventory step');
+        }
+        assert.equal(rig.behavior._seatMove ?? null, null, 'no seat move during the inventory step');
+        // The chat closes for good
+        window.MinigameFramework = { currentMinigame: null };
+        window.pendingConversationReturn = null;
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the re-seat starts after the whole conversation');
+    } finally {
+        window.npcPoses = prev.p; window.MinigameFramework = prev.mf; window.pendingConversationReturn = prev.pend; window.currentConversationMinigameType = prev.ty; rig.restore();
+    }
+});

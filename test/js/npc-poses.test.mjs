@@ -540,7 +540,13 @@ test('R1 M1/m5: the hold is released on chat start, pose end, interruption, host
     { const r = started(); globalThis.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: () => true }; r.poses.update();
       assert.equal(r.b._poseHoldFacing, false, 'knocked out'); globalThis.npcHostileSystem = null; }
     // Reload: the flag lives on the behaviour object and is never saved; a new behaviour and pose module start clear
-    { const fresh = rig({ poseKeys: keys }); assert.ok(!fresh.b._poseHoldFacing, 'a fresh behaviour holds nothing'); }
+    { const r = started(); assert.equal(r.b._poseHoldFacing, true);
+      const fresh = rig({ poseKeys: keys });   // a new behaviour and pose module, as after a reload
+      assert.equal(fresh.b._poseHoldFacing, undefined, 'a fresh behaviour holds nothing');
+      assert.equal(fresh.poses.holding?.size ?? 0, 0, 'a fresh pose module remembers no hold');
+      fresh.poses.update();   // and its first frame, with the same job running, starts the pose and the hold afresh
+      assert.equal(fresh.b._poseHoldFacing, true, 'the hold is rebuilt from the job, not carried over');
+      assert.notEqual(fresh.b, r.b); }
     // An NPC with no pose frames never gets the flag
     { const r = rig({ poseKeys: [] }); r.b.direction = 'up'; r.poses.update(); assert.ok(!r.b._poseHoldFacing, 'poseless'); }
 });
@@ -589,4 +595,73 @@ test('R1 M1: chat start turns a held NPC to the player (NPCBehavior.faceForChat)
     NPCBehavior.prototype.faceForChat.call(quiet, { x: 0, y: 50 });
     assert.equal(quiet.direction, 'up');
     assert.equal(quiet._poseHoldFacing, false, 'but the hold is still released');
+});
+
+test('R2 m4: hasPhonePose follows the frames, the poses list and officeVisuals', () => {
+    const phone = poseAnimKey('ana', 'phone', 'down');
+    {   // frames in one direction only: enough
+        const { poses } = rig({ poseKeys: [phone] });
+        assert.equal(poses.hasPhonePose('ana'), true, 'phone frames, no poses list');
+    }
+    {   const { poses } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+        assert.equal(poses.hasPhonePose('ana'), false, 'no phone frames');
+    }
+    {   const { poses } = rig({ poseKeys: [phone] });
+        globalThis.npcManager = { getNPC: () => ({ id: 'ana', poses: ['use', 'drink'] }) };
+        assert.equal(poses.hasPhonePose('ana'), false, 'a poses list without phone');
+        globalThis.npcManager = { getNPC: () => ({ id: 'ana', poses: ['phone'] }) };
+        assert.equal(poses.hasPhonePose('ana'), true, 'a poses list with phone');
+        globalThis.npcManager = { getNPC: () => ({ id: 'ana', poses: false }) };
+        assert.equal(poses.hasPhonePose('ana'), false, 'poses false');
+    }
+});
+
+test('R2 m3: hasPhonePose is false when officeVisuals is false', () => {
+    const { poses } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    assert.equal(poses.hasPhonePose('ana'), true, 'control: visuals on');
+    globalThis.gameScenario = { officeVisuals: false };
+    try { assert.equal(poses.hasPhonePose('ana'), false, 'visuals off: the pose never shows, so the call must not stand the NPC'); }
+    finally { globalThis.gameScenario = {}; }
+});
+
+// The NPCBehavior.update chat block, run on a bare object: only the parts under test are real
+async function chatRig() {
+    globalThis.window ||= globalThis;
+    const { NPCBehavior } = await import('../../public/break_escape/js/systems/npc-behavior.js');
+    const faced = [];
+    const sys = { has: () => true, world: { inChatWith: () => false } };
+    let seatBusy = false;
+    globalThis.npcNeedsSystem = sys;
+    window.seating = { updateSeatedNPC: () => seatBusy };
+    const b = {
+        npcId: 'ana', sprite: { destroyed: false, body: { enable: true, setVelocity() {} } }, isMoving: false, _avoid: null,
+        faceForChat(p) { faced.push(p); }, playAnimation() {}, updateDepth() {}, updateCurrentRoom() {}, checkAndEscapeWall() {},
+        checkAndHandleHomePush() {}, determineState: () => 'idle', executeState() {}, config: {}
+    };
+    const tick = () => NPCBehavior.prototype.update.call(b, 0, 16, { x: 0, y: 0 });
+    return { b, faced, sys, tick, seat: (v) => { seatBusy = v; } };
+}
+
+test('guard (R2 m4): update turns the NPC to the player once per chat, not every frame', async () => {
+    const { faced, sys, tick } = await chatRig();
+    sys.world.inChatWith = () => true;
+    tick(); tick(); tick();
+    assert.equal(faced.length, 1, 'once for the whole chat');
+    sys.world.inChatWith = () => false; tick();
+    sys.world.inChatWith = () => true; tick(); tick();
+    assert.equal(faced.length, 2, 'and once more for the next chat');
+});
+
+test('R2 m2: a chat opened while the seat code owns the frames still turns the NPC to the player', async () => {
+    const { b, faced, sys, tick, seat } = await chatRig();
+    // First chat: turned once, then it closes while Tom is mid seat move (the seat code owns every frame)
+    sys.world.inChatWith = () => true; tick();
+    assert.equal(faced.length, 1);
+    seat(true);
+    sys.world.inChatWith = () => false; tick(); tick();
+    assert.equal(b._chatFaced, false, 'the flag is reset during the seat move');
+    // A second chat opens as he steps off his chair: the frame is the seat code's, then the chat hold's
+    sys.world.inChatWith = () => true; tick();
+    seat(false); tick();
+    assert.equal(faced.length, 2, 'turned to the player for the second chat');
 });

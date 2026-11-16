@@ -2225,27 +2225,34 @@ export function returnToConversationAfterNPCInventory() {
     if (window.pendingConversationReturn) {
         const conversationState = window.pendingConversationReturn;
         
-        // Clear the pending return state
-        window.pendingConversationReturn = null;
-        
+        // Keep the pending return state until the chat has restarted, so the NPC (npc-needs
+        // inChatWith) never sees a gap between the inventory closing and the chat resuming
+
         console.log('Restoring conversation:', conversationState);
         
         // Restart the appropriate conversation minigame
-        if (window.MinigameFramework) {
+        if (!window.MinigameFramework) {
+            window.pendingConversationReturn = null;
+        } else if (!conversationState.resuming) {
+            conversationState.resuming = true;
             // Small delay to ensure container is fully closed
             setTimeout(() => {
-                if (conversationState.type === 'person-chat') {
-                    // Restart person-chat minigame
-                    window.MinigameFramework.startMinigame('person-chat', null, {
-                        npcId: conversationState.npcId,
-                        fromTag: true  // Flag to indicate we're resuming from a tag action
-                    });
-                } else if (conversationState.type === 'phone-chat') {
-                    // Restart phone-chat minigame
-                    window.MinigameFramework.startMinigame('phone-chat', null, {
-                        npcId: conversationState.npcId,
-                        fromTag: true  // Flag to indicate we're resuming from a tag action
-                    });
+                try {
+                    if (conversationState.type === 'person-chat') {
+                        // Restart person-chat minigame
+                        window.MinigameFramework.startMinigame('person-chat', null, {
+                            npcId: conversationState.npcId,
+                            fromTag: true  // Flag to indicate we're resuming from a tag action
+                        });
+                    } else if (conversationState.type === 'phone-chat') {
+                        // Restart phone-chat minigame
+                        window.MinigameFramework.startMinigame('phone-chat', null, {
+                            npcId: conversationState.npcId,
+                            fromTag: true  // Flag to indicate we're resuming from a tag action
+                        });
+                    }
+                } finally {
+                    if (window.pendingConversationReturn === conversationState) window.pendingConversationReturn = null;
                 }
             }, 50);
         }
