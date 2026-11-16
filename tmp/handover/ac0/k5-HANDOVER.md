@@ -99,3 +99,9 @@ Done and committed (68b44943d to 17fbda3a6): steps 1 to 6 and 10 (server tests).
 Open: the K4 merge must add `token` to any `finance` policy; credential_login_test.rb:92 (`from` route) fails
 at base 3e21ce0fd too (K4 part 1). No JS client work done (separate run). Gotcha: Ruby 2.7 keyword
 splitting on test helpers with string-keyed hashes; use positional args.
+
+## Merge-time step (review R1 m4)
+When K4's `finance` policy (or an explicit `accepts` on `finance_desk`) merges in, add `token` to it.
+`scenarios/test_access_keyring/scenario.json.erb:22`: `finance_desk` has no `accepts` on this branch, so it takes
+the default list, which includes `token`. The validator warning (validate_scenario.rb:7397) catches a miss.
+Not changed on this branch because K4's policy is not here.

@@ -1237,3 +1237,13 @@ Deviations for review:
 - A typed sign-in or claim that replaces an expired token session in its slot does not name it in `endedPcIds` or `tokenExpiredPcIds` (it is replaced, not pruned), as for any replaced session.
 - `desktop_refusal` answers `expired` before its branches, so a keyboard request at an expired token session says `expired` even when the PC is out of reach.
 - A `finance` policy does not exist here; when K4 merges one in, add `token` to its `accepts`.
+
+## K5 R1 fixes (server review round 1)
+
+- m1 fixed: three tests in credential_token_test.rb. The clock at the Wi-Fi join (and a second access point not restarting it), the clock at the implant, and the borrow answer's `tokenExpiredPcIds` (an expired token session ended by a borrow). Mutation checks, each restored with `git checkout app`: removing `start_token_clocks!` at the join (network_access.rb:387) fails the join test; at the implant (:531) fails the implant test; removing the `with_token_expired_pc_ids` line in the borrow answer (npc_frustration.rb:222) fails the borrow test.
+- m2 fixed: a test that plants at T0, signs in two minutes later, and asserts the clock is still T0, `expiresInS` is 120, and a second sign-in after the original four minutes is `expired`. Removing the "only when absent" guard in `stamp_token_clock!` fails it (and the first-plant test).
+- m3 fixed: plan section 10, "Route `proof_foothold`", now says a live token session is usable at the target's keyboard until expiry, stays remote and foothold-bound there, and is ended by an unplug.
+- m4 deferred by instruction: K4's `finance` policy is not on this branch. Added to tmp/handover/ac0/k5-HANDOVER.md as a merge-time step.
+- T1 fixed: comment on `stamp_token_clock!` saying why the cap cannot leave a token without a clock.
+- T2, T4: accepted as is. T3, T5: deferred, wording or ordering only, and the client timer normally closes the desktop first.
+- Tests: credential_token_test.rb 25 runs, 212 assertions, 0 failures.

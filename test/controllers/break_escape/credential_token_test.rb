@@ -109,6 +109,89 @@ module BreakEscape
       assert_equal({ 'success' => false, 'expired' => true }, response.parsed_body)
     end
 
+    # Review R1 m1: the clock starts at each of the three places a foothold is first gained, not
+    # only the jack. A dropped call would otherwise leave the sign-in stamp to start it later.
+    def build_with(player_state = {})
+      data = token_scenario
+      yield data
+      build_network_game({ 'encounteredNPCs' => %w[sam lena ian jake] }.merge(player_state), data)
+    end
+
+    def add_token(data, id, proof_foothold)
+      data['credentials'][id] = { 'kind' => 'token', 'account' => 'lena', 'connectsTo' => 'lena_pc',
+                                  'proof' => { 'foothold' => proof_foothold }, 'label' => id, 'expiresMin' => 4 }
+    end
+
+    test 'R1 m1: the clock starts at the Wi-Fi join, once, and a second access point never restarts it' do
+      build_with do |data|
+        data['networks']['guest_wifi'] = { 'name' => 'Guest Wi-Fi', 'wifi' => { 'ssid' => 'Harbour-Guest' } }
+        2.times do |i|
+          data['rooms']['lobby']['objects'] << { 'id' => "guest_ap#{i}", 'type' => 'pc', 'sprite' => 'wifi_ap1',
+                                                 'name' => "Guest AP #{i}", 'wifiAp' => true, 'network' => 'guest_wifi' }
+        end
+        add_token(data, 'wifi_token', 'wifi_guest_wifi')
+      end
+      assert_nil state['credentialClock']&.dig('wifi_token')
+      post game_path('network/join'), params: { ap_id: 'guest_ap0' }, as: :json
+      assert_response :success, response.body
+      assert_equal T0.to_f, state['credentialClock']['wifi_token']
+      assert_nil state['credentialClock']['lena_token'], 'a token on another foothold is not started'
+      travel 1.minute
+      post game_path('network/join'), params: { ap_id: 'guest_ap1' }, as: :json
+      assert_equal T0.to_f, state['credentialClock']['wifi_token']
+    end
+
+    test 'R1 m1: the clock starts at the implant' do
+      build_with('sessions' => { 'lena_pc' => { 'id' => 'lena', 'via' => 'claim' } }) do |data|
+        data['startItemsInInventory'] = [{ 'id' => 'kit_badusb', 'type' => 'usb_stick', 'name' => 'Keystroke device',
+                                           'takeable' => true, 'usbClass' => 'hid' }]
+        data['rooms']['finance_office']['objects'] << {
+          'id' => 'lena_usb_socket', 'type' => 'pc', 'name' => 'Desk USB socket',
+          'triggerOnInteract' => [{ 'type' => 'grant_foothold', 'pc' => 'lena_pc', 'needsSession' => true,
+                                    'needsHeld' => 'kit_badusb', 'name' => 'BadUSB: Lena desk' }]
+        }
+        add_token(data, 'implant_token', 'implant_lena_pc')
+      end
+      assert_nil state['credentialClock']&.dig('implant_token')
+      travel 30.seconds
+      post game_path('network/implant'), params: { pc_id: 'lena_pc', shape: 'session' }, as: :json
+      assert_response :success, response.body
+      assert response.parsed_body['success'], response.body
+      assert_equal (T0 + 30.seconds).to_f, state['credentialClock']['implant_token']
+    end
+
+    test 'R1 m1: a borrow that ends an expired token session names it in tokenExpiredPcIds' do
+      build_with do |data|
+        jake = data['rooms']['lobby']['npcs'].find { |n| n['id'] == 'jake' }
+        jake['workarounds'] = [{ 'at' => 50, 'do' => 'borrow_session', 'pc' => 'records_pc' }]
+      end
+      signed_in_with_token
+      @game.reload
+      @game.player_state['npcFrustration'] = { 'jake' => { 'level' => 60, 'handed' => { '0' => { 'hand' => 7, 'time' => T0.to_f } } } }
+      @game.save!
+      expire!
+      post npc_workaround_game_url(@game), params: { npc_id: 'jake', index: 0, hand: 7, cut: true }, as: :json
+      assert_response :success, response.body
+      body = response.parsed_body
+      assert_equal ['lena_pc'], body['endedPcIds']
+      assert_equal ['lena_pc'], body['tokenExpiredPcIds']
+      assert_empty state['sessions']
+    end
+
+    test 'R1 m2: a later sign-in keeps the existing clock and never renews it' do
+      build
+      with_foothold
+      travel 2.minutes
+      body = cred_login('lena_pc', 'lena_token', foothold: OFFICE)
+      assert_response :success, response.body
+      assert_equal T0.to_f, state['credentialClock']['lena_token']
+      assert_equal 120, body['expiresInS']
+      assert_equal 120, token_row['expiresInS']
+      travel 2.minutes
+      cred_login('lena_pc', 'lena_token', foothold: OFFICE)
+      assert_equal({ 'success' => false, 'expired' => true }, response.parsed_body, 'a sign-in did not buy more time')
+    end
+
     # ---- the route ------------------------------------------------------------------------
 
     test 'a token signs in through its proof foothold only, as a remote session outside signedInPcs' do

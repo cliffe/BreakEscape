@@ -163,6 +163,8 @@ module BreakEscape
     end
 
     # Stamp one token's clock with server_now when it has none (grow-only, capped).
+    # Only registry token ids reach here and the registry is capped at the same limit, so the cap
+    # cannot leave a token without a clock (a token with none never expires).
     def stamp_token_clock!(cred_id)
       return unless token_entry(cred_id)
 
