@@ -1391,7 +1391,21 @@
   image-rendering: pixelated;
 }
 
-[data-ui-theme] #be-interaction-menu .be-im-title { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] #be-interaction-menu .be-im-title { color: var(--ui-accent); text-shadow: var(--ui-text-glow); font-family: var(--ui-heading-font); }
+[data-ui-theme] #be-interaction-menu .be-im-more { color: var(--ui-text-dim); font-family: var(--ui-heading-font); }
+
+/* The menu's X is the shared small-button close; the menu's own rules set its size and
+   position (id selector), so state the skin's border width again here to keep the 9-slice */
+[data-ui-theme] #be-interaction-menu .be-im-close {
+  border-width: var(--ui-small-button-px);
+  border-radius: 0;
+  font-family: 'Press Start 2P', monospace;
+}
+[data-ui-theme] #be-interaction-menu .be-im-list:focus-visible,
+[data-ui-theme] #be-interaction-menu .be-im-close:focus-visible {
+  outline: 2px solid var(--ui-line);
+  outline-offset: 0;
+}
 [data-ui-theme] #be-interaction-menu .be-im-label { color: var(--ui-text); }
 [data-ui-theme] #be-interaction-menu .be-im-detail { color: var(--ui-text-dim); }
 
