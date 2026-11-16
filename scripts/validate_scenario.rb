@@ -7113,10 +7113,23 @@ def check_credentials(json_data)
   pcs_by_id = pcs.to_h { |pc| [pc['id'].to_s, pc] }
   headless_pc_ids = pcs.select { |pc| nm.headless?(pc) }.map { |pc| pc['id'].to_s }.to_set
 
-  # Foothold ids any jack, access point or implant/grant can create.
+  # Foothold ids any jack, access point or implant/grant can create. A proof names the runtime
+  # foothold key (plan 9.1 authors "jack_comms_port"): a jack is "jack_<jackId>" (foothold_id_for),
+  # a Wi-Fi AP is "wifi_<network>" (wifi_foothold_id), an implant is "implant_<pc>". Accept the
+  # bare source id too, so a proof written either way is not falsely rejected (a safe superset).
   foothold_ids = Set.new
-  nm.jacks(json_data).each { |e| foothold_ids << e[:object]['id'].to_s if e[:object]['id'] }
-  nm.wifi_aps(json_data).each { |ap| foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id'] }
+  nm.jacks(json_data).each do |e|
+    jid = e[:object]['id'].to_s
+    next if jid.empty?
+
+    foothold_ids << jid
+    foothold_ids << "jack_#{jid}"
+  end
+  nm.wifi_aps(json_data).each do |e|
+    ap = e[:object]
+    foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id']
+    foothold_ids << "wifi_#{e[:network]}" if e[:network]
+  end
   # A grant_foothold action (scripted or a player implant) grants its foothold through POST
   # /network/implant, whose runtime id is "implant_<pc>" (implant_foothold_id_for). Accept both
   # the bare PC id and that implant id, so a proof foothold naming an implant-created foothold is
