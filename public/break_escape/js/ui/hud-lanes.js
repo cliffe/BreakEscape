@@ -770,14 +770,23 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
     const gapOf = (t) => { const mb = parseFloat(gcs(t).marginBottom); return (Number.isFinite(mb) ? mb : 10) * z; };
     const texts = phoneOpen ? Array.from(phoneEl.querySelectorAll('.npc-bark')).filter(b => !b._removing && !b.classList.contains('hud-lane-yield')) : [];
     // Kept on the phone container across passes: keyed by width, zoom and compact flag, and dropped
-    // when the texts change (count or content), so a text at rest costs no clone (review R1 M1)
-    const phoneSig = texts.map(b => b.textContent).join('\u0001') + `|${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`;
+    // when what the clone renders changes (review R1 M1). The clone copies every child, so the
+    // signature reads every child: its text, whether it is leaving or stepped aside, whether its
+    // headshot is showing (unhidden on image load, no text change), and the clear-all button.
+    const phoneSig = phoneEl
+      ? Array.from(phoneEl.children).map(b => [b.textContent, b._removing ? 'r' : '', b.classList.contains('hud-lane-yield') ? 'y' : '',
+        b.querySelector?.('.npc-bark-head')?.hidden === false ? 'h' : '', b.style?.display || ''].join('\u0002')).join('\u0001')
+        + `|${doc.body?.classList.contains('hud-compact') ? 'c' : 'w'}`
+      : '';
     if (phoneEl && phoneEl._hudLaneSig !== phoneSig) { phoneEl._hudLaneSig = phoneSig; phoneEl._hudLaneH = new Map(); }
     const phoneH = (w) => {
       if (!texts.length) return 0;
       const cache = phoneEl._hudLaneH || (phoneEl._hudLaneH = new Map());
       const key = `${w}@${zoomOf(phoneEl)}`;
-      if (!cache.has(key)) cache.set(key, cloneHeightAt(doc, phoneEl, w, zoomOf(phoneEl), { keepId: true, fontFrom: phoneEl }));
+      if (!cache.has(key)) {
+        if (cache.size >= 8) cache.clear();   // a window drag adds a width per frame (R2 n2)
+        cache.set(key, cloneHeightAt(doc, phoneEl, w, zoomOf(phoneEl), { keepId: true, fontFrom: phoneEl }));
+      }
       return cache.get(key);
     };
     // The toasts' part: heights plus one gap between each pair; the phone texts start one gap below
@@ -803,7 +812,12 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
       const newest = warns.reduce((a, b) => ((b._toast.shownAt || 0) >= (a._toast.shownAt || 0) ? b : a));
       for (const t of warns) if (t !== newest) superseded.add(t);
     }
-    for (const t of warns) { try { t._onSupersede?.(superseded.has(t)); } catch (e) { /* gone */ } }
+    // Every warning that is not waiting hears it, including one that stepped aside (hud-lane-yield)
+    // and so is in neither list, or its timer runs on after the panel closes (R2 m1)
+    for (const t of all) {
+      if (t._toast?.type !== 'warning' || t._toast.pending || t._toast.closing) continue;
+      try { t._onSupersede?.(superseded.has(t)); } catch (e) { /* gone */ }
+    }
     const stacked = new Set(answers.filter(a => a.answer === 'stack').map(a => a.el));
     const blockEls = all.filter(t => shownEls.includes(t) || stacked.has(t));
     let res = { away: false, spot: null };
@@ -835,6 +849,7 @@ function placeNotifyBlock(doc, win, lanes, measure, prev, ringSpot) {
   } catch (e) {
     // Fail open: the block goes back to the lane and every waiting toast shows (2.6 item 8)
     try { toLane([el, phoneEl]); setClass(new Set()); } catch (e2) { /* nothing more to do */ }
+    for (const t of el.querySelectorAll('.notification')) { try { t._onSupersede?.(false); } catch (e3) { /* gone */ } }
     answerAll(Array.from(el.querySelectorAll('.notification.toast-pending')).map(t => ({ el: t, answer: 'stack' })));
     console.debug('[hud-lanes] toast block', e);
     return { away: false, spot: null };
