@@ -180,3 +180,7 @@ Keyless server on :3092 from this worktree (killed afterwards), fresh test_needs
 The `login_aloud` pool is set on the page copy only (test_needs_sims has none); no game row or scenario file was touched.
 
 Screenshots (headless, themed skin, in the session scratchpad): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/chatter-switch-on.png`, `chatter-switch-off.png`, `chatter-audio-page.png` (game menu Audio page, switch on), plus `chatter-audio-page-off.png`, `chatter-switch-plain-on.png` and `chatter-switch-plain-off.png`.
+
+### Handover (end of R3 fix pass, context limit)
+
+Done: all 8 findings fixed, unit-tested and live-proved (above). Commits: cc4e2490a (code, tests, CSS, proof cases), bee53d93a (merge of main, contains 11fae1a6d), then the docs commits. Open: the two full suites have not been run at the tip. Run them one after the other in the foreground with a long timeout: `bin/test-js`, then `RBENV_VERSION=2.7.8 BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle bin/rails test` (never a db: task). `bin/test-js` is slow (it moved to the background after 180 s once; wait for its notice). The seven chatter, tone and phone unit files passed before the merge (`npc-chatter-faint` 44/44). Gotchas: the :3092 server is killed and game 6401 remains; temporary screenshot scripts were moved to `tmp/delete/`.
