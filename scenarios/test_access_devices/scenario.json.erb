@@ -114,7 +114,7 @@
           "id": "planted_rogue_ap",
           "name": "Planted rogue AP",
           "sprite": "drop_box1",
-          "position": { "x": 8.5, "y": 4.8 },
+          "position": { "x": 9.6, "y": 3 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -139,7 +139,7 @@
           ],
           "apPortal": {
             "templates": [
-              { "id": "wifi_key", "label": "Wi-Fi key page", "setGlobals": { "ap_portal_account": false },
+              { "id": "wifi_key", "label": "Key page", "setGlobals": { "ap_portal_account": false },
                 "page": {
               "brands": [ { "id": "ledgerwell", "name": "Ledgerwell", "look": "generic", "realDomain": "ledgerwell.example", "domains": [ { "id": "d_wifi", "domain": "wifi-login.example", "trick": "unrelated", "tier": 0 } ] } ],
               "purposes": [ { "id": "wifi", "label": "Reconnect", "button": "Reconnect" } ],
@@ -148,7 +148,7 @@
               "fieldLabels": { "password": "Wi-Fi key" },
               "choices": { "brand": "ledgerwell", "purpose": "wifi", "domainId": "d_wifi", "wording": "w_key", "fields": ["password"], "logo": true, "padlock": false }
             } },
-              { "id": "staff_signin", "label": "Staff sign-in page", "setGlobals": { "ap_portal_account": true },
+              { "id": "staff_signin", "label": "Sign-in page", "setGlobals": { "ap_portal_account": true },
                 "page": {
               "brands": [ { "id": "ledgerwell", "name": "Ledgerwell", "look": "generic", "realDomain": "ledgerwell.example", "domains": [ { "id": "d_wifi", "domain": "wifi-login.example", "trick": "unrelated", "tier": 0 } ] } ],
               "purposes": [ { "id": "wifi", "label": "Sign in", "button": "Sign in" } ],
@@ -251,6 +251,8 @@
               "completeTask": "opt_rogue_ap_account" },
             { "eventPattern": "global_variable_changed:ap_twin_staff", "condition": "value === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
               "bark": "Nothing has picked your copy yet. Kieran's laptop is the likely one; give him a minute." },
+            { "eventPattern": "global_variable_changed:ap_portal_account", "condition": "value === true && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
+              "bark": "Your copy now asks for a staff sign-in. Kieran's laptop has to pick it again; give him a minute." },
             { "eventPattern": "network_joined", "condition": "data.apId === 'lw_staff_ap'", "onceOnly": true,
               "addCapture": { "targetId": "wifi_join", "roleLabel": "Ledgerwell Ltd, reception", "kind": "foothold", "host": "Ledgerwell-Staff access point", "note": "Joined the staff Wi-Fi with the harvested key: one shared key, and the staff Wi-Fi is the office LAN." },
               "setGlobal": { "kp_wifi_joined": true } },

@@ -440,3 +440,49 @@ test('model: cloneLog as a string or keyed by template id; signal words; client 
     assert.equal(model.clientsText(1), '1 client');
     assert.equal(model.clientsText(null), '');
 });
+
+// ---- scroll and whole-step sizes (review R1 M1, M2, t5) ------------------------------------
+
+test('a same-tab redraw keeps the pane scroll, and Start brings the status line into view', () => {
+    reset();
+    const scene = open();
+    scene.showTab('clone');
+    let scrolledTo = null;
+    window.HTMLElement.prototype.scrollIntoView = function (arg) { scrolledTo = { node: this, arg }; };
+    scene.pane.scrollTop = 120;
+    click(qa('.rogue-ap-ssid-pick').find((b) => b.dataset.ssid === 'Ledgerwell-Staff'));
+    assert.equal(scene.pane.scrollTop, 120, 'choosing a network does not jump to the top');
+    click(q('.rogue-ap-start'));
+    assert.equal(scene.pane.scrollTop, 120, 'Start does not jump to the top');
+    assert.ok(scrolledTo && scrolledTo.node.classList.contains('rogue-ap-status'), 'the status line is scrolled into view');
+    assert.equal(scrolledTo.arg.block, 'nearest');
+    scene.showTab('log');
+    assert.equal(scene.pane.scrollTop, 0, 'a tab change starts at the top');
+    delete window.HTMLElement.prototype.scrollIntoView;
+});
+
+test('the Wi-Fi icon is drawn at whole multiples of 11x8 and headshots at multiples of 32', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/rogue-ap.css'), 'utf8');
+    const rules = [];
+    const re = /(@media[^{]*\{)?\s*([^{}@]+)\{([^}]*)\}/g;
+    for (const m of css.matchAll(re)) rules.push({ sel: m[2].trim(), body: m[3] });
+    const sizes = (sel) => rules.filter((r) => r.sel.includes(sel)).map((r) => ({
+        w: (r.body.match(/(?:^|[\s;])width:\s*(\d+)px/) || [])[1],
+        h: (r.body.match(/(?:^|[\s;])height:\s*(\d+)px/) || [])[1]
+    })).filter((s) => s.w);
+    const icons = sizes('.rogue-ap-signal-icon');
+    assert.ok(icons.length >= 2, 'a size at each breakpoint');
+    for (const s of icons) {
+        const k = Number(s.w) / 11;
+        assert.ok(Number.isInteger(k) && k >= 1, `icon width ${s.w} is a whole multiple of 11`);
+        assert.equal(Number(s.h), k * 8, `icon height ${s.h} keeps the 11:8 aspect`);
+    }
+    assert.deepEqual(icons.map((s) => `${s.w}x${s.h}`).sort(), ['11x8', '22x16']);
+    const heads = sizes('.rogue-ap-headshot');
+    assert.ok(heads.length >= 1);
+    for (const s of heads) {
+        assert.equal(Number(s.w) % 32, 0, `headshot ${s.w} is a multiple of 32`);
+        assert.equal(s.h, s.w);
+    }
+    assert.ok(!/border-left:\s*4px/.test(css), 'status rule is 2px');
+});

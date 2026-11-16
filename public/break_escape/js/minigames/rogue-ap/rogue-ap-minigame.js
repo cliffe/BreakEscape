@@ -1,5 +1,5 @@
 // The pocket rogue AP's own web console (physical pentest devices plan 4.1 step 4, 4.3, 4.4).
-// A planted object with `wifiTwin: true` opens it (interactions.js calls window.rogueAp.open).
+// A planted object with `wifiTwin: true` opens it (interactions.js starts it with startRegisteredMinigame('rogue-ap', sprite)).
 //
 //   Recon  the authored scan (apScan): SSID, security, signal, client count, known clients with
 //          their headshots.
@@ -149,6 +149,8 @@ export class RogueApMinigame extends MinigameScene {
     }
 
     render() {
+        // Keep the scroll on a same-tab redraw, so a refusal or clone line below Start stays in view.
+        const keep = this._renderedTab === this.tab ? this.pane.scrollTop : 0;
         for (const t of TABS) {
             const b = this.tabButtons[t.id];
             const on = t.id === this.tab;
@@ -160,7 +162,8 @@ export class RogueApMinigame extends MinigameScene {
         if (this.tab === 'recon') this.renderRecon();
         else if (this.tab === 'clone') this.renderClone();
         else this.renderLog();
-        this.pane.scrollTop = 0;
+        this._renderedTab = this.tab;
+        this.pane.scrollTop = keep;
         this.updateScrollCue();
     }
 
@@ -341,6 +344,9 @@ export class RogueApMinigame extends MinigameScene {
             this.gameResult = { ...this.lastClone };
         }
         this.render();
+        const line = this.pane.querySelector('.rogue-ap-status');
+        if (line && typeof line.scrollIntoView === 'function') line.scrollIntoView({ block: 'nearest' });
+        this.updateScrollCue();
         return fx;
     }
 
