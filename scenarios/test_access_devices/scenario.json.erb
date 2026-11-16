@@ -10,15 +10,77 @@
   "social": { "captures": { "revealSecret": true } },
 
   "networks": {
+    "office_lan": { "name": "Ledgerwell office LAN", "wifi": { "ssid": "Ledgerwell-Staff", "psk": "<%= @random_password %>" } },
+    "lw_guest": { "name": "Ledgerwell guest Wi-Fi", "wifi": { "ssid": "Ledgerwell-Guest", "psk": "Visitor-Pebble-2026" } }
+  },
+
+  "resources": {
+    "lw_fs01_records": {
+      "kind": "file_share",
+      "name": "Client-Records",
+      "host": "LW-FS01",
+      "network": "office_lan",
+      "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+    }
+  },
+
+  "accountProfiles": {
+    "kieran_desktop": {
+      "for": { "people": ["kieran"] },
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "kieran_requests",
+          "name": "Facilities requests",
+          "takeable": false,
+          "readable": true,
+          "onRead": { "setVariable": { "kp_signed_in": true } },
+          "text": "Facilities requests (test)\n\nDoor faults, the post-room printer and the contractor visits booked this week. The booking list tells a stranger which names and uniforms reception expects. Booking a visit is out of scope."
+        }
+      ]
+    }
   },
 
   "globalVariables": {
+    "ap_planted": false,
+    "ap_twin_staff": false,
+    "ap_twin_wrong": false,
+    "ap_portal_account": false,
+    "kp_twin_captured": false,
+    "kp_twin_account_captured": false,
+    "kp_twin_signed_in": false,
+    "kp_wifi_joined": false,
+    "kp_signed_in": false,
+    "lw_staff_ap_planted": false,
+    "lw_guest_ap_planted": false
   },
 
   "startItemsInInventory": [
+    { "type": "rogue_ap", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
+      "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Plant it in reception, then set it up from its console." },
+    { "type": "page-builder", "id": "captures_terminal", "name": "Harvested Credentials",
+      "sprite": "tablet", "takeable": true,
+      "observations": "Your capture tablet: the keys and passwords the test has recorded, each shown in full.",
+      "minigameData": { "view": "captures", "landingPageId": "cm_captures" } },
+    { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone",
+      "npcIds": ["ruth_phone"], "observations": "Your work phone, with Ruth a message away." }
   ],
 
   "objectives": [
+    {
+      "aimId": "wireless",
+      "title": "Wireless",
+      "description": "Plant the pocket rogue AP in reception and see what a copy of the staff Wi-Fi harvests: the shared Wi-Fi key, or one person's staff sign-in. Either harvest completes this aim.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "wireless_harvest", "title": "Harvest something with the rogue AP: the Wi-Fi key page or the staff sign-in page", "type": "manual", "status": "active" },
+        { "taskId": "opt_rogue_ap", "title": "Optional: harvest the staff Wi-Fi key with the rogue AP's key page", "type": "manual", "optional": true, "status": "active" },
+        { "taskId": "opt_wifi_join", "title": "Optional: join the staff Wi-Fi with the harvested key", "type": "unlock_object", "targetObject": "lw_staff_ap", "optional": true, "status": "active" },
+        { "taskId": "opt_rogue_ap_account", "title": "Optional: harvest a staff sign-in with the rogue AP's sign-in page", "type": "manual", "optional": true, "status": "active" },
+        { "taskId": "opt_twin_signin", "title": "Optional: sign in at the hot desk with the account the portal harvested", "type": "manual", "optional": true, "status": "active" }
+      ]
+    }
   ],
 
   "rooms": {
@@ -27,8 +89,207 @@
       "door_sign": "Reception",
       "connections": {},
       "objects": [
+        {
+          "type": "pc",
+          "id": "rogue_ap_spot",
+          "name": "Waiting-area planter",
+          "sprite": "planter_fig1",
+          "position": { "x": 8.5, "y": 3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A planter in the waiting area, deep enough to hide a small box behind the leaves.",
+          "requiresItem": "kit_rogue_ap",
+          "requiresItemHint": "You would need the pocket rogue AP in hand to hide it here.",
+          "requiresItemHintVariants": [
+            { "condition": "globalVars.ap_planted", "value": "Your pocket rogue AP is tucked in behind the leaves." }
+          ],
+          "consumesItem": true,
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "ap_planted", "value": true }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "planted_rogue_ap",
+          "name": "Planted rogue AP",
+          "sprite": "drop_box1",
+          "position": { "x": 8.5, "y": 3.9 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "revealOnGlobal": "ap_planted",
+          "wifiTwin": true,
+          "observations": "Your pocket rogue AP, hidden in the planter. Click it to open its console.",
+          "apScan": [
+            { "ssid": "Ledgerwell-Staff", "security": "WPA2", "signal": 4, "clients": 3, "inScope": true,
+              "cloneGlobals": { "ap_twin_staff": true, "ap_twin_wrong": false },
+              "cloneLog": {
+                "wifi_key": "Copy of Ledgerwell-Staff up (open), showing the Wi-Fi key page. Simulated disconnect (a real test would not send these). Waiting for someone to pick the copy.",
+                "staff_signin": "Copy of Ledgerwell-Staff up (open), showing the staff sign-in page. Simulated disconnect (a real test would not send these). Waiting for someone to pick the copy."
+              },
+              "knownClients": [ { "npcId": "kieran", "label": "Kieran's laptop" } ] },
+            { "ssid": "Ledgerwell-Guest", "security": "WPA2", "signal": 3, "clients": 1, "inScope": true,
+              "cloneGlobals": { "ap_twin_wrong": true, "ap_twin_staff": false },
+              "cloneLog": "Copy of Ledgerwell-Guest up (open). It harvests nothing worth having: the guest key is printed on a card in reception, and staff laptops hold the staff network, not this one." },
+            { "ssid": "BT-Hub-4F2A", "security": "WPA2", "signal": 2, "clients": 2, "inScope": false,
+              "refusal": "Out of scope. BT-Hub-4F2A is not the client." },
+            { "ssid": "Corrigan-Dental", "security": "WPA2", "signal": 1, "clients": 1, "inScope": false,
+              "refusal": "Out of scope. Corrigan Dental is not the client." }
+          ],
+          "apPortal": {
+            "templates": [
+              { "id": "wifi_key", "label": "Wi-Fi key page", "setGlobals": { "ap_portal_account": false },
+                "page": {
+              "brands": [ { "id": "ledgerwell", "name": "Ledgerwell", "look": "generic", "realDomain": "ledgerwell.example", "domains": [ { "id": "d_wifi", "domain": "wifi-login.example", "trick": "unrelated", "tier": 0 } ] } ],
+              "purposes": [ { "id": "wifi", "label": "Reconnect", "button": "Reconnect" } ],
+              "wordings": [ { "id": "w_key", "match": true, "text": "Ledgerwell-Staff: the router has been updated. Enter the Wi-Fi key to reconnect." } ],
+              "fields": ["password"],
+              "fieldLabels": { "password": "Wi-Fi key" },
+              "choices": { "brand": "ledgerwell", "purpose": "wifi", "domainId": "d_wifi", "wording": "w_key", "fields": ["password"], "logo": true, "padlock": false }
+            } },
+              { "id": "staff_signin", "label": "Staff sign-in page", "setGlobals": { "ap_portal_account": true },
+                "page": {
+              "brands": [ { "id": "ledgerwell", "name": "Ledgerwell", "look": "generic", "realDomain": "ledgerwell.example", "domains": [ { "id": "d_wifi", "domain": "wifi-login.example", "trick": "unrelated", "tier": 0 } ] } ],
+              "purposes": [ { "id": "wifi", "label": "Sign in", "button": "Sign in" } ],
+              "wordings": [ { "id": "w_signin", "match": true, "text": "Ledgerwell-Staff: the network now uses staff accounts. Sign in with your Ledgerwell username and password." } ],
+              "fields": ["email", "password"],
+              "fieldLabels": { "email": "Ledgerwell username" },
+              "choices": { "brand": "ledgerwell", "purpose": "wifi", "domainId": "d_wifi", "wording": "w_signin", "fields": ["email", "password"], "logo": true, "padlock": false }
+            } }
+            ]
+          },
+          "apCaptureLog": [
+            { "global": "kp_twin_captured", "text": "Kieran's laptop joined the copy; Wi-Fi key page submitted.", "npcId": "kieran" },
+            { "global": "kp_twin_account_captured", "text": "Kieran's laptop joined the copy; staff sign-in page submitted.", "npcId": "kieran" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "lw_staff_ap",
+          "name": "Ledgerwell-Staff access point",
+          "sprite": "network_rack1",
+          "position": { "x": 5, "y": 2.2 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "office_lan",
+          "observations": "A wall access point above the waiting area. Its label reads Ledgerwell-Staff. It asks for a key."
+        },
+        {
+          "type": "pc",
+          "id": "lw_guest_ap",
+          "name": "Ledgerwell-Guest access point",
+          "sprite": "network_rack1",
+          "position": { "x": 2, "y": 2.2 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "lw_guest",
+          "observations": "A second access point on the wall. Its label reads Ledgerwell-Guest."
+        },
+        {
+          "type": "notes1",
+          "id": "lw_guest_card",
+          "name": "Reception Wi-Fi card",
+          "position": { "x": 6.5, "y": 6 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Ledgerwell-Guest\nKey: Visitor-Pebble-2026",
+          "observations": "A printed card on the reception desk with the guest Wi-Fi details."
+        },
+        {
+          "type": "pc",
+          "id": "hot_desk_pc",
+          "name": "Hot desk PC",
+          "network": "office_lan",
+          "host": "LW-HOT-01",
+          "sprite": "pc_desktop",
+          "position": { "x": 7.5, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["kieran"] },
+          "observations": "A spare desk with a PC on the office domain. Only Kieran's account signs in here in this test."
+        },
+        {
+          "type": "pc",
+          "id": "kieran_laptop",
+          "owner": ["kieran"],
+          "private": true,
+          "name": "Kieran's laptop",
+          "sprite": "laptop1",
+          "position": { "x": 3.6, "y": 5.2, "elevation": 30 },
+          "takeable": false,
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 3, "useFrom": { "dx": 0, "dy": -1 } },
+          "observations": "Kieran's laptop on the front desk."
+        }
       ],
       "npcs": [
+        {
+          "id": "ruth_phone",
+          "displayName": "Ruth Adeyemi",
+          "npcType": "phone",
+          "avatar": "assets/characters/ruth_adeyemi_headshot.png",
+          "spriteTalk": "assets/characters/ruth_adeyemi_talk.png",
+          "spriteVisemes": "assets/characters/ruth_adeyemi_visemes.png",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/test_access_devices/ink/ruth_phone.json",
+          "currentKnot": "start",
+          "eventMappings": [
+            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true", "onceOnly": true,
+              "addCapture": { "targetId": "staff_wifi_key", "roleLabel": "Ledgerwell Ltd, reception", "kind": "credential", "host": "Ledgerwell-Staff, rogue access point", "address": "Ledgerwell-Staff", "secret": "<%= @random_password %>", "note": "Kieran's laptop picked the copy and the Wi-Fi key page took the key (proof: planted).", "proof": { "planted": "kit_rogue_ap", "on": "rogue_ap_spot" } },
+              "setGlobal": { "kp_twin_captured": true },
+              "completeTask": "wireless_harvest" },
+            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true", "onceOnly": true, "cooldown": 0,
+              "completeTask": "opt_rogue_ap" },
+            { "eventPattern": "global_variable_changed:kp_twin_captured", "condition": "value === true", "onceOnly": true,
+              "bark": "That is the staff Wi-Fi key. Read it on your tablet, then try it on the staff access point." },
+            { "eventPattern": "global_variable_changed:kp_twin_account_captured", "condition": "value === true", "onceOnly": true,
+              "bark": "That is Kieran's sign-in. Read it on your tablet and try it at the hot desk." },
+            { "eventPattern": "global_variable_changed:ap_twin_staff", "condition": "value === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
+              "bark": "Nothing has picked your copy yet. Kieran's laptop is the likely one; give him a minute." },
+            { "eventPattern": "network_joined", "condition": "data.apId === 'lw_staff_ap'", "onceOnly": true,
+              "addCapture": { "targetId": "wifi_join", "roleLabel": "Ledgerwell Ltd, reception", "kind": "foothold", "host": "Ledgerwell-Staff access point", "note": "Joined the staff Wi-Fi with the harvested key: one shared key, and the staff Wi-Fi is the office LAN." },
+              "setGlobal": { "kp_wifi_joined": true } },
+            { "eventPattern": "pc_signed_in:hot_desk_pc", "condition": "data.npcId === 'kieran' && data.via === 'password'", "onceOnly": true,
+              "addCapture": { "targetId": "twin_signin", "roleLabel": "Ledgerwell Ltd, reception", "kind": "foothold", "host": "Hot desk PC", "note": "A password typed into a fake Wi-Fi page opened a staff desk. The control is a second factor on every sign-in." },
+              "setGlobal": { "kp_twin_signed_in": true },
+              "completeTask": "opt_twin_signin" }
+          ]
+        },
+        {
+          "id": "kieran",
+          "displayName": "Kieran Doyle",
+          "npcType": "person",
+          "position": { "x": 3.5, "y": 4.3 },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "spriteSheet": "kieran_doyle",
+          "spriteTalk": "assets/characters/kieran_doyle_talk.png",
+          "spriteVisemes": "assets/characters/kieran_doyle_visemes.png",
+          "storyPath": "scenarios/test_access_devices/ink/kieran.json",
+          "currentKnot": "start",
+          "voice": { "name": "Achird", "style": "Office junior on the front desk of a small British firm, early twenties, Irish, from Dublin. Speak with a consistent Dublin accent throughout. Do not shift to any other accent. Light, quick, cheerful; always slightly in a hurry, never rude.", "language": "en-GB" },
+          "needsHome": "kieran_laptop",
+          "needsDeferMin": 0.5,
+          "role": "facilities",
+          "creds": { "username": "k.doyle", "password": "Quarry-Beacon-Saffron-59" },
+          "captureProof": [ { "planted": "kit_rogue_ap", "on": "rogue_ap_spot" } ],
+          "needs": { "work": { "decayPerMin": 90, "urgentAt": 50, "initial": 40 } },
+          "eventMappings": [
+            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true", "onceOnly": true,
+              "bark": "My Wi-Fi dropped, so I picked the network again. It wanted the key again, so I typed it in." },
+            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account === true", "onceOnly": true,
+              "bark": "The Wi-Fi dropped again, and this time it wanted my Ledgerwell sign-in, so I typed that in.",
+              "addCapture": { "targetId": "kieran", "roleLabel": "Ledgerwell Ltd, reception", "kind": "credential", "address": "k.doyle", "host": "Ledgerwell-Staff, rogue access point", "note": "Typed his staff sign-in into the rogue AP's sign-in page (proof: planted)." },
+              "setGlobal": { "kp_twin_account_captured": true },
+              "completeTask": "wireless_harvest" },
+            { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account === true", "onceOnly": true, "cooldown": 0,
+              "completeTask": "opt_rogue_ap_account" }
+          ]
+        }
       ]
     }
   }
