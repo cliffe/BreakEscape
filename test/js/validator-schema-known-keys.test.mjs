@@ -134,6 +134,7 @@ const VALIDATOR_ONLY = ['fireOnlyWhenLoaded', 'mutuallyExclusiveGlobals'];
 const NO_READER = [
   'canScanBluetooth',     // item
   'durationTargetMin',    // social awareness episode
+  'expiresMin',           // credential registry token: declared in K1, read from keyring slice K5
   'externalVariables',    // npc
   'genericValues',        // social phish target primedFor
   'persistentVariables',  // npc
