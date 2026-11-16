@@ -85,7 +85,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Name a protection for every story beat. Only three count: (1) the NPC has no `needs`; (2) its needs are confined to its own room and every target is in it; (3) a mapping on an event that always precedes the beat sends it home with `patrolOverride.targetTile`, and a `"needs": "resume"` mapping after the beat lets it go. `deferrable: false` is **not** a protection; it makes the NPC leave more readily.
 - [ ] Never add an `npc_arrived:<id>` mapping to a needs NPC (needs arrivals fire it).
 - [ ] Social compatibility: chat only between people who plausibly get on. Distrusted or suspect people carry `needsCompany.avoids`.
-- [ ] Hostile ambient staff get `leash: true` so a punched NPC stays in its room. Add a credits line for KO and attack outcomes.
+- [ ] Hostile ambient staff get the chase `leash: true` (with `chaseRange`) so a punched NPC stays near its post. Add a credits line for KO and attack outcomes.
 
 ### Needs and routines
 
@@ -109,7 +109,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 ### Poses
 
 - [ ] Poses (`drink`, `use`, `phone`) show only when the atlas has the frames. Object `pose` overrides the default (`false` for none); NPC `poses` limits or turns them off. Seated NPCs keep the sit frame.
-- [ ] Missing pose or seated frames are an approval item (PixelLab spend). Until approved, use a stand-in atlas with seated frames (m02 used `male_telecom_v2` and `female_telecom_v2`) and plan the swap.
+- [ ] Missing pose or seated frames are an approval item (PixelLab spend). The pose engine is on main; the pose frames for existing characters arrive once `build/ol-pose-art` is on main. Until then or until approved, use a stand-in atlas with seated frames (m02 used `male_telecom_v2` and `female_telecom_v2`) and plan the swap.
 
 ### Chatter pools and exchanges
 
@@ -134,7 +134,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 - [ ] Light any new room or new screen with mission-room-lighting; keep the mission's lighting variants (for example keyed on the act-turn global) consistent with who is present.
 - [ ] Motion-sensor rooms stay dark until the player enters; an NPC posted there needs a light that matches.
-- [ ] Hearing: a room's sounds play at 1 in the player's room and 0.4 through a door to an adjacent room (`room-hearing.js`). Once the chatter falloff (D34, branch `build/ol-chatter`) is on main, chatter carries faintly through an **open** door at 40% of the distance level and stops when the door shuts; lines heard that way do not set `heard_<knot>`. Place pairs so the player can walk in on them, not only hear them from the corridor.
+- [ ] Hearing: a room's sounds play at 1 in the player's room and 0.4 through a door to an adjacent room (`room-hearing.js`). Once the chatter falloff (D34, branch `build/ol-chatter`) is on main, chatter carries faintly through an **open** door at 40% of the distance level and stops when the door shuts, and chatter is muted while a person-chat or phone-chat is open; lines heard faintly do not set `heard_<knot>`. Place pairs so the player can walk in on them, not only hear them from the corridor.
 - [ ] `roomTone`: the profile matches exact room types; map custom types with `roomToneTypes`. Room tone is the last slice, after dressing.
 
 ### Sync budget
@@ -175,7 +175,7 @@ plan -> review R1..R5+ (standalone rewrite after each) -> approvals -> implement
 After each slice:
 
 - [ ] Ink compiles; `dialoguelint.mjs` on changed ink; `tagdiff.mjs` against the last commit for any existing ink touched; inkcheck and loopcheck; `scripts/ink_runtime_check/reopencheck.mjs` and the mission's route suite (`scripts/ink_runtime_check/<m>_routes/`) where it has one.
-- [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors, every new warning cleared or justified. The office-life checks (`scripts/validate_office_life.rb`, run from it) cover V1, V2 (story NPC whose needs can leave its room), V3 (`npc_arrived` on a needs NPC), V4 (attackable needs NPC), V5 (required content keyed on an office-life global or event: an error), V7 (repeated lines), V8 (sync budget) and V10 (a pool or exchange nothing can trigger). The older needs, access and habits validators run too.
+- [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors, every new warning cleared or justified. The office-life checks (`scripts/validate_office_life.rb`, called by `validate_scenario.rb`) cover V1, V2 (story NPC whose needs can leave its room), V3 (`npc_arrived` on a needs NPC), V4 (attackable needs NPC), V7 (repeated lines), V8 (sync budget, info until a cap is passed) and V10 (a pool or exchange nothing can trigger), all warnings, and V5 (required content keyed on an office-life global or event), an error. V6 is the rake task and V9 the lock and key diff. The older needs, access and habits validators run too.
 - [ ] `--office-summary` diffed against `v1_summary_base.txt`: only the planned NPCs changed.
 - [ ] `ruby scripts/lock_key_diff.rb scenarios/<m>/scenario.json.erb scenarios/<m>/office_life/baseline_locks.json`: empty, or exactly the approved items. It regenerates the dungeon graph itself.
 - [ ] `python3 scripts/check_door_alignment.py` and the room depth check for new or changed rooms.
@@ -185,7 +185,7 @@ After each slice:
 ## Live proof
 
 - [ ] Run a keyless server from the branch worktree on its own port (never the user's main server). Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
-- [ ] **A fresh game per check** from `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
+- [ ] **A fresh game per check** from `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
 - [ ] **Never edit a game row's scenario copy or state, and never set globals in the page** to reach a state. If a check needs a head start, add it to a test scenario on the branch or ask. Type flags in play where a reward matters: seeding m02's flag 4 by `--submit-flag` did not open its cache.
 - [ ] Headless only: `game.loop.setFPS(20)` with **fixed steps on**. Never `fixedStep = false` (bodies tunnel 8 px walls).
 - [ ] Check through `window.__test.needs` that posts, leashes and privacy hold, both partners reach `using` at each chatter object, and nothing mapped to NPC position fires early or twice.
