@@ -46,3 +46,20 @@ Fresh game 6332:
 Control, game 6331 (before the door attempt, which the title screen blocked): KO of one guard with the other visible left the playlist on `threat`.
 
 m10, fresh game 6333 (`tools/playtest/m10-opening-music-read.mjs`, read only): opening playlist `noir`, no hostile NPCs, visibility record holds only `nightshade_van` and `kowalczyk_post`, so the opening is untouched by the change. The first hidden-hostile reveal (the reinforcements in the gallery) was not reached live: it needs the earlier stages of the mission played through real paths, which I did not drive. It rests on the unit tests and the analysis above.
+
+## Static check of the eight missions that use both `setVisible: false` and `all_hostiles_ko`
+
+Method: every `setVisible: false` mapping in `scenarios/m02` to `m07`, `m09` and `m10` (`scenario.json.erb`), matched to its NPC, and each condition read for whether it can hide an NPC that is hostile and conscious. All hostility in these missions comes from an ink `#hostile:` tag or the player punching an NPC; only m10's `reinforcement_a` and `reinforcement_b` use `startHostile`, and they start hidden with no record, so they count as before.
+
+The rule changes nothing unless a hostile, conscious NPC is hidden by a mapping. In that case the old code held the fight playlist until the NPC was KO'd (the bug); the new code lets the next `npc_ko` of another hostile end it. The hides below are all peaceful outcomes, so they hide a calm NPC and the music is unchanged on the normal route:
+
+- m02 `night_security_supervisor`, lines 3123, 3129, 3143: hidden on `insider_asset_arrested` only when `!globalVars.insider_hostile`. Never hides a hostile one. No change.
+- m03 `victoria_sterling`, lines 1495, 1501: hidden after `victoria_choice_made` unless `victoria_fate === 'ko'`. Her ink has no `#hostile:` tag. A punched, hostile Victoria would now stop counting once hidden; not a normal route.
+- m04 `operative_cipher` 2177, 2182 (`cipher_walked`); `voltage` 2588, 2593 (`voltage_escaped`); `operative_static` 2664, 2669 (`static_left`): hidden after they walk or escape. `operative_static` is made hostile by Voltage's ink (`m04_npc_voltage.ink:367`), so if he is hostile when he leaves, the new rule ends the fight at the next KO; the old rule kept it going. That is the intended fix.
+- m05 `david_torres` 2369, 2375 (`torres_called_in`); m06 `satoshi_minder` 2521, 2526 (`minder_walked`); m07 `ray_hollis` 1490, 1495 and `thomas_park` 2415, 2420 (`'talked'`), `james_mercer` 2188 (templated condition): hidden after a talked-down or walked-off outcome. Same reading as m04: no change on the peaceful route; a hostile hidden by these now stops counting.
+- m09 `noor_haddad` 1303, 1304 (`noor_told`); `old_coyote` 1441, 1442 (`old_coyote_told`); `jesse_tran` 1594, 1595 (`tran_outcome === 'talked'`): hidden after being told or talked round. Only `archive_guard` has a `#hostile:` tag (`m09_archive_guard.ink:11`), and it is not among the hidden NPCs. No change.
+- m10 `scenario.json.erb`: `vector_so` 2983, 2984 hides on `room_exited` of the security office, so a hostile Vector the player leaves behind stops counting (before: fight music held). `arakawa_gate` 2243, 2244 and `arakawa_blast` 2268 hide at `breach_open`. `victoria_gallery` 3895, 3896 and `victoria_threat` 3915 hide after a `trusted`, `walked` or `talked_down` outcome (`victoria_threat` is made hostile by `m10_victoria.ink:194`). `monitor_guard` 4000 and `farah_guard` 4021 hide on talked-round outcomes. `quintero_lock` 4071 and `minder_lock` 4095 hide on a gallery entry or `quintero_enters_core`. All are hides of NPCs that are normally not hostile; where one is hostile and conscious when hidden, the new rule drops it from the count (intended).
+
+No mission relies on a hidden, conscious hostile keeping the fight music going, so no behaviour on a normal route changes in any of the eight. Nothing here looked affected enough to need a live run beyond the m10 opening above.
+
+Limit of this check: it is a read of the scenario files (ERB templated conditions at m07:2188 and m10:4071, 4095 were read as written, not rendered for each variable value).
