@@ -27,6 +27,12 @@
  * opened, a tray change, a plant, implant or Wi-Fi join (network_foothold_gained), and
  * `noteOpened` of a file a waiting entry is found in. Nothing is written to globals or state.
  *
+ * Slice K3d (plan 8.7): each cache entry keeps the answer's `captures` map beside `entries`;
+ * `latestCaptures`, `firstSeen` and `listAnswer()` feed the capture log's Sign-ins list, and a
+ * changed no-screen `rev` emits `keyring_changed`. The capture log asks `fetch(null)` itself on
+ * open, so a game with no credentials declared still gets the captures map. With a capture log
+ * held, the find toasts point at it ("New in your capture log: ...").
+ *
  * No static imports: main.js imports it once (so the opened set exists from page start) and
  * unlock-system.js loads it by dynamic import, so no test harness copy list grows. Connect loads
  * its text by dynamic import.
@@ -97,6 +103,10 @@ export class Keyring {
         this._primed = null;
         // The entries of the most recent usable answer, whatever screen asked (Connect's menu)
         this.latest = [];
+        // K3d (plan 8.7): the captures map of the most recent usable answer ({ targetId: { tag,
+        // source, account? } }), and when this page first got each entry id (ms), for row order
+        this.latestCaptures = null;
+        this.firstSeen = new Map();
         // The tray item a Connect is running for, or null (the in-flight guard)
         this.connecting = null;
         this._listening = null;
@@ -161,12 +171,21 @@ export class Keyring {
             const hit = this.cache.get(key);
             if (!hit || hit.rev !== answer.rev) return null;
             this.latest = hit.entries;
+            if (hit.captures) this.latestCaptures = hit.captures;
             return hit.entries;
         }
         if (!Array.isArray(answer.entries)) return null;
         const entries = answer.entries.filter(e => e && typeof e === 'object' && typeof e.id === 'string');
-        this.cache.set(key, { rev: typeof answer.rev === 'string' ? answer.rev : null, entries });
+        const captures = answer.captures && typeof answer.captures === 'object' && !Array.isArray(answer.captures) ? answer.captures : {};
+        const before = this.cache.get(key)?.rev ?? null;
+        const rev = typeof answer.rev === 'string' ? answer.rev : null;
+        this.cache.set(key, { rev, entries, captures });
         this.latest = entries;
+        this.latestCaptures = captures;
+        const now = Date.now();
+        for (const e of entries) if (!this.firstSeen.has(e.id)) this.firstSeen.set(e.id, now);
+        // K3d: the capture log redraws and re-badges from the no-screen answer when it changes
+        if (key === Keyring.cacheKey(null) && (rev !== before || rev === null)) emitKeyringChanged(rev);
         // Only the page-start prime fixes the reload set; a screen's answer never does (R1 m1)
         if (primed && this.firstAnswerIds === null) this.firstAnswerIds = new Set(entries.map(e => e.id));
         return entries;
@@ -252,6 +271,14 @@ export class Keyring {
             try { await this.fetch(null); } catch (e) { this.retryPrime(left - 1); }
         }, this.primeRetryMs);
         return this._retryTimer;
+    }
+
+    /**
+     * The no-screen answer the capture log builds its Sign-ins list from (plan 8.7), or null
+     * before the first one: { rev, entries, captures }.
+     */
+    listAnswer() {
+        return this.cache.get(Keyring.cacheKey(null)) || null;
     }
 
     /** A registry password shows only once its file was opened here, or it was in the first answer. */
@@ -438,7 +465,8 @@ export class Keyring {
     async showFinds(entries) {
         let t;
         try { t = await import('../utils/remote-host-text.js'); } catch (e) { return null; }
-        const message = t.findToastText(entries);
+        // K3d: a held capture log that lists captures is where the toast points (D4 (d))
+        const message = t.findToastText(entries, { captureLog: heldCaptureLog() });
         if (!message) return null;
         // No title and `whole` (clamp lift only), so a grouped toast is never cut on a phone
         try { window.gameAlert?.(message, 'info', '', FIND_TOAST_MS, { plainText: true, whole: true }); } catch (e) { /* no notification layer */ }
@@ -620,6 +648,19 @@ export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite'];
 // The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
     return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);
+}
+
+/** The held capture log that lists captures (type capture_log, holds.captures), or null. */
+export function heldCaptureLog() {
+    const items = typeof window !== 'undefined' && Array.isArray(window.inventory?.items) ? window.inventory.items : [];
+    return items.find(it => it?.scenarioData?.type === 'capture_log' && it.scenarioData.holds?.captures === true) || null;
+}
+
+/** Tell the page the no-screen keyring answer changed (K3d): the capture log listens. */
+function emitKeyringChanged(rev) {
+    const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
+    if (typeof d?.emit !== 'function') return;
+    try { d.emit('keyring_changed', { rev }); } catch (e) { /* a listener failed: the next answer emits again */ }
 }
 
 /** An NPC conversation is open (person or phone chat set this while the ink runs). */

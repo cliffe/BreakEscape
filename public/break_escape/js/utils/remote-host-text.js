@@ -148,20 +148,39 @@ export const assistInviteFoundMessage = ({ label, displayName } = {}) =>
     `${label || 'An invite'}: Connect it from your inventory to join ${displayName || 'an account'}'s session.`;
 export const findMoreLine = (n) => `and ${n} more`;
 
-/** One find's line by kind, or null for a kind with no find toast. */
+// K3d (plan 8.2, D4 (d)): when the player holds a capture log, the toast points at it.
+export const CAPTURE_LOG_FIND_LEAD = 'New in your capture log:';
+export const captureLogFindMessage = ({ label, kind, displayName } = {}) =>
+    `${CAPTURE_LOG_FIND_LEAD} ${label || 'a file'} (${(TAG_TEXT[kind]?.full || 'Sign-in').toLowerCase()} for ${displayName || 'an account'}).`;
+export const captureLogPasswordFoundMessage = ({ label, displayName } = {}) =>
+    `${CAPTURE_LOG_FIND_LEAD} ${displayName || 'An account'}'s password, in ${label || 'a file'}.`;
+
+/**
+ * One find's line by kind, or null for a kind with no find toast. With `captureLog` (the player
+ * holds a capture log that lists captures) the line points at the capture log (K3d).
+ */
 // The capture check here is paired with findKindToasts in systems/keyring.js (a double guard).
-export function findLine(entry) {
+export function findLine(entry, { captureLog = false } = {}) {
     if (!entry || typeof entry !== 'object' || entry.source === 'capture') return null;
-    const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo };
+    const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo, kind: entry.kind };
+    if (captureLog) {
+        if (entry.kind === 'password') return captureLogPasswordFoundMessage(fields);
+        if (entry.kind === 'saved_connection' || entry.kind === 'assist_invite') return captureLogFindMessage(fields);
+        return null;
+    }
     if (entry.kind === 'saved_connection') return savedConnectionFoundMessage(fields);
     if (entry.kind === 'password') return passwordInFileFoundMessage(fields);
     if (entry.kind === 'assist_invite') return assistInviteFoundMessage(fields);
     return null;
 }
 
-/** The one toast for a set of finds: each line, or with more than two, two then "and N more". */
-export function findToastText(entries) {
-    const lines = (Array.isArray(entries) ? entries : []).map(findLine).filter(Boolean);
+/**
+ * The one toast for a set of finds: each line, or with more than two, two then "and N more".
+ * `captureLog` is the held capture log (or any truthy value) when one lists captures (K3d).
+ */
+export function findToastText(entries, { captureLog = null } = {}) {
+    const opts = { captureLog: !!captureLog };
+    const lines = (Array.isArray(entries) ? entries : []).map(e => findLine(e, opts)).filter(Boolean);
     if (!lines.length) return null;
     if (lines.length > 2) return [lines[0], lines[1], findMoreLine(lines.length - 2)].join('\n');
     return lines.join('\n');
@@ -192,3 +211,44 @@ export function credentialRefusalLine(reason, { host, label, displayName, kind }
     default: return null;
     }
 }
+
+// ---- K3d: the capture log's Sign-ins list (plan 8.7) ----------------------------------------
+// A row's kind tag is the full kind name of 8.5 (filled); its source tag is in outline. These
+// are on-screen text only, never spoken.
+
+/** The kind tags of capture rows (8.5): a PIN, a foothold, a physical finding. */
+export const CAPTURE_TAG_TEXT = Object.freeze({
+    pin: Object.freeze({ tag: 'PIN', full: 'Captured PIN' }),
+    foothold: Object.freeze({ tag: 'Foothold', full: 'Foothold' }),
+    finding: Object.freeze({ tag: 'Finding', full: 'Finding' })
+});
+
+/** A row's filled kind tag: a TAG_TEXT kind (captured, in_file, ...) or a capture tag (pin, ...). */
+export const rowKindName = (kind) => TAG_TEXT[kind]?.full || CAPTURE_TAG_TEXT[kind]?.full || String(kind || '');
+
+/** A credential row's outline source tag, by the capture's `source` or the entry's `how`. */
+export const SOURCE_TAG_TEXT = Object.freeze({
+    phished: 'Phished', recorded: 'Recorded', found: 'Found', given: 'Given'
+});
+
+export const SIGNINS_HEADING = 'Sign-ins';
+export const CAPTURES_HEADING = 'Captures';
+export const SIGNINS_BANNER_TEXT = 'Sign-ins this engagement has captured or found. Captured passwords show in full here and masked in the report.';
+export const CAPTURES_ROWS_BANNER_TEXT = 'PINs, footholds and findings this engagement has recorded.';
+
+/** The use line of each row (8.7). Every field is a template field, never free text. */
+export const typeItFromLine = (label) => `Type it from ${label || 'the file'}.`;
+export const alsoInLine = (label) => `Also in ${label || 'a file'}.`;
+export const connectFromInventoryLine = (label) => `Connect ${label || 'it'} from your inventory.`;
+// A saved connection a foothold recorded (no tray item to Connect): used on the host's sign-in screen
+export const useOnSignInScreenLine = (host) => `Use it on ${named(host, 'its host')}'s sign-in screen.`;
+export const expiredLine = (label) => `${label || 'That sign-in'} has expired.`;
+export const moreNotesLine = (n) => `and ${n} more.`;
+export const footholdLine = (host, note) => {
+    const where = host || 'unknown host';
+    return note ? `Foothold on ${where}: ${note}` : `Foothold on ${where}`;
+};
+/** A finding's line: "{host}: {note}", no "Foothold on". */
+export const findingLine = (host, note) => [host, note].filter(Boolean).join(': ');
+/** A captured PIN's line: "{host}: {value or mask}", or the value alone with no host. */
+export const pinLine = (host, value) => (host ? `${host}: ${value}` : String(value));
