@@ -1,0 +1,13 @@
+{
+  "key": "82e0b0b972d8b3ce6436782f42c8ad01",
+  "npc": "ernesto_bautista",
+  "text": "Last cone's always the one with a hole.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:24Z"
+}

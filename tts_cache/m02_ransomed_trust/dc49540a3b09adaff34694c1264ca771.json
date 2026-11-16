@@ -1,0 +1,13 @@
+{
+  "key": "dc49540a3b09adaff34694c1264ca771",
+  "npc": "ernesto_bautista",
+  "text": "Lab's quiet. That never lasts.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:14:01Z"
+}

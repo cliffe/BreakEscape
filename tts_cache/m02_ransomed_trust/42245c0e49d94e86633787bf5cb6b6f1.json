@@ -1,0 +1,13 @@
+{
+  "key": "42245c0e49d94e86633787bf5cb6b6f1",
+  "npc": "ernesto_bautista",
+  "text": "Hospital runs on legs. Ours.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T01:35:50Z"
+}

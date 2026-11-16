@@ -1,0 +1,13 @@
+{
+  "key": "45a34a2402030814a261ff589568ddcf",
+  "npc": "ernesto_bautista",
+  "text": "I carry what they send. Anything more and I'm under Sister's feet.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:57Z"
+}

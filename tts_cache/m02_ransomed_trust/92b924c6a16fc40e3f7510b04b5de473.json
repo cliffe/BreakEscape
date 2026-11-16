@@ -1,0 +1,13 @@
+{
+  "key": "92b924c6a16fc40e3f7510b04b5de473",
+  "npc": "ernesto_bautista",
+  "text": "Best seat in the house for waiting, this.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:49Z"
+}

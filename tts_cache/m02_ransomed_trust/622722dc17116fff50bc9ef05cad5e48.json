@@ -1,0 +1,13 @@
+{
+  "key": "622722dc17116fff50bc9ef05cad5e48",
+  "npc": "hodan_warsame",
+  "text": "Two minutes. Then the stairs again.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T01:36:35Z"
+}

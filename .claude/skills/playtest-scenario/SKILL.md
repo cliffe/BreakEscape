@@ -455,6 +455,7 @@ Use `moveToNear`, not `moveTo`, to get beside a target: it walks without sending
 - **`move-triggered-interaction`**: a click the harness sent to walk landed on something and opened it. That is a harness fault, not a finding: close what opened and reposition with `moveToNear`.
 - **`move-interrupted-by-game-event`**: the game started something on the way (a conversation, a call, a sight challenge, a timed event). Any player gets that, so it is not a failed step: deal with it, since it may be the mission's next beat, then repeat the move. Any range or contest warning the move had reached is kept in `arrival`.
 - **`blocking-ui`** names what is in the way (`blockingUi.kind`): an interaction menu to choose from or close, or an overlay to dismiss.
+- **The ending-check overlay** ("Before the mission ends", `#ending-check-overlay`) shows in `brief` as `blockingUi` with its buttons. Escape answers it "Keep going" and holds the debrief, so `mg close` and `pressKey Escape` refuse while it is up. Answer it with `{"cmd":"endingOverlay","action":"end"}` or `"keep"`.
 - **`movement-prevented`**: a script has switched movement off. Finish whatever holds the player.
 
 To test that progress survives closing the tab, close with `page.close({runBeforeUnload:true})`. Playwright's `browser.close()` skips pagehide, so it behaves like a crash and loses the last few seconds by design.
