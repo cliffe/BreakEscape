@@ -199,3 +199,116 @@ guard). Scratch: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-B
    Also look for `chair_out_of_doorway` in the log (e131ef703); if none, say unit-test only.
 3. Item 4: GL=1 fresh game, needs-sims-staff-room.mjs job_beat, look at 02a-jodie-locker-trip.
 4. "Status for review" section.
+
+## Handover 5 (fifth session)
+
+Games this session (keyless :3093): 5793 (tour, direct board route, report lost), 5817 (tour, direct
+board route, full report), 5827 (click probe and Marek seat), 5839 (job_beat GL=1, crashed), 5859
+(job_beat GL=1 rerun). One unrecorded id from the first new-game call was not driven.
+Scratch: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/sims-tidy5/
+(tour-5793.out, tour-5817/, click.mjs, click/, item4/, item4b/, testjs.txt, testjs2.txt).
+
+### Suites
+- bin/test-js on ee76e1cce plus the async tests: 682 of 683; door-gates failed because its path-avoid
+  stub had no `seatedAvoidCells` export (22724fa2f added the import). Fixed in 13a1ffbc8.
+- bin/test-js after the fix (alongside tour 5793): 683 of 683. path-seated-chairs 8 of 8, door-gates 22 of 22.
+- The new test file needed no listing: bin/test-js runs test/js/*.test.mjs.
+
+### Path grid fix (22724fa2f)
+- Unit tests (e533e3197): async mode with the player's NPC-avoid points. Both sets apply to the first
+  search; seated cells come off after calculate(), NPC cells stay until the timer callback; a failed
+  search reruns with the NPC cells and without seated ones; the caller hears once; nothing is left
+  avoided. Also: no rerun when the first search finds a path, and only one rerun (null once) when
+  nothing is found either way. Reading the code, the async case is sound: the callback runs after the
+  finally, `_calcDepth` is 0 there, so the rerun starts straight from the callback.
+- Live, old direct board route (BOARD_ROUTE=direct FRONT_CLICK=1, no waypoints):
+  - 5793: row 3 try 1 from (200,176) stopped at sprite (216..220,103), the 5748 stop; try 2 from (264,176)
+    read the board; board2 from (200,176) read first try. The report (path searches) was lost to a
+    driver crash at the end.
+  - 5817: both row 3 reads and row 5 read first try from (200,176)/(232,176). The player path search log
+    shows no player (avoidNPCs) search between (200,176) and the front at all: the approach was taken on
+    straight line of sight. The only player searches near the board were from (220,76) to the board
+    itself (behind the wall), which found nothing, reran without seated chairs and found nothing again,
+    as expected. 4 reruns in the whole tour, all of that kind; no player path crossed a seated chair.
+  - 5827 click probe: player at (200,176), real click at (220,100) with Amara seated (chair
+    office_chair-white-1-rotate6_154, box 217..239 x 118..129), three times: seated avoid on, forced off
+    (old behaviour), on. All three arrived north of her chair (sprite (218..223,69..73)); each time
+    hasPlayerLineOfSight said clear and no player grid search ran. The click landed on her chair
+    ("A chair." label), so the bridge's click point was not the feet target the probe meant.
+  - Conclusion: on this approach the player's walk is decided by line of sight, not by the grid search,
+    so the engine change is not what gets the player past Amara, and the 5793 stop happened with it in
+    place. The waypoints stay in the tour driver (default route); BOARD_ROUTE=direct is opt-in.
+- The fix does still matter for NPC routes and player clicks that need a grid search; no live run here
+  produced a player search that crossed a seated chair, with or without the fix.
+
+### Marek's post (5659540bd)
+- 5817: fetch_start at 0 s for office_chair-white-1-rotate7_152 (from 115,223), fetch_end arrived 3 s,
+  seated at 4 s. No Marek walk_stuck. 5827: seated in office_chair-white-2-rotate1_155 at feet (69,218),
+  facing west (sit_west frame). So the chair he fetches varies by run (152 or 155).
+- Facing: west, toward the west wall, side-on to the spare desk north of him (shot
+  click/marek-5827.png: he sits at the desk's south-west corner, legs to the west). A coordinate home
+  has no face point. Not changed.
+- Rosa: no doorway stall from Marek. Her two walk_rerouted at (63..65,84) were round walking Grace and
+  Sanjay in the doorway; she resumed. No Rosa stuck.
+
+### Grace beside seated Amara
+- 5817: no Grace return_stuck (stuck list empty for the whole tour; Amara seated from 59 s). One clean
+  tour, so cured or not hit; the player LOS finding above means it cannot be credited to the grid fix.
+
+### Item 5, doorway chair sweep (e131ef703)
+- No `chair_out_of_doorway` on 5817 (sweeps 0). Unit-test only.
+
+### Item 4
+- 5839 (GL=1): crashed at the wake (driver bug, fixed in 87d4d4006); no 02a shot.
+- 5859 (GL=1, fixed driver): ran to the end, no errors, but still no 02a-jodie-locker-trip shot. The
+  50 ms watch logged one record only, already at the lockers: {target staff_lockers, kind use, phase
+  using, moving false} at needs clock 199 s. So the watch saw nothing during the walk: either it is
+  installed after she has already walked (her use started 14.3 s after the call), or her state or
+  sprite lookup returned nothing until then. Next: install the watch before the call is made.
+- Shot 02-jodie-at-lockers-5859 (looked at): Jodie stands at the blue lockers with a red toolbox icon
+  above her head, debug label "using 2s staff_lockers"; Keith sits at the table, the player stands by
+  the boiler. So the job icon shows at the lockers; the walk itself is still not shown.
+- Lockers: use started by Jodie 14.3 s after the call, used by Jodie. Light: flicker on (faulty 1).
+
+### Driver fixes this session
+- 7d4245ea3, 541a07a52: tour route switch, player search log, Marek report and shot, row 6 doorway snapshot,
+  report written before the end shots.
+- 87d4d4006: job_beat used `window.game.loop` and `window.game.scene.scenes`; window.game is the scene,
+  so 5839 crashed at the wake. Now through window.game.sys.game.
+
+## Status for review
+
+### Commits (branch build/ol-sims-tidy, over main)
+- Engine: bd2b3a61e and 397597ba6 (item 3, seat walk route and home wait), e131ef703 (item 2, doorway
+  chair sweep), 22724fa2f (item 1, seated chairs out of the live grid, avoided per search, rerun).
+- Scenario: 5659540bd (Marek's post to the spare desk's south side).
+- Tests: e533e3197 (async search), 13a1ffbc8 (door-gates stub).
+- Drivers: ef0d9e168, bc0e56ed4, bd54ae5cb, bdced76e0, d5ae71088, c08b665fb, 7d4245ea3, 541a07a52, 87d4d4006.
+
+### Proved, and how
+- Item 3 (Tom's seat): live, 5733 (seated at 5 s, no mount_stuck) and 5817 (tom_sat 5 s). Unit tests.
+- Item 2: Marek's post: live, 5817 and 5827 (no walk_stuck, no Rosa doorway stall from him). Rows 5 and 6
+  cooler park: live, 5733 and 5817 (no Sanjay return_stuck at the cooler).
+- Item 1 (board read): the tour reads the board first try with the waypoints (5764) and mostly with the
+  direct route (5817 all first try; 5793 one miss). Engine path grid fix: unit tests only; live runs
+  show the player's approach goes by line of sight, so it is not exercised there.
+- Suites: bin/test-js 683 of 683.
+
+### Unit-test only
+- Doorway chair sweep (e131ef703): no live occurrence.
+- Path grid fix (22724fa2f), sync and async rerun.
+
+### Backlog
+- Player line-of-sight walks past seated chairs: 5793 stopped at Amara's chair on a straight walk. LOS
+  tests immovable bodies, so either the chair was not immovable at that moment or the feet started
+  elsewhere; needs a probe that logs the LOS call with the chair state on a failing try.
+- Marek faces the wall when seated; a face point for coordinate homes, or a home with a desk chair.
+- Row 6 (kitchen rota) failed all tries on 5793 at x 41, the doorway's office end; passed on 5817 and
+  earlier tours. The row 6 doorway snapshot (541a07a52) will show the grid and bodies next time.
+
+- Item 4 trip shot: the job_beat watch starts too late to see Jodie's walk (5859).
+
+### Open questions
+- Keep 22724fa2f given that the live gain is not shown? It is unit-tested, the suites pass, and it
+  stops stale seated chairs being baked into the grid (the 5753 finding), so I would keep it.
+- Marek's facing: leave, or add a face point (scenario or engine)?
