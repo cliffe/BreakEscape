@@ -155,3 +155,35 @@ and take the browser path from an environment variable, with the current value a
   `test/controllers/break_escape/npc_carried_items_test.rb`: 2 files, no offences.
 
 R1: 0/0/6
+
+## Outcomes
+
+All six minors fixed in `8a0d38bb5`.
+
+- **m1.** `applyScenarioObjectPosition` takes the room size from a new `roomPixelSize(map)`
+  (map tiles times `TILE_SIZE`, 10 tile fallback as in `createSpriteAtRandomPosition`) and
+  accepts `px`/`py` only when the centre lies inside `[roomPos, roomPos + size]`; otherwise the
+  random spot stays. With no room size passed, `px`/`py` is not trusted. Unit tests: inside,
+  outside (far, negative, below, left), another room's area, room edge, non-finite, no size.
+  Server side: no change. The server holds no room dimensions or world origins (those come from
+  the client's Tiled maps), so a server bound would be invented geometry. It still bounds the
+  value to finite +/-100000 through `valid_ko_coord?`, and the client now does the room check.
+- **m2.** `sanitised_carry_position` keeps only complete valid pairs (`x`+`y`, `px`+`py`) and
+  `elevation` only alongside a kept pair; nil when no pair survives. The hostile-position test
+  now expects nil (scenario position) and a second test checks a valid `px`/`py` pair survives
+  beside a bad `x`/`y` half.
+- **m3.** Source-level check (rooms.js needs Phaser, so `createRoom` cannot run under node):
+  both call sites exist, the matched branch calls it after `createSpriteFromMatch` and before
+  `placeMatchedScenarioItem`, the fallback branch after `createSpriteAtRandomPosition` and
+  before `setDepthAndStore`. Which branch the live T2 mug took was not recorded and is still
+  unrecorded; the source check covers both.
+- **m4.** The `createSpriteAtRandomPosition` JSDoc is back directly above it.
+- **m5.** `NPC_CARRIED_ITEMS_PLAN.md` now says there is no sync merge, `merge_npc_carry!` was
+  removed on main (`cf40b8e54`), and carries are written only by the four carry actions.
+- **m6.** `npc-carry-reload-proof.mjs` resolves `node_modules` from the repo root of the script
+  (override `PLAYWRIGHT_NODE_MODULES`) and the browser from `PLAYWRIGHT_CHROMIUM_EXECUTABLE` or
+  `CHROMIUM`, defaulting to the cached headless shell under `$HOME`.
+
+Suites after the fixes: `bin/test-js` 683 files passed, 0 failed; Rails 2925 runs, 47544
+assertions, 0 failures, 0 errors, 3 skips; rubocop on `game.rb` and the carry controller test,
+no offences.
