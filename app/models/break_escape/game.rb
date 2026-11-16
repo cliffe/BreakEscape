@@ -3264,13 +3264,33 @@ module BreakEscape
     # With foothold (slice 9.3a, section 5): the host must be reachable through that
     # foothold and its policy must allow remote sign-in; the room is not consulted.
     # Without: a headless host is refused as an unreachable PC is.
-    def attempt_login!(pc_id, username, password, foothold: nil)
+    #
+    # Keyring K4 (plan 9): with from (the raw param; from_given true when the request named one),
+    # the sign-in is judged by the `from` route, not the keyboard: refused generically, uncounted,
+    # outside a scenario that declares credentials, for a malformed param, with a foothold too,
+    # or for a relay source, the target itself or a target on the source's chain; 403 for a
+    # source not held, locked, off or out of reach. Nothing is counted on a route refusal.
+    def attempt_login!(pc_id, username, password, foothold: nil, from: nil, from_given: false)
       info = find_login_pc(pc_id)
       return { status: :not_found, body: { success: false, message: 'Sign-in PC not found' } } unless info
 
       unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
       foothold = foothold.presence&.to_s
-      if foothold
+      if from_given
+        return credential_login_refusal if foothold || !credentials_declared?
+
+        case from_route_refusal(from, info[:object])
+        when :generic then return credential_login_refusal
+        when :unreachable then return unreachable
+        end
+        if host_service_off?(info[:object])
+          return { status: :forbidden, body: { success: false, message: NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
+        end
+        if remote_blocked?(info[:object])
+          return { status: :unprocessable_entity,
+                   body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
+        end
+      elsif foothold
         return unreachable unless host_reachable_through?(foothold, info[:object])
         # A host whose own service is off does not answer over the network (9.3b plan 5.2)
         if host_service_off?(info[:object])
@@ -3301,9 +3321,10 @@ module BreakEscape
         end
 
         login_failures.delete(key)
-        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold)
+        from = from_given ? from : nil
+        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
         save!
-        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold)
+        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
         return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
       end
 
@@ -3537,11 +3558,18 @@ module BreakEscape
 
     # { pcId => { npcId, username, displayName, via } } for the scenario response (5.3).
     def sessions_for_client
+      reload_ended = reload_ended_session_ids.map(&:to_s)
       access_sessions.each_with_object({}) do |(pc_id, session), out|
         next unless session.is_a?(Hash)
         # The bootstrap ends relay sessions in the same request (end_claimed_sessions!), so
         # it never hands one to the client (keyring K2, plan 3.8)
         next if relay_session?(session)
+        # Keyring K4 (plan R10 m5): nor a `from` session whose source chain hits a session the
+        # same request ends (the prune that follows ends it), nor one whose chain repeats
+        if session.key?('from')
+          chain = from_chain(pc_id)
+          next if chain.nil? || (chain & reload_ended).any?
+        end
 
         answer = session_for_client(pc_id)
         out[pc_id] = answer if answer
@@ -3557,7 +3585,8 @@ module BreakEscape
       return nil unless npc && self.class.account_holder?(npc)
 
       answer = login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'],
-                                                         relay: relay_session?(session), credential: session['credential'])
+                                                         relay: relay_session?(session), credential: session['credential'],
+                                                         from: session['from'])
       answer['locked'] = true if session_locked?(session)
       answer
     end
@@ -4130,7 +4159,7 @@ module BreakEscape
     # Keyring K2: credential: (a registry id) with via 'credential', and the route: foothold:
     # or relay: true (K4 adds from:). A relay sign-in is not recorded in signedInPcs, so it
     # never proves a `session` credential or completes a sign-in task.
-    def start_login_session!(pc_id, npc, via, foothold: nil, credential: nil, relay: false)
+    def start_login_session!(pc_id, npc, via, foothold: nil, credential: nil, relay: false, from: nil)
       # A password (or remote) sign-in at a PC ends a guest session there (review R1 M1): one
       # screen holds one session. A claim is the guest's own session, or an owner's at an owned PC.
       # A relay sign-in keeps that rule (one screen, one session; plan 7.2).
@@ -4141,6 +4170,8 @@ module BreakEscape
       record['credential'] = credential.to_s if credential.present?
       # A session opened over the network records its foothold (slice 9.3a, 4.1)
       record['foothold'] = foothold if foothold.present?
+      # Keyring K4: a sign-in from a desktop records its source PC (plan 3.8)
+      record['from'] = from.to_s if from.present?
       record['relay'] = true if relay
       player_state['sessions'][pc_id.to_s] = record
       unless relay
@@ -4155,7 +4186,10 @@ module BreakEscape
     #
     # Keyring K2 (plan 3.8): a credential session adds its kind and label; a relay session adds
     # relay: true and the host (remote stays absent: the mirror reads it as remote: false).
-    def login_session_answer(npc, via, pc_id: nil, foothold: nil, relay: false, credential: nil)
+    #
+    # Keyring K4: a `from` session adds remote: true, fromPcId, the host and the source's label
+    # (fromHost, for the "Remote sign-in from ..." header), and no footholdId.
+    def login_session_answer(npc, via, pc_id: nil, foothold: nil, relay: false, credential: nil, from: nil)
       answer = {
         'npcId' => npc['id'],
         'username' => npc['creds']['username'],
@@ -4172,6 +4206,12 @@ module BreakEscape
       if relay
         pc = find_login_pc(pc_id)&.dig(:object)
         return answer.merge('relay' => true, 'host' => pc ? host_label(pc) : pc_id.to_s)
+      end
+      if from.present?
+        pc = find_login_pc(pc_id)&.dig(:object)
+        source = find_login_pc(from)&.dig(:object)
+        return answer.merge('remote' => true, 'fromPcId' => from.to_s, 'host' => pc ? host_label(pc) : pc_id.to_s,
+                            'fromHost' => source ? host_label(source) : from.to_s)
       end
       return answer unless foothold.present?
 

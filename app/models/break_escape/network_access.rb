@@ -307,6 +307,9 @@ module BreakEscape
         player_state['inventory'] << device
       end
       ended = end_sessions_through!(foothold_id)
+      # Keyring K4 (plan 9): a `from` session carries no foothold, so the prune ends one whose
+      # source (or the source's own route) went with the foothold, and the answer names it too
+      ended += prune_unreachable_sessions!
       save!
 
       device_id = device.is_a?(Hash) ? device['id'] : nil
@@ -916,6 +919,27 @@ module BreakEscape
         return { status: :forbidden, body: { error: PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
       end
 
+      remote_login_tiles_answer(pc)
+    end
+
+    # Keyring K4 (plan 9): the remote sign-in screen reached from a desktop the player holds
+    # (GET /login_accounts with from=), judged by the `from` route's source and reach checks and
+    # never given the sticky note. The controller has already refused it outside a scenario that
+    # declares credentials. Returns { status:, body: }.
+    def from_login_accounts(info, source_id)
+      pc = info[:object]
+      return { status: :bad_request, body: { error: 'Invalid from' } } unless valid_from_param?(source_id)
+      return { status: :forbidden, body: { error: "PC not reachable: #{pc['id']}" } } if from_route_refusal(source_id, pc)
+      return { status: :unprocessable_entity, body: { remoteBlocked: true } } if remote_blocked?(pc)
+      if host_service_off?(pc)
+        return { status: :forbidden, body: { error: PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
+      end
+
+      remote_login_tiles_answer(pc)
+    end
+
+    # The remote sign-in screen's 200 answer (K0 and K4): the PC's own tiles only.
+    def remote_login_tiles_answer(pc)
       headless = NetworkModel.headless?(pc)
       picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts'
       screen = remote_screen(pc)
@@ -988,8 +1012,13 @@ module BreakEscape
         session = access_sessions[pc['id'].to_s]
         return 'not_responding' if relay_session?(session) && host_service_off?(pc)
       elsif route && route[:from]
-        # K4 builds the `from` route; until then it is refused as unreachable
-        nil
+        # K4: not_responding only when the record carries this route, the route to the target
+        # holds and only the target itself is off; every other `from` refusal is unreachable
+        session = access_sessions[pc['id'].to_s]
+        if credentials_declared? && session.is_a?(Hash) && session['from'].to_s == route[:from] &&
+           from_route_refusal(route[:from], pc).nil? && !remote_blocked?(pc) && host_service_off?(pc)
+          return 'not_responding'
+        end
       elsif foothold_id.present?
         return 'not_responding' if host_reachable_through?(foothold_id, pc) && !remote_blocked?(pc) && host_service_off?(pc)
       elsif login_pc_reachable?(info) && !NetworkModel.headless?(pc) && host_service_off?(pc)
@@ -1109,7 +1138,10 @@ module BreakEscape
     # a local sign-in, a claim, or a remote session settled at the keyboard) is judged as 9.3a
     # did, except that a PC whose own service is off (5.2, q72) refuses every session's scoped
     # requests, local ones included: off is off at the keyboard too.
-    def session_route_up?(pc_id)
+    #
+    # Keyring K4 (plan 3.8): `visited` holds the PC ids already judged on this `from` walk, so
+    # two sessions that name each other answer false instead of recursing.
+    def session_route_up?(pc_id, visited = Set.new)
       session = access_sessions[pc_id.to_s]
       return true unless session.is_a?(Hash)
 
@@ -1119,8 +1151,12 @@ module BreakEscape
       # Keyring K2 (plan 3.8): a relay session is up while its invite has not ended (and the
       # PC is on, above). It has no foothold, so it must be judged before the blank return.
       return !ended_credential?(session['credential']) if relay_session?(session)
-      # K4 judges a `from` session by its source; until then one is never up
-      return false if session['from'].present?
+      # K4: a `from` session is up while its source check holds (target power is above)
+      if session.key?('from')
+        return false unless info && credentials_declared?
+
+        return from_route_refusal(session['from'], info[:object], visited | [pc_id.to_s]).nil?
+      end
 
       fid = session['foothold']
       return true if fid.blank?
@@ -1194,7 +1230,13 @@ module BreakEscape
       # An implant on a switched-off PC relays nothing (review R3 M1). Outages only.
       return Set.new if !ignore_outages && implant_source_off?(foothold_id)
 
-      reached = Set.new([own])
+      reach_spread(Set.new([own]), ignore_outages: ignore_outages)
+    end
+
+    # The pivot loop the foothold walk and from_reach share: repeatedly, from every reached, up
+    # network on which a held session host stands, add its up linked networks, to a fixpoint.
+    def reach_spread(reached, ignore_outages:)
+      up = ->(net) { ignore_outages || network_up?(net) }
       session_hosts = reach_session_hosts
       changed = true
       while changed
@@ -1220,6 +1262,115 @@ module BreakEscape
         end
       end
       reached
+    end
+
+    # ==========================================
+    # Keyring K4: the `from: pcId` route (CREDENTIAL_KEYRING_PLAN.md 3.7, 3.8 and 9)
+    # ==========================================
+
+    # A source PC id as a `from` param may name it: a short id string. Anything else (an array, a
+    # hash, a long or empty string) is refused before any state is read.
+    FROM_PARAM_PATTERN = /\A[A-Za-z0-9_-]{1,64}\z/.freeze
+
+    # The `from` route is answered only in a scenario that declares `credentials` (plan 9
+    # "Scope"); elsewhere a `from` param is refused on every route.
+    def credentials_declared?
+      creds = scenario_data.is_a?(Hash) ? scenario_data['credentials'] : nil
+      creds.is_a?(Hash) && creds.any?
+    end
+
+    def valid_from_param?(value)
+      value.is_a?(String) && FROM_PARAM_PATTERN.match?(value)
+    end
+
+    # What a sign-in from a session on `network` can reach (plan 9): the foothold walk seeded
+    # from that network instead of a foothold, so a link is crossed only from a reached network
+    # on which a held, non-relay session host stands. It never calls session_route_up? on a
+    # pivot, so it cannot recurse through another `from` session. Not networks_reachable_from,
+    # which needs no session on the networks between. Cached per request as reach_walk is; the
+    # key is reach_cache_key's (session keys, outages, host power, locks) plus the network.
+    def from_reach(network, ignore_outages:)
+      key = [:from, network.to_s] + reach_cache_key('', ignore_outages)
+      @reach_cache = {} if !defined?(@reach_cache) || @reach_cache.nil? || @reach_cache.size > 64
+      (@reach_cache[key] ||= from_reach_uncached(network, ignore_outages: ignore_outages).freeze).dup
+    end
+
+    def from_reach_uncached(network, ignore_outages:)
+      return Set.new unless NetworkModel.present_string?(network)
+      return Set.new unless ignore_outages || network_up?(network)
+
+      reach_spread(Set.new([network]), ignore_outages: ignore_outages)
+    end
+
+    # The PC ids a session's `from` chain names, nearest first ([] for a session with no `from`),
+    # or nil when the chain repeats (two sessions that name each other).
+    def from_chain(pc_id)
+      chain = []
+      seen = Set.new([pc_id.to_s])
+      current = pc_id.to_s
+      loop do
+        session = access_sessions[current]
+        source = session.is_a?(Hash) ? session['from'] : nil
+        break unless source.is_a?(String) && !source.empty?
+        return nil if seen.include?(source)
+
+        seen << source
+        chain << source
+        current = source
+      end
+      chain
+    end
+
+    # The source and reach checks of a `from` route to the sign-in PC `pc` (plan 3.7), shared by
+    # POST /login, GET /login_accounts, GET /keyring, the desktop requests and session_route_up?.
+    # nil when the route holds; :generic for a malformed param, a relay source, the target as its
+    # own source or a target on the source's own `from` chain (the generic refusal); :unreachable
+    # for a source not held, locked, off, whose own route is down, or whose from_reach misses
+    # the target's network. Target power and remote: "blocked" are the caller's: a source's own
+    # remote: "blocked" does not matter.
+    def from_route_refusal(source_id, pc, visited = Set.new)
+      return :generic unless valid_from_param?(source_id) && pc.is_a?(Hash)
+
+      target_id = pc['id'].to_s
+      return :generic if source_id == target_id
+
+      source = access_sessions[source_id]
+      return :unreachable unless source.is_a?(Hash)
+      return :generic if relay_session?(source)
+
+      chain = from_chain(source_id)
+      return :generic if chain.nil? || chain.include?(target_id)
+      return :unreachable if session_locked?(source) || visited.include?(source_id)
+
+      info = find_login_pc(source_id)
+      return :unreachable unless info && !host_service_off?(info[:object])
+      return :unreachable unless session_route_up?(source_id, visited | [target_id])
+
+      source_net = object_network(info[:object])
+      target_net = NetworkModel.sign_in_object?(pc) ? object_network(pc) : nil
+      return :unreachable if source_net.nil? || target_net.nil?
+      return :unreachable unless from_reach(source_net, ignore_outages: false).include?(target_net)
+
+      nil
+    end
+
+    # The prune's test for a `from` session (plan 3.8, R10 m4): its source session is gone or a
+    # relay, its chain repeats, or its network has left the structural from_reach of the
+    # source's network. Outages, power and locks never prune.
+    def from_session_pruned?(pc_id, session)
+      source_id = session['from']
+      return true unless valid_from_param?(source_id)
+
+      source = access_sessions[source_id]
+      return true if !source.is_a?(Hash) || relay_session?(source) || from_chain(pc_id).nil?
+
+      target = find_login_pc(pc_id)
+      source_info = find_login_pc(source_id)
+      target_net = target ? object_network(target[:object]) : nil
+      source_net = source_info ? object_network(source_info[:object]) : nil
+      return true if target_net.nil? || source_net.nil?
+
+      !from_reach(source_net, ignore_outages: true).include?(target_net)
     end
 
     # [{ pc_id:, net: }] for every held session at a sign-in host on a network, used by the
@@ -1267,10 +1418,11 @@ module BreakEscape
     #
     # Keyring K2 (plan 3.8): a session whose pivot has just become a relay (no longer a
     # pivot) ends together with every session beyond it. That comes from reach_session_hosts
-    # skipping a relay, not from the loop: a pruned session sits on a network outside the
-    # reach, so it never fed the reach and one pass is already a fixed point. The loop is kept
-    # as a cheap guard (one extra walk per non-empty prune). Relay sessions carry no foothold
-    # and are never pruned here.
+    # skipping a relay. Relay sessions carry no foothold and are never pruned here.
+    #
+    # Keyring K4: a `from` session ends when from_session_pruned? holds. The loop runs to a
+    # fixed point, so a pruned source (or pivot) ends every `from` session chained beyond it in
+    # the next round.
     def prune_unreachable_sessions!
       ended = []
       loop do
@@ -1281,7 +1433,10 @@ module BreakEscape
         network_footholds.keys.each { |fid| reachable.merge(structural_reach(fid)) }
 
         round = sessions.select do |pc_id, session|
-          next false unless session.is_a?(Hash) && session['foothold'].present?
+          next false unless session.is_a?(Hash)
+          # Keyring K4: a `from` session is judged by its source (from_session_pruned?)
+          next from_session_pruned?(pc_id, session) if session.key?('from')
+          next false unless session['foothold'].present?
 
           info = find_login_pc(pc_id)
           net = info ? object_network(info[:object]) : nil
@@ -1323,8 +1478,10 @@ module BreakEscape
       if route && route[:relay]
         relay_session?(session) && session_route_up?(pc['id'])
       elsif route && route[:from]
-        # K4: session['from'] == route[:from] && session_route_up?; not built in K2
-        false
+        # K4: the record carries this same source, its route is up (source check, target on)
+        # and the target allows remote sign-in; only in a scenario that declares credentials
+        credentials_declared? && session.is_a?(Hash) && session['from'].to_s == route[:from] &&
+          !relay_session?(session) && session_route_up?(pc['id']) && !remote_blocked?(pc)
       elsif route && route[:foothold].present?
         host_reachable_through?(route[:foothold], pc) && !remote_blocked?(pc) && !host_service_off?(pc) &&
           !(session.is_a?(Hash) && session['via'] == 'claim') && !remote_route_session?(session)
@@ -1345,7 +1502,8 @@ module BreakEscape
       when Hash
         r = route.symbolize_keys
         if r[:relay] then { relay: true }
-        elsif r[:from].present? then { from: r[:from].to_s }
+        # K4: a whitespace-only source is still a `from` request (refused), never the keyboard
+        elsif r[:from].is_a?(String) && !r[:from].empty? then { from: r[:from] }
         elsif r[:foothold].present? then { foothold: r[:foothold].to_s }
         end
       end
@@ -1373,12 +1531,12 @@ module BreakEscape
     # session no longer depends on a foothold and an unplug elsewhere does not end it.
     def settle_session_at_keyboard!(pc_id)
       session = access_sessions[pc_id.to_s]
-      return unless session.is_a?(Hash) && session.key?('foothold')
+      return unless session.is_a?(Hash) && (session.key?('foothold') || session.key?('from'))
       # Keyring K2 (plan 3.8): a credential session stays remote at the target's keyboard, so
-      # a saved-connection session still ends on unplug
+      # a saved-connection session still ends on unplug (or, K4, with its `from` source)
       return if session['via'] == 'credential'
 
-      player_state['sessions'][pc_id.to_s] = session.except('foothold')
+      player_state['sessions'][pc_id.to_s] = session.except('foothold', 'from')
       save!
     end
 

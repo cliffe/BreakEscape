@@ -111,15 +111,18 @@ module BreakEscape
     # route (section 6.2's "a pc_id the player cannot open a screen for is ignored"). route is the
     # screen the client says it is drawing ({ foothold: }, { from: }, { relay: true } or nil); it
     # names the screen, it never asserts reach. A foothold screen is openable only when that
-    # foothold reaches the host now. A from/relay screen is trusted here (K4/K2 own their reach
-    # checks); a keyboard screen (no route) needs the PC physically reachable now.
+    # foothold reaches the host now. A from screen is openable only when the `from` route's
+    # source and reach checks hold (K4); a relay screen is trusted here (K2 owns its checks); a
+    # keyboard screen (no route) needs the PC physically reachable now.
     def keyring_pc_openable?(pc_id, route)
       info = find_login_pc(pc_id)
       return false unless info
 
       if route.is_a?(Hash) && CredentialModel.present_string?(route[:foothold])
         host_reachable_through?(route[:foothold].to_s, info[:object])
-      elsif route.is_a?(Hash) && (route[:relay] || CredentialModel.present_string?(route[:from]))
+      elsif route.is_a?(Hash) && route.key?(:from)
+        from_route_refusal(route[:from], info[:object]).nil?
+      elsif route.is_a?(Hash) && route[:relay]
         true
       else
         login_pc_reachable?(info)
@@ -207,23 +210,30 @@ module BreakEscape
     end
 
     # The routes that reach a connecting credential's connectsTo now (section 6.2). K1 computes held
-    # footholds (by seq) for a saved_connection, and the relay for an assist_invite. `from` (K4) and
-    # token's proof foothold (K5) are not built here.
+    # footholds (by seq) for a saved_connection, and the relay for an assist_invite. K4 adds, after
+    # the footholds, a { from: pcId } row for each held session whose `from` source and reach
+    # checks hold, by PC id (target power and remote: "blocked" are their own fields). Token's
+    # proof foothold (K5) is not built here.
     def credential_routes(kind, pc)
       case kind
       when 'saved_connection'
         return [] unless pc.is_a?(Hash)
 
         held = player_state['footholds']
-        return [] unless held.is_a?(Hash)
-
-        held.keys.filter_map do |fid|
-          { 'foothold' => fid } if host_reachable_through?(fid, pc)
-        end
+        footholds = held.is_a?(Hash) ? held.keys.filter_map { |fid| { 'foothold' => fid } if host_reachable_through?(fid, pc) } : []
+        footholds + credential_from_routes(pc)
       when 'assist_invite'
         [{ 'relay' => true }]
       else
         []
+      end
+    end
+
+    def credential_from_routes(pc)
+      return [] unless credentials_declared?
+
+      access_sessions.keys.map(&:to_s).sort.filter_map do |source_id|
+        { 'from' => source_id } if from_route_refusal(source_id, pc).nil?
       end
     end
 

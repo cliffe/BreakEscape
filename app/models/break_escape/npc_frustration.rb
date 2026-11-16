@@ -196,9 +196,10 @@ module BreakEscape
       entry['done'] << index if LASTING_KINDS.include?(w['do']) && !entry['done'].include?(index)
       set_workaround_global!(w)
       heard_now = false
+      borrow_ended = []
       case w['do']
       when 'borrow_session'
-        record_borrow_done!(npc, w)
+        borrow_ended = record_borrow_done!(npc, w)
       when 'share_login'
         # 5. heard counts only in a room the colleague can be in that the player has opened
         heard_now = heard && share_heard_in?(w, room_id) && colleague_encountered?(w)
@@ -212,7 +213,12 @@ module BreakEscape
         end
       end
       save!
-      workaround_body(npc, w, heard: heard_now)
+      result = workaround_body(npc, w, heard: heard_now)
+      # Keyring K4 (plan 9): the sessions the borrow's end pruned (a `from` session whose source
+      # was the borrowed PC), only when there are any, so the client closes the onward desktops.
+      # A resent "done" is answered above from lastSpent and never carries them.
+      result[:body]['endedPcIds'] = borrow_ended if borrow_ended.any?
+      result
     end
 
     # player_state.sharedLogins (9.4): the accounts the player heard shared. Missing means empty.
@@ -373,6 +379,9 @@ module BreakEscape
       pc = find_login_pc(w['pc'])&.dig(:object)
       pc_id = (pc && pc['id'] || w['pc']).to_s
       player_state['sessions'] = access_sessions.except(pc_id)
+      # Keyring K4 (plan 9): ending the player's session here can end a `from` session sourced
+      # from it (and anything chained beyond), so the prune runs and its ids are returned
+      ended = prune_unreachable_sessions!
       # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there.
       # UX slice 16 review R1 m4: a policy with autoLockMin 0 locks the instant the guest leaves,
       # so no guest session is left open (the guest claim refuses such a PC, game.rb:2307-2308);
@@ -384,6 +393,7 @@ module BreakEscape
         guest_sessions[pc_id] = npc['id']
         guest_sessions_at[pc_id] = server_now
       end
+      ended
     end
 
     # Review R1 m4: a share counts as heard only once the player has met the colleague, as an
