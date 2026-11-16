@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Access model devices",
+  "description": "Test of the physical pentest devices: the pocket rogue AP (plant, clone a Wi-Fi network on a key page or a staff sign-in page, harvest the key or an account, join the staff Wi-Fi, sign in with the harvested account) and the switch drop box behind a patch panel. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 15,
+  "test_type": "access_model",
+  "test_objective": "Prove the rogue AP's plant gates the harvested key and password on the server, each portal template harvests its own thing once, a refused or wrong clone harvests nothing, the harvested key joins the staff Wi-Fi and the harvested password signs in at the hot desk; and that the patch panel plants the drop box on the right network per port"
+}
