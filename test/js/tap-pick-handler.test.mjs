@@ -571,7 +571,7 @@ test('overlap 22b (R5 M1): a walk that ends 7 px short with one hit out of reach
     // The walk ended 7 px short on its approach side: b is in reach, a is not
     player.x = stand[0] + 7; player.y = stand[1]; w.state.moving = false;
     assert.ok(w.deps.isObjectInInteractionRange(w.win.rooms.r1.objects.b) && !w.deps.isObjectInInteractionRange(w.win.rooms.r1.objects.a));
-    w.pendingOverlapWalk.update(Date.now() + 100);
+    w.pendingOverlapWalk.update(Date.now() + 350);
     const walks = w.log.filter(l => l.startsWith('walk:'));
     assert.equal(walks.length, 2, `one retry step: ${w.log.join()}`);
     const [rx, ry] = walks[1].slice(5).split(',').map(Number);
@@ -579,7 +579,7 @@ test('overlap 22b (R5 M1): a walk that ends 7 px short with one hit out of reach
     assert.ok(w.pendingOverlapWalk.get(), 'still waiting on the retry step');
     // ...and only one: back at rest still short, it finishes with what is in reach
     w.state.moving = false;
-    w.pendingOverlapWalk.update(Date.now() + 700);
+    w.pendingOverlapWalk.update(Date.now() + 1500);
     assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 2, 'no second retry');
     assert.equal(w.pendingOverlapWalk.get(), null);
 });
@@ -592,11 +592,11 @@ test('overlap 22c (R2 M1): the walk ends 7 px short with neither hit in reach: o
     player.x = stand[0] + 5; player.y = stand[1] + 5; w.state.moving = false;
     w.ovr.out = new Set(['copier', 'printout']);
     const t0 = Date.now();
-    w.pendingOverlapWalk.update(t0 + 100);
+    w.pendingOverlapWalk.update(t0 + 350);
     assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 2, 'the retry step: ' + w.log.join());
     assert.ok(w.pendingOverlapWalk.get(), 'pending while the step runs');
     w.state.moving = false;
-    w.pendingOverlapWalk.update(t0 + 800);
+    w.pendingOverlapWalk.update(t0 + 1500);
     assert.ok(!w.log.some(l => l.startsWith('alert')), 'no dead-end message: ' + w.log.join());
     assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 3, 'which walks');
     // A walk only (review R3 m1): nothing is armed to be used on arrival, and nothing is used or opened
@@ -702,12 +702,33 @@ test('overlap 22e (R2 n6): a retry step still waiting on the pathfinder is not d
     const stand = w.log.find(l => l.startsWith('walk:')).slice(5).split(',').map(Number);
     player.x = stand[0] + 7; player.y = stand[1]; w.state.moving = false;
     const t0 = Date.now();
-    w.pendingOverlapWalk.update(t0 + 100);         // the retry starts; the player is not moving yet
+    w.pendingOverlapWalk.update(t0 + 350);         // the retry starts; the player is not moving yet
     w.state.moving = false;
-    w.pendingOverlapWalk.update(t0 + 200);         // inside the grace: still pending
+    w.pendingOverlapWalk.update(t0 + 450);         // inside the grace: still pending
     assert.ok(w.pendingOverlapWalk.get(), 'kept while the step is not under way');
-    w.pendingOverlapWalk.update(t0 + 600);         // grace over: finishes with what is in reach
+    w.pendingOverlapWalk.update(t0 + 1200);        // grace over: finishes with what is in reach
     assert.equal(w.pendingOverlapWalk.get(), null);
+});
+
+test('overlap 22g (live c10): the retry is not spent before the path is found; a stand point in an NPC berth is not chosen', () => {
+    // 1. The click has just armed the watcher; the pathfinder has not answered (not moving). That is not
+    // "stopped": the retry waits, so it is still there when the real stop comes (it fired at the click
+    // from the start point and the real stop had none left)
+    const player = { x: 200, y: 200 };
+    const w = world({ player, objects: [copierAt(), printoutAt()] });
+    w.tap(118, 108);
+    const t0 = Date.now();
+    w.state.moving = false;
+    w.pendingOverlapWalk.update(t0 + 50);
+    assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 1, 'no retry at the click: ' + w.log.join());
+    assert.ok(w.pendingOverlapWalk.get());
+    // 2. Every candidate stand point sits in the berth the player's search keeps clear of a movable NPC
+    // (EasyStar finds no path to it, and the walk went to some other cell): no joint stand, so the old
+    // single far click on the topmost hit
+    const w2 = world({ player: { x: 200, y: 200 }, objects: [copierAt(), printoutAt()] });
+    w2.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }), isPlayerAvoidedCell: () => true };
+    w2.tap(118, 108);
+    assert.equal(w2.win.__overlapStand?.joint, false, JSON.stringify(w2.win.__overlapStand));
 });
 
 test('overlap 22f (R2 n1): the live-proof hooks are cleared at the start of each click', () => {

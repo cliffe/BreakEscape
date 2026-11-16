@@ -475,6 +475,22 @@ test('hasPlayerLineOfSight: { avoidNpcs } refuses a line through a standing NPC,
     }
 });
 
+test('isPlayerAvoidedCell: the berth the player\'s search keeps round a movable NPC, not round an immovable one (live c10)', async () => {
+    globalThis.window = globalThis.window || {};
+    const { NPCPathfindingManager } = await import('../../public/break_escape/js/systems/npc-pathfinding.js');
+    const pm = new NPCPathfindingManager({ time: { delayedCall() {} } });
+    pm.worldGridBounds = { minX: 0, minY: 0, cols: 40, rows: 40, step: 8 };
+    const body = (l, t, r, b, immovable = false) => ({ enable: true, immovable, left: l, top: t, right: r, bottom: b });
+    const saved = window.rooms;
+    // Marek: body x 48..58, y 120..133 -> cells 6..7 x 15..16, berth cells 4..9 x 14..17
+    window.rooms = { r: { npcSprites: [{ body: body(48, 120, 58, 133) }, { body: body(200, 200, 210, 210, true) }] } };
+    try {
+        assert.equal(pm.isPlayerAvoidedCell(44, 140), true, 'one row below his body: in the berth');
+        assert.equal(pm.isPlayerAvoidedCell(44, 164), false, 'two rows further: clear');
+        assert.equal(pm.isPlayerAvoidedCell(205, 205), false, 'an immovable (seated) body is not avoided by this search');
+    } finally { window.rooms = saved; }
+});
+
 test('player.js and game.js: a far tap\'s walk passes { avoidNpcs } to every player line-of-sight test (R3 m1)', () => {
     const player = readFileSync(join(js, 'core/player.js'), 'utf8');
     assert.match(player, /export function movePlayerToPoint\(x, y, opts = null\)/);

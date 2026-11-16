@@ -3081,6 +3081,11 @@ const pendingOverlapWalk = createPendingTapUse({
         return !overlapRetryNext(hits);
     },
     onPartial: (hits, now = Date.now()) => {
+        // The path is found a frame or two after the click: not moving yet is not "stopped". Wait
+        // RETRY_GRACE_MS after the last progress before spending the retry (live c10: it fired
+        // at the click, from the start point, and the real stop had none left)
+        const pend = pendingOverlapWalk.get();
+        if (pend && now - pend.progressAt < RETRY_GRACE_MS) return false;
         // With some hit in reach or none: the target keeps every hit in reach, so either is safe
         const t = overlapRetryNext(hits);
         if (!t) return false;
@@ -3239,6 +3244,8 @@ function lineClearFromFeet(p) {
 // The player's body at feet point p would overlap an NPC's body (the walk could not end there)
 function standsInsideNpc(p) {
     const player = window.player;
+    // The player's search avoids a berth round a movable NPC: a stand point in it has no path (live c10)
+    if (p && window.pathfindingManager?.isPlayerAvoidedCell?.(p.x, p.y)) return true;
     const rects = window.pathfindingManager?.getNpcBodyRects?.();
     const b = player?.body;
     if (!rects?.length || !b || !p) return false;

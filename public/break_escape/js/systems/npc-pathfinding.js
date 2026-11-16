@@ -413,6 +413,31 @@ export class NPCPathfindingManager {
      * on the world pathfinder, so the player routes around them.
      * skipCX/skipCY: grid cell to never avoid (the player's start cell).
      */
+    /**
+     * Whether the player's click-to-move search avoids the cell holding (worldX, worldY): inside the
+     * berth _avoidNPCPositions gives a movable NPC body (2 cells either side, 1 above and below).
+     * The goal cell of such a search is blocked, so EasyStar finds no path and the player walks
+     * to some other reachable cell instead (overlap walk, stand points chosen in an NPC's berth).
+     */
+    isPlayerAvoidedCell(worldX, worldY) {
+        if (!this.worldGridBounds || !window.rooms) return false;
+        const { minX, minY, cols, rows, step } = this.worldGridBounds;
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+        const cx = Math.floor((worldX - minX) / step), cy = Math.floor((worldY - minY) / step);
+        for (const roomId in window.rooms) {
+            for (const sprite of window.rooms[roomId]?.npcSprites || []) {
+                const body = sprite.body;
+                if (!body || !body.enable || body.immovable) continue;
+                const cx1 = clamp(Math.floor((body.left   - minX) / step) - 2, 0, cols - 1);
+                const cy1 = clamp(Math.floor((body.top    - minY) / step) - 1, 0, rows - 1);
+                const cx2 = clamp(Math.floor((body.right  - minX - 1) / step) + 2, 0, cols - 1);
+                const cy2 = clamp(Math.floor((body.bottom - minY - 1) / step) + 1, 0, rows - 1);
+                if (cx >= cx1 && cx <= cx2 && cy >= cy1 && cy <= cy2) return true;
+            }
+        }
+        return false;
+    }
+
     _avoidNPCPositions(skipCX, skipCY) {
         if (!this.worldPathfinder || !this.worldGridBounds || !window.rooms) return;
         const { minX, minY, cols, rows, step } = this.worldGridBounds;
