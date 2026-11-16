@@ -78,3 +78,19 @@ new-game.rb, the only id driven. Command: `BOARD_ROUTE=direct node tools/playtes
   `chair_in_doorway_no_spot` at (277, 87), no repeats; one `return_stuck` for Tom at (-24, 84); page errors 0.
 
 The retry path was never exercised in this run, so the re-approach remains unproven in either direction.
+
+## R5 Outcomes
+
+- **M1 fixed.** `parkByCooler` (tools/playtest/needs-tour-regression.mjs) now re-approaches once whenever the player ends 24 px or more
+  from the aim, whatever `moveTo` returned, and computes `ok` from distance alone. It reports `retried` and the final `dist`. Both
+  row 5 and row 6 go through this helper. The other approach code in the driver (`read`, the coffee and socket walks) does not park
+  against a fixed aim on trust of `ok`: `read` follows each move with an interact call and checks its result, so no change there.
+  The retry is still unproven live; the next tour will show it.
+- **m1 fixed.** seating.js gains `DOOR_SWEEP_MAX_TRIES = 9` beside `DOOR_SWEEP_TRIES = 3` (per anchor). The per-chair total and a
+  `capped` flag survive anchor resets. At the cap the chair logs one `chair_in_doorway_no_spot` line and is left alone. The count
+  clears when the foot leaves every door gap (the existing `_doorSweep = undefined`), which is also how a seated, picked-up or
+  reloaded chair starts again.
+- **m2 done.** Two seating tests added. The 0, 3, 6, 3, 0 oscillation test (9 glides, one give-up line, no further glide) fails on
+  the previous seating.js (checked with `git apply -R`). The anchor-clear test passes on both, because the clear was already
+  correct by reading; it pins the behaviour rather than a change.
+- **m3 left as is.** The memo test still pins the mark only. The memo's reach is checked live in round 6.

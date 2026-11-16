@@ -1485,6 +1485,44 @@ test('sweepDoorwayChairs (R4 m1): a genuine move of more than 4 px from the firs
     } finally { rig.restore(); }
 });
 
+test('sweepDoorwayChairs (R5 m1): a foot swinging 0, 3, 6, 3, 0 past the anchor reaches the total cap, logs once and stops', () => {
+    const chair = doorChair(5, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const xs = [5, 8, 11, 8]; // a triangle wave in 3 px steps: every 6 px excursion resets the anchor
+        for (let n = 0, t = 1000; n < 24; n++, t += 1000) {
+            chair.x = xs[n % 4];
+            seating.sweepDoorwayChairs(t);
+            for (let i = 0; i < 12; i++) seating.updateGlides();
+        }
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 9, 'nine glides in all, then none');
+        assert.equal(rig.log.filter(l => l.ev === 'chair_in_doorway_no_spot').length, 1, 'one give-up line');
+        assert.equal(seating.glideTarget(chair), null, 'no further glide');
+    } finally { rig.restore(); }
+});
+
+test('sweepDoorwayChairs (R5 m2): the anchor clears once the foot leaves every door gap, so a return gets fresh tries', () => {
+    const chair = doorChair(8, 79);
+    const rig = doorSweepRig([chair]);
+    try {
+        const run = (from, to) => {
+            for (let t = from; t <= to; t += 1000) {
+                seating.sweepDoorwayChairs(t);
+                for (let i = 0; i < 12; i++) seating.updateGlides();
+            }
+        };
+        run(1000, 8000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 3, 'given up after three');
+        assert.ok(chair._doorSweep, 'anchor held while in the gap');
+        chair.x = 400; chair.y = 400; // well clear of every gap
+        seating.sweepDoorwayChairs(9000);
+        assert.equal(chair._doorSweep, undefined, 'anchor cleared');
+        chair.x = 8; chair.y = 79; // pushed back into the same gap
+        run(10000, 17000);
+        assert.equal(rig.log.filter(l => l.ev === 'chair_out_of_doorway').length, 6, 'three fresh tries');
+    } finally { rig.restore(); }
+});
+
 test('sweepDoorwayChairs: a chair sat on, fetched, mounted, gliding or moving stays; once a second at most', () => {
     const make = () => doorChair(8, 79);
     const cases = {

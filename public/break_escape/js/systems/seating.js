@@ -1808,7 +1808,8 @@ const TILE_PX = 32;
 const DOOR_SWEEP_MS = 1000;
 /** Glides from one foot position before the sweep gives up on that chair (R2 m3). */
 const DOOR_SWEEP_SAME_PX = 4; // R4 m1: a later try within this distance of the first-try foot is the same spot
-const DOOR_SWEEP_TRIES = 3;
+const DOOR_SWEEP_TRIES = 3; // glides per anchor foot
+const DOOR_SWEEP_MAX_TRIES = 9; // R5 m1: hard cap on glides per chair across anchor resets, until it is out of the gaps
 const DOOR_SPOT_MARGIN = 2;
 let doorSweepAt = 0;
 
@@ -1878,9 +1879,11 @@ export function sweepDoorwayChairs(now = Date.now()) {
         // until the chair moves. R3 m1 and R4 m1: "the same foot" is within DOOR_SWEEP_SAME_PX of the
         // first-try foot (kept per chair), so a pixel of physics nudge, on either side of any rounding
         // edge, still counts as the same try; a move further than that starts the count again.
+        // R5 m1: a foot that swings back and forth past the anchor resets it each time; `total` and `capped`
+        // survive the reset, so at DOOR_SWEEP_MAX_TRIES the chair is left alone (one log line).
         let sw = chair._doorSweep;
         if (!sw || Math.hypot(f.x - sw.fromX, f.y - sw.fromY) > DOOR_SWEEP_SAME_PX) {
-            sw = chair._doorSweep = { fromX: f.x, fromY: f.y, tries: 0, gaveUp: false };
+            sw = chair._doorSweep = { fromX: f.x, fromY: f.y, tries: 0, gaveUp: !!sw?.capped && !!sw.gaveUp, total: sw?.total || 0, capped: !!sw?.capped };
         }
         if (!spot.to) {
             const key = from.join(',');
@@ -1891,14 +1894,15 @@ export function sweepDoorwayChairs(now = Date.now()) {
             continue;
         }
         chair._doorNoSpotAt = undefined;
-        if (sw.tries >= DOOR_SWEEP_TRIES) {
+        if (sw.capped || sw.total >= DOOR_SWEEP_MAX_TRIES || sw.tries >= DOOR_SWEEP_TRIES) {
             if (!sw.gaveUp) {
                 sw.gaveUp = true;
+                if (sw.total >= DOOR_SWEEP_MAX_TRIES) sw.capped = true;
                 window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_in_doorway_no_spot', { chair: id, at: from, tries: sw.tries });
             }
             continue;
         }
-        sw.tries++;
+        sw.tries++; sw.total++;
         glideChairFootTo(chair, spot.to.x, spot.to.y);
         window.npcNeedsSystem?._log?.(chair.seatedBy || 'chair', 'chair_out_of_doorway',
             { chair: id, from, to: [Math.round(spot.to.x), Math.round(spot.to.y)], spot: spot.index });
