@@ -228,5 +228,123 @@ module BreakEscape
       @game.scenario_data['policies'] = { 'blocked' => { 'remote' => 'blocked' } }
       assert_equal true, entry('lena_rdp')['remoteBlocked']
     end
+
+    # --- K3d (plan 8.7): the captures map and `how` ------------------------------------------
+
+    # Writers on Lena (an account holder): a password capture of her account, a PIN seen over a
+    # shoulder, a payload foothold, a plain finding; and one on Jake whose usePayload overlays it.
+    def add_capture_writers
+      npcs = @game.scenario_data['rooms']['office']['npcs']
+      npcs[0]['eventMappings'] = [
+        { 'eventPattern' => 'a', 'addCapture' => { 'targetId' => 'lena', 'kind' => 'credential', 'address' => 'lfox', 'note' => 'keylogger' } },
+        { 'eventPattern' => 'b', 'addCapture' => { 'targetId' => 'cupboard_pin', 'kind' => 'credential', 'host' => 'Cupboard keypad',
+                                                   'address' => 'someone at the cupboard', 'secret' => '2580' } },
+        { 'eventPattern' => 'c', 'addCapture' => { 'targetId' => 'propped_door', 'kind' => 'foothold', 'host' => 'Back door', 'note' => 'wedged' } },
+        { 'eventPattern' => 'd', 'addCapture' => { 'targetId' => 'tagged_door', 'kind' => 'foothold', 'host' => 'Side door', 'rowTag' => 'foothold' } },
+        { 'eventPattern' => 'e', 'addCapture' => { 'targetId' => 'qr_capture', 'kind' => 'credential', 'address' => 'lfox', 'rowSource' => 'phished' } }
+      ]
+      npcs[1]['usePayload'] = { 'host' => 'HB-FIN-03', 'note' => 'payload ran' }
+      npcs[1]['eventMappings'] = [
+        { 'eventPattern' => 'f', 'addCapture' => { 'targetId' => 'jake_payload', 'kind' => 'foothold', 'host' => 'HB-FIN-03' } }
+      ]
+    end
+
+    def store(target_id, fields, proven: true)
+      @game.player_state['seCaptures'] ||= {}
+      @game.player_state['seCaptures'][target_id] = { 'targetId' => target_id, 'at' => 1, 'proven' => proven }.merge(fields)
+    end
+
+    def captures
+      @game.keyring_for_client[:captures]
+    end
+
+    test 'K3d: a credential capture of an account is tagged password and names the account' do
+      add_capture_writers
+      store('lena', 'kind' => 'credential', 'address' => 'lfox', 'note' => 'keylogger')
+      assert_equal({ 'tag' => 'password', 'source' => 'recorded', 'account' => 'lena' }, captures['lena'])
+    end
+
+    test 'K3d: the account is named before the capture is proven' do
+      add_capture_writers
+      store('lena', { 'kind' => 'credential', 'address' => 'lfox', 'note' => 'keylogger' }, proven: false)
+      assert_equal 'lena', captures['lena']['account']
+    end
+
+    test 'K3d: digits with no account give pin, and the map carries no value' do
+      add_capture_writers
+      store('cupboard_pin', 'kind' => 'credential', 'host' => 'Cupboard keypad', 'address' => 'someone at the cupboard')
+      assert_equal({ 'tag' => 'pin', 'source' => 'recorded' }, captures['cupboard_pin'])
+      refute_includes JSON.generate(@game.keyring_for_client), '2580'
+    end
+
+    test 'K3d: digits that are an account password stay password' do
+      add_capture_writers
+      @game.scenario_data['rooms']['office']['npcs'][0]['eventMappings'][0]['addCapture']['secret'] = '1234'
+      store('lena', 'kind' => 'credential', 'address' => 'lfox', 'note' => 'keylogger')
+      assert_equal 'password', captures['lena']['tag']
+    end
+
+    test 'K3d: an addCapture foothold is a finding, a payload overlay is a foothold, rowTag overrides' do
+      add_capture_writers
+      store('propped_door', 'kind' => 'foothold', 'host' => 'Back door', 'note' => 'wedged')
+      store('tagged_door', 'kind' => 'foothold', 'host' => 'Side door')
+      # The overlaid candidate (the payload's note joins the stored entry), as record_capture! stores it
+      store('jake_payload', 'kind' => 'foothold', 'host' => 'HB-FIN-03', 'note' => 'payload ran')
+      assert_equal 'finding', captures['propped_door']['tag']
+      assert_equal 'foothold', captures['tagged_door']['tag']
+      assert_equal 'foothold', captures['jake_payload']['tag']
+      assert_equal 'recorded', captures['propped_door']['source']
+    end
+
+    test 'K3d: the plain candidate of a usePayload owner reads as a finding' do
+      add_capture_writers
+      store('jake_payload', 'kind' => 'foothold', 'host' => 'HB-FIN-03')
+      assert_equal 'finding', captures['jake_payload']['tag']
+    end
+
+    test 'K3d: rowSource phished marks a look-alike capture outside the phish targets' do
+      add_capture_writers
+      store('qr_capture', 'kind' => 'credential', 'address' => 'lfox')
+      assert_equal 'phished', captures['qr_capture']['source']
+    end
+
+    test 'K3d: two accounts with one username give no account' do
+      add_capture_writers
+      @game.scenario_data['rooms']['office']['npcs'] << { 'id' => 'lena2', 'creds' => { 'username' => 'LFOX', 'password' => 'x' } }
+      store('lena', 'kind' => 'credential', 'address' => 'lfox', 'note' => 'keylogger')
+      refute captures['lena'].key?('account')
+    end
+
+    test 'K3d: the map is built from the server record, never the client global' do
+      add_capture_writers
+      @game.player_state['globalVariables'] = { 'se_captures' => { 'lena' => { 'targetId' => 'lena', 'kind' => 'credential', 'address' => 'lfox' } } }
+      assert_equal({}, captures)
+      store('undeclared', 'kind' => 'credential', 'address' => 'lfox')
+      refute captures.key?('undeclared'), 'an undeclared target in the record is never listed'
+    end
+
+    test 'K3d: the captures map changes the rev' do
+      add_capture_writers
+      before = @game.keyring_for_client[:rev]
+      store('propped_door', 'kind' => 'foothold', 'host' => 'Back door', 'note' => 'wedged')
+      refute_equal before, @game.keyring_for_client[:rev]
+    end
+
+    test 'K3d: how is given for an itemsHeld item, found for a desktop file and a session proof' do
+      inv([{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' },
+           { 'id' => 'jake_assist_code', 'type' => 'text_file', 'name' => 'Remote assist code (Jake)', 'credential' => 'jake_assist' }])
+      @game.player_state['signedInPcs'] = ['lena_pc']
+      @game.player_state['sessions'] = { 'lena_pc' => { 'id' => 'lena' } }
+      assert_equal 'found', entry('lena_rdp')['how']
+      assert_equal 'given', entry('jake_assist')['how']
+      assert_equal 'found', entry('jake_pw_note')['how'] if entry('jake_pw_note')
+    end
+
+    test 'K3d: how is given for a start-inventory item and recorded for a foothold proof' do
+      scn = @game.scenario_data
+      assert CredentialModel.held_item_given?(scn.merge('startItemsInInventory' => [{ 'id' => 'x_file', 'type' => 'text_file' }]), 'x_file')
+      refute CredentialModel.held_item_given?(scn, 'lena_rdp_file')
+      assert_equal 'recorded', @game.send(:credential_how, { 'proof' => { 'foothold' => 'jack1' } })
+    end
   end
 end

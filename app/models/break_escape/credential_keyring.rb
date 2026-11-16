@@ -72,12 +72,32 @@ module BreakEscape
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
       # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
       entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id) && keyring_pc_openable?(pc_id, route)
-      { rev: keyring_rev(entries), entries: entries }
+      captures = keyring_captures
+      { rev: keyring_rev(entries, captures), entries: entries, captures: captures }
     end
 
-    # The short digest of the answer (section 6.2): a stable hash of the entries.
-    def keyring_rev(entries)
-      Digest::MD5.hexdigest(JSON.generate(entries))[0, 6]
+    # The short digest of the answer (section 6.2): a stable hash of the entries and (K3d) the
+    # captures map, so an `unchanged` answer never hides a capture's new tag.
+    def keyring_rev(entries, captures = {})
+      Digest::MD5.hexdigest(JSON.generate([entries, captures]))[0, 6]
+    end
+
+    # The Sign-ins list's capture map (K3d, plan 8.7): one entry per capture in the server's own
+    # record (player_state['seCaptures'], never the client's se_captures global) whose target id
+    # is declared, proven or not: { tag, source, account? }. It carries no value: a `pin` tag says
+    # only that a capture the player already holds is short and numeric.
+    def keyring_captures
+      record = player_state['seCaptures']
+      return {} unless record.is_a?(Hash) && record.any?
+
+      declared = declared_capture_target_ids
+      candidates = CaptureModel.all_capture_candidates(scenario_data)
+      record.each_with_object({}) do |(target_id, stored), out|
+        next unless stored.is_a?(Hash) && declared.include?(target_id)
+
+        meta = CaptureModel.capture_row_meta(scenario_data, stored.merge('targetId' => target_id), candidates: candidates)
+        out[target_id] = meta if meta
+      end
     end
 
     private
@@ -99,7 +119,8 @@ module BreakEscape
           'kind' => 'password',
           'source' => 'capture',
           'account' => account_block(npc, address),
-          'label' => 'Captured'
+          'label' => 'Captured',
+          'how' => 'recorded'
         }
         secret = secrets[target_id] if secrets.is_a?(Hash)
         entry['password'] = secret if CredentialModel.present_string?(secret)
@@ -155,7 +176,8 @@ module BreakEscape
         'source' => 'registry',
         'account' => account_block(npc, npc.dig('creds', 'username')),
         'label' => label,
-        'foundIn' => found_in
+        'foundIn' => found_in,
+        'how' => credential_how(entry)
       }
     end
 
@@ -172,7 +194,8 @@ module BreakEscape
         'account' => account_block(npc, npc.dig('creds', 'username')),
         'label' => label,
         'host' => pc.is_a?(Hash) ? host_label(pc) : nil,
-        'connectsTo' => connects_to
+        'connectsTo' => connects_to,
+        'how' => credential_how(entry)
       }
       # The tray item that proves it (K3b): the client never sees an item's `credential` (it is
       # stripped on the way out), so Connect finds its entry by this id. Only a held proof names
@@ -194,6 +217,19 @@ module BreakEscape
       row['targetOff'] = (pc.is_a?(Hash) && host_service_off?(pc)) if routes.any?
       row['remoteBlocked'] = kind == 'assist_invite' ? false : (pc.is_a?(Hash) && remote_blocked?(pc) ? true : false)
       row
+    end
+
+    # How the player came by a registry credential (K3d, plan 8.7), for the row's source tag:
+    # `given` for a held item from an NPC's or flag station's itemsHeld, a declared grant or the
+    # start inventory; `found` for any other held item and for a session, planted or dropped
+    # proof; `recorded` for a foothold proof (a token the foothold recorded).
+    def credential_how(entry)
+      proof = entry['proof']
+      case CredentialModel.proof_kind(proof)
+      when 'held' then CredentialModel.held_item_given?(scenario_data, proof['held']) ? 'given' : 'found'
+      when 'foothold' then 'recorded'
+      else 'found'
+      end
     end
 
     # A connecting credential's label: the entry's own `label`, else its held item's authored

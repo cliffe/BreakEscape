@@ -739,18 +739,21 @@ module BreakEscape
         base = capture_entry_fields(capture)
         if base
           default_account_address!(base, owner)
-          out << { fields: base, source: { writer: path, proof: capture['proof'], owner: owner_id_of(owner), overlaid: false } }
+          out << { fields: base, source: { writer: path, proof: capture['proof'], owner: owner_id_of(owner), overlaid: false,
+                                           **row_meta_source(capture) } }
         end
 
         next unless kind == :mapping && owner.is_a?(Hash) && owner['usePayload'].is_a?(Hash)
 
-        overlaid = capture_entry_fields(capture.merge(owner['usePayload']))
+        merged = capture.merge(owner['usePayload'])
+        overlaid = capture_entry_fields(merged)
         next unless overlaid
 
         default_account_address!(overlaid, owner)
         out << { fields: overlaid,
                  source: { writer: "#{path}+payload:#{owner_id_of(owner)}", proof: capture['proof'],
-                           owner: owner_id_of(owner), payload_owner: owner_id_of(owner), overlaid: true } }
+                           owner: owner_id_of(owner), payload_owner: owner_id_of(owner), overlaid: true,
+                           **row_meta_source(merged) } }
       end
 
       # An NPC whose usePayload carries its own targetId is a standalone writer (usepayload_captures
@@ -765,7 +768,7 @@ module BreakEscape
         default_account_address!(fields, npc)
         out << { fields: fields,
                  source: { writer: "/usePayload:#{owner_id_of(npc)}", owner: owner_id_of(npc),
-                           payload_owner: owner_id_of(npc), overlaid: true } }
+                           payload_owner: owner_id_of(npc), overlaid: true, **row_meta_source(payload) } }
       end
 
       phish_target_ids(data).each do |target_id|
@@ -776,7 +779,7 @@ module BreakEscape
           address = cap && present_string?(cap['address']) ? cap['address'] : (target && present_string?(target['address']) ? target['address'] : nil)
           note = cap && present_string?(cap['note']) ? cap['note'] : nil
           fields = capture_entry_fields({ 'targetId' => target_id, 'kind' => 'credential', 'roleLabel' => role, 'address' => address, 'note' => note })
-          out << { fields: fields, source: { page: page_id, kits: info[:kits], overlaid: false } } if fields
+          out << { fields: fields, source: { page: page_id, kits: info[:kits], overlaid: false, secret: cap && cap['secret'] } } if fields
         end
 
         foothold = target && target['foothold'].is_a?(Hash) ? target['foothold'] : nil
@@ -786,6 +789,72 @@ module BreakEscape
         out << { fields: fields, source: { phish_foothold: true, overlaid: false } } if fields
       end
 
+      out
+    end
+
+    # --- Row tags for the Sign-ins list (keyring K3d, plan 8.7) ------------------------------
+
+    ROW_TAGS = { 'credential' => %w[password pin], 'foothold' => %w[foothold finding] }.freeze
+    ROW_SOURCES = %w[phished recorded].freeze
+    PIN_PATTERN = /\A\d{3,8}\z/
+
+    # The writer's authored row fields, kept beside a candidate's source (never in its fields, so
+    # capture_entry_fields never stores or sends them): the authored secret (read for the pin
+    # default, since the record keeps none), and the optional rowTag and rowSource overrides.
+    def row_meta_source(raw)
+      return {} unless raw.is_a?(Hash)
+
+      { secret: raw['secret'], row_tag: raw['rowTag'], row_source: raw['rowSource'] }
+    end
+    private_class_method :row_meta_source
+
+    # The one account holder whose username is this address (normalised, as
+    # NetworkAccess#account_capture_usernames compares), or nil for none or two or more.
+    def capture_account_npc_id(data, address)
+      return nil unless present_string?(address)
+
+      want = normalise_username(address)
+      matches = room_npc_list(data).select do |npc|
+        account_holder?(npc) && normalise_username(npc['creds']['username']) == want
+      end
+      matches.size == 1 ? matches.first['id'] : nil
+    end
+
+    # Addresses that name two or more account holders (the validator's ambiguous-address warning).
+    def ambiguous_account_address?(data, address)
+      return false unless present_string?(address)
+
+      want = normalise_username(address)
+      room_npc_list(data).count { |npc| account_holder?(npc) && normalise_username(npc['creds']['username']) == want } > 1
+    end
+
+    # The Sign-ins list's view of one stored capture (plan 8.7): { 'tag', 'source', 'account'? },
+    # computed from the stored entry and the scenario, never from the client. The candidate is the
+    # first, in pick_capture_candidate's order (plain first), whose fields equal the stored ones,
+    # so the read agrees with the record-time choice. `candidates` may be passed in (all of them)
+    # so a caller listing every capture walks the writers once.
+    def capture_row_meta(data, stored, candidates: nil)
+      return nil unless stored.is_a?(Hash) && present_string?(stored['targetId'])
+
+      kind = CAPTURE_KINDS.include?(stored['kind']) ? stored['kind'] : 'credential'
+      all = candidates || all_capture_candidates(data)
+      mine = all.select { |c| c[:fields]['targetId'] == stored['targetId'] && c[:fields]['kind'] == kind }
+      ordered = mine.sort_by { |c| c[:source][:overlaid] ? 1 : 0 }
+      chosen = ordered.find { |c| %w[roleLabel address host note].all? { |f| c[:fields][f] == stored[f] } } || ordered.first
+      source = chosen ? chosen[:source] : {}
+
+      account = kind == 'credential' ? capture_account_npc_id(data, stored['address']) : nil
+      tag = ROW_TAGS[kind].include?(source[:row_tag]) ? source[:row_tag] : nil
+      tag ||= if kind == 'credential'
+                source[:secret].is_a?(String) && source[:secret].match?(PIN_PATTERN) && account.nil? ? 'pin' : 'password'
+              else
+                source[:phish_foothold] || source[:payload_owner] ? 'foothold' : 'finding'
+              end
+      row_source = source[:page] || source[:phish_foothold] ? 'phished' : 'recorded'
+      row_source = 'phished' if kind == 'credential' && source[:row_source] == 'phished'
+
+      out = { 'tag' => tag, 'source' => row_source }
+      out['account'] = account if account
       out
     end
 
