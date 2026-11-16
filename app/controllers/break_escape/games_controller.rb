@@ -1035,8 +1035,12 @@ module BreakEscape
         return render json: { success: false, message: 'Missing roomId or actionType' }, status: :bad_request
       end
 
-      # Validate room is accessible
-      unless @game.room_unlocked?(room_id)
+      # Validate room is accessible. consume_carried acts only on the server-verified
+      # npcCarry entry and names no room to change, so its client room is not trusted as
+      # a gate (review R1 m3). Every other action acts on room_id and keeps the gate; the
+      # KO room of a ko_drop is always a room the player reached, so it passes here and
+      # the KO itself is re-verified in the model.
+      unless action_type == 'consume_carried' || @game.room_unlocked?(room_id)
         return render json: { success: false, message: 'Room not accessible' }, status: :forbidden
       end
 
@@ -1084,6 +1088,50 @@ module BreakEscape
 
         # Use strong parameters instead of to_unsafe_h
         @game.update_npc_state!(room_id, npc_id, npc_state_params)
+
+      # NPC carried items (NPC_CARRIED_ITEMS_PLAN.md): the server tracks a carried
+      # object as a held item of the carrying NPC. roomId is the origin room for a
+      # pick-up (checked unlocked above) and the target room for a put-down; for a
+      # consume it is the NPC's room, used only by the unlocked gate above.
+      when 'carry_object'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        @game.carry_object!(room_id, npc_id, item_id)
+
+      when 'put_down_object'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        raw_pos = data[:position] || data['position']
+        position = raw_pos.respond_to?(:to_unsafe_h) ? raw_pos.to_unsafe_h : raw_pos
+        @game.put_down_carried!(room_id, npc_id, item_id, position)
+
+      when 'consume_carried'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        @game.consume_carried!(npc_id, item_id)
+
+      when 'ko_drop_carried'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        raw_pos = data[:position] || data['position']
+        position = raw_pos.respond_to?(:to_unsafe_h) ? raw_pos.to_unsafe_h : raw_pos
+        @game.ko_drop_carried!(room_id, npc_id, item_id, position)
 
       # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
       # and any room next to an unlocked one, so the NPC was served there and recorded as met
@@ -2546,6 +2594,11 @@ module BreakEscape
         host = ring_filter_section('npcHostility', params[:npcHostility].to_unsafe_h, skip)
         @game.merge_npc_hostility!(host) if host
       end
+
+      # Carried items are written only by the four update_room carry actions and never
+      # synced by the client, so an incoming npcCarry delta is ignored: the carry
+      # actions own the authoritative writes and the serve path re-validates every
+      # stored carry. (No sync merge: a forged npcCarry in sync_state writes nothing.)
 
       # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
       if params[:playerHealth].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('playerHealth', skip)

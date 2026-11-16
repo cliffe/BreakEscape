@@ -729,6 +729,14 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const toDrop = Array.isArray(onlyIds) ? npc.itemsHeld.filter(i => i && onlyIds.includes(i.id)) : npc.itemsHeld;
   if (toDrop.length === 0) return 0;
 
+  // A needs-carried object (NPC_CARRIED_ITEMS_PLAN.md) is not a scenario gift: its live
+  // sprite still exists, and the server holds the carry in npcCarry. It must end as a KO
+  // put-down (ko_drop_carried: clears npcCarry, lands it once), never as the generic
+  // npc_defeated add that would duplicate it (review R1 M1). Handled separately below.
+  const carriedDrop = toDrop.filter(i => i && i._needsCarried);
+  const plainDrop = toDrop.filter(i => !(i && i._needsCarried));
+  if (plainDrop.length === 0 && carriedDrop.length === 0) return 0;
+
   // Use the sprite we already have and find its room
   if (!sprite) {
     console.warn(`⚠️ Cannot drop items - no sprite found for NPC: ${npcId}`);
@@ -759,6 +767,20 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   // as before (review R3 n4, logged), rather than moving its drops to that room's floor.
   const floor = fellIn ? roomFloorRect(room) : null;
   const feet = clampToFloor(bc ? { x: bc.x, y: bc.y } : { x: sprite.x, y: sprite.y }, floor);
+
+  // End any needs-carry as a KO put-down into the room the NPC fell in, at the body
+  // position: the needs world re-shows the carried sprite there and clears npcCarry
+  // server-side, so the object is on the floor exactly once (review R1 M1).
+  if (carriedDrop.length && window.npcNeedsSystem?.world?.koDropCarried) {
+    try { window.npcNeedsSystem.world.koDropCarried(npcId, npcRoomId, feet); } catch (e) {
+      console.error('Failed to KO-drop carried item:', e);
+    }
+  }
+  if (plainDrop.length === 0) {
+    // Nothing else to place; clear only what was carried (koDropCarried already pruned itemsHeld).
+    npc.itemsHeld = toDrop === npc.itemsHeld ? [] : npc.itemsHeld.filter(i => !toDrop.includes(i));
+    return carriedDrop.length;
+  }
   const pm = window.pathfindingManager;
   const obstacles = [];
   for (const o of Object.values(room.objects || {})) {
@@ -775,9 +797,9 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
     inRoom: (x, y) => roomIdAtFeet(x, y, window.rooms, 0) === npcRoomId,
     floor
   });
-  const spots = koDropSpots(feet, toDrop.length, { reachable, obstacles });
+  const spots = koDropSpots(feet, plainDrop.length, { reachable, obstacles });
 
-  toDrop.forEach((item, index) => {
+  plainDrop.forEach((item, index) => {
     // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
     // (dropTextureFor: its own sprite, then its type's picture, 'key' only as a last resort)
     const texture = dropTextureFor(item, (key) => gameRef.textures.exists(key));
@@ -903,9 +925,10 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
     }
   });
 
-  // Clear the NPC's inventory (a re-drop clears only what it dropped)
+  // Clear the NPC's inventory (a re-drop clears only what it dropped; koDropCarried
+  // already pruned any needs-carried items, so filter against the full toDrop)
   npc.itemsHeld = toDrop === npc.itemsHeld ? [] : npc.itemsHeld.filter(i => !toDrop.includes(i));
-  return toDrop.length;
+  return plainDrop.length + carriedDrop.length;
 }
 
 function isNPCKO(npcId) {
