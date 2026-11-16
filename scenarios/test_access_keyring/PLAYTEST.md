@@ -89,3 +89,17 @@ These extend this scenario and are **not built in K1**:
 - Jake's ink offers the helpdesk line (gives `jake_assist_code`, credential `jake_assist`) and, once the contract
   is read, a suspicious ending that sets `jake_ended_assist`.
 - Not built: the Finance PIN and Sam's office from plan 9.1 (Finance stays open here).
+
+## K3d fixtures (the Sign-ins list, R13)
+
+- The start inventory holds a capture log (`holds: { captures: true, items: false }`), so its Sign-ins list can be read.
+- The lobby has a second capture card, `capture_card_pin` (8, 6). Reading it sets `capture_card_pin`, and Pat Doyle's mapping (an NPC with no account)
+  records `cupboard_pin`: a credential capture with the four-digit `secret` 4471, host "Stationery cupboard keypad" and an
+  address that is no account, so the server tags it `pin` and it lands under Captures.
+- **R13.** After the other beats, open the capture log. Sign-ins holds, oldest first: Ian (Captured password, Recorded, the
+  value), Lena's .rdp (Saved connection, Found), the ops .rdp (Saved connection, Found), Jake's password (Password in a
+  file, Found, "Type it from passwords.txt."), Jake's assist code (Remote assist, Given, greyed once ended) and
+  `SV-OPS-01.rdp` (`ops_cookie`: Saved connection, Recorded, "Use it on SV-OPS-01's sign-in screen."). There is no
+  duplicate row for Ian, and no token row until K5. Captures holds the stationery cupboard PIN (Captured PIN, no source
+  tag, "Stationery cupboard keypad: 4471") and nothing else. The page text must pass the leak check
+  (`tools/playtest/access-leak-check.rb`).

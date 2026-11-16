@@ -26,6 +26,7 @@
 
   "globalVariables": {
     "capture_card_ian": false,
+    "capture_card_pin": false,
     "jake_assist_given": false,
     "jake_contract_read": false,
     "jake_assist_armed": false,
@@ -76,6 +77,18 @@
       "proof": { "foothold": "jack_comms_port" }
     }
   },
+
+  "startItemsInInventory": [
+    {
+      "type": "capture_log",
+      "id": "capture_log",
+      "name": "Capture log",
+      "sprite": "laptop1",
+      "takeable": true,
+      "holds": { "captures": true, "items": false },
+      "observations": "Your engagement device: every sign-in you have captured or found, and the PINs, footholds and findings you record."
+    }
+  ],
 
   "objectives": [
     {
@@ -134,6 +147,23 @@
           "observations": "A saved remote-desktop connection file for HB-FIN-02."
         },
         {
+          "type": "notes",
+          "id": "capture_card_pin",
+          "name": "Capture card: stationery cupboard",
+          "position": { "x": 8, "y": 6 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A test card for the capture log: a PIN seen over a shoulder.",
+          "text": "CAPTURE CARD (test)\n\nReading this records the stationery cupboard keypad PIN, seen over a shoulder. It is a PIN, not an account's password, so it shows under Captures and not under Sign-ins.",
+          "triggerOnInteract": [
+            { "type": "set_global", "key": "capture_card_pin", "value": true }
+          ]
+        },
+        {
           "type": "notes1",
           "id": "sign_lobby",
           "name": "Sign: Start here",
@@ -147,6 +177,19 @@
         }
       ],
       "npcs": [
+        {
+          "id": "pat",
+          "displayName": "Pat Doyle",
+          "npcType": "person",
+          "position": { "x": 10, "y": 5 },
+          "spriteSheet": "female_office_worker_v2",
+          "spriteTalk": "assets/characters/female_office_worker_talk.png",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "role": "reception",
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:capture_card_pin", "condition": "value === true", "onceOnly": true, "addCapture": { "targetId": "cupboard_pin", "roleLabel": "Harbour office, front desk", "kind": "credential", "address": "Stationery cupboard", "host": "Stationery cupboard keypad", "secret": "4471", "note": "Seen over a shoulder." } }
+          ]
+        },
         {
           "id": "lena",
           "displayName": "Lena Fox",
