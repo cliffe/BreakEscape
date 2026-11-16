@@ -1218,3 +1218,26 @@ Review: tmp/handover/ac0/K3C_RELAY_REVIEW_R6.md, verdict LAND (m1, m2, m3, t1).
 - t1: tests in `container-shares.test.mjs` (isInteractiveItem on a folder, desktop icon, standard grid image, `containerImageUrl`) and a new `validator-folder-sprite.test.mjs` (nested folder clean, room-level folder errors, another sprite-less nested type errors).
 - Mutation checks: with the two source files reverted, the isInteractiveItem test, the standard-grid image test and the room-level validator test fail. The desktop-icon and `containerImageUrl` tests cover behaviour already landed in 5a77e794c, so they pass either way.
 - Tests: the 21 test/js files that import or copy container-minigame.js or container-item-image.js (access-relay-desktop capped) 0 failures; keyring_folder_route_test 7 runs, 34 assertions, 0 failures; test_access_keyring validator 0 errors, 4 warnings.
+
+## Slice K4 run 2 (server model)
+
+Commit 3e21ce0fd on build/keyring-k4, syntax-checked only (tests came in run 3).
+
+- network_access.rb: `FROM_PARAM_PATTERN` (`/\A[A-Za-z0-9_-]{1,64}\z/`, a PC-id pattern, not the credential `ID_PATTERN`), `credentials_declared?`, `valid_from_param?`, `from_reach(net, ignore_outages:)` (cached under `[:from, net]` plus `reach_cache_key`), `reach_spread` (the pivot loop, shared with `reach_walk_uncached`), `from_chain` (nil on a repeat), `from_route_refusal` (nil, :generic or :unreachable), `from_session_pruned?` (structural, R10 m4), the prune judging `from` sessions, `from` branches in `session_route_up?`, `desktop_request_allowed?`, `desktop_refusal` and `desktop_route`, `settle_session_at_keyboard!` stripping `from`, unplug adding the prune's ids to `endedPcIds`, and `from_login_accounts` beside a split-out `remote_login_tiles_answer`.
+- game.rb: typed `attempt_login!(from:, from_given:)` checks the route before the password (uncounted); `start_login_session!` records `from`; the session answer gives `remote: true`, `fromPcId`, `host` and `fromHost`; `sessions_for_client` skips a `from` session whose chain repeats or reaches a session the same bootstrap ends (R10 m5).
+- credential_login.rb: the `:from` branch of `credential_route_refusal`; the answer carries `route: { from: }`.
+- credential_keyring.rb: `keyring_pc_openable?` judges `{ from: }` by the route; `credential_routes` adds `{ from: }` rows after the footholds, sorted by PC id.
+- npc_frustration.rb: `record_borrow_done!` prunes; the "done" answer carries `endedPcIds` only when non-empty.
+- Deviations the orchestrator accepted: the PC-id pattern for `from`, `fromHost` in the answer, 403 on GET /login_accounts for every source failure (400 only when malformed).
+
+## Slice K4 run 3 (server wiring and tests)
+
+Commits on build/keyring-k4: 8dee57a80 (controller), then the tests and the `connect` marker.
+
+- games_controller.rb: `from_param_given?` (any `from` except missing or exactly empty); POST /login refuses a claim naming `from` (LOGIN_CLAIM_REFUSED) and passes the raw `from` to the typed `attempt_login!`; `login_route_params` passes the raw value, so an array or hash is the generic refusal; GET /login_accounts has a `from` branch before the foothold branch (400 with a foothold too or without a registry); GET /keyring answers 400 for a `from` outside scope or malformed; `desktop_route_params` treats a structured `from` as `:conflict` (403 unreachable) and keeps a whitespace one as a `from` request.
+- Display-only `connect: true` (coordinator request): `mark_saved_connection!` sets it on a served item whose authored credential is a `saved_connection`, in both `filter_inventory_for_client!` and `filter_requires_and_contents_recursive`, before the credential id is deleted. Any authored or forged `connect` is dropped first, and `restamp_item_credential!` drops it on store, so a stored inventory copy never keeps one. The leak scanner flagged nothing.
+- New test/controllers/break_escape/credential_from_route_test.rb (`CredentialFromRouteTest`, 27 runs): every case in plan 9 "Tests" except the JS ones, plus the folder open with `from=`, GET /keyring route order and scoping, the target-off `not_responding`, the `from_reach` cache key with a session added and ended in one request, hostile `from` (array, hash, 80 chars, space, tab, unknown PC, the target) on POST typed and credential, GET /login_accounts, /keyring, /container and a folder, a claim with `from`, and the scope rule on every route. The borrow case runs on the access-work fixture with a network and a one-entry registry added in the test. The connect test covers a room's loose and crated .rdp, a forged marker, a password-kind item, the take answer and the bootstrap inventory.
+- Changed existing test: credential_login_test step 4 expected `from: sam_pc` (no session at sam_pc) to be the generic refusal, the K2 placeholder. Plan 3.7 makes a source the player does not hold 403 `PC not reachable`, so the case now asserts that.
+- No network test changed: unplug's added prune left every existing `endedPcIds` assertion as it was.
+- Mutation checks: dropping unplug's prune, keying `from_reach` without the session keys, and removing the chain check each fail a test.
+- Tests: full Rails suite 3136 runs, 0 failures, 4 skips. No fixture or validator change (test_access_keyring untouched).
