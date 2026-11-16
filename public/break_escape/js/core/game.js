@@ -3012,11 +3012,9 @@ const pendingOverlapWalk = createPendingTapUse({
         // Stopped with only some hits in reach: one more short step to the exact point, then
         // today's behaviour (finish with whatever is in reach)
         const r = overlapRetry;
-        if (!r.stand) return true;
-        if (r.used) return Date.now() >= r.settleAt;   // the exact step has had its frames to start and end
+        if (!r.stand || r.used) return true;
         r.used = true;
         if (feetWithin(r.stand, 1.5)) return true;
-        r.settleAt = Date.now() + 350;
         movePlayerToPoint(r.stand.x, r.stand.y, { avoidNpcs: true, exact: true });
         return false;
     },

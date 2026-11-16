@@ -813,10 +813,7 @@ export function movePlayerToPoint(x, y, opts = null) {
         // physics LOS to the destination (world-aware: checks all rooms' wall boxes).
         // hasPlayerLineOfSight also refuses a line through a "prefer to route
         // around" object (systems/path-avoid.js); EasyStar then decides.
-        // An exact step of a few px goes straight: the physics slides the body along an edge,
-        // and a route to a cell flush with something finds no path
-        const shortExact = playerExactArrival && Math.hypot(px - x, py - y) < 2 * ARRIVAL_THRESHOLD;
-        if (shortExact || pathfindingManager.hasPlayerLineOfSight(px, py, x, y, null, playerLosOpts)) {
+        if (pathfindingManager.hasPlayerLineOfSight(px, py, x, y, null, playerLosOpts)) {
             console.log('  → Direct LOS clear — going straight');
             drawPathDebug(px, py, [{ x, y }], null);
             playerFollowingPath = false;
