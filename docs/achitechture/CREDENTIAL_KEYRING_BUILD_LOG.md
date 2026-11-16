@@ -927,3 +927,22 @@ Run 3 stopped at the context limit after step 2's writing. Commits `d42e4d7ce` a
 2. `tools/playtest/signin-fit.mjs` K3a fixtures (plan 8.1 worst cases) and run if headless.
 3. bin/test-js again, full Rails suite, rubocop on changed Ruby files.
 4. Live proof on :3063; `badge-plug.png` art for the user (the plug group still shows the key badge).
+
+### Run 4 (mutation evidence, fixtures, suites)
+
+**Mutation evidence.** Each row: one temporary change to the K3a source, `keyring-signin.test.mjs` plus `screen-states.test.mjs` run, source restored with `git checkout -- <file>` (`git diff --stat` empty after each). 12 mutations, 12 caught.
+
+| # | Mutation | File | Tests failing |
+|---|----------|------|---------------|
+| 1 | Keyring entries each get their own tile (no reuse of the account's tile) | password-minigame.js | 22 (merge one tile per account, keyboard and remote screens, ways box) |
+| 2 | Picker `accounts` keeps unlisted accounts | password-minigame.js | 3 (merge picker rules, keyboard merge, keyboard screen) |
+| 3 | `kindRefusedShort` text changed | remote-host-text.js | 2 (greyed refused button, server kindRefused) |
+| 4 | `wrongPc` no longer mapped in `credentialRefusalReason` | pc-sessions.js | 2 (wrongPc text, reason mapping) |
+| 5 | Sign-in body key `credential` renamed | api-client.js | 1 (request shapes) |
+| 6 | `_dropEnded` no longer calls `linkDropped` | pc-sessions.js | 1 (endedPcIds in both sign-in paths) |
+| 7 | `signedInVia` back to password only | screen-states.js | 2 (credential session counts as signed in, held across leave) |
+| 8 | `screenEntries` lists `assist_invite` | keyring.js | 1 (usable kinds per screen) |
+| 9 | `foundVisible` always true | keyring.js | 2 (In file waits for its file, remote loading filter) |
+| 10 | Start panel line not escaped | pc-taskbar.js | 1 (start panel line, escaped) |
+| 11 | Credential button label set as HTML | password-minigame.js | 1 (author text is text) |
+| 12 | `credentialSessionLine` returns null | pc-taskbar.js | 2 (start panel line, reload keeps kind and label) |
