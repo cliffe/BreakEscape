@@ -170,11 +170,29 @@ console.log('row 3', JSON.stringify(report.rows[3]));
 report.rooms = [];
 for (const r of ['kitchen', 'office', 'lounge', 'office']) report.rooms.push([r, (await page.evaluate(r => window.__test.enterRoom(r), r).catch(e => ({ err: String(e) })))?.ok ?? null]);
 
+// Rows 5 and 6 watch the water cooler from a few tiles off, not beside it: parked at the cooler the
+// player stood in its approach and Sanjay's return stalled against him (SIMS_TIDY_LOG.md item 2,
+// tour 5658: return_stuck at (-244,254) next to the player at (-248,244))
+const COOLER_OFFSET = { x: 80, y: 16 };
+async function parkByCooler() {
+    return page.evaluate(async off => {
+        const w = window.npcNeedsSystem.world, obj = w.getObject('water_cooler');
+        const cell = obj ? w.approachCell(obj) : null;
+        if (!cell) return { ok: false, reason: 'no_cooler' };
+        const pm = window.pathfindingManager;
+        const aim = pm?.findNearestWalkableWorldCell?.(cell.x + off.x, cell.y + off.y, 3) || { x: cell.x + off.x, y: cell.y + off.y };
+        const r = await window.__test.moveTo(aim.x, aim.y, { timeoutMs: 20000, pointer: false }).catch(e => ({ err: String(e) }));
+        const p = window.player.body.center;
+        return { ok: !!r?.ok || Math.hypot(p.x - aim.x, p.y - aim.y) < 24, cooler: [Math.round(cell.x), Math.round(cell.y)],
+                 aim: [Math.round(aim.x), Math.round(aim.y)], player: [Math.round(p.x), Math.round(p.y)] };
+    }, COOLER_OFFSET).catch(e => ({ ok: false, err: String(e).slice(0, 120) }));
+}
+
 // Row 5: the Activity Board again, then stand by the water cooler in the kitchen
 for (let i = 0; i < 120 && await coffeeBusy(); i++) await t(1000);
 report.rows[5] = { board: await read('activity_board', undefined, BOARD_FRONT) };
 await page.evaluate(() => window.__test.enterRoom('kitchen')).catch(() => null);
-await page.evaluate(() => window.__test.moveToNear('water_cooler', { timeoutMs: 20000 })).catch(() => null);
+report.rows[5].park = await parkByCooler();
 report.rows[5].wait = await waitTasks(['see_chat', 'hear_rota_exchange'], 180000);
 report.rows[5].ok = report.rows[5].wait.ok;
 console.log('row 5', JSON.stringify(report.rows[5]));
@@ -189,7 +207,7 @@ report.rows[6].sanjay_social = await page.evaluate(() => {
     window.npcNeedsSystem.control('sanjay', { set: { social: 35 } });
     return window.npcNeedsSystem.getState('sanjay')?.levels?.social ?? null;
 });
-await page.evaluate(() => window.__test.moveToNear('water_cooler', { timeoutMs: 20000 })).catch(() => null);
+report.rows[6].park = await parkByCooler();
 report.rows[6].wait = await waitTasks(['see_outcast'], 180000);
 report.rows[6].ok = report.rows[6].wait.ok;
 console.log('row 6', JSON.stringify(report.rows[6]));
