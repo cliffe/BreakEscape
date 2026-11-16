@@ -1074,3 +1074,19 @@ test('phone kind (Pentest B1): own label, icon, group and rank; unknown kinds so
         { id: 'p', kind: 'printer', name: 'Queue' }, { id: 'h', kind: 'pc', host: 'A' }];
     assert.deepEqual(displayOrder(rows).map(r => r.id), ['h', 'p', 'ph', 'x']);
 });
+
+test('phone rows render through the real view: a Phones heading and the phone5 icon (Pentest B1)', async () => {
+    const phones = [
+        { id: 'lw_callmgr', kind: 'phone', name: 'Call manager', host: 'LW-CM01', observations: 'Extensions 100 to 140.' },
+        { id: 'lw_ph_recep', kind: 'phone', name: 'Reception phone', host: 'LW-PH-RECEP' }
+    ];
+    setup({ hosts: phones });
+    links.open('jack_comms_port');
+    await settle();
+    assert.deepEqual([...document.querySelectorAll('.network-row-group')].map(el => el.textContent), ['Phones']);
+    const r = row('data-resource-id', 'lw_callmgr') || row('data-host-id', 'lw_callmgr');
+    assert.ok(r, 'the phone row is drawn');
+    assert.match(r.querySelector('.network-row-icon').getAttribute('src'), /phone5\.png$/);
+    assert.match(r.textContent, /LW-CM01/);
+    assert.equal(document.querySelectorAll('.network-row-icon[src$="phone5.png"]').length, 2);
+});
