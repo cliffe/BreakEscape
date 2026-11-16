@@ -432,8 +432,10 @@ export class NetworkLinks {
                 this._emit('network_device_refused', { jackId, reason: 'port_security' }, jackId);
                 return { action: 'refused', reason: 'port_security', message };
             }
-            toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
-            return { action: 'error', status: err?.status ?? null };
+            // quiet: the caller shows the message itself (the patch panel's footer)
+            const message = err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.';
+            if (!quiet) toast(message, 'error');
+            return { action: 'error', status: err?.status ?? null, message };
         } finally {
             this._busy = false;
         }
