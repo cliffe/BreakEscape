@@ -97,6 +97,25 @@ module BreakEscape
       refute entries.find { |x| x['id'] == 'jake_pw_note' }.key?('heldItem')
     end
 
+    test 'heldItem is sent only for a proof the player holds: a dropped item lists nothing and names no item id' do
+      @game.update_columns(player_state: @game.player_state.merge('inventory' => []))
+      body = keyring
+      refute_includes body['entries'].map { |e| e['id'] }, 'lena_rdp'
+      refute_includes response.body, 'lena_rdp_file', 'an unheld item id never reaches the client'
+    end
+
+    test 'heldItem is not sent for a forged inventory entry (wrong type), and every named item is in the inventory' do
+      forged = [{ 'id' => 'lena_rdp_file', 'type' => 'key', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }]
+      @game.update_columns(player_state: @game.player_state.merge('inventory' => forged))
+      refute_includes keyring['entries'].map { |e| e['id'] }, 'lena_rdp'
+      refute_includes response.body, 'lena_rdp_file'
+      @game.update_columns(player_state: @game.player_state.merge(
+        'inventory' => [{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }]
+      ))
+      held_ids = @game.reload.player_state['inventory'].map { |i| i['id'] }
+      keyring['entries'].each { |e| assert_includes held_ids, e['heldItem'] if e.key?('heldItem') }
+    end
+
     test 'the scenario answer carries credentialsDeclared and never the registry' do
       get "/break_escape/games/#{@game.id}/scenario", as: :json
       assert_response :success
