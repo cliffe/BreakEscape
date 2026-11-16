@@ -146,7 +146,7 @@ async function runNeedsSims() {
     // The NPC re-notices the object and repeats the carry (no driver call).
     const again = await waitFor('grace', s => {
         const log = null; return s.job?.carrying || s.held.length;
-    }, 120000);
+    }, Number(process.env.REPICK_MS || 120000));
     report.steps.repeats = again;
     report.graceLog = await page.evaluate(() => (window.npcNeedsSystem.getLog?.() || []).filter(e => e.npc === 'grace').slice(-20)).catch(() => null);
 }
@@ -165,7 +165,15 @@ async function runLab() {
     await t(1500);
     report.steps.dropped = { open_plan: await fetchRoom('open_plan', RE), world: await carriedWorld(RE) };
 
-    const needReload = async (re) => { report.steps.reload = await reload(re); };
+    // A reload restarts the player in the start room, and Sofia's room is not simulated until it
+    // is loaded again, so walk back to open_plan after each reload (as a real player would).
+    const needReload = async (re) => {
+        report.steps.reload = await reload(re);
+        report.steps.reEnter = [];
+        for (const r of ['reception', 'hall', 'open_plan']) report.steps.reEnter.push([r, (await page.evaluate(r => window.__test.enterRoom(r), r).catch(e => ({ err: String(e) })))?.ok ?? null]);
+        await t(1500);
+        report.steps.reload.world = await carriedWorld(re);
+    };
 
     if (point === 'L1') {
         // Reload after the drop, before Sofia moves.

@@ -5,37 +5,55 @@ A reload is `about:blank` then back to the game URL. Every beat records each `up
 status, page and console errors, the needs job snapshot used to time the reload, and the room
 fetch and client world before and after.
 
-## Status: the live run is BLOCKED (port conflict)
+## Status: live run done on port 3094 (16 Nov 2026)
 
-The brief pins the keyless server to port 3091 only, from this worktree. At the time of this
-run port 3091 was already held by another session's Rails server (PID 1830947, serving
-`.claude/worktrees/p-ol-carry/test/dummy`, the sibling `build/ol-carry` slice, up over an hour).
-Binding 3091 from this worktree fails with `Errno::EADDRINUSE` and the server exits at once.
+Port 3091 was held by another session's server, so the run used a keyless server from this
+worktree on port 3094 (`rails server -b 127.0.0.1 -p 3094`, port passed to the driver as its
+third argument). Headless, `setFPS(20)`, fixed steps on. Fresh game per beat. Server log:
+0 x 422 across every game below; 0 page errors. The only console error in each lab game is one
+503 from the keyless `/tts` (no key, expected); the test_needs_sims games had none.
 
-Per the brief's hard rules I did not use any other port and did not kill a PID I had not
-launched, so the T1/T2 and L1 to L5 beats could not be driven here. My own server process exited
-on the bind conflict, so there was nothing of mine left to stop.
+Driver changes (test code only, no feature code): `REPICK_MS` env var for the post-reload
+re-pick wait (default 120000), and after each lab reload the driver now walks back to
+open_plan (a reload restarts the player in the briefing room, and Sofia's room is not simulated
+until it is loaded, so the first L1/L2 run, games 5678 and 5679, never re-picked; that was a
+driver gap, not a feature fault).
 
-To finish the live proof the orchestrator needs 3091 free (coordinate with or retire the
-`p-ol-carry` session's server), then from this worktree:
+| Beat | Game | Reload point | Object after reload | NPC free, re-picks | usb_foothold |
+|---|---|---|---|---|---|
+| T1 | 5722 | Grace walking the mug to the tray (office) | once, office, at (4,7), which is also its fromPos (first pick-up) | NOT SEEN: job null, no carry in 300 s | n/a |
+| T2 | 5723 | Grace re-carrying the mug put down at (131.99, 220.73) | once, office, px (131.99, 220.73) = the put-down spot, not the scenario spot (4,7) | NOT SEEN: job null, no carry in 300 s | n/a |
+| L1 | 5702 | stick dropped, Sofia heading to it (goto_item), not yet picked up | once, open_plan (0.469, 2.188) | yes, carry then consume | true, remote session in inventory |
+| L2 | 5703 | Sofia just picked it up (goto_target) | once, open_plan (0.469, 2.188), the drop spot | yes, second carry_object then consume | true, remote session in inventory |
+| L3 | 5704 | Sofia mid-use (phase using) | once, open_plan (0.469, 2.188) | yes, second carry_object then consume | true, remote session in inventory |
+| L4 | 5709 | straight after kp_usb_foothold set | none (consumed, not resurrected) | n/a, job null | true, remote session in inventory |
+| L5 | 5710 | after records_remote_session arrived | none (not resurrected) | n/a | true, remote session in inventory |
 
-```
-env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true \
-  BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle \
-  bundle exec rails server -b 127.0.0.1 -p 3091
-# fresh game per beat:
-BUNDLE_PATH=... bundle exec rails runner tools/playtest/new-game.rb test_needs_sims
-BUNDLE_PATH=... bundle exec rails runner tools/playtest/new-game.rb lab_physical_pentest
-# then, with the ids printed above:
-node tools/playtest/npc-carry-reload-proof.mjs test_needs_sims <gid> 3091 T1
-node tools/playtest/npc-carry-reload-proof.mjs test_needs_sims <gid> 3091 T2
-node tools/playtest/npc-carry-reload-proof.mjs lab_physical_pentest <gid> 3091 L1   # L1..L5
-```
+(An earlier T1 run, game 5647, and T2 run, game 5661, with the default 120 s wait gave the same
+object positions and the same missing re-pick. In 5661 the reload put the mug back at
+px (43.99, 138.99), the position of Grace's last put-down before the pick-up that the reload
+cut off. Grace had made one carry every 80 to 130 s before the reload.)
 
-Pass across all beats: every `carry_object` / `put_down_object` / `consume_carried` answers 200,
-no 4xx/5xx for carry actions, 0 page errors, exactly one copy of each carried object after each
-reload; for the lab, `usb_foothold` completes (kp_usb_foothold true, the remote-session item in
-the inventory) after a reload at each point L1 to L5.
+Counts: 0 x 422, 0 carry-action 4xx/5xx (`badCarryStatuses` empty in every beat), 0 page
+errors, one object copy after every reload.
+
+### T1/T2: the re-pick was not observed
+
+Put-back is right (one mug, at the pick-up position, not at the scenario spot in T2). Grace was
+free (`job` null, nothing held, in the office) but did not start another carry within 300 s of
+the reload in either run; her needs log shows only parked rest and thirst needs with
+`no_source`. Before the reload she picked up a mug within about a minute of the player
+arriving. Not investigated further (brief: record and stop). It may be the needs scheduler
+cadence after a reload or the dirty_mugs task needing a trigger, so check this before treating
+T1/T2 as passed.
+
+### Sofia's pick-up bark
+
+Plays once. In L2 and L3 (reload after the pick-up) the keyless server logged exactly one
+`/tts` request for "Someone's dropped a memory stick. Whose is this?" per game and none after
+the reload. Caveat: this is indirect (a client-side cache could hide a repeat). In L1, L4 and
+L5 no request for that line appeared at all, so the bark may be skipped or cached there; the
+driver does not record barks directly.
 
 ## Open questions settled from the code (the live beats would confirm)
 
