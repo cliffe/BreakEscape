@@ -154,9 +154,10 @@ export function networkScreenKind(item) {
 // importing this module
 if (typeof window !== 'undefined') window.networkScreenKind = networkScreenKind;
 
-// The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
 // Set when a relay folder 403 closes the folder; the reopened relay desktop reads and clears it
 let pendingRelayFolderNote = null;
+
+// The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
 export const PC_OFF_TEXT = 'This PC is off.';
 
 /**
