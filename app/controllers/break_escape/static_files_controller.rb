@@ -49,6 +49,9 @@ module BreakEscape
       # module loading — they cannot carry Rails nonces. Apply a targeted
       # CSP that allows inline/eval within this file only, without
       # propagating unsafe-inline to any other part of the application.
+      # frame-src data: covers CyberChef's Bombe <object data="data:image/svg+xml...">,
+      # which Chrome checks as a nested frame (default-src would block it and log
+      # "Framing ''"). It also stops the tool framing any https: page.
       if content_type == 'text/html'
         response.set_header('Content-Security-Policy',
           "default-src 'self' https:; " \
@@ -59,6 +62,7 @@ module BreakEscape
           "connect-src 'self' https: blob: data:; " \
           "media-src 'self' https: data: blob:; " \
           "object-src data: blob:; " \
+          "frame-src data:; " \
           "worker-src 'self' blob:;"
         )
       end
