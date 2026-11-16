@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { tapPickList, seatsGiveWay, pixelHits, soleHit, overlapStandPoint, OVERLAP_MARGINS, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
+import { tapPickList, seatsGiveWay, pixelHits, soleHit, overlapStandPoint, overlapRetryTarget, OVERLAP_MARGINS, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, PENDING_TAP_USE_MS } from '../../public/break_escape/js/systems/tap-pick.js';
 import { withoutChairsIfOthers, withoutLeavingNpcsIfObjects } from '../../public/break_escape/js/systems/interaction-reach.js';
 
 const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_escape/js');
@@ -303,14 +303,14 @@ test('pending use: a menu or confirm opening on the way drops it (busy)', () => 
 // ── game.js and player.js wiring ──
 test('game.js: pointerdown builds the far lists with farUnderTap and the pick list with tapPickList', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
-    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, seatsGiveWay \} from '\.\.\/systems\/tap-pick\.js'/);
+    assert.match(src, /import \{ tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, overlapRetryTarget, seatsGiveWay \} from '\.\.\/systems\/tap-pick\.js'/);
     assert.match(src, /const nearClick = gatherInteractablesNearClick\(worldX, worldY, tapObjectIds, tapTests\);/);
     assert.match(src, /tapPickList\(nearClick, farObjects, farNpcs\)/);
     assert.doesNotMatch(src, /farObjectCandidate/, 'no walk entries (overlap plan D5)');
     assert.match(src, /withoutLeavingNpcsIfObjects\(withoutChairsIfOthers\(gathered\)\)/);
     assert.match(src, /pendingTapUse\.clear\(\)/);
     assert.match(src, /pendingTapUse\.update\(Date\.now\(\)\)/);
-    assert.match(src, /window\.__clearPendingTapUse = \(\) => \{ pendingTapUse\.clear\(\); pendingOverlapWalk\.clear\(\); \}/);
+    assert.match(src, /window\.__clearPendingTapUse = \(\) => \{ pendingTapUse\.clear\(\); clearOverlapWalk\(\); \}/);
     assert.match(src, /pendingOverlapWalk\.update\(Date\.now\(\)\)/);
 });
 
@@ -661,6 +661,91 @@ test('overlap 11c: overlapStandPoint picks the cell with the most slack at the w
     const tie = overlapStandPoint(hits, { x: 100, y: 0 }, { x: 0, y: 0 },
         { range: 32, inReachFrom, findCell: (x, y) => (Math.abs(x - 100) === 4 && y === 0 ? { x, y } : null) });
     assert.deepEqual(tie, { x: 96, y: 0 }, 'x 96 and 104 tie on slack; 96 is the shorter walk');
+});
+
+test('overlap 11d (R5 m1): slack beats walk length only within 48 px of the nearest passing cell', () => {
+    const player = { x: 0, y: 0 };
+    const hits = [{ id: 'a', x: 100, y: -4 }, { id: 'b', x: 100, y: 4 }];
+    // Each walkable cell has a made-up room (the biggest margin it passes); other points pass nothing
+    const room = { '72,0': 14, '132,28': 100, '80,0': 20 };
+    const key = (p) => `${p.x},${p.y}`;
+    const inReachFrom = (p, h, m = 12) => (room[key(p)] ?? -1000) >= m;
+    const cells = (list) => (x, y) => (list.includes(`${x},${y}`) ? { x, y } : null);
+    player.x = 60;
+    // (132,28) has the most room but its walk (78) is more than 48 px longer than (72,0)'s (10)
+    const capped = overlapStandPoint(hits, { x: 100, y: 0 }, player, { range: 32, inReachFrom, findCell: cells(['72,0', '132,28']) });
+    assert.deepEqual(capped, { x: 72, y: 0 }, 'the cell across the way with more room loses');
+    // (80,0) is 20 away: within 48 px of the nearest, so its extra room still wins
+    const close = overlapStandPoint(hits, { x: 100, y: 0 }, player, { range: 32, inReachFrom, findCell: cells(['72,0', '80,0']) });
+    assert.deepEqual(close, { x: 80, y: 0 });
+});
+
+test('overlap 11e (R5 m2/m3): the lattice stays inside the hits\' reach boxes, is not built when a named point has margin 12, and skips cells with no path', () => {
+    const player = { x: 0, y: 0 };
+    const reach = 20;
+    const inReachFrom = (p, h, margin = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= reach - margin;
+    const asked = [];
+    const findCell = (x, y, r) => { if (r === 0) asked.push([x, y]); return { x, y }; };   // the lattice asks with radius 0
+    // A named point passes at margin 12: the lattice is never queried
+    const a = { id: 'a', x: 100, y: 0 }, c = { id: 'c', x: 106, y: 0 };
+    overlapStandPoint([a, c], { x: 103, y: 0 }, player, { range: 32, inReachFrom: (p, h, m = 12) => Math.hypot(p.x - h.x, p.y - h.y) <= 40 - m, findCell });
+    assert.equal(asked.length, 0, 'no lattice scan');
+    // No named point passes: the scan stays within the overlap of the reach boxes (32 px: x 68..132 and 108..172 -> 108..132)
+    asked.length = 0;
+    const b = { id: 'b', x: 130, y: 0 };
+    overlapStandPoint([a, b], { x: 115, y: 0 }, player, { range: 32, inReachFrom, findCell });
+    const lattice = asked;
+    assert.ok(lattice.length > 0 && lattice.every(([x, y]) => x >= 98 && x <= 132 && y >= -32 && y <= 32), JSON.stringify(lattice.slice(0, 4)));
+    // A lattice cell the player cannot walk to is not offered: 40 px apart only (120,0) reaches both
+    const b40 = { id: 'b', x: 140, y: 0 };
+    const reached = [];
+    const refused = overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { range: 32, inReachFrom, findCell,
+        pathClear: (q) => { reached.push(q); return false; } });
+    assert.equal(refused, null, 'the only cell has no way there');
+    assert.deepEqual(reached, [{ x: 120, y: 0 }]);
+    assert.deepEqual(overlapStandPoint([a, b40], { x: 120, y: 0 }, player, { range: 32, inReachFrom, findCell, pathClear: () => true }), { x: 120, y: 0 });
+});
+
+test('overlap 11f (R5 M1): the retry target lies past the stand point, far enough from the feet to move, with every hit in reach', () => {
+    const reach = 32;
+    const inReachFrom = (p, h, m = 0) => Math.hypot(p.x - h.x, p.y - h.y) <= reach - m;
+    const findCell = (x, y) => ({ x, y });
+    const hits = [{ id: 'a', x: 100, y: 0 }, { id: 'b', x: 100, y: 10 }];
+    const stand = { x: 80, y: 5 };
+    for (const short of [1, 4, 7, 7.9]) {
+        const feet = { x: stand.x - short, y: stand.y };   // the walk came from the west and stopped short
+        const t = overlapRetryTarget(feet, stand, hits, { inReachFrom, findCell, arrival: 8 });
+        assert.ok(t, `short ${short}: a target`);
+        assert.ok(Math.hypot(t.x - feet.x, t.y - feet.y) > 8, `short ${short}: ${JSON.stringify(t)} moves the feet`);
+        assert.ok(t.x >= stand.x, 'on or past the stand point along the approach');
+        assert.ok(hits.every(h => inReachFrom(t, h, 0)));
+    }
+    // Aims 10 px past when that keeps everything in reach
+    assert.deepEqual(overlapRetryTarget({ x: 73, y: 5 }, stand, hits, { inReachFrom, findCell }), { x: 90, y: 5 });
+    // Past points that lose a hit are shortened; the cell must be walkable; nothing that moves: null
+    const t2 = overlapRetryTarget({ x: 73, y: 5 }, stand, hits, { inReachFrom: (p, h, m) => inReachFrom(p, h, m) && p.x <= 84, findCell });
+    assert.ok(t2.x <= 84 && Math.hypot(t2.x - 73, t2.y - 5) > 8, JSON.stringify(t2));
+    assert.equal(overlapRetryTarget({ x: 73, y: 5 }, stand, hits, { inReachFrom: (p, h, m) => inReachFrom(p, h, m) && p.x <= 80, findCell }), null);
+    assert.equal(overlapRetryTarget({ x: 73, y: 5 }, stand, hits, { inReachFrom, findCell: () => null }), null);
+    assert.equal(overlapRetryTarget(stand, stand, hits, { inReachFrom, findCell }), null, 'already there');
+});
+
+test('pending use: onPartial starts one more step and keeps the walk pending (R5 n3)', () => {
+    const steps = [];
+    let moving = false, inReach = false;
+    const p = createPendingTapUse({
+        inReach: () => inReach, isMoving: () => moving, use: () => steps.push('use'),
+        feet: () => ({ x: 0, y: 0 }), onPartial: () => { if (steps.length) return false; steps.push('retry'); moving = true; return true; },
+        onStoppedShort: () => steps.push('short')
+    });
+    p.arm({ id: 'x', interactable: true }, 0);
+    p.update(100);
+    assert.deepEqual(steps, ['retry']);
+    assert.ok(p.get(), 'still pending');
+    moving = false; p.update(200);
+    assert.deepEqual(steps, ['retry'], 'second call: no more steps, still within the stop-short wait');
+    p.update(100 + 600);
+    assert.deepEqual(steps, ['retry', 'short']);
 });
 
 test('overlap 12: farUnderTap with every NPC under the tap finds the far one on her figure', () => {

@@ -49,7 +49,7 @@ import { ScenarioTimerDispatcher } from '../ui/scenario-timer-dispatcher.js';  /
 import { GameClock } from '../systems/game-clock.js';  // Elapsed game time (resumes after a reload) and the in-game clock
 import { sightChallengeWatcher } from '../systems/npc-sight-challenge.js';  // Opt-in los.challengeOnSight guards
 import { createPendingGateWalk } from '../systems/pending-gate-walk.js';  // A far click on an open gate, re-checked in reach
-import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, seatsGiveWay } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used; overlaps ask
+import { tapPickList, farUnderTap, npcYieldsToObject, npcYieldTarget, opaqueAt, opaqueNear, objectStandPoint, createPendingTapUse, pixelHits, soleHit, overlapStandPoint, overlapRetryTarget, seatsGiveWay } from '../systems/tap-pick.js';  // A tap goes to the thing under the pointer; far objects walked to, then used; overlaps ask
 import { doorGates } from '../systems/door-gates.js';  // Gate doors: open for listed NPCs, hold, relock (sets window.doorGates)
 import '../systems/npc-sight-occlusion.js';  // Walls, doors and tall props block NPC sight (sets window.npcSightOcclusion)
 import { CommandBoardRecorder } from '../minigames/command-board/command-board-timeline.js';  // Board entries stamped as they happen
@@ -2278,7 +2278,7 @@ export async function create() {
     this.input.on('pointerdown', (pointer) => {
         pendingGateWalk.clear(); // any new click replaces a far click on a gate
         pendingTapUse.clear();   // ...and a far tap on an object
-        pendingOverlapWalk.clear();   // ...and a far tap on an overlap (overlap plan D2)
+        clearOverlapWalk();   // ...and a far tap on an overlap (overlap plan D2)
         // Check if a minigame is currently running - if so, don't process main game clicks
         if (window.MinigameFramework && window.MinigameFramework.currentMinigame) {
             console.log('Minigame is running, ignoring main game click', {
@@ -2371,7 +2371,7 @@ export async function create() {
                 // decision, handover 3 item 2).
                 let noJoint = false;
                 if (menuHits.length > 1 && !menuHits.some(inReachNow)) {
-                    const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc };
+                    const standDeps = { ...standPointDeps(window.player), inReachFrom, doorRange: DOOR_INTERACTION_RANGE, occupied: standsInsideNpc, pathClear: lineClearFromFeet };
                     // Margins 12, 8, 4, 0 over walkable cells
                     const joint = overlapStandPoint(menuHits, { x: worldX, y: worldY }, window.player, standDeps);
                     if (joint) {
@@ -2409,7 +2409,7 @@ export async function create() {
             if (nearbyInteractables.length > 1) {
                 // Opening the menu stops a walk under way (D13), outside a fight
                 if (!fight) stopClickToMove();
-                showTapMenu(nearbyInteractables, pointer, { fight });
+                showTapMenu(nearbyInteractables, pointer, { fight, scene: this });
                 return;
             }
             // Exactly one in-reach interactable near the tap: act on it directly, with the same
@@ -3014,19 +3014,38 @@ const pendingTapUse = createPendingTapUse({
 // A far tap on an overlap (overlap plan D2): walks to where every hit is in reach and uses
 // nothing on arrival; says why when the walk is blocked or ends with none in reach
 let overlapRetry = { stand: null, used: false };
+// The retry step's target, or null when there is none to take (no stand point, already used, the
+// feet at it, or no cell past it that moves the feet and keeps every hit in reach). The walk's
+// arrival test is 8 px, so the target is aimed past the stand point (overlapRetryTarget).
+function overlapRetryNext(hits) {
+    const r = overlapRetry;
+    const player = window.player;
+    if (!r.stand || r.used || !player) return null;
+    const feet = playerFeet(player);
+    if (feetWithin(r.stand, 1)) return null;
+    const d = standPointDeps(player);
+    return overlapRetryTarget(feet, r.stand, hits.filter(stillThere), {
+        inReachFrom, findCell: d.findCell, arrival: ARRIVAL_THRESHOLD, occupied: standsInsideNpc
+    });
+}
+function clearOverlapWalk() {
+    pendingOverlapWalk.clear();
+    overlapRetry = { stand: null, used: false };
+}
 const pendingOverlapWalk = createPendingTapUse({
     inReach: (hits) => {
         if (!hits.some(inReachNow)) return false;
-        const live = hits.filter(stillThere);
-        if (live.every(inReachNow)) return true;
-        // Stopped with only some hits in reach: one more short step to the exact point, then
-        // today's behaviour (finish with whatever is in reach)
-        const r = overlapRetry;
-        if (!r.stand || r.used) return true;
-        r.used = true;
-        if (feetWithin(r.stand, 1)) return true;
-        movePlayerToPoint(r.stand.x, r.stand.y, { avoidNpcs: true });
-        return false;
+        if (hits.filter(stillThere).every(inReachNow)) return true;
+        // Stopped with only some hits in reach: one more step to the stand point (onPartial),
+        // then today's behaviour (finish with whatever is in reach)
+        return !overlapRetryNext(hits);
+    },
+    onPartial: (hits) => {
+        const t = hits.some(inReachNow) ? overlapRetryNext(hits) : null;
+        if (!t) return false;
+        overlapRetry.used = true;
+        movePlayerToPoint(t.x, t.y, { avoidNpcs: true });
+        return true;
     },
     alive: (hits) => Array.isArray(hits) && hits.some(stillThere),
     isMoving: () => playerIsMoving,
@@ -3040,7 +3059,7 @@ if (typeof window !== 'undefined') {
     window.__pendingTapUse = () => pendingTapUse.get();
     window.__pendingOverlapWalk = () => pendingOverlapWalk.get();
     // The E key (player.js) and the bridge's no-click moves drop both
-    window.__clearPendingTapUse = () => { pendingTapUse.clear(); pendingOverlapWalk.clear(); };
+    window.__clearPendingTapUse = () => { pendingTapUse.clear(); clearOverlapWalk(); };
     window.roomHasActiveHostile = () => roomHasActiveHostile();
 }
 
@@ -3142,6 +3161,15 @@ function inReachFrom(point, hit, margin = ARRIVAL_THRESHOLD + 4) {
     return isObjectInInteractionRange(hit, from, INTERACTION_RANGE - margin);
 }
 
+// A lattice stand point the player can walk to: a clear straight line from the feet (the walk's
+// own direct-route test). The cheap stand-in for a path query, which is asynchronous.
+function lineClearFromFeet(p) {
+    const pfm = window.pathfindingManager;
+    const f = window.player ? playerFeet(window.player) : null;
+    if (!pfm?.hasPlayerLineOfSight || !f || !p) return true;
+    try { return !!pfm.hasPlayerLineOfSight(f.x, f.y, p.x, p.y, null, { avoidNpcs: true }); } catch (e) { return true; }
+}
+
 // The player's body at feet point p would overlap an NPC's body (the walk could not end there)
 function standsInsideNpc(p) {
     const player = window.player;
@@ -3217,7 +3245,7 @@ function menuEntryState(target) {
 }
 
 // The tap's pick-one menu: topmost first (D14), opened at the finger on touch (6.3)
-function showTapMenu(list, pointer, { fight = false } = {}) {
+function showTapMenu(list, pointer, { fight = false, scene = null } = {}) {
     const sorted = list.map((c, i) => [c, i])
         .sort((a, b) => ((b[0].depth || 0) - (a[0].depth || 0)) || (a[1] - b[1]))
         .map(pair => pair[0]);
@@ -3240,9 +3268,36 @@ function showTapMenu(list, pointer, { fight = false } = {}) {
         if (icons[i]) c.icon = icons[i];
         if (c.sprite && !c.check) c.check = () => menuEntryState(c.sprite);
     });
+    const touch = !!pointer?.wasTouch;
     showInteractionMenu(sorted, cx, cy, undefined, {
-        numberKeys: !fight, keyboard: !fight, touch: !!pointer?.wasTouch, holdKeys: !fight
+        numberKeys: !fight, keyboard: !fight, touch, holdKeys: !fight,
+        avoid: touch ? tappedScreenBox(sorted, pointer, scene) : null   // a phone menu goes beside them (6.3)
     });
+}
+
+// The client-pixel box round the tapped things' sprites, or null when it cannot be worked out
+function tappedScreenBox(list, pointer, scene) {
+    try {
+        const cam = scene?.cameras?.main;
+        const canvas = pointer?.manager?.canvas;
+        const rect = canvas?.getBoundingClientRect?.();
+        if (!cam || !rect || !canvas.width || !canvas.height) return null;
+        const view = cam.worldView;
+        const zoom = cam.zoom || 1;
+        const box = { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity };
+        for (const c of list) {
+            const bounds = c.sprite?.getBounds?.();
+            if (!bounds) continue;
+            box.left = Math.min(box.left, bounds.left); box.top = Math.min(box.top, bounds.top);
+            box.right = Math.max(box.right, bounds.right); box.bottom = Math.max(box.bottom, bounds.bottom);
+        }
+        if (!Number.isFinite(box.left)) return null;
+        const scaleX = rect.width / canvas.width;
+        const scaleY = rect.height / canvas.height;
+        const toX = (wx) => rect.left + (wx - view.x) * zoom * scaleX;
+        const toY = (wy) => rect.top + (wy - view.y) * zoom * scaleY;
+        return { left: toX(box.left), top: toY(box.top), right: toX(box.right), bottom: toY(box.bottom) };
+    } catch (e) { return null; }
 }
 
 /**

@@ -343,6 +343,45 @@ function subscribeRoomChange() {
 }
 
 /**
+ * Where a touch menu goes so it does not cover the things tapped (overlap plan 6.3): beside the
+ * `avoid` box (client px: left, top, right, bottom) on the side with more room, level with it;
+ * when neither side is wide enough, above or below it, whichever has more room. Null when the
+ * menu fits nowhere clear of the box (the caller keeps its usual spot).
+ *
+ * @param {{width:number,height:number}} rect - the menu's size
+ * @param {{width:number,height:number}} view - the viewport
+ * @param {{left:number,top:number,right:number,bottom:number}} avoid
+ * @param {number} [margin=8]
+ * @returns {?{x:number,y:number}}
+ */
+export function menuPlacement(rect, view, avoid, margin = 8) {
+    if (!rect || !view || !avoid) return null;
+    const gap = 8;
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(v, hi));
+    const midY = (avoid.top + avoid.bottom) / 2;
+    const midX = (avoid.left + avoid.right) / 2;
+    const roomL = avoid.left - gap - margin;
+    const roomR = view.width - avoid.right - gap - margin;
+    const sides = [];
+    if (roomL >= rect.width) sides.push({ room: roomL, x: avoid.left - gap - rect.width });
+    if (roomR >= rect.width) sides.push({ room: roomR, x: avoid.right + gap });
+    if (sides.length) {
+        sides.sort((a, b) => b.room - a.room);
+        return { x: sides[0].x, y: clamp(midY - rect.height / 2, margin, view.height - rect.height - margin) };
+    }
+    const roomU = avoid.top - gap - margin;
+    const roomD = view.height - avoid.bottom - gap - margin;
+    const rows = [];
+    if (roomU >= rect.height) rows.push({ room: roomU, y: avoid.top - gap - rect.height });
+    if (roomD >= rect.height) rows.push({ room: roomD, y: avoid.bottom + gap });
+    if (rows.length) {
+        rows.sort((a, b) => b.room - a.room);
+        return { x: clamp(midX - rect.width / 2, margin, view.width - rect.width - margin), y: rows[0].y };
+    }
+    return null;
+}
+
+/**
  * The menu, for a tap near several things (core/game.js), a choice of actions on one
  * world object (systems/action-menu.js) or the actions on one held item (the inventory
  * click menu, systems/inventory-menu.js). A disabled entry is shown greyed with its
@@ -359,13 +398,13 @@ function subscribeRoomChange() {
  * @param {number} clientX - viewport X of the tap (event.clientX)
  * @param {number} clientY - viewport Y of the tap (event.clientY)
  * @param {string} [titleText] - the heading (default "Interact with…"; the item's name for a held item)
- * @param {{numberKeys?: boolean, keyboard?: boolean, touch?: boolean, holdKeys?: boolean}} [opts]
+ * @param {{numberKeys?: boolean, keyboard?: boolean, touch?: boolean, holdKeys?: boolean, avoid?: {left:number,top:number,right:number,bottom:number}}} [opts]
  *   numberKeys: keys 1 to 9 pick an entry; keyboard: arrows, Home, End, Enter, Space and Tab
  *   inside the menu, focus on the first entry; touch: opened by a finger (no focus, no key
  *   hints); holdKeys: on the modal stack, so the game's keys are held and Esc closes it there
  */
 export function showInteractionMenu(candidates, clientX, clientY, titleText,
-    { numberKeys = false, keyboard = false, touch = false, holdKeys = false } = {}) {
+    { numberKeys = false, keyboard = false, touch = false, holdKeys = false, avoid = null } = {}) {
     if (!candidates || candidates.length === 0) return;
     injectStyles();
     closeInteractionMenu(); // never stack two menus
@@ -560,6 +599,12 @@ export function showInteractionMenu(candidates, clientX, clientY, titleText,
     const rect = menuEl.getBoundingClientRect();
     let x = (clientX ?? window.innerWidth / 2) - rect.width / 2;
     let y = (clientY ?? window.innerHeight / 2) - rect.height - 16;
+
+    // On a phone the menu goes beside the tapped things, not over them (overlap plan 6.3)
+    if (touch && avoid) {
+        const spot = menuPlacement(rect, { width: window.innerWidth, height: window.innerHeight }, avoid, margin);
+        if (spot) { x = spot.x; y = spot.y; }
+    }
 
     if (x + rect.width + margin > window.innerWidth) x = window.innerWidth - rect.width - margin;
     if (x < margin) x = margin;

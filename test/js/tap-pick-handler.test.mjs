@@ -83,7 +83,7 @@ const HELPERS = ['findObjectsAtPosition',
     'findNPCsAtPosition', 'findNPCAtPosition', 'findDoorAtPosition', 'allNpcSprites', 'npcBesidePlayer',
     'standPointDeps', 'isSeatOrSwivel', 'hitStackKey', 'playerAtFeet', 'inReachFrom', 'inReachNow',
     'feetWithin', 'standsInsideNpc', 'stillThere', 'roomHasActiveHostile', 'walkToDoor', 'showTapMenu', 'tapWalkBlocked',
-    'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState'];
+    'tapWalkStoppedShort', 'tapWalkBusy', 'menuEntryState', 'overlapRetryNext', 'clearOverlapWalk', 'lineClearFromFeet', 'tappedScreenBox'];
 const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pendingGateWalk', 'doorGates',
     'isObjectInInteractionRange', 'sameRoomFrom', 'playerFeet', 'wallClearFrom', 'findClearStandPoint',
     'movePlayerToPoint', 'facePlayerToward', 'startHoldWalk', 'showInteractionMenu', 'isInteractionMenuOpen',
@@ -93,7 +93,7 @@ const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pend
 const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
     'createPendingTapUse', 'aimX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
-    'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon', 'pixelHits', 'soleHit', 'overlapStandPoint',
+    'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon', 'pixelHits', 'soleHit', 'overlapStandPoint', 'overlapRetryTarget',
     'seatsGiveWay'];
 const body = [
     ...HELPERS.map(fnSource),
@@ -558,6 +558,30 @@ test('overlap 21: no spot reaches every hit: one far click on the topmost hit, w
     assert.ok(!w.log.some(l => l.startsWith('menu') || l.startsWith('use')));
 });
 
+test('overlap 22b (R5 M1): a walk that ends 7 px short with one hit out of reach takes one retry step past the stand point, far enough to move', () => {
+    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10 });
+    const player = { x: 400, y: 115 };
+    const w = world({ player, objects: [wide('a', 100), wide('b', 156)] });
+    w.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }) };
+    w.tap(158, 110);
+    const stand = w.log.find(l => l.startsWith('walk:')).slice(5).split(',').map(Number);
+    assert.equal(w.log.length, 1);
+    // The walk ended 7 px short on its approach side: b is in reach, a is not
+    player.x = stand[0] + 7; player.y = stand[1]; w.state.moving = false;
+    assert.ok(w.deps.isObjectInInteractionRange(w.win.rooms.r1.objects.b) && !w.deps.isObjectInInteractionRange(w.win.rooms.r1.objects.a));
+    w.pendingOverlapWalk.update(Date.now() + 100);
+    const walks = w.log.filter(l => l.startsWith('walk:'));
+    assert.equal(walks.length, 2, `one retry step: ${w.log.join()}`);
+    const [rx, ry] = walks[1].slice(5).split(',').map(Number);
+    assert.ok(Math.hypot(rx - player.x, ry - player.y) > 8, `the retry target (${rx},${ry}) is more than 8 px from the feet (${player.x},${player.y})`);
+    assert.ok(w.pendingOverlapWalk.get(), 'still waiting on the retry step');
+    // ...and only one: back at rest still short, it finishes with what is in reach
+    w.state.moving = false;
+    w.pendingOverlapWalk.update(Date.now() + 200);
+    assert.equal(w.log.filter(l => l.startsWith('walk:')).length, 2, 'no second retry');
+    assert.equal(w.pendingOverlapWalk.get(), null);
+});
+
 test('overlap 22: the overlap watcher: silent on arrival in reach, says why when stopped or blocked, cleared by a click', () => {
     const player = { x: 200, y: 200 };
     const w = world({ player, objects: [copierAt(), printoutAt()] });
@@ -642,7 +666,7 @@ test('overlap 28: a far NPC on her figure and a far object on its pixels: a step
     assert.equal(w.pendingOverlapWalk.get()?.obj.length, 2);
 });
 
-test('overlap 31: hostiles never join a menu; a far one takes the tap only when nothing in reach is under it', () => {
+test('overlap 31: hostiles never join a menu; a far one takes the tap only when nothing in reach is under it; a far hostile on her figure with an in-reach object under the tap: the object acts, as today', () => {
     // a far hostile on her figure over a far object: walked towards, no overlap walk
     const a = world({ player: { x: 150, y: 300 }, objects: [sprite('pc', 140, 50, 20, 20, { depth: 10 })], npcs: [npc('thug', 150, 60, { depth: 80 })], hostile: ['thug'] });
     a.tap(150, 60);

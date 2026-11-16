@@ -21,7 +21,7 @@ window.gameAlert = (...args) => alerts.push(args);
 
 const imp = (p) => import(pathToFileURL(join(js, p)).href);
 const menuMod = await imp('ui/interaction-menu.js');
-const { showInteractionMenu, closeInteractionMenu, isInteractionMenuOpen, tickInteractionMenu } = menuMod;
+const { showInteractionMenu, closeInteractionMenu, isInteractionMenuOpen, tickInteractionMenu, menuPlacement } = menuMod;
 const stack = await imp('ui/modal-stack.js');
 const { registerModal, openModalCount } = stack;
 const icons = await imp('ui/menu-icons.js');
@@ -352,4 +352,52 @@ test('47 an entry with a kind and an entity id shows its label as text; the id i
 test('47 game.js builds a seat\'s menu label as "Sit: <name>", the same as main', () => {
     const src = readFileSync(join(js, 'core/game.js'), 'utf8');
     assert.ok(src.includes('label: seat ? `Sit: ${name}` : name,'));
+});
+
+// ── Phone placement (overlap plan 6.3): the menu goes beside the tapped things, not over them ──
+test('menuPlacement: beside the tapped box on the side with more room, level with it; above or below when neither side fits', () => {
+    const view = { width: 390, height: 844 };
+    const menu = { width: 200, height: 300 };
+    const overlap = (m, at, box) => at.x < box.right && at.x + m.width > box.left && at.y < box.bottom && at.y + m.height > box.top;
+    // Things on the left of a 390 px screen: the menu goes right of them
+    const left = { left: 20, top: 400, right: 120, bottom: 460 };
+    const r = menuPlacement(menu, view, left);
+    assert.ok(r.x >= left.right, `right of the box: ${JSON.stringify(r)}`);
+    assert.ok(!overlap(menu, r, left));
+    assert.ok(r.x + menu.width <= view.width - 8 && r.y >= 8 && r.y + menu.height <= view.height - 8, 'on screen');
+    // Things on the right: the menu goes left of them
+    const right = { left: 280, top: 400, right: 370, bottom: 460 };
+    const l = menuPlacement(menu, view, right);
+    assert.ok(l.x + menu.width <= right.left && !overlap(menu, l, right), JSON.stringify(l));
+    // Wide things in the middle: no side has 200 px, so above or below, whichever has more room
+    const mid = { left: 40, top: 120, right: 350, bottom: 220 };
+    const b = menuPlacement(menu, view, mid);
+    assert.ok(b.y >= mid.bottom && !overlap(menu, b, mid), JSON.stringify(b));
+    const low = { left: 40, top: 560, right: 350, bottom: 700 };
+    const a = menuPlacement(menu, view, low);
+    assert.ok(a.y + menu.height <= low.top && !overlap(menu, a, low), JSON.stringify(a));
+    // Nowhere clear: null, the caller keeps its usual spot
+    assert.equal(menuPlacement({ width: 380, height: 800 }, view, { left: 100, top: 300, right: 200, bottom: 400 }), null);
+});
+
+test('showInteractionMenu: on touch the menu with an avoid box sits clear of it; on desktop the box is ignored', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 390, configurable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 844, configurable: true });
+    const rectOf = () => ({ width: 200, height: 300, left: 0, top: 0, right: 200, bottom: 300 });
+    const proto = window.HTMLElement.prototype;
+    const orig = proto.getBoundingClientRect;
+    proto.getBoundingClientRect = rectOf;
+    try {
+        const box = { left: 20, top: 400, right: 120, bottom: 460 };
+        showInteractionMenu(entries(), 70, 430, 'Pick', { touch: true, avoid: box });
+        const m = $('#be-interaction-menu');
+        assert.ok(parseInt(m.style.left, 10) >= box.right, `touch: right of the box, left ${m.style.left}`);
+        closeInteractionMenu();
+        showInteractionMenu(entries(), 70, 430, 'Pick', { avoid: box });
+        const d = $('#be-interaction-menu');
+        assert.ok(parseInt(d.style.left, 10) < box.right, `desktop: the usual spot over the tap, left ${d.style.left}`);
+    } finally {
+        proto.getBoundingClientRect = orig;
+        reset();
+    }
 });
