@@ -175,6 +175,39 @@
   background: #111;
 }
 
+/* A switch button (Background voices). Both states are a full-strength button with a solid 2px
+   border, like the ones above it (off is a real choice, not a disabled control). The state shows as
+   an 8px marker drawn in CSS, filled when on and hollow when off (as dusting.css marks a pressed
+   toggle), and the on text is the accent colour. 2px square borders, no radius. */
+.mw-toggle-btn {
+  white-space: nowrap;
+}
+
+.mw-toggle-btn::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 2px solid currentColor;
+  margin-right: 6px;
+  vertical-align: baseline;
+}
+
+.mw-toggle-btn[aria-pressed="true"] {
+  color: #00aaff;
+}
+
+.mw-toggle-btn[aria-pressed="true"]::before {
+  background: currentColor;
+}
+
+/* Off keeps the grey text and hollow marker, but not on hover: a hovered switch takes the same
+   accent border and text as the buttons beside it, and the marker still shows the state. */
+.mw-toggle-btn[aria-pressed="false"]:not(:hover) {
+  color: #ccc;
+}
+
 .mw-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;

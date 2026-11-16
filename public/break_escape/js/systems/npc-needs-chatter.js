@@ -10,8 +10,10 @@
  *                                 or written. Returns [{ speakerId, text }] or null while the story
  *                                 JSON is still loading (the first call starts the load).
  *   say(npcId, line, info)        speaks a line in that NPC's voice through its own TTSManager:
- *                                 only an NPC with a voice, only in the player's room (room-hearing
- *                                 level 1), quieter with distance, one line at a time (an audio
+ *                                 only an NPC with a voice, in the player's room or the next room
+ *                                 through an OPEN door (x0.4), quieter with distance down to a floor
+ *                                 (chatterVolume, D34), the volume passed to the TTS manager and
+ *                                 followed while the line plays, one line at a time (an audio
  *                                 queue, on top of the needs system's speech lock, because real clips
  *                                 can outrun the bubble). Muted when barks' sound is off. The bubble
  *                                 is the subtitle, so a missing clip (a keyless server's 503) changes
@@ -24,11 +26,16 @@
  * co-speaker's line. A line with no prefix belongs to the owner, or to a `# speaker:npc:<id>` tag.
  * What is sent to /tts is the text after the prefix.
  */
-import { hearingLevel } from './room-hearing.js';
+import { openDoorHearing, chatterVolume, CHATTER_NEAR } from './room-hearing.js';
+import { conversationOpen } from './npc-needs.js';
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const STALE_MS = 8000;   // a queued line that waited longer than this is dropped, not spoken late
 const LOG_CAP = 100;
+const VOLUME_TICK_MS = 250;   // while a line plays, its volume follows the player (D34)
+const FADE_MS = 300;          // a faint line given way to a full one fades out over this long
+const FAINT_MAX = 0.5;        // R2 m1: a background voice plays at this share of the distance curve (0.5 beside the speaker, falling with distance)
+const BARK_DUCK = 0.25;       // a faint line under a scripted bark plays at this share of its volume
 
 /** Pure: "Name: text" as [name, text]; [null, line] without a prefix (InkLineWalker.split_prefix). */
 export function splitPrefix(line) {
@@ -101,6 +108,9 @@ export class NpcChatterVoice {
         this.queue = Promise.resolve();
         this.gen = new Map();        // npcId -> cancel generation (slice 19: a hung-up call)
         this.current = null;         // { npcId, mgr, done } while a clip plays
+        this._faintToks = new Set(); // R1 m2: every faint line queued, loading or playing
+        this._radius = new Map();    // R1 m5: npcId -> the pool's overhear radius (near edge of the curve)
+        this._playN = new Map();     // npcId -> plays started (a late-resolving aborted load must not stop a newer line)
         this.log = [];               // { at, npcId, text, spoken, reason } for tests and live proof
     }
 
@@ -198,13 +208,108 @@ export class NpcChatterVoice {
 
     _muted() {
         if (this.deps.muted) return this.deps.muted();
-        return win().npcBarkSystem?.soundEnabled === false;
+        return win().barkSystem?.soundEnabled === false || win().npcBarkSystem?.soundEnabled === false;   // R1 m7: barkSystem is the real global
     }
 
+    /** Is a person-chat or phone-chat open? Chatter is silent for the whole of it. */
+    conversationOpen() {
+        if (this.deps.conversation) return !!this.deps.conversation();
+        return conversationOpen(win());
+    }
+
+    /** Is a scripted bark's voice playing now? A faint line ducks under it. */
+    _barkPlaying() {
+        if (this.deps.barkPlaying) return !!this.deps.barkPlaying();
+        const bs = win().barkSystem;
+        if (!bs?.ttsManagers || !bs._voicePlaying) return false;
+        for (const m of bs.ttsManagers.values()) { if (bs._voicePlaying(m)) return true; }
+        return false;
+    }
+
+    /**
+     * D34 (a): the volume a FAINT ambient line would have now, or 0 if none can be voiced: the NPC
+     * has a voice, sound is on, no conversation is open, it is in the player's room or the next room
+     * through an open door, and within the far radius (the falloff range). The needs system asks
+     * before it draws a line from the bag for a turn the player cannot hear in full.
+     */
+    faintVolume(npcId, radius) {
+        const npc = this._npc(npcId);
+        if (!npc || !npc.voice || this._muted() || this.conversationOpen()) return 0;
+        if (!(this._hearing(npcId) > 0)) return 0;
+        this._setRadius(npcId, radius);
+        const { far } = this._curve(npcId);
+        const d = this._distance(npcId);
+        if (Number.isFinite(d) && d > far) return 0;
+        return this._backgroundLevel(npcId);
+    }
+
+    /**
+     * R2 M1: the one place every background voice gets its volume: a faint ambient line and an
+     * exchange line voiced out of earshot. 0 when the player's "Background voices" switch is off;
+     * otherwise the distance curve (and door factor) scaled by FAINT_MAX. Heard lines never come here.
+     */
+    _backgroundLevel(npcId) {
+        if (this._faintOff()) return 0;
+        return this._volumeFor(npcId) * FAINT_MAX;
+    }
+
+    /** R1 m7: the player's "Background voices" switch (background lines only; heard lines are unaffected). */
+    _faintOff() {
+        // R3 m4: the scenario flag "faintChatter": false turns every background voice off too
+        if (win().gameScenario?.faintChatter === false) return true;
+        if (this.deps.faintOff) return !!this.deps.faintOff();
+        return win().backgroundChatter === false;
+    }
+
+    _setRadius(npcId, radius) {
+        const r = Number(radius);
+        if (Number.isFinite(r) && r > 0) this._radius.set(npcId, r); else this._radius.delete(npcId);
+    }
+
+    /** R1 m5: the curve's near and far edges for this NPC's pool: full to its overhear radius, gone at 3x. */
+    _curve(npcId) {
+        const near = this._radius.get(npcId) || CHATTER_NEAR;
+        return { near, far: 3 * near };
+    }
+
+    /**
+     * A full line, a scripted bark or a conversation needs the voice: a faint line playing (or still
+     * loading) fades out over FADE_MS and ends, so the next line does not wait behind it.
+     */
+    fadeFaint() {
+        // R1 m2: abort every faint line, loading or still queued, so the queue moves on at once
+        for (const t of this._faintToks) { t.abort = true; try { t.onAbort?.(); } catch (e) { /* ok */ } }
+        const cur = this.current;
+        if (!cur || !cur.faint || cur.fading) return false;
+        cur.fading = true;
+        try { cur.mgr?.setDistanceGain?.(0); } catch (e) { /* ok */ }
+        this._note({ at: this.deps.now ? this.deps.now() : Date.now(), npcId: cur.npcId, text: cur.text, spoken: false, reason: 'preempted' });
+        setTimeout(() => {
+            if (this.current !== cur) return;
+            try { cur.mgr?.stop?.(); } catch (e) { /* already stopped */ }
+            cur.done?.();
+        }, FADE_MS);
+        return true;
+    }
+
+    /** The hearing factor: 1 in the player's room, 0.4 through an open door, 0 otherwise (shut door, a wall). */
     _hearing(npcId) {
-        if (this.deps.npcRoom) return this.deps.npcRoom(npcId) === this.deps.playerRoom?.() ? 1 : 0;
-        const roomId = win().npcBehaviorManager?.getBehavior?.(npcId)?.roomId;
-        return hearingLevel(roomId);
+        if (this.deps.hearing) return this.deps.hearing(npcId);
+        if (this.deps.npcRoom) {
+            const nr = this.deps.npcRoom(npcId), pr = this.deps.playerRoom?.();
+            return this.deps.doorHearing ? this.deps.doorHearing(nr, pr) : (nr === pr ? 1 : 0);
+        }
+        const w = win();
+        const roomId = w.npcBehaviorManager?.getBehavior?.(npcId)?.roomId;
+        const pr = w.currentPlayerRoom;
+        return openDoorHearing(roomId, pr, w.rooms, w.gameScenario?.rooms?.[pr]?.connections);
+    }
+
+    /** The volume now: the distance curve times the door factor; 0 when it cannot be heard. */
+    _volumeFor(npcId) {
+        const h = this._hearing(npcId);
+        if (!(h > 0)) return 0;
+        return chatterVolume(this._distance(npcId), this._curve(npcId)) * h;
     }
 
     _distance(npcId) {
@@ -240,26 +345,95 @@ export class NpcChatterVoice {
         const base = { at: now, npcId, text: line, knot: info.knot || null, topic: info.topic || null };
         if (!npc || !npc.voice) { this._note({ ...base, spoken: false, reason: 'no_voice' }); return this.queue; }
         if (this._muted()) { this._note({ ...base, spoken: false, reason: 'muted' }); return this.queue; }
-        if (this._hearing(npcId) < 1) { this._note({ ...base, spoken: false, reason: 'other_room' }); return this.queue; }
-        const d = this._distance(npcId);
-        const volume = Number.isFinite(d) ? Math.max(0.35, Math.min(1, 1 - d / 400)) : 1;
+        if (this.conversationOpen()) { this._note({ ...base, spoken: false, reason: 'conversation' }); return this.queue; }
+        // R3 M1: a secret line (a priority mutter such as login_aloud) the player does not overhear is
+        // not voiced at all: no faint version and no through-door version, so the player never hears
+        // the cue where the listening window cannot credit it. (The line is a cue, not the credential.) Its bubble is an ordinary unheard bubble.
+        if (info.secret && !info.overheard) { this._note({ ...base, spoken: false, reason: 'secret_unheard' }); return this.queue; }
+        const faint = !!info.faint;
+        // R2 M1: an exchange line voiced out of earshot is a background voice too (switch, faint level),
+        // but it is not faint: it keeps the lock and no full line cuts it
+        const background = faint || !!info.unheard;
+        this._setRadius(npcId, info.radius);
+        const tok = faint ? { abort: false, onAbort: null } : null;
+        if (tok) this._faintToks.add(tok);
+        const dropTok = () => { if (tok) this._faintToks.delete(tok); };
+        if (!faint && info.overheard) this.fadeFaint();   // a full line gives the voice back at once
+        if (!(this._hearing(npcId) > 0)) { dropTok(); this._note({ ...base, spoken: false, reason: 'other_room' }); return this.queue; }
         const gen = this.gen.get(npcId) || 0;
         const live = () => (this.gen.get(npcId) || 0) === gen;
         this.queue = this.queue.then(async () => {
             const t = this.deps.now ? this.deps.now() : Date.now();
-            if (!live()) { this._note({ ...base, spoken: false, reason: 'cancelled' }); return; }
-            if (t - now > STALE_MS) { this._note({ ...base, spoken: false, reason: 'stale' }); return; }
+            if (!live()) { dropTok(); this._note({ ...base, spoken: false, reason: 'cancelled' }); return; }
+            if (tok?.abort) { dropTok(); this._note({ ...base, spoken: false, reason: 'preempted' }); return; }
+            if (t - now > STALE_MS) { dropTok(); this._note({ ...base, spoken: false, reason: 'stale' }); return; }
             const mgr = await this._ttsFor(npcId);
-            this._note({ ...base, spoken: true, volume: Math.round(volume * 100) / 100 });
-            const ms = await mgr.play(npcId, line);
+            // A conversation may have opened while the line waited: checked again just before it plays
+            if (this.conversationOpen()) { dropTok(); this._note({ ...base, spoken: false, reason: 'conversation' }); return; }
+            if (tok?.abort) { dropTok(); this._note({ ...base, spoken: false, reason: 'preempted' }); return; }
+            // Worked out when the line starts, not when it was queued: the player may have moved
+            const level = () => {
+                if (!background) return this._volumeFor(npcId);
+                return this._backgroundLevel(npcId) * (faint && this._barkPlaying() ? BARK_DUCK : 1);
+            };
+            const volume = level();
+            if (!(volume > 0)) {
+                dropTok();
+                this._note({ ...base, spoken: false, reason: background && this._faintOff() ? 'background_off' : 'other_room' });
+                return;
+            }
+            this._note({ ...base, spoken: true, faint, volume: Math.round(volume * 100) / 100 });
+            const n = (this._playN.get(npcId) || 0) + 1;
+            this._playN.set(npcId, n);
+            const loading = Promise.resolve(mgr.play(npcId, line, { volume, cancelled: tok ? () => tok.abort : null }));
+            let ms;
+            if (tok) {
+                // R1 m2: a faint line given way to while it loads does not hold the queue: race the
+                // load against the abort, and stop the clip if it starts later (unless a newer line
+                // has started on this voice since)
+                const aborted = new Promise(r => { tok.onAbort = () => r(0); });
+                ms = await Promise.race([loading, aborted]);
+                if (tok.abort) {
+                    // R3 m1: `cancelled` makes play() itself return before the first sample, so a late
+                    // clip normally never starts; this is the backstop for one that was already playing
+                    // (muted first, then stopped, unless a newer line has started on this voice)
+                    loading.then(() => { if (this._playN.get(npcId) === n) { try { mgr.setDistanceGain?.(0, true); mgr.stop?.(); } catch (e) { /* ok */ } } }).catch(() => {});
+                }
+            } else ms = await loading;
+            dropTok();
             if (!ms) return;   // no clip (keyless server, quota): the bubble already carries the line
-            if (!live()) { try { mgr.stop?.(); } catch (e) { /* ok */ } return; }   // hung up while it loaded
-            try { if (mgr.audio) mgr.audio.volume = volume; } catch (e) { /* routed audio ignores it */ }
+            if (!live() || tok?.abort) { try { mgr.stop?.(); } catch (e) { /* ok */ } return; }   // hung up, or given way, while it loaded
+            // R1 m3: a conversation that opened while the clip loaded silences it before it is heard
+            if (this.conversationOpen()) { try { mgr.stop?.(); } catch (e) { /* ok */ } this._note({ ...base, spoken: false, reason: 'conversation' }); return; }
             await new Promise(r => {
-                const timer = setTimeout(() => { this.current = null; r(); }, ms);
-                this.current = { npcId, mgr, text: line, done: () => { clearTimeout(timer); this.current = null; r(); } };
+                // Follow the player: walk off and it fades, leave the room and it stops being heard.
+                // A conversation that opens mid-line silences it (stopped, not heard).
+                const follow = setInterval(() => {
+                    try {
+                        if (this.current?.fading) return;
+                        // R2 M1: the switch turned off mid-line stops a background voice
+                        if (background && this._faintOff()) {
+                            mgr.stop?.();
+                            this._note({ at: this.deps.now ? this.deps.now() : Date.now(), npcId, text: line, spoken: false, reason: 'background_off' });
+                            end();
+                            return;
+                        }
+                        if (this.conversationOpen()) {
+                            mgr.stop?.();
+                            this._note({ at: this.deps.now ? this.deps.now() : Date.now(), npcId, text: line, spoken: false, reason: 'conversation' });
+                            end();
+                            return;
+                        }
+                        // R1 perf nit: skip the automation call when the level has barely moved
+                        const lv = level();
+                        if (!(Math.abs(lv - (cur.lastLevel ?? -1)) < 0.01)) { cur.lastLevel = lv; mgr.setDistanceGain?.(lv); }
+                    } catch (e) { /* ok */ }
+                }, VOLUME_TICK_MS);
+                const end = () => { clearTimeout(timer); clearInterval(follow); if (this.current === cur) this.current = null; r(); };
+                const timer = setTimeout(end, ms);
+                const cur = this.current = { npcId, mgr, text: line, faint, done: end };
             });
-        }).catch(() => {});
+        }).catch(() => { dropTok(); });   // R2 m7: a load that throws releases its abort token
         return this.queue;
     }
 }

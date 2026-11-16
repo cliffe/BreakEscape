@@ -112,6 +112,8 @@ export function bubbleMs(line) {
 // NPC's `chatter` pools, the scenario's shared `chatter` pools, or an ink exchange knot. The engine
 // has no spoken text of its own: a topic with nothing to say (or a speaker on cooldown) gets picture
 // chat, a speech bubble holding an icon. Lines come from a seeded shuffle-bag per NPC and topic.
+// R1 M2: the throttle between one speaker's faint lines (needs-clock ms)
+const FAINT_COOLDOWN_MS = 25000;
 export const CHATTER_COOLDOWN_MIN = 5;     // chatterCooldownMin default: needs-clock minutes between barks
 export const PICTURE_MS = 2500;            // a picture-chat bubble shows this long
 export const EXCHANGE_LINE_MAX_MS = 6000;  // an exchange line may be longer than a bark
@@ -442,6 +444,7 @@ export class NPCNeedsSystem {
         // Lines said lately, for the echo check (M4): [{ text, at, roomId, x, y }], oldest first
         this._recentLines = [];
         this._speechUntil = 0;
+        this._faintLine = null;   // { npcId, until } while a faint ambient line holds the lock (D34)
         // Mutters waiting for the speech lock, oldest first: [{ npcId, topic, since }] (9.2 B)
         this._mutterWaits = [];
         this._exPlayed = new Set();
@@ -621,6 +624,7 @@ export class NPCNeedsSystem {
         this._bags.clear();
         this._recentLines = [];
         this._speechUntil = 0;
+        this._faintLine = null;
         this._mutterWaits = [];
         this._exPlayed.clear();
         this._rings.clear();
@@ -2109,10 +2113,18 @@ export class NPCNeedsSystem {
         // voiced unheard. Mutters follow the same rule (a workaround's start line is as ambient as
         // a grumble); only a line the player is meant to overhear (always: true, the priority
         // mutters such as login_aloud, whose listening window opens when it is said) keeps its line.
-        const unheard = !opts?.always && this._unheard(s, topic);
-        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard });
+        let unheard = !opts?.always && this._unheard(s, topic);
+        // R1 m6 (D34 (a), "ambient chatter and grumbles"): an unheard grumble or mutter within the
+        // falloff range is a faint line too, on the faint throttle; it never counts as heard
+        let faint = false;
+        if (unheard && typeof this.world.faintVolume === 'function') {
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+            try { faint = this.world.faintVolume(s.npcId, radius) > 0; } catch (e) { faint = false; }
+            if (faint) unheard = false;
+        }
+        const pick = this._pickBark(s, topic, { icons, ignoreCooldown: !!opts?.ignoreCooldown, unheard, faint });
         if (!pick) return;
-        this._showSaying(s, pick, topic, objectId, opts?.minMs);
+        this._showSaying(s, pick, topic, objectId, opts?.minMs, !!opts?.always);
     }
 
     /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
@@ -2169,7 +2181,10 @@ export class NPCNeedsSystem {
         const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
         const priority = PRIORITY_MUTTERS.has(topic);
         const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
-        if (this._mutterHeld(npcId) || (lines && (!this._speechFree() || ahead))) {
+        // R1 M3: a mutter the player hears in full takes the lock from a faint ambient line (the
+        // order keeps `ahead` first, so the preempt only fires when the mutter is said now)
+        const full = priority || !this._unheard(s, topic);
+        if (this._mutterHeld(npcId) || (lines && (ahead || !this._speechFreeFor(!full)))) {
             const wait = { npcId, topic, since: this.clockMs, lines };
             if (priority) {
                 wait.priority = true;
@@ -2207,7 +2222,8 @@ export class NPCNeedsSystem {
                 else keep.push(w);
                 continue;
             }
-            if (this._speechFree() || late || w.lines === false) this._sayMutter(s, w.topic);
+            const full = PRIORITY_MUTTERS.has(w.topic) || !this._unheard(s, w.topic);
+            if (late || w.lines === false || this._speechFreeFor(!full)) this._sayMutter(s, w.topic);
             else keep.push(w);
         }
         this._mutterWaits = keep;
@@ -2240,15 +2256,15 @@ export class NPCNeedsSystem {
     }
 
     /** A one-off line or picture over one NPC (a grumble, an announce): bubble, voice, npc_overheard. */
-    _showSaying(s, pick, topic, objectId, minMs = 0) {
+    _showSaying(s, pick, topic, objectId, minMs = 0, secret = false) {
         const { line, idx, picture, pool } = pick;
         const until = this.clockMs + Math.max(Number(minMs) || 0, picture ? PICTURE_MS : bubbleMs(line));
         const radius = pool.overhearRadius || OVERHEAR_RADIUS;
-        s.saying = { line, picture, topic, objectId, until, radius };
+        s.saying = { line, picture, topic, objectId, until, radius, faint: !!pick.faint };
         const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(s.npcId, radius) || {}) : {};
         // Review 9.2 B R2 m2: a floor (minMs) keeps the bubble up; the speech lock lasts only as
         // long as the words, so the next line on the floor can start when this one ends
-        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard });
+        if (line) this._speak(s.npcId, line, this.clockMs + bubbleMs(line), { topic, objectId, overheard: !!h.overheard, faint: !!pick.faint, secret, radius });
         if (h.overheard) {
             this._emit(`npc_overheard:${s.npcId}`, {
                 speakerId: s.npcId, partnerId: null, topic, lineId: picture ? `picture:${picture}` : `${topic}:${idx}`, line, picture, objectId,
@@ -2866,6 +2882,23 @@ export class NPCNeedsSystem {
     }
 
     /**
+     * Is the speech lock free for this line? A FAINT line (D34, an ambient line drawn out of earshot)
+     * holds the lock only until a line that matters wants it: when the lock is held by nothing but a
+     * faint line, a non-faint asker (`yields` false) takes it at once and the faint voice fades out.
+     * A faint asker never takes the lock from anything.
+     */
+    _speechFreeFor(faint = false) {
+        if (this._speechFree()) return true;
+        const f = this._faintLine;
+        if (faint || !f || this.clockMs >= f.until || this._speechUntil > f.until) return false;
+        this._speechUntil = this.clockMs;
+        this._faintLine = null;
+        try { this.world.fadeFaint?.(f.npcId); } catch (e) { /* audio never breaks a tick */ }
+        this._log(f.npcId, 'faint_preempted', {});
+        return true;
+    }
+
+    /**
      * What a speaker says on a turn: a bark from the bag when it has lines, is off cooldown and the
      * speech lock is free; otherwise a picture. Returns { line, idx, picture, pool } or null (silent:
      * `"chatter": false` and nothing to say). Taking a bark starts the cooldown. `unheard` (E7, a
@@ -2875,16 +2908,20 @@ export class NPCNeedsSystem {
      * `maxMs` (a chat's time left in the overlap) skips the bark the same way when the bag's next
      * line would outlast it, so a line taken is always a line said.
      */
-    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
+    _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, faint = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
         const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
         // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
         const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
+            && !(faint && s.faintQuietUntil > this.clockMs)
             && !(maxMs < CHAT_MAX_MS && bubbleMs(pool.lines[this._bagPeek(s, topic, pool.lines)]) > maxMs);
-        if (ready && this._speechFree()) {
+        if (ready && this._speechFreeFor(faint)) {
             const idx = this._bagTake(s, topic, pool.lines);
-            s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
+            // R1 M2 (E7): a faint line is not heard, so it spends only its own short throttle and
+            // leaves the full cooldown for when the player walks up
+            if (faint) s.faintQuietUntil = this.clockMs + FAINT_COOLDOWN_MS;
+            else s.chatterQuietUntil = this.clockMs + this._cooldownMs(s);
             this._noteSaid(s, pool.lines[idx]);
-            return { line: pool.lines[idx], idx, picture: null, pool };
+            return { line: pool.lines[idx], idx, picture: null, pool, faint };
         }
         if (ready && waitForLock) return { wait: true, pool };
         if (!pool.pictures) return null;
@@ -2898,8 +2935,16 @@ export class NPCNeedsSystem {
         this._speechUntil = Math.max(this._speechUntil, until);
         // Slice 20: room tone ducks the bed only for a line the player hears
         if (info?.overheard) this._heardUntil = Math.max(this._heardUntil || 0, until);
+        // D34: a faint line is remembered so a line that matters can take the lock back from it
+        if (info?.faint) this._faintLine = { npcId, until };
+        else if (this._faintLine && until > this._faintLine.until) this._faintLine = null;
+        // R3 M1: whether a line is a background voice is decided here, once, from what the player
+        // hears, so no call site can miss it: out of earshot and not a faint draw (a desk call is only voiced when overheard).
+        // A `secret` line (a priority mutter such as login_aloud) that is not overheard is not voiced
+        // at all (the voice drops it); an overheard one is voiced in full, exactly as before.
+        const unheard = !info?.overheard && !info?.faint;
         if (typeof this.world.speak === 'function') {
-            try { this.world.speak(npcId, line, { ...info, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
+            try { this.world.speak(npcId, line, { ...info, unheard, ms: until - this.clockMs }); } catch (e) { /* audio never breaks a tick */ }
         }
     }
 
@@ -4352,15 +4397,20 @@ export class NPCNeedsSystem {
                 let rest = Math.max(0, this._speechUntil - this.clockMs);
                 for (const r of c.ex.lines.slice(c.ex.i)) rest += exchangeLineMs(r.text) + CHAT_GAP_MS;
                 this._holdExchange(c, A, B, rest);
-                if (!this._speechFree()) { c.nextAt = this._speechUntil; continue; }   // queue behind another line
+                // A line the player will hear takes the lock from a faint ambient line; one nobody hears queues
+                const nextHeard = this.playerHears(c.ex.lines[c.ex.i].speakerId, this._chatRadius(c, c.ex.lines[c.ex.i].speakerId));
+                if (!this._speechFreeFor(!nextHeard)) { c.nextAt = this._speechUntil; continue; }   // queue behind another line
                 const l = c.ex.lines[c.ex.i];
                 const ms = exchangeLineMs(l.text);
                 const partnerId = l.speakerId === c.a ? c.b : c.a;
-                c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot };
+                const exHears = typeof this.world.playerHears === 'function';
+                const h = exHears ? (this.world.playerHears(l.speakerId, this._chatRadius(c, l.speakerId)) || {}) : {};
+                // R1 m8: a line voiced out of earshot shows dimmed (bubble only; the voice keeps the
+                // lock, since cutting an exchange line would break the exchange)
+                c.current = { speakerId: l.speakerId, partnerId, line: l.text, until: this.clockMs + ms, knot: c.ex.knot, faint: exHears && !h.overheard };
                 c.ex.i++;
-                const h = typeof this.world.playerHears === 'function' ? (this.world.playerHears(l.speakerId, this._chatRadius(c, l.speakerId)) || {}) : {};
                 if (h.overheard) c.ex.heardLines++;
-                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard });
+                this._speak(l.speakerId, l.text, c.current.until, { topic: c.topic, objectId: oid, knot: c.ex.knot, overheard: !!h.overheard, radius: this._chatRadius(c, l.speakerId) });
                 const pa = this.world.npcPos(partnerId);
                 if (pa) this.world.faceTo(l.speakerId, pa.x, pa.y);
                 const data = {
@@ -4385,10 +4435,18 @@ export class NPCNeedsSystem {
             // a unit stub, keeps speaking as before). The same `h` gives `overheard` below.
             const canHear = typeof this.world.playerHears === 'function';
             const h = canHear ? (this.world.playerHears(c.speaker, this._chatRadius(c, c.speaker)) || {}) : {};
-            const unheard = canHear && !h.overheard;
+            let unheard = canHear && !h.overheard;
             const tries = this.roll(c.speaker, `${salt}:chatty`) < chatty;
+            // D34 (a): out of earshot but within the falloff range (or next door through an open door)
+            // the turn still draws a line, voiced faintly. It never counts as heard (overheard stays
+            // false), never waits for the lock and never takes it from another line.
+            let faint = false;
+            if (unheard && tries && typeof this.world.faintVolume === 'function') {
+                try { faint = this.world.faintVolume(c.speaker, this._chatRadius(c, c.speaker)) > 0; } catch (e) { faint = false; }
+                if (faint) unheard = false;
+            }
             // The overlap left is passed on, so a bark that could not be said is never drawn (R1 M1)
-            const pick = tries ? this._pickBark(sp, c.topic, { waitForLock: true, unheard, maxMs: overlapEnd - this.clockMs }) : null;
+            const pick = tries ? this._pickBark(sp, c.topic, { waitForLock: !faint, unheard, faint, maxMs: overlapEnd - this.clockMs }) : null;
             if (pick?.wait) { c.n--; c.nextAt = this._speechUntil; continue; }   // a voiced line is playing: queue
             // An unheard turn with nothing to show (`pictures: false`) is not a silent turn: it does
             // not count towards giving up, so a player who walks in later still finds the pair talking
@@ -4403,9 +4461,10 @@ export class NPCNeedsSystem {
             const ms = picture ? PICTURE_MS : bubbleMs(line);
             // Only while both are still using it: a line that would outlast the overlap is not started
             if (this.clockMs + ms > overlapEnd) { this._chats.delete(oid); continue; }
-            c.current = { speakerId: c.speaker, partnerId, line, picture, until: this.clockMs + ms };
+            const faintLine = !!(faint && line);
+            c.current = { speakerId: c.speaker, partnerId, line, picture, until: this.clockMs + ms, faint: faintLine };
             c.hush = pool.hush;
-            if (line) this._speak(c.speaker, line, c.current.until, { topic: c.topic, objectId: oid, overheard: !!h.overheard });
+            if (line) this._speak(c.speaker, line, c.current.until, { topic: c.topic, objectId: oid, overheard: !!h.overheard, faint: faintLine, radius: this._chatRadius(c, c.speaker) });
             const data = {
                 speakerId: c.speaker, partnerId, topic: c.topic, lineId: picture ? `picture:${picture}` : `${c.topic}:${idx}`, line, picture, objectId: oid,
                 overheard: !!h.overheard, playerDistance: Number.isFinite(h.distance) ? Math.round(h.distance) : null
@@ -4428,7 +4487,7 @@ export class NPCNeedsSystem {
         for (const c of this._chats.values()) {
             const cur = c.current;
             if (cur && cur.speakerId === npcId && this.clockMs < cur.until) {
-                return { line: cur.line, picture: cur.picture || null, knot: cur.knot || null, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs };
+                return { line: cur.line, picture: cur.picture || null, knot: cur.knot || null, partnerId: cur.partnerId, topic: c.topic, objectId: c.objectId, remainingMs: cur.until - this.clockMs, faint: !!cur.faint };
             }
         }
         // Slice 19: half a desk-phone call (no partner in the room)
@@ -4440,7 +4499,7 @@ export class NPCNeedsSystem {
         }
         // A grumble (slice 14) is a one-off line with no partner
         const say = this.states.get(npcId)?.saying;
-        if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs };
+        if (say && this.clockMs < say.until) return { line: say.line, picture: say.picture || null, knot: null, partnerId: null, topic: say.topic, objectId: say.objectId, remainingMs: say.until - this.clockMs, faint: !!say.faint };
         return null;
     }
 
@@ -4702,7 +4761,7 @@ export class NPCNeedsSystem {
             }
             const it = c.items[c.i];
             const voiced = !!it.text && !!h.overheard;
-            if (voiced && !this._speechFree()) { this._delayCall(c, this._speechUntil - this.clockMs); continue; }
+            if (voiced && !this._speechFreeFor(false)) { this._delayCall(c, this._speechUntil - this.clockMs); continue; }
             c.waitLock = false;
             if (!voiced) c.heardAll = false;
             const until = this.clockMs + it.ms;
@@ -5041,11 +5100,30 @@ export function planWithRoutes(plan, routes) {
 }
 
 /**
+ * Is a person-chat or phone-chat open? The one rule, used by the engine world below (what the
+ * player overhears), by the chatter voice and by room tone (R3 m3: it lived in room-hearing.js with
+ * an inline copy here; this file has no imports, so every other module can take it from here).
+ * Read the open minigame's own scene type (stamped by the minigame manager), never the sticky
+ * `currentConversationMinigameType`: that stays 'phone-chat' after a call closes, because only
+ * person-chat clears it. `returnTo` covers a minigame opened from inside a conversation (a cloner,
+ * a lockpick): the chat is suspended under it and still counts as open (R2 m8). `w` is the window.
+ */
+export function conversationOpen(w = (typeof window !== 'undefined' ? window : {})) {
+    const mg = w.MinigameFramework?.currentMinigame;
+    if (!mg) return false;
+    const chat = t => t === 'person-chat' || t === 'phone-chat';
+    return chat(mg._sceneType) || chat(mg.params?.returnTo?.sceneType) || /PersonChat|PhoneChat/.test(mg.constructor?.name || '');
+}
+const conversationOpenIn = conversationOpen;
+
+/**
  * The world as the needs system sees it, read from the running engine through
  * window. Each method is small so the stub in the node tests mirrors it.
  */
 export function createEngineWorld() {
     const W = () => (typeof window !== 'undefined' ? window : {});
+    // R1 m4: is a person-chat or phone-chat open? One shared rule, exported above (R3 m3)
+    const conversationOpen = () => conversationOpenIn(W());
     const TILE = 32;
     const centreOf = (sp) => {
         if (sp.body?.center) return { x: sp.body.center.x, y: sp.body.center.y };
@@ -5401,6 +5479,8 @@ export function createEngineWorld() {
         },
         // Chat overhearing (slice 8): the playerProximity tests (same room, clear line) at a chat radius
         playerHears(id, radius) {
+            // A person-chat or phone-chat is open: no chatter is overheard, so none counts as heard
+            if (conversationOpen()) return { overheard: false, distance: null };
             const pl = W().player;
             const pos = this.npcPos(id);
             if (!pl || !pos) return { overheard: false, distance: null };
@@ -5426,6 +5506,8 @@ export function createEngineWorld() {
         // exchange counts as heard (heard_<knot>) when the player overheard at least one of its lines (E9, 5.6a)
         speak: (id, line, info) => {
             const v = W().npcChatterVoice;
+            // Chatter is silent for the whole of a person-chat or phone-chat: no voice, no toast
+            if (conversationOpen() || v?.conversationOpen?.()) return undefined;
             const wb = W().npcWorldBubbles;
             if (info?.knot || info?.call) {
                 try { wb?.mustShowChatter?.(id, line); } catch (e) { /* display never breaks a tick */ }
@@ -5438,6 +5520,10 @@ export function createEngineWorld() {
         },
         // Slice 19: a call hung up stops its speaker's line in flight and drops its queued lines
         cancelSpeech: id => W().npcChatterVoice?.cancel?.(id),
+        // D34 (a): the faint volume an ambient line out of earshot would have (0: none; the scenario
+        // flag "faintChatter": false opts out), and a full line taking the voice from a faint one
+        faintVolume: (id, radius) => (W().gameScenario?.faintChatter === false ? 0 : (W().npcChatterVoice?.faintVolume?.(id, radius) || 0)),
+        fadeFaint: id => W().npcChatterVoice?.fadeFaint?.(id),
         warmStory: id => W().npcChatterVoice?.warm?.(id),
         exchangeLines: (id, knot) => W().npcChatterVoice?.exchangeLines(id, knot) ?? null,
         setGlobal(name, value) {
