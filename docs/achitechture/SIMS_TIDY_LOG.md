@@ -312,3 +312,73 @@ Scratch: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEsca
 - Keep 22724fa2f given that the live gain is not shown? It is unit-tested, the suites pass, and it
   stops stale seated chairs being baked into the grid (the 5753 finding), so I would keep it.
 - Marek's facing: leave, or add a face point (scenario or engine)?
+
+## Handover 6a (R1 fix session, stopped at the context guard)
+
+Code for every R1 finding is in a80f4ddb0, UNTESTED: no bin/test-js run, no live run, no games made.
+Next agent: update tests, run the suites, do the live proofs, then write "R1 Outcomes" in
+SIMS_TIDY_REVIEW_R1.md and Handover 6 here.
+
+### What a80f4ddb0 does
+- M1 (seating.js): `sweepDoorwayChairs(now)` is exported. It picks a spot with the pure
+  `doorwayChairSpot(foot, rects, half, clear)`. The candidates come from `doorwayChairCandidates`:
+  straight out first (doorGapExit), then a tile further out with a tile sideways each way, then a tile
+  sideways each way, the foot's side first. A candidate inside any doorway's approach lane
+  (`doorLaneRect`, the gap band run DOOR_LANE_PX 48 into each room) is refused. `chairSpotClear` is
+  the box test: chair half size plus 2 px against every enabled static and dynamic body except the
+  chair (walls, desks, chairs, NPCs, the player), and the spot must lie on a loaded room's floor.
+  The chair moves with `glideChairFootTo` (the new `glideTarget(chair)` reads its target). With no
+  clear spot it logs `chair_in_doorway_no_spot` once per foot position and stays put. The
+  `chair_out_of_doorway` log line now carries `spot` (the candidate index). `resetDoorSweep()` is
+  for tests.
+- m1: `doorGapRects(doorProps[])` merges sprites that join the same two rooms on the same line
+  (same axis, within 16 px across and 64 px along) into one gap centred between them.
+  NOT YET PROBED LIVE: log both kitchen doorway sprites' doorProperties.worldX.
+- M2: `postHomePending(stop, home, now, since)` always waits while the home is null. A provisional
+  home waits POST_HOME_WAIT_MS from `since`. The caller sets `behavior._postWaitSince` on the first
+  check at each post stop key (`_postWaitKey`).
+- m6: postHomePending's JSDoc now sits above it, and needsSeatRef has its own doc again.
+- m2 (npc-pathfinding.js findWorldPath): seated cells are blocked with
+  `setDirectionalCondition(cx, cy, none)`, where `none` has a `length` getter that sets
+  `probe.touched`. EasyStar 0.4.4's isTileWalkable reads it only when the search reaches a cell next
+  to a seated one. The rerun without seated chairs runs only when `probe.touched` is set. They come
+  off with `removeAllDirectionalConditions()` in the finally; nothing else in the engine uses
+  directional conditions. A pathfinder without setDirectionalCondition (old stubs) falls back to
+  avoid points and always reruns. Side effect: seated cells now also block diagonal corner
+  checks.
+- m3: `seatedAvoidCells(..., ends, { keep })` skips a rect near the start always, and near the goal
+  only when it is in `keep` (findWorldPath `opts.keepSeated`; planSeatWalk passes its chair body).
+  `findNearestWalkableWorldCell(x, y, r, { avoidSeated })` treats seated chair body cells as blocked
+  (path-avoid `seatedBodyCellKeys`). The player's click snap and planSeatWalk's goal snap use it.
+- m4 (core/player.js): pure `directWalkStall` in path-doorways.js (no new imports). Only
+  movePlayerToPoint's straight walk arms the watch (`directWalk.armed`); hold walks and
+  cancelClickToMove disarm it. A walk that is blocked, or makes less than 0.5 px of progress, for 10
+  frames calls `movePlayerToPoint(goal, { replan: true })` once. That call skips the line-of-sight
+  branch and the click indicator, and bumps `window.__playerWalkReplans` (for the live proof).
+  After the replan, a contact stops the walk as before.
+
+### Tests still to write or fix (m5)
+- path-seated-chairs.test.mjs: the `pfm` stub has only avoid points, so it takes the fallback path.
+  Add setDirectionalCondition/removeAllDirectionalConditions to the stub, and have calculate() read
+  `.length` on the conditions next to the path to simulate a touch. Then test: a rerun when touched,
+  no rerun when untouched, conditions cleared after. Add `keep` tests for seatedAvoidCells (a goal
+  inside someone else's seated chair is still avoided) and an avoidSeated snap test.
+- seating.test.mjs: postHomePending (null always waits, provisional first seen at 120000 waits until
+  125000); update any old assertion that expects the clock-0 behaviour. Write
+  doorwayChairSpot/doorGapRects tests (two sprites at x -16 and +16: a foot at (8,79) exits east),
+  and sweepDoorwayChairs tests with stub window.chairs, rooms[..].doorSprites, chair.scene.physics.world
+  and npcBehaviorManager (a resting chair glides; seated, fetching, mounting, gliding, the player's
+  and moving chairs stay). Add a two-leg advanceSeatMove test that fails without `m.leg++`, and a
+  behavioural post-wait test through updateSeatedNPC.
+- path-doorways: directWalkStall unit test (a chair that turns solid mid-walk: blocked for 10
+  frames gives replan once, then stop).
+- Check each new test fails with `git apply -R` on a80f4ddb0's diff.
+
+### Still to do
+- Marek face point (scenario only): an object on the spare desk with affordance.useFrom dy 1, and
+  Marek's needsHome set to its id. Line 734 of scenario.json.erb has his comment; the spare desk
+  objects are near spare_phone (line 252). Validate it, then check he sits facing north.
+- A late-room home-wait case in test_needs_sims (none found yet).
+- The tour's row 6 snapshot: add each door sprite's doorProperties (worldX, open) and the last
+  chair_out_of_doorway lines (tools/playtest/needs-tour-regression.mjs).
+- Live proofs on :3093 (start-keyless-server, own pidfile, new-game.rb), as the R1 brief lists.
