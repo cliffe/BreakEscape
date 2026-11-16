@@ -249,7 +249,7 @@
             { "eventPattern": "global_variable_changed:kp_twin_account_captured", "condition": "value === true", "onceOnly": true,
               "bark": "That is Kieran's sign-in. Read it on your tablet and try it at the hot desk.",
               "completeTask": "opt_rogue_ap_account" },
-            { "eventPattern": "global_variable_changed:ap_twin_staff", "condition": "value === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
+            { "eventPattern": "global_variable_changed:ap_twin_staff", "condition": "value === true && globalVars.ap_twin_staff === true && !globalVars.kp_twin_captured && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
               "bark": "Nothing has picked your copy yet. Kieran's laptop is the likely one; give him a minute. If you reloaded, the capture lands once Kieran is working again." },
             { "eventPattern": "global_variable_changed:ap_portal_account", "condition": "value === true && globalVars.ap_twin_staff === true && !globalVars.kp_twin_account_captured", "onceOnly": true, "delayMs": 60000,
               "bark": "Your copy now asks for a staff sign-in. Kieran's laptop has to pick it again; give him a minute. If you reloaded, the capture lands once Kieran is working again." },

@@ -123,6 +123,8 @@ export class RogueApMinigame extends MinigameScene {
         const d = win().eventDispatcher;
         for (const [name, fn] of this._globalHandlers) d?.off?.(name, fn);
         this._globalHandlers = [];
+        this._resizeObserver?.disconnect();
+        this._resizeObserver = null;
         super.cleanup?.();
     }
 
@@ -288,6 +290,8 @@ export class RogueApMinigame extends MinigameScene {
         const preview = el('div', 'rogue-ap-preview pixel-scroll');
         this.renderPreview(preview);
         pane.appendChild(preview);
+        // The preview's logo can load or fail after this render and change its height: re-check the cue.
+        this.watchPreview(preview);
 
         const startRow = el('div', 'rogue-ap-start-row');
         const start = el('button', 'rogue-ap-start rogue-ap-button', START_TEXT);
@@ -297,13 +301,23 @@ export class RogueApMinigame extends MinigameScene {
         startRow.appendChild(start);
         pane.appendChild(startRow);
 
-        const status = el('p', 'rogue-ap-status');
-        status.setAttribute('role', 'status');
+        // Only when there is a line to show: a hidden last child has no layout box, which would
+        // hide the "More below" cue while Start is still below the fold.
         if (this.status) {
+            const status = el('p', 'rogue-ap-status');
+            status.setAttribute('role', 'status');
             status.textContent = this.status.text;
             status.classList.toggle('is-refused', this.status.refused);
-        } else status.hidden = true;
-        pane.appendChild(status);
+            pane.appendChild(status);
+        }
+    }
+
+    watchPreview(preview) {
+        this._resizeObserver?.disconnect();
+        this._resizeObserver = null;
+        if (typeof ResizeObserver === 'undefined') return;
+        this._resizeObserver = new ResizeObserver(() => this.updateScrollCue());
+        this._resizeObserver.observe(preview);
     }
 
     renderPreview(host) {

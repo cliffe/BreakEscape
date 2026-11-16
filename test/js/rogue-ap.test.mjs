@@ -467,29 +467,102 @@ test('a same-tab redraw keeps the pane scroll, and Start brings the status line 
     }
 });
 
+// jsdom has no layout: give each pane child a rect the way a browser would, where a hidden node has none.
+function stubLayout(scene, { paneBottom, lastBottom }) {
+    const pane = scene.pane;
+    pane.getBoundingClientRect = () => ({ top: 0, bottom: paneBottom });
+    for (const child of pane.children) {
+        child.getBoundingClientRect = () => (child.hidden
+            ? { top: 0, bottom: 0 }
+            : { top: lastBottom - 20, bottom: lastBottom });
+    }
+}
+
+function stubMetrics(pane, metrics) {
+    Object.defineProperty(pane, 'scrollHeight', { configurable: true, get: () => metrics.scrollHeight });
+    Object.defineProperty(pane, 'clientHeight', { configurable: true, get: () => metrics.clientHeight });
+}
+
 test('"More below" hides when the last row is fully in view, even with spare scroll', () => {
     reset();
     const scene = open();
     scene.showTab('clone');
     const pane = scene.pane;
-    const last = pane.lastElementChild;
     const metrics = { scrollHeight: 400, clientHeight: 300 };
-    Object.defineProperty(pane, 'scrollHeight', { configurable: true, get: () => metrics.scrollHeight });
-    Object.defineProperty(pane, 'clientHeight', { configurable: true, get: () => metrics.clientHeight });
+    stubMetrics(pane, metrics);
     pane.scrollTop = 0;
-    pane.getBoundingClientRect = () => ({ top: 0, bottom: 300 });
     // Content runs well past the bottom edge: the cue shows
-    last.getBoundingClientRect = () => ({ top: 250, bottom: 380 });
+    stubLayout(scene, { paneBottom: 300, lastBottom: 380 });
     assert.equal(scene.updateScrollCue(), true);
     assert.equal(scene.more.hidden, false);
     // 100px still scrollable by metrics, but the last row ends inside the pane (margin only): no cue
-    last.getBoundingClientRect = () => ({ top: 250, bottom: 296 });
+    stubLayout(scene, { paneBottom: 300, lastBottom: 296 });
     assert.equal(scene.updateScrollCue(), false);
     assert.equal(scene.more.hidden, true);
     // Nothing to scroll at all: no cue
     metrics.scrollHeight = 300;
     assert.equal(scene.updateScrollCue(), false);
     assert.equal(scene.more.hidden, true);
+});
+
+test('"More below" shows on the Clone tab before Start, when no status line is drawn (R3 M1)', () => {
+    reset();
+    const scene = open();
+    scene.showTab('clone');
+    const pane = scene.pane;
+    assert.equal(scene.status, null);
+    assert.equal(q('.rogue-ap-status'), null, 'no hidden status node is left as the last child');
+    // A hidden last child has no layout box (stubLayout gives it none), so it must not decide the cue.
+    stubMetrics(pane, { scrollHeight: 1160, clientHeight: 400 });
+    pane.scrollTop = 0;
+    stubLayout(scene, { paneBottom: 400, lastBottom: 1100 });
+    assert.equal(scene.updateScrollCue(), true, 'Start is below the fold: cue shown');
+    assert.equal(scene.more.hidden, false);
+    // After a pick the redraw clears the status and the cue still shows
+    pane.scrollTop = 0;
+    click(qa('.rogue-ap-ssid-pick').find((b) => b.dataset.ssid === 'Ledgerwell-Staff'));
+    stubMetrics(scene.pane, { scrollHeight: 1160, clientHeight: 400 });
+    stubLayout(scene, { paneBottom: 400, lastBottom: 1100 });
+    assert.equal(scene.updateScrollCue(), true);
+});
+
+// ---- the preview logo changes the pane's height after render (R3 m2) -------------------------
+
+test('the Clone tab re-checks "More below" when its preview resizes, and stops on close (R3 m2)', () => {
+    reset();
+    const made = [];
+    const priorRO = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class {
+        constructor(cb) { this.cb = cb; this.targets = []; this.disconnected = false; made.push(this); }
+        observe(t) { this.targets.push(t); }
+        disconnect() { this.disconnected = true; }
+    };
+    try {
+        const scene = open();
+        scene.showTab('clone');
+        const live = made.filter((o) => !o.disconnected);
+        assert.equal(live.length, 1, 'one live observer for the Clone tab');
+        assert.ok(live[0].targets[0].classList.contains('rogue-ap-preview'), 'it watches the preview');
+        const pane = scene.pane;
+        const metrics = { scrollHeight: 350, clientHeight: 300 };
+        stubMetrics(pane, metrics);
+        stubLayout(scene, { paneBottom: 300, lastBottom: 340 });
+        scene.updateScrollCue();
+        assert.equal(scene.more.hidden, false);
+        // The logo fails, the preview shrinks, nothing is left to scroll: the observer callback clears the cue
+        metrics.scrollHeight = 300;
+        live[0].cb();
+        assert.equal(scene.more.hidden, true);
+        // A redraw replaces the observer rather than stacking them
+        scene.showTab('recon');
+        scene.showTab('clone');
+        assert.equal(made.filter((o) => !o.disconnected).length, 1);
+        scene.cleanup();
+        assert.equal(made.filter((o) => !o.disconnected).length, 0, 'cleanup disconnects');
+    } finally {
+        if (priorRO === undefined) delete globalThis.ResizeObserver;
+        else globalThis.ResizeObserver = priorRO;
+    }
 });
 
 test('the Wi-Fi icon is drawn at whole multiples of 11x8 and headshots at multiples of 32', () => {
@@ -516,4 +589,17 @@ test('the Wi-Fi icon is drawn at whole multiples of 11x8 and headshots at multip
         assert.equal(s.h, s.w);
     }
     assert.ok(!/border-left:\s*4px/.test(css), 'status rule is 2px');
+});
+
+// ---- Ruth's "nothing has picked your copy" hint is for the staff copy only (R3 m1) --------------
+
+test('hint 1 is gated on ap_twin_staff, read when the delay is up (R3 m1)', () => {
+    const erb = readFileSync(join(here, '../../scenarios/test_access_devices/scenario.json.erb'), 'utf8');
+    const m = erb.match(/"eventPattern": "global_variable_changed:ap_twin_staff", "condition": "([^"]+)"/);
+    assert.ok(m, 'the ap_twin_staff hint mapping exists');
+    const holds = (globalVars, value = true) => new Function('value', 'globalVars', `return (${m[1]});`)(value, globalVars);
+    assert.equal(holds({ ap_twin_staff: true }), true, 'staff copy still running');
+    assert.equal(holds({ ap_twin_staff: false }), false, 'a guest clone made within the minute cancels it');
+    assert.equal(holds({ ap_twin_staff: true, kp_twin_captured: true }), false);
+    assert.equal(holds({ ap_twin_staff: true, kp_twin_account_captured: true }), false);
 });
