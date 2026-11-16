@@ -134,6 +134,64 @@ def check_network_model(json_data, scenario_dir = nil)
     err.call("jack '#{label.call(entry[:object], entry[:path])}' has no network of its own or from its room.")
   end
 
+  # ---- Patch panel (panelOf / panelPorts) ----
+  # A jack with panelOf has no sprite and no position and is reached only through its panel;
+  # a panel's panelPorts entries with a jack name top-level jacks in the same room that name it back.
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+    objs = room['objects'].select { |o| o.is_a?(Hash) }
+    by_id = objs.to_h { |o| [o['id'], o] }
+    objs.each do |o|
+      next unless o.key?('panelOf')
+
+      where = "jack '#{o['id']}' in room '#{room_id}'"
+      panel = o['panelOf'].is_a?(String) ? by_id[o['panelOf']] : nil
+      if panel.nil?
+        err.call("#{where} has panelOf '#{o['panelOf']}', which is no object in the same room.")
+      elsif !Array(panel['panelPorts']).any? { |pp| pp.is_a?(Hash) && pp['jack'] == o['id'] }
+        err.call("#{where} has panelOf '#{o['panelOf']}', but that object does not list it in panelPorts.")
+      end
+      err.call("#{where} has panelOf and a 'sprite' texture; a panel port has no sprite.") if o.key?('sprite')
+      err.call("#{where} has panelOf and a position; a panel port has none.") if %w[x y position].any? { |k| o.key?(k) }
+      err.call("#{where} has panelOf but is not a networkJack; a panel port is a jack.") unless nm.jack?(o)
+    end
+    objs.each do |panel|
+      next unless panel.key?('panelPorts')
+
+      pwhere = "panel '#{panel['id']}' in room '#{room_id}'"
+      unless panel['panelPorts'].is_a?(Array)
+        err.call("#{pwhere} has panelPorts that is not an array.")
+        next
+      end
+      seen_ports = {}
+      seen_jacks = {}
+      panel['panelPorts'].each do |pp|
+        next unless pp.is_a?(Hash)
+
+        if pp.key?('port')
+          err.call("#{pwhere} lists port #{pp['port']} more than once.") if seen_ports[pp['port']]
+          seen_ports[pp['port']] = true
+        end
+        if pp.key?('jack')
+          err.call("#{pwhere} lists jack '#{pp['jack']}' more than once.") if seen_jacks[pp['jack']]
+          seen_jacks[pp['jack']] = true
+        end
+        next unless pp.key?('jack')
+
+        jack = by_id[pp['jack']]
+        if jack.nil?
+          err.call("#{pwhere} lists port #{pp['port']} with jack '#{pp['jack']}', which is no object in the same room.")
+        elsif !nm.jack?(jack)
+          err.call("#{pwhere} lists port #{pp['port']} with '#{pp['jack']}', which is not a networkJack.")
+        elsif jack.key?('panelOf') && jack['panelOf'] != panel['id']
+          err.call("#{pwhere} lists jack '#{pp['jack']}', whose panelOf names '#{jack['panelOf']}' instead.")
+        end
+        # A jack with a world sprite (network_port) may also be listed; it need not name the panel back.
+      end
+    end
+  end
+
   # ---- Rogue devices (3.3) ----
   device_entries = []
   all_objects.each { |e| device_entries << [e[:object], e[:path], e[:path].include?('/itemsHeld') ? :npc : :room] }
