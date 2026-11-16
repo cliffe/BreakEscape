@@ -32,3 +32,18 @@ Result: 0 blocking, 0 major, 3 minor.
 ### m3 (minor): ink `#hostile:false` on a pending NPC is still ignored
 
 `#hostile:true` is covered by the new m7 test (`hostiles-hidden-music.test.mjs:349`). The calm direction goes the same way, straight to `npcHostileSystem.setNPCHostile` (`npc-hostile.js:237`), which does not touch `_startHostileOnReveal` or call `recordCalm`. A calm set by ink on a hidden pending NPC is lost at the reveal, and again on reload. This is not new in R3 and the scenario does not use it, but it is the same class as R3 m1 now that `recordCalm` exists. Either have `setNPCHostile(…, false)` clear the pending start on the behaviour, or note it as a known gap.
+
+## R4 outcomes
+
+Merged main (9ab53f57b) first. Tests were written first.
+
+| Minor | Choice | What changed |
+|---|---|---|
+| m1 no reload round trip | Test | `hostiles-hidden-music.test.mjs`: a real `npc-hostile.js` instance runs `setHostile(false)` on a pending NPC (real `recordCalm`), `exportHostility`, a second fresh instance runs `restoreHostility`, then a new `NPCBehavior` is made. It does not set `_startHostileOnReveal`, stays calm after the reveal and gives no fight music. |
+| m2 counted before a reload, not after | Documented | Making the two cases match is not small or safe (see the reasons in `HIDDEN_HOSTILES_MUSIC.md`, "Known differences"). The permanent `npcVisibility` key is documented there too. |
+| m3 ink calm on a pending NPC | Guard + tests | The real ink route (`handleHostile`, then `npcGameBridge.setNPCHostile`) already reached `setHostile(false)` and so already recorded the calm, and a test now pins that. A direct `npcHostileSystem.setNPCHostile(id, false)` call (used by `combat-debug.js` and the review's cited line) did not, so it now cancels the pending start and calls `recordCalm`. Tests cover both routes and the no-pending case. |
+
+
+Live (keyless server on :3093 only, `PLAYTEST_PORT=3093`, `setFPS(20)`, fixed steps on, games 6428, 6429 and 6430 from new-game.rb): hide-then-ko (9 of 9), ko-then-hide (4 of 4) and reserve (8 of 8) all passed with 0 failed checks. The server was stopped afterwards.
+
+Suites, run one after the other: `bin/test-js` 724 files passed, 0 failed; `bin/rails test` 3062 runs, 0 failures, 0 errors, 3 skips.
