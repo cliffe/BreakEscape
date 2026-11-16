@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="670" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="673" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -2010,5 +2010,14 @@
  </tile>
  <tile id="679">
   <image source="../objects/power_socket_drop_off1.png" width="32" height="48"/>
+ </tile>
+ <tile id="680">
+  <image source="../objects/network_dropbox.png" width="27" height="25"/>
+ </tile>
+ <tile id="681">
+  <image source="../objects/p3_patch_panel_c2.png" width="28" height="32"/>
+ </tile>
+ <tile id="682">
+  <image source="../objects/network_dropbox_planted_cabinet.png" width="28" height="32"/>
  </tile>
 </tileset>

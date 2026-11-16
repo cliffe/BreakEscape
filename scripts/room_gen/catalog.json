@@ -6289,6 +6289,24 @@
       "w": 32,
       "h": 48,
       "gid": 1480
+    },
+    "network_dropbox": {
+      "id": 680,
+      "w": 27,
+      "h": 25,
+      "gid": 1481
+    },
+    "p3_patch_panel_c2": {
+      "id": 681,
+      "w": 28,
+      "h": 32,
+      "gid": 1482
+    },
+    "network_dropbox_planted_cabinet": {
+      "id": 682,
+      "w": 28,
+      "h": 32,
+      "gid": 1483
     }
   }
 }
