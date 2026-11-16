@@ -657,6 +657,19 @@ module BreakEscape
       assert_nil carry_state['grace']['fromPos']
     end
 
+    # The server bound is 0..64 (the client checks the real room size). Edges 0 and 64 are kept.
+    [['a negative x', { 'x' => -1, 'y' => 3 }, nil],
+     ['a y of 65', { 'x' => 3, 'y' => 65 }, nil],
+     ['the 0 and 64 edges', { 'x' => 0, 'y' => 64 }, { 'x' => 0, 'y' => 64 }]].each do |label, stored, expected|
+      test "a stored tile pair is bounded to 0..64: #{label}" do
+        build
+        place_drop('kitchen', stored)
+        carry('grace', 'office_mugs', room: 'kitchen')
+        assert_response :success
+        assert_equal expected, carry_state['grace']['fromPos']
+      end
+    end
+
     test 'a stored elevation outside the small range is dropped, a normal one kept (m2)' do
       build
       place_drop('kitchen', { 'px' => 131.5, 'py' => 60.0, 'elevation' => 100_000 })
