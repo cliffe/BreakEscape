@@ -99,3 +99,63 @@ test('the live grid leaves seated chairs and the NPCs on them out; other builds 
     assert.equal(at(pm.buildWorldGrid({ skipSeated: true }), 90, 126), 1, 'once nobody sits, an immovable chair body is solid as before');
     window.chairs = undefined;
 });
+
+// Async mode (EasyStar 0.4.4 default): calculate() runs the whole search, then delivers the
+// callback a tick later from a timer. The player's NPC-avoid points (avoidNPCs) stay set until
+// that callback; the seated cells come off in the finally, straight after calculate().
+function pfmAsync(found = () => true) {
+    const pm = pfm(found);
+    let cb = null;
+    pm.worldPathfinder.findPath = (sx, sy, ex, ey, c) => { cb = c; };
+    pm.worldPathfinder.calculate = () => {
+        pm.searches.push([...pm.avoided]);
+        const n = pm.searches.length, c = cb;
+        setTimeout(() => c(found(n) ? [{ x: 1, y: 1 }, { x: 2, y: 2 }] : null), 0);
+    };
+    return pm;
+}
+const tick = () => new Promise(r => setTimeout(r, 5));
+
+test('async player search: NPC-avoid and seated cells both apply; a failed search reruns with the NPC cells and without the seated ones', async () => {
+    window.chairs = [{ seatedBy: 'amara', body: rect(216, 118, 238, 129) }];
+    // A walking (movable) NPC west of the chair; the player's click path must still route round her.
+    window.rooms = { office: { npcSprites: [{ body: rect(160, 120, 178, 130, { immovable: false }) }] } };
+    const pm = pfmAsync(n => n > 1); const got = [];
+    pm.findWorldPath(200, 176, 220, 76, p => got.push(p), true);
+    assert.equal(pm.searches.length, 1, 'one search so far: the retry waits for the timer callback');
+    assert.ok(pm.searches[0].includes('27,15'), 'first search avoids the seated chair');
+    assert.ok(pm.searches[0].includes('20,15'), 'first search avoids the walking NPC');
+    assert.ok(!pm.avoided.has('27,15'), 'seated cells come off straight after calculate()');
+    assert.ok(pm.avoided.has('20,15'), 'NPC cells stay until the callback (async mode)');
+    assert.equal(got.length, 0, 'the caller has not heard yet');
+    await tick(); await tick();
+    assert.equal(pm.searches.length, 2, 'the failed search ran again');
+    assert.ok(pm.searches[1].includes('20,15'), 'the rerun still avoids the walking NPC');
+    assert.ok(!pm.searches[1].includes('27,15'), 'the rerun leaves the seated chair out');
+    assert.equal(got.length, 1, 'the caller hears once');
+    assert.ok(got[0] && got[0].length === 2, 'with the rerun\'s path');
+    assert.equal(pm.avoided.size, 0, 'nothing left avoided at the end');
+    window.chairs = undefined; window.rooms = undefined;
+});
+
+test('async player search that finds a path first time: no rerun, one callback, nothing left avoided', async () => {
+    window.chairs = [{ seatedBy: 'amara', body: rect(216, 118, 238, 129) }];
+    window.rooms = { office: { npcSprites: [{ body: rect(160, 120, 178, 130, { immovable: false }) }] } };
+    const pm = pfmAsync(); const got = [];
+    pm.findWorldPath(200, 176, 220, 76, p => got.push(p), true);
+    await tick(); await tick();
+    assert.equal(pm.searches.length, 1);
+    assert.equal(got.length, 1);
+    assert.equal(pm.avoided.size, 0);
+    window.chairs = undefined; window.rooms = undefined;
+});
+
+test('async search with no way through even without seated chairs: one rerun only, the caller hears null once', async () => {
+    window.chairs = [{ seatedBy: 'amara', body: rect(216, 118, 238, 129) }];
+    const pm = pfmAsync(() => false); const got = [];
+    pm.findWorldPath(200, 176, 220, 76, p => got.push(p), true);
+    await tick(); await tick(); await tick();
+    assert.equal(pm.searches.length, 2, 'no third search');
+    assert.deepEqual(got, [null]);
+    window.chairs = undefined;
+});
