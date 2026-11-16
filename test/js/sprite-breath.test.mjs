@@ -122,7 +122,7 @@ function npcRig({ poseKeys = [], seat = null, npc = { id: 'ana' } } = {}) {
     window.npcBehaviorManager = { behaviors: new Map([['ana', b]]), getBehavior: (id) => (id === 'ana' ? b : null) };
     window.npcManager = { getNPC: () => npc };
     window.npcHostileSystem = null;
-    return { poses: new NpcPoses(scene), b, s, sprite, images, calls };
+    return { poses: Object.assign(new NpcPoses(scene), { settleMs: 0 }), b, s, sprite, images, calls };
 }
 const realRandom = Math.random;
 const DOWN = 2000, UP = 500;   // phase 0: head and shoulders down from 1800 to 3240 ms of each 3600
