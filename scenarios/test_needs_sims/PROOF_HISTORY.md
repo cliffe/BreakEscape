@@ -878,7 +878,7 @@ Sanjay and Rosa are a coupled cooler pair (`chatterCooldownMin: 2`, `npc_use_sta
 
 ### Marek's post, history (moved from the README cast table)
 
-His office post was (6,8) before slice 10, then (3,8), where his walk passed behind Sanjay's chair and wedged, then (1.65, 3.5), which crowded the kitchen-door row, and is now (1.65, 4.0), which keeps the west doorway clear (commit `e2b84421b`, R3 M3).
+His office post was (6,8) before slice 10, then (3,8), where his walk passed behind Sanjay's chair and wedged, then (1.65, 3.5), which crowded the kitchen-door row, then (1.65, 4.0), which kept the west doorway clear (commit `e2b84421b`, R3 M3), and since the sims tidy pass is (2.15, 6.65), south of the spare south-west desk: seated at (1.65, 4.0) he turned Rosa back at the doorway and wedged between Sanjay and loose chair 152 (game 5733).
 
 ### SIMS-5 F2 live proof: the arm keyed to the cooler (2026-11-15, keyless, headless, worktree p-ol-sims5)
 

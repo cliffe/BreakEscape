@@ -34,6 +34,9 @@
 
 import { isWorkstation, ownerOf } from './workstation-state.js';
 
+// A password or a keyring credential session shows the desktop look; a claim keeps the lock (K3a, 3.8)
+const signedInVia = (via) => via === 'password' || via === 'credential';
+
 export const LOCK_SOUND = 'lockpick_set';
 export const UNLOCK_SOUND = 'ui_confirm';
 const MAX_TRANSITIONS = 50;
@@ -80,7 +83,7 @@ export class ScreenStates {
         const found = objectId ? findSprite(objectId) : null;
         if (!found || !this._eligible(found.sprite.scenarioData)) return null;
         const { sprite, roomId } = found;
-        const locked = !!w.workstationState.isLocked(objectId) && w.pcSessions?.get?.(objectId)?.via !== 'password';
+        const locked = !!w.workstationState.isLocked(objectId) && !signedInVia(w.pcSessions?.get?.(objectId)?.via);
         // An unset look flag is the base look: a leave that keeps the screen open changes nothing
         if (locked === !!sprite._screenLocked) return null;
 

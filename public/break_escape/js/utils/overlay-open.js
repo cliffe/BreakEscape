@@ -5,13 +5,19 @@
 
 const POPUP_IDS = ['laptop-popup', 'lab-popup'];
 
-/** True while the CyberChef or lab-sheet workstation popup is showing. */
-export function workstationPopupOpen(doc = (typeof document !== 'undefined' ? document : null)) {
-    if (!doc) return false;
-    return POPUP_IDS.some((id) => {
-        const el = doc.getElementById(id);
+/** Which workstation popup is showing: 'laptop' (CyberChef), 'lab' (lab sheet) or null. */
+export function openWorkstationPopup(doc = (typeof document !== 'undefined' ? document : null)) {
+    if (!doc) return null;
+    const id = POPUP_IDS.find((pid) => {
+        const el = doc.getElementById(pid);
         return !!el && !!el.style && el.style.display !== '' && el.style.display !== 'none';
     });
+    return id ? id.replace('-popup', '') : null;
+}
+
+/** True while the CyberChef or lab-sheet workstation popup is showing. */
+export function workstationPopupOpen(doc = (typeof document !== 'undefined' ? document : null)) {
+    return openWorkstationPopup(doc) !== null;
 }
 
 /** True while a minigame (not already closing) or a workstation popup is open. */

@@ -92,6 +92,18 @@ export function unplugEndedMessage(hosts = []) {
     const names = list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
     return `Unplugged. Your session${list.length === 1 ? '' : 's'} on ${names} ended.`;
 }
+/**
+ * The toast for sessions a sign-in or sign-out pruned (plan 8.5, reason route_ended): the
+ * session each went through was closed. Not an unplug.
+ */
+export function routeEndedMessage(hosts = []) {
+    const list = (Array.isArray(hosts) ? hosts : []).filter(h => typeof h === 'string' && h);
+    if (!list.length) return null;
+    const names = list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} and ${list[list.length - 1]}`;
+    return list.length === 1
+        ? `Your session on ${names} ended: the session it went through was closed.`
+        : `Your sessions on ${names} ended: the sessions they went through were closed.`;
+}
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 export const displacedMessage = (name) => `${name || 'Someone'} has signed in at this PC`;
 
@@ -99,6 +111,20 @@ function npcName(npcId) {
     const w = typeof window !== 'undefined' ? window : {};
     const rec = w.npcManager?.getNPC?.(npcId) || w.npcManager?.npcs?.get?.(npcId) || null;
     return rec?.displayName || npcId || null;
+}
+
+/**
+ * The reason for a credential sign-in's 422 body (keyring K3a): each server flag maps to its
+ * own reason; the generic body (no flag) means the credential no longer signs in.
+ */
+export function credentialRefusalReason(b = {}) {
+    if (b.remoteBlocked) return 'remote_blocked';
+    if (b.wrongPc) return 'wrong_pc';
+    if (b.kindRefused) return 'kind_refused';
+    if (b.notPermitted) return 'not_permitted';
+    if (b.lockedOut) return 'locked_out';
+    if (b.ended) return 'ended';
+    return 'no_longer_works';
 }
 
 function apiClient() {
@@ -114,9 +140,19 @@ function publicSession(pcId, s) {
     // A locked session (UI slice 6) stays held but needs the password again; the open flow
     // reads this to show the sign-in screen with the account pre-chosen.
     if (s.locked === true) out.locked = true;
+    // A credential session (keyring K3a) names its kind and label for the desktop's second line
+    if (s.via === 'credential') Object.assign(out, credentialFields(s));
     // The account's picture source (a headshot key's portrait or avatar), only when the server sent it
     if (typeof s.portrait === 'string' && s.portrait) out.portrait = s.portrait;
     if (typeof s.avatar === 'string' && s.avatar) out.avatar = s.avatar;
+    return out;
+}
+
+/** A credential session's kind and label (keyring K3a), each only when sent as a string. */
+function credentialFields(s) {
+    const out = {};
+    if (typeof s?.kind === 'string' && s.kind) out.kind = s.kind;
+    if (typeof s?.label === 'string' && s.label) out.label = s.label;
     return out;
 }
 
@@ -159,7 +195,7 @@ export class PcSessions {
         this._listening = dispatcher;
         dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
-        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds));
+        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged'));
         // 9.2 H (6.4): an NPC sitting down, or leaving a borrowed session, ends the player's there
         const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId)); };
         dispatcher.on('npc_sat_at:*', sat);
@@ -204,6 +240,7 @@ export class PcSessions {
                 username: s.username ?? null,
                 displayName: s.displayName ?? null,
                 via: s.via || 'password',
+                ...(s.via === 'credential' ? credentialFields(s) : {}),
                 ...pictureFields(s),
                 restored: true,
                 // A locked session survives a reload like any other session state (UI slice 6)
@@ -314,6 +351,64 @@ export class PcSessions {
             ...remoteFields(body)
         };
         this._replace(pcId, session);
+        this._dropEnded(body.endedPcIds, pcId);
+        return { ok: true, session: publicSession(pcId, session) };
+    }
+
+    /** The sessions a sign-in's answer says ended (keyring K2 3.8), never the new one itself. */
+    _dropEnded(endedPcIds, pcId) {
+        const ended = Array.isArray(endedPcIds) ? endedPcIds.filter(id => typeof id === 'string' && id && id !== pcId) : [];
+        if (ended.length) this.linkDropped(ended, 'route_ended');
+    }
+
+    /**
+     * Sign in with a keyring credential (keyring K3a, plan 8.1): POST /login { pc_id,
+     * credential } with the screen's route ({ foothold }). Resolves to
+     *   { ok: true, session }   (via 'credential', with kind and label)
+     *   { ok: false, reason, message, attemptsLeft }  reason one of 'wrong_pc', 'kind_refused',
+     *       'not_permitted', 'locked_out', 'ended', 'remote_blocked' or 'no_longer_works'
+     *       (the generic 422 body: the credential no longer signs in)
+     *   { ok: false, reason: 'error', error: true, status, message, serverReason }  (403/404/no answer)
+     */
+    async signInWithCredential(pcId, credentialId, { foothold = null } = {}) {
+        this.listen();
+        const api = apiClient();
+        if (!api?.loginWithCredential) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
+        let body;
+        try {
+            body = await api.loginWithCredential(pcId, credentialId, foothold ? { foothold } : {});
+        } catch (err) {
+            const b = err?.body || {};
+            if (err?.status === 422) {
+                const reason = credentialRefusalReason(b);
+                const attemptsLeft = Number.isFinite(b.attemptsLeft) ? b.attemptsLeft : null;
+                this._emit('pc_signin_failed', { pcId, reason, attemptsLeft, credential: credentialId });
+                return {
+                    ok: false,
+                    reason,
+                    message: b.message || 'Incorrect username or password',
+                    attemptsLeft,
+                    ...(reason === 'kind_refused' && typeof b.kindRefused === 'string' ? { kind: b.kindRefused } : {})
+                };
+            }
+            return {
+                ok: false, reason: 'error', error: true, status: err?.status ?? null,
+                message: b.message || b.error || 'Could not reach the sign-in service',
+                serverReason: typeof b.reason === 'string' ? b.reason : null
+            };
+        }
+        if (!body || body.success === false || !body.npcId) {
+            return { ok: false, reason: 'error', error: true, status: null, message: body?.message || 'Sign-in failed' };
+        }
+        const session = {
+            npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'credential',
+            ...credentialFields(body),
+            ...(body.route && typeof body.route === 'object' ? { route: body.route } : {}),
+            ...pictureFields(body),
+            ...remoteFields(body)
+        };
+        this._replace(pcId, session);
+        this._dropEnded(body.endedPcIds, pcId);
         return { ok: true, session: publicSession(pcId, session) };
     }
 
@@ -474,7 +569,7 @@ export class PcSessions {
         this._closeDesktop(pcId, message, 'sign_out');
         // Signing out of a pivot ends the onward sessions (slice 9.3b K, 5.1): the server
         // returned them, so their desktops close with "the link dropped".
-        if (Array.isArray(ended) && ended.length) this.linkDropped(ended);
+        if (Array.isArray(ended) && ended.length) this.linkDropped(ended, 'route_ended');
         return true;
     }
 
@@ -531,7 +626,8 @@ export class PcSessions {
      * The sessions whose desktop was not open (the usual case: the unplug happens at the jack)
      * get one toast naming their hosts. Returns the pcIds dropped.
      */
-    linkDropped(endedPcIds = []) {
+    linkDropped(endedPcIds = [], reason = 'unplugged') {
+        const routeEnded = reason === 'route_ended';
         const dropped = [];
         const unseen = [];
         for (const pcId of (Array.isArray(endedPcIds) ? endedPcIds : [])) {
@@ -542,9 +638,10 @@ export class PcSessions {
             // The host label the server sent; never the internal PC id
             if (!this.desktops.has(pcId)) unseen.push(previous.host || 'a remote PC');
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
-            this._closeDesktop(pcId, LINK_DROPPED_MESSAGE, 'link_dropped');
+            // An open desktop of a pruned session names its host; an unplug keeps "The link dropped"
+            this._closeDesktop(pcId, routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE, 'link_dropped');
         }
-        const message = unplugEndedMessage(unseen);
+        const message = routeEnded ? routeEndedMessage(unseen) : unplugEndedMessage(unseen);
         if (message) {
             try {
                 // Host labels are author text: plain text, never markup

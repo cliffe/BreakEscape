@@ -9,6 +9,8 @@
  *   droppable, no triggerOnInteract    "Drop here", "Examine"
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
  *   wearable, not droppable, with text "Put on" or "Take off", "Examine"
+ *   saved connection (keyring K3b)     "Connect", "Drop here" when droppable, "Examine";
+ *                                      with nothing to read and not droppable, the click is Connect
  *   everything else                    no menu: the click does what it did before
  *
  * A wearable that is not droppable and has no observations has no menu: its click puts it
@@ -90,6 +92,16 @@ export function inventoryMenuFor(sprite, ctx = {}) {
 
     const items = ctx.inventoryItems ?? (typeof window !== 'undefined' ? window.inventory?.items : undefined);
     const ctxWindow = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    const connect = connectMenuEntry(sprite, ctxWindow);
+    if (connect) {
+        const droppable = isDroppableInventoryItem(sprite, items);
+        // Nothing to read and nothing else to do: the click is Connect (trayClickIsConnect)
+        if (!droppable && !heldItemHasText(sprite, ctxWindow)) return null;
+        const out = [connect];
+        if (droppable) out.push(dropEntry(ctx));
+        out.push({ id: 'examine', label: 'Examine' });
+        return out;
+    }
     const wearLabel = ctxWindow.wearables?.menuLabel?.(data, ctxWindow);
     if (!isDroppableInventoryItem(sprite, items)) {
         // A wearable that cannot be dropped (the lab's carried vest) still has two things
@@ -100,10 +112,7 @@ export function inventoryMenuFor(sprite, ctx = {}) {
         return null;
     }
 
-    const blocked = 'dropBlocked' in ctx ? ctx.dropBlocked : dropBlockedReason();
-    const drop = blocked
-        ? { id: 'drop', label: 'Drop here', disabled: true, reason: blocked }
-        : { id: 'drop', label: 'Drop here' };
+    const drop = dropEntry(ctx);
     const entries = [];
     // A wearable's first entry puts it on or takes it off (wearables.js); "Use" maps to the
     // click, which interactions.js routes to the wearable before any triggerOnInteract
@@ -115,6 +124,36 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     }
     entries.push(drop, { id: 'examine', label: 'Examine' });
     return entries;
+}
+
+function dropEntry(ctx) {
+    const blocked = 'dropBlocked' in ctx ? ctx.dropBlocked : dropBlockedReason();
+    return blocked
+        ? { id: 'drop', label: 'Drop here', disabled: true, reason: blocked }
+        : { id: 'drop', label: 'Drop here' };
+}
+
+export const CONNECTING_TEXT = 'Connecting...';
+
+/**
+ * The Connect entry for a held item that proves a saved connection (keyring K3b, plan 8.2), or
+ * null. The item's own `credential` never reaches the client, so window.keyring matches the
+ * item's id to a GET /keyring row's `heldItem`. While a Connect runs the entry is greyed.
+ * (K3c: an assist invite gets Connect here too, once keyring.js lists its kind.)
+ */
+export function connectMenuEntry(sprite, w = typeof window !== 'undefined' ? window : {}) {
+    const kr = w?.keyring;
+    const entry = kr?.connectEntryFor?.(sprite?.scenarioData?.id);
+    if (!entry) return null;
+    if (kr.connecting) return { id: 'connect', label: 'Connect', disabled: true, reason: CONNECTING_TEXT };
+    return { id: 'connect', label: 'Connect' };
+}
+
+/** A click on this tray item is Connect itself: a saved connection with no menu (nothing to read, not droppable). */
+export function trayClickIsConnect(sprite, ctx = {}) {
+    const w = ctx.window ?? (typeof window !== 'undefined' ? window : {});
+    if (!connectMenuEntry(sprite, w)) return false;
+    return inventoryMenuFor(sprite, ctx) === null;
 }
 
 /**
@@ -145,7 +184,8 @@ const MENU_ICON_BOX = 64;
 export function inventoryMenuIcon(id, el) {
     if (id === 'drop') return { src: `${menuIconsBase()}/menu-drop.png`, width: 64, height: 64 };
     if (id === 'examine') return { src: `${menuIconsBase()}/menu-examine.png`, width: 64, height: 64 };
-    if (id !== 'use' || !el?.src) return undefined;
+    // Connect (keyring K3b) shows the item's own picture, as Use does
+    if ((id !== 'use' && id !== 'connect') || !el?.src) return undefined;
     const w = el.naturalWidth || 0;
     const h = el.naturalHeight || 0;
     if (!(w > 0 && h > 0)) return { src: el.src };
@@ -179,9 +219,16 @@ export function slotPoint(el) {
  */
 export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
     const w = deps.window ?? (typeof window !== 'undefined' ? window : {});
+    const busy = () => !!(w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.());
+    // Keyring K3b: a saved connection with no menu connects on the click; a click while a
+    // Connect runs does nothing (keyring.connect's own guard)
+    if (trayClickIsConnect(el, deps.ctx || {})) {
+        if (!busy()) w.keyring?.connect?.(el);
+        return true;
+    }
     const entries = inventoryMenuFor(el, deps.ctx || {});
     if (!entries) return false;
-    if (w.MinigameFramework?.currentMinigame || w.isInteractionMenuOpen?.()) return true;
+    if (busy()) return true;
     const blockedNow = deps.dropBlockedReason ?? (() => dropBlockedReason(w));
     const actions = {
         use: () => w.handleObjectInteraction?.(el),
@@ -195,7 +242,9 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
             }
             (deps.dropInventoryItem ?? dropInventoryItem)(el);
         },
-        examine: () => w.examineHeldItem?.(el)
+        examine: () => w.examineHeldItem?.(el),
+        // Keyring K3b (plan 8.2): the entry is greyed while one runs, and connect() ignores a second
+        connect: () => w.keyring?.connect?.(el)
     };
     // A click with no pointer position (el.click(), a key on the focused item) reports
     // 0,0: place the menu over the item's slot instead of in the corner
@@ -210,7 +259,7 @@ export function openInventoryItemMenu(el, clientX, clientY, deps = {}) {
         detail: e.disabled ? e.reason : undefined,
         disabled: !!e.disabled,
         onSelect: () => actions[e.id]?.()
-    })), x, y, el.scenarioData?.name || el.alt || 'Item', { numberKeys: true });
+    })), x, y, el.scenarioData?.name || el.alt || 'Item', { numberKeys: true, holdKeys: !w.roomHasActiveHostile?.() });
     return true;
 }
 

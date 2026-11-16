@@ -422,8 +422,9 @@ test('corpus: the campaign constant is m01 to m10, and V5 gives 0 errors on each
     for (const id of CAMPAIGN) assert.deepEqual(out[id].filter(l => l.includes('V5') && l.startsWith('❌')), [], id);
 });
 
-test('corpus: m02 and m09 count no office-life onceOnly mapping (their patrolOverrides are story patrol)', { skip }, () => {
-    for (const id of ['m02_ransomed_trust', 'm09_digital_archaeology']) {
+test('corpus: m09 counts no office-life onceOnly mapping and m02 counts its pilot\'s two (patrolOverrides are story patrol)', { skip }, () => {
+    // m02's office-life pilot adds two onceOnly mappings: Gary's print and Ernesto's burn break.
+    for (const [id, want] of [['m02_ransomed_trust', 2], ['m09_digital_archaeology', 0]]) {
         const script = `$stdout = File.open(File::NULL, 'w'); $stderr = File.open(File::NULL, 'w')
           require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
           json = render_erb_to_json(File.join(${JSON.stringify(root)}, 'scenarios', '${id}', 'scenario.json.erb'))
@@ -431,7 +432,7 @@ test('corpus: m02 and m09 count no office-life onceOnly mapping (their patrolOve
         const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env, maxBuffer: 1 << 26 });
         assert.equal(r.status, 0, r.stderr);
         const rows = JSON.parse(r.stdout.trim().split('\n').pop());
-        assert.deepEqual(rows.find(([k]) => k === 'office-life onceOnly mappings'), ['office-life onceOnly mappings', 0, 10], id);
+        assert.deepEqual(rows.find(([k]) => k === 'office-life onceOnly mappings'), ['office-life onceOnly mappings', want, 10], id);
     }
 });
 

@@ -336,6 +336,18 @@ export function openRemoteSignIn(hostRow, footholdId) {
 }
 
 /**
+ * Connect's refused sign-in (keyring K3b, plan 8.2 step 8): the target's remote sign-in screen
+ * over the foothold Connect used, with the account and the credential chosen and the refusal
+ * (a saved connection's kindRefused or lockout) shown as on the screen itself (8.1).
+ */
+export function openCredentialSignIn({ pcId, host = null, footholdId, username = null, refusal = null } = {}) {
+    if (!pcId || !footholdId) return undefined;
+    const row = remoteRowFor(pcId, footholdId);
+    return openLoginSignIn(remoteLockable({ ...row, host: row?.host || host, name: row?.name || host || pcId }, footholdId),
+        { connect: { username, refusal } });
+}
+
+/**
  * A held remote session's desktop, through its foothold (network-links.js calls this from
  * the view and from openSession; it starts no trip of its own).
  */
@@ -369,6 +381,30 @@ async function remoteCapturedSignIns() {
     const secrets = answer && typeof answer.secrets === 'object' && answer.secrets ? answer.secrets : {};
     const list = window.capturedSignIns;
     return { list: typeof list === 'function' ? list(captures, accounts, secrets) : [], failed: false };
+}
+
+/**
+ * The keyring entries a sign-in screen may show (credential keyring K3a, plan 8.1): only in a
+ * scenario that declares credentials (the bootstrap's credentialsDeclared). keyring.js loads by
+ * dynamic import, as captures.js does, so no harness copy list grows. Resolves to
+ * { declared, list, failed }; never throws.
+ */
+export async function keyringForScreen(pcId, { foothold = null } = {}) {
+    if (window.gameScenario?.credentialsDeclared !== true) return { declared: false, list: [], failed: false };
+    try {
+        const { getKeyring, SCREEN_FOOTHOLD, SCREEN_KEYBOARD } = await import('./keyring.js');
+        const keyring = getKeyring();
+        try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+        const entries = await keyring.fetch(pcId, foothold ? { foothold } : {});
+        return {
+            declared: true,
+            list: keyring.screenEntries(entries, { pcId, screen: foothold ? SCREEN_FOOTHOLD : SCREEN_KEYBOARD }),
+            failed: false
+        };
+    } catch (e) {
+        console.warn('Could not load the keyring', e);
+        return { declared: true, list: [], failed: true };
+    }
 }
 
 // The longest a remote sign-in screen shows only "Checking..." (2b0 R2 m1): the sync wait
@@ -570,7 +606,7 @@ export function openLoginDesktop(lockable) {
  * lockable that does not carry it: a remote screen never asks for or shows the sticky note
  * GET /login_accounts serves at the keyboard (slice 9.1, 5.3).
  */
-export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null } = {}) {
+export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null, connect = null } = {}) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return;
@@ -579,7 +615,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
         : (remoteOpt && remoteOpt.footholdId ? remoteOpt : null);
     if (remote) {
         const remoteLockableFor = data.remote ? lockable : { ...lockable, scenarioData: { ...data, remote: { footholdId: remote.footholdId } } };
-        return openRemoteSignInScreen(remoteLockableFor, { switching, reason });
+        return openRemoteSignInScreen(remoteLockableFor, { switching, reason, connect });
     }
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
     // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
@@ -587,6 +623,12 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     // again. Else the PC's own authored note, else none.
     let servedNote = '';
     const apiClient = window.ApiClient || window.APIClient;
+    // Keyring K3a (8.1): in a scenario with credentials, GET /keyring goes alongside
+    // /login_accounts under the remote screen's cap, with a late redraw
+    const declared = window.gameScenario?.credentialsDeclared === true;
+    const keyringStarted = Date.now();
+    const keyringP = declared ? keyringForScreen(pcId) : null;
+    let accountsFailed = false;
     if (apiClient?.loginAccounts && window.breakEscapeConfig?.gameId) {
         try {
             const answer = await apiClient.loginAccounts(pcId);
@@ -606,7 +648,13 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
                 return;
             }
             console.warn('Could not refresh the account tiles; using the room data', error);
+            accountsFailed = true;
         }
+    }
+    let keyringNow = null;
+    if (keyringP) {
+        const left = Math.max(0, REMOTE_CAPTURES_WAIT_MS - (Date.now() - keyringStarted));
+        keyringNow = await Promise.race([keyringP, new Promise(r => setTimeout(() => r(null), left))]);
     }
 
     const framework = window.MinigameFramework;
@@ -623,7 +671,7 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     // A locked session (UI slice 6) pre-chooses its own account: the player only re-enters the
     // password. The username is the held session's; the server still checks the password.
     const current = sessions?.get?.(pcId) || null;
-    framework.startMinigame('password', null, {
+    const keyboardScene = framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
         type: 'item',
@@ -633,7 +681,9 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             picker,
             tiles: picker === false ? [] : tiles,
             current,
-            preselect: current && current.locked ? current.username : null
+            preselect: current && current.locked ? current.username : null,
+            // Belt and braces: screenEntries already limits the keyboard to passwords; this keeps it so
+            ...(keyringNow ? { keyring: keyringNow.list.filter(e => e.kind === 'password'), keyringFailed: keyringNow.failed, accountsFailed } : {})
         },
         postitNote,
         showPostit,
@@ -645,10 +695,18 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             }
         }
     });
+    // A keyring answer later than the cap redraws the open screen in place (K3a 8.1)
+    if (keyringP && !keyringNow) {
+        const late = await keyringP;
+        const scene = keyboardScene || framework.currentMinigame;
+        if (scene && framework.currentMinigame === scene && typeof scene.setKeyringEntries === 'function') {
+            scene.setKeyringEntries({ keyring: late.list, keyringFailed: late.failed, accountsFailed });
+        }
+    }
 }
 
 /** The remote half of openLoginSignIn (4.4): no tiles, the foothold, and the way back (4.3). */
-async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined } = {}) {
+async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined, connect = null } = {}) {
     const data = lockable.scenarioData;
     const pcId = data.id;
     const footholdId = data.remote.footholdId;
@@ -681,8 +739,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             picker: false,
             tiles: [],
             current: held && held.via !== 'claim' ? held : null,
-            // A locked held session pre-chooses its own account, as the local screen does
-            preselect: held && held.via !== 'claim' && held.locked ? held.username : null,
+            // A locked held session pre-chooses its own account, as the local screen does; a
+            // refused Connect (K3b) pre-chooses the credential's account and shows the refusal
+            preselect: connect?.username || (held && held.via !== 'claim' && held.locked ? held.username : null),
+            ...(connect?.refusal ? { connectRefusal: { ...connect.refusal } } : {}),
             remote: { footholdId, linkName },
             host: hostLabel,
             captured: [],
@@ -733,8 +793,10 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         }
     };
 
-    let loginAns = null, captureAns = { list: [], failed: false };
-    let loginDone = false, captureDone = false, capFired = false, closed = false, shown = false;
+    let loginAns = null, captureAns = { list: [], failed: false }, keyringAns = { list: [], failed: false };
+    // Keyring K3a (8.1): the third list under the same cap, only with credentials declared
+    const keyringWanted = window.gameScenario?.credentialsDeclared === true;
+    let loginDone = false, captureDone = false, keyringDone = !keyringWanted, capFired = false, closed = false, shown = false;
 
     const closeScreen = (kind) => {
         if (closed) return;
@@ -749,7 +811,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
 
     const paint = () => {
         if (closed || !stillOpen()) return;
-        const both = loginDone && captureDone;
+        const both = loginDone && captureDone && keyringDone;
         if (!both && !capFired) return; // keep "Checking..." until both answer or the cap passes
         scene.setRemoteAccounts({
             // A failed answer sends no picker: the screen keeps every captured sign-in visible
@@ -760,6 +822,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             } : { accountsFailed: false }),
             captured: captureAns.list,
             capturedFailed: captureAns.failed,
+            ...(keyringWanted ? { keyring: keyringAns.list, keyringFailed: keyringAns.failed } : {}),
             accountsPending: !loginDone,
             capturedPending: !captureDone,
             pending: !both
@@ -778,16 +841,22 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         if (a.close) { clearTimeout(cap); closeScreen(a.close); return; }
         loginAns = a;
         loginDone = true;
-        if (loginDone && captureDone) clearTimeout(cap);
+        if (loginDone && captureDone && keyringDone) clearTimeout(cap);
         paint();
     });
     const captureP = remoteCapturedSignIns().then((c) => {
         captureAns = { list: Array.isArray(c?.list) ? c.list : [], failed: !!c?.failed };
         captureDone = true;
-        if (loginDone && captureDone) clearTimeout(cap);
+        if (loginDone && captureDone && keyringDone) clearTimeout(cap);
         paint();
     });
-    await Promise.allSettled([loginP, captureP]);
+    const keyringP = keyringWanted ? keyringForScreen(pcId, { foothold: footholdId }).then((k) => {
+        keyringAns = { list: Array.isArray(k?.list) ? k.list : [], failed: !!k?.failed };
+        keyringDone = true;
+        if (loginDone && captureDone && keyringDone) clearTimeout(cap);
+        paint();
+    }) : Promise.resolve();
+    await Promise.allSettled([loginP, captureP, keyringP]);
     clearTimeout(cap);
 }
 
@@ -1614,4 +1683,6 @@ window.openLoginSignIn = openLoginSignIn;
 // The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
 window.openRemoteSignIn = openRemoteSignIn;
 window.openRemoteDesktop = openRemoteDesktop;
+// Connect from the tray (keyring K3b): keyring.js looks this up on window, so it needs no import
+window.openCredentialSignIn = openCredentialSignIn;
 

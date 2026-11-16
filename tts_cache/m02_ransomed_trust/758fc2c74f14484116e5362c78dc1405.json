@@ -1,0 +1,13 @@
+{
+  "key": "758fc2c74f14484116e5362c78dc1405",
+  "npc": "hodan_warsame",
+  "text": "Clerk'll want that back. Just saying.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T01:36:38Z"
+}

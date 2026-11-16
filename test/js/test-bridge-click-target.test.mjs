@@ -41,7 +41,9 @@ writeFileSync(join(sysBridge, 'input.js'),
     'export const sleepFrames = async () => {};\nexport const sleep = async () => {};\n' +
     `export const clickWorld = async (x, y) => { ${G}.__clicks.push([x, y]); if (${G}.__onClick) await ${G}.__onClick(x, y); return true; };\n` +
     'export const isWorldPointOnScreen = () => true;\nexport const getScene = () => null;\n' +
-    ['pressKey', 'keyDown', 'keyUp', 'worldToClient', 'clickElement'].map(n => `export const ${n} = () => {};`).join('\n') + '\n');
+    `export const clickElement = (el) => { ${G}.__clickedEls?.push(el); el?.onClick?.(); };\n` +
+    `export const pressKey = async (k) => { (${G}.__keys ||= []).push(k); };\n` +
+    ['keyDown', 'keyUp', 'worldToClient'].map(n => `export const ${n} = () => {};`).join('\n') + '\n');
 writeFileSync(join(sysBridge, 'wait.js'),
     `export const waitForMovementEnd = async () => { if (${G}.__duringMove) await ${G}.__duringMove(); return { ok: true, elapsedMs: 1 }; };\n` +
     ['waitUntil', 'waitForGlobal', 'waitForEvent', 'waitFrames', 'waitForMinigame', 'waitForMinigameClosed']
@@ -326,4 +328,170 @@ test('moveToNear solves its stand point from the live copy, not a hidden one wit
     const r = await bridge.moveToNear('item');
     assert.equal(r.reason, 'no-viable-standing-point', JSON.stringify(r));
     assert.equal(globalThis.__solveArgs.at(-1), live);
+});
+
+// The tap menu's buttons as ui/interaction-menu.js renders them: data-kind, data-entity-id, a label span.
+function menuDom(entries, { onPick } = {}) {
+    const buttons = entries.map(([label, id, kind = 'object']) => ({
+        dataset: id ? { kind, entityId: id } : { kind },
+        innerText: label,
+        getAttribute: () => null,
+        querySelector: (sel) => (sel === '.be-im-label' ? { innerText: label } : null),
+        onClick: () => { globalThis.__menu = null; onPick?.(id, label); }
+    }));
+    globalThis.__menu = { open: true, items: [] };
+    globalThis.__clickedEls = [];
+    document.querySelectorAll = (sel) => (globalThis.__menu && /be-im-item/.test(sel) ? buttons : []);
+    return buttons;
+}
+
+test('chooseInteractionMenu picks by { id }, by exact label before a substring, and refuses an ambiguous label', async () => {
+    reset();
+    let b = menuDom([['Printout', 'printout'], ['IT copier', 'it_copier']]);
+    let r = await bridge.chooseInteractionMenu({ id: 'it_copier' });
+    assert.deepEqual([r.ok, r.chose, r.id, globalThis.__clickedEls[0]], [true, 'IT copier', 'it_copier', b[1]]);
+
+    b = menuDom([['Desk', 'desk'], ['Desk lamp', 'lamp']]);
+    r = await bridge.chooseInteractionMenu('desk');
+    assert.equal(r.id, 'desk', 'exact label wins over the substring in "Desk lamp"');
+
+    menuDom([['Desk lamp', 'lamp_a'], ['Desk lamp shade', 'lamp_b']]);
+    r = await bridge.chooseInteractionMenu('lamp');
+    assert.equal(r.reason, 'ambiguous-menu-item');
+    assert.deepEqual(r.matches, ['Desk lamp', 'Desk lamp shade']);
+    assert.equal(globalThis.__clickedEls.length, 0, 'nothing clicked');
+
+    menuDom([['Desk lamp', 'lamp_a'], ['Desk lamp shade', 'lamp_b']]);
+    r = await bridge.chooseInteractionMenu('shade');
+    assert.equal(r.id, 'lamp_b', 'a substring only one entry holds');
+    r = await bridge.chooseInteractionMenu({ id: 'nope' });
+    assert.equal(r.ok, false);
+    document.querySelectorAll = undefined;
+});
+
+test('interact() chooses its target from the menu by id, not by a name another entry shares', async () => {
+    reset({ player: { x: 150, y: 80 } });
+    const { hmi } = sis02Room();
+    globalThis.__onClick = () => {
+        menuDom([['HMI', 'hmi_other'], ['HMI', 'hmi_ops_01']], {
+            onPick: (id) => { if (id === 'hmi_ops_01') window.handleObjectInteraction(hmi); }
+        });
+    };
+    const r = await bridge.interact('hmi_ops_01');
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.mode, 'via-interaction-menu');
+    assert.equal(globalThis.__clickedEls[0].dataset.entityId, 'hmi_ops_01');
+    document.querySelectorAll = undefined;
+});
+
+test('interact() after an overlap walk clicks the same point again and chooses by id', async () => {
+    reset({ player: { x: 150, y: 80 } });
+    const { hmi } = sis02Room();
+    let armed = false;
+    window.__pendingOverlapWalk = () => (armed ? { hits: [] } : null);
+    let n = 0;
+    globalThis.__onClick = () => {
+        n += 1;
+        if (n === 1) { armed = true; return; }        // far: walk, act on nothing
+        menuDom([['Status board', 'status_board'], ['HMI', 'hmi_ops_01']], {
+            onPick: (id) => { if (id === 'hmi_ops_01') window.handleObjectInteraction(hmi); }
+        });
+    };
+    globalThis.__duringMove = () => { armed = false; };
+    const r = await bridge.interact('hmi_ops_01');
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.mode, 'overlap-walk-then-menu');
+    assert.equal(globalThis.__clicks.length, 2);
+    assert.deepEqual(globalThis.__clicks[0], globalThis.__clicks[1], 'the same point both times');
+    delete window.__pendingOverlapWalk;
+    document.querySelectorAll = undefined;
+});
+
+test('interact() after an overlap walk fails with wrong-target when the second click acts on another thing', async () => {
+    reset({ player: { x: 150, y: 80 } });
+    const { board } = sis02Room();
+    let armed = false, n = 0;
+    window.__pendingOverlapWalk = () => (armed ? { hits: [] } : null);
+    globalThis.__onClick = () => {
+        n += 1;
+        if (n === 1) { armed = true; return; }
+        window.handleObjectInteraction(board);            // only the board came into reach
+    };
+    globalThis.__duringMove = () => { armed = false; };
+    const r = await bridge.interact('hmi_ops_01');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'wrong-target');
+    assert.match(r.hint, /status_board/);
+    delete window.__pendingOverlapWalk;
+});
+
+test('clickAt reports the menu it opened and a walk it started', async () => {
+    reset();
+    globalThis.__onClick = () => { globalThis.__menu = { open: true, items: [{ index: 0, id: 'a', kind: 'object' }] }; };
+    let r = await bridge.clickAt(10, 10);
+    assert.deepEqual([r.menu?.items?.[0]?.id, r.walked], ['a', undefined]);
+    reset();
+    globalThis.__onClick = () => { window.player.isMoving = true; };
+    r = await bridge.clickAt(10, 10);
+    assert.deepEqual([r.menu, r.walked], [undefined, true]);
+});
+
+test('closeInteractionMenu clicks the X, and says so when no menu is open', async () => {
+    reset();
+    assert.equal((await bridge.closeInteractionMenu()).reason, 'no-interaction-menu-open');
+    globalThis.__menu = { open: true, items: [] };
+    globalThis.__clickedEls = [];
+    const x = { onClick: () => { globalThis.__menu = null; } };
+    document.querySelector = (sel) => (sel === '#be-interaction-menu .be-im-close' ? x : null);
+    const r = await bridge.closeInteractionMenu();
+    assert.equal(r.ok, true);
+    assert.equal(globalThis.__clickedEls[0], x);
+    document.querySelector = () => null;
+});
+
+test('pressKey: keys reach the overlap menu when it is the open blocking UI, and other blocking UIs still refuse', async () => {
+    reset();
+    globalThis.__keys = [];
+    // Nothing open: an ordinary key goes through
+    assert.equal((await bridge.pressKey('1')).ok, true);
+    assert.deepEqual(globalThis.__keys, ['1']);
+    // The menu open, its overlay the topmost thing: delivered, and the result says it went to the menu
+    globalThis.__keys = [];
+    globalThis.__menu = { open: true, items: [{ index: 0 }, { index: 1 }] };
+    globalThis.__detect = () => ({ blocking: true, tag: 'DIV' });
+    const overlay = { closest: (sel) => (sel === '#be-interaction-menu-overlay' ? {} : null) };
+    document.elementsFromPoint = () => [overlay];
+    for (const k of ['2', 'ArrowDown', 'Enter', 'Escape']) {
+        const r = await bridge.pressKey(k);
+        assert.equal(r.ok, true, k);
+        assert.equal(r.toMenu, true);
+    }
+    assert.deepEqual(globalThis.__keys, ['2', 'ArrowDown', 'Enter', 'Escape']);
+    // The menu open but another modal on top of it: refused
+    globalThis.__keys = [];
+    document.elementsFromPoint = () => [{ closest: () => null }];
+    const refused = await bridge.pressKey('1');
+    assert.equal(refused.ok, false);
+    assert.equal(refused.reason, 'blocking-ui');
+    // A modal opened underneath the menu (the menu is on top, a modal sits below it): refused
+    globalThis.__keys = [];
+    document.elementsFromPoint = () => [overlay, { closest: () => null, tagName: 'DIV' }, { tagName: 'CANVAS' }];
+    const under = await bridge.pressKey('a');
+    assert.equal(under.ok, false);
+    assert.equal(under.reason, 'blocking-ui');
+    assert.deepEqual(globalThis.__keys, []);
+    // The menu over the bare canvas is still the only blocker
+    document.elementsFromPoint = () => [overlay, { closest: () => null, tagName: 'CANVAS' }];
+    assert.equal((await bridge.pressKey('2')).toMenu, true);
+    globalThis.__keys = [];
+    // A blocking UI with no menu: refused; a minigame with the menu open: refused
+    globalThis.__menu = null;
+    assert.equal((await bridge.pressKey('1')).reason, 'blocking-ui');
+    globalThis.__menu = { open: true, items: [] };
+    document.elementsFromPoint = () => [overlay];
+    globalThis.__mg = { id: 'mg' };
+    assert.equal((await bridge.pressKey('1')).reason, 'minigame-active');
+    assert.deepEqual(globalThis.__keys, []);
+    globalThis.__detect = null;
+    document.elementsFromPoint = () => [];
 });

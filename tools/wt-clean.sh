@@ -8,8 +8,9 @@
 # Branches are never deleted (that needs the user's yes).
 R=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape
 KEEP="p-9-2-h p-train36-live"
-# Ignored paths that are safe to lose with the worktree.
-SAFE='^(\.bundle/|node_modules|log/|tmp/(cache|pids|sockets|storage)/|tmp/(restart|local_secret|development_secret)\.txt$|test/dummy/(log|tmp|storage)/|.*__pycache__/|coverage/)'
+# Ignored paths that are safe to lose with the worktree, including the playtest
+# clutter a train's live check leaves (server logs, per-game flag XML, pipes).
+SAFE='^(\.bundle/|node_modules|log/|tmp/(cache|pids|sockets|storage)/|tmp/(restart|local_secret|development_secret)\.txt$|test/dummy/(log|tmp|storage)/|tmp/keyless-[0-9]+\.log$|(tmp/delete/|tools/playtest/)([^/]+-flags-game[0-9]+\.xml|[0-9]+\.pid)$|(tmp/delete/|tools/playtest/)pipes-[0-9]+/|.*__pycache__/|coverage/)'
 APPLY=0; [ "$1" = "--apply" ] && APPLY=1
 cd $R || exit 1
 now=$(date +%s)

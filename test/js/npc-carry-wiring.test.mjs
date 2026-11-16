@@ -26,7 +26,7 @@ function makeSlotSprite(id, roomId) {
 }
 
 function setup(opts = {}) {
-    const calls = { carry: [], putDown: [], consume: [], remove: [], koDrop: [] };
+    const calls = { carry: [], putDown: [], consume: [], remove: [], koDrop: [], requestSoon: 0 };
     const sprite = makeSprite('office_mugs', 'office');
     const slot = makeSlotSprite('copier_out_a', 'office');
     const rec = { id: 'grace', itemsHeld: [] };
@@ -40,6 +40,7 @@ function setup(opts = {}) {
         npcManager: { getNPC: (id) => (id === 'grace' ? rec : null) },
         npcBehaviorManager: { getBehavior: (id) => (id === 'grace' ? graceBehaviour : null) },
         eventDispatcher: { emit() {} },
+        stateSync: { requestSoon: () => { calls.requestSoon += 1; } },
         RoomStateSync: {
             carryObject: (npcId, itemId, fromRoom) => { calls.carry.push({ npcId, itemId, fromRoom }); return ok(); },
             putDownObject: (npcId, itemId, toRoom, position) => { calls.putDown.push({ npcId, itemId, toRoom, position }); return ok(); },
@@ -71,6 +72,24 @@ test('consumeHeld calls consumeCarried with the NPC room and never removeItemFro
     assert.equal(calls.remove.length, 0, 'the 422 call is gone');
     assert.ok(!rec.itemsHeld.some(i => i.id === 'office_mugs'), 'held record cleared');
     assert.ok(!rec._needsCarried || !rec._needsCarried.office_mugs, 'carry cleared');
+});
+
+// slice C C2: a confirmed consume requests a near-immediate sync, so the use's globals
+// (set synchronously right after, by the npc_used event mapping, which requests none of
+// its own) reach the server before a tab close. A refused consume requests none.
+test('a confirmed consumeCarried requests a near-immediate sync once; a refused one does not', async () => {
+    const okCase = setup();
+    okCase.world.pickUp('grace', 'office_mugs');
+    okCase.world.consumeHeld('grace', 'office_mugs');
+    await flush();
+    assert.equal(okCase.calls.requestSoon, 1, 'one requestSoon on a confirmed consume');
+
+    const refusedCase = setup({ refuse: true });
+    refusedCase.rec._needsCarried = { office_mugs: { sprite: { scenarioData: { type: 'dirty_mugs1', name: 'Mug' }, destroy() {} }, roomId: 'office', key: 'office_mugs' } };
+    refusedCase.rec.itemsHeld = [{ id: 'office_mugs', type: 'dirty_mugs1', name: 'Mug', _needsCarried: true }];
+    refusedCase.world.consumeHeld('grace', 'office_mugs');
+    await flush();
+    assert.equal(refusedCase.calls.requestSoon, 0, 'no sync request on a refused consume');
 });
 
 test('dropHeld calls putDownObject with the NPC, item, room and world position', () => {

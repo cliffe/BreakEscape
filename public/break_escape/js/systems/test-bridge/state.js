@@ -273,12 +273,16 @@ function successScreenState() {
  */
 function interactionMenuState() {
     if (!window.isInteractionMenuOpen?.()) return null;
-    const items = Array.from(document.querySelectorAll('.be-im-item')).map((el, i) => ({
+    const items = Array.from(document.querySelectorAll('#be-interaction-menu .be-im-item')).map((el, i) => ({
         index: i,
+        // The entity the entry acts on (object id, NPC id, "door:<room>-><room>"), null for an action
+        id: el.dataset?.entityId || null,
+        kind: el.dataset?.kind || 'action',
         label: (el.querySelector('.be-im-label')?.innerText || el.innerText || '').trim(),
-        detail: (el.querySelector('.be-im-detail')?.innerText || '').trim() || null
+        detail: (el.querySelector('.be-im-detail')?.innerText || '').trim() || null,
+        disabled: el.getAttribute?.('aria-disabled') === 'true'
     }));
-    return { open: true, items, hint: 'Choose with __test.chooseInteractionMenu(index|label).' };
+    return { open: true, items, hint: 'Choose with __test.chooseInteractionMenu(index | label | { id }); close with __test.closeInteractionMenu().' };
 }
 
 function playerState() {
@@ -675,12 +679,36 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!centres.includes(cx)) centres.push(cx);
         }
     }
+    // The same for a tall wall-mounted target: reachY measures to the nearest part of its
+    // height, so the rings are centred on a grid of points down the sprite (every x centre
+    // against every y centre), not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
+    const centresY = [targetY];
+    const h = target && target.scenarioData?.wallMounted === true
+        ? (target.displayHeight ?? target.height ?? 0) : 0;
+    if (h > 16) {
+        const top = target.y - (target.originY ?? 0.5) * h;
+        const n = Math.min(6, Math.ceil(h / 16));
+        for (let i = 0; i <= n; i++) {
+            const cy = top + (h * i) / n;
+            if (!centresY.some(v => Math.abs(v - cy) < 0.5)) centresY.push(cy);
+        }
+    }
+    // Cap the grid of centres (x times y) so a wide, tall target cannot cost thousands of
+    // standable() calls per pass; thin both axes evenly (always keeping the first).
+    const MAX_CENTRES = 24;
+    const thin = (arr, keep) => arr.length <= keep ? arr
+        : Array.from({ length: keep }, (_, i) => arr[Math.round(i * (arr.length - 1) / (keep - 1))]);
+    while (centres.length * centresY.length > MAX_CENTRES) {
+        if (centres.length >= centresY.length) centres.splice(0, centres.length, ...thin(centres, centres.length - 1));
+        else centresY.splice(0, centresY.length, ...thin(centresY, centresY.length - 1));
+    }
     for (const centreX of centres)
+    for (const centreY of centresY)
     for (let r = 12; r <= 56; r += 4) {
         for (let a = 0; a < 360; a += 15) {
             const rad = a * Math.PI / 180;
             const sx = centreX + Math.cos(rad) * r;
-            const sy = targetY + Math.sin(rad) * r;
+            const sy = centreY + Math.sin(rad) * r;
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.

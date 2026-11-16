@@ -1,0 +1,13 @@
+{
+  "key": "13e4c58f1b3d4e11d9661f2e795ba893",
+  "npc": "hodan_warsame",
+  "text": "Beds. A patient goes, I strip it, clean it, make it up, and tell the bed manager.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:13Z"
+}

@@ -7,9 +7,10 @@ export class ApiClient {
   /**
    * GET request
    */
-  static async get(endpoint) {
+  static async get(endpoint, { signal } = {}) {
     const response = await fetch(`${getApiBase()}${endpoint}`, {
       method: 'GET',
+      ...(signal ? { signal } : {}),
       credentials: 'same-origin',
       headers: {
         'Accept': 'application/json'
@@ -228,6 +229,30 @@ export class ApiClient {
       url += `&foothold=${encodeURIComponent(foothold)}`;
     }
     return this.get(url);
+  }
+
+  // The player's earned credentials (credential keyring K3a, plan 6.2), asked only in a
+  // scenario that declares credentials (window.gameScenario.credentialsDeclared). pc_id and
+  // foothold name the screen being drawn, so each entry carries forThisPc and accepted; rev
+  // asks for { rev, unchanged: true } when nothing changed since that answer.
+  static async keyring(pcId = null, { foothold, rev, signal } = {}) {
+    const params = [];
+    if (pcId) params.push(`pc_id=${encodeURIComponent(pcId)}`);
+    if (foothold !== undefined && foothold !== null && foothold !== '') params.push(`foothold=${encodeURIComponent(foothold)}`);
+    if (rev) params.push(`rev=${encodeURIComponent(rev)}`);
+    return this.get(`/keyring${params.length ? `?${params.join('&')}` : ''}`, { signal });
+  }
+
+  // Sign in with a keyring credential (keyring K2, plan 7): POST /login { pc_id, credential }
+  // with the screen's route. Never sends relay: false. Answers as login() with kind and label;
+  // a refusal throws with err.status and err.body (wrongPc, kindRefused, notPermitted,
+  // lockedOut, ended, remoteBlocked, or the generic message).
+  static async loginWithCredential(pcId, credential, { foothold } = {}) {
+    return this.post('/login', {
+      pc_id: pcId,
+      credential,
+      ...(foothold ? { foothold } : {})
+    });
   }
 
   /**

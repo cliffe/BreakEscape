@@ -1,0 +1,18 @@
+OFFICE-LIFE SUMMARY (V1): 17 NPC(s)
+  agent_0x99 (reception_lobby) class=task,task-mapping post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  agent_nightshade (reception_lobby) class=attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  closing_debrief_trigger (reception_lobby) class=task,conv,attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  director_netherton (reception_lobby) class=attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  dr_sarah_kim (dr_kim_office) class=task,key,attackable post=dr_kim_office leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  gary_whitlock (it_department) class=task,conv,key,attackable post=it_department leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  ghost (reception_lobby) class=conv post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  night_security_supervisor (conference_room) class=task,conv,attackable post=conference_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  opening_briefing_cutscene (reception_lobby) class=attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  patient_bed2 (hospital_ward) class=attackable post=hospital_ward leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  patient_bed4 (hospital_ward) class=attackable post=hospital_ward leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  patient_bed5 (hospital_ward) class=attackable post=hospital_ward leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  press_terminal_system (conference_room) class=task post=conference_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  receptionist (reception_lobby) class=task,key,attackable post=reception_lobby leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  roaming_ward_nurse (hospital_ward) class=patrol,attackable post=hospital_ward leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  security_guard_patrol (office_corridor) class=conv,key,patrol,attackable post=office_corridor leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  ward_nurse (hospital_ward) class=task,key,attackable post=hospital_ward leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0

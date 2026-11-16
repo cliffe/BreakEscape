@@ -821,13 +821,19 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
   end
 
   # A game that reports a fixed set of credential ids as holding (the scanner reads @game once).
+  # captured: the NPC ids it reports as captured accounts (account_capture_usernames).
   class HeldGame
-    def initialize(held)
+    def initialize(held, captured: [])
       @held = held
+      @captured = captured
     end
 
     def credential_proof_holds?(id, _entry)
       @held.include?(id)
+    end
+
+    def account_capture_usernames
+      @captured.to_h { |npc_id| [npc_id, "#{npc_id}@example.test"] }
     end
   end
 
@@ -857,7 +863,8 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => JAKE_PASSWORD }
     ] }
     rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => body }]]
-    assert_empty AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(rows), 'capture-sourced password is allowed'
+    assert_empty AccessLeakScanner.new(scenario, game: HeldGame.new([], captured: %w[jake])).scan(rows),
+                 'capture-sourced password is allowed'
 
     # The same password on a registry-sourced entry is still a leak.
     reg = { 'rev' => 'abc123', 'entries' => [
@@ -866,6 +873,29 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     reg_rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => reg }]]
     findings = AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(reg_rows)
     assert_includes summary(findings), [1, 'password', 'npc:jake'], 'a registry entry password is flagged'
+  end
+
+  # Carry-in m3: the `source: "capture"` label alone exempts nothing. The entry's id must be
+  # `<npcId>.password` for an account the recorded state serves as captured, and the password must
+  # be that NPC's own.
+  test 'K2 m3: a capture-labelled keyring password is exempt only for a captured account under its own id' do
+    keyring = '/break_escape/games/1/keyring'
+    scan_with = lambda do |entry, captured|
+      body = { 'rev' => 'abc123', 'entries' => [entry] }
+      rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => body }]]
+      summary(AccessLeakScanner.new(scenario, game: HeldGame.new([], captured: captured)).scan(rows))
+    end
+    own = { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => JAKE_PASSWORD }
+    assert_empty scan_with.call(own, %w[jake])
+
+    # Not captured in the recorded state: flagged although the label says capture.
+    assert_includes scan_with.call(own, []), [1, 'password', 'npc:jake']
+    # Another NPC is captured, and the entry claims capture under a made-up id.
+    forged = own.merge('id' => 'anything')
+    assert_includes scan_with.call(forged, %w[jake]), [1, 'password', 'npc:jake']
+    # A captured account's id carrying someone else's password.
+    other = own.merge('id' => 'sam.password')
+    assert_includes scan_with.call(other, %w[sam]), [1, 'password', 'npc:jake']
   end
 
   # A held keyring entry's label/foundIn are an intended disclosure; the sign-in item's name can

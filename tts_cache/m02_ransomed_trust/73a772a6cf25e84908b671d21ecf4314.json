@@ -1,0 +1,13 @@
+{
+  "key": "73a772a6cf25e84908b671d21ecf4314",
+  "npc": "ernesto_bautista",
+  "text": "Third wheelchair I've chased tonight.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T01:36:27Z"
+}

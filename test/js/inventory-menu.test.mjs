@@ -188,10 +188,20 @@ test('the tray click maps the entries onto drop, examine and use', () => {
     assert.equal(opened, true);
     assert.equal(shown.title, 'Beacon');
     assert.deepEqual([shown.x, shown.y], [10, 20]);
-    assert.deepEqual(shown.opts, { numberKeys: true });
+    assert.deepEqual(shown.opts, { numberKeys: true, holdKeys: true }, 'no fight: holds the game keys');
     assert.deepEqual(shown.entries.map(e => e.label), ['Use', 'Drop here', 'Examine']);
     shown.entries.forEach(e => e.onSelect());
     assert.deepEqual(calls, [['use', el], ['drop', el], ['examine', el]]);
+
+    // a fight in the room: the menu leaves the game keys alone
+    let fightShown;
+    openInventoryItemMenu(el, 10, 20, {
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: { roomHasActiveHostile: () => true },
+        dropBlockedReason: () => null,
+        showInteractionMenu: (entries, x, y, title, opts) => { fightShown = opts; }
+    });
+    assert.deepEqual(fightShown, { numberKeys: true, holdKeys: false });
 
     // no menu: the caller runs the click as before
     const phone = held({ type: 'phone', id: 'p', name: 'Phone' });
@@ -388,4 +398,93 @@ test('no menu detail is clamped or cut with an ellipsis', () => {
     const detail = document.querySelector('.be-im-detail');
     assert.match(detail.textContent, /The card stays where it is\.$/, 'the whole detail is in the entry');
     closeInteractionMenu();
+});
+
+// ── Keyring K3b (CREDENTIAL_KEYRING_PLAN.md 8.2): Connect from the tray ───────────────────────
+// The item's own `credential` never reaches the client, so the menu matches the tray item's id
+// against a GET /keyring row's heldItem through window.keyring (the real Keyring class).
+const { Keyring } = await import(pathToFileURL(join(js, 'systems/keyring.js')).href);
+const { trayClickIsConnect, connectMenuEntry, CONNECTING_TEXT } = await import(pathToFileURL(join(js, 'systems/inventory-menu.js')).href);
+const RDP = { id: 'lena_rdp_file', type: 'text_file', name: 'HB-FIN-02.rdp', text: 'Saved connection.', observations: 'A saved connection file.' };
+const keyringWith = (entries) => { const kr = new Keyring(); kr.latest = entries; return kr; };
+const rdpEntry = { id: 'lena_rdp', kind: 'saved_connection', heldItem: 'lena_rdp_file', host: 'HB-FIN-02', connectsTo: 'lena_pc' };
+const assistEntry = { id: 'jake_assist', kind: 'assist_invite', heldItem: 'jake_assist_code', host: 'HB-FIN-03', connectsTo: 'jake_pc' };
+
+test('K3b: a held saved connection gets [Connect, Examine]', () => {
+    const w = { keyring: keyringWith([rdpEntry]) };
+    const el = held(RDP);
+    const entries = inventoryMenuFor(el, { inventoryItems: items, dropBlocked: null, window: w });
+    assert.deepEqual(labels(entries), ['Connect', 'Examine']);
+    assert.equal(entries[0].id, 'connect');
+    assert.equal(trayClickIsConnect(el, { inventoryItems: items, window: w }), false, 'it has a menu');
+});
+
+test('K3b: a droppable saved connection adds Drop here between Connect and Examine', () => {
+    const w = { keyring: keyringWith([rdpEntry]) };
+    const el = held({ ...RDP, droppable: true });
+    el.scenarioData.takeable = true;
+    assert.deepEqual(labels(inventoryMenuFor(el, { inventoryItems: items, dropBlocked: null, window: w })), ['Connect', 'Drop here', 'Examine']);
+});
+
+test('K3b: with nothing to read, the click is Connect itself, no menu', () => {
+    const connects = [];
+    const kr = keyringWith([rdpEntry]);
+    kr.connect = (s) => { connects.push(s); return Promise.resolve({ outcome: 'stub' }); };
+    const w = { keyring: kr };
+    const el = held({ id: 'lena_rdp_file', type: 'text_file', name: 'HB-FIN-02.rdp' });
+    assert.equal(inventoryMenuFor(el, { inventoryItems: items, dropBlocked: null, window: w }), null);
+    assert.equal(trayClickIsConnect(el, { inventoryItems: items, window: w }), true);
+    let shown = false;
+    const opened = openInventoryItemMenu(el, 1, 1, {
+        ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w,
+        showInteractionMenu: () => { shown = true; }
+    });
+    assert.equal(opened, true, 'the click is taken');
+    assert.equal(shown, false, 'no menu');
+    assert.deepEqual(connects, [el], 'Connect ran once');
+    // Over a minigame the click does nothing
+    openInventoryItemMenu(el, 1, 1, { ctx: { inventoryItems: items, window: w }, window: { ...w, MinigameFramework: { currentMinigame: {} } } });
+    assert.equal(connects.length, 1);
+});
+
+test('K3b: the Connect entry runs keyring.connect, with the tray picture as its icon', () => {
+    const connects = [];
+    const kr = keyringWith([rdpEntry]);
+    kr.connect = (s) => { connects.push(s); };
+    const w = { keyring: kr };
+    const el = held(RDP);
+    el.src = '/assets/objects/text_file.png'; el.naturalWidth = 16; el.naturalHeight = 16;
+    let shown;
+    openInventoryItemMenu(el, 1, 1, {
+        ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w,
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    assert.deepEqual(shown.map(e => e.label), ['Connect', 'Examine']);
+    assert.deepEqual(shown[0].icon, { src: el.src, width: 64, height: 64 }, 'the item picture, whole-number scale');
+    shown[0].onSelect();
+    assert.deepEqual(connects, [el]);
+});
+
+test('K3b: while a Connect runs the entry is greyed', () => {
+    const kr = keyringWith([rdpEntry]);
+    kr.connecting = 'lena_rdp_file';
+    const entries = inventoryMenuFor(held(RDP), { inventoryItems: items, dropBlocked: null, window: { keyring: kr } });
+    assert.equal(entries[0].disabled, true);
+    assert.equal(entries[0].reason, CONNECTING_TEXT);
+});
+
+test('K3b: the assist code keeps its tray slot with no Connect (K3c adds it)', () => {
+    const w = { keyring: keyringWith([rdpEntry, assistEntry]) };
+    const code = held({ id: 'jake_assist_code', type: 'text_file', name: 'Remote assist code (Jake)', text: 'Code 4471' });
+    assert.equal(connectMenuEntry(code, w), null);
+    assert.equal(inventoryMenuFor(code, { inventoryItems: items, dropBlocked: null, window: w }), null, 'its click is as before');
+    assert.equal(trayClickIsConnect(code, { inventoryItems: items, window: w }), false);
+    assert.ok(items.includes(code), 'still in the tray');
+});
+
+test('K3b: an item with no keyring row, or no keyring at all, has no Connect', () => {
+    const el = held({ id: 'notes1', type: 'notes', name: 'Notes', text: 'x' });
+    assert.equal(connectMenuEntry(el, { keyring: keyringWith([rdpEntry]) }), null);
+    assert.equal(connectMenuEntry(held(RDP), {}), null, 'no keyring (a scenario without credentials)');
+    assert.equal(connectMenuEntry(held(RDP), { keyring: keyringWith([{ ...rdpEntry, kind: 'password' }]) }), null);
 });

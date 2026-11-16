@@ -13,11 +13,13 @@ import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, he
 // per state, so the sign-in screen, the tray and the network view cannot drift apart. No imports
 // of its own, so it only needs adding to a test harness copy list, never growing one further.
 import {
-    tileTagLabels, tileBadgeGroups,
+    tileTagLabels, tileBadgeGroups, badgeSrc,
     REMOTE_CHECKING_TEXT, REMOTE_STILL_CHECKING_TEXT, REMOTE_CAPTURES_FAILED_TEXT,
     tileFullNames, nowrapHostsHtml, REMOTE_MORE_BELOW_TEXT,
     remoteTypedLine, remoteHeadlessLine, remoteAccountsFailedLine, remoteBothFailedLine,
-    notRespondingMessage, unreachableMessage, remoteOffMessage, remoteNotPermittedMessage, remoteLockedOutMessage
+    notRespondingMessage, unreachableMessage, remoteOffMessage, remoteNotPermittedMessage, remoteLockedOutMessage,
+    KEYRING_FAILED_TEXT, KEYBOARD_BOTH_FAILED_TEXT, FOUND_PASSWORD_LEAD_TEXT, CONNECT_WITH_TEXT,
+    kindRefusedMessage, kindRefusedShort, credentialRefusalLine, teachLine
 } from '../../utils/remote-host-text.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
@@ -360,7 +362,7 @@ export function signInErrorMessage(result, { remote = false, host } = {}) {
  * it); under `known`/`false`, a typed (NLA) screen or a headless host, an unlisted captured
  * account shows tagged. Pure: the display name and headshot are resolved by the caller.
  */
-export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles, captured } = {}) {
+export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles, captured, keyring } = {}) {
     const typed = remoteScreen === 'typed';
     const pc = (picker === false || headless || typed) ? [] : (Array.isArray(tiles) ? tiles : []);
     const caps = Array.isArray(captured) ? captured : [];
@@ -370,7 +372,8 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
         if (!t || typeof t.username !== 'string' || !t.username) continue;
         if (byUser.has(t.username)) continue;
         const tile = { username: t.username, displayName: t.displayName || t.username,
-            portrait: t.portrait ?? null, avatar: t.avatar ?? null, kinds: [], capture: null, targetId: null };
+            portrait: t.portrait ?? null, avatar: t.avatar ?? null, kinds: [], capture: null, targetId: null,
+            credentials: [], found: [], keyPassword: null };
         out.push(tile); byUser.set(t.username, tile);
     }
     // Drop an unlisted captured account only where the PC enumerates its own accounts
@@ -386,10 +389,74 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
         }
         if (dropUnlisted) continue;
         const tile = { username: c.username, displayName: c.label || c.username,
-            portrait: null, avatar: null, kinds: ['captured'], capture: c, targetId: c.targetId ?? null };
+            portrait: null, avatar: null, kinds: ['captured'], capture: c, targetId: c.targetId ?? null,
+            credentials: [], found: [], keyPassword: null };
         out.push(tile); byUser.set(c.username, tile);
     }
+    // Keyring K3a (8.1): the screen's usable keyring entries, by account username, one tile per
+    // account (never per entry), under the same inclusion rule as the captured sign-ins
+    for (const e of Array.isArray(keyring) ? keyring : []) {
+        const username = e?.account?.username;
+        if (typeof username !== 'string' || !username) continue;
+        const kind = keyringTagKind(e);
+        if (!kind) continue;
+        let tile = byUser.get(username);
+        if (!tile) {
+            if (dropUnlisted) continue;
+            tile = { username, displayName: e.account.displayName || username,
+                portrait: null, avatar: null, kinds: [], capture: null, targetId: e.account.npcId ?? null,
+                credentials: [], found: [], keyPassword: null };
+            out.push(tile); byUser.set(username, tile);
+        }
+        if (!tile.kinds.includes(kind)) tile.kinds.push(kind);
+        if (!tile.targetId && e.account.npcId) tile.targetId = e.account.npcId;
+        if (kind === 'captured') {
+            if (typeof e.password === 'string' && e.password) tile.keyPassword = e.password;
+        } else if (kind === 'in_file') {
+            if (!tile.found.some(f => f.id === e.id)) tile.found.push({ id: e.id, label: String(e.label || e.foundIn || '') });
+        } else if (!tile.credentials.some(c => c.id === e.id)) {
+            tile.credentials.push({ id: e.id, kind, label: credentialLabel(e, kind), accepted: e.accepted === true,
+                host: typeof e.host === 'string' ? e.host : null });
+        }
+    }
     return out;
+}
+
+/**
+ * The label a credential button shows: the author's label, else the 8.5 generic wording for
+ * the kind ("Saved connection"). Never a PC id: an older answer that fell back to connectsTo
+ * is treated as no label.
+ */
+export function credentialLabel(e, kind) {
+    const label = typeof e?.label === 'string' ? e.label.trim() : '';
+    if (label && label !== e?.connectsTo) return label;
+    return tileFullNames([kind])[0];
+}
+
+/** The tag kind of a keyring entry (8.5): captured, in_file, or the entry's own kind. */
+export function keyringTagKind(entry) {
+    if (!entry || typeof entry !== 'object') return null;
+    if (entry.kind === 'password') return entry.source === 'capture' ? 'captured' : 'in_file';
+    return typeof entry.kind === 'string' ? entry.kind : null;
+}
+
+/**
+ * The keyboard screen's tiles with keyring tags (K3a, 8.1): passwords only reach this screen.
+ * Tags go on the PC's own listed tiles; an unlisted account is added only under picker `known`
+ * (a tile row that names accounts it learns); `accounts` and `false` keep their own rule.
+ */
+export function mergeKeyboardTiles({ picker, tiles, keyring } = {}) {
+    if (picker === false) return [];
+    const merged = mergeRemoteTiles({ picker: picker === 'known' ? 'known' : 'accounts', tiles, captured: [], keyring });
+    const own = new Map((Array.isArray(tiles) ? tiles : []).filter(t => t && t.username).map(t => [t.username, t]));
+    return merged.map(t => ({ ...(own.get(t.username) || {}), ...t, displayName: own.get(t.username)?.displayName || t.displayName }));
+}
+
+/** The full kind name and teaching line of a credential button, for its title (8.1, 8.5). */
+export function credentialButtonTitle(cred, { displayName } = {}) {
+    const full = tileFullNames([cred.kind])[0];
+    const teach = teachLine(cred.kind, { displayName });
+    return `${full}: ${cred.label}${teach ? `. ${teach}` : ''}`;
 }
 
 /**
@@ -460,8 +527,7 @@ export class PasswordMinigame extends MinigameScene {
                 this.signIn.host = this.signIn.host || this.signIn.pcName || '';
             }
             const picker = this.signIn.picker;
-            const tiles = remote ? this.remoteTiles()
-                : (picker === false ? [] : (Array.isArray(this.signIn.tiles) ? this.signIn.tiles : []));
+            const tiles = remote ? this.remoteTiles() : this.keyboardTiles();
             // A locked session (UI slice 6) pre-chooses its own account: start with that username
             // selected (a tile when it is shown, else the "Other user" field pre-filled), so the
             // player lands straight on the password. The server still checks the password.
@@ -501,7 +567,11 @@ export class PasswordMinigame extends MinigameScene {
                 signIn: {
                     pcId: this.signIn.pcId,
                     picker: this.signIn.picker,
-                    tiles: st.tiles.map(t => ({ username: t.username, displayName: t.displayName, kinds: Array.isArray(t.kinds) ? t.kinds : [], fillsPassword: !!t.password })),
+                    tiles: st.tiles.map(t => ({ username: t.username, displayName: t.displayName, kinds: Array.isArray(t.kinds) ? t.kinds : [], fillsPassword: !!t.password,
+                        // Keyring K3a: the chosen line's ways in for this account
+                        credentials: (t.credentials || []).map(c => ({ id: c.id, kind: c.kind, label: c.label, accepted: c.accepted })),
+                        found: (t.found || []).map(f => f.label) })),
+                    keyring: { entries: Array.isArray(this.signIn.keyring) ? this.signIn.keyring.length : 0, failed: !!this.signIn.keyringFailed },
                     selected: st.selected,
                     otherUser: st.other,
                     current: this.signIn.current ? { username: this.signIn.current.username, displayName: this.signIn.current.displayName } : null,
@@ -1514,6 +1584,8 @@ export class PasswordMinigame extends MinigameScene {
                                 <div class="signin-selected" id="signin-selected"></div>
                                 <button type="button" class="signin-change${inMonitor ? ' pc-os-btn' : ''}" id="signin-change">Change</button>
                             </div>
+                            <div class="signin-ways" id="signin-ways" hidden></div>
+                            <div class="signin-ways-more" id="signin-ways-more" hidden aria-hidden="true"><span class="signin-tiles-more-arrow"></span><span>${REMOTE_MORE_BELOW_TEXT}</span></div>
                             <div class="signin-field-row" id="signin-username-row">
                                 <label for="signin-username">Username:</label>
                                 <input type="text" id="signin-username" class="password-field" placeholder="Username" aria-label="Username" maxlength="64" autocomplete="off" spellcheck="false">
@@ -1596,6 +1668,9 @@ export class PasswordMinigame extends MinigameScene {
             if (row) this.addEventListener(row, 'scroll', () => this.updateSignInTilesMore());
             this.addEventListener(window, 'resize', () => this.fitSignInTiles());
         }
+        const ways = this.gameContainer.querySelector('#signin-ways');
+        if (ways) this.addEventListener(ways, 'scroll', () => this.updateSignInWaysMore());
+        this.addEventListener(window, 'resize', () => this.fitSignInWays());
         this.renderSignInForm();
     }
 
@@ -1612,20 +1687,21 @@ export class PasswordMinigame extends MinigameScene {
             const kinds = Array.isArray(tile.kinds) ? tile.kinds : [];
             if (!kinds.length) return '';
             const labels = tileTagLabels(kinds).map(l => `<span class="signin-tag">${escapeHtml(l)}</span>`).join('');
-            const badges = tileBadgeGroups(kinds).map(g => `<img class="signin-badge" src="/break_escape/assets/icons/badge-${g}.png" alt="" aria-hidden="true">`).join('');
+            const badges = tileBadgeGroups(kinds).map(g => `<img class="signin-badge" src="${badgeSrc(g)}" alt="" aria-hidden="true">`).join('');
             // The short window shows only the badge, so it carries the full kind names as its text
             return `<span class="signin-tags">${labels}</span><span class="signin-badges" role="img" aria-label="${escapeHtml(tileFullNames(kinds).join(', '))}">${badges}</span>`;
         };
         // A tile's title: its name, then the full kind names (plan 8.5), for hover and screen readers
+        const tagged = (tile) => remote || (Array.isArray(tile.kinds) && tile.kinds.length > 0);
         const titleFor = (tile) => {
-            const full = remote && Array.isArray(tile.kinds) && tile.kinds.length ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
+            const full = tagged(tile) && Array.isArray(tile.kinds) && tile.kinds.length ? `, ${tileFullNames(tile.kinds).join(', ')}` : '';
             return `${tile.displayName || tile.username}${full}`;
         };
         const tileHtml = (tile, i) => `
-                <button type="button" class="signin-tile${remote ? ' signin-remote-tile' : ''}" data-tile-index="${i}"${remote ? ` data-username="${escapeHtml(tile.username)}"` : ''} title="${escapeHtml(titleFor(tile))}">
+                <button type="button" class="signin-tile${remote ? ' signin-remote-tile' : (tagged(tile) ? ' signin-keyring-tile' : '')}" data-tile-index="${i}"${tagged(tile) ? ` data-username="${escapeHtml(tile.username)}"` : ''} title="${escapeHtml(titleFor(tile))}">
                     <span class="signin-portrait"></span>
                     <span class="signin-name">${escapeHtml(tile.displayName || tile.username)}</span>
-                    <span class="signin-username">${escapeHtml(tile.username)}</span>${remote ? tagHtml(tile) : ''}
+                    <span class="signin-username">${escapeHtml(tile.username)}</span>${tagged(tile) ? tagHtml(tile) : ''}
                 </button>`;
         return `${st.tiles.map(tileHtml).join('')}
                 <button type="button" class="signin-tile signin-other" data-tile-index="other" title="Other user">
@@ -1779,7 +1855,7 @@ export class PasswordMinigame extends MinigameScene {
         if (!s?.remote) return [];
         const merged = mergeRemoteTiles({
             picker: s.remotePicker, headless: s.headless, remoteScreen: s.remoteScreen,
-            tiles: Array.isArray(s.tiles) ? s.tiles : [], captured: s.captured
+            tiles: Array.isArray(s.tiles) ? s.tiles : [], captured: s.captured, keyring: s.keyring
         });
         return merged.map(t => {
             const record = npcRecordFor({ npcId: t.targetId || undefined, username: t.username });
@@ -1791,7 +1867,9 @@ export class PasswordMinigame extends MinigameScene {
                 portrait: t.portrait,
                 avatar: t.avatar,
                 kinds: t.kinds,
-                password: t.capture?.password || null,
+                password: t.capture?.password || t.keyPassword || null,
+                credentials: t.credentials || [],
+                found: t.found || [],
                 targetId: t.targetId,
                 label: t.capture?.label || null,
                 record
@@ -1810,9 +1888,12 @@ export class PasswordMinigame extends MinigameScene {
         if (s.capturedLoading) return REMOTE_CHECKING_TEXT;
         if (s.stillChecking) return REMOTE_STILL_CHECKING_TEXT;
         const host = this.signInHost();
-        if (s.accountsFailed && s.capturedFailed) return remoteBothFailedLine(host);
+        // Two or more failed lists give the one combined line (8.1)
+        const failed = [s.accountsFailed, s.capturedFailed, s.keyringFailed].filter(Boolean).length;
+        if (failed >= 2) return remoteBothFailedLine(host);
         if (s.accountsFailed) return remoteAccountsFailedLine(host);
         if (s.capturedFailed) return REMOTE_CAPTURES_FAILED_TEXT;
+        if (s.keyringFailed) return KEYRING_FAILED_TEXT;
         if (s.headless) return remoteHeadlessLine(host);
         if (s.remoteScreen === 'typed') return remoteTypedLine(host);
         return SIGNIN_PROMPT;
@@ -1838,8 +1919,10 @@ export class PasswordMinigame extends MinigameScene {
         if ('host' in info && info.host) s.host = info.host;
         if ('tiles' in info) s.tiles = Array.isArray(info.tiles) ? info.tiles : [];
         if ('captured' in info) s.captured = Array.isArray(info.captured) ? info.captured : [];
+        if ('keyring' in info) s.keyring = Array.isArray(info.keyring) ? info.keyring : [];
         s.accountsFailed = !!info.accountsFailed;
         s.capturedFailed = !!info.capturedFailed;
+        s.keyringFailed = !!info.keyringFailed;
         const pending = !!info.pending;
         s.stillChecking = pending;
         // Loading ends at the cap or when both answer: only then does the form show
@@ -1863,9 +1946,55 @@ export class PasswordMinigame extends MinigameScene {
         // The chosen account may not be in the rebuilt row (N2): back to the row, nothing hidden kept.
         // Not while a sign-in is in flight: the outcome decides (see _submitSignInOnce).
         if (!this._signingIn) this.dropChosenIfGone();
+        const connectTile = this.takeConnectRefusalTile(pending);
         if (st.selected === null && !typing && !locked) st.other = !this.signInTilesOffered();
         this.renderSignInForm({ quiet: late });
+        if (connectTile !== undefined) this.showConnectRefusal(connectTile);
         return true;
+    }
+
+    /**
+     * A refused Connect (keyring K3b, plan 8.2 step 8) opened this screen: once the account's tile
+     * carries the credential (or every list has answered), choose that account and answer the tile
+     * (or null, the typed form keeping the pre-filled name). Undefined until then, and after.
+     */
+    takeConnectRefusalTile(pending) {
+        const s = this.signIn;
+        const r = s?.connectRefusal;
+        if (!r || s.connectRefusalShown) return undefined;
+        const tile = s.preselect ? this.signInTileFor(s.preselect) : null;
+        const ready = tile && Array.isArray(tile.credentials) && tile.credentials.some(c => c.id === r.credentialId);
+        if (!ready && pending) return undefined;
+        s.connectRefusalShown = true;
+        if (!tile) return null;
+        const st = this.signInState;
+        st.selected = tile.username;
+        st.other = false;
+        st.otherPicked = false;
+        if (this.usernameField) this.usernameField.value = '';
+        return tile;
+    }
+
+    /** The refusal Connect met, shown as this screen shows its own (8.1): greyed button, lockout, line. */
+    showConnectRefusal(tile) {
+        const r = this.signIn?.connectRefusal;
+        if (!r) return;
+        const host = this.signInHost();
+        if (r.reason === 'locked_out') {
+            this.signInLockedOut({ ok: false, reason: 'locked_out', message: r.message, attemptsLeft: r.attemptsLeft });
+            return;
+        }
+        const cred = (tile?.credentials || []).find(c => c.id === r.credentialId) || null;
+        if (r.reason === 'kind_refused' && cred) {
+            cred.accepted = false;
+            const box = this.gameContainer?.querySelector?.('#signin-ways');
+            if (box) delete box.dataset.for;
+            this.renderSignInWays(tile);
+        }
+        const line = credentialRefusalLine(r.reason, {
+            host: cred?.host || host, label: cred?.label, displayName: tile?.displayName, kind: r.kind || cred?.kind
+        });
+        if (line) this.setSignInMessage(line, 'error');
     }
 
     /** The chosen tile is no longer in the row (N2): forget it and the typed values. True if dropped. */
@@ -1921,6 +2050,7 @@ export class PasswordMinigame extends MinigameScene {
             show(selectedEl, !!tile);
         }
         this.applySelectedHeadshot(tile);
+        this.renderSignInWays(chosen ? tile : null);
         // One pass over every tile in the one row, so the chosen edge has one owner
         this.gameContainer.querySelectorAll('.signin-tile').forEach(el => {
             el.classList.toggle('selected', this.signInTileSelected(el));
@@ -1935,7 +2065,7 @@ export class PasswordMinigame extends MinigameScene {
         // own rule (the prompt only before an account or the typed form is chosen).
         const showBase = this.signIn?.remote ? (st.selected === null && !this._signingIn) : !chosen;
         if (showBase) {
-            let base = this.signIn?.remote ? this.remoteStateLine() : SIGNIN_PROMPT;
+            let base = this.signIn?.remote ? this.remoteStateLine() : this.keyboardStateLine();
             // "Choose an account." is for the row; under a chosen form it is blank, as at the keyboard
             if (this.signIn?.remote && chosen && base === SIGNIN_PROMPT) base = '';
             // A refusal (kind 'error') persists until Change; the base/state line is recomputed each
@@ -1950,6 +2080,218 @@ export class PasswordMinigame extends MinigameScene {
         // left) scrolls into view in a short window (UX slice 2a R2 M2)
         if (!quiet && chosen) revealInFrame(this.signInMessageEl?.textContent ? this.signInMessageEl : this.submitBtn);
         this.fitSignInTiles();
+        this.fitSignInWays();
+    }
+
+    /** The keyboard screen's tiles: the PC's own, tagged from the keyring when it has entries (K3a). */
+    keyboardTiles() {
+        const s = this.signIn;
+        const own = s.picker === false ? [] : (Array.isArray(s.tiles) ? s.tiles : []);
+        if (!Array.isArray(s.keyring) || s.keyring.length === 0 || s.picker === false) return own;
+        return mergeKeyboardTiles({ picker: s.picker, tiles: own, keyring: s.keyring })
+            .map(t => ({ ...t, password: t.keyPassword || t.password || null }));
+    }
+
+    /** The keyboard screen's base line (K3a 8.1): the failed lines, else "Choose an account." */
+    keyboardStateLine() {
+        const s = this.signIn;
+        if (s?.keyringFailed && s?.accountsFailed) return KEYBOARD_BOTH_FAILED_TEXT;
+        if (s?.keyringFailed) return KEYRING_FAILED_TEXT;
+        return SIGNIN_PROMPT;
+    }
+
+    /**
+     * The keyboard screen's keyring answer (K3a 8.1): passwords only, merged into the PC's own
+     * tiles. A late answer redraws the row in place, keeping the choice, focus and typed text.
+     */
+    setKeyringEntries({ keyring = [], keyringFailed = false, accountsFailed = false } = {}) {
+        if (!this.signIn || this.signIn.remote) return false;
+        const s = this.signIn;
+        s.keyring = Array.isArray(keyring) ? keyring.filter(e => e?.kind === 'password') : [];
+        s.keyringFailed = !!keyringFailed;
+        s.accountsFailed = !!accountsFailed;
+        this.signInState.tiles = this.keyboardTiles();
+        const tilesEl = this.gameContainer?.querySelector?.('#signin-tiles');
+        if (tilesEl) {
+            tilesEl.innerHTML = this.signInTilesInnerHtml();
+            this.bindSignInTiles();
+        }
+        if (!this._signingIn) this.dropChosenIfGone();
+        this.renderSignInForm({ quiet: true });
+        return true;
+    }
+
+    /**
+     * The chosen line's ways in (K3a 8.1), at the top of the form in their own box: one button
+     * per usable credential for this PC ("Connect with" kept whole, the label cut with an
+     * ellipsis; the full kind name and teaching line in its title), a refused one greyed with
+     * aria-disabled and its short reason under it, then the found-password lines ("Type the
+     * password from" over the file name alone). Scenario text goes in by textContent only.
+     */
+    renderSignInWays(tile) {
+        const box = this.gameContainer?.querySelector?.('#signin-ways');
+        if (!box) return;
+        const creds = Array.isArray(tile?.credentials) ? tile.credentials : [];
+        const found = Array.isArray(tile?.found) ? tile.found : [];
+        const key = tile ? JSON.stringify([tile.username, creds, found]) : '';
+        if (box.dataset.for === key && !!key === !box.hidden) return;
+        box.dataset.for = key;
+        box.replaceChildren();
+        if (!tile || (!creds.length && !found.length)) {
+            box.hidden = true;
+            const more = this.gameContainer.querySelector('#signin-ways-more');
+            if (more) more.hidden = true;
+            return;
+        }
+        const doc = box.ownerDocument;
+        const inMonitor = !!this.pcMonitor;
+        for (const cred of creds) {
+            const way = doc.createElement('div');
+            way.className = 'signin-cred-way';
+            const b = doc.createElement('button');
+            b.type = 'button';
+            b.className = `signin-cred ${inMonitor ? 'pc-os-btn' : 'minigame-button'}`;
+            b.dataset.credId = cred.id;
+            const fixed = doc.createElement('span');
+            fixed.className = 'signin-cred-fixed';
+            fixed.textContent = CONNECT_WITH_TEXT;
+            const label = doc.createElement('span');
+            label.className = 'signin-cred-label';
+            label.textContent = cred.label;
+            b.append(fixed, doc.createTextNode(' '), label);
+            b.title = credentialButtonTitle(cred, { displayName: tile.displayName });
+            b.setAttribute('aria-label', `${CONNECT_WITH_TEXT} ${cred.label}, ${tileFullNames([cred.kind])[0]}`);
+            way.appendChild(b);
+            if (!cred.accepted) {
+                b.setAttribute('aria-disabled', 'true');
+                const why = doc.createElement('div');
+                why.className = 'signin-cred-refused';
+                why.textContent = kindRefusedShort(cred.host || this.signInHost());
+                way.appendChild(why);
+            }
+            this.addEventListener(b, 'click', () => this.useCredential(cred, tile));
+            box.appendChild(way);
+        }
+        for (const f of found) {
+            const row = doc.createElement('div');
+            row.className = 'signin-found';
+            const lead = doc.createElement('div');
+            lead.className = 'signin-found-lead';
+            lead.textContent = FOUND_PASSWORD_LEAD_TEXT;
+            const name = doc.createElement('div');
+            name.className = 'signin-found-label';
+            name.textContent = f.label;
+            name.title = f.label;
+            row.append(lead, name);
+            box.appendChild(row);
+        }
+        box.hidden = false;
+    }
+
+    /**
+     * When the chosen state is too tall (8.1), only the ways-in box scrolls, with the pixel
+     * scrollbar and "More below"; its first button stays in view and the Password field, Sign in
+     * and the message line keep their place. No layout (jsdom): no cap.
+     */
+    fitSignInWays() {
+        const box = this.gameContainer?.querySelector?.('#signin-ways');
+        const more = this.gameContainer?.querySelector?.('#signin-ways-more');
+        if (!box) return;
+        box.style.maxHeight = '';
+        box.classList.remove('signin-ways-scroll');
+        if (more) more.hidden = true;
+        if (box.hidden) return;
+        const area = box.closest('.pc-monitor-area');
+        const h = box.offsetHeight;
+        if (!area || !h) return;
+        const over = area.scrollHeight - area.clientHeight;
+        if (over <= 0) return;
+        const first = box.firstElementChild;
+        const MIN = Math.max(24, first ? first.offsetHeight : 24);
+        const CUE = 18;
+        let cap = Math.max(MIN, h - over - CUE);
+        box.style.maxHeight = `${cap}px`;
+        box.classList.add('signin-ways-scroll');
+        this.updateSignInWaysMore();
+        for (let i = 0; i < 3; i++) {
+            const left = area.scrollHeight - area.clientHeight;
+            if (left <= 0 || cap <= MIN) break;
+            cap = Math.max(MIN, cap - left);
+            box.style.maxHeight = `${cap}px`;
+            this.updateSignInWaysMore();
+        }
+    }
+
+    /** The ways-in box's "More below" cue, while it has more to scroll to. */
+    updateSignInWaysMore() {
+        const box = this.gameContainer?.querySelector?.('#signin-ways');
+        const more = this.gameContainer?.querySelector?.('#signin-ways-more');
+        if (!box || !more) return;
+        const scrolls = box.classList.contains('signin-ways-scroll');
+        more.hidden = !(scrolls && (box.scrollHeight - box.clientHeight - box.scrollTop) > 2);
+    }
+
+    /** The teaching toast for a kind, once per page, after a successful sign-in with it (8.1). */
+    teachAfter(kind, session) {
+        const kr = typeof window !== 'undefined' ? window.keyring : null;
+        if (!kr?.teachOnce?.(kind)) return;
+        const line = teachLine(kind, { displayName: session?.displayName || session?.username });
+        if (!line) return;
+        try { window.gameAlert?.(line, 'info', '', 8000, { plainText: true, whole: true }); } catch (e) { /* no notification layer */ }
+    }
+
+    /**
+     * Sign in with a keyring credential (K3a 8.1). A greyed (refused) one signs nothing in and
+     * puts the full reason in the message line. A server refusal shows 8.5's line; a policy
+     * refusal greys the button from then on.
+     */
+    async useCredential(cred, tile) {
+        if (!this.gameState.isActive || this._signingIn) return;
+        const host = cred.host || this.signInHost();
+        if (!cred.accepted) {
+            if (window.playUISound) window.playUISound('reject');
+            this.setSignInMessage(kindRefusedMessage(cred.kind, host), 'error');
+            return;
+        }
+        const sessions = window.pcSessions;
+        if (!sessions?.signInWithCredential) {
+            this.setSignInMessage('Sign-in is not available.', 'error');
+            return;
+        }
+        this.setSignInMessage('Signing in...');
+        const foothold = this.signIn.remote?.footholdId || null;
+        this._signingIn = true;
+        let result;
+        try {
+            result = await sessions.signInWithCredential(this.signIn.pcId, cred.id, foothold ? { foothold } : {});
+        } finally {
+            this._signingIn = false;
+        }
+        if (result.ok) {
+            this.teachAfter(cred.kind, result.session);
+            this.signInAccepted(result.session);
+            return;
+        }
+        if (result.reason === 'locked_out') {
+            this.signInLockedOut(result);
+            return;
+        }
+        if (result.error) {
+            this.setSignInMessage(signInErrorMessage(result, this.signIn.remote ? { remote: true, host: this.signInHost() } : undefined), 'error');
+            return;
+        }
+        if (window.playUISound) window.playUISound('reject');
+        if (result.reason === 'kind_refused') {
+            // The PC's policy refused it: grey the button now, with its short reason under it
+            cred.accepted = false;
+            const box = this.gameContainer?.querySelector?.('#signin-ways');
+            if (box) delete box.dataset.for;
+            this.renderSignInWays(tile);
+        }
+        const line = credentialRefusalLine(result.reason, {
+            host, label: cred.label, displayName: tile?.displayName, kind: result.kind || cred.kind
+        });
+        this.setSignInMessage(line || signInRefusalMessage(result), 'error');
     }
 
     /**
@@ -2049,6 +2391,9 @@ export class PasswordMinigame extends MinigameScene {
             this._signingIn = false;
         }
         if (result.ok) {
+            // A typed sign-in to an account with a password found in a file teaches that kind (8.1)
+            const chosen = st.other ? null : this.signInTileFor(username);
+            if (chosen && Array.isArray(chosen.kinds) && chosen.kinds.includes('in_file')) this.teachAfter('in_file', result.session);
             this.signInAccepted(result.session);
             return;
         }

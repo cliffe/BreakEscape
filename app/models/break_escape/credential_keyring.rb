@@ -163,8 +163,7 @@ module BreakEscape
       kind = entry['kind']
       connects_to = entry['connectsTo']
       pc = CredentialModel.sign_in_pc(scenario_data, connects_to)
-      definition = CredentialModel.item_definition(scenario_data, entry.dig('proof', 'held'))
-      label = definition.is_a?(Hash) && CredentialModel.present_string?(definition['name']) ? definition['name'] : connects_to.to_s
+      label = credential_label(entry)
 
       row = {
         'id' => id,
@@ -175,6 +174,11 @@ module BreakEscape
         'host' => pc.is_a?(Hash) ? host_label(pc) : nil,
         'connectsTo' => connects_to
       }
+      # The tray item that proves it (K3b): the client never sees an item's `credential` (it is
+      # stripped on the way out), so Connect finds its entry by this id. Only a held proof names
+      # one, and only once the proof holds, so it is an item the player is carrying.
+      held_item = CredentialModel.proof_kind(entry['proof']) == 'held' ? entry.dig('proof', 'held') : nil
+      row['heldItem'] = held_item if CredentialModel.present_string?(held_item)
 
       is_ended = kind == 'assist_invite' && ended.include?(id)
       if is_ended
@@ -190,6 +194,16 @@ module BreakEscape
       row['targetOff'] = (pc.is_a?(Hash) && host_service_off?(pc)) if routes.any?
       row['remoteBlocked'] = kind == 'assist_invite' ? false : (pc.is_a?(Hash) && remote_blocked?(pc) ? true : false)
       row
+    end
+
+    # A connecting credential's label: the entry's own `label`, else its held item's authored
+    # name, else empty (the screen then uses the generic kind wording; a PC id is never shown).
+    # The keyring row and the credential sign-in answer (K2) share it.
+    def credential_label(entry)
+      return entry['label'] if CredentialModel.present_string?(entry['label'])
+
+      definition = CredentialModel.item_definition(scenario_data, entry.dig('proof', 'held'))
+      definition.is_a?(Hash) && CredentialModel.present_string?(definition['name']) ? definition['name'] : ''
     end
 
     # The routes that reach a connecting credential's connectsTo now (section 6.2). K1 computes held

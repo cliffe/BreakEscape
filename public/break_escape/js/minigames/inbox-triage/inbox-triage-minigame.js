@@ -53,6 +53,7 @@ import {
     shortTitle, realNounFor, choiceOptions, choiceOptionFor, choiceText, verdictFeedbackOverride, verdictVerbOverride
 } from './triage-kinds.js';
 import { comparisonFor, comparisonText } from './triage-comparison.js';
+import { buildStepItems, applyStepStates } from '../helpers/step-stepper.js';
 
 const ICON = '/break_escape/assets/icons/';
 const NARROW_QUERY = '(max-width: 767px)';
@@ -357,16 +358,11 @@ export class InboxTriageMinigame extends SocialOverlayScene {
     }
 
     _renderSteps() {
-        this.stepsEl.textContent = '';
-        const order = STEPS.map((s) => s[0]);
-        const here = order.indexOf(this.step);
-        STEPS.forEach(([id, label], i) => {
-            const li = el('li', 'tri-step', label);
-            li.dataset.step = id;
-            if (i < here) li.classList.add('done');
-            if (i === here) { li.classList.add('current'); li.setAttribute('aria-current', 'step'); }
-            this.stepsEl.appendChild(li);
-        });
+        const steps = STEPS.map(([id, label]) => ({ id, label }));
+        const here = steps.findIndex((s) => s.id === this.step);
+        const items = buildStepItems(this.stepsEl, steps, { stepClass: 'tri-step', dataKey: 'step', label: { as: 'text' } });
+        applyStepStates(items, steps, { currentClass: 'current', doneClass: 'done' },
+            (step, i) => ({ current: i === here, done: i < here }));
     }
 
     /** The announcement for a message's locked verdict (also what keeps it on screen while that message stays open). */

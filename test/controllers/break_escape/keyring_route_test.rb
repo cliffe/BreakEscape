@@ -91,6 +91,54 @@ module BreakEscape
       assert_equal true, e['accepted']
     end
 
+    test 'a held-proof entry names its tray item (K3b Connect), a session-proven one names none' do
+      entries = keyring['entries']
+      assert_equal 'lena_rdp_file', entries.find { |x| x['id'] == 'lena_rdp' }['heldItem']
+      refute entries.find { |x| x['id'] == 'jake_pw_note' }.key?('heldItem')
+    end
+
+    test 'heldItem is sent only for a proof the player holds: a dropped item lists nothing and names no item id' do
+      @game.update_columns(player_state: @game.player_state.merge('inventory' => []))
+      body = keyring
+      refute_includes body['entries'].map { |e| e['id'] }, 'lena_rdp'
+      refute_includes response.body, 'lena_rdp_file', 'an unheld item id never reaches the client'
+    end
+
+    test 'heldItem is not sent for a forged inventory entry (wrong type), and every named item is in the inventory' do
+      forged = [{ 'id' => 'lena_rdp_file', 'type' => 'key', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }]
+      @game.update_columns(player_state: @game.player_state.merge('inventory' => forged))
+      refute_includes keyring['entries'].map { |e| e['id'] }, 'lena_rdp'
+      refute_includes response.body, 'lena_rdp_file'
+      @game.update_columns(player_state: @game.player_state.merge(
+        'inventory' => [{ 'id' => 'lena_rdp_file', 'type' => 'text_file', 'name' => 'HB-FIN-02.rdp', 'credential' => 'lena_rdp' }]
+      ))
+      held_ids = @game.reload.player_state['inventory'].map { |i| i['id'] }
+      keyring['entries'].each { |e| assert_includes held_ids, e['heldItem'] if e.key?('heldItem') }
+    end
+
+    test 'a connecting entry proven another way (a foothold) names no tray item' do
+      data = @game.reload.scenario_data
+      data['credentials']['lena_rdp_fh'] = { 'kind' => 'saved_connection', 'account' => 'lena', 'connectsTo' => 'lena_pc', 'proof' => { 'foothold' => 'fh1' } }
+      @game.update_columns(scenario_data: data, player_state: @game.player_state.merge('footholds' => { 'fh1' => { 'seq' => 1 } }))
+      entry = keyring['entries'].find { |x| x['id'] == 'lena_rdp_fh' }
+      assert entry, 'the foothold-proven connection is listed'
+      refute entry.key?('heldItem'), 'only a held proof names a tray item'
+    end
+
+    test 'the scenario answer carries credentialsDeclared and never the registry' do
+      get "/break_escape/games/#{@game.id}/scenario", as: :json
+      assert_response :success
+      assert_equal true, response.parsed_body['credentialsDeclared']
+      refute response.parsed_body.key?('credentials'), 'the registry stays on the server'
+    end
+
+    test 'a scenario without credentials answers credentialsDeclared false' do
+      @game.update_columns(scenario_data: @game.scenario_data.except('credentials'))
+      get "/break_escape/games/#{@game.id}/scenario", as: :json
+      assert_response :success
+      assert_equal false, response.parsed_body['credentialsDeclared']
+    end
+
     test "another player's game answers as GET /capture_secrets does (forbidden)" do
       other = Game.create!(mission: @game.mission, player: break_escape_demo_users(:other_user)).reload
       get game_path(other.id, 'keyring'), as: :json

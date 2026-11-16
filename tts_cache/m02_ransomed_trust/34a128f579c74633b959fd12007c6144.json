@@ -1,0 +1,13 @@
+{
+  "key": "34a128f579c74633b959fd12007c6144",
+  "npc": "hodan_warsame",
+  "text": "My bed list's on the back of a menu.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:46Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ce9f8d78048eb0ee8e389e761c3c4b3a",
+  "npc": "hodan_warsame",
+  "text": "Watch the floor. I've just done it.",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:00Z"
+}

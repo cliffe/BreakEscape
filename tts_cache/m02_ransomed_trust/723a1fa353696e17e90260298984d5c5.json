@@ -1,0 +1,14 @@
+{
+  "key": "723a1fa353696e17e90260298984d5c5",
+  "npc": "hodan_warsame",
+  "text": "Go.",
+  "delivery": "frightened, holding it together",
+  "voice": "Laomedeia",
+  "style": "Night domestic, early twenties, British-Somali, Birmingham accent. Quick, wry and chatty, tired but sharp; drops her voice for gossip.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:12:55Z"
+}
