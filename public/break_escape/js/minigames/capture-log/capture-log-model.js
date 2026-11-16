@@ -98,7 +98,8 @@ export function buildSections({ holder, items, globals, sessionsSource = null })
     const sessionRow = (s, link) => ({
         key: `session:${s.pcId}:${s.footholdId || ''}`, kind: 'session', session: s, pcId: s.pcId,
         name: s.displayName || s.username || 'Remote session', host: s.host || '',
-        line: link ? `Remote session through ${link.name}` : 'Remote session'
+        line: link ? `Remote session through ${link.name}`
+            : (isStr(s.fromPcId) && !s.footholdId ? `Remote session from ${s.fromHost || s.host || 'another desktop'}` : 'Remote session')
     });
     const placed = new Set();
     for (const link of links) {
