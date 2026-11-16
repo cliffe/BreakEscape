@@ -733,9 +733,55 @@ test('R8 m1: a random patrol re-target keeps the yield hold but drops the pin an
     assert.equal(b._avoid.yieldUntil, until);
     assert.ok(!b._avoid.backoffUntil, 'the step in progress is dropped');
     assert.ok(!b._avoid.pinned);
+    // R9: the count of steps already taken to this NPC is carried across, not zeroed
+    b._avoid.yieldCount = 4;
+    b.chooseRandomPatrolTarget(t + 200);
+    assert.equal(b._avoid.yieldCount, 4, 'the yield step count survives the re-target');
     // a hold that has run out is dropped, as before
     b.chooseRandomPatrolTarget(until + 1000);
     assert.equal(b._avoid, null);
+});
+
+// Sims tidy R9: the step count belongs to one hold. It restarts when the hold runs out or the
+// NPC being yielded to changes; otherwise the cap would carry over into an unrelated meeting.
+function nextStepCount(b, startT, limitMs) {
+    let last = b._avoid.backoffUntil || 0;
+    for (let t = startT; t < startT + limitMs; t += 50) {
+        b._handleBlockerAhead(t, { x: 400, y: 0 });
+        if (b._avoid?.backoffUntil && b._avoid.backoffUntil !== last) return b._avoid.yieldCount;
+    }
+    return null;
+}
+
+test('R9: the yield step count restarts on the next step once the hold has expired', () => {
+    const { b, otherBody } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });   // step 1 of a hold
+    assert.equal(b._avoid.yieldCount, 1);
+    const until = b._avoid.yieldUntil;
+    b._avoid.yieldCount = 4;
+    b.sprite.body.center.x = -60;   // the step gained ground, so it is not pinned
+    otherBody.center.x = -32;       // and the NPC is still just ahead
+    const count = nextStepCount(b, until + 100, 8000);   // the hold is over: a new one starts
+    assert.equal(count, 1, 'the new hold counts its first step, not a fifth');
+});
+
+test('R9: the yield step count restarts when the NPC being yielded to changes', () => {
+    const { b, otherBody } = headOn();
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 700; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    t += 2600; b._handleBlockerAhead(t, { x: 400, y: 0 });
+    assert.equal(b._avoid.yieldTo, 'amy');
+    assert.ok(b._avoid.yieldUntil > t + 1000, 'the hold is still running');
+    b._avoid.yieldCount = 4;
+    b.sprite.body.center.x = -60; otherBody.center.x = -32;
+    window.rooms = { r: { npcSprites: [{ npcId: 'amy2', body: otherBody }] } };   // someone else is in the way
+    const count = nextStepCount(b, t + 100, 4000);
+    assert.equal(b._avoid.yieldTo, 'amy2');
+    assert.equal(count, 1, 'a different opponent starts again at one step');
 });
 
 // Sims tidy R8 m2: the player check behind a back-off reached 42 px in a 13 px lane, but a step
