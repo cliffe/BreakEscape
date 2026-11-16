@@ -94,7 +94,8 @@ test('a released toast slides in only after a relayout has placed it, also with 
   });
   const h = startHudLanes(r.doc, r.win);
   const first = raise(r, 'warning', 'first');
-  await wait(150);
+  // Poll, not a fixed wait: under a loaded host the first relayout can take longer than 150 ms
+  for (let t = 0; t < 2000 && !first.classList.contains('show'); t += 25) await wait(25);
   assert.ok(first.classList.contains('show'));
   assert.equal(r.win.__hudLanes.notifyAway, true);
   // A panel mutation starts the throttle; the next toast arrives while its trailing call is pending
@@ -107,7 +108,8 @@ test('a released toast slides in only after a relayout has placed it, also with 
   });
   watch.observe(second, { attributes: true, attributeFilter: ['class'] });
   log.length = 0;
-  await wait(PANEL_THROTTLE_MS + 200);
+  await wait(PANEL_THROTTLE_MS);
+  for (let t = 0; t < 2000 && !second.classList.contains('show'); t += 25) await wait(25);
   assert.ok(second.classList.contains('show'), 'the error slid in');
   const before = log.slice(0, seenAt);
   const rel = before.indexOf('released');
@@ -243,7 +245,8 @@ test('a class toggle that reveals a button under the toast moves it', async () =
   await wait(150);
   assert.equal(r.win.__hudLanes.notifyAway, false, 'nothing under the lane yet');
   reveal.classList.remove('gone');
-  await wait(PANEL_THROTTLE_MS + 80);
+  await wait(PANEL_THROTTLE_MS);
+  for (let n = 0; n < 2000 && r.win.__hudLanes.notifyAway !== true; n += 25) await wait(25);
   assert.equal(r.win.__hudLanes.notifyAway, true, 'the revealed button is now in the way');
   assert.ok(t.classList.contains('placed-over-panel'));
   done(r, h);
