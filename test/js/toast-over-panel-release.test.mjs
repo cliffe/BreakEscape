@@ -140,7 +140,7 @@ test('zoom 1.5 and 2.5: widths scaled, the clone is z times the unzoomed height,
     const heights = [...t._hudLaneH.values()];
     assert.ok(heights.length >= 1);
     for (const hh of heights) assert.equal(hh, Math.ceil(100 * z), `clone height at zoom ${z}`);
-    for (const key of t._hudLaneH.keys()) assert.ok(key.split("@")[1] === String(z), key);
+    for (const key of t._hudLaneH.keys()) assert.equal(key.match(/^\d+@([\d.]+)#/)?.[1], String(z), key);   // key: width@zoom#env@compact
     if (hl.notifyAway) {
       assert.ok(Math.abs(px(r.container.style.width) * z - hl.notifySpot.width) <= z, `width ${r.container.style.width} at zoom ${z}`);
       assert.ok(Math.abs(px(r.container.style.left) * z - hl.notifySpot.left) <= z, 'left');
