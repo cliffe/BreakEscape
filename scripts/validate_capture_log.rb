@@ -146,6 +146,12 @@ def check_capture_log(json_data)
   end
 
   # ---- Each proof: well formed, naming what exists ----
+  plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
+  jack_ids = cm.reachable_jack_ids(json_data) # a jack plant is a foothold, found through contents
+  sign_in_pc_ids = cm.sign_in_pc_ids(json_data) # login_scope_of's rule, not top level only
+  # Pass or fail comes from CaptureModel.proof_satisfiable? (the helper the network validator
+  # shares, written to the server's capture_proof_holds? and its recorders); this lambda keeps
+  # the per-reason messages and the extra warnings.
   check_proof = lambda do |proof, where, holder|
     kind = cm.proof_kind(proof)
     unless kind
@@ -153,6 +159,7 @@ def check_capture_log(json_data)
                "or { \"session\": pc }, got #{proof.to_json}")
       next
     end
+    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder, jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids)
     case kind
     when 'planted'
       item_id = proof['planted'].to_s
@@ -163,12 +170,13 @@ def check_capture_log(json_data)
         err.call("#{where}: planted on \"#{on}\", which is no room object")
         next
       end
+      # A nested jack is valid: the server records a jack plant as a foothold (find_jack walks contents).
       jack = on && objects.any? { |e| e[:object]['id'].to_s == on.to_s && nm.jack?(e[:object]) }
       next if jack || item.nil?
 
       takers = objects.select do |e|
         obj = e[:object]
-        obj['id'].is_a?(String) && !obj['id'].empty? && (on.nil? || obj['id'] == on) && cm.object_takes_item?(obj, item)
+        obj['id'].is_a?(String) && !obj['id'].empty? && (on.nil? || obj['id'].to_s == on.to_s) && cm.object_takes_item?(obj, item)
       end
       takers.each do |e|
         obj = e[:object]
@@ -184,29 +192,32 @@ def check_capture_log(json_data)
                   "#{shared.keys.first(3).join(', ')} also match: the player may plant one of those instead, and " \
                   "this proof names \"#{item_id}\". Name the item by id in requiresItem")
       end
-      if takers.empty?
-        err.call("#{where}: planted \"#{item_id}\"#{on ? " on \"#{on}\"" : ''} needs a room object with an id and a " \
-                 'triggerOnInteract list, whose requiresItem names the item and which consumes it (consumesItem, or a ' \
-                 'remove_item naming it), or a network jack: the server records a plant only there')
-      end
+      next if ok
+
+      err.call("#{where}: planted \"#{item_id}\"#{on ? " on \"#{on}\"" : ''} needs a room object with an id and a " \
+               'triggerOnInteract list, whose requiresItem names the item and which consumes it (consumesItem, or a ' \
+               "remove_item naming it)#{on ? ', or the network jack it names' : ''}: the server records a plant only there")
     when 'dropped'
       item_id = proof['dropped'].to_s
       item = item_defs[item_id]
       if !item
         err.call("#{where}: dropped names \"#{item_id}\", which is no item in the scenario")
-      elsif item['droppable'] != true
+      elsif !ok
         err.call("#{where}: dropped names \"#{item_id}\", which is not droppable: the server records only a player_drop")
       end
     when 'session'
       pc_id = proof['session'].to_s
-      unless login_pc_ids.include?(pc_id)
+      unless ok
         err.call("#{where}: session names \"#{pc_id}\", which is no sign-in PC (lockType login)")
         next
       end
       pc = login_pcs.find { |p| p['id'].to_s == pc_id }
+      next unless pc
+
       others = holders.reject { |npc| npc.equal?(holder) }.select { |npc| pc_admits.call(pc, npc) }
       unless others.empty?
-        warn.call("#{where}: the session proof on \"#{pc_id}\" also holds after another account signs in there " \
+        after = holder ? 'after another account signs in there' : 'after any of these accounts signs in there'
+        warn.call("#{where}: the session proof on \"#{pc_id}\" also holds #{after} " \
                   "(#{others.map { |n| n['id'] }.join(', ')}): signedInPcs records the PC, not the account")
       end
     end
@@ -231,17 +242,23 @@ def check_capture_log(json_data)
     check_proof.call(entry[:proof], entry[:path], entry[:holder]) if entry[:holder] || holderless_key.call(entry)
   end
 
-  # A non-account secret written on an account holder's own mappings is never served:
-  # build_authored_capture_secrets skips writers owned by holders. Put the writer on an NPC
-  # with no creds.
+  # A non-account secret written on an account holder's own writer (a mapping or an add_capture
+  # action), or addressed to an account's username, is never served:
+  # build_authored_capture_secrets skips both. Put the writer on an NPC with no creds, and no
+  # account address.
   holder_set = holders
-  cm.each_capture_writer(json_data) do |capture, kind, path, owner|
-    next unless kind == :mapping && owner.is_a?(Hash) && holder_set.any? { |npc| npc.equal?(owner) }
+  holder_names = holder_set.map { |npc| cm.normalise_username(npc['creds']['username']) }.to_set
+  cm.each_capture_writer(json_data) do |capture, _kind, path, owner|
     next unless cm.present_string?(capture['secret']) && !account_passwords.include?(capture['secret'])
 
+    owned = owner.is_a?(Hash) && holder_set.any? { |npc| npc.equal?(owner) }
+    addressed = capture['address'].is_a?(String) && holder_names.include?(cm.normalise_username(capture['address']))
+    next unless owned || addressed
+
+    why = owned ? "on account holder \"#{owner['id']}\"" : "addressed to the account \"#{capture['address']}\""
     warn.call("#{path}: this capture writes a secret that is no account password (targetId \"#{capture['targetId']}\") " \
-              "on account holder \"#{owner['id']}\"; the server skips writers owned by an account holder, so " \
-              'the secret is never served. Move the writer to an NPC with no creds')
+              "#{why}; the server skips such a writer, so the secret is never served. Move the writer to an NPC " \
+              'with no creds and no account address')
   end
 
   # An account holder with a proof whose password opens nothing is served with no proof at all.

@@ -357,7 +357,10 @@ export class ObjectivesManager {
     
     // A sign-in on a sign-in PC meets an unlock_object task on that PC (access model 5.3).
     // pc-sessions.js also emits pc_signed_in:<pcId>; listening to the bare name counts once.
+    // A relay sign-in (an assist invite, keyring K3c 8.3) is the holder's session, not the
+    // player's sign-in there: it meets no task, as the server's signedInPcs never counts it.
     this.eventDispatcher.on('pc_signed_in', (data) => {
+      if (data?.relay === true) return;
       if (data?.pcId) this.handleObjectUnlock(data.pcId, data.pcId, data.pcId);
     });
 

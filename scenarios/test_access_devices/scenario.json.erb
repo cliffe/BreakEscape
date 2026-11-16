@@ -10,10 +10,16 @@
   "social": { "captures": { "revealSecret": true } },
 
   "networks": {
+    <%# B1 (drop box, patch panel). office_lan is the data VLAN behind network_port and
+        secured_port; lw_voice and lw_guest are the wrong VLANs behind voice_port and guest_port. %>
     "office_lan": { "name": "Ledgerwell office LAN", "wifi": { "ssid": "Ledgerwell-Staff", "psk": "<%= @random_password %>" } },
+    "lw_voice": { "name": "Ledgerwell voice VLAN" },
     "lw_guest": { "name": "Ledgerwell guest Wi-Fi", "wifi": { "ssid": "Ledgerwell-Guest", "psk": "Visitor-Pebble-2026" } }
   },
 
+  <%# B1: the voice VLAN's phones are resources, not room objects (sign-in hosts are room objects,
+      so headless phones would otherwise be clickable sprites). Call signalling and extension
+      numbers only: no files, no staff PCs. %>
   "resources": {
     "lw_fs01_records": {
       "kind": "file_share",
@@ -21,6 +27,18 @@
       "host": "LW-FS01",
       "network": "office_lan",
       "observations": "Top folders, one per client. Any device on the network can list the names; what is inside them is client records, so open none of it."
+    },
+    "lw_callmgr": {
+      "kind": "phone", "name": "Call manager", "host": "LW-CM01", "network": "lw_voice",
+      "observations": "The call manager for the office phones. It answers on the voice network with the extension list: 100 reception, 101 open plan. Calls are set up here and nothing else."
+    },
+    "lw_ph_recep": {
+      "kind": "phone", "name": "Reception desk phone", "host": "LW-PH-RECEP", "network": "lw_voice",
+      "observations": "A desk phone registered as extension 100. Its call signalling is all that answers."
+    },
+    "lw_ph_open1": {
+      "kind": "phone", "name": "Open plan desk phone", "host": "LW-PH-OPEN1", "network": "lw_voice",
+      "observations": "A desk phone registered as extension 101. Its call signalling is all that answers."
     }
   },
 
@@ -52,7 +70,13 @@
     "kp_wifi_joined": false,
     "kp_signed_in": false,
     "lw_staff_ap_planted": false,
-    "lw_guest_ap_planted": false
+    "lw_guest_ap_planted": false,
+    "network_port_planted": false,
+    "voice_port_planted": false,
+    "guest_port_planted": false,
+    "kp_dropbox_wrong_vlan": false,
+    "kp_dropbox_remote": false,
+    "player_in_briefing": false
   },
 
   "startItemsInInventory": [
@@ -63,7 +87,10 @@
       "observations": "Your capture tablet: the keys and passwords the test has recorded, each shown in full.",
       "minigameData": { "view": "captures", "landingPageId": "cm_captures" } },
     { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone",
-      "npcIds": ["ruth_phone"], "observations": "Your work phone, with Ruth a message away." }
+      "npcIds": ["ruth_phone"], "observations": "Your work phone, with Ruth a message away." },
+    { "type": "pc", "id": "kit_dropbox", "name": "Network drop box", "sprite": "pi_cluster1",
+      "takeable": true, "rogueDevice": true,
+      "observations": "A palm-sized network drop box from the kit, with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network." }
   ],
 
   "objectives": [
@@ -87,7 +114,7 @@
     "reception": {
       "type": "room_reception",
       "door_sign": "Reception",
-      "connections": {},
+      "connections": { "north": "comms" },
       "objects": [
         {
           "type": "pc",
@@ -291,6 +318,74 @@
           ]
         }
       ]
+    },
+    <%# B1: the comms cupboard. p3_patch_panel lists five ports (four jacked on three networks, one
+        unpatched). voice_port and guest_port are reached only through the panel (panelOf: no sprite,
+        no position); network_port and secured_port keep their sprites and are also listed. %>
+    "comms": {
+      "type": "room_lw_comms",
+      "door_sign": "Comms Cupboard",
+      "connections": { "south": "reception" },
+      "objects": [
+        {
+          "type": "notes", "id": "p3_patch_panel", "name": "Patch panel and comms cabinet",
+          "sprite": "comms_cabinet1", "position": { "x": 2, "y": 1 },
+          "takeable": false, "readable": false, "interactable": true, "active": true,
+          "observations": "A wall patch panel, the ports labelled by desk.",
+          "panelPorts": [
+            { "port": 1, "label": "D01", "desk": "Desk 1, data", "jack": "network_port" },
+            { "port": 2, "label": "V02", "desk": "Reception phone", "jack": "voice_port" },
+            { "port": 3, "label": "G03", "desk": "Guest meeting room", "jack": "guest_port" },
+            { "port": 4, "label": "M04", "desk": "Managed uplink", "jack": "secured_port" },
+            { "port": 5, "label": "D05", "desk": "Spare desk" }
+          ]
+        },
+        {
+          "type": "pc", "id": "network_port", "name": "Live wall network port",
+          "sprite": "network_rack1", "position": { "x": 1, "y": 3 },
+          "takeable": false, "interactable": true, "active": true,
+          "networkJack": true, "network": "office_lan", "plantedSprite": "pi_cluster1",
+          "linkName": "Drop box: comms cupboard",
+          "jackConfirm": "Plug the network drop box into this live port?",
+          "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+          "observations": "A live data port on the office network."
+        },
+        {
+          "type": "pc", "id": "secured_port", "name": "Managed wall network port",
+          "sprite": "hce_comms_cabinet1", "position": { "x": 3, "y": 3 },
+          "takeable": false, "interactable": true, "active": true,
+          "networkJack": true, "network": "office_lan", "portSecurity": true,
+          "portSecurityMessage": "The switch logs the drop box's address and shuts the port, so an unknown device gets no network.",
+          "jackConfirm": "Try the network drop box in this managed switch port?",
+          "requiresItemHint": "You would need the network drop box from your kit to try this port.",
+          "observations": "A wall port running to a managed switch with port security on."
+        },
+        {
+          "type": "pc", "id": "voice_port", "name": "Voice VLAN port",
+          "takeable": false, "interactable": true, "active": true,
+          "networkJack": true, "network": "lw_voice", "panelOf": "p3_patch_panel",
+          "linkName": "Drop box: voice VLAN port",
+          "jackConfirm": "Plug the network drop box into the patch panel's voice port?",
+          "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+          "observations": "A patch panel port patched through to the phones."
+        },
+        {
+          "type": "pc", "id": "guest_port", "name": "Guest VLAN port",
+          "takeable": false, "interactable": true, "active": true,
+          "networkJack": true, "network": "lw_guest", "panelOf": "p3_patch_panel",
+          "linkName": "Drop box: guest VLAN port",
+          "jackConfirm": "Plug the network drop box into the patch panel's guest port?",
+          "requiresItemHint": "You need the network drop box from your kit in hand to plant it on the port.",
+          "observations": "A patch panel port patched through to the guest network."
+        },
+        {
+          "type": "pc", "id": "lan_signin_pc", "name": "Back office PC", "host": "LW-PC-BACK",
+          "sprite": "pc_desktop", "position": { "x": 5, "y": 3 }, "network": "office_lan",
+          "takeable": false, "locked": true, "lockType": "login", "loginPicker": false,
+          "observations": "A sign-in host on the office network."
+        }
+      ],
+      "npcs": []
     }
   }
 }

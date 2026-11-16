@@ -33,12 +33,25 @@ export const PC_TASKBAR_ICONS = Object.freeze({
     desktop: `${ICONS}/pc-desktop.png`,
     lock: `${ICONS}/npc-lock.png`,
     switch: `${ICONS}/pc-switch-user.png`,
-    signout: `${ICONS}/pc-sign-out.png`
+    signout: `${ICONS}/pc-sign-out.png`,
+    // Keyring K3c: a relay desktop's one way out leaves as Sign out does
+    disconnect: `${ICONS}/pc-sign-out.png`
 });
 /** The share folder (26x18), as on the desktop. */
 export const PC_PLACE_SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
 
-const ACTION_LABELS = Object.freeze({ lock: 'Lock', switch: 'Switch user', signout: 'Sign out' });
+const ACTION_LABELS = Object.freeze({ lock: 'Lock', switch: 'Switch user', signout: 'Sign out', disconnect: 'Disconnect' });
+
+/**
+ * The relay desktop's lines (keyring K3c, plan 8.3 and 8.5; on-screen text, never voiced):
+ * the header, the account line (the claim bar's form) and the line where share folders would be.
+ */
+export const RELAY_HEADER_TEXT = 'Remote assist session';
+export const RELAY_NO_SHARES_TEXT = 'Shared drives are not mapped over remote assist.';
+export const RELAY_TAG_TEXT = 'Assist';
+/** The one-line message a relay desktop closes with after Disconnect. */
+export const RELAY_DISCONNECTED_TEXT = 'Disconnected';
+export const relayAccountText = (name, username) => `Using ${name || 'the account holder'}'s session${username ? ` (${username})` : ''}`;
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
@@ -106,7 +119,9 @@ export function credentialLineHtml(session) {
     return `${escapeHtml(displayDashes(lead))}<span class="credential-label-nowrap">${escapeHtml(displayDashes(label))}</span>`;
 }
 
-export function pcTaskbarModel({ pcData = null, session = null, remote = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
+export function pcTaskbarModel({ pcData = null, session = null, remote = false, relay = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
+    // A relay (an assist invite, K3c 8.3): the holder's own session, joined from the inventory
+    const isRelay = relay === true || session?.relay === true;
     const signIn = pcData?.lockType === 'login' || !!session;
     let account = null;
     if (signIn) {
@@ -117,6 +132,7 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
                 username: session.username || '',
                 npcId: session.npcId || null,
                 claimed: session.via === 'claim',
+                ...(isRelay ? { relay: true, relayLine: relayAccountText(session.displayName || session.username, session.username) } : {}),
                 // A keyring credential session names how it signed in (K3a 8.1)
                 ...(credentialSessionLine(session) ? { credentialLine: credentialSessionLine(session), credentialHtml: credentialLineHtml(session) } : {}),
                 // The picture's source from the server's session answer, so an NPC whose room is
@@ -129,13 +145,15 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         const du = desktopUserOf(pcData);
         if (du) account = { kind: 'desktopUser', name: du.name, character: du.character };
     }
-    const isRemote = !!remote || session?.remote === true;
+    const isRemote = !isRelay && (!!remote || session?.remote === true);
     // pcSessions.canLock is the one rule when the caller has it; without it the same test is made here
     const lockable = lockSupported && session?.guest !== true
         && (typeof canLock === 'boolean' ? canLock : session?.via === 'password');
     // Switch user needs the PC's desktop to come back to; a view with none (a reader reached
     // without the desktop this page load) does not offer it rather than do nothing (R1 m3)
-    const actions = signIn && session ? [...(lockable ? ['lock'] : []), ...(canSwitch ? ['switch'] : []), 'signout'] : [];
+    // A relay has one Disconnect in place of Lock, Switch user and Sign out (8.3)
+    const actions = !(signIn && session) ? []
+        : (isRelay ? ['disconnect'] : [...(lockable ? ['lock'] : []), ...(canSwitch ? ['switch'] : []), 'signout']);
     return {
         signIn,
         account,
@@ -143,7 +161,9 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         pcName: typeof pcData?.name === 'string' ? pcData.name : '',
         remote: isRemote,
         linkName: isRemote ? (linkName || 'your link') : null,
-        places: (Array.isArray(places) ? places : []).filter(p => p && p.id),
+        relay: isRelay,
+        // The server maps no share over a relay: none listed, and one line says why
+        places: isRelay ? [] : (Array.isArray(places) ? places : []).filter(p => p && p.id),
         actions
     };
 }
@@ -190,7 +210,7 @@ export function pcTaskbarHtml(model, { windowTitle = '', takeable = false } = {}
     return `<div class="pc-taskbar${takeable ? ' pc-taskbar-takeable' : ''}" role="toolbar" aria-label="Taskbar">
         <button type="button" class="pc-os-btn pc-start-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="pc-start-panel"><img class="pc-start-icon" src="${PC_TASKBAR_ICONS.start}" alt=""><span>Start</span></button>${win}
         <span class="pc-taskbar-spacer"></span>${account}
-        ${m.remote ? '<span class="pc-taskbar-remote">Remote</span>' : ''}<span class="pc-taskbar-host">${escapeHtml(displayDashes(m.host))}</span>
+        ${m.remote ? '<span class="pc-taskbar-remote">Remote</span>' : ''}${m.relay ? `<span class="pc-taskbar-remote pc-taskbar-relay">${RELAY_TAG_TEXT}</span>` : ''}<span class="pc-taskbar-host">${escapeHtml(displayDashes(m.host))}</span>
         ${takeable ? '<button class="minigame-button pc-take-btn" id="take-container-btn" aria-label="Take Container"><span class="pc-take-long" aria-hidden="true">Take Container</span><span class="pc-take-short" aria-hidden="true">Take</span></button>' : ''}
     </div>`;
 }
@@ -204,13 +224,17 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
             <span class="pc-headshot pc-start-headshot" aria-hidden="true"></span>
             <span class="pc-start-who">
                 <span class="pc-start-name">${escapeHtml(displayDashes(a.name))}</span>${a.kind === 'session' && a.username ? `
-                <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}${a.credentialLine ? `
+                <span class="pc-start-username">${escapeHtml(a.username)}</span>` : ''}${a.relayLine ? `
+                <span class="pc-start-relay">${escapeHtml(displayDashes(a.relayLine))}</span>` : ''}${a.credentialLine ? `
                 <span class="pc-start-credential">${a.credentialHtml || escapeHtml(displayDashes(a.credentialLine))}</span>` : ''}
             </span>
         </div>` : '';
     const lines = `<span class="pc-start-line pc-start-host">${escapeHtml(displayDashes(m.host))}</span>`
         + (m.pcName && m.pcName !== m.host ? `<span class="pc-start-line pc-start-pcname">${escapeHtml(displayDashes(m.pcName))}</span>` : '');
-    const remote = m.remote ? `<span class="pc-start-line pc-start-remote">Remote through ${escapeHtml(displayDashes(m.linkName))}</span>` : '';
+    const remote = m.remote ? `<span class="pc-start-line pc-start-remote">Remote through ${escapeHtml(displayDashes(m.linkName))}</span>`
+        : (m.relay ? `<span class="pc-start-line pc-start-remote pc-start-relay-header">${RELAY_HEADER_TEXT}</span>` : '');
+    const noShares = m.relay ? `
+            <span class="pc-start-line pc-start-noshares">${RELAY_NO_SHARES_TEXT}</span>` : '';
     const item = (attrs, icon, label, cls = '') => `
             <button type="button" role="menuitem" class="pc-start-item${cls}" ${attrs}><img class="pc-start-item-icon" src="${icon}" alt=""><span>${label}</span></button>`;
     const places = [item('data-place="desktop"', PC_TASKBAR_ICONS.desktop, 'Desktop')]
@@ -227,7 +251,7 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
         <div class="pc-start-section pc-start-places">
             <span class="pc-start-heading">Places</span>
             <div class="pc-start-places-list pixel-scroll">${places}
-            </div>
+            </div>${noShares}
             <div class="pc-start-more" hidden aria-hidden="true"><span class="pc-start-more-arrow"></span><span>${MORE_BELOW_TEXT}</span></div>
         </div>${actions}
     </div>`;

@@ -473,12 +473,11 @@ test('K3b: while a Connect runs the entry is greyed', () => {
     assert.equal(entries[0].reason, CONNECTING_TEXT);
 });
 
-test('K3b: the assist code keeps its tray slot with no Connect (K3c adds it)', () => {
+test('K3c: the assist code gets Connect from its keyring row and keeps its tray slot', () => {
     const w = { keyring: keyringWith([rdpEntry, assistEntry]) };
     const code = held({ id: 'jake_assist_code', type: 'text_file', name: 'Remote assist code (Jake)', text: 'Code 4471' });
-    assert.equal(connectMenuEntry(code, w), null);
-    assert.equal(inventoryMenuFor(code, { inventoryItems: items, dropBlocked: null, window: w }), null, 'its click is as before');
-    assert.equal(trayClickIsConnect(code, { inventoryItems: items, window: w }), false);
+    assert.deepEqual(connectMenuEntry(code, w), { id: 'connect', label: 'Connect' });
+    assert.equal(labels(inventoryMenuFor(code, { inventoryItems: items, dropBlocked: null, window: w }))[0], 'Connect');
     assert.ok(items.includes(code), 'still in the tray');
 });
 

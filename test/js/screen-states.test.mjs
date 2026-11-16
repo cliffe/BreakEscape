@@ -316,6 +316,25 @@ test('a password session held across the owner\'s leave keeps the base look, wit
     assert.deepEqual(ss.transitions, []);
 });
 
+test('K3c (3.8): a relay session held across the owner\'s leave does not keep the base look: the screen locks with its sound', () => {
+    const w = world({ objects: [pcA()] });
+    window.pcSessions = { get: () => ({ pcId: 'pc_a', via: 'credential', kind: 'assist_invite', relay: true }) };
+    const ss = new ScreenStates().install();
+    w.left('ann');
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked');
+    assert.deepEqual(w.played, [LOCK_SOUND]);
+    assert.deepEqual(ss.transitions.map(t => [t.locked, t.sound]), [[true, LOCK_SOUND]]);
+});
+
+test('K3c: only a relay is exempt from the held-session rule; a credential session without relay still keeps the base look', () => {
+    const w = world({ objects: [pcA()] });
+    window.pcSessions = { get: () => ({ pcId: 'pc_a', via: 'credential', relay: false }) };
+    new ScreenStates().install();
+    w.left('ann');
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop');
+    assert.deepEqual(w.played, []);
+});
+
 test('transitions keeps the last 50', () => {
     const w = world({ objects: [pcA()] });
     const ss = new ScreenStates().install();

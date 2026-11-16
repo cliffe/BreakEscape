@@ -952,6 +952,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     key_capture = { 'targetId' => 'staff_wifi_key', 'kind' => 'credential', 'secret' => STAFF_PSK }
     key_capture['proof'] = PLANT_PROOF.dup if psk_proof
     {
+      'startItemsInInventory' => [{ 'type' => 'kit', 'id' => 'kit_rogue_ap', 'name' => 'Rogue AP kit' }],
       'social' => { 'captures' => { 'revealSecret' => true } },
       'networks' => {
         'office_lan' => { 'name' => 'Office LAN segment', 'wifi' => { 'ssid' => 'LW-Staff-Secure', 'psk' => STAFF_PSK } },
@@ -1168,5 +1169,64 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     # A pre-change log serving Kieran's password before any plant: the old rule (served_npcs only)
     assert_empty plant_scan([inv_row, served_kieran], served_npcs: %w[kieran])
     assert_empty plant_scan([inv_row, chris], served_npcs: %w[chris])
+  end
+
+  # ---- R1 fixes ----
+
+  def no_on_scenario
+    data = pentest_scenario
+    data['rooms']['reception']['npcs'].find { |n| n['id'] == 'ruth' }['eventMappings'][0]['addCapture']['proof'] =
+      { 'planted' => 'kit_rogue_ap' }
+    data
+  end
+
+  test 'R1 m2: a planted proof with no on is order-checked against a plant on any non-jack object' do
+    data = no_on_scenario
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([served_psk, plant_row], data: data, game: ProofGame.new(true)))
+    assert_empty plant_scan([plant_row, served_psk], data: data, game: ProofGame.new(true))
+    # A plant on a jack is no plant for a proof with no on
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([plant_row(on: 'chris_jack'), served_psk], data: data))
+  end
+
+  test 'R2 m1: a remove of the kit on an object that does not take it is no plant for a proof with no on' do
+    data = no_on_scenario
+    data['rooms']['reception']['objects'] << { 'id' => 'decoy', 'type' => 'plant_spot', 'name' => 'Decoy', 'requiresItem' => 'kit_other' }
+    decoy = plant_row(on: 'decoy')
+    # The decoy remove comes first, the real plant after the served row: flagged
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([decoy, served_psk, plant_row], data: data, game: ProofGame.new(true)))
+  end
+
+  test 'R3 m2: a remove of the kit on a taker nested in a container is no plant for a proof with no on' do
+    data = no_on_scenario
+    data['rooms']['reception']['objects'] << { 'id' => 'cabinet', 'type' => 'safe', 'name' => 'Cabinet', 'contents' => [
+      { 'id' => 'nested_spot', 'type' => 'plant_spot', 'name' => 'Nested', 'requiresItem' => 'kit_rogue_ap',
+        'consumesItem' => true, 'triggerOnInteract' => [] }
+    ] }
+    nested = plant_row(on: 'nested_spot')
+    # The server records a plant on a top-level object only, so the nested remove is not the earliest plant
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([nested, served_psk, plant_row], data: data, game: ProofGame.new(true)))
+  end
+
+  test 'R1 m1: a holder with a plant proof and another kind is not passed unconditionally' do
+    data = pentest_scenario
+    kieran = data['rooms']['reception']['npcs'].find { |n| n['id'] == 'kieran' }
+    kieran['captureProof'] = [PLANT_PROOF.dup, { 'session' => 'hot_desk_pc' }]
+    # Only the plant held (the stand-in game answers per proof kind): the session proof fails now,
+    # and the plant row comes after the served row, so he is flagged
+    game = Class.new(ProofGame) { def capture_proof_holds?(proof); proof.key?('planted'); end }.new(true)
+    assert_equal [[1, 'password', 'npc:kieran']],
+                 summary(plant_scan([served_kieran, plant_row], data: data, game: game, served_npcs: %w[kieran]))
+    # With the session proof holding, it is clean
+    assert_empty plant_scan([served_kieran, plant_row], data: data, game: ProofGame.new(true), served_npcs: %w[kieran])
+  end
+
+  test 'R1 t1: a tagged remove with a used_on but no item id makes the log unverifiable' do
+    unreadable = inv_row(inv: { 'action' => 'remove', 'itemId' => nil, 'usedOn' => 'rogue_ap_spot' })
+    assert_equal [[3, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([other_inv_row, unreadable, served_psk], game: ProofGame.new(true)))
   end
 end

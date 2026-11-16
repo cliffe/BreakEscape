@@ -755,6 +755,60 @@ test('a Wi-Fi key only in set member posts warns about timing; on an own post ou
     assert.ok(!w.some(s => s.includes('psk appears')), w.join('\n'));
 });
 
+// ---- Patch panel: panelOf / panelPorts (Pentest B1, E0.4) ----
+function panelScenario(mutate) {
+    const s = {
+        startRoom: 'r1',
+        networks: { office_lan: { name: 'LAN' }, lw_voice: { name: 'Voice' } },
+        rooms: { r1: { type: 'room_office', objects: [
+            { id: 'panel', type: 'table', name: 'Patch panel', interactable: true,
+              panelPorts: [{ port: 1, label: 'D01', desk: 'Desk 1', jack: 'lan_port' }, { port: 2, label: 'V02', desk: 'Phone', jack: 'voice_port' }, { port: 3, label: 'D03', desk: 'Spare' }] },
+            { id: 'lan_port', type: 'table', name: 'LAN port', networkJack: true, network: 'office_lan' },
+            { id: 'voice_port', name: 'Voice port', networkJack: true, network: 'lw_voice', panelOf: 'panel' }
+        ] } }
+    };
+    if (mutate) mutate(s.rooms.r1.objects);
+    return s;
+}
+test('panelOf: a well-formed panel raises no panel error', () => {
+    const list = errors(issues(panelScenario()));
+    assertNot(list, 'panelOf');
+    assertNot(list, 'panelPorts');
+});
+test('panelOf: names no object in the room', () => {
+    assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'nope'; }))), "has panelOf 'nope'");
+});
+test('panelOf: the panel does not list the jack', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts.splice(1, 1); }))), 'does not list it in panelPorts');
+});
+test('panelOf: a sprite or a position is refused', () => {
+    assertHas(errors(issues(panelScenario(o => { o[2].sprite = 'x'; }))), 'a panel port has no sprite');
+    assertHas(errors(issues(panelScenario(o => { o[2].x = 4; }))), 'a panel port has none');
+});
+test('panelPorts: an entry names a missing jack, a non-jack, or a jack for another panel', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[0].jack = 'ghost'; }))), "jack 'ghost'");
+    assertHas(errors(issues(panelScenario(o => { delete o[1].networkJack; }))), 'not a networkJack');
+    assertHas(errors(issues(panelScenario(o => { o[2].panelOf = 'lan_port'; o[1].panelPorts = []; }))), 'panelOf names');
+});
+test('panelPorts: a repeated port number or the same jack listed twice is an error', () => {
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[1].port = 1; }))), 'lists port 1 more than once');
+    assertHas(errors(issues(panelScenario(o => { o[0].panelPorts[2].jack = 'lan_port'; }))), "lists jack 'lan_port' more than once");
+    assertNot(errors(issues(panelScenario())), 'more than once');
+});
+test('panelOf: a panel port that is not a networkJack is refused, and the texture message names sprite only', () => {
+    const list = errors(issues(panelScenario(o => { delete o[2].networkJack; })));
+    assertHas(list, 'has panelOf but is not a networkJack');
+    assertNot(errors(issues(panelScenario(o => { o[2].sprite = 'x'; }))), "'sprite' or 'type'");
+});
+test('the full validator reports no unknown errors on test_access_devices', () => {
+    const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/test_access_devices/scenario.json.erb', '--skip-ink', '--no-graph'], {
+        cwd: root, encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr + r.stdout.slice(-2000));
+    // Known errors (scripts/validator_known_failures.json, e.g. the rogue_ap sprite awaiting A3 art) are allowed.
+    assert.match(r.stdout, /Result: (0 errors|(\d+) errors \(\2 known\))/);
+});
+
 // ---- E0.4: the Wi-Fi key as a capture secret ----
 
 const KEY = 'quiet-harbour-77';
@@ -763,6 +817,7 @@ const KEY = 'quiet-harbour-77';
 function keyCaptureScenario(proof) {
     const sc = wifiClean();
     sc.networks.guest_wifi.wifi.psk = KEY;
+    sc.social = { captures: { revealSecret: true } };
     room(sc, 'lobby').objects = room(sc, 'lobby').objects.filter(o => o.id !== 'wifi_note');
     room(sc, 'lobby').objects.push(
         { id: 'kit_ap', type: 'usb', name: 'Pocket AP', takeable: true },
@@ -778,6 +833,24 @@ test('E0.4: a key with a satisfiable proof-carrying capture writer counts as rea
     assertNot(warnings(list), 'appears nowhere the player can read');
 });
 
+test('R3 m2: a key whose plant site is nested in a container is still unreadable', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    const lobby = room(sc, 'lobby');
+    const spot = lobby.objects.find(o => o.id === 'ap_spot');
+    lobby.objects = lobby.objects.filter(o => o !== spot);
+    lobby.objects.push({ id: 'cabinet', type: 'safe', name: 'Cabinet', contents: [spot] });
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R3 m1: a key writer with kind foothold, or a whitespace targetId, is never served, so it still warns', { skip }, () => {
+    let sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.kind = 'foothold';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+    sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.targetId = '  ';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
 test('E0.4: a key with no capture writer is still unreadable', { skip }, () => {
     const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
     room(sc, 'lobby').npcs = (room(sc, 'lobby').npcs || []).filter(n => n.id !== 'hax');
@@ -787,6 +860,32 @@ test('E0.4: a key with no capture writer is still unreadable', { skip }, () => {
 test('E0.4: a key whose capture proof cannot be satisfied is still unreadable', { skip }, () => {
     const list = issues(keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' }));
     assertHas(warnings(list), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer is not served when social.captures.revealSecret is off, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    delete sc.social.captures.revealSecret;
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer addressed to an account username is not served, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.push({ id: 'ann', npcType: 'person', creds: { username: 'ann.b', password: 'Ann-Pass-901' } });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').eventMappings[0].addCapture.address = 'Ann.B';
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: a key writer owned by an account holder is not served, so it still warns', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'ap_spot' });
+    room(sc, 'lobby').npcs.find(n => n.id === 'hax').creds = { username: 'hax.h', password: 'Hax-Pass-902' };
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
+});
+
+test('R1 M1: only the first writer of a target id is served', { skip }, () => {
+    const sc = keyCaptureScenario({ planted: 'kit_ap', on: 'no_such_object' });
+    room(sc, 'lobby').npcs.push({ id: 'hax2', npcType: 'phone', eventMappings: [{ eventPattern: 'r',
+        addCapture: { targetId: 'staff_wifi_key', kind: 'credential', secret: KEY, proof: { planted: 'kit_ap', on: 'ap_spot' } } }] });
+    assertHas(warnings(issues(sc)), 'appears nowhere the player can read');
 });
 
 test('E0.4: a key writer with no proof is a warning (the server never serves it)', { skip }, () => {

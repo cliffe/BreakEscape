@@ -21,7 +21,7 @@
  * The find toasts (plan 8.2, part B): the first answer with no screen (the page-start prime, or
  * the first later one when the prime failed) is the baseline. After it, each no-screen answer
  * is diffed against the previous one, and registry entries new since then give one toast
- * (`findToastText`). Captures, assist invites (until K3c) and other kinds stay silent; a password
+ * (`findToastText`). Captures and other kinds stay silent; a password
  * in a file waits until its file is opened here. While a conversation is open (an NPC give) the
  * toast is held until it closes. The asks come from `listen()`: a sign-in once its desktop has
  * opened, a tray change, a plant, implant or Wi-Fi join (network_foothold_gained), and
@@ -50,8 +50,8 @@ export function entryTagKind(entry) {
     return typeof entry.kind === 'string' ? entry.kind : null;
 }
 
-/** The kinds Connect runs for. K3c adds 'assist_invite' here, with its relay route in connectRoute. */
-export const CONNECT_KINDS = ['saved_connection'];
+/** The kinds Connect runs for: a saved connection by a foothold, an assist invite (K3c) by the relay. */
+export const CONNECT_KINDS = ['saved_connection', 'assist_invite'];
 
 /** How long Connect waits for its screen to appear before it gives up watching for the close. */
 export const RETURN_TO_OPEN_WAIT_MS = 3000;
@@ -59,14 +59,14 @@ export const RETURN_TO_POLL_MS = 250;
 
 /**
  * The route Connect signs in by (plan 8.2 step 8): K4's `from` first, then footholds, then
- * (K3c) the relay. Today only a foothold route is built, so the other two are skipped.
+ * the relay (K3c, an assist invite only). K4's `from` is not built yet, so it is skipped.
  */
 export function connectRoute(entry) {
     const routes = Array.isArray(entry?.routes) ? entry.routes : [];
     // K4: a { from } route goes first here, once pc-sessions can post it
     const foothold = routes.find(r => r && typeof r.foothold === 'string' && r.foothold);
     if (foothold) return { foothold: foothold.foothold };
-    // K3c: { relay: true } for an assist_invite goes here
+    if (entry.kind === 'assist_invite' && routes.some(r => r && r.relay === true)) return { relay: true };
     return null;
 }
 
@@ -78,6 +78,15 @@ export const PRIME_RETRIES = 3;
 export const PRIME_RETRY_MS = 5000;
 // A background ask that has not answered by then is given up on, so the chain moves on (R2 t1)
 export const ASK_TIMEOUT_MS = 15000;
+
+/** Waits for `promise` until `deadline` (ms since the epoch; 0 waits as long as it takes). */
+function beforeDeadline(promise, deadline) {
+    if (!(deadline > 0)) return Promise.resolve(promise);
+    let timer;
+    const left = Math.max(0, deadline - Date.now());
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => { const err = new Error('timed out'); err.deadlineHit = true; reject(err); }, left); });
+    return Promise.race([Promise.resolve(promise), timeout]).finally(() => clearTimeout(timer));
+}
 
 export class Keyring {
     constructor() {
@@ -96,6 +105,11 @@ export class Keyring {
         // (null until the baseline), the files waiting entries are found in, the finds held for
         // an open conversation, and the PCs signed in whose desktop has not opened yet
         this._findIds = null;
+        // Every find id this page has seen past the baseline or toasted, with the tray item it
+        // is held by (null for none). An id leaves only once it is missing from an answer AND its
+        // tray item is out of the tray, so an answer that briefly lacks an entry (a reconnect,
+        // a sync race) never toasts it again, while dropping and retaking a file still does.
+        this._announced = new Map();
         // Background asks: each is numbered when sent, and an answer older than one already
         // applied is dropped (R1 m1). `_queued` is the ask not yet sent, which later triggers
         // join; `_running` is the chain, so asks go out one at a time.
@@ -110,6 +124,8 @@ export class Keyring {
         this._held = [];
         this._holdTimer = null;
         this._signedInPcs = new Set();
+        // The prompt-end trigger (8.3): armed while a relay session is held, else null
+        this._relaySync = null;
     }
 
     /** An item opened in this page (container-minigame's file hooks call this). */
@@ -160,7 +176,7 @@ export class Keyring {
      * GET /keyring for a screen. Resolves to the entries; throws when the request fails, and
      * when the answer is unusable, so the caller shows the "could not be loaded" line.
      */
-    async fetch(pcId, { foothold, primed = false, timeoutMs = 0 } = {}) {
+    async fetch(pcId, { foothold, primed = false, timeoutMs = 0, deadline = 0 } = {}) {
         const api = typeof window !== 'undefined' ? (window.ApiClient || window.APIClient) : null;
         if (!api?.keyring) throw new Error('keyring not available');
         const key = Keyring.cacheKey(pcId, { foothold });
@@ -173,12 +189,17 @@ export class Keyring {
             if (!primed || this.firstAnswerIds !== null || !Array.isArray(answer?.entries)) return;
             this.firstAnswerIds = new Set(answer.entries.filter(e => e && typeof e.id === 'string').map(e => e.id));
         };
+        // One deadline for the whole fetch, the no-rev retry included (R3 t2): a caller's
+        // `deadline` (refresh's, which also covers the sync PUT) or now plus `timeoutMs`
+        const until = deadline > 0 ? deadline : (timeoutMs > 0 ? Date.now() + timeoutMs : 0);
         const ask = (opts) => {
-            if (!(timeoutMs > 0)) return api.keyring(pcId, opts);
+            if (!(until > 0)) return api.keyring(pcId, opts);
+            const left = until - Date.now();
+            if (left <= 0) return Promise.reject(new Error('keyring ask timed out'));
             const ctl = typeof AbortController === 'function' ? new AbortController() : null;
             let timer;
             const timeout = new Promise((_, reject) => {
-                timer = setTimeout(() => { try { ctl?.abort(); } catch (e) { /* none */ } reject(new Error('keyring ask timed out')); }, timeoutMs);
+                timer = setTimeout(() => { try { ctl?.abort(); } catch (e) { /* none */ } reject(new Error('keyring ask timed out')); }, left);
             });
             return Promise.race([api.keyring(pcId, ctl ? { ...opts, signal: ctl.signal } : opts), timeout])
                 .finally(() => clearTimeout(timer));
@@ -250,12 +271,52 @@ export class Keyring {
         this._listening = d;
         d.on('inventory_changed', (data) => this.trayChanged(data?.items));
         // A sign-in asks once its desktop has opened (a desktop reopened on a held session does not)
-        d.on('pc_signed_in', (data) => { if (data?.pcId) this._signedInPcs.add(data.pcId); });
+        d.on('pc_signed_in', (data) => {
+            if (data?.pcId) this._signedInPcs.add(data.pcId);
+            if (data?.relay === true) this.armRelaySync();
+        });
+        d.on('pc_signed_out', () => this.relaySyncCheck());
         d.on('pc_desktop_opened', (data) => { if (data?.pcId && this._signedInPcs.delete(data.pcId)) this.refresh(); });
         // A plant, an implant and a Wi-Fi join each emit this once
         d.on('network_foothold_gained', () => this.refresh());
         d.on('conversation_closed:*', () => this.releaseHeld());
         return true;
+    }
+
+    /**
+     * The prompt-end trigger (plan 8.3): while a relay session is held, any global change asks
+     * stateSync.sync() at once, so an end global (the holder ending the assist) reaches the
+     * server within a second or so, not at the next 30 s sync. The answer's endedRelayPcIds
+     * then closes the relay desktop (pc-sessions.js). Idempotent; it disarms once no relay
+     * session is held (a sign-out, or the first change after the last relay has gone).
+     */
+    armRelaySync() {
+        const d = typeof window !== 'undefined' ? window.eventDispatcher : null;
+        if (!d || typeof d.on !== 'function') return false;
+        if (this._relaySync?.dispatcher === d) return true;
+        this.disarmRelaySync();
+        const fn = (data) => {
+            if (!this.relaySyncCheck()) return;
+            if (data && 'oldValue' in data && data.value === data.oldValue) return;
+            try { window.stateSync?.sync?.(); } catch (e) { /* the 30 s sync still runs */ }
+        };
+        d.on('global_variable_changed:*', fn);
+        this._relaySync = { dispatcher: d, fn };
+        return true;
+    }
+
+    disarmRelaySync() {
+        const r = this._relaySync;
+        if (!r) return;
+        this._relaySync = null;
+        try { r.dispatcher.off?.('global_variable_changed:*', r.fn); } catch (e) { /* gone */ }
+    }
+
+    /** True while a relay session is held; disarms the trigger once none is. */
+    relaySyncCheck() {
+        const held = typeof window !== 'undefined' && window.pcSessions?.hasRelay?.() === true;
+        if (!held) this.disarmRelaySync();
+        return held;
     }
 
     /**
@@ -273,6 +334,9 @@ export class Keyring {
         this._trayIds = ids;
         if (before) {
             const now = new Set(list);
+            // The entry goes with its item: forget it now, so a drop and a quick retake before the
+            // answer returns still toasts (K3c R1 m1). The answer-side check is the backstop.
+            for (const [id, item] of this._announced) if (item && before.has(item) && !now.has(item)) this._announced.delete(id);
             const added = list.some(id => !before.has(id));
             const held = new Set(this.latest.map(e => e?.heldItem).filter(Boolean));
             const removedHeld = [...before].some(id => !now.has(id) && held.has(id));
@@ -289,8 +353,13 @@ export class Keyring {
         const ask = after.then(async () => {
             // First, so a trigger that arrives during the sync PUT builds a later ask that carries its change (R2 m1a)
             this._queued = null;
-            try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
-            try { return await this.fetch(null, { timeoutMs: this.askTimeoutMs }); } catch (e) { return null; }
+            // One cap for the sync PUT and the GET together (R3 t1): a PUT that never answers
+            // cannot hold the chain, and the GET gets only what the PUT left of it
+            const deadline = this.askTimeoutMs > 0 ? Date.now() + this.askTimeoutMs : 0;
+            // A PUT that spent the whole cap gives up with no GET (K3c R2 t1): the timer can fire a
+            // millisecond early, and a GET sent with that sliver left could still beat its own timeout
+            try { await beforeDeadline(window.stateSync?.syncConfirmed?.(), deadline); } catch (e) { if (e?.deadlineHit) return null; /* any other failure: ask anyway */ }
+            try { return await this.fetch(null, { deadline }); } catch (e) { return null; }
         });
         this._queued = ask;
         this._running = ask;
@@ -322,7 +391,15 @@ export class Keyring {
                 continue;
             }
             known.add(e.id);
-            if (this._findIds !== null && !this._findIds.has(e.id) && findKindToasts(e)) fresh.push(e);
+            if (this._findIds !== null && !this._announced.has(e.id) && findKindToasts(e)) fresh.push(e);
+            // Keep the known tray item when a later answer omits it (K3c R1 m2). A find with no
+            // tray item (a non-held kind) is never forgotten: it toasts once per page.
+            this._announced.set(e.id, (typeof e.heldItem === 'string' && e.heldItem ? e.heldItem : null) || this._announced.get(e.id) || null);
+        }
+        // Forget an id only when its tray item has left the tray (an unknown tray keeps it)
+        const tray = this._trayIds === null ? null : new Set(this._trayIds ? this._trayIds.split('|') : []);
+        for (const [id, item] of this._announced) {
+            if (!known.has(id) && item && tray && !tray.has(item)) this._announced.delete(id);
         }
         this._findIds = known;
         this._waitingFor = waitingFor;
@@ -333,7 +410,9 @@ export class Keyring {
     /** One toast for these finds now, or held while a conversation is open. */
     announceFinds(entries) {
         if (inConversation()) {
-            this._held.push(...entries);
+            // One held line per id, however many answers named it
+            const heldIds = new Set(this._held.map(e => e.id));
+            for (const e of entries) if (!heldIds.has(e.id)) { heldIds.add(e.id); this._held.push(e); }
             if (!this._holdTimer) {
                 this._holdTimer = setInterval(() => { if (!inConversation()) this.releaseHeld(); }, FIND_HOLD_POLL_MS);
             }
@@ -345,7 +424,12 @@ export class Keyring {
     /** The conversation closed: the held finds as one toast. */
     releaseHeld() {
         if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
-        const held = this._held;
+        // A held find is dropped only once forgotten (its tray item left the tray); an answer that
+        // briefly lacks it keeps it (K3c R1 M1). With no tray change seen yet (_trayIds null) no
+        // client drop can have happened, so every held find shows (part A R2 m1). A find with no
+        // heldItem is never forgotten, so it shows even if the latest answer dropped it (a
+        // password is knowledge and is not revoked).
+        const held = this._trayIds !== null ? this._held.filter(e => this._announced.has(e.id)) : this._held;
         this._held = [];
         return held.length ? this.showFinds(held) : Promise.resolve(null);
     }
@@ -420,8 +504,18 @@ export class Keyring {
         const displayName = entry.account?.displayName || entry.account?.username || null;
         if (entry.ended === true) return toast(t.endedAssistMessage(displayName), 'ended');
         if (entry.targetOff === true) return toast(t.notRespondingMessage(host), 'target_off');
-        if (entry.sessionHeld === true) {
-            const held = w.pcSessions?.get?.(pcId);
+        const held = w.pcSessions?.get?.(pcId);
+        // A server-held relay with no mirrored copy (after a reload, or a dropped local copy)
+        // has nothing to open: it falls through to sign in again by the relay below, which
+        // replaces the identical record server-side (R1 M1)
+        const relayLost = entry.sessionHeld === true && !held && connectRoute(entry)?.relay === true;
+        if (entry.sessionHeld === true && !relayLost) {
+            if (held?.relay === true) {
+                // Re-entry to a relay session is by Connect only (8.3)
+                w.openRelayDesktop?.(pcId);
+                this.armRelaySync();
+                return opened('session_held', { relay: true });
+            }
             const foothold = held?.footholdId || connectRoute(entry)?.foothold || null;
             w.openRemoteDesktop?.(pcId, foothold);
             return opened('session_held', { foothold });
@@ -434,7 +528,12 @@ export class Keyring {
         const result = await w.pcSessions.signInWithCredential(pcId, entry.id, route);
         if (result?.ok) {
             // signInWithCredential has already handed any endedPcIds to linkDropped (route_ended)
-            w.openRemoteDesktop?.(pcId, route.foothold);
+            if (route.relay === true) {
+                this.armRelaySync();
+                w.openRelayDesktop?.(pcId);
+            } else {
+                w.openRemoteDesktop?.(pcId, route.foothold);
+            }
             if (this.teachOnce(entry.kind)) {
                 const line = t.teachLine(entry.kind, { displayName });
                 if (line) { try { w.gameAlert?.(line, 'info', '', 8000, { plainText: true, whole: true }); } catch (e) { /* none */ } }
@@ -468,7 +567,8 @@ export class Keyring {
             });
             return opened('signin_screen', { reason });
         }
-        // K3c: an assist invite's kind_refused or ended maps to 8.5's toast here
+        // An assist invite's kind_refused ("{host} does not allow remote assistance.") and ended
+        // ("{displayName} ended the remote assist.") are 8.5's toasts here; there is no relay screen
         const line = t.credentialRefusalLine(reason, { host, label: data.name, displayName, kind: result?.kind || entry.kind });
         return toast(line || t.CONNECT_FAILED_TEXT, reason || 'refused');
     }
@@ -515,8 +615,8 @@ export class Keyring {
     }
 }
 
-/** The kinds with a find toast today (K3c adds 'assist_invite'); a capture is always silent. */
-export const FIND_KINDS = ['saved_connection', 'password'];
+/** The kinds with a find toast; a capture is always silent. */
+export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite'];
 // The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
     return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);

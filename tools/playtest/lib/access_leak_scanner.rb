@@ -183,6 +183,7 @@ class AccessLeakScanner
     @capture_secret_proofs = Hash.new { |h, k| h[k] = [] }
     # E0.3: the log's plant rows, filled by prepare_plant_rows at the start of each scan
     @plant_rows = {}
+    @plant_rows_any = {}
     @log_mode = :pre
     @untagged_remove = false
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
@@ -231,6 +232,12 @@ class AccessLeakScanner
     @object_by_id = BreakEscape::AccessIdentities.room_objects(@data).each_with_object({}) do |e, h|
       id = e[:object]['id']
       h[id.to_s] ||= e[:object] if id.is_a?(String) && !id.empty?
+    end
+    # A plant is recorded only on a top-level room object (CaptureProofs#planted_target_object),
+    # so the plant lookup ignores objects nested in contents or an NPC's itemsHeld.
+    @plant_object_by_id = BreakEscape::CaptureModel.top_level_room_objects(@data).each_with_object({}) do |o, h|
+      id = o['id']
+      h[id.to_s] ||= o if id.is_a?(String) && !id.empty?
     end
     collect_items
     collect_network_secrets
@@ -1589,6 +1596,7 @@ class AccessLeakScanner
   # Rows are indexed in the order given, every file in argument order, DOM rows included.
   def prepare_plant_rows(lines)
     @plant_rows = {}
+    @plant_rows_any = {}
     rows = []
     lines.each_with_index do |(_source, _line_no, row), index|
       next unless row.is_a?(Hash) && !row.key?('dom')
@@ -1607,9 +1615,23 @@ class AccessLeakScanner
 
       inv = row['inv']
       if inv.is_a?(Hash)
-        next unless inv['action'] == 'remove' && inv['itemId'].is_a?(String) && inv['usedOn'].is_a?(String)
+        next unless inv['action'] == 'remove' && inv['usedOn'].is_a?(String)
+
+        # A remove naming an object but no readable item id may have been the plant (t1)
+        unless inv['itemId'].is_a?(String)
+          @untagged_remove = true
+          next
+        end
 
         @plant_rows[[inv['itemId'], inv['usedOn']]] ||= index
+        # The earliest plant of the item on any non-jack object, for a proof with no `on` (m2)
+        used = @plant_object_by_id[inv['usedOn']]
+        # and only an object that takes the item records a plant: the server refuses the rest
+        # (object_takes_item?), so a remove on a decoy object is no plant (R2 m1)
+        if used.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(used) &&
+           BreakEscape::CaptureModel.object_takes_item?(used, BreakEscape::CredentialModel.item_definition(@data, inv['itemId']))
+          @plant_rows_any[inv['itemId']] ||= index
+        end
       elsif tagged
         # A remove row whose body the recorder could not read may have been the plant. Untagged
         # rows carry no action, so any 200 row with a null or missing tag counts as one
@@ -1618,12 +1640,14 @@ class AccessLeakScanner
     end
   end
 
-  # A planted proof on a room object that is no network jack: the only plant sent as a POST
-  # /inventory remove with used_on, so the only one the log can order
+  # A planted proof on a room object that is no network jack, or with no `on` (met only by a
+  # non-jack plant): the only plants sent as a POST /inventory remove with used_on, so the only
+  # ones the log can order
   def order_checked_plant?(proof)
     return false unless BreakEscape::CaptureModel.proof_kind(proof) == 'planted'
 
     on = proof['on']
+    return true if on.nil?
     return false unless on.is_a?(String) && !on.empty?
 
     obj = @object_by_id[on]
@@ -1638,7 +1662,7 @@ class AccessLeakScanner
     return true if @log_mode == :pre
 
     final = @game.nil? || @game.capture_proof_holds?(proof)
-    at = @plant_rows[[proof['planted'], proof['on']]]
+    at = proof['on'].nil? ? @plant_rows_any[proof['planted']] : @plant_rows[[proof['planted'], proof['on']]]
     return at < index && final if at
     return false if @untagged_remove || @game.nil?
 
@@ -1662,7 +1686,7 @@ class AccessLeakScanner
 
   # An account password on a capture route, for an NPC whose proofs include an order-checked
   # plant: one of its proofs must have held before the row, a plant by plant_held_before? and
-  # any other kind by the served_npcs check the caller already made. Other NPCs pass as before.
+  # any other kind by the final state with a game, as the capture secret route does (R1 m1). Other NPCs pass as before.
   def account_proof_held_before?(npc_id, index)
     npc = each_room_npc.find { |n| n['id'].to_s == npc_id }
     return true unless npc
@@ -1670,7 +1694,11 @@ class AccessLeakScanner
     proofs = BreakEscape::CaptureModel.proofs_for(npc, @data)
     return true unless proofs.any? { |proof| order_checked_plant?(proof) }
 
-    proofs.any? { |proof| order_checked_plant?(proof) ? plant_held_before?(proof, index) : true }
+    proofs.any? do |proof|
+      if order_checked_plant?(proof) then plant_held_before?(proof, index)
+      else @game.nil? || @game.capture_proof_holds?(proof)
+      end
+    end
   end
 
   def scan_network_strings(body, ctx, add)

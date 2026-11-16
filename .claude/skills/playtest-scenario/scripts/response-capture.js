@@ -82,10 +82,12 @@ function inventoryTag(request, url = null) {
   try { parsed = JSON.parse(data); } catch { return null; }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
   const str = v => (typeof v === 'string' && v ? v : null);
-  const action = str(parsed.action_type) || str(parsed.actionType);
+  // Rails `a || b` keeps an empty string (it is truthy), so only null, undefined and false fall through
+  const rails = (a, b) => (a === undefined || a === null || a === false ? b : a);
+  const action = str(rails(parsed.action_type, parsed.actionType));
   const item = parsed.item && typeof parsed.item === 'object' ? parsed.item : null;
   const itemId = item ? (str(item.id) || null) : null;
-  const usedOn = str(parsed.used_on) || str(parsed.usedOn);
+  const usedOn = str(rails(parsed.used_on, parsed.usedOn));
   return { action, itemId, usedOn };
 }
 
