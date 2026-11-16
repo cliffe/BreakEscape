@@ -4,7 +4,7 @@
 //
 // playtest-session.js turns it on with --capture-responses <file>. Each line is
 //
-//   { n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, [npcId], body }
+//   { n, t, method, path, [query], status, cmdSeq, cmd, cmdActive, [npcId], [inv], body }
 //
 // where `body` is the parsed JSON (or `bodyText` when it does not parse, or
 // `bodyError` when the browser no longer holds it), and cmdSeq is the session
@@ -18,6 +18,16 @@
 // body was lost to the right NPC; it is left out when the request body is
 // missing, not JSON or names no NPC, or when the URL's query names an `npc_id`
 // too.
+//
+// Every POST /inventory line carries `inv`: { action, itemId, usedOn } read from
+// the request body (the controller's action_type or actionType, item.id, and
+// used_on or usedOn; a missing field is null), so the leak scanner can find the
+// plant row (PHYSICAL_PENTEST_DEVICES_PLAN.md E0.3). `inv` is null when the
+// body cannot be read (postData() is null, throws or is not a JSON object) or
+// when the URL's query names a field the controller reads (action_type,
+// actionType, item, used_on, usedOn): Rails lets the query beat the body, so
+// the tagger declines. A null `inv` on a remove row tells the scanner the row
+// may have been a plant it cannot read.
 //
 // Only responses from the game's own origin, with a JSON content type, count;
 // static files (/js/, /css/, /assets/, /stylesheets/) and redirects are skipped.
@@ -51,6 +61,34 @@ function feedPostNpcId(request, url = null) {
   try { parsed = JSON.parse(data); } catch { return null; }
   const id = parsed && typeof parsed === 'object' ? parsed.npc_id : null;
   return typeof id === 'string' && id.trim() ? id : null;
+}
+
+// Request fields the controller's POST /inventory reads (games_controller.rb, inventory):
+// a URL query naming any of them may override the body, so the tagger declines.
+const INVENTORY_QUERY_RE = /(^|[?&;])(action_type|actionType|item|used_on|usedOn)(\[|=|&|;|$)/;
+
+/**
+ * The `inv` tag of a POST /inventory row: { action, itemId, usedOn }, or null when the request
+ * body cannot be read or the URL's query names a field the controller reads. Never throws.
+ */
+function inventoryTag(request, url = null) {
+  try {
+    if (url && INVENTORY_QUERY_RE.test(decodeURIComponent(url.search))) return null;
+  } catch { return null; }
+  let data;
+  try { data = request.postData(); } catch { return null; }
+  if (typeof data !== 'string' || !data) return null;
+  let parsed;
+  try { parsed = JSON.parse(data); } catch { return null; }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const str = v => (typeof v === 'string' && v ? v : null);
+  // Rails `a || b` keeps an empty string (it is truthy), so only null, undefined and false fall through
+  const rails = (a, b) => (a === undefined || a === null || a === false ? b : a);
+  const action = str(rails(parsed.action_type, parsed.actionType));
+  const item = parsed.item && typeof parsed.item === 'object' ? parsed.item : null;
+  const itemId = item ? (str(item.id) || null) : null;
+  const usedOn = str(rails(parsed.used_on, parsed.usedOn));
+  return { action, itemId, usedOn };
 }
 
 function isJsonContentType(headers) {
@@ -106,6 +144,10 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
     if (w.url.pathname.endsWith('/feed_post')) {
       try { npcId = feedPostNpcId(response.request(), w.url); } catch { /* left out */ }
     }
+    let inv;
+    if (method === 'POST' && w.url.pathname.endsWith('/inventory')) {
+      try { inv = inventoryTag(response.request(), w.url); } catch { inv = null; }
+    }
     // Start reading the body at once: a navigation can drop it later.
     const bodyP = Promise.resolve()
       .then(() => response.text())
@@ -116,6 +158,7 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
                      cmdSeq: snapshot.cmdSeq, cmd: snapshot.cmd, cmdActive: snapshot.cmdActive };
       if (w.url.search) line.query = w.url.search.slice(1);
       if (npcId) line.npcId = npcId;
+      if (inv !== undefined) line.inv = inv;
       if (got.error !== undefined) {
         line.bodyError = got.error;
       } else {
@@ -132,4 +175,4 @@ function createResponseCapture({ file, origin, now = () => new Date() }) {
   return { onResponse, startCommand, endCommand, flush, get count() { return count; }, file };
 }
 
-module.exports = { createResponseCapture, isJsonContentType, feedPostNpcId };
+module.exports = { createResponseCapture, isJsonContentType, feedPostNpcId, inventoryTag };
