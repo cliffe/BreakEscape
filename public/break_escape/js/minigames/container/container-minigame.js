@@ -10,9 +10,47 @@ import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
-import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData } from '../../utils/pc-taskbar.js';
+import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
 
+
+/**
+ * The route a folder under a sign-in PC names (keyring K3c, K2 m4): relay=1 for a relay
+ * session, foothold= for a remote one, nothing at the keyboard (no-route folder opens under
+ * a foothold session keep today's rule on the server). pcId is the folder's source PC.
+ */
+export function folderRouteQuery(pcId, sessions = (typeof window !== 'undefined' ? window.pcSessions : null)) {
+    if (!pcId) return '';
+    const s = sessions?.get?.(pcId);
+    if (!s) return '';
+    if (s.relay === true) return '?relay=1';
+    if (s.remote === true && s.footholdId) return `?foothold=${encodeURIComponent(s.footholdId)}`;
+    return '';
+}
+
+/** "{displayName} ended the remote assist.", from pc-sessions.js (K3c, 8.3). */
+function relayEndedText(displayName) {
+    const line = typeof window !== 'undefined' ? window.pcSessions?.relayEndedLine?.(displayName) : null;
+    return line || 'Signed out';
+}
+
+/**
+ * A relay desktop's header block (K3c, 8.3): "Remote assist session", the account in the claim
+ * bar's form, one Disconnect in place of Switch user and Sign out, no link line, and the line
+ * where share folders would be.
+ */
+export function relayAccountBarHtml(session = {}) {
+    const name = session.displayName || session.username;
+    return `
+                    <div class="desktop-remote-line">${escapeHtml(RELAY_HEADER_TEXT)}</div>
+                    <div class="desktop-account-bar">
+                        <span class="desktop-account-name">Using <strong>${escapeHtml(displayDashes(name || 'the account holder'))}</strong>'s session${session.username ? ` (${escapeHtml(session.username)})` : ''}</span>
+                        <span class="desktop-account-actions">
+                            <button type="button" class="minigame-button desktop-account-btn" id="desktop-disconnect">Disconnect</button>
+                        </span>
+                    </div>
+                    <div class="desktop-claim-line desktop-relay-noshares">${escapeHtml(RELAY_NO_SHARES_TEXT)}</div>`;
+}
 
 /**
  * The line a claimed session's desktop shows above the account bar (UX access R1 finding 5):
@@ -355,6 +393,9 @@ export class ContainerMinigame extends MinigameScene {
         // what is taken from it (or from a folder in it) carries sourceResourceId. A mapped
         // share on a desktop keeps the desktop's lockable (parentLockable) and reopens it.
         this.remote = this.loginPcId && data.remote && data.remote.footholdId ? data.remote : null;
+        // A relay desktop (keyring K3c, 8.3): remote: { relay: true }. It is no network screen
+        // (no foothold, no view to land on): its fetches say relay=1 and its end closes to the world.
+        this.relay = this.loginPcId && !this.remote && data.remote && data.remote.relay === true ? data.remote : null;
         this.parentLockable = this.mode === 'npc' ? null : (this.containerItem?.parentLockable || null);
         this.sourceResourceId = this.mode === 'npc' || this.sourcePcId ? null
             : (params.sourceResourceId || this.containerItem?.sourceResourceId
@@ -532,12 +573,24 @@ export class ContainerMinigame extends MinigameScene {
         console.log(`Loading contents for container: ${containerId} (gameId: ${gameId})`);
 
         try {
-            const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}`, {
+            // A folder under a sign-in PC names the route its session went by (K3c, K2 m4)
+            const query = folderRouteQuery(this.sourcePcId);
+            const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
             this._loadStatus = response.status;
 
             if (!response.ok) {
+                // A folder from a relay desktop whose assist has ended: the session is gone, the
+                // screen closes to the world with the ended line (K3c, 8.3)
+                if (response.status === 403 && this.sourcePcId && window.pcSessions?.isRelay?.(this.sourcePcId)) {
+                    const name = window.pcSessions.get?.(this.sourcePcId)?.displayName;
+                    window.pcSessions.dropLocal?.(this.sourcePcId);
+                    this.exitReason = 'no_session';
+                    this.complete(false);
+                    window.gameAlert?.(relayEndedText(name), 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                    return [];
+                }
                 // A folder or share from a desktop whose PC is now off (review R3 nit 2): say so,
                 // rather than open it empty with a generic error
                 if (offWhenHolds(this.powerPcData())) {
@@ -575,7 +628,8 @@ export class ContainerMinigame extends MinigameScene {
         const gameId = window.gameId || window.breakEscapeConfig?.gameId;
         const pcId = this.loginPcId;
         // A remote desktop names its foothold on every fetch (slice 9.3a, 4.4)
-        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}` : '';
+        // A relay desktop says relay=1 on every fetch (K3c, 8.3)
+        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}` : (this.relay ? '?relay=1' : '');
         try {
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
@@ -592,6 +646,17 @@ export class ContainerMinigame extends MinigameScene {
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && this.relay) {
+                // The relay ended (its sync answer was lost, or the holder ended it first): drop
+                // the copy and close to the world, never the sign-in screen (K3c, 8.3). Connect's
+                // GET /keyring answers ended from then on.
+                const name = window.pcSessions?.get?.(pcId)?.displayName;
+                window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = 'no_session';
+                this.complete(false);
+                window.gameAlert?.(relayEndedText(name), 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
             }
             if (response.status === 403 && refusal?.reason === 'off') {
@@ -762,6 +827,14 @@ export class ContainerMinigame extends MinigameScene {
             return;
         }
         const session = this.sourcePcId ? window.pcSessions?.get?.(this.sourcePcId) : null;
+        if (session?.relay === true) {
+            // A folder opened from a relay desktop: closed, the relay desktop again (K3c)
+            if (reason === 'close' && this.closeWholePc !== true && typeof window.openRelayDesktop === 'function') {
+                const pcId = this.sourcePcId;
+                setTimeout(() => { if (!minigameOpen()) window.openRelayDesktop(pcId); }, 0);
+            }
+            return;
+        }
         if (session?.remote === true) {
             // A folder opened from a remote desktop: closed, the desktop again
             if (reason === 'close' && this.closeWholePc !== true && typeof window.openRemoteDesktop === 'function') {
@@ -1013,6 +1086,7 @@ export class ContainerMinigame extends MinigameScene {
         const session = this.loginSession();
         if (!session) return '';
         const name = session.displayName || session.username;
+        if (this.relay || session.relay === true) return relayAccountBarHtml(session);
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
         const remoteLine = this.remote
             ? `
@@ -1106,6 +1180,12 @@ export class ContainerMinigame extends MinigameScene {
     sessionNoticesHtml() {
         const session = this.loginSession();
         if (!session) return '';
+        // A relay desktop: the header and whose session it is (K3c, 8.3); no link line
+        if (this.relay || session.relay === true) {
+            return `
+                    <div class="desktop-remote-line">${escapeHtml(RELAY_HEADER_TEXT)}</div>
+                    <div class="desktop-claim-line">${escapeHtml(displayDashes(relayAccountText(session.displayName || session.username, session.username)))}</div>`;
+        }
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
         const remoteLine = this.remote ? `
                     <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
@@ -1133,7 +1213,8 @@ export class ContainerMinigame extends MinigameScene {
         const desktop = this.desktopLockable();
         const pcData = desktop?.scenarioData || findPcData(pcId);
         const session = window.pcSessions?.get?.(pcId) || null;
-        const remote = this.remote || desktop?.scenarioData?.remote || (session?.remote === true ? { footholdId: session.footholdId } : null);
+        const relay = !!this.relay || desktop?.scenarioData?.remote?.relay === true || session?.relay === true;
+        const remote = relay ? null : (this.remote || desktop?.scenarioData?.remote || (session?.remote === true ? { footholdId: session.footholdId } : null));
         const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
         let places;
         if (this.desktopMode) {
@@ -1142,7 +1223,7 @@ export class ContainerMinigame extends MinigameScene {
         } else {
             places = rememberedDesktop(pcId)?.places || [];
         }
-        const model = pcTaskbarModel({ pcData, session, remote: !!remote, linkName, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, relay, linkName, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
         this.taskbarModel = model;
         this.taskbar = mountPcTaskbar(host, model, {
             windowTitle,
@@ -1168,6 +1249,8 @@ export class ContainerMinigame extends MinigameScene {
     /** Start panel Lock, Switch user and Sign out (through pc-sessions.js). */
     taskbarAction(action, pcId) {
         if (action === 'signout') { window.pcSessions?.signOut?.(pcId); return; }
+        // A relay's Disconnect is POST /logout, as Sign out (K3c, 8.3)
+        if (action === 'disconnect') { window.pcSessions?.signOut?.(pcId, { message: RELAY_DISCONNECTED_TEXT }); return; }
         // A refusal shows inside the monitor; on success pc-sessions.js closes this view
         if (action === 'lock') { lockPcSession(pcId, { onRefuse: (msg) => this.taskbar?.notice?.(displayDashes(msg)) }); return; }
         if (action === 'switch') this.switchUser();
@@ -1386,6 +1469,10 @@ export class ContainerMinigame extends MinigameScene {
         const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');
         if (signOutBtn) {
             this.addEventListener(signOutBtn, 'click', () => window.pcSessions?.signOut?.(this.loginPcId));
+        }
+        const disconnectBtn = this.gameContainer?.querySelector('#desktop-disconnect');
+        if (disconnectBtn) {
+            this.addEventListener(disconnectBtn, 'click', () => window.pcSessions?.signOut?.(this.loginPcId, { message: RELAY_DISCONNECTED_TEXT }));
         }
     }
 
