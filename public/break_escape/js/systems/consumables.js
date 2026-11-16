@@ -201,6 +201,8 @@ export function useConsumable(sprite, deps = {}) {
   if (hurt) health.heal(amount);
   const playSound = deps.playSound ?? ((n) => w.soundManager?.play?.(n));
   try { playSound(CONSUME_SOUNDS[kind]); } catch (err) { console.warn('Could not play consume sound:', err); }
+  // The drink pose when the player's atlas has one (systems/player-poses.js)
+  if (kind === 'drink') { try { w.playerPoses?.drink?.(); } catch (err) { /* cosmetic */ } }
   if (noCombat || !healed) {
     const verb = kind === 'drink' ? 'drink' : kind === 'food' ? 'eat' : 'use';
     notify(`You ${verb} the ${name.toLowerCase()}.`, 'success', '', 2500);

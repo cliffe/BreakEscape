@@ -972,6 +972,12 @@ export default class NPCManager {
       if (framework.currentMinigame) {
         framework.endMinigame(false, null);
       }
+      // The player's phone comes up during the wait (systems/player-poses.js); the wait is unchanged
+      try {
+        if (conv.sceneType === 'phone-chat' || (conv.sceneType === 'person-chat' && conv.params?.()?.videoCall === true)) {
+          window.playerPoses?.phoneLead?.();
+        }
+      } catch (e) { /* cosmetic */ }
       setTimeout(() => {
         // Busy-guard. During the start delay the player may have opened a chat or
         // minigame of their own — e.g. an auto NPC challenge (sight/LOS) was scheduled

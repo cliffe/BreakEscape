@@ -253,6 +253,7 @@ export function installPhoneRinger(win = window) {
             return !(info && info.second) && queuedBeats();
         },
         phoneHost: (npcId) => !!hostPhone(npcId),
+        answering() { try { win.playerPoses?.phoneLead?.(); } catch (e) { /* cosmetic */ } },
         conversationOpen() {
             return isConversation(openMinigame()) || sceneActive();
         },
