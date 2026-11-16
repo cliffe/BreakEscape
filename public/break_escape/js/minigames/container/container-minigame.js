@@ -1405,7 +1405,7 @@ export class ContainerMinigame extends MinigameScene {
             
             const iconImg = document.createElement('img');
             iconImg.className = 'desktop-icon-image';
-            iconImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
+            iconImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
             iconImg.alt = item.name;
             
             const iconLabel = document.createElement('div');
