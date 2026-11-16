@@ -385,3 +385,15 @@ test('lockpicking 2560x1440 at HUD zoom 2: the side gutters are narrower than th
   }
   assert.ok(s.covers.canvasPx <= least, `${s.covers.canvasPx} <= ${least}`);
 });
+
+test('outermostBoxes (sorted by area) agrees with the pairwise definition, equal boxes included', () => {
+  const old = (boxes) => boxes.filter((a, i) => !boxes.some((b, j) => j !== i && b.left <= a.left && b.top <= a.top
+    && b.right >= a.right && b.bottom >= a.bottom
+    && (b.left < a.left || b.top < a.top || b.right > a.right || b.bottom > a.bottom || j < i)));
+  let seed = 7;
+  const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  for (let round = 0; round < 200; round++) {
+    const boxes = Array.from({ length: 2 + rnd(25) }, () => { const l = rnd(6) * 10, t = rnd(6) * 10; return { left: l, top: t, right: l + 10 + rnd(4) * 10, bottom: t + 10 + rnd(4) * 10 }; });
+    assert.deepEqual(outermostBoxes(boxes), old(boxes), `round ${round}`);
+  }
+});
