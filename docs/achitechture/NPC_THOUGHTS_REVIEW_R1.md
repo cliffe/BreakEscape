@@ -47,3 +47,11 @@ What holds up:
 - Severity: minor.
 - With `npcThoughts: false`, `showPressingNeeds: true` or an `actionIcons` table has no effect. The validator checks only that the flag is a boolean.
 - Suggested fix: a warning when `npcThoughts` is false and `showPressingNeeds` is true or `actionIcons` is set ("has no effect while npcThoughts is false"). test_npc_thoughts_off sets both on purpose, so either accept one warning there or add an `_comment` and skip the warning for `test_` scenarios.
+
+## Outcomes
+
+- M1: fixed (user decision D86a: hide picture chat). `chatterPool` takes a `thoughtsOn` argument and the needs world reads `gameScenario.npcThoughts`; picture chat is off when it is false, spoken lines and barks are unchanged. Own commit, test/js/npc-thoughts-pictures.test.mjs, docs and schema name picture chat.
+- m1: done. Live proof on test_npc_thoughts_off, m02 and the test_needs_sims control; see the hand-off report for game ids and counts. Proof script tmp/npc-thoughts-proof.mjs, screenshots tmp/npc-thoughts-proof/.
+- m2: done. One line each in OFFICE_LIFE_MISSIONS_PLAN.md and the mission-office-life SKILL.md.
+- m3: decided (D87a). sis01, sis02 and sis03 now set `"npcThoughts": false` beside the m01 to m10 line; validator 0 errors on each.
+- m4: done. validate_npc_needs.rb warns when `showPressingNeeds` or `actionIcons` is set while `npcThoughts` is false; test/js/validator-npc-thoughts.test.mjs. test_npc_thoughts_off keeps its one warning on purpose.

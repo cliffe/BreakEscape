@@ -289,7 +289,7 @@ read; the validator warns on it.
 (pressing need, avoidance, parked need), whatever `showPressingNeeds` says. It also turns off picture
 chat (the icon-only chatter bubbles: grumbles, news, workaround starts, failure mutters, unheard turns),
 since an icon bubble shows what an NPC wants. Barks, speech bubbles, spoken chatter lines, conversation UI and held items (`officeVisuals`) are untouched. The campaign missions
-m01 to m10 set it false; the labs and `test_needs_sims` keep their icons. Read through
+m01 to m10 and the sis missions set it false; the labs and `test_needs_sims` keep their icons. Read through
 `npcThoughtsOn()` in `systems/npc-action-icons.js`.
 
 ---

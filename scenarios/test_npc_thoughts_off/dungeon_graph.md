@@ -199,17 +199,21 @@ flowchart TD
 
   office("Office")
   rc_ravi_pc_1{"Ravi's PC"}
-  rc_office_coffee_2{"Office Coffee Station"}
-  rc_office_fridge_3{"Office Fridge"}
-  rc_npc_ravi_mehta_4("Ravi Mehta")
+  rc_tess_pc_2{"Tess's PC"}
+  rc_office_coffee_3{"Office Coffee Station"}
+  rc_office_fridge_4{"Office Fridge"}
+  rc_npc_ravi_mehta_5("Ravi Mehta")
+  rc_npc_tess_ng_6("Tess Ng")
 
   office --> rc_ravi_pc_1
-  office --> rc_office_coffee_2
-  office --> rc_office_fridge_3
-  office --> rc_npc_ravi_mehta_4
+  office --> rc_tess_pc_2
+  office --> rc_office_coffee_3
+  office --> rc_office_fridge_4
+  office --> rc_npc_ravi_mehta_5
+  office --> rc_npc_tess_ng_6
 
   class office room
-  class rc_ravi_pc_1,rc_office_coffee_2,rc_office_fridge_3 item
-  class rc_npc_ravi_mehta_4 npc
+  class rc_ravi_pc_1,rc_tess_pc_2,rc_office_coffee_3,rc_office_fridge_4 item
+  class rc_npc_ravi_mehta_5,rc_npc_tess_ng_6 npc
   class node_start start
 ```
