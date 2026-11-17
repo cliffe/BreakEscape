@@ -101,6 +101,10 @@ export default class PersonChatUI {
             // Add to container
             this.container.appendChild(this.elements.root);
 
+            // Size the phone portrait now the box is attached and has a height (the observer path
+            // also runs, but browsers without ResizeObserver would otherwise wait for a resize)
+            this.updatePortraitHeight();
+
             // Initialize portrait renderer
             this.initializePortrait();
 
@@ -226,10 +230,6 @@ export default class PersonChatUI {
             this._boxObserver = new ResizeObserver(this._onBoxChange);
             this._boxObserver.observe(mainContent);
         }
-        this.elements.mainContent = mainContent;
-        this.elements.portraitSection = portraitSection;
-        this.updatePortraitHeight();
-
         this.elements.mainContent = mainContent;
         this.elements.portraitSection = portraitSection;
         this.elements.portraitContainer = portraitContainer;
