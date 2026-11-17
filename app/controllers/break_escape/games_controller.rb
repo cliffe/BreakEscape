@@ -1422,7 +1422,7 @@ module BreakEscape
           # Hide a device in a plant (plant-hiding plan, section 7): its own branch, because a
           # refused hide must leave the device in the tray.
           spot = params[:hidden_in] || params[:hiddenIn]
-          result = @game.hide_device!(item.respond_to?(:[]) ? item['id'] : nil, spot)
+          result = @game.hide_device!((item.is_a?(Hash) || item.is_a?(ActionController::Parameters)) ? item['id'] : nil, spot)
           if result[:ok]
             render json: { success: true, hidden: result[:hidden] }
           else

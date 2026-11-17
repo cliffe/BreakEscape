@@ -17,8 +17,9 @@
  * rooms[roomId].objects, so lighting finds it by id and the behind-wall fade takes it through
  * the host's _fadeCompanions.
  *
- * No static imports: interactions.js, rooms.js and core/game.js reach this through
- * window.plantHiding, as they reach network-links.js. The plant lists are kept in step with
+ * No static imports here. interactions.js and rooms.js reach this through window.plantHiding,
+ * as they reach network-links.js; core/game.js (the entry module, imported by main.js only and
+ * by no test) imports it statically. The plant lists are kept in step with
  * lib/break_escape/hiding_spots.rb by test/unit/hiding_spots_test.rb.
  */
 
@@ -373,9 +374,13 @@ export class PlantHiding {
 
         if (scene.textures && !scene.textures.exists(texKey) && scene.load) {
             // Art not preloaded: fetch it as network-links does for a jack's planted look
-            scene.load.image(texKey, `objects/${texKey}.png`);
-            scene.load.once('complete', make);
-            scene.load.start();
+            // One queued load per texture: a second sync before it finishes only waits for it
+            const pending = (this._texPending ||= new Set());
+            const first = !pending.has(texKey);
+            pending.add(texKey);
+            if (first) scene.load.image(texKey, `objects/${texKey}.png`);
+            scene.load.once('complete', () => { pending.delete(texKey); make(); });
+            if (first) scene.load.start();
             return null;
         }
         return make();
