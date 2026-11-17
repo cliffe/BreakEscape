@@ -986,6 +986,8 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
   CHRIS_PASSWORD = 'Chris-Pass-6603'.freeze
   CAPTURES = '/break_escape/games/1/capture_secrets'.freeze
   INVENTORY = '/break_escape/games/1/inventory'.freeze
+  # Legacy shape (an old scenario copy that still has the rogue_ap_spot pot, as saved games carry);
+  # the hideable shape, with no spot, is covered under "Plant hiding" below.
   PLANT_PROOF = { 'planted' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot' }.freeze
 
   # Ruth (a phone NPC, no account) writes the staff key with the plant proof; Kieran holds an
