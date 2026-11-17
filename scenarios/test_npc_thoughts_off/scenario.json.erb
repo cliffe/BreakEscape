@@ -7,6 +7,7 @@
   "npcWindupMs": 0,
   "npcThoughts": false,
   "showPressingNeeds": true,
+  "chatter": { "coffee": ["Is it Friday yet?", "Lovely and hot, this."] },
 
   "globalVariables": {},
 
@@ -40,13 +41,23 @@
           "affordance": { "useSeconds": 5 }
         },
         {
+          "type": "pc",
+          "id": "tess_pc",
+          "name": "Tess's PC",
+          "takeable": false,
+          "locked": false,
+          "position": { "x": 4, "y": 3 },
+          "observations": "Tess's desk PC.",
+          "affordance": { "useSeconds": 5 }
+        },
+        {
           "type": "coffee_station1",
           "id": "office_coffee",
           "name": "Office Coffee Station",
           "position": { "x": 8, "y": 8 },
           "takeable": false,
           "observations": "The office coffee station.",
-          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 8 }
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 8, "capacity": 2, "chatter": "coffee" }
         },
         {
           "type": "mini_fridge1",
@@ -77,6 +88,22 @@
           "eventMappings": [
             { "eventPattern": "npc_used:office_coffee", "completeTask": "see_coffee" }
           ]
+        },
+        {
+          "id": "tess",
+          "displayName": "Tess Ng",
+          "npcType": "person",
+          "position": { "x": 5, "y": 5 },
+          "spriteSheet": "female_office_worker",
+          "storyPath": "scenarios/test_needs_sims/ink/tom.json",
+          "currentKnot": "start",
+          "_comment": "R1 M1 proof partner: Tess and Ravi share the coffee station, so they chat there. Her coffee line is spoken; with the player out of earshot it would be picture chat, which npcThoughts false turns off.",
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "tess_pc",
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 20, "urgentAt": 40, "initial": 25 }
+          }
         }
       ]
     }
