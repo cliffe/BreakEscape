@@ -19,7 +19,6 @@
     --pp-m: #c060c0;
     --pp-edge: #8a96aa;
     --pp-socket: #0c1018;
-    --pp-box: #9ee6ff;
     font-family: 'VT323', monospace;
     font-size: 20px;
     line-height: 20px;
@@ -166,21 +165,18 @@
 
 /* One sprite per state. The sprite's outer ring is neutral grey; the CSS border above it is the VLAN
    colour (live ports) or a dashed grey (unpatched). The link light, tag and box are in the art. */
-.patch-panel-port.pp-state-empty { background-image: url('/break_escape/assets/ui/devices/patch_port_empty.png'); }
-.patch-panel-port.pp-state-unpatched { background-image: url('/break_escape/assets/ui/devices/patch_port_unpatched.png'); }
-.patch-panel-port.pp-state-patched { background-image: url('/break_escape/assets/ui/devices/patch_port_patched.png'); }
-.patch-panel-port.pp-state-managed { background-image: url('/break_escape/assets/ui/devices/patch_port_managed.png'); }
-.patch-panel-port.pp-state-held { background-image: url('/break_escape/assets/ui/devices/patch_port_held.png'); }
-
-/* Unpatched and empty: no VLAN colour; the unpatched ring is dashed over the art's neutral ring */
+.patch-panel-port.pp-state-empty {
+    background-image: url('/break_escape/assets/ui/devices/patch_port_empty.png');
+    border-color: transparent;
+}
 .patch-panel-port.pp-state-unpatched {
+    background-image: url('/break_escape/assets/ui/devices/patch_port_unpatched.png');
     border-style: dashed;
     border-color: #8a96aa;
 }
-
-.patch-panel-port.pp-state-empty {
-    border-color: transparent;
-}
+.patch-panel-port.pp-state-patched { background-image: url('/break_escape/assets/ui/devices/patch_port_patched.png'); }
+.patch-panel-port.pp-state-managed { background-image: url('/break_escape/assets/ui/devices/patch_port_managed.png'); }
+.patch-panel-port.pp-state-held { background-image: url('/break_escape/assets/ui/devices/patch_port_held.png'); }
 
 /* Your box: the held sprite differs from "patched" only by colour, so a solid white square with a
    dark outline marks it too: a 3x2 source px bar with a 1 source px outline, top left, so its
@@ -302,4 +298,8 @@
     line-height: 20px;
     color: #e6ebf2;
     overflow-wrap: anywhere;
+    /* cannot set the frame width: the port grid does, a long message wraps inside it */
+    width: 0;
+    min-width: 100%;
+    box-sizing: border-box;
 }

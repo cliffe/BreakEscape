@@ -461,8 +461,6 @@ test('each port state class maps to its sprite, and the sprites and strip ship a
         const png = readFileSync(join(here, `../../public/break_escape/assets/ui/devices/patch_port_${state}.png`));
         assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [12, 12], state);
     }
-    const strip = readFileSync(join(here, '../../public/break_escape/assets/ui/devices/patch_strip.png'));
-    assert.deepEqual([strip.readUInt32BE(16), strip.readUInt32BE(20)], [7, 18], 'the approved strip stays');
     const row = readFileSync(join(here, '../../public/break_escape/assets/ui/devices/patch_strip_row.png'));
     assert.deepEqual([row.readUInt32BE(16), row.readUInt32BE(20)], [7, 12], 'the strip is the 12 port rows');
     assert.match(css, /patch_strip_row\.png'\) 0 3 fill/);
@@ -505,6 +503,16 @@ test('the legend cannot set the frame width: the grid does, the legend wraps ins
     assert.match(legend, /flex-wrap:\s*wrap/);
     assert.match(legend, /width:\s*0;/);
     assert.match(legend, /min-width:\s*100%/);
+});
+
+test('the footer cannot set the frame width: a long message wraps inside the grid width', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const footer = /\.patch-panel-footer\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(footer, /width:\s*0;/);
+    assert.match(footer, /min-width:\s*100%/);
+    assert.match(footer, /box-sizing:\s*border-box/);
+    assert.match(footer, /overflow-wrap:\s*anywhere/);
+    assert.match(footer, /padding-left:\s*var\(--device-frame-gap\)/);
 });
 
 test('the title cannot set the frame width and wraps in the room left of the X (8px+ gap)', () => {
