@@ -30,7 +30,7 @@ No onceOnly is needed for the cake. A task ticked on `magnet_finished:cake` need
 ## Pools the scenario must declare (scenario-level `chatter`)
 
 Copied from sims (all 40 characters or fewer):
-- `cake`: "Who brought cake in?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."
+- `cake`: "Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."
 - `news_cake`: "Someone's brought a cake in!", "There's cake going, if you're quick.", "Cake! It's somebody's birthday."
 - `grumble_gone`: "Missed it."
 
