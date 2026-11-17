@@ -23,57 +23,32 @@ and checks separately that no live author note still names a retired key.
 
 ## Loader output (stored-game equivalence)
 
-- `<scenario>.old.loaded.json`: the **format-2 loader output**: `NpcHabits.expand!` run on the 8b tip
-  `ab14d1926`, which fills a top-level `screenHabit` from `awareness` / `habits.locksScreen` the old
-  way. For `test_access_habits` and `lab_physical_pentest` (neither authors a habit key; both carry
-  awareness or `habits.locksScreen`), and a minimal `priya_awareness` scenario used by
-  `format_upgrade_test`.
+- `<scenario>.old.habits.json`: for `test_access_habits` and `lab_physical_pentest`, a map of NPC id to
+  the `screenHabit` and `habits.locksScreen` the **format-2 loader** filled (`NpcHabits.expand!` on the
+  8b tip `ab14d1926`, from `awareness` / `habits.locksScreen`). This is the only frozen part. The test
+  rebuilds the old loader output from the live render: it drops each NPC's `habits.screen`, puts back
+  the frozen `screenHabit` and `locksScreen`, folds the result and compares it with a fresh format-3
+  render. Scenario edits unrelated to habits never touch these files; a changed `awareness` or
+  `habits.locksScreen` makes the frozen value stale and the test fails.
+- `<scenario>.old.loaded.json`: the whole format-2 loader output, kept only where another test reads
+  it: `test_access_habits` (the JS reader-parity test) and the minimal `priya_awareness` scenario
+  (`format_upgrade_test`).
 
-These prove the stored-game equivalence: a game prepared by the format-2 loader, once the step folds
-its `screenHabit` into `habits.screen`, gives the same effective lock rule per workstation (and the
-same folded data, field for field) as a fresh format-3 game the current loader fills.
+The equivalence proved: a game prepared by the format-2 loader, once the step folds its `screenHabit`
+into `habits.screen`, gives the same effective lock rule per workstation (and the same folded data,
+field for field) as a fresh format-3 game the current loader fills.
 
 ## How they were made
 
 - `.old.json`: rendered from the template at the 8b tip `ab14d1926` (`git show`), `srand(1)` then a
   plain parse (the four templates carry no value-producing ERB).
 - `.new.json`: rendered the same way from this branch's rewritten template.
-- `.old.loaded.json`: on a detached worktree at `ab14d1926`, `NpcHabits.expand!` (the format-2 loader)
-  run on the format-2 render, dumped as pretty JSON.
+- `.old.habits.json`: read from the 8b-tip loader output of each scenario (the NPCs that carry a
+  `screenHabit`, with their `habits.locksScreen`).
+- `.old.loaded.json`: `NpcHabits.expand!` (the format-2 loader) run on the format-2 render at
+  `ab14d1926`, dumped as pretty JSON.
 
 Regenerate after a deliberate change by re-rendering/re-loading the same way. A change that alters the
 step-8c transform is the only thing that should move `.new.json` relative to `transform(.old.json)`.
-
-`lab_physical_pentest.old.loaded.json` now carries the gated-door server-check edits (the records door
-gate's `creditOnPass`, and the removed client credit writers and `tailgate_in` backstops). It was
-re-made the same way: the ab14d1926 lab template with this branch's own lab edits applied (the changes
-in `git diff fc4b4d8a5 08a3073e8 -- scenarios/lab_physical_pentest/`, nothing from 8b or 8c), rendered
-with `srand(1)` on a detached ab14d1926 worktree and run through `NpcHabits.expand!`. The diff from the
-previous fixture is only those tailgating edits.
-
-Note (A2, 2026-11-16): the lab now renders a per-game `@random_password` (the staff Wi-Fi key). The
-corpus test pins it to `FixedPw1` in `live_render` (SecureRandom ignores `srand`), and the lab loader
-fixture carries that same value. The fixture was refreshed by overlaying the A2 lab content (Kieran's
-account, networks, rogue AP kit, objectives, hints) on the frozen format-2 loader output.
-
-Note (A3 run 3, 2026-11-16): the lab loader fixture was refreshed again for the A3 device art and
-reception dressing. Only the `briefing_room` `kit_rogue_ap` object and the `reception` objects
-(`rogue_ap_spot`, `planted_rogue_ap`, `lw_staff_ap`, `lw_guest_ap`, `lw_guest_card`) and the
-reception `lighting` block changed, overlaid from the live render; the fold-related habit keys are
-untouched. The base did not grow beyond those few objects and a small lighting block.
-
-Note (plant hiding H5, 2026-11-17): the lab loader fixture was refreshed for the plant-hiding
-migration, by the same overlay method (not a live render of the whole file). Only the changed
-content was overlaid from the current lab render, after `NpcHabits.expand!`: the `briefing_room`
-`kit_rogue_ap` (now `hideable`), the `reception` objects (`rogue_ap_spot` removed, `reception_planter`
-and `reception_plant_desk` as plants, `planted_rogue_ap` with `hiddenWith` and no position or
-`revealOnGlobal`), Ruth's `eventMappings` and Kieran's `captureProof` (no `on`). The fold-related
-habit keys are untouched, and a diff of the fold of this fixture against a fresh render shows no
-non-note difference.
-
-Note (plant hiding R1 t1, 2026-11-17): the lab's `ap_planted` global and the kit's `hideable.onHidden` were removed (nothing read the global). The loader fixture was edited by hand to match: both lines dropped from the frozen output.
-
-Note (devices R, 2026-11-17): the lab loader fixture was refreshed again for the branch's lab changes
-(game_loaded briefing mappings, hall lighting, kit and hint text). The method: the current lab render
-after `NpcHabits.expand!`, with each NPC's `screenHabit`/`printHabit`/`usbHabit`/`habits` and the
-`formatVersion` kept verbatim from the previous fixture, so the fold-related keys are untouched.
+The lab renders a per-game `@random_password`; `live_render` in the corpus test pins it to `FixedPw1`
+(SecureRandom ignores `srand`).
