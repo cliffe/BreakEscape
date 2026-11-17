@@ -11,7 +11,14 @@ Sources, read by section, never end to end:
 
 - `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md`: section 1 (the ten rules), 2 (what the engine offers and its limits), 3 (stages), 4 (validator checks V1 to V10), 7 (sync caps), 12 (review loop).
 - `docs/achitechture/NPC_NEEDS_SYSTEM.md` sections 3 and 5; `docs/achitechture/NPC_POSES.md`; `scripts/scenario-schema.json` for every field.
-- `scenarios/m02_ransomed_trust/office_life/HANDOVER.md` (gotchas) and `PLAN.md`.
+- `scenarios/m02_ransomed_trust/office_life/HANDOVER.md` and `PLAN.md`; for m03 (second worked example) `scenarios/m03_ghost_in_the_machine/office_life/`.
+
+References, read when the step needs them (this file is the procedure, they hold the detail):
+
+- `references/measurement-recipes.md`: setup for live measurement, one machine not two, trip timing and the lock threshold, pair use, lazy rooms, hide/reload/night, trouble handling.
+- `references/mapping-patterns.md`: JSON shapes for Tiled machines, the readable laptop, night hides, mapped breaks, trouble globals, pools and exchanges.
+- `references/gotchas.md`: what bit m02 and m03, with the fix for each.
+- `references/checklists.md`: per slice, per review round, per live check, before merge.
 
 ## Standing rules
 
@@ -82,7 +89,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 
 - [ ] Every needs NPC has a post (`needsHome`), a leash (`needsRooms` or `needsAvoidRooms`) and stays out of private rooms (room `needsPrivateTo`).
 - [ ] Keep new NPCs out of a guard's patrol room and LOS window with `needsAvoidRooms`, and out of the room where a story beat happens at a fixed spot.
-- [ ] Name a protection for every story beat. Only three count: (1) the NPC has no `needs`; (2) its needs are confined to its own room and every target is in it; (3) a mapping on an event that always precedes the beat sends it home with `patrolOverride.targetTile`, and a `"needs": "resume"` mapping after the beat lets it go. `deferrable: false` is **not** a protection; it makes the NPC leave more readily.
+- [ ] Name a protection for every story beat. Only three count: (1) the NPC has no `needs`; (2) its needs are confined to its own room and every target is in it; (3) a mapping on an event that always precedes the beat sends it home with `patrolOverride.targetTile`, and a `"needs": "resume"` mapping after the beat lets it go. `patrolOverride` ends within 32 px of its target, so it stops a tile short; for trouble (a hit, a KO) do not use it, put `offWhen` on the machines and let the needs layer walk staff home (`references/mapping-patterns.md` section 5). `deferrable: false` is **not** a protection; it makes the NPC leave more readily.
 - [ ] Never add an `npc_arrived:<id>` mapping to a needs NPC (needs arrivals fire it).
 - [ ] Social compatibility: chat only between people who plausibly get on. Distrusted or suspect people carry `needsCompany.avoids`.
 - [ ] Hostile ambient staff get the chase `leash: true` (with `chaseRange`) so a punched NPC stays near its post. Add a credits line for KO and attack outcomes.
@@ -97,7 +104,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 
 ### Rooms, affordances and machine presets
 
-- [ ] Set scenario `officePresets: true`. Presets match exact sprite types (`coffee_station1`, `kettle1`, `water_cooler1`, `photocopier1`, ...); anything else takes one through object-level `officeType` (a boiler as `kettle`, an undercounter fridge as `fridge`). Takeable, `lockType`, id-less and `decor: true` objects never gain one.
+- [ ] Set scenario `officePresets: true`. Declare Tiled-claimed machines with the **base type name** (`coffee_station`, `kettle`, `water_cooler`, `photocopier`; digits stripped), never `coffee_station1` and the like: a numbered name matches no Tiled sprite and the object lands at a random spot on every load (`references/gotchas.md`, "Base type names"). Presets take both spellings. Any other machine takes one through object-level `officeType` (a boiler as `kettle`, an undercounter fridge as `fridge`). Takeable, `lockType`, id-less and `decor: true` objects never gain one.
 - [ ] Declare Tiled decor that should take part as a scenario object. Declare every same-image twin in the room too, or it is hidden when the first is claimed. Claimed decor is declared with no `position` (top-left semantics come from the map).
 - [ ] Check every object V1 says gained a preset: a puzzle `pc` with no `lockType` gains a desk preset.
 - [ ] Hand-write `useFrom`, `queue.cells` or `"queue": false` where a preset's cells hit a wall, door or neighbour. Aim `useFrom` at the NPC's body-centre cell (`HOME_EPS` is 12 px).
@@ -109,7 +116,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 ### Poses
 
 - [ ] Poses (`drink`, `use`, `phone`) show only when the atlas has the frames. Object `pose` overrides the default (`false` for none); NPC `poses` limits or turns them off. Seated NPCs keep the sit frame.
-- [ ] Missing pose or seated frames are an approval item (PixelLab spend). The pose engine is on main; the pose frames for existing characters arrive once `build/ol-pose-art` is on main. Until then or until approved, use a stand-in atlas with seated frames (m02 used `male_telecom_v2` and `female_telecom_v2`) and plan the swap.
+- [ ] Missing pose or seated frames are an approval item (PixelLab spend). The pose engine and the pose art for existing characters are on main (`build/ol-poses-code`, `build/ol-pose-art`). For a new character without frames, until approved, use a stand-in atlas with seated frames (m02 used `male_telecom_v2` and `female_telecom_v2`) and plan the swap.
 
 ### Chatter pools and exchanges
 
@@ -118,7 +125,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Exchanges (`exchanges[{with, knot, requireGlobal}]`) are ink knots, heard once (`heard_<knot>`). The first line must stand alone, because the player may walk in on it. An exchange never leaks or contradicts a clue; gate one on the global that makes it true.
 - [ ] Barks sit outside the TTS extractor; a new bark is voiced by hand, so prefer pools and knots.
 - [ ] Put every line in a table in `SPOKEN_LINES.md`: speaker, pool or knot, line, characters. Plus the list of existing lines changed (old to new), ideally empty.
-- [ ] Send `DIALOGUE_SAMPLE.md` (a few pool lines and one exchange) to the user before the dialogue cycles continue.
+- [ ] **Dialogue-sample rule.** Send `DIALOGUE_SAMPLE.md` (a few pool lines and one exchange) to the user and wait for the yes before slice 5 writes any line. Placeholder ink never reaches main, and built text matches the approved sample word for word.
 - [ ] **Re-voicing a line that a review changed needs the user's separate yes**, through the decisions page, even when the earlier voicing was approved.
 
 ### Security windows and player levers
@@ -126,6 +133,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 Prefer **levers over schedules**: the player causes the event through existing systems rather than waiting on a timetable.
 
 - [ ] Levers: deliver a magnet item (the cake), ring a desk phone (`desk_phone_ring:<id>`), throw a breaker (`offWhen` with a switch object), drop an item with `interests`. Each is optional and each says what it opens.
+- [ ] `lockIfAwayOverSeconds` is compared with the **expected** away time in `npc_left_post`, not real time. m03's planned 45 s was wrong for that reason (expected 14.6 s and 23.1 s); measure both numbers per trip (`references/measurement-recipes.md` section 3).
 - [ ] Security windows: the gap while an owner is away (unlocked screen via `habits.screen`, a page on the copier via `habits.print`, a left-behind item, a propped door). Each opens optional content only: lore, an optional task, a side drawer. Never a critical-path door, the server room, a safe or a story-locked PC.
 - [ ] Openings that write state sent whole (capture log, cloned cards, footholds, disguises) need their own approval item with a sync note.
 - [ ] Physical-pentest openings and any text that names security techniques go to the agent type AGENTS.md names for VM and technical material.
@@ -134,7 +142,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 - [ ] Light any new room or new screen with mission-room-lighting; keep the mission's lighting variants (for example keyed on the act-turn global) consistent with who is present.
 - [ ] Motion-sensor rooms stay dark until the player enters; an NPC posted there needs a light that matches.
-- [ ] Hearing: a room's sounds play at 1 in the player's room and 0.4 through a door to an adjacent room (`room-hearing.js`). Once the chatter falloff (D34, branch `build/ol-chatter`) is on main, chatter carries faintly through an **open** door at 40% of the distance level and stops when the door shuts, and chatter is muted while a person-chat or phone-chat is open; lines heard faintly do not set `heard_<knot>`. Place pairs so the player can walk in on them, not only hear them from the corridor.
+- [ ] Hearing: a room's sounds play at 1 in the player's room and 0.4 through a door to an adjacent room (`room-hearing.js`). The chatter falloff (D34, on main) means chatter carries faintly through an **open** door at 40% of the distance level and stops when the door shuts, and chatter is muted while a person-chat or phone-chat is open; lines heard faintly do not set `heard_<knot>`. Place pairs so the player can walk in on them, not only hear them from the corridor.
 - [ ] `roomTone`: the profile matches exact room types; map custom types with `roomToneTypes`. Room tone is the last slice, after dressing.
 
 ### Sync budget
@@ -161,16 +169,23 @@ plan -> review R1..R5+ (standalone rewrite after each) -> approvals -> implement
 - [ ] From R4, delta reviews (the diff since the last round) run on the cheaper tier.
 - [ ] Stop at a round with 0 blockers and 0 majors after round 5.
 - [ ] Plan reviewers check: the expected lock and key diff and aim chain; that no opening became required; V2 and V5 risks; each NPC's class and attack outcome; compatibility and leashes; spoken-line rules; sync sums; field names; cast diversity.
+- [ ] **Build review loop (m03 ran R1 to R9).** Round 1 runs on the `opus55` agent type; later delta rounds run on the cheaper tier; a major sends the next round back to `opus55`. A fixer takes each round's findings, re-measures what the fix could move, and logs outcomes. Reviewers play the merged tip, not the build branch (`references/checklists.md`).
+- [ ] Live checks run on the cheap scripted tier; a reported "stuck" gets a persona recheck before it counts.
 - [ ] Every multi-step brief carries the handover rule: at about 150k tokens or 80 tool calls, finish the step, commit, write `HANDOVER.md`, report and stop.
 
 ## Stage 4: implement (slices, one commit each)
 
-1. New rooms and objects; presets, needs, posts, leashes, privacy.
-2. Workstation habits (screen, print, USB) and awareness.
-3. Chatter pools and exchange knots (a writer on the planning tier).
-4. Levers and openings (the VM and technical agent type, text and wiring).
-5. Dressing and lighting of every changed room: mission-room-dressing, then mission-room-lighting, about five cycles each, up to ten while improving. Re-run the validator after each cycle.
-6. Room tone.
+Slice order (m03):
+
+1. **Slices 1 and 2**: baseline and plan (above), then approvals.
+2. **Slice 3**: new rooms and objects, presets, needs, posts, leashes, privacy, night hides. Declare machines by base type name and check one of each after two loads.
+3. **Slice 4**: workstation laptop and habits (screen, print, USB) and awareness; measure trip times and the lock threshold.
+4. **Slice 5**: chatter pools, exchange knots and barks, only after `DIALOGUE_SAMPLE.md` has the user's yes. Replaces any placeholder ink.
+5. **Slice 6**: dressing check and lighting of every changed room: mission-room-dressing, then mission-room-lighting, about five cycles each, up to ten while improving. Re-run the validator after each cycle. Check one of each machine with all rooms loaded.
+6. **Slice 7**: seats and poses, after the pose art is on main. Render hidden seated NPCs at the night turn and dump the scene near the seats.
+7. **Slice 8**: voice (tts-audio), room tone, close.
+
+Levers and openings that need the VM and technical agent type slot into slice 4 or 5 as the plan says.
 
 After each slice:
 
@@ -193,18 +208,9 @@ After each slice:
 - [ ] Stage 5 playtests: a scripted regression of the walkthrough with office life on; a persona run of 10 to 15 minutes that pulls each lever, tries each opening, attacks one moving NPC and reloads once; a frame-time reading; with `roomTone`, a listen through a north or south door and an east or west one. At most three rounds, then a short confirmation run.
 - [ ] The Mission Brief reappearing and the start-room spawn after a reload are intended, not findings.
 
-## Gotchas (from m02 and the sims tidy)
+## Gotchas
 
-- **Doorway jams.** Queue cells, `useFrom` cells, posts and chairs must keep out of door gaps and the corridor a player walks in on (`SIMS_TIDY_LOG.md` about :35 to :140; the `chair_out_of_doorway` sweep, e131ef703). A player parked in a lane can block NPCs too.
-- **The 20 s needs-walk deadline**: `max(20 s, 3 x distance / speed)` (`NPC_NEEDS_SYSTEM.md:474`). A long walk through traffic times out with `npc_job_failed`; keep need targets close to posts.
-- **Second user's cell.** At each capacity-2 chatter object, check live that each partner can path to its cell. A cut-off cell shows as `npc_job_failed` with reason `no_beside_cell`.
-- **Cooler coupling** both ways holds the object for minutes (above).
-- **Only loaded rooms exist.** Need objects in a room the player has not opened are not live; an NPC there is not simulated.
-- **Scripts win over needs.** A scripted walk suspends needs. A bare `suspend` freezes an NPC where it stands, possibly in another room.
-- **Story room collisions.** Do not let a needs walk or a new `room_entered` mapping collide with a cutscene trigger room or a fixed-spot beat.
-- **player_state delta sync**: every new value is a bounded key sent as a delta when it changes, never a growing list re-sent whole.
-- `scenario.json.erb` holds ERB comments with `%>`; edit with `str.replace`, never a Python `%` format.
-- Run V6 from the worktree root so it reads the branch's scenario.
+Full list with fixes in `references/gotchas.md`. The ones that cost most: declare machines by base type name; `lockIfAwayOverSeconds` reads expected, not real, away time; send staff home with `offWhen`, not `patrolOverride`; hiding a seated NPC needs a rendered check at the night turn; only loaded rooms simulate; stop servers by PID; one fresh game per scenario edit.
 
 ## Stage 6: art follow-ups
 
