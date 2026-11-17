@@ -81,3 +81,20 @@ Suggested for Lerato `:30`: `Quiet is how it starts. Then the early markets wake
 
 `ink/m06_npc_lerato.ink:27` ("Back again? Quick, before the phone goes.") and `ink/m06_npc_tomasz.ink:26` ("Yes? Quickly, I have a caller waiting."). Two neighbours, same shape.
 Suggested for Lerato: `You again. Go on, before the phone goes.`
+
+## Outcomes
+
+Fixed in the follow-up build (all lines checked against the 40 character limit for pool and exchange lines, the PLAN 3.3 banned list, UK English, no dashes).
+
+- M1 fixed. Exchange 2 `ex_floor_after_irina` is gated on `irina_taken: true` (declared scalar at `erb:813`, set by HaX's `room_entered` mapping at `erb:1669-1673`) with `floor_staff_ko: false`; the gate field takes several terms. Tomasz's line is now "I did. They walked her out past my desk." (40). PLAN section 6 updated.
+- m1 fixed: "Another one. Don't tell my mum."
+- m2 fixed: exchange 1 `requireGlobal` is now `{ irina_arrested: false, floor_staff_ko: false }` (several terms are allowed).
+- m3 fixed: "And I've no idea what to tell them."
+- m4 fixed: "Same. The floor won't run itself."
+- m5 fixed: "My phone hasn't stopped all night."
+- m6 fixed: "And I've not eaten since I came in."
+- m7 fixed with a changed line. The suggested "The queue is climbing. Callers everywhere." is 42 characters, over the limit, so the line is "The queue climbs. Callers everywhere." (37, no contraction).
+- m8 fixed: "Quiet is how it starts. Then the early markets wake and every line lights up."
+- m9 fixed: "You again. Go on, before the phone goes."
+
+Checks: ink recompiled (11 of 11, only the Lerato json changed), dialoguelint clean on both files, validator 0 errors, lock diff empty. SPOKEN_LINES.md updated; clip count unchanged at 55. Re-voicing is not requested here (nothing is voiced yet).

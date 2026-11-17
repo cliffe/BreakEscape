@@ -24,11 +24,11 @@ Lerato Dlamini: Evening. I'm on the phones and the rota tonight.
 {hub_quiet:
     ~ hub_quiet = false
 - else:
-    Lerato Dlamini: Back again? Quick, before the phone goes.
+    Lerato Dlamini: You again. Go on, before the phone goes.
 }
 * [Quiet night?]
-    Lerato Dlamini: Quiet is how it starts. Then Asia opens and every line lights up.
-    Lerato Dlamini: I keep a mug by the phone for that.
+    Lerato Dlamini: Quiet is how it starts. Then the early markets wake and every line lights up.
+    Lerato Dlamini: And I've not eaten since I came in.
     ~ hub_quiet = true
     -> hub
 * [Who else is on tonight?]
@@ -45,20 +45,20 @@ Lerato Dlamini: Evening. I'm on the phones and the rota tonight.
 // EXCHANGES (heard once each; played between Lerato and Tomasz at the coffee point)
 // ===========================================
 
-// Gate: irina_arrested. The arrest itself, nothing about Irina's character or work.
+// Gate: irina_taken (she has been collected from the floor). The arrest itself, nothing about Irina's character or work.
 === ex_floor_after_irina ===
 Lerato Dlamini: Did you see the police come through?
-Tomasz Wisniewski: I did. Her office has been dark since.
+Tomasz Wisniewski: I did. They walked her out past my desk.
 Lerato Dlamini: Nobody has told us a thing.
 Tomasz Wisniewski: I only keep the queue running.
-Lerato Dlamini: Same. Somebody has to.
+Lerato Dlamini: Same. The floor won't run itself.
 -> DONE
 
 // Gate: assets_seized. The floor's reaction in plain words; no wallets, funds or amounts.
 === ex_floor_after_seizure ===
-Lerato Dlamini: Every phone line is lit up at once.
-Tomasz Wisniewski: Queue's climbing. Callers everywhere.
-Lerato Dlamini: And nobody will tell us why.
+Lerato Dlamini: My phone hasn't stopped all night.
+Tomasz Wisniewski: The queue climbs. Callers everywhere.
+Lerato Dlamini: And I've no idea what to tell them.
 Tomasz Wisniewski: Then we answer, and we say very little.
 Lerato Dlamini: Politely. That part I can do.
 -> DONE

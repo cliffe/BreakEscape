@@ -1994,7 +1994,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 <%# Office life (PLAN 6): Dani's coffee and grumble pools. Lines in office_life/SPOKEN_LINES.md. %>
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": { "lines": ["Fourth one. Don't tell my mum.", "Charts won't watch themselves.", "Is it decaf? Tell me it's not decaf.", "Asia's about to open. Need this.", "I can see in colour again."], "overhearRadius": 360 },
+            "coffee": { "lines": ["Another one. Don't tell my mum.", "Charts won't watch themselves.", "Is it decaf? Tell me it's not decaf.", "Asia's about to open. Need this.", "I can see in colour again."], "overhearRadius": 360 },
             "grumble": ["Seriously? Not tonight.", "I'll sulk at my desk, then."]
           },
           "globalVarOnKO": "trader_ko",
@@ -2037,11 +2037,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "phone": ["Trading floor, Lerato speaking.", "Yes, I can see the problem. One moment.", "Thank you for calling. Goodnight."]
           },
           "exchanges": [
-            { "with": "tomasz_wisniewski", "knot": "ex_floor_after_irina", "requireGlobal": { "irina_arrested": true, "floor_staff_ko": false } },
+            { "with": "tomasz_wisniewski", "knot": "ex_floor_after_irina", "requireGlobal": { "irina_taken": true, "floor_staff_ko": false } },
             { "with": "tomasz_wisniewski", "knot": "ex_floor_after_seizure", "requireGlobal": { "assets_seized": true, "floor_staff_ko": false } }
           ],
           "globalVarOnKO": "lerato_ko",
-          "seated": true,
+          "seated": { "facing": "south" },
           "needsHome": "lerato_desk",
           "needsRooms": ["trading_floor"],
           "needsCompany": { "groups": ["late_floor"] },
@@ -2049,6 +2049,10 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "caffeine": { "initial": 70, "decayPerMin": 8, "urgentAt": 40, "jitterPct": 20 },
             "hunger": { "initial": 75, "decayPerMin": 6, "urgentAt": 40, "jitterPct": 20 }
           },
+<%# PLAN 2.6: one-way coupled break. Tomasz starting the floor coffee brings Lerato (never the other way round). %>
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:floor_coffee", "condition": "data.npcId === 'tomasz_wisniewski' && !globalVars.floor_staff_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
+          ],
           "observations": "A night floor coordinator at the end of the second row of desks, a desk phone at her elbow."
         },
         {
@@ -2073,7 +2077,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "phone_message": ["Lerato is away. May I take a message?", "I will tell her you called.", "She will ring you back shortly."]
           },
           "exchanges": [
-            { "with": "trader_npc", "knot": "ex_dani_tomasz_late_shift", "requireGlobal": { "floor_staff_ko": false } }
+            { "with": "trader_npc", "knot": "ex_dani_tomasz_late_shift", "requireGlobal": { "irina_arrested": false, "floor_staff_ko": false } }
           ],
           "globalVarOnKO": "tomasz_ko",
           "seated": true,
@@ -2089,7 +2093,9 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "answersPhones": true,
           "habits": { "screen": { "lockChance": 0.2, "lockIfAwayOverSeconds": 22 } },
           "eventMappings": [
-            { "eventPattern": "conversation_closed:irina_volkova", "onceOnly": true, "condition": "!globalVars.floor_staff_ko", "needs": { "print": { "producer": "floor_copier", "forget": true } } }
+            { "eventPattern": "conversation_closed:irina_volkova", "onceOnly": true, "condition": "!globalVars.floor_staff_ko", "needs": { "print": { "producer": "floor_copier", "forget": true } } },
+<%# PLAN 2.6: one-way coupled break. Dani starting the floor coffee brings Tomasz (never the other way round). %>
+            { "eventPattern": "npc_use_started:floor_coffee", "condition": "data.npcId === 'trader_npc' && !globalVars.floor_staff_ko", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }
           ],
           "observations": "An evening app-support lead working a ticket queue on his laptop."
         }

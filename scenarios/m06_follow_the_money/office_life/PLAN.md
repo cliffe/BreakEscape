@@ -83,7 +83,8 @@ No machine needs a beat gate: no beat needs Dani at a spot. The only `offWhen` o
 
 ### 2.6 Pairs
 
-- No coupled breaks. Pairs form naturally at the capacity-2 coffee point.
+- Two one-way coupled breaks make pairs likely (natural rhythm alone left the extras at different times and Dani's one trip after his first talk never met Tomasz). Tomasz starting the floor coffee sets Lerato's `caffeine` to 20; Dani starting it sets Tomasz's `caffeine` to 20. Each is an `npc_use_started:floor_coffee` mapping with `condition: "data.npcId === '<starter>' && !globalVars.floor_staff_ko"`, `delayMs: 2000` and a cooldown (Lerato's 150000 ms, Tomasz's 120000 ms). Never both ways (a two-way couple can hold the machine for minutes). Each mapping sits on the record of the NPC whose need it sets, appended last, so it is heard whenever the floor is loaded (the floor is loaded for as long as anyone is using the machine). Once `floor_staff_ko` is true no new coupled break starts.
+- Other pairs still form naturally at the capacity-2 coffee point.
 - Compatibility: Dani, Lerato and Tomasz share the late floor; any pairing is plausible. Nobody pairs with Irina, who has no needs.
 
 ### 2.7 Story-safe movement
@@ -112,6 +113,7 @@ All appended, none edits an existing mapping:
 
 - HaX: four `npc_ko:*` mappings setting `floor_staff_ko`. HaX's list ends with an ERB `pairs` loop whose trailing comma is computed (`erb:1664` to `:1680`); the new mappings go after the loop and the loop's comma logic changes so that a comma always follows its last entry. The rendered JSON is checked with the validator.
 - Dani: the first-talk break and the `room_entered` mapped break (2.5).
+- Lerato: one coupled break, `npc_use_started:floor_coffee` by Tomasz (2.6). Tomasz: one coupled break, the same event by Dani (2.6), appended after his print mapping.
 - Tomasz: one `conversation_closed:irina_volkova` mapping, `onceOnly`, `condition: "!globalVars.floor_staff_ko"`, `needs: { print: { producer: "floor_copier", forget: true } }` (`producer` is required, schema `:5107`; `npc-needs.js:1119` to `:1122`), so after the player first speaks to Irina his shift handover sheet is left on the copier tray. It lives on Tomasz because his room (the trading floor) is loaded whenever Irina is talked to.
 - Printing is by this command only. Neither extra has `habits.print` or a `work` need, and no `onUse` hook prints to the copier, so the copier's one reveal slot (3.1) can only ever hold Tomasz's page; no routine print can recycle it (`npc-needs.js:3884` to `:3891`). The command needs no `habits.print`: the habit falls back to `{}` and `forget: true` comes from the command (`npc-needs.js:1124` to `:1126`, `:3990` to `:3991`).
 - Exchange 1 (6) is declared on Tomasz (`with: "trader_npc"`), its knot in Tomasz's new ink file, so `ink/m06_npc_trader.ink` is untouched.
@@ -198,8 +200,8 @@ All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variabl
 | `grumble_gone` | not written: with two servings and two eaters at one each it cannot play (LIVE_S4.md) | 0 |
 | `phone` (answering her own phone) | Lerato | 3 |
 | `phone_message` (taking a message for her) | Tomasz | 3 |
-| exchange 1 `ex_dani_tomasz_late_shift`, on Tomasz, `with: "trader_npc"`, `requireGlobal: { floor_staff_ko: false }` | Dani, Tomasz | about 6 |
-| exchange 2 `ex_floor_after_irina`, on Lerato, `with: "tomasz_wisniewski"`, `requireGlobal: { irina_arrested: true, floor_staff_ko: false }` (`irina_arrested` declared at `erb:752`, set in `ink/m06_npc_irina_volkova.ink:594`); topic is the arrest itself (the police, the empty office), not Irina's character or work | Lerato, Tomasz | about 5 |
+| exchange 1 `ex_dani_tomasz_late_shift`, on Tomasz, `with: "trader_npc"`, `requireGlobal: { irina_arrested: false, floor_staff_ko: false }` | Dani, Tomasz | about 6 |
+| exchange 2 `ex_floor_after_irina`, on Lerato, `with: "tomasz_wisniewski"`, `requireGlobal: { irina_taken: true, floor_staff_ko: false }` (`irina_taken` declared at `erb:813`, set by HaX's room-entry mapping after the arrest once the player has left the room, so Irina is no longer at her desk when the exchange can play); topic is the arrest itself (the police walking her out), not Irina's character or work | Lerato, Tomasz | about 5 |
 | exchange 3 `ex_floor_after_seizure`, on Lerato, `with: "tomasz_wisniewski"`, `requireGlobal: { assets_seized: true, floor_staff_ko: false }` (`assets_seized` declared at `erb:748`, set late in `ink/m06_phone_agent_0x99.ink:575` and `ink/m06_satoshi_confrontation.ink:378`, so heard only if the player passes back through the floor); topic is the floor's reaction in plain words (everything frozen, the support queue on fire), with no wallets, funds or amounts | Lerato, Tomasz | about 5 |
 | short conversations, `ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink` (greeting, one question about the night, goodbye; no hub, task or item) | Lerato, Tomasz | about 12 |
 

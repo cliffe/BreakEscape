@@ -6,7 +6,7 @@ Every line the office-life build adds. Pool lines are scenario data (NPC `chatte
 
 | Speaker | Pool | Line | Chars |
 |---|---|---|---|
-| trader_npc | coffee | Fourth one. Don't tell my mum. | 30 |
+| trader_npc | coffee | Another one. Don't tell my mum. | 31 |
 | trader_npc | coffee | Charts won't watch themselves. | 30 |
 | trader_npc | coffee | Is it decaf? Tell me it's not decaf. | 36 |
 | trader_npc | coffee | Asia's about to open. Need this. | 32 |
@@ -47,19 +47,19 @@ Pool lines: 27. The `grumble_gone` pool (pizza gone) is not written: with two se
 | ex_dani_tomasz_late_shift | Tomasz Wisniewski | One said his notification rang twice. | 37 |
 | ex_dani_tomasz_late_shift | Dani Okonkwo | Tell him it's a feature. Works for me. | 38 |
 | ex_floor_after_irina | Lerato Dlamini | Did you see the police come through? | 36 |
-| ex_floor_after_irina | Tomasz Wisniewski | I did. Her office has been dark since. | 38 |
+| ex_floor_after_irina | Tomasz Wisniewski | I did. They walked her out past my desk. | 40 |
 | ex_floor_after_irina | Lerato Dlamini | Nobody has told us a thing. | 27 |
 | ex_floor_after_irina | Tomasz Wisniewski | I only keep the queue running. | 30 |
-| ex_floor_after_irina | Lerato Dlamini | Same. Somebody has to. | 22 |
-| ex_floor_after_seizure | Lerato Dlamini | Every phone line is lit up at once. | 35 |
-| ex_floor_after_seizure | Tomasz Wisniewski | Queue's climbing. Callers everywhere. | 37 |
-| ex_floor_after_seizure | Lerato Dlamini | And nobody will tell us why. | 28 |
+| ex_floor_after_irina | Lerato Dlamini | Same. The floor won't run itself. | 33 |
+| ex_floor_after_seizure | Lerato Dlamini | My phone hasn't stopped all night. | 34 |
+| ex_floor_after_seizure | Tomasz Wisniewski | The queue climbs. Callers everywhere. | 37 |
+| ex_floor_after_seizure | Lerato Dlamini | And I've no idea what to tell them. | 35 |
 | ex_floor_after_seizure | Tomasz Wisniewski | Then we answer, and we say very little. | 39 |
 | ex_floor_after_seizure | Lerato Dlamini | Politely. That part I can do. | 29 |
 
 Knot homes and gates:
-- `ex_dani_tomasz_late_shift`: `m06_npc_tomasz.ink`, `with: trader_npc`, gate `floor_staff_ko: false`
-- `ex_floor_after_irina`: `m06_npc_lerato.ink`, `with: tomasz_wisniewski`, gate `irina_arrested: true`, `floor_staff_ko: false`
+- `ex_dani_tomasz_late_shift`: `m06_npc_tomasz.ink`, `with: trader_npc`, gate `irina_arrested: false`, `floor_staff_ko: false`
+- `ex_floor_after_irina`: `m06_npc_lerato.ink`, `with: tomasz_wisniewski`, gate `irina_taken: true`, `floor_staff_ko: false`
 - `ex_floor_after_seizure`: `m06_npc_lerato.ink`, `with: tomasz_wisniewski`, gate `assets_seized: true`, `floor_staff_ko: false`
 
 Exchange lines: 16.
@@ -69,9 +69,9 @@ Exchange lines: 16.
 | Speaker | Knot | Line |
 |---|---|---|
 | lerato_dlamini | `m06_npc_lerato.ink` start | Evening. I'm on the phones and the rota tonight. |
-| lerato_dlamini | hub re-entry | Back again? Quick, before the phone goes. |
-| lerato_dlamini | hub, Quiet night? | Quiet is how it starts. Then Asia opens and every line lights up. |
-| lerato_dlamini | hub, Quiet night? | I keep a mug by the phone for that. |
+| lerato_dlamini | hub re-entry | You again. Go on, before the phone goes. |
+| lerato_dlamini | hub, Quiet night? | Quiet is how it starts. Then the early markets wake and every line lights up. |
+| lerato_dlamini | hub, Quiet night? | And I've not eaten since I came in. |
 | lerato_dlamini | hub, Who else is on tonight? | Me, Tomasz on the support queue, and Dani, wired on coffee. |
 | lerato_dlamini | hub, goodbye | Mind the coffee machine. It bites. |
 | tomasz_wisniewski | `m06_npc_tomasz.ink` start | Sorry, I am in the middle of a ticket. How can I help? |
@@ -100,3 +100,5 @@ V6 (`app:break_escape:tts:office_lines`) counts pools and exchanges only: 43 cli
 ## Banned-topic check (PLAN 3.3)
 
 Words checked absent from every line above: money, funds, wallet, deposit, withdraw, transfer, settle, custody, escrow, client, customer, account, login, password, hold, held, audit, FCA, regulator, visitor, badge, key, card, ops, any four-digit number, any month, date or hour count. The only numerals-as-words are ordinal coffee counts (fifth, sixth, fourth), which are not codes.
+
+Dialogue review fixes (DIALOGUE_REVIEW_OL.md, Outcomes): line texts above are current. Clip count unchanged at 55 (no line added or removed).
