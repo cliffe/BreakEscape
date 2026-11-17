@@ -10,12 +10,15 @@ Branch `plan/ol-m09`, base main `3e00651a8`. Inputs: `BASELINE.md`, the mission-
 | Engine changes needed by this plan | None |
 | Art, characters, voicing | None needed |
 | User's decision on tier | `QUESTIONS.md` Q1; this plan follows the recommendation (option a) |
+| User's decision on the louder authored levels | `QUESTIONS.md` Q3; this plan follows the recommendation (keep them, judge in the listen) |
 
 ## 1. Aim and tier
 
-**Aim.** Leave the archive as empty as the story says it is, and make what the player hears behave like a building at night: the hum of the stacks and machine rooms carries through open doors, crossfades as the player moves, holds steady in a doorway, and drops under the many phone calls and conversations so the voices sit on top of it.
+**Aim.** Leave the archive as empty as the story says it is, and make what the player hears behave like a building at night: each machine room plays its own hum at its authored level, the hum carries through open doors into the quiet rooms, holds steady in a doorway, and drops under the many phone calls and conversations so the voices sit on top of it.
 
 **Tier: 0 for people, with one Tier 1 atmosphere item, `roomTone: true`.** No new NPC, no needs, no machines, no chatter, no exchanges, no levers, no openings, no new room, no engine change, no art, no voicing.
+
+The missions plan expected analysis only for m09 (`OFFICE_LIFE_MISSIONS_PLAN.md:625`, `:908`). The `roomTone` key goes one step beyond that, so it waits for the user's yes on `QUESTIONS.md` Q1 (option a); option b is the missions plan's "nothing at all".
 
 **Why not more.** The archive is closed at about 22:45 and the director has cleared it of anyone she can:
 
@@ -23,7 +26,9 @@ Branch `plan/ol-m09`, base main `3e00651a8`. Inputs: `BASELINE.md`, the mission-
 - Noor: "We're closed. Nobody comes in for a deed at this hour." (`m09_noor_haddad.ink:64`)
 - Old Coyote: "I'm paid to walk the fence. Nobody pays me to look in the cage." (`m09_old_coyote.ink:98`)
 
-There is no kitchen or break room. Every person on the map is pinned by the plot (section 2), so no existing NPC may take a routine, and new staff would contradict the lines above, be witnesses to a covert entry, and need a pair to say anything at all (a lone NPC is silent in pools). The missions plan's alternative, "a front-desk kettle and a short pool for Jesse Tran", does not work: the front desk has a water cooler, not a kettle, and its only possible user is Noor, who may not move; a pool for Tran alone would never play, since chatter needs two NPCs at one capacity-2 object.
+There is no kitchen or break room. Every person on the map is pinned by the plot (section 2), so no existing NPC may take a routine, and new staff would contradict the lines above, be witnesses to a covert entry, and need a pair to say anything at all: a lone NPC is silent in pools, since chatter needs two NPCs at one capacity-2 object.
+
+The missions plan's alternative, "a front-desk kettle and a short pool for Jesse Tran" (`OFFICE_LIFE_MISSIONS_PLAN.md:344`), fails on both halves. Tran stands in `server_closet` (:1561), where he is a line-of-sight witness (`challengeOnSight`, :1587) and plot-located at the degausser, so he may not walk to a front-desk kettle. A pool for Tran alone would never play, because he would have no partner at the machine.
 
 The aim chain does not change. No task, objective, `concludeRequires`, lock or VM flag reads anything this plan adds, because it adds no global, event or mapping.
 
@@ -33,15 +38,17 @@ The aim chain does not change. No task, objective, `concludeRequires`, lock or V
 
 | NPC | Line | Cast class | D78 class | Reason |
 |---|---|---|---|---|
-| `noor_haddad` | :1265 | story-critical (KO task `meet_the_clerk`, card source, `rfidCard` clone source) | holding; also fails the open-conversation rule | `itemsHeld` `noor_staff_card` (:1290). Her clone choice reads her place: "Lean in over her list" and the narrator's "You lean in to read the list" (`m09_noor_haddad.ink:107`, `:113`); her observation is "checking boxes off a list by the trolleys" (:1306). Hidden on `noor_told` (:1304, :1305) |
+| `noor_haddad` | :1265 | story-critical (KO task `meet_the_clerk`, card source, `rfidCard` clone source) | holding; also fails the open-conversation rule | `itemsHeld` `noor_staff_card` (:1290). Her clone choice reads her place: "Lean in over her list" and the narrator's "You lean in to read the list" (`m09_noor_haddad.ink:107`, `:113`); her observation is "checking boxes off a list by the trolleys" (:1307). Hidden on `noor_told` (:1304, :1305) |
 | `old_coyote` | :1378 | patrolling, hostile on attack | witness or line of sight; holding | `behavior.patrol` (:1415), `challengeOnSight` in `open_stacks` (:1434), `patrolOverride` on `flag1_submitted` (:1448, :1454), `itemsHeld` `dock_office_key` (:1399). A needs NPC may not patrol |
-| `archive_guard` (Lyle Dillard) | :1461 | story, `initiallyHidden` | plot-located | shown and turned hostile on `tran_alerted` (m01_maya_ko branch only), re-shown on `room_entered:open_stacks` (:1494) |
+| `archive_guard` (Lyle Dillard) | :1461 | story, `initiallyHidden` | plot-located | shown on `tran_alerted` (m01_maya_ko branch only); hidden and non-hostile until his own one-line conversation opens, whose `#hostile:archive_guard` tag turns him hostile (comment at :1460); re-shown on `room_entered:open_stacks` (:1494) |
 | `jesse_tran` | :1561 | story-critical (wipe console, `tran_outcome`) | witness or line of sight; plot-located | `challengeOnSight` in `server_closet`, gated on `m01_maya_ko` (:1587); his talk-down happens at the degausser; hidden when `tran_outcome === 'talked'` (:1596) |
 | `sorensen` | :1915 | story-critical (stacks card, `sorensen_fate`, cage conversation) | holding; plot-located | `itemsHeld` `sorensen_stacks_card` (:1939); her conversation opens on `nightshade_file_held` in the cage (comment at :1914); HaX's `npc_ko:sorensen` mappings (:286 to :292) |
 | `sorensen_hatch`, `sorensen_door` | :1804, :1963 | several records of one character | never | `staticSprite` and `immovable` at the hatch; `sorensen_door` is a hidden cutscene record |
 | `alpha_recording` | tape room | cutscene record | never | `initiallyHidden` |
 | `director_netherton`, `hax_voice`, `quintero`, `kowalczyk`, `malhotra`, `arakawa`, `briefing_cutscene`, `closing_debrief` | loading dock | cutscene records | never | `initiallyHidden` at (500, 500) |
 | `agent_0x99`, `recruiter`, `nightshade_phone`, `torres_phone`, `gary_phone` | loading dock | phone | never | `npcType: phone` |
+
+Twenty-one NPC records in all, matching `v1_summary_base.txt`.
 
 ### 2.2 People table
 
@@ -67,21 +74,23 @@ Old Coyote's LOS challenge and his `patrolOverride` to (3.5, 4.2) after flag 1 (
 
 ## 3. Rooms and objects
 
-No object is declared, and `officePresets` stays unset. With no needs NPC, a preset would do nothing, and setting `officePresets` would hand a desk preset to undeclared PCs for no gain.
+No object is declared, and `officePresets` stays unset. With no needs NPC a preset would do nothing, and setting `officePresets` would hand a desk preset to undeclared PCs for no gain.
 
-| Room | Type | Machines (Tiled decor) | `ambientSound` |
+| Room | Type | Machines (Tiled decor, not checked against the map) | `ambientSound`, `ambientVolume` |
 |---|---|---|---|
 | `loading_dock` (start) | `room_m09_dock` | guard desk: cups, radio charger | none |
 | `front_desk` | `room_m09_front` | `water_cooler1`, two desk phones, `pc3` | none |
-| `open_stacks` | `room_m09_stacks` | none | `server_room_ventilation` (:1368) |
-| `server_closet` | `room_m09_closet` | `pc6`, racks, degausser (story) | `server_room_ventilation` (:1553) |
+| `open_stacks` | `room_m09_stacks` | none | `server_room_ventilation` 0.15 (:1368, :1369) |
+| `server_closet` | `room_m09_closet` | `pc6`, racks, degausser (story) | `server_room_ventilation` 0.4 (:1553, :1554) |
 | `staff_passage` | `room_m09_passage` | `water_cooler1` | none |
 | `reading_room` | `room_m09_reading` | field laptop and drop terminal (VM) | none |
-| `restricted_stacks` | `room_m09_restricted` | hatch counter | `server_room_ventilation`, placeholder for the shredder loop (:1788 comment, :1793) |
-| `restricted_cage` | `room_m09_cage` | shredder (story), plan chest | `server_room_ventilation`, same placeholder (:1896 comment, :1907) |
+| `restricted_stacks` | `room_m09_restricted` | hatch counter | `server_room_ventilation` 0.4, placeholder for the shredder loop (:1788 comment, :1793, :1794) |
+| `restricted_cage` | `room_m09_cage` | shredder (story), plan chest | `server_room_ventilation` 0.5, same placeholder (:1896 comment, :1907, :1908) |
 | `sorensen_office` | `room_m09_office` | `kettle1`, `mugs_tray1`, desk phone | none |
-| `tape_room` | `room_m09_tape` | reel deck (story) | `server_room_ventilation` (:2364) |
-| `salvage_cage` | `room_m09_salvage` | Tomb Beta rack, `pnw_portable_printer1`, VM link | `server_room_ventilation` (:2474) |
+| `tape_room` | `room_m09_tape` | reel deck (story) | `server_room_ventilation` 0.35 (:2364, :2365) |
+| `salvage_cage` | `room_m09_salvage` | Tomb Beta rack, `pnw_portable_printer1`, VM link | `server_room_ventilation` 0.6 (:2474, :2475) |
+
+Every authored loop in m09 is the same key, `server_room_ventilation`. The machines column comes from the room notes, not from decoding the Tiled maps; it does not affect room tone, because no room type has a profile.
 
 **Secrets.** Every PIN, password, key, card, code and flag stays where it is. Nothing in this plan writes, prints, shows or moves any of them.
 
@@ -93,19 +102,42 @@ Add one top-level key, beside `npcThoughts` (:549):
 "roomTone": true,
 ```
 
-No `roomToneTypes`. m09's eleven room types are all bespoke (`room_m09_*`) and none is in the profile table (`js/data/room-tones.json`), so no profile bed, typing loop or background spot applies. Every profile with a bed uses `office_ambient`, a working-office murmur (the missions plan's review at `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN_REVIEW_R8.md:113` makes the same point about reception and IT), which would put an occupied office into an archive the director has emptied. Rooms without their own loop stay quiet or carry a neighbour's hum.
+No `roomToneTypes`. Profile lookup is by exact room type, in the engine (`systems/office-room-tone.js:42` to `:47`) and the validator (`scripts/validate_npc_needs.rb:76` to `:82`). m09's eleven types are all bespoke (`room_m09_*`) and none is in the type table of `js/data/room-tones.json`, so no profile bed, typing loop or background spot can play anywhere in m09. The office, reception, IT and quiet-office profiles all use `office_ambient`, a working-office murmur (the missions plan's review makes the same point, `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN_REVIEW_R8.md:113`); the kitchen and server profiles have their own beds and the meeting profile has none. Mapping any m09 room to a profile would put an occupied office, a kitchen or a second machine hum into an archive the director has emptied, so none is mapped.
 
-**What changes for the player** (`systems/ambient-choice.js:30` to `:47`, `core/rooms.js:3276` to `:3308`, `systems/office-room-tone.js`):
+**Validator.** With `roomTone` true and no room resolving to a profile, the validator adds one warning (`scripts/validate_npc_needs.rb:115`): "roomTone is true but no room resolves to a room tone profile (by exact type or roomToneTypes); only authored ambientSound loops play." The count goes from 30 to 31. The warning states the aim, so it is accepted, not silenced: mapping rooms to the null-bed `meeting` profile only to clear it would put those rooms on step 2 with no bed, a change with no purpose.
 
-1. **Own loop first.** In a room with its own `ambientSound`, that loop plays at its `ambientVolume`. Today the first room in rooms order that is the player's room or adjacent wins (`ambient-choice.js:21` to `:28`), so in `server_closet` the earlier `open_stacks` entry, adjacent through the west door, can win over the closet's own loop. The loop key is the same placeholder in both today, so the audible change is the level: the closet's own loop plays at its own volume instead of the 0.125 or 0.01 bleed.
-2. **Open door before rooms order.** In a quiet room (dock, front desk, passage, reading room, Sorensen's office), an adjacent loop through an open door wins over one through a shut door (`ambient-choice.js:37` to `:47`). In the reading room, which has `open_stacks` east and `restricted_stacks` north, the open door's hum is the one heard. Once the shredder loop replaces the placeholder in `restricted_stacks` and `restricted_cage`, this is what lets the shredder be heard through the restricted-stacks door and not the stacks' hum.
-3. **Crossfade** between beds instead of a cut (`core/rooms.js:3306`).
-4. **Doorway hold.** In a north or south doorway the player's room is null and the bed carries on (`ambient-choice.js:30`, `core/rooms.js:3305`).
-5. **Duck.** The bed drops while a person-chat or phone-chat is open or a heard needs line plays (`office-room-tone.js:62` to `:63`, `:126` to `:130`). m09 runs on phone calls (HaX, Torres, Gary, Nightshade, the recruiter) and person-chats in the stacks and the cage, so the hum drops under each.
+**How the bed is chosen** (`systems/ambient-choice.js`, `core/rooms.js:3277` to `:3308`). Doors never close in play (`systems/doors.js:947` is the only write to a door's open state), so "open" below means a door the player has already opened.
 
-**What does not change.** No lock, key, door, object, NPC, global, event mapping, task or objective. The `room_tone_started:<roomId>` event it emits once per room is read by no mapping in m09. The music system keeps running over it (m01, m02 and m08 run both). Affordance start and output sounds are gated by `roomTone` too, but m09 declares no affordance, so none plays.
+- Step 1, own loop: a room with its own `ambientSound` plays it at its `ambientVolume`.
+- Step 2, profile bed: never in m09 (no mapped type).
+- Step 3, neighbour: in a room without a loop, the first adjacent room in rooms order with a loop and an open door gives its loop at 0.125 (`OPEN_BLEED`, `ambient-choice.js:15`); failing that, the first with a shut door at 0.01 (`SHUT_BLEED`, `:16`); open before shut (`:37` to `:47`).
+- Step 4: silence.
+- Doorway: in a north or south doorway the player's room is null and the current bed carries on (`ambient-choice.js:30`, `core/rooms.js:3305`). Today, with room tone off, a null room finds no neighbour and fades to silence, so the doorway hold is a real change.
+- Duck: the bed level halves (`DUCK` 0.5, `office-room-tone.js:22`) while a person-chat or phone-chat is open or a heard needs line plays (`:62` to `:65`, `:126` to `:130`).
+- Change of bed: a new key crossfades (`core/rooms.js:3306`); the same key at a new level tweens the level without stopping the loop (`systems/sound-manager.js:410` to `:425`). Every m09 loop is the same key, so every change in m09 is a level tween until a second key arrives.
 
-**Shredder loop.** The owed `assets/sounds/shredder_loop.mp3` (`ASSET_LIST.md:115`) is not part of this plan; when the audio stage swaps it in for the placeholder on `restricted_stacks` and `restricted_cage`, room tone needs no further change.
+**What the player hears, before and after.** Today the first room in rooms order that is the player's room or adjacent to it, with a loop, wins (`ambient-choice.js:21` to `:28`), so a room with its own loop next to an earlier room with one plays the bleed level, not its own. On the critical path each of these doors is open on entry.
+
+| Room | Today | With room tone | Why |
+|---|---|---|---|
+| `open_stacks` | own, 0.15 | own, 0.15 | first loop in rooms order |
+| `server_closet` | `open_stacks` bleed, 0.125 | own, 0.4 | step 1 |
+| `restricted_stacks` | own, 0.4 | own, 0.4 | no earlier neighbour with a loop |
+| `restricted_cage` | `restricted_stacks` bleed, 0.125 | own, 0.5 | step 1 |
+| `tape_room` | `restricted_stacks` bleed, 0.125 | own, 0.35 | step 1 |
+| `salvage_cage` | `tape_room` bleed, 0.125 | own, 0.6 | step 1 |
+| `loading_dock` | `open_stacks`, 0.01 at spawn, 0.125 once the north door is open | same | step 3 |
+| `reading_room` | `open_stacks`, 0.125 | `open_stacks`, 0.125, also after the north door opens | step 3; the player arrives from `open_stacks` (`WALKTHROUGH_R1.md:37`), and `open_stacks` (:1361) comes before `restricted_stacks` (:1785) in rooms order |
+| `sorensen_office` | `restricted_stacks`, 0.125 | same | step 3 |
+| `front_desk`, `staff_passage` | silence | silence | step 4: no neighbour has a loop |
+
+So four rooms get three to five times louder: the closet, the cage, the tape room and the salvage cage play their authored levels, which no player has heard yet. Once the shredder loop replaces the placeholder in `restricted_stacks` and `restricted_cage`, the cage plays it at 0.5 and the hatch counter at 0.4; the reading room still plays the stacks' hum on the normal route, so the shredder is not heard there.
+
+**The debrief.** The hangar debrief is a hidden person-chat with the hangar background (:1170 to :1220), opened from HaX's "[Bring me in.]" (`ink/m09_phone_agent0x99.ink:766`, shown on `tesseract_call_done`) wherever the player stands, usually the salvage cage at the end of the route (`WALKTHROUGH_R1.md:65`, `:73`). Nothing suppresses ambience until the credits (`music/ending-audio.js:67`, `systems/sound-manager.js:551`). Today the hangar scene plays over the tape-room bleed at 0.125; with room tone it plays over the salvage cage's 0.6, ducked to 0.3. `QUESTIONS.md` Q3 puts this to the user; the plan keeps the authored levels and the listen (L8) supplies the numbers. Lowering an authored `ambientVolume` changes existing data and needs the user's yes.
+
+**What does not change.** No lock, key, door, object, NPC, global, event mapping, task or objective. The `room_tone_started:<roomId>` event fires only on steps 1 and 2 (`office-room-tone.js:145` to `:149`) and no m09 mapping reads it. Room tone installs under `window.npcManager` with no needs check (`core/game.js:2060`, `:2109`), and `server_room_ventilation` is preloaded (`sound-manager.js:122`). The music system keeps running over it (m01, m02 and m08 run both), and the credits still suppress ambience. Affordance start and output sounds need an NPC using an object; m09 has no needs NPC, so none plays.
+
+**Shredder loop.** The owed `assets/sounds/shredder_loop.mp3` (`ASSET_LIST.md:115`) is not part of this plan; when the audio stage swaps it in for the placeholder on `restricted_stacks` and `restricted_cage`, room tone needs no further change, and that is when the first true crossfade in m09 happens (cage or hatch counter to tape room).
 
 ## 5. Levers and openings
 
@@ -113,7 +145,7 @@ None. The building holds no ambient staff to move, and every person is pinned by
 
 ## 6. Spoken lines
 
-None. `SPOKEN_LINES.md` and `DIALOGUE_SAMPLE.md` are not needed: no pool, exchange, knot or bark is added, and no existing line changes. V6 stays at 0 office-life clips.
+None. `SPOKEN_LINES.md` and `DIALOGUE_SAMPLE.md` are not needed: no pool, exchange, knot or bark is added, and no existing line changes. V6 stays at 0 office-life clips. Since m09 has no pools, barks, exchanges, needs NPC or affordance, no lone NPC can speak from a pool.
 
 ## 7. Sync budget
 
@@ -142,28 +174,30 @@ Lighting is finished (`LIGHTING_PLAN.md`, `LIGHTING_REVIEW_R2.md`) and does not 
 
 ### 10.1 Static checks (build)
 
-- `ruby scripts/validate_scenario.rb scenarios/m09_digital_archaeology/scenario.json.erb`: 0 errors, and the same 30 warnings as the baseline, no new one.
+- `ruby scripts/validate_scenario.rb scenarios/m09_digital_archaeology/scenario.json.erb`: 0 errors and 31 warnings: the baseline's 30 plus the one quoted in section 4.
 - `--office-summary` filtered as in the skill, diffed against `v1_summary_base.txt`: identical.
 - `ruby scripts/lock_key_diff.rb scenarios/m09_digital_archaeology/scenario.json.erb scenarios/m09_digital_archaeology/office_life/baseline_locks.json`: empty.
 - The object position one-liner (skill reference `measurement-recipes.md` section 9) diffed against `positions_base.txt`: identical.
 - V6 rake: 0 office-life clips.
 - `test/js/room-tone.test.mjs` passes unchanged.
 
-### 10.2 Live checks (keyless server on a free port, fresh game per check, headless at `setFPS(20)` with fixed steps on)
+### 10.2 Live checks
 
-Read `window.ambientChoice` (set only under room tone, `core/rooms.js:3304`) at each step.
+Keyless server on a free port, headless at `setFPS(20)` with fixed steps on. The test bridge has no unlock or teleport, so rooms behind a lock are reached by real progress. Checks in the dock and the open stacks (L0 start, L1 closet, L2, L4, L6a) run in their own fresh game; the rest are read at the matching step of the scripted regression (10.3), with no game-row edits and no globals set in the page. Read `window.ambientChoice` (set only under room tone, `core/rooms.js:3304`) and the playing sound's volume at each step.
 
-- **L1, own loop.** Walk into `server_closet`: `ambientChoice.room` is `server_closet`, `step` 1, level the closet's `ambientVolume`.
-- **L2, east or west door.** Stand in `open_stacks` beside the east door to the closet, then step through: the bed crossfades, with no gap.
-- **L3, north or south door.** Walk from `reading_room` north into `restricted_stacks` and stop in the doorway: `ambientChoice` is unchanged while the player's room is null (the bed holds).
-- **L4, open door first.** In `reading_room` with the north door open and the east door shut, the chosen key comes from `restricted_stacks` at 0.125; with the east door open and the north door shut, from `open_stacks`.
-- **L5, quiet rooms.** In `loading_dock`, `front_desk`, `staff_passage` and `sorensen_office` the chosen bed is a neighbour's loop or silence (`step` 3 or 4), never a profile bed (`step` 2).
-- **L6, duck.** Open a phone call to agent_0x99 in `open_stacks`: the ambient level halves while the call is open and returns when it closes; the same for Sorensen's conversation in the cage.
-- **L7, reload.** Reload in `restricted_cage`: the bed returns to the cage's own loop after the Mission Brief (the brief reappearing and the start-room spawn after reload are intended).
+- **L0, no profile bed ever**, held through the whole regression: `ambientChoice.step` is never 2; the room-tone log has no typing or spot entry; `office_ambient` never plays; `room_tone_started` fires only for the six rooms with their own loop.
+- **L1, own loop.** In each of `server_closet`, `restricted_cage`, `tape_room` and `salvage_cage`: `ambientChoice.room` is that room, `step` 1, level its `ambientVolume` (0.4, 0.5, 0.35, 0.6). The closet in a fresh game; the others at walkthrough steps 8 to 15. The listener records whether the cage at 0.5 and the salvage cage at 0.6 sound right (Q3).
+- **L2, east or west door.** Stand in `open_stacks` beside the east door to the closet, then step through: same key, the level tweens from 0.15 to 0.4, with no stop and restart.
+- **L3, north or south door.** At the regression step where the player walks from `reading_room` north into `restricted_stacks`, stop in the doorway: `ambientChoice` is unchanged while the player's room is null (the bed holds at `open_stacks` 0.125), then moves to `restricted_stacks` 0.4 on entry.
+- **L4, reading room.** Arrive from `open_stacks`: `open_stacks` at 0.125, step 3. After the north door opens: still `open_stacks` at 0.125.
+- **L5, quiet rooms.** `loading_dock`: step 3, `open_stacks`, 0.01 at spawn and 0.125 once the north door is open. `sorensen_office`: step 3, `restricted_stacks`, 0.125. `front_desk` and `staff_passage`: step 4, silence (read these where the regression passes through them, or note them as not reached on that route).
+- **L6, duck.** (a) In a fresh game, open a phone call to agent_0x99 in `open_stacks`: the level halves (0.15 to 0.075) while the call is open and returns when it closes. (b) At the regression's Sorensen conversation in the cage: 0.5 to 0.25 and back.
+- **L7, reload.** At a regression step in `restricted_cage`, reload: the player spawns in the dock (intended) and the bed is step 3, `open_stacks`, at the level the restored north door gives; walk back to the cage: step 1 at 0.5.
+- **L8, debrief.** At walkthrough step 19 in `salvage_cage`, open the debrief from HaX: read the ambient key and level while the hangar scene is open (expected `server_room_ventilation` at 0.3, ducked from 0.6) and after the credits (suppressed). The numbers go to the user with Q3.
 
 ### 10.3 Regression
 
-A scripted regression of `WALKTHROUGH_R1.md` with room tone on, on the cheap scripted tier. No moved NPC, so no poll-before-interact rule is needed. VM flags are seeded through `new-game.rb` FLAGS_XML and `session-start.sh --flags`, as for every m09 run here; flags stay required.
+A scripted regression of `WALKTHROUGH_R1.md` with room tone on, on the cheap scripted tier, carrying the L0, L1, L3, L5, L6b, L7 and L8 readings. No moved NPC, so no poll-before-interact rule is needed. VM flags are seeded through `new-game.rb` FLAGS_XML and `session-start.sh --flags`, as for every m09 run here; flags stay required.
 
 ### 10.4 Attack probe
 
@@ -175,6 +209,7 @@ Not needed: no NPC gains needs or walks for office life. The existing attack out
 |---|---|---|
 | Tier (people) | none | `QUESTIONS.md` Q1, recommendation (a) followed |
 | `roomTone: true` | one scenario key | `QUESTIONS.md` Q1 covers it |
+| Authored levels heard for the first time (four rooms, the debrief) | none unless the user asks for lower levels, which would change existing data | `QUESTIONS.md` Q3 |
 | New art, characters, voicing, engine | none | n/a |
 | Changed existing lines | none | n/a |
 

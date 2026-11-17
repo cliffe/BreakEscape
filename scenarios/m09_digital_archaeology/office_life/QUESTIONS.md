@@ -11,3 +11,10 @@ The archive is closed at night and the director has sent staff home ("tonight sh
 ## Q2. Noor's own-room cooler trip
 
 Noor could step to the front-desk water cooler and back. The rules rule it out twice: she holds her staff card, and her clone choice reads where she stands ("Lean in over her list", `:107`). Allowing it would mean waiving the holding rule and changing an existing line. **Recommended: no.** The plan does not move her.
+
+## Q3. Four rooms and the debrief get louder
+
+Today a room with its own hum next to an earlier room with one plays the neighbour's bleed (0.125), not its own level. Room tone plays each room's own authored level, which no player has heard yet: server closet 0.4, restricted cage 0.5, tape room 0.35, salvage cage 0.6. The hangar debrief, usually opened from the salvage cage, would play over that cage's hum ducked to 0.3 (today 0.125) until the credits.
+
+- **(a) Keep the authored levels and judge them in the build's listen check**, which records the numbers; come back with a change only if they sound wrong. **Recommended; the plan follows it.**
+- **(b) Lower the four `ambientVolume` values now** (for example to 0.2 to 0.3). Changes existing scenario data.
