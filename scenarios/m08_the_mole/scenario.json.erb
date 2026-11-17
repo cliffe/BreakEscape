@@ -605,6 +605,13 @@ CREDITS
   <%# Lighting stage (pass 5): the Citadel at night on Level Red. LIGHTING_PLAN.md. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
+<%# Office life (office_life/PLAN.md 2): room tone only, no people. Keys are room types. %>
+  "roomTone": true,
+  "roomToneTypes": {
+    "room_hq_lobby": "quiet_office", "room_hq_director": "quiet_office", "room_hq_intel": "quiet_office",
+    "room_hq_ops": "it", "room_hq_crypto": "it",
+    "room_hq_servers": "server", "room_hq_break": "kitchen"
+  },
   "rooms": {
 
     "main_lobby": {
