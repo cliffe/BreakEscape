@@ -474,7 +474,7 @@ export function preload() {
     this.load.image('power_socket_drop1', 'objects/power_socket_drop1.png');
     this.load.image('power_socket_drop_off1', 'objects/power_socket_drop_off1.png');
     this.load.image('network_dropbox', 'objects/network_dropbox.png');
-    this.load.image('p3_patch_panel_c2', 'objects/p3_patch_panel_c2.png');
+    this.load.image('network_port_cabinet', 'objects/network_port_cabinet.png');
     this.load.image('network_dropbox_planted_cabinet', 'objects/network_dropbox_planted_cabinet.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');

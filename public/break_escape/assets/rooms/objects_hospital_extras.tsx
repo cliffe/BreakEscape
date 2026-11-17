@@ -2015,7 +2015,7 @@
   <image source="../objects/network_dropbox.png" width="27" height="25"/>
  </tile>
  <tile id="681">
-  <image source="../objects/p3_patch_panel_c2.png" width="28" height="32"/>
+  <image source="../objects/network_port_cabinet.png" width="28" height="32"/>
  </tile>
  <tile id="682">
   <image source="../objects/network_dropbox_planted_cabinet.png" width="28" height="32"/>
