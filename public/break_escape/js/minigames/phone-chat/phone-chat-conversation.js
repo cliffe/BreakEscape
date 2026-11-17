@@ -591,14 +591,25 @@ export default class PhoneChatConversation {
         }
     }
 
+    /** True when the story has a top-level knot of that name. */
+    _hasKnot(story, name) {
+        try {
+            return !!story.mainContentContainer.namedContent.has(name);
+        } catch (e) {
+            return false;
+        }
+    }
+
     /**
      * Reopening a thread whose story was restored (E10/E13).
      *
      * A restored story's choices were evaluated with the globals of the time it was
      * saved. This syncs today's globals in; if any the story holds changed and it is
-     * resting on choices, it re-runs the knot that owns the first choice (the
-     * missions' resting knots re-check state at the top and divert), so the choices
-     * and any new branch reflect the change.
+     * resting on choices, it re-runs from the entry (the knot top, else the stitch that
+     * owns the first choice) whose run under the old globals lands on the choices the
+     * player is looking at, so the choices and any new branch reflect the change. If
+     * no entry reproduces them (the player is past a gather inside a stitch) the saved
+     * choices stay, unless the knot top now diverts to another knot or ends.
      *
      * What the re-run prints is split in two. It is compared, step by step, with a
      * baseline run of the same knot from the same saved state under the OLD globals:
@@ -614,10 +625,12 @@ export default class PhoneChatConversation {
      *   still empty, and syncGlobals fills them as story-LOCAL VARs, which the global
      *   comparison never sees. Re-running re-bakes the choices with the filled VARs and,
      *   as always, drops the leading output the player has already read (M2 / lab F1).
+     * @param {string} [opts.homeKnot] - the contact's home knot (npc.homeKnot, default `start`),
+     *   tried last when the re-run shows nothing new.
      * @returns {{ renavigated: boolean, knot?: string, messages?: string[], tags?: string[],
      *             replayedSteps?: number, result?: Object }}
      */
-    reopenWithCurrentGlobals(syncGlobals, { force = false } = {}) {
+    reopenWithCurrentGlobals(syncGlobals, { force = false, homeKnot = 'start' } = {}) {
         const story = this.engine?.story;
         if (!this.storyLoaded || !story) return { renavigated: false };
 
@@ -648,15 +661,20 @@ export default class PhoneChatConversation {
         // Dry run of one path: the leading output the player has seen under the OLD globals
         // (baseline) against what today's globals print (steps). The observer is detached so
         // neither run writes anything; the state is put back to syncedState afterwards.
+        const pathOf = c => (c && (c.sourcePath || (c._sourcePath && c._sourcePath.toString()))) || '';
         const dryRun = path => {
             const observer = story.variablesState.variableChangedEvent;
             story.variablesState.variableChangedEvent = null;
             try {
                 let baseline;
+                let baselineKey = null;
+                let baselineFirst = null;
                 try {
                     story.state.LoadJson(savedState);
                     story.ChoosePathString(path);
                     baseline = PhoneChatConversation.collectSteps(story);
+                    baselineKey = JSON.stringify((story.currentChoices || []).map(c => c.text));
+                    baselineFirst = pathOf(story.currentChoices?.[0]);
                 } catch (e) {
                     console.warn(`⚠️ Baseline run of "${path}" failed; showing the whole re-run:`, e.message);
                     baseline = [];
@@ -668,7 +686,9 @@ export default class PhoneChatConversation {
                 let common = 0;
                 while (common < steps.length && common < baseline.length &&
                        PhoneChatConversation.sameStep(steps[common], baseline[common])) common++;
-                return { path, steps, baseline, choices, replayed: common, fresh: steps.length - common };
+                return { path, steps, baseline, baselineKey, baselineFirst, choices,
+                         firstPath: pathOf(story.currentChoices?.[0]),
+                         replayed: common, fresh: steps.length - common };
             } catch (e) {
                 console.warn(`⚠️ Could not re-navigate to "${path}":`, e.message);
                 return null;
@@ -678,26 +698,42 @@ export default class PhoneChatConversation {
             }
         };
 
-        // Re-run from the stitch that owns the saved choices when there is one: a knot top
-        // can print and offer something else (m09: the identity scene's knot top does not
-        // lead to its albion stitch's choices).
-        const entry = this._reopenEntryPath(story, sourcePath) || knot;
-        let chosen = dryRun(entry);
-        if (!chosen && entry !== knot) chosen = dryRun(knot);
-        if (!chosen) return { renavigated: false };
-
-        // Nothing new and the same choices as before: the thread's own start may now divert
-        // (the hub's read-outs are reached from `start`, and a stitch or hub re-run never
-        // passes through it). Use it only when it prints something new.
-        const sameChoices = JSON.stringify(chosen.choices) === JSON.stringify(savedChoiceTexts);
-        let path = chosen.path;
-        if (chosen.fresh === 0 && sameChoices && knot !== 'start') {
-            const viaStart = dryRun('start');
-            if (viaStart && viaStart.fresh > 0) {
-                chosen = viaStart;
-                path = 'start';
-            }
+        // Choose where to re-run from by its BASELINE: the entry (the knot top first, so its
+        // guards stay live, then the stitch that owns the saved choices) whose run under the
+        // OLD globals lands on the choices the player is looking at. Re-running from there
+        // under today's globals re-evaluates exactly what the player sat on. A knot top that
+        // diverts elsewhere (m09's identity scene goes to `opening`) loses to its stitch; a
+        // stitch menu whose knot top holds the guard (m10 Elena/Vance "R10-m2") keeps the
+        // knot top.
+        const savedKey = JSON.stringify(savedChoiceTexts);
+        const entries = [knot];
+        const stitchEntry = this._reopenEntryPath(story, sourcePath);
+        if (stitchEntry && stitchEntry !== knot) entries.push(stitchEntry);
+        const runs = entries.map(dryRun).filter(Boolean);
+        let chosen = runs.find(r => r.baselineKey === savedKey && r.baselineFirst === sourcePath) || null;
+        if (!chosen) {
+            // Neither entry reproduces the saved choices (the player is past a gather inside a
+            // stitch, so a re-run would rewind them to its first question). The one re-run
+            // kept is a knot top whose guard now sends the thread on to another knot or ends
+            // it (m09 flag1_read: finished read-out, `{flag1_read_done: -> support_hub}`).
+            const top = runs.find(r => r.path === knot);
+            if (top && (top.choices.length === 0 || top.firstPath.split('.')[0] !== knot)) chosen = top;
         }
+
+        // Nothing new and the same choices as before: the thread's home knot may now divert
+        // (the hub's read-outs are reached from it, and a stitch or hub re-run never passes
+        // through it). Use it only when it prints something new. This runs the home knot's
+        // guards for real, with the effects of a fresh open (it can print and tag a close
+        // such as #exit_conversation, or set the flags it sets on entry). A contact without
+        // that knot in its story just skips it.
+        const home = String(homeKnot || 'start').split('.')[0];
+        const sameChoices = !chosen || JSON.stringify(chosen.choices) === savedKey;
+        if ((!chosen || chosen.fresh === 0) && sameChoices && knot !== home && this._hasKnot(story, home)) {
+            const viaHome = dryRun(home);
+            if (viaHome && viaHome.fresh > 0) chosen = viaHome;
+        }
+        if (!chosen) return { renavigated: false };
+        const path = chosen.path;
         const baseline = chosen.baseline;
 
         // The real re-run, with the observer attached as for any continue
