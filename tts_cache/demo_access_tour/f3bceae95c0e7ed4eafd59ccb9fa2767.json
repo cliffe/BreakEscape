@@ -1,0 +1,13 @@
+{
+  "key": "f3bceae95c0e7ed4eafd59ccb9fa2767",
+  "npc": "julian",
+  "text": "There's cake going, if you're quick.",
+  "voice": "Rasalgethi",
+  "style": "Merrin & Sallow's co-founding partner, in his mid 60s, calm, measured and a little wry; sits on planning panels. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:52:32Z"
+}
