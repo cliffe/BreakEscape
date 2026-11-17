@@ -1,21 +1,21 @@
 # m09 office life: plan-phase handover
 
-Stopped at the context limit before plan review R1. Worktree `.claude/worktrees/p-ol-m09`, branch `plan/ol-m09`.
+Worktree `.claude/worktrees/p-ol-m09`, branch `plan/ol-m09`. The plan review loop is closed.
 
 ## Done
 
-- Stage 0 baseline: `BASELINE.md`, `baseline_locks.json` (11 lock nodes), `positions_base.txt` (58 rows), `v1_summary_base.txt`, `validator_info_lines.txt` (empty: the run prints no info lines). V6: 0 clips.
-- Stage 1 analysis folded into `PLAN.md` section 2 (the harness refused a separate ANALYSIS.md file from a subagent).
-- `PLAN.md` round 0: Tier 0 for people plus `roomTone: true`, no `roomToneTypes`. No free NPC (Noor is holding and her conversation reads her place).
-- `QUESTIONS.md`: Q1 tier, Q2 Noor's cooler trip.
+- Stage 0 baseline: `BASELINE.md`, `baseline_locks.json` (11 lock nodes), `positions_base.txt` (58 rows), `v1_summary_base.txt`, `validator_info_lines.txt` (empty). V6: 0 clips.
+- Plan review, five rounds, each saved as `REVIEW_R<n>.md`: R1 B0 M5 m8, R2 B0 M3 m8, R3 B0 M1 m5 (all full reviews on the planning tier), R4 B0 M1 m5 (delta, cheaper tier), R5 B0 M0 m3 (delta, back on the planning tier after the R4 major). Every finding fixed; none deferred.
+- `PLAN.md` round 5, standalone. Tier unchanged: 0 for people plus `roomTone: true`, no `roomToneTypes`. The validator will show 31 warnings (one new, accepted). Four rooms play their authored levels for the first time (closet 0.4, cage 0.5, tape room 0.35, salvage cage 0.6), and three late scenes in the salvage cage play over the hum ducked to 0.3.
+- `QUESTIONS.md`: Q1 tier, Q2 Noor's cooler trip, Q3 the louder authored levels.
 
 ## Next
 
-1. Plan review R1 on the `opus55` agent type, read-only: brief it with PLAN.md, BASELINE.md, the skill's "Plan review" checklist, `public/break_escape/js/systems/ambient-choice.js`, `core/rooms.js:3270` to `:3320`, `systems/office-room-tone.js`. Save `REVIEW_R1.md` with B/M/m counts.
-2. Rewrite PLAN.md standalone after each round. R2 onward: delta on Sonnet once an Opus round has no B/M (AGENTS.md "Cheaper later rounds"). Stop at R5 unless a blocker is open.
-3. Commit with explicit paths after each round.
+1. The user answers Q1 to Q3 (through AC0's decisions page).
+2. Build on `build/ol-m09`: one slice (add the key beside `npcThoughts`, run 10.1, commit, then 10.2 to 10.4 live proof), then the build review loop.
 
 ## Gotchas
 
-- Subagent Write refuses files that look like reports (ANALYSIS.md). PLAN.md, QUESTIONS.md, HANDOVER.md and BASELINE.md were accepted; REVIEW_R<n>.md may need the reviewer to return text for the orchestrator to save.
-- Claims in PLAN.md section 4 were checked against `ambient-choice.js` (DUCK is 0.5, `office-room-tone.js:22`).
+- Doors start shut on every load and stay open once opened; in the reading room `open_stacks` always wins on the normal route.
+- The duck multiplies only the sound's volume; read `_ambientLevel`, `_ambientDuck` and the sound object's `volume` separately.
+- Long section rewrites in PLAN.md were done by Python splices; a bare `cat > file` with no heredoc hangs on stdin.
