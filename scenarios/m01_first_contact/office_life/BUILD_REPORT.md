@@ -111,3 +111,26 @@ Minors, none caused by office life:
 - SOLUTION_GUIDE.md numbering differs from the baseline and has no entry for the personal safe PIN 0319, which the player infers from "my birthday (19th March)" in Derek's personal notes.
 - Derek was found in the break room, not his office.
 - The launch code comes only from the VM (expected under the VM flag rules).
+
+## R1 and dialogue fixes
+
+Fixes from BUILD_REVIEW_R1.md and DIALOGUE_REVIEW.md. Commits: c1ca339de (ink, scenario data), ee9a3723f (spoken-line docs, plan note, handover count), then the facing fix, probes and this report.
+
+### Build review R1
+- m1 (Graham sat in a desk chair at the cooler): `"seat": "stand"` added to the office_cooler affordance. Live, game 7220: Graham `_seat` false at the cooler, standing, chair 155 empty. Screenshot screenshots/cooler-in-use.png replaced (Graham and Fatima both standing).
+- m2 (Fatima faced north while drinking): cause found. After the 3 s `use` lead pose (turned south to the cooler) the drink pose plays at the NPC's current direction, and `face_player` (facePlayerDistance 96, three tiles) turned her to the player standing north of the cooler. Data fix: Fatima's `facePlayerDistance` 96 to 48, so only a player within 1.5 tiles turns her; talks still turn her through `faceForChat`. Live, game 7220, three runs: Fatima plays `pose_use_south`, then `pose_drink_south`, and later `pose_drink_east` when she turns to Graham for the cooler chat (social turn, expected). Before the change (game 7215) she played `pose_drink_north`. `useFrom` was not the cause (dy -1 gives a south face point).
+- n1: one sentence added to PLAN.md section 11 (Maya's `no_source` park cannot happen in normal play).
+- n3: handover clip counts changed to "18 office-life clips, 22 with the 4 talk lines" (tmp/handover/M01_BUILD_HANDOVER.md, still tracked).
+- n4 (KO of Maya before her first talk): game 7225, real punches, probe tools/playtest/m01-ol-maya-ko-first.mjs. Nine punches to KO in her own office. `maya_ko` true, `maya_away` false, `maya_settled` false, `discussed_operation` false, `m01_staff_alarmed` false. Her needs mode stayed idle with no job 18 s later, so no trip. Navigation hallway_east, main_office_area, hallway_east, maya_office all ok; no blocking UI; no console errors. `talk_to_maya` is optional, so the mission stays completable as in the base game.
+- n5: the three V4 warnings (Fatima, Graham, Maya) remain because `E1_PROBE_PASSED` is a constant (`false`) at scripts/validate_office_life.rb:42, shared by every mission. The attack probe passed (routes above and in the Checks agent section); the validator cannot see that.
+- m3 (the not_here close without a Maya reply): accepted. The plan reuses a cached line on purpose and adds no new clip, so the lint `exit-no-reply` warning stays.
+- n2, n6: no change (as ruled in the review).
+
+### Dialogue review
+Applied: M1, M2, m2, m3 (and R1 n7), m4, n1, n3. Not applied: m1 (new Maya reply), n2, n4. Changed lines are listed in the final report and in SPOKEN_LINES.md and DIALOGUE_SAMPLE.md. Brush-off lines gained `#delivery` cues (Graham's two: dry, deadpan; Fatima's opener: brisk, apologetic). Ink recompiled (9 compiled, 0 failed).
+
+### Checks after the fixes
+- Validator: 0 errors, 26 warnings (unchanged). Lock and key diff against baseline_locks.json: empty.
+- V6 keyless: 18 office-life clips, 18 uncached, 589 characters (was 621).
+- scripts/ink_runtime_check/maya_routes.js: all route checks passed.
+- bin/test-js: 748 files passed, 0 failed.
