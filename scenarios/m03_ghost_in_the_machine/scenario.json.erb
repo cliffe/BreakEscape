@@ -226,7 +226,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "THE NEXT HOSPITAL: somewhere on the 214-site survey, still running St. Catherine's build", "style": "warning", "condition": "globalVars.danny_named_sites !== true" },
           { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "FFION REES, WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
-          { "text": "WHITEHAT STAFF: SOMEONE STRUCK IN RECEPTION BY DAY", "style": "warning", "condition": "globalVars.wh_staff_attacked === true && !globalVars.zainab_ko && !globalVars.yusuf_ko" },
+          { "text": "WHITEHAT STAFF: SOMEONE STRUCK BY DAY", "style": "warning", "condition": "globalVars.wh_staff_attacked === true && !globalVars.zainab_ko && !globalVars.yusuf_ko" },
           { "text": "WHITEHAT STAFF: WATCHED RECEPTION BEING KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.wh_staff_witnessed === true" },
           { "text": "ZAINAB HUSSAIN AND YUSUF DEMIR, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.zainab_ko === true && globalVars.yusuf_ko === true" },
           { "text": "ZAINAB HUSSAIN, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.zainab_ko === true && globalVars.yusuf_ko !== true" },
@@ -1368,10 +1368,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration'", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
             { "_comment": "R2: witnessed only when a staffer is on their feet to see it (both KO'd means nobody saw). HaX's text (plan section 2) goes with the same test; wording as approved in DIALOGUE_SAMPLE.md.",
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.zainab_ko", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true },
-              "sendTimedMessage": { "delay": 6000, "message": "Reception had company. Get the badge and get out." } },
+              "sendTimedMessage": { "delay": 6500, "message": "Reception had company. Get the badge and get out." } },
             { "_comment": "R2: the other branch of the same test (the validator's condition grammar has no ||): Zainab down, Yusuf still up.",
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && globalVars.zainab_ko && !globalVars.yusuf_ko", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true },
-              "sendTimedMessage": { "delay": 6000, "message": "Reception had company. Get the badge and get out." } },
+              "sendTimedMessage": { "delay": 6500, "message": "Reception had company. Get the badge and get out." } },
             { "eventPattern": "global_variable_changed:wh_staff_attacked", "condition": "value === true", "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "Leave the staff alone. You're here to clone cards, not start fights." } }
           ]
