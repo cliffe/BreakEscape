@@ -773,6 +773,7 @@ test('a capture made just before the tablet opens reads Loading... then the valu
     release();
     await settle(5);
     assert.equal(text(), 'Recruit-2026');
+    closeDevice();
 });
 
 test('a capture the first answer lacks is asked for again and shows once served', async () => {
@@ -787,6 +788,7 @@ test('a capture the first answer lacks is asked for again and shows once served'
     await settle(40);
     assert.equal(device().root.querySelector('.lpb-captures-secret').textContent, 'Recruit-2026');
     log.CaptureLogMinigame.secretRetryMs = 1500;
+    closeDevice();
 });
 
 test('when /capture_secrets keeps failing the row says Could not load, not bullets', async () => {
@@ -800,4 +802,5 @@ test('when /capture_secrets keeps failing the row says Could not load, not bulle
     console.warn = warn;
     assert.equal(device().root.querySelector('.lpb-captures-secret').textContent, 'Could not load');
     log.CaptureLogMinigame.secretRetryMs = 1500;
+    closeDevice();
 });
