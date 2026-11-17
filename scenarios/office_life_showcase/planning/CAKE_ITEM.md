@@ -5,7 +5,7 @@ Source pattern: `scenarios/test_needs_sims/scenario.json.erb:93-105` (proven in 
 ## Item
 
 - id `cake`, type `cake1`, name "Cake". Held from the start in `startItemsInInventory`, `takeable: true`, `droppable: true`.
-- The player drops it from the inventory ("Drop here"). Beside a table it goes on the table top (`item-drop.js:9-11`). Dropping is the cue: there is no other way to place a magnet (it must be a droppable held item).
+- The player drops it from the inventory ("Drop here"). Beside a table it goes on the table top (`item-drop.js:9-11`). Dropping is the cue. Holding the cake until then is what makes the cue: any loaded object with `affordance.magnet` is registered when its room loads (`scanMagnets`/`_noteMagnets`, `npc-needs.js:866-881`), so a cake that starts lying in a room is a live magnet at once, known to everyone in that room with a matching need. Start it in a room only if the cake should be known from the start.
 - Food affordance: `satisfies ["hunger", "social"]`, `restores 40`, `useSeconds 12`, `capacity 3`, `chatter "cake"`, `useSound "eat_snack"`.
 - Magnet: `tempt 30`, `servings 2`, `perPerson 1`, `announce "news_cake"`, `newsRadius 5`.
 
@@ -48,6 +48,8 @@ Need: on cue, the cake empties two desks (Thandiwe Moyo and Yasmin Chaudhry, ope
 - Overlay: leave `needsDebugOverlay` out (default off). `showPressingNeeds` is the tour's choice; with `npcThoughts` on (default) a cake bubble shows over each walker.
 - Optional guard bark if the cake goes down elsewhere: a mapping on the host, `magnet_placed:cake` with `"condition": "data.roomId !== '<open_plan_id>'"`, bark "Bring it over to the desks." (no onceOnly needed if it carries a cooldown). Plain `bark` text, voiceable.
 - No task, no `onceOnly`, so the onceOnly row is untouched.
+- The numbers above are checked: the band is 30 to 60, `initial` 50 sits inside it, urgent only after 40 minutes; `servings 2`, `perPerson 1` and capacity 3 let both eat; `cake_servings` takes the declared global (`npc-needs.js:884-889`), and the schema requires it to equal `servings` (`scenario-schema.json:3981`).
+- Two ways to drift from this variant, and what each costs: (1) starting the cake in a room (say the kitchen) instead of the inventory makes it known at load to anyone in that room with hunger, so the drop is no longer the cue; (2) giving the two NPCs more needs than hunger (caffeine, work) means either may be away when the cake goes down; she then learns of it by sight on her return (`npc-needs.js:958-970`, `:1416`), so the cue still works, only later.
 
 ## Snippet to copy (into `startItemsInInventory`)
 
