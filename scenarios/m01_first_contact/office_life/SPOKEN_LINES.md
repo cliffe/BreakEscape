@@ -93,3 +93,5 @@ Counts: new spoken lines 22 (6 at tier 1), unchanged; new player choice text 1, 
 | 2 | 2 | 4 | 8 | 8 | 22 |
 
 V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) is the check: the build records its actual total, expected 22 (6 if the build stops at tier 1), all uncached, and flags any difference. Maya's routine and her `not_here` choice add no clip.
+
+P1 context: away from her office, `not_here` first replays her existing opener "Is it safe to talk?" (m01_npc_maya.ink:26, same delivery, cached clip reused, no new clip), then offers this choice.
