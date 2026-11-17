@@ -15,7 +15,7 @@ The story says eleven on site in five places: credit `scenario.json.erb:242` (te
 - (a) "Thirteen" in all five, and Voltage's list at `:239` adds "two in reception". Four re-voiced lines, each needing its own yes.
 - (b) Reword to avoid a number ("Everyone on site walked out", "Everyone on site tonight..."): also four re-voices, and loses the precise count the scenes lean on.
 - (c) No extras (Q1 c), no change.
-- (d) The pair are off the roster (a desktop swap booked late, an early arrival), so HaX's intel and Voltage's recon stay as written: they are what each side believed. One exchange says they are not on the rota. Only the credit and the debrief line change: "Thirteen people walked out of there tonight, two of them not on anyone's list." One re-voice. **Recommended.**
+- (d) The pair are off the roster (a desktop swap booked late, an early arrival), so HaX's intel and Voltage's recon stay as written: they are what each side believed. One exchange says they are not on the rota. The unvoiced blueprint note (scenario 2739) becomes "On site per tonight's rota: 11", and Ibrahim's talk line says his swap was booked late. It leans on Voltage trusting the rota over cameras the same note says cover all areas. Only the credit, the note and the debrief line change: "Thirteen people walked out of there tonight, two of them not on anyone's list." One re-voice. **Recommended.**
 
 ## Q3. Cast
 
@@ -43,4 +43,4 @@ About 24 new clips (8 pool lines at the kettle, 4 talk lines, about 11 exchange 
 The cooler's second standing cell is blocked by the coffee table and the planter, so the plan gives it one user: Joanne drinks alone and the pair only talk at the ops-office kettle, which opens once the player has Vance's card. Reception has no chatter before then.
 
 - (a) Keep the cooler at one user. No dressing change. **Recommended**: reception stays quiet at four in the morning, and the talk waits for the kettle.
-- (b) Move the planter one tile (a room-dressing change, checked through mission-room-dressing and the object position diff) so the cooler takes a pair, with a `cooler` pool of four lines each (8 more clips) and early chat in reception.
+- (b) Move the planter one tile (a room-dressing change, checked through mission-room-dressing and the object position diff) so the cooler takes a pair (and Joanne no longer draws behind the fig), with a `cooler` pool of four lines each (8 more clips) and early chat in reception.
