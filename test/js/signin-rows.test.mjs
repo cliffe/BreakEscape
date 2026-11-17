@@ -207,8 +207,48 @@ test('an expired token row is greyed (K5 hook)', () => {
     assert.equal(signins[0].use, 'Lena token has expired.');
 });
 
-test.skip('K5: a live token row reads "Use it on {host}\'s sign-in screen, through {link}. About {n} min left."', () => {
-    // K5 fills the link and minutes; until then the token branch of signin-rows.js is a marked hook.
+test('K5: a live token row reads "Use it on {host}\'s sign-in screen, through {link}. About {n} min left."', () => {
+    const tok = { id: 'lena_tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc',
+        routes: [{ foothold: 'jack_comms_port' }], account: { npcId: 'lena', username: 'lena.f', displayName: 'Lena Fox' } };
+    let left = 181;
+    const keyring = { entries: [tok], captures: {}, tokenSecondsLeft: (id) => (id === 'lena_tok' ? left : null) };
+    const linkNames = new Map([['jack_comms_port', 'Drop box: comms room']]);
+    const row = () => build({ captures: [], keyring, linkNames }).signins[0];
+    assert.equal(row().use, "Use it on HB-FIN-02's sign-in screen, through Drop box: comms room. About 4 min left.", 'minutes rounded up');
+    assert.deepEqual(row().kinds, ['token']);
+    assert.deepEqual(row().sources, ['Recorded']);
+    assert.equal(row().greyed, undefined);
+    assert.equal(row().timed, true);
+    left = 180;
+    assert.match(row().use, /About 3 min left\.$/);
+    left = 60;
+    assert.match(row().use, /About 1 min left\.$/);
+    left = 59;
+    assert.equal(row().use, "Use it on HB-FIN-02's sign-in screen, through Drop box: comms room. Under a minute left.");
+    left = 0;
+    assert.match(row().use, /Under a minute left\.$/, 'run out, before the server says expired');
+    // An object of names works as well as a Map
+    assert.match(build({ captures: [], keyring, linkNames: { jack_comms_port: 'Drop box: comms room' } }).signins[0].use, /through Drop box: comms room\./);
+    // No time known (no keyring timer): the line has no minutes and the row is not timed
+    const untimed = build({ captures: [], keyring: { entries: [tok], captures: {} }, linkNames }).signins[0];
+    assert.equal(untimed.use, "Use it on HB-FIN-02's sign-in screen, through Drop box: comms room.");
+    assert.equal(untimed.timed, false);
+    // No held link for the proof (or no route): the plain line
+    left = 600;
+    assert.equal(build({ captures: [], keyring }).signins[0].use, "Use it on HB-FIN-02's sign-in screen. About 10 min left.");
+    assert.equal(build({ captures: [], keyring: { ...keyring, entries: [{ ...tok, routes: [] }] }, linkNames }).signins[0].use,
+        "Use it on HB-FIN-02's sign-in screen. About 10 min left.");
+    // The DOM row carries the timed mark the open log's minute redraw looks for
+    global.document = new JSDOM('<!doctype html><body></body>').window.document;
+    try {
+        assert.equal(buildSignInRow(row()).row.dataset.timed, 'true');
+        assert.equal(buildSignInRow(untimed).row.dataset.timed, undefined);
+    } finally { delete global.document; }
+    // Expired: greyed, the expired line, no minutes
+    const gone = build({ captures: [], keyring: { ...keyring, entries: [{ ...tok, routes: [], expired: true }] }, linkNames }).signins[0];
+    assert.equal(gone.greyed, true);
+    assert.equal(gone.use, 'HB-FIN-02 sign-in token has expired.');
+    assert.equal(gone.timed, undefined);
 });
 
 test('source tags: Phished, Recorded, Found, Given on credential rows; none on capture rows', () => {

@@ -80,7 +80,8 @@ export function keyringAnswer() {
         entries: Array.isArray(answer.entries) ? answer.entries : [],
         captures: answer.captures && typeof answer.captures === 'object' ? answer.captures : {},
         firstSeen: k.firstSeen,
-        foundVisible: typeof k.foundVisible === 'function' ? (e) => k.foundVisible(e) : undefined
+        foundVisible: typeof k.foundVisible === 'function' ? (e) => k.foundVisible(e) : undefined,
+        tokenSecondsLeft: typeof k.tokenSecondsLeft === 'function' ? (id) => k.tokenSecondsLeft(id) : undefined
     };
 }
 
@@ -241,6 +242,9 @@ function el(tag, cls, text) {
     return node;
 }
 
+/** How often an open log redraws a live token row's minutes (K5; the desktop bar's step too). */
+export const TOKEN_ROW_REFRESH_MS = 60 * 1000;
+
 export class CaptureLogMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): a short list, so it wraps its content
     static consoleWindow = true;
@@ -273,6 +277,17 @@ export class CaptureLogMinigame extends MinigameScene {
         openScene = this;
         this.loadSecrets();
         this.loadKeyring();
+        // K5: a live token row's minutes step each minute from the page's own timer (no request),
+        // as the desktop's bar does; it stops when the log closes
+        this.tokenTimer = setInterval(() => this.tickTokens(), TOKEN_ROW_REFRESH_MS);
+    }
+
+    /** Redraw in place when a token row shows minutes, keeping the scroll position. */
+    tickTokens() {
+        if (openScene !== this || !this.root?.querySelector('[data-timed="true"]')) return;
+        const top = this.root.scrollTop;
+        this.redraw();
+        this.root.scrollTop = top;
     }
 
     /** GET /keyring in the background, then a redraw (keyring_changed redraws too, when the rev moved). */
@@ -282,6 +297,7 @@ export class CaptureLogMinigame extends MinigameScene {
     }
 
     cleanup() {
+        if (this.tokenTimer) { clearInterval(this.tokenTimer); this.tokenTimer = null; }
         if (openScene === this) openScene = null;
         super.cleanup();
     }

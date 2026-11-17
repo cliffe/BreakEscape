@@ -676,3 +676,41 @@ test('K3d R2: a failed ask after a new capture is retried once after a short wai
     await new Promise((r) => setTimeout(r, 2200));
     assert.equal(calls.length, 2);
 });
+
+test('K5: a live token row names its link and minutes, and the open log steps them each minute with no request', async () => {
+    reset({ globals: { se_captures: {} } });
+    const TOKEN = { id: 'lena_tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc',
+        routes: [{ foothold: 'fh1' }], expiresInS: 245, account: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox' } };
+    const { calls } = stubKeyring({ rev: 'r9', entries: [TOKEN], captures: {} });
+    const made = [];
+    const cleared = [];
+    const realSet = globalThis.setInterval;
+    const realClear = globalThis.clearInterval;
+    globalThis.setInterval = (fn, ms) => { const h = { fn, ms }; made.push(h); return h; };
+    globalThis.clearInterval = (h) => { cleared.push(h); };
+    try {
+        await add(HOLDER);
+        await add(LINK);
+        await window.keyring.fetch(null);
+        await openDevice();
+        await settle(5);
+        assert.match(rowText('cred:lena_tok'), /Use it on HB-FIN-02's sign-in screen, through Drop box link\. About 5 min left\./);
+        const timer = made.find(h => h.ms === log.TOKEN_ROW_REFRESH_MS);
+        assert.ok(timer, 'a minute timer runs while the log is open');
+        assert.equal(log.TOKEN_ROW_REFRESH_MS, 60000);
+        const asked = calls.length;
+        // A minute later by the page's clock
+        window.keyring.tokenEndsAt.set('lena_tok', Date.now() + 185_000);
+        timer.fn();
+        assert.match(rowText('cred:lena_tok'), /About 4 min left\./, 'redrawn from the client timer');
+        window.keyring.tokenEndsAt.set('lena_tok', Date.now() + 30_000);
+        timer.fn();
+        assert.match(rowText('cred:lena_tok'), /Under a minute left\./);
+        assert.equal(calls.length, asked, 'no GET for the step');
+        closeDevice();
+        assert.ok(cleared.includes(timer), 'the timer stops when the log closes');
+    } finally {
+        globalThis.setInterval = realSet;
+        globalThis.clearInterval = realClear;
+    }
+});

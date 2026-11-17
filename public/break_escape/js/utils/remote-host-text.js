@@ -259,6 +259,14 @@ export const connectFromInventoryLine = (label) => `Connect ${label || 'it'} fro
 // A saved connection a foothold recorded (no tray item to Connect): used on the host's sign-in screen
 export const useOnSignInScreenLine = (host) => `Use it on ${named(host, 'its host')}'s sign-in screen.`;
 export const expiredLine = (label) => `${label || 'That sign-in'} has expired.`;
+// K5 (plan 10, 8.5's rounding): a token's time left, in whole minutes rounded up
+export const tokenMinutesLeft = (secs) => Math.max(1, Math.ceil(secs / 60));
+export const tokenTimeLeftLine = (secs) => (secs < 60 ? 'Under a minute left.' : `About ${tokenMinutesLeft(secs)} min left.`);
+/** The Sign-ins row of a live token: where to use it, through which link, and the minutes left. */
+export function tokenUseLine(host, link, secs) {
+    const where = link ? `Use it on ${named(host, 'its host')}'s sign-in screen, through ${link}.` : useOnSignInScreenLine(host);
+    return Number.isFinite(secs) && secs >= 0 ? `${where} ${tokenTimeLeftLine(secs)}` : where;
+}
 export const moreNotesLine = (n) => `and ${n} more.`;
 export const footholdLine = (host, note) => {
     const where = host || 'unknown host';
