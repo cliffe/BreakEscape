@@ -67,6 +67,16 @@ test.beforeEach(() => {
     window.objectivesManager = manager(SCENARIO);
 });
 
+test('openOptionalObjectives counts the open tasks of an optional aim, required-looking or not', () => {
+    window.objectivesManager = manager([
+        aim('main', [task('a', 'Do the work')]),
+        aim('extra', [task('wifi', 'Harvest something with the rogue AP')], { optional: true })
+    ]);
+    assert.deepEqual(E.openOptionalObjectives(window.objectivesManager).map((o) => o.taskId), ['wifi']);
+    window.objectivesManager.taskIndex.wifi.status = 'completed';
+    assert.deepEqual(E.openOptionalObjectives(window.objectivesManager), []);
+});
+
 test('openOptionalObjectives lists visible, open, optional tasks only', () => {
     const open = E.openOptionalObjectives(window.objectivesManager);
     assert.deepEqual(open.map((o) => o.taskId), ['opt1', 'opt2']);

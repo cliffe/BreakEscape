@@ -49,6 +49,7 @@ export function introText(count) {
 
 /**
  * Optional objectives the player can see and has not settled: tasks with optional === true
+ * (or in an aim with optional === true)
  * whose status is active, in an aim that is active or completed. A locked task or aim is hidden from
  * the player, so naming it would give the story away. Returns [{ taskId, title }].
  */
@@ -58,7 +59,7 @@ export function openOptionalObjectives(manager = win()?.objectivesManager) {
     for (const aim of aims) {
         if (!aim || (aim.status !== 'active' && aim.status !== 'completed')) continue;
         for (const task of aim.tasks || []) {
-            if (task && task.optional === true && task.status === 'active') {
+            if (task && (task.optional === true || aim.optional === true) && task.status === 'active') {
                 open.push({ taskId: task.taskId, title: String(task.title || task.taskId) });
             }
         }

@@ -378,6 +378,18 @@ test('9.3a: a remote sign-in sends the foothold and emits pc_signed_in with remo
     assert.equal(named('pc_desktop_opened')[0].remote, true);
 });
 
+test('devices R m8c: a sign-in over a Wi-Fi foothold emits pc_signed_in and pc_signed_in:<pc> with footholdId wifi_office_lan', async () => {
+    const s = setup({ answer: remoteAnswer });
+    const r = await s.signIn('lena_pc', 'lfox', 'right-lena', { foothold: 'wifi_office_lan' });
+    assert.equal(r.ok, true);
+    assert.deepEqual(calls[0], ['login', 'lena_pc', { username: 'lfox', password: 'right-lena', foothold: 'wifi_office_lan' }]);
+    const [signedIn] = named('pc_signed_in');
+    assert.equal(signedIn.remote, true);
+    assert.equal(signedIn.footholdId, 'wifi_office_lan', 'the lab\'s door_admin Wi-Fi mapping reads data.footholdId');
+    const [perPc] = named('pc_signed_in:lena_pc');
+    assert.equal(perPc?.footholdId, 'wifi_office_lan', 'and the per-PC event the mapping listens on carries it too');
+});
+
 test('9.3a: a local sign-in carries no remote fields, and a keyboard desktop answer settles a remote session', async () => {
     const s = setup({ answer: remoteAnswer });
     await s.signIn('lena_pc', 'lfox', 'right-lena');

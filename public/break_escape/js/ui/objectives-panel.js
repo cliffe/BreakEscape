@@ -228,8 +228,13 @@ export class ObjectivesPanel {
    * optional task, so aims (and missions) without optional tasks look as they
    * always did. Only open tasks carry it: a completed or skipped task is
    * settled. Purely presentational; task.title is never changed.
+   * An aim flagged `"optional": true` is optional as a whole: none of its tasks
+   * gets a '*', even the one that completes it (lab blind playtest finding 1:
+   * a starred task inside "Wireless (optional)" read as required). How the aim
+   * completes is unchanged.
    */
   static requiredMarkerTaskIds(aim) {
+    if (aim?.optional === true) return new Set();
     const visible = (aim.tasks || []).filter(t => t.status !== 'locked');
     if (!visible.some(t => t.optional === true)) return new Set();
     return new Set(visible
@@ -320,7 +325,8 @@ export class ObjectivesPanel {
           progressText = ` <span class="task-progress">(${task.currentCount || 0}/${task.targetCount})</span>`;
         }
         const skippedLabel = skipped ? '<span class="task-skipped-label">skipped</span>' : '';
-        const optionalClass = task.optional === true ? ' task-optional' : '';
+        // Every task of an optional aim is shown as optional (dimmer), like optional tasks elsewhere.
+        const optionalClass = (task.optional === true || aim.optional === true) ? ' task-optional' : '';
         const requiredMark = markedIds.has(task.taskId)
           ? '<span class="task-required-mark" aria-label="required">*</span>' : '';
         

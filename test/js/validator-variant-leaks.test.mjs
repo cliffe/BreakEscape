@@ -205,3 +205,10 @@ test('narrative walk: a name inside a sign-in PC contents is skipped', { skip },
   const l = issues(scene({ id: 'pc', lockType: 'login', contents: [{ id: 'f', name: 'Satchel42 file' }] }));
   assertNot(l, 'shipped narrative string');
 });
+
+test('requiresItemConditionHintVariants: an answer in a variant value warns, and a marker acknowledges it', { skip }, () => {
+  const rc = (value) => ({ id: 'pc', requiresItem: 'kit', requiresItemConditionHintVariants: [{ condition: 'globalVars.x', value }] });
+  assertHas(warnings(issues(scene(rc('the code is Satchel42')))), 'appears in the requiresItemConditionHintVariants field');
+  assertNot(warnings(issues(scene(rc('nothing here')))), 'appears in the requiresItemConditionHintVariants field');
+  assertHas(infos(issues(scene(rc('the code is Satchel42'), { acknowledgedClues: ackFor('pc') }))), 'acknowledged clue in requiresItemConditionHintVariants');
+});
