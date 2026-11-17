@@ -9,7 +9,7 @@
 // with fixture data (never by solving the mission) and measured.
 //
 //   PORT=3062 node tools/playtest/signin-fit.mjs [gameId]
-//   (optional: CHROME=<executable> PLAYWRIGHT=<node_modules holding playwright> SHOTS=<dir>)
+//   (optional: CHROME=<executable> PLAYWRIGHT=<node_modules holding playwright> SHOTS=<dir> STRIP_SHOTS=<dir>)
 //
 // K3a fixtures (ways-longest, ways-refused-short, keyring-both-failed) need no VM and no keyring
 // route: the entries are passed to setRemoteAccounts directly. This script needs a running keyless
@@ -468,6 +468,19 @@ async function measureTokenDesktop(page, size) {
     await page.evaluate(() => window.openRemoteDesktop('lena_pc', 'jack_comms_port'));
     try { await page.waitForSelector('.pc-monitor .pc-desktop-topbar', { timeout: 20000 }); } catch { /* reported below */ }
     await sleep(300);
+    // STRIP_SHOTS=<dir>: the real token desktop as opened, before Start is touched
+    if (process.env.STRIP_SHOTS) {
+        try {
+            // hide the canvas and any other overlay (the resume menu) so only the monitor shows
+            await page.evaluate(() => {
+                const mon = document.querySelector('.pc-monitor');
+                document.querySelectorAll('body > *').forEach(e => { if (e !== mon && !e.contains(mon)) e.style.visibility = 'hidden'; });
+                document.querySelectorAll('canvas').forEach(c => { c.style.visibility = 'hidden'; });
+            });
+            await (await page.$('.pc-monitor'))?.screenshot({ path: `${process.env.STRIP_SHOTS}/token-strip-${size[0]}x${size[1]}.png` });
+            await page.evaluate(() => { document.querySelectorAll('body > *, canvas').forEach(e => { e.style.visibility = ''; }); });
+        } catch { /* the check still runs */ }
+    }
     return page.evaluate(async ({ size }) => {
         const out = { ok: true, notes: [], lines: [] };
         try {
@@ -488,7 +501,9 @@ async function measureTokenDesktop(page, size) {
                 const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.2);
                 // offsetHeight is in layout px; the monitor is drawn at x2 by a transform, so a
                 // bounding rect would read twice the line count at 1400x1000
-                return Math.round(el.offsetHeight / lh);
+                // minus padding and borders, so a boxed line (the strip's amber box) counts text lines
+                const box = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
+                return Math.max(1, Math.round((el.offsetHeight - box) / lh));
             };
             const within = (name, el, box) => {
                 const a = el.getBoundingClientRect(), b = box.getBoundingClientRect();

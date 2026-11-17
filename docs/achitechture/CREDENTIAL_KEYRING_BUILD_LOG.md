@@ -1442,3 +1442,14 @@ Review: `tmp/handover/ac0/K5_REVIEW_R2.md` (m 2, t 4).
 
 **Run 8 results (R2).** `signin-fit.mjs` on a keyless server from this worktree (port 3080, stopped after): ALL PASS over 58 checks, including `token-desktop` at 1400x1000, 390x844, 915x412 and 800x600. `bin/test-js` 734 files, 0 failed (`access-relay-desktop` 21 and `access-from-desktop` 16 run alone under `ulimit -v 2000000`, 300 MB heap). `bin/rails test` (test DB) 3199 runs, 50101 assertions, 0 failures, 0 errors, 4 skips. Rubocop clean on the changed Ruby. Live R12 (Run E) is still to do.
 
+
+### K5 R3 fixes
+
+Review: `tmp/handover/ac0/K5_REVIEW_R3.md` (m 1, t 2). Decision: the token's minutes left go in the monitor desktop's top strip.
+
+- **m1.** `sessionNoticesHtml()` now draws a token line (`desktop-claim-line desktop-token-line`, the claim line's look) in the top strip of every token desktop, as escaped text from `credentialSessionLine`. `refreshTokenLines` also rewrites `.desktop-token-line`, so the 10 s look steps it and redraws only on a text change; at expiry the desktop closes with the token line as before. The start panel line stays. Run 6's "the desktop bar shows a token's minutes left" means this top strip (the account bar is not reachable by players). PLAYTEST R12 and its Fit bullet now say "the top strip says ...". Tests: two new in container-transfer-dialog (present for a token session, steps each minute, absent for a password session; plain text for a hostile label). Bite: dropping the line from `sessionNoticesHtml` fails both; dropping the selector fails the stepping test.
+- **signin-fit.** The artificial `accountBarHtml()` block is gone. On the real token desktop it measures the strip line at the four sizes for the live, sub-minute and 240-hour figures: text lines (padding and borders taken off, so a boxed line counts text), inside the strip, no sideways scroll, and the first row of desktop icons below the strip and wholly in view. `STRIP_SHOTS=<dir>` saves the opened desktop. The first run read a one-line box as two (padding); the counter now subtracts padding and borders.
+- **t1.** New Rails test: an expired token (`lena_pc`) and a live password session (`sv_fs02`) through the same foothold, unplugged after expiry; both end, only `lena_pc` is in `tokenExpiredPcIds`. Bite: without the `drop_expired_token_sessions!` call it fails (`Expected ["lena_pc"], Actual nil`). Dropping the `end_sessions_through!` half does not fail it, because `prune_unreachable_sessions!` ends the live session too; the test still pins that both are named.
+- **t2.** Not removed, as ruled. `docs/IDEAS_BACKLOG.md` notes `accountBarHtml()` and the non-monitor branch are unreachable for players and later slices should not add lines there.
+
+Screenshots of the strip at 390x844 and 1400x1000 (and the other two sizes): `tmp/handover/ac0/k5-strip/`.
