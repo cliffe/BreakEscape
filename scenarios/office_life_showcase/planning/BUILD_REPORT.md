@@ -426,3 +426,78 @@ From BUILD_REVIEW_R4.md: m1 board mugs line is now "- Note the mugs, then go to 
 ## Voicing dialogue review fixes
 
 From DIALOGUE_REVIEW_VOICING.md: A31 now names its subject ("The staff won't be back once they've gone home. Seen everything you wanted?"); "Not yet." gets a reply, new line A36 "Take your time.", before returning to the hub; the kitchen_seen, cooler-not-heard hint is new line A35 "Hang about by the water cooler." (the door is already open by then; A7 stays for the kitchen-unseen path). X4 kept: in context "You never do" agrees with "I'll not keep you long", and "Five minutes at most" supports it. Ink recompiled; validator 0 errors, 17 warnings; lines check PASS; dialoguelint no hits. The R2 probe asserts the new A31 text and A35.
+
+## BC1 after train 168 (magnet perPerson fix on the branch)
+
+Re-run of the probe on the keyless server on :3094 from this worktree. HEAD fc9b3d5c8 includes main 69d8bf05a. Command: `showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake --port 3094 --cases 1,2,3`. Case 3 was retried once on its own after the browser closed mid-case in the first run (game 7705, no JSON written). Raw results: `bc1-168.json` in this folder.
+
+| Case | Game | Result | What happened |
+|---|---|---|---|
+| 1 cake held | 7695 | PASS | Cake still in the inventory, in no room, servings 2 before and after reload. player_state 3266 to 3339 bytes (+73). |
+| 2 cake down, untouched | 7701 | FAIL | Before reload: cake in the office, servings 2, magnet true. After reload: same spot, servings 1, magnet true. One magnet_serving by chidi_okeke was logged after the reload with left 0, which does not match the reading of 1, and I have not worked out why. The probe's own eat step then showed Chidi walking to the cake and eating. player_state 3231 to 3450 bytes (+219). |
+| 3 cake down, one slice, reload | 7721 (retry) | FAIL | Chidi took the first slice before the reload: servings 2 to 1, reading 1 before the reload. After reload: cake gone, servings 0, magnet false, no magnet_finished recorded. Jun did not walk to the cake (his walk never started). player_state 3285 to 3305 bytes (+20). |
+
+Answers to the questions for case 3:
+- Who took slices before the reload: Chidi (one slice). The probe does not save the reading taken just before the reload, and the second slice is not logged by the probe, so I cannot name who took it.
+- Who took slices after the reload: none recorded. The recorder restarts at the reload and logged no magnet_serving after it. The likely explanation is that the last serving went during the 22 s settle, before the reload. That is inference, not measured.
+- Did any one NPC take two: not shown. Chidi is the only named eater in the run.
+- Servings left: 1 before the reload, 0 after it.
+- player_state growth: +20 bytes for case 3, +219 for case 2, +73 for case 1.
+
+Reading: with the perPerson fix in, case 3 still fails the reload check, but the cake was finished before or during the reload, not lost across it. Case 2 shows a serving between the two readings that the probe treats as "untouched". Servings still went during the 22 s settle, even with the five staff calmed. The probe does not record a slice count taken just before the reload, so it cannot say which side of the reload each serving fell.
+
+Not changed: no engine, scenario or probe edits in this pass.
+
+## Voicing review fixes: live check
+
+Checks the three text changes in commit 222be1abe (A31 subject, A35 cooler hint, A36 "Take your time." after "Not yet.") with the probe in g1 mode. Headless, setFPS(20) with fixed steps on, keyless server on :3092 (`env -u GEMINI_API_KEY`). The server ran from the worktree and was stopped by its recorded PID (2297120, `tmp/notyet/server.pid`) after the run. Game 7741 was made with `tools/playtest/new-game.rb` in this run. Raw evidence: `tmp/r2fix/proof-g1-7741.json`. Screenshots: `planning/screens/notyet-*.png`.
+
+Probe change: the m2 check now also requires exactly one "Take your time." bubble after "Not yet." (`takeYourTimeCount === 1`). It counts plain dialogue steps only, because the choice list is appended to the same bubble.
+
+| # | Check | Game | Result | Exact lines seen |
+|---|---|---|---|---|
+| 2a | Morning, kitchen seen, cooler not heard: "What should I try next?" gives A35 | 7741 | PASS | "Hang about by the water cooler." Not the old "Then open the kitchen door and hang about by the water cooler." Screenshot `notyet-trynext-morning-heard-false.png`. |
+| m2 | Call it a day confirm text (A31) | 7741 | PASS | "The staff won't be back once they've gone home. Seen everything you wanted?" with choices "1. Yes, call it a day." and "2. Not yet." Screenshot `notyet-m2-confirm.png`. |
+| m2 | After "Not yet.": one "Take your time.", then hub choices, no blank bubble, act_evening false | 7741 | PASS | Bubbles in order: "Take your time." then the hub list "1. What am I looking at? 2. What should I try next? 3. ...". Blank bubbles 0, `takeYourTimeCount` 1, act_evening false. Screenshot `notyet-m2-after-not-yet.png`. |
+| m2 | "Yes, call it a day." still sets act_evening | 7741 | PASS | act_evening true after the Yes pick. |
+| board | `tour_notice` board fits the modal (carried over from R2) | 7741 | PASS | Screenshot `notyet-board-modal.png`. |
+
+Probe history: the first run on game 7736 returned m2 FAIL. The cause was the new assertion, which matched the bubble text with its speaker name line still attached, so it counted zero. It was fixed to count plain dialogue steps. Game 7736 had moved past the midday state, so the final run used a fresh game (7741). The other checks on 7736 gave the same results.
+
+Probe usage: the header still says `PORT=3094`. The shared lib defaults to 3092, and this run used `PORT=3092`. The header was not changed.
+
+Not changed: no engine or scenario edits in this pass.
+
+## BC1 diagnosis (after train 168)
+
+Verdict: both failures were probe faults. No engine bug, and the accepted limit (the per-NPC `ate` count resets on reload) did not show in either. The servings global, the logged `left` and `magnet_finished` agree in every run.
+
+Cause. After `page.reload()` the needs system exists before any NPC needs state registers (states come with their room). The probe's first post-reload `calm()` ran at that moment, found no states (`__test.needs.ids()` was `[]`) and held nobody. Needs reset to their initial levels on reload, and Graham's social starts at 72 with `urgentAt` 40, inside the cake's tempt band (40 to 85). So on the second or fifth needs tick he walked to the cake and took a serving. The probe's next `calm()` came about 6 s later, when he was already eating. The old recorder was reinstalled only after the 22 s post-reload wait, so it never saw that serving. The case 2 pass before 168 was timing luck.
+
+| Case | Game | What the instrumented old probe saw |
+|---|---|---|
+| 2 | 7738 | 2 servings just before the reload. Staff ids `[]` at the first calm. Tick 2: Graham `job_start` social on the cake; tick 16: `magnet_serving` Graham, left 1, matching the reading of 1. The `left 0` by Chidi (tick 151) is the probe's own eat step, logged after that reading: the event list was read at the end of the case. |
+| 3 | 7742 | 1 serving just before the reload (Chidi took slice 1 at tick 46). Same empty-ids calm. Tick 5: Graham `job_start` social; tick 19: `magnet_serving` Graham, left 0; tick 68: `magnet_finished` when his 12 s use ended. So the last slice went after the reload, to an NPC who had not eaten, and was finished correctly. 168's game 7721 matches this pattern. |
+
+"left 0 next to a reading of 1" (7701, 7738): both are right. They are two servings at different times. The reading of 1 came after Graham's post-reload slice; the `left 0` is Chidi's slice in the probe's later eat step. `_takeServing` (`npc-needs.js` 1054) decrements once, then writes the global and logs `left` from the same value, and it is the only place servings drop.
+
+Probe fixes (`tools/playtest/showcase-bc1-cake-reload.mjs`, commits 4954d5bcd and b1db1c1eb):
+- After the reload, one in-page poll every 5 ms waits until every staff member that had a needs state before the reload has one again and sets hunger and social to 100 in that same poll (held at tick 0 or 1 in every run).
+- The emit recorder is an init script that hooks the needs system the moment it exists, so the first ticks after a reload are logged.
+- A reading, the staff states, the event list and the needs decision log are saved just before `page.reload()`; staff are snapshot at reload and after the wait. All in each result's `diag`.
+- `eatBy` names the real eaters from `magnet_serving` events (`eaters`), not only the NPC it nudged (demo_access_tour game 7730 named the wrong one).
+- `whereAll` checks each `enterRoom` result, retries after `dismiss()` and reports `unloaded` rooms and `enterFails`, so an unloaded room no longer reads as "cake gone".
+
+Fixed probe, keyless :3094, cases 1 to 3, two runs:
+
+| Run | Case 1 | Case 2 | Case 3 |
+|---|---|---|---|
+| 1 | 7756 PASS | 7759 PASS: 2/2, Chidi eats (left 1) | 7762 PASS: 1/1, Jun eats (left 0), `magnet_finished`, task completed |
+| 2 | 7766 PASS | 7771 PASS: 2/2, Chidi eats (left 1) | 7776 PASS: 1/1, Jun eats (left 0), `magnet_finished`, task completed |
+
+No serving was taken in any post-reload settle. player_state growth: +73, +73, +169 bytes per run.
+
+demo_access_tour (commit ee909e396, read from its raw JSON, not rerun here):
+- 7719 and 7643 (case 2): after the reload only reception was loaded, so the read never looked in open_plan. 7643 dropped at the usual (40,23) and failed the same way, so the (40,-33) drop is not what lost the cake. The drop is clamped into `currentPlayerRoom`'s rect (`item-drop.js` about line 297) and was recorded in open_plan; a different stand point after `enterRoom` explains the different spot. Probe fault: the old `whereAll` ignored `enterRoom` failures. The new one reports them. Why `enterRoom` failed there was not measured.
+- 7706 (case 3): a staff member took the last slice in the post-reload settle: the same calm fault as here.
+- 7730: the accepted limit, with `second.npc` misnamed (fixed: `eaters`).
