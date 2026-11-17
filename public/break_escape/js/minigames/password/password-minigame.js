@@ -4,7 +4,7 @@ import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
+import { lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 import { isComputerType } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, cssZoomOf, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
 import { headshotCandidates, headshotKeys, noteMissingHeadshot, npcRecordFor, headshotSourceFor, applyHeadshotBox, SILHOUETTE_URL,
@@ -1364,7 +1364,7 @@ export class PasswordMinigame extends MinigameScene {
                 this.gameData.attempts--;
                 if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
-                this.showScreenMessage(LOCK_SCOPE_REFUSAL_TEXT[refusal], { closeAfterMs: 2000 });
+                this.showScreenMessage(lockScopeRefusalLine(error), { closeAfterMs: 2000 });
                 this.gameResult = { success: false, reason: 'cancelled', cancelled: true, refused: refusal,
                                     attempts: this.gameData.attempts };
             } else if (error?.status === 422 || error?.message?.includes('422')) {

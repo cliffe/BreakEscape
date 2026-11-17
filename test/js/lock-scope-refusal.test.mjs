@@ -30,7 +30,7 @@ for (const rel of ['utils/remote-host-text.js', 'minigames/password/password-min
 
 globalThis.window = { breakEscapeConfig: { gameId: 1 } };
 const load = (rel) => import(pathToFileURL(join(root, rel)).href);
-const { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } = await load('utils/lock-scope-refusal.js');
+const { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, lockScopeRefusalLine } = await load('utils/lock-scope-refusal.js');
 const { PasswordMinigame } = await load('minigames/password/password-minigame.js');
 const { CombinationMinigame } = await load('minigames/combination/combination-minigame.js');
 const { CryptexMinigame } = await load('minigames/cryptex/cryptex-minigame.js');
@@ -56,6 +56,38 @@ test('lockScopeRefusal reads only a 403 with one of the three reasons', () => {
     assert.deepEqual(LOCK_SCOPE_REFUSAL_TEXT, {
         off: 'This PC is off.', not_responding: 'This PC is not responding.', unreachable: "This PC can't be reached."
     });
+});
+
+// K5 (plan 10): an expired session token. The line names the token, so it is the server's.
+const TOKEN_LINE = 'HB-FIN-02 sign-in token has expired.';
+const expiredError = (message = TOKEN_LINE) => {
+    const err = new Error('refused');
+    err.status = 403;
+    err.body = { success: false, reason: 'expired', message };
+    return err;
+};
+
+test('K5: lockScopeRefusalLine gives the server line for expired, the table for the rest', () => {
+    assert.equal(lockScopeRefusal(expiredError()), 'expired');
+    assert.equal(lockScopeRefusalLine(expiredError()), TOKEN_LINE);
+    assert.equal(lockScopeRefusalLine({ status: 403, body: { reason: 'off', message: 'anything' } }), 'This PC is off.',
+        'the three PC lines never take the server text');
+    assert.equal(lockScopeRefusalLine({ status: 422, body: { reason: 'expired', message: TOKEN_LINE } }), null);
+    assert.equal(lockScopeRefusalLine({ status: 403, body: { reason: 'nope' } }), null);
+    assert.equal(lockScopeRefusalLine(expiredError('')), 'This sign-in has expired.', 'an empty message falls back');
+    assert.equal(lockScopeRefusalLine(expiredError({ html: 1 })), 'This sign-in has expired.', 'a non-string falls back');
+    assert.equal(lockScopeRefusalLine(expiredError('x'.repeat(161))), 'This sign-in has expired.', 'an overlong message falls back');
+    assert.ok(!Object.prototype.hasOwnProperty.call(LOCK_SCOPE_REFUSAL_TEXT, 'expired'), 'no generic table line for expired');
+});
+
+test('K5: password: an expired token says the server line, closes as cancelled and counts no try', async () => {
+    serverSays(() => { throw expiredError(); });
+    const g = makePassword();
+    await g.submitPassword();
+    assert.equal(g.gameData.attempts, 0);
+    assert.deepEqual(g.shown, [[TOKEN_LINE, true]]);
+    assert.equal(g.gameResult.refused, 'expired');
+    assert.equal(g.failedEvents, 0);
 });
 
 // ── Password ────────────────────────────────────────────────────────────────
@@ -161,6 +193,20 @@ for (const [name, Cls, statusSel, setup, submit, wrongText] of screens) {
             assert.equal(m.gameContainer.els[statusSel].textContent, LOCK_SCOPE_REFUSAL_TEXT[reason]);
             assert.equal(m.attemptCount, 0);
         }
+    });
+
+    test(`${name}: K5 an expired token reads the server's line and counts no try`, async () => {
+        serverSays(() => { throw expiredError(); });
+        const m = makeDial(Cls, setup);
+        await m[submit]();
+        assert.equal(m.gameContainer.els[statusSel].textContent, TOKEN_LINE);
+        assert.equal(m.attemptCount, 0);
+        assert.equal(m.gameResult.refused, 'expired');
+        // A later refusal of another kind reads its own line, not the stale token line
+        serverSays(refused(403, 'off'));
+        const n = makeDial(Cls, setup);
+        await n[submit]();
+        assert.equal(n.gameContainer.els[statusSel].textContent, 'This PC is off.');
     });
 
     test(`${name}: a 422 is still a wrong answer that counts`, async (t) => {

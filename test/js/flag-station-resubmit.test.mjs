@@ -99,13 +99,14 @@ test('the second flag can be submitted once the first check has finished', async
 // Review R4 m2: a flag lock on a PC that is off answers 403 with a reason. The flag was not
 // judged, so the line says why and no flag_rejected is told to the mission.
 test('a flag lock refused 403 off says "This PC is off." and reports no rejection', async () => {
-    for (const [status, reason, line, rejected] of [[403, 'off', 'This PC is off.', 0], [403, 'unreachable', "This PC can't be reached.", 0],
-        [422, null, null, 1]]) {
+    // K5: an expired token's line is the server's message, which names the token
+    for (const [status, reason, line, rejected, message] of [[403, 'off', 'This PC is off.', 0], [403, 'unreachable', "This PC can't be reached.", 0],
+        [403, 'expired', 'HB-FIN-02 sign-in token has expired.', 0, 'HB-FIN-02 sign-in token has expired.'], [422, null, null, 1]]) {
         const { s, els } = makeStation();
         s.params = { type: 'object', lockable: { scenarioData: { id: 'flag_folder' } } };
         let told = 0;
         s.emitFlagRejected = () => { told++; };
-        window.ApiClient = { unlock: async () => { throw Object.assign(new Error('x'), { status, body: { success: false, reason, message: 'Invalid attempt' } }); } };
+        window.ApiClient = { unlock: async () => { throw Object.assign(new Error('x'), { status, body: { success: false, reason, message: message || 'Invalid attempt' } }); } };
         els['#flag-input'].value = 'flag{right}';
         await s.submitFlagForLock();
         if (line) assert.equal(els['#flag-result'].textContent, line, reason);
