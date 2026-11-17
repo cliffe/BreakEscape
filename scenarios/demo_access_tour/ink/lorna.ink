@@ -10,6 +10,7 @@ VAR cloner_held = false
 { met: -> hub }
 ~ met = true
 Lorna Easton: Facilities. If it's a door or a cupboard, it's mine.
+~ hub_quiet = true
 -> hub
 
 === hub ===
