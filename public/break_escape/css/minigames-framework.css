@@ -120,13 +120,15 @@
    twelve on screen). Never a wrapper that holds controls (.siem-alert-row, .combination-header,
    .tri-panel, .device-frame: a stacking context and fixed-position containing block for everything
    inside), never a skin-image button or tab (the residual there is the skin, not LCD), never a
-   row of a list (hint a text-only list container once if one measures clean). Each entry is one
+   row of a list (hint a text-only list container once if one measures clean: .rogue-ap-scan
+   holds only spans, headshots and the signal icon, no controls, and clears every row for one layer). Each entry is one
    class, or one class plus a tag, or a parent class plus a child class (`.mail-read-pane
    .ib-infl-label`: the one influence bar in the mail reader, not the per-card bars on the board).
    test/js/minigame-text-crisp-css.test.mjs pins the exact list and checks that every class is emitted by the engine, not that every body text is listed. */
 .minigame-container :is(
     .note-md-text,
     .rogue-ap-note,
+    .rogue-ap-scan,
     .lpb-copy,
     .lpb-address-text,
     .lpb-not-secure,

@@ -21,6 +21,7 @@ const parts = inner ? inner[1].split(',').map((x) => x.trim()).filter(Boolean) :
 const EXPECTED = [
     '.note-md-text',
     '.rogue-ap-note',
+    '.rogue-ap-scan',
     '.lpb-copy',
     '.lpb-address-text',
     '.lpb-not-secure',
@@ -87,7 +88,7 @@ test('wrappers with controls, skin buttons, sr-only text and repeated rows are n
     for (const cls of ['siem-alert-row', 'combination-header', 'tri-panel', 'device-frame', 'rogue-ap-pane',
         'password-minigame-area', 'minigame-container', 'ob-sr', 'signin-prompt', 'mail-sr-only',
         'siem-time', 'siem-source', 'siem-description', 'siem-btn', 'patch-panel-label', 'pin-minigame-key',
-        'cryptex-wheel-arrow', 'rogue-ap-scan-row', 'rogue-ap-ssid', 'ib-name', 'ib-card', 'combination-dial-arrow', 'mail-compose-btn', 'mail-contacts-btn', 'ob-case',
+        'cryptex-wheel-arrow', 'rogue-ap-scan-row', 'rogue-ap-scan-line', 'rogue-ap-ssid', 'ib-name', 'ib-card', 'combination-dial-arrow', 'mail-compose-btn', 'mail-contacts-btn', 'ob-case',
         'tri-start', 'notes-minigame-nav-button', 'person-chat-continue-button', 'rogue-ap-tab', 'lpb-purpose']) {
         assert.ok(!listed(cls), `${cls} is not listed`);
         assert.ok(!listedWithTag(cls), `${cls} is not listed with a tag`);
