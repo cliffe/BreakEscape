@@ -133,7 +133,7 @@ Row 2.7 (built values): Chidi and Jun eat at the fridge (restores 80) and microw
 |---|---|---|---|---|---|---|
 | 3.1 | about 6:00 | Ama: "Call it a day.", then "Yes, call it a day." at the A31 confirm ("Not yet." returns to the hub) | A31 confirm, then A17, A18 play; as A18 ends (the `#set_global` runs after it) Chidi, Jun, Graham and Agnieszka vanish, the office ambient dims, the lamp over Zainab's tool roll comes on, and the office coffee is switched back on (the kitchen machine goes off with it) | Ama A31, A17, A18 | none | `global_variable_changed:act_evening` with `value === true` (one `setVisible false` mapping per hidden NPC; on Ama, `setGlobal { office_coffee_off: false }`) |
 | 3.2 | 1.5 s after the conversation closes | Watches Zainab | Zainab speaks | Zainab bark B10 | none | same event, `delayMs 1500` |
-| 3.3 | 8 s after close | Watches Zainab | Her caffeine is set to 10 and she goes to the office coffee | none | `see_who_stays` | `npc_left_post:zainab_hussain` with `globalVars.act_evening === true` |
+| 3.3 | 8 s after close | Watches Zainab | Her caffeine is set to 10 and she goes to the office coffee | none | `see_who_stays` | `npc_left_post:zainab_hussain` with `globalVars.act_evening === true`, or `npc_used:*` with `need === 'caffeine'` (any coffee source) |
 | 3.4 | about 6:30 | Walks into the kitchen | The dark kitchen lights on entry, and goes dark 10 s after the viewer leaves | Ama A15 (hint) | none | none |
 | 3.5 | about 7:00 | Ama: "Give me the short version." | Recap of each feature in the order seen, then the close | Ama A19 to A25, A28 | none | none |
 
@@ -160,7 +160,7 @@ All three aims visible from the start (no `unlockAim`, so an early event never c
     - Evening (`act_evening`): A12, A15.
   - "What was that at the cooler?" (only when `heard_exchange_cooler_chat`): A13, A14.
   - "Let's do lunch." (`not act_midday`): if `not kitchen_seen`, A26 and back to the hub; else if `chidi_pc_owner_away or jun_pc_owner_away`, A29 and back to the hub; else A16, A30, `#set_global:act_midday:true`, exit. Globals sync into the story when the conversation starts, so a viewer who keeps the conversation open while Chidi and Jun walk back hears A29 again until the conversation is closed and reopened. A29 already tells them to give it a minute, which in practice closes the conversation; S3 checks the reopen.
-  - "Call it a day." (`act_midday and not act_evening`): the A31 confirm ("They won't be back once they've gone home. Any tasks still unticked first?") with two sticky sub-choices. "Yes, call it a day." plays A17, A18, `#set_global:act_evening:true`, exit. "Not yet." returns to the hub choices with nothing set.
+  - "Call it a day." (`act_midday and not act_evening`): the A31 confirm ("They won't be back once they've gone home. Seen everything you wanted?") with two sticky sub-choices. "Yes, call it a day." plays A17, A18, `#set_global:act_evening:true`, exit. "Not yet." returns to the hub choices with nothing set.
   - "Give me the short version." (`act_evening`): A19 to A25, A28, back to the hub.
   - "I'll have a look round.": A27, exit.
 - Each staff NPC: a minimal five-line chat in its own ink file (start line; a hub reopen line; one flavour choice answered in two lines; a plain exit choice answered with one short reply). Graham's file also holds `exchange_cooler_chat` (Graham and Agnieszka, five lines). The exchange is declared on Graham: `"exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat" }]`, and `heard_exchange_cooler_chat: false` is declared in `globalVariables`.
@@ -219,7 +219,7 @@ Character counts are the full text in the table, punctuation and spaces included
 | A28 | short version, close | That's the tour. Stay and look round as long as you like. | 57 | 12 |
 | A29 | Let's do lunch, Chidi or Jun away | Hang on, Chidi or Jun is still out. Give it a minute. | 53 | 12 |
 | A30 | Let's do lunch, after A16 | Anyone in the middle of something finishes it first. | 52 | 9 |
-| A31 | Call it a day (confirm) | They won't be back once they've gone home. Any tasks still unticked first? | 74 | 13 |
+| A31 | Call it a day (confirm) | They won't be back once they've gone home. Seen everything you wanted? | 70 | 12 |
 | A32 | try next, morning (kitchen_seen and cooler heard) | You've seen the kitchen. Ask me about lunch when you're ready. | 62 | 11 |
 | A33 | try next, midday (after A11, cake still out) | Once the cake is gone, tell me to call it a day. | 48 | 12 |
 | A34 | try next, midday (cake already gone) | The cake's gone already. Tell me when to call it a day. | 55 | 12 |
@@ -228,7 +228,7 @@ Player choice text (not voiced): "What am I looking at?", "What should I try nex
 
 R1 fixes (build review R1 and dialogue review): M1 guards each `start` with an ink-local VAR (`met_ama` and five `met_<staff>`), so the opening line plays once and a re-talk, after an ended story or a reload, opens at the hub reopen line (A0 and the staff reopen lines). M2 makes "Call it a day." confirm first with A31; A17 answers the Yes. Dialogue M2 adds A32 (morning pointer to lunch once the kitchen is seen) and A33 (midday pointer to the evening). A6 names the machine (was "it"); A13 is past tense ("That was"); A17 says "nearly all" (was "most").
 
-R2 fixes (build review R2): spoken lines changed, so they need the user's yes before voicing. A31 rewritten to name the risk (unticked tasks) and not echo A33's "Once" (was "Once they go home, they're gone for the day. Ready?") (m9). A32 now also gated on `heard_exchange_cooler_chat`, so it only replaces the cooler pointer once the cooler exchange has been heard, not the moment the kitchen is entered (m7, no text change). A34 added for the midday try-next when an early cake has already gone (`cake_servings` is 0), in place of A11 and A33 (m6). In the `cooler` pool "Not bad, you?" becomes "Quiet one today, isn't it?" (m8).
+R2 fixes (build review R2): spoken lines changed, so they need the user's yes before voicing. A31 rewritten to name the risk (unticked tasks); R3 m1 then reworded the question so "Yes" confirms it ("Seen everything you wanted?") and not echo A33's "Once" (was "Once they go home, they're gone for the day. Ready?") (m9). A32 now also gated on `heard_exchange_cooler_chat`, so it only replaces the cooler pointer once the cooler exchange has been heard, not the moment the kitchen is entered (m7, no text change). A34 added for the midday try-next when an early cake has already gone (`cake_servings` is 0), in place of A11 and A33 (m6). In the `cooler` pool "Not bad, you?" becomes "Quiet one today, isn't it?" (m8).
 
 ### 7b. Staff ink (five lines each)
 

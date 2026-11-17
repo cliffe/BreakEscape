@@ -3,7 +3,7 @@
 // cooler follow-up. S3 adds the lunch gate and the midday hints. S4 adds the
 // evening turn ("Call it a day."), the evening hints and the recap ("Give me the
 // short version."). Reopen pattern from test_needs_sims/neil.ink:
-// start diverts to hub.choices; hub has a reopen line; exit uses
+// the first talk diverts to hub.choices and later talks divert to hub; hub has a reopen line; exit uses
 // # exit_conversation then -> END. reopenRefreshesHub is set on her NPC block.
 
 // heard_exchange_cooler_chat is a scenario global, synced into this VAR when the
@@ -117,7 +117,7 @@ What can I help with?
     }
 + { act_midday and not act_evening } [Call it a day.]
     # speaker:npc
-    They won't be back once they've gone home. Any tasks still unticked first?
+    They won't be back once they've gone home. Seen everything you wanted?
     + + [Yes, call it a day.]
         # speaker:npc
         Right. Home time for nearly all of them.

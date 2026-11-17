@@ -402,3 +402,19 @@ Findings for the user:
 - After "Not yet." the ink returns to the choice point, so the hub shows its choice list without the "What can I help with?" greeting. That is the existing behaviour, not a blank bubble.
 
 Probe history: the first run on game 7656 had two probe faults (the hub criterion wanted the greeting line, and the tick was not attributed to an event). Both were fixed. Games 7673 (first rerun) and 7675 (final) show the same results for checks 2a, 3 and 4. Check 1 needed the kitchen-use wait added before the final run on 7675.
+
+## R3 fixes
+
+Review: `planning/BUILD_REVIEW_R3.md` (0 blockers, 0 majors, 4 minors), plus the failed board fit from the R2 live check.
+
+| Item | Change | Files |
+|---|---|---|
+| m1 | A31 now reads "They won't be back once they've gone home. Seen everything you wanted?" (70 characters, 12 words). Spoken line, needs voicing approval. | `ink/ama_owusu.ink`, `.json`, `planning/PLAN.md` (7a row A31, section 6 note) |
+| m2 | Evening aim text no longer says earlier aims are closed: "Home time for nearly all of them, and they don't come back, so finish the earlier tasks first. Each task ticks when you have seen that behaviour happen." | `scenario.json.erb` |
+| m3 | Board lines "Watch the coffee run: one at a time." and "Switch the coffee off at the socket." | `scenario.json.erb` |
+| m4 | PLAN row 3.3 now lists `npc_used:*` with `need === 'caffeine'`; ink header comment says the first talk diverts to `hub.choices` and later talks to `hub`. | `planning/PLAN.md`, `ink/ama_owusu.ink` |
+| Board fit | The board was cut off by 67 px. The two-line observation sentence is removed (the modal title already says "Things to try") and the mugs and cooler lines are merged ("Note the mugs; hang about by the cooler."). Text only. | `scenario.json.erb` |
+
+Live check (probe `tools/playtest/showcase-r3fix-board.mjs`, keyless server :3094, game 7685, PID file `tmp/r3fix/server.pid`, killed by PID afterwards): `.game-display-body` scrollHeight 379, clientHeight 379; dialog 467 and 467, inside the 800 px viewport. PASS. Screenshot `planning/screens/r3fix-board.png`. Evidence `tmp/r3fix/board-7685.json`. An earlier run with the observation kept as one line (game 7683) gave 445 against 444, so the sentence was dropped for margin.
+
+Checks: validator 0 errors, 17 warnings (known baseline); `showcase-lines-check.mjs` PASS; ink recompiled with no warnings.
