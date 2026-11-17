@@ -452,6 +452,22 @@ module BreakEscape
       assert_equal ['lena_pc'], body['tokenExpiredPcIds']
     end
 
+    test 'K5 R3 t1: unplugging after expiry ends an expired token and a live password session through the same foothold, naming only the token as expired' do
+      build
+      signed_in_with_token
+      # a password session reached through the same foothold; sign it in late so it is not yet expired
+      travel 3.minutes
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      assert_response :success, response.body
+      assert_equal OFFICE, state['sessions']['sv_fs02']['foothold']
+      travel 2.minutes
+      body = unplug('comms_port')
+      assert_response :success
+      assert_equal %w[lena_pc sv_fs02], body['endedPcIds'].sort
+      assert_equal ['lena_pc'], body['tokenExpiredPcIds']
+      assert_empty state['sessions']
+    end
+
     # ---- the clock stays on the server ----------------------------------------------------
 
     test 'the clock is never in an answer and a sync body cannot set it' do

@@ -110,7 +110,7 @@ export function tokenSessionLine(secs) {
 }
 
 /**
- * Rewrite the token line in a mounted desktop (the account bar and the start panel) from the
+ * Rewrite the token line in a mounted desktop (the top strip, the account bar and the start panel) from the
  * session's current figure (K5). Text only: the line is escaped by being set as textContent.
  * Returns true when it changed a line.
  */
@@ -118,7 +118,7 @@ export function refreshTokenLines(root, session) {
     const line = credentialSessionLine(session);
     if (!root?.querySelectorAll || !line || session?.kind !== 'token') return false;
     let changed = false;
-    root.querySelectorAll('.desktop-account-credential, .pc-start-credential').forEach((el) => {
+    root.querySelectorAll('.desktop-account-credential, .desktop-token-line, .pc-start-credential').forEach((el) => {
         const text = displayDashes(line);
         if (el.textContent !== text) { el.textContent = text; changed = true; }
     });

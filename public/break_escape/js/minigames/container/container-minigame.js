@@ -1278,7 +1278,12 @@ export class ContainerMinigame extends MinigameScene {
         const claim = claimLineText(session);
         const claimLine = claim ? `
                     <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
-        return `${remoteLine}${claimLine}`;
+        // A token session's minutes left sit in the top strip, where a player working in the
+        // desktop sees them without opening Start (K5). refreshTokenLines rewrites it.
+        const tokenText = session.kind === 'token' ? credentialSessionLine(session) : null;
+        const tokenLine = tokenText ? `
+                    <div class="desktop-claim-line desktop-token-line">${escapeHtml(displayDashes(tokenText))}</div>` : '';
+        return `${remoteLine}${claimLine}${tokenLine}`;
     }
 
     /** "Remote session from {fromHost}" for a desktop reached from another desktop (K4). */

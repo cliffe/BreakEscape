@@ -377,6 +377,39 @@ test('K5: under a minute the line reads "under a minute left"; a password sessio
     } finally { mock.timers.reset(); }
 });
 
+const stripToken = () => document.querySelector('.pc-desktop-topbar .desktop-token-line')?.textContent;
+
+test('K5 R3: the top strip says the minutes left for a token session, steps each minute, and a password session has no such line', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: TOKEN_SESSION });
+        assert.equal(stripToken(), 'with a session token, about 10 min left');
+        assert.equal(document.querySelectorAll('.pc-desktop-topbar .desktop-token-line').length, 1);
+        mock.timers.tick(60 * 1000);
+        assert.equal(stripToken(), 'with a session token, about 9 min left');
+        mock.timers.tick(60 * 1000 * 8 + 20 * 1000);
+        assert.equal(stripToken(), 'with a session token, under a minute left');
+        mg.cleanup?.();
+        const pw = await openDesktop();
+        assert.equal(document.querySelector('.desktop-token-line'), null, 'none for a password session');
+        pw.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+test('K5 R3: the strip line is plain text; a hostile label or link name makes no element', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const hostile = '<img src=x onerror=alert(1)>';
+        const mg = await openDesktop({ held: { ...TOKEN_SESSION, label: hostile } });
+        const html = mg.sessionNoticesHtml();
+        assert.doesNotMatch(html, /<img/);
+        assert.equal(document.querySelector('.pc-desktop-topbar img'), null);
+        assert.equal(stripToken(), 'with a session token, about 10 min left');
+        assert.equal(stripToken().includes('onerror'), false);
+        mg.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
 test('K5: a remote desktop request refused 403 expired drops the local copy and says the token expired', async () => {
     const mg = await openDesktop({ held: TOKEN_SESSION });
     mg.cleanup?.();

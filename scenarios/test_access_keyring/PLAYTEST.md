@@ -80,8 +80,9 @@ Run E starts a new game, plants the drop box in `comms_port` and never takes the
   HB-FIN-02 sign-in token for Lena Fox on HB-FIN-02." or, with a capture log held, the capture-log wording.
   Lena is tagged "Token" from the drop box view only, never at the keyboard. (This scenario has one foothold,
   `jack_comms_port`, so "from another foothold" is reachable only as a tampered request: see below.)
-  "Connect with HB-FIN-02 sign-in token" signs in and the bar's second line says "with a session token, about
-  {n} min left", stepping down each minute and reading "under a minute left" in the last one. Reload: the bar
+  "Connect with HB-FIN-02 sign-in token" signs in and the top strip (the amber line under "Remote session through ...")
+  says "with a session token, about {n} min left", stepping down each minute and reading "under a minute left"
+  in the last one; it shows without opening Start, and Start's panel repeats it. Reload: the top strip
   and timer resume from the server's `expiresInS`. The drop box view lists `server_lan` through Lena's
   session. When the four minutes are up the desktop closes with "HB-FIN-02 sign-in token expired. Your
   session on HB-FIN-02 ended."; the drop box view no longer lists `server_lan`; HB-FIN-02's row shows no
@@ -93,7 +94,7 @@ Run E starts a new game, plants the drop box in `comms_port` and never takes the
   sign-in token has expired.". A token sign-in completes no `unlock_object` task for the PC (the server
   never records a token in `signedInPcs`).
 - Fit: `tools/playtest/signin-fit.mjs` draws a live and an expired token row in the Sign-ins list and the
-  token bar line at the four sizes (390x844, 915x412, 800x600, 1400x1000).
+  token line in the top strip, and the first row of desktop icons staying in view, at the four sizes (390x844, 915x412, 800x600, 1400x1000).
 - Tampered checks from the page: the token through another foothold (generic refusal); after expiry, POST
   /login (422 `expired`), GET /container with `foothold=` (403, reason `expired`) and a share request through
   the session; a cleared client state does not revive it. `credentialClock` and its values never appear in an

@@ -429,8 +429,8 @@ async function measureCaptureLog(page, size) {
 // the drop box, plant it in the comms port, sign in to Lena's PC with the token: all server-side),
 // then the real remote desktop is opened with window.openRemoteDesktop. At each size the checks run
 // on that live DOM: the monitor's bezel inside the viewport, the top bar (the compact rule at
-// 390x844 applies there), the account bar line the desktop's own accountBarHtml() draws into that
-// real top bar, and the start panel's credential line after Start is opened. Each line must stay
+// 390x844 applies there), the token line in that top strip (sessionNoticesHtml; the first row of
+// desktop icons must stay in view under it), and the start panel's credential line after Start. Each line must stay
 // inside its box and take at most two lines, for the live figure, the sub-minute line and a 240-hour
 // figure (the widest a token line can get; a token line carries no label).
 async function setupTokenGame(page, gameId) {
@@ -497,29 +497,30 @@ async function measureTokenDesktop(page, size) {
                 if (a.right > b.right + 1 || a.left < b.left - 1) { out.ok = false; out.notes.push(`${name}: runs past its box`); }
                 if (n > 2) { out.ok = false; out.notes.push(`${name}: takes ${n} lines`); }
             };
-            // the account bar, drawn by the desktop's own method into the real top bar
-            const keepTop = top.innerHTML;
-            top.innerHTML = mg.accountBarHtml();
-            const bar = top.querySelector('.desktop-account-bar');
-            if (!bar) { out.ok = false; out.notes.push('accountBarHtml drew no bar'); }
+            // the top strip's own token line (the line a player sees without opening Start), drawn
+            // by sessionNoticesHtml(): its lines, that it fits the strip, and that the first row of
+            // desktop icons stays in view under it
             const cases = [['live', base.tokenSecondsLeft ?? 187], ['sub-minute', 41], ['240h', 240 * 60 * 60]];
-            for (const [name, secs] of cases) {
-                if (bar) {
+            const strip = top.querySelector('.desktop-token-line');
+            if (!strip) { out.ok = false; out.notes.push('the top strip has no token line'); }
+            else {
+                const icon = mon.querySelector('.desktop-icon');
+                for (const [name, secs] of cases) {
                     tb.refreshTokenLines(top, { ...base, tokenSecondsLeft: secs });
-                    const line = bar.querySelector('.desktop-account-credential');
-                    if (!line) { out.ok = false; out.notes.push(`${name}: no token line in the bar`); }
-                    else {
-                        within(`bar-${name}`, line, bar);
-                        if (bar.scrollWidth > bar.clientWidth + 1) { out.ok = false; out.notes.push(`bar-${name}: bar scrolls sideways`); }
-                        const br = bar.getBoundingClientRect(), tr = top.getBoundingClientRect();
-                        if (br.right > tr.right + 1 || tr.right > mr.right + 1) { out.ok = false; out.notes.push(`bar-${name}: bar outside the top bar`); }
-                    }
-                    const btns = [...bar.querySelectorAll('.desktop-account-btn')].map(b => b.getBoundingClientRect());
-                    if (btns.length === 2 && Math.abs(btns[0].top - btns[1].top) > 2) { out.ok = false; out.notes.push(`bar-${name}: Switch user and Sign out are on two rows`); }
-                    if (btns.some(b => b.right > bar.getBoundingClientRect().right + 1)) { out.ok = false; out.notes.push(`bar-${name}: a button runs past the bar`); }
+                    within(`strip-${name}`, strip, top);
+                    const sr = strip.getBoundingClientRect(), tr = top.getBoundingClientRect();
+                    if (sr.bottom > tr.bottom + 1 || sr.top < tr.top - 1) { out.ok = false; out.notes.push(`strip-${name}: line outside the strip`); }
+                    if (tr.right > mr.right + 1) { out.ok = false; out.notes.push(`strip-${name}: strip outside the monitor`); }
+                    if (top.scrollWidth > top.clientWidth + 1) { out.ok = false; out.notes.push(`strip-${name}: strip scrolls sideways`); }
+                    if (!icon) { out.ok = false; out.notes.push('no desktop icons to check'); break; }
+                    // the first icon sits below the strip and wholly inside the viewport and the monitor
+                    const ir = icon.getBoundingClientRect(), mrr = mon.getBoundingClientRect();
+                    const floor = Math.min(vh, mrr.bottom);
+                    if (ir.top < tr.bottom - 1) { out.ok = false; out.notes.push(`strip-${name}: first icon row under the strip`); }
+                    if (ir.bottom > floor + 1 || ir.top < 0) { out.ok = false; out.notes.push(`strip-${name}: first icon row out of view (${Math.round(ir.top)} to ${Math.round(ir.bottom)} of ${Math.round(floor)})`); }
                 }
+                tb.refreshTokenLines(top, { ...base, tokenSecondsLeft: base.tokenSecondsLeft ?? 187 });
             }
-            top.innerHTML = keepTop;
             // the start panel's own line
             mon.querySelector('.pc-start-btn')?.click();
             await new Promise(r => setTimeout(r, 250));
