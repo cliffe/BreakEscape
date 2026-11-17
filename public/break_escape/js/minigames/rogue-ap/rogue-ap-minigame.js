@@ -265,7 +265,7 @@ export class RogueApMinigame extends MinigameScene {
             b.classList.toggle('is-chosen', on);
             b.setAttribute('aria-pressed', on ? 'true' : 'false');
             if (on) b.appendChild(el('span', 'rogue-ap-chosen', CHOSEN_TEXT));
-            this.addEventListener(b, 'click', (e) => { e.preventDefault(); this.selectSsid(r.ssid); });
+            b.addEventListener('click', (e) => { e.preventDefault(); this.selectSsid(r.ssid); });
             ssids.appendChild(b);
         }
         pane.appendChild(ssids);
@@ -281,7 +281,7 @@ export class RogueApMinigame extends MinigameScene {
             b.classList.toggle('is-chosen', on);
             b.setAttribute('aria-pressed', on ? 'true' : 'false');
             if (on) b.appendChild(el('span', 'rogue-ap-chosen', CHOSEN_TEXT));
-            this.addEventListener(b, 'click', (e) => { e.preventDefault(); this.selectTemplate(t.id); });
+            b.addEventListener('click', (e) => { e.preventDefault(); this.selectTemplate(t.id); });
             tpl.appendChild(b);
         }
         pane.appendChild(tpl);
@@ -297,7 +297,7 @@ export class RogueApMinigame extends MinigameScene {
         const start = el('button', 'rogue-ap-start rogue-ap-button', START_TEXT);
         start.type = 'button';
         start.disabled = !this.selectedRow();
-        this.addEventListener(start, 'click', (e) => { e.preventDefault(); this.startClone(); });
+        start.addEventListener('click', (e) => { e.preventDefault(); this.startClone(); });
         startRow.appendChild(start);
         pane.appendChild(startRow);
 

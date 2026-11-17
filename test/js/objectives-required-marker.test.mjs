@@ -173,3 +173,22 @@ test('P3 F11: a lone task with its aim\'s own title is not printed twice; other 
     assert.ok(html.includes('data-aim-id="echo"'), 'the aim line still shows');
     assert.ok(html.includes('data-task-id="cover"') && html.includes('data-task-id="other"'), 'an aim with two tasks keeps both');
 });
+
+test('an aim flagged optional shows no * and no key; every task reads as optional; it still completes on its required task', async () => {
+    // lab blind playtest finding 1: "Wireless (optional)" starred the harvest task that closes it
+    const m = manager([
+        { aimId: 'wifi', title: 'Wireless (optional)', status: 'active', order: 0, optional: true,
+          tasks: [task('harvest'), task('extra_a', { optional: true }), task('extra_b', { optional: true })] },
+        { aimId: 'mixed', title: 'Mixed aim', status: 'active', order: 1,
+          tasks: [task('req_a'), task('opt_a', { optional: true })] }
+    ]);
+    const { html, keyIn } = render(m);
+    assert.doesNotMatch(row(html, 'harvest'), new RegExp(MARK));
+    assert.match(row(html, 'harvest'), /task-active task-optional"/);
+    assert.match(row(html, 'extra_a'), /task-active task-optional"/);
+    assert.equal(keyIn('wifi'), false);
+    assert.equal(keyIn('mixed'), true, 'other aims keep their marker');
+    assert.match(row(html, 'req_a'), new RegExp(MARK));
+    await m.completeTask('harvest');
+    assert.equal(m.aims.find(a => a.aimId === 'wifi').status, 'completed', 'completion is unchanged');
+});

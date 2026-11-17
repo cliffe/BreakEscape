@@ -151,7 +151,7 @@ module BreakEscape
           Array(aim['tasks']).each do |task|
             next unless task.is_a?(Hash)
 
-            optional = task['optional'] == true
+            optional = task['optional'] == true || aim['optional'] == true
             state = task_states.dig(task['taskId'], 'status')
             kind = task_verification(task, locks)
             counts_by[:total] += 1

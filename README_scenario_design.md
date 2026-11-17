@@ -912,6 +912,9 @@ Any action, in any list the engine runs (`triggerOnInteract`, a timer's `actions
 | `consumesItem` | `true` removes the held item when the actions fire |
 | `requiresItemHint` | The refusal text when the item is not held. Default: "You need the right kit in hand for this." |
 | `requiresItemHintVariants` | One refusal text per state: an array of `{ "condition": "globalVars...", "value": "..." }`, first match wins, then `requiresItemHint`, then the default. Same format and rules as `observationVariants` (`&&` only: no `\|\|`, no parentheses), so put the most specific condition first |
+| `requiresItemCondition` | When the held item may be used, as a globals condition. With the item held and the condition false, the actions do not fire, the item stays in the inventory, the server gets no plant or hide record, and the player sees `requiresItemConditionHint`. Syntax as for `observationVariants`: `&&`-joined terms of `globalVars.x`, `!globalVars.x`, or `globalVars.x` with `===`, `!==`, `>`, `<`, `>=`, `<=` and a `true`/`false`/`null`/number/quoted-string literal. No `\|\|`, no parentheses (they are quietly mis-read) |
+| `requiresItemConditionHint` | The refusal text when the condition does not hold. Default: "Not now." |
+| `requiresItemConditionHintVariants` | One text per state, same format as `requiresItemHintVariants` (first match wins, then `requiresItemConditionHint`, then the default). Shipped to the client in full like every variant list, so a later variant is readable before its condition holds |
 
 ```json
 {
@@ -938,6 +941,18 @@ Things to know:
 - **A click never shows `observations` on this object.** The refusal returns before the observation code. The info label at the bottom of the screen does show `observations` and `observationVariants` when the player stands near, so an object can carry both: variants for the label, hint variants for the click.
 - **The refusal toast lasts by its length**: 300 ms per word, at least 6 s and at most 12 s.
 - **An item plant cannot sit on a sign-in PC.** A `lockType: "login"` object answers a click with its own flow (owner present, session, sign-in screen) and returns before `triggerOnInteract` and `requiresItem` are read. So a scenario that chains a captured password into a sign-in puts the plant on a separate object beside the sign-in PC (the cable behind it, a dock, a desk hub), and keeps the capture on the PC's own event, for example `workstation_owner_returned:<pc>` with `data.wasLocked === true`. `lab_physical_pentest` plants on the PC object itself only because, by that lab's own rules of engagement, nothing ever signs in at Chris's PC.
+- **`requiresItemCondition` is read only on a `requiresItem` object with `triggerOnInteract`.** A `networkJack`, or an object with no `triggerOnInteract`, ignores it. The check runs after the item is found and before anything fires, so a refused use leaves the kit in the inventory. Example, a keylogger that may only be clipped on while the owner is away from the desk (`<pcId>_owner_away` is set by the workstation system):
+
+```json
+"requiresItem": "kit_deviceA", "consumesItem": true,
+"requiresItemCondition": "globalVars.staff_pc_owner_away",
+"requiresItemConditionHint": "Chris is still at her desk. Wait until she has gone for coffee.",
+"requiresItemConditionHintVariants": [
+  { "condition": "globalVars.desk_pc_busy", "value": "Someone is still working here. Wait until they have left." }
+]
+```
+
+- **The validator** errors on a `requiresItemCondition` (or a condition in its hint variants) that uses `||`, parentheses or any term outside that grammar, and warns when it names a global that is neither declared nor a workstation global (`<id>_screen_locked`, `_owner_away`, `_accessed`), when it has no `requiresItem` or no `triggerOnInteract`, or when the condition hints appear without the condition. `validate_secret_leaks` treats `requiresItemConditionHintVariants` like the other variant lists.
 - **The validator** warns when `requiresItemHintVariants` is authored without `requiresItem` (none of those hints would ever show), and checks its conditions like the other variant lists.
 
 #### Hiding a device in a plant: `hideable`
@@ -2395,6 +2410,8 @@ Objectives structure the mission with `aims` (groups) containing `tasks` (indivi
 ```
 
 **Optional tasks.** An aim completes when every task that isn't `"optional": true` is completed or skipped; its optional tasks don't hold it open. An aim whose tasks are **all** optional (a side aim such as "Trace How They Got In (Optional)") completes only once every one of its tasks is completed or skipped, not on the first. The client (`objectives-manager.js` `checkAimCompletion`) and the server (`Game#check_aim_completion`) agree on this.
+
+**Optional aims.** An aim can carry `"optional": true` (a side aim such as the lab's wireless aim). Every task in it then counts as optional wherever the player or the score looks: the objectives panel shows no `*` required marker or "* required" key for it and dims its tasks, the ending warning lists its open tasks as optional, and the score breakdown leaves them out of `required_missing` and the required totals (they still count in `total_tasks`). It does not change when the aim completes (the rule above), and `validate_office_life` skips the aim's tasks in its required-task checks. Example: `{ "aimId": "wireless", "title": "Wireless (optional)", "status": "active", "order": 6, "optional": true, "tasks": [ ... ] }`.
 
 ### Task Types
 

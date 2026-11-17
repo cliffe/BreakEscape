@@ -160,6 +160,20 @@ module BreakEscape
       assert_equal false, skipped.score_breakdown[:check_this]
     end
 
+    test "a task in an optional aim counts as optional: not required, not required_missing" do
+      scenario = SCENARIO.deep_dup
+      scenario["objectives"] << { "aimId" => "a4", "title" => "A4", "status" => "active", "order" => 3, "optional" => true, "tasks" => [
+        { "taskId" => "t_extra_vault", "title" => "Extra", "type" => "unlock_room", "targetRoom" => "vault", "status" => "active" }
+      ] }
+      game = new_game(scenario: scenario, tasks: done("t_vault", "t_safe", "t_talk"))
+      game.update!(mission_concluded_at: Time.current)
+      b = game.score_breakdown
+      assert_equal 7, b[:objectives][:required_total]
+      assert_equal 3, b[:objectives][:optional_total]
+      assert_not_includes b[:verified][:required_missing], "t_extra_vault"
+      assert_equal false, b[:check_this]
+    end
+
     # --- result --------------------------------------------------------------
 
     def with_result_mission(meta)

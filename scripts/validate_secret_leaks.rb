@@ -257,6 +257,7 @@ module SecretLeaks
     'observationVariants' => 'value',
     # [{ condition, value }] like the two above (utils/conditional-text.js resolveObjectField)
     'requiresItemHintVariants' => 'value',
+    'requiresItemConditionHintVariants' => 'value',
     'jackConfirmVariants' => 'value',
     # the ESD minigame maps { condition, text } to { condition, value } before resolving
     # (esd-pushbutton-minigame.js); it lives under minigameData, so see collect_variant_strings

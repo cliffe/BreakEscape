@@ -9,9 +9,12 @@ require 'test_helper'
 #   <scenario>.old.json / .new.json  -- the format-2 render (top-level screenHabit/printHabit/usbHabit)
 #     and the format-3 render (habits.screen/.print/.usb), for the three rewritten templates plus
 #     test_access_habits (which authors no habit key, so its pair is identical bar formatVersion).
-#   <scenario>.old.loaded.json       -- the format-2 LOADER output (NpcHabits.expand! on the 8b tip
-#     ab14d1926, which fills a top-level screenHabit from awareness / habits.locksScreen), for
-#     test_access_habits and lab_physical_pentest and a minimal priya scenario. These drive the
+#   <scenario>.old.habits.json       -- for test_access_habits and lab_physical_pentest, a small map of
+#     npc id -> the screenHabit and habits.locksScreen the format-2 loader (8b tip ab14d1926) filled
+#     from awareness / habits.locksScreen. The test rebuilds the "old loaded" data from the live
+#     render plus this map, so scenario edits never touch the fixture.
+#   <scenario>.old.loaded.json       -- whole format-2 loader output, kept for test_access_habits
+#     (the JS reader-parity test) and a minimal priya scenario (format_upgrade_test). These drive the
 #     stored-game equivalence: a game prepared the format-2 way, folded, must give the same effective
 #     lock rule per workstation as a fresh format-3 game.
 #
@@ -53,6 +56,24 @@ module BreakEscape
 
     def deep_copy(data)
       Marshal.load(Marshal.dump(data))
+    end
+
+    # What the format-2 loader would have produced for this scenario, rebuilt from the live render
+    # so unrelated scenario edits never touch the fixture. Only the frozen part comes from the 8b
+    # tip: per NPC, the top-level screenHabit and habits.locksScreen the old loader filled. Every
+    # NPC's new habits.screen is removed (format 2 had none) and the frozen screenHabit put back.
+    def old_loaded_from(live_expanded, frozen_habits)
+      old = deep_copy(live_expanded)
+      all_npcs(old).each do |npc|
+        npc['habits'].delete('screen') if npc['habits'].is_a?(Hash)
+        frozen = frozen_habits[npc['id']]
+        next unless frozen
+
+        npc['screenHabit'] = deep_copy(frozen['screenHabit'])
+        (npc['habits'] ||= {})['locksScreen'] = frozen['locksScreen'] if frozen.key?('locksScreen')
+      end
+      old.delete('formatVersion')
+      old
     end
 
     def transformed(data)
@@ -258,13 +279,13 @@ module BreakEscape
     # format-3 game.
     %w[test_access_habits lab_physical_pentest].each do |name|
       test "#{name}: a format-2 loader game, upgraded, matches a fresh format-3 game" do
-        old_loaded = fixture("#{name}.old.loaded.json")
-        folded = transformed(old_loaded)
         fresh = begin
           loaded = deep_copy(live_render(name))
           BreakEscape::NpcHabits.expand!(loaded)
           loaded
         end
+        old_loaded = old_loaded_from(fresh, fixture("#{name}.old.habits.json"))
+        folded = transformed(old_loaded)
 
         assert_equal strip_notes(fresh), strip_notes(folded),
                      "#{name}: the folded format-2 loader output must equal the fresh format-3 loader output"

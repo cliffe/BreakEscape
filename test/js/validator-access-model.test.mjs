@@ -453,6 +453,82 @@ test('requiresItemHintVariants without requiresItem is a warning: the hints are 
     assert.ok(!has(validatorIssues('check_engine_limits', sc), 'but no requiresItem'));
 });
 
+// requiresItemCondition (lab blind-playtest fix): a known field, checked against the &&-only grammar
+// that evaluateGlobalCondition reads, with warnings for the cases where nothing would read it.
+function withCondition(extra) {
+    const sc = withHintVariants([]);
+    Object.assign(lobby(sc).objects.find(o => o.id === 'plain_pc'), {
+        requiresItemCondition: 'globalVars.plain_pc_owner_away',
+        requiresItemConditionHint: 'She is still there.', ...extra
+    });
+    return sc;
+}
+
+test('requiresItemCondition and its hints are known fields, with no issues on a good condition', { skip }, () => {
+    const sc = withCondition({ requiresItemConditionHintVariants: [{ condition: '!globalVars.plain_pc_owner_away && globalVars.n >= 2', value: 'Wait.' }] });
+    for (const f of ['requiresItemCondition', 'requiresItemConditionHint', 'requiresItemConditionHintVariants']) {
+        assert.ok(!has(validatorIssues('check_unknown_fields', sc), f), f);
+        assert.ok(!has(schemaErrors(sc), f), f);
+    }
+    const out = validatorIssues('check_engine_limits', sc);
+    assert.ok(!has(out.filter(s => s.includes('requiresItemCondition')), 'ERROR'), out.join('\n'));
+    assert.ok(!has(out, "requiresItemCondition' uses globalVars"), 'workstation globals need no declaration');
+    // the schema refuses a hint variant with no value
+    assertHas(schemaErrors(withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.x' }] })), 'requiresItemConditionHintVariants');
+});
+
+test('a requiresItemCondition the evaluator would mis-read is an error', { skip }, () => {
+    for (const bad of ['globalVars.a || globalVars.b', '(globalVars.a)', 'globalVars.a == true', 'globalVars.a === true && nonsense', 'globalVars.a.includes("x")', '']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: bad }));
+        assertHas(errors(out), "requiresItemCondition'");
+    }
+    for (const good of ['globalVars.a', '!globalVars.a', "globalVars.a === 'x' && !globalVars.b", 'globalVars.n >= 3', 'globalVars.a !== null']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: good }));
+        assert.ok(!has(errors(out), "requiresItemCondition'"), `${good}: ${out.join('\n')}`);
+    }
+});
+
+test('a requiresItemConditionHintVariants condition with || is an error, once', { skip }, () => {
+    const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.a || globalVars.b', value: 'x' }] }));
+    assert.equal(out.filter(s => s.includes('requiresItemConditionHintVariants[0]') && s.includes("uses '||'")).length, 1, out.join('\n'));
+    assert.ok(!has(validatorIssues('check_or_in_global_conditions', withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.a || globalVars.b', value: 'x' }] })), 'requiresItemConditionHintVariants'));
+});
+
+test('a requiresItemConditionHintVariants condition outside the grammar is an error, a valid one is not', { skip }, () => {
+    for (const bad of ['globalVars.a == true', 'globalVars.a === true && nonsense', 'globalVars.a.includes("x")', '']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: bad, value: 'x' }] }));
+        assertHas(errors(out), 'requiresItemConditionHintVariants[0]');
+    }
+    for (const good of ['globalVars.a', '!globalVars.a && globalVars.n >= 2', "globalVars.a === 'x'"]) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: good, value: 'x' }] }));
+        assert.ok(!has(errors(out), 'requiresItemConditionHintVariants[0]'), `${good}: ${out.join('\n')}`);
+    }
+});
+
+test('requiresItemCondition warns on an undeclared global, a missing requiresItem or triggerOnInteract, and orphan hints', { skip }, () => {
+    let out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: 'globalVars.nobody_sets_this' }));
+    assertHas(out, 'globalVars.nobody_sets_this, which is not in globalVariables');
+    const noItem = withCondition({}); delete lobby(noItem).objects.find(o => o.id === 'plain_pc').requiresItem;
+    assertHas(validatorIssues('check_engine_limits', noItem), 'has requiresItemCondition but no requiresItem');
+    const noTrigger = withCondition({}); delete lobby(noTrigger).objects.find(o => o.id === 'plain_pc').triggerOnInteract;
+    assertHas(validatorIssues('check_engine_limits', noTrigger), 'has requiresItemCondition but no triggerOnInteract');
+    const orphan = withCondition({}); delete lobby(orphan).objects.find(o => o.id === 'plain_pc').requiresItemCondition;
+    assertHas(validatorIssues('check_engine_limits', orphan), 'has requiresItemConditionHint(Variants) but no requiresItemCondition');
+    // a declared global passes
+    const declared = withCondition({ requiresItemCondition: 'globalVars.declared_flag' }); declared.globalVariables = { declared_flag: false };
+    assert.ok(!has(validatorIssues('check_engine_limits', declared), 'declared_flag'));
+});
+
+test('aim optional is a known objective field', { skip }, () => {
+    const sc = clean();
+    sc.objectives = [{ aimId: 'side', title: 'Side', status: 'active', order: 1, optional: true,
+        tasks: [{ taskId: 't', title: 'T', type: 'collect_items', targetItems: ['x'], targetCount: 1, currentCount: 0, status: 'active' }] }];
+    assert.ok(!has(validatorIssues('check_unknown_fields', sc), "'optional'"));
+    assert.ok(!has(schemaErrors(sc), 'optional'), schemaErrors(sc).join('\n'));
+    sc.objectives[0].optional = 'yes';
+    assertHas(schemaErrors(sc), 'optional');
+});
+
 // apply-actions.js runs a `hint` action from triggerOnInteract; the schema's action list has it.
 test('a hint action in triggerOnInteract passes the schema, and an unknown action type does not', { skip }, () => {
     const sc = withHintVariants([]);

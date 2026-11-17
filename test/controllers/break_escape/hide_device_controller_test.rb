@@ -133,6 +133,26 @@ module BreakEscape
       assert_empty Array(@game.reload.player_state['plantedItems'])
     end
 
+    test 'another player cannot hide a device into a game they do not own (refused as /objectives is)' do
+      setup_game
+      theirs = create_access_game(
+        mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:other_user), scenario: scenario,
+        player_state: { 'currentRoom' => 'reception', 'unlockedRooms' => ['reception'],
+                        'inventory' => [{ 'id' => 'kit_rogue_ap', 'type' => 'rogue_ap', 'name' => 'Kit' }] }
+      )
+      before = theirs.reload.player_state.deep_dup
+      get "/break_escape/games/#{theirs.id}/objectives", as: :json
+      expected = [response.status, response.body]
+      refute_equal 200, expected.first
+      post "/break_escape/games/#{theirs.id}/inventory",
+           params: { action_type: 'hide', item: { id: 'kit_rogue_ap' }, hidden_in: 'pot_a' }, as: :json
+      assert_equal expected, [response.status, response.body]
+      state = theirs.reload.player_state
+      assert_equal before, state, 'their game is unchanged'
+      assert_empty Array(state['plantedItems'])
+      assert_equal ['kit_rogue_ap'], Array(state['inventory']).map { |i| i['id'] }
+    end
+
     test 'sync_state accepts nothing new for plantedItems' do
       setup_game
       put "/break_escape/games/#{@game.id}/sync_state",

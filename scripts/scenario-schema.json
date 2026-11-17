@@ -4019,6 +4019,7 @@
           "enum": ["active", "locked", "completed"]
         },
         "order": { "type": "integer" },
+        "optional": { "type": "boolean", "description": "A side aim: every task in it is treated as optional by the player-facing views. The objectives panel shows no required marker or '* required' key for it and dims its tasks; the ending warning lists its open tasks as optional; the score breakdown leaves them out of required_missing and the required totals. It does not change completion: the aim still completes by the optional-task rule (README 'Optional tasks')." },
         "unlockCondition": {
           "type": "object",
           "properties": {
@@ -5429,6 +5430,21 @@
         "requiresItemHintVariants": {
           "type": "array",
           "description": "Optional runtime variants of requiresItemHint, resolved in order by condition against globalVars (first match wins; requiresItemHint is the fallback). Lets one object give a different hint per state.",
+          "items": {
+            "type": "object",
+            "required": ["condition", "value"],
+            "properties": {
+              "condition": { "type": "string" },
+              "value": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "requiresItemCondition": { "type": "string", "description": "With requiresItem and triggerOnInteract: WHEN the held item may be used, as a globals condition (the observationVariants syntax: '&&'-joined terms of globalVars.x, !globalVars.x, or globalVars.x with ===, !==, >, <, >=, <= and a literal; no '||' or parentheses). With the item held and the condition false, the actions do not fire, nothing is consumed and no plant is recorded; the player sees requiresItemConditionHint. Only the triggerOnInteract branch reads it." },
+        "requiresItemConditionHint": { "type": "string", "description": "Message shown when the item is held but requiresItemCondition does not hold. Default: 'Not now.'. The toast lasts 300 ms per word, at least 6 s and at most 12 s." },
+        "requiresItemConditionHintVariants": {
+          "type": "array",
+          "description": "Optional runtime variants of requiresItemConditionHint, resolved in order by condition against globalVars (first match wins; requiresItemConditionHint is the fallback). Shipped to the client in full, like every variant list.",
           "items": {
             "type": "object",
             "required": ["condition", "value"],
