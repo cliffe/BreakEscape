@@ -1,0 +1,41 @@
+# m10 office life: spoken lines (slice A)
+
+Length is the spoken text without the speaker prefix. Pool and exchange lines are capped at 40 characters by the validator (`scripts/validate_npc_needs.rb:715`, `:940`). Lines marked OVER fail that cap.
+
+| Speaker | Kind | Where | Chars | Text |
+|---|---|---|---|---|
+| Darren Price | conversation | ink/m10_fp_support.ink:27 (talk_darren) | 48 | Mind the cables. The generator's touchy tonight. |
+| Darren Price | conversation | ink/m10_fp_support.ink:30 (talk_darren) | 49 | Lamps, heaters, the van chargers. Nothing clever. |
+| Darren Price | conversation | ink/m10_fp_support.ink:36 (darren_bye) | 23 | Shout if the lights go. |
+| Sofia Marchetti | conversation | ink/m10_fp_support.ink:45 (talk_sofia) | 47 | There's tea if you want it. We're out of sugar. |
+| Sofia Marchetti | conversation | ink/m10_fp_support.ink:48 (talk_sofia) | 48 | Cold, tired and fed. Two out of three isn't bad. |
+| Sofia Marchetti | conversation | ink/m10_fp_support.ink:54 (sofia_bye) | 27 | I'll keep one warm for you. |
+| Darren Price | exchange | ink/m10_fp_support.ink:61 (ex_fp_kettle_on) | 44 OVER | Kettle's on. They'll be talking a while yet. |
+| Sofia Marchetti | exchange | ink/m10_fp_support.ink:62 (ex_fp_kettle_on) | 46 OVER | Then it'll be stewed by the time they want it. |
+| Darren Price | exchange | ink/m10_fp_support.ink:63 (ex_fp_kettle_on) | 48 OVER | Stewed tea at three in the morning is still tea. |
+| Sofia Marchetti | exchange | ink/m10_fp_support.ink:64 (ex_fp_kettle_on) | 36 | I'll do a fresh pot when they break. |
+| Sofia Marchetti | exchange | ink/m10_fp_support.ink:69 (ex_fp_radios) | 32 | The radios have gone very quiet. |
+| Darren Price | exchange | ink/m10_fp_support.ink:70 (ex_fp_radios) | 44 OVER | Quiet's good. Quiet means nobody's shouting. |
+| Sofia Marchetti | exchange | ink/m10_fp_support.ink:71 (ex_fp_radios) | 37 | Then we wait. That's the job tonight. |
+| Sofia Marchetti | exchange | ink/m10_fp_support.ink:76 (ex_fp_door_open) | 25 | So the door's open, then. |
+| Darren Price | exchange | ink/m10_fp_support.ink:77 (ex_fp_door_open) | 47 OVER | I'll top up the generator. Could be a long one. |
+| Sofia Marchetti | exchange | ink/m10_fp_support.ink:78 (ex_fp_door_open) | 44 OVER | Kettle stays on for whoever walks out first. |
+| Darren Price | pool | scenario.json.erb:2628 (kettle_fp) | 36 | The generator's holding. Just about. |
+| Darren Price | pool | scenario.json.erb:2628 (kettle_fp) | 37 | Van two's battery is on its last bar. |
+| Darren Price | pool | scenario.json.erb:2628 (kettle_fp) | 40 | Too cold for the laptops, never mind me. |
+| Darren Price | pool | scenario.json.erb:2628 (kettle_fp) | 37 | I've run the lamp off the spare cell. |
+| Sofia Marchetti | pool | scenario.json.erb:2662 (kettle_fp) | 24 | Who's not had a cup yet? |
+| Sofia Marchetti | pool | scenario.json.erb:2662 (kettle_fp) | 36 | Both vans have their heaters on now. |
+| Sofia Marchetti | pool | scenario.json.erb:2662 (kettle_fp) | 38 | Long night. The kettle's the easy bit. |
+| Sofia Marchetti | pool | scenario.json.erb:2662 (kettle_fp) | 39 | Soup's in the blue box, if anyone asks. |
+
+## Credits (shown, not spoken)
+
+Four texts, each in `credits_sections.json` and the ERB `credits_fragment` (twice each, for the two credit variants).
+
+| Name | Where | Chars | Text |
+|---|---|---|---|
+| DARREN PRICE | credits_sections.json:96, :257; scenario.json.erb:982, :1143 | 66 | Field support. Knocked out by the agent he kept the lights on for. (shown, not spoken) |
+| DARREN PRICE | credits_sections.json:101, :262; scenario.json.erb:987, :1148 | 52 | Field support. Kept the generator running till dawn. (shown, not spoken) |
+| SOFIA MARCHETTI | credits_sections.json:109, :270; scenario.json.erb:995, :1156 | 58 | Welfare. Knocked out by the agent she kept a cup warm for. (shown, not spoken) |
+| SOFIA MARCHETTI | credits_sections.json:114, :275; scenario.json.erb:1000, :1161 | 38 | Welfare. Kept the kettle on all night. (shown, not spoken) |
