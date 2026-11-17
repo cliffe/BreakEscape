@@ -102,3 +102,12 @@ Arrow-key movement through the real door (see harness note). `maya_away` after e
 - Pool #7 to #14: counted (8).
 - Exchanges #15 to #22: counted (8).
 Total 2 + 8 + 8 = 18 (Graham 9, Fatima 9, 621 characters, all uncached keyless). The 22 is the whole mission's new clip count (18 plus the 4 talk lines). SPOKEN_LINES.md now says so, with a V6 column. The rake does not miss any line that would be voiced: the 4 talk lines get voiced by the per-mission batch. PLAN.md section 8 still says V6 should read 22 and should read 18 (6 clips total at tier 1, of which 2 are in V6).
+
+## Critical-path regression (game 7140, HEAD 44961bb1a)
+
+Scripted run from the briefing to the debrief on a keyless server, compared with tools/playtest/m01-baseline-report.md. Steps 1 to 29 pass; verify-run.rb shows progress (13 rooms, 10 objects, 4 flags, 29 of 29 tasks). Office life (Fatima Begum, Graham Whitfield, Maya Chen's routine) blocked no step. Maya was at her desk when the run reached her.
+
+Minors, none caused by office life:
+- SOLUTION_GUIDE.md numbering differs from the baseline and has no entry for the personal safe PIN 0319, which the player infers from "my birthday (19th March)" in Derek's personal notes.
+- Derek was found in the break room, not his office.
+- The launch code comes only from the VM (expected under the VM flag rules).
