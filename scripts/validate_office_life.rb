@@ -419,9 +419,12 @@ module ValidateOfficeLife
     rooms.keys.sort.map { |r| "#{r} (#{rooms[r].uniq.join('/')})" }
   end
 
-  # A patrolOverride walks to a tile in the room the NPC is in when it fires (npc-manager.js), so
-  # it returns the NPC to its post only when that room is its home and the trigger is a story
-  # event (an office-life event fires while it is away).
+  # A patrolOverride resolves its tile in the manager's npc.roomId (npc-manager.js), which follows
+  # the NPC only for a multi-room patrol route walker (npc-behavior.js); a needs NPC may not patrol,
+  # so the tile is in its declared room. Only a story-event trigger counts (an office-life event
+  # fires while it is away). The exemption is not a protection: the walk stops a tile short and
+  # suspends needs, the suspension does not survive a reload, and any such mapping exempts the
+  # NPC even when it does not cover every beat (mission-office-life skill, protection 3).
   def self.post_override?(w, npc, room)
     return false unless home_room(w, npc, room) == room
 
@@ -447,8 +450,9 @@ module ValidateOfficeLife
       next if away.empty?
 
       issues << "⚠️ WARNING: office life V2: NPC '#{n['id']}' #{why.join(' and ')}, and its needs can take it out of " \
-                "its own room (to #{away.join(', ')}). A story NPC must stay reachable: leash it (needsRooms), or add " \
-                'a patrolOverride.targetTile mapping that returns it to its post before the beat. deferrable: false does not exempt it.'
+                "its own room (to #{away.join(', ')}). A story NPC must stay reachable: leash it to its own room " \
+                '(needsRooms) with every need target there, or leave it without away needs. A beat gate does not lift this ' \
+                '(mission-office-life, Stage 1). deferrable: false does not exempt it.'
     end
   end
 

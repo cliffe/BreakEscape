@@ -1044,7 +1044,8 @@ export default class PhoneChatUI {
             const transcriptDiv = document.createElement('div');
             transcriptDiv.className = 'transcript';
             // The transcript is ink text: plain text after the label
-            const transcriptLabel = document.createElement('strong');
+            const transcriptLabel = document.createElement('span');
+            transcriptLabel.className = 'mg-field-label';
             transcriptLabel.textContent = 'Transcript:';
             transcriptDiv.append(transcriptLabel, document.createElement('br'), displayDashes(transcript));
             
