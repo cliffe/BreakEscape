@@ -26,8 +26,8 @@ module BreakEscape
       # base is raised to that figure. Growth since 26,619 B: reception's three AP blink emitters
       # (+379 B, A3), the drop box's seven globals, one optional aim and one credits line (+563 B,
       # B2), P3's gated network_port emitter (+191 B, LED), and the `hideables` entry of about 180 B
-      # (H5). H5 removed the duplicate deviceData (3,010 B): the console's device is authored in
-      # reception, a hideable room, so the client takes it from GET /room/reception. accountProfiles,
+      # (H5). H5 removed the duplicate deviceData (3,010 B): the hideable's only room is reception,
+      # where the console's device is authored, so the client takes it from GET /room/reception. accountProfiles,
       # networks, the drawn Wi-Fi key, Chris's and the other passwords, PINs and lock answers are
       # still withheld (checked: none in the body).
       'lab_physical_pentest' => 27_966

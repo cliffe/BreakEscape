@@ -239,15 +239,17 @@ module BreakEscape
       assert_equal ['reception'], defn['rooms']
       assert_equal 'planted_rogue_ap', defn['device']
       refute defn.key?('onHidden')
-      # The device is authored in reception, a hideable room: its console fields come from the
-      # room answer, so the bootstrap does not repeat them (R1 m2).
+      # The hideable's only room is the one the device is authored in: its console fields come
+      # from the room answer, so the bootstrap does not repeat them (R1 m2).
       refute defn.key?('deviceData')
     end
 
-    test 'deviceData is sent when the device is authored outside the hideable rooms' do
+    test 'deviceData is sent when the hideable has two rooms and the device is hidden in the non-authored one' do
       scn = hiding_scenario
-      scn['startItemsInInventory'][0]['hideable']['rooms'] = ['comms']
+      scn['startItemsInInventory'][0]['hideable']['rooms'] = %w[reception comms]
       build_game(scn, unlocked: %w[reception comms])
+      assert_equal true, @game.hide_device!('kit_rogue_ap', 'comms_pot')[:ok]
+      assert_equal [{ 'item' => 'kit_rogue_ap', 'on' => 'comms_pot', 'room' => 'comms' }], @game.hidden_devices_for_client
       out = @game.hideables_for_client['kit_rogue_ap']['deviceData']
       assert_equal 'planted_rogue_ap', out['id']
       assert out['wifiTwin']

@@ -130,16 +130,18 @@ module BreakEscape
     end
 
     # itemId -> static definition for the bootstrap (no onHidden: it runs from the held item at
-    # hide time). deviceData is the console object's behaviour fields, sent only when the
-    # device's authored room is not one of the hideable's rooms: otherwise the client takes them
-    # from that room's own answer (GET /room/:id, filtered like every room object), where
-    # core/rooms.js hands the hiddenWith object to plant-hiding.js. Plan review R1 m2: the same
-    # 3 KB was in both.
+    # hide time). deviceData is the console object's behaviour fields, sent unless the hideable's
+    # rooms are exactly [the device's authored room]. In that one case the hide room is always the
+    # authored room, so the client takes the fields from that room's own answer (GET /room/:id,
+    # filtered like every room object), where core/rooms.js hands the hiddenWith object to
+    # plant-hiding.js, and the same 3 KB is not sent twice (plan review R1 m2). With more rooms the
+    # device can be hidden in one whose load never notes the authored room, so the bootstrap
+    # carries the fields (plan review R2 M1).
     def hideables_for_client
       HidingSpots.item_defs(scenario_data).transform_values do |defn|
         dev = defn['device'] && planted_target_object(defn['device'])
         out = defn.slice('rooms', 'spots', 'exclude', 'device', 'overlay', 'spotAt', 'confirm')
-        if dev && !Array(defn['rooms']).include?(dev[:room_id])
+        if dev && Array(defn['rooms']) != [dev[:room_id]]
           out['deviceData'] = dev[:object].slice(*DEVICE_DATA_FIELDS)
         end
         out

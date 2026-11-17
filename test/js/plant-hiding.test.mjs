@@ -429,6 +429,18 @@ test('R1 m2: console fields come from the room answer when the bootstrap omits d
     assert.equal('x' in dev.scenarioData, false);
 });
 
+test('R2 M1: a two-room hideable hidden in the non-authored room opens with the bootstrap deviceData', () => {
+    const w = world({ hiddenDevices: [{ item: KIT, on: 'comms_plant-large6_1', room: 'comms' }] });
+    w.ph.hideables.get(KIT).rooms = ['reception', 'comms'];
+    // The authored room (reception) never loads: no noteHiddenWith call. Comms loads first.
+    w.ph.syncRoom('comms');
+    assert.equal(w.scene.made.length, 1);
+    const dev = w.scene.made[0];
+    assert.equal(dev.roomId, 'comms');
+    assert.equal(dev.scenarioData.id, 'planted_rogue_ap');
+    assert.equal(dev.scenarioData.wifiTwin, true);
+});
+
 test('a missing host logs one warning and the overlay goes on the first eligible plant', () => {
     const w = world({ hiddenDevices: [{ item: KIT, on: 'reception_plant-large12-top-ani1_999', room: 'reception' }] });
     const warns = [];

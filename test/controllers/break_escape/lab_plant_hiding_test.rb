@@ -123,8 +123,11 @@ module BreakEscape
       dev = response.parsed_body['room']['objects'].find { |o| o['id'] == 'planted_rogue_ap' }
       assert dev, 'GET /room/reception lists planted_rogue_ap'
       CaptureProofs::DEVICE_DATA_FIELDS.each { |f| assert dev.key?(f), "the room answer keeps #{f}" }
+      # The room answer is the only source of the console fields now: none may carry a secret.
+      refute_includes response.body, psk(@game)
+      refute_includes response.body, password(@game, 'kieran')
       assert_equal 'rogue_ap_tucked', @game.hideables_for_client['kit_rogue_ap'].dig('overlay', 'sprite')
-      refute @game.hideables_for_client['kit_rogue_ap'].key?('deviceData'), 'authored in reception: not in the bootstrap'
+      refute @game.hideables_for_client['kit_rogue_ap'].key?('deviceData'), 'rooms are exactly [reception]: not in the bootstrap'
     end
 
     # An old save keeps the lab as it was created (scenario_data is made once): the kit has no
