@@ -285,8 +285,10 @@
     /* A 2px square outline, one GNF pixel at this size (pixel-art UI rule) */
     text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
         2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000;
-    /* A name wraps at spaces and after _ . - / (fitIconLabel splits it into one box per
-       fragment), never inside a fragment ("CONTINGENCY" broke as "CONTINGENC / Y"). It runs
+    /* A name breaks only after a space or one of _ . - / (fitIconLabel splits it into one
+       box per fragment), never inside a fragment ("CONTINGENCY" broke as "CONTINGENC / Y"),
+       except that a fragment wider than the label breaks inside when the label is open, with
+       its last letter kept with the separator (.desktop-icon-tail). It runs
        to three lines: a longer name ends line 3 in an ellipsis character (fitIconLabel), a
        fragment wider than the box ends in the CSS ellipsis, and the full name is in the title.
        The clamp below is the backstop for a pass that runs before the font loads. */
@@ -325,6 +327,11 @@
 .pc-monitor .pc-desktop .desktop-icon-label .desktop-icon-word {
     padding: 0;
     margin: 0;
+}
+
+/* The last letter and the separator after it never part, so a break cannot strand the separator */
+.desktop-icon-label .desktop-icon-tail {
+    white-space: nowrap;
 }
 
 .desktop-icon-label-open .desktop-icon-word {
