@@ -9,7 +9,32 @@ const log = (k, v) => console.log(k, JSON.stringify(v));
 await h.t(6000);
 log('sounds loaded', await ev(h, () => { const s = window.soundManager.sounds || {}; return { office_ambient: !!s.office_ambient, typing_loop: !!s.typing_loop, count: Object.keys(s).length, tone: !!window.officeRoomTone }; }));
 const amb = () => ev(h, () => ({ room: window.currentPlayerRoom, current: window.soundManager.currentAmbient, choice: window.ambientChoice ? { room: window.ambientChoice.room, key: window.ambientChoice.key, level: window.ambientChoice.level, step: window.ambientChoice.step } : null }));
-const go = async r => { await dismiss(h); const x = await ev(h, async r => await window.__test.enterRoom(r), r); if (!x.ok) log('enterRoom failed', { r, reason: x.reason }); return x.ok; };
+// Retry once after a pause: a transient overlay (toast, popup) can sit on the canvas centre for a moment.
+// The failure payload is logged in full so a blocker that persists can be identified from the log.
+// The lib's dismiss() presses Escape, which opens the game's PAUSED menu (#game-menu-overlay) when the
+// blocker it was reacting to has already gone. That menu then blocks every enterRoom. So this probe
+// closes the menu with its own Resume button and never sends Escape.
+const clearMenu = async () => {
+  const st = await ev(h, () => { const s = window.__test.getState(); return { mg: !!s.activeMinigame, ui: s.blockingUi ? (s.blockingUi.id || 'other') : null }; });
+  if (st.ui === 'game-menu-overlay') {
+    const r = await ev(h, () => window.__test.dismissBlockingUi('Resume'));
+    log('cleared pause menu', { ok: r?.ok ?? null });
+    await h.t(500);
+  } else if (st.mg || st.ui) {
+    await dismiss(h);
+  }
+};
+const go = async r => {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await clearMenu();
+    let x;
+    try { x = await ev(h, async r => await window.__test.enterRoom(r), r); } catch (e) { x = { ok: false, reason: 'probe-exception: ' + String(e).slice(0, 200) }; }
+    if (x.ok) return true;
+    log('enterRoom failed', { r, attempt, reason: x.reason, blockingUi: x.blockingUi ? { id: x.blockingUi.id, buttons: (x.blockingUi.buttons || []).map(b => b.label) } : null, hint: x.hint ?? null });
+    await h.t(2500);
+  }
+  return false;
+};
 const tlog = () => ev(h, () => window.officeRoomTone.log.map(e => ({ ...e, t: undefined })));
 if (mode === 'tour') {
   const dwell = Number(process.env.DWELL || 4000);

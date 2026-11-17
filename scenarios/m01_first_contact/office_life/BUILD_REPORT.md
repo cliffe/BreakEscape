@@ -179,3 +179,32 @@ Probes: tools/playtest/m01-ol-barks.mjs, m01-ol-aisle.mjs, m01-ol-tone.mjs. Game
 
 ## Handover (fresh agent)
 Done: Test 8, Test 11 aisle, Maya sharing, doc minors (uncommitted until the commit below). Open: tests 5, 6, 10, the Test 14 remainder. Server: puma PID 141485 on :3094, log tmp/server-3094-r5.log, killed by `kill 141485` only. Gotchas: enterRoom sometimes fails with did-not-cross, so retry on a fresh game; a "using" phase can be a PC, match on office_cooler; create games with --unlock for each room visited. Generated tools/playtest/*-flags-game*.xml files are untracked noise.
+
+## R4 tests, part 2 (tone)
+
+Keyless server on :3094, PID 757041, boot log tmp/server-3094-r6.log (line 1 of the boot output: "GEMINI_API_KEY environment variable is not set"). Headless, setFPS(20) with fixed steps on, no /tts requests, no game row edited, games from new-game.rb only. Probe: tools/playtest/m01-ol-tone.mjs. Raw probe output: screenshots/tone-logs-r4p2/.
+
+| PLAN item | Result | Game | Evidence |
+|---|---|---|---|
+| 1 / Test 5 room tone per room (tour), run 1 | PASS | 7319 | tone-logs-r4p2/tour-7319.txt. All 21 rooms reached. Started entries: main office office_ambient 0.8; IT room office_ambient 0.8; server room server_room_ventilation 0.4; break room office_ambient 0.35; reception office_ambient 0.35. Conference room null (no bed, as 4.1). Maya's office, the halls, storage closet, Derek's and Kevin's offices, manager office: no tone. Spot entries []. Errors []. |
+| 1 / Test 5 room tone, second fresh run | NOT RUN | | No second clean tour finished in this run (see failed runs below). |
+| 2 / Test 6 60 s dwell, main office | PASS | 7323 | tone-logs-r4p2/dwell-7323.txt: needs clock advanced 60 s, lastSlot advanced 3, typing entries counts 1, 2 and 0 in the main office, spot entries []. |
+| 2 / Test 6 dwell, reception and break room | NOT FINISHED | 7323 | Probe stopped by PID at the context limit; no reception or break room result. |
+| 2 / Test 6 dwell, second fresh run | NOT RUN | | |
+
+Failed or invalid runs (all probe-side, see fixes):
+- Game 7313 (tour, original probe): stopped at the second visit to IT room with enterRoom reason blocking-ui. Full payload not logged by the original probe, so the blocker is unidentified.
+- Game 7317 (tour, after the retry patch): blocker identified as the game's PAUSED menu, element #game-menu-overlay (tone-logs-r4p2/tour-7317-failed-pause-menu.txt). The probe then threw an uncaught error and exited. Probe killed by its own PID 811542 after it stalled.
+
+Probe fixes made in this run (tools/playtest/m01-ol-tone.mjs only; the shared m01-ol-lib.mjs is unchanged):
+1. `go()` retries enterRoom once after 2.5 s and logs the full blocker id and button labels on failure.
+2. The lib's dismiss() presses Escape. When a transient blocker has gone, that Escape opens the PAUSED menu, which then blocks every enterRoom. The tone probe now closes the menu with `dismissBlockingUi('Resume')` and sends no Escape. Suspected cause, not proved: the menu still appeared on its own after the server room in game 7319 and was cleared on retry, so the trigger is not yet known.
+3. enterRoom calls are wrapped in try/catch so a page exception is logged, not fatal.
+
+Open points for the reviewer:
+- Assumption: the pause menu appearing after the server room is a probe effect (an Escape from dismiss()) and not an engine bug. Not checked.
+- The tour and dwell each need a second clean run on a fresh game before Test 5 and Test 6 can be marked PASS.
+
+Games in this part (new-game.rb, port 3094): 7313, 7317, 7319, 7323. Untracked flags XML files for these games were moved to tmp/delete/.
+
+Handover (fresh agent, part 2): Done: probe fixes; tour PASS once (7319); dwell main office PASS once (7323); logs saved. Open: dwell reception and break room in game 7323 (output in tone-logs-r4p2/dwell-7323.txt, if it finished; otherwise rerun on a fresh game); second tour and second dwell on fresh games; find the trigger of the PAUSED menu after the server room (check whether the menu opens without the probe pressing Escape). Server: PID 757041 on :3094, stop with `kill 757041` only. Gotchas: monitors and sleeps return early in this environment, so poll the PID; new-game.rb needs --unlock for every visited room.
