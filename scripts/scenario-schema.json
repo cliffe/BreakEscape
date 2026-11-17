@@ -5651,7 +5651,7 @@
             },
             "spotAt": { "type": "object", "description": "Per-spot anchors, keyed by spot id (the way to anchor a decor plant, which cannot carry fields).", "additionalProperties": { "type": "object", "additionalProperties": false, "properties": { "x": { "type": "number", "minimum": 0, "maximum": 100 }, "y": { "type": "number", "minimum": 0, "maximum": 100 } } } },
             "confirm": { "type": "string", "description": "The confirm text (default \"Hide the <item name> in this plant?\")." },
-            "onHidden": { "type": "array", "items": { "type": "object" }, "description": "Actions run once the server accepts the hide, through applyActions. Read from the held item, so the bootstrap's hideables map leaves it out." }
+            "onHidden": { "type": "array", "items": { "x-free-data": true, "type": "object" }, "description": "Actions run once the server accepts the hide, through applyActions. Read from the held item, so the bootstrap's hideables map leaves it out." }
           }
         },
         "hidingSpot": { "type": "boolean", "description": "Plant hiding: true makes this object a hiding spot even if its sprite is not a plant (a bin, a cable tray); false opts a plant out. A spot must not be takeable or carry needsTag." },

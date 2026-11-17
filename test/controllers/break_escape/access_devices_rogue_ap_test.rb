@@ -377,9 +377,11 @@ module BreakEscape
       response.parsed_body['secrets'] || {}
     end
 
+    # The real scenario hides the kit in a reception plant (plant-hiding plan); a decor plant id.
+    PLANT_SPOT = 'reception_plant-large12-top-ani1_77'.freeze
+
     def plant_ap
-      post game_path('inventory'), params: { action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' },
-                                   as: :json
+      post game_path('inventory'), params: { action_type: 'hide', item: { id: 'kit_rogue_ap' }, hidden_in: PLANT_SPOT }, as: :json
       assert_response :success, response.body
     end
 

@@ -474,12 +474,12 @@ module BreakEscape
           defn = HidingSpots.normalise(proof['planted'].to_s, item)
           finder = if scenario
                      ->(id) { HidingSpots.find_object(scenario, id) }
-                   else
+          else
                      lambda do |id|
                        o = objects.find { |x| x['id'].to_s == id.to_s }
                        o && { object: o, room_id: defn['rooms'].first }
                      end
-                   end
+          end
           return !HidingSpots.resolve_spot(defn, on.to_s, finder).nil?
         end
         return false if on && objects.none? { |o| o['id'].to_s == on.to_s } && !jack_ids.include?(on.to_s)
