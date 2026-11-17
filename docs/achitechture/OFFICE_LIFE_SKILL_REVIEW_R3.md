@@ -90,3 +90,18 @@ Counts: 0 blockers, 1 major, 5 minors, 4 nits.
 ## Verdict
 
 Revise. All six fixes (one major, five minors) are text changes. The major needs a choice of bark-voicing route (integrator on :3000, or a one-off keyed worktree server with the user's agreement). That choice is a new design decision, so per AGENTS.md:43 the R4 delta goes to `opus55`, not the cheaper tier. If the fix only adds the integrator route, which is already sanctioned, a cheaper-tier delta is enough.
+
+## Outcomes
+
+| Finding | Outcome |
+|---|---|
+| M1 bark voicing | Fixed. The "trigger once on a keyed server" step is gone. Barks go through the normal tts-audio batch and V6 (build/tts-barks), the voicing yes states the clip count including barks, and agents never start a keyed server. `gotchas.md` carries the pre-build/tts-barks line (count by hand, ask the integrator to voice). Edited in SKILL.md (bark checklist item, approvals item, Stage 7), `gotchas.md` "Voicing" and `mapping-patterns.md`. |
+| m1 plan loop delta rule | Fixed. One "Delta rounds apply to both loops" paragraph above the two loops, naming plan rounds 4 and 5 (delta is the diff of the rewritten PLAN.md) with the three exceptions. |
+| m2 stopping rules | Fixed. Plan: five rounds, stop at 5 unless a blocker is open. Build: at least five rounds, minors only after round 5, a round past 5 only while a major or blocker is open (log why). Same wording in SKILL.md and `checklists.md`. SKILL.md now says it overrides the counts in missions plan section 12 (plan 3 to 5, built phases 2 to 5) and follows AGENTS.md "Iterating" and the standing user rule. |
+| m3 server recipe | Fixed. Background `nohup` start with `-P tmp/pids/server-<port>.pid` and a log, a curl wait loop, a `grep` for the boot warning, then the puma PID from `ss -ltnp`. The app prints no line when a key is present (`config/initializers/break_escape.rb:12` to `:19` warns only when there is none), so the check is for the warning, with `env -u GEMINI_API_KEY` as the guarantee. |
+| m4 talk inits | Fixed. The talk inits are the pipeline's `bust` candidates (`<name>_talk_init.png`); Stage 6 offers 4 on a picks page, waits for the pick, then runs `visemes --from-talk` only for NPCs without `<key>_visemes.png`. No extra paid step. Matches the pipeline skill's bust stage. |
+| m5 bark check in Before merge | Fixed. `checklists.md` Before merge counts barks in V6 and, until build/tts-barks is on main, requires the by-hand count. |
+| n1 ports and start script | Fixed. 3002 added to the port lists in SKILL.md, `measurement-recipes.md` and `checklists.md`. The start script reason is now: fixed to :3001, exits 0 when it is up, no `BUNDLE_PATH` in a worktree. |
+| n2 bark client conditions | Fixed in `gotchas.md` "Voicing": person NPC with a `voice` only; the beep only for toasts. |
+| n3 opus55 routing | Fixed. SKILL.md sends game builds, office life included, to `opus55` on every account, and records the task type and stop message on a safeguard retry. |
+| n4 naming and opus48 case | Fixed. Both files use `REVIEW_R<n>.md`; `checklists.md` now has the non-CVP `opus48` case. |

@@ -7,16 +7,19 @@ How to measure the numbers an office-life build depends on. Every figure below i
 - Keyless server from the branch worktree on its own port (m03 used :3091 and :3094). Copy this, with `<worktree>`, `<main checkout>` and `<port>` filled in:
 
   ```bash
-  ss -ltn | grep ':<port>'    # must print nothing; never 3000, 3001, 3085 or 3086
-  cd <worktree> && env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle \
-    PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true bin/rails server -p <port> -b 127.0.0.1
+  ss -ltn | grep ':<port>'    # must print nothing; never 3000, 3001, 3002, 3085 or 3086
+  cd <worktree> && mkdir -p tmp/pids && env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle \
+    PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true nohup bin/rails server -b 127.0.0.1 -p <port> \
+    -P tmp/pids/server-<port>.pid > tmp/server-<port>.log 2>&1 &
+  until curl -s -o /dev/null http://127.0.0.1:<port>/; do sleep 2; done   # wait for boot; read the log if it never ends
+  grep -q 'GEMINI_API_KEY environment variable is not set' tmp/server-<port>.log && echo keyless
   ss -ltnp | grep ':<port>'   # the puma PID is in this line; write it down
   ```
 
-  - `env -u GEMINI_API_KEY` keeps the server keyless: with a key every line played is generated and billed.
+  - `env -u GEMINI_API_KEY` keeps the server keyless: with a key every line played is generated and billed. The app prints no line when a key is present; it prints the "GEMINI_API_KEY environment variable is not set" warning at boot only when there is none (`config/initializers/break_escape.rb`), so the `grep` above must find it. It runs in the background with `-P tmp/pids/server-<port>.pid` so a second server from the same worktree does not hit "A server is already running".
   - A worktree has no `.bundle/config`, so every `bin/rails` or `rake` command run from it needs the same `RBENV_VERSION` and `BUNDLE_PATH`, or it fails with GemNotFound. That covers the V6 rake (`app:break_escape:tts:office_lines[<m>]`) too.
   - Create games with `new-game.rb` run from the same worktree with the same two variables: `cd <worktree> && env RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. It renders the scenario into the game row at save, so run from the main checkout the game holds main's scenario.
-  - Do not use `tools/playtest/start-keyless-server.sh` for a worktree proof. It is fixed to :3001, exits 0 with "Already listening" when :3001 is up, and runs the main checkout's code, so the result would belong to the wrong build.
+  - Do not use `tools/playtest/start-keyless-server.sh` for a worktree proof. It is fixed to :3001, exits 0 with "Already listening" when :3001 is up, and has no `BUNDLE_PATH` in a worktree, so it fails there.
   - Stop only the PID from `ss -ltnp`. Record the **puma process PID**, not the PID of the shell that launched it. Never `pkill -f`, and never kill through a `ps | grep` pipeline whose pattern appears in the same command line (it killed the fixer's own shell twice, `R1_FIX_HANDOVER.md`, Gotchas). `./start_server.sh` runs `pkill -9 -f puma` and takes other servers with it (`playtest-scenario` skill). Killing the bash wrapper's PID in a real m03 run left puma holding the port.
 - A **fresh game per run** from `tools/playtest/new-game.rb <m>`, after every scenario edit. Use the id it prints. Do not reuse a game after editing `scenario.json.erb` (`R2_FIX_HANDOVER.md`).
 - `game.loop.setFPS(20)` with fixed steps on. Game time matched wall time to within 3 ms over each trip (`STAGE1_CHECKS.md`).

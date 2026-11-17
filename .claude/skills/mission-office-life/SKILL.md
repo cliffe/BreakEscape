@@ -125,7 +125,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Talk needs a pair: two compatible NPCs using one capacity-2 chatter object at once. A lone NPC says nothing. `grumble` plays only on a turn-back; `greet` only at an affordance with `chatter: "greet"`.
 - [ ] Pool lines: one line, 40 characters at most (validator error above), no `{ }` variables, no speaker prefix, nothing that repeats a bark or the NPC's ink opener (V7).
 - [ ] Exchanges (`exchanges[{with, knot, requireGlobal}]`) are ink knots, heard once (`heard_<knot>`). The first line must stand alone, because the player may walk in on it. An exchange never leaks or contradicts a clue; gate one on the global that makes it true.
-- [ ] Barks are outside the TTS batch and V6, so a new bark has no clip until someone plays it on a keyed server and the clip is committed (`references/gotchas.md`, "Voicing"). Prefer pools and knots, which V6 counts.
+- [ ] Barks (`eventMappings[].bark`) are voiced by the normal tts-audio batch and counted by V6, like pool lines and knots, so the voicing yes states a clip count that includes them. Voice a bark only for a person NPC with a `voice`. A bark still needs a reason in `SPOKEN_LINES.md`; prefer pools and knots. Agents never start a keyed server or play through to voice a line (`references/gotchas.md`, "Voicing").
 - [ ] Put every line in a table in `SPOKEN_LINES.md`: speaker, pool or knot, line, characters, and for a bark how it gets its clip. Plus the list of existing lines changed (old to new), ideally empty.
 - [ ] **Dialogue-sample rule.** Send `DIALOGUE_SAMPLE.md` (a few pool lines and one exchange) to the user and wait for the yes before slice 5 writes any line. Placeholder ink never reaches main, and built text matches the approved sample word for word.
 - [ ] **Re-voicing a line that a review changed needs the user's separate yes**, through the decisions page, even when the earlier voicing was approved.
@@ -138,7 +138,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 - [ ] `lockIfAwayOverSeconds` is compared with the **expected** away time in `npc_left_post`, not real time. m03's planned 45 s was wrong for that reason (Stage 1 measured 14.6 s and 23.1 s; the build settled at use 16/20 s, expected 18.6 s for coffee and 28.7 s for the cooler, threshold 24 s); measure both numbers per trip (`references/measurement-recipes.md` section 3).
 - [ ] Security windows: the gap while an owner is away (unlocked screen via `habits.screen`, a page on the copier via `habits.print`, a left-behind item, a propped door). Each opens optional content only: lore, an optional task, a side drawer. Never a critical-path door, the server room, a safe or a story-locked PC.
 - [ ] Openings that write state sent whole (capture log, cloned cards, footholds, disguises) need their own approval item with a sync note.
-- [ ] Physical-pentest openings are office-life builds and follow AGENTS.md "Which work goes to `opus48`": under the Cyber Verification Program (this account) `opus55` or the cheaper tier take them, and `opus48` takes only the social-engineering text in an opening (pretexting, phishing) and CTF or VM solve scripts. A safeguard stop is retried once on `opus48`.
+- [ ] Physical-pentest openings are office-life builds and follow AGENTS.md "Which work goes to `opus48`": game builds, office life included, go to `opus55` or the cheaper tier on every account. Under the Cyber Verification Program `opus48` takes only the social-engineering text in an opening (pretexting, phishing) and CTF or VM solve scripts. A safeguard stop is retried once on `opus48`, and the log records the task type and the stop message.
 
 ### Lighting and doors
 
@@ -153,7 +153,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 ### Costs and approvals
 
-- [ ] One page of approval items (new rooms, new NPCs with the cast choice, new art, engine changes, voicing spend from V6, any changed existing line), with a Copy picks box, saved inputs, entered on the shared decisions page. Paid steps wait for the picks.
+- [ ] One page of approval items (new rooms, new NPCs with the cast choice, new art, engine changes, voicing spend (the V6 clip count, barks included), any changed existing line), with a Copy picks box, saved inputs, entered on the shared decisions page. Paid steps wait for the picks.
 
 ### Test plan
 
@@ -165,20 +165,20 @@ Prefer **levers over schedules**: the player causes the event through existing s
 plan -> plan review R1..R5 (standalone rewrite after each) -> approvals -> implement in slices -> build review until clean -> art follow-ups -> voice -> close
 ```
 
-Two loops, two stopping rules. Each round is a fresh read-only reviewer (planning and review tier, per AGENTS.md "Choosing a model"), findings tagged blocker, major or minor with file:line, saved as `REVIEW_R<n>.md` with B/M/m counts.
+Two loops, two stopping rules. Each round is a fresh read-only reviewer (planning and review tier, per AGENTS.md "Choosing a model"), findings tagged blocker, major or minor with file:line, saved as `REVIEW_R<n>.md` with B/M/m counts (the same name in `references/checklists.md`). This skill follows AGENTS.md "Iterating" and the standing user rules on round counts, and overrides the counts in missions plan section 12 (plan 3 to 5 rounds, built phases 2 to 5).
+
+**Delta rounds apply to both loops.** From round 4, or at the first round after a stronger-tier round with no blockers or majors, whichever comes first, a round is a delta review: the reviewer gets only the diff since the last round and the previous findings, and runs on the cheaper tier. For a plan, the diff is the rewritten PLAN.md, so plan rounds 4 and 5 are deltas too. AGENTS.md "Cheaper later rounds" sends a delta back to Opus (the `opus55` agent type) in three cases: (1) a cheaper-tier round found a major; (2) the delta touches secret handling, what the server serves or access checks (on an account without CVP, `opus48` instead); (3) the delta adds a new design decision.
 
 **Plan review** (AGENTS.md "Iterating"):
 
-- [ ] At least five rounds, and **stop at round 5**. Plan and design reviews do not run past it unless a blocker is still open. Whatever major or minor is left at round 5 goes in the plan as open, with the reason.
+- [ ] Five rounds, and **stop at round 5** unless a blocker is still open (a blocker allows round 6). Whatever major or minor is left at round 5 goes in the plan as open, with the reason.
 - [ ] After each round, **rewrite PLAN.md as a standalone document** with no references to reviews or earlier drafts. Every finding gets an outcome: fixed, withdrawn with the reason, or deferred with the reason.
-- [ ] After round 5, fix minors only.
 - [ ] Reviewers check: the expected lock and key diff and aim chain; that no opening became required; V2 and V5 risks; each NPC's class and attack outcome; compatibility and leashes; spoken-line rules; sync sums; field names; cast diversity.
 
 **Build review** (m03 ran R1 to R9):
 
-- [ ] Round 1 runs on the `opus55` agent type. This skill runs at least five build rounds and carries on past round 5 only while a major or blocker is open (the skill's own rule for the build, which is longer than a plan; AGENTS.md's general standard is 2 to 5 rounds, so say in the log why a round past 5 ran). A fixer takes each round's findings, re-measures what the fix could move, and logs outcomes. Reviewers play the merged tip, not the build branch (`references/checklists.md`).
-- [ ] **Delta rounds start from round 4, or at the first round after a stronger-tier round with no blockers or majors, whichever comes first.** A delta review gets only the diff since the last round and the previous findings, and runs on the cheaper tier. AGENTS.md "Cheaper later rounds" sends a delta back to Opus (the `opus55` agent type) in three cases: (1) a cheaper-tier round found a major; (2) the delta touches secret handling, what the server serves or access checks (on an account without CVP, `opus48` instead); (3) the delta adds a new design decision.
-- [ ] In office life, case 2 is the usual one: a delta that changes what a workstation's text shows while its owner is away (the readable laptop and its text gate, `references/mapping-patterns.md` section 2), a PIN, password or card shown on a screen, or any opening that reveals a secret or item type. Case 3 is a new lever, opening or tier change. Send those to `opus55`, not the cheaper tier.
+- [ ] Round 1 runs on the `opus55` agent type. Build phases run **at least five rounds** (user's standing rule). After round 5, rounds fix minors only, and a round past 5 runs only while a major or blocker is still open (the fixer closes those too, and the log says why the round ran). A fixer takes each round's findings, re-measures what the fix could move, and logs outcomes. Reviewers play the merged tip, not the build branch (`references/checklists.md`).
+- [ ] In office life, delta case 2 is the usual one: a delta that changes what a workstation's text shows while its owner is away (the readable laptop and its text gate, `references/mapping-patterns.md` section 2), a PIN, password or card shown on a screen, or any opening that reveals a secret or item type. Case 3 is a new lever, opening or tier change. Send those to `opus55`, not the cheaper tier.
 - [ ] Live checks run on the cheap scripted tier; a reported "stuck" gets a persona recheck before it counts.
 - [ ] Every multi-step brief carries the handover rule: at about 150k tokens or 80 tool calls, finish the step, commit, write `HANDOVER.md`, report and stop.
 
@@ -208,7 +208,7 @@ After each slice:
 
 ## Stage 5: live proof
 
-- [ ] Run a keyless server from the branch worktree on its own free port, with the exact command in `references/measurement-recipes.md` section 1 (never 3000, 3001, 3085 or 3086; do not use `tools/playtest/start-keyless-server.sh`, which is fixed to :3001 and serves main's code). Record the puma PID and stop that PID. Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
+- [ ] Run a keyless server from the branch worktree on its own free port, with the exact command in `references/measurement-recipes.md` section 1 (never 3000, 3001, 3002, 3085 or 3086; do not use `tools/playtest/start-keyless-server.sh`, which is fixed to :3001, exits 0 when :3001 is already up, and has no `BUNDLE_PATH` in a worktree). Run it in the background with a log and a pid file, check the log, record the puma PID and stop that PID. Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
 - [ ] **A fresh game per check** from `new-game.rb`, run from the same worktree with the same env as the server (section 1 of the recipes). Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
 - [ ] **Never edit a game row's scenario copy or state, and never set globals in the page** to reach a state. If a check needs a head start, add it to a test scenario on the branch or ask. Type flags in play where a reward matters: seeding m02's flag 4 by `--submit-flag` did not open its cache.
 - [ ] Headless only: `game.loop.setFPS(20)` with **fixed steps on**. Never `fixedStep = false` (bodies tunnel 8 px walls).
@@ -220,14 +220,14 @@ After each slice:
 ## Stage 6: art follow-ups
 
 - [ ] Art only for what the awareness cast atlases still lack (seated or pose frames), or for a new character the plan justified. After the user's yes: pixellab-character-pipeline (concept through agy, walk atlas with the stock six animations, seated frames if they sit, bust, `<key>_headshot.png`). No custom animations. Hand edits go in `tools/pixellab_overrides/`. Never rescale pixel art.
-- [ ] **Talk visemes, in this order** (the pipeline skill does not state the first step): (1) make 4 alternative talk inits for each new character and put them side by side on a picks page with the character's concept and bust (decisions page, Copy picks box, saved inputs, per AGENTS.md "Asking the user for input"); (2) wait for the pick, since the viseme generations are the paid step; (3) make visemes for every NPC with `visemes --from-talk`, never inpaint, and keep the 2x2 talk sheet only as the fallback.
+- [ ] **Talk visemes, in this order**: (1) the pipeline's `bust` stage makes the talk init candidates (`<name>_talk_init.png`, 4 per new character, about 1 generation each; no extra paid step): put the 4 side by side with the character's concept on a picks page (decisions page, Copy picks box, saved inputs, per AGENTS.md "Asking the user for input") and wait for the pick, installed with `pick <name> bust bNN`; (2) run `visemes --from-talk` only for NPCs that have no `<key>_visemes.png` yet (awareness-cast characters that already have one are skipped), never inpaint, and keep the 2x2 talk sheet only as the fallback.
 - [ ] Swap stand-in atlases for the real keys, then re-measure posts, seats and each pairing.
 - [ ] room-pov-background for every changed room with a `chatBackground` (both halves of a split one), after dressing and lighting.
 - [ ] Closing check on the final commit: validator, `--office-summary` diff, lock and key diff, a short scripted regression playtest.
 
 ## Stage 7 and 8: voice and close
 
-- [ ] Voice with tts-audio only after the user's explicit yes on the spend, stating the V6 clip count, asked through the orchestrator's decisions page. Signed-off wording is not that yes. V6 must then show 0 uncached office-life clips. V6 does not see barks: list each new bark and play it once on a keyed server (only with the same yes), then confirm its clip is committed. No release carries unvoiced office-life lines.
+- [ ] Voice with tts-audio only after the user's explicit yes on the spend, stating the clip count from V6, **barks included** (the tooling counts and generates them in the normal batch), asked through the orchestrator's decisions page. Signed-off wording is not that yes. V6 must then show 0 uncached office-life clips. Agents never start a keyed server or play through to voice a line. No release carries unvoiced office-life lines.
 - [ ] Record each round's severity table and every finding's outcome in `LOG.md`.
 - [ ] **Lab sheet last.** Flag the lab-sheet impact (new optional routes and openings) to the user; the mission-lab-sheet skill runs only as the final step. Update `CYBOK_MAPPING.md` if an opening teaches something new.
 - [ ] Commit each pass; ask the integrator for a train. `tools/playtest/train-check.sh` (AGENTS.md) must be GREEN on the hash to be merged; do not hand-run the suites instead. The integrator merges the tested hash; the pass never moves main itself.
