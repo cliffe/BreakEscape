@@ -282,12 +282,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "WHO TOLD SECURITY TO STOP — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS STAFF ──",                        "style": "section-header" },
-          { "text": "Nobody on staff hurt",                                "style": "entry", "_comment": "Engine regression 2026-10-16 (E4): not after a fight with Torres (torres_fought), KO or not.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && !globalVars.torres_fought && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
-          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && (globalVars.torres_fought || globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
+          { "text": "Nobody on staff hurt",                                "style": "entry", "_comment": "Engine regression 2026-10-16 (E4): not after a fight with Torres (torres_fought), KO or not.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && !globalVars.bernadette_ko && !globalVars.torres_fought && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
+          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && !globalVars.bernadette_ko && (globalVars.torres_fought || globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
           { "text": "PATRICIA MORGAN: A&E, on your account",               "style": "warning", "condition": "globalVars.patricia_ko" },
           { "text": "OWEN GALLAGHER: concussion, on your account",          "style": "warning", "condition": "globalVars.owen_ko" },
           { "text": "LISA PARK: off work with a head injury",              "style": "warning", "condition": "globalVars.lisa_ko" },
-          { "text": "A MEMBER OF STAFF: HURT, ON YOUR ACCOUNT",            "style": "warning", "condition": "globalVars.thandiwe_ko || globalVars.niamh_ko" },
+          { "text": "A MEMBER OF STAFF: HURT, ON YOUR ACCOUNT",            "style": "warning", "condition": "globalVars.thandiwe_ko || globalVars.niamh_ko || globalVars.bernadette_ko" },
           { "text": "DR RUTH HALLORAN: off work, her division one short",   "style": "warning", "condition": "globalVars.halloran_ko && globalVars.final_choice === 'turn_double_agent'" },
           { "text": "DR RUTH HALLORAN: off work, her division two short",   "style": "warning", "condition": "globalVars.halloran_ko && globalVars.final_choice !== 'turn_double_agent'" },
           { "text": "" },
@@ -826,6 +826,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "qdc_cooler_off": false,
     "thandiwe_ko": false,
     "niamh_ko": false,
+    "bernadette_ko": false,
+    "heard_ex_late_again": false,
     "lisa_met": false
   },
 
@@ -1555,6 +1557,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     (offWhen) and needs walk the newcomers home. Appended last so no saved once index moves. %>
             { "eventPattern": "npc_attacked:thandiwe_moyo", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_attacked:niamh_doherty", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
+            { "eventPattern": "npc_attacked:bernadette_lyons", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_attacked:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_ko:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "global_variable_changed:qdc_staff_upset", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
@@ -1868,11 +1871,62 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "eventMappings": [
             { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:break_espresso", "condition": "data.npcId === 'thandiwe_moyo' && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "global_variable_changed:server_badge_obtained", "fireOnlyWhenLoaded": true, "condition": "value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } }
+            { "eventPattern": "global_variable_changed:server_badge_obtained", "fireOnlyWhenLoaded": true, "condition": "value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:break_espresso", "condition": "data.npcId === 'bernadette_lyons' && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }
+          ]
+        },
+<%# Office life (PLAN.md 2.13, D82b): the evening cleaner. Hidden by day; shown on the evening turn
+    (server_room_entered) by three mappings that also reset her needs, so her timing starts at the reveal.
+    The bins are her tidy source; the espresso break is mapped so she and Niamh meet (ex_late_again). %>
+        {
+          "id": "bernadette_lyons",
+          "displayName": "Bernadette Lyons",
+          "npcType": "person",
+          "gender": "female",
+          "voice": { "name": "Vindemiatrix", "style": "Quantum Dynamics' evening cleaner, in her late 50s, dry, unhurried and kind. Speak with a consistent Dublin accent throughout, with no shift to any other accent.", "language": "en-GB" },
+          "_comment": "Provisional voice (PLAN.md 2.13): placeholder so V6 counts her lines; the name and style are confirmed with her own voicing yes. No clip is generated before that.",
+          "position": { "x": 5, "y": 7 },
+          "spriteSheet": "bernadette_lyons",
+          "spriteTalk": "assets/characters/bernadette_lyons_talk_init.png",
+          "spriteVisemes": "assets/characters/bernadette_lyons_visemes.png",
+          "avatar": "assets/characters/bernadette_lyons_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_bernadette_lyons.json",
+          "currentKnot": "start",
+          "globalVarOnKO": "bernadette_ko",
+          "behavior": { "initiallyHidden": true, "hostile": { "leash": true } },
+          "needsHome": { "room": "break_room", "x": 5, "y": 7 },
+          "needsRooms": ["break_room"],
+          "needsCompany": { "groups": ["qdc_staff"] },
+          "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Still here? You'll wear that chair out.", "Kettle's quicker, you know.", "Last floor before I'm done.", "Who leaves a teabag in the sink?"]
+          },
+          "exchanges": [
+            { "with": "niamh_doherty", "knot": "ex_late_again", "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": true } }
+          ],
+          "needs": {
+            "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 },
+            "tidy": { "initial": 50, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.bernadette_ko !== true", "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
+            { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
+            { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "globalVars.server_room_entered === true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
+            { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
           ]
         }
       ],
       "objects": [
+        {
+          "type": "qdc_recycling_bins",
+          "id": "break_bins",
+          "name": "Recycling Bins",
+          "takeable": false,
+          "offWhen": "qdc_staff_upset",
+          "observations": "A row of recycling bins, paper, plastic and the rest.",
+          "affordance": { "satisfies": "tidy", "restores": 100, "useSeconds": 10, "capacity": 1, "useFrom": { "dx": 1, "dy": -1 }, "queue": false }
+        },
         {
           "type": "qdc_espresso",
           "id": "break_espresso",

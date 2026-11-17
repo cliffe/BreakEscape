@@ -108,3 +108,7 @@ NOT DONE
 - Live: talk at each machine (while using espresso and cooler), each exchange plays once and never again (heard_ globals), pool line at espresso and at cooler, reload mid-day. The harness is in scratchpad m05live (lib.mjs, ng.sh, talk.mjs; copy of tmp/handover/m05live). Needs: __test.needs.log() shows exchange_started, exchange_heard, chatter entries; trigger with a Lisa conversation close then needs.set('thandiwe_moyo','caffeine',15); badge exchange needs server_badge_obtained via session-start.sh --unlock/--set.
 - BUILD_REPORT.md "Slice 5" section (short one added in the commit after this note); DIALOGUE note in walkthrough.
 - Server was killed (PID 3630615) and symlink unlinked. To restart: ss check :3092, the section 1 command in measurement-recipes.md, ln -s main node_modules.
+
+## Slice 5 checks and dialogue fixes (commit fb917e748)
+DONE: pool-bubble "fail" was a probe mistake (read `saying`, which is mutters only; pair chat is `_talking(id)` and `npc_chatted:<objectId>`). Both pools play at espresso and cooler, 2e passes, dialogue fixes M1 and m1 to m4 applied. Validator 0 errors, 27 warnings; lock diff empty; V6 27; bin/test-js 751/751 (scratchpad m05live/testjs2.txt). Server (PID 4024373) killed, symlink unlinked.
+NOT DONE: m5, m6, n1 to n4 (not briefed). Bernadette lines wait for slice 6.
