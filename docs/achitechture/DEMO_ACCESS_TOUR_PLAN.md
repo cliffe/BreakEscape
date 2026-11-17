@@ -152,7 +152,7 @@ Kitchen: room_qdc_break has a fridge, an undercounter fridge, a vending machine 
 
 Open plan: the course map has a conference table, six studio chairs, a kiosk and a plan chest, but no desks. The tour adds two desks as scenario objects from the existing catalogue, square to the walls: Thandiwe's on the west half, Yasmin's on the east half, each with its chair as the owner's seat (`needsHome` is the PC; the seat is the chair beside it). Lorna stands near the comms door, clear of its approach cell; she needs no desk.
 
-Reception: the lobby map already has a `pc8` on its table layer and two `planter_fig1` as plain Tiled items. The scenario's `reception_pc` and the two hideable plants go on other clear spots at the front desk and by the walls, so nothing doubles up and the course map stays as it is.
+Reception: the lobby map already has a `pc8` on its table layer and two `planter_fig1` as plain Tiled items. The scenario's `reception_pc` takes the lobby map's `pc8` slot (it claims it by sprite and moves to the counter's left end, so the west table is left bare, which is accepted). The two hideable plants go on other clear spots by the walls, so nothing doubles up and the course map stays as it is.
 
 ### 2.3 Networks, resources and policies
 
@@ -638,7 +638,7 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 
 - C1: room_qdc_break carries no prop or sign that names another mission's firm. If it does, use room_lw_kitchen with catalogue props (fridge, kettle) beside the coffee station.
 - C2: room_aw_merrin_sallow has clear floor for two desks square to the walls, away from the four doorways and their approach cells. If it does not, seat Thandiwe and Yasmin at opposite ends of the conference table (laptop and PC on the table) and say so in the run sheet. Both static NPCs stand clear of every door approach cell: Lorna near, not on, the comms door's approach; Julian clear of the coffee station's `useFrom` cell and its queue line.
-- C3: the reception spots chosen for reception_pc and the two plants sit clear of the map's own pc8 and planters.
+- C3: the reception spots chosen for the two plants sit clear of the map's own planters; reception_pc takes the map's pc8 slot, leaving the west table bare (accepted).
 - C4: CAKE_ITEM.md is at 08646ad8b. Before slice 4 builds the cake, diff the spec against 08646ad8b and take any changed numbers or fields; the rota board covers both NPCs either way.
 - C6: the cake's reload behaviour is the showcase's BC1 result (cake held, cake down and untouched, one slice gone, cake finished, each reloaded on a fresh game). If the showcase has not landed BC1 when slice 4 is built, slice 4 runs BC1 on the tour's cake before it is marked done.
 - C5: a policy with no `autoLockMin` never auto-locks a password or credential session (npc_frustration.rb:281-306 reads it only for guest and claim sessions).
