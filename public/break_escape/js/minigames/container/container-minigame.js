@@ -361,10 +361,16 @@ const LABEL_SEP_ONE = new RegExp(`^${LABEL_SEP.source}$`);
  * whole grapheme before it (a surrogate pair, a letter with a combining mark or a VS16
  * emoji stays in one piece). Null when there is no trailing separator, or no letter before it.
  */
-export function splitLabelTail(frag) {
+const GRAPHEMES = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : null;
+
+// segmenter: the grapheme segmenter to use; null falls back to code points (Array.from)
+export function splitLabelTail(frag, segmenter = GRAPHEMES) {
     const text = String(frag ?? '');
-    const g = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
-        ? Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text), s => s.segment)
+    if (!text || !LABEL_SEP_ONE.test(Array.from(text).pop())) return null;
+    const g = segmenter
+        ? Array.from(segmenter.segment(text), s => s.segment)
         : Array.from(text);
     let i = g.length;
     while (i > 0 && LABEL_SEP_ONE.test(g[i - 1])) i--;

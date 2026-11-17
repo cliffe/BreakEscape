@@ -2139,6 +2139,10 @@ test('Icon labels: splitLabelTail keeps a whole grapheme with the separator', as
     assert.deepEqual(splitLabelTail('ab\u0065\u0301_'), { head: 'ab', tail: '\u0065\u0301_' }, 'decomposed e-acute stays whole');
     assert.equal(splitLabelTail('___'), null, 'separators only: no tail');
     assert.deepEqual(splitLabelTail('.config_'), { head: '.confi', tail: 'g_' });
+    // Fallback with no Intl.Segmenter: code points, so a surrogate pair still stays whole
+    assert.deepEqual(splitLabelTail('Reconciliation_', null), { head: 'Reconciliatio', tail: 'n_' });
+    assert.deepEqual(splitLabelTail('\u{1F600}_', null), { head: '', tail: '\u{1F600}_' });
+    assert.equal(splitLabelTail('xlsx', null), null);
     assert.equal(splitLabelTail('xlsx'), null, 'no separator: no tail');
     assert.equal(splitLabelTail(''), null);
 });
