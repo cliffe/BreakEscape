@@ -98,3 +98,43 @@ test('the backing store is the CSS box times devicePixelRatio', () => {
     }
     delete globalThis.devicePixelRatio;
 });
+
+test('a fractional box at a fractional devicePixelRatio is sized from the rect or the device-pixel box', () => {
+    for (const dpr of [1.25, 1.5]) {
+        globalThis.devicePixelRatio = dpr;
+        // no observer entry: getBoundingClientRect keeps the fractions clientWidth rounds off
+        const { p } = make(10, 10);
+        p.portraitContainer = { clientWidth: 390, clientHeight: 549, getBoundingClientRect: () => ({ width: 390.4, height: 548.6 }) };
+        p.updateCanvasSize();
+        assert.equal(p.canvas.width, Math.round(390.4 * dpr));
+        assert.equal(p.canvas.height, Math.round(548.6 * dpr));
+        // observer entry: the browser's own device pixel size wins
+        const { p: q } = make(10, 10);
+        q.portraitContainer = { clientWidth: 390, clientHeight: 549, getBoundingClientRect: () => ({ width: 390.4, height: 548.6 }) };
+        q.updateCanvasSize({ devicePixelContentBoxSize: [{ inlineSize: 488, blockSize: 686 }] });
+        assert.deepEqual([q.canvas.width, q.canvas.height], [488, 686]);
+    }
+    delete globalThis.devicePixelRatio;
+});
+
+test('a scene shot covers the frame at the exact scale, not a rounded-up one', () => {
+    const { p, draws } = make(1280, 680);
+    p.backgroundImage = { width: 400, height: 400 };
+    p._characterHidden = true;
+    p.parallaxStartTime = Date.now() - 5000;
+    p.render();
+    const bg = draws.find(d => d.a.length === 4);
+    assert.ok(bg.a[2] < 1500, `1304/400 = 3.26x, not rounded up to 4x: ${bg.a[2]}`);
+    assert.ok(bg.a[2] > 1303.9, `w ${bg.a[2]}`);
+});
+
+test('on a phone the viseme frame stands on the canvas bottom at the height-led scale', () => {
+    for (const [cw, ch] of [[390, 474], [390, 513], [390, 549], [390, 585]]) {
+        const { p, draws } = make(cw, ch);
+        p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
+        p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 128, 128);
+        const a = draws[0].a;
+        assert.equal(a[5] + a[7], ch, `${cw}x${ch} bottom edge`);
+        assert.equal(a[6] / a[2], Math.floor(ch / 128));
+    }
+});

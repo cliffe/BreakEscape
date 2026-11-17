@@ -1,7 +1,7 @@
 // Camera shots for multi-NPC person-chats (person-chat-camera.js).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cameraViewFor, backgroundRect, portraitRect, shotScale, canvasBackingSize, PLAYER_VIEW, FIRST_NPC_VIEW } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
+import { cameraViewFor, backgroundRect, portraitRect, shotScale, containFit, canvasBackingSize, PLAYER_VIEW, FIRST_NPC_VIEW } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
 
 test('player left, first NPC right, as before', () => {
     assert.deepEqual(cameraViewFor(true, 3), PLAYER_VIEW);
@@ -24,10 +24,11 @@ test('portrait and background share one pixel scale in every shot', () => {
 
 test('a fitted portrait sits where it always did', () => {
     const p = portraitRect(FIRST_NPC_VIEW, 128, 128, 1280, 720, 0.2);
-    // 5x (the largest whole number that fits 720 px), centred vertically, shifted 20% of the width
-    assert.deepEqual([p.x, p.y, p.w, p.h], [(1280 - 640) / 2 - 256, 40, 640, 640]);
+    // 5x (the largest whole number that fits 720 px), standing on the canvas bottom, shifted 20% of the width
+    assert.deepEqual([p.x, p.y, p.w, p.h], [(1280 - 640) / 2 - 256, 80, 640, 640]);
+    assert.equal(p.y + p.h, 720);
     const pip = portraitRect(null, 128, 128, 200, 150, 0);
-    assert.deepEqual([pip.x, pip.y, pip.scale], [36, 11, 1]);
+    assert.deepEqual([pip.x, pip.y, pip.scale], [36, 22, 1]);
 });
 
 test('a close-up keeps the head in frame', () => {
@@ -75,7 +76,7 @@ test('a source pixel covers a whole number of canvas pixels, in every shot and s
             const p = portraitRect(v, 128, 128, cw, ch, v.shift);
             assert.ok(Number.isInteger(p.scale), `${cw}x${ch} scale ${p.scale}`);
             assert.ok(Number.isInteger(p.x) && Number.isInteger(p.y), `${cw}x${ch} position ${p.x},${p.y}`);
-            const b = backgroundRect(v, Math.min(cw, ch) / 128, 400, 400, cw, ch);
+            const b = backgroundRect(v, containFit(cw, ch, 128, 128), 400, 400, cw, ch);
             assert.ok(Number.isInteger(b.w / 400), `${cw}x${ch} background scale ${b.w / 400}`);
             assert.ok(Number.isInteger(b.x) && Number.isInteger(b.y), `${cw}x${ch} background position`);
             assert.equal(b.w / 400, p.scale, 'background shares the portrait scale');
@@ -109,4 +110,47 @@ test('the backing store is the CSS box times devicePixelRatio', () => {
     assert.deepEqual(canvasBackingSize(390, 844, 3), { width: 1170, height: 2532 });
     assert.deepEqual(canvasBackingSize(1280, 720, 1.5), { width: 1920, height: 1080 });
     assert.deepEqual(canvasBackingSize(0, 0, 1), { width: 1, height: 1 });
+});
+
+test('at zoom 1 the portrait stands on the canvas bottom, never centred', () => {
+    const sizes = [[1280, 720], [1280, 680], [1366, 768], [1920, 1080], [844, 390], [390, 474], [390, 513], [390, 549], [390, 585], [390, 844], [768, 1024]];
+    for (const [cw, ch] of sizes) {
+        for (const v of [PLAYER_VIEW, FIRST_NPC_VIEW, { pan: 0.4, zoom: 1, shift: 0 }]) {
+            const p = portraitRect(v, 128, 128, cw, ch, v.shift);
+            assert.equal(p.y + p.h, ch, `${cw}x${ch} bottom edge`);
+            // a smaller frame of the same speaker shares the bottom edge
+            const q = portraitRect(v, 120, 120, cw, ch, v.shift, 128, 128);
+            assert.equal(q.y + q.h, ch, `${cw}x${ch} small frame bottom edge`);
+        }
+    }
+});
+
+test('on a canvas taller than wide the scale comes from the height and the sides are cropped', () => {
+    for (const [cw, ch] of [[390, 474], [390, 513], [390, 549], [390, 585], [390, 844], [768, 1024]]) {
+        const p = portraitRect(FIRST_NPC_VIEW, 128, 128, cw, ch, 0.2);
+        assert.equal(p.scale, Math.max(1, Math.floor(ch / 128)), `${cw}x${ch}`);
+    }
+    assert.equal(portraitRect(FIRST_NPC_VIEW, 128, 128, 390, 549, 0.2).scale, 4);
+    assert.equal(containFit(390, 549, 128, 128), 549 / 128);
+    assert.equal(containFit(1280, 720, 128, 128), 5.625);
+});
+
+test('a close-up stays on whole pixels and its bottom reaches the canvas bottom', () => {
+    for (const [cw, ch] of [[1280, 720], [1280, 680], [390, 549], [390, 844], [1920, 1080]]) {
+        for (const slot of [1, 3, 5]) {
+            const v = cameraViewFor(false, slot);
+            assert.equal(v.zoom, 1.5);
+            const p = portraitRect(v, 128, 128, cw, ch, 0);
+            assert.ok(Number.isInteger(p.x) && Number.isInteger(p.y) && Number.isInteger(p.scale), `${cw}x${ch}`);
+            assert.ok(p.y + p.h >= ch, `${cw}x${ch} bottom ${p.y + p.h}`);
+            assert.ok(p.y <= 0, `${cw}x${ch} top ${p.y}`);
+        }
+    }
+});
+
+test('a scene shot may use the exact cover scale', () => {
+    const r = backgroundRect({ pan: 1, zoom: 1 }, 1, 400, 400, 1304, 680, true);
+    assert.equal(r.w, 1304);
+    const whole = backgroundRect({ pan: 1, zoom: 1 }, 1, 400, 400, 1304, 680);
+    assert.equal(whole.w, 1600);
 });

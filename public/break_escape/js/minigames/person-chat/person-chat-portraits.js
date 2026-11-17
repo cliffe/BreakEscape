@@ -11,7 +11,7 @@
 import { ASSETS_PATH } from '../../config.js';
 import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
 import { influenceTintFilter } from '../../ui/pretext-chrome.js';
-import { backgroundRect, portraitRect, canvasBackingSize } from './person-chat-camera.js';
+import { backgroundRect, portraitRect, canvasBackingSize, containFit } from './person-chat-camera.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
@@ -188,12 +188,19 @@ export default class PersonChatPortraits {
             this.render();
             
             // Handle window resize (store the handler so destroy() can remove it — no leak)
-            this._resizeHandler = () => this.handleResize();
-            window.addEventListener('resize', this._resizeHandler);
-            // The box can change without a window resize (caption, layout), so watch it too
+            // The ResizeObserver also fires on a window resize, so the window listener is only
+            // the fallback where there is no observer (one render per change, not two)
             if (typeof ResizeObserver !== 'undefined' && this.portraitContainer) {
-                this._resizeObserver = new ResizeObserver(() => this.handleResize());
-                this._resizeObserver.observe(this.portraitContainer);
+                // The box can change without a window resize (caption, layout), so watch it
+                this._resizeObserver = new ResizeObserver(entries => this.handleResize(entries[entries.length - 1]));
+                try {
+                    this._resizeObserver.observe(this.portraitContainer, { box: 'device-pixel-content-box' });
+                } catch (e) {
+                    this._resizeObserver.observe(this.portraitContainer); // older browsers: no device-pixel box
+                }
+            } else {
+                this._resizeHandler = () => this.handleResize();
+                window.addEventListener('resize', this._resizeHandler);
             }
             
             // Parallax animation will start automatically when background image loads
@@ -213,13 +220,26 @@ export default class PersonChatPortraits {
      * scale the portrait is drawn at is chosen per draw from this size (person-chat-camera.js).
      * The backing store is only reset when its size changes, since resetting clears it.
      */
-    updateCanvasSize() {
+    updateCanvasSize(entry = null) {
         if (!this.canvas) return;
+
+        // The browser's own device-pixel size of the box, when the observer gave it: exact
+        // even for a fractional box or a fractional devicePixelRatio
+        const dpb = entry && entry.devicePixelContentBoxSize && entry.devicePixelContentBoxSize[0];
+        if (dpb && dpb.inlineSize > 0 && dpb.blockSize > 0) {
+            const width = Math.max(1, Math.round(dpb.inlineSize));
+            const height = Math.max(1, Math.round(dpb.blockSize));
+            if (this.canvas.width !== width) this.canvas.width = width;
+            if (this.canvas.height !== height) this.canvas.height = height;
+            return;
+        }
 
         // The canvas fills its container (CSS 100% x 100%)
         const box = this.portraitContainer;
-        let cssW = box ? box.clientWidth : 0;
-        let cssH = box ? box.clientHeight : 0;
+        // getBoundingClientRect keeps the fractions that clientWidth/clientHeight round off
+        const rect = box && typeof box.getBoundingClientRect === 'function' ? box.getBoundingClientRect() : null;
+        let cssW = rect ? rect.width : (box ? box.clientWidth : 0);
+        let cssH = rect ? rect.height : (box ? box.clientHeight : 0);
         if (!cssW || !cssH) {
             // Not laid out yet: the game container is the same full-screen box
             const gc = this.sizeToContainer ? null : document.getElementById('game-container');
@@ -237,11 +257,11 @@ export default class PersonChatPortraits {
     /**
      * Handle canvas resize on window resize
      */
-    handleResize() {
+    handleResize(entry = null) {
         if (!this.canvas) return;
         
         try {
-            this.updateCanvasSize();
+            this.updateCanvasSize(entry);
             this.render();
         } catch (error) {
             console.error('❌ Error resizing portrait:', error);
@@ -612,7 +632,7 @@ export default class PersonChatPortraits {
      * (flipped) and left edge for the player
      * @param {number} spriteScale - The sprite's contain fit (canvas size over frame size); the background snaps it to the same integer scale as the sprite
      */
-    drawBackground(spriteScale) {
+    drawBackground(spriteScale, sceneShot = false) {
         if (!this.backgroundImage || !this.ctx || !this.canvas || !spriteScale) return;
         
         const canvasWidth = this.canvas.width;
@@ -625,7 +645,7 @@ export default class PersonChatPortraits {
         // Scene shots and the PiP ignore it and keep the side-aligned framing.
         const view = this._cameraView() || { pan: this.flipped ? 1 : 0, zoom: 1 };
         let { x, y, w: scaledWidth, h: scaledHeight } =
-            backgroundRect(view, spriteScale, imgWidth, imgHeight, canvasWidth, canvasHeight);
+            backgroundRect(view, spriteScale, imgWidth, imgHeight, canvasWidth, canvasHeight, sceneShot);
 
         // Calculate subtle parallax effect - move background towards sprite once and stop
         const elapsed = (Date.now() - this.parallaxStartTime) / 1000; // Time in seconds
@@ -682,10 +702,11 @@ export default class PersonChatPortraits {
                 if (this.backgroundImage) {
                     // Establishing shots: cover the frame rather than zoom to the
                     // character's pixel scale, so the whole width of the scene shows
-                    // (the small margin hides the parallax drift at the edge)
+                    // (the small margin hides the parallax drift at the edge). There is no
+                    // animated sprite here, so the exact cover scale is fine: parallax moves
+                    // the image by whole pixels and nothing changes size between frames.
                     const img = this.backgroundImage;
-                    // A whole-number scale so the background's pixels stay square
-                    this.drawBackground(Math.ceil(Math.max((this.canvas.width + 24) / img.width, this.canvas.height / img.height)));
+                    this.drawBackground(Math.max((this.canvas.width + 24) / img.width, this.canvas.height / img.height), true);
                 }
                 return;
             }
@@ -747,7 +768,7 @@ export default class PersonChatPortraits {
             const canvasWidth = this.canvas.width;
             const canvasHeight = this.canvas.height;
             
-            const scale = Math.min(canvasWidth / spriteWidth, canvasHeight / spriteHeight); // contain fit; both the sprite and background snap it to one integer scale
+            const scale = containFit(canvasWidth, canvasHeight, spriteWidth, spriteHeight); // contain fit; both the sprite and background snap it to one integer scale
             
             // Draw background with sprite scale if loaded
             if (this.backgroundImage) {
@@ -906,7 +927,7 @@ export default class PersonChatPortraits {
     calculateSpriteTalkScale() {
         const frameSize = this._speakerRefSize();
         if (!frameSize || !this.canvas) return null;
-        return Math.min(this.canvas.width / frameSize, this.canvas.height / frameSize);
+        return containFit(this.canvas.width, this.canvas.height, frameSize, frameSize);
     }
 
     /**

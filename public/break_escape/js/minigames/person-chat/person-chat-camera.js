@@ -60,6 +60,18 @@ export function shotScale(fit, zoom = 1) {
 }
 
 /**
+ * The contain fit a speaker's frame box gets on a canvas, before it is rounded down to a
+ * whole number. On a canvas taller than wide (a phone) the height decides and the sides are
+ * cropped, as the old cover framing did, so the character keeps her size instead of
+ * shrinking to the narrow width. Elsewhere it is the usual contain fit.
+ * @returns {number}
+ */
+export function containFit(canvasW, canvasH, refW, refH) {
+    if (canvasH > canvasW) return canvasH / refH;
+    return Math.min(canvasW / refW, canvasH / refH);
+}
+
+/**
  * Where to draw a portrait frame, before any flip: contain-fitted at one integer scale
  * (shotScale), scaled by the view's zoom, and moved away from the way it faces by `shift`
  * of the canvas width. A close-up keeps the head near the top instead of centring the frame.
@@ -80,13 +92,18 @@ export function shotScale(fit, zoom = 1) {
  */
 export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = srcW, refH = srcH) {
     const zoom = view?.zoom || 1;
-    const scale = shotScale(Math.min(canvasW / refW, canvasH / refH), zoom);
+    const scale = shotScale(containFit(canvasW, canvasH, refW, refH), zoom);
     const w = srcW * scale;
     const h = srcH * scale;
     const boxW = refW * scale;
     const boxH = refH * scale;
     const x = Math.round((canvasW - boxW) / 2 - canvasW * shift + (boxW - w) / 2);
-    const boxY = zoom > 1 ? 0 - CLOSE_UP_TOP_CROP * boxH : (canvasH - boxH) / 2;
+    // The box stands on the canvas bottom (never centred, which left a gap under her feet).
+    // A close-up crops a little off the top to keep the head in shot, but its bottom still
+    // reaches the canvas bottom.
+    const boxY = zoom > 1
+        ? Math.max(0 - CLOSE_UP_TOP_CROP * boxH, canvasH - boxH)
+        : canvasH - boxH;
     const y = Math.round(boxY + (boxH - h));
     return { x, y, w, h, scale };
 }
@@ -94,11 +111,16 @@ export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = s
 /**
  * Where to draw the background: the same integer scale as the portrait (pass the portrait's
  * unrounded contain fit as `scale`), raised to the next whole number only when that would
- * leave the canvas uncovered. Positions are whole canvas pixels.
+ * leave the canvas uncovered. Positions are whole canvas pixels. With `fractionalCover`
+ * (scene shots) the scale is the exact cover scale (or `scale`, if larger) instead.
  */
-export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH) {
-    const cover = Math.ceil(Math.max(canvasW / imgW, canvasH / imgH) - 1e-9);
-    const s = Math.max(shotScale(scale, view?.zoom || 1), cover);
+export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH, fractionalCover = false) {
+    // A scene shot has no animated sprite to match, so it may use the exact cover scale
+    // (a whole-number one would crop much more of the room)
+    const cover = fractionalCover
+        ? Math.max(canvasW / imgW, canvasH / imgH)
+        : Math.ceil(Math.max(canvasW / imgW, canvasH / imgH) - 1e-9);
+    const s = fractionalCover ? Math.max(cover, scale) : Math.max(shotScale(scale, view?.zoom || 1), cover);
     const w = imgW * s;
     const h = imgH * s;
     const pan = Math.min(1, Math.max(0, view?.pan ?? 1));
