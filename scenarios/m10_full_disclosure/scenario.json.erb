@@ -2625,7 +2625,7 @@ end
           "globalVarOnKO": "fp_darren_ko",
           "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
           "needs": { "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "kettle_fp": ["The generator's holding. Just about.", "Van two's battery is on its last bar.", "Too cold for the laptops, never mind me.", "I've run the lamp off a spare battery."] },
+          "chatter": { "kettle_fp": ["Fuel's good till dawn. Probably.", "Should've brought the big coat.", "Too cold for the laptops, never mind me.", "I've run the lamp off a spare battery."] },
           "exchanges": [
             { "with": "sofia_marchetti", "knot": "ex_fp_kettle_on", "requireGlobal": { "fp_staff_upset": false, "split_started": false } },
             { "with": "sofia_marchetti", "knot": "ex_fp_radios", "requireGlobal": { "fp_staff_upset": false, "split_started": true, "breach_open": false } },
@@ -2659,7 +2659,7 @@ end
           "globalVarOnKO": "fp_sofia_ko",
           "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
           "needs": { "caffeine": { "initial": 90, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "kettle_fp": ["Who's not had a cup yet?", "Both vans have their heaters on now.", "Long night. The kettle's the easy bit.", "Soup's in the flask, if anyone wants it."] },
+          "chatter": { "kettle_fp": ["Who's not had a cup yet?", "Both vans have their heaters on now.", "The kettle's the easy bit tonight.", "Soup's in the flask, if anyone wants it."] },
           "eventMappings": [
             <%= after_end_json.('forward_post') %>
             { "eventPattern": "npc_use_started:fp_kettle", "condition": "data.npcId === 'darren_price' && !globalVars.fp_staff_upset", "delayMs": 1500, "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }

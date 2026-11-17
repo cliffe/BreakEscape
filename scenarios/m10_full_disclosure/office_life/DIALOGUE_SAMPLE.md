@@ -6,14 +6,14 @@ The user picked all five recommendations on the office-life questions (D118). Th
 
 ### Conversation
 
-- Mind the cables. The generator's touchy tonight.
+- Watch the leads. The generator's touchy tonight.
 - Lamps, heaters, the van chargers. Nothing clever.
 - Shout if the lights go.
 
 ### Kettle chatter pool (kettle_fp)
 
-- The generator's holding. Just about.
-- Van two's battery is on its last bar.
+- Fuel's good till dawn. Probably.
+- Should've brought the big coat.
 - Too cold for the laptops, never mind me.
 - I've run the lamp off a spare battery.
 
@@ -21,15 +21,15 @@ The user picked all five recommendations on the office-life questions (D118). Th
 
 ### Conversation
 
-- There's tea if you want it. We're out of sugar.
-- Cold, tired and fed. Two out of three isn't bad.
+- Kettle's on, for all the good it does. We're out of sugar.
+- Cold and tired, but fed. I'll take one in three.
 - I'll keep one warm for you.
 
 ### Kettle chatter pool (kettle_fp)
 
 - Who's not had a cup yet?
 - Both vans have their heaters on now.
-- Long night. The kettle's the easy bit.
+- The kettle's the easy bit tonight.
 - Soup's in the flask, if anyone wants it.
 
 ## Exchanges (once each, Darren and Sofia together)
@@ -40,18 +40,18 @@ The user picked all five recommendations on the office-life questions (D118). Th
 - Darren Price: Kettle's on. They'll be a while yet.
 - Sofia Marchetti: Then it'll be stewed when they want it.
 - Darren Price: Stewed tea at this hour is still tea.
-- Sofia Marchetti: I'll do a fresh pot when they break.
+- Sofia Marchetti: I'll brew fresh when they stop for one.
 
 `ex_fp_radios`
 
-- Sofia Marchetti: The radios have gone very quiet.
+- Sofia Marchetti: It's gone very still out here.
 - Darren Price: Quiet's good. Means nobody's shouting.
 - Sofia Marchetti: Then we wait. That's the job tonight.
 
 `ex_fp_door_open`
 
 - Sofia Marchetti: So the door's open, then.
-- Darren Price: I'll top the generator up for them.
+- Darren Price: They'll want the lamps on, coming out.
 - Sofia Marchetti: Kettle stays on for whoever walks out.
 
 ## Credits (shown, not spoken)

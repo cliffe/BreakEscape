@@ -24,7 +24,7 @@ VAR sofia_quiet = false
 {darren_quiet:
     ~ darren_quiet = false
 - else:
-    Darren Price: Mind the cables. The generator's touchy tonight.
+    Darren Price: Watch the leads. The generator's touchy tonight.
 }
 + [What are you running out here?]
     Darren Price: Lamps, heaters, the van chargers. Nothing clever.
@@ -42,10 +42,10 @@ Darren Price: Shout if the lights go.
 {sofia_quiet:
     ~ sofia_quiet = false
 - else:
-    Sofia Marchetti: There's tea if you want it. We're out of sugar.
+    Sofia Marchetti: Kettle's on, for all the good it does. We're out of sugar.
 }
 + [How's the post holding up?]
-    Sofia Marchetti: Cold, tired and fed. Two out of three isn't bad.
+    Sofia Marchetti: Cold and tired, but fed. I'll take one in three.
     -> sofia_bye
 + [Not now, thanks.]
     -> sofia_bye
@@ -61,12 +61,12 @@ Sofia Marchetti: I'll keep one warm for you.
 Darren Price: Kettle's on. They'll be a while yet.
 Sofia Marchetti: Then it'll be stewed when they want it.
 Darren Price: Stewed tea at this hour is still tea.
-Sofia Marchetti: I'll do a fresh pot when they break.
+Sofia Marchetti: I'll brew fresh when they stop for one.
 -> DONE
 
 // Between the split and the breach: the radios have gone quiet. Sofia opens (nearer the gate).
 === ex_fp_radios ===
-Sofia Marchetti: The radios have gone very quiet.
+Sofia Marchetti: It's gone very still out here.
 Darren Price: Quiet's good. Means nobody's shouting.
 Sofia Marchetti: Then we wait. That's the job tonight.
 -> DONE
@@ -74,6 +74,6 @@ Sofia Marchetti: Then we wait. That's the job tonight.
 // After the breach, until the close: the door is open. Sofia opens (nearer the gate).
 === ex_fp_door_open ===
 Sofia Marchetti: So the door's open, then.
-Darren Price: I'll top the generator up for them.
+Darren Price: They'll want the lamps on, coming out.
 Sofia Marchetti: Kettle stays on for whoever walks out.
 -> DONE
