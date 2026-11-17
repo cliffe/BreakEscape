@@ -326,3 +326,25 @@ Finding to fix or reason. Spoken lines added or changed are listed in PLAN secti
 | m5 (dialogue) name pronunciation | Left: note for the voicing step. |
 | m6 (dialogue) "Not bad, you?" opener | Left: line-selection pairing unconfirmed; swapping is a spoken-line change the review flagged as conditional. |
 | m8 (dialogue) voice style strings | Left per brief. |
+
+## R1 fixes: live proof
+
+Server: keyless on :3094, boot log shows the GEMINI_API_KEY warning, puma PID 1696831 (recorded in `tmp/r1fix/server.pid`), killed by that PID at the end. Games came from `new-game.rb` in this run: 7641 (check 1), 7642 (checks 2 to 5). Headless, setFPS(20) with fixed steps on, POST /tts aborted by pathname only. Probe: `tools/playtest/showcase-r1fix-proof.mjs` (`b1` and `talk` modes). Raw evidence is in `tmp/r1fix/` (not committed).
+
+| Check | Result | Game | Evidence |
+|---|---|---|---|
+| B1: evening turn during office-coffee use | PASS | 7641 | Lunch set `act_midday`. Zainab sent to the office coffee machine, `caffeine:office_coffee:using` from 3.6 s. The "Yes, call it a day" press (which sets `act_evening`) came while her job was still `using`. `see_who_stays` went from active to completed 0.3 s later. Queued and walking at the turn were not tested |
+| M1: met_* guard on re-talk and after reload | PASS | 7642 | Ama, first talk: "Today you watch an office..." and "Everyone here is driven..." Exit with "I'll have a look round", re-talk: "What can I help with?" only, no opening lines. After `page.reload()` (22 s after the last talk), re-talk: the same hub line. Staff spot-check, Chidi: first talk "Hiya. Can't stop long...", re-talk "Still here, still busy.", and the same reopen line after the reload |
+| M2: "Call it a day." confirm (A31) | PASS | 7642 | Hub choice opened "Once they go home, they're gone for the day. Ready?" with "1. Yes, call it a day." and "2. Not yet." Not yet: back at the hub, `act_evening` false. Yes: "Right. Home time for nearly all of them.", "Have a wander if you like.", `act_evening` true, chat closed |
+| Try-next, morning after kitchen_seen (A32) | PASS | 7642 | `kitchen_seen` true. "What should I try next?" showed "You've seen the kitchen. Ask me about lunch when you're ready." |
+| Try-next, midday (A33) | PASS | 7642 | `act_midday` true after lunch. The same choice showed "Once the cake is gone, tell me to call it a day." |
+| tour_notice board readable | PASS | 7642 | Interact opened the "Things to try" modal; the text starts "THINGS TO TRY / Morning:" and runs on to the midday and evening lists. Closed with Escape |
+
+Notes:
+- The two M2 confirm screenshots (`r1fix-m2-confirm.png`, `r1fix-m2-confirm-yes-offered.png`) show the same frame and are the same file size. The second was taken before the Yes press in the second conversation.
+- The board modal is shorter than its text. The midday and evening lists sit below the fold and need scrolling. The text is readable, but a reader may miss the evening list. Not changed here (the brief said not to edit the scenario or engine).
+- No scenario, ink or engine file was changed. No game row was edited. Only POST /tts was aborted.
+
+### Screens (`scenarios/office_life_showcase/planning/screens/`)
+
+`r1fix-b1-zainab-before-turn.png`, `r1fix-b1-evening-turn.png`, `r1fix-b1-see-who-stays.png`, `r1fix-m1-ama-reopen-hub.png`, `r1fix-m1-chidi-reopen-hub.png`, `r1fix-m1-ama-after-reload.png`, `r1fix-m2-confirm.png`, `r1fix-m2-confirm-yes-offered.png`, `r1fix-m2-after-yes.png`, `r1fix-trynext-morning.png`, `r1fix-trynext-midday.png`, `r1fix-board.png`.
