@@ -17,6 +17,10 @@ module BreakEscape
   class TtsMissionLinesTest < ActiveSupport::TestCase
     MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest)\z/.freeze
 
+    # Missions whose event barks are checked against the batch's keys (m3):
+    # the missions above plus sis03, whose barks carry the NPC's own name prefix
+    BARK_MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest|sis03_cyber_insurance)\z/.freeze
+
     # Voiced lines that print a scenario value, by mission. Anything else that
     # prints a variable is either player text (a carried-over global) or game
     # state, and must not be voiced.
@@ -256,6 +260,35 @@ module BreakEscape
         readings[:phone_call] = TtsLineExtractor.reachable_knots(ink, phone.compact.uniq, knot.call(npc['currentKnot'] || 'start'))
       end
       readings
+    end
+
+    test "every event bark the endpoint accepts is a key the batch lists" do
+      checked = Hash.new(0)
+      failures = []
+      Dir.glob(Engine.root.join('scenarios', '*', 'scenario.json.erb').to_s).sort.each do |erb|
+        name = File.basename(File.dirname(erb))
+        next unless name.match?(BARK_MISSIONS)
+
+        raw = JSON.parse(ERB.new(File.read(erb)).result(Mission::ScenarioBinding.new({}).get_binding))
+        game_data = self.class.game_scenario_data(name)
+        ex = TtsLineExtractor.new(name, raw)
+        resolver = self.class.resolver(name, game_data)
+        each_bark(game_data) do |npc_id, text|
+          npc = TtsLineResolver.find_npc(game_data, npc_id)
+          next unless npc && npc['npcType'] == 'person' && npc['voice'].is_a?(Hash)
+
+          result = resolver.resolve(npc_id, npc, text)
+          next failures << "#{name} #{npc_id} refused: #{text[0, 60]}" unless result.line
+
+          voice = ex.voices[npc_id] || npc['voice']
+          key = @svc.cache_key_for(result.line, voice['name'], voice['style'], voice['language'])
+          checked[name] += 1
+          failures << "#{name} #{npc_id}: batch does not list #{result.line[0, 60]}" unless ex.keys.include?(key)
+        end
+      end
+      assert_empty failures, failures.first(40).join("\n")
+      assert_operator checked['sis03_cyber_insurance'], :>=, 3
+      assert_operator checked.size, :>=, 2
     end
 
     def each_bark(data)

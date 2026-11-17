@@ -64,11 +64,99 @@ module BreakEscape
       end
     end
 
-    test 'm03 lists its office-life barks' do
+    test 'm03 lists exactly its three office-life barks' do
       ex = TtsLineExtractor.for_scenario('m03_ghost_in_the_machine')
-      barks = ex.entries.select { |e| e.path == 'npc.bark' }
-      puts "m03 bark lines: #{barks.map { |b| [b.npc_id, b.text] }.inspect}" if ENV['SHOW_BARKS']
-      assert_operator barks.size, :>=, 2
+      barks = ex.entries.select { |e| e.path == 'npc.bark' }.map { |b| [b.npc_id, b.text] }
+      assert_equal [['ffion_rees', 'Charger, charger... I know I left it here somewhere.'],
+                    ['zainab_hussain', "That's my laptop. Can I help you?"],
+                    ['yusuf_demir', 'Zainab, ring someone. Now.']].sort, barks.sort
+    end
+
+    # M1: the client strips the NPC's own "Name:" prefix (phoneBarkText) before /tts,
+    # so the batch and the endpoint use the stripped text
+    SIS03_BARKS = [
+      'The policy binder and FDP terminal on the desk both unlock the Evidence Archive.',
+      'Warranty assessment recorded.',
+      'The decision is logged. Come and talk to me before you leave'
+    ].freeze
+
+    def sis03_data
+      raw = JSON.parse(ERB.new(File.read(Engine.root.join('scenarios', 'sis03_cyber_insurance', 'scenario.json.erb')))
+                          .result(Mission::ScenarioBinding.new({}).get_binding))
+      raw
+    end
+
+    def eleanor(data)
+      data['rooms'].values.flat_map { |r| Array(r['npcs']) }.find { |n| n['id'] == 'eleanor_vance' }
+    end
+
+    # What npc-barks.js sends: phoneBarkText of the authored line (own name prefix dropped)
+    def client_text(authored)
+      authored.sub(/\AEleanor Vance:\s*/i, '').strip
+    end
+
+    test 'sis03 Eleanor prefixed sendTimedMessage barks key on the text the client sends' do
+      data = sis03_data
+      npc = eleanor(data)
+      authored = ScenarioBarkValidator.raw_event_bark_texts(npc).select { |t| t.start_with?('Eleanor Vance:') }
+      assert_equal 3, authored.size
+      ex = TtsLineExtractor.new('sis03_cyber_insurance', data, chatter: false)
+      barks = ex.entries.select { |e| e.path == 'npc.bark' && e.npc_id == 'eleanor_vance' }
+      svc = TtsService.new
+      voice = ex.voices['eleanor_vance']
+      authored.each do |line|
+        sent = client_text(line)
+        refute_match(/\AEleanor/, sent)
+        key = svc.cache_key_for(sent, voice['name'], voice['style'], voice['language'])
+        assert_includes barks.map(&:key), key, "batch lacks the key of the text the client sends: #{sent[0, 50]}"
+        assert_includes barks.map(&:text), sent
+        assert_equal sent, ScenarioBarkValidator.canonical(npc, sent), 'endpoint refuses the stripped text'
+      end
+      refute(barks.any? { |b| b.text.start_with?('Eleanor Vance:') })
+    end
+
+    test 'a bark prefix naming someone else, or the id forms, follow the client rule' do
+      npc = { 'id' => 'dr_chen', 'displayName' => 'Dr Chen',
+              'eventMappings' => [{ 'bark' => 'Dr Chen: One.' }, { 'bark' => 'dr_chen : Two.' },
+                                  { 'bark' => 'dr chen:Three.' }, { 'bark' => 'Director: Four.' },
+                                  { 'bark' => "You: Mine.\nDr Chen: Five.\nNarrator: Quiet." },
+                                  { 'bark' => 'Dr Chen:' }] }
+      assert_equal ['One.', 'Two.', 'Three.', 'Director: Four.', 'Five.', 'Dr Chen:'],
+                   ScenarioBarkValidator.event_bark_texts(npc)
+    end
+
+    test 'a String voice and an NPC with no npcType list no bark' do
+      assert_empty extractor(person('obj', 'voice' => 'A fixed line.')).entries
+      p = person('plain')
+      p.delete('npcType')
+      assert_empty extractor(p).entries
+    end
+
+    test 'a whitespace-only bark is skipped and non-Hash entries are ignored' do
+      npc = person('guard', 'eventMappings' => [{ 'bark' => '   ' }, 'junk', nil,
+                                                 { 'sendTimedMessage' => 'junk' }, { 'bark' => 'Real.' }],
+                            'timedMessages' => ['junk', nil, { 'message' => "\n" }])
+      assert_equal ['Real.'], extractor(npc).entries.map(&:text)
+      assert_equal ['Real.'], ScenarioBarkValidator.event_bark_texts(npc)
+    end
+
+    test 'bark_texts keeps event barks first, then chatter, in order' do
+      npc = person('guard', 'chatter' => { 'idle' => ['Chat one.', 'Chat two.'] })
+      assert_equal ['Mind the step.', 'Found it yet?', 'Still there?', 'Chat one.', 'Chat two.'],
+                   ScenarioBarkValidator.bark_texts(npc)
+    end
+
+    test 'a bark that duplicates a person-chat line is one entry' do
+      story = Engine.root.join('scenarios/test_needs_sims/ink/amara.json').to_s
+      host = person('amara', 'storyPath' => story, 'currentKnot' => 'start', 'eventMappings' => [], 'timedMessages' => [])
+      line = extractor(host).entries.find { |e| e.path != 'npc.bark' }&.text
+      assert line, 'fixture story lists no line'
+      with_bark = person('amara', 'storyPath' => story, 'currentKnot' => 'start', 'timedMessages' => [],
+                                  'eventMappings' => [{ 'bark' => line }, { 'bark' => 'Mind the step.' }])
+      entries = extractor(with_bark).entries
+      assert_equal 1, entries.count { |e| e.text == line }
+      assert_equal entries.size, entries.map(&:key).uniq.size
+      assert_includes entries.map(&:text), 'Mind the step.'
     end
   end
 end

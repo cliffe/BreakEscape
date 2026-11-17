@@ -43,6 +43,16 @@ module BreakEscape
     # @param npc [Hash]
     # @return [Array<String>]
     def self.event_bark_texts(npc)
+      raw_event_bark_texts(npc).filter_map do |text|
+        spoken = spoken_bark_text(npc, text)
+        spoken unless spoken.empty?
+      end
+    end
+
+    # The barks as authored, before the client's own-name strip.
+    # @param npc [Hash]
+    # @return [Array<String>]
+    def self.raw_event_bark_texts(npc)
       texts = []
 
       Array(npc["eventMappings"]).each do |mapping|
@@ -59,6 +69,47 @@ module BreakEscape
       end
 
       texts
+    end
+
+    # What the client voices for a bark: a port of phoneBarkText
+    # (phone-chat-speaker.js), which npc-barks.js runs every bark through before
+    # it sends the text to /tts. Per line (split on newlines, trimmed, blanks
+    # dropped): a `You:` / `Player:` line and a `Narrator:` line are left out,
+    # and a leading `<displayName>:`, `<id>:` or `<id with spaces>:` naming the
+    # NPC itself is dropped (case-insensitive, any space around the colon; kept
+    # when nothing would remain). Remaining lines are rejoined with a newline.
+    # @param npc [Hash]
+    # @param text [String]
+    # @return [String] '' when nothing in it is the NPC's
+    def self.spoken_bark_text(npc, text)
+      return "" unless text.is_a?(String)
+
+      names = own_names(npc)
+      text.split("\n").map(&:strip).reject(&:empty?).filter_map do |line|
+        next if line.match?(/\A(?:you|player)\s*:\s*\S/i) || line.match?(/\Anarrator(?:\s*\[[^\]]*\])?\s*:\s*\S/i)
+
+        strip_own_prefix(line, names)
+      end.join("\n")
+    end
+
+    # The names an NPC's own lines may be prefixed with, longest first, as
+    # contactNames does: displayName, id, and id with underscores as spaces.
+    private_class_method def self.own_names(npc)
+      id = npc["id"]
+      [npc["displayName"], id, id.is_a?(String) ? id.tr("_", " ") : nil]
+        .select { |n| n.is_a?(String) && !n.strip.empty? }
+        .map { |n| n.strip.downcase }.uniq.sort_by { |n| -n.length }
+    end
+
+    private_class_method def self.strip_own_prefix(line, names)
+      names.each do |name|
+        m = line.match(/\A#{Regexp.escape(name)}\s*:\s*/i)
+        next unless m
+
+        rest = line[m[0].length..].strip
+        return rest.empty? ? line : rest
+      end
+      line
     end
 
     # True when text is a line of one of the scenario's own chatter pools

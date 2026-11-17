@@ -15,8 +15,11 @@ module BreakEscape
   # ScenarioBarkValidator.event_bark_texts; npc-manager.js sets useTTS only for
   # `npcType: "person"` with a `voice`). Barks are always listed, unlike
   # chatter: there are few of them and each is heard every time its event
-  # fires. Phone conversations are not voiced by the batch, except a phone contact with a voiced call (`voiced: true` on a
-  # phone-chat eventMapping or on its timedConversation, F17): its story is a
+  # fires. A bark is listed as the client voices it, with the NPC's own
+  # "Name:" prefix stripped (ScenarioBarkValidator.spoken_bark_text). Phone
+  # conversations are not voiced by the batch, except a phone contact with a
+  # voiced call (`voiced: true` on a phone-chat eventMapping or on its
+  # timedConversation, F17): its story is a
   # host like a person-chat one, read as phone-call-voice.js voices it (no
   # narration), but only the lines in the call's own knots (call_knots, F20).
   # A video call (`conversationMode: "video-call"` on an eventMapping, or a
