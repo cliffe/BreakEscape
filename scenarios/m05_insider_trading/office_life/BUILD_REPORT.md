@@ -223,3 +223,21 @@ Live runs on a keyless server on :3092 (boot log shows the missing-key warning),
 Caveat on the m1 proof: it was run on a game started in the break room with the server-room entry emitted as the engine's own `room_entered:server_room` event (the server hallway door is locked in a fresh game), so the mappings were registered and the corridor `onceOnly` unspent, which is the skip-route state. There was no run of the old build as a negative control.
 
 No reload check was part of the R2 fixes, so the `page.reload()` rule did not come into play; `browser.close()` appears only at the end of each probe.
+
+## R3 fixes (build review round 3)
+
+Edits: n2 (Bernadette's coffee pool line is now "One cup, then I'm back on the hoover.", 37 characters, `scenario.json.erb` and `SPOKEN_LINES.md`; checked against her other lines, no clash, so the alternative was not needed), n3 (`PLAN.md` parenthesis removed; ERB comment now says four mappings, the three `onceOnly` ones reset needs), n4 (backlog entry for the short park on the walk home).
+
+Live check (n1, return leg): keyless server on :3092 (boot log shows the missing-key warning, PID 2114538, stopped by PID afterwards), headless, setFPS(20), fixed steps on, `/tts` aborted by the harness. Probe `tools/playtest/m05-ol-l1a-bernadette.mjs` now also samples the return leg (end of `using` until idle). Games, both printed by `m05-ol-ng.sh` in this run: 7414 and 7416. Positions are world coordinates; the break room origin is about (-320,-127) here, so her post (-165,66) is local (155,193). Lisa stays at (-192,0) throughout.
+
+| Try | Out leg min to Lisa (7416) | Return min to Lisa, 7414 | Return min to Lisa, 7416 | Return min x, 7414 | Return min x, 7416 |
+|---|---|---|---|---|---|
+| 1 | 52 | 58 | 36 | -169 | -165 |
+| 2 | 52 | 36 | 31 | -165 | -165 |
+| 3 | 52 | 36 | 37 | -165 | -165 |
+| 4 | 52 | 33 | 36 | -165 | -165 |
+| 5 | 52 | 41 | 38 | -151 | -154 |
+
+Result: FAIL on distance. The return leg runs 31 to 41 px from Lisa in nine of ten tries (one 58 in 7414 try 1), against the 47 px limit. In game 7416 the closest point is Bernadette at about (-156,1) and Lisa at (-192,0): on the way home she walks straight down x of about -156 past Lisa's row, on the east side, where the out leg sits at about 52 px. Try 5 in both games detoured (218 samples, to about (-75,84) and back) before settling, so its figure is from the first stretch. Minimum x is -165 to -154 world, which is local 155 to 166; the post itself is local 155, so the "159 or more" limit reads as unmeasurable in this frame and was not met on the post alone. Bodies are 18 by 10, so 31 px still leaves 13 px clear and no contact was seen. No fix applied: a post, `interests` or route change is a design decision for the plan.
+
+Validator: 0 errors, 29 warnings (unchanged). Lock/key diff: "lock and key diff: empty". `bin/test-js`: 752 passed, 0 failed. No ink changed, nothing recompiled.

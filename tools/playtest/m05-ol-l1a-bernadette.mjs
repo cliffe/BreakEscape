@@ -1,4 +1,4 @@
-// L1a for Bernadette (R2 fix M1): five coffee trips from her post, minimum distance to Lisa per trip (all samples, and excluding the last tile).
+// L1a for Bernadette (R2 fix M1, R3 n1): five coffee trips from her post. Out leg: minimum distance to Lisa (all samples, and excluding the last tile). Return leg (end of 'using' until idle): minimum distance to Lisa and minimum x (aisle is x < 159).
 import { start, log } from './m05-ol-lib.mjs';
 const g = await start(process.argv[2]);
 await g.page.evaluate(async () => { const m = await import('/break_escape/js/systems/global-writer.js'); m.writeGlobal('server_room_entered', true); });
@@ -18,7 +18,12 @@ for (let k = 1; k <= 5; k++) {
   const ok = await g.until(async () => { const a = await g.st('bernadette_lyons'); return a.phase === 'using'; }, 60000, 300);
   const fin = await P('bernadette_lyons');
   const m = await g.page.evaluate((fin) => { let all = 1e9, ex = 1e9, minX = 1e9; for (const s of window.__trk) { if (!s.b || !s.l) continue; const d = Math.hypot(s.b[0]-s.l[0], s.b[1]-s.l[1]); all = Math.min(all, d); if (Math.hypot(s.b[0]-fin[0], s.b[1]-fin[1]) > 32) ex = Math.min(ex, d); minX = Math.min(minX, s.b[0]); } return { all: Math.round(all), exLast: Math.round(ex), minX: Math.round(minX), path: window.__trk.filter((s, i) => i % 8 === 0 && s.b).map(s => s.b.map(Math.round).join(',')).join(' ') }; }, fin);
-  res.push({ k, home, ok, fin, m }); log(JSON.stringify(res[res.length - 1]));
+  // Return leg: from the end of 'using' until idle at the post.
+  await g.until(async () => (await g.st('bernadette_lyons')).phase !== 'using', 60000, 200);
+  await g.page.evaluate(() => { window.__trk.length = 0; });
   await g.until(async () => (await g.st('bernadette_lyons')).mode === 'idle', 90000, 1000);
+  const r = await g.page.evaluate(() => { let d = 1e9, minX = 1e9, at = null; for (const s of window.__trk) { if (!s.b || !s.l) continue; const dd = Math.hypot(s.b[0]-s.l[0], s.b[1]-s.l[1]); if (dd < d) { d = dd; at = { b: s.b.map(Math.round), l: s.l.map(Math.round) }; } minX = Math.min(minX, s.b[0]); } return { minD: Math.round(d), minX: Math.round(minX), at, n: window.__trk.length, path: window.__trk.filter((s, i) => i % 8 === 0 && s.b).map(s => s.b.map(Math.round).join(',')).join(' ') }; });
+  res.push({ k, home, ok, fin, m, ret: r }); log(JSON.stringify(res[res.length - 1]));
 }
+log('RETURN', JSON.stringify(res.map(x => x.ret.minD)), 'minX', Math.min(...res.map(x => x.ret.minX)), 'PASS', res.every(x => x.ret.minD >= 47 && x.ret.minX >= 159));
 log('errs', JSON.stringify(g.errs)); await g.browser.close();

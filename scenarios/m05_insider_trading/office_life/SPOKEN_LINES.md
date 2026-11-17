@@ -62,7 +62,7 @@ Pool, `bernadette_lyons`, coffee:
 
 | Line | Chars |
 |---|---|
-| Still here? You'll wear that chair out. | 39 |
+| One cup, then I'm back on the hoover. | 37 |
 | Kettle's quicker, you know. | 27 |
 | Last floor before I'm done. | 27 |
 | Who leaves a teabag in the sink? | 32 |
