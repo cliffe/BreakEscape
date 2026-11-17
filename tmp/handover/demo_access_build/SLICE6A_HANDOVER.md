@@ -210,3 +210,50 @@ Not asked again after step 11, because the run stopped at step 12. The second an
 - Phone: `openInventoryItem` `phone`, then `mg clickText` "Ama Owusu", then `mg clickText` "Where next?" (it repeats the top line first; read the last lines of the text).
 - `dismiss` with label "×" closes the rota board overlay (it is not a minigame).
 - An `eval` that uses a bare identifier fails when the name is not defined in the page; use string keys like `["thandiwe","yasmin"]`.
+
+## Full route 12-19 (game 7537, server :3096)
+
+Run by the full-route 12-19 agent. Keyless Rails from this worktree on 127.0.0.1:3096 (pid 243468, stopped afterwards; port free). Headless, setFPS(20) applied as `game.physics.world.setFPS(20)` with `smoothStep` off and fixed steps on (`fixedStep` read back true). Session log: tmp/handover/demo_access_build/s7_7537.jsonl. Game 7537 was not edited by script; all moves were through the harness.
+
+Stopped at the call budget (about 60 calls). Steps 14 (part) to 19 not run.
+
+### Step table
+
+| Step | Result | Notes |
+|---|---|---|
+| 12 Open session | PASS | Read the rota (`rota_board`), dismissed with ×, then `moveToNear thandiwe_laptop` and `interact` in one shell call, no brief between. Session opened first try; `done_t_open_session` set. Screenshot 12. |
+| 13 Yasmin's PC | PASS | Done straight after the laptop (after closing the laptop container). Locked sign-in; post-it added with "Add Postit to notepad" (the notes overlay opened on its own). Typed `Saffron-Ledger-31` into field 0, Enter. Desktop shows Client-Letters, Finance, Start. Screenshots 13, 14. Did not check that Yasmin was away at the time. |
+| 14 Front desk USB and injector | STUCK (budget) | Signed in at the front desk keyboard as Delphine (`Merrin-Desk-4417`, field 0). USB hub: `interact usb_hub` opened the default examine ("USB hub") with no refusal toast and no `usb_refused:usb_hub` event. The USB stick has only an Examine action, so `inventoryAct` "Use" was refused as "no-menu". Injector at the implant socket not tried. Probable cause (inference, not checked): the hub has `requiresItem` but no `triggerOnInteract`, and the refusal sits in the triggerOnInteract branch (interactions.js ~1036). |
+| 15 Rogue AP, Staff Wi-Fi clone | NOT RUN | |
+| 16 Staff Wi-Fi key | NOT RUN | |
+| 17 Unplug | NOT RUN | |
+| 18 Comms ports (guest VLAN) | NOT RUN | |
+| 19 Debrief and credits | NOT RUN | |
+| Walk behind open_plan back wall | PARTIAL | Walked north in open plan to (171,-218). Screenshot 15 taken. Not confirmed that the player is behind the back wall; check the image. |
+
+### Phone answers ("Where next?") and Ama's debrief
+
+None captured this run. The phone was not asked after stop 12.
+
+### Mistake to know about
+
+One stray `interactNearest` call (typed by mistake in a shell call that was meant to search the scenario) ran an interact on the nearest chair in open plan before the rota read. It moved the player to a chair and did not touch any task or global that I saw. Not repeated.
+
+### Harness notes
+
+- `pressKey` Enter clears the "Continue?" title screen; the Mission Brief notes then need `mg close`.
+- Headless recipe that worked: `const g=window.game.sys.game; g.loop.smoothStep=false; g.loop.minFps=1; window.game.physics.world.setFPS(20);` (`window.__test.setFPS` does not exist).
+- `enter` with a room id walks through the doorway; `walk up` alone stopped short of a closed door.
+- `mg close` on a notes overlay also closes the password screen beneath it (as before). Re-run `interact` on the PC after.
+- A minigame (the laptop container) blocks `moveToNear` and `interact` until it is closed with `mg close`.
+- `mg type` takes field index 0 for the password field on both PCs.
+
+### Screenshots (screens6/)
+
+- 12_open_session_thandiwe_laptop.png
+- 13_yasmin_pc.png (locked sign-in)
+- 14_yasmin_pc_desktop.png
+- 15_open_plan_back_wall_walk.png
+- 16_front_desk_signin_delphine.png
+
+Not taken: rota board, USB hub, server and later stops, debrief, credits.
