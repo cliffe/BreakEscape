@@ -78,6 +78,7 @@ const EXPECTED = [
     '.ob-page-title',
 ];
 const matchesClass = (cls) => parts.some((p) => p === `.${cls}`);
+const anyToken = (cls) => parts.some((p) => [...p.matchAll(/\.([\w-]+)/g)].some((m) => m[1] === cls));
 const matchesHeaderH3 = () => parts.includes('.minigame-header h3');
 const matchesHeading = (sel) => parts.includes(sel);
 
@@ -116,7 +117,7 @@ test('wrapper bars and icons are not covered', () => {
         'share-folder-titlebar', 'network-view-title-icon', 'bv-title-block', 'ac-title', 'ncsc-brief-title', 'minigame-container', 'device-frame',
         'device-frame-title', 'console-window', 'share-folder-window', 'desktop-transfer-dialog']) {
         assert.ok(!matchesClass(cls), `${cls} is not listed`);
-        assert.ok(!parts.some((p) => p.startsWith(`.${cls} `)), `${cls} is not listed with a heading tag`);
+        assert.ok(!anyToken(cls), `${cls} is not a class token of any entry (heading tag or parent form)`);
     }
 });
 
@@ -129,17 +130,19 @@ const walk = (dir) => readdirSync(dir).flatMap((f) => {
 });
 const sources = [...walk(join(root, 'public/break_escape/js')), ...walk(join(root, 'app/views'))]
     .filter((f) => /\.(js|mjs|erb)$/.test(f))
-    .map((f) => readFileSync(f, 'utf8'))
+    .map((f) => readFileSync(f, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^[ \t]*\/\/.*$/gm, ''))
     .join('\n');
 
 
 // Class tokens only: the contents of class="...", className = '...', classList.add('...') and
-// el('tag', 'cls ...') style string arguments. Ids, comments and plain prose do not count.
+// el('tag', 'cls ...') style string arguments. Ids, plain prose, block comments, whole-line // comments and classList.remove do not count.
 const classTokens = new Set();
 {
     const add = (str) => str.split(/\s+/).forEach((t) => t && classTokens.add(t));
     for (const m of sources.matchAll(/class(?:Name)?\s*[=:]\s*(["'`])([^"'`]*)\1/g)) add(m[2]);
-    for (const m of sources.matchAll(/classList\.(?:add|toggle|remove)\(([^)]*)\)/g)) for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) add(q[2]);
+    for (const m of sources.matchAll(/classList\.(?:add|toggle)\(([^)]*)\)/g)) for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) add(q[2]);
     for (const m of sources.matchAll(/\b(?:el|h|mk|make|div|span)\(\s*(["'`])[\w-]+\1\s*,\s*(["'`])([^"'`]*)\2/g)) add(m[3]);
     for (const m of sources.matchAll(/\btagText\(\s*(?:"[^"]*"|'[^']*')\s*,\s*("|')([^"']*)\1/g)) add(m[2]);
 }

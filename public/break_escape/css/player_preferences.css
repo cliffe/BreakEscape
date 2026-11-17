@@ -7,7 +7,7 @@ body {
   background: #1a1a1a;
   color: #00ff00;
   margin: 0;
-  -webkit-font-smoothing: none; /* macOS only; Windows and Linux use the will-change rules in minigames-framework.css */
+  -webkit-font-smoothing: none; /* macOS only. On Windows and Linux the will-change rules in minigames-framework.css cover the listed minigame text only; HUD and other text outside minigames keep LCD text. */
 }
 
 /* Only the configuration page is padded. This stylesheet is also loaded by the game page

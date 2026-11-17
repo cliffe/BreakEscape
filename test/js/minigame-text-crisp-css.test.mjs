@@ -52,7 +52,8 @@ const EXPECTED = [
     '.person-chat-speaker-name',
 ];
 const listed = (cls) => parts.includes(`.${cls}`);
-const listedWithTag = (cls) => parts.some((p) => p.startsWith(`.${cls} `));
+// Any class token of any entry, so a parent-class form such as `.rogue-ap-pane .rogue-ap-scan-row` is caught too.
+const listedWithTag = (cls) => parts.some((p) => [...p.matchAll(/\.([\w-]+)/g)].some((m) => m[1] === cls));
 
 test('a body-text rule promotes leaf text to its own layer, scoped to the minigame container', () => {
     assert.ok(rule, 'a will-change: transform rule on body text exists');
@@ -108,17 +109,19 @@ const walk = (dir) => readdirSync(dir).flatMap((f) => {
 });
 const sources = [...walk(join(root, 'public/break_escape/js')), ...walk(join(root, 'app/views'))]
     .filter((f) => /\.(js|mjs|erb)$/.test(f))
-    .map((f) => readFileSync(f, 'utf8'))
+    .map((f) => readFileSync(f, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^[ \t]*\/\/.*$/gm, ''))
     .join('\n');
 
 
 // Class tokens only: the contents of class="...", className = '...', classList.add('...') and
-// el('tag', 'cls ...') style string arguments. Ids, comments and plain prose do not count.
+// el('tag', 'cls ...') style string arguments. Ids, plain prose, block comments, whole-line // comments and classList.remove do not count.
 const classTokens = new Set();
 {
     const add = (str) => str.split(/\s+/).forEach((t) => t && classTokens.add(t));
     for (const m of sources.matchAll(/class(?:Name)?\s*[=:]\s*(["'`])([^"'`]*)\1/g)) add(m[2]);
-    for (const m of sources.matchAll(/classList\.(?:add|toggle|remove)\(([^)]*)\)/g)) for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) add(q[2]);
+    for (const m of sources.matchAll(/classList\.(?:add|toggle)\(([^)]*)\)/g)) for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) add(q[2]);
     for (const m of sources.matchAll(/\b(?:el|h|mk|make|div|span)\(\s*(["'`])[\w-]+\1\s*,\s*(["'`])([^"'`]*)\2/g)) add(m[3]);
     for (const m of sources.matchAll(/\btagText\(\s*(?:"[^"]*"|'[^']*')\s*,\s*("|')([^"']*)\1/g)) add(m[2]);
 }
