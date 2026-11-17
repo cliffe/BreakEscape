@@ -23,6 +23,10 @@ export const CAPTURE_ENTRY_KEYS = Object.freeze(['targetId', 'roleLabel', 'addre
 const CAPTURE_KINDS = Object.freeze(['credential', 'foothold']);
 const MASK = '••••••••';
 
+/** What a revealed secret reads while it is still being fetched, and when the fetch ended without it. */
+export const SECRET_LOADING_TEXT = 'Loading...';
+export const SECRET_FAILED_TEXT = 'Could not load';
+
 const isObj = (v) => v != null && typeof v === 'object' && !Array.isArray(v);
 const isStr = (v) => typeof v === 'string';
 

@@ -7,7 +7,7 @@
 // password, once a capture proof holds). loadCaptureSecrets() asks for it, after awaiting the
 // state sync so a capture made a moment ago is on the server first.
 
-import { captureList, capturesReveal, displaySecret, maskSecret } from '../../systems/captures.js';
+import { captureList, capturesReveal, displaySecret, maskSecret, SECRET_LOADING_TEXT, SECRET_FAILED_TEXT } from '../../systems/captures.js';
 
 export { captureList, capturesReveal };
 
@@ -44,7 +44,10 @@ export function buildCaptureRow(entry, social, secretsById = null) {
     }
     if (entry.host) row.appendChild(el('div', 'lpb-captures-host', entry.host));
     const secret = displaySecret(entry, social, secretsById);
-    const secretNode = el('div', 'lpb-captures-secret', secret == null ? maskSecret() : secret);
+    // A revealing scenario whose value has not arrived reads Loading..., never the bullets
+    const waiting = secret == null && capturesReveal(social);
+    const secretNode = el('div', 'lpb-captures-secret', waiting ? SECRET_LOADING_TEXT : (secret == null ? maskSecret() : secret));
+    if (waiting) secretNode.dataset.secretState = 'loading';
     row.appendChild(secretNode);
     if (entry.note) row.appendChild(el('div', 'lpb-captures-note', entry.note));
     return { row, secretNode: capturesReveal(social) ? secretNode : null };
@@ -55,8 +58,35 @@ export function applyCaptureSecrets(secretRows, secrets) {
     if (!secrets || typeof secrets !== 'object') return;
     for (const { targetId, node } of (secretRows || [])) {
         const s = secrets[targetId];
-        if (typeof s === 'string' && s) node.textContent = s;
+        if (typeof s === 'string' && s) { node.textContent = s; delete node.dataset.secretState; }
     }
+}
+
+/** Show the failure on every row still waiting for its value. */
+export function failCaptureSecrets(secretRows) {
+    for (const { node } of (secretRows || [])) {
+        if (node.dataset.secretState === 'loading') {
+            node.textContent = SECRET_FAILED_TEXT;
+            node.dataset.secretState = 'failed';
+        }
+    }
+}
+
+/**
+ * Fetch the secrets for the given rows, again a few times while a row is not in the answer yet
+ * (its state sync may still be on the way). Rows read Loading... meanwhile and Could not load if
+ * the attempts end without their value. `alive()` returning false stops it (the view closed).
+ */
+export async function watchCaptureSecrets(secretRows, { attempts = 4, retryMs = 1500, alive = () => true, deps = {}, onSecrets = null } = {}) {
+    const waiting = () => (secretRows || []).some(({ node }) => node.dataset.secretState === 'loading');
+    for (let i = 0; i < attempts && waiting(); i++) {
+        if (i) await new Promise((r) => setTimeout(r, retryMs));
+        if (!alive()) return;
+        const secrets = await loadCaptureSecrets(deps);
+        if (!alive()) return;
+        if (secrets) { applyCaptureSecrets(secretRows, secrets); if (onSecrets) onSecrets(secrets); }
+    }
+    if (alive()) failCaptureSecrets(secretRows);
 }
 
 /**

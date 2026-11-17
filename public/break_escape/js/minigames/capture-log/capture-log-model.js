@@ -78,13 +78,13 @@ function opensContents(d) {
  * null before the first answer (capture rows from the globals only, tags guessed).
  * secrets: GET /capture_secrets's map, or null. social: the scenario's social block.
  */
-export function buildSections({ holder, items, globals, sessionsSource = null, keyring = null, secrets = null, social = {} }) {
+export function buildSections({ holder, items, globals, sessionsSource = null, keyring = null, secrets = null, secretsState = null, social = {} }) {
     const hd = dataOf(holder);
     const holds = isObj(hd.holds) ? hd.holds : {};
     const out = { signins: [], captures: [], sessions: [], findings: [] };
 
     if (holds.captures === true) {
-        const rows = buildSignInRows({ captures: isObj(globals?.se_captures) ? globals.se_captures : {}, secrets, keyring, social,
+        const rows = buildSignInRows({ captures: isObj(globals?.se_captures) ? globals.se_captures : {}, secrets, secretsState, keyring, social,
             linkNames: linkNames(items) });
         out.signins = rows.signins;
         out.captures = rows.captures;

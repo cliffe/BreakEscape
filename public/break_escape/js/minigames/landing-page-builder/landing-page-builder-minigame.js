@@ -40,7 +40,7 @@ import {
 } from './landing-page-model.js';
 import { buildSuspectPage } from './landing-page-inspect.js';
 import { captureList, capturesReveal } from '../../systems/captures.js';
-import { buildCaptureRow, captureBannerText, applyCaptureSecrets, loadCaptureSecrets } from '../capture-log/capture-rows.js';
+import { buildCaptureRow, captureBannerText, applyCaptureSecrets, watchCaptureSecrets } from '../capture-log/capture-rows.js';
 import { buildStepItems, applyStepStates } from '../helpers/step-stepper.js';
 
 export const PAGES_KEY = 'se_landing_pages';
@@ -141,6 +141,9 @@ function h(tag, props = {}, ...kids) {
 }
 
 export class LandingPageBuilderMinigame extends SocialOverlayScene {
+    // Pause between /capture_secrets asks while a capture is missing from the answer (a test may shorten it)
+    static secretRetryMs = 1500;
+
     constructor(container, params) {
         super(container, params);
         this.pageDef = null;
@@ -468,10 +471,13 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         applyCaptureSecrets(this._secretRows, secrets);
     }
 
-    /** Fetch the authored secret for each earned credential capture and reveal it (capture-rows.js). */
+    /** Fetch the authored secret for each earned credential capture and reveal it (capture-rows.js); rows read Loading... until then. */
     async _loadCaptureSecrets() {
-        const secrets = await loadCaptureSecrets();
-        if (secrets) this._applyCaptureSecrets(secrets);
+        await watchCaptureSecrets(this._secretRows, {
+            retryMs: LandingPageBuilderMinigame.secretRetryMs,
+            alive: () => this._capturesView && !!this.root?.isConnected,
+            onSecrets: (secrets) => { this._capturedSecrets = secrets; }
+        });
     }
 
     _buildShell() {

@@ -384,3 +384,38 @@ test('the order follows the server gainedAt, so a reload (which resets firstSeen
     assert.deepEqual(run(new Map([['early', 9e12], ['late', 1]])), expected);
     assert.deepEqual(run(null), expected);
 });
+
+test('a captured value still loading reads Loading..., never the bullets; failed says so; ready shows the value', () => {
+    const noSecret = { ...ian, secret: undefined };
+    const pin = cap('stationery_pin', { roleLabel: 'Stationery', host: 'Cupboard keypad', at: 50 });
+    const keyring = { entries: [], captures: { ian_page: meta('password', { account: 'ian' }), stationery_pin: meta('pin') } };
+    const run = (secrets, secretsState) => build({ captures: [noSecret, pin], secrets, secretsState, keyring });
+    const loading = run(null, 'loading');
+    assert.equal(loading.signins[0].value, 'Loading...');
+    assert.equal(loading.captures[0].value, 'Loading...');
+    assert.match(loading.captures[0].use, /Loading\.\.\.$/);
+    assert.doesNotMatch(rowText([...loading.signins, ...loading.captures]), /•/);
+    const failed = run(null, 'failed');
+    assert.equal(failed.signins[0].value, 'Could not load');
+    assert.equal(failed.captures[0].value, 'Could not load');
+    // A map that answered for one capture only: the other still reads as loading, not bullets
+    const part = run({ ian_page: 'hunter2' }, 'loading');
+    assert.equal(part.signins[0].value, 'hunter2');
+    assert.equal(part.captures[0].value, 'Loading...');
+    const ready = run({ ian_page: 'hunter2', stationery_pin: '4471' }, 'ready');
+    assert.equal(ready.signins[0].value, 'hunter2');
+    assert.equal(ready.captures[0].value, '4471');
+    // An awareness scenario (no reveal) keeps the mask whatever the state
+    const aware = buildSignInRows({ captures: [{ ...ian, secret: undefined }], secrets: null, secretsState: 'loading', social: {}, keyring: { entries: [], captures: { ian_page: meta('password', { account: 'ian' }) } } });
+    assert.equal(aware.signins[0].value, MASK);
+});
+
+test('the DOM row carries the loading state on its secret node', () => {
+    const { signins } = build({ captures: [{ ...ian, secret: undefined }], secrets: null, secretsState: 'loading',
+        keyring: { entries: [], captures: { ian_page: meta('password', { account: 'ian' }) } } });
+    const dom = new JSDOM('<body></body>');
+    globalThis.document = dom.window.document;
+    const { secretNode } = buildSignInRow(signins[0]);
+    assert.equal(secretNode.textContent, 'Loading...');
+    assert.equal(secretNode.dataset.secretState, 'loading');
+});

@@ -14,7 +14,7 @@
 // carries `seenKeys`: its key plus each of its captures' old `capture:<targetId>` keys, so an
 // old save's New mark still reads as seen (a read; nothing is rewritten).
 
-import { captureList, displaySecret, maskSecret } from '../../systems/captures.js';
+import { captureList, capturesReveal, displaySecret, maskSecret, SECRET_LOADING_TEXT, SECRET_FAILED_TEXT } from '../../systems/captures.js';
 import {
     rowKindName, SOURCE_TAG_TEXT, typeItFromLine, alsoInLine, connectFromInventoryLine,
     useOnSignInScreenLine, endedAssistMessage, expiredLine, moreNotesLine, footholdLine,
@@ -77,7 +77,23 @@ function makeVisible(keyring, openedFiles) {
  *   linkNames    footholdId -> the held network link's name (a Map or object), for a token row
  * The keyring answer may carry `tokenSecondsLeft(credId)` (K5): a live token row names its minutes.
  */
-export function buildSignInRows({ captures, secrets = null, keyring = null, social = {}, openedFiles = null, linkNames = null } = {}) {
+
+/**
+ * What a captured value reads as. The served secret when there is one; else, in a scenario that
+ * reveals secrets, a loading or failed notice (secretsState 'loading' or 'failed') so the row
+ * never shows bullets as if they were the value; else the mask (awareness labs, or no state given).
+ */
+function valueFor(c, social, secrets, secretsState) {
+    const v = displaySecret(c, social, secrets);
+    if (v != null) return { value: v, valueState: null };
+    if (capturesReveal(social) && c?.kind === 'credential') {
+        if (secretsState === 'loading') return { value: SECRET_LOADING_TEXT, valueState: 'loading' };
+        if (secretsState === 'failed') return { value: SECRET_FAILED_TEXT, valueState: 'failed' };
+    }
+    return { value: maskSecret(), valueState: null };
+}
+
+export function buildSignInRows({ captures, secrets = null, secretsState = null, keyring = null, social = {}, openedFiles = null, linkNames = null } = {}) {
     const meta = isObj(keyring?.captures) ? keyring.captures : {};
     const entries = Array.isArray(keyring?.entries) ? keyring.entries.filter((e) => isObj(e) && isStr(e.id)) : [];
     const firstSeen = keyring?.firstSeen;
@@ -136,8 +152,9 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
         const row = { key: oldKey, type: 'capture', kinds: [tag], sources: [], captures: [c], seenKeys: [oldKey], order: at,
             title: c.roleLabel || null, subtitle: c.address || null, note: c.note || null };
         if (tag === 'pin') {
-            const value = displaySecret(c, social, secrets);
-            row.value = value == null ? maskSecret() : value;
+            const got = valueFor(c, social, secrets, secretsState);
+            row.value = got.value;
+            row.valueState = got.valueState;
             row.valueTargetId = c.targetId;
             row.use = pinLine(c.host, row.value);
             if (row.note) row.lines = [row.note];
@@ -207,13 +224,15 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
         row.lines = [];
         if (caps.length) {
             // The value: the one served for the oldest capture that has one; with none, the mask
-            let value = null;
+            let got = null;
             let valueTargetId = first.targetId;
             for (const c of caps) {
                 const v = displaySecret(c, social, secrets);
-                if (v != null) { value = v; valueTargetId = c.targetId; break; }
+                if (v != null) { got = { value: v, valueState: null }; valueTargetId = c.targetId; break; }
             }
-            row.value = value == null ? maskSecret() : value;
+            if (!got) got = valueFor(first, social, secrets, secretsState);
+            row.value = got.value;
+            row.valueState = got.valueState;
             row.valueTargetId = valueTargetId;
             row.use = row.value;
             if (row.password) row.lines.push(alsoInLine(row.password.label));
@@ -265,6 +284,7 @@ export function buildSignInRow(r) {
         const use = el('div', 'signin-use', r.use);
         if (r.value != null && r.use === r.value) {
             use.classList.add('signin-secret', 'lpb-captures-secret');
+            if (r.valueState) { use.classList.add(`signin-secret-${r.valueState}`); use.dataset.secretState = r.valueState; }
             secretNode = use;
         }
         row.appendChild(use);

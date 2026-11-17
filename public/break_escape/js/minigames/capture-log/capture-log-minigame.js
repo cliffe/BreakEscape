@@ -107,9 +107,9 @@ export async function askKeyring() {
     }
 }
 
-function sectionsFor(holder, { secrets = null } = {}) {
+function sectionsFor(holder, { secrets = null, secretsState = null } = {}) {
     return buildSections({ holder, items: items(), globals: globals(), sessionsSource: sessionsSource(),
-        keyring: keyringAnswer(), secrets, social: social() });
+        keyring: keyringAnswer(), secrets, secretsState, social: social() });
 }
 
 function findHolder(holderId) {
@@ -246,6 +246,8 @@ function el(tag, cls, text) {
  * How often an open log looks at a live token row's time (K5 R1 m1). A look is cheap and the row
  * redraws only when its text would change, so a step shows within this many ms of its real minute.
  */
+export const SECRET_ATTEMPTS = 4;
+export const SECRET_RETRY_MS = 1500;
 export const TOKEN_ROW_REFRESH_MS = 10 * 1000;
 
 /** The step a token's line shows for `secs` left: changes exactly when the row's text changes. */
@@ -257,11 +259,16 @@ export function tokenStep(secs) {
 export class CaptureLogMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): a short list, so it wraps its content
     static consoleWindow = true;
+    // Pause between /capture_secrets asks while a capture is missing from the answer (a test may shorten it)
+    static secretRetryMs = SECRET_RETRY_MS;
 
     constructor(container, params) {
         super(container, { title: 'Capture log', cancelText: 'Close', ...params });
         this.holderId = params?.holderId || null;
         this.secrets = null;
+        // 'loading' until /capture_secrets has a value for every captured credential, 'failed' if it will not
+        this.secretsState = 'loading';
+        this.secretsRun = 0;
         this.lastKeys = [];
         // The keys marked New in this opening: a row stays marked while the device is open,
         // through redraws, though its seen key was written on the first draw
@@ -318,18 +325,38 @@ export class CaptureLogMinigame extends MinigameScene {
         return findHolder(this.holderId);
     }
 
+    /** Whether every captured credential has its value in the loaded map. */
+    secretsComplete() {
+        const caps = Object.values(globals()?.se_captures || {});
+        return caps.every((c) => c?.kind !== 'credential' || (this.secrets && typeof this.secrets[c.targetId] === 'string' && this.secrets[c.targetId]));
+    }
+
+    /**
+     * GET /capture_secrets, again a few times while a capture is not in the answer yet (its state
+     * sync may still be on the way). Rows read Loading... meanwhile and Could not load if it ends
+     * without the value; a newer call supersedes an older one.
+     */
     async loadSecrets() {
         if (!capturesReveal(social())) return;
-        const secrets = await loadCaptureSecrets();
-        if (!secrets || openScene !== this) return;
-        this.secrets = secrets;
+        const run = ++this.secretsRun;
+        if (!this.secretsComplete()) this.secretsState = 'loading';
+        for (let attempt = 0; attempt < SECRET_ATTEMPTS; attempt++) {
+            if (attempt) await new Promise((r) => setTimeout(r, CaptureLogMinigame.secretRetryMs));
+            if (openScene !== this || run !== this.secretsRun) return;
+            const secrets = await loadCaptureSecrets();
+            if (openScene !== this || run !== this.secretsRun) return;
+            if (secrets) this.secrets = { ...(this.secrets || {}), ...secrets };
+            if (this.secretsComplete()) { this.secretsState = 'ready'; this.redraw(); return; }
+            if (secrets) this.redraw();
+        }
+        this.secretsState = 'failed';
         this.redraw();
     }
 
     redraw() {
         if (!this.root) return;
         const holder = this.holder();
-        const sections = holder ? sectionsFor(holder, { secrets: this.secrets }) : EMPTY_SECTIONS();
+        const sections = holder ? sectionsFor(holder, { secrets: this.secrets, secretsState: this.secretsState }) : EMPTY_SECTIONS();
         const seen = readSeen(globals());
         const unseen = newKeys(sections, seen);
         const keys = rowKeys(sections);
@@ -440,7 +467,7 @@ export class CaptureLogMinigame extends MinigameScene {
 
     getTestState() {
         const holder = this.holder();
-        const sections = holder ? sectionsFor(holder, { secrets: this.secrets }) : EMPTY_SECTIONS();
+        const sections = holder ? sectionsFor(holder, { secrets: this.secrets, secretsState: this.secretsState }) : EMPTY_SECTIONS();
         const summary = (rows) => rows.map((r) => ({ key: r.key, kind: r.kind || 'capture', name: r.name || r.entry?.roleLabel || null }));
         const signInSummary = (rows) => rows.map((r) => ({ key: r.key, type: r.type, kinds: [...(r.kinds || [])],
             sources: [...(r.sources || [])], title: r.title || null, use: r.use ?? null, greyed: !!r.greyed }));

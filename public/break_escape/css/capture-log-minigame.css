@@ -38,3 +38,5 @@
 .signin-secret { font-size: 20px; letter-spacing: 1px; }
 .signin-row-greyed { opacity: 0.55; border-style: dashed; }
 .signin-row-greyed .signin-row-tag-kind { background: transparent; color: var(--ui-text, #eef1f8); border-color: var(--ui-line, #4c5b80); }
+.signin-secret-loading, .signin-secret-failed { letter-spacing: 0; opacity: 0.8; }
+.signin-secret-failed { color: var(--ui-warn, #ffb86b); }
