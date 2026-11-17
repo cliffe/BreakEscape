@@ -8,8 +8,8 @@ From the awareness course cast (D53). The Office Life Tour cast (Chidi Okeke, Ju
 
 | Pick | Character | Sprite key | Voice | m06 job | Art needed |
 |---|---|---|---|---|---|
-| A | Lerato Dlamini | `lerato_dlamini` | Gacrux | late-desk operations assistant: keeps the floor running overnight (phones, rota, post, kitchen), owns the desk phone | none (sit, use, phone, drink frames present) |
-| B | Tomasz Wisniewski | `tomasz_wisniewski` | Algieba | evening client-support lead: works the overnight support queue (app and payments tickets, never account tickets), leaves a shift handover sheet, covers the phones, owns a laptop | none |
+| A | Lerato Dlamini | `lerato_dlamini` | Gacrux | night floor coordinator: keeps the floor running overnight (phones, rota, post, kitchen), owns the desk phone | none (sit, use, phone, drink frames present) |
+| B | Tomasz Wisniewski | `tomasz_wisniewski` | Algieba | evening client-support lead: works the overnight support queue (app tickets only, never payments or account tickets), leaves a shift handover sheet, covers the phones, owns a laptop | none |
 
 Options: (a) both, as planned; (b) swap one for another awareness-cast character you name; (c) one extra only (drops exchanges 2 and 3 and lever L2).
 
