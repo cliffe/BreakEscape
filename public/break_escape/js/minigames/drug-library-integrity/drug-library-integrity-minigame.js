@@ -273,7 +273,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
         return `
 <div class="dli-result-banner dli-result-banner-restored" id="dli-result-banner" style="border-color:#33cc66;background:#0d2a16">
   <div class="dli-result-banner-title" style="color:#33cc66">&#x2713; Integrity Check Complete</div>
-  <p>${total} entries verified: <strong style="color:#33cc66">PASS</strong></p>
+  <p>${total} entries verified: <span style="color:#33cc66">PASS</span></p>
   <p>${escapeHtml(displayDashes(this._tampered.drug))} restored from ${escapeHtml(this._data.backupFile || 'drug_library.bak')}. The change made ${escapeHtml(this._tampered.modifiedAt)} (${this._changesText('current')}) is kept in the audit record.</p>
 </div>`;
     }
@@ -284,8 +284,8 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
         return `
 <div class="dli-result-banner" id="dli-result-banner">
   <div class="dli-result-banner-title">&#x26A0; Integrity Check Complete</div>
-  <p>${pass} entries verified: <strong style="color:#33cc66">PASS</strong></p>
-  <p>1 entry: <strong style="color:#cc3333">HASH MISMATCH</strong> &mdash; DRUG LIBRARY MAY HAVE BEEN MODIFIED</p>
+  <p>${pass} entries verified: <span style="color:#33cc66">PASS</span></p>
+  <p>1 entry: <span style="color:#cc3333">HASH MISMATCH</span> &mdash; DRUG LIBRARY MAY HAVE BEEN MODIFIED</p>
 </div>`;
     }
 
@@ -300,7 +300,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
 <div class="dli-hash-detail" id="dli-hash-detail">
   <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${escapeHtml(displayDashes(t.drug))}</div>
   <div class="dli-hash-meta">
-    <span>File: <strong>${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</strong></span>
+    <span>File: <span class="dli-hash-file">${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</span></span>
     <span>Modified: <span class="dli-ts">${escapeHtml(t.modifiedAt)}</span></span>
   </div>
   <div class="dli-hash-row">

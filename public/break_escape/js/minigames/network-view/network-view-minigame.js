@@ -464,7 +464,7 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** A row's label: its name, the down tag after it, and the line under it. */
     labelHtml(title, sub, ds) {
-        return `<span class="network-row-label"><span class="network-row-title"><strong class="${hostnameClass(title)}">${escapeHtml(title)}</strong>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
+        return `<span class="network-row-label"><span class="network-row-title"><span class="${hostnameClass(title)}">${escapeHtml(title)}</span>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
                         <span class="network-row-name">${escapeHtml(sub)}</span></span>`;
     }
 
@@ -519,7 +519,7 @@ export class NetworkViewMinigame extends MinigameScene {
         return `
                 <li class="network-row network-row-resource${action === 'locked' ? ' network-row-wide' : ''}" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
-                    <span class="network-row-label"><strong>${wordsHtml(row.name || row.id)}</strong>
+                    <span class="network-row-label"><span class="network-row-resource-title">${wordsHtml(row.name || row.id)}</span>
                         <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on <span class="${hostnameClass(row.host)}">${escapeHtml(row.host)}</span>` : ''}</span>${action === 'locked' ? `
                         <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
                     <span class="network-row-control">${control}</span>
