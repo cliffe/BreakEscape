@@ -167,10 +167,10 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
         return `
             This will disconnect all clinical zone systems from the enterprise network.
             <br/><br/>
-            <strong>CLINICAL CONSEQUENCES:</strong>
+            <span class="mg-section-label">CLINICAL CONSEQUENCES:</span>
             ${consequences}
             <br/><br/>
-            <strong>DUAL AUTHORISATION STATUS:</strong>
+            <span class="mg-section-label">DUAL AUTHORISATION STATUS:</span>
             <br/><span id="nsm-auth-itsec">⬜ ${escapeTitle(displayDashes(auth.itsecLabel || 'IT Security'))} — pending</span>
             <br/><span id="nsm-auth-clinical">⬜ ${escapeTitle(displayDashes(auth.clinicalLabel || 'Clinical Engineering'))} — pending</span>
             <br/><br/>
@@ -380,7 +380,7 @@ export class NetworkSegmentationMapMinigame extends MinigameScene {
     _buildConsequenceItem(item) {
         const cls = `nsm-cons-item nsm-impact-${item.severity}${item.isAttackPath ? ' nsm-attack-path' : ''}`;
         const content = item.isAttackPath
-            ? `<strong>ATTACK VECTOR:</strong> ${escapeTitle(displayDashes(item.text))}`
+            ? `<span class="mg-field-label">ATTACK VECTOR:</span> ${escapeTitle(displayDashes(item.text))}`
             : escapeTitle(displayDashes(item.text));
         return `<li class="${escapeTitle(cls)}">${content}</li>`;
     }

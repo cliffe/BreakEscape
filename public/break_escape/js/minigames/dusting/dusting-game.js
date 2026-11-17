@@ -442,7 +442,7 @@ export class DustingMinigame extends MinigameScene {
             <h3>${escapeHtml(d.name || 'Surface')}</h3>
             ${observations ? `<p>${escapeHtml(observations)}</p>` : ''}
             ${text ? `<p class="dusting-quote">${escapeHtml(text)}</p>` : ''}
-            <p class="dusting-surface-line"><strong>Surface:</strong> ${escapeHtml(this.surface.description)}</p>
+            <p class="dusting-surface-line"><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>
             ${prior}
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="start">Dust for prints</button>
@@ -466,11 +466,11 @@ export class DustingMinigame extends MinigameScene {
         const jars = Object.values(POWDERS).map((pw, i) => `
             <button class="dusting-jar" data-action="powder" data-powder="${pw.id}" aria-pressed="${this.powder === pw.id}" title="Press ${i + 1}">
                 <span data-slot="jar-${pw.id}" data-scale="2"></span>
-                <span class="dusting-jar-text"><strong>${i + 1}. ${escapeHtml(pw.label)}</strong><br>${escapeHtml(pw.kitLabel)}</span>
+                <span class="dusting-jar-text"><span class="mg-section-label">${i + 1}. ${escapeHtml(pw.label)}</span><br>${escapeHtml(pw.kitLabel)}</span>
             </button>`).join('');
         return `
             <h3>Choose a powder</h3>
-            <p><strong>Surface:</strong> ${escapeHtml(this.surface.description)}</p>
+            <p><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>
             <p>Pick the powder whose label fits. If it does not show well you can change it.</p>
             <div class="dusting-jars">${jars}</div>
 `;
@@ -493,7 +493,7 @@ export class DustingMinigame extends MinigameScene {
             <h3>Dust the print</h3>
             <p>Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</p>
             <div class="dusting-tools">${this._brushButtons()}</div>
-            <p class="dusting-powder-line">Powder: <strong>${escapeHtml(pw.label)}</strong></p>
+            <p class="dusting-powder-line">Powder: ${escapeHtml(pw.label)}</p>
             <div class="dusting-meters">
                 <div class="dusting-meter"><label>Coverage <b data-dyn="cov-text"></b></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
                 <div class="dusting-meter"><label>Clarity <b data-dyn="clar-text"></b></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>
@@ -525,12 +525,12 @@ export class DustingMinigame extends MinigameScene {
     _htmlCompare() {
         const q = this.final ? Math.round(this.final.quality * 100) : 0;
         const head = `<h3>Compare and identify</h3>
-            <p class="dusting-result">Lift mounted: <strong>${q}% (${escapeHtml(this.final ? this.final.rating : '')})</strong>.</p>`;
+            <p class="dusting-result">Lift mounted: <span class="dusting-result-value">${q}% (${escapeHtml(this.final ? this.final.rating : '')})</span>.</p>`;
         if (!this.patternOk) {
             const btns = PATTERNS.map(pt => `
                 <button class="dusting-pattern" data-action="pattern" data-pattern="${pt}">
                     <span class="dusting-pattern-art">${PATTERN_SVG[pt]}</span>
-                    <span><strong>${PATTERN_INFO[pt].label}</strong><br>${PATTERN_INFO[pt].desc}</span>
+                    <span><span class="mg-section-label">${PATTERN_INFO[pt].label}</span><br>${PATTERN_INFO[pt].desc}</span>
                 </button>`).join('');
             return `${head}<p>What pattern is your lift? Look for the core (middle) and the triangles where ridges meet.</p>
                 <div class="dusting-patterns">${btns}</div>

@@ -210,6 +210,18 @@
     text-decoration-skip-ink: none;
 }
 
+/* Field labels, key names and panel headings are not emphasis: the pixel face has one weight
+   and these take no underline (an underline means emphasis above). Same colour as the text
+   around them, weight 400. .mg-field-label: "UID:", "Surface:". .mg-section-label: a heading
+   inside a panel; add .mg-block when it sits on its own line. */
+.minigame-container :is(.mg-field-label, .mg-section-label) {
+    text-decoration: none;
+    font-weight: 400;
+}
+.minigame-container .mg-section-label.mg-block {
+    display: block;
+}
+
 /* Local copy of the shared `.pixel-scroll` scrollbar (css/utilities.css on build/ux-net,
    slice 1), as in infusion-pump-minigame.css's .ip-pixel-scroll, for the slice 7 panes that
    scroll: the fingerprint reader panel, the network architecture diagram and detail pane,

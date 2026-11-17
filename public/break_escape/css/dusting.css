@@ -78,7 +78,7 @@
 .dusting-feedback { min-height: 1.2em; color: #ffd75e; }
 .dusting-feedback.good { color: var(--d-accent); }
 .dusting-estimate { color: var(--d-text); }
-.dusting-result strong { color: var(--d-accent); }
+.dusting-result .dusting-result-value { color: var(--d-accent); }
 
 .dusting-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
 .dusting-btn, .dusting-jar, .dusting-pattern, .dusting-ref {

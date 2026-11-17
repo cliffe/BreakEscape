@@ -943,7 +943,8 @@ export class RFIDUIRenderer {
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
             // Field values carry scenario card data: text nodes only
-            const strong = document.createElement('strong');
+            const strong = document.createElement('span');
+            strong.className = 'mg-field-label';
             strong.textContent = `${field.label}:`;
             const value = document.createElement('span');
             value.textContent = ` ${field.value}`;
@@ -1186,7 +1187,8 @@ export class RFIDUIRenderer {
         displayData.fields.forEach(field => {
             const fieldDiv = document.createElement('div');
             // Field values carry scenario card data: text nodes only
-            const strong = document.createElement('strong');
+            const strong = document.createElement('span');
+            strong.className = 'mg-field-label';
             strong.textContent = `${field.label}:`;
             const value = document.createElement('span');
             value.textContent = ` ${field.value}`;
@@ -1201,7 +1203,7 @@ export class RFIDUIRenderer {
             if (hex) {
                 const checksum = this.dataManager.calculateChecksum(hex);
                 const checksumDiv = document.createElement('div');
-                checksumDiv.innerHTML = `<strong>Checksum:</strong> 0x${checksum.toString(16).toUpperCase().padStart(2, '0')}`;
+                checksumDiv.innerHTML = `<span class="mg-field-label">Checksum:</span> 0x${checksum.toString(16).toUpperCase().padStart(2, '0')}`;
                 data.appendChild(checksumDiv);
             }
         }

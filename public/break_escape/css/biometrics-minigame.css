@@ -293,7 +293,7 @@
     font-size: 14px;
 }
 
-.sample-header strong {
+.sample-header .mg-section-label {
     color: #e0e0e0;
     font-weight: bold;
 }
@@ -650,7 +650,7 @@
     border: 2px solid #555;
 }
 
-.field-note strong { text-transform: capitalize; display: block; }
+.field-note .mg-section-label { text-transform: capitalize; display: block; }
 
 /* ===== Reader: bezel, status light, answers (art slots fall back to these) ===== */
 
