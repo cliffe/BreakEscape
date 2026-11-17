@@ -132,10 +132,20 @@
    their rows for one layer. Rows that interleave text with buttons stay out: .siem-alert-row
    (21 rows, a button pair in each), .patch-panel-row, and the person cards (.ib-people: the
    readiness checklist inside each card can hold a details element when a slot has a gapString,
-   so the list is a wrapper with controls). Each entry is one class, or one class plus a tag, or a
-   parent class plus a child class (`.mail-read-pane .ib-infl-label`: the one influence bar in the
-   mail reader, not the per-card bars on the board). test/js/minigame-text-crisp-css.test.mjs pins the exact list and checks
-   that every class is emitted by the engine, not that every body text is listed. */
+   so the list is a wrapper with controls). .siem-status-bar is a text-only bar: the clock and the
+   pending and time-remaining counts are three spans with no controls, and it is one layer for
+   all three (measured per span at 1280 and 390: 600 to 1900 fringe px without it, 0 with it).
+   .mail-subject also styles every non-email triage card heading (call, push, notice, browser
+   and the other kinds, via `mail-subject tri-kind-title`), light and dark: measured one light
+   notice, one light browser page and one dark push heading at 390 wide, each 0 with the hint.
+   It is focusable by script only (tabindex -1, no outline), and .tri-steps scrolls sideways at
+   767px and below; the hint on the scroller measured clean. A list that holds two text colours
+   (.mail-headers dt and dd, .tri-steps li) is measured per leaf, not as one colour (inside the
+   li's own border for .tri-steps). Each entry is one class, or one class plus a tag, or a parent
+   class plus a child class (`.mail-read-pane .ib-infl-label`: the one influence bar in the mail
+   reader, not the per-card bars on the board). test/js/minigame-text-crisp-css.test.mjs pins the
+   exact list and checks that every class is emitted by the engine, not that every body text is
+   listed. */
 .minigame-container :is(
     .note-md-text,
     .rogue-ap-note,
