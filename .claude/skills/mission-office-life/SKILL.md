@@ -153,7 +153,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 ### Costs and approvals
 
-- [ ] One page of approval items (new rooms, new NPCs with the cast choice, new art, engine changes, voicing spend (the V6 clip count, barks included), any changed existing line), with a Copy picks box, saved inputs, entered on the shared decisions page. Paid steps wait for the picks.
+- [ ] One page of approval items (new rooms, new NPCs with the cast choice, new art, engine changes, voicing spend (the V6 clip count, barks included once build/tts-barks is on main; before that, add the barks counted by hand, see `references/gotchas.md`, "Voicing"), any changed existing line), with a Copy picks box, saved inputs, entered on the shared decisions page. Paid steps wait for the picks.
 
 ### Test plan
 
@@ -165,7 +165,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 plan -> plan review R1..R5 (standalone rewrite after each) -> approvals -> implement in slices -> build review until clean -> art follow-ups -> voice -> close
 ```
 
-Two loops, two stopping rules. Each round is a fresh read-only reviewer (planning and review tier, per AGENTS.md "Choosing a model"), findings tagged blocker, major or minor with file:line, saved as `REVIEW_R<n>.md` with B/M/m counts (the same name in `references/checklists.md`). Plan rounds follow AGENTS.md "Iterating". The build loop follows the user's standing rule on full rounds (phases run at least 5 rounds; after round 5 minors only; memory note "Full rounds until zero"), which departs from the 5-round cap at AGENTS.md:41. This skill overrides the counts in missions plan section 12 (plan 3 to 5 rounds, built phases 2 to 5).
+Two loops, two stopping rules. Each round is a fresh read-only reviewer (planning and review tier, per AGENTS.md "Choosing a model"), findings tagged blocker, major or minor with file:line, saved as `REVIEW_R<n>.md` with B/M/m counts (the same name in `references/checklists.md`). Plan rounds follow AGENTS.md "Iterating". The build loop follows the user's standing rule on full rounds (phases run at least 5 rounds; after round 5 minors only, set by the user on 15 November 2026), which departs from the 5-round cap at AGENTS.md:41. This skill overrides the counts in missions plan section 12 (plan 3 to 5 rounds, built phases 2 to 5).
 
 **Delta rounds apply to both loops.** From round 4, or at the first round after a stronger-tier round with no blockers or majors, whichever comes first, a round is a delta review: the reviewer gets only the diff since the last round and the previous findings, and runs on the cheaper tier. For a plan, the diff is the rewritten PLAN.md, so plan rounds 4 and 5 are deltas too. AGENTS.md "Cheaper later rounds" sends a delta back to Opus (the `opus55` agent type) in three cases: (1) a cheaper-tier round found a major; (2) the delta touches secret handling, what the server serves or access checks (on an account without CVP, `opus48` instead); (3) the delta adds a new design decision.
 
