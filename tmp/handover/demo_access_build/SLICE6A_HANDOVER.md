@@ -349,3 +349,39 @@ Step 14 hub: `usb_hub` had `requiresItem` and `policy: desk` but no `triggerOnIn
 ### Screenshots (screens6/)
 
 17_implant_confirm, 18_implant_done, 19_implant_network_view, 20_hide_ap_confirm, 21_ap_console, 22_ap_clone_list, 23_ap_clone_started, 24_ap_log, 25_phone_after_clone, 26_phone_after_capture, 27_capture_tablet, 28_join_staff_wifi, 29_join_staff_result, 30_guest_wifi, 31_unplug_confirm (network view with the Unplug button), 32_unplugged, 33_phone_after_unplug, 34_managed_port_refusal (the confirm), 35_managed_port_result (the toast), 36_patch_panel, 37_patch_panel_g02, 38_patch_panel_plugged, 39_phone_after_port. The hub refusal shot (the brief's first) does not exist: the refusal did not fire on 7537.
+
+## Step 19 and hub proof (live checks A and B, server :3096)
+
+Keyless Rails from this worktree on 127.0.0.1:3096 (pid 348308, stopped by PID afterwards, port free). Started with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true BUNDLE_PATH=<worktree>/vendor/bundle RBENV_VERSION=2.7.8 bundle exec rails server -b 127.0.0.1 -p 3096`. Headless, `game.physics.world.setFPS(20)` via `eval` (fixed steps left on). No row, player state, need or unlock edited by script. Sessions: game 7537 log `s9_7537.jsonl`; game 7585 log `s9b_7585.jsonl` (both in tmp/handover/demo_access_build/). Server log: scratchpad `server-3096.log`.
+
+### Check A: step 19 on game 7537 (result: PARTIAL)
+
+- Resumed at Ama's first debrief question. `converse` with choices `I.m done, let.s talk` chose "I'm done, let's talk." The conversation then ran through the debrief and closed the mission in that one call, so the "Before the mission ends" panel was never on screen to a screenshot. Missed: no screen 40 for the panel or the debrief.
+- `brief` after the call: `missionEnd: credits, creditsShowing: true`. The server log shows `mission_concluded_at` written.
+- Screen 41 (credits): `screens6/41_credits.png`.
+
+Ama's lines after the choice, verbatim and in order (from the converse transcript):
+
+1. "The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's door held only because nobody copied his card."
+2. "A saved connection on the front desk got you into Julian's PC. His door never came into it."
+3. "And when the box came out, everything you'd opened through it went with it."
+4. "Anything you'd reached another way didn't need the box."
+5. "Thanks. I'll write it up for the partners."
+
+Line 4 played this time, where the earlier run on 7537 did not. The harness chose no option after the first choice.
+
+### Check B: hub refusal in a fresh game (result: PASS)
+
+- Game 7585, created with `new-game.rb demo_access_tour` (fixed scenario copy at HEAD). Tutorial prompt dismissed ("NO, I'LL FIGURE IT OUT").
+- Quick start: Ama `^Quick version`; visitor card picked up from the counter; meeting room door opened with VISITOR-07 (`enter meeting_room`; a plain `interact` on the RFID door did not open it); USB stick (`demo_stick`) taken, inventory "USB stick".
+- Back to reception, `interact usb_hub`:
+  - Try 1 (interact sent 19:12:34.0, returned 19:12:38.4): harness reported `no-effect-confirmed`. The phone line is in the phone history with a client timestamp of 19:12:38.9, about 4 s after this refusal. The toast was not captured on this try.
+  - Try 2 (19:12:53.7): same harness reply. Screenshot taken straight after: toast "USB storage is disabled on this PC." Screen `screens6/42_hub_refusal.png`.
+- Event log: server sync at 19:12:59 carries `triggeredEvents` `"ama_phone:usb_refused:usb_hub:14"`.
+- Phone line in the same sync: "Storage is blocked on that hub. A keyboard isn't storage."
+- Expected from the brief: all three items seen (toast, event, phone line). The one oddity is the harness's `no-effect-confirmed` on both tries, even though the effect happened. Recorded as a harness-reporting quirk, not a game fault.
+
+### Left open
+
+- Check A: the debrief panel and debrief screenshot (screen 40) are missing. Replaying needs a new game run to the debrief, which I did not do.
+- The demo_access_tour test files and the validator were not run in this pass.
