@@ -24,7 +24,7 @@ VAR gary_t_costs = false     // tech: HaX's cost line before the menu has been s
     -> consultant_rest
 }
 Gary Whitlock: You saved my career. Director of Cyber Security now. Consultant for SAFETYNET tonight, apparently.
-Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's, Nobody ever inventoried it.
+Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's. Nobody ever inventoried it.
 + [Same supplier, then.]
     Gary Whitlock: Same bench, by the look of it. Small world, and most of it on fire.
     -> consultant_imran

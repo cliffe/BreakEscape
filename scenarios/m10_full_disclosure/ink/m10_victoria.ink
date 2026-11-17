@@ -226,8 +226,6 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
         Victoria Sterling: You've seen what I'd have done. Go in before I think about it again.
     - victoria_gallery == "trusted" and victoria_sold:
         Victoria Sterling: I told you not to follow me.
-    - victoria_gallery == "trusted" and share_zero_day != "stopped":
-        Victoria Sterling: I told you not to follow me.
     - victoria_gallery == "trusted":
         Victoria Sterling: Go on. It's open, and I'm still on your side.
     - victoria_gallery == "arrested_here":
