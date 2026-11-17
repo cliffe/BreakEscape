@@ -164,6 +164,16 @@
       "use": "e5703901-3749-4cc3-a242-63073412a660"
     }
   },
+  "bernadette_lyons": {
+    "character_id": "e48db9da-ad1c-4a04-a128-a527e1caf828",
+    "name": "Make portrait for Bernadette Lyons\nA British Greek...",
+    "size": {
+      "width": 60,
+      "height": 60
+    },
+    "imported": "2026-11-17",
+    "sit_from": "2030f54a-51e9-4253-84ed-529f4eb4b74f"
+  },
   "bernie_nwosu": {
     "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
     "name": "A Black British woman of Nigerian heritage in her ...",
