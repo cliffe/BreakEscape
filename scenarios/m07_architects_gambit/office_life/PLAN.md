@@ -72,9 +72,15 @@ One need each, met by the cooler (`ops_cooler`):
 |---|---|---|
 | thirst | initial 45, decayPerMin 10, urgentAt 30, jitterPct 10 | initial 60, decayPerMin 8, urgentAt 30, jitterPct 10 |
 
-Adaeze leads every trip and Gwen follows (2.5). Adaeze's first trip comes at about 1.5 needs-clock minutes; Gwen on her own would need 3.75, so the coupled break always reaches her first. After the pair drink together, Adaeze's faster decay (9 to 11 per minute with jitter) never overlaps Gwen's (7.2 to 8.8), so Adaeze is always the one who gets up next and Gwen never walks alone.
+Adaeze leads every trip and Gwen follows (2.5). In the engine, jitter applies to `initial` (`npc-needs.js:520`) and to each refill (`:3675`); decay is fixed (`:1570`). The cooler preset restores 70, plus or minus 10%.
 
-The first natural trip must come no sooner than 45 s and no later than 120 s of real time after the room loads. The 45 s floor keeps both seated through the stacked first entry (the HaX hurt line at 1 s, the Architect's call at 5 s, the RFID guide text at 9.5 s; `:896`, `:903`, `:1604`, `:1306`). Slice 3 measures how needs-clock minutes map to real seconds (`references/measurement-recipes.md` section 10) and scales Adaeze's `initial` (and Gwen's, keeping the gap) to land in that window. After a reload both start at `initial` again, which is harmless: they sit, then go.
+- First trip: Adaeze turns urgent after 1.05 to 1.95 needs-clock minutes; Gwen on her own would need 3.0 to 4.5, so the coupled row reaches her first.
+- After a natural trip: Adaeze arrives at about 29 and refills to 92.5 to 100, urgent again 6.25 to 7.0 minutes later. The coupled row sets Gwen to 30 (her `urgentAt`), so she refills to 93 to 100 and is urgent again 7.8 to 8.75 minutes later, counting her later finish. The ranges do not overlap, so Adaeze is always the one who gets up next and Gwen never walks alone.
+- After a talk break both start from their set values (Adaeze 20, Gwen 30 through the coupled row), which keeps the same order.
+
+Five live tries cannot catch a rare order swap, so slice 3 also runs a manual-clock check: the needs system stepped with the real random source for 50 cycles, asserting that Adaeze reaches `urgent` before Gwen every cycle.
+
+The first natural trip must come no sooner than 45 s and no later than 120 s of real time after the room loads. The 45 s floor keeps both seated through the stacked first entry (the HaX hurt line at 1 s, the Architect's call at 5 s, the RFID guide text at 9.5 s; `:896`, `:903`, `:1604`, `:1306`). Slice 3 measures how needs-clock minutes map to real seconds (`references/measurement-recipes.md` section 10) and scales Adaeze's `initial` (and Gwen's, keeping the gap) to land in that window. After a reload both start at `initial` again (needs are not saved), which is harmless: they sit, then go.
 
 ### 2.5 What starts a break
 
@@ -82,7 +88,7 @@ Talk always sends Adaeze, so the pair still go together:
 
 - Talking to Adaeze: on Adaeze, `conversation_closed:adaeze_okafor`, `delayMs` 2000, `cooldown` 150000, `condition` `!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true`, `needs: { set: { thirst: 20 } }`.
 - Talking to Gwen: also on Adaeze, `conversation_closed:gwen_pritchard`, `delayMs` 4000, `cooldown` 150000, the same condition, `needs: { set: { thirst: 20 } }`. Gwen has no talk break of her own; she follows Adaeze through the coupled row below.
-- Coupled, one way, on Gwen: `{ "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } }`. Adaeze leads; Gwen follows. The cooler has no third user, so the pair shut nobody out.
+- Coupled, one way, on Gwen: `{ "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 30000, "needs": { "set": { "thirst": 30 } } }`. Adaeze leads; Gwen follows. The cooler has no third user, so the pair shut nobody out. The mapping cooldown is wall-clock time from when the row fires; 30 s is shorter than any gap between two of Adaeze's uses (a 22 s use plus the walk home and back), so the row fires once per trip and is always ready for the next one, including a talk break straight after a natural trip.
 - No mapping keys on `room_entered:operations_floor` for a break, so nothing new fires on the stacked first entry.
 
 ### 2.6 Long enough to talk; hearing
@@ -106,18 +112,18 @@ The cooler preset gives capacity 2; the plan sets `useSeconds` 22, long enough f
 
 ### 2.8 Talk
 
-Each has a short conversation in its own ink file: `ink/m07_npc_adaeze_okafor.ink` and `ink/m07_npc_gwen_pritchard.ink`, compiled to `.json`, `storyPath` pointing at the JSON. Each declares `VAR ops_staff_upset = false` (synced from the global) and a local `VAR met = false`.
+Each has a short conversation in its own ink file: `ink/m07_npc_adaeze_okafor.ink` and `ink/m07_npc_gwen_pritchard.ink`, compiled to `.json`, `storyPath` pointing at the JSON. Each declares `VAR ops_staff_upset = false` (synced from the global) and two local variables, `VAR met = false` and `VAR hub_quiet = false`.
 
 The files follow the m05 hub shape (`ink/m05_npc_thandiwe_moyo.ink` is the model), because `#exit_conversation` saves the current knot and the next talk resumes there, not at `start`. A check placed only in `start` would be skipped on the second talk.
 
 - `=== start ===` holds nothing but `-> hub`.
-- The top of `=== hub ===` branches every time it is entered:
-  - `ops_staff_upset` true: one short upset line, then `#exit_conversation` and `-> hub`;
+- The top of `=== hub ===` starts with the skip-once guard, as in m05 (`m05_npc_thandiwe_moyo.ink:12` to `:13`, `:19` to `:23`, `:32`): `{hub_quiet: ~ hub_quiet = false - else: <branch>}`, where the branch is:
+  - `ops_staff_upset` true: one short upset line, then `~ hub_quiet = true`, `#exit_conversation` and `-> hub`;
   - `met` true: one "still here?" repeat line;
   - otherwise the opener (two to three lines) and `~ met = true`.
-- One player choice follows, a goodbye, which ends `#exit_conversation` then `-> hub`.
+- One player choice follows, inside `hub` so its source knot is `hub`: a goodbye line, then `~ hub_quiet = true`, `#exit_conversation` and `-> hub`.
 
-So a second talk re-enters `hub` and runs the upset check again; an operator who was friendly on the first talk gives the upset line once her colleague has been struck. `met` and visit counts reset on a reload, so after a reload the opener plays once more; that is harmless.
+The guard stops the `-> hub` after an exit from printing the repeat or upset line a second time with the exit tag attached; the chat closes on the goodbye or the upset line itself. On the next talk the engine re-enters `hub` with fresh globals, the guard is already cleared, and the upset check runs again; an operator who was friendly on the first talk gives the upset line once her colleague has been struck. `met` and `hub_quiet` are NPC ink-local variables, which are saved and restored on a reload (`npc-conversation-state.js:248` to `:265`), so after a reload a player who has met her hears the repeat line, not the opener.
 
 The two exchange knots (`ex_last_two`, `ex_going_now`) live in Adaeze's file, outside the hub; each line carries a speaker prefix (`adaeze_okafor:` or `gwen_pritchard:`) and each knot ends `-> DONE`.
 
@@ -208,6 +214,7 @@ All lines go in `SPOKEN_LINES.md` with characters per line; `DIALOGUE_SAMPLE.md`
 | KO globals | 2 | `adaeze_ko`, `gwen_ko` |
 | Saved NPC visibility keys | 2 | one per operator |
 | Saved NPC hostility keys | up to 2 | |
+| NPC ink-local keys | 4 | `met` and `hub_quiet` on each operator, bounded booleans |
 | Reveal globals | 0 | |
 | Beat or derived gate globals | 0 | |
 | Mappings with cooldown, no `onceOnly` | 3 | two talk breaks on Adaeze (one per operator's close), one coupled break on Gwen |
@@ -249,9 +256,9 @@ Scenario: `officePresets`. NPC: `currentKnot`, `needs` (`initial`, `decayPerMin`
 ### 10.2 Live office-life checks (walking pace, five tries each)
 
 - L1: first ops-floor entry: both seated at post through the HaX line, the Architect's call and the RFID text; no chatter during the call.
-- L2: both reach `using` at `ops_cooler` together on the natural trip, after talking to Adaeze and after talking to Gwen; Gwen never walks to the cooler alone; no `no_beside_cell` in the needs log; pool lines heard in the room.
+- L2: both reach `using` at `ops_cooler` together on the natural trip, after talking to Adaeze, after talking to Gwen, after talking to Adaeze within 60 s of the pair returning from a natural trip, and after talking to both back to back; Gwen never walks to the cooler alone and Adaeze never goes twice without her; no `no_beside_cell` in the needs log; pool lines heard in the room.
 - L3: `ex_last_two` heard once, then `ex_going_now` once, only under their globals; `heard_` set only when heard in the room.
-- L4: talking to each opens the ops-floor background; the lines offer nothing; a second talk gives the repeat line; the pair's break follows after either chat closes. Talk to one, strike the other, talk to the first again: the upset line plays on that second talk.
+- L4: talking to each opens the ops-floor background; the lines offer nothing; a second talk gives the repeat line; the pair's break follows after either chat closes. Each chat closes on the goodbye or upset line itself, with no repeat line after it. Talk to one, strike the other, talk to the first again: the upset line plays exactly once on that second talk. Reload after meeting one: the repeat line plays.
 - L5: the player walks west door to desk to east door with both at post and both at the cooler, never blocked; the key and the handover sheet stay reachable.
 - L6: enter the server room: both hidden, no seated sprite left; go back to the ops floor: still gone.
 - L7: lighting: both readable at the cooler.
@@ -267,7 +274,7 @@ Attack Adaeze walking, Gwen seated, and one at the cooler: hostile with leash, s
 
 ### 10.5 Open numbers
 
-Chair cells, `useFrom` and the engine's second cell (slice 3); needs-clock to real seconds and the first-trip time, 45 s to 120 s after load (slice 3); use time.
+Chair cells, `useFrom` and the engine's second cell (slice 3); needs-clock to real seconds and the first-trip time, 45 s to 120 s after load (slice 3); the 50-cycle manual-clock order check (2.4); use time.
 
 ### 10.6 Static checks
 
