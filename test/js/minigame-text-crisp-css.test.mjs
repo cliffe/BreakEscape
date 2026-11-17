@@ -112,22 +112,34 @@ test('the hinted list containers hold no controls', () => {
     const js = (f) => readFileSync(join(root, 'public/break_escape/js/minigames', f), 'utf8');
     const between = (src, from, to) => { const a = src.indexOf(from); const b = src.indexOf(to, a); assert.ok(a >= 0 && b > a, `${from} .. ${to} found`); return src.slice(a, b); };
     // Quoted tags (el/make/h/createElement calls) and tags inside template or HTML strings.
-    const controls = /['"`](?:button|input|select|textarea|a|details|summary)['"`]|<\s*(?:button|input|select|textarea|a|details|summary)\b/;
+    const controls = /['"`](?:button|input|select|textarea|a|details|summary)['"`]|<\s*(?:button|input|select|textarea|a|details|summary)\b/i;
+    // Focusable or clickable markup with no control tag.
+    const focusable = /tabindex|role\s*[=:]\s*['"`]?button|contenteditable|onclick|addEventListener\(\s*['"`](?:click|pointer|mouse|key)/i;
+    const plain = (src) => { assert.doesNotMatch(src, controls); assert.doesNotMatch(src, focusable); };
     const mail = js('mail-client/mail-reader.js');
-    assert.doesNotMatch(between(mail, "el('dl', 'mail-headers')", 'pane.appendChild(head)'), controls);
+    plain(between(mail, "el('dl', 'mail-headers')", 'pane.appendChild(head)'));
     const tri = js('inbox-triage/inbox-triage-minigame.js');
-    assert.doesNotMatch(between(tri, "el('dl', 'tri-brief-buttons')", 'p.appendChild(dl)'), controls);
+    plain(between(tri, "el('dl', 'tri-brief-buttons')", 'p.appendChild(dl)'));
     // .tri-steps is an ol of li items from buildStepItems; the close control is a sibling elsewhere.
     assert.match(tri, /this\.stepsEl = el\('ol', 'tri-steps'\)/);
-    assert.doesNotMatch(between(js('helpers/step-stepper.js'), 'export function buildStepItems', 'return items;'), controls);
+    const stepper = js('helpers/step-stepper.js');
+    plain(between(stepper, 'export function buildStepItems', 'return items;'));
+    // Later step updates only toggle classes and add screen-reader spans.
+    plain(between(stepper, 'export function applyStepStates', '\n}'));
     const pp = js('patch-panel/patch-panel-minigame.js');
-    assert.doesNotMatch(between(pp, "el('div', 'patch-panel-legend')", 'this.frame.appendChild(this.legend)'), controls);
-    assert.doesNotMatch(between(pp, 'setFooter(text)', '\n    }'), controls);
+    plain(between(pp, "el('div', 'patch-panel-legend')", 'this.frame.appendChild(this.legend)'));
+    plain(between(pp, 'setFooter(text)', '\n    }'));
     assert.match(pp, /el\('div', 'patch-panel-footer'/);
     // The SIEM status bar: three text spans in a template; the counts are updated by textContent.
     const siem = js('siem/siem-dashboard-minigame.js');
     const bar = between(siem, '<div class="siem-status-bar">', '</div>');
-    assert.doesNotMatch(bar, controls);
+    plain(bar);
+    // The spans are reached by id afterwards and only ever get textContent.
+    for (const ref of ['pendingCountEl', 'timerEl', 'systemClockEl']) {
+        const uses = siem.split('\n').filter((l) => l.includes(`this.${ref}.`));
+        assert.ok(uses.length > 0, `${ref} is used`);
+        for (const l of uses) assert.match(l, new RegExp(`this\\.${ref}\\.textContent\\s*=`), l.trim());
+    }
     assert.equal((bar.match(/<span\b/g) || []).length, 3);
     assert.equal((siem.match(/siem-status-bar/g) || []).length, 1, 'nothing else adds to the bar');
     // The checker catches both forms.
@@ -136,6 +148,10 @@ test('the hinted list containers hold no controls', () => {
     assert.match('<a href="#">', controls);
     assert.match('<details>', controls);
     assert.doesNotMatch('<span class="x">y</span> <div>', controls);
+    assert.match('<BUTTON>', controls);
+    assert.match("li.tabIndex = 0", focusable);
+    assert.match("x.addEventListener('click', f)", focusable);
+    assert.match('<div role="button">', focusable);
     // The person cards stay out: their checklist can hold a details element.
     assert.match(js('intel-board/intel-board-minigame.js'), /h\('details', \{ class: 'ib-slot-stuck' \}/);
 });
