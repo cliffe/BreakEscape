@@ -453,6 +453,80 @@ test('the CSS never uses --pp-scale bare as a length (it is unitless)', () => {
     }
 });
 
+test('each port state class maps to its sprite, and the sprites and strip ship at native size', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    for (const state of ['empty', 'unpatched', 'patched', 'managed', 'held']) {
+        const re = new RegExp(`\\.patch-panel-port\\.pp-state-${state}\\s*\\{\\s*background-image:\\s*url\\('/break_escape/assets/ui/devices/patch_port_${state}\\.png'\\)`);
+        assert.match(css, re, state);
+        const png = readFileSync(join(here, `../../public/break_escape/assets/ui/devices/patch_port_${state}.png`));
+        assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20)], [12, 12], state);
+    }
+    const row = readFileSync(join(here, '../../public/break_escape/assets/ui/devices/patch_strip_row.png'));
+    assert.deepEqual([row.readUInt32BE(16), row.readUInt32BE(20)], [7, 12], 'the strip is the 12 port rows');
+    assert.match(css, /patch_strip_row\.png'\) 0 3 fill/);
+    assert.doesNotMatch(css, /clip-path:\s*inset/, 'no clip: the strip is already the port rows');
+    assert.match(css, /::before \{[^}]*top:\s*0;\s*height:\s*calc\(12px \* var\(--pp-scale\)\)/s, 'strip is 12 source rows from the top');
+    assert.match(css, /border:\s*calc\(1px \* var\(--pp-scale\)\) solid transparent/, 'VLAN border is 1 source px');
+    assert.doesNotMatch(css, /patch-panel-socket/, 'the CSS-drawn socket is gone');
+    const rule = (sel) => [...css.matchAll(new RegExp('(?:^|\\n)' + sel.replace(/[.]/g, '\\.') + '\\s*\\{([^}]*)\\}', 'g'))].map((m) => m[1]).join('\n');
+    const port = rule('.patch-panel-port');
+    assert.match(port, /background:\s*url\('[^']*patch_port_empty\.png'\) 0 0 \/ 100% 100% no-repeat/, 'sprite fills the port, no repeat');
+    assert.match(port, /background-origin:\s*border-box/);
+    assert.match(port, /image-rendering:\s*pixelated/);
+    assert.match(rule('.patch-panel-port.pp-state-empty'), /border-color:\s*transparent/);
+    assert.doesNotMatch(css, /--pp-light/, 'dead variable gone');
+    assert.doesNotMatch(rule('.patch-panel-port:hover'), /#9ee6ff/, 'hover is not the held boot cyan');
+    const mark = /\.patch-panel-port\.pp-state-held::after,\s*\.pp-swatch-state-held::after\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(mark, /width:\s*calc\(3px \* var\(--pp-scale\)\)/);
+    assert.match(mark, /height:\s*calc\(2px \* var\(--pp-scale\)\)/, 'a bar, not the managed tag\'s square');
+    assert.match(mark, /border:\s*calc\(1px \* var\(--pp-scale\)\) solid #0c1018/);
+    assert.match(mark, /background:\s*#ffffff/);
+    assert.match(mark, /left:\s*0;\s*top:\s*0/, 'top left, clear of the light and the managed tag');
+    for (const k of ['held', 'managed', 'unpatched']) {
+        assert.match(rule('.pp-swatch-state-' + k), new RegExp('patch_port_' + k + '\\.png'), 'legend swatch uses the sprite: ' + k);
+    }
+    assert.match(rule('.pp-swatch-state-unpatched'), /border-style:\s*dashed;\s*border-color:\s*#8a96aa/);
+    assert.match(css, /\.pp-swatch-state-held,[^{]*\{[^}]*--pp-scale:\s*1;[^}]*background-size:\s*100% 100%/s);
+    assert.doesNotMatch(css, /border-radius:\s*[1-9]/);
+});
+
+test('the legend names each state key once: "managed" is the M VLAN, "Port security" the managed state', async () => {
+    const { LEGEND } = await import('../../public/break_escape/js/minigames/patch-panel/patch-panel-minigame.js');
+    const labels = LEGEND.map((l) => l.label);
+    assert.ok(labels.includes('Your box') && labels.includes('Not patched') && labels.includes('Port security'));
+    assert.equal(labels.filter((l) => /managed/i.test(l)).length, 1);
+});
+
+test('the legend cannot set the frame width: the grid does, the legend wraps inside it', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const legend = /\.patch-panel-legend\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(legend, /flex-wrap:\s*wrap/);
+    assert.match(legend, /width:\s*0;/);
+    assert.match(legend, /min-width:\s*100%/);
+});
+
+test('the footer cannot set the frame width: a long message wraps inside the grid width', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const footer = /\.patch-panel-footer\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(footer, /width:\s*0;/);
+    assert.match(footer, /min-width:\s*100%/);
+    assert.match(footer, /box-sizing:\s*border-box/);
+    assert.match(footer, /overflow-wrap:\s*anywhere/);
+    assert.match(footer, /padding-left:\s*var\(--device-frame-gap\)/);
+});
+
+test('the title cannot set the frame width and wraps in the room left of the X (8px+ gap)', () => {
+    const css = readFileSync(join(here, '../../public/break_escape/css/patch-panel-minigame.css'), 'utf8');
+    const bar = /\.patch-panel > \.device-frame-title\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(bar, /width:\s*0;/);
+    assert.match(bar, /min-width:\s*100%/);
+    assert.ok(Number(/padding-right:\s*(\d+)px/.exec(bar)?.[1]) >= 40, 'room for the X plus a gap');
+    const text = /\.patch-panel-title\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    assert.match(text, /min-width:\s*0;/);
+    assert.match(text, /flex:\s*1 1 0/);
+    assert.match(text, /overflow-wrap:\s*anywhere/);
+});
+
 test('registration and wiring sit in index.js and the page', () => {
     const idx = readFileSync(join(js, 'minigames/index.js'), 'utf8');
     assert.match(idx, /registerScene\('patch-panel', PatchPanelMinigame\)/);
