@@ -134,3 +134,32 @@ Not reached. The run stopped before the unplug, so no debrief line was seen.
 - 06_phone_at_stop12.png: Ama's thread at stop 12
 
 Not taken: the route choice itself and the debrief (not reached).
+
+## Cake reload (task 4): RAN, cases 2 and 4 FAIL, reload executed
+
+Run by a cake-reload agent on keyless server 127.0.0.1:3099 (worktree p-build-access, started with $S/start3099.sh, pid file tmp/pids/server-3099.pid; RBENV_VERSION=2.7.8, BUNDLE_PATH=<main>/vendor/bundle). Command (run from the worktree root):
+`node $S/cake/showcase-bc1-cake-reload.mjs --scenario demo_access_tour --room open_plan --cake cake --port 3099 --cases 2,4 --eaters thandiwe,yasmin --rooms open_plan,kitchen --task t_open_session`
+Probe copy: $S/cake/showcase-bc1-cake-reload.mjs (identical to p-ol-showcase). Full output: $S/cake/cake_run.txt. Result JSON: tmp/bc1/demo_access_tour-case2-game7557.json, tmp/bc1/demo_access_tour-case4-game7564.json.
+
+Early exit (last run): not reproduced. The script only reaches its exit at the end, and that exit is `process.exit(rows.every(pass) ? 0 : 1)`. The earlier silent exit 0 is probably the calling wrapper, not the script (inference, not checked further).
+
+Key output (verbatim):
+```
+case 2: game 7557
+  wait 22s (before reload)
+  case 2: FAIL {"pass":false,"placed":false,"kept":true,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake"],"before":{"found":[{"room":"reception","x":172.5,"y":260.5,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"]}
+case 4: game 7564
+  wait 22s (before reload)
+  case 4: FAIL {"pass":false,"gone":false,"finishedEvent":false,"taskBefore":"active","taskAfter":"active","after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"]}
+| 2 | 7557 | FAIL |
+| 4 | 7564 | FAIL |
+```
+
+What it shows:
+- Reload ran and the scene rebuilt. `window.rooms` loaded, `whereAll` ran, and the cake stayed in reception with magnet and servings intact in both cases. Not the shared "scene never rebuilds" issue.
+- Case 2: cake kept on the magnet (servings 2, not in inventory). Position changed from (172.5, 260.5) to (160, 247). The "before" read was taken 3 s after the drop and the "after" read 22 s later, so the move may come from the settle wait, not the reload. Not separated. `placed` failed on that move. The NPC eat step did not start (thandiwe `walked:false`).
+- Case 4: the cake was not eaten within the 150 s timeout, both eaters were set to hunger 60, and the task stayed `active`. Not reloaded into a finished state, so the case cannot pass. The probe never reaches the post-finish assertions.
+- Console errors are the same in both cases: one 400 and one ERR_FAILED (the /tts abort route is the likely source; not confirmed).
+- player_state size was not measured. The probe does not record it, so the "grew or not" question is open.
+
+Next: the eat step needs its own check (why thandiwe and yasmin do not walk to the cake on this worktree's build), and the drop position needs a read after the settle, before and after the reload.
