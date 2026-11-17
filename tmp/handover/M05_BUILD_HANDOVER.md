@@ -94,3 +94,17 @@ Open: KO Lisa in front of pair; live debrief trust (needs mission_complete); E4 
 
 ## Session 6 (KO Lisa and debrief checks)
 Both checks PASS, written up in BUILD_REPORT.md. Probes: m05live/kolisa.mjs, kolisa2.mjs, deb.mjs. Debrief needs --carry-npc closing_debrief_trigger, --complete-task submit_flag1..4, writeGlobal import for mission_complete, and "End the mission now" on the ending-check overlay. Remaining: kill puma 1233537, unlink node_modules.
+
+## Slice 5 session (commit 8bd7d2c93 on plan/ol-m05)
+DONE
+- Ink: ink/m05_npc_thandiwe_moyo.ink/.json (opener, two choices, goodbye; hub_quiet pattern so dialoguelint blank-reentry is clean) and ink/m05_npc_niamh_doherty.ink/.json (same shape, plus knots ex_whispering, ex_collection, ex_heading_home, VAR heard_* declared). Compiled with bin/inklecate. inkcheck and loopcheck clean.
+- scenario.json.erb: storyPath and currentKnot on both, chatter pools (8 lines each, coffee and cooler, as SPOKEN_LINES.md), Niamh's exchanges in plan order, globals heard_ex_whispering, heard_ex_collection, heard_ex_heading_home = false.
+- Validator 0 errors, 27 warnings (was 29; the two "chatter has no lines" warnings are gone; the only new dialogue items are the dialoguelint delivery-note false positive on the hub_quiet conditional, same as m02 Hodan). lock_key_diff empty.
+- V6: 27 clips (Niamh 13, Thandiwe 14, all uncached). = 16 pool + 11 exchange lines. Plus 6 conversation lines (not counted by V6) = 33 = 42 minus Bernadette's 9 (4 pool, 3 exchange, 2 conversation), which wait for slice 6.
+- Live (keyless :3092, game 7241 start-room break_room, headless): both newcomers seated (niamh hospital_chair_south, thandiwe hospital_chair_north): interact ok, no "Failed to load conversation", opener shown, choice, close, reopen shows the opener again, 0 page errors. Both seated chats show the same background image (espresso and kettle view, screenshots scratchpad m05live/out/seated_*.png), so n2 reads fine; which of the two split files it is was not read out of the DOM.
+- Deviations from SPOKEN_LINES.md: none in the lines. Added two player choice labels per conversation ("Just looking around." / "I'll leave you to it." for Thandiwe; "Who should I talk to around here?" / "Go on, I'll let you work." for Niamh), and no narrator lines. The 3 conversation lines are split: opener, one optional middle line, goodbye.
+NOT DONE
+- bin/test-js: started in background, was cut short when node_modules symlink was unlinked mid-run (scratchpad testjs.txt had only PASS lines, no EXIT). Rerun with the symlink and read the output file to the end.
+- Live: talk at each machine (while using espresso and cooler), each exchange plays once and never again (heard_ globals), pool line at espresso and at cooler, reload mid-day. The harness is in scratchpad m05live (lib.mjs, ng.sh, talk.mjs; copy of tmp/handover/m05live). Needs: __test.needs.log() shows exchange_started, exchange_heard, chatter entries; trigger with a Lisa conversation close then needs.set('thandiwe_moyo','caffeine',15); badge exchange needs server_badge_obtained via session-start.sh --unlock/--set.
+- BUILD_REPORT.md "Slice 5" section (short one added in the commit after this note); DIALOGUE note in walkthrough.
+- Server was killed (PID 3630615) and symlink unlinked. To restart: ss check :3092, the section 1 command in measurement-recipes.md, ln -s main node_modules.

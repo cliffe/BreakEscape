@@ -128,3 +128,14 @@ Setup: `new-game.rb --start-room break_room --carry-npc closing_debrief_trigger`
 | n1 | Stale "one kettle trip" comment now reads "one fridge trip" | Static |
 
 Server for the proof: keyless (boot log warning present), :3092, puma PID 3378834, stopped at the end. Headless, `setFPS(20)`, fixed steps on, no `/tts` request. Games used, all printed by `new-game.rb` in this run: 7229 to 7234. No game row edited.
+
+## Slice 5 (spoken lines and conversations), partial
+
+Commit 8bd7d2c93. Scenario data and ink only; no engine change.
+
+- Conversations: `ink/m05_npc_thandiwe_moyo` and `ink/m05_npc_niamh_doherty` (`storyPath`, `currentKnot: start`). Opener, one optional line behind a choice, goodbye. A `hub_quiet` flag skips the opener once after the exit tag so a reopen prints it again. Both lines of text come from `SPOKEN_LINES.md`; two player choice labels per conversation are new (no voiced clip).
+- Pools: 8 lines each (coffee and cooler), as written. Exchanges `ex_whispering`, `ex_collection`, `ex_heading_home` on Niamh in plan order; globals `heard_ex_*` declared `false`.
+- Validator 0 errors, 27 warnings (was 29: the two "chatter has no lines" warnings cleared). Lock and key diff empty.
+- V6: 27 clips (Niamh 13, Thandiwe 14), all uncached. Plus 6 conversation lines, which V6 does not count: 33, which is SPOKEN_LINES.md's 42 minus Bernadette's 9 (slice 6).
+- Live (keyless :3092, game 7241): both seated chats open with no "Failed to load conversation", show the same break-room background (n2 reads fine), and reopen cleanly; no page errors.
+- Open: chat at each machine, exchange once-only, pool lines at both machines, reload mid-day, full `bin/test-js`.
