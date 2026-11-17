@@ -69,6 +69,8 @@ export class BluetoothScannerMinigame extends MinigameScene {
         expandToggle.setAttribute('role', 'button');
         expandToggle.setAttribute('tabindex', '0');
         expandToggle.setAttribute('aria-label', 'Expand or collapse the scanner panel');
+        expandToggle.setAttribute('aria-expanded', 'false'); // the panel starts collapsed; the click handler keeps it current
+        expandToggle.setAttribute('aria-controls', this.container.id || (this.container.id = 'bluetooth-scanner-panel'));
         
         // Create scanner header
         const scannerHeader = document.createElement('div');
@@ -163,6 +165,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
     
     setupExpandToggle(expandToggle) {
         this.addEventListener(expandToggle, 'keydown', (e) => {
+            if (e.repeat) return;
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandToggle.click(); }
         });
         this.addEventListener(expandToggle, 'click', () => {
@@ -173,11 +176,13 @@ export class BluetoothScannerMinigame extends MinigameScene {
                 this.container.classList.remove('expanded');
                 expandToggle.innerHTML = '+';
                 expandToggle.title = 'Expand';
+                expandToggle.setAttribute('aria-expanded', 'false');
             } else {
                 // Expand
                 this.container.classList.add('expanded');
                 expandToggle.innerHTML = '-';
                 expandToggle.title = 'Collapse';
+                expandToggle.setAttribute('aria-expanded', 'true');
             }
         });
     }

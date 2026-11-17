@@ -14,8 +14,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const css = readFileSync(join(root, 'public/break_escape/css/person-chat-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const ui = readFileSync(join(root, 'public/break_escape/js/minigames/person-chat/person-chat-ui.js'), 'utf8');
 
-function mediaBlock(query) {
-    const start = css.indexOf(query);
+function mediaBlock(query, from = 0) {
+    const start = css.indexOf(query, from);
     assert.ok(start >= 0, `media query exists: ${query}`);
     let depth = 0, end = start;
     for (let i = css.indexOf('{', start); i < css.length; i++) {
@@ -94,9 +94,13 @@ test('the More below cue: base rule lies over the foot at any width, ignores tap
     assert.match(bodyOf(phone, '.person-chat-caption-area'), /scroll-padding-bottom:\s*4px/);
     assert.match(B('.person-chat-caption-area'), /scroll-padding-top:\s*4px/);
     // overlay scrollbars reserve no gutter: the strip insets go back to 0
-    const sup = css.slice(css.indexOf('@supports not selector(::-webkit-scrollbar)'));
-    assert.match(sup, /left:\s*0;\s*right:\s*0/);
-    assert.match(sup, /width:\s*var\(--pc-caption-col\)/);
+    const sup = mediaBlock('@supports not selector(::-webkit-scrollbar)');
+    assert.match(bodyOf(parse(sup.block), '.person-chat-more:not([hidden])'), /left:\s*0;\s*right:\s*0/);
+    // the landscape column width override is nested inside the @supports block, not after it
+    const inner = mediaBlock('@media (min-width: 600.02px) and (max-height: 520px) {', sup.start);
+    assert.ok(inner.start > sup.start && inner.start < sup.start + sup.block.length, 'nested in @supports');
+    const irules = parse(inner.block);
+    assert.match(bodyOf(irules, '.person-chat-more:not([hidden])'), /width:\s*var\(--pc-caption-col\)/);
     assert.match(ui, /updateScrollCue/);
 });
 test('desktop video call (heights 521-700) keeps the capped caption clear of the status bar and PiP', () => {
