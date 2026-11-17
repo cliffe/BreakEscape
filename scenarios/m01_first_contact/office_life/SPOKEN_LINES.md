@@ -1,6 +1,6 @@
 # m01 First Contact: office-life spoken lines
 
-Every new line from PLAN.md, with speaker, trigger, voice and character count. Scenario data only: NPC JSON bark and chatter fields, and ink. None is engine text. Not voiced: voicing waits for the user's own yes, and any later change to a line needs its own yes to re-voice.
+Every new line from PLAN.md, with speaker, trigger, voice and character count. Scenario data only: NPC JSON bark and chatter fields, and ink. None is engine text. Voiced: all 22 clips, with the user's yes (D97a), in commit a0c4535b6. Any later change to a line needs its own yes to re-voice.
 
 Rules checked: pool barks are 40 characters or fewer; no line carries a clue, a PIN or code, or a name the plot uses; none mentions the audit, late nights, boxes, laptops, the coffee machine or the fridge (the plot's false leads and clue surfaces).
 
@@ -21,12 +21,12 @@ Graham speaks on the first return from another room, not the first entry, so he 
 
 ### Talk (ink, brush-off conversations)
 
-| # | Speaker | Trigger | Text | Chars |
-|---|---|---|---|---|
-| 3 | fatima_begum | `start` knot, first line | Sorry, I'm halfway through a candidate's file. | 46 |
-| 4 | fatima_begum | `start` knot, after the choice | If it's the network, I only press the buttons. Nice to meet you. | 64 |
-| 5 | graham_whitfield | `start` knot, first line | Graham, finance. If it's about expenses, I'm not in. | 52 |
-| 6 | graham_whitfield | `start` knot, after the choice | Only joking. Not that I know much about computers, mind. | 56 |
+| # | Speaker | Trigger | Text | Chars | Delivery |
+|---|---|---|---|---|---|
+| 3 | fatima_begum | `start` knot, first line | Sorry, I'm halfway through a candidate's file. | 46 | brisk, apologetic |
+| 4 | fatima_begum | `start` knot, after the choice | If it's the network, I only press the buttons. Nice to meet you. | 64 | |
+| 5 | graham_whitfield | `start` knot, first line | Graham, finance. If it's about expenses, I'm not in. | 52 | dry, deadpan |
+| 6 | graham_whitfield | `start` knot, after the choice | Only joking. Not that I know much about computers, mind. | 56 | dry, deadpan |
 
 Player choices (not voiced): Fatima, "Don't let me keep you." Graham, "I'll leave you to it."
 
@@ -57,7 +57,7 @@ Tier 1 clip count: **6**.
 
 ### Exchanges (heard once; knots in `m01_npc_fatima_begum.ink`; set `heard_ex_interns`, `heard_ex_biscuits`)
 
-The validator caps every exchange bubble at 40 characters, so lines 16, 21 and 22 were shortened in the build (not yet voiced, so no re-voice).
+The validator caps every exchange bubble at 40 characters, so lines 16, 21 and 22 were shortened in the build, before voicing.
 
 `ex_interns` (global `heard_ex_interns`)
 

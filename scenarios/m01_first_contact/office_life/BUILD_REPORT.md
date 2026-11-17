@@ -17,7 +17,7 @@ Measured values only. Steps 0 to 4 so far; step 5 (Maya) and the remaining secti
 - Sync during the run: 4 flushes, largest 1241 bytes, keys triggeredEvents, phoneState, scenarioClock, timedMessages, clientTs, globalVariables, notes (no growth).
 - Step 0 503s: every "Completed 503" in tmp/server-3094.log pairs with a /break_escape/games/N/tts request (17 of 17 by path count); one stray pairing of a button.png line was an interleaved-log artefact (that request completed 200).
 - Screenshots: screenshots/main-office-seated.png, screenshots/cooler-in-use.png.
-- Spoken-line change: validator caps exchange bubbles at 40 characters, so SPOKEN_LINES 16, 21, 22 were shortened (38, 32, 39 characters); not voiced yet.
+- Spoken-line change: validator caps exchange bubbles at 40 characters, so SPOKEN_LINES 16, 21, 22 were shortened (38, 32, 39 characters) before voicing; all 22 clips voiced in a0c4535b6 (D97a).
 
 ## Checks agent (live checks for steps 3 and 4, port 3094 keyless, headless, setFPS 20 with fixed steps)
 Probes: tools/playtest/m01-ol-evening-reload.mjs, m01-ol-attack.mjs, m01-ol-approach.mjs, m01-ol-reloads.mjs; raw output in tmp/handover/m01live/. No scenario or ink edits.
@@ -152,3 +152,10 @@ Review: BUILD_REVIEW_R2.md. Keyless server on :3094 (puma 2279413, left running)
 - Lock and key diff against baseline_locks.json: empty.
 - V6 keyless: 18 office-life clips (589 characters); the rake printed all 18 as cached this time, the R2 review saw them uncached.
 - bin/test-js (output in `tmp/testjs-r2.txt` in the worktree, read to the last line): 751 passed, 0 failed.
+
+## R3 and voicing
+
+- Voicing (D97a): 22 clips in a0c4535b6, 44 files under tts_cache/m01_first_contact only. Graham 11 (Umbriel), Fatima 11 (Vindemiatrix); 8 pool, 8 exchange, 4 talk, 2 bark. Delivery tags match the ink. Maya's not_here line stays a cache hit.
+- V6 on the merged tip (d82f010cb): 18 office-life clips, 0 uncached.
+- Build review R3 (ea513dbc2): 0B/0M/2m/3n. Minors were documentation (this section, SPOKEN_LINES voicing status and delivery column). Notes accepted: the drink pose keeps facing where the player stood until the use ends (shared pose behaviour, cosmetic); Fatima's side swap at the cooler is the intended pair swap.
+- bin/test-js on d82f010cb: 751 passed, 0 failed.
