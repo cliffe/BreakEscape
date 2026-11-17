@@ -430,8 +430,9 @@ test('R1 m2: console fields come from the room answer when the bootstrap omits d
 });
 
 test('R2 M1: a two-room hideable hidden in the non-authored room opens with the bootstrap deviceData', () => {
-    const w = world({ hiddenDevices: [{ item: KIT, on: 'comms_plant-large6_1', room: 'comms' }] });
+    const w = world({ hiddenDevices: [{ item: KIT, on: 'comms_fern', room: 'comms' }] });
     w.ph.hideables.get(KIT).rooms = ['reception', 'comms'];
+    w.comms.objects.comms_fern = scenarioPlant(w.scene, 'comms_fern', { roomId: 'comms' });
     // The authored room (reception) never loads: no noteHiddenWith call. Comms loads first.
     w.ph.syncRoom('comms');
     assert.equal(w.scene.made.length, 1);
