@@ -832,8 +832,10 @@ test('rows lay out in two columns when there is room; headings and locked shares
     assert.ok(row('data-resource-id', 'ledger_archive').classList.contains('network-row-wide'), 'a locked share and its note span');
     assert.ok(!row('data-resource-id', 'scanned_inbox').classList.contains('network-row-wide'));
     // A PC row's host label stays on one line too, and the button shrinks instead (code review R2 m3)
-    assert.equal(row('data-host-id', 'lena_pc').querySelector('.network-row-title strong').className, 'network-row-hostname');
-    assert.equal(row('data-host-id', 'lena_pc').querySelector('.network-row-title strong').textContent, 'HB-FIN-02');
+    const hostSpan = row('data-host-id', 'lena_pc').querySelector('.network-row-title > span');
+    assert.ok(hostSpan, 'the host title holds a span');
+    assert.equal(hostSpan.className, 'network-row-hostname');
+    assert.equal(hostSpan.textContent, 'HB-FIN-02');
     assert.match(ruleBody('.network-row-hostname') || '', /white-space:\s*nowrap/);
     assert.match(ruleBody('.network-row-host .network-row-label') || '', /min-width:\s*min-content/);
     // A locked share's label keeps the resource rule's min-content floor; a wide-row min-width: 0
