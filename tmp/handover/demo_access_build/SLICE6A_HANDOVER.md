@@ -300,3 +300,52 @@ Line 3 is the `julian_ended_by_unplug` variant of the recap (ama.ink, `=== recap
 - 08_unplug_meeting_room.png
 - 10_credits.png
 - (09 not taken, see above)
+
+## Full route 14-19 (game 7537, server :3096)
+
+Run by the full-route 14-19 agent. Keyless Rails from this worktree on 127.0.0.1:3096, harness session log tmp/handover/demo_access_build/s8_7537.jsonl. Headless, setFPS(20), fixed steps on. Stopped at the context guard with Ama's first debrief choice on screen: step 19 not finished (no debrief lines, no credits).
+
+### Real fault found and fixed (scenario data)
+
+Step 14 hub: `usb_hub` had `requiresItem` and `policy: desk` but no `triggerOnInteract`. The engine's refusal (interactions.js, the `plantRefusal` branch) sits inside the `hasTriggerOnInteract` branch, so a plain interact gave only the examine text and no `usb_refused` event. The stick has only Examine in the tray, so there was no other way for a player to reach the refusal. Fix: added `"triggerOnInteract": [{ "type": "set_global", "key": "hub_stick_accepted", "value": true }]` to `usb_hub` (same shape as `priya_dock` in test_access_work). It can never fire, since the desk policy refuses the stick. Commit ed7ab5b12. NOT yet proved live: game 7537 holds its own scenario copy (re-checked: interact still gave "examine"), so a fresh game is needed (new-game, take the stick from the meeting room, interact `usb_hub`, expect the toast and `usb_refused:usb_hub`, then the phone line "Storage is blocked on that hub. A keyboard isn't storage."). The demo_access_tour test files and the validator were NOT run after this change; run them (flock, command in the brief).
+
+### Step table
+
+| Step | Result | Notes |
+|---|---|---|
+| 14 Hub refusal | FAIL on 7537 (fixed in data, unproved) | See above. |
+| 14 Injector at implant socket | PASS | Was already signed in at the front desk (Delphine). `interact implant_socket` raised the confirm "Plug the keystroke injector into the front desk PC? ..."; `dismiss` "Plug it in"; injector became "Keystroke injector: Reception" (network link); `t_implant` done, `reception_pc_planted` set; the network view opened by itself. Screens 17 (confirm), 18, 19 (network view). |
+| 15 Rogue AP | PASS with snag | `interact reception_plant_east` raised "Hide the pocket rogue AP in this plant?", `dismiss` "Hide it"; second interact opened the console (Recon, Clone, Log). Clone lists all four networks, MerrinSallow-Guest shown "Chosen" by default: must click Staff, then Start. Log: "Copy of MerrinSallow-Staff up (open), showing the key page. Waiting for someone to pick the copy." Screens 20-24. |
+| 15 Thandiwe joins | PASS with snag | While I stayed in reception nothing happened for about 2 minutes. The global-change nudge is `fireOnlyWhenLoaded` (her room must be loaded). Entering open_plan fired the room-entry nudge and `done_t_capture_key` set within about 30 s. |
+| 16 Capture and join | PASS | The tablet is in the meeting room (interact opens "Captures"): "Merrin & Sallow, reception / MerrinSallow-Staff / MerrinSallow-Staff, rogue access point / VZ4h0GqB / Thandiwe's laptop picked the copy and the key page took the Staff key (proof: planted)." Typed the key at `staff_ap` ("Join Wi-Fi", Network key, Submit, field 0): "Joined. Reaches 6 hosts." Guest AP: "Joined. Reaches 0 hosts. Nothing answers on this network." Both tasks done. Screens 25-30. |
+| 17 Unplug | PASS with snag | `interact meeting_jack` opens the drop box network view with an "Unplug" button; `mg clickText` "Unplug" unplugged at once, with NO "Unplug it" confirm (a `dismiss` "Unplug it" found nothing). Box returned as "Network drop box". `t_debrief` opened, `julian_ended_by_unplug` set. Screens 31, 32. |
+| 18 Managed port | PASS | `interact managed_port`: confirm "Try the network drop box in this managed switch port?", Plug it in; toast "Port security: this device is not the one registered to this port." Examine line: "A wall port running to a managed switch with port security on." Patch panel: ports M01 (managed, box icon), G02 (guest), D03 (not patched), 04-24 empty. Click G02: "Plug the network drop box into the patch panel's guest port?" Plug it in: "Drop box: guest VLAN port ... On Merrin & Sallow guest network ... Nothing answers on this network." `t_guest_port` done. Screens 33-39. |
+| 19 Debrief | NOT FINISHED | Back at reception, `converse ama` gave: "Right. Before we wrap up, anything else you want to try?" with options "1. I'll have another look round." and "2. I'm done, let's talk." The conversation is still open on game 7537 (harness session 7537 may still be up). Debrief lines and credits not captured. |
+
+### Phone answers ("Where next?"), word for word
+
+- After the clone: "She's signed in and sitting right there. Give it a minute, or read the coffee rota on the wall and watch her go." (stale stop 12 line), then asked again: "Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy." then "If she doesn't, carry on. The Wi-Fi stops still work after the box comes out."
+- After the capture: "You've got the Staff key. Join the Staff Wi-Fi and compare it with the guest one."
+- After the unplug (timed): "Box is out. Take it to the comms cupboard and see what the ports in there make of it. Then come back to reception." Asked: "Take the box to the comms cupboard. Try the managed port, then the patch panel."
+- After the managed port refusal (timed): "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." Asked after both ports: "That's the lot. Come and find me at reception."
+
+### Run sheet corrections (DEMO_ACCESS_TOUR_RUN_SHEET.md, not yet edited)
+
+- Row 14: "Try the USB stick at the hub" works only after the data fix; the refusal toast text was not seen live (not proved). Keep, but retest on a fresh game.
+- Row 15: add the snag "Clone shows Guest as Chosen; click Staff, then Start." Add: "Thandiwe only joins if open plan is loaded. If you stay in reception, walk into open plan; the entry nudges her. About 30 s."
+- Row 15 phone: add the stale first reply ("She's signed in and sitting right there...") shown above the right one.
+- Row 16: the Staff key is shown on the capture tablet in the meeting room (also in the captures viewer), not in reception; say "go back to the meeting room tablet". The join is at the Staff access point in reception.
+- Row 17 (quick and full): no "Unplug it" confirm. Click the box, then "Unplug". Phone line quoted in the quick row is correct.
+- Row 18: the refusal is a toast "Port security: this device is not the one registered to this port." The phone follow-up after 4 s matches. The patch panel's spare port is G02; click it, confirm "Plug it in". Result "Nothing answers on this network."
+- Row 19: unchecked (debrief and credits).
+
+### Left for the next agent
+
+1. Fresh game on :3096 (do not use db tasks other than new-game.rb): prove the hub refusal, then run all demo_access_tour*_test.rb under flock with the brief's env, and the validator with --no-graph.
+2. Finish step 19 on game 7537 (pick "I'm done, let's talk.", read the "Before the mission ends" panel, debrief lines, credits) or on a fresh game; add screens 40+ and the debrief lines here.
+3. Edit the run sheet with the corrections above.
+4. Stop the server: pid 317772 (port 3096) and harness `tools/playtest/session-stop.sh 7537`.
+
+### Screenshots (screens6/)
+
+17_implant_confirm, 18_implant_done, 19_implant_network_view, 20_hide_ap_confirm, 21_ap_console, 22_ap_clone_list, 23_ap_clone_started, 24_ap_log, 25_phone_after_clone, 26_phone_after_capture, 27_capture_tablet, 28_join_staff_wifi, 29_join_staff_result, 30_guest_wifi, 31_unplug_confirm (network view with the Unplug button), 32_unplugged, 33_phone_after_unplug, 34_managed_port_refusal (the confirm), 35_managed_port_result (the toast), 36_patch_panel, 37_patch_panel_g02, 38_patch_panel_plugged, 39_phone_after_port. The hub refusal shot (the brief's first) does not exist: the refusal did not fire on 7537.
