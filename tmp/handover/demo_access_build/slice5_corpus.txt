@@ -1,0 +1,32 @@
+Run options: --seed 40952
+
+# Running:
+
+..
+[payload scan] scenarios scanned: 1, with findings before exceptions: 0
+  exceptions in file: 0
+...................
+[opened-state scan] scenarios scanned: 1, with findings before exceptions: 0
+  exceptions in file: 3
+  refusals recorded (kind => count): {"GET container/:id door_controller@lorna unreachable"=>1, "POST inventory takeable julian_rdp_file status 422"=>1}
+F
+
+Failure:
+BreakEscape::PayloadScanOpenedStateTest#test_opened-state_corpus_scan:_no_class_1,_class_2_or_unexempted_class_4_leaf_ships_once_everything_is_unlocked [/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/.claude/worktrees/p-build-access/test/models/break_escape/payload_scan_opened_state_test.rb:118]:
+opened-state payload scan findings:
+stale opened-state exception: scenarios/m09_digital_archaeology/scenario.json.erb GET room/:id rooms/reading_room/objects[2]/textVariants
+stale opened-state exception: scenarios/m09_digital_archaeology/scenario.json.erb GET /container container/hl_box/contents[0]/name
+stale opened-state exception: scenarios/m09_digital_archaeology/scenario.json.erb GET scenario playerInventory[7]/name.
+--- expected
++++ actual
+@@ -1 +1 @@
+-[]
++["stale opened-state exception: scenarios/m09_digital_archaeology/scenario.json.erb GET room/:id rooms/reading_room/objects[2]/textVariants", "stale opened-state exception: scenarios/m09_digital_archaeology/scenario.json.erb GET /container container/hl_box/contents[0]/name", "stale opened-state exception: scenarios/m09_digital_archaeology/scenario.json.erb GET scenario playerInventory[7]/name"]
+
+
+rails test test/models/break_escape/payload_scan_opened_state_test.rb:67
+
+.
+
+Finished in 12.765937s, 1.8017 runs/s, 6.1883 assertions/s.
+23 runs, 79 assertions, 1 failures, 0 errors, 0 skips

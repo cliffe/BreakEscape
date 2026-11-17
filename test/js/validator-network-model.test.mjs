@@ -808,6 +808,13 @@ test('the full validator reports no unknown errors on test_access_devices', () =
     // Known errors (scripts/validator_known_failures.json, e.g. the rogue_ap sprite awaiting A3 art) are allowed.
     assert.match(r.stdout, /Result: (0 errors|(\d+) errors \(\2 known\))/);
 });
+test('the full validator reports no unknown errors on demo_access_tour', () => {
+    const r = spawnSync('ruby', ['scripts/validate_scenario.rb', 'scenarios/demo_access_tour/scenario.json.erb', '--skip-ink', '--no-graph'], {
+        cwd: root, encoding: 'utf8', env: { ...process.env, LANG: 'C.UTF-8' }
+    });
+    assert.equal(r.status, 0, r.stderr + r.stdout.slice(-2000));
+    assert.match(r.stdout, /Result: (0 errors|(\d+) errors \(\2 known\))/);
+});
 
 // ---- E0.4: the Wi-Fi key as a capture secret ----
 
