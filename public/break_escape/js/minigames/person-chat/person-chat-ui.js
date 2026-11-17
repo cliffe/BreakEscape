@@ -215,7 +215,8 @@ export default class PersonChatUI {
         this._onCaptionChange = () => this.updateScrollCue();
         // On a phone the portrait's height comes from the box, not the caption (see updatePortraitHeight)
         this._onBoxChange = () => this.updatePortraitHeight();
-        if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', this._onBoxChange);
+        // The ResizeObserver below covers the box; the window listener is only the fallback without one.
+        if (typeof ResizeObserver !== 'function' && typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', this._onBoxChange);
         captionArea.addEventListener('scroll', this._onCaptionChange);
         if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', this._onCaptionChange);
         if (typeof ResizeObserver === 'function') {
@@ -225,6 +226,9 @@ export default class PersonChatUI {
             this._boxObserver = new ResizeObserver(this._onBoxChange);
             this._boxObserver.observe(mainContent);
         }
+        this.elements.mainContent = mainContent;
+        this.elements.portraitSection = portraitSection;
+        this.updatePortraitHeight();
 
         this.elements.mainContent = mainContent;
         this.elements.portraitSection = portraitSection;

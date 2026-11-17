@@ -1,4 +1,5 @@
 // Camera shots for multi-NPC person-chats (person-chat-camera.js).
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cameraViewFor, backgroundRect, portraitRect, shotScale, containFit, canvasBackingSize, PLAYER_VIEW, FIRST_NPC_VIEW } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
@@ -159,12 +160,13 @@ test('a scene shot may use the exact cover scale', () => {
 import { phonePortraitSize, PHONE_FRAME_PX, PHONE_MIN_CAPTION_PX } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
 
 test('phone portrait height is a whole scale of the frame and leaves the caption its minimum', () => {
-    for (const dpr of [1, 2, 3]) {
+    for (const dpr of [1, 1.25, 1.27, 1.35, 1.4, 1.5, 2, 2.625, 3]) {
         for (const boxH of [474, 620, 647, 824, 895, 1000]) {
             const { scale, cssHeight } = phonePortraitSize(boxH, dpr);
             assert.ok(Number.isInteger(scale) && scale >= 1);
             // the backing store (css x dpr) lands on exactly scale x frame, with no spare band
             assert.equal(Math.floor(cssHeight * dpr), scale * PHONE_FRAME_PX);
+            assert.equal(Math.round(cssHeight * dpr), scale * PHONE_FRAME_PX);
             assert.equal(canvasBackingSize(390, cssHeight, dpr).height, scale * PHONE_FRAME_PX);
             // and it is the largest scale that keeps the caption minimum (unless 1x already cannot)
             if (scale > 1) assert.ok(boxH - cssHeight >= PHONE_MIN_CAPTION_PX - 1e-6);
@@ -180,9 +182,15 @@ test('the drawn scale equals the section scale and ignores caption content', () 
         const p = portraitRect(FIRST_NPC_VIEW, 128, 128, 390, Math.round(cssHeight), 0);
         assert.equal(p.scale, scale);
         assert.equal(p.y + p.h, Math.round(cssHeight));
-        // the caption is not an input: the box height alone decides, so a longer line or more choices cannot move it
-        assert.deepEqual(phonePortraitSize(boxH, 1, PHONE_FRAME_PX, PHONE_MIN_CAPTION_PX), phonePortraitSize(boxH, 1));
+        // the caption is not an input: phonePortraitSize takes the box height and dpr only
+        assert.ok(phonePortraitSize.length <= 4);
     }
+    // and the live updater reads only the chat box height and devicePixelRatio
+    const src = readFileSync(new URL('../../public/break_escape/js/minigames/person-chat/person-chat-ui.js', import.meta.url), 'utf8');
+    const body = src.slice(src.indexOf('updatePortraitHeight() {'), src.indexOf('updateScrollCue() {'));
+    assert.match(body, /main\.getBoundingClientRect\(\)\.height/);
+    assert.match(body, /phonePortraitSize\(h, window\.devicePixelRatio/);
+    assert.doesNotMatch(body, /captionArea|captionContent|scrollHeight|dialogueBox|textContent/);
 });
 
 test('the portrait scale changes only when the viewport does', () => {
