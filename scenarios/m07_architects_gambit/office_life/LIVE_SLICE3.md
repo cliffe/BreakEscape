@@ -65,3 +65,26 @@ No probe output contains "coffee", across all L1, trip and talk runs. The needs 
 
 - `window.__test` has no `converse` or `room()`. Dialogue opens with `interact(id)`, then the minigame steps (the m01 lib's `converse`). `doorways(roomId)` gives door ids.
 - `needs.state(id).job` has `objectId` null. The cooler is identified by position, not by target id.
+
+## Talk failure: diagnosis and rerun (17 Nov 2026)
+
+Cause of the 240 s `blocking-ui` in games 7737, 7744 and 7751: the probe, not the scenario or ink. Two separate things.
+
+1. On first ops-floor entry the Agent HaX phone bark ("The checkpoint guard is bought...", class `npc-bark npc-bark--phone`) is the blocking UI at about 2 s. Expected. The probe dismissed it with Enter then Escape (`dismiss` in the m01 lib). Escape opens the pause menu, so `blockingUi` became `game-menu-overlay` ("PAUSED ... Resume"), and every later Enter/Escape pair toggled it open again for the rest of the 240 s. Game 7767 printed both values (bark at t2, pause menu from t9 on). Fix: the talk mode now clears the blocker with `__test.dismissBlockingUi()` only and prints `blockingUi` (tag, id, class, text) and the open minigame. With that, the bark clears by t4 (game 7774).
+2. First talk not opening (7732, and Gwen in 7779 and 7789): `interact('gwen_pritchard')` returned ok with `targetUnverified: true`, confirmed only by the `architect_contact` global event, and the chat never opened; a screenshot showed the chair bark "A chair." Gwen's chair (`operations_floor_chair-grey-1_7`, 40 px box centred x 364, seatedBy gwen_pritchard) overlaps the bridge's aim point (383, 122), her sprite centre column; the chair box spans x 344 to 384 and wins the click at equal depth (165.5). Clicking her body at x 395 opens the chat (game 7793). Adaeze's aim point happened to clear her chair, so her talks worked. Fix in the probe: stand beside her and click 12 px right of her sprite centre (`talkTo`). Not changed in the scenario or engine.
+   - Engine note, not changed: a seated NPC's chair hit box sits under the centre click, and the bridge's `aimPointFor` reported `clean: true` for a point on the chair. A player clicking a seated NPC's centre can get "A chair." instead of the chat. Worth a look when someone owns seating or click priority. Evidence: games 7779, 7789, 7793.
+
+Probe also fixed: the both-using predicate stopped at x 420, but the second cooler cell is at x 448 (Gwen `using` at 448, 244), so it never matched. Now x 360 to 460. Two further probe changes: the chat background is read from `MinigameFramework.currentMinigame.background`.
+
+### L4: talk to each
+
+- Gwen, game 7795. Opener: "Hi there. I look after the systems on this floor, if something's playing up." then "Not that I'd be much use tonight. I'm just tidying up before I go." Choice "Carry on, I'll stay out of your way." Goodbye "Thanks. Take care." and the chat closed. Second talk gave the repeat line "Oh, you're still here. I'll be off in a minute." then the same choice and goodbye, closed. Background `assets/backgrounds/rooms/m07_operations_floor_blended.png` both times (ops floor). Pass.
+- Adaeze, game 7802. Opener "Evening. I'm the grid scheduler, if you were looking for one." / "Last of the load figures, then I'm out of here like everybody else." Goodbye "Thank you. I'll shut this down and go." Closed. Second talk "Still here? I'm nearly done, I promise." then the same choice and goodbye, closed. Background the ops floor both times. Pass. (7774, run before the probe changes, gave the same lines.)
+
+### L2 after talk
+
+- 7802 (talk to Adaeze): chat closed at t15. Adaeze started `goto_target` 2 s after the close and reached `using` at (403, 244); Gwen followed and was `using` at (448, 244). Both using together 10 s after the close (t25). `no_beside_cell` 0. Pass.
+- 7795 (talk to Gwen): chat closed at t15. Adaeze `goto_target` at t19, `using` at t21 (403, 244). Gwen `goto_target` at t24, `using` at t27 (448, 244). Both using together from t27 to about t56. `no_beside_cell` 0. Pass (the probe's old predicate missed it; read from the sample log).
+- Probe errors: none in any run.
+
+Games used: 7767 (diagnosis, blocker values), 7774, 7779, 7789, 7792, 7793 (chair diagnosis), 7795, 7802.
