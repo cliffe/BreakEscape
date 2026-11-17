@@ -77,6 +77,9 @@ let reload = async function (h) {
   });
   if (resumed) await h.t(1000);
   await h.page.waitForFunction(() => window.gameScenario && window.rooms && window.__test && window.player && window.player.body && window.npcNeedsSystem, null, { timeout: 90000 });
+  // Hold the staff the moment the needs system exists: needs reset on reload (R6) and the cake's
+  // tempt band can send someone to it within the settle below, before any measurement.
+  await calm(h);
   await h.t(2000);
   await dismiss(h);
   await h.page.evaluate(() => {
