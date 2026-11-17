@@ -130,7 +130,7 @@ function dispatcher() {
 }
 
 const BASE_GLOBALS = () => ({
-    ap_planted: true, ap_twin_staff: false, ap_twin_wrong: false, ap_portal_account: false,
+    ap_twin_staff: false, ap_twin_wrong: false, ap_portal_account: false,
     kp_twin_captured: false, kp_twin_account_captured: false
 });
 
@@ -442,6 +442,23 @@ test('model: cloneLog as a string or keyed by template id; signal words; client 
 });
 
 // ---- scroll and whole-step sizes (review R1 M1, M2, t5) ------------------------------------
+
+test('picking SSIDs and templates does not grow the tracked listener list (m8a)', () => {
+    reset();
+    const scene = open();
+    scene.showTab('clone');
+    const base = scene._eventListeners.length;
+    for (let i = 0; i < 6; i++) {
+        click(qa('.rogue-ap-ssid-pick').find((b) => b.dataset.ssid === 'Ledgerwell-Staff'));
+        click(qa('.rogue-ap-template').find((b) => b.dataset.template === 'signin'));
+        click(qa('.rogue-ap-template')[0]);
+    }
+    assert.equal(scene._eventListeners.length, base, 'buttons inside the redrawn pane are not tracked');
+    // and the buttons still work after many redraws
+    click(qa('.rogue-ap-ssid-pick').find((b) => b.dataset.ssid === 'Ledgerwell-Staff'));
+    click(q('.rogue-ap-start'));
+    assert.equal(G().ap_twin_staff, true);
+});
 
 test('a same-tab redraw keeps the pane scroll, and Start brings the status line into view', () => {
     reset();
