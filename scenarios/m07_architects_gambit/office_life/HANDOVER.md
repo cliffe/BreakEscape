@@ -26,3 +26,22 @@ Branch `plan/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Nothing built. Plan
 
 - The Write tool refuses `.md` files in a subagent; write plan files with a shell heredoc.
 - Do not stage `dungeon_graph.*`. Commit with `git commit -m ... -- <paths>` after `git diff --cached --stat`.
+
+---
+
+# Slice 3 build handover (2026-11-17)
+
+Branch build/ol-m07, commit c36090d54.
+
+## Done
+- scenario.json.erb: officePresets; adaeze_okafor and gwen_pritchard in operations_floor (seated, needsHome, needsRooms, thirst, group ops_floor, leash, globalVarOnKO adaeze_ko/gwen_ko, pools, talk breaks, coupled break on Gwen, three hides each); ops_cooler declared (water_cooler, offWhen ops_staff_upset, useSeconds 22, overhearRadius 360, useFrom dx 0 dy -1 PLACEHOLDER); affordance false on ops_floor_workstation; trouble rows and two hands-down rows appended on agent_0x99; two credits lines after Park; five globals.
+- Static checks pass (BUILD_LOG.md).
+
+## Not done
+- Exchanges unwired: four lines over 40 chars (BUILD_LOG.md has the block and options). Needs the user's call on shortened text (ink and SPOKEN_LINES change), then re-compile ink.
+- All measurements: chair body-centre cells (positions 2,5 and 4,5 are estimates), useFrom plus engine second cell and routes, needs clock ratio, first trip 45 to 120 s (tune initial), use and walk-home over five tries, 50-seed manual-clock order test, no no_beside_cell over five trips.
+- Live checks L1, L2, L5, L6, L8, 10.3, 10.4 and LIVE_SLICE3.md. No server started; nothing running.
+
+## Gotchas
+- I ran `git checkout -- dungeon_graph.html` once to clear a generated file (rule slip); dungeon_graph.md is modified and unstaged: never stage it.
+- Write .md with heredocs. node_modules is a symlink or dir already in the worktree (untracked, do not stage).
