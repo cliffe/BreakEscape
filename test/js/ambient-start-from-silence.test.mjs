@@ -11,7 +11,8 @@ function lagSound(key) {
         key, isPlaying: false, loop: false, audioVol: 1, pendingVol: null,
         get volume() { return this.audioVol; },
         setVolume(v) { this.pendingVol = v; },
-        play(o) { this.isPlaying = true; this.loop = !!o?.loop; this.audioVol = 1; this.pendingVol = null; },
+        playConfig: null,
+        play(o) { this.isPlaying = true; this.loop = !!o?.loop; this.playConfig = o; this.audioVol = o?.volume ?? 1; this.pendingVol = null; },
         stop() { this.isPlaying = false; },
         audioTick() { if (this.pendingVol !== null) { this.audioVol = this.pendingVol; this.pendingVol = null; } }
     };
@@ -40,6 +41,7 @@ test('the first ambient start fades in from 0 even though the sound still reads 
     const { sm, tweens, advance } = rig();
     sm.fadeAmbientTo('A', 1, 400);
     assert.equal(tweens[0].cfg.from, 0);
+    assert.equal(sm.sounds.A.volume, 0, 'no stale base-volume read straight after play');
     advance(20);
     assert.ok(sm.sounds.A.volume < 0.2, `volume after 20 ms was ${sm.sounds.A.volume}`);
 });
@@ -48,6 +50,7 @@ test('a side loop started with fadeLoopTo also fades in from 0', () => {
     const { sm, tweens } = rig();
     sm.fadeLoopTo('B', 0.5, 400);
     assert.equal(tweens[0].cfg.from, 0);
+    assert.equal(sm.sounds.B.volume, 0);
 });
 
 test('a loop already playing keeps its true current volume as the start of the next fade', () => {

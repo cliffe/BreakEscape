@@ -444,7 +444,7 @@ class SoundManager {
 
         let startedNow = false;
         if (!sound.isPlaying) {
-            sound.play({ loop: true });
+            sound.play({ loop: true, volume: 0 });
             // play(config) puts back the configured base volume, so a new loop would start at full
             // for a frame and then fade down. Zero it after play so every ambient fades in from
             // silence (room tone and the shipped path alike).
@@ -532,7 +532,7 @@ class SoundManager {
         if (prev) prev.stop();
         if (normalizedVolume === 0 && !sound.isPlaying) return;
         let startedNow = false;
-        if (!sound.isPlaying) { sound.play({ loop: true }); sound.setVolume(0); startedNow = true; } // play(config) resets the volume
+        if (!sound.isPlaying) { sound.play({ loop: true, volume: 0 }); sound.setVolume(0); startedNow = true; } // play(config) resets the volume
         const target = this.volumeSettings.music * this.masterVolume * normalizedVolume * (this._ambientDuck ?? 1);
         const t = this.scene.tweens.addCounter({
             from: startedNow ? 0 : sound.volume, // sound.volume lags setVolume(0) until the audio thread runs
