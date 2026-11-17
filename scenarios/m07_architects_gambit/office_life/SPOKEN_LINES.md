@@ -14,14 +14,14 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. Nothing is voiced yet; n
 | Gwen Pritchard | hub, repeat | Oh, you're still about. I'll be off in a minute. | 48 |
 | Gwen Pritchard | hub, upset | That's enough now. We're going, all right? | 42 |
 | Gwen Pritchard | hub, goodbye | Ta. Mind how you go. | 20 |
-| Adaeze Okafor | ex_last_two 1 | That board by the entrance still has us down as missing. | 56 |
-| Gwen Pritchard | ex_last_two 2 | Somebody ought to have crossed us off by now. | 45 |
+| Adaeze Okafor | ex_last_two 1 | The muster board still has us missing. | 38 |
+| Gwen Pritchard | ex_last_two 2 | Somebody ought to cross us off. | 31 |
 | Adaeze Okafor | ex_last_two 3 | And the coffee machine is still broken. | 39 |
 | Gwen Pritchard | ex_last_two 4 | Still broken, still nobody's job. | 33 |
 | Adaeze Okafor | ex_last_two 5 | At least the water is cold. | 27 |
 | Gwen Pritchard | ex_going_now 1 | Right, I'm logging this and going. | 34 |
-| Adaeze Okafor | ex_going_now 2 | Same. Two minutes and I'm out of the door. | 42 |
-| Gwen Pritchard | ex_going_now 3 | The fire marshal won't thank us for staying. | 44 |
+| Adaeze Okafor | ex_going_now 2 | Same. Two minutes and I'm out the door. | 39 |
+| Gwen Pritchard | ex_going_now 3 | The fire marshal won't thank us for it. | 39 |
 | Adaeze Okafor | ex_going_now 4 | Then let's not give him the chance. | 35 |
 | Gwen Pritchard | ex_going_now 5 | Come on, I'll walk down with you. | 33 |
 | Adaeze Okafor | pool cooler 1 | Cold water again. Lovely. | 25 |

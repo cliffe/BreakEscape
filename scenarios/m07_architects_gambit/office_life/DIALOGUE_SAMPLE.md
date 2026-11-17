@@ -18,8 +18,8 @@ Status: awaiting the user's yes. Nothing is voiced until it is given.
 
 ## Exchange: ex_last_two (at the cooler, both present)
 
-- Adaeze Okafor: That board by the entrance still has us down as missing.
-- Gwen Pritchard: Somebody ought to have crossed us off by now.
+- Adaeze Okafor: The muster board still has us missing.
+- Gwen Pritchard: Somebody ought to cross us off.
 - Adaeze Okafor: And the coffee machine is still broken.
 - Gwen Pritchard: Still broken, still nobody's job.
 - Adaeze Okafor: At least the water is cold.

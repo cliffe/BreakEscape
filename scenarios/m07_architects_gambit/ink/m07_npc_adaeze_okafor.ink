@@ -54,8 +54,8 @@ VAR hub_quiet = false
 
 // Before the server room is entered: the muster board.
 === ex_last_two ===
-Adaeze Okafor: That board by the entrance still has us down as missing.
-Gwen Pritchard: Somebody ought to have crossed us off by now.
+Adaeze Okafor: The muster board still has us missing.
+Gwen Pritchard: Somebody ought to cross us off.
 Adaeze Okafor: And the coffee machine is still broken.
 Gwen Pritchard: Still broken, still nobody's job.
 Adaeze Okafor: At least the water is cold.
@@ -64,8 +64,8 @@ Adaeze Okafor: At least the water is cold.
 // After ex_last_two: they agree to go.
 === ex_going_now ===
 Gwen Pritchard: Right, I'm logging this and going.
-Adaeze Okafor: Same. Two minutes and I'm out of the door.
-Gwen Pritchard: The fire marshal won't thank us for staying.
+Adaeze Okafor: Same. Two minutes and I'm out the door.
+Gwen Pritchard: The fire marshal won't thank us for it.
 Adaeze Okafor: Then let's not give him the chance.
 Gwen Pritchard: Come on, I'll walk down with you.
 -> DONE

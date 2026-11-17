@@ -1887,7 +1887,10 @@ scada_password = "CascadeWindow19"
           "behavior": { "hostile": { "leash": true } },
           "needs": { "thirst": { "initial": 45, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
           "chatter": { "cooler": ["Cold water again. Lovely.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Nearly done. Nearly."] },
-<%# Exchanges ex_last_two and ex_going_now are NOT wired yet: four of their lines are over the 40 character bubble limit (validator error). See office_life/BUILD_LOG.md for the ready block. %>
+          "exchanges": [
+            { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false } },
+            { "with": "gwen_pritchard", "knot": "ex_going_now", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false, "heard_ex_last_two": true } }
+          ],
           "eventMappings": [
             { "eventPattern": "conversation_closed:adaeze_okafor", "condition": "!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "conversation_closed:gwen_pritchard", "condition": "!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true", "delayMs": 4000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
