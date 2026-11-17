@@ -47,7 +47,6 @@
    minigame title in a pixel font must be added to this list (test/js/minigame-title-crisp-css.test.mjs
    checks the list). Never add a wrapper bar. */
 .minigame-container :is(
-    .device-frame-title,
     .patch-panel-title,
     .rogue-ap-title-text,
     .console-title,
@@ -56,16 +55,13 @@
     .notes-minigame-title,
     .signin-title,
     .password-prompt-title,
-    .password-modal-title,
     .desktop-window-title,
     .window-title,
     .share-folder-path,
     .dusting-title,
     .da-title,
-    .ehr-terminal-online-title,
     .er-title,
     .ib-title,
-    .ip-modal-title,
     .lpb-title,
     .lpb-inspect-title,
     .lpb-pretext-title,
