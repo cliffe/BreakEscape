@@ -1,6 +1,6 @@
 # m10 office life: questions for the user
 
-**Final casting picks (for clash checks):** Ama Owusu (`ama_owusu`, voice Autonoe) and Lorna Easton (`lorna_easton`, voice Erinome). Not Lerato Dlamini or Tomasz Wisniewski (m06), not the Office Life Tour cast (Chidi Okeke, Jun Watanabe, Graham Whitfield, Agnieszka Duda, Zainab Hussain), not the m01, m03 or m05 extras. Both picks are conditional on Q1 (none if Tier 0).
+**Final casting picks (for clash checks):** Darren Price (`darren_price`, voice Orus) and Sofia Marchetti (`sofia_marchetti`, voice Despina). Not the Access Tour demo cast (Ama Owusu, Lorna Easton, Delphine Arvanitis, Julian Sallow, Thandiwe Moyo, Yasmin Chaudhry), not the Office Life Tour cast (Chidi Okeke, Jun Watanabe, Graham Whitfield, Agnieszka Duda, Zainab Hussain), not m06 (Lerato Dlamini, Tomasz Wisniewski), not m04 (Ibrahim Diallo, Joanne Pell), not m07's picks (Adaeze Okafor, Gwen Pritchard), not the m01, m03 or m05 extras. Both picks are conditional on Q1 (none if Tier 0).
 
 ## Q1. Tier: Tier 0, or a small forward-post treatment?
 
@@ -9,11 +9,12 @@
 
 ## Q2. Casting
 
-Every course man's voice is already used in m10 (Darren Price's Orus is Robert Vance's), and `VOICE_CAST.md` keeps one voice per speaker within a scenario.
+No free course character has a voice that m10 does not already use. The voices m10 leaves free (Autonoe, Erinome, Gacrux, Vindemiatrix, Achernar) belong to characters taken by the demos or other missions. m10 already shares one voice among speakers who are never heard together (Iapetus: Vector, Mercer and the ENTROPY operative), so a share is not new here; the question is which share costs least.
 
-- **a. Ama Owusu and Lorna Easton (recommended).** Field power and IT support (Black British, Ghanaian heritage, 40s, London) and welfare and logistics (white, 40s, Lancashire). Both voices are free in m10, both atlases have seated and pose frames, visemes and headshots, neither is in any mission (both appear only in `demo_access_tour`).
-- **b. Darren Price and Ama Owusu.** Puts a man in the pair. Darren keeps Orus, shared with Robert Vance's phone calls in the bunker; they are never heard together, but it breaks the one-voice rule. Age used: 40s per `BRAND_SET.md:84` (`VOICE_CAST.md:101` says 50s; the style line would be corrected to 40s).
-- **c. Adaeze Okafor and Lorna Easton.** Adaeze's Gacrux is free in m10 but is also Lerato's voice, and m06 is drafting Lerato.
+- **a. Darren Price and Sofia Marchetti (recommended).** Field support (white, 40s, Bristol) and welfare and logistics (Italian-British, 30s, southern English). Darren's Orus is Robert Vance's and Sofia's Despina is Victoria's; both of those are phone contacts heard only on calls deep in the bunker, never in the yard, and chatter is muted while any phone call is open. The style lines keep each accent well apart from the phone voice (Vance is Teesside, Victoria is RP). Full atlases, visemes and headshots; in no mission yet. Darren's age: 40s per `BRAND_SET.md:84` (`VOICE_CAST.md` says 50s; the style line would say 40s).
+- **b. Anjali Rao or Nilesh Solanki in either slot.** Anjali's Kore is Quintero's and Nilesh's Iapetus is Vector's; both stand in the yard beside the kettle. Not recommended.
+- **c. Ama Owusu and Lorna Easton.** Their voices (Autonoe, Erinome) are free in m10, but both are in the Access Tour demo, and Ama hosts both demos.
+- **d. One extra only (Darren or Sofia).** Halves the voice share, but the kettle exchanges need two speakers, so the treatment becomes pool lines from one person.
 
 ## Q3. Voicing spend
 

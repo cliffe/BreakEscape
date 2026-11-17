@@ -56,28 +56,28 @@ The aim chain does not change. No task, objective, `concludeRequires` or lock re
 
 **Secrets in the yard.** The gate console (VM launcher), the gate terminal (flag station), the sign-out sheet, Helena's plans, the incident file, the guide flags held by `agent_0x99` and the cupboard codes held by phones. No office-life line, object or global names, carries or points at any of them.
 
-**Voices.** In use in m10: Achird, Algieba, Alnilam, Aoede, Callirrhoe, Charon, Despina, Enceladus, Fenrir, Iapetus, Kore, Laomedeia, Leda, Orus, Puck, Pulcherrima, Rasalgethi, Sadachbia, Sadaltager, Schedar, Sulafat, Umbriel, Zephyr, Zubenelgenubi. `VOICE_CAST.md` keeps one voice per speaker within a scenario, and every course man's voice is already taken here (Darren Price's Orus is Robert Vance's, `vance_phone` `:2443`). Course women with a free voice: Ama Owusu (Autonoe), Lorna Easton (Erinome), Adaeze Okafor and Lerato Dlamini (Gacrux).
+**Voices.** In use in m10: Achird, Algieba, Alnilam, Aoede, Callirrhoe, Charon, Despina, Enceladus, Fenrir, Iapetus, Kore, Laomedeia, Leda, Orus, Puck, Pulcherrima, Rasalgethi, Sadachbia, Sadaltager, Schedar, Sulafat, Umbriel, Zephyr, Zubenelgenubi. No course cast member who is still free for a mission has a voice that m10 does not already use. The free voices (Autonoe, Erinome, Gacrux, Vindemiatrix, Achernar) belong to course characters already taken: Ama Owusu and Lorna Easton (Access Tour demo), Lerato Dlamini (m06), Fatima Begum (m01), Adaeze Okafor (m07), Zainab Hussain (Office Life Tour). m10 itself already shares one voice among speakers who are never heard together (Iapetus: Vector, Mercer and the ENTROPY operative, `:498`, `:503`, `:507`). The picks share voices with two phone contacts who are only ever heard on the phone, deep in the bunker: Darren Price's Orus with Robert Vance (`vance_phone` `:2443`, voice table `:505`) and Sofia Marchetti's Despina with Victoria (`victoria_line` `:2423` and `victoria_threat` in the gallery, voice table `:504`). The other free cast would share with someone standing in the yard: Anjali Rao's Kore is Quintero's, Nilesh Solanki's Iapetus is Vector's.
 
 ## 2. People
 
 | NPC | Class | Post | Leash | Needs | Groups and avoids | Habits | Beats protected by | Gate global | If attacked mid-walk |
 |---|---|---|---|---|---|---|---|---|---|
 | every existing record | as section 1A | unchanged | n/a | none | n/a | none | protection 1 (no needs) | n/a | unchanged |
-| `ama_owusu` (field power and IT support) | ambient | kettle west use cell (8,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash | caffeine | groups `fp_support` | none | not near any beat: she does not walk (section 2.3) | n/a | she never walks; a strike sets `fp_staff_upset`, a KO sets `fp_staff_ko` |
-| `lorna_easton` (welfare and logistics) | ambient | kettle east use cell (9,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash | caffeine | groups `fp_support` | none | as above | n/a | as above |
+| `darren_price` (field power and IT support) | ambient | kettle west use cell (8,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash | caffeine | groups `fp_support` | none | not near any beat: he does not walk (section 2.3) | n/a | he never walks; a strike sets `fp_staff_upset`, a KO sets `fp_staff_ko` |
+| `sofia_marchetti` (welfare and logistics) | ambient | kettle east use cell (9,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash | caffeine | groups `fp_support` | none | as above | n/a | as above |
 
 No gated machine: no story NPC has needs, so no beat gate exists.
 
 ### 2.1 The two extras
 
-- **Ama Owusu.** In the course, security lead at an outsourced IT provider; 40s, Black British of Ghanaian heritage, warm and practical (`BRAND_SET.md:596`). Here: field support from the regional office, keeping the generator, the vans' power and the field kit running. Not cleared for the bunker.
-- **Lorna Easton.** In the course, reception and facilities lead; 40s, white, from Lancashire, warm and reassuring (`BRAND_SET.md:681`, `:687`). Here: welfare and logistics for the post, the heaters, the food and the tea. She has nothing to do with the kit sign-outs, which belong to the story.
+- **Darren Price.** In the course, service desk team lead and security awareness lead; 40s, white, from Bristol, measured and dry (`BRAND_SET.md:84`; `VOICE_CAST.md` says 50s, and this plan uses 40s). Here: field support from the regional office, keeping the generator, the vans' power and the field kit running. Not cleared for the bunker.
+- **Sofia Marchetti.** In the course, an HR adviser; 30s, second-generation Italian-British, warm and approachable (`VOICE_CAST.md`, Quayholt table). Here: welfare and logistics for the post, the heaters, the food and the tea. She has nothing to do with the kit sign-outs, which belong to the story.
 
-Their looks and backgrounds differ from each other and from the yard's cast (Netherton, HaX, Quintero, Kowalczyk, Arakawa, Malhotra). Neither holds an item, a key, a code or a clue, neither names a team member, and neither is a suspect: no ink, note or line mentions them in the whodunnit, and their lines never mention the kit, the sign-out sheet or anyone's movements. They are compatible with each other.
+Their looks and backgrounds differ from each other and from the yard's cast (Netherton, HaX, Quintero, Kowalczyk, Arakawa, Malhotra). Neither holds an item, a key, a code or a clue, neither names a team member, and neither is a suspect: no ink, note or line mentions them in the whodunnit, and their lines never mention the kit, the sign-out sheet or anyone's movements. They are compatible with each other. One man and one woman, of different ages and backgrounds.
 
 Each is talkable: a three-line conversation that offers nothing and ends (section 6).
 
-Each carries `"behavior": { "hostile": { "leash": true } }`. A strike makes a non-hostile NPC hostile (`systems/player-combat.js:453` to `:462`); without the leash she would follow the player into the bunker. With it, she stops chasing past `chaseRange` from her post and, as measured on m05, stays hostile near her post for the rest of the game, chasing again on re-entry. That is the cost of the player's own attack.
+Each carries `"behavior": { "hostile": { "leash": true } }`. A strike makes a non-hostile NPC hostile (`systems/player-combat.js:453` to `:462`); without the leash the extra would follow the player into the bunker. With it, the extra stops chasing past `chaseRange` from the post and, as measured on m05, stays hostile near the post for the rest of the game, chasing again on re-entry. That is the cost of the player's own attack.
 
 ### 2.2 Posts and the kettle
 
@@ -95,7 +95,7 @@ Posts are the kettle's two use cells, (8,8) and (9,8) (**estimate**), so the pai
 | (15,8), (18,7) | Arakawa, minder and Nightshade at the blast door | 6 tiles or more |
 | incident file reach (6,8), (5,8) | the player | the nearest user cell is 2 tiles east |
 
-**Fallback F1**, if the engine does not let two NPCs hold posts at one object's use cells, or a post on a use cell does not start the use in place: posts one tile out, Ama at (7,8) and Lorna at (10,8), each stepping one tile to brew. (7,8) stays clear of the incident file's reach cells. Re-run L2 and L5.
+**Fallback F1**, if the engine does not let two NPCs hold posts at one object's use cells, or a post on a use cell does not start the use in place: posts one tile out, Darren at (7,8) and Sofia at (10,8), each stepping one tile to brew. (7,8) stays clear of the incident file's reach cells. Re-run L2 and L5.
 
 ### 2.3 Needs and rhythm
 
@@ -103,14 +103,14 @@ Caffeine only, met by the kettle.
 
 | | `initial` | `decayPerMin` | `urgentAt` | `jitterPct` |
 |---|---|---|---|---|
-| Ama | 60 | 3 | 30 | 10 |
-| Lorna | 90 | 2.5 | 30 | 10 |
+| Darren | 60 | 3 | 30 | 10 |
+| Sofia | 90 | 2.5 | 30 | 10 |
 
-Ama brews first, about ten needs-minutes in (**estimate**; the build measures how needs-minutes map to real seconds, `references/measurement-recipes.md` section 10).
+Darren brews first, about ten needs-minutes in (**estimate**; the build measures how needs-minutes map to real seconds, `references/measurement-recipes.md` section 10).
 
-**Coupled break, one way.** On `lorna_easton`: `npc_use_started:fp_kettle`, condition `data.npcId === 'ama_owusu' && !globalVars.fp_staff_upset`, `delayMs` 1500, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. When Ama brews, Lorna joins her, so the pair use the kettle at once and talk. Coupling one way only, so the kettle is never held for minutes.
+**Coupled break, one way.** On `sofia_marchetti`: `npc_use_started:fp_kettle`, condition `data.npcId === 'darren_price' && !globalVars.fp_staff_upset`, `delayMs` 1500, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. When Darren brews, Sofia joins her, so the pair use the kettle at once and talk. Coupling one way only, so the kettle is never held for minutes.
 
-**Mapped break.** On `ama_owusu`: `conversation_closed:director_netherton`, condition `!globalVars.fp_staff_upset`, `delayMs` 2000, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. After the player's talk with Netherton, as the player turns from the table, the pair brew up within earshot. Netherton's existing mappings are untouched; this mapping is on Ama and only reads the event.
+**Mapped break.** On `darren_price`: `conversation_closed:director_netherton`, condition `!globalVars.fp_staff_upset`, `delayMs` 2000, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. After the player's talk with Netherton, as the player turns from the table, the pair brew up within earshot. Netherton's existing mappings are untouched; this mapping is on Darren and only reads the event.
 
 `useSeconds` 22, long enough for a four-line exchange.
 
@@ -130,7 +130,7 @@ Plain, as the existing yard NPCs' hides are (repeating a hide is harmless). The 
 ### 2.6 Trouble
 
 One bounded global, `fp_staff_upset` (declared `false`), set by seven `onceOnly` mappings on `agent_0x99`, appended at the end of its list so no saved once index moves:
-- `npc_attacked:ama_owusu`, `npc_attacked:lorna_easton`;
+- `npc_attacked:darren_price`, `npc_attacked:sofia_marchetti`;
 - `global_variable_changed:arakawa_ko`, `:vector_ko`, `:phantom_ko`, `:quintero_ko`, `:kowalczyk_ko`, each `value === true`: a team member knocked out by the player, in the yard or over the radio, stops the tea.
 
 The build confirms each of those five KO globals is declared `false` in `globalVariables`; any that is not, gets declared, or its mapping is dropped and the count here falls.
@@ -146,13 +146,13 @@ The kettle carries `offWhen: "fp_staff_upset"`, so neither uses it again: the pa
 ### 2.7 Build skeleton
 
 ```json
-{ "id": "ama_owusu", "displayName": "Ama Owusu", "npcType": "person", "gender": "female",
-  "spriteSheet": "ama_owusu",
-  "spriteTalk": "assets/characters/ama_owusu_talk.png",
-  "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
-  "avatar": "assets/characters/ama_owusu_headshot.png",
-  "voice": { "name": "Autonoe", "style": "<SAFETYNET rewrite, below>", "language": "en-GB" },
-  "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json", "currentKnot": "talk_ama",
+{ "id": "darren_price", "displayName": "Darren Price", "npcType": "person", "gender": "male",
+  "spriteSheet": "darren_price",
+  "spriteTalk": "assets/characters/darren_price_talk.png",
+  "spriteVisemes": "assets/characters/darren_price_visemes.png",
+  "avatar": "assets/characters/darren_price_headshot.png",
+  "voice": { "name": "Orus", "style": "<SAFETYNET rewrite, below>", "language": "en-GB" },
+  "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json", "currentKnot": "talk_darren",
   "position": { "x": 8, "y": 8 },
   "needsHome": { "x": 8, "y": 8 }, "needsRooms": ["forward_post"],
   "needsCompany": { "groups": ["fp_support"] }, "chatterCooldownMin": 2,
@@ -161,18 +161,18 @@ The kettle carries `offWhen: "fp_staff_upset"`, so neither uses it again: the pa
   "needs": { "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 } },
   "chatter": { "kettle_fp": ["..."] },
   "exchanges": [
-    { "with": "lorna_easton", "knot": "ex_fp_kettle_on",
+    { "with": "sofia_marchetti", "knot": "ex_fp_kettle_on",
       "requireGlobal": { "fp_staff_upset": false, "split_started": false } },
-    { "with": "lorna_easton", "knot": "ex_fp_radios",
+    { "with": "sofia_marchetti", "knot": "ex_fp_radios",
       "requireGlobal": { "fp_staff_upset": false, "split_started": true, "breach_open": false } },
-    { "with": "lorna_easton", "knot": "ex_fp_door_open",
+    { "with": "sofia_marchetti", "knot": "ex_fp_door_open",
       "requireGlobal": { "fp_staff_upset": false, "breach_open": true, "closing_done": false } } ],
   "eventMappings": [ "<the mapped break, section 2.3>", "<the three hides, section 2.4>" ] }
 ```
 
-The `needs` action takes `{ "set": { "<need>": <level> } }`. The exchanges live on `ama_owusu`, the lower id of the pair. Lorna mirrors this without `exchanges`, with `currentKnot: "talk_lorna"`, her post (9,8), `initial` 90 and `decayPerMin` 2.5, and the coupling mapping of section 2.3 before her hides. Every key the exchanges test is declared (`split_started`, `breach_open`, `closing_done` already are, all `false`; `fp_staff_upset` is new, `false`). The sprite field names copy the course NPC shape used in `scenarios/demo_access_tour/scenario.json.erb:534` to `:549`.
+The `needs` action takes `{ "set": { "<need>": <level> } }`. The exchanges live on `darren_price`, the lower id of the pair. Sofia mirrors this without `exchanges`, with `currentKnot: "talk_sofia"`, her post (9,8), `gender: "female"`, voice Despina, `initial` 90 and `decayPerMin` 2.5, and the coupling mapping of section 2.3 before her hides. Every key the exchanges test is declared (`split_started`, `breach_open`, `closing_done` already are, all `false`; `fp_staff_upset` is new, `false`). The sprite field names copy the course NPC shape used in `scenarios/demo_access_tour/scenario.json.erb:534` to `:549`.
 
-**Voice styles.** `VOICE_CAST.md` sets each in her course company. Rewrite for SAFETYNET, keeping voice and accent: Ama, "SAFETYNET field support from the regional office, in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout, with no shift to any other accent." Lorna, "SAFETYNET's welfare and logistics lead at a forward post, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout, with no shift to any other accent." Calm and quiet, as at three in the morning; no urgent wording.
+**Voice styles.** `VOICE_CAST.md` sets each in a course company. Rewrite for SAFETYNET, keeping voice and accent, and keep each accent clearly apart from the phone contact who shares the voice (Vance is Teesside, Victoria is RP): Darren, "SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent." Sofia, "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent." Calm and quiet, as at three in the morning; no urgent wording.
 
 ## 2A. Story-safe movement
 
@@ -207,12 +207,12 @@ Every line goes in `SPOKEN_LINES.md` with its character count, after the user's 
 
 | Kind | Count (**estimate**) | Topic |
 |---|---|---|
-| Pool `kettle_fp`, Ama | 4 lines | the generator, the cold, the vans' batteries |
-| Pool `kettle_fp`, Lorna | 4 lines | tea, the heaters, a long night |
+| Pool `kettle_fp`, Darren | 4 lines | the generator, the cold, the vans' batteries |
+| Pool `kettle_fp`, Sofia | 4 lines | tea, the heaters, a long night |
 | `ex_fp_kettle_on` | 4 lines | brewing for a team that will not drink it before the briefing ends |
 | `ex_fp_radios` | 3 lines | the radios have gone quiet; waiting is the job |
 | `ex_fp_door_open` | 3 lines | the door is open; the kettle stays on for whoever walks out |
-| `talk_ama`, `talk_lorna` | 3 lines each | a word with the player, nothing offered, ends |
+| `talk_darren`, `talk_sofia` | 3 lines each | a word with the player, nothing offered, ends |
 | Credits texts | 4 lines (shown, not spoken) | section 2.6 |
 
 Rules applied: 40 characters at most per pool line; no variables; no speaker prefix in pools; no line repeats a bark or an ink opener (V7). Each exchange's first line stands alone. No line names a team member, the sleeper, the kit, the sign-out sheet, a code, a flag, a time a clue depends on or anyone's movements; none says who is in the bunker. Pool lines are NPC `chatter` data; exchanges and conversations are ink knots; nothing is engine text and there are no barks.
@@ -245,7 +245,7 @@ NPC: `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chat
 | Item | Cost | Decision |
 |---|---|---|
 | Tier: small forward-post treatment or Tier 0 | about one build slice plus lines | Q1, recommend the small treatment |
-| Two extras from the course cast | no art | Q2, recommend Ama Owusu and Lorna Easton |
+| Two extras from the course cast | no art | Q2, recommend Darren Price and Sofia Marchetti |
 | Kettle spot and a third crate | no new art (existing crate and kettle sprites); one Tiled edit | Q4, recommend the south-centre crate |
 | Voicing | about 24 clips (**estimate**; V6 gives the count once lines exist) | Q3; and the user's yes on `DIALOGUE_SAMPLE.md` before slice 5 |
 | Levers, openings | none | decided here |
@@ -269,11 +269,11 @@ NPC: `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chat
 
 ### 10.2 Live office-life checks (walking pace, five tries each)
 
-- **L1** Pair use: Ama brews, Lorna joins within about 2 s; both reach `using` at `fp_kettle` at once; a pool line or an exchange plays.
+- **L1** Pair use: Darren brews, Sofia joins within about 2 s; both reach `using` at `fp_kettle` at once; a pool line or an exchange plays.
 - **L2** Lanes and reach: with the pair at the kettle, the player reaches every table item, the incident file, Netherton, the minder, Malhotra and both van steps; the pair never stand on a van tap area or a cutscene spot.
-- **L3** The mapped break: after closing Netherton's conversation, Ama brews within about 4 s and Lorna follows.
+- **L3** The mapped break: after closing Netherton's conversation, Darren brews within about 4 s and Sofia follows.
 - **L4** Exchange gates: `ex_fp_kettle_on` only before `split_started`; `ex_fp_radios` between `split_started` and `breach_open`; `ex_fp_door_open` after `breach_open` until `closing_done`. Each plays once.
-- **L5** Posts: over ten needs-minutes neither leaves her post cell (or, under F1, goes further than the kettle).
+- **L5** Posts: over ten needs-minutes neither leaves the post cell (or, under F1, goes further than the kettle).
 - **E1** At `closing_done` both hide; after a reload with `closing_done` true they stay hidden.
 - **E2** Through every act show and hide (split, pair back, breach on both the tethered and untethered routes) and each Netherton cutscene, no NPC appears on or walks through a cell an extra stands on, and no extra blocks a scripted walk.
 - **E3** The tunnel guard's kettle beat is unchanged on the tethered route.
