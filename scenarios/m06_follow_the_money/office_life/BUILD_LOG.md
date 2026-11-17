@@ -21,3 +21,6 @@ Built: Tomasz laptop text and screen habit, handover sheet print command, lerato
 
 ## Slice 4 live (part 2, 8d59ba7cb)
 Trips timed (LIVE_S4.md): fridge 17.5 s expected, 17.5 to 17.8 s real, 5 of 5 open; phone answer 14.4 to 15.6 expected, 22.5 to 25.8 real, 5 of 5 open; pizza 13.4 to 15.9 expected. `lockIfAwayOverSeconds` 30 to 22. Phone lever home and away 5 of 5 each. Pizza servings 3 to 2 (two eligible eaters and perPerson 1 could never empty the box). Static checks after the change: validator 0 errors, 45 warnings; summary diff empty vs slice 4; lock diff empty; positions identical to slice 4. Not done: servings to 0 and grumble_gone, pizza reload, handover sheet, useFrom wall check, workstation parity.
+
+## Slice 4 live (part 3, final)
+Handover sheet, workstation parity, lerato_phone cell and pizza (count to 0, empty box, reload, east-door drop) checked live; details in LIVE_S4.md part 3. Only repo change besides docs: PLAN.md L1 wording (the engine removes the box when the last serving is eaten; it does not stay as decor). No scenario edit, so validator, summary, lock and positions results are those of 8d59ba7cb.
