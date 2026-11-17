@@ -1,7 +1,15 @@
 // Jun Watanabe, office worker. Five-line staff chat (neil.ink reopen pattern).
 // One flavour topic (leaves his screen open), no variable, no consequence.
 
+// met_jun: ink-local VAR so the first-meeting line plays once; a re-talk (after
+// an ended story or a reload) opens at the hub reopen line. See ama_owusu.ink.
+VAR met_jun = false
+
 === start ===
+{ met_jun:
+    -> hub
+}
+~ met_jun = true
 # speaker:npc
 Oh, hi. Sorry, I'm a bit swamped.
 -> hub.choices

@@ -7,7 +7,7 @@ Source pattern: `scenarios/test_needs_sims/scenario.json.erb:93-105` (proven in 
 - id `cake`, type `cake1`, name "Cake". Held from the start in `startItemsInInventory`, `takeable: true`, `droppable: true`.
 - The player drops it from the inventory ("Drop here"). Beside a table it goes on the table top (`item-drop.js:9-11`). Dropping is the cue. Holding the cake until then is what makes the cue: any loaded object with `affordance.magnet` is registered when its room loads (`scanMagnets`/`_noteMagnets`, `npc-needs.js:866-881`), so a cake that starts lying in a room is a live magnet at once, known to everyone in that room with a matching need. Start it in a room only if the cake should be known from the start.
 - Food affordance: `satisfies ["hunger", "social"]`, `restores 40`, `useSeconds 12`, `capacity 3`, `chatter "cake"`, `useSound "eat_snack"`.
-- Magnet: `tempt 30`, `servings 2`, `perPerson 1`, `announce "news_cake"`, `newsRadius 5`.
+- Magnet (office_life_showcase built values): `tempt 45`, `servings 2`, `perPerson 1`. No `announce`/`newsRadius`: the tour drops the cake in the one shared room, so everyone sees it by sight and nobody is told, and the `news_cake` pool was dropped. `tempt 45` (not the originally planned 30) was tuned around the kitchen presets (fridge restores 80, microwave 60), so lunch eaters come back fuller; proven live in a natural run with three tempted and one "Missed it.". demo_access_tour keeps the minimal variant below.
 
 ## How NPCs react
 
@@ -52,6 +52,8 @@ Need: on cue, the cake empties two desks (Thandiwe Moyo and Yasmin Chaudhry, ope
 - Two ways to drift from this variant, and what each costs: (1) starting the cake in a room (say the kitchen) instead of the inventory makes it known at load to anyone in that room with hunger, so the drop is no longer the cue. The validator still warns about such a cake (`scripts/validate_npc_needs.rb:275-277`: "has affordance.magnet but is not a droppable item the player holds; only a dropped magnet is built ... so it draws nobody"). That warning is stale: the engine registers a magnet lying in a room when the room loads (`scanMagnets`, `npc-needs.js:872-881`, from `_onRoomsLoaded`, `:1274`) and NPCs there learn of it by sight on their next tick (`_sight`, `:958-970`), and V10 already treats a room magnet as live (`fixed_magnet?`, `scripts/validate_office_life.rb:996-998`). A scenario that takes this route records the warning as known and expected in its validator notes and does not count it against a clean run; the one-line validator fix goes to the engine backlog. Neither tour takes this route, so neither sees the warning; (2) giving the two NPCs more needs than hunger (caffeine, work) means either may be away when the cake goes down; she then learns of it by sight on her return (`npc-needs.js:958-970`, `:1416`), so the cue still works, only later.
 
 ## Snippet to copy (into `startItemsInInventory`)
+
+This is the generic template (word-of-mouth variant). office_life_showcase built it with `tempt 45` and no `announce`/`newsRadius` (see the Magnet note above): the tour drops the cake where everyone can see it, so nobody is told, and `45` was tuned to the kitchen presets.
 
 ```json
 {

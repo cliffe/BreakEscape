@@ -6,7 +6,7 @@ A new test scenario: a guided tour of office life in three acts, hosted by Ama O
 
 - A guided 5 to 10 minute tour of office life for colleagues who know Break Escape. Ama Owusu hosts; she may use engine terms (needs, affordance, capacity, exchange, lever, security window).
 - Collection `test_scenarios`. Display name "Office Life Tour". `estimated_duration_minutes` 8. No firm is named in any spoken line.
-- test_needs_sims stays unchanged as the regression fixture. Only existing engine features; anything needing an engine change is in section 14.
+- test_needs_sims stays unchanged as the regression fixture. One engine change was made during the build (S3): `exchanges[].topic`, which pins an exchange to one object's chatter pool so the cooler exchange no longer fires at the cake (`systems/npc-needs.js` `_findExchange`, schema and `docs/achitechture/NPC_NEEDS_SYSTEM.md`; three unit tests in `test/js/npc-exchange-heard.test.mjs`, plus a validator type-check in `scripts/validate_npc_needs.rb` check_exchanges). An entry with no `topic` is unchanged, so m01/m02/m03/m05 behave as before. Anything else needing an engine change is in section 14.
 - Overlay off (`needsDebugOverlay` left out). `showPressingNeeds: true`, `npcThoughts` default (on), `officePresets: true`, `roomTone: true`, `lighting` on, scenario-level `disableAttacks: true` (so no KO cases).
 - The viewer sets the pace. Nothing locks: both rooms are open from the start, and each act turn is a choice in Ama's hub.
 - The tour never ends by itself. After the last task it stays open; Ama's recap is the close (section 6). Section 6 also says how the scenario is kept from concluding.
@@ -32,7 +32,7 @@ Office objects (positions copied from sims unless marked new):
 - `tour_notice` (notice_board1, wallMounted, readable "Things to try") at (8.1875, 0.6875) = (262, 22), where sims has its deadline memo; clear of the chalkboard to its left (ends at x 7.82). Its text gives the same steps as Ama's "What should I try next?" for all three acts.
 
 Kitchen objects (all copied from sims, `room_break`):
-- `fridge` (qdc_fridge1) at (1, 2) with `restores 40`; `microwave` (microwave1) at (5, 3) with `restores 40`.
+- `fridge` (qdc_fridge1) at (1, 2) and `microwave` (microwave1) at (5, 3), both on the office presets (`data/office-presets.json`: fridge restores 80, microwave 60), no affordance override. Built this way, not the planned `restores 40`: the natural lunch-then-cake beat was tuned and proven live on the presets (`cake` magnet `tempt 45`), with three tempted and one "Missed it." (see row 2.7 and CAKE_ITEM.md).
 - `kitchen_coffee` (coffee_station1) at (3, 8), `useFrom (0,-1)`, queue (1,-1), (2,-1), `"offWhen": { "office_coffee_off": false }`, observations "The kitchen coffee machine. It shares a fuse with the office one, so only one of them runs at a time." The object form of `offWhen` is read by `_isOff` through `requiredGlobalsHold` (`systems/npc-needs.js:312-318`, `:832-840`), which compares with `===`: the kitchen machine is off exactly while the office one is on. `office_coffee_off: false` is declared in `globalVariables` (an undeclared key would leave the kitchen machine on). No off look: `coffee_station1` has no off sprite, and the sockets carry the off look in sims too; the observation text says why it is off in both states. Why this matters is in section 3, "One coffee at a time".
 - `water_cooler` (water_cooler1) at (1, 7), `affordance: { "useSeconds": 40, "overhearRadius": 360 }`. The 40 s use gives a coupled pair time together for the exchange (the preset's 15 s leaves them 3 to 7 s); the radius covers the whole room, so the viewer need not stand anywhere special.
 - `washing_up_tray` (mugs_tray1) at (3, 3), accepts `dirty_mugs`, `useSeconds 5`.
@@ -125,7 +125,7 @@ If Chidi or Jun is part way through a desk use when lunch is called, he finishes
 
 Row 2.5: `npc_caught_at_post` fires once per return while Jun walks back inside the office, if the viewer is within 1.5 tiles of his desk's approach cell or has his PC open (`systems/npc-needs.js:3371-3383`). A viewer who stays in the PC is caught too, but B8 and B6 then wait until the PC is closed (a delayed mapping that falls due while a minigame is open waits for it to close, `systems/npc-manager.js:921-925`). A10 therefore says to close the PC and wait by the desk, so both barks show as Jun walks up.
 
-Row 2.7: Chidi and Jun eat at the fridge and microwave (restores 40, so 20 becomes 60); Graham and Agnieszka sit at 62. The tempt band is at or below 70 (urgentAt 40 plus tempt 30), so all four are tempted. An NPC part way through a desk use does not look for a target until the use ends (`systems/npc-needs.js:1509-1513`), and one that looks after both slices are claimed never sets off (`_magnetsFor`, `:931`). So the number who turn back is anything from none to two; B7's wording holds for any count, and the task needs only the cake to be finished. Word of mouth plays only if the cake goes down in the kitchen with someone there; it is not a task.
+Row 2.7 (built values): Chidi and Jun eat at the fridge (restores 80) and microwave (restores 60) at lunch, so they come back fuller (measured live: Jun 98.3, Chidi 77.9); Graham and Agnieszka sit at 62. The cake magnet is `tempt 45`, so the tempt band is `urgentAt 40 < level <= 85`. At the natural drop that tempts Graham, Agnieszka and Chidi (three), not Jun at 98.3 (one "Missed it."); with `servings 2` two eat and the task ticks on `magnet_finished:cake`. This differs from the planned `restores 40`/`tempt 30`: the presets were kept and the cake tuned around them, tuned and proven live in a natural run. A cake dropped earlier in the morning still completes `see_cake_eaten` with no soft-lock: the `see_cake_eaten` mapping has no act gate, Graham is tempted by social (72, band 85) at spawn and the rest fall into the hunger band within about a minute as hunger decays from 90, so two servings are always consumed and `magnet_finished:cake` fires. An NPC part way through a desk use does not look for a target until the use ends (`systems/npc-needs.js:1509-1513`), and one that looks after both slices are claimed never sets off (`_magnetsFor`, `:931`). B7's wording holds for any count, and the task needs only the cake to be finished. Word of mouth plays only if the cake goes down in the kitchen with someone there (then as a picture bubble with no line, since the `news_cake` pool was dropped); it is not a task.
 
 ### Act 3, Evening (about 6:00 to 7:30)
 
@@ -191,18 +191,18 @@ Character counts are the full text in the table, punctuation and spaces included
 | A3 | What am I looking at? | Each person has needs: coffee, water, food, company, work. They run down over time. | 83 | 14 |
 | A4 | What am I looking at? | When one runs low, they go to whatever fills it. That's an affordance. | 70 | 13 |
 | A5 | try next, morning | Wait for the coffee run. One person at a time; the rest queue. | 62 | 13 |
-| A6 | try next, morning | They come back every few minutes. Switch it off at the wall socket while they're queued. | 88 | 16 |
+| A6 | try next, morning | They come back every few minutes. Switch the machine off at the wall socket while they queue. | 93 | 17 |
 | A7 | try next, morning | Then open the kitchen door and hang about by the water cooler. | 62 | 12 |
 | A8 | try next, morning (said before A7) | Before you open the kitchen, note the mugs on the floor. Someone dislikes them. | 79 | 14 |
 | A9 | try next, midday | Lunch takes people away from their desks. Some lock their screens; some don't. | 78 | 13 |
 | A10 | try next, midday | Use an open one, then close it and wait by the desk for its owner. | 66 | 15 |
 | A11 | try next, midday | When they're all back and sitting, drop the cake from your inventory here in the office. | 88 | 16 |
 | A12 | try next, evening | Everyone's gone home but one. See where she goes. | 49 | 9 |
-| A13 | What was that at the cooler? | This is an exchange. Two people at the same machine can have one set conversation. | 82 | 15 |
+| A13 | What was that at the cooler? | That was an exchange. Two people at the same machine can have one set conversation. | 83 | 15 |
 | A14 | What was that at the cooler? | They have it once, and only if you're close enough to hear. | 59 | 12 |
 | A15 | try next, evening | Then walk into the kitchen. The lights there are on a motion sensor now. | 72 | 14 |
 | A16 | Let's do lunch. | Good idea. Watch who goes, and what they leave on their desks. | 62 | 12 |
-| A17 | Call it a day. | Right. Home time for most of them. | 34 | 7 |
+| A17 | Call it a day, after Yes | Right. Home time for nearly all of them. | 40 | 8 |
 | A18 | Call it a day. | Have a wander if you like. | 26 | 6 |
 | A19 | short version | Needs run down, and people go to whatever fills them. | 53 | 10 |
 | A20 | short version | The coffee machine takes one at a time, so people queue and chat. | 65 | 13 |
@@ -216,8 +216,13 @@ Character counts are the full text in the table, punctuation and spaces included
 | A28 | short version, close | That's the tour. Stay and look round as long as you like. | 57 | 12 |
 | A29 | Let's do lunch, Chidi or Jun away | Hang on, Chidi or Jun is still out. Give it a minute. | 53 | 12 |
 | A30 | Let's do lunch, after A16 | Anyone in the middle of something finishes it first. | 52 | 9 |
+| A31 | Call it a day (confirm) | Once they go home, they're gone for the day. Ready? | 51 | 10 |
+| A32 | try next, morning (kitchen_seen) | You've seen the kitchen. Ask me about lunch when you're ready. | 62 | 11 |
+| A33 | try next, midday (after A11) | Once the cake is gone, tell me to call it a day. | 48 | 12 |
 
-Player choice text (not voiced): "What am I looking at?", "What should I try next?", "What was that at the cooler?", "Let's do lunch.", "Call it a day.", "Give me the short version.", "I'll have a look round."
+Player choice text (not voiced): "What am I looking at?", "What should I try next?", "What was that at the cooler?", "Let's do lunch.", "Call it a day.", "Yes, call it a day.", "Not yet.", "Give me the short version.", "I'll have a look round."
+
+R1 fixes (build review R1 and dialogue review): M1 guards each `start` with an ink-local VAR (`met_ama` and five `met_<staff>`), so the opening line plays once and a re-talk, after an ended story or a reload, opens at the hub reopen line (A0 and the staff reopen lines). M2 makes "Call it a day." confirm first with A31; A17 answers the Yes. Dialogue M2 adds A32 (morning pointer to lunch once the kitchen is seen) and A33 (midday pointer to the evening). A6 names the machine (was "it"); A13 is past tense ("That was"); A17 says "nearly all" (was "most").
 
 ### 7b. Staff ink (five lines each)
 
@@ -260,7 +265,7 @@ In the ink, each line carries the speaker's full display name as its prefix: "Gr
 | X1 | Graham | Not seen you at the cooler all week. | 36 |
 | X2 | Agnieszka | I've been hiding at my desk, Graham. | 36 |
 | X3 | Graham | Deadline? I'll not keep you long. | 33 |
-| X4 | Agnieszka | You never do. Five minutes, tops. | 33 |
+| X4 | Agnieszka | You never do. Five minutes at most. | 35 |
 | X5 | Graham | Then back to it. Same time tomorrow? | 36 |
 
 ### 7d. Barks (NPC `eventMappings`, `bark` field)
@@ -335,14 +340,14 @@ Other saved state, all bounded and sent as deltas through the keyed sections (`s
 | `globalVariables` | `act_midday`, `act_evening`, `kitchen_seen`, `office_coffee_off` (booleans, all declared `false`); `cake_servings` (0 to 2); the rows above, of which `chidi_pc_owner_away` and `jun_pc_owner_away` are also declared (`false`) so they reach Ama's ink | fixed set, declared up front |
 | `npcVisibility` | `chidi_okeke`, `jun_watanabe`, `graham_whitfield`, `agnieszka_duda`, each `false` after the evening turn (`systems/npc-manager.js:2207-2226`, sent at `state-sync.js:549-550`) | 4 entries, one boolean each, written once |
 | `triggeredEvents` | fired onceOnly mappings: B1 to B7, B9, B11 | 9 entries |
-| `npcInkVariables` | none: declared globals are excluded from this export (`systems/npc-conversation-state.js:258`, `:331`), so Ama's six mirrored VARs travel only in `globalVariables`; the inks declare no ink-local VARs | 0 |
+| `npcInkVariables` | six one-per-NPC `met_*` booleans (`met_ama` plus `met_chidi`, `met_jun`, `met_graham`, `met_agnieszka`, `met_zainab`), the M1 re-talk guard; each stored under its own NPC id. Ama's six mirrored globals are excluded from this export (`systems/npc-conversation-state.js:258`, `:331`) and travel only in `globalVariables` | 6 |
 
 Nothing grows `player_state`; every key is a boolean or a small bounded integer, written when it changes.
 
 ## 9. Ending and reload behaviour
 
 - No conclusion, no credits, no ending warning (section 6). The objectives panel shows all three aims complete; the viewer can keep walking round, talking to Ama and replaying the recap.
-- Reload keeps act globals, NPC visibility, lighting variants and fired onceOnly mappings; needs reset to each NPC's `initial` (accepted for a tour: Ama's hints still hold, and the coffee run restarts from spawn timing). A dropped cake is covered by build check BC1 (section 10). Needs restart at 90 hunger, and the cake tempts only at 70 or below, so after a reload in midday nobody is hungry enough for the cake for about 4 minutes; a viewer who reloads and then drops it sees it sit untouched for that time.
+- Reload keeps act globals, NPC visibility, lighting variants and fired onceOnly mappings; needs reset to each NPC's `initial` (accepted for a tour: Ama's hints still hold, and the coffee run restarts from spawn timing). The `met_*` re-talk guards persist (they export in `npcInkVariables`), so a reload does not replay the opening or the staff greetings. A reload in the 8 s window after the evening turn is covered by a second Zainab mapping, `room_entered:office` with `globalVars.act_evening === true` and `caffeine: 10` (spawn fires `room_entered`), so `see_who_stays` still has a thirsty Zainab heading for the office coffee rather than waiting on her reset thirst. A dropped cake is covered by build check BC1 (section 10). Needs restart at 90 hunger, and the cake tempts only at 70 or below, so after a reload in midday nobody is hungry enough for the cake for about 4 minutes; a viewer who reloads and then drops it sees it sit untouched for that time.
 
 ## 10. Risks and points to measure
 

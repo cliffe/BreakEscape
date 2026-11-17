@@ -18,8 +18,16 @@ VAR act_evening = false
 VAR kitchen_seen = false
 VAR chidi_pc_owner_away = false
 VAR jun_pc_owner_away = false
+// met_ama is an ink-local VAR (not a global): it survives an ended story on a
+// re-talk (restoreNPCState) and a reload (exportNpcInkVariables), so the opening
+// A1/A2 plays once and later talks open at the hub with A0. Pattern from m01 met_maya.
+VAR met_ama = false
 
 === start ===
+{ met_ama:
+    -> hub
+}
+~ met_ama = true
 # speaker:npc
 Today you watch an office instead of breaking into one.
 # speaker:npc
@@ -50,20 +58,28 @@ What can I help with?
             Use an open one, then close it and wait by the desk for its owner.
             # speaker:npc
             When they're all back and sitting, drop the cake from your inventory here in the office.
+            # speaker:npc
+            Once the cake is gone, tell me to call it a day.
         - else:
             # speaker:npc
             Wait for the coffee run. One person at a time; the rest queue.
             # speaker:npc
-            They come back every few minutes. Switch it off at the wall socket while they're queued.
-            # speaker:npc
-            Before you open the kitchen, note the mugs on the floor. Someone dislikes them.
-            # speaker:npc
-            Then open the kitchen door and hang about by the water cooler.
+            They come back every few minutes. Switch the machine off at the wall socket while they queue.
+            {
+                - kitchen_seen:
+                    # speaker:npc
+                    You've seen the kitchen. Ask me about lunch when you're ready.
+                - else:
+                    # speaker:npc
+                    Before you open the kitchen, note the mugs on the floor. Someone dislikes them.
+                    # speaker:npc
+                    Then open the kitchen door and hang about by the water cooler.
+            }
     }
     -> choices
 + { heard_exchange_cooler_chat } [What was that at the cooler?]
     # speaker:npc
-    This is an exchange. Two people at the same machine can have one set conversation.
+    That was an exchange. Two people at the same machine can have one set conversation.
     # speaker:npc
     They have it once, and only if you're close enough to hear.
     -> choices
@@ -89,13 +105,18 @@ What can I help with?
     }
 + { act_midday and not act_evening } [Call it a day.]
     # speaker:npc
-    Right. Home time for most of them.
-    # speaker:npc
-    Have a wander if you like.
-    #set_global:act_evening:true
-    ~ act_evening = true
-    # exit_conversation
-    -> END
+    Once they go home, they're gone for the day. Ready?
+    + + [Yes, call it a day.]
+        # speaker:npc
+        Right. Home time for nearly all of them.
+        # speaker:npc
+        Have a wander if you like.
+        #set_global:act_evening:true
+        ~ act_evening = true
+        # exit_conversation
+        -> END
+    + + [Not yet.]
+        -> choices
 + { act_evening } [Give me the short version.]
     # speaker:npc
     Needs run down, and people go to whatever fills them.

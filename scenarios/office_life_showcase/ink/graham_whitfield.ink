@@ -2,7 +2,15 @@
 // One flavour topic (the cooler), no variable, no consequence.
 // The cooler exchange knot (exchange_cooler_chat) is at the foot of this file.
 
+// met_graham: ink-local VAR so the first-meeting line plays once; a re-talk (after
+// an ended story or a reload) opens at the hub reopen line. See ama_owusu.ink.
+VAR met_graham = false
+
 === start ===
+{ met_graham:
+    -> hub
+}
+~ met_graham = true
 # speaker:npc
 Now then. You'll be the visitor Ama mentioned.
 -> hub.choices
@@ -29,6 +37,6 @@ Go on, then.
 Graham Whitfield: Not seen you at the cooler all week.
 Agnieszka Duda: I've been hiding at my desk, Graham.
 Graham Whitfield: Deadline? I'll not keep you long.
-Agnieszka Duda: You never do. Five minutes, tops.
+Agnieszka Duda: You never do. Five minutes at most.
 Graham Whitfield: Then back to it. Same time tomorrow?
 -> DONE

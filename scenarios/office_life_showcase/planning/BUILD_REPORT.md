@@ -297,3 +297,32 @@ Recap ("Give me the short version") finished at 390 s. `verify-run.rb --tasks 76
 ### Findings
 - m1 (`scenarios/office_life_showcase/ink/ama_owusu.ink:14-18`, `start`): after any conversation that ends with `-> END` (lunch, "Call it a day", "I'll have a look round."), the next talk to Ama restarts at `start` and replays A1 and A2 ("Today you watch an office instead of breaking into one...") before the hub. Closing mid-hub with Esc reopens at the hub line A0 as planned. Seen on the "Call it a day" and recap conversations. Proposed fix: guard `start` with a global or VAR that the first run sets, diverting to `hub.choices` when set.
 - m2 (probe note): bark recorders log some barks twice (B2, B3, B5, B6, B7); same double-logging noted in S3 m4, a recorder artefact.
+
+## R1 fixes (build review R1 + dialogue review BUILD)
+
+Finding to fix or reason. Spoken lines added or changed are listed in PLAN section 7a/7c and need the user's yes before voicing.
+
+| Finding | Fix |
+|---|---|
+| B1 (R1) evening task stalls if Zainab is away from post at the turn | Added on Ama `npc_used:office_coffee` with `data.npcId === 'zainab_hussain' && globalVars.act_evening === true`, completeTask see_who_stays. Kept the npc_left_post:zainab_hussain mapping. |
+| M1 (both) Ama replays A1/A2 after every ended story | Guarded `start` with ink-local VAR `met_ama`; divert to `hub` on the repeat so A0 plays. Same guard on all five staff (`met_<staff>`), dialogue m7. Guard survives END (restoreNPCState) and reload (exportNpcInkVariables; npcInkVariables 0 to 6). |
+| M2 (R1) "Call it a day." loses unticked tasks, no warning | New Ama confirm line A31 ("Once they go home, they're gone for the day. Ready?") with Yes/Not yet sub-choices; Yes runs A17/A18 and the turn. |
+| M2 (dialogue) try-next goes quiet | A32 (morning, once kitchen_seen: "You've seen the kitchen. Ask me about lunch when you're ready.") and A33 (midday: "Once the cake is gone, tell me to call it a day."). |
+| M3 (R1) meal values differ from plan; cake re-tuned | Kept the built values (tempt 45, fridge/microwave on presets). Updated PLAN section 2, row 2.7 and CAKE_ITEM.md to the built values with the reason; confirmed a morning cake drop still completes see_cake_eaten with no soft-lock. |
+| M4 (R1) notice board missing | Added `tour_notice` (notice_board1, wallMounted, readable) at (8.1875, 0.6875) with the three-act "Things to try" text (not voiced, no secrets). |
+| m1 (R1) short lever window, no hint on early switch-off | Reworded the two socket hint messages (UI text, not voiced). Left B2 reword (spoken, optional). |
+| m2 (R1) double bark logs | Left: probe/recorder artefact, no scenario effect; the player sees one bubble. |
+| m3 (R1) "Missed it." not recorded as a speak on Agnieszka | Left: voicing-step live check. |
+| m4 (R1) picture-only word of mouth on a kitchen cake drop | Noted in PLAN row 2.7 (picture bubble, no line). |
+| m5 (R1) evening lamp reads cream | Left: a lighting value change needs a re-render to confirm it does not wash out; defer to a lighting pass. |
+| m6 (R1) V6 clip count | Left: voicing-step concern (give the reachable per-speaker count then). |
+| m7 (R1) validator does not check topic | Added a type-check in check_exchanges (ERROR if topic is set and not a non-empty string). Full reachability check left as a backlog note. |
+| m8 (R1) PLAN does not record the engine change / topic | Noted in PLAN section 1. |
+| m9 (R1) reload in the 8 s after the turn loses Zainab's coffee | Added on Zainab `room_entered:office` with `globalVars.act_evening === true`, cooldown 60000, caffeine 10. Noted in PLAN section 9. |
+| m1 (dialogue) A6 "it" has no antecedent | A6 now "Switch the machine off at the wall socket while they queue." |
+| m2 (dialogue) A13 "This is" | A13 now "That was an exchange..." |
+| m3 (dialogue) A17 "most of them" | A17 now "nearly all of them." |
+| m4 (dialogue) X4 "Five minutes, tops" (American) | X4 now "Five minutes at most." |
+| m5 (dialogue) name pronunciation | Left: note for the voicing step. |
+| m6 (dialogue) "Not bad, you?" opener | Left: line-selection pairing unconfirmed; swapping is a spoken-line change the review flagged as conditional. |
+| m8 (dialogue) voice style strings | Left per brief. |
