@@ -350,7 +350,7 @@ async function measureCaptureLog(page, size) {
                     { id: 'assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist from Lena', how: 'given', ended: true, account: acct('lena', 'Lena Fox', 'lfox') },
                     // K5: a live token (minutes left, the link that recorded it) and an expired one
                     { id: 'tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc', routes: [{ foothold: 'drop_box' }], account: acct('lena', 'Lena Fox', 'lfox') },
-                    { id: 'tok_old', kind: 'token', source: 'registry', label: LABEL_32, host: 'HB-FIN-02', connectsTo: 'lena_pc', expired: true, account: acct('okafor', 'Sam Okafor', 'sokafor') }
+                    { id: 'tok_old', kind: 'token', source: 'registry', label, host: 'HB-FIN-02', connectsTo: 'lena_pc', expired: true, account: acct('okafor', 'Sam Okafor', 'sokafor') }
                 ],
                 captures: {
                     lord_qr: { tag: 'password', source: 'phished', account: 'lord' },
