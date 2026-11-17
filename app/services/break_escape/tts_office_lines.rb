@@ -6,8 +6,9 @@ module BreakEscape
   #
   # Office-life clips are NPC chatter pool lines (an NPC's own `chatter`, and the scenario's shared
   # pools, which the extractor yields once for every voiced NPC), and the lines of exchange and
-  # phone-call knots (an NPC's `exchanges[].knot` and `phoneCalls[].knot`). EventMapping `bark`
-  # lines are outside the extractor and so outside this report (plan section 10).
+  # phone-call knots (an NPC's `exchanges[].knot` and `phoneCalls[].knot`), and the event barks of
+  # voiced person NPCs (eventMappings `bark` and `sendTimedMessage`, `timedMessages`; kind 'bark'),
+  # so "0 uncached" covers barks too.
   #
   # Clips are keyed as the client requests them: chatter, exchanges and desk-phone calls play
   # through NpcChatterVoice with no delivery note (npc-needs-chatter.js), so an exchange line
@@ -16,7 +17,7 @@ module BreakEscape
   # "0 uncached office-life clips" both count these distinct keys. A clip whose key a person-chat
   # line also holds is still listed, marked shared.
   class TtsOfficeLines
-    CHATTER_PATHS = %w[npc.chatter scenario.chatter].freeze
+    CHATTER_PATHS = %w[npc.chatter scenario.chatter npc.bark].freeze
 
     Clip = Struct.new(:npc_id, :text, :kind, :knot, :key, :cached, :shared, keyword_init: true)
     Voice = Struct.new(:label, :npc_ids, :clips, keyword_init: true) do
@@ -95,6 +96,7 @@ module BreakEscape
         add.call(npc_id, text, kind, knot) if kind
       end
       @extractor.each_chatter_line { |npc_id, text, _path| add.call(npc_id, text, 'chatter', nil) }
+      @extractor.each_bark_line { |npc_id, text, _path| add.call(npc_id, text, 'bark', nil) }
       person = person_chat_keys(knots)
       clips.each { |_v, c| c.shared = person.include?(c.key) }
       voices = clips.group_by { |voice, _| [voice['name'], voice['style'], voice['language']] }.map do |(name, style, lang), list|
@@ -105,7 +107,7 @@ module BreakEscape
       Report.new(scenario: @scenario_name, voices: voices.sort_by(&:label))
     end
 
-    # Cache keys of the person-chat batch: the extractor's entries outside chatter pools and
+    # Cache keys of the person-chat batch: the extractor's entries outside chatter pools, barks and
     # office-life knots.
     def person_chat_keys(knots)
       stories = @extractor.hosts.to_h { |h| [h['id'], h['storyPath']] }

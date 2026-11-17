@@ -34,9 +34,20 @@ module BreakEscape
     # @param npc [Hash]
     # @return [Array<String>]
     def self.bark_texts(npc)
+      event_bark_texts(npc) + chatter_texts(npc["chatter"])
+    end
+
+    # The barks an NPC says on events and timers, without its chatter pools:
+    # eventMappings `bark` and `sendTimedMessage.message`, and `timedMessages`.
+    # TtsLineExtractor lists these in the batch.
+    # @param npc [Hash]
+    # @return [Array<String>]
+    def self.event_bark_texts(npc)
       texts = []
 
       Array(npc["eventMappings"]).each do |mapping|
+        next unless mapping.is_a?(Hash)
+
         texts << mapping["bark"] if mapping["bark"].present?
 
         stm = mapping["sendTimedMessage"]
@@ -44,10 +55,10 @@ module BreakEscape
       end
 
       Array(npc["timedMessages"]).each do |msg|
-        texts << msg["message"] if msg["message"].present?
+        texts << msg["message"] if msg.is_a?(Hash) && msg["message"].present?
       end
 
-      texts.concat(chatter_texts(npc["chatter"]))
+      texts
     end
 
     # True when text is a line of one of the scenario's own chatter pools
