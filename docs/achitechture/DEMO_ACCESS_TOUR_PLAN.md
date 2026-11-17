@@ -375,7 +375,7 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W12 F | not `done_t_yasmin_pc` | "Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving." |
 | W13 F | not `done_t_implant` | With `front_desk_signed_out`: "Back to the front desk. Sign in again, then see what Delphine's USB ports will take." Otherwise: "Back to the front desk. See what Delphine's USB ports will take." |
 | W14 F | not `ap_planted`, then not `staff_twin_up` | "Hide the access point in one of the reception plants, then open its console and copy the Staff Wi-Fi." then "The access point's in. Open its console from the plant and copy the Staff Wi-Fi." |
-| W15 F | not `done_t_capture_key` | "Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy." Then, box still in: "If she doesn't, carry on. The Wi-Fi stops still work after the box comes out." Box out: "If she doesn't, carry on to the comms cupboard and come back." (sets no tail) |
+| W15 F | not `done_t_capture_key` | "Give it a moment. Thandiwe's about to check her email. Walk into the open plan and her laptop should join your copy." Then, box still in: "If she doesn't, carry on. The Wi-Fi stops still work after the box comes out." Box out: "If she doesn't, carry on to the comms cupboard and come back." (sets no tail) |
 | W16 F | not `done_t_staff_wifi` | "You've got the Staff key. Join the Staff Wi-Fi and compare it with the guest one." |
 | W17 | not `done_t_unplug` | "When you've had enough, pull the box out and see what drops." |
 | W18 F | not `done_t_guest_port` | "Take the box to the comms cupboard. Try the managed port, then the patch panel." |

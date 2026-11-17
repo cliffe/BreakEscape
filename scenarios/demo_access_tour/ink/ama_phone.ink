@@ -110,7 +110,7 @@ Ask me where next when you need it.
     ~ tail = true
     ~ w = 17
 - tour_full and not done_t_capture_key:
-    Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy.
+    Give it a moment. Thandiwe's about to check her email. Walk into the open plan and her laptop should join your copy.
     { not done_t_unplug:
         If she doesn't, carry on. The Wi-Fi stops still work after the box comes out.
     - else:
