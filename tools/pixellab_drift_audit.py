@@ -15,7 +15,7 @@ import` runs this check itself before replacing an existing atlas.
     python3 tools/pixellab_drift_audit.py female_nurse2_v2 --adopt   # save drifted frames as overrides
 
 --adopt crops each drifted frame out of the committed atlas back to the export frame's size and
-position and writes it to tools/pixellab_overrides/<key>/<animation>/<direction>/frame_NNN.png,
+position (the converter's paste offset) and writes it to tools/pixellab_overrides/<key>/<animation>/<direction>/frame_NNN.png,
 so the committed atlas becomes reproducible. Run the audit again afterwards: it should be clean.
 Nothing in public/ is modified.
 """
@@ -104,6 +104,16 @@ def split_frame_name(n):
     return anim, direction, fr
 
 
+def converter_offset(root, frame_size, cell_size):
+    """Where the converter pastes a frame of frame_size onto the atlas cell: the same
+    frame_offsets() the rebuild uses, read from the export under root."""
+    from convert_pixellab_to_spritesheet import (DEFAULT_CANVAS, DEFAULT_FEET_Y, frame_offsets,
+                                                  scan_character_animations)
+    offsets, _ = frame_offsets(scan_character_animations(root), DEFAULT_CANVAS, DEFAULT_FEET_Y)
+    return offsets.get(tuple(frame_size), ((cell_size[0] - frame_size[0]) // 2,
+                                           (cell_size[1] - frame_size[1]) // 2))
+
+
 def adopt(key, drift, root):
     committed = frames(ASSETS / f"{key}.png", ASSETS / f"{key}.json")
     for n, px in drift.items():
@@ -114,15 +124,12 @@ def adopt(key, drift, root):
         ex = Image.open(root / "animations" / anim / direction / f"frame_{fr}.png").convert("RGBA")
         cell = committed[n]
 
-        def placed(ox, oy):
-            c = Image.new("RGBA", cell.size)
-            c.paste(ex, (ox, oy))
-            return c
-
-        # The converter pads the export frame onto the canvas; find where by best match.
-        _, ox, oy = min((changed(placed(x, y), cell), x, y)
-                        for x in range(cell.width - ex.width + 1)
-                        for y in range(cell.height - ex.height + 1))
+        # The rebuild pastes an override at the converter's offset for its frame size, whatever
+        # the override holds. Crop the window at that offset so the frame lands where the
+        # committed cell has it. (Matching the export frame against the cell instead picked a
+        # different origin for hand-aligned frames, whose figure was moved: the override then
+        # came back shifted by the difference.)
+        ox, oy = converter_offset(root, ex.size, cell.size)
         crop = cell.crop((ox, oy, ox + ex.width, oy + ex.height))
         full = Image.new("RGBA", cell.size)
         full.paste(crop, (ox, oy))
