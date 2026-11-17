@@ -21,7 +21,7 @@ Saturday 21 March 2026, 06:30. Albion Energy Storage, on the Trent near Newark: 
 
 6 hops through story aims — minimum mandatory sequence to reach mission completion:
 
-**Understand the Facility State → Battery Hall 1 Walkdown → Check the Historian → Call Marcus Webb and Investigate → Isolate the Attacker → + → Post-Incident Debrief**
+**Understand the Facility State → Battery Hall 1 Walkdown → Check the Historian → Message Marcus Webb and Investigate → Isolate the Attacker → + → Post-Incident Debrief**
 
 ## How to Read These Diagrams
 
@@ -184,7 +184,7 @@ flowchart TD
   aim_assess_control_room{{"Understand the Facility State"}}
   aim_conduct_walkdown{{"Battery Hall 1 Walkdown"}}
   aim_verify_anomaly{{"Check the Historian"}}
-  aim_contact_marcus_investigate{{"Call Marcus Webb and Investigate"}}
+  aim_contact_marcus_investigate{{"Message Marcus Webb and Investigate"}}
   aim_investigate_sis{{"Investigate the SIS"}}
   aim_initiate_esd{{"Shut Down Hall 1 (ESD)"}}
   aim_isolate_network{{"Isolate the Attacker"}}
@@ -274,7 +274,7 @@ flowchart TD
   aim_assess_control_room{{"Understand the Facility State"}}
   aim_conduct_walkdown{{"Battery Hall 1 Walkdown"}}
   aim_verify_anomaly{{"Check the Historian"}}
-  aim_contact_marcus_investigate{{"Call Marcus Webb and Investigate"}}
+  aim_contact_marcus_investigate{{"Message Marcus Webb and Investigate"}}
   aim_investigate_sis{{"Investigate the SIS"}}
   aim_initiate_esd{{"Shut Down Hall 1 (ESD)"}}
   aim_isolate_network{{"Isolate the Attacker"}}
