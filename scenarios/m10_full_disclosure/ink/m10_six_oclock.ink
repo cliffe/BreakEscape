@@ -165,7 +165,7 @@ Narrator: Your phone buzzes on the bonnet. A number with no name.
 Agent 0x5E 'Lantern': When did you know?
 + { not sleeper_caught } [I didn't. Not till you came through his door.]
     ~ kowalczyk_answer = "worked_out"
-+ { sleeper_caught and clue_bench_log and m09_recruiter_offer != "taken" } [At the bench log. Then your name on the sign-out sheet.]
++ { sleeper_caught and clue_bench_log and m09_recruiter_offer != "taken" } [When the cloner turned up in our case. Then your name on the sheet.]
     ~ kowalczyk_answer = "bench"
 + { sleeper_caught and m09_recruiter_offer != "taken" } [At the briefing. You laughed too easily.]
     ~ kowalczyk_answer = "briefing"
