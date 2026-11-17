@@ -385,3 +385,41 @@ Line 4 played this time, where the earlier run on 7537 did not. The harness chos
 
 - Check A: the debrief panel and debrief screenshot (screen 40) are missing. Replaying needs a new game run to the debrief, which I did not do.
 - The demo_access_tour test files and the validator were not run in this pass.
+
+## Cake reload (fixed probe)
+
+Run by a Haiku agent on keyless server 127.0.0.1:3099 (worktree p-build-access, puma PID 245962 at time of run, pid file in scratch; started with `-P` because test/dummy/tmp/pids/server.pid belongs to another live server on 3098). BUNDLE_PATH=<main>/vendor/bundle, RBENV_VERSION=2.7.8. Probe: copy of tools/playtest/showcase-bc1-cake-reload.mjs at p-ol-showcase commit 5b5381664 (scratch copy, not committed). Command:
+`node <scratch>/cake/showcase-bc1-cake-reload.mjs --scenario demo_access_tour --room open_plan --cake cake --port 3099 --cases 1,2,3,4 --eaters thandiwe,yasmin --staff thandiwe,yasmin --rooms open_plan,kitchen --task t_open_session --calm 1`
+Note: `--staff` and `--calm` are read in the probe source (lines 39 to 40) but not in its header comment.
+
+Results: case 1 PASS (game 7575). Cases 2, 3 and 4 FAIL (games 7576, 7582, 7592). The first run was killed by an outer 590 s timeout during case 3 (exit 124); cases 3 and 4 were rerun separately (output scratch cake34.txt).
+
+Cake persistence across reload: case 1 (held) kept in inventory; case 2 (down, untouched) kept at the same place in reception (160,247) and servings 2; case 3 (one slice gone) was not measured because the cake had never been eaten (see below); case 4 not measured for the same reason.
+
+Staff eating after reload: no NPC ever walked to the cake in any case (walked:false, ate:false for thandiwe and yasmin). Cause in the probe: `drop()` runs before `whereAll()` enters the target room, so the cake is dropped in the start room (reception), which open-plan staff never see. Every failing case has it in reception.
+
+player_state growth: NOT measured. The probe does not record it, and no GET endpoint returns player_state (routes.rb has no state route; show renders HTML). Needs a before and after snapshot added to the probe or a read-only rails runner query.
+
+22 s wait: did not hang in this run. Each case printed "wait 22s (before reload)" and continued. Not reproduced.
+
+Key output (verbatim):
+```
+case 1: game 7575
+  wait 22s (before reload)
+  case 1: PASS {"pass":true,"before":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"after":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"]}
+case 2: game 7576
+  wait 22s (before reload)
+  case 2: FAIL {"pass":false,"placed":true,"kept":true,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake"],"before":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"]}
+case 3: game 7582
+  wait 22s (before reload)
+  case 3: FAIL {"pass":false,"first":{"npc":"thandiwe","walked":false,"ate":false},"kept":false,"second":{"npc":"yasmin","walked":false,"ate":false},"gone":false,"finishedEvent":false,"task":"active","before":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"mid":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2}
+case 4: game 7592
+  wait 22s (before reload)
+  case 4: FAIL {"pass":false,"gone":false,"finishedEvent":false,"taskBefore":"active","taskAfter":"active","after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2}}
+
+BC1 demo_access_tour
+| Case | Game | Result |
+|---|---|---|
+| 3 | 7582 | FAIL |
+| 4 | 7592 | FAIL |
+```
