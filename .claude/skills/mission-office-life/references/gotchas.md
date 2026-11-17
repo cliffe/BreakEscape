@@ -25,7 +25,12 @@ At each capacity-2 chatter object, check live that each partner can path to its 
 `lockIfAwayOverSeconds` is compared with `expectedAwayMs` from the `npc_left_post` payload, once, at the leave. A pair that leaves together stalls on the walk home (`_watchReturn` re-issues a stalled return after 3 s), so real away runs 4 to 12 s over the estimate. Measure both and keep a margin of at least 3 s on each side. Re-measure after any move of a post, machine, use time or lane (`measurement-recipes.md` section 3).
 
 ### Pair walk-home stall
-A pair at the cooler reached 50.9 to 58.5 s away against a 28.7 s estimate. A trip really away 27 to 30 s against a 24 s threshold leaves the laptop open for the whole absence. m03 left this in the backlog. Decide whether to stagger the walk home or add the overshoot to `expectedAwayMs` for capacity-2 objects before promising the player that long absences lock (`M03_REVIEW_R7.md` M3).
+Two cases, one harmless and one real.
+
+- Cooler pair: 50.9 to 58.5 s really away against a 28.7 s estimate. The estimate is already over the 24 s threshold, so that trip locks the laptop and the overshoot does no harm.
+- Coffee pair: 22 to 30 s really away against an 18.6 s estimate and a 24 s threshold. The decision is taken once at the leave, on the estimate, so the laptop stays open for the whole absence even when the real trip is long. This is the open-laptop gap (`M03_REVIEW_R7.md` M3; `COFFEE_PAIR_FIX.md`).
+
+m03 filed the coffee case in `docs/IDEAS_BACKLOG.md` (capacity-2 walk-home stalls). Decide whether to stagger the walk home or add the overshoot to `expectedAwayMs` for capacity-2 objects before promising the player that long absences lock.
 
 ### The 20 s needs-walk deadline
 `max(20 s, 3 x distance / speed)` (`NPC_NEEDS_SYSTEM.md:474`). A long walk through traffic times out with `npc_job_failed`. Keep need targets close to posts.
@@ -48,7 +53,7 @@ Measure a seated NPC against the seated sprite, not the post's foot point. m03's
 A seated NPC hidden at the act turn kept a seated breathing image drawn on the sofa until reload, although `vis false` and `hiddenMap true` held. The engine now unseats instantly on hide (R6 to R9, `SOFA_FIX.md`). Every mission with seated staff who vanish: render the night turn and look, dump the scene children within about 60 px of each seat, hide while the breathing image is visibly up, then show the NPC again and confirm it re-sits within about a second (`measurement-recipes.md` section 6).
 
 ### Seated pose checks
-TODO: no `SLICE7_SEATS_POSES.md` exists on any branch yet. When slice 7 is built, add the seat and pose lessons here (seat origin, cushion choice, pose frames against the seated offset).
+Not yet measured. Seated pose checks follow plan slice 7 (`docs/achitechture/M03_OFFICE_LIFE_PLAN.md`); the results will be in `SLICE7_SEATS_POSES.md` in the mission's `office_life/` folder. Until then, use the seated-offset note above and the night-turn render check above.
 
 ## Mappings and conditions
 
@@ -90,7 +95,7 @@ Record the puma process PID at start and stop that PID. Never `pkill -f` and nev
 Do not `rm tools/playtest/*-flags-game*.xml`: older files are tracked.
 
 ### Suites one after the other
-`bin/test-js`, then the Rails suite, never together. `LabPhysicalPentestSecretsTest` is a known flake; re-run it alone before calling a failure real.
+When debugging by hand, run `bin/test-js`, then the Rails suite, never together. The merge gate is `tools/playtest/train-check.sh` through the integrator, not these. `LabPhysicalPentestSecretsTest` is a known flake; re-run it alone before calling a failure real.
 
 ### Fresh game per scenario edit
 A game row keeps the scenario it was created with. Make a new game after every edit to `scenario.json.erb`.
@@ -99,6 +104,8 @@ A game row keeps the scenario it was created with. Make a new game after every e
 A live pass on a lineage that predates a fix does not count. Play the merged tip, with main merged in, before the final review.
 
 ## Smaller items
+
+- `requireGlobal` is a strict `===` test (`npc-needs.js:310` to `:314`, build/ol-m03). A global used in a `requireGlobal` false-check must be declared in `globalVariables`, or the exchange silently never plays (`references/mapping-patterns.md` section 6).
 
 - `player_state` delta sync: every new value is a bounded key sent as a delta, never a growing list re-sent whole.
 - `scenario.json.erb` holds ERB comments with `%>`; edit with `str.replace`, never a Python `%` format.

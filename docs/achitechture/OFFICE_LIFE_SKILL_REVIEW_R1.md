@@ -81,3 +81,30 @@ These were checked and are correct: the onceOnly key format `<npc>:<pattern>:<ha
 ## Verdict
 
 Revise. The three majors are small text changes, but M1 decides when the skill can land: with or after build/ol-m03, or with the engine claims marked as pending. Round 2 should confirm the fixes and cover the unchecked scope listed at the top.
+
+## Outcomes
+
+Fixes are in the skill at `.claude/skills/mission-office-life/` (SKILL.md 230 lines). Engine line numbers are as on `build/ol-m03` (tip b4b7c5119).
+
+| Finding | Outcome | Where |
+|---|---|---|
+| M1 side swap and instant unseat only on build/ol-m03 | Fixed. The skill lands after build/ol-m03 (train 131); the "engine now..." wording stays, with one line near the top saying main must include the m03 engine fixes. Cites are build/ol-m03 lines. | SKILL.md intro; `measurement-recipes.md` section 4 (`_sideBlocker` `:3445`, `pair_side_swap` `:3427`) |
+| M2 ambient staff not from the awareness cast | Fixed. D53 rule added with the three awareness files, atlases with seated and pose frames, sprite key clash check, ethnicity and age variety, new design only with a reason and the user's yes. Stage 6 narrowed to missing frames. | SKILL.md Stage 1 (extras line replaces the diversity line); Stage 6 |
+| M3 `globalVars` vs `globalVariables`, strict `requireGlobal` | Fixed. `globalVariables` named in all three places; the strict `===` gotcha added (`npc-needs.js:310` to `:314`). | `mapping-patterns.md` sections 3 and 6; `checklists.md` per slice; `gotchas.md` Smaller items |
+| m1 stale timings in SKILL.md | Fixed. Final 18.6 s and 28.7 s, use 16/20, threshold 24; 14.6 and 23.1 given only as the Stage 1 figures. | SKILL.md Stage 2 levers |
+| m2 pair stall mixed two cases | Fixed. Cooler stall is harmless (already over 24 s); coffee overshoot (22 to 30 s against 18.6 s) is the open-laptop gap. The IDEAS_BACKLOG line the brief pointed to did not exist on this branch or on build/ol-m03, so I added it. | `gotchas.md` Pair walk-home stall; `measurement-recipes.md` section 3; `docs/IDEAS_BACKLOG.md` last line |
+| m3 main-based line cites | Fixed by M1: hidden-skip tests now `:1023`, `:1238`, `:2202`, `:4619`, `:4661`; `npc_use_started` emit `:3557`. | `mapping-patterns.md` sections 3 and 4 |
+| m4 validator list missing V11 and V4 info | Fixed after reading `scripts/validate_office_life.rb` (V4 info `:41`, `:489`; V11 `:13`, `:743`). Source list now says V1 to V11. | SKILL.md Stage 1 sources, Stage 4 after-each-slice |
+| m5 no voicing yes, no train request | Fixed. Voicing needs the user's explicit yes with the V6 clip count via the decisions page; before merge asks the integrator for a train and requires `train-check.sh` GREEN on the merge hash; the hand-run suites are marked as debugging only. | SKILL.md Stage 7 and 8; `checklists.md` Before merge; `gotchas.md` Suites |
+| m6 `overhearRadius` only in `affordance` | Fixed. Objects take it in `affordance`; a pool `{ lines, overhearRadius }` sets it for mutters and as fallback (`:271` to `:293`, `:2996` to `:3004`). | SKILL.md Stage 2 rooms |
+| n1 shredder missing | Fixed. `office-presets.json` and `npc-poses.js:52` both carry it. | SKILL.md Stage 2 rooms |
+| n2 abridged exchanges snippet | Fixed. Real gates for `ex_open_door`, `ex_tailgate`, `ex_client_sites` copied (scenario `:838` to `:840`); chatter lines marked elided. | `mapping-patterns.md` section 6 |
+| n3 TODO in gotchas | Fixed. Now "not yet measured", pointing to plan slice 7 and the future `SLICE7_SEATS_POSES.md`. | `gotchas.md` Seated pose checks |
+| n4 stage numbering gap | Fixed. The loop is Stage 3, Live proof is Stage 5, and a note says slice numbers are not stage numbers. | SKILL.md headings |
+
+Round 2 scope the review left open, done as a quick pass:
+
+- `SOFA_FIX.md` and the R2/R3 handovers: consistent with the skill (breathing image cause, instant unseat on hide, the 20 px seated offset, `patrolOverride` stopping short, the flake note). No change.
+- Port and PID wording: the skill said only "its own port". Added "never 3000, 3085 or 3086" (AGENTS.md) and "record the puma PID and stop that PID" to Live proof. It is consistent with the playtest-scenario skill's keyless-server rules.
+- Form against sibling skills: same front matter and checklist style as `mission-room-lighting` and the others; no change.
+- The agent-type id `opus55` still appears in SKILL.md and `checklists.md` as the routing name AGENTS.md uses, not as a model claim; left as is.

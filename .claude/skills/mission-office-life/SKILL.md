@@ -7,9 +7,11 @@ description: Takes a Break Escape campaign mission from no office life to the m0
 
 Make a finished campaign mission feel like a working building: people who drink coffee, talk at the cooler, lock their screens and go home, without moving a single lock, key or required step. m02 (`scenarios/m02_ransomed_trust/office_life/`) is the worked example; read its `PLAN.md` for the shape of every section below. `test_needs_sims` is the showcase for each feature.
 
+The skill assumes main includes the m03 office-life engine fixes (`build/ol-m03`, train 131): the pair side swap and the instant unseat when a seated NPC is hidden. Where it says "the engine now...", that is those fixes; engine line numbers are as on `build/ol-m03`.
+
 Sources, read by section, never end to end:
 
-- `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md`: section 1 (the ten rules), 2 (what the engine offers and its limits), 3 (stages), 4 (validator checks V1 to V10), 7 (sync caps), 12 (review loop).
+- `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md`: section 1 (the ten rules), 2 (what the engine offers and its limits), 3 (stages), 4 (validator checks V1 to V11), 7 (sync caps), 12 (review loop).
 - `docs/achitechture/NPC_NEEDS_SYSTEM.md` sections 3 and 5; `docs/achitechture/NPC_POSES.md`; `scripts/scenario-schema.json` for every field.
 - `scenarios/m02_ransomed_trust/office_life/HANDOVER.md` and `PLAN.md`; for m03 (second worked example) `scenarios/m03_ghost_in_the_machine/office_life/`.
 
@@ -66,7 +68,7 @@ One row per NPC record, with file:line. Classify each:
 - [ ] Mark every NPC "can be attacked" unless the scenario sets `disableAttacks`, and list each one's `globalVarOnKO`, `taskOnKO` and KO drops.
 - [ ] List beats keyed on NPC position or presence: `npc_arrived`, `room_entered` mappings, conversation-reachable knots, LOS and `challengeOnSight`, KO tasks, `initiallyHidden` reveals, cutscene triggers.
 - [ ] **Schedules.** There is no timetable field. Write down the mission's acts and the global that turns each (m03: `clone_call_done` turns afternoon into night). Ambient staff appear and leave on those globals through mappings (`hide`/`show`, `patrolOverride`), not on a clock.
-- [ ] **Cast diversity.** A new NPC varies ethnicity and age against the mission's cast; the concept prompt records the choice. A recurring named character uses their own sprite key.
+- [ ] **Extras and ambient staff come from the awareness course cast** (decision D53). Pick from `planning_notes/phishing_and_social_engineering/awareness/` (`HANDOVER.md`, `VOICE_CAST.md` for voices, `BRAND_SET.md`), keep their name, look, voice and kind of job, and adapt the job to the mission's building (m03 did this). Prefer atlases that already have seated and pose frames, check their sprite keys do not clash with the mission's own, and vary ethnicity and age against the mission's cast. Design a new character only with a reason written in the plan; new art needs the user's yes. A recurring named character uses their own sprite key.
 - [ ] Tone and time of day: a working day suits office life; night gets a thinning office (a cleaner, one late worker) or nothing.
 
 ### Rooms and machines
@@ -108,9 +110,9 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Declare Tiled decor that should take part as a scenario object. Declare every same-image twin in the room too, or it is hidden when the first is claimed. Claimed decor is declared with no `position` (top-left semantics come from the map).
 - [ ] Check every object V1 says gained a preset: a puzzle `pc` with no `lockType` gains a desk preset.
 - [ ] Hand-write `useFrom`, `queue.cells` or `"queue": false` where a preset's cells hit a wall, door or neighbour. Aim `useFrom` at the NPC's body-centre cell (`HOME_EPS` is 12 px).
-- [ ] `offWhen` lives at object level, never inside `affordance`. `overhearRadius` is read only from `affordance`; set it so the parts of the room where the player should hear the pair are within it of both users' cells (360 covers a whole room; the default 160 is narrow).
+- [ ] `offWhen` lives at object level, never inside `affordance`. On an object, `overhearRadius` goes in `affordance`. A chatter pool written as `{ lines, overhearRadius }` also carries it: it sets the radius for mutters and is the fallback for a chat whose object sets none (`npc-needs.js:271` to `:293`, `:2996` to `:3004`). Set it so the parts of the room where the player should hear the pair are within it of both users' cells (360 covers a whole room; the default 160 is narrow).
 - [ ] Wall objects whose sprite sits beyond the 32 px reach get `wallMounted: true` (read by `reachY` in `interaction-reach.js`).
-- [ ] Machines: `machine` defaults true for coffee, kettle, cooler, boiler, copier, printer, microwave, vending, keypad and socket. Set it only to override.
+- [ ] Machines: `machine` defaults true for coffee, kettle, cooler, boiler, copier, printer, microwave, vending, keypad, socket and shredder. Set it only to override.
 - [ ] Props square to the walls (one or two angled per room), placed through mission-room-dressing.
 
 ### Poses
@@ -133,7 +135,7 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 Prefer **levers over schedules**: the player causes the event through existing systems rather than waiting on a timetable.
 
 - [ ] Levers: deliver a magnet item (the cake), ring a desk phone (`desk_phone_ring:<id>`), throw a breaker (`offWhen` with a switch object), drop an item with `interests`. Each is optional and each says what it opens.
-- [ ] `lockIfAwayOverSeconds` is compared with the **expected** away time in `npc_left_post`, not real time. m03's planned 45 s was wrong for that reason (expected 14.6 s and 23.1 s); measure both numbers per trip (`references/measurement-recipes.md` section 3).
+- [ ] `lockIfAwayOverSeconds` is compared with the **expected** away time in `npc_left_post`, not real time. m03's planned 45 s was wrong for that reason (Stage 1 measured 14.6 s and 23.1 s; the build settled at use 16/20 s, expected 18.6 s for coffee and 28.7 s for the cooler, threshold 24 s); measure both numbers per trip (`references/measurement-recipes.md` section 3).
 - [ ] Security windows: the gap while an owner is away (unlocked screen via `habits.screen`, a page on the copier via `habits.print`, a left-behind item, a propped door). Each opens optional content only: lore, an optional task, a side drawer. Never a critical-path door, the server room, a safe or a story-locked PC.
 - [ ] Openings that write state sent whole (capture log, cloned cards, footholds, disguises) need their own approval item with a sync note.
 - [ ] Physical-pentest openings and any text that names security techniques go to the agent type AGENTS.md names for VM and technical material.
@@ -157,7 +159,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 - [ ] Walkthrough steps that must still pass; office-life checks to make live (five tries each at walking pace); reload checks; the attack probe (attack a moving NPC, a seated one and one leaving through a door, fresh game per step); the expected lock and key diff (empty, or exactly the approved items).
 
-## The loop
+## Stage 3: the loop
 
 ```
 plan -> review R1..R5+ (standalone rewrite after each) -> approvals -> implement in slices -> review R1..R5+ -> art follow-ups -> voice -> close
@@ -175,7 +177,7 @@ plan -> review R1..R5+ (standalone rewrite after each) -> approvals -> implement
 
 ## Stage 4: implement (slices, one commit each)
 
-Slice order (m03):
+Slice numbers below are m03's build slices, not stage numbers. Slice order (m03):
 
 1. **Slices 1 and 2**: baseline and plan (above), then approvals.
 2. **Slice 3**: new rooms and objects, presets, needs, posts, leashes, privacy, night hides. Declare machines by base type name and check one of each after two loads.
@@ -190,16 +192,16 @@ Levers and openings that need the VM and technical agent type slot into slice 4 
 After each slice:
 
 - [ ] Ink compiles; `dialoguelint.mjs` on changed ink; `tagdiff.mjs` against the last commit for any existing ink touched; inkcheck and loopcheck; `scripts/ink_runtime_check/reopencheck.mjs` and the mission's route suite (`scripts/ink_runtime_check/<m>_routes/`) where it has one.
-- [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors, every new warning cleared or justified. The office-life checks (`scripts/validate_office_life.rb`, called by `validate_scenario.rb`) cover V1, V2 (story NPC whose needs can leave its room), V3 (`npc_arrived` on a needs NPC), V4 (attackable needs NPC), V7 (repeated lines), V8 (sync budget, info until a cap is passed) and V10 (a pool or exchange nothing can trigger), all warnings, and V5 (required content keyed on an office-life global or event), an error. V6 is the rake task and V9 the lock and key diff. The older needs, access and habits validators run too.
+- [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors, every new warning cleared or justified. The office-life checks (`scripts/validate_office_life.rb`, called by `validate_scenario.rb`) cover V1, V2 (story NPC whose needs can leave its room), V3 (`npc_arrived` on a needs NPC), V4 (attackable needs NPC; an info line once the E1 attack probe has passed), V7 (repeated lines), V8 (sync budget, info until a cap is passed), V10 (a pool or exchange nothing can trigger) and V11 (a chatter pool line that names a credential), all warnings, and V5 (required content keyed on an office-life global or event), an error. V6 is the rake task and V9 the lock and key diff. The older needs, access and habits validators run too.
 - [ ] `--office-summary` diffed against `v1_summary_base.txt`: only the planned NPCs changed.
 - [ ] `ruby scripts/lock_key_diff.rb scenarios/<m>/scenario.json.erb scenarios/<m>/office_life/baseline_locks.json`: empty, or exactly the approved items. It regenerates the dungeon graph itself.
 - [ ] `python3 scripts/check_door_alignment.py` and the room depth check for new or changed rooms.
 - [ ] Field names at `FormatUpgrade.current`; office-life keys never inside an ERB loop or tag.
 - [ ] Commit the slice with explicit paths after `git diff --cached --stat`, before any live test.
 
-## Live proof
+## Stage 5: live proof
 
-- [ ] Run a keyless server from the branch worktree on its own port (never the user's main server). Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
+- [ ] Run a keyless server from the branch worktree on its own free port (never 3000, 3085 or 3086; the user's server and the integrator's are there). Record the puma PID and stop that PID. Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
 - [ ] **A fresh game per check** from `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
 - [ ] **Never edit a game row's scenario copy or state, and never set globals in the page** to reach a state. If a check needs a head start, add it to a test scenario on the branch or ask. Type flags in play where a reward matters: seeding m02's flag 4 by `--submit-flag` did not open its cache.
 - [ ] Headless only: `game.loop.setFPS(20)` with **fixed steps on**. Never `fixedStep = false` (bodies tunnel 8 px walls).
@@ -214,15 +216,15 @@ Full list with fixes in `references/gotchas.md`. The ones that cost most: declar
 
 ## Stage 6: art follow-ups
 
-- [ ] New NPCs, after the user's yes: pixellab-character-pipeline (concept through agy, walk atlas with the stock six animations, seated frames if they sit, bust, `<key>_headshot.png`, visemes from a talk run). No custom animations. Hand edits go in `tools/pixellab_overrides/`. Never rescale pixel art.
+- [ ] Art only for what the awareness cast atlases still lack (seated or pose frames), or for a new character the plan justified. After the user's yes: pixellab-character-pipeline (concept through agy, walk atlas with the stock six animations, seated frames if they sit, bust, `<key>_headshot.png`, visemes from a talk run). No custom animations. Hand edits go in `tools/pixellab_overrides/`. Never rescale pixel art.
 - [ ] Swap stand-in atlases for the real keys, then re-measure posts, seats and each pairing.
 - [ ] room-pov-background for every changed room with a `chatBackground` (both halves of a split one), after dressing and lighting.
 - [ ] Closing check on the final commit: validator, `--office-summary` diff, lock and key diff, a short scripted regression playtest.
 
 ## Stage 7 and 8: voice and close
 
-- [ ] Voice with tts-audio once the words are signed off; V6 must show 0 uncached office-life clips. No release carries unvoiced office-life lines.
+- [ ] Voice with tts-audio only after the user's explicit yes on the spend, stating the V6 clip count, asked through the orchestrator's decisions page. Signed-off wording is not that yes. V6 must then show 0 uncached office-life clips. No release carries unvoiced office-life lines.
 - [ ] Record each round's severity table and every finding's outcome in `LOG.md`.
 - [ ] **Lab sheet last.** Flag the lab-sheet impact (new optional routes and openings) to the user; the mission-lab-sheet skill runs only as the final step. Update `CYBOK_MAPPING.md` if an opening teaches something new.
-- [ ] Commit each pass; hand the branch to the integrator, who merges the tested hash. The pass never moves main itself.
+- [ ] Commit each pass; ask the integrator for a train. `tools/playtest/train-check.sh` (AGENTS.md) must be GREEN on the hash to be merged; do not hand-run the suites instead. The integrator merges the tested hash; the pass never moves main itself.
 - [ ] Fold new lessons into this skill.

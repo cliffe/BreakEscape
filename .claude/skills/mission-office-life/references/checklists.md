@@ -12,7 +12,7 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 - [ ] `python3 scripts/check_door_alignment.py` for new or changed rooms.
 - [ ] No office-life key inside an ERB loop or tag; field names at `FormatUpgrade.current`.
 - [ ] Machines declared with base type names; one of each in the room after two loads.
-- [ ] Every new global declared (`globalVars`, `heard_<knot>`, workstation globals); sync budget updated.
+- [ ] Every new global declared (`globalVariables`, `heard_<knot>`, workstation globals; every key a `requireGlobal` tests for `false` too); sync budget updated.
 - [ ] New mappings appended at the end of the NPC's list.
 - [ ] Slice log written: what changed, measurements, what was not checked.
 
@@ -42,8 +42,8 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 ## Before merge
 
 - [ ] Main merged into the branch; conflicts understood, not resolved blind.
-- [ ] `bin/test-js` then the Rails suite, one after the other, on the final tip; the flake re-run alone.
-- [ ] Validator 0 errors; V6 shows 0 uncached office-life clips (or the voicing request is filed).
+- [ ] Commit, then ask the integrator for a train. `tools/playtest/train-check.sh` must be GREEN on the hash to be merged (it runs the Rails suite, rubocop, the JS batch, train-smoke and the validator corpus; a hand-run `bin/test-js` and Rails pass is only a subset). The `LabPhysicalPentestSecretsTest` flake is re-run alone.
+- [ ] Validator 0 errors; V6 shows 0 uncached office-life clips, or the voicing request is on the decisions page with the clip count and the user's yes is pending (no release carries unvoiced lines).
 - [ ] `--office-summary` and lock/key diff clean against the baseline.
 - [ ] No placeholder ink, no draft wording differing from `DIALOGUE_SAMPLE.md`.
 - [ ] Dressing check with all rooms loaded: one of each machine, no duplicates.

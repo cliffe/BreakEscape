@@ -41,7 +41,7 @@ and on the NPC:
 "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 24 } }
 ```
 
-- The workstation globals derive from the object id (`<id>_owner_away`, `<id>_screen_locked`) and still need declaring in `globalVars`.
+- The workstation globals derive from the object id (`<id>_owner_away`, `<id>_screen_locked`) and still need declaring in `globalVariables` (the scenario field; `globalVars.` is only the prefix conditions use).
 - The text is the gate. The engine does not refuse a read over an attended owner's shoulder, so only the away-and-open variant carries anything. Order: night, trouble, locked, away-and-open, then the attended base text. Night outranks trouble on purpose (both are dark-screen text) (`R1_FIX_HANDOVER.md`, coordinator extras).
 - `addToNotes: false` stops the notes entry and its toast on each read. The text is HTML-escaped on the `gameDisplay` path.
 - The variant text must match `DIALOGUE_SAMPLE.md` as the user approved it. Slice 4 wrote its own text and slice 5 left it ("left untouched as instructed"); R2 flagged the mismatch and the fix restored the approved wording (`M03_SLICES3_5_REVIEW_R2.md` finding 4).
@@ -69,7 +69,7 @@ The staff vanish at the act turn through **several mappings per NPC**, because n
   - `onceOnly` state persists with the game once the handler has no conversation or minigame (`state-sync.js`), so each handler adds one keyed entry. Count them in the sync budget.
 - Re-hides are `onceOnly` because `setNPCVisible` posts `update_room` on every call; plain re-hides posted twice on every entry at night (R1 finding 6). Saved visibility is restored on reload before the NPC registers (`restoreNpcVisibility`), so a reload in either room stays hidden after the once-only mapping has fired.
 - Do not add a `previousRoom === null` first-frame mapping. The plain mapping's condition has no `previousRoom` term, so it matches the first-frame event anyway; the extra mapping only caused double writes (R2 finding 6, fixed in the R2 log, confirmed R3). If you ever test `previousRoom` use `=== null`: the evaluator has no `==`, and `== null` did not fire in 5 of 5 fresh games while `=== null` did (`STAGE1_CHECKS.md` (a)). The first-frame `room_entered` of the start room fires with the NPCs already registered, at 0 to 250 ms.
-- A hidden NPC is skipped by the needs tick, witnesses, phone answering and exchanges (`npc-needs.js:1023`, `:1236`, `:2202`, `:4575`, `:4617`). A hidden hostile does not hold back `all_hostiles_ko` (the `build/ol-hidden-hostiles` dependency, on main).
+- A hidden NPC is skipped by the needs tick, witnesses, phone answering and exchanges (the `st.hidden` tests in `npc-needs.js`: the tick at `:1023`, presence at `:1238`, mutters at `:2202`, phone answering at `:4619` and `:4661`). A hidden hostile does not hold back `all_hostiles_ko` (the `build/ol-hidden-hostiles` dependency, on main).
 - **Always render the night turn and look.** `vis false` and `hiddenMap true` held while a seated breathing image of the NPC stayed drawn until reload (`SLICE6_DRESSING_LIGHTING.md` finding 1). See `gotchas.md`, "Hiding a seated NPC".
 
 ## 4. Mapped breaks and one-way coupling
@@ -97,7 +97,7 @@ The natural rhythm may never fire within the act (m03: first natural thirst at 1
 - A delayed mapping re-checks its condition when the delay is up, so a KO inside the 2 s cancels the trip.
 - Every `needs.set` mapping is gated on `!wh_staff_upset`, so once the day goes wrong no new break starts (`M03_SLICES3_5_REVIEW_R4.md`).
 - Mapped trips began 11 to 15 s after the trigger, which lands them inside the aftermath of Ffion's conversation; the player-at-Ffion lane held (`STAGE1_CHECKS.md` assumption 3).
-- Event payloads: `npc_use_started:<obj>` carries `npcId` (`npc-needs.js:3513`); `room_entered:<room>` carries `previousRoom` (`rooms.js:3232`); `npc_attacked:<id>` is emitted at `player-combat.js:461`.
+- Event payloads: `npc_use_started:<obj>` carries `npcId` (the `npc_use_started:${job.targetId}` emit, `npc-needs.js:3557`); `room_entered:<room>` carries `previousRoom` (`rooms.js:3232`); `npc_attacked:<id>` is emitted at `player-combat.js:461`.
 
 ## 5. Trouble: one global, two exclusive mappings
 
@@ -137,15 +137,22 @@ Machines switch off on a single bounded global, and the needs layer does the res
 
 ```jsonc
 "chatterCooldownMin": 2,
-"chatter": { "coffee": ["...", "..."], "cooler": ["...", "..."] },
-"exchanges": [ { "with": "yusuf_demir", "knot": "ex_open_door",
-  "requireGlobal": { "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } },
+"chatter": { "coffee": ["...", "..."], "cooler": ["...", "..."] },   // lines elided; the real pools hold the approved lines
+"exchanges": [
+  { "with": "yusuf_demir", "knot": "ex_open_door",
+    "requireGlobal": { "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } },
+  { "with": "yusuf_demir", "knot": "ex_tailgate",
+    "requireGlobal": { "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } },
   { "with": "yusuf_demir", "knot": "ex_client_sites",
-  "requireGlobal": { "reception_badge_cloned": true, "wh_staff_upset": false } } ]
+    "requireGlobal": { "reception_badge_cloned": true, "wh_staff_upset": false, "receptionist_ko": false, "zainab_ko": false, "yusuf_ko": false } }
+]
 ```
 
-- Declare `heard_<knot>` for every exchange in `globalVars`. A knot is heard once; it counts as heard after one overheard line (`npc-needs.js:2954`, `:3011`, `:3062`).
+The exchange gates are the real m03 ones (`scenario.json.erb` on `build/ol-m03`, lines 838 to 840); only the chatter lines are elided.
+
+- Declare `heard_<knot>` for every exchange in `globalVariables`. A knot is heard once; it counts as heard after one overheard line (`npc-needs.js:2954`, `:3011`, `:3062`).
 - The exchange knots live in the owner's ink and end `-> DONE`. A conversation hub in the same ink needs a line for the "upset" state that exits at once (`#exit_conversation`) and re-entry lines for after a goodbye ("Still about?").
 - A bark is an `eventMappings` entry with a `bark` string, listed with its cooldown and gate, appended last: `npc_ko:ffion_rees` for Yusuf (day, `clone_call_done` not true, neither staffer KO, `onceOnly`), `npc_caught_at_post:<npc>` (`npc-needs.js:3377`) with a 30 s cooldown.
 - Barks sit outside the TTS extractor, so a bark is voiced by hand. Prefer pools and knots.
 - Verify by script that every approved clip appears in the scenario or ink unchanged (R2 did all 49).
+- **`requireGlobal` compares with strict `===`** (`requiredGlobalsHold`, `npc-needs.js:310` to `:314`, also used for `needsCompany` gates). A key tested for `false` that is not declared `false` in `globalVariables` is `undefined`, and `undefined === false` is false, so the exchange silently never plays and nothing reports it. Declare every such key (`receptionist_ko`, `zainab_ko`, `wh_staff_upset` and the like), including KO globals that only `globalVarOnKO` sets.
