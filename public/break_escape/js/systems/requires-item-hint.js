@@ -22,6 +22,8 @@ export const DEFAULT_REQUIRES_ITEM_CONDITION_HINT = 'Not now.';
  * false, the actions do not fire and nothing is consumed; the player sees
  * `requiresItemConditionHint` (with `requiresItemConditionHintVariants`, first match wins).
  * Returns that refusal text, or null when the use may go ahead (no condition, or it holds).
+ * Only the triggerOnInteract branch of interactions.js reads it: on an object without
+ * triggerOnInteract, or on a networkJack, it is ignored (the validator warns).
  * lab_physical_pentest gates the keylogger plant on Chris being away from her desk
  * (`globalVars.staff_pc_owner_away`, workstation-state.js), as its hint has always said.
  */
