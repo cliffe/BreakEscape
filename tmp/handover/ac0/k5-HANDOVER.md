@@ -105,3 +105,60 @@ When K4's `finance` policy (or an explicit `accepts` on `finance_desk`) merges i
 `scenarios/test_access_keyring/scenario.json.erb:22`: `finance_desk` has no `accepts` on this branch, so it takes
 the default list, which includes `token`. The validator warning (validate_scenario.rb:7397) catches a miss.
 Not changed on this branch because K4's policy is not here.
+
+## Run 3 (K4 merge + client half start), 2026-11-17
+Done: merged build/keyring-k4 (db3986065) as f8638e2e6. Conflicts: games_controller desktop refusal
+(kept K5 `expired` and K4 `no_session` branches, in that order); npc_frustration borrow done (kept
+K4's lastSpent-kept ids in an `if borrow_ended.any?` block, K5's `with_token_expired_pc_ids` inside it;
+a resent "done" replays endedPcIds from lastSpent but not tokenExpiredPcIds: minor gap, note for
+review); build log (K4 sections first, then K5 run 2 and R1). K4 adds no `finance` policy and no
+explicit `accepts` on `finance_desk`, so the "add token" step was a no-op (default list has token).
+Rails after merge: 474 controller runs (credential/keyring/access/network) 0 F 0 E; 208 model/unit
+runs 0 F 0 E (one run showed 1 error under load, clean on rerun; not reproduced).
+bin/test-js (all but access-relay-desktop/access-from-desktop) was started in the background and had
+not finished when run 3 stopped: rerun it, plus the two heavy files under ulimit, before client work.
+No client code written yet.
+
+## Client half design (run 3 reading; start here)
+K3d is NOT on this branch (no minigames/capture-log/signin-rows.js), so the Sign-ins list token row
+and the capture-log find toast wording are out of scope until K3d lands; say so in the build log.
+1. utils/remote-host-text.js (import-free): `tokenFoundMessage` ("Session token captured: {label} for
+   {displayName} on {host}."), findLine token branch; teachLine token (8.5); kindRefusedMessage token
+   "{host} does not accept session tokens."; kindRefusedShort(host, kind) token "{host}: no session
+   tokens." (default unchanged); `tokenExpiredMessage(label)` "{label} has expired.";
+   `tokenExpiredEndedMessage(label, host)` "{label} expired. Your session on {host} ended.";
+   credentialRefusalLine case 'expired'. TAG_TEXT token already exists.
+2. systems/keyring.js: FIND_KINDS += token. screenEntries gains `foothold`; token shows on a foothold
+   screen only when forThisPc and routes has {foothold: <screen foothold>}; an expired token (server
+   sends routes []) shows greyed only if an earlier answer this page listed its proof foothold
+   (keep a `_tokenProofs` credId->foothold map in remember()). unlock-system.js:503 keyringForScreen
+   must pass `foothold` to screenEntries. remember(): for token entries with sessionHeld and numeric
+   expiresInS call pcSessions.noteTokenExpiry(connectsTo, s); for `unchanged` answers read
+   answer.expiresInS {credId: n} and map credId->connectsTo from the cached entries.
+3. password-minigame.js: mergeRemoteTiles cred push adds `expired: e.expired === true`;
+   renderSignInWays greys when !accepted || expired (short line: expired -> tokenExpiredMessage(label),
+   refused -> kindRefusedShort(host, kind)); useCredential: expired -> message, no post; result reason
+   'expired' -> mark cred.expired, rerender, line.
+4. systems/pc-sessions.js (import-free: copy texts, add a test that keeps them equal to
+   remote-host-text): credentialRefusalReason `b.expired` -> 'expired' (before the generic);
+   token sessions store `expiresAt = Date.now() + expiresInS*1000` (signInWithCredential and load());
+   per-PC timer -> linkDropped([pcId], 'token_expired'); `noteTokenExpiry`, `tokenSecondsLeft`;
+   linkDropped(ids, reason, { tokenExpired }) gives tokenExpired ids the token line (desktop close or
+   toast) and the rest the batch reason; _dropEnded / signOut / displaced pass the answer's
+   tokenExpiredPcIds; token sessions never enter `signedIn` (load and _replace, as relay), firstAtPc false.
+5. network-links.js:588 unplug emits tokenExpiredPcIds; pc-sessions listener passes it.
+   npc-workarounds.js:359 passes body.tokenExpiredPcIds (filtered like endedPcIds) through deps.linkDropped.
+6. utils/pc-taskbar.js: credentialSessionLine token -> "with a session token, about {n} min left"
+   (n = ceil(s/60); s < 60 -> "with a session token, under a minute left"); credentialLineHtml for
+   token escapes the whole line (no label span); add `refreshTokenLines(root, session)` updating
+   `.desktop-account-credential` and `.pc-start-credential` text. container-minigame.js: a 60 s (or
+   to-next-minute) interval after the desktop registers (line ~732), cleared in cleanup() (~802); the
+   remote/from 403 branch (~661, ~671) maps reason 'expired' -> dropLocal + toast tokenExpiredMessage(label).
+7. utils/lock-scope-refusal.js: add `expired` to LOCK_SCOPE_REFUSAL_TEXT (generic line, e.g. "This
+   session token has expired."; the label-bearing server message would need 4 call sites changed) and
+   update test/js/lock-scope-refusal.test.mjs's deepEqual of the table.
+8. Tests: extend keyring-signin.test.mjs, keyring-client.test.mjs, pc-sessions.test.mjs (timer with
+   fake Date/setTimeout), a pc-taskbar line test; tools/playtest/signin-fit.mjs token bar line. No new
+   static imports planned, so no harness copy list should grow (check if that changes).
+9. Fixture/PLAYTEST: lena_token already exists from run 2 step 9 (check PLAYTEST R12 text) and the
+   build log "K5 client" section must list what R12's live check must see.
