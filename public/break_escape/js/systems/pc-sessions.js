@@ -12,7 +12,7 @@
  *              signedInPcs, used by unlock_object tasks);
  *   desktops   pcId -> close(message, reason) for a desktop that is open now, so a session
  *              that ends closes it with a one-line message; reason is why (sign_out,
- *              no_session, link_dropped, displaced, owner_returned, auto_locked), which a
+ *              no_session, link_dropped, token_expired, displaced, owner_returned, auto_locked), which a
  *              network screen hands to networkLinks.landed (slice 9.3a, 4.3).
  *
  * Remote sessions (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.4). A sign-in through a
@@ -21,7 +21,7 @@
  * may never have loaded). The sign-in events carry remote and footholdId. A keyboard fetch
  * of the desktop settles a remote session (the server clears its foothold), and the answer's
  * session tells settle() so. network_device_unplugged ends exactly the sessions named in its
- * endedPcIds (pc_signed_out reason link_dropped; an open desktop closes with "The link
+ * endedPcIds (pc_signed_out reason link_dropped, or token_expired when a session token ran out; an open desktop closes with "The link
  * dropped"). A refusal because the PC's policy blocks remote sign-in (422 remoteBlocked)
  * emits pc_signin_failed with reason remote_blocked.
  *

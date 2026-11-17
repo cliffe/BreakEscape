@@ -848,7 +848,7 @@ export class ContainerMinigame extends MinigameScene {
     /**
      * A network screen says why it closed (4.3, "Getting back"): exitReason is close unless
      * the closing path set another (handover, switch, item, share, no_session, unreachable,
-     * or a session end: sign_out, link_dropped, displaced). A container opened from another
+     * or a session end: sign_out, link_dropped, token_expired, displaced). A container opened from another
      * (a mapped share, or a folder opened below a network screen: parentLockable) reopens
      * that container when closed by its Close; a folder from a remote desktop with no parent
      * recorded reopens that desktop; every other network screen hands the pair to

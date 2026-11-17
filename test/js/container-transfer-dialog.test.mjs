@@ -410,6 +410,22 @@ test('K5 R3: the strip line is plain text; a hostile label or link name makes no
     } finally { mock.timers.reset(); }
 });
 
+test('K5 R5 m3: sessionNoticesHtml draws the amber token line only when under 60 s are left at first draw', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const low = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 45 } });
+        const lowHtml = low.sessionNoticesHtml();
+        assert.match(lowHtml, /class="desktop-claim-line desktop-token-line desktop-token-line-low"/, '45 s left is amber');
+        assert.match(lowHtml, /under a minute left/);
+        low.cleanup?.();
+        const calm = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 600 } });
+        const calmHtml = calm.sessionNoticesHtml();
+        assert.match(calmHtml, /desktop-token-line/);
+        assert.doesNotMatch(calmHtml, /desktop-token-line-low/, '10 min left is neutral');
+        calm.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
 test('K5: a remote desktop request refused 403 expired drops the local copy and says the token expired', async () => {
     const mg = await openDesktop({ held: TOKEN_SESSION });
     mg.cleanup?.();
