@@ -1,5 +1,5 @@
 // scripts/validate_access_work.rb, the USB habit (docs/achitechture/USB_HABIT_PLAN.md, q39):
-// usbHabit's shape and global, the no-plan warning, the usb_refused mutter, the work report line
+// habits.usb's shape and global, the no-plan warning, the usb_refused mutter, the work report line
 // and a reactive post keyed on cause usb_refused.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,7 +39,7 @@ function clean() {
                 objects: [{ id: 'kim_pc', type: 'pc', name: 'PC', lockType: 'login', policy: 'locked',
                     affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }],
                 npcs: [{ id: 'kim', displayName: 'Kim', npcType: 'person', needsHome: 'kim_pc', needsDeferMin: 0.5,
-                    workNeeds: ['reports'], usbHabit: { every: 2, setGlobal: 'kim_emailed' },
+                    workNeeds: ['reports'], habits: { usb: { every: 2, setGlobal: 'kim_emailed' } },
                     itemsHeld: [{ type: 'usb', id: 'kim_usb', name: "Kim's USB stick", sprite: 'usb_bowl1', usbClass: 'storage', takeable: true }],
                     needs: { work: { decayPerMin: 40, urgentAt: 50 } } }]
             }
@@ -54,35 +54,35 @@ test('USB habit: a clean fixture raises nothing', { skip }, () => {
 
 test('USB habit: a bad every, an undeclared setGlobal and a non-object are errors', { skip }, () => {
     const s = clean();
-    kim(s).usbHabit = { every: 0, setGlobal: 'nope' };
+    kim(s).habits = { usb: { every: 0, setGlobal: 'nope' } };
     const list = issues(s);
-    assertHas(list, 'kim.usbHabit.every is 0');
-    assertHas(list, 'kim.usbHabit.setGlobal "nope" is not declared');
-    kim(s).usbHabit = true;
-    assertHas(issues(s), 'kim.usbHabit must be an object');
+    assertHas(list, 'kim.habits.usb.every is 0');
+    assertHas(list, 'kim.habits.usb.setGlobal "nope" is not declared');
+    kim(s).habits = { usb: true };
+    assertHas(issues(s), 'kim.habits.usb must be an object');
 });
 
 test('USB habit: no work plan is warned', { skip }, () => {
     const s = clean();
     kim(s).workNeeds = [];
-    assertHas(issues(s), 'kim has a usbHabit but no work plan');
+    assertHas(issues(s), 'kim has a habits.usb but no work plan');
 });
 
 // Review R1 m5
 test('USB habit: no station is warned', { skip }, () => {
     const s = clean();
     delete kim(s).needsHome;
-    assertHas(issues(s), 'kim has a usbHabit but no station');
+    assertHas(issues(s), 'kim has a habits.usb but no station');
     const t = clean();
     kim(t).needsHome = 'missing_pc';
-    assertHas(issues(t), 'kim has a usbHabit but no station');
+    assertHas(issues(t), 'kim has a habits.usb but no station');
 });
 
 test('USB habit: a setGlobal at a PC that allows USB is warned', { skip }, () => {
     const s = clean();
     s.rooms.office.objects[0].policy = 'lax';
-    assertHas(issues(s), "kim.usbHabit.setGlobal 'kim_emailed' can never be set");
-    delete kim(s).usbHabit.setGlobal;
+    assertHas(issues(s), "kim.habits.usb.setGlobal 'kim_emailed' can never be set");
+    delete kim(s).habits.usb.setGlobal;
     assert.ok(!has(issues(s), 'can never be set'), 'no global, nothing to warn');
 });
 
@@ -100,8 +100,8 @@ test('USB habit: a refusing PC needs a usb_refused (or work_fail) line', { skip 
 
 test('USB habit: only room NPCs may carry it', { skip }, () => {
     const s = clean();
-    s.npcs = [{ id: 'phone_kim', usbHabit: { every: 2 } }];
-    assertHas(issues(s), "has 'usbHabit', which is allowed only on room NPCs");
+    s.npcs = [{ id: 'phone_kim', habits: { usb: { every: 2 } } }];
+    assertHas(issues(s), "has 'habits.usb', which is allowed only on room NPCs");
 });
 
 test('USB habit: the work report names it, refused or allowed', { skip }, () => {
@@ -129,11 +129,11 @@ test('USB habit: a reactive post on cause usb_refused is accepted where it can f
 test('USB habit: no stick in itemsHeld is an error', { skip }, () => {
     const s = clean();
     kim(s).itemsHeld = [{ type: 'key', id: 'k1', name: 'Key' }];
-    assertHas(issues(s), 'kim has a usbHabit but holds no USB stick');
+    assertHas(issues(s), 'kim has a habits.usb but holds no USB stick');
     delete kim(s).itemsHeld;
-    assertHas(issues(s), 'kim has a usbHabit but holds no USB stick');
+    assertHas(issues(s), 'kim has a habits.usb but holds no USB stick');
     kim(s).itemsHeld = [{ type: 'usb', name: 'No id' }];
-    assertHas(issues(s), 'kim has a usbHabit but holds no USB stick');
+    assertHas(issues(s), 'kim has a habits.usb but holds no USB stick');
 });
 
 test('USB habit: authored files that are well formed raise nothing', { skip }, () => {

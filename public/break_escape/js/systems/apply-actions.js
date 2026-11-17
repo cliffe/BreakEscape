@@ -401,14 +401,26 @@ export function applyActions(actions, { source = 'scenario', gameId = null, obje
             }
 
             // Show confirmation dialog, then execute nested actions if confirmed
-            // action: { type: 'confirm_action', text, onConfirm: [...actions] }
+            // action: { type: 'confirm_action', text, onConfirm: [...actions],
+            //           confirmLabel?, cancelLabel? }
+            // The labels name the two choices (UX slice 15, R4e: a switch says "Switch off" and
+            // "Leave it"); a missing or empty label keeps gameConfirm's Confirm or Cancel.
             case 'confirm_action': {
                 if (!window.gameConfirm) {
                     console.warn('[applyActions] gameConfirm not available');
                     break;
                 }
                 const { text, onConfirm } = action;
-                window.gameConfirm(text).then(confirmed => {
+                // The same confirm is already open: drop this copy, so the same switch pressed
+                // twice never stacks two dialogs and runs onConfirm twice (UX slice 16 R1 M1).
+                // A different confirm (a timer's) still opens (R2 m3).
+                if (window.gameConfirmOpen?.(text)) {
+                    console.warn('[applyActions] confirm_action dropped: the same confirm is already open', text);
+                    break;
+                }
+                const label = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
+                window.gameConfirm(text, label(action.confirmLabel, 'Confirm'),
+                    label(action.cancelLabel, 'Cancel')).then(confirmed => {
                     if (confirmed && Array.isArray(onConfirm)) {
                         applyActions(onConfirm, { source, gameId, objectId });
                     }

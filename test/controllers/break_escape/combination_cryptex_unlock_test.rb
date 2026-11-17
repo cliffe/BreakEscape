@@ -185,6 +185,50 @@ module BreakEscape
                    'the stored copy holds no answer either'
     end
 
+    # ── a locked start item opens on the server (hardening item 4) ───────
+
+    test 'a locked start item opens with the right answer and is refused with a wrong one' do
+      data = scenario.merge('startItemsInInventory' => [
+        { 'type' => 'cryptex', 'id' => 'pocket_cryptex', 'name' => 'Pocket Cryptex', 'takeable' => true,
+          'locked' => true, 'lockType' => 'cryptex', 'requires' => 'RIDDLE',
+          'cryptexConfig' => { 'wheelCount' => 6, 'answer' => 'RIDDLE' },
+          'contents' => [{ 'type' => 'notes', 'id' => 'pocket_note', 'name' => 'Pocket Note', 'takeable' => true }] },
+        { 'type' => 'briefcase', 'id' => 'start_case', 'name' => 'Case', 'takeable' => true,
+          'locked' => true, 'lockType' => 'combination', 'requires' => '3-14-15', 'combination' => [3, 14, 15],
+          'contents' => [{ 'type' => 'notes', 'id' => 'case_sheet', 'name' => 'Case Sheet', 'takeable' => true }] }
+      ])
+      @game = Game.create!(mission: @mission, player: @owner, scenario_data: data, player_state: state)
+
+      unlock('pocket_cryptex', 'WRONGO', 'cryptex')
+      assert_response :unprocessable_entity
+      refute_includes @game.reload.player_state['unlockedObjects'].to_a, 'pocket_cryptex'
+
+      unlock('pocket_cryptex', 'riddle', 'cryptex')
+      assert_response :success, response.body
+      assert_equal ['pocket_note'], response.parsed_body['contents'].map { |c| c['id'] }
+      assert_includes @game.reload.player_state['unlockedObjects'], 'pocket_cryptex'
+
+      # The opened item also serves its contents through GET /container
+      get "/break_escape/games/#{@game.id}/container/pocket_cryptex", as: :json
+      assert_response :success, response.body
+      assert_equal ['pocket_note'], response.parsed_body['contents'].map { |c| c['id'] }
+
+      unlock('start_case', '3-14-16', 'combination')
+      assert_response :unprocessable_entity
+
+      unlock('start_case', '3-14-15', 'combination')
+      assert_response :success, response.body
+      assert_equal ['case_sheet'], response.parsed_body['contents'].map { |c| c['id'] }
+      assert_includes @game.reload.player_state['unlockedObjects'], 'start_case'
+
+      # Neither the opened reply nor any client payload carries the answer
+      refute_includes response.body, 'RIDDLE'
+      refute_includes response.body, '3-14-15'
+      get scenario_game_url(@game), as: :json
+      refute_includes response.body, 'RIDDLE'
+      refute_includes response.body, '3-14-15'
+    end
+
     # ── answer comparison ────────────────────────────────────────────────
 
     test 'a combination compares its numbers, a cryptex ignores case and outer spaces' do

@@ -139,6 +139,31 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
 
   "show_scenario_brief": "on_resume",
 
+  "validSprites": [
+    "female_hacker_hood_v2",
+    "female_hacker_hood_down_v2",
+    "female_office_worker_v2",
+    "female_security_guard_v2",
+    "female_telecom_v2",
+    "female_scientist_v2",
+    "female_blowse_v2",
+    "male_hacker_hood_v2",
+    "male_hacker_hood_down_v2",
+    "male_office_worker_v2",
+    "male_security_guard_v2",
+    "male_telecom_v2",
+    "male_spy_v2",
+    "male_nerd_v2",
+    "vivian_ashby",
+    "mei_lin_chow",
+    "lucia_moreno",
+    "ngozi_adeyemi",
+    "daniel_seo",
+    "frank_callahan",
+    "marcus_hale",
+    "harjit_singh"
+  ],
+
   <%# Round 2 (2026-10-17): the safetynet credits overlay's header and ticker. True in every ending: Nightshade is named whether he is arrested or left in place, and the database is gone either way. %>
   "creditsOverlay": {
     "operation": "LOOKING GLASS",
@@ -151,7 +176,17 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
     ]
   },
 
+  "npcThoughts": false,
   "startRoom": "main_lobby",
+
+  "acknowledgedClues": [
+    {
+      "lock": "interrogation_room",
+      "in": "global:suite_code",
+      "reason": "Netherton says the interrogation suite code aloud in his voiced ink, so the global carries it from game start; accepted as a best-effort clue (q85).",
+      "approved": "2026-11-14: m08 suite_code spoken clue"
+    }
+  ],
 
   "flags": {
     "safetynet_gitlist_server": <%= vm_flags_json('safetynet_gitlist_server', ['flag{gitlist_argument_injection}', 'flag{stashed_credentials_recovered}', 'flag{home_directory_access}', 'flag{root_via_sudo_apt}']) %>
@@ -571,6 +606,13 @@ CREDITS
   <%# Lighting stage (pass 5): the Citadel at night on Level Red. LIGHTING_PLAN.md. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
+  <%# Office life (office_life/PLAN.md 2): room tone only, no people. Keys are room types. %>
+  "roomTone": true,
+  "roomToneTypes": {
+    "room_hq_lobby": "quiet_office", "room_hq_director": "quiet_office", "room_hq_intel": "quiet_office",
+    "room_hq_ops": "it", "room_hq_crypto": "it",
+    "room_hq_servers": "server", "room_hq_break": "kitchen"
+  },
   "rooms": {
 
     "main_lobby": {
@@ -732,6 +774,7 @@ CREDITS
           "_comment": "Agent HaX -- handler, phone NPC on player_phone, reachable from every room. Runs the support hub, the per-stage VM hints, the field guides, and the emotional throughline -- she has worked with all three suspects for years. WP6 adds itemsHeld/hub gating; the eventMappings below wire flag rewards to narrative globals and acknowledge KOs.",
           "id": "agent_0x99",
           "displayName": "Agent HaX",
+          "callLabel": "SAFETYNET secure line",
           "npcType": "phone",
           "phoneId": "player_phone",
           "avatar": "assets/characters/agent_hax_v2_headshot.png",
@@ -742,6 +785,9 @@ CREDITS
             "language": "en-GB"
           },
           "currentKnot": "start",
+          "call": [
+            { "knot": "hax_read_1", "button": false }
+          ],
 <%# PASS 2 rework of HaX's mappings:
     - the 8 s timedMessage could land over the opening cutscene (lesson 20);
       it now fires when that cutscene closes.
@@ -766,7 +812,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_gitlist_vuln": true, "gitsecrets_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Our own code server, and its repo is open to anyone. No password. That's a report nobody will enjoy. The credential's gone from the files, not from the history. Break in and read it. Want the git secrets guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "Our code server's repo is open to anyone: a report nobody will enjoy. The credential's gone from the files, not the history. Break in and read it. Git secrets guide?" }
             },
             {
               "_comment": "Flag 2 -- the break-in and the stashed credentials. GitList remote command execution with no login gives the foothold; the mole's opsec failure (creds committed to the repo, removed, never rotated) is in its history. PASS 4 (fix 19): its guide is now offered at flag 1.",
@@ -774,7 +820,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_leaked_creds": true },
-              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials: committed straight into the repo, deleted, never rotated. Log in properly with them and see what the account keeps at home. If anything in there is sealed, the Director has held a key for nine days: the full Portland intercept, in his safe." }
+              "sendTimedMessage": { "delay": 1500, "message": "You're in, and so were the credentials, never rotated. Log in properly. If anything's sealed, the Director's held the key nine days: the full Portland intercept, in his safe." }
             },
             {
               "_comment": "Flag 3 -- proper login, home-directory flag. The mailbox ties the account to the Portland intercept (an account, not yet a person: PASS 5 Option B). Also opens the privilege-escalation guide.",
@@ -782,7 +828,7 @@ CREDITS
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "found_architect_comms": true, "privesc_guide_offered": true },
-              "sendTimedMessage": { "delay": 1500, "message": "The intercept's seal opened their drop. The mail goes to architect@entropy.onion, from the sender on the Portland intercept. The logs need root, and that account hasn't got it. The web service you landed as has a sudo rule. Privesc guide?" }
+              "sendTimedMessage": { "delay": 1500, "message": "The seal opened their drop: mail to architect@entropy.onion, from the intercept's sender. The logs need root, which this account lacks; your web foothold has a sudo rule. Privesc guide?" }
             },
 <%# Flag 4 -- root. Access logs become readable: a terminal and a time (PASS 5,
     Option B; see below for the fallbacks that still set mole_identified).
@@ -871,7 +917,7 @@ CREDITS
               "eventPattern": "global_variable_changed:found_badge_audit",
               "condition": "value === true && globalVars.netherton_hostile === true && globalVars.netherton_ko !== true && globalVars.mole_identified !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. The Director won't hear it from you, so read it to me: the door against the minute the plan was opened. Call when you've got both." }
+              "sendTimedMessage": { "delay": 2000, "message": "That's the door audit. The Director won't hear it from you. Read it to me: the door against the minute the plan was opened. Call me when you've got both." }
             },
             {
               "eventPattern": "global_variable_changed:mole_identified",
@@ -1032,7 +1078,7 @@ CREDITS
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'agent_0x99_person' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Ring me. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 1000, "message": "Ow. I'm not hitting back, 0x00, but I'm done talking in person tonight. Message me. Q until the open hand shows to use anything." }
             },
             {
               "_comment": "PASS 3 (P2): the USB stick from Nightshade's locker is opened (container path fires its onPickup). Offers the CyberChef guide.",
@@ -1370,6 +1416,7 @@ CREDITS
           "type": "pc",
           "id": "badge_printer",
           "name": "Visitor Badge Printer",
+          "host": "BADGE-PRN-01",
           "position": "as-type:hq_badge_printer",
           "takeable": false,
           "locked": true,
@@ -1680,6 +1727,10 @@ CREDITS
           "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           <%# Design C1 (m6): a KO is on the record and, before the naming, tips the mole off (HaX). %>
           "globalVarOnKO": "analyst_ko",
+          <%# Office life (office_life/PLAN.md Q5 b, D83): one once-only bark on first entering the ops floor. %>
+          "eventMappings": [
+            { "eventPattern": "room_entered:operations_floor", "condition": "!globalVars.analyst_ko", "onceOnly": true, "delayMs": 3500, "bark": "Nobody's said a word on this floor for an hour. I counted." }
+          ],
           "observations": "A junior analyst monitoring threat feeds she has read four times without seeing."
         }
       ],
@@ -2099,9 +2150,11 @@ CREDITS
           "type": "workstation",
           "id": "cyberchef_workstation",
           "name": "CyberChef Workstation",
+          "host": "LAB-DECODE-01",
           "takeable": false,
           "observations": "The lab's decoding station, CyberChef loaded and waiting. Whatever turns up encoded in this building, this is where it comes apart."
         },
+        <%# No host or desktopUser here on purpose: this is a text-only object that never opens a desktop, and a numbered host would pair with the lab terminal log clue. %>
         {
           "_comment": "Nightshade's desk. PASS 3 (P8): bare. The USB stick and the recruitment brief moved to his locker in the break room, so the signed mail no longer sits, decodable, in the room he is interviewed in. Type pc with no contents key keeps its desk slot and opens no container (interactions.js:1287).",
           "type": "pc",

@@ -26,7 +26,7 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
     - fon_card_given:
         Sione Fonoti: I'm off shift, far as I'm concerned. Go on through.
     - else:
-        Sione Fonoti: Evening. Nobody comes up the stair this late. They told me one would, and not why.
+        Sione Fonoti: Evening. Nobody comes up the stair this late. They told me somebody would tonight. Not why.
     }
 }
 + {not fon_card_given and not outer_lock_open and gallery_rota_read} [The rota says you carry the card.]
@@ -49,7 +49,12 @@ VAR fon_shift_used = false  // "Shift change" has been tried at the challenge
     ~ lock_guard_stood_down = true  // puzzle chains P6
     Sione Fonoti: The Dutch guy. Figures. You've got his card, so you don't need mine. I'll stand over here.
     -> talk
-+ [Never mind.]
++ {fon_card_given or outer_lock_open} [Thanks.]
+    Sione Fonoti: Sure. Mind the grating by the stair. It's loose.
+    ~ fon_quiet = true
+    #exit_conversation
+    -> talk
++ {not fon_card_given and not outer_lock_open} [Never mind.]
     Sione Fonoti: Sure. Mind the grating by the stair. It's loose.
     ~ fon_quiet = true
     #exit_conversation

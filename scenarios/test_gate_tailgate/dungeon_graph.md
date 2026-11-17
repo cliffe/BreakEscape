@@ -13,8 +13,8 @@ Throwaway engine test. A facilities worker walks rounds between an office and a 
 | VM flag challenges | 0 |
 | Physical locks | 1 |
 | AND-gate convergences | 0 |
-| Rooms | 1 |
-| Puzzle graph nodes / edges | 2 / 1 |
+| Rooms | 2 |
+| Puzzle graph nodes / edges | 4 / 2 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -69,14 +69,17 @@ flowchart TD
   node_start(("▶"))
   node_start --> office
 
-  door_staff_room["Staff Only<br/>RFID lock"]
+  door_staff_room["Staff Only<br/>RFID lock<br/>gated: credential or server pass"]
   staff_room("Staff Only")
-  office("Office")
+  grant_visitor_lanyard_worn{"Visitor lanyard<br/>(granted)"}
+  office("Open-Plan Office")
 
   door_staff_room --> staff_room
+  office -.-> grant_visitor_lanyard_worn
 
   class door_staff_room lock
   class staff_room,office room
+  class grant_visitor_lanyard_worn item
   class node_start start
 ```
 
@@ -133,16 +136,19 @@ flowchart TD
   node_start(("▶"))
   node_start --> office
 
-  door_staff_room["Staff Only<br/>RFID lock"]
+  door_staff_room["Staff Only<br/>RFID lock<br/>gated: credential or server pass"]
   staff_room("Staff Only")
+  grant_visitor_lanyard_worn{"Visitor lanyard<br/>(granted)"}
+  office("Open-Plan Office")
   aim_enter{{"Reach the staff room"}}
-  office("Office")
 
   door_staff_room --> staff_room
+  office -.-> grant_visitor_lanyard_worn
   door_staff_room -.-> aim_enter
 
   class door_staff_room lock
   class staff_room,office room
+  class grant_visitor_lanyard_worn item
   class aim_enter aim
   class node_start start
 ```
@@ -214,6 +220,7 @@ flowchart TD
   rc_door_reader_3{"Staff door reader"}
   rc_npc_sam_ellery_4("Sam Ellery")
   rc_staff_notice_5{"Staff notice"}
+  rc_grant_visitor_lanyard_worn_6{"Visitor lanyard<br/>(granted)"}
 
   office --> staff_room
   office --> rc_kit_cloner_1
@@ -221,10 +228,11 @@ flowchart TD
   office --> rc_door_reader_3
   office --> rc_npc_sam_ellery_4
   staff_room --> rc_staff_notice_5
+  office -.-> rc_grant_visitor_lanyard_worn_6
 
   class office room
   class staff_room lock
-  class rc_kit_cloner_1,rc_visitor_lanyard_2,rc_door_reader_3,rc_staff_notice_5 item
+  class rc_kit_cloner_1,rc_visitor_lanyard_2,rc_door_reader_3,rc_staff_notice_5,rc_grant_visitor_lanyard_worn_6 item
   class rc_npc_sam_ellery_4 npc
   class node_start start
 ```

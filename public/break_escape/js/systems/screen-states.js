@@ -34,6 +34,9 @@
 
 import { isWorkstation, ownerOf } from './workstation-state.js';
 
+// A password or a keyring credential session shows the desktop look; a claim keeps the lock (K3a, 3.8)
+const signedInVia = (via) => via === 'password' || via === 'credential';
+
 export const LOCK_SOUND = 'lockpick_set';
 export const UNLOCK_SOUND = 'ui_confirm';
 const MAX_TRANSITIONS = 50;
@@ -68,7 +71,7 @@ export class ScreenStates {
         const ws = win().workstationState;
         if (!ws || !isWorkstation(data)) return false;
         if (Array.isArray(data.spriteVariants) && data.spriteVariants.length) return false;
-        return !!ownerOf(data, ws.env.npcs());
+        return !!ownerOf(data);
     }
 
     /**
@@ -80,7 +83,10 @@ export class ScreenStates {
         const found = objectId ? findSprite(objectId) : null;
         if (!found || !this._eligible(found.sprite.scenarioData)) return null;
         const { sprite, roomId } = found;
-        const locked = !!w.workstationState.isLocked(objectId) && w.pcSessions?.get?.(objectId)?.via !== 'password';
+        // A relay session (keyring K3c, 3.8) is the holder's, reached only by Connect: the sprite
+        // paints as it would with no session the player holds
+        const held = w.pcSessions?.get?.(objectId);
+        const locked = !!w.workstationState.isLocked(objectId) && !(held?.relay !== true && signedInVia(held?.via));
         // An unset look flag is the base look: a leave that keeps the screen open changes nothing
         if (locked === !!sprite._screenLocked) return null;
 

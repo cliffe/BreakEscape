@@ -1,0 +1,13 @@
+{
+  "key": "1276af28d86deb567dae913af4695f8e",
+  "npc": "nightshade_phone",
+  "text": "So you've found my file. Never mind the boy in it. Look at the handwriting.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst, now a triple agent. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, collegial; serene and a little tired.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:22:23Z"
+}

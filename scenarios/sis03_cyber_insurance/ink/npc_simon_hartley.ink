@@ -201,11 +201,17 @@ That's correct design: make the plant safe first, forensics second.
 It also overwrote the registers that held the falsified sensor values. Nobody imaged them first.
 So I don't have direct forensic evidence of exactly what the attacker wrote.
 
-Instead, I'm relying on the historian database — which recorded the falsified sensor readings in real-time. But the historian was itself compromised, so those readings are the attacker's data.
+Instead, I'm relying on the historian database, which recorded the falsified sensor readings in real-time.
 
-There's a layer of circularity there: the evidence I'm using to prove the attack altered sensor values is data that was itself falsified by the attack.
+But the historian was itself compromised, so those readings are the attacker's data.
 
-The forensic team has done their best to reconstruct the pre-shutdown values by cross-referencing historian trends with physical measurements from the incident report. But it's reconstruction, not direct evidence.
+There's a layer of circularity there.
+
+The evidence I'm using to prove the attack altered sensor values is data that was itself falsified by the attack.
+
+The forensic team has done their best to reconstruct the pre-shutdown values by cross-referencing historian trends with physical measurements from the incident report.
+
+But it's reconstruction, not direct evidence.
 
 * [Does this affect the loss quantum?]
     It affects confidence, not the total. I'm confident in the £8.2M.

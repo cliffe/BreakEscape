@@ -70,9 +70,40 @@ test('other keys pass through, and unregister on click-close leaves no listener'
     assert.equal(listeners.length, 0);
 });
 
-test('gameDisplay and gameConfirm register with the stack and have a close X', () => {
+test('gameDisplay and gameConfirm register with the stack; only gameDisplay has a close X', () => {
     const src = readFileSync(join(js, 'systems/notifications.js'), 'utf8');
     assert.equal((src.match(/registerModal\(/g) || []).length, 2);
-    assert.equal((src.match(/game-modal-close/g) || []).length >= 4, true);
+    // gameDisplay draws the X and wires it; a confirm has none (UX q99)
+    assert.equal((src.match(/game-modal-close/g) || []).length, 2);
     assert.match(src, /registerModal\(\(\) => finish\(false\)\)/, 'gameConfirm Esc must cancel (resolve false)');
+});
+
+test('yieldsToNext: a later registration closes the flagged entry; an unflagged one stays', () => {
+    const closed = [];
+    let unMenu, unPlain, unNext;
+    unPlain = registerModal(() => { closed.push('plain'); });
+    unMenu = registerModal(() => { closed.push('menu'); unMenu(); }, { yieldsToNext: true });
+    assert.equal(openModalCount(), 2);
+    unNext = registerModal(() => { closed.push('next'); unNext(); });
+    assert.deepEqual(closed, ['menu'], 'only the flagged entry closed');
+    assert.equal(openModalCount(), 2, 'plain and next remain');
+    press('Escape');
+    assert.deepEqual(closed, ['menu', 'next'], 'Esc closes the newest');
+    unPlain();
+    assert.equal(openModalCount(), 0);
+});
+
+test('yieldsToNext: each flagged entry closes in turn, and a close that throws does not block the new overlay', () => {
+    const closed = [];
+    registerModal(() => { closed.push('a'); throw new Error('broken close'); }, { yieldsToNext: true });
+    registerModal(() => { closed.push('b'); }, { yieldsToNext: true });
+    assert.deepEqual(closed, ['a'], 'b registering closed a');
+    assert.equal(openModalCount(), 1, 'a was removed although its close threw, and its close did not unregister');
+    let un;
+    un = registerModal(() => { closed.push('c'); un(); });
+    assert.deepEqual(closed, ['a', 'b']);
+    assert.equal(openModalCount(), 1, 'only c is left');
+    press('Escape');
+    assert.deepEqual(closed, ['a', 'b', 'c']);
+    assert.equal(openModalCount(), 0);
 });

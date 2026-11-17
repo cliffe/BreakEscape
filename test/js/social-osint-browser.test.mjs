@@ -674,3 +674,311 @@ test('C3: a reply arriving re-renders the open thread poster\'s profile; reply t
         s.cleanup();
     } finally { window.eventDispatcher = saved; }
 });
+
+// ── Friendface reactions (FRIENDFACE_REACTIONS_PLAN.md sections 4 and 11): chips and names line ──
+const rx = (postId, npc, key, person = npc) => ({ postId, npc, person, key });
+// jsdom 26 has no PointerEvent: a MouseEvent with a defined pointerType stands in
+function ptr(el, type, pointerType = 'mouse') {
+    const e = new window.MouseEvent(type, { bubbles: !['pointerenter', 'pointerleave'].includes(type), cancelable: true });
+    Object.defineProperty(e, 'pointerType', { value: pointerType });
+    el.dispatchEvent(e);
+}
+// A pointer click as a browser sends it: pointerdown, focus (if not already), click
+function tap(el, pointerType = 'mouse') {
+    ptr(el, 'pointerdown', pointerType);
+    if (document.activeElement !== el) el.focus();
+    click(el);
+}
+function withBus(fn) {
+    const handlers = new Map();
+    const saved = window.eventDispatcher;
+    window.eventDispatcher = {
+        on(n, cb) { handlers.set(n, [...(handlers.get(n) || []), cb]); },
+        off(n, cb) { handlers.set(n, (handlers.get(n) || []).filter((x) => x !== cb)); },
+        emit(n, d) { for (const [k, cbs] of handlers) if (k === n || (k.endsWith(':*') && n.startsWith(k.slice(0, -1)))) cbs.forEach((cb) => cb(d, n)); }
+    };
+    try { return fn(handlers); } finally { window.eventDispatcher = saved; }
+}
+// Pierce's post with Like 1 (Sofia Lord) and Sad 2 (Jed Baker, Chris Hampshire); Hampshire's reply
+// in its thread with Like 1 (Jed Baker)
+function rxFeed() {
+    const feed = feedFor();
+    feed.apply('pierce', { ...feedAnswer(0, 'feed_pierce_1', 'The shared drive is down again today.'), seq: 1 });
+    feed.apply('hampshire', { ...replyAnswer(0, 2, 'hamp_re', 'Pierce, mine went down too.', 'feed_pierce_1', 'pierce', 'pierce', 'hampshire'),
+        reactions: [rx('feed_pierce_1', 'hampshire', 'sad')] });
+    feed.apply('baker', { ...feedAnswer(0, 'feed_baker_1', 'Lunch at one.'), person: 'baker', seq: 3,
+        reactions: [rx('feed_pierce_1', 'baker', 'sad'), rx('feed_pierce_1', 'lord', 'like'), rx('hamp_re', 'baker', 'like')] });
+    return feed;
+}
+const row = (s, postId) => s.container.querySelector(`.ob-reactions[data-post="${postId}"]`);
+const chip = (s, postId, key) => s.container.querySelector(`.ob-reaction[data-focus="reaction:${postId}:${key}"]`);
+const names = (s, postId) => row(s, postId).querySelector('.ob-reaction-names').textContent;
+const layers = (s) => s.getTestState().overlay.layers;
+
+test('reactions: each chip is a button outside the post block, named with the reactors; the names line is there and empty', () => {
+    setGlobals({ se_intel_hampshire_careers: true });
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const r = row(s, 'feed_pierce_1');
+    assert.ok(r, 'a row under the post');
+    assert.equal(r.closest('.ob-block'), null, 'never inside the post button');
+    assert.equal(r.parentElement.className, 'ob-blocks', 'a sibling in ob-blocks');
+    const chips = [...r.querySelectorAll('.ob-reaction')];
+    assert.deepEqual(chips.map((c) => c.getAttribute('data-key')), ['like', 'sad'], 'key order');
+    for (const c of chips) {
+        assert.equal(c.tagName, 'BUTTON');
+        assert.equal(c.getAttribute('type'), 'button');
+        assert.equal(c.hasAttribute('aria-expanded'), false);
+        assert.equal(c.querySelector('img').getAttribute('alt'), '');
+        // q80: the 16x16 art at a whole 2x, never below 32px
+        const img = c.querySelector('img');
+        assert.equal(img.className, 'ob-reaction-icon');
+        assert.equal(img.getAttribute('width'), '32');
+        assert.equal(img.getAttribute('height'), '32');
+        assert.equal(img.getAttribute('style'), null, 'no inline size that could override the CSS');
+    }
+    const sad = chip(s, 'feed_pierce_1', 'sad');
+    assert.equal(sad.getAttribute('aria-label'), 'Sad, 2: Jed Baker, Chris Hampshire');
+    assert.equal(sad.querySelector('.ob-reaction-count').textContent, '2');
+    assert.match(sad.querySelector('img').getAttribute('src'), /\/assets\/icons\/reaction-sad\.png$/);
+    const line = r.querySelector('.ob-reaction-names');
+    assert.equal(line.getAttribute('aria-hidden'), 'true');
+    assert.equal(line.textContent, '');
+    // a reply in the thread carries its own row, at the end of its entry
+    const reRow = s.container.querySelector('.ob-thread .ob-reply[data-post="hamp_re"] > .ob-reactions:last-child');
+    assert.ok(reRow, 'the reply\'s row');
+    assert.equal(chip(s, 'hamp_re', 'like').getAttribute('aria-label'), 'Like, 1: Jed Baker');
+    // and on the replier's own profile
+    const own = open({ start: 'social.hampshire', feed: s.params.feed });
+    assert.ok(own.container.querySelector('.ob-reply-own .ob-reactions .ob-reaction'));
+    // a post with no reactions (Pierce's authored one) has no row
+    const again = open({ start: 'social.pierce', feed: s.params.feed });
+    assert.ok(block(again, 'post_pierce_jed'));
+    assert.deepEqual([...again.container.querySelectorAll('.ob-reactions')].map((x) => x.getAttribute('data-post')), ['feed_pierce_1', 'hamp_re']);
+});
+
+test('reactions: keyboard focus and mouse hover fill the names line; a touch hover fills nothing', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const sad = chip(s, 'feed_pierce_1', 'sad');
+    sad.focus();
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+    sad.blur();
+    assert.equal(names(s, 'feed_pierce_1'), '');
+    ptr(sad, 'pointerenter', 'touch');
+    assert.equal(names(s, 'feed_pierce_1'), '', 'a tap\'s emulated hover is ignored');
+    ptr(sad, 'pointerenter', 'mouse');
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+    ptr(row(s, 'feed_pierce_1'), 'pointerleave', 'mouse');
+    assert.equal(names(s, 'feed_pierce_1'), '');
+    assert.deepEqual(layers(s), [], 'focus and hover push no layer');
+});
+
+test('reactions: a click opens the chip (data-open, one layer); a second click closes it with the chip still focused', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const sad = chip(s, 'feed_pierce_1', 'sad');
+    tap(sad, 'touch');
+    assert.ok(sad.hasAttribute('data-open'));
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+    assert.deepEqual(layers(s), ['reaction-names']);
+    tap(sad, 'touch');
+    assert.equal(document.activeElement, sad, 'still focused');
+    assert.equal(sad.hasAttribute('data-open'), false);
+    assert.equal(names(s, 'feed_pierce_1'), '', 'pointer focus does not keep the line up');
+    assert.deepEqual(layers(s), []);
+});
+
+test('reactions: the pointer-focus mark clears, so a keyboard focus after two clicks shows its names', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    tap(chip(s, 'feed_pierce_1', 'sad'));
+    tap(chip(s, 'feed_pierce_1', 'sad'));
+    chip(s, 'feed_pierce_1', 'like').focus();
+    assert.equal(names(s, 'feed_pierce_1'), 'Like: Sofia Lord');
+});
+
+test('reactions: a press on a keyboard-focused chip released off it still lets the next keyboard focus show its names', () => {
+    setGlobals();
+    for (const end of ['pointerup', 'pointercancel']) {
+        const s = open({ start: 'social.pierce', feed: rxFeed() });
+        const sad = chip(s, 'feed_pierce_1', 'sad');
+        sad.focus();
+        assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+        ptr(sad, 'pointerdown');           // already focused: no focusin, and no click follows
+        ptr(document.body, end);           // the press ends off the chip
+        chip(s, 'feed_pierce_1', 'like').focus();
+        assert.equal(names(s, 'feed_pierce_1'), 'Like: Sofia Lord', `after ${end} off the chip`);
+        s.cleanup();
+    }
+    // Paired: with the press still held, the next focus is pointer focus and shows nothing new
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    ptr(chip(s, 'feed_pierce_1', 'like'), 'pointerdown');
+    chip(s, 'feed_pierce_1', 'like').focus();
+    assert.equal(names(s, 'feed_pierce_1'), '');
+    s.cleanup();
+});
+
+test('reactions: a re-render does not turn pointer focus into keyboard focus', () => {
+    setGlobals();
+    withBus(() => {
+        const feed = rxFeed();
+        const s = open({ start: 'social.pierce', feed });
+        tap(chip(s, 'feed_pierce_1', 'sad'));
+        feed.apply('lord', { ...feedAnswer(0, 'feed_lord_1', 'Back from leave.'), person: 'lord', seq: 4, reactions: [rx('feed_pierce_1', 'lord', 'sad')] });
+        const sad = chip(s, 'feed_pierce_1', 'sad');
+        assert.equal(document.activeElement, sad, 'focus came back to the new chip');
+        assert.ok(sad.hasAttribute('data-open'), 'still open after the re-render');
+        tap(sad);
+        assert.equal(names(s, 'feed_pierce_1'), '');
+        assert.equal(sad.hasAttribute('data-open'), false);
+    });
+});
+
+test('reactions: in a row, an open chip wins over a hovered one; closing it shows the hovered one', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    tap(chip(s, 'feed_pierce_1', 'sad'), 'touch');
+    ptr(chip(s, 'feed_pierce_1', 'like'), 'pointerenter', 'mouse');
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+    esc();
+    assert.equal(names(s, 'feed_pierce_1'), 'Like: Sofia Lord');
+});
+
+test('reactions: keyboard focus on another chip moves the open state and removes the layer', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const like = chip(s, 'feed_pierce_1', 'like');
+    like.focus();
+    click(like); // Enter on a focused button
+    assert.ok(like.hasAttribute('data-open'));
+    chip(s, 'feed_pierce_1', 'sad').focus(); // Tab
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+    assert.equal(like.hasAttribute('data-open'), false);
+    assert.deepEqual(s._layers, []);
+});
+
+test('reactions: precedence is per row: an open chip in one row does not blank a hovered chip in another', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    tap(chip(s, 'feed_pierce_1', 'sad'), 'touch');
+    ptr(chip(s, 'hamp_re', 'like'), 'pointerenter', 'mouse');
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire');
+    assert.equal(names(s, 'hamp_re'), 'Like: Jed Baker');
+});
+
+test('reactions: Esc through the overlay closes the names line first, then the browser', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const sad = chip(s, 'feed_pierce_1', 'sad');
+    tap(sad, 'touch');
+    esc();
+    assert.equal(names(s, 'feed_pierce_1'), '');
+    assert.equal(sad.hasAttribute('data-open'), false);
+    assert.deepEqual(s._layers, []);
+    assert.equal(ended.length, 0, 'the browser is still open');
+    esc();
+    assert.equal(ended.length, 1, 'the second Esc closes the browser');
+});
+
+test('reactions: a keyboard user\'s first Esc closes the open state and leaves the focused names showing', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const sad = chip(s, 'feed_pierce_1', 'sad');
+    sad.focus();
+    click(sad);
+    assert.deepEqual(layers(s), ['reaction-names']);
+    esc();
+    assert.equal(sad.hasAttribute('data-open'), false);
+    assert.deepEqual(s._layers, []);
+    assert.equal(names(s, 'feed_pierce_1'), 'Sad: Jed Baker, Chris Hampshire', 'focus still shows it');
+    assert.equal(ended.length, 0);
+    esc();
+    assert.equal(ended.length, 1);
+});
+
+test('reactions: no stale layer after go(), a click on another chip, or closing the minigame', () => {
+    setGlobals();
+    const feed = rxFeed();
+    let s = open({ start: 'social.pierce', feed });
+    tap(chip(s, 'feed_pierce_1', 'sad'), 'touch');
+    s.go('social');
+    assert.deepEqual(s._layers, []);
+    esc();
+    assert.equal(ended.length, 1, 'Esc then closes the browser');
+    setGlobals();
+    s = open({ start: 'social.pierce', feed });
+    tap(chip(s, 'feed_pierce_1', 'sad'), 'touch');
+    tap(chip(s, 'feed_pierce_1', 'like'), 'touch');
+    assert.equal(s._layers.length, 1, 'one layer');
+    assert.equal(chip(s, 'feed_pierce_1', 'sad').hasAttribute('data-open'), false);
+    esc();
+    assert.equal(names(s, 'feed_pierce_1'), '');
+    tap(chip(s, 'feed_pierce_1', 'like'), 'touch');
+    assert.doesNotThrow(() => s.cleanup());
+    assert.deepEqual(s._layers, []);
+    current = null;
+});
+
+test('reactions: focus and an open names line survive npc_reacted and npc_posted re-renders', () => {
+    setGlobals();
+    withBus((handlers) => {
+        const feed = rxFeed();
+        const s = open({ start: 'social.pierce', feed });
+        const like = chip(s, 'feed_pierce_1', 'like');
+        like.focus();
+        click(like);
+        // npc_posted: a new post on Pierce's profile
+        feed.apply('pierce', { ...feedAnswer(1, 'feed_pierce_2', 'Friday at last.'), seq: 5 });
+        assert.equal(document.activeElement, chip(s, 'feed_pierce_1', 'like'));
+        assert.ok(chip(s, 'feed_pierce_1', 'like').hasAttribute('data-open'));
+        // npc_reacted: a reaction carried by a post on another profile
+        feed.apply('lord', { ...feedAnswer(0, 'feed_lord_1', 'Back from leave.'), person: 'lord', seq: 6, reactions: [rx('feed_pierce_2', 'lord', 'laugh')] });
+        assert.ok(chip(s, 'feed_pierce_2', 'laugh'), 'drawn by the npc_reacted re-render');
+        assert.equal(document.activeElement, chip(s, 'feed_pierce_1', 'like'));
+        assert.ok(chip(s, 'feed_pierce_1', 'like').hasAttribute('data-open'));
+        assert.deepEqual(layers(s), ['reaction-names']);
+        s.cleanup();
+        assert.equal((handlers.get('npc_reacted:*') || []).length, 0, 'the listener is removed on close');
+        current = null;
+    });
+});
+
+test('reactions: npc_reacted re-renders the target\'s profile and the target reply\'s thread poster only', () => {
+    setGlobals({ se_intel_hampshire_careers: true });
+    withBus(() => {
+        const feed = rxFeed();
+        // Pierce's profile draws hamp_re in its thread; the carrying post is Lord's, on another thread
+        let s = open({ start: 'social.pierce', feed });
+        let renders = 0;
+        const render = s._renderMain.bind(s);
+        s._renderMain = () => { renders++; render(); };
+        feed.apply('lord', { ...feedAnswer(0, 'feed_lord_1', 'Back from leave.'), person: 'lord', seq: 4, reactions: [rx('hamp_re', 'lord', 'laugh')] });
+        assert.equal(renders, 1, 'only the npc_reacted re-render reaches the thread poster');
+        assert.ok(chip(s, 'hamp_re', 'laugh'));
+        // another profile (Hampshire's, which draws hamp_re but not Pierce's post) is not redrawn
+        s = open({ start: 'social.hampshire', feed });
+        assert.equal(s.place.view, 'social');
+        renders = 0;
+        const render2 = s._renderMain.bind(s);
+        s._renderMain = () => { renders++; render2(); };
+        feed.apply('lord', { ...feedAnswer(1, 'feed_lord_2', 'Coffee?'), person: 'lord', seq: 5, reactions: [rx('feed_pierce_1', 'lord', 'laugh')] });
+        assert.equal(renders, 0);
+    });
+});
+
+test('reactions: a missing icon draws the label; counts show; a stand-in feed with no reactionsFor draws no row', () => {
+    setGlobals();
+    const s = open({ start: 'social.pierce', feed: rxFeed() });
+    const img = chip(s, 'feed_pierce_1', 'sad').querySelector('img');
+    img.dispatchEvent(new window.Event('error'));
+    const sad = chip(s, 'feed_pierce_1', 'sad');
+    assert.equal(sad.querySelector('img'), null);
+    assert.equal(sad.querySelector('.ob-reaction-label').textContent, 'Sad');
+    assert.equal(sad.querySelector('.ob-reaction-count').textContent, '2');
+    s._renderMain();
+    assert.equal(chip(s, 'feed_pierce_1', 'sad').querySelector('img'), null, 'remembered across a re-render');
+    assert.equal(chip(s, 'feed_pierce_1', 'sad').querySelector('.ob-reaction-label').textContent, 'Sad');
+    const plain = open({ start: 'social.pierce', feed: { postsFor: () => [{ id: 'feed_pierce_1', text: 'The shared drive is down again today.' }] } });
+    assert.ok(block(plain, 'feed_pierce_1'));
+    assert.equal(plain.container.querySelector('.ob-reactions'), null);
+});

@@ -1,0 +1,13 @@
+{
+  "key": "ed56a3c7dc1a772fe1ab0660f096123e",
+  "npc": "grace",
+  "text": "Hello, love. I keep this place tidy, whether anyone asks or not.",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:19Z"
+}

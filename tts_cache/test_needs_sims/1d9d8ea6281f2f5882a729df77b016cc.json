@@ -1,0 +1,13 @@
+{
+  "key": "1d9d8ea6281f2f5882a729df77b016cc",
+  "npc": "tom",
+  "text": "If Amara's already at the coffee station I'll wait, or try the kitchen one.",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:09:50Z"
+}

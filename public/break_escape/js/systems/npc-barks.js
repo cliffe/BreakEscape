@@ -3,14 +3,31 @@
 // default export class NPCBarkSystem
 
 import { ASSETS_PATH } from '../config.js';
-import { overlayDepth } from '../utils/constants.js';
 import TTSManager from './tts-manager.js';
 import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
-import { releaseHeldBarks } from './bark-release-policy.js';
+import { releaseHeldBarks, HELD_BARK_VOICE_CAP_MS } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
 import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
+import { barkSource, arrowDirection, startHudLanes, dialogLayerOpen } from '../ui/hud-lanes.js';
+import { applyHeadshotBox } from '../utils/npc-headshot.js';
+
+// The phone notification's icon (B2 option A): 16x16 pixel art at 1x
+export const PHONE_ICON_URL = '/break_escape/assets/icons/npc-phone.png';
+
+/**
+ * Where a bark shows (UX feedback round slice 5, o-barks): the speech bubble over a person NPC
+ * whose sprite is in the player's room and on camera, with the room lit and no minigame open;
+ * the toast otherwise. Phone contacts always use the toast. The voice is the same either way.
+ * @param {object} f  { npcType, hasSprite, npcRoom, playerRoom, dark, minigameOpen, onCamera }
+ * @returns {'bubble'|'toast'}
+ */
+export function routeBark({ npcType, hasSprite = false, npcRoom = null, playerRoom = null, dark = false, minigameOpen = false, onCamera = true } = {}) {
+  if (npcType === 'phone') return 'toast';
+  if (!hasSprite || minigameOpen || dark || onCamera === false) return 'toast';
+  return (npcRoom && npcRoom === playerRoom) ? 'bubble' : 'toast';
+}
 
 export default class NPCBarkSystem {
   constructor(npcManager) {
@@ -40,6 +57,7 @@ export default class NPCBarkSystem {
     this.isDrainingDeferred = false;
 
     this.clearAllButton = null;
+    this.speechContainer = null;
   }
 
   init() {
@@ -50,6 +68,20 @@ export default class NPCBarkSystem {
       this.container = document.createElement('div');
       this.container.id = 'npc-bark-container';
       document.body.appendChild(this.container);
+    }
+    // Speech from someone in the building who is out of view has a lane of its own above the
+    // caption (UI decisions H1 and B2): it is not a phone text, so it never looks like one
+    this.speechContainer = document.getElementById('npc-speech-container');
+    if (!this.speechContainer) {
+      this.speechContainer = document.createElement('div');
+      this.speechContainer.id = 'npc-speech-container';
+      this.speechContainer.setAttribute('aria-live', 'polite');
+      document.body.insertBefore(this.speechContainer, this.container);
+    }
+    // The lanes place both containers, the toasts and the caption between the top bar and dock
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
+        && typeof window.MutationObserver === 'function' && !window.__hudLanesDisabled) {
+      try { startHudLanes(document, window); } catch (e) { console.debug('[hud-lanes] not started:', e); }
     }
     
     // Preload bark notification sound
@@ -124,17 +156,67 @@ export default class NPCBarkSystem {
    *
    * @param {string} npcId
    * @param {string} text
+   * @param {{ beep?: boolean }} [opts]  beep: false for a speech bubble, which never plays the
+   *   phone's sound when there is no voice (slice 5 R1 m3)
    */
-  async _speakBark(npcId, text) {
+  async _speakBark(npcId, text, { beep = true } = {}) {
     if (!this.ttsManagers.has(npcId)) {
       this.ttsManagers.set(npcId, new TTSManager());
     }
     const mgr = this.ttsManagers.get(npcId);
-    const duration = await mgr.play(npcId, text);
-    if (!duration) {
+    const playing = mgr.play(npcId, text);
+    const seq = mgr.playSeq;
+    const duration = await playing;
+    // A later play() on this manager took over while this one loaded: its null is not "no voice",
+    // so no beep, and the newer clip's audio is not this bark's
+    if (mgr.playSeq !== seq) return null;
+    // A clip whose length reads NaN (no duration in its metadata) is still playing: Infinity
+    // means "playing, length unknown", so the hold waits for its ended/pause/error event
+    // (capped by the release policy) instead of counting it as silent
+    if (!(duration > 0) && this._voicePlaying(mgr)) return Infinity;
+    if (!duration && beep) {
       // TTS unavailable — fall back to the standard notification sound
       this.playBarkSound();
     }
+    return duration || null;
+  }
+
+  /** Is this TTS manager's audio playing now (started, not paused, ended or failed)? */
+  _voicePlaying(mgr) {
+    const a = mgr && mgr.audio;
+    return !!(a && mgr.playing !== false && !a.paused && !a.ended);
+  }
+
+  /**
+   * Track one bark's voice: live() is true while it is still loading or playing; cancel() stops it
+   * now, or as soon as it starts if it is still loading.
+   * "Ours" is this play() call (the manager's playSeq when the tracker is made, just after
+   * _speakBark called play()), not the text: a requeued line replays the same text on the same
+   * manager, and a cancelled tracker must not stop the replay's voice (review R1 m2).
+   */
+  _voiceTracker(npcId, ttsPromise, text) {
+    const mgrOf = () => this.ttsManagers.get(npcId);
+    const token = ttsPromise ? mgrOf()?.playSeq : undefined;
+    const ours = (m) => !!(m && m.currentText === text && m.playSeq === token);
+    const stopIfOurs = () => { const m = mgrOf(); if (ours(m)) m.stop(); };
+    const v = {
+      state: ttsPromise ? 'pending' : 'none', cancelled: false, started: ttsPromise || null,
+      live: () => {
+        if (v.cancelled) return false;
+        if (v.state === 'pending') return true;
+        if (v.state !== 'playing') return false;
+        const m = mgrOf();
+        return ours(m) && this._voicePlaying(m);
+      },
+      cancel: () => { v.cancelled = true; stopIfOurs(); }
+    };
+    if (ttsPromise) {
+      ttsPromise.then(ms => {
+        if (v.cancelled) { stopIfOurs(); v.state = 'none'; return; }
+        v.state = ms ? 'playing' : 'none';
+      }, () => { v.state = 'none'; });
+    }
+    return v;
   }
 
   /**
@@ -144,6 +226,8 @@ export default class NPCBarkSystem {
    */
   showBark(payload = {}) {
     if (!this.container) this.init();
+    // A text for another thread is already in its history: the open phone's back button counts it
+    this._refreshPhoneUnread();
 
     // A bark repeating a line the open phone thread already shows adds nothing
     // (m06 confirmation R4 M2)
@@ -158,10 +242,17 @@ export default class NPCBarkSystem {
     // (payload.stillValid) and stale ones dropped; one every ~2.5 s; more than 3 waiting drops
     // the oldest ones that also sit in a phone thread. Drops are logged with console.debug.
     // A bark arriving mid-release joins the end of the line, so it can't jump the queue.
-    if (this._shouldDefer(payload) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) {
+    // The release lasts until the last held bark's voice ends (isDrainingDeferred), so a
+    // bark due while that voice plays waits for it (and 0.3 s more) instead of talking over it.
+    // A continuation (the rest of a bubble that lost its place, or its unread hint) belongs to
+    // the line on screen now: only an open panel holds it, never the line it continues
+    // (it was queued behind that line's own voice and showed after it ended).
+    const queueHolds = !payload.continuation && (this.isDrainingDeferred || this.deferredBarkQueue.length > 0);
+    if (this._shouldDefer(payload) || queueHolds) {
       console.log('💬 conversation/minigame open — deferring bark:', payload.text || payload.message);
       this.deferredBarkQueue.push(payload);
       if (!this._shouldDefer()) this.drainDeferredBarks();
+      else this._watchDialogHold();
       return null;
     }
 
@@ -178,6 +269,21 @@ export default class NPCBarkSystem {
     // workstation's operations list (m04 F7). They drain the queue on close.
     if (workstationPopupOpen()) return true;
     if (window.MinigameFramework?.holdsBarks?.()) return true;
+    // A dialog or modal (tutorial prompt, confirm, pause menu, password, preferences): every
+    // bark waits until it closes, as for a minigame (review R1 M1). _watchDialogHold drains.
+    if (dialogLayerOpen()) return true;
+    // A ringer call is on the line (or opening): hold every bark, so a click on another
+    // contact's toast cannot open a thread and end the call (phone calls plan 2.9).
+    if (window.phoneRinger?.callActive?.()) return true;
+    // Phone chat keeps phone texts from other contacts on top, but speech from someone in the
+    // building is not a notification for a thread: it waits until the phone closes (R1 M1)
+    if (window.MinigameFramework?.isOpen?.('phone-chat')) {
+      // On the phone layout the notify lane runs across the open phone, where a text would
+      // take a tap meant for its back button: every bark waits, and the back button counts the
+      // other threads' unread texts (review R2 M2). Wide screens keep texts on top (m04).
+      if (compactHud()) return true;
+      if (payload ? this._isSpeech(payload) : this.deferredBarkQueue.some(p => this._isSpeech(p))) return true;
+    }
     // The phone keeps other contacts' barks on top, but a bark from the contact whose
     // thread is open waits until the phone closes (m04 confirmation N1). With no
     // payload (the drain's check), hold while any queued bark is from that contact.
@@ -214,6 +320,7 @@ export default class NPCBarkSystem {
     const thread = openPhoneThread();
     if (!thread) return 0;
     let n = 0;
+    // Only phone texts point at a thread; speech lines in the building have none
     for (const el of this.container.querySelectorAll('.npc-bark')) {
       if (el._removing) continue;
       if (el._npcId === thread.npcId
@@ -240,18 +347,55 @@ export default class NPCBarkSystem {
   async drainDeferredBarks() {
     if (!this._shouldDefer()) this._dropStaleVisibleBarks();
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
-    if (this._shouldDefer()) return;   // another minigame opened; drained when it closes
+    // Another minigame opened (drained when it closes), or a dialog is open: a minigame that
+    // closes under a dialog drains here, so the dialog's watch must start now or nothing
+    // releases the queue when the dialog goes (review R2 M1)
+    if (this._shouldDefer()) { this._watchDialogHold(); return; }
     this.isDrainingDeferred = true;
     console.log(`📣 Releasing ${this.deferredBarkQueue.length} held bark(s)`);
     try {
       await releaseHeldBarks(this.deferredBarkQueue, {
         shouldHold: () => this._shouldDefer(),
-        render: (payload) => this._renderBark(payload),
+        render: (payload) => ({ voiceEnd: this._voiceEnd(payload.npcId, this._renderBark(payload)) }),
         hasPersistentCopy: (payload) => this._hasPersistentCopy(payload)
       });
     } finally {
       this.isDrainingDeferred = false;
     }
+    // A bark that joined the queue after the policy's last look (its showBark call saw the
+    // drain still running and returned) would wait for the next trigger: go round once more.
+    // Each pass shows at least one bark or drops one, so this ends; the flag guards re-entry.
+    if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) return this.drainDeferredBarks();
+    // A dialog opened part way through: the rest go when it closes
+    if (this.deferredBarkQueue.length > 0) this._watchDialogHold();
+  }
+
+  /**
+   * Settles when a rendered bark's voice has finished: true if it played, false if there was
+   * none (no TTS, a 503, a failed fetch). `started` is _renderBark's promise, which settles
+   * with the clip length in ms once playback starts. The end is the audio element's
+   * ended/pause/error/emptied event (stop() pauses it), or the clip length plus a second if no event
+   * comes. The release policy also caps the whole wait.
+   */
+  async _voiceEnd(npcId, started) {
+    let ms = null;
+    try { ms = await started; } catch (e) { console.debug('[barks] held bark render failed:', e); return false; }
+    if (!ms) return false;
+    const audio = npcId && this.ttsManagers.get(npcId)?.audio;
+    return new Promise(resolve => {
+      const events = ['ended', 'pause', 'error', 'emptied'];
+      let timer = null;
+      const done = () => {
+        clearTimeout(timer);
+        if (audio) for (const ev of events) audio.removeEventListener(ev, done);
+        resolve(true);
+      };
+      // An unknown or infinite length arms no timer: the events and the policy cap end the wait.
+      if (Number.isFinite(ms) && ms > 0) timer = setTimeout(done, ms + 1000);
+      if (!audio) return;
+      if (audio.ended || audio.paused) { done(); return; }
+      for (const ev of events) audio.addEventListener(ev, done);
+    });
   }
 
   /**
@@ -280,87 +424,6 @@ export default class NPCBarkSystem {
   }
 
   /**
-   * Find a Phaser NPC sprite by npcId, searching all loaded rooms.
-   * @param {string} npcId
-   * @returns {Phaser.GameObjects.Sprite|null}
-   */
-  _findNPCSprite(npcId) {
-    const rooms = window.rooms;
-    if (!rooms) return null;
-    for (const room of Object.values(rooms)) {
-      if (!room.npcSprites) continue;
-      const sprite = room.npcSprites.find(s => s.npcId === npcId);
-      if (sprite) return sprite;
-    }
-    return null;
-  }
-
-  /**
-   * Show a pulsing talk icon above the NPC sprite for the duration of a bark.
-   * Uses a dedicated sprite.barkIcon separate from the proximity interactionIndicator
-   * so the two systems don't interfere with each other.
-   * @param {string} npcId
-   * @param {number} duration  ms to keep the icon visible
-   */
-  _showBarkIcon(npcId, duration) {
-    const sprite = this._findNPCSprite(npcId);
-    if (!sprite || !sprite.scene) return;
-
-    const scene = sprite.scene;
-
-    // Lazy-create a dedicated bark icon the first time it's needed
-    if (!sprite.barkIcon) {
-      sprite.barkIcon = scene.add.image(
-        Math.round(sprite.x + 5),
-        Math.round(sprite.y - 38),
-        'talk'
-      );
-      sprite.barkIcon.setDepth(overlayDepth(sprite.depth + 2)); // above proximity indicator
-      sprite.barkIcon.setVisible(false);
-    }
-
-    const icon = sprite.barkIcon;
-
-    // Cancel any in-progress bark pulse
-    if (sprite._barkTween) {
-      sprite._barkTween.stop();
-      sprite._barkTween = null;
-    }
-    if (sprite._barkHideTimer) {
-      clearTimeout(sprite._barkHideTimer);
-      sprite._barkHideTimer = null;
-    }
-
-    // Show and start pulsing
-    icon.setVisible(true);
-    icon.setScale(1);
-    icon.setAlpha(1);
-
-    sprite._barkTween = scene.tweens.add({
-      targets: icon,
-      scaleX: { from: 1, to: 1.25 },
-      scaleY: { from: 1, to: 1.25 },
-      alpha:  { from: 1, to: 0.55 },
-      duration: 380,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.easeInOut'
-    });
-
-    // Auto-hide after duration
-    sprite._barkHideTimer = setTimeout(() => {
-      if (sprite._barkTween) {
-        sprite._barkTween.stop();
-        sprite._barkTween = null;
-      }
-      icon.setVisible(false);
-      icon.setScale(1);
-      icon.setAlpha(1);
-      sprite._barkHideTimer = null;
-    }, duration);
-  }
-
-  /**
    * Actually render the bark to DOM
    */
   async _renderBark(payload = {}) {
@@ -375,28 +438,60 @@ export default class NPCBarkSystem {
       console.debug('[barks] dropped, already in the open thread:', text);
       return null;
     }
-    const duration = ('duration' in payload) ? payload.duration : 5000;
     const playSound = payload.playSound !== false; // Default true
-    
-    // Person NPCs with a voice config speak their bark via TTS; everyone else gets the phone beep
-    let ttsPromise = null;
-    if (playSound && payload.useTTS && npcId && text) {
-      ttsPromise = this._speakBark(npcId, text);
-    } else if (playSound) {
-      this.playBarkSound();
+    const followUp = typeof payload.followUp === 'string' && payload.followUp.trim() ? payload.followUp.trim() : null;
+
+    // A person NPC in view says it in a speech bubble over their head, in place of the toast
+    // (slice 5). The rest of a line cut short by leaving view comes back here as a toast.
+    // The bubble shows the line with authored " -- " as a dash, as the toast does; the voice
+    // gets the raw text, so cached audio still matches (R1 m1).
+    let handle = null;
+    let voice = null;
+    const voiced = !!(playSound && payload.useTTS && npcId && text);
+    if (!payload.forceToast && this._routeFor(payload, contact) === 'bubble') {
+      handle = window.npcWorldBubbles?.say?.(npcId, displayDashes(text), {
+        onRemainder: (rest, info) => this._bubbleLeft(payload, rest, info, voice),
+        // The last page stays up while the voice plays (a late start, or a length read as NaN)
+        voiceLive: () => !!(voice && voice.live()),
+        stillValid: typeof payload.stillValid === 'function' ? payload.stillValid : null,
+        // A gate's lockedHint after the guard's refusal, in her bubble (R2 m3); never voiced
+        followUp: followUp ? displayDashes(followUp) : null,
+        tag: payload.eventPattern || null,
+        // Her bubble ended before the hint was read (stillValid, closed, another gate's
+        // notification): the hint as a toast of its own, so it is never lost (R3 m1)
+        onFollowUpLost: (hint) => this._toastFollowUp(payload, hint)
+      }) || null;
     }
 
-    // Flash a pulsing talk icon above the NPC's sprite for the bark duration
-    if (npcId) {
-      this._showBarkIcon(npcId, duration);
+    // Person NPCs with a voice config speak their bark via TTS; a toast without one gets the
+    // phone's sound. A speech bubble never does: that sound belongs to phone contacts (R1 m3).
+    let ttsPromise = null;
+    if (voiced) {
+      ttsPromise = this._speakBark(npcId, text, { beep: !handle });
+    } else if (playSound && !handle) {
+      this.playBarkSound();
     }
-    
-    // Create bark element (using DocumentFragment for batch update)
+    if (handle) voice = this._voiceTracker(npcId, ttsPromise, text);
+
+    if (handle) {
+      this.lastRoute = { npcId, route: 'bubble' };
+      // An unknown length (Infinity) leaves the reading times; voiceLive holds the last page
+      if (ttsPromise) ttsPromise.then(ms => { if (Number.isFinite(ms) && ms > 0) handle.setAudioMs(ms); }, () => {});
+      return ttsPromise;
+    }
+    // Phone text or speech in the building (B2 option A): two looks, two places
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const npcDef = (npcId && manager?.getNPC?.(npcId)) || null;
+    const speech = this._isSpeech(payload) && !!this.speechContainer;
+    const host = speech ? this.speechContainer : this.container;
+    this.lastRoute = { npcId, route: 'toast', source: speech ? 'speech' : 'phone' };
+
     const el = document.createElement('div');
-    el.className = 'npc-bark';
-    
-    // Add avatar if provided
-    if (avatar) {
+    el.className = `npc-bark ${speech ? 'npc-bark--speech' : 'npc-bark--phone'}`;
+    el.dataset.source = speech ? 'speech' : 'phone';
+
+    // The sender's face: an avatar the caller gave, else the character's own 32x32 headshot
+    if (avatar && !/_headshot\.png$/i.test(String(avatar).split(/[?#]/)[0])) {
       const avatarImg = document.createElement('img');
       // Resolve avatar path to full URL if relative
       let avatarSrc = avatar;
@@ -411,38 +506,89 @@ export default class NPCBarkSystem {
       avatarImg.className = 'npc-bark-avatar';
       avatarImg.alt = npcName || npcId || 'NPC';
       el.appendChild(avatarImg);
+    } else {
+      const head = document.createElement('span');
+      head.className = 'npc-bark-avatar npc-bark-head';
+      head.setAttribute('aria-hidden', 'true');
+      head.hidden = true;
+      el.appendChild(head);
+      const talk = npcDef?.spriteTalk || null;
+      try {
+        applyHeadshotBox(head, { avatar: avatar || npcDef?.avatar || null, spriteSheet: npcDef?.spriteSheet || null, portrait: talk },
+          { talkUrl: talk ? (talk.startsWith('/') || talk.startsWith('http') ? talk : `${ASSETS_PATH}/${talk}`) : null });
+      } catch (e) { head.hidden = true; }
     }
-    
+
     // Add text content
     const textSpan = document.createElement('span');
     textSpan.className = 'npc-bark-text';
     const displayName = npcName || npcId || 'NPC';
-    textSpan.textContent = `${displayName}: ${displayDashes(text)}`;
-    el.appendChild(textSpan);
+    // A follow-up (a gate's lockedHint) that could not go in a bubble rides on the toast
+    textSpan.textContent = `${displayName}: ${displayDashes(followUp ? `${text} ${followUp}` : text)}`;
 
-    // Dismiss (×) button
-    const dismissBtn = document.createElement('button');
-    dismissBtn.className = 'npc-bark-dismiss';
-    dismissBtn.textContent = '×';
-    dismissBtn.addEventListener('click', e => {
-      e.stopPropagation();
-      this._removeBark(el);
-    });
-    el.appendChild(dismissBtn);
-
-    // Swipe-to-dismiss (before click handlers so capture listener fires first)
-    this._addSwipeGesture(el);
+    if (speech) {
+      // Which way the speaker is from the player, as a pixel arrow (no text, nothing to voice)
+      const arrow = document.createElement('span');
+      arrow.className = 'npc-bark-arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      const dir = this._speakerDirection(npcId);
+      if (dir) arrow.dataset.dir = dir; else arrow.hidden = true;
+      el.appendChild(textSpan);
+      el.appendChild(arrow);
+    } else {
+      // A phone text: the phone icon says where it came from, and a tap opens the thread
+      const icon = document.createElement('img');
+      icon.className = 'npc-bark-phone-icon';
+      icon.src = PHONE_ICON_URL;
+      icon.alt = '';
+      icon.setAttribute('aria-hidden', 'true');
+      el.appendChild(icon);
+      el.appendChild(textSpan);
+      // Dismiss (x) button
+      const dismissBtn = document.createElement('button');
+      dismissBtn.className = 'npc-bark-dismiss';
+      dismissBtn.textContent = '×';
+      dismissBtn.setAttribute('aria-label', 'Dismiss');
+      dismissBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        this._removeBark(el);
+      });
+      el.appendChild(dismissBtn);
+      // Swipe-to-dismiss (before click handlers so capture listener fires first)
+      this._addSwipeGesture(el);
+    }
 
     if (typeof payload.stillValid === 'function') el._stillValid = payload.stillValid;
     el._npcId = npcId || null;
     el._barkText = payload.text || payload.message || '';
 
-    this.container.appendChild(el);
+    host.appendChild(el);
     this.activeBarkCount++;
     this._updateClearAllButton();
-    this._trimBarkStackToFit();
+    this._trimBarkStackToFit(host);
 
+    el._shownAt = Date.now();
     this._startAutoClose(el, barkLifetimeMs(textSpan.textContent));
+    el._lifetime = el._autoCloseRemaining;
+    // The toast stays while the voice it carries plays: its own, or (a continuation) the voice
+    // of the bubble it took over from
+    // (the bubble's voice may still be loading: then hold from when it starts)
+    const carried = payload.continuation ? payload.continuationVoice : null;
+    if (carried && carried.state === 'pending' && carried.started) {
+      carried.started.then(() => { if (carried.live()) this._holdToastForVoice(el, npcId); }, () => {});
+    } else if (payload.continuation) this._holdToastForVoice(el, npcId);
+    else if (ttsPromise) ttsPromise.then(ms => { if (ms) this._holdToastForVoice(el, npcId); }, () => {});
+    // A speech line has no click or hover (the voice hold above still keeps it up)
+    if (speech) return ttsPromise;   // not clickable: it never takes a tap meant for Block or the room
+
+    // A text that steps aside on a short screen (ui/hud-lanes.js) waits: its countdown pauses
+    // while it is hidden and goes on when it shows again (review R1 m1)
+    el._onLaneYield = (hidden) => {
+      el._laneYielded = !!hidden;
+      if (hidden) this._pauseAutoClose(el);
+      else this._resumeAutoClose(el);
+    };
+
     el.addEventListener('mouseenter', () => this._pauseAutoClose(el));
     el.addEventListener('mouseleave', () => this._resumeAutoClose(el));
 
@@ -463,10 +609,105 @@ export default class NPCBarkSystem {
     return ttsPromise;
   }
 
+  /**
+   * Would a bark from this NPC, made now, show in a speech bubble? The NPC manager asks this
+   * when an event mapping's bark fires, so the event's sender can tell an in-view NPC answered
+   * it (a gate refusal drops its own notification then: doors.js refuseAtGate, R1 M2).
+   */
+  answersInView(npcId) {
+    // A bark held now (a call opening, a panel) shows later, maybe in a toast: not an answer
+    // in view (R2 n4)
+    if (this._shouldDefer({ npcId }) || this.isDrainingDeferred || this.deferredBarkQueue.length > 0) return false;
+    return this._routeFor({ npcId }, null) === 'bubble';
+  }
+
+  /** The bubble-or-toast decision for this bark, from the bubble layer's view of the NPC. */
+  _routeFor(payload, contact) {
+    const npcId = payload?.npcId;
+    const bubbles = window.npcWorldBubbles;
+    if (!npcId || !bubbles?.viewFacts) return 'toast';
+    const manager = this.npcManager || window.npcManager;
+    const npc = manager?.getNPC?.(npcId) || contact || {};
+    let facts;
+    try { facts = bubbles.viewFacts(npcId); } catch (e) { return 'toast'; }
+    return routeBark({ npcType: npc.npcType, ...facts });
+  }
+
+  /**
+   * The rest of a bubble line (the NPC left view, the room went dark, a minigame opened, or a
+   * nearer bark took the bubble's place), as a toast with the speaker's name. Silent: the
+   * audio carries on. Goes through showBark, so it is held while a panel is open.
+   */
+  _toastRemainder(payload, rest, voice = null) {
+    if (!rest) return;
+    // The rest already holds any follow-up pages still to come. continuationVoice: the bubble's
+    // voice, which the toast stays up for (it may still be loading)
+    this.showBark({ ...payload, message: rest, text: undefined, followUp: null, playSound: false, useTTS: false, forceToast: true,
+      continuation: true, continuationVoice: voice });
+  }
+
+  /**
+   * A bubble lost its place (onRemainder). A panel opening over it while its voice is still to
+   * come or playing: the voice stops and the whole line is held, first in line, so it plays
+   * with its voice when the panel closes (the hold policy). Otherwise the rest goes to a toast
+   * at once, which stays until the voice ends.
+   */
+  _bubbleLeft(payload, rest, info, voice) {
+    if (voice && voice.live() && this._shouldDefer(payload)) {
+      voice.cancel();
+      console.debug('[barks] panel opened over a speaking bubble; line held with its voice:', payload.text || payload.message);
+      this.deferredBarkQueue.unshift(payload);
+      // A minigame drains the queue when it closes; a dialog does not, so its watch releases it
+      this._watchDialogHold();
+      return;
+    }
+    this._toastRemainder(payload, rest, voice);
+  }
+
+  /**
+   * Keep a toast up while this NPC's voice plays: no auto-close until the audio ends (or pauses,
+   * fails, or HELD_BARK_VOICE_CAP_MS passes), then what is left of its reading time, at least
+   * BARK_RESUME_MIN_MS. Returns true if it is holding.
+   */
+  _holdToastForVoice(el, npcId) {
+    const mgr = npcId && this.ttsManagers.get(npcId);
+    if (!el || el._removing || !this._voicePlaying(mgr)) return false;
+    const audio = mgr.audio;
+    const events = ['ended', 'pause', 'error', 'emptied'];
+    let cap = null;
+    const release = () => {
+      clearTimeout(cap);
+      for (const ev of events) audio.removeEventListener?.(ev, release);
+      if (!el._voiceHold) return;
+      el._voiceHold = false;
+      if (el._removing || el._autoClosePaused) return;
+      const left = (el._lifetime || 0) - (Date.now() - (el._shownAt || Date.now()));
+      this._startAutoClose(el, Math.max(BARK_RESUME_MIN_MS, left));
+    };
+    el._voiceHold = true;
+    clearTimeout(el._autoCloseTimer);
+    for (const ev of events) audio.addEventListener?.(ev, release);
+    cap = setTimeout(release, HELD_BARK_VOICE_CAP_MS);
+    return true;
+  }
+
+  /**
+   * A follow-up (a gate's lockedHint) whose bubble ended before it was read, as a toast of its
+   * own. Silent, and with no stillValid: the check that closed her bubble would close it too
+   * (R3 m1).
+   */
+  _toastFollowUp(payload, hint) {
+    if (!hint) return;
+    this.showBark({ ...payload, message: hint, text: undefined, followUp: null, playSound: false, useTTS: false,
+      forceToast: true, stillValid: undefined, continuation: true });
+  }
+
   _startAutoClose(el, ms) {
     clearTimeout(el._autoCloseTimer);
     el._autoCloseRemaining = ms;
     el._autoCloseStarted = Date.now();
+    // Held for a voice (_holdToastForVoice): the timer starts when the voice ends
+    if (el._voiceHold) return;
     el._autoCloseTimer = setTimeout(() => this._removeBark(el), ms);
   }
 
@@ -478,7 +719,7 @@ export default class NPCBarkSystem {
   }
 
   _resumeAutoClose(el) {
-    if (el._removing || !el._autoClosePaused) return;
+    if (el._removing || !el._autoClosePaused || el._laneYielded) return;
     el._autoClosePaused = false;
     this._startAutoClose(el, Math.max(BARK_RESUME_MIN_MS, el._autoCloseRemaining));
   }
@@ -490,8 +731,8 @@ export default class NPCBarkSystem {
    */
   _dropStaleVisibleBarks() {
     if (!this.container) return;
-    for (const el of this.container.querySelectorAll('.npc-bark')) {
-      if (typeof el._stillValid !== 'function') continue;
+    for (const el of this._barkEls()) {
+      if (el._removing || typeof el._stillValid !== 'function') continue;
       let valid = true;
       try { valid = el._stillValid(); } catch (e) { valid = true; }
       if (!valid) {
@@ -528,8 +769,19 @@ export default class NPCBarkSystem {
 
   _updateClearAllButton() {
     if (!this.clearAllButton) return;
-    const hasBarks = this.container.querySelectorAll('.npc-bark').length > 0;
+    // Only phone texts can be cleared: speech lines are not clickable and close on their own
+    // and only when there are two or more: one text has its own X
+    const hasBarks = this.container.querySelectorAll('.npc-bark').length > 1;
     this.clearAllButton.style.display = hasBarks ? 'block' : 'none';
+  }
+
+  /** Every bark toast on screen: phone texts and speech lines, speech first (DOM order). */
+  _barkEls() {
+    const out = [];
+    for (const c of [this.speechContainer, this.container]) {
+      if (c) out.push(...c.querySelectorAll('.npc-bark'));
+    }
+    return out;
   }
 
   _clearAllBarks() {
@@ -537,29 +789,90 @@ export default class NPCBarkSystem {
   }
 
   /**
-   * Keep the stack to MAX_VISIBLE_BARKS toasts and clear of the objectives panel: the oldest
-   * close early, the newest always stays (bark-lifetime.js barksToTrim).
+   * Keep a stack to MAX_VISIBLE_BARKS toasts and inside its lane: the oldest close early, the
+   * newest always stays (bark-lifetime.js barksToTrim). The lanes (ui/hud-lanes.js) give each
+   * container a max-height; without one (no lanes yet) the phone stack keeps clear of the
+   * objectives panel as before.
    */
-  _trimBarkStackToFit() {
+  _trimBarkStackToFit(host = this.container) {
     requestAnimationFrame(() => {
-      const containerRect = this.container.getBoundingClientRect();
-      // The stack grows upward from its bottom edge (80px above the inventory bar)
-      let top = 20;
-      const panel = document.querySelector('.objectives-panel');
-      // (the panel is position: fixed, so offsetParent can't tell whether it shows)
-      if (panel && !document.body.classList.contains('minigame-active')) {
-        const r = panel.getBoundingClientRect();
-        const overlapsSideways = r.left < containerRect.right && r.right > containerRect.left;
-        if (r.height > 0 && overlapsSideways) top = Math.max(top, r.bottom + 8);
+      if (!host) return;
+      const containerRect = host.getBoundingClientRect();
+      const gcs = typeof window !== 'undefined' && window.getComputedStyle ? window.getComputedStyle(host) : null;
+      const zoom = (gcs && parseFloat(gcs.zoom)) || 1;
+      const laneMax = parseFloat(host.style.maxHeight);
+      let available;
+      const clearAll = (host === this.container && this.clearAllButton && this.clearAllButton.offsetHeight)
+        ? this.clearAllButton.offsetHeight + 8 : 0;
+      if (Number.isFinite(laneMax) && laneMax > 0) {
+        available = laneMax - clearAll;          // CSS px of the container, as offsetHeight is
+      } else {
+        // The stack grows upward from its bottom edge (80px above the inventory bar)
+        let top = 20;
+        const panel = document.querySelector('.objectives-panel');
+        // (the panel is position: fixed, so offsetParent can't tell whether it shows)
+        if (panel && !document.body.classList.contains('minigame-active')) {
+          const r = panel.getBoundingClientRect();
+          const overlapsSideways = r.left < containerRect.right && r.right > containerRect.left;
+          if (r.height > 0 && overlapsSideways) top = Math.max(top, r.bottom + 8);
+        }
+        available = (containerRect.bottom - top) / zoom - clearAll;
       }
-      const clearAll = (this.clearAllButton && this.clearAllButton.offsetHeight) ? this.clearAllButton.offsetHeight + 8 : 0;
-      const available = containerRect.bottom - top - clearAll;
 
       // Oldest barks are first in the DOM. Skip any already on their way out.
-      const barks = Array.from(this.container.querySelectorAll('.npc-bark')).filter(el => !el._removing);
+      const barks = Array.from(host.querySelectorAll('.npc-bark')).filter(el => !el._removing);
+      // Phone texts placed by the lanes are not closed for want of room: the lanes step the
+      // oldest aside, paused, until there is room (review R1 m1); only the count limit applies
+      if (host === this.container && host.dataset.lane === 'notify') available = Infinity;
       const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
       barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
+  }
+
+  /**
+   * Is this bark speech from someone in the building (the message lane) rather than a phone
+   * text? Only registered phone contacts, timed messages (channel 'phone') and a caller's own
+   * click handler make a phone text; anyone else is speech, registered or not (review R1 M4:
+   * the client scenario has no NPC lists until a room loads).
+   */
+  _isSpeech(payload = {}) {
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const npc = (payload.npcId && manager?.getNPC?.(payload.npcId)) || null;
+    return barkSource({ npcType: npc?.npcType || null, channel: payload.channel || null,
+      hasClickHandler: typeof payload.onClick === 'function' }) === 'speech';
+  }
+
+  /**
+   * Dialogs are not minigames, so nothing calls drainDeferredBarks when one closes: while barks
+   * are held behind one, look every DIALOG_HOLD_POLL_MS and release them once it has gone. The
+   * release itself is the usual one (order, gaps and voice waits unchanged).
+   */
+  _watchDialogHold() {
+    if (this._dialogHoldTimer || typeof setInterval !== 'function' || !dialogLayerOpen()) return;
+    this._dialogHoldTimer = setInterval(() => {
+      if (dialogLayerOpen()) return;
+      clearInterval(this._dialogHoldTimer);
+      this._dialogHoldTimer = null;
+      if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) this.drainDeferredBarks();
+    }, NPCBarkSystem.DIALOG_HOLD_POLL_MS);
+  }
+
+  /** The open phone's back button counts unread texts in its other threads (review R2 M2). */
+  _refreshPhoneUnread() {
+    try {
+      const m = window.MinigameFramework?.currentMinigame;
+      if (m && !m._ending && m._sceneType === 'phone-chat') m.ui?.refreshBackUnread?.();
+    } catch (e) { /* the phone closed meanwhile */ }
+  }
+
+  /** Compass point from the player to a speaker's sprite (hud-lanes.js arrowDirection), or null. */
+  _speakerDirection(npcId) {
+    try {
+      const sprite = window.npcWorldBubbles?._spriteAndRoom?.(npcId)?.sprite;
+      const player = window.player;
+      if (!sprite || !player) return null;
+      return arrowDirection({ x: player.x, y: player.y }, { x: sprite.x, y: sprite.y });
+    } catch (e) { return null; }
   }
 
   /**
@@ -667,7 +980,9 @@ export default class NPCBarkSystem {
 
     // Try MinigameFramework first (if in game with Phaser)
     if (window.MinigameFramework && typeof window.MinigameFramework.startMinigame === 'function') {
-      window.MinigameFramework.startMinigame('phone-chat', null, params);
+      const go = () => window.MinigameFramework.startMinigame('phone-chat', null, params);
+      // The phone pose shows a moment before the phone opens (systems/player-poses.js)
+      if (window.playerPoses?.openWithPhoneLead) window.playerPoses.openWithPhoneLead(go); else go();
       console.log('✅ Opened phone chat via MinigameFramework');
       return;
     }
@@ -913,4 +1228,12 @@ export default class NPCBarkSystem {
       messagesContainer.replaceChildren(errEl);
     }
   }
+}
+
+// How often a bark held behind a dialog checks whether the dialog has closed (_watchDialogHold)
+NPCBarkSystem.DIALOG_HOLD_POLL_MS = 250;
+
+// The phone layout (ui/hud-lanes.js sets body.hud-compact; css/npc-barks.css uses the same class)
+function compactHud() {
+  try { return !!document?.body?.classList?.contains('hud-compact'); } catch (e) { return false; }
 }

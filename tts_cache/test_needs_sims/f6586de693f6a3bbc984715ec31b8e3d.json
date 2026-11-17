@@ -1,0 +1,13 @@
+{
+  "key": "f6586de693f6a3bbc984715ec31b8e3d",
+  "npc": "jodie",
+  "text": "Friday drinks again?",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:14:05Z"
+}

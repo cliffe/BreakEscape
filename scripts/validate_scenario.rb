@@ -25,18 +25,26 @@ require_relative 'validate_social'
 require_relative 'validate_npc_needs'
 require_relative 'validate_network'
 require_relative 'validate_capture_log'
+require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
+require_relative 'validate_plant_hiding'
+require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
+require_relative '../lib/break_escape/schema_walk'
+require_relative '../lib/break_escape/format_upgrade'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/capture_model'
+require_relative '../lib/break_escape/credential_model'
+require_relative '../lib/break_escape/phish_score'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative 'validate_npc_habits'
 require_relative '../lib/break_escape/access_work'
 require_relative '../lib/break_escape/owner_claim'
 require_relative 'validate_access_work'
+require_relative 'validate_office_life'
 
 # Try to load json-schema gem, provide helpful error if missing
 begin
@@ -56,60 +64,10 @@ rescue LoadError
   exit 1
 end
 
-# ScenarioBinding class - replicates the one from app/models/break_escape/mission.rb
-class ScenarioBinding
-  def initialize(vm_context = {})
-    require 'securerandom'
-    @random_password = SecureRandom.alphanumeric(8)
-    @random_pin = rand(1000..9999).to_s
-    @random_code = SecureRandom.hex(4)
-    @vm_context = vm_context || {}
-  end
-
-  attr_reader :random_password, :random_pin, :random_code, :vm_context
-
-  # Get a VM from the context by title, or return a fallback VM object
-  def vm_object(title, fallback = {})
-    if vm_context && vm_context['hacktivity_mode'] && vm_context['vms']
-      vm = vm_context['vms'].find { |v| v['title'] == title }
-      return vm.to_json if vm
-    end
-
-    result = fallback.dup
-    if vm_context && vm_context['vm_ips'] && vm_context['vm_ips'][title]
-      result['ip'] = vm_context['vm_ips'][title]
-    end
-    result.to_json
-  end
-
-  # Get flags for a specific VM from the context
-  def flags_for_vm(vm_name, fallback = [])
-    if vm_context && vm_context['flags_by_vm']
-      flags = vm_context['flags_by_vm'][vm_name]
-      return flags.to_json if flags
-    end
-    fallback.to_json
-  end
-
-  # Get a slice of flags for a VM (mirrors Mission::ScenarioBinding#flags_for_vm_slice).
-  def flags_for_vm_slice(vm_name, start_index, count, fallback = [])
-    if vm_context && vm_context['flags_by_vm']
-      flags = vm_context['flags_by_vm'][vm_name]
-      return flags.slice(start_index, count).to_json if flags
-    end
-    fallback.to_json
-  end
-
-  # Get VM flags as a JSON array for use in the top-level 'flags' object.
-  # Mirrors flags_for_vm but used in the top-level flags: { vm_name: vm_flags_json('vm_name') } pattern.
-  def vm_flags_json(vm_name, fallback = [])
-    flags_for_vm(vm_name, fallback)
-  end
-
-  def get_binding
-    binding
-  end
-end
+# One ERB binding for every renderer (plan step 5): the validator renders through the same
+# BreakEscape::ScenarioBinding as the server, so a top-level `flags` block is the Hash the server
+# builds, not the plain array the validator's old copy produced.
+require_relative '../lib/break_escape/scenario_binding'
 
 # Load valid item types from the objects asset directory.
 # Returns a Set of type strings (filenames without .png extension), or nil if the directory
@@ -124,6 +82,22 @@ def load_valid_item_types(base_dir)
   Set.new(types)
 end
 
+# Load valid room types from the engine's room map registry. A room's "type" is the key the engine
+# registers with this.load.tilemapTiledJSON('<type>', 'rooms/<file>.json') in game.js; a type with
+# no registration cannot load. This reads those keys straight from the engine, the way the sprite
+# check reads the object asset files, so a new room map is accepted the moment the engine loads it
+# and no hand-maintained enum can drift. Returns a Set of type strings, or nil when game.js cannot be
+# found (callers skip the check).
+def load_valid_room_types(base_dir)
+  game_js = File.join(base_dir, 'public', 'break_escape', 'js', 'core', 'game.js')
+  return nil unless File.exist?(game_js)
+
+  types = File.read(game_js).scan(/tilemapTiledJSON\(\s*['"]([^'"]+)['"]/).flatten
+  return nil if types.empty?
+
+  Set.new(types)
+end
+
 # Render ERB template to JSON
 def render_erb_to_json(erb_path, vm_context = {}, include_rendered: false)
   unless File.exist?(erb_path)
@@ -131,9 +105,7 @@ def render_erb_to_json(erb_path, vm_context = {}, include_rendered: false)
   end
 
   erb_content = File.read(erb_path)
-  erb = ERB.new(erb_content)
-  binding_context = ScenarioBinding.new(vm_context)
-  json_output = erb.result(binding_context.get_binding)
+  json_output = BreakEscape::ScenarioBinding.render(erb_content, vm_context)
 
   parsed = JSON.parse(json_output)
   include_rendered ? [parsed, json_output] : parsed
@@ -285,7 +257,16 @@ ADDITIONAL_PROPERTIES_RE = /\AThe property '(#[^']*)' contains additional proper
 def format_schema_errors(json_data, messages, schema = nil)
   schema ||= JSON.parse(File.read(File.join(__dir__, 'scenario-schema.json')))
   texts = messages.map { |m| m.to_s.sub(/ in schema [0-9a-f-]+#?\s*\z/, '') }
+  # A retired key reintroduced in a closed block reaches the schema as an unknown key and is also
+  # caught by check_retired_keys, which prints the rename line. Suppress the schema line for it, so
+  # one slip prints one line (the rename). The retired pointers are the json-pointer paths
+  # FormatUpgrade.retired_keys_in finds in this data.
+  retired_pointers = BreakEscape::FormatUpgrade.retired_keys_in(json_data).map { |r| r[:path] }
+  retired_ptr = lambda do |ptr, key|
+    "#{ptr}/#{key.to_s.gsub('~', '~0').gsub('/', '~1')}"
+  end
   unknown = []   # [index, pointer, key, suggestion]
+  additional = []  # message indices that matched the additional-properties rule
   texts.each_with_index do |text, i|
     m = text.match(ADDITIONAL_PROPERTIES_RE)
     next unless m
@@ -295,12 +276,18 @@ def format_schema_errors(json_data, messages, schema = nil)
     rescue JSON::ParserError
       next
     end
+    additional << i
     known = schema_known_keys(schema, json_data, m[1], underscore: true)
     plain = known.reject { |k| k.start_with?('_') }
-    keys.each { |k| unknown << [i, m[1], k.to_s, suggest_key(k.to_s, plain, known - plain)] }
+    keys.each do |k|
+      next if retired_pointers.include?(retired_ptr.call(m[1], k))
+
+      unknown << [i, m[1], k.to_s, suggest_key(k.to_s, plain, known - plain)]
+    end
   end
   suggested = unknown.map { |_, ptr, _, s| [ptr, s] if s }.compact.to_set
   replaced = unknown.map(&:first).to_set
+  additional = additional.to_set
   out = []
   texts.each_with_index do |text, i|
     if replaced.include?(i)
@@ -310,6 +297,9 @@ def format_schema_errors(json_data, messages, schema = nil)
       end
       next
     end
+    # An additional-properties message whose only unknown keys were retired keys: the rename line
+    # (check_retired_keys) stands in for it, so the raw schema message is dropped.
+    next if additional.include?(i)
     req = text.match(/\AThe property '(#[^']*)' did not contain a required property of '([^']*)'\z/)
     next if req && suggested.include?([req[1], req[2]])
 
@@ -581,6 +571,121 @@ end
 # value), it is dead code, so warn the author. Walks with the shared resolver, so it tells a note
 # from an id from free data exactly as the engine does: it never looks inside an id or free data (a
 # "_" key there is real), only inside genuine notes. The corpus has none, so this adds no lines.
+# Step 7. A rendered template carries current field names and no formatVersion. Error on a template
+# that sets formatVersion (the server stamps it at creation), and on every retired key present
+# (renamed by a FormatUpgrade step), unless an alias keeps it for a deployed scenario (a warning).
+# Author notes and free data are skipped (FormatUpgrade.retired_keys_in). STEPS is empty in step 7,
+# so this adds no line to the corpus until a rename step lands.
+def check_retired_keys(json_data)
+  issues = []
+  if json_data.is_a?(Hash) && json_data.key?('formatVersion')
+    issues << "❌ ERROR: '#/formatVersion': the server stamps formatVersion at creation; remove it from the template"
+  end
+  BreakEscape::FormatUpgrade.retired_keys_in(json_data).each do |r|
+    issues << if r[:aliased]
+                "⚠️ WARNING: #{r[:path]}: '#{r[:key]}' was renamed to '#{r[:now]}' in format #{r[:version]} (kept as an alias for a deployed scenario)"
+    else
+                "❌ ERROR: #{r[:path]}: '#{r[:key]}' was renamed to '#{r[:now]}' in format #{r[:version]}"
+    end
+  end
+  issues
+end
+
+# "wallMounted": true is for a tall interactable fixed to a back wall (a power socket): reach is
+# measured to the nearest part of the sprite's height (interaction-reach.js reachY). Warn where it
+# sits on something it cannot help: an NPC, an object with interactable: false, or a type that is
+# not one of generate_rooms.py's WALL_MOUNTED_EXTRAS (read from that file, so there is one list).
+# An object given an explicit position (tiles from the room's top-left) is judged by position.y,
+# which is the sprite's TOP edge (origin 0,0; rooms.js sets sprite.y = room y + position.y * TILE_SIZE).
+# The back wall is 2 rows in every room, so a top edge at y >= 2 starts on the floor, not the wall.
+# Not judged: objects with no position (they take the room template's slot) and objects placed with
+# pixel position.px/py (not converted here).
+WALL_MOUNTED_MAX_Y = 2.0
+WALL_MOUNTED_EXTRAS_FILE = File.join(File.expand_path('..', __dir__), 'scripts', 'generate_rooms.py')
+
+def wall_mounted_extras
+  @wall_mounted_extras ||= begin
+    m = File.read(WALL_MOUNTED_EXTRAS_FILE).match(/WALL_MOUNTED_EXTRAS = \{\n(.*?)\n\}/m)
+    m ? m[1].scan(/"([a-z0-9_]+)"/).flatten : nil
+  end
+end
+
+def check_wall_mounted(json_data, extras = wall_mounted_extras)
+  issues = []
+  return issues unless json_data.is_a?(Hash) && json_data['rooms'].is_a?(Hash)
+  json_data['rooms'].each do |rid, room|
+    next unless room.is_a?(Hash)
+    { 'objects' => 'object', 'npcs' => 'NPC' }.each do |key, kind|
+      Array(room[key]).each_with_index do |o, i|
+        next unless o.is_a?(Hash) && o['wallMounted'] == true
+        why = if kind == 'NPC'
+          'it is an NPC (the key is read for scenario objects only)'
+        elsif o['interactable'] == false
+          'the object has interactable: false, so nothing reaches for it'
+        elsif extras && !extras.include?(o['type'].to_s.sub(/\d+\z/, ''))
+          "type '#{o['type']}' is not a wall-mounted type (WALL_MOUNTED_EXTRAS in scripts/generate_rooms.py)"
+        elsif o['position'].is_a?(Hash) && o['position']['y'].is_a?(Numeric) && o['position']['y'] >= WALL_MOUNTED_MAX_Y
+          "position.y #{o['position']['y']} starts at or below the back wall's floor line (#{WALL_MOUNTED_MAX_Y.to_i} tiles, top edge), so the object is not on a wall"
+        end
+        next unless why
+        issues << "⚠️ WARNING: rooms/#{rid}/#{key}[#{i}] '#{o['id'] || o['name']}': wallMounted is set but #{why}. " \
+                  'Use it only on a tall interactable fixed to a back wall, such as a power socket.'
+      end
+    end
+  end
+  issues
+end
+
+# Step 8b (format 2). The merged `owner` field: a single-owner kind (a workstation, a desk phone,
+# a Friendface phone, a left-behind item) carries one NPC id, never a list; a private object may
+# list several. Warn where a workstation or private object has no owner of its own but an NPC's
+# needsHome names it (needsHome no longer sets an owner). Report the pre-rename two-field conflict
+# (`screenOwner` against `affordance.owners` naming different owners); none is expected.
+def check_owner_fields(json_data)
+  ai = BreakEscape::AccessIdentities
+  issues = []
+  home_npc = {}
+  ai.room_npcs(json_data).each do |e|
+    h = e[:npc]['needsHome']
+    next unless h.is_a?(String) && !h.empty?
+    next unless e[:npc]['id'].is_a?(String) && !e[:npc]['id'].empty?
+
+    home_npc[h] ||= e[:npc]['id']
+  end
+
+  ai.room_objects(json_data).each do |e|
+    obj = e[:object]
+    where = "object '#{obj['id'] || e[:path]}'"
+    owner = obj['owner']
+    owner_set = (owner.is_a?(String) && !owner.empty?) || (owner.is_a?(Array) && !owner.empty?)
+
+    single_kind = if ai.workstation?(obj) then 'a workstation'
+    elsif obj['deskPhone'] == true then 'a desk phone'
+    elsif obj['type'] == 'phone_friendface' then 'a Friendface phone'
+    elsif obj.key?('leftBehindChance') then 'a left-behind item'
+    end
+    if owner.is_a?(Array) && single_kind
+      issues << "❌ ERROR: #{where}: #{single_kind} has one owner; owner must be a single NPC id (not a list)."
+    end
+
+    # The pre-rename conflict: an object that still names an owner two ways, differently.
+    aff = obj['affordance']
+    if obj.key?('screenOwner') && aff.is_a?(Hash) && aff.key?('owners') &&
+       Array(aff['owners']).map(&:to_s) != [obj['screenOwner'].to_s]
+      issues << "❌ ERROR: #{where}: names an owner both as screenOwner and affordance.owners, and they differ; set a single owner."
+    end
+
+    # needsHome no longer sets an owner: warn where the owner would have been derived from it.
+    old_explicit = obj.key?('screenOwner') || obj.key?('phoneOwner') ||
+                   (aff.is_a?(Hash) && aff.key?('owners'))
+    private_obj = obj['private'] == true || (aff.is_a?(Hash) && aff['private'] == true)
+    if !owner_set && !old_explicit && (ai.workstation?(obj) || private_obj) && home_npc[obj['id'].to_s]
+      issues << "⚠️ WARNING: #{where}: needsHome no longer sets an owner; add owner: '#{home_npc[obj['id'].to_s]}' if this is theirs."
+    end
+  end
+  issues
+end
+
 def check_notes_hold_no_actions(json_data)
   warnings = []
   holds_action = lambda do |val|
@@ -616,78 +721,184 @@ def check_notes_hold_no_actions(json_data)
   warnings
 end
 
-# Check for unknown fields in JSON that aren't in the schema
+# q94: desktopUser on a PC or laptop is { name, character? }: an object with a non-empty string name,
+# and character (if set) a non-empty string. A character with no <key>_headshot.png in the character
+# assets is a warning, since the desktop frame then shows a silhouette. Walks room objects (and
+# their contents and itemsHeld), NPC itemsHeld and the starting inventory. Warns when set on a sign-in PC (lockType login).
+# An unknown key inside desktopUser is reported once, by the schema (additionalProperties false).
+DESKTOP_USER_CHARS_DIR = File.join(File.expand_path('..', __dir__), 'public/break_escape/assets/characters')
+
+def check_desktop_users(json_data, chars_dir = DESKTOP_USER_CHARS_DIR)
+  issues = []
+  check = lambda do |item, path|
+    return unless item.is_a?(Hash)
+
+    if item.key?('desktopUser')
+      du = item['desktopUser']
+      where = "'#{path}' desktopUser"
+      if item['lockType'] == 'login'
+        issues << "⚠️ WARNING: #{where} is set on a sign-in PC (lockType login): " \
+                  'the live session shows the signed-in user there, so desktopUser is ignored or conflicts. Remove it.'
+      end
+      if !du.is_a?(Hash)
+        issues << "❌ ERROR: #{where} must be an object { \"name\": \"...\", \"character\": \"...\" }."
+      else
+        unless du['name'].is_a?(String) && !du['name'].strip.empty?
+          issues << "❌ ERROR: #{where} needs a non-empty string 'name' (the display name shown as signed in)."
+        end
+        if du.key?('character')
+          ch = du['character']
+          if !ch.is_a?(String) || ch.strip.empty?
+            issues << "❌ ERROR: #{where} 'character' must be a non-empty string (a character key)."
+          elsif !File.exist?(File.join(chars_dir, "#{ch}_headshot.png"))
+            issues << "⚠️ WARNING: #{where} character '#{ch}' has no assets/characters/#{ch}_headshot.png: " \
+                      'the desktop frame shows a silhouette instead.'
+          end
+        end
+      end
+    end
+    item['contents']&.each_with_index { |c, i| check.call(c, "#{path}/contents[#{i}]") } if item['contents'].is_a?(Array)
+    item['itemsHeld']&.each_with_index { |c, i| check.call(c, "#{path}/itemsHeld[#{i}]") } if item['itemsHeld'].is_a?(Array)
+  end
+  rooms = json_data.is_a?(Hash) && json_data['rooms'].is_a?(Hash) ? json_data['rooms'] : {}
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+    room['objects'].each_with_index do |obj, i|
+      check.call(obj, "rooms/#{room_id}/objects[#{i}](#{(obj.is_a?(Hash) && (obj['id'] || obj['name'])) || '?'})")
+    end
+  end
+  inv = json_data.is_a?(Hash) ? json_data['startItemsInInventory'] : nil
+  inv.each_with_index { |obj, i| check.call(obj, "startItemsInInventory[#{i}]") } if inv.is_a?(Array)
+  # Objects an NPC carries (itemsHeld), on room NPCs and on the top-level npcs list.
+  npc_held = lambda do |npc, npath|
+    next unless npc.is_a?(Hash) && npc['itemsHeld'].is_a?(Array)
+
+    npc['itemsHeld'].each_with_index { |obj, i| check.call(obj, "#{npath}/itemsHeld[#{i}]") }
+  end
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['npcs'].is_a?(Array)
+
+    room['npcs'].each_with_index { |n, i| npc_held.call(n, "rooms/#{room_id}/npcs[#{i}](#{(n.is_a?(Hash) && n['id']) || '?'})") }
+  end
+  if json_data.is_a?(Hash) && json_data['npcs'].is_a?(Array)
+    json_data['npcs'].each_with_index { |n, i| npc_held.call(n, "npcs[#{i}](#{(n.is_a?(Hash) && n['id']) || '?'})") }
+  end
+  issues
+end
+
+# Check for keys the schema does not declare. The schema (scripts/scenario-schema.json) is the one
+# list of known keys: every open block it describes (rooms, objects, NPCs, event mappings, timers,
+# music events and the rest) is checked against the properties it declares there, so there is no
+# second list in this file. A closed block (additionalProperties: false) is left to json-schema,
+# which reports its unknown keys as errors. A "_" author note, an id-map key and anything inside
+# free data are never unknown. Unknown keys here stay warnings.
+def schema_unknown_key_warnings(data, node, warnings, prefix: nil, seen: nil)
+  retired = BreakEscape::FormatUpgrade.retired_entries.map { |e| e[:key] }.to_set
+  schema = BreakEscape::ScenarioSchema
+  item_def = schema.at('#/definitions/item').branches.first
+  room_def = schema.at('#/definitions/room').branches.first
+  BreakEscape::SchemaWalk.walk(data, node) do |value, vnode, vpath|
+    next unless value.is_a?(Hash) && vnode.is_a?(schema::Node)
+    next if vnode.free_branch?
+    # a hash reached twice (a declared grant's item is also under timers[].actions) is checked once
+    next if seen&.include?(value.object_id)
+
+    seen&.add(value.object_id)
+    # A grant_foothold action is checked against its closed definition (validate_grant_foothold_actions),
+    # which reports an unknown key as an error, so it is not warned about again here.
+    next if value['type'] == 'grant_foothold'
+
+    obranches = vnode.object_branches
+    next if obranches.empty? || obranches.any? { |b| schema.map_branch?(b) }
+    next if obranches.any? { |b| b['additionalProperties'] == false }
+
+    declared = vnode.declared_property_keys
+    next if declared.empty?
+
+    is_item = vnode.branches.any? { |b| b.equal?(item_def) }
+    is_room = vnode.branches.any? { |b| b.equal?(room_def) }
+    value.each_key do |key|
+      k = key.to_s
+      next if declared.include?(k)
+      next if BreakEscape::AuthorNotes.note?(vnode, k)
+      # A retired key (renamed by a FormatUpgrade step) already gets its rename line from
+      # check_retired_keys, so one slip prints one line.
+      next if retired.include?(k)
+      # fingerprintQuality has its own line ("ignored: lift quality comes from the dusting minigame").
+      next if is_item && k == 'fingerprintQuality'
+
+      rel = unknown_key_path(data, vpath)
+      rel = "#{prefix}#{rel.empty? || rel.start_with?('[') ? '' : '/'}#{rel}" if prefix
+      room_id = vpath.last if is_room && vpath.length == 2 && vpath.first == 'rooms'
+      warnings << unknown_key_message(k, unknown_key_hint(k, declared), rel,
+                                      top: vpath.empty? && prefix.nil?, room_id: room_id, item: is_item)
+    end
+  end
+  warnings
+end
+
+# The unknown-key warning, worded for where the key sits (the wording the hand-list checks used).
+def unknown_key_message(key, hint, where, top:, room_id:, item:)
+  ignored = 'this field will be ignored by the game engine.'
+  if top
+    "⚠️ WARNING: Top-level field '#{key}' is not recognized in the schema#{hint} — #{ignored} " \
+      'Remove it if not needed, or check if the spelling is correct.'
+  elsif room_id
+    "⚠️ WARNING: Room '#{room_id}' has unknown field '#{key}'#{hint} — #{ignored}"
+  elsif item
+    "⚠️ WARNING: '#{where}' has unknown field '#{key}'#{hint} — " \
+      "if this is minigame-specific configuration data, nest it under 'minigameData' instead."
+  else
+    "⚠️ WARNING: '#{where}' has unknown field '#{key}'#{hint} — #{ignored}"
+  end
+end
+
+# "rooms/office/objects[2](safe)/minigameData": the data path, with the id (or name or type) of
+# each array entry, as the unknown-key warnings print it.
+def unknown_key_path(data, vpath)
+  out = +''
+  cur = data
+  vpath.each do |seg|
+    cur = cur.is_a?(Hash) ? cur[seg] : (cur.is_a?(Array) && seg.is_a?(Integer) ? cur[seg] : nil)
+    if seg.is_a?(Integer)
+      tag = cur.is_a?(Hash) ? (cur['id'] || cur['name'] || cur['type']) : nil
+      out << "[#{seg}]"
+      out << "(#{tag})" if tag.is_a?(String) || tag.is_a?(Numeric)
+    else
+      out << '/' unless out.empty?
+      out << seg.to_s
+    end
+  end
+  out
+end
+
+# The keys the schema declares for the Node reached from the root by the given data keys ("[]" for
+# an array item, any id for a map key). Used by the checks below that word their own
+# message for a closed block (personalSpace, los, challengeOnSight).
+def schema_keys_at(*keys)
+  node = BreakEscape::ScenarioSchema.root
+  keys.each do |k|
+    node = k == '[]' ? BreakEscape::ScenarioSchema.item(node) : BreakEscape::ScenarioSchema.child(node, k)
+  end
+  node.is_a?(BreakEscape::ScenarioSchema::Node) ? node.declared_property_keys : []
+end
+
 def check_unknown_fields(json_data)
   warnings = []
 
-  # Known top-level fields
-  known_top_level = %w[
-    scenario_id scenario_name scenario_brief endGoal version startRoom startPosition resumeSpawn titleScreenName
-    show_scenario_brief disableAttacks creditsTheme creditsOverlay gameClock flags music startItemsInInventory globalVariables
-    player objectives rooms npcs phoneNPCs narrator timers _comment mutuallyExclusiveGlobals lighting
-    importGlobals exportGlobals social npcNeedsSeed disguises actionIcons officeVisuals npcWindupMs showPressingNeeds showNpcIntentBubbles needsDebugOverlay officePresets chatter lockCues roomTone roomToneTypes
-    ttsPregenerateChatter
-    accountProfiles policies defaultPolicy
-    networks networkLinks resources
-    roles
-  ]
+  # Unknown keys are checked below, against the schema: declared grants and account profile items
+  # first (so their warnings name the grant), then everything the root reaches.
+  checked = Set.new
 
-  # Check top-level unknown fields
-  json_data.each_key do |key|
-    unless known_top_level.include?(key)
-      warnings << "⚠️ WARNING: Top-level field '#{key}' is not recognized in the schema — this field will be ignored by the game engine. Remove it if not needed, or check if the spelling is correct."
-    end
-  end
-
-  # Known room fields
-  known_room_fields = %w[
-    type door_sign connections locked lockType requires keyPins lockedHint difficulty
-    ambientSound ambientVolume objects npcs _comment dimensions biometricMatchThreshold lighting
-    chatBackground doors needsPrivateTo access acceptsUIDOnly
-    network cryptexConfig
-  ]
-
-  # Known NPC fields
-  known_npc_fields = %w[
-    id displayName npcType position spriteSheet spriteTalk spriteVisemes spriteConfig seated
-    voice behavior globalVarOnKO restartOnRetalk reopenRefreshesHub livePreview taskOnKO koImmune storyPath callId currentKnot avatar
-    phoneId phoneTheme handle profile voiced callLabel unlockable externalVariables persistentVariables
-    timedMessages timedConversation eventMappings itemsHeld puzzle_graph_actions
-    needs interests needsHome needsSpeed needsRooms needsAvoidRooms needsCompany chatter chattiness usePayload onUse
-    captureProof
-    maxQueue needsDeferMin exchanges chatterCooldownMin swivel swivelChance screenHabit printHabit
-    answersPhones phoneCalls
-    role creds staff cloneable
-    awareness habits
-    workNeeds frustration workarounds phone socialUse feed usbHabit
-    observations disableClose los rfidCard chatBackground spriteStyle gender portraitVariants _comment
-  ]
-
-  # Known NPC los fields, and those of the opt-in los.challengeOnSight
-  known_los_fields = %w[enabled range angle visualize occlusion origin challengeOnSight _comment]
-  known_sight_challenge_fields = %w[enabled cooldown event rooms requireGlobal skipIfGlobal near _comment]
+  # NPC los and the opt-in los.challengeOnSight inside it, and behavior.personalSpace: closed in
+  # the schema (so json-schema reports an unknown key there as an error), and worded here as well
+  # with the known keys, which come from the schema.
+  known_los_fields = schema_keys_at('rooms', 'x', 'npcs', '[]', 'los') + ['_comment']
+  known_sight_challenge_fields = schema_keys_at('rooms', 'x', 'npcs', '[]', 'los', 'challengeOnSight') + ['_comment']
+  known_personal_space_fields = schema_keys_at('rooms', 'x', 'npcs', '[]', 'behavior', 'personalSpace') | ['_comment']
   sight_challenges = []   # { path:, event: } checked against every eventMapping below
   mapping_patterns = []
-
-  # Known NPC behavior fields
-  known_behavior_fields = %w[
-    initiallyHidden immovable hostile facePlayer facePlayerDistance personalSpace patrol staticSprite
-    collisionBox _comment torch
-  ]
-  # behavior.personalSpace sub-fields (npc-behavior.js parseConfig)
-  known_personal_space_fields = %w[enabled distance backAwaySpeed backAwayDistance _comment]
-
-  # Known eventMapping fields
-  known_event_mapping_fields = %w[
-    eventPattern condition onceOnly maxTriggers cooldown fireOnlyWhenLoaded delayMs
-    bark message barkDelay
-    targetKnot conversationMode background disableClose resume voiced callLabel videoLabel participantTag
-    patrolOverride setPatrolSpeed setDwellMultiplier setVisible
-    sendTimedMessage sendEmail setGlobal completeTask skipTask unlockTask unlockAim unlockDoor closeDoor
-    openMinigame endingCheck needs addCapture emitEvent emitEventData
-    _comment
-  ]
-
   # Load minigameData schemas (flat map; entries with _dispatch:"lockType" are matched by lockType)
   minigame_schemas_path = File.join(__dir__, 'minigame-data-schemas.json')
   minigame_schemas = if File.exist?(minigame_schemas_path)
@@ -736,54 +947,15 @@ def check_unknown_fields(json_data)
     end
   end
 
-  # Known item (object) fields — any unknown field should be inside minigameData
-  known_item_fields = %w[
-    type id name takeable readable interactable active locked important
-    position observations observationVariants spriteVariants observationDisplay readDisplay addToNotes
-    text textVariants
-    voice ttsVoice sender timestamp avatar sprite
-    collection_group onRead onPickup onInteract
-    lockType requires opens_lock key_id keyPins card_id difficulty
-    passwordHint showHint showKeyboard maxAttempts pinLength cryptexConfig
-    postitNote showPostit
-    hasFingerprint fingerprintOwner fingerprintDifficulty fingerprintQuality
-    fingerprintOwnerName fingerprintPattern fingerprintSurface fingerprintCandidates biometricMatchThreshold
-    mac canScanBluetooth phoneId npcIds app
-    phoneOf site
-    hacktivityMode vm acceptsVms flags flagRewards
-    mode onAbort onLaunch abortConfirmText launchConfirmText
-    itemsHeld contents hasContents triggerOnInteract
-    requiresItem requiresItemHint requiresItemHintVariants consumesItem revealOnGlobal outputOf leftBehindBy leftBehindChance
-    minigameData interactionType
-    holds storeIn
-    gateVar sealedMessage openableReadyMessage
-    puzzle_graph_role puzzle_graph_aim puzzle_graph_unlocks
-    puzzle_graph_and_with puzzle_graph_reveals puzzle_graph_optional puzzle_graph_note
-    storyPath currentKnot
-    completesTask completesTaskOnOpen
-    puzzle_graph_links hintOnlyFlags acceptsVmLabels
-    affordance needsTag droppable officeType wearable
-    usbClass
-    workstation locksScreenOnLeave lockChance screenOwner screenLocked autoLockSeconds
-    phoneOwner rings
-    actions onOwnerNoticesMissing interactionWarning saved_cards rfid_protocol
-    access acceptsUIDOnly loginPicker policy transfer cloneable identity
-    network host headless networkJack jackConfirm plantedSprite linkName linkStoreIn rogueDevice
-    wifiAp portSecurity portSecurityMessage
-    _comment
-  ]
-
+  # Item checks that are not key lists: fingerprintQuality is ignored. Recurses into contents and
+  # itemsHeld, as the item walk does.
   check_item_fields = lambda do |item, path|
     next unless item.is_a?(Hash)
     warnings << "⚠️ WARNING: '#{path}' sets fingerprintQuality, which is ignored: lift quality now comes from the dusting minigame." if item.key?('fingerprintQuality')
-    item.each_key do |key|
-      unless known_item_fields.include?(key)
-        warnings << "⚠️ WARNING: '#{path}' has unknown field '#{key}'#{unknown_key_hint(key, known_item_fields)} — if this is minigame-specific configuration data, nest it under 'minigameData' instead."
-      end
-    end
-    item['contents']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/contents[#{i}](#{c['id'] || c['type'] || '?'})") }
-    item['itemsHeld']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/itemsHeld[#{i}](#{c['type'] || '?'})") }
+    item['contents']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/contents[#{i}](#{c['id'] || c['type'] || '?'})") if c.is_a?(Hash) }
+    item['itemsHeld']&.each_with_index { |c, i| check_item_fields.call(c, "#{path}/itemsHeld[#{i}](#{c['type'] || '?'})") if c.is_a?(Hash) }
   end
+  item_node = BreakEscape::ScenarioSchema.at('#/definitions/item')
 
   # Check startItemsInInventory fields
   json_data['startItemsInInventory']&.each_with_index do |item, idx|
@@ -798,6 +970,7 @@ def check_unknown_fields(json_data)
   BreakEscape::DeclaredGrants.for(json_data).each do |grant|
     grant_path = "#{grant['path']}/item(#{grant['item']['id'] || grant['item']['type'] || '?'})"
     check_item_fields.call(grant['item'], grant_path)
+    schema_unknown_key_warnings(grant['item'], item_node, warnings, prefix: grant_path, seen: checked)
     check_minigame_data.call(grant['item'], grant_path)
   end
 
@@ -810,22 +983,19 @@ def check_unknown_fields(json_data)
         next unless item.is_a?(Hash)
         item_path = "accountProfiles/#{profile_id}/contents[#{idx}](#{item['id'] || item['name'] || '?'})"
         check_item_fields.call(item, item_path)
+        schema_unknown_key_warnings(item, item_node, warnings, prefix: item_path, seen: checked)
         check_minigame_data.call(item, item_path)
       end
     end
   end
 
-  # Check room fields and recurse into NPCs and objects
+  schema_unknown_key_warnings(json_data, BreakEscape::ScenarioSchema.root, warnings, seen: checked) if json_data.is_a?(Hash)
+
+  # Room objects and NPCs: the checks that are not key lists
   if json_data['rooms']
     json_data['rooms'].each do |room_id, room|
       next unless room.is_a?(Hash)
-      room.each_key do |key|
-        unless known_room_fields.include?(key)
-          warnings << "⚠️ WARNING: Room '#{room_id}' has unknown field '#{key}'#{unknown_key_hint(key, known_room_fields)} — this field will be ignored by the game engine."
-        end
-      end
 
-      # Check object fields
       room['objects']&.each_with_index do |obj, idx|
         next unless obj.is_a?(Hash)
         obj_path = "rooms/#{room_id}/objects[#{idx}](#{obj['id'] || obj['name'] || '?'})"
@@ -833,23 +1003,12 @@ def check_unknown_fields(json_data)
         check_minigame_data.call(obj, obj_path)
       end
 
-      # Check NPC fields
       room['npcs']&.each_with_index do |npc, idx|
         next unless npc.is_a?(Hash)
         npc_path = "rooms/#{room_id}/npcs[#{idx}](#{npc['id'] || '?'})"
-        npc.each_key do |key|
-          unless known_npc_fields.include?(key)
-            warnings << "⚠️ WARNING: '#{npc_path}' has unknown field '#{key}'#{unknown_key_hint(key, known_npc_fields)} — this field will be ignored by the game engine."
-          end
-        end
 
-        # Check NPC behavior fields
+        # NPC behavior values (unknown keys are checked against the schema above)
         if npc['behavior'].is_a?(Hash)
-          npc['behavior'].each_key do |key|
-            unless known_behavior_fields.include?(key)
-              warnings << "⚠️ WARNING: '#{npc_path}/behavior' has unknown field '#{key}' — this field will be ignored by the game engine."
-            end
-          end
           fpd = npc['behavior']['facePlayerDistance']
           if npc['behavior'].key?('facePlayerDistance') && !(fpd.is_a?(Numeric) && fpd > 0)
             warnings << "⚠️ WARNING: '#{npc_path}/behavior/facePlayerDistance' should be a positive number of pixels " \
@@ -905,11 +1064,6 @@ def check_unknown_fields(json_data)
           next unless mapping.is_a?(Hash)
           mapping_path = "#{npc_path}/eventMappings[#{midx}]"
           mapping_patterns << mapping['eventPattern'] if mapping['eventPattern'].is_a?(String)
-          mapping.each_key do |key|
-            unless known_event_mapping_fields.include?(key)
-              warnings << "⚠️ WARNING: '#{mapping_path}' has unknown field '#{key}' — this field will be ignored by the game engine."
-            end
-          end
           # unlockDoor (F19): each room it names must exist, or the server refuses the unlock
           [mapping['unlockDoor']].flatten.compact.each do |rid|
             next if rid.is_a?(String) && json_data['rooms'].is_a?(Hash) && json_data['rooms'].key?(rid)
@@ -1134,12 +1288,13 @@ def headless_npc_records(json_data)
   end
 end
 
-# { npc id => screenHabit } for every room NPC with one in the expanded copy (slice 9.1):
+# { npc id => habits.screen } for every room NPC with one in the expanded copy (slice 9.1):
 # authored and filled alike, for ValidateNpcNeeds.check's screen_habits: keyword.
 def npc_screen_habits(expanded)
   BreakEscape::AccessIdentities.room_npcs(expanded).each_with_object({}) do |entry, out|
     npc = entry[:npc]
-    out[npc['id']] = npc['screenHabit'] if npc.key?('screenHabit') && npc['id']
+    habits = npc['habits']
+    out[npc['id']] = habits['screen'] if habits.is_a?(Hash) && habits.key?('screen') && npc['id']
   end
 end
 
@@ -1193,6 +1348,22 @@ def give_item_placement_issues(ink_lines, source_ink_path)
               "Wrong: dialogue → tag. Correct: tag → dialogue."
   end
   issues
+end
+
+# A1 R1 m1: a record whose id is another record's display name (ignoring case). A line prefix such as
+# "ghost:" then names different records on the phone client (display names first) and the extractor
+# (first match in scenario order), so the voiced speaker can differ from the one shown.
+def check_speaker_id_name_clashes(json_data)
+  records = scenario_npc_records(json_data).map { |npc, path| [npc, path] }.select { |npc, _| npc['id'] }
+  records.flat_map do |npc, path|
+    id = npc['id'].to_s.downcase
+    records.filter_map do |other, other_path|
+      next if other.equal?(npc) || other['displayName'].to_s.downcase != id
+
+      "⚠️ WARNING: #{path}: NPC id '#{npc['id']}' is also the display name of '#{other['id']}' (#{other_path}); " \
+        "a '#{npc['id']}:' line prefix is ambiguous between the two. Rename one of them, or avoid the prefix."
+    end
+  end
 end
 
 def check_ink_files(json_data, base_dir, scenario_dir = nil)
@@ -2777,6 +2948,8 @@ end
 # interactionWarning (systems/interactions.js): an author-defined "are you sure?" any
 # object may carry, shown before the object's normal interaction. Validate its shape
 # wherever it appears (walk the whole document, so nested contents/itemsHeld are covered).
+CONFIRM_LABEL_MAX = 16
+
 def check_interaction_warnings(json_data)
   issues = []
   # The apply-actions.js action vocabulary (its case labels) plus the extra names the
@@ -2832,6 +3005,15 @@ def check_interaction_warnings(json_data)
           end
         end
       end
+      # A confirm's button label stays on one line (notifications.css nowrap), and at phone
+      # width a button holds about 18 characters before the frame cuts it (UX slice 16 R1 m9).
+      %w[confirmLabel cancelLabel proceedLabel declineLabel].each do |lk|
+        label = node[lk]
+        next unless label.is_a?(String) && label.strip.length > CONFIRM_LABEL_MAX
+        issues << "⚠️ WARNING: '#{path}/#{lk}' is #{label.strip.length} characters (\"#{label.strip}\"). " \
+                  "A confirm button label of more than #{CONFIRM_LABEL_MAX} characters is cut off at phone width; " \
+                  "shorten it (\"Switch off\", \"Leave it\")."
+      end
       # A minigame's own data is its own format: the EHR terminal's medication rows carry a
       # string 'interactionWarning' that the object-level warning code never reads.
       node.each { |k, v| walk.call(v, path.empty? ? k.to_s : "#{path}/#{k}") unless k == 'minigameData' }
@@ -2840,6 +3022,88 @@ def check_interaction_warnings(json_data)
     end
   end
   walk.call(json_data, '')
+  issues
+end
+
+# A scenario that cancels a card (apply-actions.js revoke_card, the left-card consequence §3.3b)
+# must declare the globalVariables.revoked_card_ids array. The server enforces the cancellation
+# from that global (Game#revoked_card_ids), stored grow-only, and round-trips it to the client for
+# the UI filter. Without the declared array the revocation is unenforceable: nothing seeds the
+# server default and the client has no base value to add to, so a cancelled card keeps opening its
+# door. Both test_clone_left_card and lab_physical_pentest already declare it.
+def check_revoke_card_globals(json_data)
+  issues = []
+  found = false
+  revoked_ids = []
+  granted = {} # card_id => the pointer of the give_item or start item that hands it over
+
+  # Every card_id string under a granted item subtree: its own card_id and any nested
+  # rfidCard/card/contents card_id, so a card handed over inside a container counts too.
+  card_ids_under = nil
+  card_ids_under = lambda do |node, out|
+    case node
+    when Hash
+      cid = node['card_id']
+      out << cid if cid.is_a?(String) && !cid.empty?
+      out.concat(cid.select { |c| c.is_a?(String) && !c.empty? }) if cid.is_a?(Array)
+      node.each_value { |v| card_ids_under.call(v, out) }
+    when Array
+      node.each { |v| card_ids_under.call(v, out) }
+    end
+    out
+  end
+
+  walk = nil
+  walk = lambda do |node, pointer|
+    case node
+    when Hash
+      if node['type'] == 'revoke_card'
+        found = true
+        cid = node['card_id']
+        revoked_ids << cid if cid.is_a?(String) && !cid.empty?
+        revoked_ids.concat(cid.select { |c| c.is_a?(String) && !c.empty? }) if cid.is_a?(Array)
+      end
+      if node['type'] == 'give_item' && node['item'].is_a?(Hash)
+        card_ids_under.call(node['item'], []).each { |c| granted[c] ||= "#{pointer}/item" }
+      end
+      node.each { |k, v| walk.call(v, "#{pointer}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk.call(v, "#{pointer}/#{i}") }
+    end
+  end
+  walk.call(json_data, '#')
+
+  # Start items the player begins with: each carried card_id is granted at game start.
+  if json_data['startItemsInInventory'].is_a?(Array)
+    json_data['startItemsInInventory'].each_with_index do |item, i|
+      next unless item.is_a?(Hash)
+
+      card_ids_under.call(item, []).each { |c| granted[c] ||= "#/startItemsInInventory/#{i}" }
+    end
+  end
+
+  return issues unless found
+
+  globals = json_data['globalVariables']
+  value = globals.is_a?(Hash) ? globals['revoked_card_ids'] : nil
+  unless value.is_a?(Array)
+    issues << "❌ ERROR: a 'revoke_card' action is used but 'globalVariables.revoked_card_ids' is " \
+              "not declared as an array. The server enforces card cancellation from this global " \
+              "(stored grow-only) and the client reads it for the UI; without the declared array " \
+              "default [] the cancellation never takes, so a revoked card keeps opening its door."
+  end
+
+  # Advisory (hardening item 2): a card handed to the player that a revoke_card also cancels.
+  # revoked_card_ids is grow-only (merge_global_variables! unions it every sync and there is no
+  # un-revoke path), so a card re-issued under the same id after revocation stays dead. Fires on
+  # nothing in the corpus; purely an authoring guard.
+  (revoked_ids.uniq & granted.keys).sort.each do |cid|
+    issues << "⚠️ WARNING: #{granted[cid]}: card_id '#{cid}' is handed to the player (give_item or a " \
+              "start item) and is also cancelled by a 'revoke_card' action. revoked_card_ids is " \
+              "grow-only, so once this id is revoked it stays refused for the rest of the game. That is " \
+              "fine for a card given and later cancelled. If the player is meant to get a working card " \
+              "back after the revoke, give the re-issued card a fresh card_id."
+  end
   issues
 end
 
@@ -2908,7 +3172,7 @@ def check_common_issues(json_data, valid_item_types = nil)
   # Recursive helper: check item type and all nested contents/itemsHeld
   # A type is valid if an exact asset file exists, OR if any numbered/variant file starting with
   # that type name exists (e.g. type "safe" is valid when safe1.png, safe2.png etc. exist).
-  check_item_type = lambda do |item, item_path|
+  check_item_type = lambda do |item, item_path, in_contents = false|
     if valid_item_types && item['type']
       t = item['type']
       exact_match = valid_item_types.include?(t)
@@ -2918,11 +3182,15 @@ def check_common_issues(json_data, valid_item_types = nil)
       # sprite must be a picture in assets/objects/ (laptop1 until the content plan supplies
       # capture_log.png).
       engine_type = t == 'capture_log' && item['sprite'].is_a?(String) && valid_item_types.include?(item['sprite'])
+      # A folder is a desktop-only entry inside a PC or share (container minigame); it has no
+      # world sprite, so it needs no picture in assets/objects/. Only a folder nested in a
+      # container's contents is exempt: a room-level folder is drawn in the world and needs one.
+      engine_type ||= t == 'folder' && in_contents
       unless exact_match || variant_match || engine_type
         issues << "❌ ERROR: '#{item_path}' has type '#{t}' but no matching sprite found at assets/objects/#{t}.png (nor any #{t}*.png variant) — check the spelling or add the asset"
       end
     end
-    item['contents']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/contents[#{i}]") }
+    item['contents']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/contents[#{i}]", true) }
     item['itemsHeld']&.each_with_index { |c, i| check_item_type.call(c, "#{item_path}/itemsHeld[#{i}]") }
   end
   start_room_id = json_data['startRoom']
@@ -4303,6 +4571,7 @@ RECURRING_SYNCED_INK_VARS = %w[
   has_keycard has_rfid_cloner card_protocol card_name card_card_id card_instant_clone
   card_needs_attack card_uid_only player_name current_mission_id npc_location mission_phase
   operational_stress_level equipment_status
+  call_answer_seconds call_is_callback
 ].freeze
 
 def recurring_norm_words(text)
@@ -4685,6 +4954,19 @@ def check_recurring_bugs(json_data, repo_root)
               "In standalone mode (and Rails games with no saved sprite) the player has no texture."
   end
 
+  # Top-level pcWallpaper (utils/pc-monitor.js): a missing file falls back to the shared wallpaper
+  # in game, so say so here. pcWallpaperFocus is [x, y], shares of the picture (0 to 1).
+  if json_data.key?('pcWallpaper') && json_data['pcWallpaper'].is_a?(String) && !asset_exists.call(json_data['pcWallpaper'])
+    issues << "⚠️ WARNING: pcWallpaper '#{json_data['pcWallpaper']}' does not exist under public/break_escape/. " \
+              "Every PC screen shows the shared wallpaper instead."
+  end
+  if json_data.key?('pcWallpaperFocus')
+    pf = json_data['pcWallpaperFocus']
+    unless pf.is_a?(Array) && pf.size == 2 && pf.all? { |n| n.is_a?(Numeric) && n >= 0 && n <= 1 }
+      issues << "⚠️ WARNING: pcWallpaperFocus should be [x, y], shares of the wallpaper's width and height between 0 and 1. The centre is used."
+    end
+  end
+
   # Room chatBackground: person-chat's fallback background (person-chat-background.js). A missing
   # file fails quietly in game (plain frame), so say so here.
   rooms.each do |rid, room|
@@ -4901,6 +5183,10 @@ def check_recurring_bugs(json_data, repo_root)
       # producer, or two slots of one producer, are meant to share a spot
       next if a['outputOf'].is_a?(String) && (a['outputOf'] == b['id'] || a['outputOf'] == b['outputOf'])
       next if b['outputOf'].is_a?(String) && b['outputOf'] == a['id']
+      # A click cannot open an object with interactable: false (the tap filter in game.js and the
+      # proximity pass in interactions.js both skip it), so such a pair cannot steal clicks. The
+      # lab's plain corridor extinguisher and its revealed wedge share one spot on purpose.
+      next if a['interactable'] == false || b['interactable'] == false
       issues << "⚠️ WARNING: rooms/#{rid}: objects[#{ai}] '#{a['name'] || a['id']}' and objects[#{bi}] '#{b['name'] || b['id']}' " \
                 "are pinned #{dist.round} px apart, inside the 32 px interaction range (constants.js INTERACTION_RANGE), so " \
                 "one click can open the other. Move them at least a tile apart. (Objects placed by Tiled slots aren't " \
@@ -5099,6 +5385,16 @@ def check_globals_never_read(json_data, repo_root)
           setters[v] ||= "#{path}/#{k}"
         elsif k == 'setGlobal' && v.is_a?(String)
           setters[v] ||= "#{path}/#{k}"
+        elsif k == 'onHidden' && v.is_a?(Array)
+          # hideable.onHidden actions: a set_global key is a setter, and its key string is not a read
+          v.each_with_index do |act, i|
+            if act.is_a?(Hash) && act['type'] == 'set_global' && act['key'].is_a?(String)
+              setters[act['key']] ||= "#{path}/#{k}[#{i}]"
+              walk.call(act.reject { |ak, _| ak == 'key' }, "#{path}/#{k}[#{i}]")
+            else
+              walk.call(act, "#{path}/#{k}[#{i}]")
+            end
+          end
         else
           walk.call(v, "#{path}/#{k}")
         end
@@ -6046,6 +6342,24 @@ def unsupported_condition_syntax(condition, allow_includes:)
   problems.empty? ? nil : problems.join(' and ')
 end
 
+# requiresItemCondition and its hint variants are evaluated by evaluateGlobalCondition
+# (utils/conditional-text.js): '&&'-joined terms, each globalVars.x, !globalVars.x, or
+# globalVars.x with ===, !==, >, <, >= or <= and a true/false/null/number/quoted literal.
+# With '||' or parentheses it quietly reads the first globalVars name, so a bad condition
+# can refuse the use for good. Returns a description of the problem, or nil.
+ITEM_CONDITION_TERM = /\A(!\s*globalVars\.\w+|globalVars\.\w+(\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(\.\d+)?|'[^'"]*'|"[^'"]*"))?)\z/
+def item_condition_problem(condition)
+  return 'is not a string' unless condition.is_a?(String)
+  return 'is empty' if condition.strip.empty?
+  if (bad = unsupported_condition_syntax(condition, allow_includes: false))
+    return "uses #{bad}"
+  end
+  condition.split('&&').each do |term|
+    return "has the term \"#{term.strip}\", which is not globalVars.x, !globalVars.x or globalVars.x with === !== > < >= <= and a literal" unless term.strip.match?(ITEM_CONDITION_TERM)
+  end
+  nil
+end
+
 # R29 (VM integration review): every VM flag a mission's stations accept must be
 # load-bearing for the ending. A flag counts when the server can't conclude
 # without it: a submit_flags task matching it is in the conclusion aim's
@@ -6246,9 +6560,42 @@ def check_engine_limits(json_data)
                   "textVariants for text that does not depend on a carried item."
       end
 
-      %w[observationVariants spriteVariants textVariants requiresItemHintVariants].each do |vk|
+      # requiresItemCondition (interactions.js, through requires-item-hint.js) gates the use of a
+      # held item on a globals condition. Only the requiresItem + triggerOnInteract branch reads it.
+      cond_hint_fields = %w[requiresItemConditionHint requiresItemConditionHintVariants]
+      if node.key?('requiresItemCondition')
+        if (problem = item_condition_problem(node['requiresItemCondition']))
+          issues << "❌ ERROR: '#{path}/requiresItemCondition' #{problem}. conditional-text.js evaluateGlobalCondition " \
+                    "supports only '&&'-joined terms; anything else is mis-read, so the use could be refused for good."
+        else
+          node['requiresItemCondition'].scan(/globalVars\.(\w+)/).flatten.uniq.each do |gv|
+            next if globals.include?(gv) || gv.match?(/\A(\w+)_(screen_locked|owner_away|accessed)\z/)
+            issues << "⚠️ WARNING: '#{path}/requiresItemCondition' uses globalVars.#{gv}, which is not in globalVariables " \
+                      "and is not a workstation global (<id>_screen_locked, _owner_away, _accessed). Declare it, or the " \
+                      "condition reads a name nothing is known to set."
+          end
+        end
+        if node['requiresItem'].nil? || node['requiresItem'] == '' || node['requiresItem'] == []
+          issues << "⚠️ WARNING: '#{path}' has requiresItemCondition but no requiresItem, so the condition is never read."
+        elsif !node['triggerOnInteract'].is_a?(Array) || node['triggerOnInteract'].empty?
+          issues << "⚠️ WARNING: '#{path}' has requiresItemCondition but no triggerOnInteract. Only the triggerOnInteract " \
+                    "branch of interactions.js reads it (a networkJack or other interaction ignores it), so it is never applied."
+        end
+      elsif cond_hint_fields.any? { |f| node.key?(f) && !(node[f].respond_to?(:empty?) && node[f].empty?) }
+        issues << "⚠️ WARNING: '#{path}' has requiresItemConditionHint(Variants) but no requiresItemCondition, so those hints are never shown."
+      end
+
+      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
+          if vk == 'requiresItemConditionHintVariants' && v.key?('condition')
+            # Same grammar as requiresItemCondition itself (evaluateGlobalCondition).
+            if (problem = item_condition_problem(v['condition']))
+              issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" #{problem}. conditional-text.js " \
+                        "supports only '&&'-joined terms of the globalVars.x / !globalVars.x / comparison forms."
+            end
+            next
+          end
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
             issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."
@@ -6361,7 +6708,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node
@@ -6461,6 +6808,702 @@ end
 # its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
 DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
                             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength].freeze
+# ─────────────────────────────────────────────────────────────
+# Gated-door credit (GATED_DOOR_SERVER_CHECK_PLAN.md §12). The server owns the credit for
+# passing a split gated door: at promotion it sets the gate's creditOnPass globals and completes
+# the credited task itself, and those globals are read-only to a client sync_state. These checks
+# keep an author from writing a scenario where that ownership can be defeated (a second unlock
+# route, a client-writable pass global, an ACL rfid lock, a flag-completed credited task) or
+# where a credit could never fire.
+# ─────────────────────────────────────────────────────────────
+
+# The runtime server-owned global names (Game::SERVER_OWNED_GLOBAL_NAMES). Kept in step by
+# carry_over_server_owned_globals_test, which guards that the two literals agree.
+GATED_SERVER_OWNED_GLOBALS = %w[se_captures].freeze
+
+# True when the scenario defines any rfid_cloner object anywhere (nested contents included). This
+# mirrors Game#scenario_has_rfid_cloner?, the runtime split proxy for "a requires card is obtainable".
+def scenario_contains_rfid_cloner?(node)
+  case node
+  when Array then node.any? { |n| scenario_contains_rfid_cloner?(n) }
+  when Hash
+    return true if node['type'] == 'rfid_cloner'
+    node.each_value.any? { |v| scenario_contains_rfid_cloner?(v) }
+  else
+    false
+  end
+end
+
+def check_gated_door_credit(json_data)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+  rooms = json_data['rooms']
+  return issues unless rooms.is_a?(Hash)
+
+  declared = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'].keys.map(&:to_s).to_set : Set.new
+
+  # task id -> type, so a creditOnPass.completeTask can be checked to exist and not be a submit_flags task.
+  task_types = {}
+  Array(json_data['objectives']).each do |aim|
+    next unless aim.is_a?(Hash)
+    Array(aim['tasks']).each do |t|
+      task_types[t['taskId'].to_s] = t['type'].to_s if t.is_a?(Hash) && t['taskId']
+    end
+  end
+
+  # Globals a client sync_state cannot write (mirrors Game#server_owned_global_name?): worn-costume
+  # globals, imported globals, the creditOnPass credit globals, and the runtime server-owned names.
+  worn = BreakEscape::WearableModel.worn_globals(json_data)
+  imported = Array(json_data['importGlobals']).filter_map { |e| carry_over_import_name(e) }
+
+  # The runtime serverCompletedOnly set (mirrors Game.completed_only_task_ids_in): every task named
+  # by any door gate's creditOnPass.completeTask, independent of openFor or whether the gate splits.
+  credited_task_ids = Set.new
+  rooms.each_value do |room|
+    next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+    room['doors'].each do |door|
+      credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+      next unless credit.is_a?(Hash)
+      credit.each_value do |block|
+        t = block.is_a?(Hash) ? block['completeTask'] : nil
+        credited_task_ids << t.to_s if t.is_a?(String) && !t.strip.empty?
+      end
+    end
+  end
+
+  # First pass: collect every openFor gate, its credit blocks and the credit globals.
+  gates = []            # [{ room_id, i, connected, gate, requires, open_for }]
+  credit_globals = Set.new
+  credit_block_paths = Set.new
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+    room['doors'].each_with_index do |door, i|
+      next unless door.is_a?(Hash)
+      gate = door['gate']
+      next unless gate.is_a?(Hash) && Array(gate['openFor']).any?
+      connected = door['connectedRoom'].to_s
+      target = rooms[connected]
+      gates << { room_id: room_id, i: i, connected: connected, gate: gate,
+                 requires: Array(target.is_a?(Hash) ? target['requires'] : nil).map(&:to_s).reject(&:empty?),
+                 open_for: Array(gate['openFor']).map(&:to_s).to_set }
+      credit = gate['creditOnPass']
+      next unless credit.is_a?(Hash)
+      credit.each do |path_key, block|
+        set = block.is_a?(Hash) ? block['setGlobal'] : nil
+        next unless set.is_a?(Hash)
+        set.each_key { |n| credit_globals << n.to_s }
+        credit_block_paths << "rooms/#{room_id}/doors[#{i}]/gate/creditOnPass/#{path_key}/setGlobal"
+      end
+    end
+  end
+
+  server_owned = (worn + imported + credit_globals.to_a + GATED_SERVER_OWNED_GLOBALS).to_set
+  has_cloner = scenario_contains_rfid_cloner?(json_data)
+
+  split_rooms = {}  # connected_room -> open_for set (only splitting gates)
+  gates.each do |g|
+    at = "rooms/#{g[:room_id]}/doors[#{g[:i]}]"
+    gate = g[:gate]
+    pass = gate['playerMayPassIf']
+    pass_present = pass.is_a?(String) && !pass.strip.empty?
+    pass_server_owned = pass_present && server_owned.include?(pass)
+    # A gate splits (its NPC route records the room in npcRouteRooms rather than unlockedRooms) when a
+    # provable path exists: a server-owned pass, or an rfid_cloner anywhere in the scenario. This
+    # mirrors runtime Game#gate_splits? exactly (R3 minor 3): the runtime does not condition the
+    # cloner term on the target room carrying a `requires` card, so neither does this. Dropping the
+    # former `&& !requires.empty?` closes the hole where the runtime split a cloner gate but the
+    # validator stayed silent on a client-writable pass; for every deployed/test scenario the only
+    # cloner gates (lab, test_gate_tailgate) carry a requires card, so the split decision is
+    # unchanged. Keep this in step with Game#gate_splits? and generate_dungeon_graph.rb.
+    splits = pass_server_owned || has_cloner
+    credit = gate['creditOnPass']
+
+    if splits
+      split_rooms[g[:connected]] = g[:open_for]
+      # §12: a split gate's playerMayPassIf must be a global a client sync_state cannot write; a
+      # client-writable pass global could be forged to fake the viaPass promotion.
+      if pass_present && !pass_server_owned
+        issues << "❌ ERROR: '#{at}' is a split gated door whose playerMayPassIf '#{pass}' is a " \
+                  "client-writable global. It must be server-owned (a worn-costume global, an imported " \
+                  "global, or a creditOnPass credit global), or a tampered client could forge the viaPass pass."
+      end
+      # §12 / Chunk E to-do (b): a split gate's rfid room lock must be requires-only, never an ACL
+      # (access-list) lock. credit_via_credential! re-asserts possession with rfid_lock_passes!, which for
+      # a requires-only lock delegates to rfid_requires_held? (server inventory + clones, ignores the
+      # client card_ids). An ACL lock would consult the client card_ids through the access model, so the
+      # credential credit would inherit the client-driven access semantics rather than a server check.
+      target = rooms[g[:connected]]
+      if target.is_a?(Hash) && target['lockType'].to_s == 'rfid' && target.key?('access')
+        issues << "❌ ERROR: split gated room '#{g[:connected]}' has an rfid lock with an 'access' ACL list. " \
+                  "A split gate's credential credit re-asserts server possession (rfid_requires_held?), which " \
+                  "needs a requires-only lock; make the lock requires-only (drop the access list)."
+      end
+    elsif credit.is_a?(Hash)
+      # §12: a gate that does not split named a creditOnPass, so the credit can never fire.
+      issues << "⚠️ WARNING: '#{at}' names a creditOnPass but the gate does not split (no server-owned " \
+                "playerMayPassIf and no obtainable requires card), so the server credit can never fire."
+    end
+
+    next unless credit.is_a?(Hash)
+    credit.each do |path_key, block|
+      next unless block.is_a?(Hash)
+      cat = "#{at}/gate/creditOnPass/#{path_key}"
+      set = block['setGlobal']
+      if set.is_a?(Hash)
+        set.each_key do |name|
+          unless declared.include?(name.to_s)
+            issues << "❌ ERROR: '#{cat}/setGlobal' sets '#{name}', which is not declared in globalVariables."
+          end
+        end
+      end
+      task_id = block['completeTask']
+      if task_id.is_a?(String) && !task_id.strip.empty?
+        if !task_types.key?(task_id)
+          issues << "❌ ERROR: '#{cat}/completeTask' names task '#{task_id}', which no objective defines."
+        elsif task_types[task_id] == 'submit_flags'
+          issues << "❌ ERROR: '#{cat}/completeTask' names submit_flags task '#{task_id}'. Flag completion " \
+                    "(process_flag_task_completions!) writes task status directly, bypassing the server-completed-only " \
+                    "guard, so a credited task must never be a submit_flags task."
+        end
+      end
+    end
+  end
+
+  # §12: a credit global still written by a client set_global / setGlobal mapping is a half-done
+  # migration (the client writer races the server credit and is no longer read-only to sync_state).
+  unless credit_globals.empty?
+    BreakEscape::WearableModel.global_writers(json_data).each do |w|
+      name = w[:name].to_s
+      next unless credit_globals.include?(name)
+      # Skip the creditOnPass setGlobal nodes themselves (the server writer, not a client one).
+      next if credit_block_paths.include?(w[:path].to_s)
+      issues << "⚠️ WARNING: credit global '#{name}' is still written by a client setter at '#{w[:path]}'. " \
+                "The server owns it through creditOnPass; remove the client writer so the credit cannot be forged or raced."
+    end
+  end
+
+  # §12 / R3 minor 2: a credited task (named by a creditOnPass.completeTask, so serverCompletedOnly
+  # at runtime) that is ALSO completed by a client completeTask (an eventMapping, reward or action)
+  # is a half-done migration. With the server-completed-only guard now behind the already-completed
+  # branch (R3 minor 1), such a client completer, fired before the server credit lands, reaches the
+  # guard on a not-yet-completed task and surfaces a hard "Objective Blocked" to an honest player.
+  # Mirrors the credit-global client-writer warning above. The creditOnPass blocks themselves (the
+  # server writer) are pruned, so only a genuine client completer trips it.
+  unless credited_task_ids.empty?
+    walk_client_complete = lambda do |node|
+      case node
+      when Array then node.each { |n| walk_client_complete.call(n) }
+      when Hash
+        ct = node['completeTask']
+        if ct.is_a?(String) && credited_task_ids.include?(ct.to_s)
+          issues << "⚠️ WARNING: task '#{ct}' is credited by a gate's creditOnPass (server-completed only) but is " \
+                    "also completed by a client completeTask. Remove the client completer, or the credited task is " \
+                    "shown as 'Objective Blocked' to an honest player when the client fires before the server credit."
+        end
+        node.each do |k, v|
+          next if k.to_s == 'creditOnPass' # the server writer itself, not a client completer
+          walk_client_complete.call(v)
+        end
+      end
+    end
+    walk_client_complete.call(json_data)
+  end
+
+  unless split_rooms.empty?
+    # §12 / Chunk E to-do (a): a second unlock route into a split gated room would unlock it without
+    # the gate credit, silently defeating the split. A flag or action unlock_door reward, or a
+    # non-openFor NPC unlockDoor mapping, is such a route.
+    walk_unlock_door = lambda do |node|
+      case node
+      when Array then node.each { |n| walk_unlock_door.call(n) }
+      when Hash
+        if node['type'] == 'unlock_door'
+          target = %w[target_room roomId room connectedRoom].map { |k| node[k] }.compact.first.to_s
+          if split_rooms.key?(target)
+            issues << "❌ ERROR: an unlock_door reward/action targets split gated room '#{target}', a second " \
+                      "unlock route that opens the room without the gate credit and defeats the split."
+          end
+        end
+        node.each_value { |v| walk_unlock_door.call(v) }
+      end
+    end
+    walk_unlock_door.call(json_data)
+
+    rooms.each do |room_id, room|
+      next unless room.is_a?(Hash)
+      Array(room['npcs']).each do |npc|
+        next unless npc.is_a?(Hash)
+        npc_id = npc['id'].to_s
+        Array(npc['eventMappings']).each do |m|
+          next unless m.is_a?(Hash)
+          Array(m['unlockDoor']).map(&:to_s).each do |target|
+            next unless split_rooms.key?(target)
+            next if split_rooms[target].include?(npc_id)  # the gate's own openFor NPC: the intended route
+            issues << "❌ ERROR: NPC '#{npc_id}' in '#{room_id}' has an unlockDoor mapping for split gated room " \
+                      "'#{target}' but is not in that gate's openFor, a second unlock route that defeats the split."
+          end
+        end
+      end
+    end
+
+    # §12 / Q5: a server-enforced lock code placed in a split gated room's readable text leaks to an
+    # un-promoted client the moment the room is served (filtered_room_data serves its text). A warning,
+    # not an error: the lab's deeds_signout combination is a deliberate teaching pattern the author keeps
+    # where the leak only saves time.
+    codes = Set.new
+    collect_codes = lambda do |node|
+      case node
+      when Array then node.each { |n| collect_codes.call(n) }
+      when Hash
+        if %w[pin password combination cryptex key rfid].include?(node['lockType'])
+          Array(node['requires']).each { |r| codes << r.to_s unless r.to_s.strip.empty? }
+        end
+        node.each_value { |v| collect_codes.call(v) }
+      end
+    end
+    collect_codes.call(json_data)
+
+    unless codes.empty?
+      scan_readables = lambda do |node, &blk|
+        case node
+        when Array then node.each { |n| scan_readables.call(n, &blk) }
+        when Hash
+          blk.call(node) if node['readable'] == true && node['text'].is_a?(String)
+          node.each_value { |v| scan_readables.call(v, &blk) }
+        end
+      end
+      split_rooms.each_key do |rid|
+        room = rooms[rid]
+        next unless room.is_a?(Hash)
+        scan_readables.call(room) do |obj|
+          text = obj['text'].to_s
+          leaked = codes.select { |c| text =~ /(?<![\w])#{Regexp.escape(c)}(?![\w])/ }
+          next if leaked.empty?
+          name = obj['name'] || obj['id'] || obj['type']
+          issues << "⚠️ WARNING: readable '#{name}' in split gated room '#{rid}' contains a server-enforced " \
+                    "lock code (#{leaked.size} value#{leaked.size == 1 ? '' : 's'}) in its text, which leaks to an " \
+                    "un-promoted client the moment the room is served. Keep real secrets out of a route room's " \
+                    "readable text, or accept it where the leak only saves time."
+        end
+      end
+    end
+  end
+
+  issues
+end
+
+# Whether some closed-menu choice set for this landing page reaches meets_threshold for the given
+# target, proving an honest player can build a convincing page (PHISH_EVIDENCE_SERVER_PLAN section
+# 13: "Share PhishScore with the validator so an authored page can be checked for being solvable,
+# some choice set meets its linkThreshold"). It reuses the shared BreakEscape::PhishScore port
+# (lib/break_escape/phish_score.rb), the same scorer the build route recomputes with, so the
+# validator and the server agree on what is buildable and the check cannot drift from the runtime.
+#
+# This is a bounded exhaustive search, not a blind best-choice-per-part pick, because one choice is
+# coupled: the brand choice feeds the brand points, the brand gate and the domain menu, and a domain
+# option lives under the brand that owns it. So the search enumerates every (brand, domain) pair and,
+# within it, every authored purpose and wording option. The three remaining factors are fixed to
+# their own factor maximum, which is independent of every other choice, so fixing them loses no
+# reachable credibility: logo 'crisp' is the only full-points logo (score_logo), padlock true is the
+# only full-points padlock (score_padlock), and choosing exactly a brand's realFields is always full
+# form points (score_form rule 4) for that brand. Each menu is a handful of options, so the product
+# is tiny and the search is exact: if it finds no meeting choice set, none exists.
+def landing_page_buildable?(page_def, target_id)
+  return false unless page_def.is_a?(Hash)
+  return fake_check_buildable?(page_def, target_id) if page_def['pageType'] == 'fakeCheck'
+
+  pretext = page_def['pretext'].is_a?(Hash) ? page_def['pretext'] : {}
+  purposes = Array(page_def['purposes']).filter_map { |p| p['id'] if p.is_a?(Hash) }
+  purposes = (purposes + [pretext['purposeId'], 'signin']).compact.uniq
+  purposes = [nil] if purposes.empty?
+  wordings = Array(page_def['wordings']).filter_map { |w| w['id'] if w.is_a?(Hash) }
+  wordings = (wordings + [nil]).uniq
+  brands = page_def['brands'].is_a?(Array) ? page_def['brands'] : []
+
+  brands.each do |brand|
+    next unless brand.is_a?(Hash)
+
+    real_fields = brand['realFields'].is_a?(Array) ? brand['realFields'] : []
+    domains = brand['domains'].is_a?(Array) ? brand['domains'] : []
+    # A page with no domain options still gets the no-domain case: guard_domain blocks it (so it is
+    # never convincing), but enumerating [nil] keeps the search total.
+    (domains.empty? ? [nil] : domains).each do |domain|
+      domain_id = domain.is_a?(Hash) ? domain['id'] : nil
+      purposes.each do |purpose|
+        wordings.each do |wording|
+          choices = {
+            'brand' => brand['id'], 'domainId' => domain_id, 'purpose' => purpose,
+            'logo' => 'crisp', 'wording' => wording, 'fields' => real_fields, 'padlock' => true
+          }
+          return true if BreakEscape::PhishScore.score(page_def, choices, target_id)[:meets_threshold]
+        end
+      end
+    end
+  end
+  false
+end
+
+# The fake-check variant (scoreFakeCheck): four independent menus (hosts, pretexts, steps,
+# urgencies) and no gates. Each factor's points depend only on its own menu option, so the full
+# product of the four menus is a small, exact search.
+def fake_check_buildable?(page_def, target_id)
+  check = page_def['check'].is_a?(Hash) ? page_def['check'] : {}
+  ids = lambda do |key|
+    out = Array(check[key]).filter_map { |o| o['id'] if o.is_a?(Hash) }
+    out.empty? ? [nil] : out
+  end
+  ids.call('hosts').each do |host_id|
+    ids.call('pretexts').each do |pretext_id|
+      ids.call('steps').each do |steps_id|
+        ids.call('urgencies').each do |urgency_id|
+          choices = { 'check' => { 'hostId' => host_id, 'pretextId' => pretext_id,
+                                   'stepsId' => steps_id, 'urgencyId' => urgency_id } }
+          return true if BreakEscape::PhishScore.score(page_def, choices, target_id)[:meets_threshold]
+        end
+      end
+    end
+  end
+  false
+end
+
+def check_credentials(json_data)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  creds = json_data['credentials']
+  return issues unless creds.is_a?(Hash)
+
+  cm = BreakEscape::CredentialModel
+  ai = BreakEscape::AccessIdentities
+  capm = BreakEscape::CaptureModel
+  nm = BreakEscape::NetworkModel
+  err  = ->(msg) { issues << "❌ ERROR: credentials: #{msg}" }
+  warn = ->(msg) { issues << "⚠️ WARNING: credentials: #{msg}" }
+  info = ->(msg) { issues << "ℹ️ INFO: credentials: #{msg}" }
+
+  # Account holders and sign-in PCs, by id.
+  accounts_by_id = cm.room_npcs(json_data).select { |n| ai.account?(n) }.to_h { |n| [n['id'].to_s, n] }
+  pcs = cm.sign_in_pcs(json_data)
+  pcs_by_id = pcs.to_h { |pc| [pc['id'].to_s, pc] }
+  headless_pc_ids = pcs.select { |pc| nm.headless?(pc) }.map { |pc| pc['id'].to_s }.to_set
+
+  # Foothold ids any jack, access point or implant/grant can create. The runtime only ever keys
+  # player_state['footholds'] by the prefixed forms (plan 9.1 authors "jack_comms_port"): a jack is
+  # "jack_<jackId>" (foothold_id_for), a Wi-Fi AP is "wifi_<network>" (wifi_foothold_id), an implant
+  # is "implant_<pc>". A proof must name one of those to fire live. `foothold_ids` holds the runtime
+  # (prefixed) forms a proof may name; `bare_foothold_ids` holds the matching bare source ids, so a
+  # proof written with a bare id can be told apart and warned about rather than passed (R2 m1).
+  foothold_ids = Set.new
+  bare_foothold_ids = Set.new
+  nm.jacks(json_data).each do |e|
+    jid = e[:object]['id'].to_s
+    next if jid.empty?
+
+    bare_foothold_ids << jid
+    foothold_ids << "jack_#{jid}"
+  end
+  nm.wifi_aps(json_data).each do |e|
+    ap = e[:object]
+    bare_foothold_ids << ap['id'].to_s if ap.is_a?(Hash) && ap['id']
+    foothold_ids << "wifi_#{e[:network]}" if e[:network]
+  end
+  # A grant_foothold action (scripted or a player implant) grants its foothold through POST
+  # /network/implant, whose runtime id is "implant_<pc>" (implant_foothold_id_for). The runtime
+  # keys the foothold by that prefixed id; the bare PC id is tracked only to warn on a proof that
+  # names it (R1 m4, R2 m1). The runtime reads player_state['footholds'].
+  nm.grant_foothold_actions(json_data).each do |a|
+    pc = a[:pc].to_s
+    next if pc.empty?
+
+    bare_foothold_ids << pc
+    foothold_ids << "implant_#{pc}"
+  end
+
+  declared_globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'].keys.map(&:to_s).to_set : Set.new
+
+  notes_family = %w[notes notes2 notes4 notes5].to_set
+  always_allowed = BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.to_set
+  # Client-built decor cups (games_controller DECOR_CUP_TYPES, mirrored by DeclaredGrants::DECOR_CUPS)
+  # have no scenario lookup either, so a credential on one would be keyed on a client-chosen id (R3 m1).
+  decor_cups = BreakEscape::DeclaredGrants::DECOR_CUPS.to_set
+
+  # Count and id-pattern checks over the raw map (not the 64-capped reader).
+  err.call("more than #{cm::MAX_ENTRIES} entries (#{creds.size}); the server reads only the first #{cm::MAX_ENTRIES} by sorted id.") if creds.size > cm::MAX_ENTRIES
+  creds.each_key do |id|
+    err.call("credential id '#{id}' is outside the pattern ^[a-z][a-z0-9_]{0,63}$.") unless id.is_a?(String) && id.match?(cm::ID_PATTERN)
+  end
+
+  # Every item carrying a `credential`, by path (for the item-field checks).
+  cred_items = []
+  walk_items = lambda do |node, path|
+    case node
+    when Hash
+      if node['type'].is_a?(String) && node['credential'].is_a?(String)
+        cred_items << { item: node, path: path }
+      end
+      node.each { |k, v| walk_items.call(v, "#{path}/#{k}") }
+    when Array
+      node.each_with_index { |v, i| walk_items.call(v, "#{path}[#{i}]") }
+    end
+  end
+  walk_items.call(json_data, '')
+
+  # policy accepts checks (independent of the registry).
+  policies = json_data['policies'].is_a?(Hash) ? json_data['policies'] : {}
+  used_policy_names = Set.new
+  pcs.each do |pc|
+    used_policy_names << (cm.present_string?(pc['policy']) ? pc['policy'] : json_data['defaultPolicy']).to_s
+  end
+  policies.each do |pname, policy|
+    next unless policy.is_a?(Hash) && policy.key?('accepts')
+
+    list = policy['accepts']
+    if list.is_a?(Array)
+      list.each do |k|
+        err.call("policy '#{pname}' accepts an unknown kind '#{k}'.") unless cm::KINDS.key?(k)
+      end
+      warn.call("policy '#{pname}' accepts a list without 'password'; password is always accepted anyway, so the list is misleading.") unless list.include?('password')
+    end
+    warn.call("policy '#{pname}' sets 'accepts' but no PC uses it.") unless used_policy_names.include?(pname.to_s)
+  end
+
+  # unlock_object tasks, for the "relay sign-in never completes it" warning.
+  invite_connect_pcs = creds.select { |_id, e| e.is_a?(Hash) && e['kind'] == 'assist_invite' }
+                            .filter_map { |_id, e| e['connectsTo'].to_s if cm.present_string?(e['connectsTo']) }.to_set
+  if !invite_connect_pcs.empty? && json_data['objectives'].is_a?(Array)
+    json_data['objectives'].each do |obj|
+      Array(obj.is_a?(Hash) ? obj['tasks'] : nil).each do |task|
+        next unless task.is_a?(Hash) && task['type'] == 'unlock_object'
+
+        target = task['targetObject'] || task['target'] || task['object']
+        warn.call("an unlock_object task targets '#{target}', an assist_invite's connectsTo; a relay sign-in never completes it.") if invite_connect_pcs.include?(target.to_s)
+      end
+    end
+  end
+
+  # Tokens (K5): a token sign-in never adds its PC to signedInPcs, so a session proof or an
+  # unlock_object task on a token's connectsTo is never satisfied by it.
+  token_connect_pcs = creds.select { |_id, e| e.is_a?(Hash) && e['kind'] == 'token' }
+                           .filter_map { |_id, e| e['connectsTo'].to_s if cm.present_string?(e['connectsTo']) }.to_set
+  if !token_connect_pcs.empty? && json_data['objectives'].is_a?(Array)
+    json_data['objectives'].each do |obj|
+      Array(obj.is_a?(Hash) ? obj['tasks'] : nil).each do |task|
+        next unless task.is_a?(Hash) && task['type'] == 'unlock_object'
+
+        target = task['targetObject'] || task['target'] || task['object']
+        warn.call("an unlock_object task targets '#{target}', a token's connectsTo; a token sign-in never completes it.") if token_connect_pcs.include?(target.to_s)
+      end
+    end
+  end
+
+  # The network a foothold id sits on: a jack's own, wifi_<network>, or an implant PC's.
+  net_entries = nm.room_objects(json_data)
+  foothold_network = lambda do |fid|
+    if fid.start_with?('jack_')
+      jid = fid.delete_prefix('jack_')
+      nm.jacks(json_data).find { |e| e[:object]['id'].to_s == jid }&.dig(:network)
+    elsif fid.start_with?('wifi_')
+      fid.delete_prefix('wifi_')
+    elsif fid.start_with?('implant_')
+      pid = fid.delete_prefix('implant_')
+      net_entries.find { |e| e[:object].is_a?(Hash) && e[:object]['id'].to_s == pid }&.dig(:network)
+    end
+  end
+  networks_reach = lambda do |from, to|
+    seen = Set[from]
+    queue = [from]
+    until queue.empty?
+      cur = queue.shift
+      return true if cur == to
+
+      nm.linked_networks(json_data, cur).each { |nb| queue << nb if seen.add?(nb) }
+    end
+    false
+  end
+
+  creds.each do |id, entry|
+    next unless entry.is_a?(Hash)
+
+    kind = entry['kind']
+    label = "credential '#{id}'"
+
+    # Kind.
+    if !cm::KINDS.key?(kind)
+      err.call("#{label} has an unknown kind '#{kind}'.")
+    elsif !cm.kind_built?(kind)
+      err.call("#{label} kind '#{kind}' is not supported until phase 3.")
+    end
+
+    # Token (K5, plan section 10): a label, a bounded life and a foothold proof.
+    if kind == 'token'
+      err.call("#{label} is a token and must set label (the sign-in screen and the Sign-ins list name it).") unless cm.present_string?(entry['label'])
+      err.call("#{label} expiresMin must be a whole number of minutes from 1 to #{cm::TOKEN_MAX_MIN}.") if cm.token_expires_min(entry).nil?
+      pk0 = cm.proof_kind(entry['proof'])
+      err.call("#{label} is a token and its proof must be a foothold (the token is recorded by the foothold that holds it).") if pk0 && pk0 != 'foothold'
+      info.call("#{label} a token expires on a clock that starts when its foothold is first gained; it must not be the only route to something the mission needs.")
+    end
+
+    # Label: the sign-in screen and desktop keep it on one line and cut it with an ellipsis.
+    if entry['label'].is_a?(String) && entry['label'].length > 32
+      warn.call("#{label} label is #{entry['label'].length} characters; over 32 it is cut with an ellipsis on a narrow screen. Shorten it.")
+    end
+
+    # Account.
+    npc = accounts_by_id[entry['account'].to_s]
+    err.call("#{label} account '#{entry['account']}' is not an account holder.") unless npc
+
+    # connectsTo.
+    connecting = cm.connecting?(kind)
+    connects_to = entry['connectsTo']
+    if kind == 'password'
+      err.call("#{label} is a password and must not set connectsTo.") if entry.key?('connectsTo')
+    elsif connecting
+      if !cm.present_string?(connects_to)
+        err.call("#{label} is a connecting kind and must set connectsTo.")
+      elsif !pcs_by_id.key?(connects_to.to_s)
+        err.call("#{label} connectsTo '#{connects_to}' is not a sign-in PC.")
+      elsif kind == 'assist_invite' && headless_pc_ids.include?(connects_to.to_s)
+        err.call("#{label} is an assist_invite whose connectsTo '#{connects_to}' is headless; there is no screen to share.")
+      end
+    end
+
+    # foundIn.
+    if kind == 'password'
+      err.call("#{label} is a password and must set foundIn.") unless cm.present_string?(entry['foundIn'])
+    elsif entry.key?('foundIn')
+      err.call("#{label} sets foundIn, which is only allowed on a password.")
+    end
+
+    # endsOnGlobal.
+    if entry.key?('endsOnGlobal')
+      if kind != 'assist_invite'
+        err.call("#{label} sets endsOnGlobal, which is only allowed on an assist_invite.")
+      elsif !declared_globals.include?(entry['endsOnGlobal'].to_s)
+        err.call("#{label} endsOnGlobal '#{entry['endsOnGlobal']}' names no declared globalVariable.")
+      end
+    end
+
+    # proof.
+    proof = entry['proof']
+    pk = cm.proof_kind(proof)
+    if pk.nil?
+      err.call("#{label} proof must name exactly one of #{cm::PROOF_KINDS.join(', ')}.")
+    else
+      case pk
+      when 'session'
+        session_pc = proof['session'].to_s
+        if !pcs_by_id.key?(session_pc)
+          err.call("#{label} proof session '#{session_pc}' is not a sign-in PC.")
+        elsif kind == 'assist_invite' && connects_to.to_s == session_pc
+          warn.call("#{label} proof is a session on the invite's own connectsTo; a relay sign-in never satisfies it.")
+        elsif token_connect_pcs.include?(session_pc)
+          warn.call("#{label} proof is a session on '#{session_pc}', a token's connectsTo; a token sign-in never adds the PC to the signed-in list, so it never satisfies it.")
+        end
+      when 'held'
+        item_id = proof['held'].to_s
+        definition = cm.item_definition(json_data, item_id)
+        if definition.nil?
+          err.call("#{label} proof held '#{item_id}' names no item in the held scope.")
+        else
+          placeable = definition['takeable'] == true
+          grant_ids = BreakEscape::DeclaredGrants.for(json_data).map { |g| g['item'].is_a?(Hash) ? g['item']['id'].to_s : nil }.compact.to_set
+          held_in_itemsheld = cm.room_npcs(json_data).any? { |n| Array(n['itemsHeld']).any? { |i| i.is_a?(Hash) && i['id'].to_s == item_id } }
+          start_ids = Array(json_data['startItemsInInventory']).filter_map { |i| i['id'].to_s if i.is_a?(Hash) }.to_set
+          reachable = placeable || grant_ids.include?(item_id) || held_in_itemsheld || start_ids.include?(item_id)
+          err.call("#{label} proof held '#{item_id}' can never hold: the item is not takeable and is in no declared grant, NPC itemsHeld or start inventory.") unless reachable
+
+          # Item-field and cross-reference checks on the definition.
+          if notes_family.include?(definition['type'])
+            err.call("#{label} held item '#{item_id}' is a notes-family type ('#{definition['type']}'); it never reaches the tray, so use text_file.")
+          elsif always_allowed.include?(definition['type'])
+            err.call("#{label} held item '#{item_id}' is an always-allowed type ('#{definition['type']}'); the client could build one, so use text_file.")
+          end
+          if definition['credential'].to_s != id.to_s
+            warn.call("#{label} proof held '#{item_id}' but that item does not carry credential '#{id}' (it carries '#{definition['credential']}').")
+          end
+          if kind == 'assist_invite' && grant_ids.include?(item_id) && !held_in_itemsheld
+            warn.call("#{label} is an assist_invite whose code is a declared grant; it can be claimed at once. Give it from the NPC's itemsHeld through an ink gift.")
+          end
+          if kind == 'saved_connection' && grant_ids.include?(item_id) && !placeable && !held_in_itemsheld && !start_ids.include?(item_id)
+            warn.call("#{label} is a saved_connection placed only by a declared grant; a tampered client can claim it at once. Place it in a room, on a desktop or in a share.")
+          end
+        end
+      when 'foothold'
+        fid = proof['foothold'].to_s
+        if foothold_ids.include?(fid)
+          # Runtime (prefixed) form: fires live.
+        elsif bare_foothold_ids.include?(fid)
+          warn.call("#{label} proof foothold '#{fid}' names a bare source id; the runtime only keys footholds by the prefixed form (jack_, wifi_ or implant_), so this proof can never fire. Use 'jack_#{fid}', 'wifi_<network>' or 'implant_#{fid}' as the source requires.")
+        else
+          err.call("#{label} proof foothold '#{fid}' names no foothold any jack, access point or implant action can create.")
+        end
+      when 'planted', 'dropped'
+        # Capture proofs; reachability is covered by the capture model's own checks.
+      end
+    end
+
+    # Warnings that need the account and PC.
+    if npc && connecting && pcs_by_id.key?(connects_to.to_s)
+      pc = pcs_by_id[connects_to.to_s]
+      warn.call("#{label} connectsTo '#{connects_to}' whose access list does not admit account '#{entry['account']}'.") unless cm.pc_admits_account?(pc, npc)
+      policy = cm.policy_for(json_data, pc)
+      if kind == 'saved_connection' && policy.is_a?(Hash) && policy['maxAttempts']
+        info.call("#{label} connectsTo '#{connects_to}' whose policy sets maxAttempts; a lockout there refuses the connection for the rest of the game (lockouts never expire), so it must not be the only route to something the mission needs.")
+      end
+    end
+
+    # Token warnings: the proof foothold must be able to reach the PC, and its policy must accept tokens.
+    if kind == 'token' && connecting && pcs_by_id.key?(connects_to.to_s)
+      tpc = pcs_by_id[connects_to.to_s]
+      tpolicy = cm.policy_for(json_data, tpc)
+      if tpolicy.is_a?(Hash) && tpolicy['accepts'].is_a?(Array) && !tpolicy['accepts'].include?('token')
+        warn.call("#{label} connectsTo '#{connects_to}' whose policy '#{tpc['policy'] || json_data['defaultPolicy']}' does not accept 'token'; add it to the policy's accepts list.")
+      end
+      fid = cm.token_proof_foothold(entry)
+      from_net = fid ? foothold_network.call(fid) : nil
+      to_net = net_entries.find { |e| e[:object].is_a?(Hash) && e[:object]['id'].to_s == connects_to.to_s }&.dig(:network)
+      if from_net && to_net && !networks_reach.call(from_net, to_net)
+        warn.call("#{label} proof foothold network cannot reach '#{connects_to}': '#{from_net}' has no link path to '#{to_net}'.")
+      end
+    end
+
+    # No machine accepts this credential.
+    if npc && (kind == 'password' || connecting)
+      warn.call("#{label} is accepted by no machine: no sign-in PC's policy accepts kind '#{kind}', admits the account and (for a connecting kind) is its connectsTo.") if cm.pcs_accepting(json_data, id).empty?
+    end
+
+    # A saved_connection whose connectsTo nothing can reach.
+    if kind == 'saved_connection' && pcs_by_id.key?(connects_to.to_s) && foothold_ids.empty?
+      warn.call("#{label} is a saved_connection but no foothold or access point can reach its connectsTo.")
+    end
+  end
+
+  # Items carrying a credential: the registry id must exist, and its entry's proof must be `held`
+  # on that item.
+  cred_items.each do |rec|
+    item = rec[:item]
+    cid = item['credential'].to_s
+    entry = creds[cid]
+    if !entry.is_a?(Hash)
+      err.call("item '#{item['id'] || item['name']}' names credential '#{cid}', which is not a registry id.")
+      next
+    end
+    if notes_family.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is a notes-family type ('#{item['type']}'); use text_file.")
+    elsif always_allowed.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is an always-allowed type ('#{item['type']}'); use text_file.")
+    elsif decor_cups.include?(item['type'])
+      err.call("item '#{item['id'] || item['name']}' carries a credential but is a decor-cup type ('#{item['type']}'); the server cannot look it up in the scenario, so use text_file.")
+    end
+    held_id = entry['proof'].is_a?(Hash) ? entry['proof']['held'].to_s : nil
+    unless held_id && held_id == item['id'].to_s
+      warn.call("item '#{item['id'] || item['name']}' carries credential '#{cid}' but that entry's proof is not held on this item.")
+    end
+  end
+
+  issues
+end
+
 def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   issues = []
   return issues unless json_data.is_a?(Hash)
@@ -6537,8 +7580,10 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
 
     capture_route = payload.is_a?(Hash) ||
                     Array(npc['eventMappings']).any? { |m| m.is_a?(Hash) && m['addCapture'].is_a?(Hash) }
-    reveal = json_data.dig('social', 'captures', 'revealSecret') if json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash)
-    if capture_route && !reveal
+    captures_cfg = json_data['social'].is_a?(Hash) && json_data['social']['captures'].is_a?(Hash) ? json_data['social']['captures'] : {}
+    # An explicit revealSecret: false is a choice (the password is typed from its earned
+    # source), not a forgotten switch, so only a missing one is warned about
+    if capture_route && !captures_cfg.key?('revealSecret')
       warn.call("NPC #{name_of.call(npc)} has a capture route (usePayload or addCapture), but " \
                 'social.captures.revealSecret is not set, so a captured sign-in never shows its password.')
     end
@@ -6550,15 +7595,19 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
              '(usernames compare trimmed and case-insensitively).')
   end
 
-  # A non-account capture secret that is also a password or PIN lock code is withheld until a
-  # capture proof holds (Game#authored_capture_secret), so one authored with no proof is never
-  # served and the capture silently stops working. Warn the author (usePayload/capture review R1).
-  lock_codes = BreakEscape::CaptureModel.lock_codes(json_data)
-  unless lock_codes.empty?
+  # A non-account capture secret that is also a hard-access value (a password or PIN lock code, an
+  # RFID or biometric requires, a Wi-Fi PSK or a flag) is withheld until a capture proof holds
+  # (Game#authored_capture_secret / authored_capture_served?), so one authored with no proof is never
+  # served and the capture silently stops working. Warn the author (usePayload/capture review R1,
+  # widened from lock codes to the full hard-access set at phish-evidence review R1, Minor 2: the
+  # server withholds a PSK or flag secret the same way it withholds a lock code). Stays a warning,
+  # not an error: the server never over-serves such a capture, it only withholds it.
+  hard_access = BreakEscape::CaptureModel.hard_access_values(json_data)
+  unless hard_access.empty?
     room_npcs.reject { |e| ai.account?(e[:npc]) }.each do |e|
       npc = e[:npc]
       payload = npc['usePayload']
-      if payload.is_a?(Hash) && lock_codes.include?(payload['secret'].to_s)
+      if payload.is_a?(Hash) && BreakEscape::CaptureModel.lock_answer?(hard_access, payload['secret'])
         own = payload['targetId']
         ungated = if own.is_a?(String) && !own.strip.empty?
                     !payload['proof'].is_a?(Hash)
@@ -6570,20 +7619,105 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
                     end
         end
         if ungated
-          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a password or PIN lock " \
-                    'code but no capture proof gates it, so the capture is withheld and never served. Add a ' \
+          warn.call("NPC #{name_of.call(npc)} has a usePayload.secret that is also a hard-access value (a " \
+                    'password or PIN lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) but no ' \
+                    'capture proof gates it, so the capture is withheld and never served. Add a ' \
                     "'proof' to the capture, or make the secret open nothing.")
         end
       end
       Array(npc['eventMappings']).each_with_index do |mapping, i|
         capture = mapping.is_a?(Hash) ? mapping['addCapture'] : nil
-        next unless capture.is_a?(Hash) && lock_codes.include?(capture['secret'].to_s)
+        next unless capture.is_a?(Hash) && BreakEscape::CaptureModel.lock_answer?(hard_access, capture['secret'])
         next if capture['proof'].is_a?(Hash)
 
-        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a password or PIN " \
-                  'lock code but the mapping has no \'proof\', so the capture is withheld and never served. ' \
+        warn.call("NPC #{name_of.call(npc)} eventMappings[#{i}].addCapture.secret is also a hard-access value " \
+                  '(a password or PIN lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) but the ' \
+                  "mapping has no 'proof', so the capture is withheld and never served. " \
                   "Add a 'proof' to the capture, or make the secret open nothing.")
       end
+    end
+  end
+
+  # Phish evidence: a landing page whose capture.secret is a hard-access value (a password or PIN
+  # lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag) is only safe to serve once the
+  # server has recorded a built, convincing page and a landed send for it (PHISH_EVIDENCE_SERVER_PLAN
+  # sections 11 to 13). For such a page three facts must all hold, or a tampered client can forge the
+  # build and send state and be served the secret without running the minigames:
+  #   1. a social.mailClient.payloadKit link kit names the page (landingPageId), so there is a kit to
+  #      attach and the server has something to record a send against;
+  #   2. some authored social.phishTargets entry is one the page aims at (its own 'targets' map), so
+  #      the link kit has an authored target that can be sent it and the server can record a landed
+  #      send to a real target. This is a STRUCTURAL check only: it proves a phish target the page is
+  #      aimed at exists and carries the per-target threshold. The full "a message can land" check
+  #      (does a composed message actually pass the target's required factors) needs the send judge
+  #      BreakEscape::PhishJudge, which lands in chunk 4; it should be added here then, so an aimed
+  #      target that no message could ever satisfy is also caught at authoring time;
+  #   3. the page is buildable: some closed-menu choice set reaches the aimed target's linkThreshold
+  #      (checked with the shared BreakEscape::PhishScore port, section 13 bullet 3). If no choice set
+  #      can ever be convincing, the server can never record a built page, so the secret is withheld
+  #      from honest play forever while the validator would otherwise pass.
+  # Error on any of the three so a future author cannot quietly reopen the forge or ship an
+  # unsolvable protected page. Where the landing secret is not a hard-access value (every awareness
+  # page), nothing fires.
+  #
+  # Only the Array form of social.landingPages is iterated, matching exactly what the server serves a
+  # phish secret from (Game#capture_secrets_for_client, game.rb:1428, `pages.is_a?(Array) ? pages :
+  # []`). A Hash-form landingPages is never read by that serve path, so a hard-access secret authored
+  # under a Hash form can never be served through the forge and needs no gate here; erroring on it
+  # would be a false positive the server cannot reach (review R1, Minor 1).
+  unless hard_access.empty?
+    evidence_kits = BreakEscape::CaptureModel.page_evidence_kits(json_data)
+    phish_target_ids = BreakEscape::CaptureModel.phish_target_ids(json_data).to_set
+    social = json_data['social']
+    array_pages = social.is_a?(Hash) && social['landingPages'].is_a?(Array) ? social['landingPages'] : []
+    array_pages.each do |page|
+      next unless page.is_a?(Hash)
+
+      capture = page['capture']
+      next unless capture.is_a?(Hash)
+
+      secret = capture['secret']
+      next unless BreakEscape::CaptureModel.present_string?(secret) && BreakEscape::CaptureModel.lock_answer?(hard_access, secret)
+
+      page_id = page['id']
+      page_label = BreakEscape::CaptureModel.present_string?(page_id) ? page_id : '(no id)'
+
+      # 1. A link kit must name the page.
+      info = BreakEscape::CaptureModel.present_string?(page_id) ? evidence_kits[page_id] : nil
+      unless info.is_a?(Hash) && Array(info[:kits]).any?
+        err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+                 'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag, but no ' \
+                 'social.mailClient.payloadKit link kit names it (landingPageId), so the server cannot ' \
+                 'gate the reveal on a built page and a landed send. A tampered client could forge the ' \
+                 'build and send and be served the secret. Wire the page through a link kit, or make the ' \
+                 'secret open nothing.')
+        next
+      end
+
+      # 2. Some authored phish target the page aims at must exist (kit reachability, structural).
+      page_targets = page['targets'].is_a?(Hash) ? page['targets'].keys : []
+      aimed = page_targets.select { |t| phish_target_ids.include?(t.to_s) }
+      if aimed.empty?
+        err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+                 'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag, and a link kit names ' \
+                 'it, but no authored social.phishTargets entry is one the page aims at (its \'targets\' ' \
+                 'map), so the link kit has no real target to be sent to and the server can never record ' \
+                 'a landed send for it. Add a phish target id to the page\'s targets map, or make the ' \
+                 'secret open nothing. (The full check that a composed message can actually land needs ' \
+                 'the send judge PhishJudge, chunk 4.)')
+        next
+      end
+
+      # 3. The page must be buildable for some aimed target (PhishScore: a choice set meets threshold).
+      next if aimed.any? { |target_id| landing_page_buildable?(page, target_id) }
+
+      err.call("landing page '#{page_label}' carries a capture.secret that is also a password or PIN " \
+               'lock code, an RFID or biometric requires, a Wi-Fi PSK or a flag wired through a link ' \
+               'kit, but no closed-menu choice set reaches its linkThreshold for any phish target the ' \
+               'page aims at (checked with BreakEscape::PhishScore), so the page can never be scored ' \
+               'convincing, the server can never record a built page, and the secret is withheld from ' \
+               'honest play. Lower the target linkThreshold or minDomainTier, fix the page menus, or ' \
+               'make the secret open nothing.')
     end
   end
 
@@ -6628,6 +7762,41 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     next if policies.key?(e[:object]['policy'].to_s)
 
     err.call("'#{e[:path]}' policy '#{e[:object]['policy']}' names no entry in 'policies'.")
+  end
+
+  # remoteScreen (credential keyring K0, section 5.3): a policy with remoteScreen on a
+  # remote: "blocked" policy warns (no remote screen opens); remoteScreen: "tiles" on a
+  # policy only PCs with loginPicker:false or headless PCs use draws an info line (no PC
+  # tiles ever show through it).
+  # The sign-in PCs whose effective policy is the named one. The policy name is resolved
+  # without ActiveSupport (the validator never requires it; .presence would crash, R1 B1),
+  # matching the idiom used for defaultPolicy above.
+  pcs_under = lambda do |policy_name|
+    pcs.select do |e|
+      p = e[:object]['policy']
+      used = (p.is_a?(String) && !p.empty? ? p : json_data['defaultPolicy']).to_s
+      used == policy_name
+    end
+  end
+  tiles_capable = lambda do |pc|
+    picker = pc.key?('loginPicker') ? pc['loginPicker'] : 'accounts'
+    !(picker == false) && !(pc['headless'] == true)
+  end
+  policies.each do |policy_name, policy|
+    next unless policy.is_a?(Hash) && policy.key?('remoteScreen')
+
+    if policy['remote'] == 'blocked'
+      warn.call("policy '#{policy_name}' sets remoteScreen but remote is 'blocked', so no remote sign-in screen opens under it.")
+      # The warning already says no screen opens under a blocked policy; the info line below
+      # would double the noise for the same condition (R1 m2), so stop here.
+      next
+    end
+    # Only when PCs are actually under the policy and none could ever tile: a policy no PC
+    # uses is odd on its own but does not mean "no PC tiles show" (R1 m1).
+    under = pcs_under.call(policy_name.to_s)
+    if policy['remoteScreen'] == 'tiles' && under.any? && under.none? { |e| tiles_capable.call(e[:object]) }
+      issues << "ℹ️ access model: policy '#{policy_name}' has remoteScreen 'tiles' but every PC under it has loginPicker false or is headless, so no PC tiles show over the network."
+    end
   end
 
   # Profile item ids: unique across profiles and room objects (section 5.1)
@@ -6813,7 +7982,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
   end
   find_rewards.call(json_data)
   # Owner claim q78, judged as the server judges it: on the data as prepared at game creation
-  # (habits expanded, so screenHabit is filled; object ids stamped), and only where check 10 is
+  # (habits expanded, so habits.screen is filled; object ids stamped), and only where check 10 is
   # the reason the claim is refused. An owner with no account or not on the PC's access list, a
   # screen that always locks and a policy with autoLockMin 0 are refused by an earlier check.
   claim_data = nil
@@ -6852,7 +8021,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     if owner_id
       owner = npc_by_id[owner_id.to_s]
       if owner.nil?
-        err.call("#{where} screenOwner '#{owner_id}' names unknown person (it must be a room NPC id).")
+        err.call("#{where} owner '#{owner_id}' names unknown person (it must be a room NPC id).")
       else
         lock_chance = pc['lockChance']
         if lock_chance.is_a?(Numeric) && lock_chance.positive? && lock_chance < 1
@@ -6903,7 +8072,7 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     owner_pairs << [e, home] if home.is_a?(String) && ws_room.key?(home)
   end
   workstations.each do |w|
-    owner = w[:object]['screenOwner']
+    owner = w[:object]['owner']
     owner_pairs << [npc_by_id[owner], w[:object]['id']] if owner.is_a?(String) && npc_by_id[owner]
   end
   owner_pairs.each do |e, ws_id|
@@ -7083,7 +8252,9 @@ def main
     skip_ink: false,
     no_lint: false,
     strict_social: false,
-    known_failures: File.join(__dir__, 'validator_known_failures.json')
+    known_failures: File.join(__dir__, 'validator_known_failures.json'),
+    campaign: false,
+    office_summary: false
   }
 
   OptionParser.new do |opts|
@@ -7124,6 +8295,14 @@ def main
 
     opts.on('--no-known-failures', 'Ignore the known-failures list and show the raw result') do
       options[:known_failures] = nil
+    end
+
+    opts.on('--campaign', 'Treat this scenario as a campaign mission for the office-life checks V2, V4 and V5 (fixture tests)') do
+      options[:campaign] = true
+    end
+
+    opts.on('--office-summary', 'Print the office-life summary (V1): one line per NPC, sorted by id so it diffs') do
+      options[:office_summary] = true
     end
 
     opts.on('-h', '--help', 'Show this help message') do
@@ -7175,6 +8354,224 @@ def main
     $stdout = real_out
   end
   exit code
+end
+
+# ---------------------------------------------------------------------------
+# Step 4. Reference and id checks driven by schema annotations.
+#
+# Every property that names something carries "x-ref": "<kind>" in the schema (on the property, or,
+# for an array of references, on its items). This check walks the scenario with the shared schema
+# walker (BreakEscape::SchemaWalk, which pairs each value with its schema Node through the step 2b
+# resolver), reads the x-ref kind off each string leaf's Node, and resolves it against an index of
+# every id of that kind in the scenario. An unresolved reference is a ⚠️ WARNING; the existing
+# one-off checks that already error (connections, targetRoom, unlockDoor, setVariable globals) keep
+# their level, so x-ref is placed on the fields they do not cover.
+#
+# It also reports id-uniqueness: an object id used by two objects at any depth, and an NPC id used
+# twice, each a warning (the social lint already errors on duplicate top-level room-object ids, so
+# those are left to it); a string used as both a task id and a global is a note.
+
+# Collect every object/item id at any depth: rooms[*].objects and their contents/itemsHeld, plus
+# startItemsInInventory. Yields [id, path_string] for each object that carries a non-empty id.
+def each_object_id(json_data)
+  return enum_for(:each_object_id, json_data) unless block_given?
+
+  visit = lambda do |obj, path|
+    next unless obj.is_a?(Hash)
+
+    id = obj['id']
+    yield id, path if id.is_a?(String) && !id.empty?
+    %w[contents itemsHeld].each do |key|
+      Array(obj[key]).each_with_index { |child, i| visit.call(child, "#{path}/#{key}[#{i}]") }
+    end
+  end
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    Array(room['objects']).each_with_index { |obj, i| visit.call(obj, "rooms/#{room_id}/objects[#{i}]") }
+  end
+  Array(json_data['startItemsInInventory']).each_with_index do |obj, i|
+    visit.call(obj, "startItemsInInventory[#{i}]")
+  end
+end
+
+# Every id of an item that an action creates in the inventory: a give_item action's nested "item"
+# object, anywhere in the scenario (triggerOnInteract, flagRewards, onConfirm, timers, onInteract).
+# Yields the id string. These are not in any room's objects, so each_object_id misses them, but a
+# wear/take_off/unlock_object reference can name them, so the index needs them.
+def each_given_item_id(json_data)
+  return enum_for(:each_given_item_id, json_data) unless block_given?
+
+  visit = lambda do |node|
+    case node
+    when Hash
+      item = node['item']
+      if item.is_a?(Hash) && item['id'].is_a?(String) && !item['id'].empty?
+        yield item['id']
+      end
+      node.each_value { |v| visit.call(v) }
+    when Array
+      node.each { |v| visit.call(v) }
+    end
+  end
+  visit.call(json_data)
+end
+
+# Every NPC id: rooms[*].npcs, top-level npcs and phoneNPCs. Yields [id, path_string].
+def each_npc_id(json_data)
+  return enum_for(:each_npc_id, json_data) unless block_given?
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    Array(room['npcs']).each_with_index do |npc, i|
+      yield npc['id'], "rooms/#{room_id}/npcs[#{i}]" if npc.is_a?(Hash) && npc['id'].is_a?(String) && !npc['id'].empty?
+    end
+  end
+  %w[npcs phoneNPCs].each do |key|
+    Array(json_data[key]).each_with_index do |npc, i|
+      yield npc['id'], "#{key}[#{i}]" if npc.is_a?(Hash) && npc['id'].is_a?(String) && !npc['id'].empty?
+    end
+  end
+end
+
+# The index of every id by x-ref kind. Globals are the declared globalVariables plus the
+# engine-written patterns the schema lists under "x-engineGlobals" (e.g. "<npcId>_frustration").
+def build_reference_index(json_data)
+  object_ids = Set.new
+  each_object_id(json_data) { |id, _| object_ids.add(id) }
+  # Items defined inside a give_item action (triggerOnInteract, flagRewards, onConfirm, timers) are
+  # real inventory ids a wear/take_off/unlock_object action can name, but they live in an action,
+  # not in a room's objects, so each_object_id does not see them. Fold them into the object/item
+  # index so such a reference resolves (e.g. lab_physical_pentest's granted hi-vis vest).
+  each_given_item_id(json_data) { |id| object_ids.add(id) }
+  npc_ids = Set.new
+  each_npc_id(json_data) { |id, _| npc_ids.add(id) }
+  room_ids = (json_data['rooms'] || {}).keys.to_set
+  task_ids = Set.new
+  aim_ids = Set.new
+  Array(json_data['objectives']).each do |aim|
+    next unless aim.is_a?(Hash)
+
+    aim_ids.add(aim['aimId']) if aim['aimId'].is_a?(String)
+    Array(aim['tasks']).each { |t| task_ids.add(t['taskId']) if t.is_a?(Hash) && t['taskId'].is_a?(String) }
+  end
+
+  globals = (json_data['globalVariables'] || {}).keys.to_set
+  engine = begin
+    BreakEscape::ScenarioSchema.root.table.root_schema['x-engineGlobals']
+  rescue StandardError
+    nil
+  end
+  Array(engine).each do |pat|
+    next unless pat.is_a?(Hash) && pat['suffix'].is_a?(String)
+
+    over = pat['over'] == 'npc' ? npc_ids : object_ids
+    over.each { |id| globals.add("#{id}#{pat['suffix']}") }
+  end
+
+  {
+    'room' => room_ids,
+    'npc' => npc_ids,
+    'object' => object_ids,
+    'item' => object_ids,
+    'task' => task_ids,
+    'aim' => aim_ids,
+    'global' => globals,
+    'network' => (json_data['networks'] || {}).keys.to_set,
+    'resource' => (json_data['resources'] || {}).keys.to_set,
+    'policy' => (json_data['policies'] || {}).keys.to_set,
+    'role' => (json_data['roles'] || {}).keys.to_set
+  }
+end
+
+def check_references(json_data, _repo_root = nil)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  index = build_reference_index(json_data)
+  root = BreakEscape::ScenarioSchema.root
+  BreakEscape::SchemaWalk.walk(json_data, root) do |value, node, path|
+    next unless value.is_a?(String) && !value.empty?
+
+    kind = BreakEscape::SchemaWalk.ref_kind(node)
+    next unless kind
+
+    known = index[kind]
+    next if known.nil? || known.include?(value)
+
+    issues << "⚠️ WARNING: '#{BreakEscape::SchemaWalk.path_string(path)}' references #{kind} '#{value}', " \
+              'which is not defined in this scenario.'
+  end
+
+  issues.concat(reference_uniqueness_issues(json_data, index))
+  issues
+end
+
+# Every room's "type" must be a room map the engine can load. The valid set is the engine's own
+# tilemapTiledJSON registry (load_valid_room_types), the same way the sprite check reads the object
+# asset files, so no hand-maintained enum can drift. An unknown type is an ❌ ERROR, as the sprite
+# check reports an unknown object type: the room cannot load. Skipped when game.js cannot be found.
+def check_room_types(json_data, repo_root)
+  issues = []
+  return issues unless json_data.is_a?(Hash)
+
+  valid = load_valid_room_types(repo_root)
+  if valid.nil?
+    # Fail loudly, never silently: a missing game.js or a parse that finds no room maps means
+    # the check could not run, and the author must know that rather than read a clean pass.
+    return ["⚠️ WARNING: room type check skipped: public/break_escape/js/core/game.js is missing " \
+            "or registers no tilemapTiledJSON room maps, so room 'type' values were not checked."]
+  end
+
+  (json_data['rooms'] || {}).each do |room_id, room|
+    next unless room.is_a?(Hash)
+
+    type = room['type']
+    next unless type.is_a?(String) && !type.empty?
+    next if valid.include?(type)
+
+    issues << "❌ ERROR: room '#{room_id}' has type '#{type}', which no room map registers (no " \
+              "tilemapTiledJSON('#{type}', ...) in game.js); check the spelling or add the room map."
+  end
+
+  issues
+end
+
+# Object ids reused at any depth, and NPC ids reused, each a warning. The social lint already errors
+# on duplicate top-level room-object ids, so a set of occurrences that are all top-level room objects
+# is left to it (no double report); any set that includes a nested occurrence is reported here.
+def reference_uniqueness_issues(json_data, index = nil)
+  index ||= build_reference_index(json_data)
+  issues = []
+
+  obj_paths = Hash.new { |h, k| h[k] = [] }
+  each_object_id(json_data) { |id, path| obj_paths[id] << path }
+  top_level = /\Arooms\/[^\/]+\/objects\[\d+\]\z/
+  obj_paths.each do |id, paths|
+    next if paths.length < 2
+    next if paths.all? { |p| p =~ top_level } # the social lint's duplicate-object-ids error owns these
+
+    issues << "⚠️ WARNING: object id '#{id}' is used by more than one object (#{paths.join(', ')}); " \
+              'the unlock endpoint takes the first hit by id, so the others could never be targeted.'
+  end
+
+  npc_paths = Hash.new { |h, k| h[k] = [] }
+  each_npc_id(json_data) { |id, path| npc_paths[id] << path }
+  npc_paths.each do |id, paths|
+    next if paths.length < 2
+
+    issues << "⚠️ WARNING: NPC id '#{id}' is used by more than one NPC (#{paths.join(', ')}); give each a unique id."
+  end
+
+  # A string used as both a task id and a global can be confused by a bare-string reference field.
+  (index['task'] & index['global']).each do |name|
+    issues << "💡 SUGGESTION: '#{name}' is both a task id and a global variable; a bare-string reference to " \
+              'it is ambiguous. Consider renaming one.'
+  end
+
+  issues
 end
 
 # The body of a run. It never exits: every section prints, and ValidatorReport#finish decides
@@ -7262,6 +8659,11 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
     puts "✓ No unknown fields"
   end
   puts
+
+  puts "Checking desktop users (q94)..."
+  desktop_user_issues = report.run_check('common', 'check_desktop_users') { check_desktop_users(json_data) }
+  print_issue_list(report, desktop_user_issues, error_header: 'Desktop user check failed with',
+                                                warning_header: 'Found %d desktop user warning(s):', ok_line: '✓ Desktop users valid')
 
   puts "Checking author notes hold no actions..."
   note_action_warnings = report.run_check('common', 'check_notes_hold_no_actions') { check_notes_hold_no_actions(json_data) }
@@ -7359,6 +8761,8 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   common_issues = []
   run = ->(name, &blk) { common_issues.concat(report.run_check('common', name, &blk)) }
   run.call('check_common_issues') { check_common_issues(json_data, valid_item_types) }
+  run.call('check_references') { check_references(json_data, repo_root) }
+  run.call('check_room_types') { check_room_types(json_data, repo_root) }
   run.call('check_lock_credentials') { check_lock_credentials(json_data) }
   run.call('check_pin_locks') { check_pin_locks(json_data) }
   run.call('check_combination_cryptex_locks') { check_combination_cryptex_locks(json_data) }
@@ -7366,9 +8770,13 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_npc_patrol_and_catch_locks') { check_npc_patrol_and_catch_locks(json_data, repo_root) }
   run.call('check_give_item_collectible') { check_give_item_collectible(json_data) }
   run.call('check_interaction_warnings') { check_interaction_warnings(json_data) }
+  run.call('check_revoke_card_globals') { check_revoke_card_globals(json_data) }
   run.call('check_engine_limits') { check_engine_limits(json_data) }
   run.call('check_vm_flags_load_bearing') { check_vm_flags_load_bearing(json_data) }
   run.call('check_recurring_bugs') { check_recurring_bugs(json_data, repo_root) }
+  run.call('check_retired_keys') { check_retired_keys(json_data) }
+  run.call('check_owner_fields') { check_owner_fields(json_data) }
+  run.call('check_wall_mounted') { check_wall_mounted(json_data) }
   run.call('check_unheard_room_triggers') { check_unheard_room_triggers(json_data, repo_root) }
   habits_copy = nil
   habits_report = nil
@@ -7378,10 +8786,19 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   end
   run.call('ValidateNpcNeeds') { ValidateNpcNeeds.check(json_data, screen_habits: npc_screen_habits(habits_copy)) }
   run.call('check_access_model') { check_access_model(json_data, repo_root, scenario_dir) }
+  run.call('check_credentials') { check_credentials(json_data) }
+  run.call('check_gated_door_credit') { check_gated_door_credit(json_data) }
+  run.call('check_speaker_id_name_clashes') { check_speaker_id_name_clashes(json_data) }
   run.call('check_network_model') { check_network_model(json_data, scenario_dir) }
   run.call('check_capture_log') { check_capture_log(json_data) }
+  run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
+  run.call('check_plant_hiding') { check_plant_hiding(json_data, repo_root) }
+  run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
+  run.call('ValidateOfficeLife') do
+    ValidateOfficeLife.check(json_data, scenario_id: File.basename(scenario_dir), campaign: options[:campaign])
+  end
   run.call('ValidateNpcHabits') do
     ValidateNpcHabits.check(json_data, expanded: habits_copy, report: habits_report, scenario_dir: scenario_dir)
   end
@@ -7461,6 +8878,20 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   work_lines = report.run_check('work', 'work report') { ValidateAccessWork.report_lines(json_data) }
   unless work_lines.empty?
     work_lines.each { |line| puts line }
+    puts
+  end
+
+  # The office-life sync budget (V8) and, with --office-summary, the per-NPC summary (V1)
+  report.stage = 'work'
+  budget_lines = report.run_check('work', 'office-life sync budget') { ValidateOfficeLife.sync_budget_lines(json_data) }
+  unless budget_lines.empty?
+    budget_lines.each { |line| puts line }
+    puts
+  end
+  if options[:office_summary]
+    summary = report.run_check('work', 'office-life summary') { ValidateOfficeLife.office_summary(json_data) }
+    puts "OFFICE-LIFE SUMMARY (V1): #{summary.length} NPC(s)"
+    summary.each { |line| puts "  #{line}" }
     puts
   end
 

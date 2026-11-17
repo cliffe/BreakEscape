@@ -91,6 +91,16 @@ module BreakEscape
 
     # ─── Game show ───────────────────────────────────────────────────────────
 
+    # The CyberChef page's own CSP gained frame-src data: (static_files_controller); the game page must not.
+    test 'game page CSP is unchanged: no frame-src, default-src self https, object-src none' do
+      get game_url(@game)
+      assert_response :success
+      csp = response.headers['Content-Security-Policy'].to_s
+      assert_no_match(/frame-src/, csp)
+      assert_match(/default-src 'self' https:/, csp)
+      assert_match(/object-src 'none'/, csp)
+    end
+
     test 'should show game' do
       get game_url(@game)
       assert_response :success
@@ -180,13 +190,15 @@ module BreakEscape
     end
 
     test 'SECURITY: sync_state rejects teleport to locked room' do
-      # 'office' is locked and not in unlockedRooms; player is in 'reception'
+      # 'office' is locked and not in unlockedRooms; player is in 'reception'.
+      # R4 MINOR 1: the forged room is skipped and reported in notSaved (not a batch rollback);
+      # the saved room and unlockedRooms are untouched, so no teleport lands.
       put sync_state_game_url(@game), params: { currentRoom: 'office' }
 
-      assert_response :forbidden
+      assert_response :success
       json = JSON.parse(@response.body)
-      assert_equal false, json['success']
-      assert_match(/locked room/i, json['message'])
+      assert_equal true, json['success']
+      assert_includes Array(json['notSaved']), 'currentRoom'
 
       @game.reload
       assert_equal 'reception', @game.player_state['currentRoom'],

@@ -1,0 +1,104 @@
+{
+  "scenario_id": "test_conclude_race",
+  "scenario_name": "Test: Conclude Race (plain path)",
+  "scenario_brief": "CONCLUDE RACE TEST (plain path)\n\nThis scenario reproduces the generic conclude race: a task completes on the same beat that a plain setGlobal action sets a global named in the mission's concludeRequires.globals.\n\nTEST PROCEDURE:\n1. The start room holds one switch object and one NPC.\n2. Interact with the SWITCH. Its triggerOnInteract runs a plain set_global (apply-actions.js writeGlobal, emitAlways) that sets 'gate_global' = true.\n3. The global change broadcasts; the NPC's eventMapping completes the task 'final_task'.\n4. 'final_task' is the single task of a missionConclusion aim whose concludeRequires.globals names 'gate_global'.\n\nEXPECTED (with the engine fix): the completion POST is preceded by the state sync that carries 'gate_global', so the server concludes on the first POST and no 'Not Yet' warning is shown. Without the fix the completion POST can land before the sync, so the server warns 'Not Yet' over an ending that concludes a moment later.",
+  "endGoal": "Throw the switch to finish.",
+  "startRoom": "race_room",
+
+  "globalVariables": {
+    "gate_global": false
+  },
+
+  "objectives": [
+    {
+      "aimId": "finish_aim",
+      "title": "Throw the switch",
+      "description": "Throw the switch to conclude.",
+      "status": "active",
+      "order": 0,
+      "missionConclusion": true,
+      "concludeRequires": {
+        "globals": [
+          "gate_global"
+        ]
+      },
+      "conclusionScreen": {
+        "type": "success",
+        "title": "Conclude race: finished",
+        "body": "The switch set the gate global and the task completed on the same beat. The mission concluded without a 'Not Yet' warning."
+      },
+      "tasks": [
+        {
+          "taskId": "final_task",
+          "title": "Finish",
+          "type": "custom",
+          "status": "active"
+        }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "race_room": {
+      "type": "room_office",
+      "door_sign": "Conclude Race Test",
+      "connections": {},
+      "npcs": [
+        {
+          "id": "gate_npc",
+          "displayName": "Gate Watcher",
+          "npcType": "person",
+          "position": { "x": 3, "y": 5 },
+          "spriteSheet": "female_blowse_v2",
+          "spriteVisemes": "assets/characters/female_blowse_visemes.png",
+          "storyPath": "scenarios/test_conclude_race/ink/gate_npc.json",
+          "currentKnot": "stable",
+          "voice": {
+            "name": "Kore",
+            "style": "Calm office worker.",
+            "language": "en-GB"
+          },
+          "behavior": {
+            "facePlayer": false,
+            "immovable": true
+          },
+          "eventMappings": [
+            {
+              "eventPattern": "global_variable_changed:gate_global",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "final_task"
+            }
+          ]
+        }
+      ],
+      "objects": [
+        {
+          "type": "aes_elec_cabinet1",
+          "id": "gate_switch",
+          "name": "Gate switch",
+          "position": { "x": 6, "y": 5 },
+          "takeable": false,
+          "interactable": true,
+          "triggerOnInteract": [
+            {
+              "type": "set_global",
+              "key": "gate_global",
+              "value": true
+            }
+          ],
+          "observations": "A switch wired to the gate."
+        },
+        {
+          "type": "notes",
+          "name": "Instructions",
+          "position": { "x": 2, "y": 2 },
+          "takeable": false,
+          "readable": true,
+          "text": "TEST: Throw the Gate switch. Its plain set_global sets gate_global, the NPC's eventMapping completes the final task, and the mission concludes. With the engine fix no 'Not Yet' warning shows.",
+          "observations": "Test instructions."
+        }
+      ]
+    }
+  }
+}

@@ -13,18 +13,7 @@
     font-family: 'GNF';
 }
 
-#inventory-container::-webkit-scrollbar {
-    height: 8px;
-}
-
-#inventory-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
-}
-
-#inventory-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-}
+/* The strip's scrollbar is the shared .pixel-scroll (utilities.css), set on the element */
 
 .inventory-slot {
     min-width: 60px;

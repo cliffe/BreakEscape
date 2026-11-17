@@ -655,6 +655,28 @@ export function updateNPCDepth(sprite) {
 // NPC-NPC collider later in the same step also sees him unpushable: one step at most.
 export const PLAYER_WALL_MARGIN_PX = 12;
 
+/**
+ * Does a bump end this goToAndStay walk as an arrival? Any move: within two tiles of the
+ * destination, measured from the sprite's origin, as before. A needs move only counts within
+ * NEEDS_COLLISION_ARRIVE_PX of it by body centre, the radius npc-needs.js accepts
+ * (ARRIVAL_NEAR_PX): a bump further out was an arrival the needs layer rejected as far, and
+ * the walk home stood still and re-issued into the same colleague for minutes (game 5260,
+ * OFFICE_LIFE_STUCK_RETURN.md). Further out the walk goes on and routes round the body.
+ */
+export const NEEDS_COLLISION_ARRIVE_PX = 48;
+export function collisionArrives(behavior, sprite) {
+    const dest = behavior?._goToStayDest;
+    if (!dest) return false;
+    if (behavior._moveOwner === 'needs') {
+        const c = sprite?.body?.center || sprite;
+        const dx = dest.x - c.x, dy = dest.y - c.y;
+        return dx * dx + dy * dy <= NEEDS_COLLISION_ARRIVE_PX * NEEDS_COLLISION_ARRIVE_PX;
+    }
+    const gdx = dest.x - sprite.x;
+    const gdy = dest.y - sprite.y;
+    return gdx * gdx + gdy * gdy < (TILE_SIZE * 2) * (TILE_SIZE * 2);
+}
+
 /** Does this NPC keep a route the player must not push it off? Patrol on, not hostile, not KO'd. */
 export function keepsRouteAgainstPlayer(behavior, npcId) {
     if (!behavior?.config?.patrol?.enabled) return false;
@@ -1346,6 +1368,34 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
     return true; // Direction is safe
 }
 
+/** Does this walker have patrol waypoints? Only those arrive on a bump (the arrival guards below). */
+function hasPatrolWaypoints(behavior) {
+    const w = behavior?.config?.patrol?.waypoints;
+    return Array.isArray(w) && w.length > 0;
+}
+
+/**
+ * Is the walker inside the grace that follows a settle (see triggerSettling)?
+ * @private exported for unit tests
+ */
+export function settleGraceRunning(npcBehavior, npcSprite) {
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
+    return !npcBehavior.isSettling && npcBehavior._settleGraceUntil > gameTime;
+}
+
+/**
+ * The settle guard (game 5347): a walker touching another NPC settles (stops, then re-plans)
+ * unless that body is held (immovable: seated, or held still using something), which cannot
+ * push and would re-collide every frame. Returns true when it settled.
+ * @private exported for unit tests
+ */
+export function settleOnContact(npcBehavior, npcSprite, otherNPC) {
+    if (otherNPC?.body?.immovable) return false;
+    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
+    if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) npcSprite.body.setVelocity(0, 0);
+    return true;
+}
+
 /**
  * Handle NPC-to-NPC collision by inserting an avoidance waypoint
  * 
@@ -1360,8 +1410,9 @@ function isDirectionSafe(npcSprite, velocityX, velocityY, roomId, ignoreNPCs) {
  * 
  * @param {Phaser.Sprite} npcSprite - NPC sprite that collided
  * @param {Phaser.Sprite} otherNPC - Other NPC sprite it collided with
+ * @private exported for unit tests
  */
-function handleNPCCollision(npcSprite, otherNPC) {
+export function handleNPCCollision(npcSprite, otherNPC) {
     if (!npcSprite || !otherNPC || npcSprite.destroyed || otherNPC.destroyed) {
         return;
     }
@@ -1374,13 +1425,25 @@ function handleNPCCollision(npcSprite, otherNPC) {
         return;
     }
 
-    // ALWAYS trigger settling on collision, regardless of patrol type
-    // This prevents NPCs from being pushed across the room by pausing their behavior briefly
-    const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) {
-        npcSprite.body.setVelocity(0, 0);
+    // Trigger settling on collision, regardless of patrol type: it stops NPCs pushing each
+    // other across the room. Not against a held body (seated, or held still while using
+    // something; OFFICE_LIFE_STUCK_RETURN.md): it cannot push, and the walker touching it
+    // re-collides every frame, so each settle ended in another and the walk never moved off
+    // the contact (game 5347: Marek against seated Sanjay's corner for 70 s). Physics
+    // separation slides the walker along it instead.
+    const otherHeld = !settleOnContact(npcBehavior, npcSprite, otherNPC);
+
+    // Inside the grace after a settle the walker is meant to walk off the contact. The avoidance
+    // waypoint below clears its path and sets _needsPathRecalc, and updatePatrol returns for that
+    // before it moves the body, so redoing it on every overlap frame kept a walker against a
+    // face_player NPC still for ever (game 6330).
+    // A goToAndStay walker with patrol waypoints that is close enough still arrives inside the grace
+    // (not up to 600 ms late). Walkers without waypoints never arrived on a bump, and still do not.
+    if (hasPatrolWaypoints(npcBehavior) && npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+        if (typeof npcBehavior._triggerGoToStayArrival === 'function') npcBehavior._triggerGoToStayArrival();
+        return;
     }
+    if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     // (face_player is also a valid patrolling state, just with player-facing behavior)
@@ -1435,11 +1498,10 @@ function handleNPCCollision(npcSprite, otherNPC) {
     // Just trigger settling to pause patrol
     
     // Trigger settling state to pause patrol briefly while physics settles
-    if (npcBehavior) {
+    if (npcBehavior && !otherHeld) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        // Ensure velocity is zero while settling
-        if (npcSprite.body) {
+        // Ensure velocity is zero while settling (not in the grace after a settle: see triggerSettling)
+        if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
             npcSprite.body.setVelocity(0, 0);
         }
     }
@@ -1453,15 +1515,11 @@ function handleNPCCollision(npcSprite, otherNPC) {
         // Arrival-tolerance guard: if this NPC is doing a goToAndStay move and is
         // already close enough to its destination, stop here instead of inserting
         // an avoidance waypoint that would cause oscillation.
-        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest) {
-            const gdx = npcBehavior._goToStayDest.x - npcSprite.x;
-            const gdy = npcBehavior._goToStayDest.y - npcSprite.y;
-            if (gdx * gdx + gdy * gdy < (TILE_SIZE * 2) * (TILE_SIZE * 2)) {
-                if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
-                    npcBehavior._triggerGoToStayArrival();
-                }
-                return;
+        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+            if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
+                npcBehavior._triggerGoToStayArrival();
             }
+            return;
         }
 
         // Get the current travel direction
@@ -1549,8 +1607,9 @@ function handleNPCCollision(npcSprite, otherNPC) {
  * 
  * @param {Phaser.Sprite} npcSprite - NPC sprite that collided with player
  * @param {Phaser.Sprite} player - Player sprite
+ * @private exported for unit tests
  */
-function handleNPCPlayerCollision(npcSprite, player) {
+export function handleNPCPlayerCollision(npcSprite, player) {
     if (!npcSprite || !player || npcSprite.destroyed || player.destroyed) {
         return;
     }
@@ -1570,10 +1629,18 @@ function handleNPCPlayerCollision(npcSprite, player) {
     // ALWAYS trigger settling on collision, regardless of patrol type
     // This prevents NPCs from being pushed across the room by pausing their behavior briefly
     const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-    npcBehavior.triggerSettling(gameTime);
-    if (npcSprite.body) {
+    if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
         npcSprite.body.setVelocity(0, 0);
     }
+
+    // The same grace as the NPC-to-NPC handler: no avoidance re-plan while the walker pulls away.
+    // A goToAndStay walker with patrol waypoints that is close enough still arrives inside the grace
+    // (not up to 600 ms late). Walkers without waypoints never arrived on a bump, and still do not.
+    if (hasPatrolWaypoints(npcBehavior) && npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+        if (typeof npcBehavior._triggerGoToStayArrival === 'function') npcBehavior._triggerGoToStayArrival();
+        return;
+    }
+    if (settleGraceRunning(npcBehavior, npcSprite)) return;
 
     // Only handle waypoint avoidance if NPC is in patrol or face_player mode with waypoints
     const isValidPatrolState = npcBehavior.currentState === 'patrol' || npcBehavior.currentState === 'face_player';
@@ -1628,9 +1695,8 @@ function handleNPCPlayerCollision(npcSprite, player) {
     // Trigger settling state to pause patrol briefly while physics settles
     if (npcBehavior) {
         const gameTime = npcBehavior.clockNow ? npcBehavior.clockNow() : (npcSprite.scene?.time?.now ?? performance.now());
-        npcBehavior.triggerSettling(gameTime);
-        // Ensure velocity is zero while settling
-        if (npcSprite.body) {
+        // Ensure velocity is zero while settling (not in the grace after a settle: see triggerSettling)
+        if (npcBehavior.triggerSettling(gameTime) !== false && npcSprite.body) {
             npcSprite.body.setVelocity(0, 0);
         }
     }
@@ -1642,15 +1708,11 @@ function handleNPCPlayerCollision(npcSprite, player) {
         npcBehavior.config.patrol.waypoints.length > 0) {
 
         // Arrival-tolerance guard: same as NPC-to-NPC collision — settle here if close enough.
-        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest) {
-            const gdx = npcBehavior._goToStayDest.x - npcSprite.x;
-            const gdy = npcBehavior._goToStayDest.y - npcSprite.y;
-            if (gdx * gdx + gdy * gdy < (TILE_SIZE * 2) * (TILE_SIZE * 2)) {
-                if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
-                    npcBehavior._triggerGoToStayArrival();
-                }
-                return;
+        if (npcBehavior._stopOnArrival && npcBehavior._goToStayDest && collisionArrives(npcBehavior, npcSprite)) {
+            if (typeof npcBehavior._triggerGoToStayArrival === 'function') {
+                npcBehavior._triggerGoToStayArrival();
             }
+            return;
         }
 
         // Get the current travel direction

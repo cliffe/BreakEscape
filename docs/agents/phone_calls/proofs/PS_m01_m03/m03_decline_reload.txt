@@ -1,0 +1,21 @@
+game 2244 (decline_reload)
+  close_brief: "closed briefing"
+  close_brief: "closed NotesMinigame"
+  close_brief: "none"
+"declined tutorial"
+distcc raised: true
+ring appeared at t=121 s: {"cur":{"npc":"agent_0x99","state":"ringing","knot":"m2_revelation_call"},"banner":"Agent HaX | Incoming call | Answer | Decline"} offered=true
+shot decline_reload_banner
+after decline: {"cur":null,"banner":null} missed-rows=["Missed call"]
+  close_brief: "none"
+"no tutorial prompt"
+after reload: offered=true heard=false ringer={"cur":null,"banner":null}
+150 s after reload: ringer={"cur":null,"banner":null} banner=false rows=["Missed call"]
+"opened agent_0x99"
+thread: {"header":"☎\nCall back","thread":"Here, Agent. | 14:55 | Your interview's with Victoria Sterling in the conference room, behind a staff card reader. Reception will sign you in. Message me if you get stuck. | 14:56 | Got the distcc logs. Call me when you're done at the drop-site. | 14:56 | ☎ | Missed call | Call back"}
+shot decline_reload_thread
+header call: "header: ☎Call back"
+callback call: {"bar":"ON CALL | 0:07","subs":["Agent HaX: Knew you'd get back to me. Open your copy and read along.","Agent HaX: There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost.","Agent HaX: And a line under it: \"Target Selection Consultation\", ten thousand. They chose the hospital for Ghost.","AGENT HAX: Target line: St. Catherine's Regional. Sable's sign-off on the approval.","AGENT HAX: St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name."],"choices":["1. Direct chain. Zero Day to Ghost to St. Catherine's. That stands up.","2. They charged extra to hit a hospital. That's intent, on an invoice.","3. If they invoice one cell like this, they invoice all of them."]}
+shot decline_reload_callback_call
+handler /tts: "Knew you'd get back to me. Open your copy and read along." "There it is. The ProFTPD backdoor, line item on invoice ZDS-2024-0847. Twenty-five thousand, part of a package to Ghost." "And a line under it: \"Target Selection Consultation\", ten thousand. They chose the hospital for Ghost." "Target line: St. Catherine's Regional. Sable's sign-off on the approval." "St. Catherine's gave us the buyer's invoice. This is the seller's own ledger, saying the same thing. A case with a name." 
+[]

@@ -17,6 +17,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-episode-brief-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
@@ -144,6 +145,20 @@ test('three cards: Next and Back move between them, the last button is Got it an
     assert.equal(saved.stage, null);
     assert.ok(text().includes('You have finished this exercise'));
     assert.deepEqual(errors, []);
+});
+
+test('the brief-card Back button is the awareness secondary look (C-X9 / aw-button-secondary)', () => {
+    const ep = briefEpisode();
+    setup(ep);
+    open(ep);
+    click('.epr-next');
+    const back = cur().container.querySelector('.epr-back');
+    assert.ok(back, 'Back shows on a later card');
+    assert.ok(back.classList.contains('aw-button-secondary'), 'Back carries the secondary variant');
+    assert.ok(back.classList.contains('aw-button') && back.classList.contains('epr-button'),
+        'Back stays part of the shared button family');
+    const next = cur().container.querySelector('.epr-next');
+    assert.ok(next && !next.classList.contains('aw-button-secondary'), 'the primary Next is not secondary');
 });
 
 test('the last card button label is strings.briefDone, default Got it', () => {

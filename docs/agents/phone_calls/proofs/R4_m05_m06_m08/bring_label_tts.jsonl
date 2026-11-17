@@ -1,0 +1,66 @@
+{"t":1794521804933,"npc_id":"narrator","text":"A SAFETYNET briefing room. Director Netherton stands at the head of the table. Beside him, Nightshade has three monitors of access logs open.","delivery":null,"status":200}
+{"t":1794521805412,"npc_id":"director_netherton","text":"Agent 0x00. This one is close to home in a way I dislike. Someone inside a Home Office contractor is handing ENTROPY the crown jewels.","delivery":null,"status":200}
+{"t":1794521805724,"npc_id":"director_netherton","text":"I have brought Nightshade in because catching a mole is precisely his trade. Learn from him. HaX will run you on the ground.","delivery":null,"status":200}
+{"t":1794521806009,"npc_id":"director_netherton","text":"Task Force Null is three people and a whiteboard so far. Every cell we've hit bought something. This time it's bought a person. I want to know how.","delivery":null,"status":200}
+{"t":1794521806912,"npc_id":"director_netherton","text":"That is what you are going to tell me.","delivery":null,"status":200}
+{"t":1794521807233,"npc_id":"agent_nightshade","text":"Insiders are hard to catch because they never have to break in. They're already trusted.","delivery":null,"status":200}
+{"t":1794521807560,"npc_id":"agent_nightshade","text":"So you hunt the pattern. Access a little too broad, hours a little too odd.","delivery":null,"status":200}
+{"t":1794521807829,"npc_id":"agent_nightshade","text":"And the calm of someone who's decided the rules don't apply to them. Find whose behaviour stopped matching their story.","delivery":null,"status":200}
+{"t":1794521808126,"npc_id":"director_netherton","text":"Sound advice. HaX -- the detail.","delivery":null,"status":200}
+{"t":1794521808422,"npc_id":"opening_briefing","text":"Quantum Dynamics Corporation, on a science park outside Cambridge. Quantum-safe cryptography, under contract to the Home Office.","delivery":null,"status":200}
+{"t":1794521808769,"npc_id":"opening_briefing","text":"Someone on the inside is stealing it.","delivery":null,"status":200}
+{"t":1794521809903,"npc_id":"opening_briefing","text":"Project Heisenberg. Quantum-safe key material for the national emergency dispatch network. The system that routes nine-nine-nine calls.","delivery":null,"status":200}
+{"t":1794521810227,"npc_id":"opening_briefing","text":"Seventy-three per cent of the package is already staged to go. The rest goes out within four hours unless we stop it.","delivery":null,"status":200}
+{"t":1794521811139,"npc_id":"opening_briefing","text":"Lattice-based key exchange parameters. The production candidate set.","delivery":null,"status":200}
+{"t":1794521811435,"npc_id":"opening_briefing","text":"And the rollout schedule: cutover dates, region by region, with the key-rotation windows.","delivery":null,"status":200}
+{"t":1794521811742,"npc_id":"opening_briefing","text":"Everything ENTROPY needs to own the dispatch network the day it goes live.","delivery":null,"status":200}
+{"t":1794521812618,"npc_id":"opening_briefing","text":"No foreign buyer. ENTROPY's Insider Threat Initiative is taking it and keeping it.","delivery":null,"status":200}
+{"t":1794521812904,"npc_id":"opening_briefing","text":"Hold the keys during a rotation window and you can force the network onto a degraded routing path.","delivery":null,"status":200}
+{"t":1794521813200,"npc_id":"opening_briefing","text":"Every ambulance, fire and police call through it runs six to eleven minutes slower.","delivery":null,"status":200}
+{"t":1794521813502,"npc_id":"opening_briefing","text":"Early modelling: thirty to forty-five excess civilian deaths in the first rollout wave.","delivery":null,"status":200}
+{"t":1794521813934,"npc_id":"opening_briefing","text":"Cardiac arrests. Strokes. Structure fires. The calls where minutes decide it.","delivery":null,"status":200}
+{"t":1794521814961,"npc_id":"opening_briefing","text":"Three things, then.","delivery":null,"status":200}
+{"t":1794521815238,"npc_id":"opening_briefing","text":"One. Find the insider. QDC's security chief has it down to eight people in the cryptography division.","delivery":null,"status":200}
+{"t":1794521815592,"npc_id":"opening_briefing","text":"Their access is real, so nothing will look like a break-in.","delivery":null,"status":200}
+{"t":1794521815894,"npc_id":"opening_briefing","text":"Look at the edges. A badge at an odd hour. Money that doesn't add up. Someone who's changed.","delivery":null,"status":200}
+{"t":1794521816207,"npc_id":"opening_briefing","text":"And don't take anyone's hunch for proof. Patricia's included.","delivery":null,"status":200}
+{"t":1794521816526,"npc_id":"opening_briefing","text":"Two. Build the case. Enough for the police to act on when we pass it over anonymously, or enough to turn them.","delivery":null,"status":200}
+{"t":1794521817447,"npc_id":"opening_briefing","text":"ENTROPY's Insider Threat Initiative runs on a recruiter, working behind a headhunting firm.","delivery":null,"status":200}
+{"t":1794521817768,"npc_id":"opening_briefing","text":"Twenty-three active placements. Forty-seven more targets under evaluation.","delivery":null,"status":200}
+{"t":1794521818077,"npc_id":"opening_briefing","text":"Turn this insider into a double agent, and we map the lot.","delivery":null,"status":200}
+{"t":1794521818385,"npc_id":"opening_briefing","text":"Three. Stop the final upload. The rotation windows are in that last part, and they stay in the building.","delivery":null,"status":200}
+{"t":1794521819553,"npc_id":"opening_briefing","text":"You're going in as an external security consultant.","delivery":null,"status":200}
+{"t":1794521819870,"npc_id":"opening_briefing","text":"Your kit goes in with you. Picks, the cloner, and the print kit you brought back from Albion. Auditors carry odd bags; nobody looks.","delivery":null,"status":200}
+{"t":1794521820194,"npc_id":"opening_briefing","text":"Still no PIN cracker. The lab isn't finished with it.","delivery":null,"status":200}
+{"t":1794521820551,"npc_id":"opening_briefing","text":"Chief Security Officer Patricia Morgan is expecting you. Ex-military police, fifteen years at the National Crime Agency. She called us in.","delivery":null,"status":200}
+{"t":1794521820888,"npc_id":"opening_briefing","text":"She'll get you in. The CEO would rather none of it was happening, and wants it kept quiet.","delivery":null,"status":200}
+{"t":1794521821837,"npc_id":"opening_briefing","text":"Dr Ruth Halloran leads the cryptography team. Brilliant scientist, protective of her people.","delivery":null,"status":200}
+{"t":1794521822132,"npc_id":"opening_briefing","text":"Owen Gallagher, IT. He holds the spare cards and the server-room password, and he logs who gets them.","delivery":null,"status":200}
+{"t":1794521822421,"npc_id":"opening_briefing","text":"Lisa Park in marketing notices things. Office gossip, mostly. Some of it useful.","delivery":null,"status":200}
+{"t":1794521823259,"npc_id":"opening_briefing","text":"We can't get you a staff badge, so you'll be borrowing access on site. Owen in IT is your best bet.","delivery":null,"status":200}
+{"t":1794521823541,"npc_id":"opening_briefing","text":"There's a drop-site terminal in the server room. Secure channel for whatever you pull off their systems.","delivery":null,"status":200}
+{"t":1794521823922,"npc_id":"opening_briefing","text":"Their research portal runs Bludit. Whatever the insider is staging goes through that box.","delivery":null,"status":200}
+{"t":1794521824894,"npc_id":"opening_briefing","text":"Then find the login. Four flags on that server. I want them all.","delivery":null,"status":200}
+{"t":1794521825176,"npc_id":"opening_briefing","text":"Last thing. How are you going to play it?","delivery":null,"status":200}
+{"t":1794521826017,"npc_id":"opening_briefing","text":"Good. Write it all down. The police will want every page.","delivery":null,"status":200}
+{"t":1794521826300,"npc_id":"opening_briefing","text":"Thirty to forty-five lives ride on that upload. Keep the number with you.","delivery":null,"status":200}
+{"t":1794521826571,"npc_id":"opening_briefing","text":"Just watch the clock while you're at it.","delivery":null,"status":200}
+{"t":1794521826845,"npc_id":"opening_briefing","text":"I'm on the phone throughout. Call with what you find. Flags go in the drop-site.","delivery":null,"status":200}
+{"t":1794521827719,"npc_id":"opening_briefing","text":"Don't decide the insider's story until you've seen all of it.","delivery":null,"status":200}
+{"t":1794521828041,"npc_id":"opening_briefing","text":"And remember who ENTROPY goes looking for.","delivery":null,"status":200}
+{"t":1794521828351,"npc_id":"opening_briefing","text":"Good luck, Agent.","delivery":null,"status":200}
+{"t":1794521828632,"npc_id":"opening_briefing","text":"Quantum Dynamics. Wednesday afternoon, half past four.","delivery":null,"status":200}
+{"t":1794521828991,"npc_id":"opening_briefing","text":"The final upload goes tonight. You have four hours.","delivery":null,"status":200}
+{"t":1794521829353,"npc_id":"opening_briefing","text":"Patricia Morgan's expecting you. Go.","delivery":null,"status":200}
+{"t":1794521848259,"npc_id":"agent_0x99_handler","text":"Once you're out, QDC's own people go through that vault before ours do. Whatever you haven't read could walk.","delivery":null,"status":503}
+{"t":1794521849720,"npc_id":"agent_0x99_handler","text":"There's an envelope under the terminal keyboard nobody's opened.","delivery":null,"status":503}
+{"t":1794521851171,"npc_id":"agent_0x99_handler","text":"His upload schedule's still on the desk.","delivery":null,"status":503}
+{"t":1794521852642,"npc_id":"agent_0x99_handler","text":"The package manifest's still there as well.","delivery":null,"status":503}
+{"t":1794521854153,"npc_id":"agent_0x99_handler","text":"TalentStack's line is still open. She's lost him. Ring her if you want to hear her lose.","delivery":null,"status":503}
+{"t":1794521859785,"npc_id":"agent_0x99_handler","text":"Front entrance. Walk like you work there.","delivery":null,"status":503}
+{"t":1794521861723,"npc_id":"agent_0x99_handler","text":"Thursday, nine o'clock. My office.","delivery":null,"status":503}
+{"t":1794521862883,"npc_id":"narrator","text":"SAFETYNET headquarters, Thursday, nine o'clock. HaX has your report up on the screen.","delivery":null,"status":200}
+{"t":1794521871462,"npc_id":"closing_debrief_trigger","text":"Let's go through it.","delivery":null,"status":200}
+{"t":1794521873793,"npc_id":"closing_debrief_trigger","text":"You stopped the upload. The file behind it is thin. The police will get what we send them, and it won't be much.","delivery":null,"status":200}
+{"t":1794521880500,"npc_id":"closing_debrief_trigger","text":"QDC's readiness review passed. Nobody asked who told Patricia to stop looking.","delivery":null,"status":200}
+{"t":1794521886684,"npc_id":"closing_debrief_trigger","text":"You said you'd be methodical. The file's thinner than that promise.","delivery":null,"status":200}

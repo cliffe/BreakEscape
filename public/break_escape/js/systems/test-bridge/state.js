@@ -18,7 +18,7 @@ import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
 import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
 // Reach runs to the nearest part of a wide object, in the game and here
-import { reachX, aimX } from '../interaction-reach.js';
+import { reachX, reachY, aimX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -273,12 +273,16 @@ function successScreenState() {
  */
 function interactionMenuState() {
     if (!window.isInteractionMenuOpen?.()) return null;
-    const items = Array.from(document.querySelectorAll('.be-im-item')).map((el, i) => ({
+    const items = Array.from(document.querySelectorAll('#be-interaction-menu .be-im-item')).map((el, i) => ({
         index: i,
+        // The entity the entry acts on (object id, NPC id, "door:<room>-><room>"), null for an action
+        id: el.dataset?.entityId || null,
+        kind: el.dataset?.kind || 'action',
         label: (el.querySelector('.be-im-label')?.innerText || el.innerText || '').trim(),
-        detail: (el.querySelector('.be-im-detail')?.innerText || '').trim() || null
+        detail: (el.querySelector('.be-im-detail')?.innerText || '').trim() || null,
+        disabled: el.getAttribute?.('aria-disabled') === 'true'
     }));
-    return { open: true, items, hint: 'Choose with __test.chooseInteractionMenu(index|label).' };
+    return { open: true, items, hint: 'Choose with __test.chooseInteractionMenu(index | label | { id }); close with __test.closeInteractionMenu().' };
 }
 
 function playerState() {
@@ -326,11 +330,12 @@ function describeObject(sprite, roomId, px, py, mx, my) {
     // object marked inRange:false at a short distance and can tell why
     // (interactDistance) rather than assuming the bridge is simply wrong.
     const rx = reachX(sprite, px); // nearest part of a wide object (interaction-reach.js)
-    const d = dist(px, py, rx, sprite.y);
+    const ry = reachY(sprite, py); // and of a tall wall-mounted one (reachY, opt-in)
+    const d = dist(px, py, rx, ry);
     // Mirrors getInteractionDistance(): the smaller of the facing-offset and
     // plain centre distances. The offset extends reach; the min stops it
     // *reducing* reach for a target the player is nearly standing on.
-    const di = Math.min(dist(mx, my, rx, sprite.y), d);
+    const di = Math.min(dist(mx, my, rx, ry), d);
     return {
         kind: 'object',
         id,
@@ -626,6 +631,11 @@ function rivalX(o, fromX) {
     return o.sprite ? reachX(o.sprite, fromX) : o.x;
 }
 
+/** y the engine measures to for a rival: its nearest span point if wall-mounted, as reachY does. */
+function rivalY(o, fromY) {
+    return o.sprite ? reachY(o.sprite, fromY) : o.y;
+}
+
 export function solveStandingPoint(targetX, targetY, fromX, fromY, feetOffset = null, target = null) {
     // With the target sprite, a stand point must also have no wall between the
     // player's feet there and the target (interactionLineClear's own test), or the
@@ -683,12 +693,36 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!centres.includes(cx)) centres.push(cx);
         }
     }
+    // The same for a tall wall-mounted target: reachY measures to the nearest part of its
+    // height, so the rings are centred on a grid of points down the sprite (every x centre
+    // against every y centre), not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
+    const centresY = [targetY];
+    const h = target && target.scenarioData?.wallMounted === true
+        ? (target.displayHeight ?? target.height ?? 0) : 0;
+    if (h > 16) {
+        const top = target.y - (target.originY ?? 0.5) * h;
+        const n = Math.min(6, Math.ceil(h / 16));
+        for (let i = 0; i <= n; i++) {
+            const cy = top + (h * i) / n;
+            if (!centresY.some(v => Math.abs(v - cy) < 0.5)) centresY.push(cy);
+        }
+    }
+    // Cap the grid of centres (x times y) so a wide, tall target cannot cost thousands of
+    // standable() calls per pass; thin both axes evenly (always keeping the first).
+    const MAX_CENTRES = 24;
+    const thin = (arr, keep) => arr.length <= keep ? arr
+        : Array.from({ length: keep }, (_, i) => arr[Math.round(i * (arr.length - 1) / (keep - 1))]);
+    while (centres.length * centresY.length > MAX_CENTRES) {
+        if (centres.length >= centresY.length) centres.splice(0, centres.length, ...thin(centres, centres.length - 1));
+        else centresY.splice(0, centresY.length, ...thin(centresY, centresY.length - 1));
+    }
     for (const centreX of centres)
+    for (const centreY of centresY)
     for (let r = 12; r <= 56; r += 4) {
         for (let a = 0; a < 360; a += 15) {
             const rad = a * Math.PI / 180;
             const sx = centreX + Math.cos(rad) * r;
-            const sy = targetY + Math.sin(rad) * r;
+            const sy = centreY + Math.sin(rad) * r;
             if (!standable(sx, sy)) continue;
             // The game faces the player at the target before checking, so
             // predict the direction it will pick, then apply that offset.
@@ -701,9 +735,10 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             // acted on nor appear in the menu — however good its offset distance
             // looks. The offset measure is then the engine's execution check.
             const tx = target ? reachX(target, sx) : targetX; // nearest part of a wide target
-            const plain = dist(sx, sy, tx, targetY);
+            const ty = target ? reachY(target, sy) : targetY; // and of a tall wall-mounted one
+            const plain = dist(sx, sy, tx, ty);
             if (plain > INTERACTION_RANGE * MARGIN) continue;
-            const d = Math.min(dist(sx + off.x, sy + off.y, tx, targetY), plain);
+            const d = Math.min(dist(sx + off.x, sy + off.y, tx, ty), plain);
             if (d > INTERACTION_RANGE * MARGIN) continue;
             const cost = dist(sx, sy, fromX, fromY);
             const point = { x: sx, y: sy, predictedDistance: d, direction: dir };
@@ -714,7 +749,7 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             const feetHere = feetOffset ? { x: sx + feetOffset.x, y: sy + feetOffset.y } : null;
             const nearestRival = rivals.reduce(
                 (m, o) => (feetHere && o.sprite && !sameRoomFrom(feetHere, o.sprite))
-                    ? m : Math.min(m, dist(sx, sy, rivalX(o, sx), o.y)), Infinity);
+                    ? m : Math.min(m, dist(sx, sy, rivalX(o, sx), rivalY(o, sy))), Infinity);
             point.plainDistance = Math.round(plain * 10) / 10;
             point.nearestRivalDistance = Number.isFinite(nearestRival)
                 ? Math.round(nearestRival * 10) / 10 : null;
@@ -815,7 +850,8 @@ export function plainNearestEntity() {
     let bestD = Infinity;
     for (const e of window.__test.getState().nearby) {
         if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
-        const d = dist(p.x, p.y, rivalX({ x: e.x, sprite: objectSpriteById(e.id) }, p.x), e.y);
+        const rival = { x: e.x, y: e.y, sprite: objectSpriteById(e.id) };
+        const d = dist(p.x, p.y, rivalX(rival, p.x), rivalY(rival, p.y));
         if (d < bestD) { bestD = d; best = { id: e.id, name: e.name, distance: Math.round(d * 10) / 10 }; }
     }
     return best;

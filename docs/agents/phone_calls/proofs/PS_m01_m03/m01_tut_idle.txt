@@ -1,0 +1,15 @@
+game 2201
+SESSION=2201
+{"ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","c
+after bootstrap: {"active":true,"prompt":false,"step":0} mg=null
+{"ok":true,"reason":null}
+entered, t=0
+banner at t=26.32 s; tut={"active":true,"prompt":false,"step":0}
+geometry: {"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","layerClass":"under-tutorial","bannerRect":[520,892,880,984],"panelRect":[332,0,1068,384],"skipRect":[823,38,1025,95],"overlapsPanel":false,"overlapsSkip":false,"vh":1000}
+shot tut_idle_banner_tut_idle
+"answered"
+call: {"bar":"ON CALL | 0:05","subs":["Agent HaX: You're in.","AGENT HAX: One test call before it's texts only.","AGENT HAX: A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover."],"choices":[]}
+tut during call: {"active":true,"prompt":false,"step":0}
+shot tut_idle_call
+tour rows=1 tut={"active":true,"prompt":false,"step":0}
+shot tut_idle_after

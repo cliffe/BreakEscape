@@ -1,0 +1,13 @@
+{
+  "key": "fef09efb2f6052b2d27b83d679fd3ca2",
+  "npc": "neil",
+  "text": "Not with him there.",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:09:13Z"
+}

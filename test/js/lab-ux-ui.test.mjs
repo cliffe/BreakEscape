@@ -77,7 +77,9 @@ test('pickupToast: a generic toast for any type, the own toasts kept, none for n
         { message: 'Picked up Staff keycard', type: 'info', title: '', duration: 2500 });
     assert.equal(inv.pickupToast({ type: 'rfid_cloner' }).message, 'Picked up rfid_cloner', 'no name: the type');
     assert.equal(inv.pickupToast({ type: 'workstation', name: 'Crypto Workstation' }).title, 'Item Acquired');
-    assert.match(inv.pickupToast({ type: 'lab-workstation', name: 'Lab tablet' }).message, /^Lab tablet added to inventory\. You can now use it to access lab sheets\.$/);
+    for (const type of ['workstation', 'lab-workstation', 'vm-launcher', 'vm_launcher', 'launch-device']) {
+        assert.equal(inv.pickupToast({ type, name: 'Lab tablet' }).message, 'Lab tablet added to inventory. Open it from your inventory to use it.', type);
+    }
     assert.equal(inv.pickupToast({ type: 'notes', name: 'Memo' }), null, 'notes say "Added to your notes"');
     assert.equal(inv.pickupToast({ type: 'notes3', name: 'Memo' }), null);
     assert.equal(inv.pickupToast({ type: 'lockpick', name: 'Lock Pick Kit' }), null, 'its branch has its own toast');
@@ -118,6 +120,29 @@ test('announcePickup: a key is announced; an item filed in a holder is left to "
         assert.equal(inv.announcePickup(filed, fres), false);
         assert.deepEqual(toasts, []);
     } finally { off?.(); }
+});
+
+test('addToInventory: a second copy answers already with the held copy; a refusal answers once with one alert', async () => {
+    resetInventory();
+    const first = worldSprite({ id: 'dev_1', type: 'launch-device', name: 'Launch device', takeable: true });
+    assert.deepEqual(await inv.addToInventory(first), { ok: true, reason: 'added' });
+    const held = window.inventory.items.find(i => i?.scenarioData?.id === 'dev_1');
+    assert.ok(held, 'the slot is in the inventory');
+    toasts.length = 0;
+    const second = worldSprite({ id: 'dev_1', type: 'launch-device', name: 'Launch device', takeable: true });
+    const res = await inv.addToInventory(second);
+    assert.equal(res.ok, true);
+    assert.equal(res.reason, 'already');
+    assert.equal(res.item, held, 'the held copy, so the caller can open it');
+    assert.equal(toasts.length, 1);
+
+    resetInventory();
+    let posts = 0;
+    globalThis.fetch = async () => { posts++; return { json: async () => ({ success: false, message: 'NPC not encountered' }) }; };
+    const refused = await inv.addToInventory(worldSprite({ id: 'dev_2', type: 'launch-device', name: 'Launch device', takeable: true }));
+    assert.deepEqual(refused, { ok: false, reason: 'rejected', message: 'NPC not encountered' });
+    assert.equal(posts, 1);
+    assert.equal(toasts.length, 1);
 });
 
 // ── interactions.js, imports stubbed (as examine-minigame.test.mjs does) ─────────
@@ -360,7 +385,7 @@ function arriveThenTap(stopAt = 400, until = 640) {
     return { tracker, player, npc, now: until };
 }
 function danaDesk() {
-    const objects = [{ id: 'dana_pc', workstation: true, lockType: 'login' }, { id: 'ian_pc', workstation: true }];
+    const objects = [{ id: 'dana_pc', workstation: true, lockType: 'login', owner: 'dana' }, { id: 'ian_pc', workstation: true, owner: 'ian' }];
     const env = {
         objects: () => objects,
         npcs: () => [{ id: 'dana', needsHome: 'dana_pc' }, { id: 'ian', needsHome: 'ian_pc' }],
@@ -570,14 +595,14 @@ test('the panel: the cue also watches the rendered list, and destroy() lets go o
 });
 
 // ── R1 m1: a pickup toast waits for the tool the pickup opens (interactions.js, notifications.js) ──
-test('pick-up-then-open: the branch expects the panel before the add, for every type that opens one', async () => {
+test('pick-up-then-open: the branch expects the panel before the add, for the phone and terminals that open one', async () => {
     resetInteractions();
     const order = [];
     window.expectPanelWithin = (ms) => order.push(['expect', ms]);
     const realPush = calls.push.bind(calls);
     calls.push = (c) => { order.push([c[0]]); return realPush(c); };
     try {
-        for (const type of ['lab-workstation', 'workstation', 'phone', 'mail_terminal', 'vm-launcher']) {
+        for (const type of ['phone', 'mail_terminal']) {
             order.length = 0;
             handleObjectInteraction(roomSprite({ id: 'x_' + type, type, name: type, takeable: true, phoneId: 'p1' }));
             await settle();
@@ -676,4 +701,28 @@ test('pending gate walk: a minigame opening on the way drops it, so he does not 
     assert.equal(g.get(), null);
     env.minigame = false; g.update(t + 700);
     assert.deepEqual(env.moves, [], 'no walk under the panel, nor after it');
+});
+
+test('laptop-type takeables are only picked up: added, one notice, no tool opens, even after the old 1 s delay', async () => {
+    resetInteractions();
+    const realSetTimeout = globalThis.setTimeout;
+    const timers = [];
+    globalThis.setTimeout = (cb, ms, ...a) => { timers.push({ ms }); return realSetTimeout(cb, ms, ...a); };
+    const opened = [];
+    const realStart = window.MinigameFramework?.startMinigame;
+    try {
+        for (const type of ['workstation', 'lab-workstation', 'vm-launcher', 'vm_launcher', 'launch-device']) {
+            calls.length = 0; timers.length = 0; opened.length = 0;
+            window.openCryptoWorkstation = () => opened.push('crypto');
+            window.openLabWorkstation = () => opened.push('lab');
+            window.MinigameFramework = { startMinigame: (t) => opened.push(t) };
+            const sprite = roomSprite({ id: 'x_' + type, type, name: 'Laptop ' + type, takeable: true, labUrl: 'http://x/' });
+            handleObjectInteraction(sprite);
+            await settle();
+            await new Promise(r => realSetTimeout(r, 1200));
+            assert.equal(calls.filter(c => c[0] === 'addToInventory').length, 1, `${type}: added once`);
+            assert.deepEqual(opened, [], `${type}: nothing opens`);
+            assert.ok(!timers.some(t => t.ms >= 900 && t.ms <= 1000), `${type}: no 1 s reopen timer`);
+        }
+    } finally { globalThis.setTimeout = realSetTimeout; if (realStart) window.MinigameFramework.startMinigame = realStart; }
 });

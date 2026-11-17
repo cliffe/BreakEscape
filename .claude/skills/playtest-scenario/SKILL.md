@@ -114,6 +114,7 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - `brief` waits up to 15 s for the player sprite after a reload. If it never appears, `brief` returns `{ready:false, reason:"player-not-ready"}` rather than throwing.
 - `bootstrap` stops on an ending: the credits overlay (`state.missionEnd`) or an end card whose only buttons leave the game ("Return to Missions"). It returns `settled:true, ended:true, endKind:"credits"|"end-card"` and does not click. Use `brief` after that. It cannot be used to get past an ending.
 - A container shows "Loading contents..." for a beat after opening. `mg getState` now waits that out; a state read during it reports an empty safe.
+- `mg getState` returns at most 2000 characters of minigame text. When the result says `textTruncated: true` (check `textLength`), rows past the cut are still on screen: scroll or read by row before reporting anything as missing. A blind run on 17 Nov reported a "missing" capture row that was only past the cut. Read a tablet or log again a second after opening too: values that load from the server can show a placeholder first.
 - An unlocked door can still be shut, and `enter` opens it before walking through. An unlocked door that has *vanished* is normal: opening a door removes its sprite on both sides. `enter` doesn't need the sprite.
 - `converse` stops once the conversation stops saying anything new, so hub NPCs no longer burn the whole turn budget. Pass `choices` when you need a branch. It never takes an option you did not name (see "Conversations" below): at an unnamed choice it stops and lists the options.
 
@@ -124,12 +125,31 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 - **Assigning a global through the bridge does not emit `global_variable_changed`**, so event mappings keyed on it don't fire. Trigger the real action, or emit the event yourself after setting the value.
 - **Prove texts and calls from the player's side.** For a text with a toast: ignore the toast and open the thread by hand, tap the toast, open the thread before the text arrives, and reload before and after delivery. For a voiced line, record the `/tts` requests (`npc_id`, text, delivery) and compare them with a known-good run; a screenshot of the subtitle doesn't show which voice was asked for.
 - **Compare saved conversation state without the seed.** `storySeed` is random per run, so compare `storyState` hashes with the seed removed.
+- **A ring times out after 20 s.** A script that waits longer before clicking Answer finds no banner. Auto-click it from the page (a `setInterval` on the incoming-call Answer button) rather than polling from the shell.
+- **`bootstrap` can ring out an opening call.** It waits up to 20 s (`OPENING_WAIT_MS`) while an opening call is pending, which equals the ring timeout. If `.incoming-call` is showing, answer it yourself first.
+- **A keyless server runs a call to its end in about 2 s** (no TTS to wait for). To prove something "during a call", use a call that stops at a choice and check `phoneRinger.callActive()` when the event fires.
+- **`{"cmd":"sync"}` is not a command.** Run `await window.stateSync.sync()` in the page before a reload test; state syncs on a 30 s tick, and a reload sooner leans on the unload flush.
+- **`jq '.x // .'` treats `false` as missing**, so a `false` result prints the whole reply and `grep -q true` matches `"ok":true`. Use `jq -e` or compare to the literal.
+- **A patrolling guard with a `player_in_view` mapping opens a person-chat about 30 s in**, which looks like an engine popup bug in a hold or popup proof. Turn it off (`guard_off`) first.
+- **An NPC cannot reach the player inside a minigame.** For a "hit" over a keypad use `playerHealth.damage(...)`; it does not close a legacy (non-ringer) voiced call, a real guard attack does.
+- **Hold proofs:** emit `ring_hold` directly once the object is open; `open_obj` retries when a neighbouring object opens.
+- **Never edit a route script while it runs**; bash reads it incrementally.
+- **`conversation_closed:<npc>` fires once per call**, including a call placed from that contact's thread, and again on a later visit to the thread. Count one per conversation.
+- **`ring.ringWhile` drops a queued or ringing call with no row, event or callback**, so check `phoneRinger` state, not the thread. An answered or held call is never dropped, and a mapping's trigger `condition` is not re-checked after it fires. The drop puts back the mapping's own `setGlobal` keys (only those still holding the value it wrote) and emits no `global_variable_changed`: read the global after the drop.
+- **A ring under a tutorial step panel waits** up to 20 s of unpaused time (or until the step changes), then rings with the banner clear of SKIP TUTORIAL. A route that skips the tutorial sees no wait.
+- **A terminal-look call that closes itself stays open for its read beat.** Wait for the phone to close before the next step.
+- **A choice written wholly in parentheses (`(Close.)`) posts no player bubble.** Don't count it as one.
+- **A contact's thread opened from a normal phone's list shows in the device look** even with `phoneTheme: "terminal"`. That is intended.
+- **The lab Dev and Ruth `sha256_noseed` hashes are the regression check** for anything that touches the phone.
+- **The Mission Brief popup reappearing after a resume is intended**, and a ring under it is frozen, not lost.
+- **jsdom harnesses for the ringer need `pretendToBeVisual`**, or `document.hidden` pauses it.
 
 ### Harness gotchas from pass 4 (October 2026)
 
 Each of these cost at least one pass-4 run (reports in `tools/playtest/m0*-pass4-*report.md`):
 
 - **`bootstrap` leaves the opening briefing alone (changed October 2026).** It used to auto-pick choice 1 at each menu, which committed story choices the tester never made and looped on long hubs (m07 Netherton, ~90 s; m03). Now it clears the resume prompt, tutorial prompt, title screen and notes, and when a dialogue is on screen it stops and returns `briefingPending:true` with that dialogue in `state`. Drive the briefing yourself with `converse` / `mg`, then call `bootstrap` again to clear whatever opens after it (the tutorial prompt appears once the briefing closes). `{"cmd":"bootstrap","autoBrief":true}` opts back in to the old auto-driving, for regression runs where the briefing choices do not matter. Don't close the title screen with `mg close` either; that has closed the briefing underneath it (m03, m06).
+- **`close()` closes a `gameDisplay` dialog first (changed November 2026).** A read note or the sis02 NIS form is a plain DOM overlay above every minigame, so `minigame.close()` / `mg close` clicks its X and answers `closed:'game-display'`, leaving any minigame or person-chat underneath open. Ending a conversation or minigame with a display up therefore needs a second `close()`. It answers `ok:false, reason:'game-display-did-not-close'` if the dialog is still there, so do not loop on `ok` alone without a cap.
 - **`bootstrap` after a reload (fixed October 2026).** A reload shows the "Continue?" title card first, and `minigame.close()` does not close it (it needs a player gesture), so bootstrap used to retry `close title-screen` up to 400 times (4-6 minutes) while the session stopped answering. It now waits for the prompt, presses Enter, then does a real click if the card is still up, and the trace says which ("title screen: Enter then click on \"Continue?\" -> closed"). Expect ~20 s after a reload in headless mode (title typing plus world build). `bootstrap` is bounded: `timeoutMs` (default 90000) and a per-overlay retry cap make it return `ok:false` with an error naming the last steps and the screen, instead of looping. The Resume button is matched by word and the OTHER SESSIONS Prev/Next/Load session links are never clicked. Use `?skip_resume=1` (the session's default URL) to avoid the overlay altogether.
 - **Run `verify-run.rb` through Rails:** `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>`. Plain `ruby` fails.
 - **Read the credits while they play.** They are one `#bv-cr-label` element (inside `#bv-credits-overlay`) that changes about every 3.5 s, and they don't replay after a reload. Attach a MutationObserver to `#bv-cr-label` before the last debrief line, and read the lines from it; `.bv-stage` is the visualiser panel, not the credits.
@@ -424,6 +444,23 @@ Interactables sit close together and the game routes a click by proximity to the
 How it is decided (changed October 2026): the bridge records which object, NPC or door the engine's own handlers (`handleObjectInteraction`, `tryInteractWithNPC`, `handleDoorInteraction`) were given for this click and compares its id with the one you asked for; a different one is `ok:false, mismatch:true, reason:"wrong-target-opened"` with `engineTarget` naming what the engine acted on. This check runs on every confirmation path (minigame, overlay, event). It no longer compares the object's name with the minigame's title, which reported working interactions as failures (Infected Terminal opens "Ransomware Impact Display", a Signing Case opens "Fingerprint Reader").
 
 Two limits. A door's own click zone calls its handler directly, so a door opened that way leaves no record; for a door whose lock minigame opened, the bridge reads the minigame's door instead. When neither source exists the reply carries **`targetUnverified:true`**: a minigame, overlay or event confirmed the click but nothing proves it is the target you asked for, so check what opened yourself. Overlays: see the `gameDisplay`/`gameConfirm` rule below under the command loop; a tutorial or session prompt, or a message that appears on a timer, comes back `ok:false, reason:"unrelated-overlay"`. A minigame that opens during the approach walk with no recorded target is accepted when it is the target door's own lock, and otherwise is `ok:false, reason:"unrelated-minigame"` (a timed or forced event, or an earlier interaction's delayed open). `enter` passes that reason through. Door overlays (`gameAlert`) never count as a click's effect.
+
+### Where the click lands, and what a move can report (November 2026)
+
+`interact(id)` clicks a point inside the target's own hit area that no other interactable claims (it used to click the object's top-left corner, which could sit inside a neighbour: sis02's HMI-OPS-01 opened the status board that way). Read these fields on every reply:
+
+- **`picked`** is what the engine's handler actually got. **`picked.matches:false` is a failed step**, whatever opened. `matches:null` means the engine's target had no id: check what opened before recording a pass, as with `targetUnverified`.
+- **`aim.clean:false`** means the target shares every point with `aim.sharedWith`. A menu may appear, and `interact` answers it by name.
+
+Use `moveToNear`, not `moveTo`, to get beside a target: it walks without sending any click. A move can come back `ok:false` for these reasons:
+
+- **`move-triggered-interaction`**: a click the harness sent to walk landed on something and opened it. That is a harness fault, not a finding: close what opened and reposition with `moveToNear`.
+- **`move-interrupted-by-game-event`**: the game started something on the way (a conversation, a call, a sight challenge, a timed event). Any player gets that, so it is not a failed step: deal with it, since it may be the mission's next beat, then repeat the move. Any range or contest warning the move had reached is kept in `arrival`.
+- **`blocking-ui`** names what is in the way (`blockingUi.kind`): an interaction menu to choose from or close, or an overlay to dismiss.
+- **The ending-check overlay** ("Before the mission ends", `#ending-check-overlay`) shows in `brief` as `blockingUi` with its buttons. Escape answers it "Keep going" and holds the debrief, so `mg close` and `pressKey Escape` refuse while it is up. Answer it with `{"cmd":"endingOverlay","action":"end"}` or `"keep"`.
+- **`movement-prevented`**: a script has switched movement off. Finish whatever holds the player.
+
+To test that progress survives closing the tab, close with `page.close({runBeforeUnload:true})`. Playwright's `browser.close()` skips pagehide, so it behaves like a crash and loses the last few seconds by design.
 
 ### Inventory items: `openInventoryItem`
 

@@ -27,7 +27,7 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
   def kim(extra = {})
     { 'id' => 'kim', 'needsHome' => 'kim_pc', 'workNeeds' => ['reports'],
       'needs' => { 'work' => { 'decayPerMin' => 40 }, 'social_media' => { 'decayPerMin' => 60 } },
-      'usbHabit' => { 'every' => 2, 'setGlobal' => 'kim_emailed' } }.merge(extra)
+      'habits' => { 'usb' => { 'every' => 2, 'setGlobal' => 'kim_emailed' } } }.merge(extra)
   end
 
   USB = { 'id' => 'kim_pc', 'why' => 'usb_refused' }.freeze
@@ -40,23 +40,23 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
     assert AW.usb_habit_refused?(scenario, kim)
     assert AW.usb_habit_refused?(scenario(usb: 'blocked'), kim)
     assert_not AW.usb_habit_refused?(scenario(usb: 'allowed'), kim)
-    assert_not AW.usb_habit_refused?(scenario, kim('usbHabit' => nil)), 'no habit'
+    assert_not AW.usb_habit_refused?(scenario, kim('habits' => {})), 'no habit'
     assert_not AW.usb_habit_refused?(scenario, kim('workNeeds' => [])), 'no work plan'
     assert_not AW.usb_habit_refused?(scenario, kim('needsHome' => nil)), 'no station'
   end
 
   test 'every: 1 to 10, default 2' do
-    assert_equal 2, AW.usb_every(kim('usbHabit' => {}))
-    assert_equal 3, AW.usb_every(kim('usbHabit' => { 'every' => 3 }))
-    assert_equal 2, AW.usb_every(kim('usbHabit' => { 'every' => 0 }))
-    assert_equal 2, AW.usb_every(kim('usbHabit' => { 'every' => 11 }))
-    assert_equal 2, AW.usb_every(kim('usbHabit' => { 'every' => 2.5 }))
+    assert_equal 2, AW.usb_every(kim('habits' => { 'usb' => {} }))
+    assert_equal 3, AW.usb_every(kim('habits' => { 'usb' => { 'every' => 3 } }))
+    assert_equal 2, AW.usb_every(kim('habits' => { 'usb' => { 'every' => 0 } }))
+    assert_equal 2, AW.usb_every(kim('habits' => { 'usb' => { 'every' => 11 } }))
+    assert_equal 2, AW.usb_every(kim('habits' => { 'usb' => { 'every' => 2.5 } }))
   end
 
   test 'can fail: only through the habit here' do
     assert AW.can_fail?(scenario, kim, 'work')
     assert_not AW.can_fail?(scenario(usb: 'allowed'), kim, 'work')
-    assert_not AW.can_fail?(scenario, kim('usbHabit' => nil), 'work')
+    assert_not AW.can_fail?(scenario, kim('habits' => {}), 'work')
   end
 
   test 'belongs: work at the station only' do
@@ -64,7 +64,7 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
     assert_not AW.cause_belongs?(scenario, kim, 'work', { 'id' => 'other_pc', 'why' => 'usb_refused' })
     assert_not AW.cause_belongs?(scenario, kim, 'social_media', USB)
     # Review R1 m2: only for an NPC whose station refuses its habit
-    assert_not AW.cause_belongs?(scenario, kim('usbHabit' => nil), 'work', USB), 'no habit'
+    assert_not AW.cause_belongs?(scenario, kim('habits' => {}), 'work', USB), 'no habit'
     assert_not AW.cause_belongs?(scenario(usb: 'allowed'), kim, 'work', USB), 'the policy allows USB'
   end
 
@@ -86,8 +86,8 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
 
   test 'the plan carries usb { every, setGlobal }; an undeclared global is left out' do
     assert_equal({ 'every' => 2, 'setGlobal' => 'kim_emailed' }, AW.plan(scenario, kim)['usb'])
-    assert_equal({ 'every' => 2 }, AW.plan(scenario, kim('usbHabit' => { 'every' => 2, 'setGlobal' => 'nope' }))['usb'])
-    assert_nil AW.plan(scenario, kim('usbHabit' => nil))['usb']
+    assert_equal({ 'every' => 2 }, AW.plan(scenario, kim('habits' => { 'usb' => { 'every' => 2, 'setGlobal' => 'nope' } }))['usb'])
+    assert_nil AW.plan(scenario, kim('habits' => {}))['usb']
   end
 
   STICK = { 'type' => 'usb', 'id' => 'kim_usb', 'name' => "Kim's USB stick", 'usbClass' => 'storage', 'takeable' => true }.freeze
@@ -96,7 +96,7 @@ class AccessWorkUsbHabitTest < ActiveSupport::TestCase
     held = [{ 'type' => 'key', 'id' => 'k' }, { 'type' => 'usb', 'name' => 'no id' }, STICK, STICK.merge('id' => 'second')]
     assert_equal 'kim_usb', AW.usb_stick(kim('itemsHeld' => held))['id']
     assert_nil AW.usb_stick(kim)
-    assert_nil AW.usb_stick(kim('itemsHeld' => [STICK], 'usbHabit' => nil)), 'no habit, no habit stick'
+    assert_nil AW.usb_stick(kim('itemsHeld' => [STICK], 'habits' => {})), 'no habit, no habit stick'
   end
 
   # Review R2 m4: a HID device is never the habit's stick

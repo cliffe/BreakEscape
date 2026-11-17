@@ -1,0 +1,13 @@
+{
+  "key": "8fccd94b9e56febf493b72fa13a4c0e5",
+  "npc": "lock_guard",
+  "text": "Who gave out the code?",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:59:04Z"
+}

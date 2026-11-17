@@ -1,0 +1,13 @@
+{
+  "key": "9280eb85eca65343e8f5d8fbbf120d67",
+  "npc": "zainab_hussain",
+  "text": "Eight years of vans and trains. I left a tablet on a train once. Never again.",
+  "voice": "Achernar",
+  "style": "Field engineer, mid-thirties, British Bangladeshi, from Leeds. Dry, down-to-earth and quick; short practical sentences, a light Yorkshire edge, mildly amused by the office.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:42:01Z"
+}

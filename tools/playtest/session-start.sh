@@ -45,15 +45,20 @@ rm -rf "$DIR"; mkdir -p "$DIR"
 mkfifo "$DIR/in"
 : > "$DIR/out"; : > "$DIR/err"
 
-# The `sleep infinity` holds the write end open, so the harness does not see
-# EOF between commands and the browser stays up for the whole playtest.
+# The holder keeps the write end open, so the harness does not see EOF between
+# commands and the browser stays up for the whole playtest. It watches the
+# harness and exits when the harness does (a quit command, a crash or a failed
+# start), so no keep-alive outlives its session. A bare `sleep infinity` holder
+# leaked one process per run that did not end through session-stop.sh.
 #
 # Every descriptor of both children is redirected away from ours. A background
 # child that inherits this script's stdout or stderr keeps the caller's pipe
 # open, so `session-start.sh | tail` would hang forever after we exit.
-( sleep infinity > "$DIR/in" 2>/dev/null < /dev/null & echo $! > "$DIR/holder.pid" )
 node "$HARNESS" "$@" < "$DIR/in" > "$DIR/out" 2> "$DIR/err" &
-echo $! > "$PIDFILE"
+HARNESS_PID=$!
+echo "$HARNESS_PID" > "$PIDFILE"
+( while kill -0 "$HARNESS_PID" 2>/dev/null; do sleep 2; done ) > "$DIR/in" 2>/dev/null < /dev/null &
+echo $! > "$DIR/holder.pid"
 disown -a 2>/dev/null || true
 
 # The harness emits one session-open line when the browser is ready.

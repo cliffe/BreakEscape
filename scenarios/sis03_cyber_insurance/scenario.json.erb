@@ -63,6 +63,7 @@ cabinet_pin = 5857 # @random_pin
   "disableAttacks": true,
   "creditsTheme": "cyber",
 
+  "npcThoughts": false,
   "startRoom": "meridian_claims_suite",
 
   "player": {
@@ -116,7 +117,7 @@ cabinet_pin = 5857 # @random_pin
       "takeable": true,
       "phoneId": "claims_phone",
       "npcIds": ["james_whitworth", "simon_hartley", "robert_ngata"],
-      "observations": "Meridian's dedicated claims response mobile. Contacts: James Whitworth (Albion General Manager), Simon Hartley (Fairbridge Associates), Robert Ngata (NCSC threat assessment lead; call him once you have read the NCSC brief)."
+      "observations": "Meridian's dedicated claims response mobile. Contacts: James Whitworth (Albion General Manager), Simon Hartley (Fairbridge Associates), Robert Ngata (NCSC threat assessment lead; message him once you have read the NCSC brief)."
     }
   ],
 
@@ -283,7 +284,7 @@ cabinet_pin = 5857 # @random_pin
     {
       "aimId": "trent_water_assessment",
       "title": "Assess Trent Water Exposure (Optional)",
-      "description": "Call Robert Ngata at the NCSC to discuss the Trent Water cross-sector exposure. Decide whether to include the third-party liability in scope or refer out pending investigation.",
+      "description": "Message Robert Ngata at the NCSC to discuss the Trent Water cross-sector exposure. Decide whether to include the third-party liability in scope or refer out pending investigation.",
       "status": "locked",
       "order": 5,
       "unlockCondition": { "globalVariable": "attribution_brief_reviewed", "equals": true },
@@ -293,7 +294,7 @@ cabinet_pin = 5857 # @random_pin
           "type": "npc_conversation",
           "targetNPC": "robert_ngata",
           "status": "locked",
-          "title": "Call Robert Ngata (NCSC) — assess Trent Water third-party exposure"
+          "title": "Message Robert Ngata (NCSC) — assess Trent Water third-party exposure"
         }
       ]
     },
@@ -570,7 +571,7 @@ cabinet_pin = 5857 # @random_pin
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "Eleanor Vance: Start with the policy binder on the desk and the FDP terminal — we need both before we can open the Evidence Archive. Whitworth's incident notification is on the desk as well — check it for the claim quantum and containment timeline. Come and talk to me when you've covered them."
+                "message": "Eleanor Vance: The policy binder and FDP terminal on the desk both unlock the Evidence Archive. Whitworth's notification there gives the claim quantum and containment timeline. Then come and talk."
               }
             },
             {
@@ -673,7 +674,7 @@ cabinet_pin = 5857 # @random_pin
               "setGlobal": { "ins008_assessed": true },
               "sendTimedMessage": {
                 "delay": 5000,
-                "message": "The NCSC brief flags the Trent Water exposure. Robert Ngata's contact is in the brief. Call him on the claims phone for what the NCSC knows about the Trent side."
+                "message": "The NCSC brief flags the Trent Water exposure. Robert Ngata's contact is in the brief. Message him on the claims phone for what the NCSC knows about the Trent side."
               }
             },
             {
@@ -743,7 +744,7 @@ cabinet_pin = 5857 # @random_pin
           "timedMessages": [
             {
               "delay": 15000,
-              "message": "James Whitworth (Albion): I'm told you're handling our claim. I was on leave that weekend, so the morning is second-hand, but I can take you through the claim. Message me any time.",
+              "message": "James Whitworth (Albion): I'm told you're handling our claim. I was on leave that weekend, so the morning is second-hand, but I can brief you. Message any time.",
               "type": "text",
               "waitForEvent": "global_variable_changed:briefing_played"
             }
@@ -755,7 +756,7 @@ cabinet_pin = 5857 # @random_pin
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 8000,
-                "message": "James Whitworth: I wanted to follow up on the W-07 timeline. Our remediation project was genuine — I can walk you through why the deadline slipped if that context helps your assessment."
+                "message": "James Whitworth: I wanted to follow up on the W-07 timeline. Our remediation project was genuine, and I can explain why the deadline slipped if that helps your assessment."
               }
             }
           ]
@@ -785,7 +786,7 @@ cabinet_pin = 5857 # @random_pin
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 6000,
-                "message": "Simon Hartley: You've seen my report. Call me about the contested items: the battery modules, and the deferred maintenance argument on the outage."
+                "message": "Simon Hartley: You've seen my report. Message me about the contested items: the battery modules, and the deferred maintenance argument on the outage."
               }
             }
           ]
@@ -834,6 +835,7 @@ cabinet_pin = 5857 # @random_pin
           "observations": "Meridian's internal claims lifecycle terminal. Use it to review policy and quarterly posture context.",
           "minigameData": {
             "title": "Meridian Claims Management System",
+            "subtitle": "MC-2023-ALBE-007 | Coverage Analysis Workspace",
             "printEnabled": true,
             "stateWrites": {
               "policy": "cms_policy_section_reviewed",
@@ -1021,7 +1023,8 @@ cabinet_pin = 5857 # @random_pin
           "puzzle_graph_aim": "make_recommendation",
           "observations": "A printed Meridian warranty compliance checklist. Four warranty rows — W-03, W-07, W-09, W-12 — with spaces to record compliance status and supporting evidence notes.",
           "minigameData": {
-            "title": "Warranty Compliance Checklist — MC-2023-ALBE-007",
+            "title": "Warranty Compliance Checklist",
+            "caseRef": "MC-2023-ALBE-007",
             "warranties": [
               {
                 "id": "w03",

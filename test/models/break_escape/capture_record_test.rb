@@ -99,6 +99,8 @@ module BreakEscape
       record = @game.player_state['seCaptures']
       assert record['len'].is_a?(Hash)
       assert_equal 7, record['len']['at'], 'the stored time is kept'
+      assert_equal true, record['len']['proven'],
+                   'a non-phish capture has no server re-derivation to defer to, so it keeps the old-rules grandfather'
       refute record['len'].key?('secret'), 'the client secret is never stored'
       refute record.key?('ghost'), 'an undeclared target is dropped'
       refute @game.player_state['globalVariables'].key?('se_captures'), 'the legacy global is deleted'
@@ -151,40 +153,11 @@ module BreakEscape
       refute @game.unrecorded_shared_logins?
     end
 
-    # 6b review m1: the phish-evidence fingerprint is stable while the evidence is unchanged and
-    # moves when a landing page or a landed sent mail arrives, so the sync step can skip the
-    # scenario load when a request brought no new phish evidence.
-    test 'phish_evidence_fingerprint is stable until a landing page or sent mail changes' do
-      base = @game.phish_evidence_fingerprint
-      assert_equal base, @game.phish_evidence_fingerprint, 'stable for the same state'
-
-      @game.player_state['globalVariables'] = { 'se_landing_pages' => {
-        'portal' => { 'built' => true, 'meetsThreshold' => true, 'victim' => { 'submitted' => true } }
-      } }
-      built = @game.phish_evidence_fingerprint
-      refute_equal base, built, 'a built page moves the fingerprint'
-
-      # A landed sent mail passed only in extra_sent (a mail section the merge refused over a cap)
-      # still moves it, so such a request is not mistaken for one with no new evidence.
-      sent = { 'folder' => 'sent', 'landed' => true, 'targetId' => 'phished', 'link' => { 'kitId' => 'kit_portal' } }
-      refute_equal built, @game.phish_evidence_fingerprint(extra_sent: [sent]), 'a landed sent mail moves it'
-
-      # A change that is not phish evidence (another global) does not move it.
-      @game.player_state['globalVariables']['unrelated'] = 'x'
-      assert_equal built, @game.phish_evidence_fingerprint, 'an unrelated global does not move it'
-    end
-
-    # 6b review n2: the stored-mail scan is memoised per request against the mailboxes identity, so
-    # several reveal / stamp checks reuse one walk. A fresh mailState object recomputes.
-    test 'each_stored_sent_message memoises against the mailboxes identity' do
-      @game.player_state['mailState'] = { 'mailboxes' => { 'inbox' => { 'messages' => [
-        { 'id' => 'm1', 'folder' => 'sent', 'landed' => true }
-      ] } } }
-      first = @game.send(:each_stored_sent_message)
-      assert_same first, @game.send(:each_stored_sent_message), 'same object reused while the mailbox is unchanged'
-
-      @game.player_state['mailState'] = { 'mailboxes' => { 'inbox' => { 'messages' => [] } } }
-      refute_same first, @game.send(:each_stored_sent_message), 'a replaced mailState recomputes'
-    end
+    # Chunk C (plan section 6): phish_evidence_fingerprint and each_stored_sent_message are retired
+    # with the sync's phish stamp branch (the gate reads the two server stores, written by the two
+    # gated routes, never the client globals or the stored mailbox). Their stability and memoisation
+    # tests retire with them; the new reader is proven in capture_proofs_test (the chunk C serving
+    # tests), the two route tests (se_landing_page_build_test, se_phish_send_test) and the legacy
+    # import tests (phish_legacy_migration_test and phish_legacy_migration_controller_test).
   end
 end

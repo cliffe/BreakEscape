@@ -1,7 +1,9 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class CryptexMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -77,6 +79,9 @@ export class CryptexMinigame extends MinigameScene {
     <button class="cryptex-submit-btn ready" id="cryptex-submit-btn">Submit</button>
   </div>
 </div>`;
+
+        // Name the bare subtitle so the crisp-text rule in minigames-framework.css can list it
+        this.gameContainer.querySelector('#cryptex-subtitle')?.classList.add('cryptex-subtitle');
 
         // Build wheels
         const wheelsContainer = this.gameContainer.querySelector('#cryptex-wheels');
@@ -304,8 +309,9 @@ export class CryptexMinigame extends MinigameScene {
 
             console.log('Validating cryptex with server:', { targetType, targetId, answer: answerStr });
 
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, answerStr, 'cryptex');
+            // Through the shared object-unlock retry so a correct answer on a route-room object is
+            // not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, answerStr, 'cryptex');
 
             if (response.success && response.hasContents && response.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = response.contents;
@@ -322,6 +328,7 @@ export class CryptexMinigame extends MinigameScene {
             const refusal = lockScopeRefusal(error);
             if (refusal) {
                 this.scopeRefusal = refusal;
+                this.scopeRefusalLine = lockScopeRefusalLine(error);
                 return false;
             }
             // A 5xx is a server fault, not a wrong answer (code review R3 n3): it takes the
@@ -340,7 +347,7 @@ export class CryptexMinigame extends MinigameScene {
     // Says why and closes as cancelled, counting no attempt (as the PIN pad does)
     _handleScopeRefusal(reason) {
         this.isLocked = true;
-        this._setStatus(LOCK_SCOPE_REFUSAL_TEXT[reason], '');
+        this._setStatus(this.scopeRefusalLine || LOCK_SCOPE_REFUSAL_TEXT[reason], '');
         this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
         setTimeout(() => this.complete(false), 2000);
     }

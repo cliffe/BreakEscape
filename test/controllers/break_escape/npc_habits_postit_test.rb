@@ -18,15 +18,15 @@ module BreakEscape
         'type' => 'room_office', 'connections' => { 'south' => 'lobby' },
         'objects' => [
           { 'id' => 'omar_pc', 'type' => 'pc', 'name' => "Omar's PC", 'locked' => true, 'lockType' => 'login',
-            'contents' => [{ 'type' => 'text_file', 'name' => 'a.txt', 'text' => 'a' }] },
-          { 'id' => 'ian_pc', 'type' => 'pc', 'name' => "Ian's PC", 'locked' => true, 'lockType' => 'login' },
+            'owner' => 'omar', 'contents' => [{ 'type' => 'text_file', 'name' => 'a.txt', 'text' => 'a' }] },
+          { 'id' => 'ian_pc', 'type' => 'pc', 'name' => "Ian's PC", 'locked' => true, 'lockType' => 'login', 'owner' => 'ian' },
           { 'id' => 'hot_desk', 'type' => 'pc', 'name' => 'Hot desk', 'locked' => true, 'lockType' => 'login' },
           { 'id' => 'noted_pc', 'type' => 'pc', 'name' => 'Noted PC', 'locked' => true, 'lockType' => 'login',
-            'screenOwner' => 'omar', 'postitNote' => AUTHORED_NOTE },
+            'owner' => 'omar', 'postitNote' => AUTHORED_NOTE },
           { 'id' => 'hidden_pc', 'type' => 'pc', 'name' => 'Hidden PC', 'locked' => true, 'lockType' => 'login',
-            'screenOwner' => 'omar', 'showPostit' => false },
+            'owner' => 'omar', 'showPostit' => false },
           { 'id' => 'len_pc', 'type' => 'pc', 'name' => "Len's PC", 'locked' => true, 'lockType' => 'login',
-            'screenOwner' => 'len' }
+            'owner' => 'len' }
         ],
         'npcs' => [
           { 'id' => 'omar', 'displayName' => 'Omar Haddad', 'npcType' => 'person', 'position' => { 'x' => 3, 'y' => 3 },
@@ -164,7 +164,9 @@ module BreakEscape
     test 'a request that names a foothold never gets the note (a remote sign-in, slice 9.3a)' do
       build
       get login_accounts_game_url(@game), params: { pc_id: 'omar_pc', foothold: 'jack_any' }
-      assert_response :success
+      # An unheld foothold cannot reach the PC (keyring K0): a 403 reach refusal, never the
+      # keyboard screen, so no note and no password can leak through a foothold-named request.
+      assert_response :forbidden
       assert_no_store
       refute response.parsed_body.key?('postitNote')
       refute_includes response.body, OMAR_PASSWORD

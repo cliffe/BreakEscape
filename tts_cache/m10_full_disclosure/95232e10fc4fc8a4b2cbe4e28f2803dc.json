@@ -1,0 +1,13 @@
+{
+  "key": "95232e10fc4fc8a4b2cbe4e28f2803dc",
+  "npc": "voltage_van",
+  "text": "You let me walk out of Albion, and tonight you did my job for me. Slower, but right.",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:12:26Z"
+}

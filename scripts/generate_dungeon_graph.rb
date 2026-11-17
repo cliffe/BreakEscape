@@ -21,9 +21,12 @@ Encoding.default_external = Encoding::UTF_8
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/network_model'
+require_relative '../lib/break_escape/credential_model'
 require_relative '../lib/break_escape/npc_habits'
 require_relative '../lib/break_escape/npc_habits/clues'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/wearable_model'
+require_relative '../lib/break_escape/scenario_binding'
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -50,43 +53,12 @@ JSON_FILE     = File.join(File.dirname(SCENARIO_FILE), 'dungeon_graph.json')
 SCENARIO_ID   = File.basename(File.dirname(SCENARIO_FILE))
 
 # ---------------------------------------------------------------------------
-# ERB context — replicates app/models/break_escape/mission.rb ScenarioBinding
-# ---------------------------------------------------------------------------
-class ScenarioBinding
-  def initialize
-    @random_password = SecureRandom.alphanumeric(8)
-    @random_pin      = rand(1000..9999).to_s
-    @random_code     = SecureRandom.hex(4)
-  end
-
-  attr_reader :random_password, :random_pin, :random_code
-
-  def vm_context
-    nil
-  end
-
-  def vm_object(_title, fallback = {})
-    fallback.to_json
-  end
-
-  def flags_for_vm(_vm, fallback = [])
-    fallback.to_json
-  end
-
-  def vm_flags_json(_vm, fallback = [])
-    fallback.to_json
-  end
-
-  def get_binding
-    binding
-  end
-end
-
-# ---------------------------------------------------------------------------
-# Parse
+# Parse: one ERB binding for every renderer (plan step 5). The generator's old copy had its
+# own vm_flags_json returning the fallback array; it now renders through the server's
+# BreakEscape::ScenarioBinding, so the top-level `flags` block is the Hash the server builds.
 # ---------------------------------------------------------------------------
 src      = File.read(SCENARIO_FILE)
-rendered = ERB.new(src).result(ScenarioBinding.new.get_binding)
+rendered = BreakEscape::ScenarioBinding.render(src)
 scenario = JSON.parse(rendered)
 
 # ---------------------------------------------------------------------------
@@ -509,6 +481,49 @@ end
   node[:label] = "#{node[:label]}<br/>gate: #{parts.join('; ')}"
 end
 
+# A split gated door (GATED_DOOR_SERVER_CHECK_PLAN.md §12): the server owns the way in. The door
+# opens on a server-owned pass (walk in behind the guard wearing it) or on a cloned/held requires
+# card at the reader, and the server credits the passage itself. Label it so the structure is
+# visible: the holdsDoors block above skips a gate with a playerMayPassIf, so these get no label
+# otherwise. Mirrors Game#gate_splits?: a server-owned playerMayPassIf, or an rfid_cloner present.
+DG_SERVER_OWNED_GLOBALS = (BreakEscape::WearableModel.worn_globals(scenario) +
+  Array(scenario['importGlobals']).filter_map { |e| e.is_a?(Hash) ? (e['as'] || e['completed'] || e['var']) : nil } +
+  %w[se_captures]).map(&:to_s).to_set
+dg_cloner_walk = lambda do |node|
+  case node
+  when Array then node.any? { |n| dg_cloner_walk.call(n) }
+  when Hash then node['type'] == 'rfid_cloner' || node.each_value.any? { |v| dg_cloner_walk.call(v) }
+  else false
+  end
+end
+dg_has_cloner = dg_cloner_walk.call(scenario)
+(habits_copy['rooms'].is_a?(Hash) ? BreakEscape::NpcHabits.gate_entries(habits_copy) : []).each do |entry|
+  next if entry[:doorway]
+
+  gate = entry[:gate]
+  pass_if = gate['playerMayPassIf']
+  pass_server_owned = pass_if.is_a?(String) && !pass_if.empty? && DG_SERVER_OWNED_GLOBALS.include?(pass_if)
+  room = (habits_copy['rooms'][entry[:connected_room]] if habits_copy['rooms'].is_a?(Hash))
+  room_requires = room.is_a?(Hash) ? Array(room['requires']).map(&:to_s).reject(&:empty?) : []
+  # Split predicate mirrors runtime Game#gate_splits? and the validator exactly (R3 minor 3): a
+  # server-owned pass, or an rfid_cloner anywhere, with no room-requires condition. The credential
+  # LABEL still needs a requires card (a cloner with nothing to clone opens no door); a gate that
+  # splits only on a cloner with no card is labelled 'route only' (a shape no deployed scenario
+  # ships, which the validator errors on). Keep in step with Game#gate_splits? and the validator.
+  has_credential = dg_has_cloner && room_requires.any?
+  splits = pass_server_owned || dg_has_cloner
+  next unless splits
+
+  node = $nodes["door_#{entry[:connected_room]}"]
+  next unless node
+
+  label_parts = []
+  label_parts << 'credential' if has_credential
+  label_parts << 'server pass' if pass_server_owned
+  label_parts << 'route only' if label_parts.empty?
+  node[:label] = "#{node[:label]}<br/>gated: #{label_parts.join(' or ')}"
+end
+
 # ---------------------------------------------------------------------------
 # Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, section 7.3). A jack is a lock-like node that
 # the rogue device opens, from the jack's room, with an edge to its network's node. A
@@ -624,9 +639,9 @@ def check_wifi_key_free(outputs)
     removed.each { |f| File.delete(f) }
     cause = if SCRUB_OFF_FOR_TEST
               'The label scrub was off because DUNGEON_GRAPH_TEST_NO_SCRUB=1 is set: unset it and run again.'
-            else
+    else
               'An authored string reaches the output by a path scripts/generate_dungeon_graph.rb does not scrub.'
-            end
+    end
     gone = removed.empty? ? 'No graph file was written.' : "No graph file was written, and the old #{removed.map { |f| File.basename(f) }.join(', ')} were deleted so a stale copy cannot stay on disk."
     warn "❌ ERROR: #{File.basename(file)} still holds a Wi-Fi key after the label scrub. #{gone} #{cause}"
     exit KEY_STOP_STATUS
@@ -636,7 +651,7 @@ if NETWORKS.any?
   nm = BreakEscape::NetworkModel
   ai = BreakEscape::AccessIdentities
   # An outage (slice 9.3b, plan 9.3) is a condition on the network node, not a gate: the
-  # label names the downIf global and says whether the network starts down.
+  # label names the offWhen condition and says whether the network starts down.
   globals_g = scenario['globalVariables'].is_a?(Hash) ? scenario['globalVariables'] : {}
   # A label from an authored value only when it is a non-blank string, else the fallback.
   npc_text = ->(value, fallback) { nm.present_string?(value) ? value : fallback.to_s }
@@ -648,10 +663,13 @@ if NETWORKS.any?
   net_node = lambda do |net_id|
     net = NETWORKS[net_id]
     label = "#{safe_text.call(net['name'], net_id)}<br/>Network"
-    down = net['downIf']
-    if nm.present_string?(down)
-      label += "<br/>down while #{down}"
-      label += ' (down at start)' if nm.truthy?(globals_g[down])
+    cond = net['offWhen']
+    present = cond.is_a?(String) ? !cond.strip.empty? : (cond.is_a?(Hash) && !cond.empty?)
+    if present
+      shown = cond.is_a?(String) ? cond : cond.map { |k, v| "#{k}=#{v}" }.join(' &amp; ')
+      label += "<br/>down while #{shown}"
+      down_at_start = cond.is_a?(String) ? nm.truthy?(globals_g[cond]) : cond.all? { |k, v| globals_g[k.to_s] == v }
+      label += ' (down at start)' if down_at_start
     end
     add_node("net_#{nid(net_id)}", label, 'room')
   end
@@ -1063,7 +1081,7 @@ end
 # Workarounds (ACCESS_MODEL_SLICE_9_2_PLAN.md, section 10). Each workaround is an action node
 # ("Jake: writes it down, at 50") with an edge to what it opens: the account's sign-in node
 # for writes_down and share_login, the PC for borrow_session, the door for prop_door. An
-# outage global (a resource's downIf in the NPC's work list, or its station's offWhen) is a
+# outage global (a resource's offWhen in the NPC's work list, or its station's offWhen) is a
 # gate node with an edge to each workaround of each NPC it can frustrate, so a chain reads
 # outage, person and workaround, then the thing opened. Read through BreakEscape::AccessWork,
 # the server's resolver.
@@ -1084,12 +1102,16 @@ aw_g.with_index(scenario) do
     res = aw_g.resources(scenario)
     if aw_g.need?(npc, 'work')
       aw_g.work_list(scenario, npc).each do |rid|
-        dn = res.dig(rid, 'downIf')
-        outages << dn if aw_g.present_string?(dn)
+        cond = res.dig(rid, 'offWhen')
+        if cond.is_a?(String) && !cond.strip.empty?
+          outages << cond
+        elsif cond.is_a?(Hash)
+          outages.concat(cond.keys.map(&:to_s))
+        end
       end
     end
     st = aw_g.station(scenario, npc)
-    off = st ? aw_g.affordance(scenario, st)&.dig('offWhen') : nil
+    off = st ? aw_g.object_off_when(st) : nil
     outages << off if off.is_a?(String) && !off.empty?
     outages.concat(off.keys.map(&:to_s)) if off.is_a?(Hash)
 
@@ -1593,6 +1615,51 @@ aim_edges.select { |e| e[:story_gate] }.each do |e|
   end
 end
 aim_edges.each { |e| e.delete(:gates); e.delete(:story_gate); e.delete(:root) }
+
+# ---------------------------------------------------------------------------
+# Credential registry (CREDENTIAL_KEYRING_PLAN.md, section 6.1). Each built credential is a key
+# node; an edge runs from its proof source (a held item, a reachable foothold or a PC session) to
+# the credential, and from the credential to each sign-in PC that accepts it. Drawn only for a
+# scenario that declares a `credentials` registry, so other graphs are unchanged.
+# ---------------------------------------------------------------------------
+BreakEscape::CredentialModel.registry(scenario).each do |cid, cred_entry|
+  cred_kind = cred_entry['kind']
+  next unless BreakEscape::CredentialModel.kind_built?(cred_kind)
+
+  cred_npc = BreakEscape::CredentialModel.account_npc(scenario, cred_entry['account'])
+  next unless cred_npc
+
+  cred_node = "cred_#{nid(cid)}"
+  cred_user = cred_npc.dig('creds', 'username')
+  add_node(cred_node, "#{cred_npc['displayName'] || cred_npc['id']} #{cred_kind.tr('_', ' ')}<br/>(#{cred_user})", 'key')
+
+  cred_proof = cred_entry['proof']
+  case BreakEscape::CredentialModel.proof_kind(cred_proof)
+  when 'held'
+    cred_def = BreakEscape::CredentialModel.item_definition(scenario, cred_proof['held'])
+    if cred_def
+      cred_src = "cred_src_#{nid(cred_proof['held'])}"
+      add_node(cred_src, (cred_def['name'] || cred_proof['held']).to_s, 'item')
+      add_edge(cred_src, cred_node)
+    end
+  when 'foothold'
+    cred_jack = "jack_#{nid(cred_proof['foothold'])}"
+    add_edge(cred_jack, cred_node) if $nodes.key?(cred_jack)
+  when 'session'
+    cred_sess = "lock_#{cred_proof['session']}"
+    add_edge(cred_sess, cred_node) if $nodes.key?(cred_sess)
+  when 'planted', 'dropped'
+    # A capture proof; the capture and social sections already show how the secret is earned.
+  end
+
+  BreakEscape::CredentialModel.pcs_accepting(scenario, cid).each do |cred_pc|
+    cred_pc_lock = "lock_#{cred_pc['id']}"
+    unless $nodes.key?(cred_pc_lock)
+      add_node(cred_pc_lock, "#{cred_pc['name'] || cred_pc['id']}<br/>#{LOCK_TYPE_LABELS[cred_pc['lockType']] || 'Lock'}", 'lock')
+    end
+    add_edge(cred_node, cred_pc_lock)
+  end
+end
 
 # ---------------------------------------------------------------------------
 # Integrated graph: puzzle + aims + bridge edges

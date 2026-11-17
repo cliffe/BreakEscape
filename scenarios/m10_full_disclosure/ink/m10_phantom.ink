@@ -33,6 +33,7 @@ VAR pha_list_heard = false
     ~ pha_list_heard = true
     -> the_list
 + {whodunit_live and pha_list_heard and not clue_bench_log} [Who signed for the case?]
+    ~ signout_read = true
     ~ clue_bench_log = true
     Agent 0x88 'Phantom': Kowalczyk and Arakawa. Both signatures are good. The count isn't.
     ~ pha_quiet = true
@@ -48,10 +49,10 @@ VAR pha_list_heard = false
 === the_list ===
 {
 - whodunit_live:
-    Agent 0x88 'Phantom': Since Portland I audit every sign-out. That case went out with one more unit than its sheet lists.
-    Agent 0x88 'Phantom': Two names signed for it.
+    Agent 0x88 'Phantom': Since Portland I audit every sign-out. That case went out with a cloner its sheet doesn't list.
+    Agent 0x88 'Phantom': The bench log has it reading one of our badges at one fifty-eight. Two names signed for the case.
 - else:
-    Agent 0x88 'Phantom': Since Portland I audit every sign-out. Tonight's balances. I checked twice, out of habit.
+    Agent 0x88 'Phantom': Since Portland I audit every sign-out. Tonight's count balances. I checked twice, out of habit.
 }
 ~ pha_quiet = true
 -> post
@@ -63,11 +64,11 @@ VAR pha_list_heard = false
     -> post
 }
 // Playtest R1 m-1: a condition, not a verdict, for the right officer too.
-Agent HaX: If that's wrong, Netherton loses Phantom till you can clear him. Sure?
+agent_0x99: If that's wrong, Netherton loses Phantom till you can clear him. Sure?
 + [I'm sure.]
     ~ officer_out = "phantom"
     ~ wrong_accusation = true
-    Agent 0x88 'Phantom': Ask me for my list next time. It has a name on it, and it isn't mine.
+    Agent 0x88 'Phantom': Ask me for my list next time. It has two names on it. Neither is mine.
     Director Magnus Netherton: Then I am a pair of hands short. Carry on.
     ~ pha_quiet = true
     #exit_conversation

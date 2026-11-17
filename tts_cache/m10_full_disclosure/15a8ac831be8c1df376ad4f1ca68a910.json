@@ -1,0 +1,14 @@
+{
+  "key": "15a8ac831be8c1df376ad4f1ca68a910",
+  "npc": "voltage_van",
+  "text": "I'm not going to argue with my own thumb.",
+  "delivery": "flatly",
+  "voice": "Alnilam",
+  "style": "Critical Mass field lieutenant, a former grid engineer in his mid-forties. Speak with a consistent South African English (Johannesburg) accent throughout -- do not shift to any other accent. Low, flat pitch; slow, clipped pace. Detached and contemptuous, barely looking up; nothing anyone says is new to him.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:29:32Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "2e2207f7a2c5777e1fbf719977d5e074",
+  "npc": "tom",
+  "text": "Strong one today?",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:17:36Z"
+}

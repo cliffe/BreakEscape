@@ -139,7 +139,7 @@ test('a name with markup characters is a plain string in the toast', () => {
 
 // ── friendface-phone.js counts ────────────────────────────────────────────────
 
-const phone = (owner) => ({ type: PHONE_TYPE, id: owner ? `${owner}_phone` : 'mine', name: 'p', ...(owner ? { phoneOf: owner } : {}) });
+const phone = (owner) => ({ type: PHONE_TYPE, id: owner ? `${owner}_phone` : 'mine', name: 'p', ...(owner ? { owner } : {}) });
 function phones(items) {
     return new FriendfacePhones({ items: () => items, held: () => false, play() {}, refresh() {}, setNoPhone() {} });
 }

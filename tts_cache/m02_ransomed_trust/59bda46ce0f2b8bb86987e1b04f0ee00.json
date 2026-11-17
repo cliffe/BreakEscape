@@ -1,0 +1,13 @@
+{
+  "key": "59bda46ce0f2b8bb86987e1b04f0ee00",
+  "npc": "ernesto_bautista",
+  "text": "Tonight that's samples down to the lab and results back up.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:31Z"
+}

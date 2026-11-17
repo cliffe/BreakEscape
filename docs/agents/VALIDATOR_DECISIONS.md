@@ -195,3 +195,99 @@ Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (me
 
 Owner: escape-room track. Status: signed off by the orchestrator, 2026-11-12 (merge batch 13). Design edit: each mapping sets a global and the ink hub gets a conditional option for it.
 
+
+## 2026-11-14: m06 custody console slot clue
+
+```json
+{
+  "lock": "cold_storage_console",
+  "in": "transaction_server",
+  "reason": "Tracing the three suspense withdrawals to the matching slot number is the puzzle; the slots are shown in the unlocked transaction server, not on the custody console."
+}
+```
+
+Signed off by the hardening orchestrator, 2026-11-15.
+
+Owner: m06. Acknowledged clue (step 3). The custody console PIN (`data_center/objects[1].requires`, id `cold_storage_console`) equals three `withdrawals[].slot` values in the transaction server's `minigameData` (`data_center/objects[0]`, id `transaction_server`). The server is not the lock and not inside it; reading the slots off the unlocked server is the deduction.
+
+## 2026-11-14: m08 suite_code spoken clue
+
+```json
+{
+  "lock": "interrogation_room",
+  "in": "global:suite_code",
+  "reason": "Netherton says the interrogation suite code aloud in his voiced ink, so the global carries it from game start; accepted as a best-effort clue (q85)."
+}
+```
+
+Signed off by the hardening orchestrator, 2026-11-15.
+
+Owner: m08. Acknowledged clue in a global (step 3), printed as a warning, not an info line. The interrogation suite PIN is held in `globalVariables.suite_code` so Netherton's voiced ink can speak it. Server-held globals are dropped (q85); this is the cheat policy's best effort for a clue an NPC must say aloud.
+
+## 2026-11-15: m09_digital_archaeology opened-state class-2 display text
+
+```json
+{
+  "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+  "route": "GET room/:id",
+  "paths": [
+    "rooms/reading_room/objects[2]/textVariants"
+  ]
+}
+```
+
+**Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside the locked reading room's in-world display text (the `drop_terminal_screen` textVariants), a deliberate clue gated in the game world on `flag2_submitted`/`invoice_booked`. Not a filter gap; does not start 6b. Follow-up for m09's owner: declare it in `acknowledgedClues`.
+
+## 2026-11-15: m09_digital_archaeology opened-state class-2 item name
+
+```json
+{
+  "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+  "route": "GET /container",
+  "paths": [
+    "container/hl_box/contents[0]/name"
+  ]
+}
+```
+
+**Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): a 6+ character lock answer appears as a whole word inside a held item's display name, in the locked hl_box container. The name is shown only after the hl_box unlock, so it is harmless. Not a filter gap; does not start 6b.
+
+## 2026-11-15: m09_digital_archaeology opened-state class-2 inventory name
+
+```json
+{
+  "scenario": "scenarios/m09_digital_archaeology/scenario.json.erb",
+  "route": "GET scenario",
+  "paths": [
+    "playerInventory[7]/name"
+  ]
+}
+```
+
+**Signed by the orchestrator, 2026-11-15.** Owner: m09. Opened-state payload scan (6a-2), class 2 (step 3's leak rule): the same held item as the hl_box entry above. Once the player unlocks hl_box and picks the item up, its display name travels with it into playerInventory. The item is only takeable after the hl_box unlock that earns the answer, so this adds no new exposure. Not a filter gap; does not start 6b.
+
+## 2026-11-16: rogue_ap sprite waits on A3 art (RESOLVED 2026-11-16, entry removed)
+
+```json
+{
+  "scenario": "scenarios/test_access_devices/scenario.json.erb",
+  "stage": "common",
+  "match": "has type 'rogue_ap' but no matching sprite found",
+  "count": 1
+}
+```
+
+Signed off by the devices orchestrator, 2026-11-16. Owner: devices build. The pocket rogue AP start item (`kit_rogue_ap`, type `rogue_ap`) has no `assets/objects/rogue_ap.png` yet: its art is slice A3, which waits on the user's approval of the mock-ups. The item carries `sprite: "drop_box1"`, so it renders in game; only the type-sprite check fires. **Resolved:** A3 run 1 added `assets/objects/rogue_ap.png`, registered it, and pointed `kit_rogue_ap` at it. The check now passes, so the known-failure entry is removed.
+
+## 2026-11-16: A2 R1 decision, shared door_admin target
+
+```json
+{
+  "scenario": "scenarios/lab_physical_pentest/scenario.json.erb",
+  "stage": "common",
+  "match": "two capture routes write targetId \"door_admin\"",
+  "count": 1
+}
+```
+
+Signed off by the devices orchestrator, 2026-11-16 (A2 review round 1). Owner: devices build. The drop box route and the Wi-Fi route each file the `door_admin` capture from a `pc_signed_in` mapping split on `footholdId`, so only one of them fires in a game. The validator reads the two writers without the split and reports a duplicate target. Intended design: one door-controller finding, reached by either route.

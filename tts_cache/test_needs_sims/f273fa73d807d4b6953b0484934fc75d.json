@@ -1,0 +1,13 @@
+{
+  "key": "f273fa73d807d4b6953b0484934fc75d",
+  "npc": "marek",
+  "text": "Whose birthday is it?",
+  "voice": "Orus",
+  "style": "Telecoms contractor, fifties, Polish-born, years in the UK. Gruff but not unfriendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:25:17Z"
+}

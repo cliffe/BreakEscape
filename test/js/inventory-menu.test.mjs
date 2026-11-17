@@ -17,7 +17,7 @@ const dom = new JSDOM('<!doctype html><html><head></head><body></body></html>');
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const {
-    inventoryMenuFor, openInventoryItemMenu, dropBlockedReason, hasTriggerOnInteract, slotPoint
+    inventoryMenuFor, openInventoryItemMenu, dropBlockedReason, hasTriggerOnInteract, slotPoint, inventoryMenuIcon
 } = await import(pathToFileURL(join(js, 'systems/inventory-menu.js')).href);
 const { showInteractionMenu, isInteractionMenuOpen, closeInteractionMenu } = await import(pathToFileURL(join(js, 'ui/interaction-menu.js')).href);
 
@@ -95,7 +95,7 @@ test('an item no longer in the inventory, or with no data, has no menu', () => {
     assert.equal(menu(null), null);
 });
 
-test('the carried vest keeps its one click (a wearable that is not droppable has no menu)', () => {
+test('a carried vest with nothing to read keeps its one click (not droppable, no observations: no menu)', () => {
     // As the lab gives it (give_item): wearable, not droppable
     const vest = held({ id: 'kit_hivis_vest', type: 'aes_hivis_hook1', name: 'Hi-vis courier vest',
         sprite: 'aes_hivis_hook1', wearable: { costume: 'courier', global: 'courier_ready' } });
@@ -137,6 +137,43 @@ test('"Drop here" is greyed with a reason between rooms or in a doorway', () => 
     assert.equal(entries[1].disabled, undefined);
 });
 
+
+// UX slice 4 R1 m1: menu entries carry icons, at whole-number scale
+test('every tray menu entry has a pixel icon: the item picture for Use, shared icons for Drop and Examine', () => {
+    const el = held({ id: 'b10', name: 'Beacon', droppable: true, triggerOnInteract: [] });
+    Object.assign(el, { src: '/x/beacon.png', naturalWidth: 20, naturalHeight: 16 });
+    let shown;
+    openInventoryItemMenu(el, 10, 20, {
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: {},
+        dropBlockedReason: () => null,
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    assert.deepEqual(shown.map(e => e.icon), [
+        { src: '/x/beacon.png', width: 60, height: 48 },
+        { src: '/break_escape/assets/icons/menu-drop.png', width: 64, height: 64 },
+        { src: '/break_escape/assets/icons/menu-examine.png', width: 64, height: 64 }
+    ]);
+    // The two shared icons are 32x32 PNGs, drawn at 2x like the hand icon
+    for (const f of ['menu-drop.png', 'menu-examine.png']) {
+        const b = readFileSync(join(js, '../assets/icons', f));
+        assert.equal(b.toString('ascii', 1, 4), 'PNG', f);
+        assert.deepEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [32, 32], f);
+    }
+    // A picture larger than the 64px box is never shrunk (R2 m6): it gets the shared open hand,
+    // drawn at a whole-number scale; one that fits is scaled up by a whole number
+    const hand = inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 100, naturalHeight: 50 });
+    assert.deepEqual(hand, { src: '/break_escape/assets/icons/hand_frames.png', frame: 0, cols: 4, cell: 32 });
+    assert.equal(Number.isInteger(64 / hand.cell), true);
+    assert.equal(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 65, naturalHeight: 10 }).src, hand.src);
+    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 64, naturalHeight: 30 }), { src: 'a.png', width: 64, height: 30 });
+    assert.deepEqual(inventoryMenuIcon('use', { src: 'a.png', naturalWidth: 30, naturalHeight: 25 }), { src: 'a.png', width: 60, height: 50 });
+    assert.equal(inventoryMenuIcon('use', {}), undefined);
+    // The rendered menu draws them
+    showInteractionMenu(shown, 10, 20, 'Beacon', { numberKeys: true });
+    assert.equal(document.querySelectorAll('#be-interaction-menu .be-im-icon').length, 3);
+    closeInteractionMenu();
+});
 test('the tray click maps the entries onto drop, examine and use', () => {
     const calls = [];
     const el = held({ id: 'b9', name: 'Beacon', droppable: true, triggerOnInteract: [] });
@@ -151,10 +188,20 @@ test('the tray click maps the entries onto drop, examine and use', () => {
     assert.equal(opened, true);
     assert.equal(shown.title, 'Beacon');
     assert.deepEqual([shown.x, shown.y], [10, 20]);
-    assert.deepEqual(shown.opts, { numberKeys: true });
+    assert.deepEqual(shown.opts, { numberKeys: true, holdKeys: true }, 'no fight: holds the game keys');
     assert.deepEqual(shown.entries.map(e => e.label), ['Use', 'Drop here', 'Examine']);
     shown.entries.forEach(e => e.onSelect());
     assert.deepEqual(calls, [['use', el], ['drop', el], ['examine', el]]);
+
+    // a fight in the room: the menu leaves the game keys alone
+    let fightShown;
+    openInventoryItemMenu(el, 10, 20, {
+        ctx: { inventoryItems: items, dropBlocked: null },
+        window: { roomHasActiveHostile: () => true },
+        dropBlockedReason: () => null,
+        showInteractionMenu: (entries, x, y, title, opts) => { fightShown = opts; }
+    });
+    assert.deepEqual(fightShown, { numberKeys: true, holdKeys: false });
 
     // no menu: the caller runs the click as before
     const phone = held({ type: 'phone', id: 'p', name: 'Phone' });
@@ -316,4 +363,127 @@ test('a 0,0 position is no position: the menu is not pinned to the top-left corn
     const src = readFileSync(join(js, 'ui/interaction-menu.js'), 'utf8');
     const at = src.indexOf('if (clientX === 0 && clientY === 0) { clientX = undefined; clientY = undefined; }');
     assert.ok(at > 0 && at < src.indexOf('let x = (clientX ?? window.innerWidth / 2)'), 'cleared before the fallback is read');
+});
+
+// UX feedback slice 3a (main2-16): a small image icon drawn at the exact size asked for,
+// centred, never scaled by a fraction; a sheet frame scales to the 64px box.
+test('menu icons: an exact-size image is centred at that size, a sheet frame fills the box', () => {
+    showInteractionMenu([
+        { label: 'Copy it', icon: { src: '/a/rfid_cloner.png', width: 22, height: 44 }, onSelect() {} },
+        { label: 'Take it', icon: { src: '/a/hand_frames.png', frame: 0, cols: 4, cell: 32 }, onSelect() {} },
+        { label: 'Talk', icon: { src: '/a/talk.png' }, onSelect() {} }
+    ], 50, 50, 'Card');
+    const icons = [...document.querySelectorAll('.be-im-item .be-im-icon')];
+    assert.equal(icons.length, 3);
+    assert.equal(icons[0].style.backgroundSize, '22px 44px');
+    assert.equal(icons[0].style.backgroundPosition, 'center');
+    assert.equal(icons[1].style.backgroundSize, '256px auto', 'the 128px sheet at x2');
+    assert.equal(icons[2].style.backgroundSize, 'contain', 'an image with no size keeps the old rule');
+    closeInteractionMenu();
+});
+
+// UX slice 3a R1 M1: a menu entry's detail shows in full. With a 64px icon in the row the
+// old two-line clamp cut the Copy entry's last sentence (the one that tells Copy from Take).
+test('no menu detail is clamped or cut with an ellipsis', () => {
+    showInteractionMenu([
+        { label: 'Copy it', detail: 'Read the card and save a copy on the card copier. The card stays where it is.',
+            icon: { src: '/a/rfid_cloner.png', width: 22, height: 44 }, onSelect() {} }
+    ], 50, 50, 'Card');
+    const css = document.getElementById('be-interaction-menu-styles').textContent;
+    const rule = css.match(/#be-interaction-menu \.be-im-detail \{([^}]*)\}/);
+    assert.ok(rule, 'the detail has a rule');
+    assert.doesNotMatch(rule[1], /line-clamp|text-overflow|overflow\s*:\s*hidden|white-space\s*:\s*nowrap|max-height|-webkit-box/,
+        'the detail wraps to as many lines as it needs');
+    assert.doesNotMatch(css, /ellipsis|line-clamp/, 'nothing in the menu is cut with an ellipsis');
+    const detail = document.querySelector('.be-im-detail');
+    assert.match(detail.textContent, /The card stays where it is\.$/, 'the whole detail is in the entry');
+    closeInteractionMenu();
+});
+
+// ── Keyring K3b (CREDENTIAL_KEYRING_PLAN.md 8.2): Connect from the tray ───────────────────────
+// The item's own `credential` never reaches the client, so the menu matches the tray item's id
+// against a GET /keyring row's heldItem through window.keyring (the real Keyring class).
+const { Keyring } = await import(pathToFileURL(join(js, 'systems/keyring.js')).href);
+const { trayClickIsConnect, connectMenuEntry, CONNECTING_TEXT } = await import(pathToFileURL(join(js, 'systems/inventory-menu.js')).href);
+const RDP = { id: 'lena_rdp_file', type: 'text_file', name: 'HB-FIN-02.rdp', text: 'Saved connection.', observations: 'A saved connection file.' };
+const keyringWith = (entries) => { const kr = new Keyring(); kr.latest = entries; return kr; };
+const rdpEntry = { id: 'lena_rdp', kind: 'saved_connection', heldItem: 'lena_rdp_file', host: 'HB-FIN-02', connectsTo: 'lena_pc' };
+const assistEntry = { id: 'jake_assist', kind: 'assist_invite', heldItem: 'jake_assist_code', host: 'HB-FIN-03', connectsTo: 'jake_pc' };
+
+test('K3b: a held saved connection gets [Connect, Examine]', () => {
+    const w = { keyring: keyringWith([rdpEntry]) };
+    const el = held(RDP);
+    const entries = inventoryMenuFor(el, { inventoryItems: items, dropBlocked: null, window: w });
+    assert.deepEqual(labels(entries), ['Connect', 'Examine']);
+    assert.equal(entries[0].id, 'connect');
+    assert.equal(trayClickIsConnect(el, { inventoryItems: items, window: w }), false, 'it has a menu');
+});
+
+test('K3b: a droppable saved connection adds Drop here between Connect and Examine', () => {
+    const w = { keyring: keyringWith([rdpEntry]) };
+    const el = held({ ...RDP, droppable: true });
+    el.scenarioData.takeable = true;
+    assert.deepEqual(labels(inventoryMenuFor(el, { inventoryItems: items, dropBlocked: null, window: w })), ['Connect', 'Drop here', 'Examine']);
+});
+
+test('K3b: with nothing to read, the click is Connect itself, no menu', () => {
+    const connects = [];
+    const kr = keyringWith([rdpEntry]);
+    kr.connect = (s) => { connects.push(s); return Promise.resolve({ outcome: 'stub' }); };
+    const w = { keyring: kr };
+    const el = held({ id: 'lena_rdp_file', type: 'text_file', name: 'HB-FIN-02.rdp' });
+    assert.equal(inventoryMenuFor(el, { inventoryItems: items, dropBlocked: null, window: w }), null);
+    assert.equal(trayClickIsConnect(el, { inventoryItems: items, window: w }), true);
+    let shown = false;
+    const opened = openInventoryItemMenu(el, 1, 1, {
+        ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w,
+        showInteractionMenu: () => { shown = true; }
+    });
+    assert.equal(opened, true, 'the click is taken');
+    assert.equal(shown, false, 'no menu');
+    assert.deepEqual(connects, [el], 'Connect ran once');
+    // Over a minigame the click does nothing
+    openInventoryItemMenu(el, 1, 1, { ctx: { inventoryItems: items, window: w }, window: { ...w, MinigameFramework: { currentMinigame: {} } } });
+    assert.equal(connects.length, 1);
+});
+
+test('K3b: the Connect entry runs keyring.connect, with the tray picture as its icon', () => {
+    const connects = [];
+    const kr = keyringWith([rdpEntry]);
+    kr.connect = (s) => { connects.push(s); };
+    const w = { keyring: kr };
+    const el = held(RDP);
+    el.src = '/assets/objects/text_file.png'; el.naturalWidth = 16; el.naturalHeight = 16;
+    let shown;
+    openInventoryItemMenu(el, 1, 1, {
+        ctx: { inventoryItems: items, dropBlocked: null, window: w }, window: w,
+        showInteractionMenu: (entries) => { shown = entries; }
+    });
+    assert.deepEqual(shown.map(e => e.label), ['Connect', 'Examine']);
+    assert.deepEqual(shown[0].icon, { src: el.src, width: 64, height: 64 }, 'the item picture, whole-number scale');
+    shown[0].onSelect();
+    assert.deepEqual(connects, [el]);
+});
+
+test('K3b: while a Connect runs the entry is greyed', () => {
+    const kr = keyringWith([rdpEntry]);
+    kr.connecting = 'lena_rdp_file';
+    const entries = inventoryMenuFor(held(RDP), { inventoryItems: items, dropBlocked: null, window: { keyring: kr } });
+    assert.equal(entries[0].disabled, true);
+    assert.equal(entries[0].reason, CONNECTING_TEXT);
+});
+
+test('K3c: the assist code gets Connect from its keyring row and keeps its tray slot', () => {
+    const w = { keyring: keyringWith([rdpEntry, assistEntry]) };
+    const code = held({ id: 'jake_assist_code', type: 'text_file', name: 'Remote assist code (Jake)', text: 'Code 4471' });
+    assert.deepEqual(connectMenuEntry(code, w), { id: 'connect', label: 'Connect' });
+    assert.equal(labels(inventoryMenuFor(code, { inventoryItems: items, dropBlocked: null, window: w }))[0], 'Connect');
+    assert.ok(items.includes(code), 'still in the tray');
+});
+
+test('K3b: an item with no keyring row, or no keyring at all, has no Connect', () => {
+    const el = held({ id: 'notes1', type: 'notes', name: 'Notes', text: 'x' });
+    assert.equal(connectMenuEntry(el, { keyring: keyringWith([rdpEntry]) }), null);
+    assert.equal(connectMenuEntry(held(RDP), {}), null, 'no keyring (a scenario without credentials)');
+    assert.equal(connectMenuEntry(held(RDP), { keyring: keyringWith([{ ...rdpEntry, kind: 'password' }]) }), null);
 });

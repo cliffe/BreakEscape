@@ -19,6 +19,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-episode-runner-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
@@ -242,7 +243,9 @@ test('a full episode runs every stage in order and holds then clears sent', () =
     assert.ok(cur().container.querySelector('.epr-finished'), 'the episode-finished panel shows');
     assert.equal(cur().container.querySelector('.epr-finished .epr-heading').textContent, 'Episode finished');
     // the bar's Close is the only close and it closes the runner
-    const closeBtn = [...cur().container.querySelectorAll('button')].find((b) => /close/i.test(b.textContent));
+    // The kiosk (normal play) draws the themed .epr-kiosk-close in its top strip; a facilitated
+    // run draws the flat-red .se-overlay-close. Either is the single keyboard-reachable Close.
+    const closeBtn = cur().container.querySelector('.se-overlay-close, .epr-kiosk-close');
     assert.ok(closeBtn, 'a keyboard-reachable Close');
     closeBtn.click();
     assert.equal(cur(), null, 'Close closes the runner');
@@ -296,7 +299,7 @@ test('a reopen at every stage resumes there', () => {
     // one Close only: the bar's (P7-J playtest); the finished panel adds none of its own
     assert.ok(cur().container.querySelector('.epr-finished'));
     assert.equal(cur().container.querySelector('.epr-finish'), null);
-    assert.equal([...cur().container.querySelectorAll('button')].filter((b) => /close/i.test(b.textContent)).length, 1);
+    assert.equal(cur().container.querySelectorAll('.se-overlay-close, .epr-kiosk-close').length, 1);
 });
 
 test('the flip shows no message when nothing usable was sent', () => {
@@ -499,7 +502,7 @@ test('Esc and Close are a normal exit with no minigame_failed', () => {
     document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     assert.equal(cur(), null);
     open(ep);
-    click('.se-overlay-close');
+    click('.se-overlay-close, .epr-kiosk-close');
     assert.equal(cur(), null);
     assert.equal(failed().length, 0);
     assert.equal(events.filter((e) => e.name === 'minigame_completed').length, 2);

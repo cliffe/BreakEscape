@@ -38,6 +38,11 @@ function formatCountdown(remainingMs) {
 }
 
 export class RansomwareDisplayMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): the window title is neutral (the
+    // params title); the red ransom notice is the screen's own content and stays inside it
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params) {
         params = params || {};
         params.title = params.title || 'Ransomware Impact Display';
@@ -153,12 +158,12 @@ export class RansomwareDisplayMinigame extends MinigameScene {
                         <img class="ransomware-display-icon-img" src="${ICON_BASE}/ransom_padlock.png?v=${ASSETS_VERSION}" alt="Padlock" width="72" height="72">
                     </div>
                     <h2 class="ransomware-display-title">YOUR FILES HAVE BEEN ENCRYPTED</h2>
-                    <pre class="ransomware-display-body">${organisation}
+                    <pre class="ransomware-display-body pixel-scroll">${organisation}
 ${encryptedSystems}
 ${ransomBitcoin ? `${ransomBitcoin} - ${ransomAmount}` : ransomAmount}
 ${walletAddress ? `Wallet: ${walletAddress}` : ''}
 DO NOT attempt recovery - encrypted files will be destroyed${supportPortal ? `\nSupport: ${supportPortal}` : ''}</pre>
-                    ${extraLines ? `<pre class="ransomware-display-body ransomware-display-extra">${extraLines}</pre>` : ''}
+                    ${extraLines ? `<pre class="ransomware-display-body ransomware-display-extra pixel-scroll">${extraLines}</pre>` : ''}
 
                     <div class="ransomware-display-timer-row">
                         <span id="ransomware-timer-label">TIME REMAINING:</span>

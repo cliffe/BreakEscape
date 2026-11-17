@@ -4,6 +4,31 @@ module BreakEscape
   class StaticFilesControllerTest < ActionDispatch::IntegrationTest
     include Engine.routes.url_helpers
 
+    # CyberChef embeds its Bombe animation as <object data="data:image/svg+xml...">.
+    # Chrome checks that nested context against frame-src, which fell back to
+    # default-src and logged "Framing '' violates ..." in the console.
+    test 'HTML tools: CSP allows data: frames only, with no unsafe-inline loosening of the script policy' do
+      get '/break_escape/assets/cyberchef/CyberChef_v10.19.4.html'
+      assert_response :success
+      csp = response.headers['Content-Security-Policy']
+      assert_match(/(\A|; )frame-src data:;/, csp)
+      assert_no_match(/frame-src[^;]*(https:|\*)/, csp)
+      assert_match(/script-src 'self' https: 'unsafe-inline' 'unsafe-eval' blob:;/, csp)
+    end
+
+    test 'HTML tools: frame-src is exactly data: (no https:, no wildcard, one directive)' do
+      get '/break_escape/assets/cyberchef/CyberChef_v10.19.4.html'
+      csp = response.headers['Content-Security-Policy']
+      frame = csp.split(';').map(&:strip).select { |d| d.start_with?('frame-src') }
+      assert_equal ['frame-src data:'], frame
+    end
+
+    test 'Non-HTML static responses get no frame-src data: from the HTML tools policy' do
+      get '/break_escape/js/main.js'
+      assert_response :success
+      assert_no_match(/frame-src data:/, response.headers['Content-Security-Policy'].to_s)
+    end
+
     # CSS file serving tests
     test 'CSS: should serve files with correct MIME type' do
       get '/break_escape/css/hud.css'

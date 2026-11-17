@@ -1,0 +1,13 @@
+{
+  "key": "1421ee88cfbfe2ed4bc1861069f03738",
+  "npc": "ravi_anand",
+  "text": "Sunday's NAS snapshot is clean of everything we know about. That's all I can promise.",
+  "voice": "Puck",
+  "style": "British Indian IT security manager in his mid-thirties, exhausted after a night shift, matter-of-fact. Speak with a consistent Leeds, with a light British Indian lilt, accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:58:02Z"
+}

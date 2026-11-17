@@ -1,0 +1,13 @@
+game 2387 (c_vance)
+contact list: {"mg":"PhoneChatMinigame","theme":null,"appTheme":null,"terminalEls":0,"callScreen":false} contacts=["agent_0x99","robert_vance_phone"]
+shot c_vance_list
+"opened robert_vance_phone"
+thread from the list: {"mg":"PhoneChatMinigame","theme":null,"appTheme":null,"terminalEls":0,"callScreen":false} header="☎\nCall"
+shot c_vance_thread
+"Call pressed: ☎Call"
+dialling: {"mg":"PhoneChatMinigame","theme":null,"appTheme":null,"terminalEls":0,"callScreen":true} {"bar":"CALLING"}
+shot c_vance_dialling
+call: {"mg":"PhoneChatMinigame","theme":null,"appTheme":null,"terminalEls":0,"callScreen":true} {"bar":"ON CALL | 0:02","subs":["ROBERT VANCE (OPS DESK): Vance. What do you need?"],"choices":["1. How do the charge controls work?","2. How do I shut this down safely?","3. What should I be doing right now?","4. How bad is it?","5. That's everything for now."]}
+shot c_vance_call
+events: {"ev":[],"toasts":[]}
+/tts requests: ["narrator","A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk."] ["director_netherton","Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without."] ["director_netherton","I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest."] ["agent_nightshade","The physics doesn't lie and neither do I. If they reach the safety interlocks, this

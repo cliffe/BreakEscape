@@ -43,6 +43,9 @@ function setup({ timed = false, saved = null } = {}) {
   Object.assign(window, {
     mailScheduler: mail,
     gameState: { globalVariables: { a: 1 }, notes: [] },
+    // state-sync.js reads window.currentPlayerRoom (the real engine field); window.currentRoom
+    // is the legacy null global and no longer feeds the sync. Set both so the page is faithful.
+    currentPlayerRoom: 'office',
     currentRoom: { name: 'office' }
   });
   delete window.npcManager;
@@ -442,6 +445,10 @@ const CONSTANTS = [
   ['MAX_PHONE_DEFERRED_TAG_CHARS', 'MAX_PHONE_DEFERRED_TAG_CHARS', 'npc', 'num'],
   ['MAX_PHONE_DEFERRED_TAGS', 'MAX_PHONE_DEFERRED_TAGS', 'npc', 'num'],
   ['MAX_PHONE_SCALAR_KEY_CHARS', 'MAX_PHONE_SCALAR_KEY_CHARS', 'npc', 'num'],
+  // Phone calls (merge of main into build/phone-calls): the call-row and delivery-tag cleaning the export mirrors
+  ['PHONE_DELIVERY_TAG_MAX', 'PHONE_DELIVERY_TAG_MAX_CHARS', 'npc', 'num'],
+  ['PHONE_DELIVERY_TAGS_MAX', 'PHONE_DELIVERY_TAGS_MAX', 'npc', 'num'],
+  ['PHONE_CALL_EVENTS', 'PHONE_CALL_EVENTS', 'npc', 'list'],
   ['MAX_NPC_INK_NAME_CHARS', 'MAX_NPC_INK_NAME_CHARS', 'ink', 'num'],
 ];
 

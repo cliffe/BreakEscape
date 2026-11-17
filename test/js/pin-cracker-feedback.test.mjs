@@ -200,6 +200,29 @@ test('a 403 off refuses the pad without counting a try, says "This PC is off." a
     assert.notEqual(pin.gameResult.maxAttemptsReached, true, 'with one try allowed, not locked out');
 });
 
+test('K5: a 403 expired says the server line naming the token, counts no try and closes', async () => {
+    clearPinAttemptHistory();
+    const server = {
+        async unlock() {
+            const err = new Error('refused');
+            err.status = 403;
+            err.body = { success: false, reason: 'expired', message: 'HB-FIN-02 sign-in token has expired.' };
+            throw err;
+        }
+    };
+    const pin = makePin({ secret: '0417', cracker: false, maxAttempts: 1, lockId: 'expired_vault', server });
+    pin.params.type = 'object';
+    pin.params.lockable = { scenarioData: { id: 'lena_vault' } };
+    const shown = [];
+    pin.showFailure = (message, autoClose) => shown.push([message, autoClose]);
+    pin.updateDisplay = () => {};
+    pin.currentInput = '0417';
+    await pin.handleEnter();
+    assert.equal(pin.attemptCount, 0);
+    assert.deepEqual(shown, [['HB-FIN-02 sign-in token has expired.', true]]);
+    assert.equal(pin.gameResult.refused, 'expired');
+});
+
 test('a 403 with no scope reason is still a wrong PIN', async () => {
     clearPinAttemptHistory();
     const server = { async unlock() { const err = new Error('x'); err.status = 403; err.body = { reason: 'nope' }; throw err; } };

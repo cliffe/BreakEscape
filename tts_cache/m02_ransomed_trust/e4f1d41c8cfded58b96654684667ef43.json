@@ -1,0 +1,13 @@
+{
+  "key": "e4f1d41c8cfded58b96654684667ef43",
+  "npc": "ernesto_bautista",
+  "text": "Fair enough. Nobody's anything tonight.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:06Z"
+}

@@ -1,11 +1,13 @@
 // The capture log's rules (engine plan section 6), with no DOM: which held items a holder files,
-// the three sections of the device, the row keys and which rows are new.
+// the device's sections, the row keys and which rows are new. Since K3d (credential keyring plan
+// 8.7) the captures are two sections: Sign-ins (credential rows) and Captures (PINs, footholds
+// and findings), both from signin-rows.js.
 //
 // Filing is a view of the inventory, not a move: an item is filed in the held holder whose id
 // equals its storeIn (and whose holds.items is on). The item stays in window.inventory.items;
 // its tray slot is hidden by the tray rule.
 
-import { captureList } from '../../systems/captures.js';
+import { buildSignInRows } from './signin-rows.js';
 
 export const SEEN_GLOBAL = '__capture_log_seen';
 // One global per seen row (R3): the row key appended to this prefix, value true. This replaces the
@@ -22,6 +24,16 @@ const dataOf = (item) => (isObj(item?.scenarioData) ? item.scenarioData : (isObj
 /** Whether a held item is a holder (it has a holds block). */
 export function isHolder(item) {
     return isObj(dataOf(item).holds);
+}
+
+/** footholdId -> name of each held network link (K5: a token row names the link that recorded it). */
+export function linkNames(items) {
+    const out = new Map();
+    for (const it of Array.isArray(items) ? items : []) {
+        const d = dataOf(it);
+        if (d.type === 'network_link' && isStr(d.footholdId) && isStr(d.name) && !out.has(d.footholdId)) out.set(d.footholdId, d.name);
+    }
+    return out;
 }
 
 /** The held holder that files items with this id, or null. */
@@ -55,22 +67,27 @@ function opensContents(d) {
 }
 
 /**
- * The device's three sections from the held items, the globals and (when 9.3a's client is
- * present) the remote sessions. Each row has a key: capture:<targetId>, item:<itemId> or
- * session:<pcId>:<footholdId>.
+ * The device's sections from the held items, the globals, the keyring answer and (when 9.3a's
+ * client is present) the remote sessions. Each row has a key: account:<npcId>, cred:<id>,
+ * capture:<targetId>, item:<itemId> or session:<pcId>:<footholdId>. A Sign-ins or Captures row
+ * also has seenKeys (its key plus its captures' old capture:<targetId> keys).
  *
  * sessionsSource: an array of pcSessions.list() entries, or null when the remote-session
  * source is not available (no window.pcSessions.list or no window.networkLinks.openSession).
+ * keyring: the no-screen GET /keyring answer { entries, captures, firstSeen?, foundVisible? }, or
+ * null before the first answer (capture rows from the globals only, tags guessed).
+ * secrets: GET /capture_secrets's map, or null. social: the scenario's social block.
  */
-export function buildSections({ holder, items, globals, sessionsSource = null }) {
+export function buildSections({ holder, items, globals, sessionsSource = null, keyring = null, secrets = null, secretsState = null, social = {} }) {
     const hd = dataOf(holder);
     const holds = isObj(hd.holds) ? hd.holds : {};
-    const out = { captures: [], sessions: [], findings: [] };
+    const out = { signins: [], captures: [], sessions: [], findings: [] };
 
     if (holds.captures === true) {
-        for (const entry of captureList(globals)) {
-            if (isStr(entry.targetId)) out.captures.push({ key: `capture:${entry.targetId}`, entry });
-        }
+        const rows = buildSignInRows({ captures: isObj(globals?.se_captures) ? globals.se_captures : {}, secrets, secretsState, keyring, social,
+            linkNames: linkNames(items) });
+        out.signins = rows.signins;
+        out.captures = rows.captures;
     }
     if (holds.items !== true) return out;
 
@@ -98,7 +115,8 @@ export function buildSections({ holder, items, globals, sessionsSource = null })
     const sessionRow = (s, link) => ({
         key: `session:${s.pcId}:${s.footholdId || ''}`, kind: 'session', session: s, pcId: s.pcId,
         name: s.displayName || s.username || 'Remote session', host: s.host || '',
-        line: link ? `Remote session through ${link.name}` : 'Remote session'
+        line: link ? `Remote session through ${link.name}`
+            : (isStr(s.fromPcId) && !s.footholdId ? `Remote session from ${s.fromHost || s.host || 'another desktop'}` : 'Remote session')
     });
     const placed = new Set();
     for (const link of links) {
@@ -115,9 +133,16 @@ export function buildSections({ holder, items, globals, sessionsSource = null })
     return out;
 }
 
+const SECTION_NAMES = ['signins', 'captures', 'sessions', 'findings'];
+
+/** Every row in the sections, in section order. */
+export function allRows(sections) {
+    return SECTION_NAMES.flatMap((name) => (Array.isArray(sections?.[name]) ? sections[name] : []));
+}
+
 /** Every row key in the sections. */
 export function rowKeys(sections) {
-    return [...sections.captures, ...sections.sessions, ...sections.findings].map((r) => r.key);
+    return allRows(sections).map((r) => r.key);
 }
 
 /**
@@ -138,8 +163,14 @@ export function readSeen(globals) {
     return [...out];
 }
 
-/** The keys among these sections that are new (not yet seen). */
+/**
+ * The keys among these sections that are new (not yet seen). A row counts as seen when any of
+ * its seenKeys is (an account row whose capture was seen under its old capture:<targetId> key, in
+ * a save from before K3d: a read, nothing is rewritten).
+ */
 export function newKeys(sections, seen) {
     const s = new Set(seen || []);
-    return rowKeys(sections).filter((k) => !s.has(k));
+    return allRows(sections)
+        .filter((r) => !s.has(r.key) && !(Array.isArray(r.seenKeys) && r.seenKeys.some((k) => s.has(k))))
+        .map((r) => r.key);
 }

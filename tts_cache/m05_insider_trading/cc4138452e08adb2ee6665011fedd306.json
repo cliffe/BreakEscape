@@ -1,0 +1,13 @@
+{
+  "key": "cc4138452e08adb2ee6665011fedd306",
+  "npc": "recruiter",
+  "text": "You've already opened it, I expect. Leave it out of your report, let my courier have it, and nothing points at you.",
+  "voice": "Gacrux",
+  "style": "ENTROPY's recruiter, a former intelligence-agency talent spotter in her fifties, calling from somewhere comfortable. Speak with a consistent educated American (Washington DC, Mid-Atlantic) accent throughout — do not shift to any other accent. Low, warm pitch; slow, patient pace, never raised. Charming and empathetic on the surface, utterly ruthless underneath; talks about people as placements.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:19:34Z"
+}

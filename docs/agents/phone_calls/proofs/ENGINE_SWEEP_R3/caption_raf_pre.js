@@ -1,0 +1,3 @@
+window.__capf=[]; window.__capm=[]; const t0=performance.now(); let seen=null, n=0;
+const tick=()=>{ const e=document.getElementById('call-caption'); if(e){ if(e!==seen){ seen=e; n=0; const mo=new MutationObserver(rs=>rs.forEach(r=>window.__capm.push({type:r.type, old:r.oldValue, now:e.textContent, t:((performance.now()-t0)/1000).toFixed(3)}))); mo.observe(e,{childList:true,characterData:true,subtree:true,characterDataOldValue:true}); } n++; const k=e.textContent; const L=window.__capf; if(!L.length||L[L.length-1].k!==k||n<=3) L.push({frame:n,k,t:((performance.now()-t0)/1000).toFixed(3)}); } requestAnimationFrame(tick); };
+requestAnimationFrame(tick); return true;

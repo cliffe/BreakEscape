@@ -19,7 +19,7 @@ function copy(p, rewrites = {}) {
     return pathToFileURL(out).href;
 }
 // Only the controller is under test; its collaborators are stubbed.
-writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor() {} init() {} start() {} complete() {} cleanup() {} }');
+writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.params = p; } init() {} start() {} complete() {} cleanup() {} }');
 for (const n of ['rfid-ui', 'rfid-data', 'rfid-animations', 'rfid-attacks']) {
     const cls = { 'rfid-ui': 'RFIDUIRenderer', 'rfid-data': 'RFIDDataManager', 'rfid-animations': 'RFIDAnimations', 'rfid-attacks': 'MIFAREAttackManager' }[n];
     writeFileSync(join(tmp, `${n}.mjs`), `export class ${cls} {}` + (n === 'rfid-ui' ? '\nexport const clonerNameInSentence = () => "card copier";' : ''));

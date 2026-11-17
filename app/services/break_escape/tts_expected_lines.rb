@@ -218,8 +218,8 @@ module BreakEscape
         end
         json = path.extname == ".ink" ? path.sub_ext(".json") : path
         ink = if path.extname == ".ink" then path
-              elsif path.to_s.end_with?(".json") then Pathname.new(path.to_s.sub(/(\.ink)?\.json\z/, ".ink"))
-              end
+        elsif path.to_s.end_with?(".json") then Pathname.new(path.to_s.sub(/(\.ink)?\.json\z/, ".ink"))
+        end
         json_files << json if File.exist?(json)
         ink_files << ink if ink && File.exist?(ink)
       end

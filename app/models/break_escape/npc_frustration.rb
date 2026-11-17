@@ -172,7 +172,12 @@ module BreakEscape
       if last.is_a?(Hash) && last['hand'] == hand
         return { status: :ok, body: { 'dropped' => true } } unless last['done']
 
-        return workaround_body(npc, w, heard: last['heard'] == true)
+        replay = workaround_body(npc, w, heard: last['heard'] == true)
+        # K4 R1: a resent borrow "done" carries the ids the original ended (kept in lastSpent)
+        replay[:body]['endedPcIds'] = last['endedPcIds'] if last['endedPcIds'].is_a?(Array) && last['endedPcIds'].any?
+        # K5: and the expired token sessions among them, so the client gives those the token line
+        replay[:body]['tokenExpiredPcIds'] = last['tokenExpiredPcIds'] if last['tokenExpiredPcIds'].is_a?(Array) && last['tokenExpiredPcIds'].any?
+        return replay
       end
       # 3. handed over and not yet spent
       handed = view['handed'][key]
@@ -196,9 +201,10 @@ module BreakEscape
       entry['done'] << index if LASTING_KINDS.include?(w['do']) && !entry['done'].include?(index)
       set_workaround_global!(w)
       heard_now = false
+      borrow_ended = []
       case w['do']
       when 'borrow_session'
-        record_borrow_done!(npc, w)
+        borrow_ended = record_borrow_done!(npc, w)
       when 'share_login'
         # 5. heard counts only in a room the colleague can be in that the player has opened
         heard_now = heard && share_heard_in?(w, room_id) && colleague_encountered?(w)
@@ -211,8 +217,21 @@ module BreakEscape
           record_shared_login!(npc_id, scenario: scenario_data, workaround: w)
         end
       end
+      # Kept so a resent "done" (a lost answer) names them again (K4 R1)
+      entry['lastSpent'][key]['endedPcIds'] = borrow_ended if borrow_ended.any?
+      borrow_token_ids = borrow_ended.any? ? (Array(defined?(@token_expired_pc_ids) ? @token_expired_pc_ids : nil) & borrow_ended) : []
+      entry['lastSpent'][key]['tokenExpiredPcIds'] = borrow_token_ids if borrow_token_ids.any?
       save!
-      workaround_body(npc, w, heard: heard_now)
+      result = workaround_body(npc, w, heard: heard_now)
+      # Keyring K4 (plan 9): the sessions the borrow's end pruned (a `from` session whose source
+      # was the borrowed PC), only when there are any, so the client closes the onward desktops.
+      # A resent "done" is answered above from lastSpent, with the ids kept there.
+      if borrow_ended.any?
+        result[:body]['endedPcIds'] = borrow_ended
+        # Keyring K5 (plan 10): and the expired token sessions among them
+        result[:body] = with_token_expired_pc_ids(result[:body])
+      end
+      result
     end
 
     # player_state.sharedLogins (9.4): the accounts the player heard shared. Missing means empty.
@@ -273,9 +292,19 @@ module BreakEscape
     end
 
     # A careful guest (6.4): 9.1's screen_always_locks? with no PC field, on the saved (expanded)
-    # NPC record, so no screenHabit at all is careful. Such a guest signs out of a borrowed PC.
+    # NPC record, so no habits.screen at all is careful. Such a guest signs out of a borrowed PC.
     def careful_guest?(npc)
       AccessIdentities.screen_always_locks?({}, npc)
+    end
+
+    # A PC whose effective policy has autoLockMin 0 locks its screen the instant anyone leaves, so
+    # a borrower never leaves a guest session open there (UX slice 16 review R1 m4). The guest
+    # claim refuses the same PC (game.rb:2307-2308); this keeps record_borrow_done! in step.
+    def policy_locks_guest_outright?(pc)
+      return false unless pc
+
+      min = effective_policy(pc)['autoLockMin']
+      min.is_a?(Numeric) && min.zero?
     end
 
     # The PCs this NPC's handed-over (or spent) borrow_session workarounds name: a place for the
@@ -360,16 +389,24 @@ module BreakEscape
     # after a later borrower's (its answer was lost) is answered from lastSpent and writes
     # nothing; workaround_body then answers guest: false, so the client keeps the later one too.
     def record_borrow_done!(npc, w)
-      pc_id = borrow_pc_id(w)
+      pc = find_login_pc(w['pc'])&.dig(:object)
+      pc_id = (pc && pc['id'] || w['pc']).to_s
       player_state['sessions'] = access_sessions.except(pc_id)
-      # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there
-      if careful_guest?(npc) || account_locked_out_at?(pc_id, npc)
+      # Keyring K4 (plan 9): ending the player's session here can end a `from` session sourced
+      # from it (and anything chained beyond), so the prune runs and its ids are returned
+      ended = prune_unreachable_sessions!
+      # Sub-slice L review R1 m1: a borrower locked out at this PC cannot have signed in there.
+      # UX slice 16 review R1 m4: a policy with autoLockMin 0 locks the instant the guest leaves,
+      # so no guest session is left open (the guest claim refuses such a PC, game.rb:2307-2308);
+      # borrow_body then reads no guest record and answers guest: false, and onGuestLeft agrees.
+      if careful_guest?(npc) || account_locked_out_at?(pc_id, npc) || policy_locks_guest_outright?(pc)
         guest_sessions.delete(pc_id)
         guest_sessions_at.delete(pc_id)
       else
         guest_sessions[pc_id] = npc['id']
         guest_sessions_at[pc_id] = server_now
       end
+      ended
     end
 
     # Review R1 m4: a share counts as heard only once the player has met the colleague, as an
@@ -417,6 +454,7 @@ module BreakEscape
 
       player_state['globalVariables'] = {} unless player_state['globalVariables'].is_a?(Hash)
       player_state['globalVariables'][name] = true
+      record_server_global_writes([name])
     end
 
     # The USB habit's workaround (USB_HABIT_PLAN.md, q39): an accepted fail naming usb_refused
@@ -427,6 +465,7 @@ module BreakEscape
 
       player_state['globalVariables'] = {} unless player_state['globalVariables'].is_a?(Hash)
       player_state['globalVariables'][name] = true
+      record_server_global_writes([name])
     end
 
     # The "done" answer, composed from the scenario (and, for a borrow, the guest record now), so

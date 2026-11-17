@@ -22,6 +22,9 @@
  *                          "C"                      a short text glyph
  *                        Textures draw at native size (never scaled) on the dark backing; each
  *                        loads on first use and the text glyph shows until it arrives.
+ *   npcThoughts          true (default). false: no action icon, no pressing, avoid or parked thought
+ *                          bubble for any NPC, whatever showPressingNeeds says (the campaign missions,
+ *                          D77). Barks, speech bubbles, spoken chatter lines and held items are not affected (picture chat follows this flag too, read by the needs world hook).
  *   npcWindupMs          pre-action tell length before an NPC leaves its post (npc-needs.js). Default 700, 0 = off.
  *   showPressingNeeds    false (default). true: a thought bubble beside the head shows the NPC's
  *                          most pressing need it is not acting on (getState().pressing), the
@@ -298,7 +301,7 @@ export function targetInfo(id, cache = null) {
                 const preset = op?.spritePreset ? op.spritePreset(sp, win().gameScenario) : null;
                 const info = { id: d.id, type: d.type, satisfies: Array.isArray(sat) ? sat[0] : sat,
                     print: isPrinter({ type: d.type, officeType: d.officeType, preset }),
-                    ...(typeof d.phoneOwner === 'string' && d.phoneOwner ? { phone: true } : {}) };
+                    ...(d.deskPhone === true ? { phone: true } : {}) };
                 if (cache && !sp.destroyed && sp.scene) cache.set(id, { info, sp });
                 return info;
             }
@@ -335,7 +338,34 @@ function reducedMotion() {
     } catch (e) { return false; }
 }
 
+/**
+ * Pure (SIMS-5 design R2 m8): does a speech bubble cover this NPC's head now? Its needs state is
+ * talking, a bark is up, or the bubble layer still shows a bubble for it. The bubble pass runs in
+ * the camera's preRender, after this layer's update, so a bubble left from the last pass counts
+ * too: without it the action icon and the thought bubble came back under a bubble still showing.
+ */
+export function speechCovers(st, bubbles, npcId) {
+    if (st?.talking) return true;
+    if (!bubbles) return false;
+    try {
+        return !!bubbles.hasLine?.(npcId) || !!bubbles.showsBubble?.(npcId);
+    } catch (e) { return false; }
+}
+
+/** Are NPC thoughts and action icons on? On unless the scenario says `"npcThoughts": false` (D77). */
+export function npcThoughtsOn(scenario = win().gameScenario) {
+    return scenario?.npcThoughts !== false;
+}
+
 export class NpcActionIcons {
+    /** m8: hide this NPC's action icon and thought bubble now (the bubble pass calls it as it shows a bubble). */
+    hideFor(npcId) {
+        const ic = this.icons.get(npcId);
+        if (ic?.box) ic.box.setVisible(false);
+        const bb = this.bubbles.get(npcId);
+        if (bb?.box) bb.box.setVisible(false);
+    }
+
     constructor() { this.icons = new Map(); this.bubbles = new Map(); this.windups = new Map(); this.targets = new Map(); this.sceneHooked = null; this.textures = new Map(); this.faces = new Map(); }
 
     get showPressingNeeds() { return win().gameScenario?.showPressingNeeds === true; }
@@ -550,6 +580,12 @@ export class NpcActionIcons {
         const actionIcons = scenario?.actionIcons;
         const optIn = scenario?.showPressingNeeds === true;
         const playerRoom = win().currentPlayerRoom;
+        // D77: "npcThoughts": false draws no action icon, no avoid/parked/pressing bubble, whatever showPressingNeeds says
+        if (!npcThoughtsOn(scenario)) {
+            for (const ic of this.icons.values()) if (ic?.box) ic.box.setVisible(false);
+            for (const bb of this.bubbles.values()) if (bb?.box) bb.box.setVisible(false);
+            return;
+        }
         for (const id of sys.states.keys()) {
             const st = sys.getState(id);
             const b = mgr.getBehavior?.(id);
@@ -557,8 +593,9 @@ export class NpcActionIcons {
             const roomId = b?.roomId;
             const seen = !!(st && sprite && sprite.active && sprite.visible && !sprite.destroyed)
                 && iconShown({ npcRoom: roomId, playerRoom, dark: roomIsDark(roomId) });
-            // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks
-            const talking = !!st?.talking;
+            // A speech bubble (slice 8, npc-world-bubbles.js) hides both while the NPC talks,
+            // chatter or a bark (UX slice 5)
+            const talking = speechCovers(st, win().npcWorldBubbles, id);
             const bubble = seen && !talking ? thoughtBubble(st, actionIcons, optIn) : null;
             let bb = this.bubbles.get(id);
             if (!bubble) { if (bb) bb.box.setVisible(false); }

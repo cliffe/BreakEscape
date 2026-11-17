@@ -8,8 +8,9 @@ Usage:
   python3 scripts/check_door_alignment.py scenarios/<m>/scenario.json.erb [...]
   python3 scripts/check_door_alignment.py [--json] <scenario.json | scenario.json.erb>
 
-A .json.erb file is rendered here (same stubs as scripts/validate_scenario.rb,
-no VM context). Exit status is 1 if any door pair is misaligned, else 0.
+A .json.erb file is rendered here through the one shared binding
+(lib/break_escape/scenario_binding.rb, no VM context). Exit status is 1 if any
+door pair is misaligned, else 0.
 Only single (string) connections are modelled exactly; array connections
 (one direction leading to several rooms) are reported as UNMODELLED and do
 not affect the exit status. --json prints one machine-readable object per
@@ -66,20 +67,15 @@ def door(rid, d, P, D):
 
 OPP = dict(north='south', south='north', east='west', west='east')
 
-RENDER_RB = r"""
-require 'erb'; require 'json'; require 'base64'
-def base64_encode(t); Base64.strict_encode64(t); end
-def vm_context; {}; end
-def vm_object(n, o = {}); o.merge('system_name' => n).to_json; end
-def flags_for_vm(vm, flags = []); flags.to_json; end
-def vm_flags_json(vm, flags = []); flags.to_json; end
-puts JSON.generate(JSON.parse(ERB.new(File.read(ARGV[0]), trim_mode: '-').result(binding)))
-"""
+# Plan step 5: one binding for every renderer. Renders through the server's
+# BreakEscape::ScenarioBinding (it loses the old trim_mode: '-'; no template uses -%>).
+SCENARIO_BINDING_RB = os.path.join(ROOT, 'lib', 'break_escape', 'scenario_binding.rb')
+RENDER_RB = r"print BreakEscape::ScenarioBinding.render(File.read(ARGV[0]), {})"
 
 def load_scenario(path):
     if not path.endswith('.erb'):
         return json.load(open(path))
-    r = subprocess.run(['ruby', '-e', RENDER_RB, path], capture_output=True, text=True)
+    r = subprocess.run(['ruby', '-r', SCENARIO_BINDING_RB, '-e', RENDER_RB, path], capture_output=True, text=True)
     if r.returncode != 0:
         raise RuntimeError('ERB render failed: ' + r.stderr.strip()[:500])
     return json.loads(r.stdout)

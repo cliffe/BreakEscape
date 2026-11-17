@@ -24,7 +24,7 @@ import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { resolvePhoneApp } from '../phone-chat/phone-app.js';
 import {
     blankSlot, blanksPayload, briefCopy, callGate, callWords, callBeginLabel, callLaunch, cardFacts, cardLines, heldIdsFor,
-    factLabel, heldOnBoard, hintLine, kindText, optionsForFact, readinessLines, textParts
+    factLabel, heldOnBoard, hintLine, kindText, optionsForFact, textParts
 } from './pretext-card.js';
 
 function h(tag, props = {}, ...kids) {
@@ -123,7 +123,6 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         const brief = briefCopy(spec, this.social);
         const held = heldOnBoard(this.social, this.globals);
         const gate = this.gate();
-        const ready = readinessLines(facts, options);
         const npcMissing = gate.ok && !this.npc();
         const gateText = npcMissing ? 'This call has no contact.' : gate.line;
         const lines = cardLines(spec, heldIdsFor(this.social, this.globals));
@@ -139,7 +138,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
 
         const head = h('div', { class: 'pretext-head' },
             h('h2', { class: 'pretext-title', text: words.title }),
-            brief.characterName ? h('p', { class: 'pretext-who', text: brief.characterName }) : null,
+            brief.characterName ? h('p', { class: 'pretext-who', text: `Calling: ${brief.characterName}` }) : null,
             this._closeButton()
         );
         root.appendChild(head);
@@ -148,7 +147,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         scroll.appendChild(this._briefBlock(brief, held, words));
         const hint = hintLine(spec, this.globals);
         if (hint) scroll.appendChild(h('p', { class: 'pretext-hint', text: hint }));
-        scroll.appendChild(this._cardBlock(facts, options, lines, factIds, labelFor, ready));
+        scroll.appendChild(this._cardBlock(facts, options, lines, factIds, labelFor));
         root.appendChild(scroll);
 
         const bar = h('div', { class: 'pretext-bar' });
@@ -179,19 +178,12 @@ export class PretextPrepMinigame extends SocialOverlayScene {
     }
 
     _closeButton() {
-        const btn = h('button', { type: 'button', class: 'pretext-close minigame-button', text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(btn, 'click', (event) => {
-            event.preventDefault?.();
-            event.stopPropagation?.();
-            this.requestClose();
-        });
-        this.closeButton = btn;
-        return btn;
+        return this.buildCloseControl();
     }
 
     _briefBlock(brief, held, words) {
         const block = h('section', { class: 'pretext-brief', 'aria-label': 'Brief' });
-        if (brief.scope) block.appendChild(h('p', { class: 'pretext-scope', text: brief.scope }));
+        if (brief.scope) block.appendChild(h('p', { class: 'pretext-scope se-notice', text: brief.scope }));
         block.appendChild(h('p', { class: 'pretext-ethics', text: brief.ethics }));
         if (brief.objectives.length) {
             const list = h('ul', { class: 'pretext-objectives' });
@@ -215,7 +207,7 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         return block;
     }
 
-    _cardBlock(facts, options, lines, factIds, labelFor, ready) {
+    _cardBlock(facts, options, lines, factIds, labelFor) {
         const block = h('section', { class: 'pretext-card', 'aria-label': 'Pretext card' });
         block.appendChild(h('h3', { class: 'pretext-card-title', text: 'Pretext card' }));
         // A line whose blank refers to a fact with nothing held can never be completed, so it is
@@ -244,11 +236,9 @@ export class PretextPrepMinigame extends SocialOverlayScene {
         for (const fact of facts) {
             block.appendChild(this._blankControl(fact, options[fact.factId] || []));
         }
-        if (ready.length) {
-            const note = h('p', { class: 'pretext-readiness' });
-            note.textContent = ready.join(' ');
-            block.appendChild(note);
-        }
+        // No separate readiness note: every blank with nothing held already shows its own disabled
+        // "<label>: nothing held yet" button, so a paragraph restating them only read like an error
+        // (C-PP3, user 2026-11-15). The button is the single place the gap is named.
         return block;
     }
 

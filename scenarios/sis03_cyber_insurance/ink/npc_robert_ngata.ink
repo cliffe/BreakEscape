@@ -72,9 +72,13 @@ I won't advise you on your policy: that's for you and your lawyers. Our interest
 
 The NCSC has assessed the post-exploitation activity — from week five onward — to GREYMANTLE, a known state-sponsored APT group, with moderate-to-high confidence.
 
-The basis is: custom implant characteristics match known GREYMANTLE tooling; the C&C infrastructure overlaps with previously attributed GREYMANTLE campaigns; the ICS-specific attack capabilities are consistent with GREYMANTLE's operational profile; and the targeting pattern — Western European energy infrastructure — aligns with GREYMANTLE's strategic interests.
+The basis is: custom implant characteristics match known GREYMANTLE tooling, and the C&C infrastructure overlaps with previously attributed GREYMANTLE campaigns.
 
-I want to be explicit about what that confidence level means: intelligence assessment confidence. It's not legal certainty. And it's not the legal threshold for "act of war."
+The ICS-specific attack capabilities are consistent with GREYMANTLE's operational profile. And the targeting pattern, Western European energy infrastructure, aligns with GREYMANTLE's strategic interests.
+
+I want to be explicit about what that confidence level means: intelligence assessment confidence.
+
+It's not legal certainty. And it's not the legal threshold for "act of war."
 
 * [What's the difference between intelligence confidence and legal threshold?]
     -> war_exclusion_context
@@ -125,15 +129,21 @@ Speaking only for myself: I'd be uneasy if intelligence confidence levels starte
 
 We want to share the indicators of compromise, anonymised, with other operators, particularly in energy and water.
 
-The Ferryman Collective access point was a printer firmware vulnerability. That's a common beachhead. Multiple operators use similar equipment. If we can share the technical profile quickly, we might prevent similar incidents at other facilities.
+The Ferryman Collective access point was a printer firmware vulnerability. That's a common beachhead. Multiple operators use similar equipment.
 
-The GREYMANTLE tools — the DNS-over-HTTPS C&C, the domain controller implant characteristics — those are indicators we need in the hands of defenders at other critical infrastructure sites.
+If we can share the technical profile quickly, we might prevent similar incidents at other facilities.
+
+The GREYMANTLE tools matter most: the DNS-over-HTTPS C&C and the domain controller implant characteristics.
+
+Those are indicators we need in the hands of defenders at other critical infrastructure sites.
 
 We already hold what Albion's team gave us that morning. The fuller picture is in the forensic work your firm commissioned.
 Albion's solicitor wants to limit what leaves that report, because it describes their architecture in detail.
 
 * [What does the NCSC need from the forensic work?]
-    IOCs (indicators of compromise), attack timeline, affected device types, mitigation steps — that's the minimal set. We don't need to disclose Albion's specific architectural failures. We just need to share the threat indicators.
+    IOCs (indicators of compromise), attack timeline, affected device types, mitigation steps: that's the minimal set.
+
+    We don't need to disclose Albion's specific architectural failures. We just need to share the threat indicators.
     The challenge is: once technical details are public, they're public. An attacker can infer architectural information from the IOCs.
     -> hub
     
@@ -201,11 +211,17 @@ Critical infrastructure operators have to make security investments. They're com
 What should incentivise security investment at those organisations?
 Regulation, which is Ofgem's job and still open for Albion; reputation, which is real but slow; and money.
 
-Insurance is the financial consequence mechanism. If a critical infrastructure operator knows that a security failure will result in an insurance claim denial, they take the failure seriously.
+Insurance is the financial consequence mechanism.
 
-But if they know that an insurance claim will be denied specifically because a nation-state was involved — because the exclusion applies to state-sponsored attacks — the incentive flips. It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
+If a critical infrastructure operator knows that a security failure will result in an insurance claim denial, they take the failure seriously.
 
-That's the systemic problem. If that's the precedent Meridian sets, other insurers will follow. And critical infrastructure operators will stop investing in defences against state-sponsored threats because the financial incentive disappears.
+But if they know a claim will be denied because a nation-state was involved, under the state-sponsored attack exclusion, the incentive flips.
+
+It becomes: "Why invest in security against nation-states? The insurance won't cover it anyway."
+
+That's the systemic problem. If that's the precedent Meridian sets, other insurers will follow.
+
+And critical infrastructure operators will stop investing in defences against state-sponsored threats because the financial incentive disappears.
 
 That's my view, not NCSC advice on your claim. But what Meridian decides here matters beyond Albion.
 It sets the market expectation for how cyber insurance responds to state-sponsored attacks.
@@ -220,7 +236,9 @@ It sets the market expectation for how cyber insurance responds to state-sponsor
     -> hub
     
 * [What if Meridian's capital position doesn't allow for this risk?]
-    Then Meridian shouldn't underwrite critical infrastructure cyber coverage. There are other insurers. But the market needs at least some capital willing to write this risk at a price.
+    Then Meridian shouldn't underwrite critical infrastructure cyber coverage. There are other insurers.
+
+    But the market needs at least some capital willing to write this risk at a price.
     If all cyber insurers decline state-backed-attack coverage, critical infrastructure becomes uninsurable. And uninsurable critical infrastructure means underinvested security and higher risk for everyone.
     -> hub
 

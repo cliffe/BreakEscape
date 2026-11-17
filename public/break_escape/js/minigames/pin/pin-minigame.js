@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 // Attempts allowed per opening of the pad when the scenario doesn't set
 // maxAttempts and the player has no PIN cracker. With a cracker there is no
@@ -18,6 +18,8 @@ export function clearPinAttemptHistory() { pinAttemptHistory.clear(); }
 
 // PIN Minigame Scene implementation
 export class PinMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -133,6 +135,14 @@ export class PinMinigame extends MinigameScene {
         
         displayContainer.appendChild(this.displayElement);
         interfaceContainer.appendChild(displayContainer);
+
+        // The keypad's own message line, under the display: a wrong code says so here rather
+        // than in the framework's toast, which sat over keys 4 to 6 (critique A10)
+        this.messageLineElement = document.createElement('div');
+        this.messageLineElement.className = 'pin-minigame-message';
+        this.messageLineElement.setAttribute('role', 'status');
+        this.messageLineElement.setAttribute('aria-live', 'polite');
+        interfaceContainer.appendChild(this.messageLineElement);
         
         // Create keypad
         this.keypadElement = document.createElement('div');
@@ -181,7 +191,9 @@ export class PinMinigame extends MinigameScene {
         if (this.allowBackspace) {
             const backspaceButton = document.createElement('button');
             backspaceButton.className = 'pin-minigame-key pin-minigame-backspace';
-            backspaceButton.textContent = '⌫';
+            // "DEL", as on the infusion pump: the pixel fonts have no erase glyph (slice 7 R1 m4)
+            backspaceButton.textContent = 'DEL';
+            backspaceButton.setAttribute('aria-label', 'Delete last digit');
             backspaceButton.addEventListener('click', () => this.handleBackspace());
             this.keypadElement.appendChild(backspaceButton);
         }
@@ -292,6 +304,8 @@ export class PinMinigame extends MinigameScene {
         }
 
         if (window.playUISound) window.playUISound('keypad');
+        // The next code clears the last wrong-code line
+        if (this.currentInput.length === 0 && this.messageLineElement?.textContent) this.showPinMessage('');
         this.currentInput += number;
         this.updateDisplay();
         
@@ -362,7 +376,7 @@ export class PinMinigame extends MinigameScene {
             this.updateDisplay();
             this.isLocked = true;
             this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
-            this.showFailure(PIN_SCOPE_REFUSAL_TEXT[reason], true, 2000);
+            this.showPinMessage(this.lastAttemptRefusalLine || PIN_SCOPE_REFUSAL_TEXT[reason], 'wrong', 2000);
             return;
         }
 
@@ -430,9 +444,9 @@ export class PinMinigame extends MinigameScene {
 
             console.log('Validating PIN with server:', { targetType, targetId, attempt: enteredPin });
 
-            // Call server API for validation (use ApiClient with correct casing)
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, enteredPin, 'pin');
+            // Call server API for validation, through the shared object-unlock retry so a correct
+            // code on a route-room object is not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, enteredPin, 'pin');
 
             // If server returned container contents, populate the lockable object
             if (response.success && response.hasContents && response.contents && lockable.scenarioData) {
@@ -452,6 +466,7 @@ export class PinMinigame extends MinigameScene {
             if (lockScopeRefusal(error)) {
                 this.attemptCount--;
                 this.lastAttemptRefusal = lockScopeRefusal(error);
+                this.lastAttemptRefusalLine = lockScopeRefusalLine(error);
                 return false;
             }
             if (error?.status) {
@@ -461,7 +476,7 @@ export class PinMinigame extends MinigameScene {
             }
 
             console.error('Server validation error:', error);
-            this.showFailure("Network error. Please try again.", false, 3000);
+            this.showPinMessage('Network error. Please try again.', 'wrong');
             // Decrease attempts counter since this wasn't a real attempt
             this.attemptCount--;
             // ...and say so, so the caller can keep the visible attempt history
@@ -619,6 +634,22 @@ export class PinMinigame extends MinigameScene {
         };
     }
     
+    /**
+     * Writes a line under the display (kind: 'wrong' or ''). closeAfterMs closes the keypad
+     * afterwards, as the framework's showFailure(…, true, ms) did.
+     */
+    showPinMessage(text, kind = '', closeAfterMs = 0) {
+        const line = this.messageLineElement;
+        if (line) {
+            line.textContent = text || '';
+            line.className = `pin-minigame-message${kind ? ` ${kind}` : ''}`;
+        } else if (text) {
+            this.showFailure(text, closeAfterMs > 0, closeAfterMs || 2000, { plainText: true });
+            return;
+        }
+        if (closeAfterMs > 0) setTimeout(() => this.complete(false), closeAfterMs);
+    }
+
     handleFailure() {
         this.currentInput = '';
         this.updateDisplay();
@@ -629,7 +660,7 @@ export class PinMinigame extends MinigameScene {
             this.displayElement.classList.add('locked');
             this.displayElement.textContent = 'LOCKED';
 
-            this.showFailure('Maximum attempts reached. System locked. Your guesses so far are kept.', true, 3000);
+            this.showPinMessage('Locked out. Your guesses are kept.', 'wrong', 3000);
             
             // Set game result
             this.gameResult = {
@@ -643,15 +674,8 @@ export class PinMinigame extends MinigameScene {
             const message = Number.isFinite(remainingAttempts)
                 ? `Incorrect PIN. ${remainingAttempts} attempt${remainingAttempts > 1 ? 's' : ''} remaining.`
                 : 'Incorrect PIN. Read the cracker\'s lights and try again.';
-            this.showFailure(message, false, 1500);
-            
-            // Clear the failure message after delay
-            setTimeout(() => {
-                const failureMessage = this.messageContainer.querySelector('.minigame-failure-message');
-                if (failureMessage) {
-                    failureMessage.remove();
-                }
-            }, 1500);
+            // Stays until the next key press, so the player can read it while typing again
+            this.showPinMessage(message, 'wrong');
         }
     }
     

@@ -194,6 +194,15 @@ export function renderLandingPage(options = {}) {
     // A blocked address draws the frame only, with no page body (07 N6b).
     if (blocked) {
         root.classList.add('is-blocked');
+        // C-LP2: before any choice the preview is otherwise an empty "Blocked address" box. Show a
+        // start hint so the empty state reads as guidance, not an error. Only when nothing is chosen
+        // yet; a deliberately blocked look-alike domain (a brand or domain is set) keeps the bare
+        // placeholder so the teaching contrast stays.
+        const nothingChosen = !choices.brand && !choices.purpose && !choices.domainId
+            && !choices.wording && !(Array.isArray(choices.fields) && choices.fields.length);
+        if (mode === 'build' && nothingChosen) {
+            root.appendChild(make('div', 'lpb-preview-empty', 'Pick a service to start the page'));
+        }
         return { root, blocked: true, regions };
     }
 

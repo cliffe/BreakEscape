@@ -11,6 +11,7 @@ require 'set'
 require_relative '../lib/break_escape/network_model'
 require_relative '../lib/break_escape/access_identities'
 require_relative '../lib/break_escape/access_work'
+require_relative '../lib/break_escape/capture_model'
 require_relative '../lib/break_escape/declared_grants'
 require_relative '../lib/break_escape/author_notes'
 require_relative '../lib/break_escape/npc_habits/clues'
@@ -18,6 +19,26 @@ require_relative '../lib/break_escape/npc_habits/clues'
 # Items that are physical things: taken down the wire from a remote desktop, they would
 # arrive in the player's hand (7.2).
 NETWORK_PHYSICAL_ITEM_TYPES = %w[key keycard lockpick lockpick_set rfid_cloner key-ring].freeze
+
+# Format 1 (step 8a): a network/resource outage condition is `offWhen` in the requireGlobal form.
+# The global names it reads (a bare name, or the keys of { name: value }); nil when the shape is
+# neither a non-empty string nor a non-empty Hash.
+def offwhen_names(cond)
+  return [cond] if cond.is_a?(String) && !cond.strip.empty?
+  return cond.keys if cond.is_a?(Hash) && !cond.empty?
+
+  nil
+end
+
+# Whether an offWhen condition holds on a globals map (the declared defaults, for start-down):
+# a bare name is truthy, { name: value } matches every pair.
+def offwhen_holds_on?(cond, globals, nm)
+  case cond
+  when String then nm.truthy?(globals[cond])
+  when Hash then cond.all? { |k, v| globals[k.to_s] == v }
+  else false
+  end
+end
 
 def check_network_model(json_data, scenario_dir = nil)
   issues = []
@@ -114,6 +135,64 @@ def check_network_model(json_data, scenario_dir = nil)
     err.call("jack '#{label.call(entry[:object], entry[:path])}' has no network of its own or from its room.")
   end
 
+  # ---- Patch panel (panelOf / panelPorts) ----
+  # A jack with panelOf has no sprite and no position and is reached only through its panel;
+  # a panel's panelPorts entries with a jack name top-level jacks in the same room that name it back.
+  rooms.each do |room_id, room|
+    next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+    objs = room['objects'].select { |o| o.is_a?(Hash) }
+    by_id = objs.to_h { |o| [o['id'], o] }
+    objs.each do |o|
+      next unless o.key?('panelOf')
+
+      where = "jack '#{o['id']}' in room '#{room_id}'"
+      panel = o['panelOf'].is_a?(String) ? by_id[o['panelOf']] : nil
+      if panel.nil?
+        err.call("#{where} has panelOf '#{o['panelOf']}', which is no object in the same room.")
+      elsif !Array(panel['panelPorts']).any? { |pp| pp.is_a?(Hash) && pp['jack'] == o['id'] }
+        err.call("#{where} has panelOf '#{o['panelOf']}', but that object does not list it in panelPorts.")
+      end
+      err.call("#{where} has panelOf and a 'sprite' texture; a panel port has no sprite.") if o.key?('sprite')
+      err.call("#{where} has panelOf and a position; a panel port has none.") if %w[x y position].any? { |k| o.key?(k) }
+      err.call("#{where} has panelOf but is not a networkJack; a panel port is a jack.") unless nm.jack?(o)
+    end
+    objs.each do |panel|
+      next unless panel.key?('panelPorts')
+
+      pwhere = "panel '#{panel['id']}' in room '#{room_id}'"
+      unless panel['panelPorts'].is_a?(Array)
+        err.call("#{pwhere} has panelPorts that is not an array.")
+        next
+      end
+      seen_ports = {}
+      seen_jacks = {}
+      panel['panelPorts'].each do |pp|
+        next unless pp.is_a?(Hash)
+
+        if pp.key?('port')
+          err.call("#{pwhere} lists port #{pp['port']} more than once.") if seen_ports[pp['port']]
+          seen_ports[pp['port']] = true
+        end
+        if pp.key?('jack')
+          err.call("#{pwhere} lists jack '#{pp['jack']}' more than once.") if seen_jacks[pp['jack']]
+          seen_jacks[pp['jack']] = true
+        end
+        next unless pp.key?('jack')
+
+        jack = by_id[pp['jack']]
+        if jack.nil?
+          err.call("#{pwhere} lists port #{pp['port']} with jack '#{pp['jack']}', which is no object in the same room.")
+        elsif !nm.jack?(jack)
+          err.call("#{pwhere} lists port #{pp['port']} with '#{pp['jack']}', which is not a networkJack.")
+        elsif jack.key?('panelOf') && jack['panelOf'] != panel['id']
+          err.call("#{pwhere} lists jack '#{pp['jack']}', whose panelOf names '#{jack['panelOf']}' instead.")
+        end
+        # A jack with a world sprite (network_port) may also be listed; it need not name the panel back.
+      end
+    end
+  end
+
   # ---- Rogue devices (3.3) ----
   device_entries = []
   all_objects.each { |e| device_entries << [e[:object], e[:path], e[:path].include?('/itemsHeld') ? :npc : :room] }
@@ -121,6 +200,9 @@ def check_network_model(json_data, scenario_dir = nil)
     device_entries << [item, "startItemsInInventory[#{i}]", :start] if item.is_a?(Hash)
   end
   BreakEscape::DeclaredGrants.for(json_data).each { |grant| device_entries << [grant['item'], grant['path'], :grant] }
+  # Item definitions by id, for the capture-proof checks below (before the device filter).
+  capture_item_defs = {}
+  device_entries.each { |item, _p, _h| capture_item_defs[item['id'].to_s] ||= item if item.is_a?(Hash) && item['id'].is_a?(String) }
   device_entries.select! { |item, _path, _home| nm.rogue_device?(item) }
   device_entries.each do |item, path, home|
     where = "rogue device at '#{path}'"
@@ -153,6 +235,28 @@ def check_network_model(json_data, scenario_dir = nil)
               'but no jack to plant it in.')
   end
 
+  # A planted proof on a non-jack object names a kit the object takes by id; a rogueDevice flag
+  # would offer that kit to every jack as well (held_rogue_device).
+  cm = BreakEscape::CaptureModel
+  plain_objects = all_objects.map { |e| e[:object] }
+  plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
+  jack_ids = cm.reachable_jack_ids(json_data) # a jack plant is a foothold, found through contents
+  sign_in_pc_ids = cm.sign_in_pc_ids(json_data) # login_scope_of's rule, not top level only
+  cm.each_capture_writer(json_data) do |capture, _kind, path, _owner|
+    proof = capture['proof']
+    next unless cm.proof_kind(proof) == 'planted'
+
+    on = proof['on']
+    # A nested jack counts: the server records a jack plant as a foothold (find_jack walks contents).
+    next if on && plain_objects.any? { |o| o['id'].to_s == on.to_s && nm.jack?(o) }
+
+    item = capture_item_defs[proof['planted'].to_s]
+    next unless item && nm.rogue_device?(item)
+
+    warn.call("#{path}/proof: planted \"#{proof['planted']}\" carries rogueDevice but is planted on a non-jack object; " \
+              'a rogue device is offered to every jack. Drop rogueDevice from this item')
+  end
+
   # ---- Headless hosts (3.4) ----
   all_objects.each do |e|
     obj = e[:object]
@@ -166,7 +270,7 @@ def check_network_model(json_data, scenario_dir = nil)
     room = rooms[e[:room]]
     err.call("headless host #{where} has no network of its own or from its room; it could never be reached.") unless nm.network_of(obj, room)
     if ai.owner_id(obj, json_data)
-      err.call("headless host #{where} is a workstation with an owner (screenOwner or an NPC's needsHome); a " \
+      err.call("headless host #{where} is a workstation with an owner; a " \
                'headless host has no screen for anyone to sit at.')
     end
   end
@@ -194,7 +298,18 @@ def check_network_model(json_data, scenario_dir = nil)
     next unless psk.is_a?(String) && !psk.strip.empty?
 
     warn.call("'networks/#{net_id}/wifi' psk is shorter than eight characters.") if psk.length < 8
-    unless readable.include?(psk)
+    capture_writers_of_psk = cm.each_capture_writer(json_data).select { |cap, _k, _p, _o| cap['secret'] == psk }
+    if capture_writers_of_psk.any? { |cap, *_| cap['proof'].nil? }
+      warn.call("'networks/#{net_id}/wifi' psk is the secret of a capture writer that carries no proof; the server " \
+                'never serves it, so the tablet stays blank. Give the writer a proof')
+    end
+    served_writers = cm.served_capture_writers(json_data)
+    proven = capture_writers_of_psk.any? do |cap, *_|
+      served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plant_objects, nil,
+                                                                      jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids,
+                                                                      scenario: json_data)
+    end
+    unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.
       sets = BreakEscape::NpcHabits::Clues.set_member_texts(json_data).select { |t| t[:text].to_s.include?(psk) }
       if sets.any?
@@ -277,29 +392,30 @@ def check_network_model(json_data, scenario_dir = nil)
   end
 
   # ---- Outages (slice 9.3b sub-slice O, 5.2 and 9.2) ----
-  # A network downIf names a global; the network is down while it is truthy. The value must be
-  # a string, and the global should be declared. 9.2 owns the resource downIf checks
+  # A network offWhen names a global; the network is down while it is truthy. The value must be
+  # a string, and the global should be declared. 9.2 owns the resource offWhen checks
   # (validate_access_work.rb); this adds the network side and the start-down open-share warning.
   decl_globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
   networks.each do |net_id, net|
-    next unless net.key?('downIf')
+    next unless net.key?('offWhen')
 
-    dn = net['downIf']
-    unless dn.is_a?(String)
-      err.call("'networks/#{net_id}/downIf' must be a string naming a global.")
+    names = offwhen_names(net['offWhen'])
+    unless names
+      err.call("'networks/#{net_id}/offWhen' must be a global name or { name: value } (the requireGlobal form).")
       next
     end
-    next if dn.strip.empty?
 
-    warn.call("networks.#{net_id}.downIf '#{dn}' is not declared in globalVariables.") unless decl_globals.key?(dn)
+    names.each do |nm_name|
+      warn.call("networks.#{net_id}.offWhen names '#{nm_name}', which is not declared in globalVariables.") unless decl_globals.key?(nm_name)
+    end
   end
-  # An open share with contents on a network whose downIf default is truthy (it starts down): a
+  # An open share with contents on a network whose offWhen default holds (it starts down): a
   # browser can write the global false, so a secret that must not be read early needs a session
   # as well, not an outage alone.
   net_starts_down = lambda do |net_id|
     net = networks[net_id]
-    dn = net.is_a?(Hash) ? net['downIf'] : nil
-    nm.present_string?(dn) && nm.truthy?(decl_globals[dn])
+    cond = net.is_a?(Hash) ? net['offWhen'] : nil
+    !offwhen_names(cond).nil? && offwhen_holds_on?(cond, decl_globals, nm)
   end
   resources.each do |res_id, res|
     next unless res['kind'] == 'file_share' && res['access'].nil? && nm.resource_contents?(res)
@@ -307,7 +423,7 @@ def check_network_model(json_data, scenario_dir = nil)
     net = res['network']
     next unless net.is_a?(String) && net_starts_down.call(net)
 
-    warn.call("open share '#{res_id}' with contents is on network '#{net}', which starts down (its downIf default is " \
+    warn.call("open share '#{res_id}' with contents is on network '#{net}', which starts down (its offWhen default is " \
               'truthy); a browser can set that global false, so a secret that must not be read early needs an ' \
               'account-gated share or a session as well, not an outage alone.')
   end
@@ -667,18 +783,18 @@ def check_network_model(json_data, scenario_dir = nil)
     via = host_ids.empty? ? 'no sign-in host to pivot through' : "pivot hosts #{quote_list.call(host_ids)}"
     info << "ℹ️ Link reach: from '#{net_id}' a pivot reaches #{quote_list.call(reached)}; #{via}"
   end
-  # Outages: each network and resource with a downIf, and its declared starting state (5.2).
+  # Outages: each network and resource with an offWhen, and its declared starting state (5.2).
   networks.keys.sort.each do |net_id|
-    dn = networks[net_id]['downIf']
-    next unless nm.present_string?(dn)
+    cond = networks[net_id]['offWhen']
+    next unless offwhen_names(cond)
 
-    info << "ℹ️ Outage: network '#{net_id}' is down while '#{dn}' is truthy; it starts #{nm.truthy?(decl_globals[dn]) ? 'down' : 'up'}."
+    info << "ℹ️ Outage: network '#{net_id}' is down while #{cond.inspect} holds; it starts #{offwhen_holds_on?(cond, decl_globals, nm) ? 'down' : 'up'}."
   end
   resources.keys.sort.each do |res_id|
-    dn = resources[res_id]['downIf']
-    next unless nm.present_string?(dn)
+    cond = resources[res_id]['offWhen']
+    next unless offwhen_names(cond)
 
-    info << "ℹ️ Outage: resource '#{res_id}' is down while '#{dn}' is truthy; it starts #{nm.truthy?(decl_globals[dn]) ? 'down' : 'up'}."
+    info << "ℹ️ Outage: resource '#{res_id}' is down while #{cond.inspect} holds; it starts #{offwhen_holds_on?(cond, decl_globals, nm) ? 'down' : 'up'}."
   end
 
   resources.keys.sort.each do |res_id|

@@ -9,7 +9,7 @@
 // The real unlock-system.js (its browser-only imports stubbed), container-minigame.js,
 // pc-sessions.js and network-links.js run against jsdom.
 // Run with: node test/js/access-remote-signin.test.mjs
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -37,13 +37,19 @@ put('systems/lockpick-catch.js', 'export function catchLockpickInView() { return
 put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 copy('utils/escape-html.js');
+copy('utils/lock-scope-refusal.js'); // unlock-system.js now imports unlockWithRouteRoomRetry from here (GATED_DOOR §3.6)
+copy('utils/more-below.js');
 copy('utils/computer-keywords.js');
+copy('utils/pc-monitor.js');
+copy('utils/npc-headshot.js');
+copy('utils/pc-taskbar.js');
 copy('utils/author-html.js');
 put('systems/inventory.js',
     'export async function addToInventory() { return { ok: true }; }\n' +
     'export function removeFromInventory() {}\n' +
     'export function inventoryImageKey(d) { return (typeof d?.sprite === "string" && d.sprite) || d?.type; }\n');
 for (const rel of ['utils/locked-hint.js', 'utils/conditional-text.js', 'systems/global-writer.js', 'systems/captures.js',
+    'utils/remote-host-text.js',
     'systems/unlock-system.js', 'systems/pc-sessions.js', 'systems/network-links.js',
     'minigames/framework/base-minigame.js', 'minigames/container/container-item-image.js',
     'minigames/container/container-minigame.js']) copy(rel);
@@ -52,11 +58,13 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { openLoginSignIn, interactLoginPc, openLoginPc, remoteLockable, openRemoteSignIn, openRemoteDesktop } = await imp('systems/unlock-system.js');
+const { openLoginSignIn, interactLoginPc, openLoginPc, remoteLockable, openRemoteSignIn, openRemoteDesktop, REMOTE_CAPTURES_WAIT_MS } = await imp('systems/unlock-system.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 const { NetworkLinks } = await imp('systems/network-links.js');
 const { ContainerMinigame } = await imp('minigames/container/container-minigame.js');
 
+// UX slice 6: Switch user and Sign out are in the start panel
+const startAction = (id) => { document.querySelector('.pc-start-btn').click(); document.getElementById(`pc-start-${id}`).click(); };
 const settle = async (n = 4) => { for (let i = 0; i < n; i++) await new Promise(r => setTimeout(r, 0)); };
 
 const foothold = { id: 'jack_comms_port', via: 'jack', name: 'Drop box: comms room', itemId: 'netlink_jack_comms_port',
@@ -75,7 +83,7 @@ function setup() {
     window.gameAlert = (...a) => alerts.push(a);
     window.playUISound = () => {};
     window.ApiClient = {
-        loginAccounts: async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: [{ username: 'lfox', displayName: 'Lena Fox' }] }; },
+        loginAccounts: async (pcId, opts = {}) => { calls.push(['loginAccounts', pcId, opts.foothold ?? null]); return { loginAccounts: [{ username: 'lfox', displayName: 'Lena Fox' }], loginPicker: 'accounts', headless: false, host: 'HB-FIN-02' }; },
         login: async (pcId, fields) => {
             calls.push(['login', pcId, fields]);
             if (fields.password !== 'right') throw Object.assign(new Error('no'), { status: 422, body: { message: "This account can't sign in on this PC", notPermitted: true } });
@@ -149,32 +157,35 @@ test('remoteLockable builds the lockable of 4.4 from a host row', () => {
         lockType: 'login', locked: true, loginPicker: false, remote: { footholdId: 'jack_comms_port' } });
 });
 
-test('a remote lockable opens the sign-in screen with no /login_accounts request and no tiles, whatever its picker', async () => {
+test('a remote lockable opens the sign-in screen with one /login_accounts request carrying the foothold, and never a post-it', async () => {
     setup();
     const lockable = remoteLockable(LENA_ROW, 'jack_comms_port');
-    // Even a lockable that carries tiles and a picker shows none remotely
+    // Even a lockable that carries tiles and a picker reads them from the server, not itself
     lockable.scenarioData.loginPicker = 'accounts';
     lockable.scenarioData.loginAccounts = [{ username: 'lfox' }];
     lockable.scenarioData.postitNote = 'lfox / secret';
     await openLoginSignIn(lockable);
-    assert.equal(calls.filter(c => c[0] === 'loginAccounts').length, 0);
+    // The remote screen fetches GET /login_accounts with the foothold (credential keyring K0), once
+    const la = calls.filter(c => c[0] === 'loginAccounts');
+    assert.equal(la.length, 1);
+    assert.deepEqual(la[0], ['loginAccounts', 'lena_pc', 'jack_comms_port'], 'the foothold is on the request');
     const [type, params] = started[0];
     assert.equal(type, 'password');
-    assert.equal(params.signIn.picker, false);
-    assert.deepEqual(params.signIn.tiles, []);
+    assert.equal(params.signIn.picker, false, 'the lockable picker stays false; the server answer decides');
+    assert.deepEqual(params.signIn.tiles, [], 'no tiles until the server answers');
     assert.deepEqual(params.signIn.remote, { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' });
     assert.equal(params.showPostit, false, 'a sticky note is never shown remotely');
     assert.equal(params.signIn.pcName, "Lena's PC (HB-FIN-02)");
 });
 
-test('the remote screen starts before /capture_secrets answers, and its Captured sign-ins fill in after (review R1 minor 1)', async () => {
+test('the remote screen starts before the answers, fetches /login_accounts with the foothold and /capture_secrets, and lays out once', async () => {
     setup();
     window.gameState.globalVariables.se_captures = { lena: { targetId: 'lena', kind: 'password', roleLabel: 'Lena Fox', at: 1 } };
     window.capturedSignIns = (captures, accounts) => Object.values(captures)
         .filter(e => accounts[e.targetId]).map(e => ({ targetId: e.targetId, label: e.roleLabel, username: accounts[e.targetId], password: null }));
     let answerSecrets;
     window.ApiClient.get = (path) => { calls.push(['get', path]); return new Promise(r => { answerSecrets = r; }); };
-    const scene = { _sceneType: 'password', cleanup() {}, filled: null, setCapturedSignIns(list) { this.filled = list; } };
+    const scene = { _sceneType: 'password', cleanup() {}, laidOut: null, setRemoteAccounts(info) { this.laidOut = info; } };
     const start = window.MinigameFramework.startMinigame.bind(window.MinigameFramework);
     window.MinigameFramework.startMinigame = (type, c, params) => {
         const m = start(type, c, params);
@@ -188,24 +199,217 @@ test('the remote screen starts before /capture_secrets answers, and its Captured
     assert.deepEqual(scene.params.signIn.captured, []);
     assert.equal(scene.params.signIn.capturedLoading, true);
     await settle();
-    assert.equal(scene.filled, null, 'nothing filled before the answer');
+    assert.equal(scene.laidOut, null, 'nothing laid out before /capture_secrets answers');
+    assert.deepEqual(calls.find(c => c[0] === 'loginAccounts'), ['loginAccounts', 'lena_pc', 'jack_comms_port']);
     assert.deepEqual(calls.filter(c => c[0] === 'get'), [['get', '/capture_secrets']]);
     answerSecrets({ accounts: { lena: 'lfox' }, secrets: {} });
     await opening;
-    assert.deepEqual(scene.filled, [{ targetId: 'lena', label: 'Lena Fox', username: 'lfox', password: null }]);
+    assert.deepEqual(scene.laidOut.tiles, [{ username: 'lfox', displayName: 'Lena Fox' }], 'the server PC tiles');
+    assert.deepEqual(scene.laidOut.captured, [{ targetId: 'lena', label: 'Lena Fox', username: 'lfox', password: null }]);
+    assert.equal(scene.laidOut.picker, 'accounts');
+    assert.equal(scene.laidOut.host, 'HB-FIN-02');
+    assert.equal(scene.laidOut.pending, false);
     delete window.capturedSignIns;
 });
 
-test('the remote option keeps a keyboard lockable off /login_accounts: no tiles and no sticky note (9.1 m5)', async () => {
+// The screen's wait for the pair is capped (plan 5.2): the sync retries and a fetch can take 8 s
+// or more on a struggling server. Fake timers drive the cap; setImmediate drains.
+function slowCapturesScene() {
+    window.gameState.globalVariables.se_captures = { lena: { targetId: 'lena', kind: 'password', roleLabel: 'Lena Fox', at: 1 } };
+    window.capturedSignIns = (captures, accounts) => Object.values(captures)
+        .filter(e => accounts[e.targetId]).map(e => ({ targetId: e.targetId, label: e.roleLabel, username: accounts[e.targetId], password: null }));
+    const answer = {};
+    window.ApiClient.get = (path) => { calls.push(['get', path]); return new Promise((ok, fail) => { answer.ok = ok; answer.fail = fail; }); };
+    const scene = { _sceneType: 'password', cleanup() {}, layouts: [], setRemoteAccounts(info) { this.layouts.push(info); } };
+    const start = window.MinigameFramework.startMinigame.bind(window.MinigameFramework);
+    window.MinigameFramework.startMinigame = (type, c, params) => {
+        const m = start(type, c, params);
+        if (type !== 'password') return m;
+        Object.assign(scene, { params });
+        window.MinigameFramework.currentMinigame = scene;
+        return scene;
+    };
+    return { scene, answer };
+}
+const drain = async (n = 6) => { for (let i = 0; i < n; i++) await new Promise(r => setImmediate(r)); };
+
+test('plan 5.2: a slow /capture_secrets shows the Other user form at the cap, and the late answer still lays out', async () => {
     setup();
-    window.ApiClient.loginAccounts = async (pcId) => { calls.push(['loginAccounts', pcId]); return { loginAccounts: [{ username: 'lfox' }], postitNote: 'lfox / Ledger-Lena-9' }; };
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const { scene, answer } = slowCapturesScene();
+        const opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        assert.equal(REMOTE_CAPTURES_WAIT_MS, 3000);
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS - 1);
+        assert.deepEqual(scene.layouts, [], 'still "Checking..." just before the cap');
+        mock.timers.tick(1);
+        assert.equal(scene.layouts.length, 1, 'at the cap: one layout, marked still on its way');
+        assert.equal(scene.layouts[0].pending, true);
+        assert.equal(scene.layouts[0].capturedPending, true);
+        answer.ok({ accounts: { lena: 'lfox' }, secrets: {} });
+        await opening;
+        assert.equal(scene.layouts.length, 2);
+        assert.equal(scene.layouts[1].pending, false);
+        assert.deepEqual(scene.layouts[1].captured, [{ targetId: 'lena', label: 'Lena Fox', username: 'lfox', password: null }]);
+    } finally {
+        mock.timers.reset();
+        delete window.capturedSignIns;
+    }
+});
+
+// R1 fixes (M8, m1, m2): the /login_accounts side of the dual fetch. A scene stub records what
+// the screen is told (layouts, closes) and what the player is shown (gameAlert).
+function loginScene({ captures = true } = {}) {
+    const scene = { _sceneType: 'password', cleanup() {}, layouts: [], closedByPlayer: 0,
+        signInState: { tiles: [{ username: 'lfox' }] },
+        setRemoteAccounts(info) { this.layouts.push(info); return true; },
+        closeByPlayer() { this.closedByPlayer++; if (window.MinigameFramework.currentMinigame === this) window.MinigameFramework.currentMinigame = null; } };
+    const start = window.MinigameFramework.startMinigame.bind(window.MinigameFramework);
+    window.MinigameFramework.startMinigame = (type, c, params) => {
+        const m = start(type, c, params);
+        if (type !== 'password') return m;
+        Object.assign(scene, { params });
+        window.MinigameFramework.currentMinigame = scene;
+        return scene;
+    };
+    window.capturedSignIns = (caps, accounts) => Object.values(caps)
+        .filter(e => accounts[e.targetId]).map(e => ({ targetId: e.targetId, label: e.roleLabel, username: accounts[e.targetId], password: null }));
+    if (captures) window.gameState.globalVariables.se_captures = { lena: { targetId: 'lena', kind: 'password', roleLabel: 'Lena Fox', at: 1 } };
+    return scene;
+}
+const heldLogin = () => { const h = {}; window.ApiClient.loginAccounts = () => new Promise((ok, fail) => { h.ok = ok; h.fail = fail; }); return h; };
+const shownCalls = () => { const seen = []; sessions.screenShown = (...a) => seen.push(a); return seen; };
+
+for (const [name, err, line] of [
+    ['422 remoteBlocked', { status: 422, body: { remoteBlocked: true } }, 'Remote sign-in is off on HB-FIN-02.'],
+    ['403 not_responding', { status: 403, body: { reason: 'not_responding' } }, 'HB-FIN-02 is not responding.'],
+    ['a plain 403', { status: 403, body: {} }, "HB-FIN-02 can't be reached over this link."],
+    ['a 404', { status: 404, body: {} }, "HB-FIN-02 can't be reached over this link."]
+]) {
+    test(`R1 M8: ${name} from /login_accounts closes the screen with the host line while /capture_secrets is still pending`, async () => {
+        setup();
+        const scene = loginScene();
+        const seen = shownCalls();
+        window.ApiClient.get = () => new Promise(() => {});          // /capture_secrets never answers
+        window.ApiClient.loginAccounts = async () => { throw Object.assign(new Error('x'), err); };
+        const opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await Promise.race([opening, drain(8)]);
+        assert.equal(scene.closedByPlayer, 1, 'the screen closed');
+        assert.deepEqual(alerts.map(a => [a[0], a[1]]), [[line, 'error']], 'the host line, as an error toast');
+        assert.deepEqual(scene.layouts, [], 'nothing was laid out');
+        assert.deepEqual(seen, [], 'no pc_signin_shown for a screen that never showed');
+        delete window.capturedSignIns;
+    });
+}
+
+test('R1 M8: a slow /login_accounts past the cap shows the pending form without a picker, then the late answer carries picker and tiles', async () => {
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const scene = loginScene();
+        const seen = shownCalls();
+        const held = heldLogin();
+        window.ApiClient.get = async () => ({ accounts: { lena: 'lfox' }, secrets: {} });
+        const opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        assert.deepEqual(scene.layouts, [], 'captures are in but "Checking..." holds until the cap');
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS);
+        assert.equal(scene.layouts.length, 1);
+        assert.equal('picker' in scene.layouts[0], false, 'no picker until the server has answered');
+        assert.equal(scene.layouts[0].pending, true);
+        assert.deepEqual(scene.layouts[0].captured.map(c => c.username), ['lfox'], 'the captures are in the cap layout');
+        assert.deepEqual(seen, [], 'pc_signin_shown waits for the server tiles');
+        held.ok({ loginAccounts: [{ username: 'lfox', displayName: 'Lena Fox' }, { username: 'sokafor', displayName: 'Sam Okafor' }], loginPicker: 'accounts', host: 'HB-FIN-02' });
+        await opening;
+        assert.equal(scene.layouts.length, 2);
+        assert.equal(scene.layouts[1].picker, 'accounts');
+        assert.equal(scene.layouts[1].pending, false);
+        assert.deepEqual(scene.layouts[1].tiles.map(t => t.username), ['lfox', 'sokafor']);
+        assert.equal(seen.length, 1, 'pc_signin_shown fires once, after the layout');
+        assert.deepEqual(seen[0][1], scene.signInState.tiles, 'with the tiles the row shows');
+        assert.equal(seen[0][2], 'remote');
+    } finally {
+        mock.timers.reset();
+        delete window.capturedSignIns;
+    }
+});
+
+test('R1 M1 (client side): a failed /login_accounts lays out with no picker key, so the captures stay', async () => {
+    setup();
+    const scene = loginScene();
+    window.ApiClient.get = async () => ({ accounts: { lena: 'lfox' }, secrets: {} });
+    window.ApiClient.loginAccounts = async () => { throw Object.assign(new Error('boom'), { status: 500, body: {} }); };
+    await openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+    assert.equal(scene.layouts.length, 1);
+    const info = scene.layouts[0];
+    assert.equal(info.accountsFailed, true);
+    assert.equal('picker' in info, false, 'a failure says nothing about the picker');
+    assert.deepEqual(info.captured.map(c => c.username), ['lfox'], 'the captured sign-in is still offered');
+    delete window.capturedSignIns;
+});
+
+test('R1 m1/m2: after the player closed the screen, a late 403 raises no toast and a late 200 lays out nothing and emits nothing', async () => {
+    for (const late of ['403', '200']) {
+        setup();
+        const scene = loginScene();
+        const seen = shownCalls();
+        const held = heldLogin();
+        window.ApiClient.get = async () => ({ accounts: { lena: 'lfox' }, secrets: {} });
+        const opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        window.MinigameFramework.currentMinigame = null;           // the player pressed X
+        if (late === '403') held.fail(Object.assign(new Error('x'), { status: 403, body: {} }));
+        else held.ok({ loginAccounts: [{ username: 'lfox' }], loginPicker: 'accounts', host: 'HB-FIN-02' });
+        await opening;
+        assert.deepEqual(alerts, [], `a late ${late} raises no toast`);
+        assert.deepEqual(scene.layouts, [], `a late ${late} lays out nothing`);
+        assert.deepEqual(seen, [], `a late ${late} emits no pc_signin_shown`);
+        assert.equal(scene.closedByPlayer, 0);
+        delete window.capturedSignIns;
+    }
+});
+
+test('plan 5.2: an answer inside the cap lays out once; a failed /capture_secrets is marked', async () => {
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        let { scene, answer } = slowCapturesScene();
+        let opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        mock.timers.tick(1000);
+        answer.ok({ accounts: { lena: 'lfox' }, secrets: {} });
+        await opening;
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS);
+        assert.equal(scene.layouts.length, 1, 'the cap is cleared once both are in');
+        assert.equal(scene.layouts[0].capturedFailed, false);
+
+        setup();
+        ({ scene, answer } = slowCapturesScene());
+        opening = openRemoteSignIn(LENA_ROW, 'jack_comms_port');
+        await drain();
+        answer.fail(new Error('500'));
+        await opening;
+        mock.timers.tick(REMOTE_CAPTURES_WAIT_MS);
+        assert.equal(scene.layouts.length, 1);
+        assert.equal(scene.layouts[0].capturedFailed, true);
+    } finally {
+        mock.timers.reset();
+        delete window.capturedSignIns;
+    }
+});
+
+test('the remote option asks /login_accounts with the foothold and never serves the sticky note (9.1 m5, K0)', async () => {
+    setup();
+    window.ApiClient.loginAccounts = async (pcId, opts = {}) => { calls.push(['loginAccounts', pcId, opts.foothold ?? null]); return { loginAccounts: [{ username: 'lfox' }], loginPicker: 'accounts', host: 'HB-FIN-02', postitNote: 'lfox / Ledger-Lena-9' }; };
     const sprite = { scenarioData: { id: 'lena_pc', type: 'pc', name: "Lena's PC", lockType: 'login', locked: true, loginPicker: 'accounts', hasPostit: true } };
     await openLoginSignIn(sprite, { switching: true, remote: { footholdId: 'jack_comms_port' } });
-    assert.equal(calls.filter(c => c[0] === 'loginAccounts').length, 0, 'the note is never asked for');
+    // The foothold request goes through remote_login_accounts, which never serves the post-it
+    assert.deepEqual(calls.filter(c => c[0] === 'loginAccounts'), [['loginAccounts', 'lena_pc', 'jack_comms_port']]);
     const [, params] = started[0];
     assert.equal(params.showPostit, false);
     assert.equal(params.postitNote, '');
-    assert.deepEqual(params.signIn.tiles, []);
+    assert.deepEqual(params.signIn.tiles, [], 'the start params carry no tiles; the server answer decides');
     assert.equal(params.signIn.remote.footholdId, 'jack_comms_port');
     assert.equal(sprite.scenarioData.remote, undefined, 'the world sprite is not changed');
 });
@@ -240,13 +444,14 @@ test('Switch user on a remote desktop opens the remote screen; a refused switch 
     await remoteDesktopOpen();
     views.length = 0;
     calls.length = 0;
-    document.querySelector('#desktop-switch-user').click();
+    startAction('switch');
     await settle();
     const [type, params] = started.at(-1);
     assert.equal(type, 'password');
     assert.equal(params.signIn.picker, false);
     assert.equal(params.signIn.current.username, 'lfox');
-    assert.equal(calls.filter(c => c[0] === 'loginAccounts').length, 0);
+    // Switch user on a remote desktop takes the same dual fetch: /login_accounts with the foothold
+    assert.deepEqual(calls.filter(c => c[0] === 'loginAccounts'), [['loginAccounts', 'lena_pc', 'jack_comms_port']]);
     // Sam's details are refused; the screen is left with no new sign-in
     const refused = await sessions.signIn('lena_pc', 'sokafor', 'wrong', { foothold: 'jack_comms_port' });
     assert.equal(refused.reason, 'not_permitted');
@@ -323,13 +528,13 @@ test('the remote desktop closed by its Close returns to the view; Sign out too',
     setup();
     await remoteDesktopOpen();
     views.length = 0;
-    document.querySelector('#minigame-cancel').click();
+    document.querySelector('#minigame-close').click();   // the X: no Cancel beside it (slice 7 R1)
     await settle();
     assert.deepEqual(views, [['jack_comms_port', null]]);
     openRemoteDesktop('lena_pc', 'jack_comms_port');
     await settle();
     views.length = 0;
-    document.querySelector('#desktop-sign-out').click();
+    startAction('signout');
     await settle(6);
     assert.equal(sessions.has('lena_pc'), false);
     assert.deepEqual(views, [['jack_comms_port', null]]);
@@ -371,4 +576,21 @@ test('a headless object\'s click shows its observations and opens nothing', asyn
     assert.equal(alerts.length, 2);
     assert.equal(alerts[0][0], 'A door controller with no screen or keyboard.');
     delete window.workstationState;
+});
+
+test('a from lockable opens the remote sign-in screen asking /login_accounts with from, headed by the source host (K4)', async () => {
+    setup();
+    const { fromLockable } = await imp('systems/unlock-system.js');
+    window.ApiClient.loginAccounts = async (pcId, opts = {}) => { calls.push(['loginAccounts', pcId, opts.foothold ?? null, opts.from ?? null]); return { loginAccounts: [{ username: 'lfox', displayName: 'Lena Fox' }], loginPicker: 'accounts', headless: false, host: 'HB-FIN-02' }; };
+    const l = fromLockable('lena_pc', 'ops_pc');
+    l.scenarioData.remote.fromHost = 'OPS-PC';
+    await openLoginSignIn(l);
+    const la = calls.filter(c => c[0] === 'loginAccounts');
+    assert.equal(la.length, 1);
+    assert.deepEqual(la[0], ['loginAccounts', 'lena_pc', null, 'ops_pc']);
+    const [type, params] = started[0];
+    assert.equal(type, 'password');
+    assert.equal(params.signIn.remote.fromPcId, 'ops_pc');
+    assert.equal(params.signIn.remote.footholdId ?? null, null);
+    assert.equal(params.showPostit, false, 'a sticky note is never shown remotely');
 });

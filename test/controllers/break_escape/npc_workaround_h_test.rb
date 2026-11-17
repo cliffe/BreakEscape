@@ -30,7 +30,7 @@ module BreakEscape
       office['objects'] += [AccessWorkScenario.pc('sam_pc'), AccessWorkScenario.pc('ruth_pc')]
       ian = npc_in(data, 'ian')
       ian['workarounds'] = ian_workarounds || [{ 'at' => 40, 'do' => 'borrow_session', 'pc' => 'hot_desk' }]
-      ian['screenHabit'] = ian_habit if ian_habit
+      (ian['habits'] ||= {})['screen'] = ian_habit if ian_habit
       office['npcs'] += [
         AccessWorkScenario.staff('sam', 'sokafor', SAM_PASSWORD, 'displayName' => 'Sam Okafor', 'workNeeds' => ['+printer'],
                                                                'workarounds' => [{ 'at' => 40, 'do' => 'share_login', 'with' => sam_with }]),
@@ -218,7 +218,7 @@ module BreakEscape
       end
     end
 
-    test 'locksScreen habits (slice 9.1) decide the guest as they fill the screenHabit' do
+    test 'locksScreen habits (slice 9.1) decide the guest as they fill habits.screen' do
       { 'always' => false, 'never' => nil }.each do |value, expected|
         data = scenario(ian_habit: nil)
         npc_in(data, 'ian')['habits'] = { 'locksScreen' => value }
@@ -233,6 +233,33 @@ module BreakEscape
       borrow_done!
       assert_empty state['guestSessions']
       assert_equal 422, claim.status
+    end
+
+    test 'slice 16 m4: a hot desk with autoLockMin 0 leaves no guest record and the borrow answers guest false' do
+      data = scenario
+      data['policies']['kiosk'] = { 'autoLockMin' => 0 }
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'kiosk'
+      build(data: data)
+      t = Time.current
+      run = fails('ian', 2, t).last['run']
+      assert_equal 'borrow_session', run['do']
+      res = done('ian', run, t + 60)
+      assert_equal 200, res.status
+      assert_equal({ 'pcId' => 'hot_desk', 'guest' => false }, res.parsed_body,
+                   'the borrow no longer promises a guest the claim refuses')
+      assert_empty state['guestSessions']
+      assert_equal 422, claim.status
+    end
+
+    test 'R1 minor 2: an autoLockMin 0 claim refusal purges a stale guest record, as the locked-out and timed-out branches do' do
+      data = scenario
+      data['policies']['kiosk'] = { 'autoLockMin' => 0 }
+      data['rooms']['office']['objects'].find { |o| o['id'] == 'hot_desk' }['policy'] = 'kiosk'
+      # a record predating a flip to autoLockMin 0 (static policies cannot do this today, but the
+      # refusal still cleans it up so no stale record lingers for a later read)
+      build(data: data, player_state: { 'guestSessions' => { 'hot_desk' => 'ian' } })
+      assert_equal 422, claim.status
+      assert_empty state['guestSessions'], 'the refusal purges the stale guest record'
     end
 
     test 'the guest claim succeeds with a guest record and nobody signed in' do
@@ -502,7 +529,7 @@ module BreakEscape
     def queue_scenario
       data = scenario
       data['globalVariables']['finance_share_down'] = true
-      npc_in(data, 'dana')['screenHabit'] = LEAVES_OPEN
+      (npc_in(data, 'dana')['habits'] ||= {})['screen'] = LEAVES_OPEN
       data
     end
 

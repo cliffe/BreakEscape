@@ -7,9 +7,10 @@
 
 import { INTERACTION_RANGE, INTERACTION_RANGE_SQ } from '../utils/constants.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { worldObservations } from '../utils/pc-observations.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { interactionLineClear } from '../systems/interaction-walls.js';
-import { reachX, aimX } from '../systems/interaction-reach.js';
+import { reachX, reachY, aimX } from '../systems/interaction-reach.js';
 
 const SIDE_DOOR_RANGE_SQ  = INTERACTION_RANGE_SQ * 4;  // 2× radius for E/W doors
 const SIDE_DOOR_Y_OFFSET  = INTERACTION_RANGE / 2;
@@ -21,14 +22,60 @@ let proximityText = null; // text from nearest world object (updated on interval
 let hoverText     = null; // text from HUD element hover (takes priority)
 const UPDATE_INTERVAL = 100; // ms
 
+// A screen that can't hover (a phone, a tablet) fires mouseenter on a tap and never the
+// mouseleave, so a hover label would stick under the HUD buttons (UX slice 16 R1 m13).
+function cannotHover() {
+    try {
+        return typeof window !== 'undefined' && typeof window.matchMedia === 'function' &&
+            window.matchMedia('(hover: none)').matches;
+    } catch (e) {
+        return false;
+    }
+}
+
+// On a screen that can't hover, a tap still shows the label (the only name an icon-only
+// button or a one-action tray item has), but only briefly: it clears after TOUCH_LABEL_MS
+// or on the next tap anywhere (UX slice 16 R2 m1). The tap's own mouseenter comes after
+// its pointerdown, so the listener added here waits for the next tap.
+export const TOUCH_LABEL_MS = 1500;
+let touchTimer = null;
+let touchTapOff = null;
+
+function stopTouchLabel() {
+    if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+    if (touchTapOff) {
+        try { document.removeEventListener('pointerdown', touchTapOff, true); } catch (e) { /* no document */ }
+        touchTapOff = null;
+    }
+}
+
+function showTouchLabel(text) {
+    stopTouchLabel();
+    hoverText = text;
+    _applyText(hoverText);
+    const end = () => {
+        stopTouchLabel();
+        if (hoverText === text) hoverText = null;
+        _applyText(hoverText ?? proximityText);
+    };
+    touchTimer = setTimeout(end, TOUCH_LABEL_MS);
+    if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        touchTapOff = end;
+        document.addEventListener('pointerdown', touchTapOff, true);
+    }
+}
+
 /** Called by HUD elements on mouseenter to override the proximity label. */
 export function setHudLabel(text) {
+    if (text && cannotHover()) { showTouchLabel(text); return; }
+    stopTouchLabel();
     hoverText = text || null;
     _applyText(hoverText ?? proximityText);
 }
 
 /** Called by HUD elements on mouseleave to restore the proximity label. */
 export function clearHudLabel() {
+    stopTouchLabel();
     hoverText = null;
     _applyText(proximityText);
 }
@@ -85,13 +132,13 @@ export function updateInfoLabel() {
     let bestScore = Infinity;
     let bestText  = null;
 
-    function consider(ox, oy, text, rangeSq, target = null, faceX = ox) {
+    function consider(ox, oy, text, rangeSq, target = null, faceX = ox, faceY = oy) {
         if (!text) return;
         const dx = ox - px;
         const dy = oy - py;
         if (dx * dx + dy * dy > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
-        const score = angularDiff(faceX, oy) * 1000 + Math.sqrt(dx * dx + dy * dy);
+        const score = angularDiff(faceX, faceY) * 1000 + Math.sqrt(dx * dx + dy * dy);
         if (score < bestScore) {
             bestScore = score;
             bestText  = text;
@@ -108,9 +155,13 @@ export function updateInfoLabel() {
                     'observations',
                     obj.observations || obj.scenarioData?.name || obj.name || null
                 );
+                // An unlocked PC stops repeating its "password locked" line: its name instead
+                if (worldObservations(obj.scenarioData, text, window.pcSessions) === null) {
+                    text = obj.scenarioData?.name || obj.name || null;
+                }
                 // A sign-in PC with a sticky note picture says so (slice 9.2 B)
                 if (window.postitMarks?.label) text = window.postitMarks.label(obj.scenarioData?.id, text);
-                consider(reachX(obj, px), obj.y, text, INTERACTION_RANGE_SQ, obj, aimX(obj));
+                consider(reachX(obj, px), reachY(obj, py), text, INTERACTION_RANGE_SQ, obj, aimX(obj), obj.y);
             });
         }
 

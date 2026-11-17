@@ -141,3 +141,24 @@ test('a report-workstation with no social.engagement.report warns; with one it i
   json.social.engagement = { report: { title: 'Report' } };
   has(lint(json).filter((s) => s.includes('report-workstation')), /report-workstation/, 0);
 });
+
+// check_globals_never_read: an onHidden set_global is a setter, and its key string is not a read.
+function neverRead(json) {
+  const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
+    j = JSON.parse($stdin.read)
+    puts JSON.generate(check_globals_never_read(j, ${JSON.stringify(root)}))`;
+  const r = spawnSync('ruby', ['-e', script], { encoding: 'utf8', env, input: JSON.stringify(json) });
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout.trim().split('\n').pop());
+}
+
+test('onHidden set_global key is a setter, not a read', { skip }, () => {
+  const base = (extra) => ({
+    globalVariables: { ap_planted: false },
+    rooms: { r: { objects: [{ type: 'x', hideable: { onHidden: [{ type: 'set_global', key: 'ap_planted', value: true }] }, ...extra }] } },
+  });
+  const unread = neverRead(base({}));
+  assert.equal(unread.filter((s) => /'ap_planted'/.test(s)).length, 1, unread.join('\n'));
+  const read = neverRead(base({ condition: 'value:globalVars.ap_planted' }));
+  assert.equal(read.filter((s) => /'ap_planted'/.test(s)).length, 0, read.join('\n'));
+});

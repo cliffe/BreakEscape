@@ -60,9 +60,12 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
         assert.equal(rules(framework, `${box} .minigame-controls`).length, 0, `${box} is no longer listed by class`);
     }
     const js = (p) => readFileSync(join(here, '../../public/break_escape/js/minigames', p), 'utf8');
-    for (const f of ['siem/siem-dashboard-minigame.js', 'ehr-terminal/ehr-terminal-minigame.js',
-        'network-architecture/network-architecture-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
-        assert.match(js(f), /static controlsOverlay = true;/, f);
+    // SIEM and the network architecture diagram moved onto the shared console window (X8), which
+    // owns the bar the X sits in, so they no longer opt in
+    // The EHR terminal and the backup recovery console moved onto it too
+    for (const f of ['siem/siem-dashboard-minigame.js', 'network-architecture/network-architecture-minigame.js',
+        'ehr-terminal/ehr-terminal-minigame.js', 'backup-recovery/backup-recovery-minigame.js']) {
+        assert.doesNotMatch(js(f), /static controlsOverlay = true;/, f);
     }
     const base = js('framework/base-minigame.js');
     assert.match(base, /static controlsOverlay = false;/);
@@ -71,7 +74,6 @@ test('full-window consoles opt in to the overlaid Cancel row; no class allowlist
 
 test('scene overrides keep the Cancel row positioned, so its z-index holds (R2 m2)', () => {
     for (const [file, sel] of [['examine-minigame.css', '.examine-minigame .minigame-controls'],
-        ['forensic-data-platform-minigame.css', '.fdp-minigame-container .minigame-controls'],
         ['biometrics-minigame.css', '.fingerprint-reader-container .minigame-controls']]) {
         assert.equal(rule(css(file), sel).position, 'relative', sel);
     }
@@ -81,15 +83,18 @@ test('the case-lock panel has no soft focus glow (R2 m1)', () => {
     assert.equal(rule(css('password-minigame.css'), '.password-minigame-area.case-lock .password-field:focus')['box-shadow'], 'none');
 });
 
-test('the password and container panels fit inside the game area; the desktop sizes to its screen', () => {
-    for (const [file, sel] of [['password-minigame.css', '.password-minigame-area'],
-        ['container-minigame.css', '.container-minigame']]) {
-        const r = rule(css(file), sel);
-        assert.equal(r.padding, '20px', sel);
-        assert.equal(r.margin, '20px auto', sel);
-        // 20px margin and 20px padding top and bottom: 80px less than the area
-        assert.equal(r.height, 'calc(100% - 80px)', sel);
-    }
+test('the container panel fits inside the game area, the password area inside its frame; the desktop sizes to its screen', () => {
+    const r = rule(css('container-minigame.css'), '.container-minigame');
+    assert.equal(r.padding, '20px');
+    assert.equal(r.margin, '20px auto');
+    // 20px margin and 20px padding top and bottom: 80px less than the area
+    assert.equal(r.height, 'calc(100% - 80px)');
+    // The password area is sized to its content inside a frame that wraps it and scrolls in a
+    // short window (slice 2a R1, the user's notes: no fixed-height empty band under the monitor)
+    const pw = rule(css('password-minigame.css'), '.password-minigame-area');
+    assert.equal(pw.height, 'auto');
+    assert.equal(pw.margin, '0 auto');
+    assert.equal(rule(css('password-minigame.css'), '.password-frame > .minigame-game-container')['overflow-y'], 'auto');
     // The desktop sizes itself to its 16:10 screen (capped by the screen's max-height),
     // so its height is auto rather than a share of the game area
     assert.equal(rule(css('container-minigame.css'), '.container-minigame.desktop-mode').height, 'auto');

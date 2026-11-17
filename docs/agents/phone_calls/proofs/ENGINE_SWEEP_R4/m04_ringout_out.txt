@@ -1,0 +1,20 @@
+game 2383 (m04_ringout)
+dial read: anomaly_detected=true
+"closed popup"
+ringing: {"npc":"agent_0x99","state":"ringing","ringMs":1447}
+shot m04_ringout_ringing
+rang out after ~20 s: ringer=null banner=false
+events: {"ev":["phone_call_missed:agent_0x99@43.8"],"toasts":[]}
+rows: ["Missed call"] callback: {"knot":"on_anomaly_confirmed","callLabel":null,"callbackWhen":"globalVars.esd_authorized !== true && globalVars.mission_complete !== true"}
+shot m04_ringout_after_ringout
+thread header button: "☎\nCall back"
+shot m04_ringout_thread_callback
+"Call pressed: ☎Call back"
+dialling: {"bar":"CALLING"}
+shot m04_ringout_dialling
+call back connected: {"bar":"ON CALL | 0:07","subs":["Agent HaX: You rang. Good. Straight to it.","Agent HaX: Nightshade's had a look at your reading. Thirty-three degrees over what the screens show.","AGENT HAX: His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.","AGENT HAX: ENTROPY are feeding the control room. That dial isn't on their network."],"choices":["1. Then where do I start?"]}
+shot m04_ringout_callback_call
+after the call: rows=["Missed call","Outgoing call, 0:13"] header=null mg="PhoneChatMinigame phone-chat"
+events: {"ev":["phone_call_missed:agent_0x99@43.8","phone_call_answered:agent_0x99@55.1 callback","conversation_closed:agent_0x99@68.3"],"toasts":[]}
+shot m04_ringout_after_call
+/tts requests: ["agent_0x99","You rang. Good. Straight to it."] ["agent_0x99","Nightshade's had a look at your reading. Thirty-three degrees over what the screens show."] ["agent_0x99","His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger."] ["agent_0x99","ENTROPY are feeding the control room. That dial isn't on their network."] ["agent_0x99","With how they're driving it. The workshop, off Hall 1."] 

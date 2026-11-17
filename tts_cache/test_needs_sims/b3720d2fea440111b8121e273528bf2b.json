@@ -1,0 +1,13 @@
+{
+  "key": "b3720d2fea440111b8121e273528bf2b",
+  "npc": "jodie",
+  "text": "Once I've finished this, aye.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:08:05Z"
+}

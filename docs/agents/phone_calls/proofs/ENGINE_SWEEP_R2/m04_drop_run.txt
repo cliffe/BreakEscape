@@ -1,0 +1,12 @@
+game 2305 (m04_drop)
+dial read: anomaly_detected=true voltage_neutralised=true attack_mechanism_known=false esd=false
+HaX dial ring: {"npcId":"agent_0x99","state":"ringing","knot":"on_anomaly_confirmed","ringCondition":"globalVars.esd_authorized !== true && globalVars.mission_complete !== true"}
+shot m04_drop_ringing
+attack_mechanism_known landed while ringing -> esd_authorized=true
+t+1s: ringer=null banner=false rows=[] callback=null
+t+2s: ringer=null banner=false rows=[] callback=null
+t+4s: ringer=null banner=false rows=[] callback=null
+t+6s: ringer=null banner=false rows=[] callback=null
+events after the ring started: ["global_variable_changed:attack_mechanism_known=true","global_variable_changed:esd_authorized=true"]
+shot m04_drop_after_esd
+t+28s: ringer=null rows=[] callback=null phone_events=[]

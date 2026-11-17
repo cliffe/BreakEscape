@@ -69,9 +69,11 @@ function press(key, extra = {}) {
 const playerSrc = read('core/player.js');
 const pauseSrc = playerSrc.match(/export function pauseKeyboardInput\(\) \{[\s\S]*?\n\}/)[0];
 const resumeSrc = playerSrc.match(/export function resumeKeyboardInput\(\) \{[\s\S]*?\n\}/)[0];
+const clearSrc = playerSrc.match(/function clearKeyboardMovement\(\) \{[\s\S]*?\n\}/)[0];
 const world = new Function('log', `
     let keyboardPaused = false; let isKeyboardMoving = false;
     const keyboardInput = {}; const console = { log() {} };
+    ${clearSrc}
     ${pauseSrc.replace('export ', '')}
     ${resumeSrc.replace('export ', '')}
     return {
@@ -322,8 +324,9 @@ test('helper: Esc closes the top layer, then blurs a field, then closes as a nor
     assert.equal(FW.currentMinigame, b, 'held Esc does not close');
     press('Escape');
     assert.equal(FW.currentMinigame, null);
-    const ev = window.eventDispatcher.events.at(-1);
-    assert.equal(ev.name, 'minigame_completed');
+    // minigame_ended (K4, Connect's returnTo) follows it, so look for the completion by name
+    const ev = window.eventDispatcher.events.findLast((e) => e.name === 'minigame_completed');
+    assert.ok(ev, 'minigame_completed was emitted');
     assert.deepEqual(ev.data.result, { collected: ['fact_a'] });
     assert.equal(listeners.filter((l) => l.capture).length, 0, 'capture listener removed');
 });
@@ -343,16 +346,16 @@ test('helper: Close control; closeMode abort gives { aborted: true } and complet
     reset();
     const b = FW.startMinigame('board', el('div'), socialOverlayParams({}));
     const btn = b.mountCloseControl();
-    assert.equal(btn.textContent, 'Close');
+    assert.ok(btn.className.includes('se-overlay-close'), 'the shared pixel X close control');
     btn.click();
     assert.equal(FW.currentMinigame, null);
-    assert.equal(window.eventDispatcher.events.at(-1).name, 'minigame_completed');
+    assert.ok(window.eventDispatcher.events.some((e) => e.name === 'minigame_completed'));
 
     class Mail extends Overlay { get closeMode() { return 'abort'; } }
     FW.registerScene('mail', Mail);
     const m = FW.startMinigame('mail', el('div'), socialOverlayParams({}));
     m.mountCloseControl().click();
-    const ev = window.eventDispatcher.events.at(-1);
+    const ev = window.eventDispatcher.events.findLast((e) => e.name !== 'minigame_ended');
     assert.equal(ev.name, 'minigame_failed');
     assert.deepEqual(ev.data.result, { aborted: true });
 });

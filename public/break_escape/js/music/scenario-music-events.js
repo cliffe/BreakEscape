@@ -157,7 +157,9 @@ if (typeof window !== 'undefined') window.startEndingReplayMusic = startEndingRe
 
 /**
  * Check whether any still-alive hostile NPC exists.
- * Returns true if at least one NPC is hostile AND not KO'd.
+ * Returns true if at least one NPC is hostile AND not KO'd AND not hidden by a
+ * setVisible:false mapping (a hidden NPC cannot attack, so it cannot keep a fight going).
+ * An NPC that merely starts hidden has no recorded state and still counts.
  *
  * @returns {boolean}
  */
@@ -167,6 +169,7 @@ function anyHostilesAlive() {
     const npcs = window.npcManager.getAllNPCs(); // Array of NPC objects
     for (const npc of npcs) {
         const npcId = npc.id;
+        if (window.npcManager.isHiddenByMapping?.(npcId)) continue;
         if (
             window.npcHostileSystem.isNPCHostile(npcId) &&
             !window.npcHostileSystem.isNPCKO(npcId)
@@ -243,6 +246,18 @@ function playEntry(entry, data) {
     // screen in front of a player who was simultaneously being told they were
     // not finished.
     const hasEnding = !!(entry.credits?.length || entry.closingCard);
+    // Phone calls plan 2.3 row 28: the ringer closes only once the server agrees the mission
+    // concluded (the two `result.concluded` branches below). A refusal leaves the player
+    // playing, so calls must still ring.
+    const closeRinger = () => {
+        try { window.phoneRinger?.close?.(); } catch (e) { console.warn(`${TAG} phoneRinger.close failed:`, e); }
+    };
+    // The ringer is held from now until the server answers: no call rings or opens over the
+    // credits while the conclude is in flight (A3 R1 m5, A2c R3 m1). Agreement closes it above;
+    // a refusal lifts the hold.
+    const suspendRinger = (on) => {
+        try { window.phoneRinger?.suspend?.(on); } catch (e) { console.warn(`${TAG} phoneRinger.suspend failed:`, e); }
+    };
     const ownsVisualiser = hasEnding;
     if (ownsVisualiser && window.BondVisualiser?.setAutoOpenSuppressed) {
         window.BondVisualiser.setAutoOpenSuppressed(true);
@@ -301,6 +316,7 @@ function playEntry(entry, data) {
             creditsAfter: MusicController.context?.state === 'suspended' ? audible?.ready : undefined,
         }));
 
+        suspendRinger(true);
         concludeMission().then((result) => {
             // Decision made: restore normal auto-open behaviour for any later
             // victory playlist change.
@@ -310,18 +326,21 @@ function playEntry(entry, data) {
                 // R14: the server never answered. The player keeps the ending, but it
                 // says the result is not recorded yet, and the conclude is retried.
                 _endingOwnsMusic = true;
+                closeRinger();
                 openCredits(offlineEndingOptions);
                 queueConcludeRetry(window.breakEscapeConfig?.gameId);
                 return;
             }
             if (result.concluded) {
                 _endingOwnsMusic = true;
+                closeRinger();
                 openCredits();
                 return;
             }
             // Refused: the scenario declared technical work that is not done.
             // Say what is outstanding rather than rolling credits.
             console.warn(`${TAG} Conclusion refused; missing:`, result.missing);
+            suspendRinger(false);
             if (window.gameAlert) {
                 window.gameAlert(
                     'Not finished yet -- there is outstanding work on their network before this is over.',
@@ -400,13 +419,17 @@ export function initScenarioMusicEvents(scenario) {
         const { trigger } = entry;
 
         if (trigger === 'all_hostiles_ko') {
-            // Special virtual trigger: listen to every npc_ko and check remaining hostiles
+            // Special virtual trigger: listen to every npc_ko and npc_hidden and check remaining hostiles
             const handler = (data) => {
                 if (anyHostilesAlive()) return; // still fighting
                 switchIfConditionMet(entry, data);
             };
             window.eventDispatcher.on('npc_ko', handler);
             _cleanupFns.push(() => window.eventDispatcher.off('npc_ko', handler));
+            // Hiding the last conscious hostile (setVisible:false) ends the fight too; the
+            // emitter only fires for a hostile, not KO'd NPC, so a peaceful hide never switches
+            window.eventDispatcher.on('npc_hidden', handler);
+            _cleanupFns.push(() => window.eventDispatcher.off('npc_hidden', handler));
             console.log(`${TAG} Registered 'all_hostiles_ko' (via npc_ko) → '${entry.track || entry.playlist}'`);
 
         } else {

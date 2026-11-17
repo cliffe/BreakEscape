@@ -38,10 +38,11 @@ export function labelForSample(sample, { withPattern = false } = {}) {
 /** Heading and symbol for each answer, so the meaning never rests on colour alone. */
 export function headingForOutcome(result) {
     switch (result) {
-        case 'accepted': return { glyph: '\u2714', title: 'Accepted' };
-        case 'low_quality': return { glyph: '\u25D0', title: 'Partial read' };
-        case 'no_match': return { glyph: '\u2716', title: 'No match' };
-        case 'no_samples': return { glyph: '\u2716', title: 'No prints' };
+        // ASCII marks: the pixel fonts have no tick, cross or half-circle (slice 7 R1 m4)
+        case 'accepted': return { glyph: '[+]', title: 'Accepted' };
+        case 'low_quality': return { glyph: '[~]', title: 'Partial read' };
+        case 'no_match': return { glyph: '[x]', title: 'No match' };
+        case 'no_samples': return { glyph: '[x]', title: 'No prints' };
         default: return { glyph: '', title: '' };
     }
 }

@@ -1,0 +1,14 @@
+{
+  "key": "8ececb6cff47e82778b3f48224ac4213",
+  "npc": "ernesto_bautista",
+  "text": "That's close enough. Whatever you want, I haven't got it.",
+  "delivery": "flat and guarded",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:09:49Z"
+}

@@ -61,7 +61,7 @@ VAR phantom_hostile = false
 // her displayName), and the corridor and the Director share one narrator line so
 // the run before the stance stays within nine with a KO line.
 { not nightshade_ko_before_fate:
-    Narrator: Netherton finds you in the corridor. He looks older than he did at the briefing a few hours ago. Your phone buzzes once: HaX.
+    Narrator: Netherton finds you in the corridor. He looks older than he did at the briefing a few hours ago. Your phone buzzes once: a voice note from HaX.
     Agent HaX: He said it to you? Afterwards, not during. I was taught that line, and I say it to every agent I run.
     Agent HaX: Same classroom, 0x00. Don't ask me whose yet.
 - else:
@@ -93,8 +93,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
 
 = owned
     ~ debrief_stance = "owned"
-    Narrator: A long beat.
-    Director Magnus Netherton: Yes. I will put my own name in the report beside his. You were right to make me say it aloud. #set_global:debrief_stance:owned
+    Director Magnus Netherton: Yes. I will put my own name in the report beside his. You were right to make me say it aloud. #delivery: after a long pause, quietly #set_global:debrief_stance:owned
     -> the_hunt
 
 === the_hunt ===
@@ -102,7 +101,11 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     Director Magnus Netherton: {accused_vector and accused_phantom:You accused both of the innocent men to their faces.|You accused {accused_vector:Vector|Phantom} to his face.} I read the transcripts.
     Director Magnus Netherton: It is in the file now, and it will follow {accused_vector and accused_phantom:them|him} longer than it follows you.
     { (accused_vector and vector_apologised) or (accused_phantom and phantom_apologised):
-        Director Magnus Netherton: So is the apology you went back to make{accused_vector and accused_phantom and not (vector_apologised and phantom_apologised): to {vector_apologised:Vector|Phantom}}. It does not unsay the accusation. It sits beside it.
+        { accused_vector and accused_phantom and vector_apologised and phantom_apologised:
+            Director Magnus Netherton: So are the apologies you went back to make. They do not unsay the accusations. They sit beside them.
+        - else:
+            Director Magnus Netherton: So is the apology you went back to make{accused_vector and accused_phantom and not (vector_apologised and phantom_apologised): to {vector_apologised:Vector|Phantom}}. It does not unsay the accusation. It sits beside it.
+        }
     }
 }
 { vector_hostile or phantom_hostile:
@@ -118,7 +121,7 @@ Director Magnus Netherton: Say it, Agent. Whatever you think of me tonight. I wo
     Director Magnus Netherton: You knocked out a junior analyst at her desk. She was a witness to nothing. She will remember you longer than she remembers tonight.
 }
 { athena_ko:
-    Director Magnus Netherton: And ATHENA logged you putting her reception avatar on the floor. Facilities would like a word.
+    Director Magnus Netherton: ATHENA logged you putting her reception avatar on the floor. Facilities would like a word.
 }
 // Phase 4 dialogue C1 (D8-18): a player beat after the charge sheet, so the
 // conduct lines and the case don't run on as one speech.

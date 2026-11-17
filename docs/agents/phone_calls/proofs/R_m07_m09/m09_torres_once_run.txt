@@ -1,0 +1,19 @@
+game 2320 (torres_once)
+lid: "PasswordMinigame"
+shot torres_once_ring_over_lid
+{"t":26.2,"ringer":"torres_phone:ringing","mg":"PasswordMinigame:password","layer":"David Torres | Incoming call · Answer puts them on hold until you close this | Answer | Decline","laptop":"none"}
+declined: {"t":27.7,"ringer":null,"mg":"PasswordMinigame:password","layer":"","laptop":"none"}
+torres_rang latched (want true): true
+callback after decline: {"knot":"call","callLabel":null}
+{"ok":true,"cmd":"mg","result":{"ok":true,"typed":"HL2015-0477","submit":true,"submittedVia":"button:Submit"}}
+lid opened: "ContainerMinigame"
+second ring within 8 s? (want none):
+  done
+missed rows (want 1): 1
+shot torres_once_after_decline_no_second_ring
+callback: {"bar":"ON CALL 0:02","subs":["DAVID TORRES: I gave you this address back in October. It was a line in a list."],"choices":[],"end":true}
+shot torres_once_callback_connected
+chose: "1. Are you safe?"
+chose: "1. (Close.)"
+shot torres_once_after_callback
+/tts requests: ["torres_phone","I gave you this address back in October. It was a line in a "] ["torres_phone","I am still a live placement. Every morning I wake up, and I "] ["torres_phone","The old placements are filed under the firm that placed them"] ["torres_phone","They pick people with someone to lose. Look for the ones wit"] ["torres_phone","Safe enough. Please be quick."] 

@@ -19,6 +19,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-episode-sandbox-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js',
     'minigames/episode-runner/consequence-sandbox.js', 'systems/episode-starter.js',

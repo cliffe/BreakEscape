@@ -20,7 +20,16 @@ function check(scenario) {
 const has = (issues, frag) => issues.some(s => s.includes(frag));
 
 const thirst = { thirst: { decayPerMin: 10, urgentAt: 40 } };
-const cooler = (id, extra = {}) => ({ id, type: 'water_cooler', affordance: { satisfies: 'thirst', restores: 60, ...extra } });
+// Format 2: `private` and `owner` are object-level fields (no longer affordance.owners/private).
+// Extras named private/owners/owner are hoisted to the object; anything else stays affordance keys.
+const cooler = (id, extra = {}) => {
+    const { private: priv, owners, owner, ...aff } = extra;
+    const o = { id, type: 'water_cooler', affordance: { satisfies: 'thirst', restores: 60, ...aff } };
+    if (priv !== undefined) o.private = priv;
+    if (owner !== undefined) o.owner = owner;
+    else if (owners !== undefined) o.owner = owners;
+    return o;
+};
 // kitchen - office - lounge in a row; the home desk is in the office
 function office({ npc = {}, rooms = {}, objects = {} } = {}) {
     return {
@@ -51,7 +60,7 @@ test('unknown rooms in needsRooms / needsAvoidRooms and unknown NPCs in needsPri
     assert.ok(has(i, "needsRooms names unknown room 'attic'"));
     assert.ok(has(i, "needsAvoidRooms names unknown room 'cellar'"));
     assert.ok(has(i, "needsPrivateTo names unknown NPC 'ghost'"));
-    assert.ok(has(i, "affordance.owners names unknown NPC 'nobody'"));
+    assert.ok(has(i, "object 'kitchen_cooler' owner names unknown NPC 'nobody'"));
 });
 
 test('the home room forbidden, or the needsHome object private to someone else, is an error', { skip }, () => {
@@ -59,7 +68,7 @@ test('the home room forbidden, or the needsHome object private to someone else, 
     assert.ok(has(i, "needsAvoidRooms lists its own home room 'office'"));
     i = check(office({ rooms: { office: { needsPrivateTo: ['rosa'] } } }));
     assert.ok(has(i, "NPC 'tom' home room 'office' is needsPrivateTo"));
-    i = check(office({ objects: { office: [{ id: 'tom_pc', type: 'pc', affordance: { private: true, owners: ['rosa'] } }] } }));
+    i = check(office({ objects: { office: [{ id: 'tom_pc', type: 'pc', private: true, owner: ['rosa'] }] } }));
     assert.ok(has(i, "needsHome 'tom_pc' is private to [\"rosa\"]"));
 });
 
@@ -95,8 +104,8 @@ test('a permitted target reachable only through a forbidden room is a warning', 
 test('a private object with no owner serves nobody (warning)', { skip }, () => {
     const i = check(office({ objects: { kitchen: [cooler('kitchen_cooler'), cooler('orphan', { private: true })] } }));
     assert.ok(has(i, "object 'orphan' is private but has no owner"));
-    const j = check(office({ objects: { office: [{ id: 'tom_pc', type: 'pc', affordance: { private: true } }] } }));
-    assert.ok(!has(j, "object 'tom_pc' is private but has no owner"), 'needsHome makes Tom its owner');
+    const j = check(office({ objects: { office: [{ id: 'tom_pc', type: 'pc', private: true, owner: 'tom' }] } }));
+    assert.ok(!has(j, "object 'tom_pc' is private but has no owner"), 'an explicit owner serves Tom');
 });
 
 test('interest: accepting objects all forbidden is an error; noticeRooms naming a forbidden room warns', { skip }, () => {

@@ -27,6 +27,19 @@ function isCriticalType(type) {
 }
 
 export class CommandBoardMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
+    // The board's title and subtitle come from the scenario (commandBoard.title/subtitle)
+    consoleTitle() {
+        return displayDashes(String(this.boardConfig?.title || DEFAULT_TITLE));
+    }
+
+    consoleSubtitle() {
+        return displayDashes(String(this.boardConfig?.subtitle || DEFAULT_SUBTITLE));
+    }
+
     constructor(container, params = {}) {
         const mergedParams = {
             ...params,
@@ -262,21 +275,7 @@ export class CommandBoardMinigame extends MinigameScene {
 
     renderLayout() {
         this.gameContainer.innerHTML = `
-            <div class="cb-panel" id="cb-panel">
-                <div class="cb-header" id="cb-header">
-                    <div class="cb-header-title-wrap">
-                        <div class="cb-header-title"></div>
-                        <div class="cb-header-subtitle"></div>
-                    </div>
-                    <div class="cb-header-right">
-                        <div class="cb-status-dots" id="cb-status-dots">
-                            <span class="cb-status-dot dot-1"></span>
-                            <span class="cb-status-dot dot-2"></span>
-                            <span class="cb-status-dot dot-3"></span>
-                        </div>
-                        <div class="cb-clock" id="cb-clock">00:00</div>
-                    </div>
-                </div>
+            <div class="cb-panel pixel-scroll" id="cb-panel">
                 <div class="cb-body">
                     <section class="cb-timeline-col">
                         <div class="cb-section-title">INCIDENT TIMELINE</div>
@@ -284,8 +283,18 @@ export class CommandBoardMinigame extends MinigameScene {
                         <div class="cb-timeline-list" id="cb-timeline-list"></div>
                     </section>
                     <section class="cb-status-col">
-                        <div class="cb-section-title">SYSTEM STATUS</div>
-                        <div class="cb-status-list" id="cb-status-list"></div>
+                        <div class="cb-header" id="cb-header">
+                            <div class="cb-section-title">SYSTEM STATUS</div>
+                            <div class="cb-header-right">
+                                <div class="cb-status-dots" id="cb-status-dots">
+                                    <span class="cb-status-dot dot-1"></span>
+                                    <span class="cb-status-dot dot-2"></span>
+                                    <span class="cb-status-dot dot-3"></span>
+                                </div>
+                                <div class="cb-clock" id="cb-clock">00:00</div>
+                            </div>
+                        </div>
+                        <div class="cb-status-list pixel-scroll" id="cb-status-list"></div>
                     </section>
                 </div>
                 <div class="cb-entry-bar">
@@ -303,10 +312,11 @@ export class CommandBoardMinigame extends MinigameScene {
         this.dotContainerEl = this.gameContainer.querySelector('#cb-status-dots');
         this.headerEl = this.gameContainer.querySelector('#cb-header');
 
-        const titleEl = this.gameContainer.querySelector('.cb-header-title');
-        const subtitleEl = this.gameContainer.querySelector('.cb-header-subtitle');
-        if (titleEl) titleEl.textContent = displayDashes(String(this.boardConfig.title || DEFAULT_TITLE));
-        if (subtitleEl) subtitleEl.textContent = displayDashes(String(this.boardConfig.subtitle || DEFAULT_SUBTITLE));
+        // The scenario's title and subtitle go to the shared window's bar
+        this.setConsoleTitle(
+            String(this.boardConfig.title || DEFAULT_TITLE),
+            String(this.boardConfig.subtitle || DEFAULT_SUBTITLE)
+        );
     }
 
     renderTimeline(newKeys = []) {

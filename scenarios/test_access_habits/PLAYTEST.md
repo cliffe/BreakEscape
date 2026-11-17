@@ -37,7 +37,7 @@ BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/access-leak-check.r
 
 The leak check must say `VERDICT: no leaks found` after every beat. If a run continues in a second
 capture file after a reload, give both files, in order. The `habits` block of `verify-run.rb`
-lists each NPC's habits and `screenHabit` as saved, and each owned PC's own lock field, whether
+lists each NPC's habits and `habits.screen` as saved, and each owned PC's own lock field, whether
 the server's claim check calls it "always locks" (`alwaysLocks`) and whether it shows a note
 (`hasPostit`).
 
@@ -77,17 +77,17 @@ PCs resolve to 1, H5's to 1 through `instant_lock`, and H1, H3 and H6 to H8 are 
 `pc_signed_in`). The usual feature-scenario suggestions (VM launchers, music, a briefing and so
 on) and the "Missing recommended" lines also print. The habits report shows:
 
-- dana: level low (level from role front_desk); locksScreen never (preset), screenHabit lockChance
+- dana: level low (level from role front_desk); locksScreen never (preset), habits.screen lockChance
   0, read at dana_pc;
-- ian, omar, mei, tom: level high, locksScreen always (preset), screenHabit lockChance 1;
+- ian, omar, mei, tom: level high, locksScreen always (preset), habits.screen lockChance 1;
 - omar: writesDown true (by name), sticky note at omar_pc;
 - priya: locksScreen never (preset), "priya_pc: the PC sets lockChance, habit not applied there"
-  (no screenHabit is filled);
-- kai: locksScreen never (preset), screenHabit lockChance 0, read at kai_pc;
+  (no habits.screen is filled);
+- kai: locksScreen never (preset), habits.screen lockChance 0, read at kai_pc;
 - mei: password guessable (by name), backed; piece 1 of 3, word: mei_photo; piece 2 of 3,
   number: mei_calendar; piece 3 of 3, symbol: in the pattern clue; pattern clue at
   password_memo; the pattern clue must cover: 1 capital, 1 symbol, 3 pieces in order;
-- lena: level medium, locksScreen sometimes (preset), screenHabit lockChance 0.5;
+- lena: level medium, locksScreen sometimes (preset), habits.screen lockChance 0.5;
 - tom: password reused (by name), same password as tom_locker, written in full at locker_note;
 - gary: level low, holdsDoors true (preset), "holds the gate at rooms/gate_hall/doors/0 (into
   store_a)";
@@ -114,7 +114,7 @@ Room `dana_room`, PC `dana_pc` (Dana Reyes, `role: front_desk`, no awareness of 
 3. `interact` `dana_pc`: her desktop opens (a claim). Task `h1_never_locks` complete.
 
 Server record: `sessions` has `dana_pc = dana (claim)`. Habits block: `npc dana locksScreen=never
-screenHabit {"lockChance":0}`; `pc dana_pc owner dana no lock field alwaysLocks false hasPostit
+habits.screen {"lockChance":0}`; `pc dana_pc owner dana no lock field alwaysLocks false hasPostit
 false`.
 
 ### H2 Always locks
@@ -128,7 +128,7 @@ Room `ian_room`, PC `ian_pc` (Ian Shaw, `awareness: high`).
 3. `interact` `ian_pc`: the sign-in screen with no note. Task `h2_always_locks` complete. There is
    no way in.
 
-Server record: no `ian_pc` session. Habits block: Ian `screenHabit {"lockChance":1}`; `pc ian_pc
+Server record: no `ian_pc` session. Habits block: Ian `habits.screen {"lockChance":1}`; `pc ian_pc
 ... alwaysLocks true`.
 
 ### H3 Careful, with a sticky note
@@ -169,7 +169,7 @@ Room `priya_room`, PC `priya_pc` (Priya Nair, `awareness: low`; the PC has `lock
 1. Wait for her to leave: locked, padlock. `interact` `priya_pc`: the sign-in screen, no note.
    Task `h4_pc_field_wins` complete.
 
-Server record: no session. Habits block: `npc priya locksScreen=never screenHabit -` (nothing is
+Server record: no session. Habits block: `npc priya locksScreen=never habits.screen -` (nothing is
 filled: the only PC she owns sets its own field, which wins, plan 5.2); `pc priya_pc owner priya
 lockChance 1 alwaysLocks true`.
 
@@ -181,7 +181,7 @@ Room `kai_room`, PC `kai_pc` (Kai Brennan, `awareness: low`; the PC is under `in
 1. Wait for him to leave: locked in the leave roll itself. `interact` `kai_pc`: the sign-in
    screen, and no claim. Task `h5_policy_wins` complete.
 
-Server record: no session. Habits block: Kai `screenHabit {"lockChance":0}`; `pc kai_pc ...
+Server record: no session. Habits block: Kai `habits.screen {"lockChance":0}`; `pc kai_pc ...
 no lock field alwaysLocks false` (the claim check's own test; the policy refuses the claim).
 
 ## Run 2: H6 to H8, reload inside H8
@@ -214,7 +214,7 @@ Server record: `tom_locker` in `unlockedObjects`; `sessions` has `tom_pc = tom (
 
 ### H8 Sometimes locks
 
-Room `lena_room`, PC `lena_pc` (Lena Fox, `awareness: medium`, so `screenHabit` lockChance 0.5).
+Room `lena_room`, PC `lena_pc` (Lena Fox, `awareness: medium`, so `habits.screen` lockChance 0.5).
 The PC's id is the roll's salt (`habit:lena_pc:<leaves>`, seed `test_access_habits`), chosen so
 her first leaves are:
 

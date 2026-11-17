@@ -55,8 +55,22 @@ function person(id, extra = {}) {
 const loginPc = (id, extra = {}) => ({ id, type: 'pc', name: id, locked: true, lockType: 'login', sprite: 'pc_desktop', ...extra });
 const station = (id, extra = {}) => ({ id, type: 'pc', name: id, workstation: true, sprite: 'pc_desktop', ...extra });
 const note = (id, text, extra = {}) => ({ id, type: 'notes', name: id, readable: true, text, ...extra });
+// Format 2: needsHome no longer derives ownership. The loader (and the template rewrite) write an
+// explicit `owner` onto each id-bearing PC an NPC's needsHome names; reproduce that here so the
+// fixtures carry the owner the old derivation used to supply. An id-less owned PC sets owner inline.
+function assignOwners(s) {
+    for (const room of Object.values(s.rooms || {})) {
+        const objs = room.objects || [];
+        for (const n of room.npcs || []) {
+            if (typeof n.needsHome !== 'string') continue;
+            const pc = objs.find(o => o && o.id === n.needsHome && o.type === 'pc');
+            if (pc && pc.owner === undefined) pc.owner = n.id;
+        }
+    }
+    return s;
+}
 function scenario({ npcs = [], objects = [], extra = {} } = {}) {
-    return { startRoom: 'office', rooms: { office: { type: 'room_office', connections: {}, objects, npcs } }, ...extra };
+    return assignOwners({ startRoom: 'office', rooms: { office: { type: 'room_office', connections: {}, objects, npcs } }, ...extra });
 }
 
 // ── Clean ─────────────────────────────────────────────────────────────────────
@@ -71,8 +85,8 @@ test('a clean fixture raises nothing', () => {
     assert.deepEqual(out.habits, []);
     assertHas(out.lines, 'dana: level low (level from role front_desk)');
     assertHas(out.lines, 'locksScreen never (preset)');
-    assertHas(out.lines, 'screenHabit lockChance 0, read at dana_pc');
-    assertHas(out.lines, 'screenHabit lockChance 1, read at ian_pc');
+    assertHas(out.lines, 'habits.screen lockChance 0, read at dana_pc');
+    assertHas(out.lines, 'habits.screen lockChance 1, read at ian_pc');
 });
 
 test('a scenario with no awareness, habits or roles has no report', () => {
@@ -112,7 +126,7 @@ test('passwordPattern naming no object', () => {
 
 // ── locksScreen ───────────────────────────────────────────────────────────────
 
-test('locksScreen by name that does nothing: no workstation, every PC sets a field, an authored screenHabit', () => {
+test('locksScreen by name that does nothing: no workstation, every PC sets a field, an authored habits.screen', () => {
     let out = run(scenario({ npcs: [person('dana', { habits: { locksScreen: 'never' } })] }));
     assertHas(warnings(out.habits), 'owns no workstation');
     assertHas(out.lines, 'no effect: owns no workstation');
@@ -122,10 +136,10 @@ test('locksScreen by name that does nothing: no workstation, every PC sets a fie
     assertHas(warnings(out.habits), 'sets lockChance or locksScreenOnLeave, which wins');
     assertHas(out.lines, 'dana_pc: the PC sets lockChance, habit not applied there');
 
-    out = run(scenario({ npcs: [person('dana', { needsHome: 'dana_pc', habits: { locksScreen: 'never' }, screenHabit: { lockChance: 1 } })],
+    out = run(scenario({ npcs: [person('dana', { needsHome: 'dana_pc', habits: { locksScreen: 'never', screen: { lockChance: 1 } } })],
         objects: [loginPc('dana_pc')] }));
-    assertHas(warnings(out.habits), 'the authored screenHabit wins');
-    assertHas(out.lines, 'habit not applied: the NPC sets screenHabit');
+    assertHas(warnings(out.habits), 'the authored habits.screen wins');
+    assertHas(out.lines, 'habit not applied: the NPC sets habits.screen');
 });
 
 test('a preset that does nothing draws no warning', () => {
@@ -166,7 +180,7 @@ test('a workstation with a locksScreen habit and no locked art draws the sprite 
 function mapped(level, pattern, condition, { pcExtra = {}, policy = null, habit = null } = {}) {
     const owner = person('ann', { needsHome: 'ws', eventMappings: [{ eventPattern: pattern, ...(condition ? { condition } : {}), setGlobal: { x: true } }] });
     if (level) owner.habits = { locksScreen: level };
-    if (habit) owner.screenHabit = habit;
+    if (habit) owner.habits = { ...(owner.habits || {}), screen: habit };
     const pc = station('ws', pcExtra);
     const extra = {};
     if (policy) { extra.policies = { p: policy }; pc.policy = 'p'; }
@@ -204,7 +218,7 @@ test('mappings that need neither state draw nothing', () => {
     assert.deepEqual(warnings(mapped('never', 'global_variable_changed:x', null).habits), []);
 });
 
-test('no habit: an authored screenHabit decides, and autoLockSeconds silences both', () => {
+test('no habit: an authored habits.screen decides, and autoLockSeconds silences both', () => {
     assertHas(warnings(mapped(null, 'workstation_owner_returned:ws', 'data.wasLocked === true', { habit: { lockIfAwayOverSeconds: 20 } }).habits), some);
     assertHas(warnings(mapped(null, 'workstation_owner_returned:ws', 'data.wasLocked === true', { habit: { lockChance: 0 } }).habits), never);
     for (const habit of [{ lockIfAwayOverSeconds: 20 }, { lockChance: 0 }]) {
@@ -238,13 +252,13 @@ test('the office life autoLockSeconds check sees the filled habit; called withou
 test('an owned workstation with no authored id draws the id warning and is listed with its fill', () => {
     const out = run(scenario({
         npcs: [person('ann', { awareness: 'low' }), person('bob', { needsHome: 'office_pc_1', awareness: 'high' })],
-        objects: [{ type: 'pc', name: 'Ann PC', workstation: true, sprite: 'pc_desktop', screenOwner: 'ann' },
-            { type: 'pc', name: 'Bob PC', workstation: true, sprite: 'pc_desktop' }]
+        objects: [{ type: 'pc', name: 'Ann PC', workstation: true, sprite: 'pc_desktop', owner: 'ann' },
+            { type: 'pc', name: 'Bob PC', workstation: true, sprite: 'pc_desktop', owner: 'bob' }]
     }));
     assertHas(warnings(out.habits), "give the object the id 'office_pc_0'");
     assertHas(warnings(out.habits), "give the object the id 'office_pc_1'");
-    assertHas(out.lines, 'screenHabit lockChance 0, read at office_pc_0');
-    assertHas(out.lines, 'screenHabit lockChance 1, read at office_pc_1');
+    assertHas(out.lines, 'habits.screen lockChance 0, read at office_pc_0');
+    assertHas(out.lines, 'habits.screen lockChance 1, read at office_pc_1');
 });
 
 // ── writesDown ────────────────────────────────────────────────────────────────
@@ -255,7 +269,7 @@ test('writesDown: no account, no sign-in PC, every PC authors its own note', () 
     out = run(scenario({ npcs: [person('omar', { needsHome: 'ws', habits: { writesDown: true } })], objects: [station('ws')] }));
     assertHas(warnings(out.habits), 'owns no sign-in PC');
     out = run(scenario({ npcs: [person('omar', { needsHome: 'omar_pc', habits: { writesDown: true } })],
-        objects: [loginPc('omar_pc', { postitNote: 'Printer 4410' }), loginPc('omar_pc2', { screenOwner: 'omar', showPostit: false })] }));
+        objects: [loginPc('omar_pc', { postitNote: 'Printer 4410' }), loginPc('omar_pc2', { owner: 'omar', showPostit: false })] }));
     assertHas(warnings(out.habits), 'authors its own postitNote or sets showPostit: false');
 });
 

@@ -4,6 +4,8 @@ require 'json'
 require 'set'
 require 'cgi'
 require 'uri'
+require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
+require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -113,6 +115,13 @@ require 'uri'
 # carries (a sign-in PC's, a profile's or a share's file of the same name, review R3 n3) is left
 # to that secret, since the other file's own answer would otherwise be reported as the stick's.
 #
+# Scenario format hardening step 3 (SCENARIO_FORMAT_HARDENING_PLAN) adds the non-account capture
+# secrets (rule `capture_secret`): the `secret` on an add_capture action, an addCapture mapping or a
+# non-account NPC's usePayload, keyed by its target id. The server serves these only through GET
+# /capture_secrets once the capture is earned, so the value is reported anywhere else, with the same
+# exception /capture_secrets and a capture page already carry (the account-password rule). Account
+# capture secrets are an NPC's creds.password and stay with the password rule.
+#
 # A finding names the rule, the route, the response line and the secret's owner (an NPC or
 # item id), never the value. Every output line is checked against the secret values before it
 # is returned, so blind runs can use it too.
@@ -138,13 +147,21 @@ class AccessLeakScanner
   MIN_NETWORK_STRING = 3
   # Room data keys the server withholds: their strings are not public.
   WITHHELD_ROOM_KEYS = %w[network linkName linkStoreIn creds].freeze
+  # A hash under one of these keys is a capture descriptor: its `secret` never ships (E0.3)
+  CAPTURE_DESCRIPTOR_KEYS = %w[capture addCapture usePayload].freeze
+  # A page the tester read counts as a capture page only when its label says so (E0.3)
+  CAPTURE_PAGE_LABEL = /\bcaptures?\b/i.freeze
 
   Finding = Struct.new(:rule, :owner, :route, :source, :line, :cmd_seq, :json_path, keyword_init: true)
 
   # Keys an NPC record never takes to the browser (Game::WITHHELD_NPC_KEYS).
-  WITHHELD_KEYS = %w[creds role awareness habits workarounds].freeze
+  WITHHELD_KEYS = %w[creds role awareness workarounds].freeze
   # Slice 9.2 (9.2): the NPC keys the server withholds beside them (Game::WITHHELD_WORK_NPC_KEYS)
-  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed usbHabit].freeze
+  WITHHELD_WORK_KEYS = %w[workNeeds frustration feed].freeze
+  # Step 8c: the `habits` block ships only its allow-listed keys (Game::SHIPPED_HABIT_KEYS); any
+  # other key in a shipped `habits` (locksScreen, writesDown, password, passwordPattern, holdsDoors,
+  # the USB habit `usb`, or a key added later) is server-only, so it is a leak if it ships.
+  SHIPPED_HABIT_KEYS = %w[screen print].freeze
   # Feed texts shorter than this are not searched for (the validator warns about them, 9.2)
   MIN_FEED_TEXT = 12
 
@@ -160,6 +177,16 @@ class AccessLeakScanner
     @shared = Set.new # passwords a heard share_login answer has carried, so far (sub-slice H)
     @passwords = {}          # password => [npc_id, ...]
     @capture_npcs = Set.new  # npc ids the capture_secrets exception covers
+    @capture_secrets = {}    # a non-account capture secret => [target_id, ...] (served only by /capture_secrets)
+    # E0.3: a capture secret => the `proof` of each writer (nil for a writer with none). A secret
+    # whose writers all carry a proof is served only once one held, so its served rows are
+    # order-checked against the plant (proof_held_before?)
+    @capture_secret_proofs = Hash.new { |h, k| h[k] = [] }
+    # E0.3: the log's plant rows, filled by prepare_plant_rows at the start of each scan
+    @plant_rows = {}
+    @plant_rows_any = {}
+    @log_mode = :pre
+    @untagged_remove = false
     @items = {}              # item_id => { strings:, scope:, profile:, pc:, ancestors:, locked_ancestors: }
     @public_strings = Set.new
     @clue_holders = Hash.new { |h, k| h[k] = Set.new } # password => item ids holding it on purpose
@@ -197,7 +224,22 @@ class AccessLeakScanner
     @feed_unknown = []          # npc ids that took a reveal from an unreadable answer
     @feed_ruled_out = []        # fallback npc ids that a lost answer's npcId tag ruled out of it
     @feed_tags_ignored = false  # a readable answer's npcId tag disagreed with its body
+    # Friendface reactions (FRIENDFACE_REACTIONS_PLAN.md section 9): NPCs with a served post so far,
+    # and the reaction items judged (a clean verdict proves something only when this is above 0)
+    @feed_posters = Set.new
+    @reaction_items = 0
     collect_passwords
+    collect_capture_secrets
+    @object_by_id = BreakEscape::AccessIdentities.room_objects(@data).each_with_object({}) do |e, h|
+      id = e[:object]['id']
+      h[id.to_s] ||= e[:object] if id.is_a?(String) && !id.empty?
+    end
+    # A plant is recorded only on a top-level room object (CaptureProofs#planted_target_object),
+    # so the plant lookup ignores objects nested in contents or an NPC's itemsHeld.
+    @plant_object_by_id = BreakEscape::CaptureModel.top_level_room_objects(@data).each_with_object({}) do |o, h|
+      id = o['id']
+      h[id.to_s] ||= o if id.is_a?(String) && !id.empty?
+    end
     collect_items
     collect_network_secrets
     collect_wifi_secrets
@@ -211,6 +253,7 @@ class AccessLeakScanner
   def counts
     {
       passwords: @passwords.values.flatten.uniq.length,
+      capture_secrets: @capture_secrets.length,
       login_items: @items.count { |_, i| i[:scope] && i[:scope] != :stick },
       stick_items: @items.count { |_, i| i[:scope] == :stick },
       locked_items: @items.count { |_, i| i[:locked_ancestors].any? },
@@ -223,7 +266,9 @@ class AccessLeakScanner
       feed_posts: @feed_texts.values.select { |f| f[:kind] == :post }.flat_map { |f| f[:served] }.uniq.length,
       feed_texts: @feed_texts.values.count { |f| f[:kind] == :post },
       feed_facts: @feed_fact_ids.length,
-      lockout_records: lockout_records.values.sum(&:length)
+      lockout_records: lockout_records.values.sum(&:length),
+      # Reaction items judged by scan so far (0 before a scan)
+      reaction_items: @reaction_items
     }
   end
 
@@ -252,7 +297,8 @@ class AccessLeakScanner
     seen = Set.new
     legit = Set.new # items already served by their own allowed route earlier in the run
     prepare_feed_base(lines)
-    lines.each do |source, line_no, row|
+    prepare_plant_rows(lines)
+    lines.each_with_index do |(source, line_no, row), index|
       next unless row.is_a?(Hash)
 
       note_feed_unreadable(row) if feed_unreadable?(row)
@@ -262,7 +308,7 @@ class AccessLeakScanner
       end
       next if body.nil?
 
-      ctx = response_context(row)
+      ctx = response_context(row).merge(index: index)
       add = lambda do |rule, owner, json_path|
         key = [source, line_no, rule, owner]
         next if seen.include?(key)
@@ -272,6 +318,7 @@ class AccessLeakScanner
                                 cmd_seq: row['cmdSeq'], json_path: json_path)
       end
       scan_passwords(body, ctx, legit, add)
+      scan_capture_secrets(body, ctx, add)
       scan_withheld_keys(body, add)
       scan_login_content(body, ctx, legit, add)
       scan_locked_content(body, add)
@@ -280,8 +327,10 @@ class AccessLeakScanner
       scan_wifi_secrets(body, add)
       scan_workarounds(body, ctx, add)
       scan_lockouts(body, ctx, add)
+      scan_reacts_key(body, add)
       note_feed_served(body, ctx)
       scan_feed(body, ctx, add)
+      scan_credentials(body, add)
     end
     findings
   end
@@ -303,6 +352,7 @@ class AccessLeakScanner
 
   RULE_TEXT = {
     'password' => 'an NPC password in a response',
+    'capture_secret' => 'a non-account capture secret outside a GET /capture_secrets answer or a capture page',
     'signin_content' => 'sign-in PC content outside its own container response',
     'stick_content' => "a habit USB stick's files outside a container or unlock response for that stick",
     'profile_content' => 'profile content outside a sign-in PC container response',
@@ -310,26 +360,40 @@ class AccessLeakScanner
     'share_content' => 'file share content outside a container response for that share',
     'network_string' => 'a network or resource name, host or observations outside the network routes',
     'wifi_secret' => 'a Wi-Fi SSID or pre-shared key in any response (the key is compared on the server, never served)',
-    'withheld_key' => 'a withheld key (creds, role, awareness, habits, workarounds, workNeeds, frustration, feed, usbHabit) on an NPC record',
+    'withheld_key' => 'a withheld key (creds, role, awareness, workarounds, workNeeds, frustration, feed, or a habits key other than screen and print such as locksScreen, writesDown, password, holdsDoors or usb) on an NPC record',
     'workaround' => 'a workaround (its kind beside its target) outside a hand-over',
     'feed_text' => "a feed post's or feed fact's whole text before the server served it",
     'feed_fact_key' => 'an object keyed by a feed fact id with a text key before its post was served, or a bootstrap social.intelFacts that is not an object',
     'feed_reply_target' => 'a feed reply whose replyTo names a post the server had not served yet',
+    'feed_reacts_key' => 'an authored reacts key in a response (reactions are derived on the server, never shipped as authored)',
+    'feed_reaction_target' => 'a feed reaction on a post the server had not served yet',
+    'feed_reaction_key' => 'a feed reaction with a key outside like, laugh, sad, angry',
+    'feed_reaction_reactor' => 'a feed reaction from an NPC with no served post yet',
     'lockout_list' => 'a list of sign-in lockouts or failures, a lockout key, a lockedOut list outside GET /scenario ' \
                       'npcFrustration, a lockedOut flag outside a check or sign-in answer, or a lockoutPcs entry that is not a locked-out PC',
-    'lockout_unrecorded' => 'a lockout the server\'s check did not record'
+    'lockout_unrecorded' => 'a lockout the server\'s check did not record',
+    'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
+    'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
+    'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
+    'credential_clock' => 'a credentialClock key, or a recorded token clock value, in a response (the token clock is server-only; the client gets expiresInS only)',
+    'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
+    'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)'
   }.freeze
 
   private
 
   def secret_values
-    @secret_values ||= (@passwords.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
+    @secret_values ||= (@passwords.keys + @capture_secrets.keys + @items.values.flat_map { |i| i[:strings] } + @network_strings.keys +
                         @wifi_secrets.keys + @share_items.values.flat_map { |i| i[:strings] } + @feed_texts.keys).uniq.sort_by { |v| -v.length }
   end
 
   # ---- catalogue ---------------------------------------------------------------------------
 
   WORKAROUND_TARGET_KEYS = %w[door prop event pc with].freeze
+  # Kept equal to BreakEscape::AccessWork::REACTION_KEYS (the scanner keeps its own copy; a unit
+  # test checks they match)
+  REACTION_KEYS = %w[like laugh sad angry].freeze
+
   # Kept equal to BreakEscape::AccessWork::WORKAROUND_KINDS (the scanner loads no Rails code)
   WORKAROUND_KINDS = %w[writes_down prop_door emit borrow_session share_login].freeze
 
@@ -364,6 +428,42 @@ class AccessLeakScanner
       (@passwords[password] ||= []) << id
       @capture_npcs << id if reveal && BreakEscape::Game.capture_route?(npc)
     end
+  end
+
+  # Non-account capture secrets (step 3, SCENARIO_FORMAT_HARDENING_PLAN): the `secret` on an
+  # add_capture action, an addCapture mapping or a non-account NPC's usePayload, keyed by target
+  # id. The server serves these only through GET /capture_secrets once the capture is earned (and
+  # its proof holds), so, like an account password, the value must appear nowhere else. Account
+  # secrets stay with collect_passwords (they are an NPC's creds.password, caught there); a writer
+  # on an account holder is skipped here, as build_authored_capture_secrets does.
+  def collect_capture_secrets
+    cm = BreakEscape::CaptureModel
+    cm.each_capture_writer(@data) do |capture, _kind, _path, owner|
+      next if owner.is_a?(Hash) && cm.account_holder?(owner)
+
+      add_capture_secret(capture['secret'], capture['targetId'], capture['proof'])
+    end
+    each_room_npc do |npc|
+      payload = npc['usePayload']
+      next unless payload.is_a?(Hash) && !cm.account_holder?(npc)
+
+      add_capture_secret(payload['secret'], payload['targetId'] || npc['id'], payload['proof'])
+    end
+  end
+
+  def add_capture_secret(secret, target, proof = nil)
+    return unless secret.is_a?(String) && !secret.strip.empty?
+
+    owner = target.is_a?(String) && !target.strip.empty? ? target.strip : 'capture'
+    owners = (@capture_secrets[secret.strip] ||= [])
+    owners << owner unless owners.include?(owner)
+    @capture_secret_proofs[secret.strip] << (proof.is_a?(Hash) ? proof : nil)
+  end
+
+  # The proofs of a capture secret whose writers all carry one, or nil (E0.3)
+  def capture_secret_proofs(secret)
+    list = @capture_secret_proofs.fetch(secret, [])
+    list.empty? || list.any?(&:nil?) ? nil : list
   end
 
   def each_room_npc(&block)
@@ -427,6 +527,10 @@ class AccessLeakScanner
         v = wifi[field]
         next unless v.is_a?(String) && v.strip.length >= MIN_NETWORK_STRING
         next if public_strings.any? { |s| s.include?(v.strip) }
+        # E0.3: a key that is also a capture secret whose writers all carry a proof is served on
+        # GET /capture_secrets once the proof holds, so scan_capture_secrets judges it there (by
+        # the order of the plant). With no proof the server never serves it: a Wi-Fi secret.
+        next if field == 'psk' && capture_secret_proofs(v.strip)
 
         (@wifi_secrets[v.strip] ||= []) << "network:#{net_id}"
       end
@@ -449,10 +553,12 @@ class AccessLeakScanner
   end
 
   # Every string room data ships as authored: rooms, door signs, objects and NPCs, except the
-  # keys the server withholds, sign-in PC desktops and the contents of locked containers.
+  # keys the server withholds, sign-in PC desktops, the contents of locked containers and the
+  # `secret` of a capture descriptor (a hash under capture, addCapture or usePayload), which
+  # Game#strip_capture_secrets! removes before room data ships (E0.3).
   def room_data_strings
     out = Set.new
-    walk = lambda do |node|
+    walk = lambda do |node, descriptor = false|
       case node
       when String then out << node.strip
       when Array then node.each { |v| walk.call(v) }
@@ -461,8 +567,9 @@ class AccessLeakScanner
         node.each do |k, v|
           next if WITHHELD_ROOM_KEYS.include?(k)
           next if k == 'contents' && hidden
+          next if k == 'secret' && descriptor
 
-          walk.call(v)
+          walk.call(v, CAPTURE_DESCRIPTOR_KEYS.include?(k) && v.is_a?(Hash))
         end
       end
     end
@@ -633,7 +740,10 @@ class AccessLeakScanner
 
   def response_context(row)
     if row.key?('dom')
-      return { route: "page #{row['label'] || 'dom'}", container: nil, unlock: false, capture_secrets: true,
+      # E0.3: only a page labelled as a capture page (a capture log, a captures terminal) is
+      # exempt like a GET /capture_secrets answer; any other page (a device console) is scanned
+      return { route: "page #{row['label'] || 'dom'}", container: nil, unlock: false,
+               capture_secrets: row['label'].to_s.match?(CAPTURE_PAGE_LABEL),
                network: false, any_container: false, scenario: false }
     end
 
@@ -652,7 +762,8 @@ class AccessLeakScanner
       npc_workaround: method == 'POST' && path.end_with?('/npc_workaround'),
       npc_frustration: method == 'POST' && path.end_with?('/npc_frustration'),
       login: method == 'POST' && path.end_with?('/login'),
-      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone')
+      friendface_phone: method == 'POST' && path.end_with?('/friendface_phone'),
+      keyring: method == 'GET' && path.end_with?('/keyring')
     }
   end
 
@@ -672,21 +783,50 @@ class AccessLeakScanner
 
     note = ctx[:login_accounts] ? served_note_password(body) : nil
     shared = ctx[:npc_workaround] ? heard_share_password(body) : nil
+    # A GET /keyring answer's implicit capture entries carry the captured account's own
+    # password, just as GET /capture_secrets does. Exempt the `password` field on a
+    # `source: "capture"` entry only when its id is `<npcId>.password` for an account the
+    # recorded state serves as captured (Game#account_capture_usernames) and the password found
+    # there is that NPC's own (carry-in m3): the `source` label alone exempts nothing. A
+    # registry-sourced entry is never exempted, so a password on one is still flagged.
+    keyring_capture_paths = ctx[:keyring] && @game ? keyring_capture_password_paths(body) : nil
     each_string(body) do |str, json_path, holder|
       @passwords.each do |password, owners|
         next unless contains_password?(str, password)
         next if deliberate_clue?(password, str, holder)
         next if share_clue?(password, str, holder, ctx, json_path, legit)
+        next if keyring_capture_paths && owners.include?(keyring_capture_paths[json_path])
         next if note == password && json_path == '$.postitNote'
         next if @noted.include?(password) && json_path.include?('.savedNotes[')
         next if shared == password && share_path?(json_path)
         next if reveal_secret? && @shared.include?(password) && json_path.include?('.captures')
 
         owners.each do |npc_id|
-          next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id))
+          next if ctx[:capture_secrets] && @capture_npcs.include?(npc_id) && (@served_npcs.nil? || @served_npcs.include?(npc_id)) &&
+                  account_proof_held_before?(npc_id, ctx[:index])
 
           add.call('password', "npc:#{npc_id}", safe_path(json_path))
         end
+      end
+    end
+  end
+
+  # A non-account capture secret anywhere but the two routes that legitimately serve it: a GET
+  # /capture_secrets answer and a capture page the tester read (a dom row, labelled a capture log
+  # or captures terminal). Both set ctx[:capture_secrets]. The match rule mirrors a password: a
+  # secret of six or more characters is matched as a substring, a shorter one as a whole token.
+  #
+  # E0.3: on those routes a secret whose writers all carry a proof passes only when one of its
+  # proofs held before the row (proof_held_before?).
+  def scan_capture_secrets(body, ctx, add)
+    return if @capture_secrets.empty?
+
+    each_string(body) do |str, json_path, _owner|
+      @capture_secrets.each do |secret, targets|
+        next unless contains_password?(str, secret)
+        next if ctx[:capture_secrets] && capture_secret_served_in_order?(secret, ctx[:index])
+
+        targets.each { |t| add.call('capture_secret', "capture:#{t}", safe_path(json_path)) }
       end
     end
   end
@@ -981,6 +1121,7 @@ class AccessLeakScanner
   end
 
   def serve_feed(npc_id, post_id, fid)
+    @feed_posters << npc_id.to_s
     @feed_served << "#{npc_id}|#{post_id}"
     @feed_served << "fact:#{fid}" if fid
   end
@@ -989,14 +1130,85 @@ class AccessLeakScanner
     entry[:served].any? { |k| @feed_served.include?(k) }
   end
 
+  # Reactions: a `reacts` key anywhere is the authored list shipped; it needs no feed texts or facts,
+  # so it runs outside scan_feed's early return
+  def scan_reacts_key(body, add)
+    walk_hashes(body, '$') do |hash, json_path|
+      next unless hash.key?('reacts')
+
+      owner = hash['id'].is_a?(String) ? "reacts:#{hash['id']}" : 'reacts'
+      add.call('feed_reacts_key', owner, safe_path("#{json_path}.reacts"))
+    end
+  end
+
+  # Reaction items in a /feed_post answer ({ postId, npc, person, key }) and in a feedPosts block
+  # (on the item they target: { npc, person, key }). Each target must be served by now (the
+  # answer's own post and the block's own items were noted first), each key one of
+  # REACTION_KEYS, and each reactor an NPC with a served post.
+  def scan_reactions(body, ctx, add)
+    return unless body.is_a?(Hash)
+
+    if ctx[:route].end_with?('/feed_post')
+      Array(body['reactions']).each_with_index do |r, i|
+        next unless r.is_a?(Hash)
+
+        target = r['postId'].is_a?(String) ? @feed_post_key[r['postId']] : nil
+        judge_reaction(r, target, r['postId'], "$.reactions[#{i}]", add)
+      end
+    elsif (ctx[:scenario] || ctx[:friendface_phone]) && body['feedPosts'].is_a?(Hash)
+      body['feedPosts'].each do |npc_id, f|
+        Array(f.is_a?(Hash) ? f['posts'] : nil).each_with_index do |item, j|
+          next unless item.is_a?(Hash) && item['post'].is_a?(Hash)
+
+          post_id = item['post']['id']
+          Array(item['reactions']).each_with_index do |r, i|
+            next unless r.is_a?(Hash)
+
+            target = post_id.is_a?(String) ? "#{npc_id}|#{post_id}" : nil
+            judge_reaction(r, target, post_id, "$.feedPosts.#{npc_id}.posts[#{j}].reactions[#{i}]", add)
+          end
+        end
+      end
+    end
+  end
+
+  def judge_reaction(item, target, post_id, path, add)
+    @reaction_items += 1
+    unless target && feed_target_out?(target)
+      add.call('feed_reaction_target', target ? "feed:#{target}" : "post:#{post_id}", safe_path(path))
+    end
+    add.call('feed_reaction_key', "post:#{post_id}", safe_path("#{path}.key")) unless REACTION_KEYS.include?(item['key'])
+    reactor = item['npc'].to_s
+    add.call('feed_reaction_reactor', "npc:#{reactor}", safe_path("#{path}.npc")) unless feed_poster_out?(reactor)
+  end
+
+  # Whether a post ("npc|post_id") may be out at this point of the log: served by a line the log
+  # holds, or among the owner's saved reveal ids that a lost /feed_post answer passed so far (or a
+  # reveal before the log) accounts for (feed_allowed_ids). Reactions code review R1 m2: a post
+  # whose answer body was lost is never served by serve_feed, so a later reaction or reply on it
+  # would otherwise be a false leak.
+  def feed_target_out?(key)
+    return true if @feed_served.include?(key)
+
+    npc_id, post_id = key.split('|', 2)
+    @feed_order.key?(npc_id) && feed_allowed_ids(npc_id).include?(post_id)
+  end
+
+  # Whether an NPC may have a post out at this point of the log, by the same credit
+  def feed_poster_out?(npc_id)
+    @feed_posters.include?(npc_id) || (@feed_order.key?(npc_id) && feed_allowed_ids(npc_id).any?)
+  end
+
   def scan_feed(body, ctx, add)
     return if @feed_texts.empty? && @feed_fact_ids.empty?
+
+    scan_reactions(body, ctx, add)
 
     # C3: a served reply's replyTo names its thread post, which must be out already
     walk_hashes(body, '$') do |hash, json_path|
       target = hash['replyTo']
       next unless target.is_a?(String) && hash['id'].is_a?(String) && @feed_post_key.key?(target)
-      next if @feed_served.include?(@feed_post_key[target])
+      next if feed_target_out?(@feed_post_key[target])
 
       add.call('feed_reply_target', "feed:#{@feed_post_key[target]}", safe_path("#{json_path}.replyTo"))
     end
@@ -1022,6 +1234,131 @@ class AccessLeakScanner
 
         add.call('feed_fact_key', "fact:#{k}", safe_path("#{json_path}.#{k}"))
       end
+    end
+  end
+
+  # Credential keyring (CREDENTIAL_KEYRING_PLAN.md, section 6.1). Three leaks:
+  # - any response carrying a `credentials` key (the registry is server-only, stripped from the
+  #   bootstrap, so it must never reach the browser);
+  # - a registry credential served in a GET /keyring answer whose proof does not hold in the
+  #   recorded state (@game, read once at scan time, as the lockout records are);
+  # - a registry password credential carrying its `password` value (only a captured account's
+  #   implicit entry may carry one, and only where GET /capture_secrets already serves it).
+  def scan_credentials(body, add)
+    walk_hashes(body, '$') do |hash, path|
+      add.call('credential_registry', 'credentials', safe_path("#{path}.credentials")) if hash.key?('credentials')
+      # The item-level `credential` field is server-only: both client filters strip it, so it
+      # must never reach the browser. A second guard on the field R1 m1 flagged (K1 R2 m3).
+      add.call('credential_field', 'credential', safe_path("#{path}.credential")) if hash['credential'].is_a?(String)
+      # K5: the token clock is server-only (never the key, never a recorded value).
+      add.call('credential_clock', 'credentialClock', safe_path("#{path}.credentialClock")) if hash.key?('credentialClock')
+      next if credential_clock_values.empty?
+
+      hash.each do |k, v|
+        add.call('credential_clock', 'credentialClock', safe_path("#{path}.#{k}")) if v.is_a?(Numeric) && credential_clock_values.include?(v.to_f)
+      end
+    end
+
+    entries = keyring_entries_in(body)
+    return if entries.nil?
+
+    scan_keyring_captures(body, add)
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash)
+      next unless entry['source'].to_s == 'registry'
+
+      id = entry['id'].to_s
+      base = "$.entries[#{i}]"
+      if entry['kind'].to_s == 'password' && entry.key?('password')
+        add.call('credential_password_value', "credential:#{id}", safe_path("#{base}.password"))
+      end
+      next if credential_proof_held_ids.nil?
+
+      add.call('credential_unheld', "credential:#{id}", safe_path(base)) unless credential_proof_held_ids.include?(id)
+    end
+  end
+
+  KEYRING_CAPTURE_KEYS = %w[tag source account].freeze
+
+  # K3d (plan 8.7): the `captures` map of a GET /keyring answer carries a tag, a source and an
+  # account id per target, never a value. Any other key, or an entry that is not an object, is a
+  # finding named by its target id; the path is reported, the value never.
+  def scan_keyring_captures(body, add)
+    captures = body['captures']
+    return unless captures.is_a?(Hash)
+
+    captures.each do |target_id, entry|
+      owner = "capture:#{target_id}"
+      unless entry.is_a?(Hash)
+        add.call('keyring_capture_key', owner, safe_path("$.captures.#{target_id}"))
+        next
+      end
+      (entry.keys - KEYRING_CAPTURE_KEYS).each do |key|
+        add.call('keyring_capture_key', owner, safe_path("$.captures.#{target_id}.#{key}"))
+      end
+    end
+  end
+
+  # A GET /keyring answer, told apart by its shape (`{ rev, entries: [...] }`); nil otherwise.
+  def keyring_entries_in(body)
+    return nil unless body.is_a?(Hash) && body.key?('rev') && body['entries'].is_a?(Array)
+
+    body['entries']
+  end
+
+  # { JSON path => npc id } for the `password` field on every `source: "capture"` keyring entry
+  # whose id is `<npcId>.password` for an account the recorded state serves as captured, so
+  # scan_passwords can exempt that NPC's own value there (and only there). An entry labelled
+  # capture under any other id, or for an account not captured, maps to nothing.
+  def keyring_capture_password_paths(body)
+    entries = keyring_entries_in(body)
+    return {} if entries.nil?
+
+    captured = captured_account_ids
+    paths = {}
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'capture' && entry['password'].is_a?(String)
+
+      id = entry['id'].to_s
+      next unless id.end_with?('.password')
+
+      npc_id = id.delete_suffix('.password')
+      paths["$.entries[#{i}].password"] = npc_id if captured.include?(npc_id)
+    end
+    paths
+  end
+
+  # The NPC ids whose capture the recorded state serves (Game#account_capture_usernames, the
+  # reader the server's implicit keyring entries use), read once from the game at scan time;
+  # empty when the game cannot say, so nothing is exempted.
+  def captured_account_ids
+    return @captured_account_ids if defined?(@captured_account_ids)
+
+    usernames =
+      if @game.respond_to?(:account_capture_usernames, true)
+        @game.send(:account_capture_usernames)
+      end
+    @captured_account_ids = usernames.is_a?(Hash) ? usernames.keys.map(&:to_s).to_set : Set.new
+  end
+
+  # The registry credential ids whose proof holds in the recorded state, from the game read once at
+  # scan time; nil when no game is given (the unheld check then does not run).
+  def credential_proof_held_ids
+    return @credential_proof_held_ids if defined?(@credential_proof_held_ids)
+
+    @credential_proof_held_ids =
+      if @game.respond_to?(:credential_proof_holds?)
+        BreakEscape::CredentialModel.registry(@data)
+                                    .select { |id, entry| @game.credential_proof_holds?(id, entry) }
+                                    .keys.map(&:to_s).to_set
+      end
+  end
+
+  # The recorded token clock values of the game read at scan time (empty without a game).
+  def credential_clock_values
+    @credential_clock_values ||= begin
+      state = @game.respond_to?(:player_state) && @game.player_state.is_a?(Hash) ? @game.player_state['credentialClock'] : nil
+      (state.is_a?(Hash) ? state.values : []).select { |v| v.is_a?(Numeric) }.map(&:to_f).to_set
     end
   end
 
@@ -1134,6 +1471,15 @@ class AccessLeakScanner
 
         add.call('withheld_key', "npc:#{record['id']}/#{key}", safe_path("#{json_path}.#{key}"))
       end
+      # Step 8c: the habits block ships only screen and print; any other habits key is server-only.
+      habits = record['habits']
+      next unless habits.is_a?(Hash)
+
+      habits.each_key do |hk|
+        next if SHIPPED_HABIT_KEYS.include?(hk)
+
+        add.call('withheld_key', "npc:#{record['id']}/habits.#{hk}", safe_path("#{json_path}.habits.#{hk}"))
+      end
     end
   end
 
@@ -1175,7 +1521,10 @@ class AccessLeakScanner
     return if scoped.empty?
 
     hits = Hash.new { |h, k| h[k] = [] }
+    disclosed = ctx[:keyring] ? held_keyring_disclosure_paths(body) : []
     each_string(body) do |str, json_path|
+      next if disclosed.any? { |p| json_path == p || json_path.start_with?("#{p}[") }
+
       scoped.each do |item_id, info|
         hits[item_id] << json_path if content_match?(str, info[:strings])
       end
@@ -1191,6 +1540,24 @@ class AccessLeakScanner
       rule = { profile: 'profile_content', stick: 'stick_content' }.fetch(info[:scope], 'signin_content')
       add.call(rule, "item:#{item_id}", safe_path(paths.first))
     end
+  end
+
+  # The JSON paths of the `label` and `foundIn` fields on GET /keyring registry entries whose proof
+  # holds: the keyring serves them on purpose once the proof holds, so a label equal to a sign-in
+  # item's name (a "passwords.txt" note) is not sign-in content. An unheld entry is not exempted
+  # (credential_unheld flags it too), and no other field (a file body) is. Empty without a game.
+  def held_keyring_disclosure_paths(body)
+    entries = keyring_entries_in(body)
+    held = credential_proof_held_ids
+    return [] if entries.nil? || held.nil?
+
+    paths = []
+    entries.each_with_index do |entry, i|
+      next unless entry.is_a?(Hash) && entry['source'].to_s == 'registry' && held.include?(entry['id'].to_s)
+
+      paths << "$.entries[#{i}].label" << "$.entries[#{i}].foundIn"
+    end
+    paths
   end
 
   # A folder inside a sign-in PC or profile (a locked archive) opened by /unlock: the server
@@ -1261,6 +1628,132 @@ class AccessLeakScanner
   # as GET /container would, for example a held grant item whose file names a share's host)
   # and the footholds block of /scenario. Both container exemptions cover every network
   # string, by design (see the header).
+  # ---- order of the plant (E0.3) -------------------------------------------------------------
+
+  # The log's POST /inventory rows: the index of the earliest tagged 200 remove for each
+  # [item, used_on]; whether any row carries an `inv` key (a log written after the recorder
+  # change); and whether a 200 remove row is untagged (inv null or missing) in such a log.
+  # Rows are indexed in the order given, every file in argument order, DOM rows included.
+  def prepare_plant_rows(lines)
+    @plant_rows = {}
+    @plant_rows_any = {}
+    rows = []
+    lines.each_with_index do |(_source, _line_no, row), index|
+      next unless row.is_a?(Hash) && !row.key?('dom')
+      next unless row['method'].to_s.upcase == 'POST' && row['path'].to_s.split('?').first.to_s.end_with?('/inventory')
+
+      rows << [index, row]
+    end
+    tagged = rows.any? { |_i, row| row.key?('inv') }
+    @log_mode = if rows.empty? then :no_inventory
+    elsif tagged then :tagged
+    else :pre
+    end
+    @untagged_remove = false
+    rows.each do |index, row|
+      next unless row['status'].to_i == 200
+
+      inv = row['inv']
+      if inv.is_a?(Hash) && inv['action'] == 'hide'
+        # Plant hiding (PLANT_HIDING_PLAN.md section 7): a 200 hide is the plant of its item when
+        # the spot passes HidingSpots for that item, as the server checks it.
+        unless inv['itemId'].is_a?(String) && inv['hiddenIn'].is_a?(String)
+          @untagged_remove = true
+          next
+        end
+        defn = BreakEscape::HidingSpots.item_defs(@data)[inv['itemId']]
+        finder = ->(id) { BreakEscape::HidingSpots.find_object(@data, id) }
+        if defn && BreakEscape::HidingSpots.resolve_spot(defn, inv['hiddenIn'], finder)
+          @plant_rows[[inv['itemId'], inv['hiddenIn']]] ||= index
+          @plant_rows_any[inv['itemId']] ||= index
+        end
+      elsif inv.is_a?(Hash)
+        next unless inv['action'] == 'remove' && inv['usedOn'].is_a?(String)
+
+        # A remove naming an object but no readable item id may have been the plant (t1)
+        unless inv['itemId'].is_a?(String)
+          @untagged_remove = true
+          next
+        end
+
+        @plant_rows[[inv['itemId'], inv['usedOn']]] ||= index
+        # The earliest plant of the item on any non-jack object, for a proof with no `on` (m2)
+        used = @plant_object_by_id[inv['usedOn']]
+        # and only an object that takes the item records a plant: the server refuses the rest
+        # (object_takes_item?), so a remove on a decoy object is no plant (R2 m1)
+        if used.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(used) &&
+           BreakEscape::CaptureModel.object_takes_item?(used, BreakEscape::CredentialModel.item_definition(@data, inv['itemId']))
+          @plant_rows_any[inv['itemId']] ||= index
+        end
+      elsif tagged
+        # A remove row whose body the recorder could not read may have been the plant. Untagged
+        # rows carry no action, so any 200 row with a null or missing tag counts as one
+        @untagged_remove = true
+      end
+    end
+  end
+
+  # A planted proof on a room object that is no network jack, or with no `on` (met only by a
+  # non-jack plant): the only plants sent as a POST /inventory remove with used_on, so the only
+  # ones the log can order
+  def order_checked_plant?(proof)
+    return false unless BreakEscape::CaptureModel.proof_kind(proof) == 'planted'
+
+    on = proof['on']
+    return true if on.nil?
+    return false unless on.is_a?(String) && !on.empty?
+
+    obj = @object_by_id[on]
+    obj.is_a?(Hash) && !BreakEscape::NetworkModel.jack?(obj)
+  end
+
+  # Whether an order-checked plant proof held before the row at index. A pre-change log is not
+  # order-checked. A tagged plant row must come first (and, with a game, the proof must hold
+  # now). With no plant row: an untagged remove row makes the log unverifiable; otherwise, with
+  # a game, the plant predates the log when the proof holds now; without one it is flagged.
+  def plant_held_before?(proof, index)
+    return true if @log_mode == :pre
+
+    final = @game.nil? || @game.capture_proof_holds?(proof)
+    at = proof['on'].nil? ? @plant_rows_any[proof['planted']] : @plant_rows[[proof['planted'], proof['on']]]
+    return at < index && final if at
+    return false if @untagged_remove || @game.nil?
+
+    final
+  end
+
+  # A capture secret on a capture route: one with no proof on some writer keeps the old
+  # exemption. Otherwise one of its proofs must have held before the row: an order-checked
+  # plant by plant_held_before?, any other kind by the final state with a game (no check
+  # without one, as before).
+  def capture_secret_served_in_order?(secret, index)
+    proofs = capture_secret_proofs(secret)
+    return true unless proofs
+
+    proofs.any? do |proof|
+      if order_checked_plant?(proof) then plant_held_before?(proof, index)
+      else @game.nil? || @game.capture_proof_holds?(proof)
+      end
+    end
+  end
+
+  # An account password on a capture route, for an NPC whose proofs include an order-checked
+  # plant: one of its proofs must have held before the row, a plant by plant_held_before? and
+  # any other kind by the final state with a game, as the capture secret route does (R1 m1). Other NPCs pass as before.
+  def account_proof_held_before?(npc_id, index)
+    npc = each_room_npc.find { |n| n['id'].to_s == npc_id }
+    return true unless npc
+
+    proofs = BreakEscape::CaptureModel.proofs_for(npc, @data)
+    return true unless proofs.any? { |proof| order_checked_plant?(proof) }
+
+    proofs.any? do |proof|
+      if order_checked_plant?(proof) then plant_held_before?(proof, index)
+      else @game.nil? || @game.capture_proof_holds?(proof)
+      end
+    end
+  end
+
   def scan_network_strings(body, ctx, add)
     return if @network_strings.empty?
     return if ctx[:network] || ctx[:any_container]

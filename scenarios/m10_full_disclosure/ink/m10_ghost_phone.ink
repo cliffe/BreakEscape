@@ -19,6 +19,7 @@ VAR ghost_l_owned = false    // broken branch: the player has owned the broken d
 // The call. First lines write the defaults (MC §3.2).
 // ---------------------------------------------------------------
 === ghost_call ===
+// lint: call-knot
 {ghost_call_done:
     -> ghost_after
 }
@@ -69,7 +70,7 @@ Four digits. The rota inside names the man with the card.
 
 // Refused: the parley, and Ghost's question back. The answer picks the gift.
 === refused ===
-I hope it's you leading it. I said so at the time, and here you are.
+I hoped it would be you leading the raid. I said so at the time, and here you are.
 You turned me down. Why?
 + [I don't buy from people who hold hospitals.]
     ~ ghost_answer = "hospitals"
@@ -84,7 +85,7 @@ You turned me down. Why?
     ~ ghost_gift = "card"
     ~ lock_guard_known = true
     ~ ghost_call_done = true
-    Then don't trust me. Check it. The one at the lock end. Fonoti.
+    Then don't trust me. Check it yourself. The one at the lock end is Fonoti.
     He carries the code card, and he'll want to be off shift.
     Don't thank me. It's not for you.
     -> ghost_close_und
@@ -106,7 +107,7 @@ You turned me down. Why?
 }
 Two hours' head start on everything in that bunker. Five buyers. One of them wants the hospitals.
 It's my leaving fee. After tonight there's nobody here to find.
-Agent HaX: If it sells, the release console can kill that share. It only does one.
+agent_0x99: If it sells, the release console can kill that share. It only does one.
 -> selling_menu
 
 === selling_menu ===

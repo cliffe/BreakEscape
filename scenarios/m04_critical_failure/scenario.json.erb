@@ -103,6 +103,31 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
 
   "show_scenario_brief": "once",
 
+  "validSprites": [
+    "female_hacker_hood_v2",
+    "female_hacker_hood_down_v2",
+    "female_office_worker_v2",
+    "female_security_guard_v2",
+    "female_telecom_v2",
+    "female_scientist_v2",
+    "female_blowse_v2",
+    "male_hacker_hood_v2",
+    "male_hacker_hood_down_v2",
+    "male_office_worker_v2",
+    "male_security_guard_v2",
+    "male_telecom_v2",
+    "male_spy_v2",
+    "male_nerd_v2",
+    "vivian_ashby",
+    "mei_lin_chow",
+    "lucia_moreno",
+    "ngozi_adeyemi",
+    "daniel_seo",
+    "frank_callahan",
+    "marcus_hale",
+    "harjit_singh"
+  ],
+
   <%# Top-level flags block (m01/m03/m06/m07/m08 pattern; game.rb primary source for
       scenario_data["flags"], the table the VM-step runner matches captured output
       against). Keyed on the SecGen target system name bms_jump_server, flag_1..flag_4
@@ -535,6 +560,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
                     "voltage_print_on_bypass", "static_left", "static_left_alone", "vance_is_ally",
                     "robert_vance_ko", "lore_safehouse_address_found", "security_guard_ko"],
 
+  "npcThoughts": false,
   "startRoom": "main_entrance",
 
   "startItemsInInventory": [
@@ -575,6 +601,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "type": "workstation",
       "id": "cyberchef_workstation",
       "name": "CyberChef Workstation",
+      "host": "CYBER-LAP-01",
       "takeable": true,
       "puzzle_graph_role": "tool",
       "puzzle_graph_note": "Decoding tool for the go-bag's encoded safehouse card",
@@ -761,6 +788,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "id": "agent_0x99",
           "displayName": "Agent HaX",
+          "callLabel": "SAFETYNET secure line",
           "npcType": "phone",
           "voice": {
             "name": "Aoede",
@@ -772,6 +800,14 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "phoneId": "player_phone",
           <%# Pass 5 A5: start greets once (greeted) and then lands in the hub, m03's shape. %>
           "currentKnot": "start",
+          <%# Phone calls M4: both beats are voiced calls placed from a hub choice
+              (#place_call:<knot>), so neither entry gets a header button. The dial
+              reading also rings (the mapping below); its hub choice is the way back
+              if the player declines or misses it. %>
+          "call": [
+            { "knot": "on_anomaly_confirmed", "button": false },
+            { "knot": "extract_call", "button": false }
+          ],
           "itemsHeld": [
             {
               "type": "lab-workstation",
@@ -893,9 +929,25 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
                 the hub re-offers it if the text is missed (anomaly_call_heard). %>
             {
               "eventPattern": "global_variable_changed:anomaly_detected",
-              "condition": "value === true",
+              "condition": "value === true && globalVars.esd_authorized !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "targetKnot": "on_anomaly_confirmed", "message": "Sixty-one on that dial? Call me when you're clear of it." }
+              "_comment": "Phone calls M4: HaX rings six seconds after the dial read (was a text 'Call me when you're clear of it.'). Default ring-out; a decline or miss leaves a Call back button and the text below. The hub choice [About the dial reading.] dials the same knot.",
+              "delayMs": 6000,
+              "conversationMode": "phone-chat",
+              "targetKnot": "on_anomaly_confirmed",
+              "ring": { "onMissed": "callback", "callbackWhen": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true", "ringWhile": "globalVars.esd_authorized !== true && globalVars.mission_complete !== true" }
+            },
+            {
+              "eventPattern": "phone_call_declined:agent_0x99",
+              "condition": "data.knot === 'on_anomaly_confirmed'",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Got your reading. Ring me back." }
+            },
+            {
+              "eventPattern": "phone_call_missed:agent_0x99",
+              "condition": "data.knot === 'on_anomaly_confirmed' && !data.reload",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 1500, "message": "Got your reading. Ring me back." }
             },
             <%# Struggling run A (F4): a fair, unprompted signal that the night crew is
                 in danger and that Vance can clear them, for every player, cover held
@@ -1126,7 +1178,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "onceOnly": true,
               "completeTask": "investigate_compromised_services",
               "setGlobal": { "erlang_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port there — the crew's way back in, with a brand-new pre-auth RCE. Their job card names the port. I've a guide if you want it.", "skipIfGlobal": "flag_erlang_rce_submitted" }
+              "sendTimedMessage": { "delay": 2000, "message": "There's an Erlang/OTP SSH daemon on a high port: the crew's way back in, a brand-new pre-auth RCE. The job card names the port. Want the guide?", "skipIfGlobal": "flag_erlang_rce_submitted" }
             },
             <%# PASS 3 P15 (review): the sudo offer on the FTP flag, only if the
                 Erlang SSH RCE flag hasn't already made it. %>
@@ -1498,6 +1550,11 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "avatar": "assets/characters/robert_vance_headshot.png",
           "phoneId": "player_phone",
           "currentKnot": "start",
+          <%# Phone calls M4: the engineering support conversation is a voiced call the
+              player rings from this thread once Vance is an ally and still on his feet.
+              Before that (or after his KO) it rings out: "NO ANSWER". %>
+          "call": { "knot": "support_call", "when": "globalVars.vance_is_ally && !globalVars.robert_vance_ko", "unavailable": "no_answer" },
+          "callLabel": "Albion Energy",
           "timedMessages": [
             {
               "delay": 20000,
@@ -1662,6 +1719,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "type": "pc",
           "name": "Vance's BMS Monitoring Terminal",
+          "host": "BMS-MON-01",
+          "desktopUser": {"name": "Robert Vance", "character": "robert_vance"},
           "takeable": false,
           "observations": "Vance's BMS terminal. Every rack bank green, 28°C, NORMAL: the same feed as the SCADA wall, so it agrees with it."
         },
@@ -1866,6 +1925,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "type": "pc",
           "name": "Network Monitoring Station",
+          "host": "OT-NETMON-01",
           "position": "as-type:kvm_cart",
           "takeable": false,
           "observations": "A live traffic monitor for the OT network. Steady SCADA polling, and a second stream into the BMS jump server at <%= jump_server_ip %>, on a high port, from a host that isn't on Albion's asset list."
@@ -1930,6 +1990,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
         {
           "type": "pc",
           "name": "Security Camera Monitors",
+          "host": "SEC-CAM-WALL",
           "position": "as-type:cctv_monitors",
           "takeable": false,
           "observations": "The camera wall. Scrub back to the 9th and cameras 7, 8, 12 and 15 go black at 23:45 and come back at 03:00. Workshop corridor and the Hall 2 door."
@@ -2218,6 +2279,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "type": "pc",
           "id": "hall1_round_panel",
           "name": "Duty Round Panel",
+          "host": "HALL1-ROUND-01",
           "takeable": false,
           "position": "as-type:aes_round_terminal",
           "hasFingerprint": true,
@@ -2662,6 +2724,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "type": "pc",
           "sprite": "entropy_command_unit1",
           "name": "ENTROPY Command Laptop",
+          "host": "CM-FIELD-LT",
           "position": "as-type:laptop",
           "takeable": false,
           "readable": true,

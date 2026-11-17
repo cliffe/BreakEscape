@@ -14,7 +14,8 @@ import {
 } from '../utils/constants.js';
 import { ensureCharacterTexture } from '../systems/character-textures.js';
 import { playerTalkPath, syncScenarioPlayer } from '../utils/player-avatar.js';
-import { insertDoorwayWaypoints } from '../systems/path-doorways.js';
+import { insertDoorwayWaypoints, directWalkStall } from '../systems/path-doorways.js';
+import { openModalCount } from '../ui/modal-stack.js';
 
 export let player = null;
 export let targetPoint = null;
@@ -80,6 +81,8 @@ let playerFinalGoal = null;    // Original click destination (world coords); cle
 // Line-of-sight options for the current click-to-move walk: { avoidNpcs: true } for a far
 // tap's walk, so its straight-line shortcuts go round standing NPCs (tap pick review R3 m1)
 let playerLosOpts = null;
+// A direct walk's stall watch (directWalkStall): armed only on movePlayerToPoint's straight walk
+let directWalk = { armed: false, hist: [], replanned: false };
 let waypointApproach = { target: null, distSq: Infinity }; // last frame's distance to targetPoint
 let pathDebugGraphics = null;  // Phaser Graphics object used to draw the path overlay
 
@@ -101,9 +104,8 @@ export function pauseKeyboardInput() {
     console.log('🔒 Keyboard input PAUSED for minigame (keyboardPaused = true)');
 }
 
-export function resumeKeyboardInput() {
-    keyboardPaused = false;
-    // Clear all keyboard state when resuming
+// Drop every held key: nothing keeps walking once input is taken away.
+function clearKeyboardMovement() {
     keyboardInput.up = false;
     keyboardInput.down = false;
     keyboardInput.left = false;
@@ -111,6 +113,12 @@ export function resumeKeyboardInput() {
     keyboardInput.space = false;
     keyboardInput.shift = false;
     isKeyboardMoving = false;
+}
+
+export function resumeKeyboardInput() {
+    keyboardPaused = false;
+    // Clear all keyboard state when resuming
+    clearKeyboardMovement();
     console.log('🔓 Keyboard input RESUMED (keyboardPaused = false)');
 }
 
@@ -163,6 +171,8 @@ export async function updatePlayerSprite(newSpriteKey) {
     punchDirections.forEach(dir => {
         animKeysToDestroy.push(`cross-punch_${dir}`);
         animKeysToDestroy.push(`lead-jab_${dir}`);
+        // Pose frames (systems/player-poses.js): a new atlas without them must not keep the old ones
+        for (const pose of ['drink', 'use', 'phone']) animKeysToDestroy.push(`pose_${pose}_${dir}`);
     });
     
     animKeysToDestroy.forEach(key => {
@@ -275,6 +285,19 @@ export function createPlayer(gameInstance) {
     return player;
 }
 
+const FOCUSABLE_CONTROL = 'button, input, textarea, select, a[href], [contenteditable]:not([contenteditable="false"])';
+
+/**
+ * True when a key event belongs to the interface and not the player: a minigame is open, or the
+ * focus is on a control that uses the key itself (Space presses a focused button and types in a
+ * field). The game keys then neither move the player nor have their default action cancelled.
+ */
+function keysBelongToUi(event) {
+    if (window.MinigameFramework?.currentMinigame) return true;
+    const target = event?.target;
+    return !!(target && typeof target.closest === 'function' && target.closest(FOCUSABLE_CONTROL));
+}
+
 function setupKeyboardInput() {
     // Handle keydown events
     document.addEventListener('keydown', (event) => {
@@ -283,7 +306,22 @@ function setupKeyboardInput() {
             console.log('⏸️ Keydown blocked (paused):', event.key);
             return;
         }
+
+        // A confirm or display dialog is open (ui/modal-stack.js): it holds the game's keys, so E
+        // can't open a second copy of the same confirm, the arrows can't walk away from it, and F
+        // and Space don't punch or jump behind it. A held arrow stops here too. Enter and Space on
+        // the dialog's focused button are left to the dialog.
+        if (openModalCount() > 0) {
+            clearKeyboardMovement();
+            return;
+        }
         
+        // A minigame is open or a control has the focus: the key is the interface's
+        if (keysBelongToUi(event)) {
+            clearKeyboardMovement();
+            return;
+        }
+
         const key = event.key.toLowerCase();
         
         // Shift key for running
@@ -388,6 +426,13 @@ function setupKeyboardInput() {
             return;
         }
         
+        // Same rule as keydown: leave the key's default to the open minigame or focused control,
+        // but let go of anything the player was holding
+        if (keysBelongToUi(event)) {
+            clearKeyboardMovement();
+            return;
+        }
+
         const key = event.key.toLowerCase();
         
         // Shift key
@@ -735,8 +780,10 @@ function drawPathDebug(fromX, fromY, smoothed, raw) {
 }
 
 export function movePlayerToPoint(x, y, opts = null) {
-    window.seating?.onMoveIntent(); // a static chair: hop off first
+    const replan = !!opts?.replan; // a stalled direct walk going through the grid once (R1 m4)
+    if (!replan) window.seating?.onMoveIntent(); // a static chair: hop off first
     playerLosOpts = opts?.avoidNpcs ? { avoidNpcs: true } : null;
+    directWalk = { armed: false, hist: [], replanned: replan };
     const worldBounds = gameRef.physics.world.bounds;
 
     // Ensure coordinates are within bounds
@@ -745,7 +792,7 @@ export function movePlayerToPoint(x, y, opts = null) {
 
     // Create click indicator (kept so it can be relocated if we end up
     // navigating to a nearby reachable point instead of the exact click).
-    const clickIndicator = createClickIndicator(x, y);
+    const clickIndicator = replan ? null : createClickIndicator(x, y);
 
     // Reset path state and bump request ID to cancel any in-flight async callbacks
     playerPath = [];
@@ -765,8 +812,9 @@ export function movePlayerToPoint(x, y, opts = null) {
         // physics LOS to the destination (world-aware: checks all rooms' wall boxes).
         // hasPlayerLineOfSight also refuses a line through a "prefer to route
         // around" object (systems/path-avoid.js); EasyStar then decides.
-        if (pathfindingManager.hasPlayerLineOfSight(px, py, x, y, null, playerLosOpts)) {
+        if (!replan && pathfindingManager.hasPlayerLineOfSight(px, py, x, y, null, playerLosOpts)) {
             console.log('  → Direct LOS clear — going straight');
+            directWalk.armed = true;
             drawPathDebug(px, py, [{ x, y }], null);
             playerFollowingPath = false;
             playerFinalGoal = null;
@@ -775,7 +823,7 @@ export function movePlayerToPoint(x, y, opts = null) {
         } else {
             // Snap destination to nearest walkable world-grid cell if the click
             // landed inside an obstacle — EasyStar cannot path to blocked cells.
-            const snappedDest = pathfindingManager.findNearestWalkableWorldCell(x, y) || { x, y };
+            const snappedDest = pathfindingManager.findNearestWalkableWorldCell(x, y, 8, { avoidSeated: true }) || { x, y };
             if (snappedDest.x !== x || snappedDest.y !== y) {
                 console.log(`  → Dest snapped from (${x.toFixed(0)},${y.toFixed(0)}) to (${snappedDest.x.toFixed(0)},${snappedDest.y.toFixed(0)})`);
             }
@@ -875,6 +923,30 @@ export function startHoldWalk() {
     holdWalkStartTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
 }
 
+/**
+ * Stop a click-to-move walk where the player stands (the pick menu opening, overlap plan D13),
+ * clearing what the keyboard's cancel clears and showing the idle pose, so a walk under way
+ * cannot carry him into another room while he chooses.
+ */
+export function stopClickToMove() {
+    isMoving = false;
+    targetPoint = null;
+    playerPath = [];
+    playerPathIndex = 0;
+    playerFollowingPath = false;
+    playerFinalGoal = null;
+    holdWalkActive = false;
+    if (!player) return;
+    try { player.body?.setVelocity?.(0, 0); } catch (e) { /* no body yet */ }
+    if (player.isMoving) {
+        player.isMoving = false;
+        const currentAnim = player.anims?.currentAnim?.key || '';
+        if (!/punch|jab|death|taking-punch/.test(currentAnim)) {
+            try { player.anims.play(`idle-${getAnimationKey(player.direction)}`, true); } catch (e) { /* no anims */ }
+        }
+    }
+}
+
 /** Stop continuous hold-to-walk (called on pointer release). */
 export function stopHoldWalk() {
     holdWalkActive = false;
@@ -906,6 +978,7 @@ function updateHoldWalk() {
     playerFollowingPath = false;
     playerFinalGoal = null;
     ++playerPathRequestId; // discard any pending EasyStar callback from the initial click
+    directWalk.armed = false;
     targetPoint = { x: worldX, y: worldY };
     isMoving = true;
 
@@ -921,6 +994,7 @@ window.cancelClickToMove = () => {
     playerFollowingPath = false;
     playerFinalGoal     = null;
     ++playerPathRequestId; // invalidate any pending EasyStar callbacks
+    directWalk.armed = false;
     isMoving            = false;
     targetPoint         = null;
     holdWalkActive      = false;
@@ -1032,6 +1106,12 @@ export function updatePlayerMovement() {
         window.playerCombat.showGuardPose();
         updateFootstepSound(false);
         return;
+    }
+
+    // A dialog opened while an arrow was held: stop walking (the keydown guard drops new presses)
+    if (isKeyboardMoving && openModalCount() > 0) {
+        clearKeyboardMovement();
+        player.body.setVelocity(0, 0);
     }
 
     // Handle keyboard movement (takes priority over mouse movement)
@@ -1406,6 +1486,23 @@ function updatePlayerMouseMovement() {
     // Skip while hold-to-walk is active: the player is steering into the obstacle on
     // purpose, so cancelling movement here would just be re-engaged next frame,
     // flickering between walk and idle animations. Physics already holds them at the wall.
+    // A straight walk from movePlayerToPoint first watches for a stall: line of sight was checked
+    // once, against fixed bodies, and a chair turns solid when its sitter mounts (R1 m4). With
+    // under a third of the free-walk gain over DIRECT_WALK_STALL_MS (wall time, so a 360 Hz display is no different) it replans through the grid
+    // once; blocked on one axis while sliding along a wall still gains ground, so that walk goes on.
+    // After the replan a contact stops it as before.
+    if (!playerFollowingPath && !holdWalkActive && directWalk.armed) {
+        const verdict = directWalkStall(directWalk, { blocked: player.body.blocked.none === false, dist: Math.sqrt(distanceSq), now: gameRef?.loop?.time ?? performance.now() }, { speed: MOVEMENT_SPEED });
+        if (verdict === 'wait') return;
+        if (verdict === 'replan') {
+            const goal = targetPoint;
+            player.body.setVelocity(0, 0);
+            console.log(`🖱️ Direct walk stalled at feet(${px.toFixed(0)},${py.toFixed(0)}): replanning to (${goal.x.toFixed(0)},${goal.y.toFixed(0)}) through the grid`);
+            window.__playerWalkReplans = (window.__playerWalkReplans || 0) + 1;
+            movePlayerToPoint(goal.x, goal.y, { avoidNpcs: !!playerLosOpts?.avoidNpcs, replan: true });
+            return;
+        }
+    }
     if (!playerFollowingPath && !holdWalkActive && player.body.blocked.none === false) {
         isMoving = false;
         playerPath = [];

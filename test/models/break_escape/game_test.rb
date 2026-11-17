@@ -25,6 +25,21 @@ module BreakEscape
       )
     end
 
+    test "rooms_connected? matches an exit that lists several rooms" do
+      @game.scenario_data = {
+        "startRoom" => "hall",
+        "rooms" => {
+          "hall" => { "connections" => { "north" => ["office", "kitchen"] } },
+          "office" => { "connections" => {} },
+          "kitchen" => { "connections" => {} },
+          "vault" => { "connections" => {} }
+        }
+      }
+      assert @game.send(:rooms_connected?, "hall", "kitchen")
+      assert @game.send(:rooms_connected?, "office", "hall")
+      refute @game.send(:rooms_connected?, "hall", "vault")
+    end
+
     test "should belong to player and mission" do
       assert @game.player
       assert @game.mission
@@ -46,6 +61,23 @@ module BreakEscape
       @game.merge_global_variables!("other" => 2)
       @game.save!
       assert_equal longer, @game.reload.player_state["globalVariables"]["se_awareness_records"]
+    end
+
+    test "revoked_card_ids merges grow-only: a client cannot un-revoke a card" do
+      @game.merge_global_variables!("revoked_card_ids" => ["clerk_card"])
+      @game.save!
+      assert_equal ["clerk_card"], @game.reload.player_state["globalVariables"]["revoked_card_ids"]
+
+      # A later sync adds a second cancelled card: the union keeps both.
+      @game.merge_global_variables!("revoked_card_ids" => ["guard_card"])
+      @game.save!
+      assert_equal %w[clerk_card guard_card], @game.reload.player_state["globalVariables"]["revoked_card_ids"].sort
+
+      # A client that resends an empty array, or drops the key with null, cannot clear it.
+      @game.merge_global_variables!("revoked_card_ids" => [])
+      @game.merge_global_variables!("revoked_card_ids" => nil)
+      @game.save!
+      assert_equal %w[clerk_card guard_card], @game.reload.player_state["globalVariables"]["revoked_card_ids"].sort
     end
 
     test "NPC drop persists the full held item definition and survives pickup" do
@@ -155,7 +187,7 @@ module BreakEscape
         ['opens_lock-only keys: hidden', { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, { 'type' => 'key', 'name' => 'Office Key', 'opens_lock' => 'office' }, true],
         ['opens_lock-only keys, different locks: kept', { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'a' }, { 'type' => 'key', 'name' => 'Key', 'opens_lock' => 'b' }, false],
         ['different type, same name: kept', { 'type' => 'notes', 'name' => 'Locked Briefcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase' }, false],
-        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true],
+        ['room item with no id or name: hidden by type', { 'type' => 'suitcase' }, { 'type' => 'suitcase', 'name' => 'Locked Briefcase', 'id' => 'bag_1' }, true]
       ].freeze
 
     ITEM_FILTER_CASES.each_with_index do |(label, room_item, held, hidden), i|
@@ -485,6 +517,9 @@ module BreakEscape
         { 'type' => 'key', 'opens_lock' => 'door_key_lock', 'name' => 'Door Key' },
         { 'type' => 'key', 'opens_lock' => 'safe_key_lock', 'name' => 'Safe Key' },
         { 'type' => 'key', 'opens_lock' => 'case_key_lock', 'name' => 'Case Key' },
+        # The rfid locks require the 'badge' card; a requires-only rfid lock now needs the
+        # player to actually hold it (card_id or opens_lock), not just claim the method.
+        { 'type' => 'keycard', 'opens_lock' => 'badge', 'name' => 'Badge', 'rfid_protocol' => 'EM4100' },
         { 'type' => 'lockpick', 'name' => 'Lock Pick Kit' }
       ]
     end

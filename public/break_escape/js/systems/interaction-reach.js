@@ -10,8 +10,9 @@
  *
  * reachX() gives the x to measure to: the player's own x clamped into the
  * object's horizontal span, so standing below any part of it counts as being at
- * that part. The vertical measure is unchanged (the sprite's y), which keeps
- * every existing stand point valid; this only ever shortens a reach.
+ * that part. The vertical measure is the sprite's y, which keeps every
+ * existing stand point valid; this only ever shortens a reach. reachY() is
+ * the vertical counterpart, for objects marked "wallMounted" only.
  *
  * Doors and NPCs keep their own measures (DOOR_INTERACTION_RANGE_SQ,
  * npc-reach.js). No imports, so the node tests can load this file on its own.
@@ -34,6 +35,27 @@ export function reachX(sprite, fromX) {
     if (!(w > 0)) return sprite.x;
     const left = sprite.x - (sprite.originX ?? 0.5) * w;
     return Math.max(left, Math.min(fromX, left + w));
+}
+
+/**
+ * The y to measure reach to for `sprite`, seen from player y `fromY`: the
+ * vertical counterpart of reachX, but opt-in. Only a scenario object marked
+ * `"wallMounted": true` gets it (a tall wall fixture such as a power socket
+ * whose plate is high on the back wall and whose cable reaches the floor line).
+ * For it, the player's y is clamped into the sprite's vertical span, so standing
+ * level with any part of it counts as being at that part. Every other sprite
+ * (bookcases, vending machines, doors, NPCs, anything unmarked) keeps sprite.y,
+ * so their reach is unchanged. Like reachX it only ever shortens a reach: the
+ * clamped point is never further from fromY than sprite.y is.
+ */
+export function reachY(sprite, fromY) {
+    if (!sprite || !Number.isFinite(sprite.y)) return sprite ? sprite.y : 0;
+    if (sprite._isNPC || sprite.doorProperties || sprite.scenarioData?.wallMounted !== true) return sprite.y;
+    if (!Number.isFinite(fromY) || sprite.rotation) return sprite.y;
+    const h = sprite.displayHeight ?? sprite.height ?? 0;
+    if (!(h > 0)) return sprite.y;
+    const top = sprite.y - (sprite.originY ?? 0.5) * h;
+    return Math.max(top, Math.min(fromY, top + h));
 }
 
 /**

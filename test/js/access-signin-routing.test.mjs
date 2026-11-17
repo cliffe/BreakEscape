@@ -24,7 +24,9 @@ const stubs = {
     './minigame-starters.js': dataUrl('export function startLockpickingMinigame() {} export function startKeySelectionMinigame() {} export function startPinMinigame() {} export function startPasswordMinigame() { globalThis.__passwordStarts++; } export function startRansomwareDisplayMinigame() {} export function startBackupRecoveryMinigame() {} export function startInfusionPumpMinigame() {}'),
     './ui-sounds.js': dataUrl('export function playUISound() {}'),
     '../utils/locked-hint.js': dataUrl(readFileSync(join(js, 'utils/locked-hint.js'), 'utf8')),
+    '../utils/remote-host-text.js': dataUrl(readFileSync(join(js, 'utils/remote-host-text.js'), 'utf8')),
     '../minigames/biometrics/fingerprint-reader-minigame.js': dataUrl('export function startFingerprintReader() {}'),
+    '../utils/lock-scope-refusal.js': dataUrl(readFileSync(join(js, 'utils/lock-scope-refusal.js'), 'utf8')),
     './lockpick-catch.js': dataUrl('export function catchLockpickInView() { return false; }')
 };
 let src = readFileSync(join(js, 'systems/unlock-system.js'), 'utf8');
@@ -387,7 +389,7 @@ test('a click on a switched-off PC says "This PC is off." and opens nothing, wit
     for (const held of [false, true]) {
         reset({ held });
         window.gameState = { globalVariables: { hot_desk_off: true } };
-        const out = await interactLoginPc(pc({ affordance: { offWhen: 'hot_desk_off' } }));
+        const out = await interactLoginPc(pc({ offWhen: 'hot_desk_off' }));
         assert.equal(out, 'off');
         assert.equal(started.length, 0, 'no sign-in screen');
         assert.equal(desktops.length, 0, 'no desktop');
@@ -400,14 +402,14 @@ test('a click on a switched-off PC says "This PC is off." and opens nothing, wit
 test('the { name: value } form of offWhen, and a PC switched back on, which syncs first then opens', async () => {
     reset();
     window.gameState = { globalVariables: { power: 'off' } };
-    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'off');
+    assert.equal(await interactLoginPc(pc({ offWhen: { power: 'off' } })), 'off');
 
     reset();
     const order = [];
     window.gameState = { globalVariables: { power: 'on' } };
     window.stateSync = { sync: async () => { order.push('sync'); return true; } };
     window.ApiClient.loginAccounts = async (pcId) => { order.push('loginAccounts'); return { pc_id: pcId, loginAccounts: TILES }; };
-    assert.equal(await interactLoginPc(pc({ affordance: { offWhen: { power: 'off' } } })), 'signin');
+    assert.equal(await interactLoginPc(pc({ offWhen: { power: 'off' } })), 'signin');
     await settle();
     assert.deepEqual(order, ['sync', 'loginAccounts'], 'the server hears the switch before it is asked');
     assert.equal(started.length, 1);

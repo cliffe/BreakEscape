@@ -1,0 +1,18 @@
+game 2318 (dial_decline)
+dial read: anomaly_detected=true mg=null
+"closed popup"
+banner: "Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline"
+shot dial_decline_banner
+after decline: {"ringer":null,"mg":null}
+"opened agent_0x99"
+thread: {"choices":["1. About the dial reading.","2. Can we get the night crew out of Hall 2?","3. How do I get past the gate?","4. Where do I stand?","5. Nothing right now."],"header":"☎\nCall back","thread":"Agent, status check. Are you inside the facility? | 04:05 | The workshop wants a Level 2 card. Vance hasn't got one. Relay has, and it's old prox, like his. She walks the inverter room. | 04:05 | ☎ | Missed call | Call back | Got your reading. Ring me back. | 04:05"}
+shot dial_decline_thread_after_decline
+hub choice on the dial: ["1. About the dial reading."]
+dialling: {"bar":"CALLING"}
+shot dial_decline_callback_dialling
+callback call: {"bar":"ON CALL | 0:06","subs":["Agent HaX: You rang. Good. Straight to it.","Agent HaX: Nightshade's had a look at your reading. Thirty-three degrees over what the screens show.","AGENT HAX: His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger.","AGENT HAX: ENTROPY feed the control room. That dial isn't on their network."],"choices":["1. Then where do I start?"]}
+shot dial_decline_callback_call
+end: {"bar":null,"subs":[]}
+after: rows=["Missed call","Outgoing call, 0:12"] hub dial choice=[] header=null
+/tts requests: ["agent_0x99","You rang. Good. Straight to it."] ["agent_0x99","Nightshade's had a look at your reading. Thirty-three degrees over what the screens show."] ["agent_0x99","His words: those cells are past safe, and they won't wait for 0800, trigger or no trigger."] ["agent_0x99","ENTROPY feed the control room. That dial isn't on their network."] ["agent_0x99","With how they're driving it. The workshop, off Hall 1."] 
+["global_variable_changed:anomaly_detected@20.7","phone_call_declined:agent_0x99@28.8","phone_call_answered:agent_0x99@41.6 callback","conversation_closed:agent_0x99@54.3"]

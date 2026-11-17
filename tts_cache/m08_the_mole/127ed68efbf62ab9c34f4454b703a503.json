@@ -1,0 +1,13 @@
+{
+  "key": "127ed68efbf62ab9c34f4454b703a503",
+  "npc": "receptionist_ai",
+  "text": "I may not read a passphrase aloud on Level Red. I will observe that facilities spend most of the night near the kettle.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI at reception. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, unnervingly helpful.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:23Z"
+}

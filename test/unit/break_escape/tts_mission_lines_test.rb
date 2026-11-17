@@ -17,6 +17,10 @@ module BreakEscape
   class TtsMissionLinesTest < ActiveSupport::TestCase
     MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest)\z/.freeze
 
+    # Missions whose event barks are checked against the batch's keys (m3):
+    # the missions above plus sis03, whose barks carry the NPC's own name prefix
+    BARK_MISSIONS = /\A(m(0[1-9]|10)_[a-z_]+|lab_physical_pentest|sis03_cyber_insurance)\z/.freeze
+
     # Voiced lines that print a scenario value, by mission. Anything else that
     # prints a variable is either player text (a carried-over global) or game
     # state, and must not be voiced.
@@ -48,6 +52,38 @@ module BreakEscape
 
     def self.resolver(name, game_data)
       TtsLineResolver.new(scenario_name: name, scenario_data: game_data, compile: false)
+    end
+
+    # [file, raw line] for each voiced line that prints a variable. A person-chat
+    # host is read over its whole story. A phone contact is read only over the
+    # knots the extractor voices (TtsLineExtractor.call_knots, video_call_knots
+    # and voicemail_knots): text-thread lines may print variables.
+    def self.printed_variable_lines(ex, allowed)
+      variables = ex.instance_variable_get(:@variables)
+      dynamic = ex.send(:dynamic_variables)
+      stories = {}
+      ex.hosts.each do |host|
+        path = story_file(host['storyPath'])
+        next unless path
+
+        if host['npcType'] == 'phone'
+          ink = JSON.parse(File.read(path))
+          voiced_knots = TtsLineExtractor.call_knots(host, ink) | TtsLineExtractor.video_call_knots(host, ink) |
+                         TtsLineExtractor.voicemail_knots(host)
+          stories[path] = stories.key?(path) && stories[path].nil? ? nil : (stories[path] || Set.new) | voiced_knots
+        else
+          stories[path] = nil
+        end
+      end
+      stories.flat_map do |path, knots|
+        voiced = InkLineWalker.from_file(path, variables: variables, dynamic: dynamic)
+        names = voiced.ink_defaults.keys | variables.keys.map(&:to_s)
+        # Every variable treated as changed in play, except the allowed ones:
+        # a line that resolves only with a variable read as a constant drops out
+        strict = InkLineWalker.from_file(path, variables: variables, dynamic: names - allowed)
+        kept = voiced.lines.select { |line| knots.nil? || knots.include?(TtsLineExtractor.line_knot(line.path)) }
+        (kept.map(&:raw) - strict.lines.map(&:raw)).uniq.map { |raw| [File.basename(path), raw] }
+      end
     end
 
     def self.missions_data
@@ -175,18 +211,8 @@ module BreakEscape
       printed = []
       self.class.missions_data.each do |name, data|
         ex = TtsLineExtractor.new(name, data)
-        variables = ex.instance_variable_get(:@variables)
-        dynamic = ex.send(:dynamic_variables)
-        allowed = PRINTED_ALLOWED.fetch(name, [])
-        ex.hosts.map { |h| self.class.story_file(h['storyPath']) }.compact.uniq.each do |path|
-          voiced = InkLineWalker.from_file(path, variables: variables, dynamic: dynamic)
-          names = voiced.ink_defaults.keys | variables.keys.map(&:to_s)
-          # Every variable treated as changed in play, except the allowed ones:
-          # a line that resolves only with a variable read as a constant drops out
-          strict = InkLineWalker.from_file(path, variables: variables, dynamic: names - allowed)
-          (voiced.lines.map(&:raw) - strict.lines.map(&:raw)).uniq.each do |raw|
-            printed << "#{name} #{File.basename(path)}: #{raw[0, 80]}"
-          end
+        self.class.printed_variable_lines(ex, PRINTED_ALLOWED.fetch(name, [])).each do |file, raw|
+          printed << "#{name} #{file}: #{raw[0, 80]}"
         end
       end
       assert_empty printed, "voiced lines that print a variable"
@@ -236,7 +262,48 @@ module BreakEscape
       readings
     end
 
-    def each_bark(data)
+    test "every event bark the endpoint accepts is a key the batch lists" do
+      checked = Hash.new(0)
+      failures = []
+      # The eleven missions are already built; only sis03 is built here
+      sis03 = 'sis03_cyber_insurance'
+      sis03_raw = JSON.parse(ERB.new(File.read(Engine.root.join('scenarios', sis03, 'scenario.json.erb')))
+                                .result(Mission::ScenarioBinding.new({}).get_binding))
+      rows = self.class.missions_data + [[sis03, sis03_raw, self.class.game_scenario_data(sis03)]]
+      rows.each do |name, raw, game_data|
+        next unless name.match?(BARK_MISSIONS)
+
+        ex = TtsLineExtractor.new(name, raw)
+        resolver = self.class.resolver(name, game_data)
+        # The authored text (raw_event_bark_texts), so the hand strip below is
+        # the only thing that removes a prefix: independent of spoken_bark_text
+        each_bark(game_data, raw: true) do |npc_id, text|
+          npc = TtsLineResolver.find_npc(game_data, npc_id)
+          next unless npc && npc['npcType'] == 'person' && npc['voice'].is_a?(Hash)
+
+          # What npc-barks.js sends: the line with the NPC's own "Name:" prefix
+          # dropped. A plain strip, enough for the barks of these missions (none
+          # needs the id-with-spaces form or the You:/Narrator: line rules, which
+          # tts_line_extractor_barks_test covers).
+          sent = text.sub(/\A(?:#{Regexp.union(npc['displayName'].to_s, npc_id).source})\s*:\s*/i, '')
+          result = resolver.resolve(npc_id, npc, sent)
+          next failures << "#{name} #{npc_id} refused: #{sent[0, 60]}" unless result.line
+
+          voice = ex.voices[npc_id] || npc['voice']
+          key = @svc.cache_key_for(result.line, voice['name'], voice['style'], voice['language'])
+          sent_key = @svc.cache_key_for(sent, voice['name'], voice['style'], voice['language'])
+          checked[name] += 1
+          failures << "#{name} #{npc_id}: batch does not list #{result.line[0, 60]}" unless ex.keys.include?(key)
+          # The key of the text the client sends, not of what the validator returns
+          failures << "#{name} #{npc_id}: batch lacks the sent text #{sent[0, 60]}" unless ex.keys.include?(sent_key)
+        end
+      end
+      assert_empty failures, failures.first(40).join("\n")
+      assert_operator checked['sis03_cyber_insurance'], :>=, 3
+      assert_operator checked.size, :>=, 2
+    end
+
+    def each_bark(data, raw: false)
       seen = Set.new
       npcs = []
       npcs << data['narrator'] if data['narrator']
@@ -247,7 +314,8 @@ module BreakEscape
 
         # Chatter pools are their own rows
         own_chatter = ScenarioBarkValidator.chatter_texts(npc['chatter'])
-        (ScenarioBarkValidator.bark_texts(npc) - own_chatter).each do |text|
+        texts = raw ? ScenarioBarkValidator.raw_event_bark_texts(npc) : ScenarioBarkValidator.bark_texts(npc) - own_chatter
+        texts.each do |text|
           next if TtsService.match_form(text).blank? || !seen.add?([npc['id'], text])
 
           yield npc['id'], text

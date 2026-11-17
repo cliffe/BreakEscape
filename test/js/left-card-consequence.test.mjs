@@ -57,7 +57,7 @@ test('config cached from a later object_revealed when not loaded at install', ()
     const applied = setup(null); // nothing loaded at install
     // Reveal brings the sprite in; cache it.
     window.rooms.office.objects.clerk_card_item = cardWithConfig();
-    window.eventDispatcher.emit('object_revealed:clerk_card_item', { objectId: 'clerk_card_item', leftBehindBy: 'clerk' });
+    window.eventDispatcher.emit('object_revealed:clerk_card_item', { objectId: 'clerk_card_item', owner: 'clerk' });
     delete window.rooms.office.objects.clerk_card_item; // player takes it
     window.eventDispatcher.emit('npc_left_item_gone:clerk', { npcId: 'clerk', itemId: 'clerk_card_item' });
     assert.equal(applied.length, 1);

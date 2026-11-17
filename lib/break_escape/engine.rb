@@ -22,6 +22,15 @@ module BreakEscape
       BreakEscape::ScenarioSchema.boot_check!(app)
     end
 
+    # Step 7, the reload live proof's development-only switch. With BREAK_ESCAPE_FORMAT_TEST_STEP=1
+    # and Rails.env.development?, appends one no-op step (version 900) to FormatUpgrade::STEPS, so a
+    # tab on a game at 0 reloads once. Never acts in test or production, so exporting the variable
+    # and running the suite in the same shell changes nothing.
+    initializer 'break_escape.format_upgrade_test_step' do
+      require_relative 'format_upgrade'
+      BreakEscape::FormatUpgrade.install_dev_test_step!(env: Rails.env)
+    end
+
     # Pundit authorization
     config.after_initialize do
       if defined?(Pundit)

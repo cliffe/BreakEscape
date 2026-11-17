@@ -14,6 +14,7 @@ import { displayDashes } from '../../utils/display-dashes.js';
 import { clickElement, typeInto, keyDown, keyUp, sleepFrames, sleep } from './input.js';
 import { logAction } from './log.js';
 import { activeMinigameSummary } from './state.js';
+import { openWorkstationPopup } from '../../utils/overlay-open.js';
 
 function current() {
     return window.MinigameFramework?.currentMinigame || null;
@@ -249,6 +250,7 @@ export const minigameBridge = {
         if (!nodes.length) return fail('no-takeable-items', { active: activeMinigameSummary() });
 
         const labelOf = (el) => (el.title || el.alt ||
+            el.querySelector('.desktop-icon-label')?.dataset?.fullName ||
             el.querySelector('.desktop-icon-label')?.textContent || '').trim();
 
         let el;
@@ -482,8 +484,38 @@ export const minigameBridge = {
      * (disableClose cutscenes) correctly stays open.
      */
     async close() {
+        // A gameDisplay modal (a read note, the NIS form) is a plain DOM overlay on top of
+        // everything, not a minigame: close it the way a player does, with a click on its X.
+        // It sits above any minigame, so it goes first; the game's own close logic is untouched.
+        const displayX = document.querySelector('.game-display-dialog .game-modal-close');
+        if (displayX) {
+            clickElement(displayX);
+            await sleepFrames(2);
+            const stillOpen = !!document.querySelector('.game-display-dialog');
+            const result = {
+                ok: !stillOpen,
+                closed: 'game-display',
+                stillOpen,
+                ...(stillOpen ? { reason: 'game-display-did-not-close' } : {}),
+                nowActive: activeMinigameSummary()?.id ?? null,
+                returnedToContainer: false
+            };
+            logAction('minigame.close', { popup: 'game-display' }, result);
+            return result;
+        }
         const mg = current();
-        if (!mg) return fail('no-active-minigame');
+        if (!mg) {
+            // The CyberChef and lab-sheet popups are plain DOM popups, not minigames: close them
+            // through their own close functions, which re-enable input and drain barks and calls.
+            const popup = openWorkstationPopup();
+            const closeFn = popup === 'laptop' ? window.closeLaptop : popup === 'lab' ? window.closeLabWorkstation : null;
+            if (!closeFn) return fail('no-active-minigame');
+            closeFn();
+            await sleepFrames(2);
+            const result = { ok: true, closed: popup, stillOpen: openWorkstationPopup() !== null, nowActive: null, returnedToContainer: false };
+            logAction('minigame.close', { popup }, result);
+            return result;
+        }
         // The reopen isn't next-frame: notes/text-file/phone viewers reopen
         // their parent container via a real `setTimeout(..., 100)` in their
         // own onComplete (see notes-minigame.js), fired from the CLOSE flow,

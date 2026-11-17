@@ -171,6 +171,14 @@ function softenField(field, rad) {
 }
 
 export class DustingMinigame extends MinigameScene {
+    // The X sits inside the kit's frame (critique A14), and closes it with Esc: the steps
+    // have no Close button of their own any more (A16)
+    static closeInsideFrame = true;
+
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.dusting-root') || this.gameContainer;
+    }
+
     constructor(container, params) {
         super(container, { ...params, showCancel: false });
         this.item = params.item;
@@ -261,7 +269,7 @@ export class DustingMinigame extends MinigameScene {
         this.gameContainer.removeAttribute('style');
 
         this.gameContainer.innerHTML = `
-            <div class="dusting-root" data-step="examine">
+            <div class="dusting-root pixel-scroll" data-step="examine">
                 <div class="dusting-title"><h2>Fingerprint kit</h2><span class="dusting-object"></span></div>
                 <ol class="dusting-steps" aria-label="Steps">
                     ${STEPS.map((s, i) => `<li data-step="${s}"><span class="dusting-step-num">${i + 1}</span> ${STEP_NAMES[s]}</li>`).join('')}
@@ -434,12 +442,11 @@ export class DustingMinigame extends MinigameScene {
             <h3>${escapeHtml(d.name || 'Surface')}</h3>
             ${observations ? `<p>${escapeHtml(observations)}</p>` : ''}
             ${text ? `<p class="dusting-quote">${escapeHtml(text)}</p>` : ''}
-            <p class="dusting-surface-line"><strong>Surface:</strong> ${escapeHtml(this.surface.description)}</p>
+            <p class="dusting-surface-line"><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>
             ${prior}
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="start">Dust for prints</button>
                 <button class="dusting-btn" data-action="use-normally">Use normally</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
@@ -452,7 +459,6 @@ export class DustingMinigame extends MinigameScene {
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-hint" data-action="hint" ${this.hintReady ? '' : 'hidden'}>Hint</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
@@ -460,14 +466,14 @@ export class DustingMinigame extends MinigameScene {
         const jars = Object.values(POWDERS).map((pw, i) => `
             <button class="dusting-jar" data-action="powder" data-powder="${pw.id}" aria-pressed="${this.powder === pw.id}" title="Press ${i + 1}">
                 <span data-slot="jar-${pw.id}" data-scale="2"></span>
-                <span class="dusting-jar-text"><strong>${i + 1}. ${escapeHtml(pw.label)}</strong><br>${escapeHtml(pw.kitLabel)}</span>
+                <span class="dusting-jar-text"><span class="mg-section-label">${i + 1}. ${escapeHtml(pw.label)}</span><br>${escapeHtml(pw.kitLabel)}</span>
             </button>`).join('');
         return `
             <h3>Choose a powder</h3>
-            <p><strong>Surface:</strong> ${escapeHtml(this.surface.description)}</p>
+            <p><span class="mg-field-label">Surface:</span> ${escapeHtml(this.surface.description)}</p>
             <p>Pick the powder whose label fits. If it does not show well you can change it.</p>
             <div class="dusting-jars">${jars}</div>
-            <div class="dusting-buttons"><button class="dusting-btn" data-action="close">Close</button></div>`;
+`;
     }
 
     _brushButtons() {
@@ -487,10 +493,10 @@ export class DustingMinigame extends MinigameScene {
             <h3>Dust the print</h3>
             <p>Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</p>
             <div class="dusting-tools">${this._brushButtons()}</div>
-            <p class="dusting-powder-line">Powder: <strong>${escapeHtml(pw.label)}</strong></p>
+            <p class="dusting-powder-line"><span class="mg-field-label">Powder:</span> ${escapeHtml(pw.label)}</p>
             <div class="dusting-meters">
-                <div class="dusting-meter"><label>Coverage <b data-dyn="cov-text"></b></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
-                <div class="dusting-meter"><label>Clarity <b data-dyn="clar-text"></b></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>
+                <div class="dusting-meter"><label>Coverage <span class="dusting-meter-value" data-dyn="cov-text"></span></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
+                <div class="dusting-meter"><label>Clarity <span class="dusting-meter-value" data-dyn="clar-text"></span></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>
                 <p class="dusting-estimate" data-dyn="estimate"></p>
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
@@ -498,7 +504,6 @@ export class DustingMinigame extends MinigameScene {
                 <button class="dusting-btn dusting-primary" data-action="to-lift" data-dyn="lift-btn">Lift (L)</button>
                 <button class="dusting-btn" data-action="puff" aria-pressed="${this.puffMode}" title="Press T">Puff off excess (T)</button>
                 <button class="dusting-btn" data-action="change-powder" title="Press C">Change powder (C)</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
@@ -507,26 +512,25 @@ export class DustingMinigame extends MinigameScene {
             <h3>Lift with tape</h3>
             <p>The tape is laid over the print with air bubbles under it. Rub over it (drag, or hold Space and use the arrows) to press the bubbles out. Bubbles left in leave holes in the lift.</p>
             <div class="dusting-meters">
-                <div class="dusting-meter"><label>Tape pressed <b data-dyn="tape-text"></b></label><div class="dusting-bar"><i data-dyn="tape-bar"></i></div></div>
+                <div class="dusting-meter"><label>Tape pressed <span class="dusting-meter-value" data-dyn="tape-text"></span></label><div class="dusting-bar"><i data-dyn="tape-bar"></i></div></div>
                 <p class="dusting-estimate" data-dyn="estimate"></p>
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
             <div class="dusting-buttons">
                 <button class="dusting-btn dusting-primary" data-action="peel" title="Press P"><span data-slot="tape-roll" data-scale="1"></span> Peel and mount (P)</button>
                 <button class="dusting-btn" data-action="back-dust">Back to dusting</button>
-                <button class="dusting-btn" data-action="close">Close</button>
             </div>`;
     }
 
     _htmlCompare() {
         const q = this.final ? Math.round(this.final.quality * 100) : 0;
         const head = `<h3>Compare and identify</h3>
-            <p class="dusting-result">Lift mounted: <strong>${q}% (${escapeHtml(this.final ? this.final.rating : '')})</strong>.</p>`;
+            <p class="dusting-result">Lift mounted: <span class="dusting-result-value">${q}% (${escapeHtml(this.final ? this.final.rating : '')})</span>.</p>`;
         if (!this.patternOk) {
             const btns = PATTERNS.map(pt => `
                 <button class="dusting-pattern" data-action="pattern" data-pattern="${pt}">
                     <span class="dusting-pattern-art">${PATTERN_SVG[pt]}</span>
-                    <span><strong>${PATTERN_INFO[pt].label}</strong><br>${PATTERN_INFO[pt].desc}</span>
+                    <span><span class="mg-section-label">${PATTERN_INFO[pt].label}</span><br>${PATTERN_INFO[pt].desc}</span>
                 </button>`).join('');
             return `${head}<p>What pattern is your lift? Look for the core (middle) and the triangles where ridges meet.</p>
                 <div class="dusting-patterns">${btns}</div>

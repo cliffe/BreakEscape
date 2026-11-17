@@ -148,6 +148,22 @@ test('no builder file calls a network API', () => {
     }
 });
 
+test('the build client posts only the closed-set keys (page id, target, choices)', async () => {
+    // The network call lives outside the builder folder (systems/se-landing-page-client.js). Its
+    // body must carry only the closed set: no free text, no score. The builder types nothing, so
+    // choices is the raw authored-choice object and rides through unchanged.
+    const { landingPageBuildBody } =
+        await import(pathToFileURL(join(js, 'systems/se-landing-page-client.js')));
+    const body = landingPageBuildBody({ pageId: 'payroll_login', targetId: 'lord', choices: workedChoices });
+    assert.deepEqual(Object.keys(body).sort(), ['choices', 'pageId', 'targetId']);
+    assert.equal(body.choices, workedChoices, 'choices passed through, nothing added');
+    // no score or verdict field leaks in, even if one is handed alongside
+    const padded = landingPageBuildBody({
+        pageId: 'p', targetId: 't', choices: { brand: 'ledgerwell' }, credibility: 99, built: true
+    });
+    assert.deepEqual(Object.keys(padded).sort(), ['choices', 'pageId', 'targetId']);
+});
+
 test('the renderer never imports displayDashes', () => {
     const src = readFileSync(join(builderDir, 'landing-page-render.js'), 'utf8');
     assert.equal(/display-dashes|displayDashes/.test(src.replace(/\/\/.*$/gm, '')), false);
@@ -207,7 +223,20 @@ test('blocked placeholder draws the frame only', () => {
     assert.ok(root.classList.contains('is-blocked'));
     assert.equal(root.querySelector('.lpb-address-text').textContent, 'Blocked address');
     assert.equal(root.querySelector('.lpb-body'), null, 'no page body when blocked');
+    // C-LP2: a deliberately blocked look-alike (a service is chosen) keeps the bare placeholder,
+    // no start hint.
+    assert.equal(root.querySelector('.lpb-preview-empty'), null, 'no empty hint once a choice is made');
     assertDomSafe(root, 'blocked');
+});
+
+test('C-LP2: the empty preview shows a start hint before any choice', () => {
+    const { root, blocked } = renderLandingPage({ pageDef, choices: {}, mode: 'build', doc: freshDoc() });
+    assert.equal(blocked, true, 'nothing chosen is a blocked preview');
+    const hint = root.querySelector('.lpb-preview-empty');
+    assert.ok(hint, 'the empty state has a hint element');
+    assert.match(hint.textContent, /pick a service/i);
+    assert.equal(root.querySelector('.lpb-body'), null, 'still no page body');
+    assertDomSafe(root, 'empty');
 });
 
 test('a blocked address injected straight into the renderer still draws the placeholder', () => {

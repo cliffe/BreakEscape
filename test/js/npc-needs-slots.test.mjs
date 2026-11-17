@@ -22,7 +22,7 @@ const TICKS_PER_MIN = 240;
 // brings the parcel to her own PC, is logged at tick 453 as she arrives, ahead of the "using"
 // entry, and no longer at tick 494 after the session (a delivery to the own post is the
 // return). Every other entry is as recorded at 4bff74a0b.
-const GOLDEN_SIMS_DAY = 'a87a652c0b54abe9d8c237f6ba4b8cc097f193097a546267bbcf6b5b86b86948';
+const GOLDEN_SIMS_DAY = 'd6dbd5a503737c56739831f658d6c6be9c8ed2eceee8278a7b5a11fade52381e';   // the kitchen cooler at 40 s (E7 to E9 R1 m1)
 
 test('a plain item is consumed and the sims-day log is byte-identical to before slice 7', () => {
     const { sys, w } = runSimsDay(NPCNeedsSystem, { minutes: 15 });

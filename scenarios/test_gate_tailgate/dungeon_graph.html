@@ -141,8 +141,8 @@
       <tr><th>VM flag challenges</th><td class="val">0</td></tr>
       <tr><th>AND-gate convergences</th><td class="val">0</td></tr>
       <tr><th>Physical locks (puzzle)</th><td class="val">1</td></tr>
-      <tr><th>Rooms</th><td class="val">1</td></tr>
-      <tr><th>Puzzle nodes / edges</th><td class="val">2 / 1</td></tr>
+      <tr><th>Rooms</th><td class="val">2</td></tr>
+      <tr><th>Puzzle nodes / edges</th><td class="val">4 / 2</td></tr>
       <tr><th>Story nodes / edges</th><td class="val">1 / 0</td></tr>
     </table>
   </div>
@@ -171,14 +171,17 @@
   node_start(("▶"))
   node_start --> office
 
-  door_staff_room["Staff Only<br/>RFID lock"]
+  door_staff_room["Staff Only<br/>RFID lock<br/>gated: credential or server pass"]
   staff_room("Staff Only")
-  office("Office")
+  grant_visitor_lanyard_worn{"Visitor lanyard<br/>(granted)"}
+  office("Open-Plan Office")
 
   door_staff_room --> staff_room
+  office -.-> grant_visitor_lanyard_worn
 
   class door_staff_room lock
   class staff_room,office room
+  class grant_visitor_lanyard_worn item
   class node_start start`,
       story:      `flowchart TD
 
@@ -221,16 +224,19 @@
   node_start(("▶"))
   node_start --> office
 
-  door_staff_room["Staff Only<br/>RFID lock"]
+  door_staff_room["Staff Only<br/>RFID lock<br/>gated: credential or server pass"]
   staff_room("Staff Only")
+  grant_visitor_lanyard_worn{"Visitor lanyard<br/>(granted)"}
+  office("Open-Plan Office")
   aim_enter{{"Reach the staff room"}}
-  office("Office")
 
   door_staff_room --> staff_room
+  office -.-> grant_visitor_lanyard_worn
   door_staff_room -.-> aim_enter
 
   class door_staff_room lock
   class staff_room,office room
+  class grant_visitor_lanyard_worn item
   class aim_enter aim
   class node_start start`,
       rooms:      `flowchart TD
@@ -288,6 +294,7 @@
   rc_door_reader_3{"Staff door reader"}
   rc_npc_sam_ellery_4("Sam Ellery")
   rc_staff_notice_5{"Staff notice"}
+  rc_grant_visitor_lanyard_worn_6{"Visitor lanyard<br/>(granted)"}
 
   office --> staff_room
   office --> rc_kit_cloner_1
@@ -295,10 +302,11 @@
   office --> rc_door_reader_3
   office --> rc_npc_sam_ellery_4
   staff_room --> rc_staff_notice_5
+  office -.-> rc_grant_visitor_lanyard_worn_6
 
   class office room
   class staff_room lock
-  class rc_kit_cloner_1,rc_visitor_lanyard_2,rc_door_reader_3,rc_staff_notice_5 item
+  class rc_kit_cloner_1,rc_visitor_lanyard_2,rc_door_reader_3,rc_staff_notice_5,rc_grant_visitor_lanyard_worn_6 item
   class rc_npc_sam_ellery_4 npc
   class node_start start`
     };

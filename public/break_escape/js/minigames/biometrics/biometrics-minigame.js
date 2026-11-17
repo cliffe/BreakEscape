@@ -11,6 +11,8 @@ const EXCELLENT_LIFT = 0.85;
 
 // Biometrics Minigame Scene implementation (the fingerprint kit panel)
 export class BiometricsMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -32,6 +34,8 @@ export class BiometricsMinigame extends MinigameScene {
     init() {
         // Call parent init to set up common components
         super.init();
+        // One scanner-panel look, themed by this scanner's accent (css/scanner-panel.css, A22)
+        this.container.classList.add('scanner-panel', 'scanner-panel--biometrics');
         
         // Set container dimensions to be compact like the Bluetooth scanner
         this.container.className += ' biometrics-minigame-container';
@@ -52,8 +56,8 @@ export class BiometricsMinigame extends MinigameScene {
     createScannerInterface() {
         // Create expand/collapse toggle button
         const expandToggle = document.createElement('div');
-        expandToggle.className = 'biometrics-expand-toggle';
-        expandToggle.innerHTML = '▼';
+        expandToggle.className = 'biometrics-expand-toggle scan-toggle';
+        expandToggle.innerHTML = '+';
         expandToggle.title = 'Expand/Collapse';
         expandToggle.setAttribute('role', 'button');
         expandToggle.setAttribute('tabindex', '0');
@@ -61,14 +65,14 @@ export class BiometricsMinigame extends MinigameScene {
         
         // Create scanner header
         const scannerHeader = document.createElement('div');
-        scannerHeader.className = 'biometrics-scanner-header';
+        scannerHeader.className = 'biometrics-scanner-header scan-header';
         scannerHeader.innerHTML = `
-            <div class="biometrics-scanner-title">
-                <img src="/break_escape/assets/objects/fingerprint.png" alt="Biometric Samples" class="scanner-icon">
+            <div class="biometrics-scanner-title scan-title">
+                <img src="/break_escape/assets/objects/fingerprint.png" alt="Biometric Samples" class="scanner-icon scan-icon">
                 <span>Biometric Samples</span>
                 <span class="samples-count-header">0 samples</span>
             </div>
-            <div class="biometrics-scanner-status">
+            <div class="biometrics-scanner-status scan-status">
                 <div class="scanner-indicator active"></div>
                 <span>Ready</span>
             </div>
@@ -78,7 +82,7 @@ export class BiometricsMinigame extends MinigameScene {
         const searchRoomContainer = document.createElement('div');
         searchRoomContainer.className = 'biometrics-search-room-container';
         searchRoomContainer.innerHTML = `
-            <button id="search-room-btn" class="biometrics-action-btn">
+            <button id="search-room-btn" class="biometrics-action-btn scan-button">
                 <span class="btn-icon btn-icon-search" aria-hidden="true"></span>
                 <span class="btn-text">Search Room for Fingerprints</span>
             </button>
@@ -86,12 +90,12 @@ export class BiometricsMinigame extends MinigameScene {
         
         // Create controls container (for expanded view)
         const controlsContainer = document.createElement('div');
-        controlsContainer.className = 'biometrics-scanner-controls';
+        controlsContainer.className = 'biometrics-scanner-controls scan-controls';
         controlsContainer.innerHTML = `
             <div class="biometrics-search-container">
-                <input type="text" id="biometrics-search" placeholder="Search samples..." class="biometrics-search-input">
+                <input type="text" id="biometrics-search" placeholder="Search samples..." class="biometrics-search-input scan-search">
             </div>
-            <div class="biometrics-categories">
+            <div class="biometrics-categories scan-chips">
                 <div class="biometrics-category active" data-category="all">All</div>
                 <div class="biometrics-category" data-category="fingerprint">Fingerprints</div>
             </div>
@@ -99,13 +103,13 @@ export class BiometricsMinigame extends MinigameScene {
         
         // Create samples list container
         const samplesListContainer = document.createElement('div');
-        samplesListContainer.className = 'biometrics-samples-list-container';
+        samplesListContainer.className = 'biometrics-samples-list-container scan-list-wrap';
         samplesListContainer.innerHTML = `
-            <div class="biometrics-samples-list-header">
+            <div class="biometrics-samples-list-header scan-list-header">
                 <span>Collected Samples</span>
-                <div class="samples-count">0 samples</div>
+                <div class="samples-count scan-count">0 samples</div>
             </div>
-            <div class="biometrics-samples-list" id="biometrics-samples-list"></div>
+            <div class="biometrics-samples-list scan-list pixel-scroll" id="biometrics-samples-list"></div>
         `;
         
         // Field notes: the three pattern types, drawn by the same generator as the prints
@@ -121,7 +125,8 @@ export class BiometricsMinigame extends MinigameScene {
             canvas.setAttribute('aria-label', `Example of a ${note.pattern} pattern`);
             canvas.dataset.pattern = note.pattern;
             const text = document.createElement('div');
-            const name = document.createElement('strong');
+            const name = document.createElement('span');
+            name.className = 'mg-section-label';
             name.textContent = note.pattern;
             text.append(name, document.createTextNode(note.text));
             row.append(canvas, text);
@@ -131,11 +136,13 @@ export class BiometricsMinigame extends MinigameScene {
         this.addEventListener(fieldNotes, 'toggle', () => this.drawFieldNotes());
         
         // Create instructions
-        const instructionsContainer = document.createElement('div');
-        instructionsContainer.className = 'biometrics-scanner-instructions';
+        // A closed "How to use" disclosure, like Field notes, so the samples list keeps the
+        // panel's height (critique A18: the list had none left at 800x600 and below)
+        const instructionsContainer = document.createElement('details');
+        instructionsContainer.className = 'biometrics-scanner-instructions scan-instructions';
         instructionsContainer.innerHTML = `
+            <summary>How to use the kit</summary>
             <div class="instruction-text">
-                <strong>Instructions:</strong><br>
                 • Use "Search Room" to highlight surfaces that carry prints<br>
                 • Click a highlighted surface to dust it and lift the print<br>
                 • Present a lift to a fingerprint reader to try to unlock it<br>
@@ -176,6 +183,9 @@ export class BiometricsMinigame extends MinigameScene {
         const biometricsSearch = document.getElementById('biometrics-search');
         if (biometricsSearch) {
             this.addEventListener(biometricsSearch, 'input', () => this.updateBiometricsPanel());
+            // keep typed letters away from the game's key handler (as the BLE panel does)
+            this.addEventListener(biometricsSearch, 'keydown', (e) => e.stopPropagation());
+            this.addEventListener(biometricsSearch, 'keyup', (e) => e.stopPropagation());
         }
         
         // Category filters
@@ -208,12 +218,12 @@ export class BiometricsMinigame extends MinigameScene {
             if (isExpanded) {
                 // Collapse
                 this.container.classList.remove('expanded');
-                expandToggle.innerHTML = '▼';
+                expandToggle.innerHTML = '+';
                 expandToggle.title = 'Expand';
             } else {
                 // Expand
                 this.container.classList.add('expanded');
-                expandToggle.innerHTML = '▲';
+                expandToggle.innerHTML = '-';
                 expandToggle.title = 'Collapse';
             }
         });
@@ -394,7 +404,8 @@ export class BiometricsMinigame extends MinigameScene {
             
             const header = document.createElement('div');
             header.className = 'sample-header';
-            const name = document.createElement('strong');
+            const name = document.createElement('span');
+            name.className = 'mg-section-label';
             name.textContent = displayDashes(labelForSample(sample));
             const type = document.createElement('span');
             type.className = 'sample-type';

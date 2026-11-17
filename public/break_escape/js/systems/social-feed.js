@@ -31,6 +31,14 @@ const REPLY_IDS = ['replyToNpc', 'replyToPerson', 'namedNpc', 'namedPerson'];
 
 const isStr = (v) => typeof v === 'string' && v.length > 0;
 
+/**
+ * Friendface reactions (docs/achitechture/FRIENDFACE_REACTIONS_PLAN.md section 6). The fixed key
+ * set, in display order; a copy of AccessWork::REACTION_KEYS (a test checks they match). The
+ * labels are engine UI labels, never spoken.
+ */
+export const REACTION_KEYS = ['like', 'laugh', 'sad', 'angry'];
+export const REACTION_LABELS = { like: 'Like', laugh: 'Laugh', sad: 'Sad', angry: 'Angry' };
+
 /** A post block as the browser renders it: string fields only, an id required; else null. */
 export function cleanPost(raw) {
     if (!raw || typeof raw !== 'object' || !isStr(raw.id)) return null;
@@ -110,6 +118,8 @@ export class SocialFeed {
         this.inFlight = new Set();
         this.retrying = new Set();   // npcIds with one retry waiting (the use it belongs to)
         this.requests = 0;
+        // postId -> Map(reactorNpcId -> { key, person }); Maps, so no server string is an object key
+        this.reactions = new Map();
     }
 
     /**
@@ -172,7 +182,64 @@ export class SocialFeed {
         if (!body || typeof body !== 'object') return false;
         if (body.done === true) this.done.add(npcId);
         if (!body.post) return false;
-        return this._add(npcId, body, { live: true });
+        // Reactions first, so the npc_posted re-render already draws them (on this post too)
+        const fresh = [];
+        for (const r of Array.isArray(body.reactions) ? body.reactions : []) {
+            if (r && typeof r === 'object' && this._react(r.postId, r.npc, r.person, r.key)) fresh.push(r);
+        }
+        const added = this._add(npcId, body, { live: true });
+        for (const r of fresh) {
+            const data = { npcId: r.npc, postId: r.postId, key: r.key };
+            const target = this._stored(r.postId);
+            if (target) {
+                data.site = target.entry.site;
+                data.targetNpc = target.npcId;
+                data.targetPerson = target.entry.person;
+                if (SocialFeed.isReply(target.entry) && isStr(target.entry.replyToPerson)) {
+                    data.targetReplyToPerson = target.entry.replyToPerson;
+                }
+            } else if (isStr(body.site)) {
+                data.site = body.site;
+            }
+            this.deps.emit?.(`npc_reacted:${r.npc}`, data);
+        }
+        return added;
+    }
+
+    /** Stores one reaction; the first per (post, reactor) wins. Returns whether it was new. */
+    _react(postId, npcId, person, key) {
+        if (!isStr(postId) || !isStr(npcId) || !REACTION_KEYS.includes(key)) return false;
+        let byNpc = this.reactions.get(postId);
+        if (!byNpc) {
+            byNpc = new Map();
+            this.reactions.set(postId, byNpc);
+        }
+        if (byNpc.has(npcId)) return false;
+        byNpc.set(npcId, { key, person: isStr(person) ? person : null });
+        return true;
+    }
+
+    /** The stored post with this id, as { npcId, entry }, or null. */
+    _stored(postId) {
+        for (const [npcId, list] of this.posts) {
+            const entry = list.find((p) => p.post.id === postId);
+            if (entry) return { npcId, entry };
+        }
+        return null;
+    }
+
+    /**
+     * A post's reactions: [{ key, label, people: [{ npcId, person }] }] in key order, empty keys
+     * left out, people sorted by NPC id (so live and restored give the same list).
+     */
+    reactionsFor(postId) {
+        const byNpc = isStr(postId) ? this.reactions.get(postId) : null;
+        if (!byNpc) return [];
+        const ids = [...byNpc.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+        return REACTION_KEYS.map((key) => ({
+            key, label: REACTION_LABELS[key],
+            people: ids.filter((id) => byNpc.get(id).key === key).map((id) => ({ npcId: id, person: byNpc.get(id).person }))
+        })).filter((g) => g.people.length > 0);
     }
 
     /** GET /scenario's feedPosts: { npcId: { site, person, posts: [{ index, post, fact }], done } }. */
@@ -182,6 +249,10 @@ export class SocialFeed {
             if (!f || typeof f !== 'object') continue;
             for (const item of Array.isArray(f.posts) ? f.posts : []) {
                 this._add(npcId, { ...item, site: f.site, person: f.person }, { live: false });
+                const pid = item && item.post && item.post.id;
+                for (const r of Array.isArray(item && item.reactions) ? item.reactions : []) {
+                    if (r && typeof r === 'object') this._react(pid, r.npc, r.person, r.key);
+                }
             }
             if (f.done === true) this.done.add(npcId);
         }

@@ -34,6 +34,13 @@ export class ObjectivesManager {
     this.syncTimeouts = {};   // Debounced sync timers
     this.initialized = false;
 
+    // Bounded in-memory re-send queue of enter_room completions that failed for a
+    // transient or network reason (plan section 8.3). A Set keyed by task id, so
+    // re-queuing an id is a no-op and the queue holds at most one entry per
+    // enter_room task. Never part of any sync payload (SYNC SIZE RULE).
+    this.enterRoomQueue = new Set();
+    this._drainingEnterRoomQueue = false;
+
     this.setupEventListeners();
 
     // Teach the ending warning how to rebuild a held missionConclusion-aim ending after a reload
@@ -41,6 +48,12 @@ export class ObjectivesManager {
     if (typeof window !== 'undefined') {
       window.endingCheck?.registerRebuilder?.('aim', (record) =>
         (record?.taskId ? () => this.completeTask(record.taskId) : null));
+
+      // Reconnect drain: when the browser comes back online, re-post any queued
+      // enter_room completions (the load-bearing reconnect trigger, plan section 8.3).
+      if (typeof window.addEventListener === 'function') {
+        window.addEventListener('online', () => this.drainEnterRoomQueue());
+      }
     }
   }
   
@@ -110,6 +123,21 @@ export class ObjectivesManager {
     this.initialized = true;
     console.log(`📋 Objectives initialized: ${this.aims.length} aims, ${Object.keys(this.taskIndex).length} tasks`);
     this.notifyListeners();
+
+    // Init replay (plan section 8.3): if the avatar already stands in a room on a
+    // reload-in-place, the single post-reload room_entered auto-emit may have fired
+    // before this manager finished initialising (handleRoomEntered returns early
+    // while !this.initialized), dropping the only emit until the next crossing.
+    // Replay the current room once now that tasks are loaded. Idempotent:
+    // handleRoomEntered only completes an active enter_room task for that room,
+    // completeTask early-returns for a completed/completing task, and the server
+    // check is idempotent, so this can never double-complete or complete a task for
+    // a room the player has not reached. A no-op if no room is set yet (init ran
+    // before the first tick), in which case the tick's own emit is caught.
+    if (typeof window !== 'undefined' && typeof window.currentPlayerRoom === 'string'
+        && window.currentPlayerRoom !== '') {
+      this.handleRoomEntered(window.currentPlayerRoom);
+    }
   }
   
   /**
@@ -329,7 +357,11 @@ export class ObjectivesManager {
     
     // A sign-in on a sign-in PC meets an unlock_object task on that PC (access model 5.3).
     // pc-sessions.js also emits pc_signed_in:<pcId>; listening to the bare name counts once.
+    // A relay sign-in (an assist invite, keyring K3c 8.3) is the holder's session, not the
+    // player's sign-in there: it meets no task, as the server's signedInPcs never counts it.
+    // A session token (K5) is no lasting sign-in either: the server never records it in signedInPcs.
     this.eventDispatcher.on('pc_signed_in', (data) => {
+      if (data?.relay === true || data?.token === true) return;
       if (data?.pcId) this.handleObjectUnlock(data.pcId, data.pcId, data.pcId);
     });
 
@@ -616,7 +648,48 @@ export class ObjectivesManager {
    * ("NPC not encountered") comes back with success:false and no transient
    * flag, and is returned on the first attempt without retrying.
    */
+  /**
+   * Flush pending client state (globals among it) to the server before a
+   * task-completion or skip POST. A global named in a mission's
+   * concludeRequires.globals, set on the same beat as the task, reaches the
+   * server only with the state sync; without this flush the completion POST can
+   * land first, and the server warns "Not Yet..." over an ending that concludes a
+   * moment later (the conclude race). Mirrors concludeMission() in
+   * music/scenario-music-events.js, which already does this before POST .../conclude.
+   *
+   * StateSync.sync() sends buildChanges() -- deltas only, and no request at all
+   * when nothing changed -- so this never grows the synced state (SYNC SIZE RULE).
+   * It never rejects. Called twice: the second is a no-op if the first saved, a
+   * resend if the first was answered stale.
+   */
+  async flushPendingGlobals() {
+    await window.stateSync?.sync?.();
+    await window.stateSync?.sync?.();
+  }
+
+  /**
+   * Does this scenario gate any mission conclusion on a global variable
+   * (`concludeRequires.globals`)? Only such scenarios can hit the conclude race,
+   * so only they pay for the pre-flush before the completion/skip POST; every
+   * other scenario keeps its original timing. Computed once and cached.
+   */
+  scenarioGatesOnGlobals() {
+    if (this._gatesOnGlobals === undefined) {
+      this._gatesOnGlobals = this.aims.some(aim =>
+        Array.isArray(aim.concludeRequires?.globals) && aim.concludeRequires.globals.length > 0);
+    }
+    return this._gatesOnGlobals;
+  }
+
   async serverCompleteTaskWithRetry(taskId, attempts = 4) {
+    // Order the pending global sync before the completion POST (the conclude race).
+    // Only scenarios that gate a conclusion on a global need this, and one sync
+    // round-trip carries the global; scenarios with no global gate keep their
+    // original timing. The warning fallback below re-flushes and re-posts if a
+    // tight residual race still slips through.
+    if (this.scenarioGatesOnGlobals()) {
+      await window.stateSync?.sync?.();
+    }
     let last = { success: false, error: 'No attempt made' };
     for (let i = 0; i < attempts; i++) {
       last = await this.serverCompleteTask(taskId);
@@ -626,6 +699,61 @@ export class ObjectivesManager {
       await new Promise(resolve => setTimeout(resolve, delay));
     }
     return last;
+  }
+
+  /**
+   * Await one state sync for ordering only, swallowing a rejection. The enter_room
+   * check passes on durable server state regardless of this sync, so a rejecting or
+   * absent sync must never block or fail the completion POST (plan section 8.3).
+   */
+  async safeSyncOnce() {
+    try {
+      await window.stateSync?.sync?.();
+    } catch (_e) {
+      // Awaited for ordering, never for success.
+    }
+  }
+
+  /**
+   * Add an enter_room completion that failed for a transient or network reason to
+   * the bounded re-send queue (plan section 8.3). Keyed by task id (a Set), so
+   * re-queuing is a no-op and the queue cannot grow per attempt. Only enter_room
+   * tasks enter it; every other task keeps its current behaviour.
+   */
+  enqueueEnterRoom(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.type !== 'enter_room') return;
+    this.enterRoomQueue.add(taskId);
+  }
+
+  /**
+   * Re-post queued enter_room completions. Fired from the browser `online` event
+   * (the reconnect trigger) and, opportunistically, after the syncs this manager
+   * itself awaits (the enter_room pre-flush and the inline retryable re-sync).
+   * Removes each entry, then re-runs the full this.completeTask(taskId) path, so a
+   * drained completion that ends a mission still fires the end-screen and
+   * conclude-race handling. A fresh transient, a still-`retryable` enter_room refusal
+   * (R1 minor 2) or a thrown failure re-adds the id (the feed rule in completeTask);
+   * a drained entry that comes back success or a genuinely non-retryable refusal is
+   * dropped. A re-added id cannot retry forever: each drain is one completeTask run
+   * and is triggered only by the `online` event or a manager sync, never by the drain
+   * itself (re-entry guarded, so a drain-triggered sync does not recurse), so a forge
+   * stays queued without spinning. The server's already-completed branch makes a
+   * duplicate a no-op.
+   */
+  async drainEnterRoomQueue() {
+    if (this._drainingEnterRoomQueue) return;
+    if (!this.enterRoomQueue || this.enterRoomQueue.size === 0) return;
+    this._drainingEnterRoomQueue = true;
+    try {
+      const ids = Array.from(this.enterRoomQueue);
+      for (const taskId of ids) {
+        this.enterRoomQueue.delete(taskId);
+        await this.completeTask(taskId);
+      }
+    } finally {
+      this._drainingEnterRoomQueue = false;
+    }
   }
 
   /**
@@ -687,13 +815,72 @@ export class ObjectivesManager {
 
     // Server validation
     try {
-      const response = await this.serverCompleteTaskWithRetry(taskId);
+      // enter_room pre-flush (plan section 8.3): order the soft currentRoom signal
+      // before the completion POST so the server's player_reached_room? sees the
+      // latest synced room. Awaited for ordering only (safeSyncOnce swallows a
+      // rejection); the durable unlockedRooms/npcRouteRooms write carries the check,
+      // so a rejecting, aborted or absent sync never blocks the POST. Also drain any
+      // queued enter_room completions while we are flushing.
+      if (task.type === 'enter_room') {
+        await this.safeSyncOnce();
+        void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
+      }
+
+      let response = await this.serverCompleteTaskWithRetry(taskId);
+
+      // Inline retryable re-post (plan section 8.3): a `retryable` refusal
+      // ('Room not reached') means the durable membership may not have reached the
+      // completion yet (an honest ordering gap) or the room was never reached (a
+      // forge). Re-sync once (for ordering, never for success) and re-post once.
+      // An honest gap self-heals. A still-`retryable` result after the re-post is
+      // enqueued below (R1 minor 2): once Chunk A's npcRouteRooms lands, a separate
+      // method:npc route POST may still be in flight, so an honest player can briefly
+      // be refused while the membership is written; the queue carries it to the next
+      // drain rather than showing a hard block, and the honest player is never
+      // refused. A forge is refused there too, stays queued and never completes (the
+      // server keeps refusing; each drain is one completeTask run). A transient
+      // re-post result (a network blip during that single re-post) also falls to the
+      // transient path below (R9 minor 1). Scoped to enter_room (review R2 minor 1): the
+      // pre-flush and the enqueue are already enter_room-only, and only the enter_room branch
+      // of complete_task! returns `retryable`, so this matches the retry to its stated scope
+      // and keeps a future task type that gains a `retryable` refusal from a spurious re-post.
+      if (!response.success && response.retryable && task.type === 'enter_room') {
+        await this.safeSyncOnce();
+        void this.drainEnterRoomQueue(); // fire-and-forget: drain swallows its own errors
+        response = await this.serverCompleteTask(taskId);
+      }
+
+      if (!response.success && task._serverCompleted) {
+        // The server completed this task itself (a credit) while its own POST was in flight and
+        // refused the POST: the server's completion wins, so finish it here instead of reverting
+        this._completeTaskLocally(task, taskId);
+        return;
+      }
+
       if (!response.success) {
-        console.warn(`⚠️ Server rejected task completion: ${response.error}`);
         task.status = 'active'; // Revert on server rejection
         this.replayPendingPickups(task);
-        if (window.gameAlert) {
-          window.gameAlert(response.error || 'Not yet…', 'warning', 'Objective Blocked');
+        if (task.type === 'enter_room' && (response.transient || response.retryable)) {
+          // Offline, a 5xx, an exhausted retry, an inline retryable re-post that then
+          // dropped offline (R9 minor 1), or a still-`retryable` refusal after the one
+          // re-sync and re-post (R1 minor 2 -- an honest route-room race whose
+          // method:npc membership write is still in flight, or a forge). Queue it: the
+          // browser `online` event and the next awaited sync re-post it, and for an
+          // honest crossing the durable membership write persists across the gap, so
+          // the re-post passes once it lands. The honest player is never stranded, so
+          // no hard block here; a forge simply stays queued and never completes (the
+          // server keeps refusing, and each drain is one completeTask run triggered by
+          // `online` or a manager sync, so the queue cannot spin).
+          this.enqueueEnterRoom(taskId);
+          if (window.gameAlert) {
+            window.gameAlert('Could not save that objective yet. It will retry. Keep playing.',
+                             'warning', 'Sync Pending');
+          }
+        } else {
+          console.warn(`⚠️ Server rejected task completion: ${response.error}`);
+          if (window.gameAlert) {
+            window.gameAlert(response.error || 'Not yet…', 'warning', 'Objective Blocked');
+          }
         }
         return;
       }
@@ -703,10 +890,21 @@ export class ObjectivesManager {
         const aim = this.aimIndex[task.aimId];
         this.handleMissionConcluded(aim);
       } else if (response.warning) {
-        // Gate blocked conclusion — inform the player but keep the task completed
-        console.warn(`⚠️ Mission conclusion blocked: ${response.warning}`);
-        if (window.gameAlert) {
-          window.gameAlert(response.warning, 'warning', 'Not Yet…');
+        // Conclude race fallback (second line of defence). The gate is blocked
+        // because a concludeRequires global had not reached the server when this
+        // completion landed. Flush the globals and re-post: the server's
+        // idempotent re-completion re-evaluates the gate and concludes if it is now
+        // met. Only a gate that is STILL unmet after that reaches the player, so the
+        // warning is never merely dropped.
+        await this.flushPendingGlobals();
+        const retry = await this.serverCompleteTask(taskId);
+        if (retry.missionConcluded) {
+          this.handleMissionConcluded(this.aimIndex[task.aimId]);
+        } else if (retry.warning) {
+          console.warn(`⚠️ Mission conclusion blocked: ${retry.warning}`);
+          if (window.gameAlert) {
+            window.gameAlert(retry.warning, 'warning', 'Not Yet…');
+          }
         }
       }
     } catch (error) {
@@ -715,17 +913,74 @@ export class ObjectivesManager {
       // conclusion gated on it can no longer be met. Leave the task active so a
       // later trigger can retry it, and say so plainly.
       console.error('Failed to sync task completion with server:', error);
+      if (task._serverCompleted) {
+        this._completeTaskLocally(task, taskId);
+        return;
+      }
       task.status = 'active';
       this.replayPendingPickups(task);
+      // An enter_room completion that threw (the second failure feed, plan
+      // section 8.3) also enters the re-send queue, so it re-posts on reconnect or
+      // the next awaited sync rather than waiting for the next boundary crossing.
+      if (task.type === 'enter_room') {
+        this.enqueueEnterRoom(taskId);
+      }
       if (window.gameAlert) {
-        window.gameAlert('Could not save that objective. It will retry -- keep playing.',
+        window.gameAlert('Could not save that objective. It will retry. Keep playing.',
                          'error', 'Sync Error');
       }
       return;
     }
 
+    this._completeTaskLocally(task, taskId);
+  }
+
+  /**
+   * A task the server completed on its own (a creditOnPass credit during a sync or door unlock,
+   * reported in serverCompletedTasks). The server already holds it, so this runs only the local
+   * completion (toast, onComplete, aim reveal and check, events) with no POST. A task already
+   * completed here, or unknown to this page, is left alone, and so is one whose own POST is in
+   * flight ('completing'): the server answers that POST "Already completed" and it finishes there.
+   * @param {string} taskId
+   * @returns {boolean} true when the task was completed here
+   */
+  applyServerCompletedTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.status === 'completed') return false;
+    if (task.status === 'completing') {
+      // Its own POST is in flight. If the POST succeeds it finishes there; if the server refuses
+      // it, the server's completion still wins (completeTask checks this flag)
+      task._serverCompleted = true;
+      return false;
+    }
+    this._completeTaskLocally(task, taskId);
+    return true;
+  }
+
+  /**
+   * The server concluded the mission as the result of its own credit (serverMissionConcluded on a
+   * sync or unlock answer): show the ending as a client completion would.
+   * @param {string} taskId the credited task that concluded the mission
+   */
+  applyServerMissionConcluded(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task) return;
+    // The credited task's own aim concluded the mission when it is the missionConclusion aim.
+    // Otherwise (the server's recheck_pending_mission_conclusions! path, where a credit met a
+    // concludeRequires gate held by another aim) fall back to the missionConclusion aim, as
+    // main.js does on reload and as the POST path's server answer implies.
+    const own = this.aimIndex[task.aimId];
+    const aim = own?.missionConclusion
+      ? own
+      : (Object.values(this.aimIndex).find(a => a?.missionConclusion) || own);
+    this.handleMissionConcluded(aim);
+  }
+
+  /** The local tail of a completion, after the server has recorded it. */
+  _completeTaskLocally(task, taskId) {
     // Update local state
     task._pendingPickups = null;
+    delete task._serverCompleted;
     task.status = 'completed';
     task.completedAt = new Date().toISOString();
     
@@ -790,6 +1045,13 @@ export class ObjectivesManager {
 
     const gameId = window.breakEscapeConfig?.gameId;
     if (gameId) {
+      // Order the pending global sync before the skip POST: skip_task! also
+      // re-checks mission conclusions server-side (the conclude race). Only
+      // scenarios that gate a conclusion on a global pay for it; one sync
+      // round-trip carries the global.
+      if (this.scenarioGatesOnGlobals()) {
+        await window.stateSync?.sync?.();
+      }
       try {
         const response = await fetch(`/break_escape/games/${gameId}/objectives/tasks/${taskId}/skip`, {
           method: 'POST',
@@ -925,7 +1187,9 @@ export class ObjectivesManager {
         if (window.npcConversationStateManager) {
           window.npcConversationStateManager.broadcastGlobalVariableChange(varName, value, null);
         }
-        if (window.eventDispatcher) {
+        // An unchanged value was already announced (a server credit wrote it through the shared
+        // writer first), so listeners do not hear it a second time
+        if (window.eventDispatcher && oldValue !== value) {
           window.eventDispatcher.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
         }
       });
@@ -1228,6 +1492,10 @@ export class ObjectivesManager {
 
     console.log(`🏁 Mission concluded via aim: ${aim.aimId}`);
 
+    // Phone calls plan 2.3 row 28: the server has agreed (or this is a reload of a concluded game), so
+    // nothing rings over the credits. The ending check does not close the ringer: a conclude can be refused.
+    try { window.phoneRinger?.close?.(); } catch (e) { console.warn('[ObjectivesManager] phoneRinger.close failed:', e); }
+
     // Emit event for any listeners (music system, analytics, etc.)
     this.eventDispatcher.emit('mission_concluded', { aimId: aim.aimId, aim });
 
@@ -1275,12 +1543,20 @@ export class ObjectivesManager {
     if (window.playUISound) {
       window.playUISound('objective_complete');
     }
+    // A phone: the pill blinks and the task's full text shows as a short line in the notify lane,
+    // wrapping as it needs, with no title over it (review R1 M2)
+    if (window.objectivesPanel?.foldToast?.('Done', task.title)) {
+      window.gameAlert?.(`✓ ${task.title}`, 'success', '', 5000, { brief: true });
+      return;
+    }
     if (window.gameAlert) {
       window.gameAlert(`✓ ${task.title}`, 'success', 'Task Complete');
     }
   }
   
   showTaskUnlockedNotification(task) {
+    // A phone: the pill blinks and its count and sheet show the new task (H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New task', task.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`New Task: ${task.title}`, 'info', 'Objective Updated');
     }
@@ -1290,12 +1566,19 @@ export class ObjectivesManager {
     if (window.playUISound) {
       window.playUISound('objective_complete');
     }
+    // A phone: as for a task, a short line (the pill moves on to the next aim)
+    if (window.objectivesPanel?.foldToast?.('Aim complete', aim.title)) {
+      window.gameAlert?.(`🏆 ${aim.title}`, 'success', '', 5000, { brief: true });
+      return;
+    }
     if (window.gameAlert) {
       window.gameAlert(`🏆 ${aim.title}`, 'success', 'Objective Complete!');
     }
   }
   
   showAimUnlockedNotification(aim) {
+    // A phone: the pill blinks and its line shows the new aim (H1 option A)
+    if (window.objectivesPanel?.foldToast?.('New aim', aim.title)) return;
     if (window.gameAlert) {
       window.gameAlert(`New Objective: ${aim.title}`, 'info', 'Mission Updated');
     }

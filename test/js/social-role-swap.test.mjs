@@ -24,6 +24,7 @@ const dir = mkdtempSync(join(tmpdir(), 'social-role-swap-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/role-swap.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-comparison.js',

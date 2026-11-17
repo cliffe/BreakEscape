@@ -1,0 +1,13 @@
+{
+  "key": "0600c5a4495e6f115888025242e34917",
+  "npc": "amara",
+  "text": "This is really good.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:16:53Z"
+}

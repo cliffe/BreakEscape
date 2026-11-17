@@ -24,6 +24,8 @@ Started 2026-10-08. Request: lighting effects, a dark-room setting where lights 
 
 On (people in them, or default): reception, ward, IT, Dr Kim's office, conference room, office corridor. Motion: server room (darker night ambient), emergency storage (faulty panel), security office, staff room, ward hall, ward vestibule (faulty panel), ward approach.
 
+Office life (2026-11-15): the staff room stays `motion` but starts lit, as Ernesto and Hodan wait there from load. Two small `above` dots by object id: the microwave clock (green) and the boiler standby (amber). Emitter `offsetX`/`offsetY` are world pixels, half what a 2x tour screenshot shows. Details in `scenarios/m02_ransomed_trust/office_life/HANDOVER.md`.
+
 ## Round log
 
 - **Round 1**: system, m02 config. Dark rooms looked right first time; lit rooms indistinguishable from no lighting. Found and fixed the 3.60 fill clip.

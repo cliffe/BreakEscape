@@ -70,6 +70,7 @@ test("'||' in a portraitVariants condition is allowed (global-condition.js)",
   });
 
 test('portraitVariants is a known NPC field', { skip: ruby.status !== 0 && 'ruby not found' }, () => {
-  const src = spawnSync('grep', ['-c', 'gender portraitVariants _comment', join(root, 'scripts/validate_scenario.rb')], { encoding: 'utf8' });
-  assert.equal(src.stdout.trim(), '1');
+  // The unknown-key check reads the schema (no hand list), so the field is known when the schema declares it.
+  const issues = run('check_unknown_fields(JSON.parse(STDIN.read))');
+  assert.ok(!issues.some(s => s.includes("unknown field 'portraitVariants'")), issues.join('\n'));
 });

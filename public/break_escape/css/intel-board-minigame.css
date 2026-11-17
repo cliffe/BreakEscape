@@ -18,8 +18,8 @@
     overflow: hidden;
     background: #aa7446 url('/break_escape/assets/ui/social/board-cork.png') 0 0 / 124px 124px repeat;
     image-rendering: pixelated;
-    border: 4px solid #4a3220;
-    box-shadow: 0 0 0 2px var(--ui-line, #4c5b80), inset 0 0 24px rgba(0, 0, 0, 0.45);
+    border: 16px solid transparent;
+    border-image: var(--se-frame-image, url('/break_escape/assets/ui/social/mail-frame.png')) 8 / 16px stretch;
 }
 
 .ib-root {
@@ -47,8 +47,8 @@
 .ib-title {
     margin: 0;
     font-family: 'Press Start 2P', monospace;
-    font-size: 14px;
-    line-height: 1.4;
+    font-size: 16px;
+    line-height: 24px;
     font-weight: 400;
     flex: 1 1 auto;
 }
@@ -57,13 +57,6 @@
     margin: 0;
     font-size: 16px;
     color: var(--ui-text-dim, #a8b2c8);
-}
-
-.ib-close {
-    min-width: 88px;
-    min-height: 44px;
-    font-family: 'GNF', monospace;
-    cursor: pointer;
 }
 
 .ib-live {
@@ -85,8 +78,7 @@
     gap: 18px;
 }
 
-.ib-scroll:focus-visible,
-.ib-close:focus-visible {
+.ib-scroll:focus-visible {
     outline: 3px solid var(--ui-accent, #ffcc44);
     outline-offset: 2px;
 }
@@ -104,7 +96,8 @@
 .ib-h {
     margin: 0 0 8px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 16px;
+    line-height: 24px;
     font-weight: 400;
     color: #fff;
     text-shadow: 1px 1px 0 #000;

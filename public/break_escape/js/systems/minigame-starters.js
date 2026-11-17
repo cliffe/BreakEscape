@@ -140,7 +140,6 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         itemName: itemName,
         itemImage: itemImage,
         itemObservations: itemObservations,
-        cancelText: 'Close',
         canSwitchToKeyMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
             item.scenarioData.type === 'key'
@@ -420,7 +419,6 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         itemName: itemName,
         itemImage: itemImage,
         itemObservations: itemObservations,
-        cancelText: 'Close',
         canSwitchToPickMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
             item.scenarioData.type === 'lockpick'
@@ -619,18 +617,10 @@ export function startPasswordMinigame(lockable, type, correctPassword, callback,
                 callback(true, result); // Pass result with serverResponse
             } else {
                 console.log('PASSWORD MINIGAME FAILED');
-                if (!window.minigameClosedByDamage?.()) {
-                    // A flag lock says so: a mistyped flag is not "a password"
+                // No toast for the player's own close (UX slice 2a R3 m3) or a refusal the screen said
+                if (!window.minigameClosedByDamage?.() && !result?.closedByPlayer && !result?.refused) {
                     const rej = rejectionAlert(lockable, type, { message: "Failed to enter correct password.", title: 'Password Rejected' });
-                    // A cancel is the player's own act, not a refusal: a short info toast,
-                    // which the 5 s error floor (notifications.js) leaves alone
-                    if (result?.refused) {
-                        // The screen already said the PC is off or out of reach (review R4 m2)
-                    } else if (result?.cancelled) {
-                        window.gameAlert(rej.message, 'info', rej.title, 3000);
-                    } else {
-                        window.gameAlert(appendLockedHint(rej.message, lockable), 'error', rej.title, lockedHintDuration(lockable, 3000, rej.message));
-                    }
+                    window.gameAlert(appendLockedHint(rej.message, lockable), 'error', rej.title, lockedHintDuration(lockable, 3000, rej.message));
                 }
                 callback(false, result);
             }
@@ -861,9 +851,10 @@ export function startWarrantyChecklistMinigame(lockable, options = {}) {
     const minigameData = scenarioData.minigameData || {};
 
     window.MinigameFramework.startMinigame('warranty-checklist', null, {
-        title: options.title || minigameData.title || 'Warranty Compliance Checklist — MC-2023-ALBE-007',
+        title: options.title || minigameData.title || 'Warranty Compliance Checklist',
         lockable,
         warranties: options.warranties || minigameData.warranties,
+        caseRef: options.caseRef || minigameData.caseRef,
         onComplete: (success, result) => {
             if (typeof options.onComplete === 'function') {
                 options.onComplete(success, result);

@@ -35,7 +35,7 @@ test('the bridge exposes the access block', () => {
   const src = readFileSync(join(js, 'systems/test-bridge/index.js'), 'utf8');
   assert.match(src, /import \{ accessBridge \} from '\.\/access\.js';/);
   assert.match(src, /\baccess: accessBridge,/);
-  assert.deepEqual(Object.keys(accessBridge).sort(), ['feed', 'footholds', 'guest', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
+  assert.deepEqual(Object.keys(accessBridge).sort(), ['feed', 'footholds', 'guest', 'hiddenDevices', 'networkView', 'reports', 'savedCards', 'screenTransitions', 'sessions', 'work', 'workstation']);
 });
 
 test('sessions() is empty without pc-sessions.js, and reads its list() or sessions map', () => {
@@ -50,7 +50,7 @@ test('sessions() is empty without pc-sessions.js, and reads its list() or sessio
 });
 
 test('workstation() reports owner, presence, the away record and the screen', () => {
-  const pc = { id: 'jake_pc', lockChance: 0.5 };
+  const pc = { id: 'jake_pc', lockChance: 0.5, owner: 'jake' };
   const { ws } = installWorkstations([pc, { id: 'lamp' }], [{ id: 'jake', needsHome: 'jake_pc' }]);
   let r = accessBridge.workstation('jake_pc');
   assert.deepEqual(r, { ok: true, id: 'jake_pc', workstation: true, owner: 'jake', present: true,
@@ -76,7 +76,7 @@ test('workstation() reports owner, presence, the away record and the screen', ()
 });
 
 test('workstation() uses ownerPresent and lockAt when the module has them, and copies, never shares', () => {
-  const pc = { id: 'jake_pc', locksScreenOnLeave: false, lockAt: 300000 };
+  const pc = { id: 'jake_pc', locksScreenOnLeave: false, lockAt: 300000, owner: 'jake' };
   const { ws } = installWorkstations([pc], [{ id: 'jake', needsHome: 'jake_pc' }], { ownerPresent: () => false });
   const r = accessBridge.workstation('jake_pc');
   assert.equal(r.present, false, 'ownerPresent wins over the away map');
@@ -104,7 +104,7 @@ test('savedCards() lists the copier\'s card ids', () => {
 });
 
 test('workstation() reports the live sprite\'s texture, display size and locked look; screenTransitions() copies the module\'s record', () => {
-  const pc = { id: 'jake_pc', workstation: true };
+  const pc = { id: 'jake_pc', workstation: true, owner: 'jake' };
   installWorkstations([pc], [{ id: 'jake', needsHome: 'jake_pc' }]);
   const sprite = { scenarioData: pc, texture: { key: 'pc_desktop' }, displayWidth: 36, displayHeight: 24 };
   window.rooms = { office: { objects: { o1: sprite } } };
@@ -127,6 +127,15 @@ test('workstation() reports the live sprite\'s texture, display size and locked 
   out[0].locked = false;
   assert.equal(transitions[0].locked, true);
   delete window.rooms; delete window.screenStates;
+});
+
+test('train 31 item 2: workstation() reports the real locked state after a no-owner outright lock (autoLockMin 0), not null', () => {
+  const pc = { id: 'hot_desk', lockType: 'login' };
+  // ian owns ian_pc, not the hot desk, so the hot desk has no owner.
+  const { ws } = installWorkstations([pc], [{ id: 'ian', needsHome: 'ian_pc' }], { policyFor: () => ({ autoLockMin: 0 }) });
+  assert.equal(accessBridge.workstation('hot_desk').screenLocked, null, 'null before any lock');
+  ws.onBorrowedSession('hot_desk', 'ian');
+  assert.equal(accessBridge.workstation('hot_desk').screenLocked, true, 'the outright lock on a no-owner PC is queryable, not null');
 });
 
 // Networks (ACCESS_MODEL_SLICE_9_3_PLAN.md, step 6): the client's footholds and last views.
@@ -208,9 +217,9 @@ test('slice 9.2: work(npcId) reads the plan and the needs state; reports() reads
 
 test('feed() (slice 9.2 C): revealed post ids, done NPCs and the request count; empty without the module', () => {
   delete window.socialFeed;
-  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0, threads: {} });
+  assert.deepEqual(accessBridge.feed(), { revealed: {}, done: [], requests: 0, threads: {}, reactions: {} });
   window.socialFeed = { revealed: () => ({ jake: ['p1', 'p2'] }), done: new Set(['lena']), requests: 3 };
-  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3, threads: {} });
+  assert.deepEqual(accessBridge.feed(), { revealed: { jake: ['p1', 'p2'] }, done: ['lena'], requests: 3, threads: {}, reactions: {} });
   delete window.socialFeed;
 });
 
@@ -227,5 +236,19 @@ test('feed() C3: threads in thread order, on a null-prototype object, a __proto_
   assert.deepEqual(Object.getOwnPropertyDescriptor(out.threads, '__proto__').value, ['r3']);
   assert.equal(Object.getPrototypeOf(out.threads), Object.prototype, 'json() copies it into a plain object');
   assert.equal({}.r3, undefined);
+  delete window.socialFeed;
+});
+
+test('feed() reactions: { postId: { key: [npcId] } } on null-prototype objects, a __proto__ post id included', async () => {
+  const { SocialFeed } = await import('../../public/break_escape/js/systems/social-feed.js');
+  const f = new SocialFeed({ emit() {}, hasFeed: () => true });
+  f.apply('ivy', { index: 0, seq: 1, site: 'friendface', person: 'ivy', post: { id: 'p1', text: 't' },
+    reactions: [{ postId: 'p1', npc: 'tom', person: 'tom', key: 'sad' }, { postId: 'p1', npc: 'kofi', person: 'kofi', key: 'sad' },
+      { postId: '__proto__', npc: 'mei', person: 'mei', key: 'like' }] });
+  window.socialFeed = f;
+  const out = accessBridge.feed();
+  assert.deepEqual(out.reactions.p1, { sad: ['kofi', 'tom'] });
+  assert.deepEqual(Object.getOwnPropertyDescriptor(out.reactions, '__proto__').value, { like: ['mei'] });
+  assert.equal({}.like, undefined);
   delete window.socialFeed;
 });

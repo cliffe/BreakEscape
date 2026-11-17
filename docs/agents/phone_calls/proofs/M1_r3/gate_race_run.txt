@@ -1,0 +1,22 @@
+game 2154 (gate_race)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+terminal closed (t0)
+  room: "restricted_stacks"
+  +8.3s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=false" toast=true {"t":35.6,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+  cage gate tried at +12.3s
+  +12.5s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":39.9,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +14.5s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":41.8,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +16.4s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":43.8,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +18.4s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":45.3,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +19.9s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":47.3,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +21.9s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":49.3,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +23.9s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":51.2,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +25.8s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":53.2,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +27.8s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":55.1,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +29.7s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":57.1,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +31.7s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":59,"ringer":"nightshade_phone:ringing","mg":null,"layer":"Agent 0x47 'Nightshade' | Incoming call | Answer | Decline","laptop":"none"}
+  +33.6s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":60.9,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+  +35.3s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":62.5,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+  +37.1s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":64,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+  +38.6s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=false flag1_read_done=false nightshade_rang=true" toast=true {"t":65.9,"ringer":null,"mg":null,"layer":"","laptop":"none"}
+shot gate_race_gate_race_end

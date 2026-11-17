@@ -340,9 +340,14 @@ test('the grumble is overheard like a chat line (npc_overheard, no npc_chatted);
     assert.equal(ov[0].data.line, null);
     assert.ok(PICTURE_CHATTER.grumble.includes(ov[0].data.picture));
     assert.equal(heard.emitted('npc_chatted').length, 0);
-    const own = turn({ chatter: { grumble: ['Not with him there.'] } });
+    // SIMS-5 design R3 m1: a grumble line is spent only within earshot, as chatter is
+    const own = turn({ chatter: { grumble: ['Not with him there.'] }, hears: () => ({ overheard: true, distance: 60 }) });
     assert.equal(own.sys.getState('sanjay').talking.line, 'Not with him there.');
-    assert.equal(own.emitted('npc_overheard').length, 0, 'not heard: no event');
+    assert.equal(own.emitted('npc_overheard').length, 1);
+    const far = turn({ chatter: { grumble: ['Not with him there.'] } });
+    assert.equal(far.sys.getState('sanjay').talking.line, null, 'out of earshot: no line spent');
+    assert.ok(PICTURE_CHATTER.grumble.includes(far.sys.getState('sanjay').talking.picture), 'the grumble picture instead');
+    assert.equal(far.emitted('npc_overheard').length, 0, 'not heard: no event');
     const off = turn({ chatter: false });
     assert.equal(off.sys.getState('sanjay').talking, null, 'chatter false: no built-in grumble');
 });
@@ -374,7 +379,7 @@ test('deterministic for a seed, with Math.random throwing', () => {
 });
 
 // sha256 of the 15-minute sims-day log, as in npc-needs-slots.test.mjs and npc-left-behind.test.mjs
-const GOLDEN_SIMS_DAY = 'a87a652c0b54abe9d8c237f6ba4b8cc097f193097a546267bbcf6b5b86b86948';
+const GOLDEN_SIMS_DAY = 'd6dbd5a503737c56739831f658d6c6be9c8ed2eceee8278a7b5a11fade52381e';   // the kitchen cooler at 40 s (E7 to E9 R1 m1)
 
 test('the sims day (nobody avoids anyone, nothing parks) is byte-identical to before slice 14', () => {
     const { sys } = runSimsDay(NPCNeedsSystem, { minutes: 15 });

@@ -23,7 +23,7 @@ module BreakEscape
       data['globalVariables']['amy_emailed'] = false
       data['social']['osint']['sites'][0]['profiles'] << { 'person' => 'amy', 'name' => 'Amy', 'posts' => [] }
       amy = data['rooms']['office']['npcs'].find { |n| n['id'] == 'amy' }
-      amy['usbHabit'] = { 'every' => 2, 'setGlobal' => 'amy_emailed' }
+      (amy['habits'] ||= {})['usb'] = { 'every' => 2, 'setGlobal' => 'amy_emailed' }
       amy['itemsHeld'] = Array(amy['itemsHeld']) + [stick.deep_dup] if stick
       amy['needs']['social_media'] = { 'decayPerMin' => 60, 'urgentAt' => 40, 'initial' => 50 }
       amy['feed'] = { 'site' => 'friendface', 'person' => 'amy', 'order' => 'reactive_first',
@@ -61,13 +61,38 @@ module BreakEscape
       @game.reload.player_state
     end
 
-    test 'room data carries work.usb and withholds usbHabit' do
+    test 'room data carries work.usb and withholds the usb habit' do
       build
       get room_game_url(@game, room_id: 'office'), as: :json
       assert_response :success
       amy = response.parsed_body.dig('room', 'npcs').find { |n| n['id'] == 'amy' }
       assert_equal({ 'every' => 2, 'setGlobal' => 'amy_emailed', 'stick' => 'amy_usb' }, amy.dig('work', 'usb'))
-      assert_not amy.key?('usbHabit')
+      refute (amy['habits'] || {}).key?('usb'), 'the usb habit never ships'
+    end
+
+    # Step 8c: the filter keeps an allow list of two habit keys. An NPC carrying every habit key
+    # ships habits holding exactly screen and print; the usb habit still builds work.usb.
+    test 'a room NPC carrying every habits key ships exactly screen and print, and work.usb is still built' do
+      data = scenario
+      amy = data['rooms']['office']['npcs'].find { |n| n['id'] == 'amy' }
+      amy['habits'].merge!('screen' => { 'lockChance' => 1 }, 'print' => { 'fetchAfterSeconds' => [10, 20] },
+                           'locksScreen' => 'always', 'writesDown' => true, 'password' => 'reused',
+                           'passwordPattern' => 'memo', 'holdsDoors' => true)
+      build(data)
+
+      get room_game_url(@game, room_id: 'office'), as: :json
+      room_amy = response.parsed_body.dig('room', 'npcs').find { |n| n['id'] == 'amy' }
+      assert_equal %w[print screen], room_amy['habits'].keys.sort, 'only screen and print ship'
+      assert_equal({ 'lockChance' => 1 }, room_amy['habits']['screen'])
+      %w[locksScreen writesDown password passwordPattern holdsDoors usb].each do |k|
+        refute room_amy['habits'].key?(k), k
+      end
+      assert_equal 'amy_usb', room_amy.dig('work', 'usb', 'stick'), 'work.usb is still built from the usb habit'
+
+      get scenario_game_url(@game), as: :json
+      %w[locksScreen writesDown holdsDoors passwordPattern].each do |k|
+        refute_includes response.body, %("#{k}"), k
+      end
     end
 
     test 'a usb_refused fail is recorded with its global, then the reactive post is served' do
@@ -158,7 +183,7 @@ module BreakEscape
     # count never stands in the way, so only the pace floor is under test here.
     test 'rearmed usb_refused fails inside the park floor come back tooSoon' do
       data = scenario
-      data['rooms']['office']['npcs'].find { |n| n['id'] == 'amy' }['usbHabit']['every'] = 1
+      data['rooms']['office']['npcs'].find { |n| n['id'] == 'amy' }['habits']['usb']['every'] = 1
       build(data)
       t = Time.current
       answers = (0..4).map do |i|

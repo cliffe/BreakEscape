@@ -20,6 +20,7 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-triage-ui-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
+    'minigames/helpers/step-stepper.js',
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-comparison.js',
@@ -546,4 +547,14 @@ test('R18 F-d: extra clicks on a sorted message change nothing, and a row keeps 
     pick(s, 'm3_parcel');
     assert.doesNotMatch($(s, '.tri-live').textContent, /Verdict locked/);
     assert.equal(s.progressEl.textContent, '2 of 4 sorted');
+});
+
+test('C-X7 golden: the step strip outerHTML is unchanged (done, current, future)', () => {
+    const s = open(makeSet());
+    s._showStep('sort');
+    assert.equal(s.stepsEl.outerHTML,
+        '<ol class="tri-steps" aria-label="Steps"><li class="tri-step done" data-step="brief">1 Brief</li>'
+        + '<li class="tri-step current" data-step="sort" aria-current="step">2 Sort</li>'
+        + '<li class="tri-step" data-step="review">3 Review</li>'
+        + '<li class="tri-step" data-step="result">4 Result</li></ol>');
 });

@@ -1,3 +1,6 @@
+// The format guard wraps window.fetch and must run before any other module keeps a
+// reference to fetch, so it is the first import (format-guard-sites.test.mjs enforces this).
+import './format-guard.js';
 import { GAME_CONFIG } from './utils/constants.js';
 import { preload, create, update } from './core/game.js';
 import { initializeNotifications } from './systems/notifications.js';
@@ -23,10 +26,12 @@ import NPCEventDispatcher from './systems/npc-events.js';
 import NPCManager from './systems/npc-manager.js';
 import NPCBarkSystem from './systems/npc-barks.js';
 import NPCLazyLoader from './systems/npc-lazy-loader.js';
+import { installPhoneRinger } from './minigames/phone-chat/phone-ringer-dom.js';
 import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game state
 
 // Import Objectives System
 import { getObjectivesManager } from './systems/objectives-manager.js';
+import { writeGlobal } from './systems/global-writer.js';
 // conclusionScreen type "success": sets window.showSuccessScreen for the objectives manager
 import './ui/success-screen.js';
 // The warning before an ending that leaves optional objectives open: sets window.endingCheck
@@ -41,6 +46,8 @@ import './systems/room-state-sync.js';
 // Import global state sync (persists gameState.globalVariables to server every 30s)
 import { StateSync } from './state-sync.js';
 import { installCaptureClient } from './systems/capture-client.js';
+// Credential keyring K3a: window.keyring and its opened-file set exist from page start
+import './systems/keyring.js';
 
 // Import Music Controller and Widget
 import MusicController from './music/music-controller.js';
@@ -140,6 +147,8 @@ function initializeGame() {
     }
     window.barkSystem = new NPCBarkSystem();
     window.npcManager = new NPCManager(window.eventDispatcher, window.barkSystem);
+    // Incoming phone calls: the ringer and its banner (phone calls plan 2.2)
+    installPhoneRinger(window);
     window.npcLazyLoader = new NPCLazyLoader(window.npcManager);
     console.log('✅ NPC lazy loader initialized');
     
@@ -148,6 +157,8 @@ function initializeGame() {
 
     // Start periodic global state sync (saves globalVariables to server every 30s)
     window.stateSync = new StateSync(30000);
+    // Globals the server writes during a sync or unlock (serverGlobals) reach ink and listeners too
+    window.stateSync.writeGlobal = writeGlobal;
     // Capture client (sync deltas R2, 6a): registers the `captures` sync part and sets
     // window.submitSECapture / window.mirrorSECapture, before any game code captures.
     installCaptureClient(window.stateSync);
@@ -176,6 +187,22 @@ function initializeGame() {
                 manager: window.objectivesManager,
                 config: window.breakEscapeConfig
             });
+        });
+    }
+
+    // Reload handler: re-drive the phish routes once the bootstrap has applied (phish evidence
+    // plan section 11; chunk A review minor 3). The in-memory re-post queues do not survive a
+    // reload, but the durable globalVariables.se_landing_pages keeps the stored build choices and
+    // the victim.submitted marker, so a reload re-posts each built page's build (and, where the
+    // victim submitted, its send) through the idempotent, first-wins routes. Dynamically imported
+    // so the phish network module stays off the main bundle's static graph and harness copy lists.
+    if (window.eventDispatcher) {
+        window.eventDispatcher.once('game_loaded', () => {
+            const globals = window.gameState?.globalVariables;
+            if (!globals || !globals.se_landing_pages) return;
+            import('./systems/se-phish-send-client.js')
+                .then((mod) => mod.redrivePhishEvidence(window.gameScenario, globals))
+                .catch((err) => console.warn('[BreakEscape] phish re-drive failed:', err));
         });
     }
 
@@ -293,6 +320,11 @@ function initializeGame() {
         const hudZoom = Math.max(hudStep < 0 ? 1 / dpr : 1, hudDevicePixels / 2 / dpr);
         document.documentElement.style.setProperty('--hud-zoom', hudZoom);
 
+        // Canvas text that has to stay readable (speech bubbles) picks its own whole-number scale
+        // from this (q105 R1 M2); the bubble system reads it on install and is told of changes
+        window.pixelDisplay = { scale, dpr, hudStep, viewWidth: gameWidth };
+        try { window.npcWorldBubbles?.setDisplayScale?.(window.pixelDisplay); } catch (e) { /* bubbles keep their scale */ }
+
         console.log(`Pixel scale ${scale}x (dpr ${dpr}): game ${gameWidth}x${gameHeight}`);
     };
 
@@ -318,7 +350,16 @@ function initializeGame() {
     window.addEventListener('be:display-settings-changed', handleResize);
     window.addEventListener('orientationchange', handleOrientationChange);
     document.addEventListener('fullscreenchange', handleOrientationChange);
-    
+    // The container can change size with no window 'resize': on touch devices
+    // show.html.erb makes the body 1px taller than the viewport for 700 ms (to
+    // retract the URL bar), which shows a root scrollbar where scrollbars are
+    // classic. A canvas sized in that window stayed 15px short and left a #333
+    // band down the right edge once the scrollbar went (UX slice 4 finish).
+    if (typeof ResizeObserver === 'function') {
+        const containerEl = document.getElementById('game-container');
+        if (containerEl) new ResizeObserver(handleResize).observe(containerEl);
+    }
+
     // Check for LOS visualization debug flag
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.has('debug-los') || urlParams.has('los')) {

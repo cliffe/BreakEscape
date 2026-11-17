@@ -7,7 +7,7 @@ import { FriendfacePhones, openFriendfacePhone, phoneKey, startKey, PHONE_TYPE }
 import { SocialFeed } from '../../public/break_escape/js/systems/social-feed.js';
 
 const OWN = { type: PHONE_TYPE, id: 'mine', name: 'Your phone' };
-const JAKE = { type: PHONE_TYPE, id: 'jake_phone', name: "Jake's phone", phoneOf: 'jake' };
+const JAKE = { type: PHONE_TYPE, id: 'jake_phone', name: "Jake's phone", owner: 'jake' };
 
 function harness(items = [], { held = false } = {}) {
     const log = [];

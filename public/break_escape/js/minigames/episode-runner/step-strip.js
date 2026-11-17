@@ -5,6 +5,11 @@
 // A numbered list of the episode's stages with the current one marked. Every string goes in
 // with textContent. `brand` is optional: it sets --aw-accent on the container (only a plain
 // hex colour is accepted) and draws a wordmark from brand.logoText in CSS, no image.
+//
+// The <ol> of steps is built and updated through the shared stepper helper (C-X7, n5); the
+// nav wrapper, wordmark and brand accent are episode-specific and stay here.
+
+import { buildStepItems, applyStepStates } from '../helpers/step-stepper.js';
 
 export const STAGE_LABELS = Object.freeze({
     brief: 'Brief', osint: 'Research', write: 'Write', flip: 'Your message', defend: 'Defend',
@@ -47,34 +52,25 @@ export function renderStepStrip(container, opts = {}) {
     if (mark) root.appendChild(mark);
     const list = el('ol', 'aw-steps');
     root.appendChild(list);
-    const items = new Map();
-    stages.forEach((id, i) => {
-        const li = el('li', 'aw-step');
-        li.dataset.stage = id;
-        li.append(el('span', 'aw-step-num', String(i + 1)), el('span', 'aw-step-label',
-            typeof labels[id] === 'string' ? labels[id] : id));
-        list.appendChild(li);
-        items.set(id, li);
+    const steps = stages.map((id) => ({ id, label: typeof labels[id] === 'string' ? labels[id] : id }));
+    const items = buildStepItems(list, steps, {
+        stepClass: 'aw-step', dataKey: 'stage', numClass: 'aw-step-num',
+        label: { as: 'span', class: 'aw-step-label' }
     });
 
     function update({ current, done, skipped } = {}) {
         const doneSet = new Set(Array.isArray(done) ? done : []);
         const skipSet = new Set(Array.isArray(skipped) ? skipped : []);
-        for (const [id, li] of items) {
-            // A skipped stage was passed over (never run), so it is shown as skipped, not done:
-            // ticking it "done" claimed the learner did something they did not (E3-6).
+        // A skipped stage was passed over (never run), so it is shown as skipped, not done:
+        // ticking it "done" claimed the learner did something they did not (E3-6).
+        applyStepStates(items, steps, {
+            currentClass: 'aw-step-current', doneClass: 'aw-step-done', skippedClass: 'aw-step-skipped',
+            srClass: 'aw-step-sr', srDone: ' (done)', srSkipped: ' (skipped)'
+        }, ({ id }) => {
             const isSkipped = skipSet.has(id) && id !== current;
             const isDone = doneSet.has(id) && id !== current && !isSkipped;
-            li.classList.toggle('aw-step-current', id === current);
-            li.classList.toggle('aw-step-done', isDone);
-            li.classList.toggle('aw-step-skipped', isSkipped);
-            if (id === current) li.setAttribute('aria-current', 'step');
-            else li.removeAttribute('aria-current');
-            const old = li.querySelector('.aw-step-sr');
-            if (old) old.remove();
-            if (isDone) li.appendChild(el('span', 'aw-step-sr', ' (done)'));
-            else if (isSkipped) li.appendChild(el('span', 'aw-step-sr', ' (skipped)'));
-        }
+            return { current: id === current, done: isDone, skipped: isSkipped };
+        });
     }
     update(opts);
     container.appendChild(root);

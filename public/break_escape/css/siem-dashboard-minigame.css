@@ -1,12 +1,6 @@
-.siem-minigame-container {
-    background: #0d1324;
-    border: 2px solid #2f3a59;
-}
-
 .siem-minigame-game-container {
-    padding: 14px;
+    padding: 0;
     box-sizing: border-box;
-    overflow: visible;
 }
 
 .siem-panel {
@@ -17,9 +11,7 @@
     height: 100%;
     margin: 0;
     box-sizing: border-box;
-    min-height: 520px;
     background: #1a1a2e;
-    border: 2px solid #3a4a6d;
     overflow: hidden;
 }
 
@@ -32,8 +24,8 @@
     height: 56px;
     display: block;
     font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
-    letter-spacing: 1px;
+    font-size: 16px;
+    letter-spacing: 0;
     color: #ffffff;
     transition: top 0.25s ease;
     padding: 0 72px 0 16px;
@@ -59,27 +51,11 @@
     border-bottom: 2px solid #ff3a5a;
 }
 
-.siem-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px;
-    border-bottom: 2px solid #364261;
-    background: #11192b;
-}
-
-.siem-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 12px;
-    color: #c8d8ff;
-    letter-spacing: 1px;
-}
-
+/* The clock sits in the status bar (Fix round 1 M2: no row of its own under the shared
+   title bar), in the bar's own font size and the clock's colour */
 .siem-clock {
     font-family: 'GNF', monospace;
-    font-size: 32px;
     color: #ffd27f;
-    margin-right: 64px;
 }
 
 .siem-body {
@@ -104,7 +80,8 @@
     padding: 10px;
     border-bottom: 2px solid #2e3957;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 8px;
+    line-height: 16px;
     color: #9ac1ff;
     background: #0f1730;
 }
@@ -127,6 +104,9 @@
     gap: 10px;
     align-items: center;
     min-height: 60px;
+    /* The list is a fixed-height column that scrolls: a row never shrinks below its
+       content, or a wrapped message runs over the next row */
+    flex-shrink: 0;
     padding: 8px;
     border: 2px solid #32466f;
     background: #1a2745;
@@ -148,7 +128,8 @@
     justify-content: center;
     height: 32px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 11px;
+    font-size: 8px;
+    line-height: 16px;
     color: #ffffff;
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
@@ -215,8 +196,9 @@
     min-width: 90px;
     height: 36px;
     border: 2px solid #2d3856;
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     font-size: 16px;
+    line-height: 24px;
     color: #ffffff;
     cursor: pointer;
 }
@@ -265,7 +247,8 @@
     height: 28px;
     border: 2px solid rgba(255, 255, 255, 0.2);
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
     color: #ffffff;
 }
 
@@ -295,6 +278,8 @@
 
 .siem-status-bar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
     justify-content: space-between;
     align-items: center;
     min-height: 48px;
@@ -316,7 +301,7 @@
     }
     50% {
         border-color: #ff4f67;
-        box-shadow: 0 0 28px 6px rgba(255, 70, 94, 0.6);
+        box-shadow: none;
     }
     100% {
         border-color: #3a4a6d;
@@ -329,10 +314,13 @@
 .siem-queue-section-title {
     padding: 10px 8px 6px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    /* Its own 16px line box, so a wrapped title stacks cleanly instead of overlapping
+       (slice 7 R5 M3) */
+    line-height: 16px;
     color: #ffd700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0;
     border-top: 2px solid #2e3957;
     background: #0f1730;
     margin-top: 8px;
@@ -357,7 +345,7 @@
     height: 100%;
     min-height: 100%;
     box-sizing: border-box;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.1);
     min-width: 4px;
 }
 
@@ -389,7 +377,8 @@
     align-items: center;
     gap: 6px;
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #d2e0ff;
 }
 
@@ -397,7 +386,7 @@
     display: inline-block;
     width: 14px;
     height: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .siem-severity-item-color.sev-LOW {
@@ -419,7 +408,7 @@
 .siem-severity-item-count {
     margin-left: auto;
     color: #a8b8d8;
-    font-size: 10px;
+    font-size: 8px;
 }
 
 .siem-alert-score-box {
@@ -432,10 +421,11 @@
 
 .siem-alert-score-label {
     font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
+    font-size: 8px;
+    line-height: 16px;
     color: #00ffff;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0;
     margin-bottom: 4px;
     display: block;
 }
@@ -457,7 +447,7 @@
 
 .siem-sources-empty {
     font-family: 'GNF', monospace;
-    font-size: 12px;
+    font-size: 16px;
     color: #6e7583;
     text-align: center;
     padding: 12px;
@@ -480,7 +470,8 @@
 
 .siem-source-name {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
+    font-size: 8px;
+    line-height: 16px;
     color: #d2e0ff;
     white-space: nowrap;
     overflow: hidden;
@@ -489,7 +480,7 @@
 
 .siem-source-bar-container {
     background: rgba(0, 255, 255, 0.1);
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    border: 2px solid rgba(0, 255, 255, 0.3);
     height: 12px;
     position: relative;
 }
@@ -502,20 +493,97 @@
 
 .siem-source-count {
     font-family: 'GNF', monospace;
-    font-size: 10px;
+    font-size: 16px;
     color: #00ffff;
     text-align: right;
     min-width: 28px;
 }
 
-@media (max-width: 1100px) {
+/* Short screens (915x412 and the like): the console drops its 520px minimum and fills the
+   frame, and the two panes scroll inside it, so the bottom border and the status bar stay
+   on screen (slice 7 R5 M3) */
+@media (max-height: 560px) {
+    .siem-body {
+        padding: 6px;
+        gap: 6px;
+    }
+
     .siem-alert-row {
-        grid-template-columns: 56px 72px 105px minmax(0, 1fr) 168px;
+        min-height: 48px;
+        padding: 4px 8px;
+    }
+
+    .siem-status-bar {
+        min-height: 32px;
+        padding: 4px 12px;
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 1100px) {
+    /* Two lines: badge, time, host and the buttons; then the whole message below them, so
+       the message keeps the row's full width (at 800 it was squeezed to one letter a line) */
+    .siem-alert-row {
+        grid-template-columns: 56px 72px minmax(0, 1fr) auto;
+        row-gap: 6px;
+    }
+
+    .siem-description {
+        grid-column: 1 / -1;
+        grid-row: 2;
     }
 
     .siem-time,
     .siem-source,
     .siem-description {
         font-size: 16px;
+    }
+
+    /* The message wraps to more lines instead of collapsing to one letter (critique B SIEM2) */
+    .siem-description {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+/* Phones: each alert on two lines (badge, time and host; then the message and its buttons),
+   the review queue under the list (critique B SIEM1) */
+@media (max-width: 600px) {
+    .siem-body {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+        padding: 6px;
+    }
+
+    .siem-alert-pane,
+    .siem-queue-pane {
+        min-height: auto;
+    }
+
+    .siem-alert-list {
+        overflow: visible;
+    }
+
+    .siem-alert-row {
+        grid-template-columns: 56px 64px minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .siem-description,
+    .siem-actions {
+        grid-column: 1 / -1;
+    }
+
+    .siem-actions {
+        justify-content: flex-start;
+    }
+
+    .siem-btn {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .siem-pane-title {
+        overflow-wrap: anywhere;
     }
 }

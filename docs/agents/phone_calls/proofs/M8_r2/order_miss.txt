@@ -1,0 +1,9 @@
+SESSION=2168
+{"ok":true,"cmd":"bootstrap","result":{"trace":["cutscene choice 1 of 3","cutscene choice 1 of 3","cutscene choice 1 of 2","cutscene choice 1 of 2","cutscene choice 1 of 3","cutscene choice 1 of 2","c
+{"ok":true,"reason":null}
+banner: {"banner":"Agent HaX | SAFETYNET secure line | Incoming call | Answer | Decline","ringer":"ringing","queued":0}
+banner gone after ~20 s: {"banner":null,"ringer":null,"queued":0}
+thread: ["npc: Agent, I'm your handler for this op. Message me if you need any guidan","call: Missed call","npc: Texting from here, then. Now get a feel for the place. 🦎 Check the de"]
+tour rows=1
+["phone_call_missed:agent_0x99@59.2"]
+shot order_miss_end

@@ -14,6 +14,7 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-captures-view-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
+    'minigames/helpers/step-stepper.js',
     'minigames/landing-page-builder/landing-page-builder-minigame.js',
     'minigames/landing-page-builder/landing-page-model.js',
     'minigames/landing-page-builder/landing-page-render.js',
@@ -25,6 +26,7 @@ for (const rel of [
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js',
     'ui/modal-stack.js',
     'systems/global-writer.js',
+    'systems/se-landing-page-client.js',
     'systems/captures.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
@@ -100,7 +102,7 @@ test('a credential with no stored secret is masked until the served reveal arriv
     // _applyCaptureSecrets fills it in from the /capture_secrets map.
     const seed = { lord: { targetId: 'lord', roleLabel: 'Finance intern', address: 'intern@corp.example', kind: 'credential', at: 1 } };
     const s = open({ se_captures: seed }, { captures: { revealSecret: true } });
-    assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, '••••••••', 'masked before the reveal');
+    assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, 'Loading...', 'a revealing row waiting for its value reads Loading..., not bullets');
     assert.doesNotMatch(s.container.textContent, /Sofia2026!/);
     s._applyCaptureSecrets({ lord: 'Sofia2026!' });
     assert.equal(s.container.querySelector('.lpb-captures-secret').textContent, 'Sofia2026!', 'revealed after the fetch');
@@ -136,4 +138,30 @@ test('opening and closing writes nothing and leaves se_captures unchanged', () =
     assert.equal(syncs, 0);
     assert.equal(ended.length, 1);
     assert.equal(ended[0].success, true);
+});
+
+test('a revealing row reads Loading..., then the value, and Could not load when the fetch ends without it', async () => {
+    LandingPageBuilderMinigame.secretRetryMs = 2;
+    const seed = { lord: { targetId: 'lord', roleLabel: 'Finance intern', address: 'intern@corp.example', kind: 'credential', at: 1 } };
+    const node = (s) => s.container.querySelector('.lpb-captures-secret');
+    // The served map lacks the capture twice, then has it (its state sync was still on the way)
+    let n = 0;
+    window.ApiClient = null;
+    const s = open({ se_captures: seed }, { captures: { revealSecret: true } });
+    assert.equal(node(s).textContent, 'Loading...');
+    assert.equal(node(s).dataset.secretState, 'loading');
+    const { watchCaptureSecrets } = await import(pathToFileURL(join(dir, 'minigames/capture-log/capture-rows.js')));
+    const rowsFor = [{ targetId: 'lord', node: node(s) }];
+    const api = { get: async () => (++n < 3 ? { secrets: {} } : { secrets: { lord: 'Sofia2026!' } }) };
+    await watchCaptureSecrets(rowsFor, { retryMs: 2, deps: { ApiClient: api, stateSync: null } });
+    assert.equal(node(s).textContent, 'Sofia2026!');
+    assert.equal(n, 3, 'asked again until served');
+    // A fetch that keeps failing says so
+    const s2 = open({ se_captures: seed }, { captures: { revealSecret: true } });
+    const warn = console.warn; console.warn = () => {};
+    await watchCaptureSecrets([{ targetId: 'lord', node: node(s2) }], { retryMs: 2, deps: { ApiClient: { get: async () => { throw new Error('boom'); } }, stateSync: null } });
+    console.warn = warn;
+    assert.equal(node(s2).textContent, 'Could not load');
+    assert.doesNotMatch(s2.container.textContent, /•/);
+    LandingPageBuilderMinigame.secretRetryMs = 1500;
 });

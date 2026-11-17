@@ -1,0 +1,13 @@
+{
+  "key": "a78ff4d8bd8e95eaaaca6ec82617fab1",
+  "npc": "director_netherton",
+  "text": "People will notice. If he did not know we were looking, he will soon. Get root on the box. When its logs come in, I will name him.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:45Z"
+}

@@ -11,11 +11,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { readDecisions, signOffProblems, sharedHeadings } from './validator-decisions-reader.mjs';
+import { acknowledgedApproved } from './validator-acknowledged-clues-reader.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const LIST = join(root, 'scripts/validator_known_failures.json');
 const DECISIONS = join(root, 'docs/agents/VALIDATOR_DECISIONS.md');
 const EXCEPTIONS = join(root, 'test/fixtures/files/payload_scan_exceptions.json');
+const OPENED = join(root, 'test/fixtures/files/payload_scan_opened_exceptions.json');
 const STAGES = ['ink', 'schema', 'common', 'habits', 'work', 'social'];
 const UNMATCHABLE = ['could not run', 'stale known failure', 'Result:'];
 // scripts/validator_report.rb INK_COMPILE_FAILURE_RE: a compile failure cannot be listed.
@@ -80,13 +82,78 @@ export function checkKnownFailures(entries, decisionsText, { mergeBatch = false,
   return { problems, warnings };
 }
 
-// The other two lists, once they exist: payload scan exceptions (6a-1) and acknowledgedClues (step 3,
-// read from the scenario templates' raw text, as the markers never ship).
+// Checks the payload scan exceptions list (SCENARIO_FORMAT_HARDENING_PLAN step 6a-1,
+// test/fixtures/files/payload_scan_exceptions.json) against the decisions text. Each entry restates
+// scenario, route and paths in its approved heading's json block; the date and shared-heading rules
+// match checkKnownFailures. Returns { problems, warnings }.
+export function checkPayloadScanExceptions(entries, decisionsText, { mergeBatch = false, now = today(), otherApproved = [],
+                                                                     scenarioExists = (p) => existsSync(join(root, p)) } = {}) {
+  const problems = [];
+  const warnings = [];
+  if (!Array.isArray(entries)) return { problems: ['the list must be a JSON array'], warnings };
+  const sections = readDecisions(decisionsText);
+  entries.forEach((e, i) => {
+    const label = `payload scan exception ${i} (${e && e.scenario})`;
+    if (!e || typeof e !== 'object') { problems.push(`${label}: not an object`); return; }
+    if (typeof e.scenario !== 'string' || !/^scenarios\/[^/]+\/scenario\.json\.erb$/.test(e.scenario)) {
+      problems.push(`${label}: scenario must be scenarios/<dir>/scenario.json.erb`);
+    } else if (!scenarioExists(e.scenario)) {
+      problems.push(`${label}: ${e.scenario} does not exist`);
+    }
+    if (typeof e.route !== 'string' || e.route.trim() === '') problems.push(`${label}: route is empty`);
+    if (!Array.isArray(e.paths) || e.paths.length === 0 || !e.paths.every((p) => typeof p === 'string' && p.trim() !== '')) {
+      problems.push(`${label}: paths must be a non-empty array of non-empty strings`);
+    }
+    if (typeof e.reason !== 'string' || e.reason.trim() === '') problems.push(`${label}: reason is empty`);
+    if (!validDate(e.added)) problems.push(`${label}: added '${e.added}' is not an ISO date`);
+    else if (e.added > now) problems.push(`${label}: added ${e.added} is in the future`);
+    if (!validDate(e.reviewBy)) problems.push(`${label}: reviewBy '${e.reviewBy}' is not an ISO date`);
+    else if (validDate(e.added) && e.reviewBy < e.added) {
+      problems.push(`${label}: reviewBy ${e.reviewBy} is earlier than added ${e.added}`);
+    } else if (e.reviewBy < now) {
+      (mergeBatch ? problems : warnings).push(`${label}: reviewBy ${e.reviewBy} has passed; renew it with the owner or fix the paths`);
+    }
+    problems.push(...signOffProblems(sections, e, ['scenario', 'route', 'paths'], label, { mergeBatch }));
+  });
+  const labelled = entries.map((e, i) => [e, i]).filter(([e]) => e && typeof e.approved === 'string')
+    .map(([e, i]) => [`payload scan exception ${i} (${e.scenario})`, e.approved]).concat(otherApproved);
+  for (const [heading, labels] of sharedHeadings(labelled)) {
+    problems.push(`heading '## ${heading}' backs more than one entry: ${labels.join(', ')}`);
+  }
+  return { problems, warnings };
+}
+
+// Known-failures headings as [label, heading] pairs, for the exceptions list's shared-heading rule.
+function knownFailureApproved() {
+  return JSON.parse(readFileSync(LIST, 'utf8')).map((e, i) => [`known failure ${i} (${e && e.scenario})`, e && e.approved])
+    .filter(([, h]) => typeof h === 'string');
+}
+
+// The 6a-1 payload scan exceptions as [label, heading] pairs (for the opened list's shared-heading rule).
+function sixA1ExceptionApproved() {
+  if (!existsSync(EXCEPTIONS)) return [];
+  return JSON.parse(readFileSync(EXCEPTIONS, 'utf8'))
+    .map((e, i) => [`payload scan exception ${i} (${e && e.scenario})`, e && e.approved])
+    .filter(([, h]) => typeof h === 'string');
+}
+
+// The opened-state payload scan exceptions (6a-2) as [label, heading] pairs.
+function openedExceptionApproved() {
+  if (!existsSync(OPENED)) return [];
+  return JSON.parse(readFileSync(OPENED, 'utf8'))
+    .map((e, i) => [`opened-state exception ${i} (${e && e.scenario})`, e && e.approved])
+    .filter(([, h]) => typeof h === 'string');
+}
+
+// The other three lists: payload scan exceptions (6a-1), the opened-state exceptions (6a-2) and the
+// acknowledgedClues markers (step 3, read from the scenario templates' raw text with the shared
+// reader, as the markers never ship). All feed the shared-heading rule, so one heading cannot back
+// an entry in two lists.
 function otherApproved() {
   const pairs = [];
-  if (existsSync(EXCEPTIONS)) {
-    JSON.parse(readFileSync(EXCEPTIONS, 'utf8')).forEach((e, i) => pairs.push([`payload scan exception ${i} (${e.scenario})`, e.approved]));
-  }
+  for (const pair of sixA1ExceptionApproved()) pairs.push(pair);
+  for (const pair of openedExceptionApproved()) pairs.push(pair);
+  for (const pair of acknowledgedApproved(root)) pairs.push(pair);
   return pairs;
 }
 
@@ -223,4 +290,74 @@ test('a shared heading names each entry by its index in the list', () => {
 test('a reviewBy earlier than its added date fails', () => {
   const e = { ...good, added: '2026-11-12', reviewBy: '2026-11-01' };
   assert.match(check([e], doc(e.approved, block(ids(e)))).problems.join('\n'), /reviewBy 2026-11-01 is earlier than added 2026-11-12/);
+});
+
+// ── the payload scan exceptions list (step 6a-1) ───────────────────────────────────────────────
+
+test('the real payload scan exceptions list is well formed and signed off under its own heading', () => {
+  const list = existsSync(EXCEPTIONS) ? JSON.parse(readFileSync(EXCEPTIONS, 'utf8')) : [];
+  const { problems, warnings } = checkPayloadScanExceptions(list, decisions, {
+    mergeBatch: process.env.MERGE_BATCH === '1',
+    otherApproved: [...knownFailureApproved(), ...openedExceptionApproved(), ...acknowledgedApproved(root)]
+  });
+  for (const w of warnings) console.warn(`WARNING: ${w}`);
+  assert.deepEqual(problems, []);
+});
+
+// ── the opened-state payload scan exceptions list (step 6a-2) ──────────────────────────────────
+// The same schema as the 6a-1 list (scenario, route, paths), in its own file so the fresh-state
+// scan never marks an opened-only m09 path stale. Checked with checkPayloadScanExceptions and the
+// shared-heading rule against the other three lists.
+
+test('the real opened-state payload scan exceptions list is well formed and signed off under its own heading', () => {
+  const list = existsSync(OPENED) ? JSON.parse(readFileSync(OPENED, 'utf8')) : [];
+  const { problems, warnings } = checkPayloadScanExceptions(list, decisions, {
+    mergeBatch: process.env.MERGE_BATCH === '1',
+    otherApproved: [...knownFailureApproved(), ...sixA1ExceptionApproved(), ...acknowledgedApproved(root)]
+  });
+  for (const w of warnings) console.warn(`WARNING: ${w}`);
+  assert.deepEqual(problems, []);
+});
+
+test('opened-state exceptions: the real payload_scan_opened_exceptions file parses to a JSON array', () => {
+  const list = existsSync(OPENED) ? JSON.parse(readFileSync(OPENED, 'utf8')) : null;
+  assert.ok(Array.isArray(list), 'payload_scan_opened_exceptions.json must be a JSON array');
+});
+
+const goodExc = {
+  scenario: 'scenarios/ceo_exfil/scenario.json.erb', route: 'GET scenario',
+  paths: ['rooms.office.objects.0.requires'], reason: 'legacy inert requires', added: '2026-11-12',
+  reviewBy: '2026-12-10', approved: '2026-11-12: ceo_exfil legacy requires'
+};
+const excIds = (e) => ({ scenario: e.scenario, route: e.route, paths: e.paths });
+const checkExc = (list, text, extra = {}) => checkPayloadScanExceptions(list, text, { ...opts, ...extra });
+
+test('exceptions: a well-formed entry with a matching block passes', () => {
+  assert.deepEqual(checkExc([goodExc], doc(goodExc.approved, block(excIds(goodExc)))), { problems: [], warnings: [] });
+});
+
+test('exceptions: a block naming other paths, an empty paths list, or an empty route fails', () => {
+  assert.match(checkExc([goodExc], doc(goodExc.approved, block({ ...excIds(goodExc), paths: ['other'] }))).problems.join('\n'), /'paths' is/);
+  const empty = { ...goodExc, paths: [] };
+  assert.match(checkExc([empty], doc(empty.approved, block(excIds(empty)))).problems.join('\n'), /paths must be a non-empty array/);
+  const noroute = { ...goodExc, route: ' ' };
+  assert.match(checkExc([noroute], doc(noroute.approved, block({ ...excIds(noroute), route: ' ' }))).problems.join('\n'), /route is empty/);
+});
+
+test('exceptions: a missing approved heading, or one shared with a known failure, fails', () => {
+  assert.match(checkExc([goodExc], doc('2026-11-12: unrelated', block(excIds(goodExc)))).problems.join('\n'), /is not in VALIDATOR_DECISIONS/);
+  const text = doc(goodExc.approved, block(excIds(goodExc)));
+  assert.match(checkExc([goodExc], text, { otherApproved: [['known failure 0', goodExc.approved]] }).problems.join('\n'), /backs more than one entry/);
+});
+
+test('exceptions: a passed reviewBy warns, and fails with MERGE_BATCH=1', () => {
+  const e = { ...goodExc, added: '2026-11-01', reviewBy: '2026-11-11' };
+  const text = doc(e.approved, block(excIds(e)));
+  assert.match(checkExc([e], text).warnings.join('\n'), /reviewBy 2026-11-11 has passed/);
+  assert.match(checkExc([e], text, { mergeBatch: true }).problems.join('\n'), /reviewBy 2026-11-11 has passed/);
+});
+
+test('exceptions: the real payload_scan_exceptions file parses to a JSON array', () => {
+  const list = existsSync(EXCEPTIONS) ? JSON.parse(readFileSync(EXCEPTIONS, 'utf8')) : null;
+  assert.ok(Array.isArray(list), 'payload_scan_exceptions.json must be a JSON array');
 });

@@ -164,7 +164,7 @@ The team's logged for {team_assignment == "fracture": Fracture, Washington|{team
     }
     -> hub
 + [Understood. Let's go.]
-    Call me the second you hit something you can't open.
+    Message me the second you hit something you can't open.
     -> hub
 
 === first_call_open ===
@@ -174,7 +174,7 @@ The team's logged for {team_assignment == "fracture": Fracture, Washington|{team
 HaX here, Agent. I've got your channel and the board.
 
 // Phase 4 dialogue C1 (D7-30): a first call opened late.
-{inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor. Call me when you hit something you can't open.}
+{inside_reached: You're past the checkpoint. Ask me where you stand and I'll give you the next step.|Get past the checkpoint to the operations floor. Message me when you hit something you can't open.}
 
 -> hub
 
@@ -226,7 +226,8 @@ HaX here, Agent. I've got your channel and the board.
 // plant and the vault stay open after the abort. The fallback timer sets
 // debrief_requested too, which hides this.
 + {grid_saved and not debrief_requested} [Bring me in.]
-    -> bring_me_in
+    #place_call:bring_me_in
+    -> DONE
 
 // PASS 3 (playtest s6): the "Confirm the team's away." option is removed.
 // Every commit (briefing commit_menu, HaX commit_team) completes
@@ -298,7 +299,7 @@ HaX here, Agent. I've got your channel and the board.
     -> first_call_committed_choices
 
 // --- Sticky exit ---
-+ [I'll call you back.]
++ [I'll check back in.]
     I'm here. Go.
     #exit_conversation
     -> hub
@@ -512,6 +513,7 @@ HaX here, Agent. I've got your channel and the board.
 // through). The debrief opens on the next room entry
 // or closed screen once all four flags are in (closing_debrief mappings).
 === bring_me_in ===
+// lint: call-knot
 ~ debrief_requested = true
 {flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
     Putting you through. He's waiting.
@@ -519,7 +521,7 @@ HaX here, Agent. I've got your channel and the board.
     Not yet. Put the rest of the flags through the relay and he's on straight after.
 }
 #exit_conversation
--> hub
+-> DONE
 
 // ===========================================
 // PASS 5 alignment r1 (M2): THE DEDUCTION
@@ -776,8 +778,8 @@ Bag it. That's what we work from next.
 === topic_teacher ===
 ~ teacher_discussed = true
 #set_global:teacher_discussed:true
-...Read me that again.
-Narrator: You read it back to her. The line stays quiet for longer than she usually lets it.
+...Send me that again.
+Narrator: You send it again. Nothing comes back for longer than she usually leaves it.
 // PASS 4 round 2 (re-review F1): branch on whether the player actually heard
 // her say it (first call, or "How do you carry that?").
 {hurt_line_said:
@@ -795,9 +797,9 @@ Leave it with me. And keep it out of your notes for now.
 
 === topic_mole ===
 ~ mole_discussed = true
-Narrator: A long pause on the line.
+Narrator: Nothing comes back for a while.
 
-Slowly. I want to be sure I'm hearing this.
+Wait. I want to be sure I've read this right.
 
 He had your deployment before the order went out. Somebody handed ENTROPY you, by name.
 

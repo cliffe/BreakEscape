@@ -1,0 +1,10 @@
+game 2192 (seattle)
+fire T-1, let it ring
+T-1 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+fire countdown_expired -> seattle_call replaces the ringing T-1
+ringer (should be seattle_call): {"cur":{"npc":"the_architect","state":"ringing","knot":"seattle_call","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot seattle_seattle_banner
+seattle call: {"lines":[],"choices":[]}
+shot seattle_seattle_call
+seattle ended: mg=null rows=["Call: No caller ID"]
+architect /tts: "Seattle first. Exactly as scheduled." "Three to go, and you're on the phone to me." "You'll have the figure by morning. Better you heard it from them than from me." 

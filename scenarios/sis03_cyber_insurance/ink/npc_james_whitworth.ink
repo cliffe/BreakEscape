@@ -70,7 +70,9 @@ The decisions before it were mine, and I'll answer for those. We acted in good f
 
 The historian migration and jump server reconfiguration were on the work plan. We had vendors scheduled. We had budget allocated.
 
-But the historian migration hit vendor delays — the hardware we needed wasn't available. And the jump server reconfiguration required coordination with our operations team. We were also managing the NESO ancillary services upgrade simultaneously. Resource constraints are real.
+But the historian migration hit vendor delays, because the hardware we needed wasn't available.
+
+And the jump server reconfiguration required coordination with our operations team. We were also managing the NESO ancillary services upgrade simultaneously. Resource constraints are real.
 
 * [Did you file an extension request?]
     We told your underwriters at the renewal meeting in November that we'd miss it.
@@ -86,7 +88,9 @@ But the historian migration hit vendor delays — the hardware we needed wasn't 
     -> hub
     
 * [Why didn't Meridian's renewal decision flag a firmer remediation requirement?]
-    You tell me. Your underwriters reviewed our quarterly reports. They saw the progress. They renewed the policy with a warranty they must have known was aggressive given our constraints.
+    You tell me. Your underwriters reviewed our quarterly reports. They saw the progress.
+
+    They renewed the policy with a warranty they must have known was aggressive given our constraints.
     If Meridian thought the deadline was impossibly tight, they should have said so. They set it. We tried to meet it.
     -> hub
 
@@ -146,7 +150,9 @@ I signed it on that basis. We also meant to restrict the jump server to the main
     -> hub
     
 * [So the compensating controls never went live?]
-    Not fully, no. That's a point against us in your warranty assessment. I acknowledge that. But it's not the same as willfully ignoring safety. We documented the risk. We committed to controls. We were implementing them.
+    Not fully, no. That's a point against us in your warranty assessment. I acknowledge that.
+
+    But it's not the same as willfully ignoring safety. We documented the risk. We committed to controls. We were implementing them.
     -> hub
 
 
@@ -158,11 +164,15 @@ I signed it on that basis. We also meant to restrict the jump server to the main
 #speaker:james
 ~ business_interruption_discussed = true
 
-The six-week outage is entirely attributable to the incident. We were forced to shut down the facility for incident response, network isolation, forensic examination, and complete infrastructure rebuild. We had no choice.
+The six-week outage is entirely attributable to the incident.
+
+We were forced to shut down the facility for incident response, network isolation, forensic examination, and complete infrastructure rebuild. We had no choice.
 
 Meridian is arguing that part of that outage — the SIS recertification period — addresses a pre-existing maintenance obligation. But that's not accurate.
 
-The SIS recertification was accelerated and expanded in scope because of the incident. Without the attack, we would have applied the patch during a planned maintenance window — probably two to three weeks, not six.
+The SIS recertification was accelerated and expanded in scope because of the incident.
+
+Without the attack, we would have applied the patch during a planned maintenance window, probably two to three weeks, not six.
 
 The incident cascaded the recertification timeline into emergency mode. So the business interruption should reflect the full six weeks.
 

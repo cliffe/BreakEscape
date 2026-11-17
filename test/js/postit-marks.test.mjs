@@ -1,5 +1,5 @@
 // Slice 9.1 step 2 (docs/achitechture/ACCESS_MODEL_SLICE_9_1_PLAN.md 5.3): systems/postit-marks.js
-// draws the notes_postit1 picture at a sign-in PC's top-left corner when its screen shows a
+// draws the notes_postit1 picture at a sign-in PC's bottom-left corner when its screen shows a
 // note (hasPostit, or an authored postitNote that is shown), on sign-in PCs only.
 // Run with: node test/js/postit-marks.test.mjs
 import test from 'node:test';
@@ -16,7 +16,7 @@ function scene() {
         image(x, y, key) {
             const img = {
                 x, y, key, depth: 0, visible: true, active: true, interactive: true, destroyed: false,
-                setOrigin() { return this; },
+                setOrigin(ox, oy) { this.originX = ox; this.originY = oy; return this; },
                 setDepth(d) { this.depth = d; return this; },
                 setVisible(v) { this.visible = v; return this; },
                 setPosition(nx, ny) { this.x = nx; this.y = ny; return this; },
@@ -57,15 +57,21 @@ test('wantsPostit: sign-in PCs with hasPostit or a shown authored note only', ()
     assert.equal(wantsPostit(null), false);
 });
 
-test('a sign-in PC with hasPostit gets one picture at the top-left offset and the stated depth; a second syncRoom adds none', () => {
+test('a sign-in PC with hasPostit gets one picture at the bottom-left and the stated depth; a second syncRoom adds none', () => {
     const { sc, sprites, marks } = world([login('omar_pc', { hasPostit: true })]);
     marks.syncRoom('office');
     assert.equal(sc.images.length, 1);
     const img = sc.images[0];
     assert.equal(img.key, POSTIT_TEXTURE);
     const s = sprites.omar_pc;
-    assert.equal(img.x, Math.round(s.x + POSTIT_INSET + POSTIT_SIZE / 2));
-    assert.equal(img.y, Math.round(s.y + POSTIT_INSET + POSTIT_SIZE / 2));
+    // Drawn from its bottom-left (review R2 n1), so its left edge is a whole pixel, inset
+    assert.equal(img.x, Math.round(s.x + POSTIT_INSET));
+    assert.ok(Number.isInteger(img.x) && img.x - s.x === POSTIT_INSET, 'the left edge on a whole pixel, inset');
+    // UX feedback slice 2a (main-11): the note's bottom edge is level with the sprite's bottom
+    // (review R1 n1), so its bottom edge is exactly img.y
+    assert.equal(img.originX, 0);
+    assert.equal(img.originY, 1);
+    assert.equal(img.y, s.y + s.displayHeight, 'the bottom edge is the sprite bottom, to the pixel');
     assert.ok(img.x < s.x + s.displayWidth / 2, 'on the left half, clear of the indicator dot at the top-right');
     assert.equal(img.depth, s.depth + POSTIT_DEPTH_OFFSET);
     assert.ok(img.depth < s.depth + 0.01, 'below an indicator drawn at the object depth + 0.01');
@@ -150,4 +156,41 @@ test('label passes a non-string observation through unchanged, marked or not', (
     assert.equal(marks.label('plain_pc', 42), 42);
     assert.equal(marks.label('plain_pc', undefined), undefined);
     assert.equal(marks.label('plain_pc', "Mei's PC"), "Mei's PC (a sticky note on the monitor)");
+});
+
+test('slice 2a R5 M1: a sign-in PC in the start room gets its mark once the start room is built', async () => {
+    // Boot order: installPostitMarks runs before any room exists, so its own pass finds nothing
+    for (const k of Object.keys(window)) delete window[k];
+    const sc = scene();
+    window.rooms = {};
+    const marks = new PostitMarks().install(sc);
+    assert.equal(marks.marks.size, 0);
+    // Then the start room is made directly (game.js), not through the room loader
+    window.rooms.omar_room = { objects: { obj_omar_pc: sprite(sc, login('omar_pc', { hasPostit: true })) } };
+    window.postitMarks = marks;
+    // game.js must make the same per-room syncs for the start room as core/rooms.js does
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/core/game.js', import.meta.url), 'utf8');
+    const at = src.indexOf('createRoom(startRoomId');
+    assert.ok(at > 0, 'game.js builds the start room');
+    const after = src.slice(at, src.indexOf('revealRoom(startRoomId)', at));
+    for (const sync of ['screenStates', 'networkLinks', 'postitMarks', 'npcWorkarounds']) {
+        assert.match(after, new RegExp(`window\\.${sync}\\?\\.syncRoom\\?\\.\\(startRoomId\\)`),
+            `${sync}.syncRoom(startRoomId) runs after the start room is built`);
+    }
+    window.postitMarks?.syncRoom?.('omar_room');
+    assert.equal(marks.marks.size, 1);
+    assert.ok(marks.marks.has('omar_pc'), "Omar's PC has its mark after boot");
+});
+
+test('slice 2a (main-11): the mark sits on the sprite bottom for any origin', () => {
+    for (const [originX, originY] of [[0, 0], [0.5, 0.5], [0.5, 1]]) {
+        const sprite = { x: 100, y: 200, displayWidth: 32, displayHeight: 48, originX, originY };
+        const { x, y } = postitPosition(sprite);
+        const bottom = sprite.y - sprite.displayHeight * originY + sprite.displayHeight;
+        const left = sprite.x - sprite.displayWidth * originX;
+        assert.equal(y, bottom, `origin ${originX},${originY}: bottom ${y} against sprite bottom ${bottom}`);
+        assert.equal(x, Math.round(left + POSTIT_INSET));
+        assert.ok(Number.isInteger(x), `origin ${originX},${originY}: left edge on a whole pixel`);
+    }
 });

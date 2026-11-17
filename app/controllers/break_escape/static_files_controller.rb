@@ -1,6 +1,9 @@
 module BreakEscape
   class StaticFilesController < BreakEscape::ApplicationController
     skip_before_action :verify_authenticity_token
+    # Step 7: a browser-cached asset must never carry a stale format header, so the static controller
+    # does not set it. Its answers are JS modules, sprites, sounds and static JSON, never a game.
+    skip_before_action :set_format_header
 
     def serve
       # Use the BreakEscape engine's root, not Rails.root
@@ -46,6 +49,9 @@ module BreakEscape
       # module loading — they cannot carry Rails nonces. Apply a targeted
       # CSP that allows inline/eval within this file only, without
       # propagating unsafe-inline to any other part of the application.
+      # frame-src data: covers CyberChef's Bombe <object data="data:image/svg+xml...">,
+      # which Chrome checks as a nested frame (default-src would block it and log
+      # "Framing ''"). It also stops the tool framing any https: page.
       if content_type == 'text/html'
         response.set_header('Content-Security-Policy',
           "default-src 'self' https:; " \
@@ -56,6 +62,7 @@ module BreakEscape
           "connect-src 'self' https: blob: data:; " \
           "media-src 'self' https: data: blob:; " \
           "object-src data: blob:; " \
+          "frame-src data:; " \
           "worker-src 'self' blob:;"
         )
       end

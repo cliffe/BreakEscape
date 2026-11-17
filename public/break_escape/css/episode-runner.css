@@ -5,6 +5,124 @@
 
 .minigame-container[data-minigame="episode-runner"] .minigame-game-container { display: flex; flex-direction: column; min-height: 0; }
 
+/* C-ER1 (user pick B): the diegetic awareness kiosk. A CSS-drawn bezel in the PC monitor's look
+   (flat dark case, 2px outline, a 2px lighter inner edge, corners cut in 2px steps; no image art)
+   with the X in its top strip. The screen wraps the content and scrolls inside, so the step strip
+   keeps its natural height instead of being squeezed to a fixed aspect. Facilitated runs skip
+   .epr-kiosk and stay full-bleed for projection. */
+.minigame-container.epr-kiosk > .minigame-game-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+    background: none;
+}
+.epr-kiosk-bezel {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 96vw);
+    max-height: 100%;
+    background: #3d3d3d;
+    border: 2px solid #161616;
+    box-shadow: inset 0 0 0 2px #555555;
+    clip-path: polygon(
+        0 6px, 2px 6px, 2px 4px, 4px 4px, 4px 2px, 6px 2px, 6px 0,
+        calc(100% - 6px) 0, calc(100% - 6px) 2px, calc(100% - 4px) 2px, calc(100% - 4px) 4px,
+        calc(100% - 2px) 4px, calc(100% - 2px) 6px, 100% 6px,
+        100% calc(100% - 6px), calc(100% - 2px) calc(100% - 6px), calc(100% - 2px) calc(100% - 4px),
+        calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 2px), calc(100% - 6px) calc(100% - 2px),
+        calc(100% - 6px) 100%,
+        6px 100%, 6px calc(100% - 2px), 4px calc(100% - 2px), 4px calc(100% - 4px),
+        2px calc(100% - 4px), 2px calc(100% - 6px), 0 calc(100% - 6px)
+    );
+}
+.epr-kiosk-top {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 38px;
+    padding: 4px 10px;
+}
+.epr-kiosk-cap {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 24px;
+    color: #c8c8c8;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+/* R2 m2 (a): the kiosk close is the themed steel .minigame-close-button (the PC monitor's X),
+   not the flat red SE X. Keep it in the top strip's flex flow (the base rule makes it absolute). */
+.epr-kiosk-top .epr-kiosk-close {
+    position: static;
+    top: auto;
+    right: auto;
+    flex: 0 0 auto;
+    margin: 0;
+}
+.epr-kiosk-screen {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+    margin: 0 8px;
+    border: 2px solid #111111;
+    background: var(--aw-surface, #f6f8f7);
+}
+/* R2 m2 (b): the kiosk chin - a card-reader slot and a status LED that mark it as a public
+   kiosk rather than a window. All 2px pixel art: flat fills, hard edges, no radius or soft shadow. */
+.epr-kiosk-chin {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+    padding: 5px 12px 7px;
+}
+.epr-kiosk-reader {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 14px;
+    background: #2a2a2a;
+    border: 2px solid #161616;
+}
+.epr-kiosk-reader-slot {
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #555555;
+}
+.epr-kiosk-status {
+    flex: 0 0 auto;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.epr-kiosk-led {
+    display: block;
+    width: 8px;
+    height: 8px;
+    background: #39d353;
+    box-shadow: inset 0 0 0 2px #1f7a33;
+}
+.epr-kiosk-status-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 1px;
+    color: #9a9a9a;
+}
+.epr-kiosk-screen > .epr-root { flex: 1 1 auto; min-width: 0; }
+
 .epr-root {
     --aw-accent: #2f6f5e;
     --aw-ink: #1f2933;
@@ -42,13 +160,11 @@
 .epr-text { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
 /* batch 13: the send-off under the Episode finished panel */
 .epr-send-off { margin: 0 0 12px; padding: 10px 12px; font-size: 16px; max-width: 60ch; border-left: 4px solid var(--aw-accent, #2f6f8f); }
+/* C-ER3: the scope note carries .se-notice (dashed box) in markup, so .epr-scope only sets its
+   flow; the left-bar quote box is gone in favour of the shared notice look. */
 .epr-scope {
     margin: 0 0 12px;
-    padding: 8px 12px;
     max-width: 60ch;
-    font-size: 15px;
-    background: #fff;
-    border-left: 4px solid var(--aw-accent);
 }
 .epr-card-count { margin: 12px 0 0; font-size: 14px; }
 .epr-brief-card .epr-button + .epr-button { margin-left: 8px; }
@@ -61,13 +177,17 @@
     margin-top: 14px;
     padding: 8px 18px;
     font: inherit;
-    font-weight: 700;
+    font-weight: normal;
     color: #fff;
     background: var(--aw-accent);
-    border: 0;
-    border-radius: 4px;
+    border: 2px solid var(--aw-accent);
+    border-radius: 0;
     cursor: pointer;
 }
+/* C-X9 secondary action (e.g. brief-card Back): the awareness secondary look, square 2px line,
+   no fill. Two-class selector so it beats the single-class .epr-button fill regardless of load
+   order. */
+.epr-button.aw-button-secondary { color: var(--aw-ink); background: #fff; border-color: var(--aw-line); }
 .epr-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* Facilitated mode (11 N5, P7-I): the group prompt and the pause between stages. Large
@@ -80,7 +200,7 @@
     font-size: 18px;
     background: #fff;
     border: 2px dashed var(--aw-accent);
-    border-radius: 4px;
+    border-radius: 0;
 }
 .epr-panel .epr-facilitator { margin: 12px 0 0; }
 .epr-facilitator-label { display: block; font-size: 14px; font-weight: 700; color: var(--aw-accent); }
@@ -112,14 +232,18 @@
 }
 .epr-sbx-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .epr-sbx-title { font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--aw-accent); }
-.epr-sbx-card { padding: 12px; background: #fff; border: 1px solid var(--aw-line); }
+.epr-sbx-card { padding: 12px; background: #fff; border: 2px solid var(--aw-line); }
 .epr-sbx-intro { margin: 0 0 10px; font-size: 15px; color: #52606d; }
 .epr-sbx-heading { margin: 0 0 6px; font-size: 18px; color: var(--aw-accent); }
 .epr-sbx-heading:focus { outline: none; }
 .epr-sbx-situation { margin: 0 0 12px; font-size: 16px; max-width: 60ch; }
 .epr-sbx-options { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: 8px; }
 .epr-sbx-legend { padding: 0; margin: 0 0 6px; font-size: 14px; font-weight: 700; }
-.epr-sbx-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; font-size: 16px; border: 1px solid var(--aw-line); border-radius: 4px; cursor: pointer; background: #fff; }
+.epr-sbx-option { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; font-size: 16px; border: 2px solid var(--aw-line); border-radius: 0; cursor: pointer; background: #fff; }
 .epr-sbx-radio { margin: 4px 0 0; flex: none; }
 .epr-sbx-picked { border-color: var(--aw-accent); background: #eef6f3; }
 .epr-sbx-confirm:disabled { opacity: 1; background: #d3dae2; color: #3a4452; cursor: default; }
+
+/* C-X4 (n2): the shared .se-notice reads its colours from the scene tokens so it stays legible
+   on the awareness skin's light surface (the default --ui-* values suit the dark SE windows). */
+.epr-root .se-notice { color: var(--aw-ink, #1f2933); border-color: var(--aw-line, #cfd8d4); }

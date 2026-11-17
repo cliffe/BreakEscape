@@ -1,0 +1,13 @@
+{
+  "key": "27ca84029e4a7dddd28bab41ad617a32",
+  "npc": "keith",
+  "text": "Cold one before the round.",
+  "voice": "Algenib",
+  "style": "Night security officer, mid fifties, white British, West Country (Bristol) accent. Steady, dry, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:10:38Z"
+}

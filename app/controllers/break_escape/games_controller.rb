@@ -24,15 +24,19 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
-                                        :login, :logout, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear]
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
+                                        :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
     # Review R2 n1: runs before set_game, whose params[:id] parses the whole JSON body, so the
     # cap limits parse cost as well as report cost. Reads only the Content-Length header.
     prepend_before_action :refuse_oversized_body, only: [:npc_frustration, :clone_card]
+    # Step 7: re-prepend the format header after the prepend above, so it is restored to the front
+    # of this controller's callback chain (a later prepend goes in front). A Rails test asserts
+    # set_format_header is the first before callback of every engine controller except the static one.
+    prepend_before_action :set_format_header
 
 
     # Actions that read-modify-write @game.player_state and then save! need a
@@ -90,9 +94,15 @@ module BreakEscape
     # login, logout and clone_card write sessions, sign-in failures and card copies
     # (access model, section 6), so they take the lock like unlock. network_plant and
     # network_unplug write footholds, the inventory and sessions (slice 9.3a, section 5).
+    # se_landing_page (phish evidence Route 1) records the build into seLandingPages and
+    # save!s the whole player_state. The client fires its POST right after the attach sync,
+    # so the two race: the unlocked POST read player_state before the sync committed, added
+    # its own key and saved its stale copy back, reverting the sync's globalVariables
+    # se_landing_pages.built to false (observed on the branch; main has no such route). It
+    # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
-                                          :login, :logout, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
-                                          :npc_frustration, :npc_workaround, :feed_post, :wear]
+                                          :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear, :se_landing_page, :se_phish_send]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -189,6 +199,13 @@ module BreakEscape
     def show
       authorize @game if defined?(Pundit)
       @mission = @game.mission
+
+      # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). show is room-agnostic
+      # and holds the full row, so this sees every split gated room in one pass before any room GET or
+      # currentRoom sync, and before this request's auto-unlock. It is read-only (no lock) for every
+      # game with nothing stuck, and takes its own row lock only for the one-time demotion of a stored
+      # soft-locked game, so show keeps its lock-free read-only cost in the common case.
+      @game.migrate_soft_locked_route_rooms!
 
       # Load player preference data for the in-game modal
       @player_preference = current_player_preference || create_default_preference
@@ -297,6 +314,10 @@ module BreakEscape
         # notes and ships as authored. The secret-keeping filters above still visit notes.
         BreakEscape::AuthorNotes.strip_notes!(filtered, BreakEscape::ScenarioSchema.root)
 
+        # Step 7: the tab learns its format here. set_game already ran ensure_current_format!, so the
+        # stored data is at current; read it as an Integer (never data['formatVersion'] directly).
+        filtered['formatVersion'] = BreakEscape::FormatUpgrade.version_of(@game.scenario_data)
+
         # Include objectives state for page reload recovery
         # This allows the client to restore completed/progress state
         # Aims the client opened by unlockCondition are derived here, since
@@ -321,7 +342,7 @@ module BreakEscape
         # These are merged over the scenario defaults in game.js, allowing flags like
         # `briefing_played` to persist across page reloads.
         if @game.player_state['globalVariables'].present?
-          filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
+          filtered['savedGlobalVariables'] = @game.client_visible_globals(@game.player_state['globalVariables'])
         end
 
         # The server-owned capture record (sync deltas R2, 6a): shipped as `captures`. The client
@@ -416,9 +437,32 @@ module BreakEscape
         # the client's POST /logout.
         filtered['sessions'] = @game.sessions_for_client
         filtered['signedInPcs'] = @game.signed_in_pcs
+        # UI slice 6: the server supports locking a held session, so the UI may show the Lock
+        # button, but only when the scenario has at least one sign-in PC (R1 minor 2). A
+        # capability flag, not per-session state; the client never sends it back.
+        filtered['sessionLockingSupported'] = @game.scenario_has_login_pc?
+        # Keyring K3a (8.1): the scenario declares credentials, so the sign-in screens fetch
+        # GET /keyring. The bootstrap drops the credentials registry itself; this static
+        # capability flag is all the client learns, and it is never part of player_state.
+        creds = @game.scenario_data['credentials']
+        filtered['credentialsDeclared'] = creds.is_a?(Hash) && creds.any?
         # Footholds held and every jack one was gained from (slice 9.3a, section 6)
         filtered['footholds'] = @game.footholds_for_client
         filtered['gainedFootholds'] = @game.gained_footholds
+        # Hiding a device in a plant (plant-hiding plan, section 7): the static definitions of
+        # hideable items and where each hidden one sits. Scenario data and a derived read of the
+        # server's record; neither is player_state and neither is sent back.
+        hideables = @game.hideables_for_client
+        if hideables.any?
+          filtered['hideables'] = hideables
+          filtered['hiddenDevices'] = @game.hidden_devices_for_client
+          if filtered['startItemsInInventory'].is_a?(Array)
+            hidden_ids = filtered['hiddenDevices'].map { |h| h['item'] }
+            filtered['startItemsInInventory'] = filtered['startItemsInInventory'].reject do |i|
+              i.is_a?(Hash) && hidden_ids.include?(i['id'])
+            end
+          end
+        end
         # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
         filtered['npcFrustration'] = @game.npc_frustration_for_client
         # Feed posts revealed so far, with their facts (slice 9.2 C, 9.4)
@@ -522,13 +566,18 @@ module BreakEscape
         # from scenario_data on every request.
         is_world_room = @game.awareness_world_room?(room_id)
 
-        unless is_start_room || is_unlocked || is_world_room
+        # A gated route room the player is slipping into (GATED_DOOR §3.2): served so the
+        # avatar and NPCs load, but not promoted to unlockedRooms, so its contents stay gated.
+        is_route_room = @game.in_npc_route_room?(room_id)
+
+        unless is_start_room || is_unlocked || is_world_room || is_route_room
           return render_error("Room not accessible: #{room_id}", :forbidden)
         end
 
         # Auto-add room to unlockedRooms when accessed
         # This ensures items in the room can be collected
-        if !is_unlocked
+        # A route room is deliberately NOT auto-unlocked (§3.2): promotion is earned, not a GET.
+        if !is_unlocked && !is_route_room
           @game.player_state['unlockedRooms'] ||= []
           @game.player_state['unlockedRooms'] << room_id unless @game.player_state['unlockedRooms'].include?(room_id)
           @game.save!
@@ -599,6 +648,13 @@ module BreakEscape
       elsif located && located[:scope]
         unless @game.session_admits?(located[:scope]) && @game.path_unlocked?(located[:path] + [located[:object]])
           return render_error("Container not unlocked: #{container_id}", :forbidden)
+        end
+        # Keyring K3c (K2 m4): a folder under a sign-in PC is judged by the route the request
+        # names, as its desktop is. A named route must pass desktop_request_allowed?; a no-route
+        # request at a relay session is refused (the holder's keyboard never reaches the shared
+        # screen). A no-route folder open under a foothold session keeps the session_admits? rule.
+        if located[:scope][:type] == 'login_pc' && !folder_route_allowed?(located[:scope][:id])
+          return render json: { error: "PC not reachable: #{located[:scope][:id]}", reason: 'unreachable' }, status: :forbidden
         end
 
         return render json: { container_id: container_id, contents: filter_container_contents(located[:object]) }
@@ -695,6 +751,7 @@ module BreakEscape
       resolved = TtsLineResolver.new(
         scenario_name: @game.mission&.name,
         scenario_data: tts_scenario_data,
+        story_file: method(:resolve_and_compile_ink),
         player_name: tts_player_name
       ).resolve(npc_id, npc, text)
       return render_error(resolved.error, resolved.status) unless resolved.line
@@ -802,6 +859,7 @@ module BreakEscape
     def sync_state
       stale = false
       refusal = nil
+      format_refusal = nil
       # Sections a merge refused over a cap (the saved copy stands). Reported
       # as notSaved so the client does not mark them confirmed and resends them.
       @not_saved = []
@@ -809,18 +867,41 @@ module BreakEscape
         @game = Game.lock.select(*SYNC_STATE_COLUMNS).find(params[:id])
         authorize @game if defined?(Pundit)
 
+        # Step 7: refuse a game stored above current (or with an unreadable formatVersion) before any
+        # merge, under the same row lock, so a tab on newer code than its server writes nothing to
+        # player_state. sync_state never upgrades: a version below current is synced as today and
+        # upgraded on the next load. The narrow sync load has no scenario_data, so pluck the version.
+        format_refusal = sync_format_refusal
+        if format_refusal
+          raise ActiveRecord::Rollback
+        end
+
+        # The request's own clientTs, kept for the ring entry's ts. A request
+        # without a numeric clientTs (a client from before the sync-ordering
+        # change) records nothing, so the ring stays keyed entirely by real
+        # stamps.
+        @sync_client_ts = params[:clientTs].is_a?(Numeric) ? params[:clientTs].to_i : nil
         stale = stale_sync_request?
-        # 6b review m1: fingerprint the phish evidence before the merge, only when something is
-        # waiting on it, so the capture step can tell whether this request advanced that evidence
-        # and skip the scenario load otherwise. A forged, never-provable unproven entry no longer
-        # forces the scenario load on every later evidence-carrying sync.
-        # Branch review R1 n2: gate on phish_gated_unproven_captures?, not unproven_captures?. An
-        # entry unproven only because a part 3 proof (a captureProof) has not yet held can never be
-        # advanced by a sync_state request (part 3 proofs arrive through other routes), so it needs
-        # no fingerprint; walking the whole mailbox to produce one a sync can never move is wasted.
-        @phish_fp_before = (!stale && @game.phish_gated_unproven_captures?) ? @game.phish_evidence_fingerprint : nil
-        refusal = merge_last_write_wins_sections unless stale
+        # Snapshot the last-write-wins sections before the merge so the ring can
+        # record only the keys a merge actually changed (a no-op resend then
+        # records nothing and forces no save). Taken only on the path that merges
+        # them.
+        ring_before = nil
+        if !stale
+          ring_before = ring_before_snapshot
+          refusal = merge_last_write_wins_sections
+        elsif @stale_recent
+          # Stale but recent, and the ring holds every newer write (the
+          # completeness guard): merge the last-write-wins sections key by key,
+          # skipping only the keys a newer recorded request already wrote. The
+          # stamp is not moved (stale_sync_request? did not store it), so this
+          # applies only unclaimed keys and can never put an older value over a
+          # newer one. currentRoom is stripped until chunk 3.
+          ring_before = ring_before_snapshot
+          refusal = merge_last_write_wins_sections(skip: ring_skip_set(@sync_client_ts))
+        end
         raise ActiveRecord::Rollback if refusal
+        record_ring_write!(ring_before) if ring_before
 
         merge_grow_only_sections
         # Server-owned capture record (sync deltas R2, 6a). Runs on a stale request too (a
@@ -828,6 +909,10 @@ module BreakEscape
         # se_captures global and records params[:captures], taking every field from the
         # scenario, so the client never owns the record.
         apply_capture_sync_step(stale: stale)
+        # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): end each invite whose cached end global is now
+        # true. Reads only credentialEndGlobals (written on the bootstrap), never scenario_data; with
+        # no cache yet it does nothing and the next bootstrap ends the invite.
+        @ended_relay_pc_ids = @game.apply_credential_end_globals!
         # validate: false because the validations here are player and mission
         # presence (twice each: belongs_to is required and validates :player /
         # :mission repeat it), which load both rows on every save, and the
@@ -839,17 +924,43 @@ module BreakEscape
         @game.save!(validate: false) if @game.changed?
       end
 
-      if refusal
+      if format_refusal
+        current = BreakEscape::FormatUpgrade.current
+        message =
+          if format_refusal.is_a?(BreakEscape::FormatUpgrade::TooNew)
+            "This game was saved by a newer version of Break Escape (format #{format_refusal.stored}; this server reads up to #{current})"
+          else
+            "This game's saved format cannot be read"
+          end
+        render json: { error: 'format', message: message, current: current }, status: :conflict
+      elsif refusal
         render json: { success: false, message: refusal }, status: :forbidden
       elsif stale
         body = { success: true, stale: true }
+        # A stale-but-recent request now merges its pre-filtered last-write-wins
+        # sections (chunk 2 and 3), so it can refuse a section the same way a fresh
+        # request does: a forged currentRoom, a capped phone or mail update. Surface
+        # notSaved and mailTrimmed on the stale answer too, so the answer reports what
+        # the server refused or trimmed. The client today returns early on any stale
+        # answer (state-sync.js) and reads neither field: it resends, and the next
+        # fresh answer carries the same notSaved and mailTrimmed. A refused room does
+        # not loop and trimmed mail reconciles then. A fully-stale whole-skip merges
+        # nothing, so neither is set.
+        body[:notSaved] = @not_saved if @not_saved.any?
+        body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
+        body[:endedRelayPcIds] = @ended_relay_pc_ids if @ended_relay_pc_ids.present?
+        # Globals and tasks a server credit wrote during this sync (a viaPass tailgate)
+        @game.add_server_writes_to_answer!(body)
         render json: body
       else
         body = { success: true }
         body[:notSaved] = @not_saved if @not_saved.any?
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
+        body[:endedRelayPcIds] = @ended_relay_pc_ids if @ended_relay_pc_ids.present?
+        # Globals and tasks a server credit wrote during this sync (a viaPass tailgate)
+        @game.add_server_writes_to_answer!(body)
         render json: body
       end
     end
@@ -865,27 +976,12 @@ module BreakEscape
       @capture_answers = {}
       @capture_refused = {}
       @capture_incoming_any = incoming.any?
-      # 6b: a request that carries globalVariables or mailState can complete an unproven entry's
-      # part 2 evidence, so the step runs (and loads the scenario) to stamp it, even with no new
-      # capture. A stale request's mail is not merged and confirms nothing, so it never stamps.
-      # 6b review m1: only when this request actually advanced the phish evidence. The merge has
-      # already run, so compare the post-merge fingerprint (counting the request's own sent
-      # messages, so a mail section refused over a cap still counts) with the pre-merge one. When
-      # they match, no new evidence arrived and the scenario load is skipped, so a forged,
-      # never-provable unproven entry does not force the load on every later sync.
-      mail_incoming = params[:mailState].respond_to?(:to_unsafe_h) ? params[:mailState].to_unsafe_h : nil
-      # Branch review R1 m1: parse the incoming mail (incoming_sent_messages re-sanitises the whole
-      # body) only when extra_sent can be used: when this request can advance the phish evidence
-      # (an unproven phish-gated entry, so @phish_fp_before is set), or carries a new capture, or
-      # has a legacy global to migrate and then stamp. The common sync (no incoming, nothing
-      # unproven and phish-gated, no legacy) now skips the second mail walk.
-      extra_sent = (!stale && (incoming.any? || !@phish_fp_before.nil? || @game.legacy_captures?)) ?
-        @game.incoming_sent_messages(mail_incoming) : []
-      needs_stamp = false
-      if !stale && !@phish_fp_before.nil?
-        needs_stamp = @game.phish_evidence_fingerprint(extra_sent: extra_sent) != @phish_fp_before
-      end
-      return if incoming.empty? && !@game.legacy_captures? && !needs_stamp
+      # Chunk C (plan section 6): a sync_state request can no longer advance the phish evidence.
+      # The gate reads only the two server-owned stores (seLandingPages, sePhishSends), written by
+      # the two gated routes, each of which re-stamps the capture itself. So the sync step runs only
+      # when it has a capture to record or a legacy se_captures global to migrate; it no longer
+      # fingerprints the mailbox or forwards the request's own sent messages.
+      return if incoming.empty? && !@game.legacy_captures?
 
       scenario = @game.stored_scenario_data
       @game.migrate_legacy_captures!(scenario: scenario) if @game.legacy_captures?
@@ -914,14 +1010,13 @@ module BreakEscape
         @capture_refused[target_id] = 'invalid'
       end
 
-      # 6b: stamp proven: true on any unproven entry whose evidence now holds, counting the
-      # request's own sent messages (the capture and its landed phish mail ride one sync; a mail
-      # section refused over a cap still proves the capture). Non-stale only: a stale request's
-      # mail is not merged. The answers rebuild below from the stamped record.
+      # Stamp proven: true on any unproven entry whose evidence now holds (reading the server
+      # stores; a capture recorded here is served the instant its route-written evidence is there).
+      # Non-stale only: a stale request records but does not stamp. The answers rebuild below from
+      # the stamped record.
       return if stale
 
-      # extra_sent was computed above (reused from the needs_stamp fingerprint check).
-      @game.stamp_proven_captures!(scenario: scenario, extra_sent: extra_sent)
+      @game.stamp_proven_captures!(scenario: scenario)
     end
 
     # params[:captures] (an array) plus each value of the old tab's
@@ -976,8 +1071,12 @@ module BreakEscape
         return render json: { success: false, message: 'Missing roomId or actionType' }, status: :bad_request
       end
 
-      # Validate room is accessible
-      unless @game.room_unlocked?(room_id)
+      # Validate room is accessible. consume_carried acts only on the server-verified
+      # npcCarry entry and names no room to change, so its client room is not trusted as
+      # a gate (review R1 m3). Every other action acts on room_id and keeps the gate; the
+      # KO room of a ko_drop is always a room the player reached, so it passes here and
+      # the KO itself is re-verified in the model.
+      unless action_type == 'consume_carried' || @game.room_unlocked?(room_id)
         return render json: { success: false, message: 'Room not accessible' }, status: :forbidden
       end
 
@@ -1026,6 +1125,50 @@ module BreakEscape
         # Use strong parameters instead of to_unsafe_h
         @game.update_npc_state!(room_id, npc_id, npc_state_params)
 
+      # NPC carried items (NPC_CARRIED_ITEMS_PLAN.md): the server tracks a carried
+      # object as a held item of the carrying NPC. roomId is the origin room for a
+      # pick-up (checked unlocked above) and the target room for a put-down; for a
+      # consume it is the NPC's room, used only by the unlocked gate above.
+      when 'carry_object'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        @game.carry_object!(room_id, npc_id, item_id)
+
+      when 'put_down_object'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        raw_pos = data[:position] || data['position']
+        position = raw_pos.respond_to?(:to_unsafe_h) ? raw_pos.to_unsafe_h : raw_pos
+        @game.put_down_carried!(room_id, npc_id, item_id, position)
+
+      when 'consume_carried'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        @game.consume_carried!(npc_id, item_id)
+
+      when 'ko_drop_carried'
+        npc_id = data && (data[:npcId] || data['npcId'])
+        item_id = data && (data[:itemId] || data['itemId'])
+        unless npc_id.present? && item_id.present?
+          return render json: { success: false, message: 'Missing npcId or itemId' }, status: :bad_request
+        end
+
+        raw_pos = data[:position] || data['position']
+        position = raw_pos.respond_to?(:to_unsafe_h) ? raw_pos.to_unsafe_h : raw_pos
+        @game.ko_drop_carried!(room_id, npc_id, item_id, position)
+
       # No 'move_npc' action: nothing in the game called it, and a client could name any NPC
       # and any room next to an unlocked one, so the NPC was served there and recorded as met
       # (friendface phone code review round 5, M1). An unknown action answers 400 below.
@@ -1066,6 +1209,11 @@ module BreakEscape
       method = params[:method]
       # Every card id the client holds, for an rfid lock with an access list (4.1).
       card_ids = params.key?(:card_ids) ? Array(params[:card_ids]).map(&:to_s) : nil
+      # Open before this request: validate_unlock grants it whatever is sent, so the answer
+      # must not say which of the sent cards the list admits, or a request per copy would
+      # sort the player's copies after the first yes (UX slice 3b R1 m1)
+      already_open = method == 'rfid' && card_ids &&
+                     (target_type == 'door' ? @game.room_unlocked?(target_id) : @game.object_unlocked?(target_id))
 
       is_valid = @game.validate_unlock(target_type, target_id, attempt, method, card_ids: card_ids)
 
@@ -1098,12 +1246,41 @@ module BreakEscape
 
       # An access-list rfid unlock says which held card passed: the player's own keycard by
       # id, a copy only as viaCopy (UX devices R1)
-      rfid_card_answer = method == 'rfid' && card_ids ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
+      rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
+
+      # Object-action gate (GATED_DOOR §3.6): an object in a served-but-unearned route room is
+      # refused before any write, so a locked container, its contents and its unlock credit stay
+      # gated until the room is promoted. The refusal is retryable: an honest player who just
+      # earned the pass (viaPass) may be one sync behind, so the client flushes a sync and re-posts
+      # (the object-path retry in unlock-system.js). It surfaces only if the room never promotes.
+      # Keyed on target_type so no door is ever gated here (a door into a route room is the split
+      # itself, §3.5). Placed before the transaction so the refusal writes nothing.
+      if target_type != 'door' && @game.object_in_unpromoted_route_room?(target_id)
+        return render json: { success: false, reason: 'room_not_reachable', retryable: true },
+                      status: :forbidden
+      end
 
       # Use transaction to ensure atomic update
       ActiveRecord::Base.transaction do
         if target_type == 'door'
-          room_data = serve_opened_room(target_id)
+          if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
+            # Gated route-room split (§3.5): the NPC route opened the door for the player's
+            # slip-in, but the room is not yet earned. Record it in npcRouteRooms rather than
+            # unlockedRooms and serve it without unlock_room!, so its contents stay gated (§3.6).
+            # Still compose filtered_room_data and track_npc_encounters, or route-room NPCs go
+            # untracked until promotion.
+            @game.record_npc_route_room!(target_id)
+            room_data = @game.filtered_room_data(target_id)
+            track_npc_encounters(target_id, room_data)
+          else
+            # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
+            # unlock_room! adds the room, then credit viaCredential on the server possession result
+            # (never a client boolean). This also deletes the room from npcRouteRooms, closing the
+            # Chunk A interim where a credential unlock left the room in both lists.
+            credit_credential = @game.split_gated_door?(target_id) && !@game.room_unlocked?(target_id)
+            room_data = serve_opened_room(target_id)
+            @game.credit_via_credential!(target_id, method, card_ids) if credit_credential
+          end
 
           door_answer = {
             success: true,
@@ -1111,6 +1288,10 @@ module BreakEscape
             roomData: room_data
           }
           door_answer.merge!(rfid_card_answer) if rfid_card_answer
+          # Open before this request: say so, and name no card (R2 m2)
+          door_answer[:alreadyOpen] = true if already_open
+          # Globals and tasks a viaCredential credit wrote during this unlock
+          @game.add_server_writes_to_answer!(door_answer)
           render json: door_answer
         else
           # Object/container unlock
@@ -1123,6 +1304,7 @@ module BreakEscape
             type: 'object'
           }
           response.merge!(rfid_card_answer) if rfid_card_answer
+          response[:alreadyOpen] = true if already_open
 
           # If object has contents, include them in response, filtered as
           # GET /container filters them (M7): a nested lock's requires and a
@@ -1149,7 +1331,9 @@ module BreakEscape
               # Use the flag ref directly ("vm:flag_N") as the submitted identifier —
               # avoids collision with station-position-based flag_ids ("vm-flagN").
               flag_ref    = object_data['requires'] || ''
-              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] })
+              # trusted: false (a client-driven completion); the explicit keyword also keeps the
+              # positional validation_data hash unambiguous under Ruby 2.7 keyword separation.
+              task_result = @game.complete_task!(task_id, { submittedFlags: [flag_ref] }, trusted: false)
               completed_tasks << task_id if task_result[:success]
             end
             response[:completedTasks] = completed_tasks
@@ -1240,6 +1424,19 @@ module BreakEscape
           @game.remove_inventory_item!(item['id'])
           render json: { success: true }
 
+        when 'hide'
+          # Hide a device in a plant (plant-hiding plan, section 7): its own branch, because a
+          # refused hide must leave the device in the tray.
+          spot = params[:hidden_in] || params[:hiddenIn]
+          result = @game.hide_device!((item.is_a?(Hash) || item.is_a?(ActionController::Parameters)) ? item['id'] : nil, spot)
+          if result[:ok]
+            render json: { success: true, hidden: result[:hidden] }
+          else
+            body = { success: false, reason: result[:reason], message: result[:message] }
+            body[:hidden] = result[:hidden] if result[:hidden]
+            render json: body, status: :unprocessable_entity
+          end
+
         when 'update_saved_cards'
           # The RFID cloner's saved cards (kept for one release while old tabs still send
           # it; SYNC_DELTAS_PLAN 5.4). A filtered merge now: only a recorded card is kept.
@@ -1293,7 +1490,11 @@ module BreakEscape
         if params.key?(:claim)
           # The model refuses a claim that carries a foothold (an unlocked screen is
           # physical), so it is passed on rather than checked here: one place of truth.
-          if params[:claim].to_s == 'owner'
+          if params.key?(:credential) || from_param_given?
+            # Keyring K2 (plan 7): claim stays first; claim with credential is the claim refusal.
+            # K4: a claim is physical, so a claim that names a `from` source is refused too.
+            { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
+          elsif params[:claim].to_s == 'owner'
             @game.claim_login_session!(pc_id, claim_globals, foothold: foothold)
           elsif params[:claim].to_s == 'guest'
             # Slice 9.2 sub-slice H: a session an NPC left open at a borrowed PC
@@ -1301,8 +1502,22 @@ module BreakEscape
           else
             { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
           end
+        elsif params.key?(:credential)
+          # Keyring K2 (plan 7): a credential body that also types a username or password gets
+          # the generic refusal, uncounted; else the credential branch
+          if params.key?(:username) || params.key?(:password)
+            @game.credential_login_refusal
+          else
+            @game.attempt_credential_login!(pc_id, params[:credential].is_a?(String) ? params[:credential] : nil,
+                                            login_route_params)
+          end
+        elsif params.key?(:relay)
+          # A relay is never a typed sign-in (plan 3.8): the generic refusal, uncounted
+          @game.credential_login_refusal
         else
-          @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold)
+          # K4: a typed password on the `from` sign-in screen is judged by the route (plan 9)
+          @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold,
+                               from: params[:from], from_given: from_param_given?)
         end
       render json: result[:body], status: result[:status]
     end
@@ -1318,7 +1533,23 @@ module BreakEscape
       # Ending a session can break a pivot; the model ends the onward sessions and returns
       # their ids (networks slice 9.3b, 5.1) for pc-sessions.js.
       ended = @game.logout_session!(pc_id)
-      render json: { success: true, endedPcIds: Array(ended) }
+      # Keyring K5 (plan 10): tokenExpiredPcIds names the expired token sessions the prune ended
+      render json: @game.with_token_expired_pc_ids({ success: true, endedPcIds: Array(ended) })
+    end
+
+    # POST /games/:id/lock_session
+    # Lock the held session at a sign-in PC (pc_id): it stays held, but the player must sign
+    # in again (POST /login, the same password check, no unlock route) to use it. Only the
+    # holder can lock; a PC with no held session is refused 422. The answer is the delta
+    # { success, pcId, locked }, so the sessions map is never re-sent whole.
+    def lock_session
+      authorize @game if defined?(Pundit)
+
+      pc_id = params[:pc_id].to_s
+      return render json: { success: false, message: 'Missing pc_id' }, status: :bad_request if pc_id.empty?
+
+      result = @game.lock_session!(pc_id)
+      render json: result[:body], status: result[:status]
     end
 
     # GET /games/:id/login_accounts?pc_id=
@@ -1331,21 +1562,54 @@ module BreakEscape
 
       info = @game.find_login_pc(params[:pc_id].to_s)
       return render_error("Sign-in PC not found: #{params[:pc_id]}", :not_found) unless info
+
+      # A request that carries a foothold is the remote sign-in screen (credential keyring K0,
+      # section 5.1): judged by reach through the foothold, never at the keyboard, and never
+      # given a post-it. A malformed foothold is refused here (400), never falling through to
+      # the keyboard branch. "Carries a foothold" means any non-empty string (a whitespace-only
+      # scalar such as foothold=%09 is not present? but still a foothold request, so it must not
+      # win the keyboard answer), or a structured value (array or hash/Parameters). Only a
+      # missing or truly empty foothold= stays on the keyboard path below.
+      # Keyring K4 (plan 9): a request that names a `from` source is the remote sign-in screen
+      # reached from a held desktop. Malformed (with a foothold too, or in a scenario that
+      # declares no credentials) is 400; every source failure is 403 in the model.
+      if from_param_given?
+        if params.key?(:foothold) || !@game.credentials_declared?
+          return render json: { error: 'Invalid from' }, status: :bad_request
+        end
+
+        result = @game.from_login_accounts(info, params[:from])
+        return render json: result[:body], status: result[:status]
+      end
+
+      foothold = params[:foothold]
+      foothold_request =
+        case foothold
+        when String then !foothold.empty?
+        when Array, Hash, ActionController::Parameters then true
+        else false
+        end
+      if foothold_request
+        result = @game.remote_login_accounts(info, foothold.to_s)
+        return render json: result[:body], status: result[:status]
+      end
+
       # A headless host has no screen and no tiles (networks slice 9.3a, section 5)
       unless @game.login_pc_reachable?(info) && !BreakEscape::NetworkModel.headless?(info[:object])
         return render_error("PC not reachable: #{params[:pc_id]}", :forbidden)
       end
-      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). The route is
-      # judged at the keyboard whatever foothold value it carries (review R3 nit 3): the PC is
-      # physically reachable here, so saying it is off tells nothing new.
+      # The sign-in screen at a switched-off PC's keyboard is not shown (q72). This keyboard
+      # off-branch runs only for a request with no foothold: a foothold request is intercepted
+      # above and judged by reach (K0 section 5.1), never here. The PC is physically reachable,
+      # so saying it is off tells nothing new.
       if @game.host_service_off?(info[:object])
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       end
 
       answer = { pc_id: info[:object]['id'], loginAccounts: @game.login_account_tiles(info[:object]) }
-      # A written-down note is seen at the PC's own keyboard only: a request that names a
-      # foothold (a remote sign-in, slice 9.3a 4.4 and 13.1) never gets it
-      note = params[:foothold].present? ? nil : @game.login_postit_for(info[:object])
+      # A written-down note is seen at the PC's own keyboard only. A foothold request never
+      # reaches here (the remote branch above handles it), so this keyboard answer carries the note.
+      note = @game.login_postit_for(info[:object])
       answer[:postitNote] = note if note
       render json: answer
     end
@@ -1540,6 +1804,81 @@ module BreakEscape
       render json: body
     end
 
+    # GET /games/:id/keyring?pc_id=&foothold=&from=&relay=&rev=
+    # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6.2): the player's earned credentials,
+    # computed server-side from state the game already keeps. A read apart from stamping a gained
+    # time on each newly listed registry entry (keyringGained), which takes the game lock only when
+    # an entry is missing one. The registry never reaches the browser; a password value is served
+    # only where GET /capture_secrets already serves it. foothold/from/relay name the screen the client
+    # is drawing; they never assert reach.
+    def keyring
+      authorize @game if defined?(Pundit)
+
+      # K4: a `from` param is answered only in a scenario that declares credentials, and only
+      # as a short PC id (plan 9 "Scope"); anything else is 400.
+      if from_param_given? && !(@game.credentials_declared? && @game.valid_from_param?(params[:from]))
+        return render json: { error: 'Invalid from' }, status: :bad_request
+      end
+
+      route =
+        if params[:relay].present? then { relay: true }
+        elsif from_param_given? then { from: params[:from] }
+        elsif params[:foothold].present? then { foothold: params[:foothold].to_s }
+        end
+      # The one write: stamp newly listed registry entries (under the lock, only when there are any)
+      answer = @game.keyring_for_client(pc_id: params[:pc_id].presence, route: route, stamp: true)
+
+      response.headers['Cache-Control'] = 'no-store'
+      if params[:rev].present? && params[:rev].to_s == answer[:rev]
+        unchanged = { rev: answer[:rev], unchanged: true }
+        # Keyring K5 (plan 10): expiresInS sits outside the digest, so it rides on unchanged too
+        live = @game.keyring_live_expires(answer[:entries])
+        unchanged[:expiresInS] = live if live.any?
+        render json: unchanged
+      else
+        render json: answer
+      end
+    end
+
+    # POST /games/:id/se/landing_page
+    # Record a landing-page build server-side (phish evidence plan, Route 1). Body:
+    # { pageId, targetId, choices }. The server validates choices against the page's authored
+    # menus and recomputes the verdict itself (BreakEscape::PhishScore); the body carries no
+    # score. Nothing reads the store for the gate yet (plan build order, chunk 3). The raw
+    # params are passed through so the model's own type and menu checks bite a hostile body.
+    def se_landing_page
+      authorize @game if defined?(Pundit)
+
+      choices = params[:choices]
+      choices = choices.to_unsafe_h if choices.respond_to?(:to_unsafe_h)
+      # A+B R2 minor 1: the reload re-drive marks its body redrive:true so the model refuses to
+      # replace a recorded meetsThreshold build with a weaker one. Passed only as a trusted boolean.
+      input = { 'pageId' => params[:pageId], 'targetId' => params[:targetId], 'choices' => choices,
+                'redrive' => params[:redrive] == true }
+
+      result = @game.build_landing_page!(input)
+      render json: result[:body], status: result[:status]
+    end
+
+    # POST /games/:id/se/phish_send
+    # Record a phish send server-side (phish evidence plan, Route 2). Body: the composed message
+    # the client bounds to PENDING_MESSAGE_KEYS plus { targetId, kitId }. The server validates the
+    # target and kit against the authored sets and the message fields against the authored accounts
+    # and payload kits (hostile-input hygiene), then computes `landed` from its own seLandingPages
+    # store (the kit's page is server-built and server-convincing); the body's `landed` is ignored.
+    # Under :with_game_lock (around_action above) because it saves the whole player_state and
+    # re-stamps captures, so an unlocked write would race performSend's mailState sync on the same
+    # row. The raw params pass through so the model's own type and menu checks bite a hostile body.
+    def se_phish_send
+      authorize @game if defined?(Pundit)
+
+      raw = params.respond_to?(:to_unsafe_h) ? params.to_unsafe_h : params
+      input = raw.is_a?(Hash) ? raw.each_with_object({}) { |(k, v), h| h[k.to_s] = v } : {}
+
+      result = @game.send_phish!(input)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/objectives/unlock
     # Record an aim or task the client unlocked from an ink tag or an
     # eventMapping (params: kind = 'aim' | 'task', objective_id). Only reveals; never
@@ -1587,11 +1926,20 @@ module BreakEscape
         validation_data[:currentCount] = params[:currentCount].to_i
       end
 
-      result = @game.complete_task!(task_id, validation_data)
+      # trusted: false — this is the client route; a server-completed-only task (a gate's
+      # creditOnPass completeTask) is refused here and completes only through the server's own
+      # credit path. The explicit keyword also keeps validation_data unambiguously positional
+      # under Ruby 2.7 keyword separation.
+      result = @game.complete_task!(task_id, validation_data, trusted: false)
 
       if result[:success]
         Rails.logger.info "[BreakEscape] Task completed: #{task_id}"
-        if (cb = BreakEscape.configuration&.on_task_complete)
+        # Fire the host rescore hook only on a real first completion, not on
+        # the idempotent "Already completed" re-post (which the conclude-race
+        # fallback makes on the same beat). skip_task below guards the hook the
+        # same way: the already-settled branch is the only success path that
+        # sets :message.
+        if !result.key?(:message) && (cb = BreakEscape.configuration&.on_task_complete)
           begin
             cb.call(@game)
           rescue => e
@@ -1988,6 +2336,30 @@ module BreakEscape
 
     def set_game
       @game = Game.find(params[:id])
+      # Step 7: bring the stored game up to the current format at load, under its row lock. A game
+      # stored above current, or with an unreadable formatVersion, is refused before any other work.
+      @game.ensure_current_format!
+    rescue BreakEscape::FormatUpgrade::TooNew, BreakEscape::FormatUpgrade::Unreadable => e
+      render_format_refusal(e)
+    end
+
+    # Step 7. One body for every format refusal. show (the only HTML route through set_game) renders
+    # a styled page; every JSON route answers 409 with { error: "format", message, current }.
+    def render_format_refusal(error)
+      current = BreakEscape::FormatUpgrade.current
+      message =
+        if error.is_a?(BreakEscape::FormatUpgrade::TooNew)
+          "This game was saved by a newer version of Break Escape (format #{error.stored}; this server reads up to #{current})"
+        else
+          "This game's saved format cannot be read"
+        end
+
+      if action_name == 'show'
+        @format_message = message
+        render template: 'break_escape/games/format_refusal', status: :conflict, layout: false
+      else
+        render json: { error: 'format', message: message, current: current }, status: :conflict
+      end
     end
 
     # Only when the route names an event (the host's alias route): the game's mission listing must be in it.
@@ -2017,20 +2389,285 @@ module BreakEscape
     # sync from the new page stale until it passed the old value.
     SYNC_STALE_RESET_MS = 10.minutes.in_milliseconds
 
+    # The stale-but-recent write ring (SYNC_STALE_RING_PLAN). A short, bounded
+    # record of the last few accepted last-write-wins writes, by clientTs and the
+    # keys (never values) each wrote, so a stale-but-recent request can be merged
+    # key by key, skipping only what a newer recorded request already wrote. It
+    # lives in player_state under 'syncWrites', is read and written only inside
+    # sync_state, and is never serialised to the client (like lastSyncClientTs).
+    SYNC_RING_MAX = 8                    # newest entries kept
+    SYNC_RING_WINDOW_MS = 60_000         # entries this far below the newest ts are dropped
+    SYNC_RING_KEYS_PER_ENTRY = 32        # recorded keys across all sections in one entry
+
+    # Last-write-wins sections the ring records per key (the string is the claim
+    # key). mailState and notes are keyed too but derive their claim key
+    # specially, so they are handled on their own below.
+    RING_KEYED_SECTIONS = %w[globalVariables npcInkVariables npcVisibility npcHostility phoneState].freeze
+    # Sections the server replaces whole (replace_timed_messages!,
+    # merge_player_health!): recorded as a whole-section claim ("true"), never per
+    # key, so a stale-but-recent request is skipped for them rather than handed a
+    # partial hash that would wipe a kept key.
+    RING_WHOLE_SECTIONS = %w[playerHealth timedMessages].freeze
+
+    # Step 7. Judge the stored formatVersion under the sync row lock. Returns a FormatUpgrade::TooNew
+    # (stored above current) or Unreadable (a bad value) to refuse the sync, or nil to proceed.
+    #
+    # At current 0 (step 7) the subsystem is inert and this returns at once, reading no scenario_data:
+    # with no format steps, a real game's stored version is only ever 0 (nothing is stamped), so none
+    # can be too-new, and a hand-crafted too-new or unreadable game is already refused at load time by
+    # set_game (ensure_current_format!), so its client never reaches a sync. This also keeps a plain
+    # sync off scenario_data entirely (the sync-deltas rule: the narrow sync load carries no
+    # scenario_data), which capture_proofs_test's query counter pins.
+    #
+    # Once current is non-zero the value is read with jsonb_typeof plus ->> rather than the whole
+    # column (one scalar, not the materialised scenario_data). This rebuilds the Ruby value exactly as
+    # set_game sees it once the adapter decodes the full jsonb column, no matter how a given adapter
+    # maps a bare jsonb expression. A JSON string scalar (for example "1") stays a Ruby String here,
+    # so version_of refuses it as Unreadable on this path just as set_game does; a JSON integer
+    # becomes an Integer, a fractional number a Float (Unreadable), JSON null or a missing key is 0.
+    def sync_format_refusal
+      current = BreakEscape::FormatUpgrade.current
+      return nil if current.zero?
+
+      type, text = Game.where(id: @game.id).pick(
+        Arel.sql("jsonb_typeof(scenario_data -> 'formatVersion')"),
+        Arel.sql("scenario_data ->> 'formatVersion'")
+      )
+      value =
+        case type
+        when 'number' then text =~ /\A-?\d+\z/ ? text.to_i : Float(text)
+        when 'string' then text
+        when 'true' then true
+        when 'false' then false
+        when 'null', nil then nil
+        else type # object / array: a non-Integer, so version_of raises Unreadable
+        end
+      stored = BreakEscape::FormatUpgrade.version_of({ 'formatVersion' => value })
+      return BreakEscape::FormatUpgrade::TooNew.new(stored, current) if stored > current
+
+      nil
+    rescue BreakEscape::FormatUpgrade::Unreadable => e
+      e
+    end
+
     # True when the request carries a clientTs no newer than the newest one
     # accepted. Otherwise records it (so every accepted request with clientTs
     # is a write, which under the change-only client means a request that has
     # something to save anyway).
     def stale_sync_request?
+      @stale_recent = false
       client_ts = params[:clientTs]
       return false unless client_ts.is_a?(Numeric)
 
       client_ts = client_ts.to_i
       stored = @game.player_state['lastSyncClientTs']
-      return true if stored.is_a?(Numeric) && client_ts <= stored && stored - client_ts <= SYNC_STALE_RESET_MS
+      if stored.is_a?(Numeric) && client_ts <= stored
+        if stored - client_ts <= SYNC_STALE_RESET_MS
+          # Stale but recent. Do not move the stamp. @stale_recent decides whether
+          # the key-by-key merge may run (the completeness guard) or the request
+          # falls back to today's whole-skip.
+          @stale_recent = stale_recent_guard_holds?(client_ts)
+          return true
+        end
+        # The ten-minute reset (a clock set back more than ten minutes between a
+        # reload's old and new page). Treat as fresh on the new, lower timeline,
+        # and clear the ring so its lingering pre-reset high-ts entries do not keep
+        # the completeness guard failing for the rest of the session (section 5,
+        # "Clearing the ring on a reset"). The same write that lowers the stamp.
+        @game.player_state['syncWrites'] = [] if @game.player_state['syncWrites'].present?
+      end
 
       @game.player_state['lastSyncClientTs'] = client_ts
       false
+    end
+
+    # The completeness guard (section 5): the key-by-key merge is correct only if
+    # the ring holds every accepted write with ts >= the request's ts. The ring
+    # keeps the newest entries within a 60 s window, so the guard holds when the
+    # request's ts is at or above the oldest retained entry's ts.
+    #
+    # An absent or empty ring is a guard failure (fall back to today's whole-skip),
+    # not a merge. This method runs only from stale_sync_request?'s stale-but-recent
+    # branch, which is reached only when lastSyncClientTs is already set, so an empty
+    # ring here never means a brand-new game: it means a game whose stamp predates
+    # the ring (an existing game on its first sync after this deploys), a ring that
+    # has fully expired, or a ring the ten-minute reset cleared. In each of those a
+    # newer last-write-wins write may sit behind the stamp with no ring entry to skip
+    # it, so merging key by key could put an older value over that newer one (build
+    # review R2, Major 1). Falling back whole-skips every last-write-wins section, so
+    # no older value lands. The only recovery this forgoes is gap 1 for the very
+    # first reduced body before any last-write-wins ring entry exists; it self-heals
+    # on the first recorded last-write-wins write.
+    def stale_recent_guard_holds?(ts)
+      ring = @game.player_state['syncWrites']
+      return false unless ring.is_a?(Array) && ring.any?
+
+      ts >= ring.map { |entry| entry['ts'] }.min
+    end
+
+    # A deep copy of the last-write-wins sections before the merge, so
+    # record_ring_write! can tell what the merge actually changed. Only the
+    # sections the ring records are snapshotted; currentRoom is a plain string.
+    def ring_before_snapshot
+      ps = @game.player_state
+      snap = {}
+      (RING_KEYED_SECTIONS + RING_WHOLE_SECTIONS + %w[notes]).each do |section|
+        snap[section] = ps[section].deep_dup
+      end
+      # mailState is capped at 1 MB, so a whole-section deep_dup here is the most
+      # expensive part of the snapshot (about 5.7 ms at the cap on Ruby 2.7.8). The
+      # mail diff (changed_mail_keys) only reads the request's own incoming claim
+      # keys, so snapshot just those before-values rather than the whole mailbox
+      # (build review R2, Minor 1). Deletion and changed-key detection stay exact:
+      # changed_mail_keys already inspects only incoming keys, so no mail change
+      # outside the incoming set was ever recorded.
+      snap['mailState'] = mail_before_snapshot(ps['mailState'])
+      snap['currentRoom'] = ps['currentRoom']
+      snap
+    end
+
+    # The before-values for just this request's incoming mailState claim keys, deep
+    # copied so the merge cannot mutate them, keyed by the dotted claim key.
+    # changed_mail_keys reads it by key rather than by navigating a mailState, so it
+    # holds only the few values this request touches, never the whole 1 MB section.
+    def mail_before_snapshot(mail)
+      incoming = params[:mailState]
+      snap = {}
+      return snap unless incoming.respond_to?(:keys)
+
+      incoming.keys.each do |k|
+        ks = k.to_s
+        snap[ks] = mail_value_at(mail, ks).deep_dup
+      end
+      snap
+    end
+
+    # Append this request's ring entry: the sections and keys its merge actually
+    # changed (after server-owned drops, notSaved refusals, cap rejections and a
+    # refused currentRoom), then normalise the ring to its fixed bound. A request
+    # with no numeric clientTs, or one whose merge changed nothing, records
+    # nothing, so a no-op resend neither grows the ring nor forces a save.
+    def record_ring_write!(before)
+      return if @sync_client_ts.nil?
+
+      w = ring_write_map(before)
+      return if w.empty?
+
+      ring = @game.player_state['syncWrites']
+      ring = [] unless ring.is_a?(Array)
+      @game.player_state['syncWrites'] = BreakEscape::SyncRing.normalise(
+        ring + [{ 'ts' => @sync_client_ts, 'w' => w }],
+        max: SYNC_RING_MAX, window_ms: SYNC_RING_WINDOW_MS, keys_per_entry: SYNC_RING_KEYS_PER_ENTRY
+      )
+    end
+
+    # The 'w' map for this request: section name to the array of claim keys it
+    # changed, or true for a whole-section claim. Only changed values are
+    # recorded (see ring_before_snapshot).
+    def ring_write_map(before)
+      ps = @game.player_state
+      w = {}
+      RING_KEYED_SECTIONS.each do |section|
+        keys = changed_hash_keys(before[section], ps[section])
+        w[section] = keys unless keys.empty?
+      end
+      notes = changed_note_ids(before['notes'], ps['notes'])
+      w['notes'] = notes unless notes.empty?
+      mail = changed_mail_keys(before['mailState'], ps['mailState'])
+      w['mailState'] = mail unless mail.empty?
+      RING_WHOLE_SECTIONS.each do |section|
+        w[section] = true if before[section] != ps[section]
+      end
+      w['currentRoom'] = true if before['currentRoom'] != ps['currentRoom']
+      w
+    end
+
+    # The keys whose value differs between two per-key section hashes (a deleted
+    # key is a change too, so a tombstone is recorded by its name). Keys are
+    # stringified to match the params keys the pre-filter compares against.
+    def changed_hash_keys(old, new)
+      old = old.is_a?(Hash) ? old : {}
+      new = new.is_a?(Hash) ? new : {}
+      (old.keys | new.keys).select { |k| old[k] != new[k] }.map(&:to_s)
+    end
+
+    # The note ids whose stored record changed (notes merge by id in the
+    # controller).
+    def changed_note_ids(old, new)
+      old_by = note_index(old)
+      new_by = note_index(new)
+      (old_by.keys | new_by.keys).select { |id| old_by[id] != new_by[id] }
+    end
+
+    def note_index(notes)
+      idx = {}
+      Array(notes).each { |n| idx[n['id'].to_s] = n if n.is_a?(Hash) && n.key?('id') }
+      idx
+    end
+
+    # The mailState claim keys this request changed. `before` is the dotted before-
+    # value map from mail_before_snapshot (keyed by the dotted claim key); `after` is
+    # the live mailState. The claim key is the dotted string the client sent as a
+    # top-level params key (mailboxes.<box>.<msgId>, threads.<key>, jobs/drafts/
+    # metrics), which is also the string the pre-filter compares, so the map is
+    # identity on the dotted form. A key is recorded only when its stored value
+    # actually changed, so a notSaved (refused) or no-op mailState records nothing.
+    def changed_mail_keys(before, after)
+      incoming = params[:mailState]
+      return [] unless incoming.respond_to?(:keys)
+
+      before = before.is_a?(Hash) ? before : {}
+      incoming.keys.map(&:to_s).select { |k| before[k] != mail_value_at(after, k) }
+    end
+
+    # The stored value a dotted mailState claim key points at, so before and
+    # after can be compared. Mirrors mail_state_updates' parse (split on the first
+    # dot after the prefix), so a box or message id containing a dot round-trips.
+    def mail_value_at(mail, dotted_key)
+      return nil unless mail.is_a?(Hash)
+
+      if dotted_key.start_with?('mailboxes.')
+        box_id, msg_id = dotted_key.delete_prefix('mailboxes.').split('.', 2)
+        box = mail.dig('mailboxes', box_id)
+        return nil unless box.is_a?(Hash)
+
+        Array(box['messages']).find { |m| m.is_a?(Hash) && m['id'] == msg_id }
+      elsif dotted_key.start_with?('threads.')
+        mail.dig('threads', dotted_key.delete_prefix('threads.'))
+      else
+        mail[dotted_key]
+      end
+    end
+
+    # The skip set for a stale-but-recent request at `ts`, built from the stored
+    # ring by BreakEscape::SyncRing.skip_set.
+    def ring_skip_set(ts)
+      BreakEscape::SyncRing.skip_set(@game.player_state['syncWrites'], ts)
+    end
+
+    # The incoming section hash narrowed for a stale-but-recent request: the
+    # claimed keys (keys a newer recorded request already wrote) removed. Returns
+    # the narrowed hash, or nil to skip the merge entirely (a wholly-claimed
+    # section, or nothing left after filtering). With no skip set (a fresh
+    # request) the hash is returned unchanged. The existing merge methods then run
+    # unchanged on the narrowed input, so their own guards still apply, and a key
+    # left in is one no newer accepted request wrote, so last-write-wins is
+    # correct for it.
+    def ring_filter_section(section, hash, skip)
+      return hash if skip.nil?
+
+      claim = skip[section]
+      return hash if claim.nil?
+      return nil if claim == :whole
+
+      kept = hash.reject { |k, _| claim.include?(k.to_s) }
+      kept.empty? ? nil : kept
+    end
+
+    # A whole-replace section (playerHealth, timedMessages) a newer entry claimed:
+    # skip its merge entirely rather than hand it a partial hash.
+    def ring_whole_claimed?(section, skip)
+      !skip.nil? && skip[section] == :whole
     end
 
     # Sections where the last write wins: a stale request would put older
@@ -2039,71 +2676,118 @@ module BreakEscape
     # set back to hidden), and a phone entry replaces the saved one whole, so
     # an older thread would drop newer texts. npcHostility and playerHealth
     # likewise. Returns a refusal message, or nil.
-    def merge_last_write_wins_sections
-      if params[:currentRoom]
+    #
+    # On a stale-but-recent request `skip` is the ring skip set (section 5): each
+    # section is pre-filtered to drop the keys a newer recorded request already
+    # wrote. currentRoom is handled inline rather than by a merge_*! call, and is
+    # recorded as a whole-section claim, so it is skipped only when a newer ring
+    # entry claimed it (`ring_whole_claimed?`); an unclaimed room on a
+    # stale-but-recent request goes through the normal acceptance below, exactly as
+    # a fresh room does (skip nil makes `ring_whole_claimed?` false). Chunk 3.
+    def merge_last_write_wins_sections(skip: nil)
+      if params[:currentRoom] && !ring_whole_claimed?('currentRoom', skip)
         room = params[:currentRoom]
-        unless Array(@game.player_state['unlockedRooms']).include?(room) ||
-               Game.where(id: @game.id).pick(Arel.sql("scenario_data->>'startRoom'")) == room
-          return "Cannot enter locked room: #{room}"
+        # Accept currentRoom for a gated route room the player is slipping into (GATED_DOOR
+        # §3.3a), so the avatar and the saved room agree (no snap-back) and the no-vest slip-in
+        # works. Acceptance is never promotion: the viaPass credit below runs only when the
+        # gate's server-owned playerMayPassIf is true.
+        # Acceptance mirrors player_reached_room? (Game#may_sync_current_room?): unlockedRooms, a
+        # route room, the start room, or the awareness world room. The last admits an awareness
+        # episode's world room (e.g. ca12's "lobby"), which enterWorld places the player in without a
+        # door unlock so it is never in unlockedRooms; without it, enabling the currentRoom sync
+        # would refuse every sync while the learner stood in that room.
+        if @game.may_sync_current_room?(room)
+          @game.player_state['currentRoom'] = room
+          # viaPass credit (GATED_DOOR §3.3a): if this room is a served-but-unearned route room and
+          # the gate's server-owned pass global is true, promote it and apply the viaPass credit. A
+          # no-op (and no scenario read) on an ordinary room; the honest no-vest slip-in fails the
+          # pass check and stays a route room. Runs inside the sync_state row-lock transaction.
+          @game.credit_via_pass_on_sync!(room)
+        else
+          # R4 MINOR 1: a room outside the acceptance set is a forge (or a future bespoke placement
+          # the room-load invariant does not cover). Skip ONLY the currentRoom update and its viaPass
+          # credit -- never save or credit a refused room -- and report it in notSaved so the rest of
+          # this batch (globalVariables, notes, captures, health and the rest) still commits. The old
+          # behaviour returned a refusal, which rolled the whole batch back and 403'd it; with
+          # currentRoom now a live sync field, a persistent refusal would re-send the whole batch on
+          # every sync forever (SYNC SIZE) and never advance any saved section. The client confirms
+          # currentRoom on a notSaved (so it does not re-send the same refused room) and sends a room
+          # again only when it changes. Globals and every other section keep their own guards.
+          @not_saved << 'currentRoom'
         end
-
-        @game.player_state['currentRoom'] = room
       end
 
       if params[:globalVariables].respond_to?(:to_unsafe_h)
-        @game.merge_global_variables!(params[:globalVariables].to_unsafe_h)
+        gv = ring_filter_section('globalVariables', params[:globalVariables].to_unsafe_h, skip)
+        @game.merge_global_variables!(gv) if gv
       end
 
       if params[:npcInkVariables].respond_to?(:to_unsafe_h)
-        @game.merge_npc_ink_variables!(params[:npcInkVariables].to_unsafe_h)
+        ink = ring_filter_section('npcInkVariables', params[:npcInkVariables].to_unsafe_h, skip)
+        @game.merge_npc_ink_variables!(ink) if ink
       end
 
-      if params[:timedMessages].respond_to?(:to_unsafe_h)
+      if params[:timedMessages].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('timedMessages', skip)
         @game.replace_timed_messages!(params[:timedMessages].to_unsafe_h)
       end
 
-      if params[:phoneState].respond_to?(:to_unsafe_h) &&
-         @game.merge_phone_state!(params[:phoneState].to_unsafe_h) == false
-        @not_saved << 'phoneState'
+      if params[:phoneState].respond_to?(:to_unsafe_h)
+        phone = ring_filter_section('phoneState', params[:phoneState].to_unsafe_h, skip)
+        @not_saved << 'phoneState' if phone && @game.merge_phone_state!(phone) == false
       end
 
       # mailState: each key replaces the saved message, thread or list whole, so
       # an older copy would undo a read mark or bring back a delivered job (00 §10a)
       if params[:mailState].respond_to?(:to_unsafe_h)
-        if @game.merge_mail_state!(params[:mailState].to_unsafe_h) == false
-          @not_saved << 'mailState'
-        elsif @game.mail_trimmed_keys.any?
-          # A successful save still trimmed read mail to fit the 1 MB cap: report
-          # the dropped keys so the client drops them too, instead of holding
-          # them as confirmed and losing them silently on reload (P1-D).
-          @mail_trimmed = @game.mail_trimmed_keys
+        mail = ring_filter_section('mailState', params[:mailState].to_unsafe_h, skip)
+        if mail
+          if @game.merge_mail_state!(mail) == false
+            @not_saved << 'mailState'
+          elsif @game.mail_trimmed_keys.any?
+            # A successful save still trimmed read mail to fit the 1 MB cap: report
+            # the dropped keys so the client drops them too, instead of holding
+            # them as confirmed and losing them silently on reload (P1-D).
+            @mail_trimmed = @game.mail_trimmed_keys
+          end
         end
       end
 
       if params[:npcVisibility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_visibility!(params[:npcVisibility].to_unsafe_h)
+        vis = ring_filter_section('npcVisibility', params[:npcVisibility].to_unsafe_h, skip)
+        @game.merge_npc_visibility!(vis) if vis
       end
 
       # Hostility is latest-wins per NPC (a KO is kept by the merge itself)
       if params[:npcHostility].respond_to?(:to_unsafe_h)
-        @game.merge_npc_hostility!(params[:npcHostility].to_unsafe_h)
+        host = ring_filter_section('npcHostility', params[:npcHostility].to_unsafe_h, skip)
+        @game.merge_npc_hostility!(host) if host
       end
 
+      # Carried items are written only by the four update_room carry actions and never
+      # synced by the client, so an incoming npcCarry delta is ignored: the carry
+      # actions own the authoritative writes and the serve path re-validates every
+      # stored carry. (No sync merge: a forged npcCarry in sync_state writes nothing.)
+
       # The player's HP (m05 E6): latest wins, so a stale flush can't undo a hit
-      if params[:playerHealth].respond_to?(:to_unsafe_h)
+      if params[:playerHealth].respond_to?(:to_unsafe_h) && !ring_whole_claimed?('playerHealth', skip)
         @game.merge_player_health!(params[:playerHealth].to_unsafe_h)
       end
 
       # Notes merge by id, so an edit overwrites the saved copy and a new note
       # is added
       if params[:notes].present?
-        existing = @game.player_state['notes'] ||= []
-        params[:notes].map(&:to_unsafe_h).each do |note|
-          idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
-          if idx
-            existing[idx] = note
-          else
-            existing << note
+        notes_claim = skip && skip['notes']
+        unless notes_claim == :whole
+          existing = @game.player_state['notes'] ||= []
+          params[:notes].map(&:to_unsafe_h).each do |note|
+            next if notes_claim && notes_claim.include?(note['id'].to_s)
+
+            idx = existing.index { |n| n['id'].to_s == note['id'].to_s }
+            if idx
+              existing[idx] = note
+            else
+              existing << note
+            end
           end
         end
       end
@@ -2171,7 +2855,7 @@ module BreakEscape
         BreakEscape::Game.strip_puzzle_graph_keys!(obj) # generator-only authoring fields
         # A declared grant's contents are served from the held item, never shipped
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
-        if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        if lock_type && !BreakEscape::Game::CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
           obj.delete('requires')
         end
 
@@ -2272,7 +2956,10 @@ module BreakEscape
         # room; its files come from the scenario (or the default), never from the browser
         find_container_recursive(@game.held_usb_sticks, container_id) ||
         # A container an NPC carried, released by a give or KO record (unlock gaps build)
-        find_container_recursive(@game.released_npc_containers, container_id)
+        find_container_recursive(@game.released_npc_containers, container_id) ||
+        # A locked start item the player begins with (hardening item 4): its contents are
+        # served filtered from the authored scenario copy, as held grants and sticks are
+        find_container_recursive(Array(@game.scenario_data['startItemsInInventory']), container_id)
     end
 
     def find_container_recursive(objects, container_id)
@@ -2332,6 +3019,14 @@ module BreakEscape
         found = find_object_in_object(container, object_id)
         return found if found
       end
+      # Then a locked start item the player begins with (hardening item 4), as
+      # Game#find_scenario_object, so an opened start item serves its contents.
+      Array(@game.scenario_data['startItemsInInventory']).each do |start_item|
+        next unless start_item.is_a?(Hash)
+
+        found = find_object_in_object(start_item, object_id)
+        return found if found
+      end
       nil
     end
 
@@ -2378,6 +3073,9 @@ module BreakEscape
     # host only on a remote one), so the client learns at once that a keyboard fetch made
     # a remote session local (review R1, m3).
     def render_login_desktop(container_id)
+      # Keyring K4 R1 m3: a bare ?from (Rack reads it as nil) is malformed, never the keyboard rule
+      return render json: { error: 'Malformed from', reason: 'malformed' }, status: :bad_request if params.key?(:from) && params[:from].nil?
+
       info = @game.find_login_pc(container_id)
       return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden unless info
 
@@ -2385,21 +3083,82 @@ module BreakEscape
       npc = @game.session_identity(pc['id'])
       return render json: { error: "Not signed in: #{container_id}", reason: 'no_session' }, status: :forbidden unless npc
 
-      foothold = params[:foothold].presence&.to_s
-      refusal = @game.desktop_refusal(info, foothold)
+      # Keyring K2 (plan 3.8): the route the request names, judged against the server's record
+      route = desktop_route_params
+      refusal = route == :conflict ? 'unreachable' : @game.desktop_refusal(info, route)
       if refusal == 'off'
         # At the keyboard of a switched-off PC (q72): the session is kept, the desktop refused
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       elsif refusal == 'not_responding'
         return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal == 'expired'
+        # Keyring K5 (plan 10): a session token that has run out; the client says "{label} has expired."
+        return render json: { error: 'Session token expired', reason: 'expired' }, status: :forbidden
+      elsif refusal == 'no_session'
+        return render json: { error: "PC not reachable: #{container_id}", reason: 'no_session' }, status: :forbidden
       elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
 
-      @game.settle_session_at_keyboard!(pc['id']) if foothold.nil?
+      @game.settle_session_at_keyboard!(pc['id']) if route.nil?
 
       contents = filter_container_contents('contents' => @game.login_desktop_contents(pc, npc))
       render json: { container_id: container_id, contents: contents, session: @game.session_for_client(pc['id']) }
+    end
+
+    # The route a credential POST /login names (keyring K2, plan 7): foothold, from and relay as
+    # sent, for the model to judge (more than one, or none, is refused there).
+    def login_route_params
+      {
+        foothold: params[:foothold].presence&.to_s,
+        # K4: the raw value, so an array or hash fails valid_from_param? (the generic refusal)
+        from: from_param_given? ? params[:from] : nil,
+        relay: ActiveModel::Type::Boolean.new.cast(params[:relay]) == true ? true : nil
+      }.compact
+    end
+
+    # Keyring K3c (K2 m4): may a folder under the sign-in PC pc_id open by the route this
+    # request names? A named route (relay=1, foothold=, from=) is judged as the desktop is; two
+    # routes conflict; no route is refused only at a relay session.
+    def folder_route_allowed?(pc_id)
+      route = desktop_route_params
+      return false if route == :conflict
+
+      info = @game.find_login_pc(pc_id)
+      return false unless info
+
+      if route.nil?
+        session = @game.access_sessions[pc_id.to_s]
+        return !@game.relay_session?(session)
+      end
+      @game.desktop_request_allowed?(info, route)
+    end
+
+    # The route a desktop request names (keyring K2, plan 3.8): { relay: true } for relay=1,
+    # { from: } for from= (K4), { foothold: } for foothold=, nil for none (the keyboard), and
+    # :conflict when more than one is named.
+    def desktop_route_params
+      relay = params[:relay].present? && ActiveModel::Type::Boolean.new.cast(params[:relay]) == true
+      # K4: any non-empty from= is a `from` request (a whitespace one is refused by the model,
+      # never the keyboard); a structured value is refused outright
+      from = from_param_given? ? params[:from] : nil
+      return :conflict if from_param_given? && !from.is_a?(String)
+
+      foothold = params[:foothold].presence&.to_s
+      named = [relay, !from.nil?, foothold.present?].count(&:itself)
+      return :conflict if named > 1 || (params[:relay].present? && !relay)
+      return { relay: true } if relay
+      return { from: from } if from
+      return { foothold: foothold } if foothold
+
+      nil
+    end
+
+    # Keyring K4 (plan 9): the request names a `from` source. Any value counts except a missing
+    # or truly empty from=, so a whitespace or structured value is judged (and refused), never
+    # treated as the keyboard.
+    def from_param_given?
+      params.key?(:from) && !(params[:from].is_a?(String) && params[:from].empty?)
     end
 
     # The workstation globals a claim carries (<id>_screen_locked, <id>_owner_away),
@@ -2477,11 +3236,12 @@ module BreakEscape
     # Game#add_item_to_room! stamps it. A client must not set it on an item it builds
     # (an always-allowed item reaches the non-Hash branch below with just this filter),
     # so a security marker is never client-writable (code review R2, m2).
-    # phoneOf names whose Friendface phone an item is; only the scenario sets it
-    # (q35 review R1 m1).
+    # owner names whose thing an item is (a Friendface phone's owner, since format 2); only the
+    # scenario sets it, so a client-built item could otherwise mint one (q35 review R1 m1). phoneOf
+    # stays listed so a tab still running pre-format-2 code cannot send the old name either.
     CLIENT_ITEM_FORBIDDEN_FIELDS = (
       BreakEscape::ItemIdentity::FORGEABLE_ITEM_FIELDS +
-      %w[scenarioData phoneOf] +
+      %w[scenarioData phoneOf owner] +
       [BreakEscape::ItemIdentity::CLIENT_ADDED_MARKER]
     ).freeze
 
@@ -2617,7 +3377,7 @@ module BreakEscape
         # Review R2 M1: an NPC's Friendface phone lies in a room only as a stored NPC drop. A save
         # made before add_item_to_room! checked the drop can hold one taken from a live NPC that
         # never offered it, so the pickup asks the same question
-        owner = found_item['phoneOf']
+        owner = found_item['owner']
         if found_item['type'] == BreakEscape::SocialFeed::FRIENDFACE_PHONE && owner.is_a?(String) &&
            !@game.npc_room_drop_allowed?(owner, found_item)
           error_msg = "NPC does not give this item: #{owner}"

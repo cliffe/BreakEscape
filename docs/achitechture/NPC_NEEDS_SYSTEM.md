@@ -285,6 +285,15 @@ voice generation (5.6a).
 `noticed` and `blocked` (section 4.1, slice 3b). The old name `showNpcIntentBubbles` is no longer
 read; the validator warns on it.
 
+`npcThoughts`: boolean, default true (D77). `false` draws no NPC action icon and no thought bubble
+(pressing need, avoidance, parked need), whatever `showPressingNeeds` says. It also turns off picture
+chat (the icon-only chatter bubbles: grumbles, news, workaround starts, failure mutters, unheard
+turns, the desk-phone picture), since an icon bubble shows what an NPC wants. Barks, speech bubbles,
+spoken chatter lines, conversation UI and held items (`officeVisuals`) are untouched. The campaign
+missions m01 to m10 and the sis missions set it false; the labs and `test_needs_sims` keep their
+icons. The icons read it through `npcThoughtsOn()` in `systems/npc-action-icons.js`; the needs system
+reads it through its own world hook (`npcThoughtsOn` in `createEngineWorld`, `systems/npc-needs.js`).
+
 ---
 
 ## 4. Runtime architecture
@@ -571,6 +580,11 @@ during the walk home (exists). Player-facing behaviour:
 - **Timing.** A line shows for 2.5 s + 50 ms a character, at most 4 s, then a 0.5 s gap, on the
   needs clock. A line starts only if it ends before the first of the two uses does, so a 15 s
   overlap gives three or four lines and a short one gives one. Dwell times never stretch.
+- **Coupled pairs.** A pair sent to a capacity-2 object by an eventMapping on `npc_use_started`
+  (the partner's need set so it follows the first user) overlap only for the use less the
+  partner's walk. Give such an object a `useSeconds` of at least the partner's measured walk to it
+  plus 20 s, so the pair have time for an exchange or several barks (the test_needs_sims cooler is
+  40 s; at the preset's 15 s the pair had 3 to 7 s together).
 - **Pools.** Since slice 15 there are no built-in lines (5.6a): a scenario's `chatter` pools
   (`coffee`, `cooler`, `greet`, `grumble`) and an NPC's own `chatter` lines for that topic make up
   what an NPC can say, and with none it shows picture chat. `"chatter": false` turns chat off
@@ -590,7 +604,21 @@ during the walk home (exists). Player-facing behaviour:
   mid-chat lets the pairing finish. With no `needsCompany` anywhere, `_free` never checks, and the
   decision log is byte-identical.
 - **Second user's spot.** The live adapter's `besideCell` puts the second NPC heading for a shared
-  object one walkable tile beside the first one's approach cell (right, left, below, above).
+  object one walkable tile beside the first one's approach cell (right, left, below, above). Since
+  E7 to E9 (`OFFICE_LIFE_MISSIONS_PLAN.md` 9.1) that side must also be reachable from where the
+  second NPC stands, with its leash (`besideCell(cell, taken, { from, avoidRooms })`): a side with a
+  definite "no path" (`routeLength(..., { detail: true })` gives `known: true, length: null`) is
+  passed over, and a side whose route is unknown (no pathfinder answer) counts as reachable, as
+  `reachable()` treats it. With no side passing, the job fails at once with `npc_job_failed`
+  `reason: "no_beside_cell"`: the object goes on the NPC's fail cooldown (60 s) and the NPC walks
+  home. Before, such a partner stood on the first user's cell or walked to a cut-off cell until its
+  20 s deadline.
+- **Order of events on a failed second user.** `_startJob` emits `npc_left_post` and places any
+  left-behind items (`_leavePost`) before `_moveForPhase` picks the cell, so a partner that fails
+  with `no_beside_cell` has already "left" its post. Harmless where nothing is left behind and
+  nothing is mapped on `npc_left_post`; a mission that combines left-behind items or
+  `npc_left_post` mappings with a capacity-2 object states in its plan what a failed partner's
+  leave does.
 - **Bubbles** (`systems/npc-world-bubbles.js`) draw `getState().talking`: the speaker's line in a
   white rounded box above the head. Only for NPCs in the player's room, not while it is dark, not
   under any open minigame, at most four on screen (nearest the player). While an NPC talks its
@@ -602,6 +630,7 @@ during the walk home (exists). Player-facing behaviour:
 
 ### 5.6a Voiced chatter, scripted exchanges and picture chat (office life slice 15, `OFFICE_LIFE_PLAN.md` section 11)
 
+- **Turning picture chat off.** Two switches: `"chatter": false` (all chat) and `"npcThoughts": false` (picture chat and the action icons; spoken lines stay, see the flag paragraph earlier in this document).
 - **Where lines live.** Barks are strings in a scenario `chatter` pool or an NPC's `chatter`; they are
   voiced by the speaker's TTS voice on first play and cached like any bark. The server accepts them
   (`ScenarioBarkValidator.bark_texts`, `validate_shared`; `/tts` and `TtsExpectedLines`), so the pruner
@@ -610,6 +639,44 @@ during the walk home (exists). Player-facing behaviour:
 - **Bag.** An NPC draws from a seeded shuffle-bag per NPC and topic over the pool it speaks (shared
   plus own lines). It refills when empty and a refill never starts with the line just said. Bags are
   in memory only (not saved).
+- **Earshot (E7 to E9).** A chat turn counts as heard by `playerHears(speakerId, radius)`: the
+  player in the speaker's room, within the radius, the room lit, a clear line. The radius is one
+  rule, `_chatRadius`: the object's `overhearRadius`, else the `overhearRadius` of that speaker's
+  pool for the chat's topic, else 160 px (`OVERHEAR_RADIUS`). Bark turns, the exchange start gate
+  and the exchange-line heard check all use it. It is stricter than the voice layer, which plays a
+  faint line from out of earshot (see "Faint chatter" below) at a volume that falls with distance; an author who
+  wants the whole of a room to count sets `overhearRadius` on the chatter object (the schema accepts
+  it on an affordance).
+- **Spent only when heard (E7).** A bark turn takes a line from the bag, and starts the speaker's
+  cooldown, only when the player hears that speaker. Out of earshot the turn is a picture (or
+  nothing, for a pool with `pictures: false`), no line is taken, the cooldown does not start and the
+  speech lock is not held, so a bark turn nobody hears never delays a pair the player can hear. This
+  is for bark turns only: an exchange voices every line through the speech lock whether or not the
+  player is in earshot of it, so an exchange whose first line was heard holds the lock to its end
+  even after the player walks away, and a pair the player stands beside waits behind it. An
+  unheard turn with nothing to show does not count towards the 40 silent turns after which a
+  meeting is given up. A break that starts before the player arrives still has a line ready for
+  each speaker when the player walks in. A heard turn takes a line only if it can be said inside
+  the overlap left (`_pickBark`'s `maxMs`, checked on the bag's next line before it is drawn): one
+  that would outlast the overlap gives a picture if that fits, or ends the chat, with the bag and
+  the cooldown untouched.
+- **Faint chatter (D34, option c).** Out of earshot is not silent. A bark turn, grumble or mutter
+  the player cannot hear in full, but within the falloff range (full volume to the pool's
+  `overhearRadius`, fading to a floor at 3 times it) or next door through an open door (x0.4), still
+  draws a bag line and is voiced faintly (the distance curve times 0.5, so at most 0.5 and still falling with distance), with a dimmed bubble; a faint grumble or mutter dims its bubble the same way. It never counts as
+  heard: no `npc_overheard`, no `heard_<knot>`, no room-tone duck, so E9 and every gate are unchanged.
+  It spends only its own throttle (`faintQuietUntil`, 25 s), not the chatter cooldown, so the E7 rule
+  above still holds: the speaker has a line ready when the player walks up. A faint line never waits
+  for or takes the speech lock from another line, and gives the lock to any line the player hears
+  in full (bark, exchange line, desk call, mutter) at once, fading its voice in 0.3 s. It ducks under
+  a scripted bark. While a person-chat or phone-chat is open, or a minigame opened from one (its
+  `returnTo` names the chat; the chat is suspended under it), by the live minigame's scene type and
+  not the sticky type, no chatter is overheard, voiced or toasted, and room tone ducks too. A priority
+  mutter that carries a secret (`login_aloud`) the player does not overhear is not voiced at all. That line is a cue ("it's on the note"), not the credential: the credential comes from the server on a heard listening tick, and the window stays open after the line, so a player who walks into earshot after a silent cue can still get "Overheard" (the q42 design; playtesters should not report it). Authoring rule: credentials and secrets go only in priority mutters, never in exchange or pool lines, because out of earshot those are background voices (heard through an open door with no heard credit); the validator's V11 warns on a pool line that names one. The scenario flag `"faintChatter":
+  false` and the player's "Background voices" switch in the music widget turn every background voice off. An
+  exchange line voiced out of earshot keeps the lock, shows a dimmed bubble and is a background voice
+  too (the same switch, the same 0.5 scale), though no full line cuts it. Design, tests and
+  live proof: `CHATTER_FALLOFF.md`.
 - **Cooldown.** After a spoken line the NPC stays quiet for `chatterCooldownMin` needs-clock minutes
   (NPC field, default 5). Pictures never start or wait for it.
 - **Speech lock.** One global lock (`_speechUntil`, across rooms): bark and exchange turns wait for
@@ -620,23 +687,45 @@ during the walk home (exists). Player-facing behaviour:
   `line: null, picture`.
 - **Exchanges.** NPC field `exchanges: [{ with: "<npcId>" | "group:<name>", knot, requireGlobal }]`
   (the lower id's list is read first). A `knot` is an ink knot on the owner's story whose lines are
-  prefixed `Name:` for the other speaker. When a compatible pair meets and the player hears them
-  (same room, lit, in range, clear line, checked every turn, so walking up mid-meeting works), the
-  first unheard exchange for the pair plays instead of a bark. Every speaker named in the knot must
+  prefixed `Name:` for the other speaker. When a compatible pair meets and the player hears the
+  exchange's **first speaker** at the chat's radius (E9; checked every free turn, so walking up
+  mid-meeting works), the first unheard exchange for the pair plays instead of a bark. Hearing only
+  the partner gives a bark or picture turn instead. An entry skipped only because its
+  `requireGlobal` does not hold yet keeps the meeting looking (E9): when the gate opens mid-meeting,
+  the exchange starts on the next free turn with its first speaker in earshot. A meeting stops
+  looking once no entry can become playable (none for the pair, all heard). Put anything the player
+  must not miss in the first line, spoken by a named first speaker. Every speaker named in the knot must
   be one of the pair, or it is not played. It runs on a separate `inkjs` story (the player's
   conversation state is untouched), one line per bubble (`exchangeLineMs`, at most 6 s), each in its
   speaker's voice through `systems/npc-needs-chatter.js` (`window.npcChatterVoice`; plays only in the
   player's room, volume falls with distance, muted when barks are muted, `log` records every line).
-  The pair's overlap is extended by the knot, capped at 60 s. At the end the global `heard_<knot>` is
-  set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>` fires. A meeting
-  interrupted mid-exchange leaves it unplayed. Afterwards the same meeting carries on with barks,
-  then pictures.
+  The pair's overlap is held for the lines left (moved on by lines that wait for the speech lock),
+  capped at 60 s from the start (`EXCHANGE_MAX_MS`); the front of a queue in an exchange does not run
+  out its queue wait until the exchange ends or reaches that cap. **The heard rule (E9):** an
+  exchange counts as heard when the player overheard at least one of its lines (each line checked
+  at the chat's radius for its speaker), whether it played to the end or was cut (the pair breaks
+  up: a use or queue that ends, a player conversation, a knock-out). Heard: the global
+  `heard_<knot>` is set (saved, so once per game survives a reload) and `npc_exchange_heard:<knot>`
+  fires with `complete` true (played to the end) or false (a heard cut); it is never played again,
+  so the lines after a heard cut are lost. No line reached the player (cut, or played to the end to
+  an empty room, logged `exchange_unheard { knot, of }`): unplayed, and a later meeting in earshot
+  plays it from the start; a meeting plays at most one exchange either way. With the start gate the
+  first line is heard whenever it starts on that tick; the unheard case arises when the first line
+  waits for the speech lock and the player leaves meanwhile. So an exchange gated on another's
+  `heard_<knot>` always follows news the player heard. This replaces the rule in
+  `EXCHANGE_HEARD_FIX_LOG.md` (played to the end, or cut after a heard line). A hush from an earlier bark in the same chat is
+  cleared when an exchange starts. A task that needs the whole exchange binds with `condition:
+  "data.complete === true"`; put anything the player must learn in the first line. The validator
+  warns when a knot's lines add up to more than 60 s (the last lines would never play). Afterwards
+  the same meeting carries on with barks, then pictures.
 - **Order.** Each turn: unheard exchange (with audience), then a bark (if lines, off cooldown, lock
   free), then a picture. `_grumble` (5.8) uses the same bag, cooldown and lock, and shows `avoid`
   otherwise.
 - **Dark rooms.** `playerHears` now needs the NPC's room lit (`roomLevel >= 0.5`), so `overheard`,
   `npc_overheard` (slice 8 and 14) and exchanges do not fire in a dark room.
-- **Decision log.** `exchange_started` (`knot`, `with`) and `exchange_heard` (`knot`).
+- **Decision log.** `exchange_started` (`knot`, `with`), `exchange_cut` (`knot`, `reason`
+  (`pair_ended`), `line`, `of`, `heardLines`, `heard`) and `exchange_heard` (`knot`,
+  `complete`).
 - **Not saved:** bags, cooldowns, the lock. Saved: `heard_<knot>`.
 
 ### 5.7 Queues at shared machines (office life slice 10, `OFFICE_LIFE_PLAN.md` 2.5, 7.3)
@@ -882,7 +971,7 @@ events.
 | `npc_caught_at_post:<npcId>` | `{npcId, objectId, playerDistance, inMinigame}` (5.3) |
 | `npc_picked_up:<itemId>` | `{npcId, itemId, tag}` |
 | `npc_used:<objectId>` | `{npcId, objectId, need, itemId, tag, payload, playerNearby}` |
-| `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`); `{npcId, need, targetId, itemId, reason: "item_gone"}` when the player took the item an NPC was fetching (slice 7) |
+| `npc_job_failed:<npcId>` | `{npcId, need, targetId, reason}` (`timeout`, `no_approach`, `no_beside_cell` (E8, 5.6)); `{npcId, need, targetId, itemId, reason: "item_gone"}` when the player took the item an NPC was fetching (slice 7) |
 | `object_revealed:<slotId>` | `{producerId, npcId, objectId}` (a reveal slot shown by `revealOutput`, 3.3a); `{npcId, objectId, leftBehindBy}` for a left-behind item (3.3b) |
 | `npc_left_item_gone:<npcId>` | `{npcId, itemId, playerNearby, playerDistance}` (back at the post, the item it left was taken, 3.3b) |
 | `npc_placed:<itemId>` | `{npcId, itemId, targetId, roomId}` (a delivered slot set down, 3.3a) |
@@ -924,7 +1013,11 @@ events.
 - `npc_overheard:<speakerId>` with the same payload, only when `overheard` is true.
 - Slice 15: `npc_chatted` also carries `picture` (an icon name, with `line: null`) for picture chat
   and `exchange` (the knot) for an exchange line. `npc_exchange_heard:<knot>` `{ knot, ownerId, npcIds,
-  objectId }` fires when an exchange finishes, once per game (global `heard_<knot>`).
+  objectId, complete }` fires once per game (global `heard_<knot>`) when the player overheard at least
+  one line of an exchange, played to the end (`complete: true`) or cut (`complete: false`; 5.6a, E9).
+  An exchange played to the end with no line overheard fires nothing (decision log `exchange_unheard`).
+- `npc_job_failed:<npcId>` gains `reason: "no_beside_cell"` (E8, 5.6): a second user of a shared
+  object found no reachable side cell.
 - `npc_turned_back:<npcId>` `{ npcId, need, targetId, reason, avoidedId?, playerNearby, playerDistance }`
   when an NPC gives up a source it was walking to or queued for (5.8).
 - `npc_need_parked:<npcId>` `{ npcId, need, reason, targetId, avoidedId?, untilMs }` when a need parks (5.8).

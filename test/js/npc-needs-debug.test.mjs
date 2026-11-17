@@ -83,3 +83,77 @@ test('wrapLabel: the job line in short lines at spaces, so it stays over the NPC
     assert.equal(wrapLabel('a_very_long_object_identifier'), 'a_very_long_object_identifier', 'a long word keeps its own line');
     assert.equal(wrapLabel(''), '');
 });
+
+// Critique S01: the showcase overlay is readable (GNF bitmap font, display names) and the
+// panels no longer sit on top of each other.
+test('stackOverlayBoxes: the lowest block stays, an overlapping one above it moves clear', async () => {
+    const { stackOverlayBoxes } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    const dy = stackOverlayBoxes([
+        { id: 'low', x: 0, y: 100, w: 40, h: 30 },
+        { id: 'high', x: 10, y: 90, w: 40, h: 30 },
+        { id: 'apart', x: 200, y: 95, w: 40, h: 30 }
+    ], 2);
+    assert.equal(dy.low, 0);
+    assert.equal(dy.high, 100 - 2 - 30 - 90, 'moved up to clear the low block by the gap');
+    assert.equal(dy.apart, 0, 'no horizontal overlap: stays');
+});
+
+test('stackOverlayBoxes: a chain of three overlapping blocks stacks into a column', async () => {
+    const { stackOverlayBoxes } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    const dy = stackOverlayBoxes([
+        { id: 'a', x: 0, y: 100, w: 40, h: 20 }, { id: 'b', x: 5, y: 98, w: 40, h: 20 }, { id: 'c', x: 2, y: 96, w: 40, h: 20 }
+    ], 2);
+    const top = (id, y) => y + dy[id];
+    assert.ok(top('b', 98) + 20 + 2 <= 100);
+    assert.ok(top('c', 96) + 20 + 2 <= top('b', 98));
+});
+
+test('stackOverlayBoxes stable: two NPCs passing each other never swap panels', async () => {
+    const { stackOverlayBoxes } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    // "ann" sorts first, so she keeps her place whichever block is lower; the other goes up
+    for (const [annY, bobY] of [[100, 90], [90, 100], [95, 95]]) {
+        const dy = stackOverlayBoxes([
+            { id: 'bob', x: 5, y: bobY, w: 40, h: 30 }, { id: 'ann', x: 0, y: annY, w: 40, h: 30 }
+        ], 2, true);
+        assert.equal(dy.ann, 0, `ann stays when her block is at ${annY} and bob's at ${bobY}`);
+        assert.ok(bobY + dy.bob + 30 + 2 <= annY, 'bob clears ann');
+    }
+    // input order does not matter
+    const a = stackOverlayBoxes([{ id: 'x', x: 0, y: 5, w: 9, h: 9 }, { id: 'y', x: 0, y: 5, w: 9, h: 9 }], 2, true);
+    const b = stackOverlayBoxes([{ id: 'y', x: 0, y: 5, w: 9, h: 9 }, { id: 'x', x: 0, y: 5, w: 9, h: 9 }], 2, true);
+    assert.deepEqual(a, b);
+});
+
+test('npcLabelName: the display name when the NPC manager has one, else the id', async () => {
+    const { npcLabelName } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    const w = { npcManager: { getNPC: (id) => (id === 'amara' ? { displayName: 'Amara Osei' } : null) } };
+    assert.equal(npcLabelName('amara', w), 'Amara Osei');
+    assert.equal(npcLabelName('tom', w), 'tom');
+    assert.equal(npcLabelName('tom', {}), 'tom');
+});
+
+test('the overlay draws with the GNF bitmap font helper, not VT323 canvas text', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../../public/break_escape/js/systems/npc-needs-debug.js', import.meta.url), 'utf8');
+    assert.match(src, /from '\.\.\/utils\/pixel-text\.js'/);
+    assert.doesNotMatch(src, /VT323/);
+    assert.doesNotMatch(src, /scene\.add\.text\(/);
+});
+
+test('stackOverlayBoxes minTop: a block that would climb out of the view goes below instead', async () => {
+    const { stackOverlayBoxes } = await import('../../public/break_escape/js/systems/npc-needs-debug.js');
+    const boxes = [
+        { id: 'a', x: 0, y: 40, w: 40, h: 30 },
+        { id: 'b', x: 5, y: 38, w: 40, h: 30 },
+        { id: 'c', x: 2, y: 36, w: 40, h: 30 }
+    ];
+    const free = stackOverlayBoxes(boxes, 2, true);
+    assert.ok(36 + free.c < 0, 'without a limit the third panel leaves the top of the view');
+    const dy = stackOverlayBoxes(boxes, 2, true, 0);
+    for (const b of boxes) assert.ok(b.y + dy[b.id] >= 0, `${b.id} stays inside the view`);
+    const placed = boxes.map((b) => ({ ...b, y: b.y + dy[b.id] }));
+    for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) {
+        const p = placed[i], q = placed[j];
+        assert.ok(p.y + p.h <= q.y || q.y + q.h <= p.y, `${p.id} and ${q.id} do not overlap`);
+    }
+});

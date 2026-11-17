@@ -40,13 +40,13 @@ function scenario() {
     return {
         scenario_brief: 'workarounds fixture',
         startRoom: 'office',
-        resources: { rota: { name: 'Rota', kind: 'rota', downIf: 'rota_down' } },
+        resources: { rota: { name: 'Rota', kind: 'rota', offWhen: 'rota_down' } },
         roles: { staff: { workNeeds: ['rota'], frustration: { perFail: 20 } } },
         globalVariables: { rota_down: false, tom_pc_off: false, store_propped: false },
         rooms: {
             office: {
                 type: 'room_office', connections: { north: 'store' },
-                objects: [pc('mei_pc'), pc('tom_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'tom_pc_off' } }),
+                objects: [pc('mei_pc'), pc('tom_pc', { offWhen: 'tom_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
                     pc('ellis_pc'), { id: 'wedge', type: 'fire_extinguisher1', name: 'Wedge', revealOnGlobal: 'store_propped' }],
                 npcs: [
                     worker('mei', { workarounds: [{ at: 50, do: 'writes_down' }] }),

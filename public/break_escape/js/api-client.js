@@ -7,9 +7,10 @@ export class ApiClient {
   /**
    * GET request
    */
-  static async get(endpoint) {
+  static async get(endpoint, { signal } = {}) {
     const response = await fetch(`${getApiBase()}${endpoint}`, {
       method: 'GET',
+      ...(signal ? { signal } : {}),
       credentials: 'same-origin',
       headers: {
         'Accept': 'application/json'
@@ -102,13 +103,20 @@ export class ApiClient {
   // Validate unlock attempt. `extra` carries optional fields for some lock types:
   // { card_ids } for an rfid lock with an access list (access model 4.1).
   static async unlock(targetType, targetId, attempt, method, extra = {}) {
-    return this.post('/unlock', {
+    // Stamped at dispatch so a late unlock answer cannot overwrite a newer sync's server writes
+    const clientTs = typeof window !== 'undefined' ? window.stateSync?.nextClientTs?.() : undefined;
+    const answer = await this.post('/unlock', {
       ...extra,
       targetType,
       targetId,
       attempt,
       method
     });
+    // A door unlock may credit a gate (viaCredential): apply the globals and tasks it wrote
+    if (answer && (answer.serverGlobals || answer.serverCompletedTasks || answer.serverMissionConcluded) && typeof window !== 'undefined') {
+      window.stateSync?.applyServerWrites?.(answer, clientTs);
+    }
+    return answer;
   }
 
   // Record a card the card copier saved (access model 4.2). `source` is
@@ -151,9 +159,11 @@ export class ApiClient {
   // { success, npcId, username, displayName, via } (a remote one adds remote, footholdId
   // and host); a refusal throws with err.status (422) and err.body { message,
   // attemptsLeft, lockedOut?, notPermitted?, remoteBlocked? }.
+  // K4: { from: <source pcId> } names a desktop route instead (one route at a time).
   static async login(pcId, fields = {}) {
-    const { foothold, ...rest } = fields || {};
-    return this.post('/login', { ...rest, ...(foothold ? { foothold } : {}), pc_id: pcId });
+    const { foothold, from, ...rest } = fields || {};
+    const route = foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {});
+    return this.post('/login', { ...rest, ...route, pc_id: pcId });
   }
 
   // Networks (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md section 5). Only
@@ -205,12 +215,59 @@ export class ApiClient {
     return this.post('/logout', { pc_id: pcId });
   }
 
+  // Lock the held session at a sign-in PC (UI slice 6): it stays held, but a sign-in (the same
+  // password check) is needed to use it again. Only the holder can lock; a PC with no held
+  // session throws (422). Answers the delta { success: true, pcId, locked: true }; `locked` is
+  // never sent back as state.
+  static async lockSession(pcId) {
+    return this.post('/lock_session', { pc_id: pcId });
+  }
+
   // The account tiles for a sign-in PC's loginPicker, refreshed each time its sign-in
   // screen opens: { pc_id, loginAccounts: [{ username, displayName, portrait, avatar }] },
   // plus postitNote ("<username> / <password>") when the owner writes the password down
   // (slice 9.1, 5.3). Sent no-store; never asked for a PC the player is not at.
-  static async loginAccounts(pcId) {
-    return this.get(`/login_accounts?pc_id=${encodeURIComponent(pcId)}`);
+  //
+  // A remote sign-in screen passes { foothold }: the request names the foothold the player
+  // reached the PC through (credential keyring K0, plan 5.2), so the server answers from
+  // Game#remote_login_accounts (the PC's own tiles under remoteScreen "tiles", never the
+  // post-it) instead of the keyboard branch. Additive: with no foothold the URL is unchanged.
+  static async loginAccounts(pcId, { foothold, from } = {}) {
+    let url = `/login_accounts?pc_id=${encodeURIComponent(pcId)}`;
+    if (foothold !== undefined && foothold !== null && foothold !== '') {
+      url += `&foothold=${encodeURIComponent(foothold)}`;
+    } else if (typeof from === 'string' && from) {
+      // K4: a sign-in screen reached from another desktop
+      url += `&from=${encodeURIComponent(from)}`;
+    }
+    return this.get(url);
+  }
+
+  // The player's earned credentials (credential keyring K3a, plan 6.2), asked only in a
+  // scenario that declares credentials (window.gameScenario.credentialsDeclared). pc_id and
+  // foothold name the screen being drawn, so each entry carries forThisPc and accepted; rev
+  // asks for { rev, unchanged: true } when nothing changed since that answer.
+  static async keyring(pcId = null, { foothold, from, rev, signal } = {}) {
+    const params = [];
+    if (pcId) params.push(`pc_id=${encodeURIComponent(pcId)}`);
+    if (foothold !== undefined && foothold !== null && foothold !== '') params.push(`foothold=${encodeURIComponent(foothold)}`);
+    else if (typeof from === 'string' && from) params.push(`from=${encodeURIComponent(from)}`);
+    if (rev) params.push(`rev=${encodeURIComponent(rev)}`);
+    return this.get(`/keyring${params.length ? `?${params.join('&')}` : ''}`, { signal });
+  }
+
+  // Sign in with a keyring credential (keyring K2, plan 7): POST /login { pc_id, credential }
+  // with the screen's route. Never sends relay: false. Answers as login() with kind and label;
+  // a refusal throws with err.status and err.body (wrongPc, kindRefused, notPermitted,
+  // lockedOut, ended, remoteBlocked, or the generic message).
+  static async loginWithCredential(pcId, credential, { foothold, relay, from } = {}) {
+    // K3c: the relay route is relay: true, and only when asked; one route at a time.
+    // K4: { from: <source pcId> } is the desktop route.
+    let route = {};
+    if (relay === true) route = { relay: true };
+    else if (foothold) route = { foothold };
+    else if (typeof from === 'string' && from) route = { from };
+    return this.post('/login', { pc_id: pcId, credential, ...route });
   }
 
   /**

@@ -34,6 +34,9 @@ def check_capture_log(json_data)
     end
   end
 
+  # ---- Sign-ins list row fields (K3d, plan 8.7) ----
+  check_capture_row_fields(json_data, err, warn)
+
   # ---- Authored capture strings are bounded (sync deltas R2, 6a) ----
   # A note is at most MAX_CAPTURE_NOTE_CHARS code points; roleLabel, address and host at most
   # MAX_CAPTURE_FIELD_CHARS; a target id at most MAX_CAPTURE_TARGET_CHARS. The server stores each
@@ -43,7 +46,7 @@ def check_capture_log(json_data)
   # the serving path, but these string fields ride the bootstrap mirror and the sync answer
   # verbatim, so an author who put a lock code into a note would leak it on a forged pre-beat
   # claim. Keep the note channel as safe as the secret channel.
-  hard_values = cm.hard_access_values(json_data).to_a.select { |v| v.is_a?(String) && v.length >= 3 }
+  hard_values = cm.hard_access_raw_values(json_data).to_a.select { |v| v.is_a?(String) && v.length >= 3 }
   cm.all_capture_candidates(json_data).each do |cand|
     fields = cand[:fields]
     tid = fields['targetId'].to_s
@@ -74,8 +77,16 @@ def check_capture_log(json_data)
     err.call("#{entry[:path]}: a proof on an add_capture action is not read: put it on the account holder as captureProof")
   end
   shorthands = cm.shorthand_proofs(json_data)
+  account_passwords = cm.room_npc_list(json_data).filter_map do |holder|
+    holder['creds']['password'] if cm.account_holder?(holder) && cm.present_string?(holder['creds']['password'])
+  end.to_set
+  # A holderless proof is allowed when it carries a non-account secret (the staff Wi-Fi key,
+  # written by a phone NPC): it is checked like any other proof, with no holder.
+  holderless_key = lambda do |entry|
+    entry[:holder].nil? && cm.present_string?(entry[:secret]) && !account_passwords.include?(entry[:secret])
+  end
   shorthands.each do |entry|
-    next if entry[:holder]
+    next if entry[:holder] || holderless_key.call(entry)
 
     err.call("#{entry[:path]}: this proof resolves to no account holder (its capture's address names no " \
              'account, and the mapping is not on one): put it on the account holder as captureProof')
@@ -121,12 +132,12 @@ def check_capture_log(json_data)
   pc_admits = lambda do |pc, npc|
     pc['access'].nil? || ai.acl_admits?(pc['access'], npc)
   end
-  lock_codes = cm.lock_codes(json_data)
+  lock_answer_keys = cm.lock_answer_keys(json_data)
   # The server's rule (CaptureProofs#account_password_opens_something?): a sign-in PC that
-  # admits the account, a password or PIN lock whose code is the password, or an access-listed
-  # share that admits it.
+  # admits the account, a password, PIN, combination or cryptex lock whose answer is the password,
+  # or an access-listed share that admits it.
   opens_something = lambda do |npc|
-    return true if cm.password_opens_lock?(npc, json_data, lock_codes)
+    return true if cm.password_opens_lock?(npc, json_data, lock_answer_keys)
     return true if login_pcs.any? { |pc| pc_admits.call(pc, npc) }
     return false unless networks
 
@@ -138,6 +149,12 @@ def check_capture_log(json_data)
   end
 
   # ---- Each proof: well formed, naming what exists ----
+  plant_objects = cm.top_level_room_objects(json_data) # the server records a plant on these only
+  jack_ids = cm.reachable_jack_ids(json_data) # a jack plant is a foothold, found through contents
+  sign_in_pc_ids = cm.sign_in_pc_ids(json_data) # login_scope_of's rule, not top level only
+  # Pass or fail comes from CaptureModel.proof_satisfiable? (the helper the network validator
+  # shares, written to the server's capture_proof_holds? and its recorders); this lambda keeps
+  # the per-reason messages and the extra warnings.
   check_proof = lambda do |proof, where, holder|
     kind = cm.proof_kind(proof)
     unless kind
@@ -145,22 +162,31 @@ def check_capture_log(json_data)
                "or { \"session\": pc }, got #{proof.to_json}")
       next
     end
+    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder, jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids,
+                                scenario: json_data)
     case kind
     when 'planted'
       item_id = proof['planted'].to_s
       on = proof['on']
       item = item_defs[item_id]
       err.call("#{where}: planted names \"#{item_id}\", which is no item in the scenario") unless item
+      hideable = item.is_a?(Hash) && item['hideable'].is_a?(Hash)
+      if hideable
+        # A hideable device is planted through the hide flow (HidingSpots): `on` may be a decor plant
+        err.call("#{where}: planted \"#{item_id}\" needs hideable.rooms and, with `on`, a plant spot") unless ok
+        next
+      end
       if on && !object_ids.include?(on.to_s)
         err.call("#{where}: planted on \"#{on}\", which is no room object")
         next
       end
+      # A nested jack is valid: the server records a jack plant as a foothold (find_jack walks contents).
       jack = on && objects.any? { |e| e[:object]['id'].to_s == on.to_s && nm.jack?(e[:object]) }
       next if jack || item.nil?
 
       takers = objects.select do |e|
         obj = e[:object]
-        obj['id'].is_a?(String) && !obj['id'].empty? && (on.nil? || obj['id'] == on) && cm.object_takes_item?(obj, item)
+        obj['id'].is_a?(String) && !obj['id'].empty? && (on.nil? || obj['id'].to_s == on.to_s) && cm.object_takes_item?(obj, item)
       end
       takers.each do |e|
         obj = e[:object]
@@ -176,29 +202,32 @@ def check_capture_log(json_data)
                   "#{shared.keys.first(3).join(', ')} also match: the player may plant one of those instead, and " \
                   "this proof names \"#{item_id}\". Name the item by id in requiresItem")
       end
-      if takers.empty?
-        err.call("#{where}: planted \"#{item_id}\"#{on ? " on \"#{on}\"" : ''} needs a room object with an id and a " \
-                 'triggerOnInteract list, whose requiresItem names the item and which consumes it (consumesItem, or a ' \
-                 'remove_item naming it), or a network jack: the server records a plant only there')
-      end
+      next if ok
+
+      err.call("#{where}: planted \"#{item_id}\"#{on ? " on \"#{on}\"" : ''} needs a room object with an id and a " \
+               'triggerOnInteract list, whose requiresItem names the item and which consumes it (consumesItem, or a ' \
+               "remove_item naming it)#{on ? ', or the network jack it names' : ''}: the server records a plant only there")
     when 'dropped'
       item_id = proof['dropped'].to_s
       item = item_defs[item_id]
       if !item
         err.call("#{where}: dropped names \"#{item_id}\", which is no item in the scenario")
-      elsif item['droppable'] != true
+      elsif !ok
         err.call("#{where}: dropped names \"#{item_id}\", which is not droppable: the server records only a player_drop")
       end
     when 'session'
       pc_id = proof['session'].to_s
-      unless login_pc_ids.include?(pc_id)
+      unless ok
         err.call("#{where}: session names \"#{pc_id}\", which is no sign-in PC (lockType login)")
         next
       end
       pc = login_pcs.find { |p| p['id'].to_s == pc_id }
+      next unless pc
+
       others = holders.reject { |npc| npc.equal?(holder) }.select { |npc| pc_admits.call(pc, npc) }
       unless others.empty?
-        warn.call("#{where}: the session proof on \"#{pc_id}\" also holds after another account signs in there " \
+        after = holder ? 'after another account signs in there' : 'after any of these accounts signs in there'
+        warn.call("#{where}: the session proof on \"#{pc_id}\" also holds #{after} " \
                   "(#{others.map { |n| n['id'] }.join(', ')}): signedInPcs records the PC, not the account")
       end
     end
@@ -219,7 +248,39 @@ def check_capture_log(json_data)
     end
     list.each_with_index { |proof, i| check_proof.call(proof, "#{entry[:path]}/captureProof[#{i}]", npc) }
   end
-  shorthands.each { |entry| check_proof.call(entry[:proof], entry[:path], entry[:holder]) if entry[:holder] }
+  shorthands.each do |entry|
+    check_proof.call(entry[:proof], entry[:path], entry[:holder]) if entry[:holder] || holderless_key.call(entry)
+  end
+
+  # A non-account secret written on an account holder's own writer (a mapping or an add_capture
+  # action), or addressed to an account's username, is never served:
+  # build_authored_capture_secrets skips both. Put the writer on an NPC with no creds, and no
+  # account address.
+  holder_set = holders
+  holder_names = holder_set.map { |npc| cm.normalise_username(npc['creds']['username']) }.to_set
+  cm.each_capture_writer(json_data) do |capture, _kind, path, owner|
+    next unless cm.present_string?(capture['secret']) && !account_passwords.include?(capture['secret'])
+
+    owned = owner.is_a?(Hash) && holder_set.any? { |npc| npc.equal?(owner) }
+    addressed = capture['address'].is_a?(String) && holder_names.include?(cm.normalise_username(capture['address']))
+    next unless owned || addressed
+
+    why = owned ? "on account holder \"#{owner['id']}\"" : "addressed to the account \"#{capture['address']}\""
+    warn.call("#{path}: this capture writes a secret that is no account password (targetId \"#{capture['targetId']}\") " \
+              "#{why}; the server skips such a writer, so the secret is never served. Move the writer to an NPC " \
+              'with no creds and no account address')
+  end
+
+  # An account holder with a proof whose password opens nothing is served with no proof at all.
+  room_npcs.each do |entry|
+    npc = entry[:npc]
+    next unless ai.account?(npc) && npc['captureProof'].is_a?(Array) && !npc['captureProof'].empty?
+    next if opens_something.call(npc)
+
+    warn.call("#{npc['id']} (#{entry[:path]}): captureProof is set but the password opens nothing (no lock, no sign-in " \
+              'PC or share access list admits this account), so it is served with no proof at all. List the account ' \
+              'on a PC or share, or drop the proof')
+  end
 
   # ---- When the rule is strict ----
   strict = cm.declares_proofs?(json_data)
@@ -338,21 +399,73 @@ end
 
 # Every lock code (a string requires) and every account password, for the storeIn text check.
 def capture_log_secret_strings(json_data, holders)
+  cm = BreakEscape::CaptureModel
   out = Set.new
   holders.each do |npc|
     pw = npc['creds']['password']
     out << pw if pw.is_a?(String) && pw.length >= 3
   end
-  walk = lambda do |node|
-    case node
-    when Hash
-      req = node['requires']
-      out << req if req.is_a?(String) && req.length >= 3 && node['lockType'].is_a?(String) && %w[pin password].include?(node['lockType'])
-      node.each_value { |v| walk.call(v) }
-    when Array
-      node.each { |v| walk.call(v) }
+  # Over the whole-tree lock-answer walk (step 3), so the storeIn text check also catches a
+  # combination, cryptex or door-entry answer written into visible text, not only pin/password.
+  cm.each_lock_answer(json_data) do |lock_type, value, _path|
+    case lock_type
+    when 'pin', 'password', 'cryptex'
+      str = value.to_s
+      out << str if str.length >= 3
+    when 'combination'
+      nums = cm.combination_numbers(value)
+      next unless nums
+
+      str = nums.join('-')
+      out << str if str.length >= 3
     end
   end
-  walk.call(json_data['rooms'])
   out.to_a
+end
+
+# The authored rowTag and rowSource on a capture writer, and a capture address that names two
+# account holders. Mirrors CaptureModel.capture_row_meta: rowTag must be one of the writer kind's
+# tags (credential: password, pin; foothold: foothold, finding), rowSource only "phished" and only
+# on a credential capture. A mapping on an NPC with a usePayload gives a plain and an overlaid
+# candidate, so each message is reported once.
+def check_capture_row_fields(json_data, err, warn)
+  cm = BreakEscape::CaptureModel
+  seen = Set.new
+  once = lambda do |level, msg|
+    level.call(msg) if seen.add?(msg)
+  end
+  cm.all_capture_candidates(json_data).each do |cand|
+    fields = cand[:fields]
+    source = cand[:source] || {}
+    kind = fields['kind'].to_s
+    tid = fields['targetId'].to_s[0, 40]
+    tags = cm::ROW_TAGS[kind]
+
+    unless source[:row_tag].nil?
+      tag = source[:row_tag]
+      if !tag.is_a?(String) || !cm::ROW_TAGS.values.flatten.include?(tag)
+        once.call(err, "capture \"#{tid}\" has rowTag #{tag.is_a?(String) ? "\"#{tag[0, 20]}\"" : '(not a string)'}: " \
+                       'it must be password, pin, foothold or finding')
+      elsif tags && !tags.include?(tag)
+        once.call(err, "capture \"#{tid}\" has rowTag \"#{tag}\" on a #{kind} capture: " \
+                       "a #{kind} capture takes #{tags.join(' or ')}")
+      end
+    end
+
+    unless source[:row_source].nil?
+      row_source = source[:row_source]
+      if row_source != 'phished'
+        once.call(err, "capture \"#{tid}\" has rowSource #{row_source.is_a?(String) ? "\"#{row_source[0, 20]}\"" : '(not a string)'}: " \
+                       'the only allowed value is "phished"')
+      elsif kind == 'foothold'
+        once.call(err, "capture \"#{tid}\" has rowSource on a foothold capture: a foothold row carries " \
+                       'no source tag, so remove it')
+      end
+    end
+
+    next unless kind == 'credential' && cm.ambiguous_account_address?(json_data, fields['address'])
+
+    once.call(warn, "ambiguous capture address on \"#{tid}\": two or more account holders share that username, " \
+                    'so the Sign-ins list cannot join the capture to an account')
+  end
 end

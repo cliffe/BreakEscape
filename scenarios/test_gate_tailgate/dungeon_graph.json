@@ -4,13 +4,25 @@
   "nodes": [
     {
       "id": "door_staff_room",
-      "label": "Staff Only<br/>RFID lock",
+      "label": "Staff Only<br/>RFID lock<br/>gated: credential or server pass",
       "kind": "lock",
       "optional": false
     },
     {
       "id": "staff_room",
       "label": "Staff Only",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "grant_visitor_lanyard_worn",
+      "label": "Visitor lanyard<br/>(granted)",
+      "kind": "item",
+      "optional": false
+    },
+    {
+      "id": "office",
+      "label": "Open-Plan Office",
       "kind": "room",
       "optional": false
     }
@@ -20,6 +32,11 @@
       "from": "door_staff_room",
       "to": "staff_room",
       "soft": false
+    },
+    {
+      "from": "office",
+      "to": "grant_visitor_lanyard_worn",
+      "soft": true
     }
   ]
 }

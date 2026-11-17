@@ -212,7 +212,7 @@ module BreakEscape
     def with_lena_implant
       data = implant_scenario
       lena = data['rooms']['finance_office']['objects'].find { |o| o['id'] == 'lena_pc' }
-      lena['affordance'] = { 'offWhen' => LENA_OFF }
+      lena['offWhen'] = LENA_OFF
       data['globalVariables'] = (data['globalVariables'] || {}).merge(LENA_OFF => false)
       build_network_game({ 'sessions' => { 'lena_pc' => { 'id' => 'lena', 'via' => 'claim' } } }, data)
       body = implant('lena_pc', 'session')

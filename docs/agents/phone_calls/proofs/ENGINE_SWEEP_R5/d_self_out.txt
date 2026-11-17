@@ -1,0 +1,3 @@
+game 2391 (d_self)
+records: [{"npc":"the_architect","theme":"terminal","selfClose":true,"beatAt":66089,"completeAt":68723,"goneAt":68730,"laterCalls":null,"clipPlayingAtBeat":false,"lastLineAtBeat":"Let it hurt afterwards, not during. I expect you've been told that.","read_ms":2634}]
+rows: ["Call: No caller ID"] mg=null

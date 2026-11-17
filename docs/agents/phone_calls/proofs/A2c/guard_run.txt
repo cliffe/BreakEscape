@@ -1,0 +1,49 @@
+game 1707 (guard)
+shot guard_call_connected
+1: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+2: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+3: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+4: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+5: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+6: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+7: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+8: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+9: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+10: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+11: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+12: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+13: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+14: {"mg":"phone-chat","ringer":"connected","guardX":null,"guardY":null}
+shot guard_during
+challenge opened during the call? []
+true
+call ended; watching for the next sighting
+after 1: null
+after 2: null
+after 3: "person-chat"
+after 4: "person-chat"
+after 5: "person-chat"
+after 6: "person-chat"
+after 7: "person-chat"
+after 8: "person-chat"
+after 9: "person-chat"
+after 10: "person-chat"
+after 11: "person-chat"
+after 12: "person-chat"
+after 13: "person-chat"
+after 14: "person-chat"
+after 15: "person-chat"
+after 16: "person-chat"
+after 17: "person-chat"
+after 18: "person-chat"
+after 19: "person-chat"
+after 20: "person-chat"
+after 21: "person-chat"
+after 22: "person-chat"
+after 23: "person-chat"
+after 24: "person-chat"
+after 25: "person-chat"
+player_in_view:guard emitted at (s): [17.4,69.7]
+timeline:
+["17.3s null|caller_basic:ringing","17.8s null|caller_basic:connected","18.3s phone-chat:caller_basic|caller_basic:connected","66.3s null|null","70.3s person-chat:guard|null"]
+shot guard_after

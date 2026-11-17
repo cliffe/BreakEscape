@@ -1,0 +1,13 @@
+{
+  "key": "5cde50189efe685cfaf5dddbe9ceff2a",
+  "npc": "jodie",
+  "text": "Comes in waves. Right now it's just us and the boiler.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:07:26Z"
+}

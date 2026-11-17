@@ -412,3 +412,116 @@
 .objectives-end-button:focus {
   background: #1d4d33;
 }
+
+/* Phones (UI decision H1 option A): the panel is a one-line pill in the top bar showing the
+   current aim and its count (objectives-panel.js updatePill). It never opens by itself; a tap
+   opens it as a sheet over the map, closed by its X. Objective toasts fold into a pulse of the
+   pill (foldToast). Same test as ui/hud-lanes.js isCompactViewport. */
+.objectives-pill-summary {
+  display: none;
+}
+
+@media (max-width: 899.98px), (max-height: 500px) {
+  /* The pill takes the width up to 8px short of the menu buttons (ui/hud-lanes.js measures it
+     into --hud-pill-room; the fallback is the 14px + 132px buttons). The whole pill is the
+     button, so no chevron; the count comes first and never shrinks (review R1 M2). */
+  .objectives-panel.collapsed {
+    box-sizing: border-box;
+    width: var(--hud-pill-room, calc(100vw / var(--hud-zoom, 1) - 174px));
+    max-width: 480px;
+    min-width: 0;
+  }
+  .objectives-panel.collapsed .objectives-header {
+    padding: 8px 8px;
+  }
+  .objectives-panel.collapsed .objectives-controls,
+  .objectives-panel.collapsed .objectives-title-text {
+    display: none;
+  }
+  .objectives-panel.collapsed .objectives-clipboard {
+    margin-right: 0;
+  }
+  .objectives-panel.collapsed .objectives-pill-summary {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    margin: 0 0 0 8px;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    white-space: nowrap;
+  }
+  .objectives-pill-count {
+    flex: 0 0 auto;
+  }
+  .objectives-pill-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* The sheet's frame stays on screen: its border is inside the width (review R1 M3) */
+  .objectives-panel.objectives-sheet {
+    box-sizing: border-box;
+    width: calc(100vw / var(--hud-zoom, 1) - 32px);
+    left: 16px;
+    max-height: 50vh;
+  }
+  /* The sheet's toggle is its X */
+  .objectives-panel.objectives-sheet .objectives-toggle .obj-chevron {
+    display: none;
+  }
+  .objectives-panel.objectives-sheet .objectives-toggle::after {
+    content: 'X';
+    font-family: 'Press Start 2P', monospace;
+    font-size: 16px;
+    line-height: 16px;
+  }
+  .objectives-panel.pill-pulse {
+    animation: objectives-pill-pulse 0.5s steps(2, end) 4;
+  }
+}
+
+/* Phones held upright: the count says what the pill is, so the clipboard gives its 28px to the
+   aim's text (about three more characters at 360 to 420 px wide); the open sheet keeps it */
+@media (max-width: 420px) {
+  .objectives-panel.collapsed .objectives-clipboard {
+    display: none;
+  }
+  .objectives-panel.collapsed .objectives-pill-summary {
+    margin-left: 0;
+  }
+}
+
+/* Phones held upright: the aim may take a second line, so most aims read in full (review R2
+   m1). The pill keeps its width, clear of the menu buttons; past two lines it ends in an
+   ellipsis, and the header's title still has the whole aim. The lanes measure the taller pill. */
+@media (max-width: 899.98px) and (min-height: 501px) and (orientation: portrait) {
+  /* Sized from the content: two 18px lines, the header's padding and the frame (review R3 m2) */
+  .objectives-panel.collapsed {
+    max-height: none;
+  }
+  .objectives-panel.collapsed .objectives-pill-summary {
+    align-items: flex-start;
+    white-space: normal;
+  }
+  .objectives-panel.collapsed .objectives-pill-count {
+    line-height: 18px;
+  }
+  .objectives-panel.collapsed .objectives-pill-text {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    line-height: 18px;
+    max-height: 36px;
+    overflow-wrap: break-word;
+  }
+}
+
+/* A hard on/off blink in whole steps (no soft glow) */
+@keyframes objectives-pill-pulse {
+  0% { outline: 2px solid #ffd23f; outline-offset: 0; }
+  100% { outline: 2px solid transparent; outline-offset: 0; }
+}

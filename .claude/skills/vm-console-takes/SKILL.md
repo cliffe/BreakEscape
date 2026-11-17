@@ -312,9 +312,10 @@ As with `video-takes`, re-run a failing take; do not tune it. Keep a failed `.ch
 
 ## Where the footage lives
 
-The durable, git-ignored film folder is **`Hacktivity/tmp/playtest/film/<mission>_trailer/`** (for
-m01, `m01_trailer/`; `tmp/` is gitignored). Put the full solution under a `solution/` subfolder.
-Each take ships:
+The durable library is **`$FOOTAGE_ROOT/<mission>/`** (FOOTAGE_ROOT default `/data/footage`, on the
+`/data` disk; record with `--out $FOOTAGE_ROOT/<mission>/<kind>/<id>`). Put the full solution and the
+clean console beat under a `solution/` subfolder. (The old `Hacktivity/tmp/playtest/film/<mission>_trailer/`
+is now a symlink into the library.) Each take ships:
 
 - the full-res `.mkv` (native 1024x768, H.264/yuv420p, silent) and a small compressed `.mp4`
   review/proxy copy (<~1 MB, +faststart) for the review page;

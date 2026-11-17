@@ -12,7 +12,7 @@ Agent, you're online. Good to hear from you.
 + [Mission status?]
     -> mission_status
 + [I'm good for now]
-    Copy that. Call if you need anything.
+    Copy that. Message me if you need anything.
     #exit_conversation
     -> hub
 

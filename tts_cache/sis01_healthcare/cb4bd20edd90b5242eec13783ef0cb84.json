@@ -1,0 +1,13 @@
+{
+  "key": "cb4bd20edd90b5242eec13783ef0cb84",
+  "npc": "helen_carver",
+  "text": "The NCSC have our reference. Priya's picking it up, and she'll join us once we're recovering.",
+  "voice": "Pulcherrima",
+  "style": "NHS chief information officer in her mid-fifties, decisive and under pressure, clipped and authoritative. Speak with a consistent well-spoken North Yorkshire (Harrogate) accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:54:10Z"
+}

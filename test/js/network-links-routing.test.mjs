@@ -113,3 +113,21 @@ test('a sign-in PC still goes to the sign-in branch, before the jack branch', ()
     handleObjectInteraction(roomSprite({ id: 'lena_pc', type: 'pc', name: "Lena's PC", lockType: 'login', locked: true }));
     assert.deepEqual(calls, [['handleUnlock', 'lena_pc']]);
 });
+
+test('R3 m1: a locked patch panel goes to handleUnlock and does not open; unlocked, the next click opens it', () => {
+    reset();
+    const opened = [];
+    window.startPatchPanelMinigame = (data) => opened.push(data);
+    const data = { id: 'comms_panel', type: 'pc', name: 'Patch panel', panelPorts: [{ n: 1 }], locked: true };
+    const sprite = roomSprite(data);
+    handleObjectInteraction(sprite);
+    assert.deepEqual(calls.filter(c => c[0] !== 'gameAlert'), [['handleUnlock', 'comms_panel']]);
+    assert.deepEqual(opened, [], 'the panel does not open while locked');
+    reset();
+    data.locked = false;
+    handleObjectInteraction(sprite);
+    assert.deepEqual(calls.filter(c => c[0] !== 'gameAlert'), []);
+    assert.equal(opened.length, 1);
+    assert.equal(opened[0], data, 'opened with the scenarioData');
+    delete window.startPatchPanelMinigame;
+});

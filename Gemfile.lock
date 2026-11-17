@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    break_escape (1.0.14)
+    break_escape (1.0.15)
       pundit (~> 2.3)
       rails (~> 7.0)
 

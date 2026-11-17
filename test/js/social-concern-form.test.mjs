@@ -19,6 +19,7 @@ for (const rel of [
     'minigames/concern-form/concern-form-minigame.js', 'minigames/concern-form/concern-form-model.js',
     'minigames/sort-drill/sort-drill-minigame.js', 'minigames/sort-drill/sort-drill-model.js',
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
@@ -252,7 +253,7 @@ test('Done needs a check of the report on screen', () => {
 
 test('the same overlay serves other chips and wording with no awareness ids', () => {
     const s = open({ factChips: [{ id: 'x', kind: 'where', label: 'Aisle 4' }], minFacts: 1, strings: { title: 'Spill report', check: 'Look it over' } });
-    assert.equal($(s, '.cf-title').textContent, 'Spill report');
+    assert.equal($(s, '.console-title').textContent, 'Spill report');
     begin(s);
     assert.equal($(s, '.cf-check').textContent, 'Look it over');
     pick(s, 'x');

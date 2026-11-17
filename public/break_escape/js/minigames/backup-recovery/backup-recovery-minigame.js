@@ -77,8 +77,12 @@ function escapeText(value) {
 }
 
 export class BackupRecoveryMinigame extends MinigameScene {
-    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
-    static controlsOverlay = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
+    consoleTitle() {
+        return this.getMinigameData().consoleTitle || 'NORTHGATE TRUST // BACKUP RECOVERY CONSOLE';
+    }
 
     constructor(container, params) {
         params = params || {};
@@ -403,7 +407,7 @@ export class BackupRecoveryMinigame extends MinigameScene {
         }
 
         this.gameContainer.innerHTML = `
-            <div class="backup-recovery-shell backup-recovery-shell--outcome">
+            <div class="backup-recovery-shell backup-recovery-shell--outcome pixel-scroll">
                 <div class="backup-recovery-header">${escapeText(headerText)}</div>
                 <div class="backup-recovery-outcome-panel backup-recovery-outcome-panel--${escapeHtml(panelTone)}">
                     <div class="backup-recovery-outcome-status">${escapeText(statusText)}</div>
@@ -581,7 +585,6 @@ export class BackupRecoveryMinigame extends MinigameScene {
             `;
         }).join('');
 
-        const consoleTitle = this.getMinigameData().consoleTitle || 'NORTHGATE TRUST // BACKUP RECOVERY CONSOLE';
         const slots = this.getKeySlots();
         const slotsMarkup = slots.length === 0 ? '' : `
                     <ul class="backup-recovery-slots">
@@ -600,14 +603,14 @@ export class BackupRecoveryMinigame extends MinigameScene {
                     </ul>`;
 
         this.gameContainer.innerHTML = `
-            <div class="backup-recovery-shell">
-                <div class="backup-recovery-header">${escapeText(consoleTitle)}${slotsMarkup}</div>
+            <div class="backup-recovery-shell pixel-scroll">
+                ${slotsMarkup ? `<div class="backup-recovery-header">${slotsMarkup}</div>` : ''}
 
                 <div class="backup-recovery-tiles" role="list">
                     ${tiles}
                 </div>
 
-                <div class="backup-recovery-panel">
+                <div class="backup-recovery-panel pixel-scroll">
                     <div id="backup-recovery-panel-header" class="backup-recovery-panel-header"></div>
                     <div id="backup-recovery-panel-banner" class="backup-recovery-panel-banner"></div>
                     <ul id="backup-recovery-panel-bullets" class="backup-recovery-panel-bullets"></ul>

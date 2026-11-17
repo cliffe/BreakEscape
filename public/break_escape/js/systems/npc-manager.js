@@ -4,6 +4,14 @@
 import { isInLineOfSight, drawLOSCone, clearLOSCone, getNPCFacingDirection, losVisualSuppressed, losVisualOutOfRoom, losCatchSpent } from './npc-los.js';
 import { classifyPhoneLine, phoneStepLines } from '../minigames/phone-chat/phone-chat-speaker.js';
 
+// The InkEngine class, once imported: with it and the story cached, a knot bark builds the
+// NPC's engine with no await, so it can mark a gate refusal answered in time (R3 n4)
+let InkEngineClass = null;
+async function loadInkEngineClass() {
+  if (!InkEngineClass) InkEngineClass = (await import('./ink/ink-engine.js')).default;
+  return InkEngineClass;
+}
+
 /**
  * Safe condition evaluator — replaces eval() for CSP compliance (unsafe-eval blocked).
  * Supports the condition patterns used in scenario eventMappings:
@@ -139,6 +147,11 @@ export default class NPCManager {
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
+  static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
+  static PHONE_DELIVERY_TAGS_MAX = 5;
+  // A call row's text and event, as game.rb keeps them (PHONE_CALL_ROW_TEXT, PHONE_CALL_EVENTS)
+  static PHONE_CALL_ROW_TEXT = /^[A-Za-z0-9 ,:]{1,60}$/;
+  static PHONE_CALL_EVENTS = ['missed', 'incoming', 'outgoing', 'no_answer', 'voicemail'];
   // 60.kilobytes, now a UTF-8 byte limit (the server's bytesize, game.rb
   // MAX_PHONE_STORY_STATE_BYTES), not a character count (SYNC_DELTAS_PLAN 2.1).
   static PHONE_STORY_STATE_MAX_BYTES = 61440;
@@ -151,7 +164,7 @@ export default class NPCManager {
   static MAX_PHONE_SCALAR_KEY_CHARS = 100;
   // gameTime: elapsed game ms when the message arrived (window.gameClock), so its
   // shown time stays put across reopen and reload (messageClockText in game-clock.js)
-  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded'];
+  static PHONE_MESSAGE_FIELDS = ['type', 'text', 'timestamp', 'gameTime', 'read', 'isBark', 'timed', 'preloaded', 'deliveryTags', 'callEvent'];
 
   // Code-point helpers (SYNC_DELTAS_PLAN 2.1). Ruby's String#length and [0, n]
   // count code points; JavaScript's length and slice count UTF-16 units, so a
@@ -231,6 +244,7 @@ export default class NPCManager {
     this._timedMessageSeq = 0; // ids for mapping texts (see exportTimedMessages)
     this._savedPhoneState = new Map(); // npcId -> saved phone thread, applied when the NPC registers
     this._delayedMappings = new Map(); // npcId -> Map(eventKey -> timer id) for mappings with delayMs
+    this._delayedBarkSeq = 0;          // key counter for barkDelay timers kept in _delayedMappings
     this._scriptedCall = null;        // the scripted conversation starting or open: { npcId, minigame }
     this._scriptedCallQueue = [];     // scripted conversations that arrived while one was starting or open
     this._scriptedCallTimer = null;   // retry timer for the queue
@@ -397,6 +411,8 @@ export default class NPCManager {
         disableClose: entry.timedConversation.disableClose === true,
         voiced: entry.timedConversation.voiced === true,
         callLabel: entry.timedConversation.callLabel || null,
+        // An incoming call that rings (plan 3.1); not for a video call
+        ring: entry.timedConversation.ring || null,
         // A video call, as an event mapping's conversationMode "video-call" opens one
         videoCall: entry.timedConversation.videoCall === true || entry.timedConversation.conversationMode === 'video-call',
         videoLabel: entry.timedConversation.videoLabel || null,
@@ -573,6 +589,183 @@ export default class NPCManager {
     this._log('debug', `Added ${type} message to ${npcId}:`, text);
   }
 
+  /**
+   * Whether a `call` entry's `when` holds now (plan 3.2): the event-mapping grammar over
+   * `globalVars.` terms joined by `&&`. A condition that cannot be evaluated does not hold.
+   * @param {string|null} when
+   * @returns {boolean}
+   */
+  callConditionHolds(when) {
+    if (!when) return true;
+    try { return !!safeEvaluateCondition(String(when), {}); } catch (e) { return false; }
+  }
+
+  /**
+   * Whether a ring's opt-in `ring.ringWhile` still holds while its call is queued or ringing (plan
+   * 2.3). Like a held bark, the condition is re-run so a global that has changed since the ring was
+   * offered can drop it. `ringWhile` is written in the `call.when` / `callbackWhen` grammar
+   * (`globalVars.*` terms joined by `&&`, including `!globalVars.x`). Returns true (keep ringing)
+   * unless it can confidently say the condition is now false. M1 R4: this re-checks only the author's
+   * opt-in `ringWhile`, never a mapping's trigger `condition`, so typing a trigger-time guard never
+   * silently drops a call.
+   * @param {string|null} condition
+   * @returns {boolean}
+   */
+  ringConditionHolds(condition) {
+    if (!condition || typeof condition !== 'string' || !condition.trim()) return true;
+    if (condition.includes('||')) return true;   // only plain && chains are split safely
+    // Re-check the terms that read only globals (`globalVars.x`, `!globalVars.x`, `globalVars.x !== true`);
+    // anything else is left holding (a stray non-global term keeps the ring rather than dropping it).
+    const LITERALS = new Set(['true', 'false', 'null', 'undefined']);
+    const globalOnly = (t) => {
+      if (!/globalVars\.[A-Za-z_$]/.test(t)) return false;
+      const rest = t.replace(/globalVars\.[A-Za-z_$][\w$]*/g, ' ').replace(/(['"])(?:\\.|(?!\1).)*\1/g, ' ');
+      return (rest.match(/[A-Za-z_$][\w$]*/g) || []).every((id) => LITERALS.has(id));
+    };
+    const kept = condition.split('&&').map((t) => t.trim()).filter(Boolean).filter(globalOnly);
+    if (!kept.length) return true;
+    try { return !!safeEvaluateCondition(kept.join(' && '), {}); } catch (e) { return true; }
+  }
+
+  /**
+   * Add a call row to a contact's thread (plan 2.6): `{ type: 'call', callEvent, text, timestamp,
+   * read }` with fixed plain text. Only the ringer's outcomes call this (never a pretext call or a
+   * legacy voiced mapping). A missed call is unread; the others are read.
+   * @param {string} npcId
+   * @param {'missed'|'incoming'|'outgoing'|'no_answer'|'voicemail'} callEvent
+   * @param {{ seconds?: number, withheld?: boolean }} [opts]
+   * @returns {Object|null} the row, or null for an unknown event or contact
+   */
+  addCallRow(npcId, callEvent, opts = {}) {
+    if (!this.npcs.has(npcId)) return null;
+    const withheld = opts.withheld === true;
+    const mss = (sec) => {
+      const n = Math.max(0, Math.min(359999, Math.floor(Number(sec) || 0)));
+      return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}`;
+    };
+    let text;
+    switch (callEvent) {
+      case 'missed': text = withheld ? 'Missed call: No caller ID' : 'Missed call'; break;
+      case 'incoming': text = withheld ? 'Call: No caller ID' : `Incoming call, ${mss(opts.seconds)}`; break;
+      case 'outgoing': text = `Outgoing call, ${mss(opts.seconds)}`; break;
+      case 'no_answer': text = 'No answer'; break;
+      case 'voicemail': text = 'Voicemail'; break;
+      default: return null;
+    }
+    if (!this.conversationHistory.has(npcId)) this.conversationHistory.set(npcId, []);
+    const timestamp = Date.now();
+    const row = { type: 'call', callEvent, text, timestamp, ...this._gameTimeAt(timestamp), read: callEvent !== 'missed' };
+    const history = this.conversationHistory.get(npcId);
+    history.push(row);
+    // The thread is open on screen: draw the row now and count it as seen
+    const open = typeof window !== 'undefined' ? window.MinigameFramework?.currentMinigame : null;
+    if (open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId && typeof open.ui?.addMessage === 'function') {
+      try { open.ui.addMessage('call', text, true, row); row.read = true; } catch (e) { /* the row stays in the thread */ }
+    }
+    const phoneId = this.npcs.get(npcId)?.phoneId;
+    if (typeof window !== 'undefined' && window.updatePhoneBadge && phoneId) {
+      try { window.updatePhoneBadge(phoneId); } catch (e) { /* inventory not ready yet */ }
+    }
+    return row;
+  }
+
+  /**
+   * A voicemail (plan 2.6): run the contact's voicemail knot silently into its thread (the Voicemail
+   * row, then its lines, unread; the thread then rests on its home knot). Runs one at a time per
+   * contact. Toast "New voicemail from <name>" unless `quiet` (a reload) or `withheld`
+   * ("New voicemail"). Resolves to whether the knot ran.
+   *
+   * While the contact's own thread is the open phone-chat the run is held until
+   * `conversation_closed:<npcId>`: that thread holds its own copy of the story and its next save would
+   * overwrite the voicemail's (A6 R1 M1). The thread is checked again after the story loads, just
+   * before anything is written. Until it runs, the voicemail is saved in the contact's slot, so a
+   * reload delivers it (quietly) too.
+   * @param {string} npcId
+   * @param {string} knot
+   * @param {{ withheld?: boolean, quiet?: boolean }} [opts]
+   * @returns {Promise<boolean>}
+   */
+  runVoicemail(npcId, knot, opts = {}) {
+    const npc = this.npcs.get(npcId);
+    if (!npc || typeof knot !== 'string' || !knot) return Promise.resolve(false);
+    if (!this._voicemailRuns) this._voicemailRuns = new Map();
+    const ringer = typeof window !== 'undefined' ? window.phoneRinger : null;
+    const hold = ringer?.holdVoicemail?.(npcId, { knot, withheld: opts.withheld === true }) || null;
+    const run = async () => {
+      try {
+        const maxTries = 20;
+        for (let attempt = 0; attempt < maxTries; attempt++) {
+          await this._whileThreadOpen(npcId);
+          const { Conversation, InkEngine, processGameActionTags } = await this._voicemailDeps();
+          const result = await Conversation.runVoicemail(npc, this, new InkEngine(npcId), knot, {
+            withheld: opts.withheld === true,
+            isBlocked: () => this._threadOpenOn(npcId),
+            applyTags: (tags, conversation) => processGameActionTags(tags, null,
+              { npcId, engine: conversation?.engine || null }),
+          });
+          if (result.blocked) continue;   // the thread opened while the story loaded: wait for its close and run afresh
+          if (!result.ran) return false;
+          // No toast once the phone is closed or suspended for the ending (A6 R2 n3)
+          const phoneGone = !!(ringer?.isClosed?.() || ringer?.isSuspended?.());
+          if (!opts.quiet && !phoneGone && typeof window !== 'undefined' && window.showNotification) {
+            const name = opts.withheld ? null : npc.displayName;
+            window.showNotification(name ? `New voicemail from ${name}` : 'New voicemail', 'info', 'Phone');
+          }
+          return true;
+        }
+        // Never dropped silently (A6 R2 n4): the thread kept opening. Logged; the slot forgets it with the hold.
+        console.warn(`[NPCManager] voicemail "${knot}" for ${npcId} not delivered after ${maxTries} blocked tries`);
+        return false;
+      } catch (e) {
+        console.error('[NPCManager] voicemail failed', e);
+        return false;
+      } finally {
+        if (hold) ringer?.releaseVoicemail?.(npcId, hold);
+      }
+    };
+    const previous = this._voicemailRuns.get(npcId) || Promise.resolve();
+    const next = previous.then(run, run);
+    this._voicemailRuns.set(npcId, next);
+    next.finally(() => { if (this._voicemailRuns.get(npcId) === next) this._voicemailRuns.delete(npcId); });
+    return next;
+  }
+
+  /**
+   * True while this contact's thread is the open phone-chat (its minigame holds its own copy of the story).
+   * `isConversationActive` is not asked (A6 R2 m1): it is false while the thread loads and once its story
+   * has ended, and the thread is on screen with its own copy of the story in both. It does ask for
+   * `conversation` (A6 R3 n-a): until it exists (intro preload, an outgoing dial) the thread's close
+   * emits nothing, so a hold there would never be released.
+   */
+  _threadOpenOn(npcId) {
+    const open = typeof window !== 'undefined' ? window.MinigameFramework?.currentMinigame : null;
+    return !!open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId
+      && !open._ending && !!open.conversation;
+  }
+
+  /** Resolves at once when the contact's thread is not open, else when conversation_closed:<npcId> fires. */
+  _whileThreadOpen(npcId) {
+    if (!this._threadOpenOn(npcId)) return Promise.resolve();
+    const dispatcher = typeof window !== 'undefined' ? window.eventDispatcher : null;
+    if (!dispatcher?.on) return Promise.resolve();
+    return new Promise((resolve) => {
+      const eventName = `conversation_closed:${npcId}`;
+      const onClosed = () => { dispatcher.off?.(eventName, onClosed); resolve(); };
+      dispatcher.on(eventName, onClosed);
+    });
+  }
+
+  /** The modules a voicemail run needs (loaded on first use; a test replaces this to supply its own copies). */
+  async _voicemailDeps() {
+    const [conversationModule, inkModule, helpers] = await Promise.all([
+      import('../minigames/phone-chat/phone-chat-conversation.js'),
+      import('./ink/ink-engine.js'),
+      import('../minigames/helpers/chat-helpers.js'),
+    ]);
+    return { Conversation: conversationModule.default, InkEngine: inkModule.default,
+      processGameActionTags: helpers.processGameActionTags };
+  }
+
   /** { gameTime } for a wall-clock time, or {} when there's no game clock yet. */
   _gameTimeAt(timestamp) {
     const clock = typeof window !== 'undefined' ? window.gameClock : null;
@@ -615,7 +808,8 @@ export default class NPCManager {
     
     for (const npc of npcs) {
       const history = this.getConversationHistory(npc.id);
-      const unreadCount = history.filter(msg => !msg.read && msg.type === 'npc').length;
+      const unreadCount = history.filter(msg => !msg.read &&
+        (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
       totalUnread += unreadCount;
     }
     
@@ -652,9 +846,61 @@ export default class NPCManager {
         this.eventListeners.set(npcId, []);
       }
       this.eventListeners.get(npcId).push({ pattern: eventPattern, listener });
+      if (this._isKnotBark(npcId, config)) this._preloadKnotBark(npcId);
     }
 
     console.log(`✅ Registered ${mappingsArray.length} event mappings for ${npcId}`);
+  }
+
+  /** Does this mapping answer with a bark from an ink knot (no text of its own, no conversation)? */
+  _isKnotBark(npcId, config) {
+    const npc = this.npcs.get(npcId);
+    return !!(config?.knot && !config.bark && !config.message && !config.conversationMode
+      && npc?.npcType === 'person' && npc.storyPath);
+  }
+
+  /**
+   * The story JSON if either cache has it: ours, or the room loader's (npcLazyLoader fetches each
+   * room's stories before it registers the NPCs; without this the preload fetched them again:
+   * UX slice 5 R4 n3). A loader copy is put in ours. Null when neither has it.
+   */
+  _storyFromLoader(storyPath) {
+    if (!storyPath) return null;
+    if (this.storyCache.has(storyPath)) return this.storyCache.get(storyPath);
+    let cached = null;
+    try { cached = (typeof window !== 'undefined' ? window.npcLazyLoader?.getCachedStory?.(storyPath) : null) || null; } catch (e) { cached = null; }
+    if (cached) this.storyCache.set(storyPath, cached);
+    return cached;
+  }
+
+  /**
+   * Fetch the NPC's story and import the InkEngine class in the background, once, so the first
+   * knot bark runs with no await and a gate refusal it answers in view is marked in time: without
+   * it the door showed its notification over her bubble (R3 n4). Read only: the ink endpoint and
+   * the story cache. The engine itself is still built on first use (so a conversation that opens
+   * first keeps getInkEngine's global-variable sync). Failures are ignored: the bark then loads
+   * as before.
+   */
+  _preloadKnotBark(npcId) {
+    if (this.preloadKnotBarks === false) return null;
+    const npc = this.npcs.get(npcId);
+    if (!npc?.storyPath) return null;
+    if (!this._knotPreloads) this._knotPreloads = new Map();
+    if (this._knotPreloads.has(npc.storyPath)) return this._knotPreloads.get(npc.storyPath);
+    const p = (async () => {
+      try {
+        await loadInkEngineClass();
+        if (this._storyFromLoader(npc.storyPath) || typeof fetch !== 'function') return;
+        const gameId = typeof window !== 'undefined' ? window.breakEscapeConfig?.gameId : null;
+        const endpoint = gameId ? `/break_escape/games/${gameId}/ink?npc=${encodeURIComponent(npcId)}` : npc.storyPath;
+        const response = await fetch(endpoint);
+        if (!response.ok) return;
+        const storyJson = await response.json();
+        if (!this.storyCache.has(npc.storyPath)) this.storyCache.set(npc.storyPath, storyJson);
+      } catch (e) { /* the bark loads it on first use */ }
+    })();
+    this._knotPreloads.set(npc.storyPath, p);
+    return p;
   }
 
   /**
@@ -677,7 +923,11 @@ export default class NPCManager {
     if (pending.has(check.eventKey)) return;
 
     const fire = () => {
-      if (window.MinigameFramework?.currentMinigame) {
+      // A ring mapping does not wait for the minigame to close: the ringer's table decides (2.9).
+      // Nor does an interrupt video call: it goes on to _queueScriptedConversation, which
+      // closes the open minigame (or queues behind a scripted conversation).
+      const cutsIn = config.interrupt === true && config.conversationMode === 'video-call';
+      if (!config.ring && !cutsIn && window.MinigameFramework?.currentMinigame) {
         pending.set(check.eventKey, setTimeout(fire, NPCManager.DELAYED_MAPPING_RETRY_MS));
         return;
       }
@@ -703,10 +953,13 @@ export default class NPCManager {
    * together. Now it waits in a queue and opens once the first, and any minigame
    * opened from it, has closed.
    * @param {{ npcId: string, label: string, sceneType: string, params: Function,
-   *   startDelayMs?: number, beforeOpen?: Function, onStart?: Function, opening?: boolean }} conv
+   *   startDelayMs?: number, beforeOpen?: Function, onStart?: Function, opening?: boolean,
+   *   interrupt?: boolean }} conv
    *   params() builds the minigame params when it opens. beforeOpen() runs just before
    *   (false: drop it). onStart(minigame) runs after. opening: a timedConversation,
    *   which holds the mission brief popup while queued (hasPendingOpeningConversation).
+   *   interrupt: a minigame the player opens during the start delay is closed and this
+   *   opens anyway, instead of waiting behind it (video-call mappings that set it).
    */
   _queueScriptedConversation(conv) {
     const framework = window.MinigameFramework;
@@ -725,6 +978,12 @@ export default class NPCManager {
       if (framework.currentMinigame) {
         framework.endMinigame(false, null);
       }
+      // The player's phone comes up during the wait (systems/player-poses.js); the wait is unchanged
+      try {
+        if (conv.sceneType === 'phone-chat' || (conv.sceneType === 'person-chat' && conv.params?.()?.videoCall === true)) {
+          window.playerPoses?.phoneLead?.();
+        }
+      } catch (e) { /* cosmetic */ }
       setTimeout(() => {
         // Busy-guard. During the start delay the player may have opened a chat or
         // minigame of their own — e.g. an auto NPC challenge (sight/LOS) was scheduled
@@ -736,6 +995,16 @@ export default class NPCManager {
         // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
         // to the queue so it is not lost.
         if (window.MinigameFramework?.currentMinigame) {
+          // interrupt (an opt-in video-call mapping, m02 R4 M1): the call is meant to
+          // cut in before the player acts in the minigame they just opened (Ghost's
+          // offer before the recovery console choice). Close that minigame and open,
+          // as every scripted call did before the busy-guard. The drop check runs
+          // first, so a decision made inside the delay still drops the call and the
+          // minigame is left alone.
+          if (conv.interrupt && !conv.dropIfBusy) {
+            this._interruptAndOpen(conv, 'the minigame the player opened during the start delay');
+            return;
+          }
           this._scriptedCall = null;
           if (conv.dropIfBusy) {
             console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: player is in a minigame (auto-challenge, re-fires on next sighting)`);
@@ -762,6 +1031,14 @@ export default class NPCManager {
     this._pumpScriptedCallQueue();
   }
 
+  /**
+   * The one truth test for every skipIfGlobal (timed messages, timedConversations and
+   * video-call mappings): set means truthy, so a string or count global works too.
+   */
+  _skipGlobalSet(name) {
+    return !!window.gameState?.globalVariables?.[name];
+  }
+
   /** An event-mapping phone call (see _queueScriptedConversation). */
   _queueScriptedPhoneCall(call) {
     this._queueScriptedConversation({
@@ -772,8 +1049,13 @@ export default class NPCManager {
     });
   }
 
-  /** True while a scripted conversation is starting, or is the open minigame. */
-  _scriptedCallBusy() {
+  /**
+   * True while a scripted conversation is starting, or is the open minigame. Clears a stale
+   * record: `_scriptedCall` is left pointing at a closed minigame after every scripted scene.
+   * The ringer's ringBlocked() and openBlocked() ask this, never `_scriptedCall` and never
+   * _scriptedCallBusy() (phone calls plan 2.2).
+   */
+  scriptedConversationActive() {
     const current = this._scriptedCall;
     if (!current) return false;
     if (!current.minigame) return true;   // inside the start delay
@@ -781,6 +1063,11 @@ export default class NPCManager {
     if (open === current.minigame && !open._ending) return true;
     this._scriptedCall = null;
     return false;
+  }
+
+  /** The busy rule: a ringer call that is connected or opening, or a scripted conversation (plan 2.9). */
+  _scriptedCallBusy() {
+    return !!window.phoneRinger?.callActive?.() || this.scriptedConversationActive();
   }
 
   _openScriptedConversation(conv) {
@@ -800,15 +1087,41 @@ export default class NPCManager {
     if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
   }
 
+  /**
+   * interrupt: close the open minigame and open conv in its place. The drop check
+   * (beforeOpen) runs first, so a call that would be dropped leaves the minigame alone.
+   * Never used over a scripted conversation: callers check _scriptedCallBusy() first.
+   */
+  _interruptAndOpen(conv, what) {
+    if (conv.beforeOpen && conv.beforeOpen() === false) {
+      this._scriptedCall = null;
+      if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+      return;
+    }
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) interrupts: closing ${what}`);
+    this._scriptedCall = { npcId: conv.npcId, minigame: null };
+    window.MinigameFramework.endMinigame(false, null);
+    this._openScriptedConversation({ ...conv, beforeOpen: null });
+  }
+
   // A queued conversation opens when none is starting or open, no minigame is open
   // (the player may have gone from the call to the notepad and back) and the player is
-  // not knocked out (startMinigame would refuse it, and it would be lost)
+  // not knocked out (startMinigame would refuse it, and it would be lost). One marked
+  // interrupt does not wait for a minigame that is not a scripted conversation: it
+  // closes it and opens (it still waits behind another scripted conversation).
   _pumpScriptedCallQueue() {
     if (this._scriptedCallTimer) return;
     const tick = () => {
       this._scriptedCallTimer = null;
       if (!this._scriptedCallQueue.length) return;
       const framework = window.MinigameFramework;
+      const head = this._scriptedCallQueue[0];
+      if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
+          head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
+        this._scriptedCallQueue.shift();
+        this._interruptAndOpen(head, 'the open minigame (queued call)');
+        return;
+      }
       if (!framework || this._scriptedCallBusy() || framework.currentMinigame ||
           window.playerIsKnockedOut?.()) {
         this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
@@ -821,7 +1134,7 @@ export default class NPCManager {
     this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
   }
 
-  /** Cancel an NPC's pending delayMs mappings. */
+  /** Cancel an NPC's pending delayMs mappings and barkDelay barks. */
   _cancelDelayedMappings(npcId) {
     const pending = this._delayedMappings.get(npcId);
     if (!pending) return;
@@ -901,6 +1214,7 @@ export default class NPCManager {
         cooldown: mapping.cooldown,
         condition: mapping.condition,
         delayMs: Number(mapping.delayMs) > 0 ? Number(mapping.delayMs) : 0,  // fire this long after the event, re-checking then
+        barkDelay: Number(mapping.barkDelay) > 0 ? Number(mapping.barkDelay) : 0,  // ms: the bark alone waits this long (_delayBark)
         maxTriggers: mapping.maxTriggers,  // Add max trigger limit
         conversationMode: mapping.conversationMode,  // Add conversation mode (e.g., 'person-chat')
         changeStoryPath: mapping.changeStoryPath,  // Change the NPC's story file
@@ -919,8 +1233,11 @@ export default class NPCManager {
         endingCheck:   mapping.endingCheck === true,    // this mapping opens the ending/debrief: warn first (systems/ending-check.js)
         disableClose:  mapping.disableClose  || false,  // hide × and block Esc for this conversation
         resume:        mapping.resume === true,         // phone-chat: reopen the saved thread, no knot jump
+        skipIfGlobal:  mapping.skipIfGlobal  || null,   // video-call: no call if this global is set at the event or when the call opens
+        interrupt:     mapping.interrupt === true,      // video-call: close a minigame opened during the start delay and open anyway
         voiced:        mapping.voiced === true,         // phone-chat: speak the NPC's lines through TTS (F17)
         callLabel:     mapping.callLabel     || null,   // phone-chat voiced call: caption under the caller's name
+        ring:          mapping.ring          || null,   // phone-chat: an incoming call that rings (plan 3.1)
         videoLabel:    mapping.videoLabel    || null,   // ENG-07 (video-call): meeting-tool label (default SECURE VIDEO LINK)
         participantTag: mapping.participantTag || null, // ENG-07 (video-call): participant tag (e.g. External)
         background:    mapping.background    || null,    // optional background image path
@@ -1002,6 +1319,79 @@ export default class NPCManager {
       if (typeof condition === 'function') return !!condition(eventData, this.getNPC(npcId));
       return !!safeEvaluateCondition(condition, eventData);
     };
+  }
+
+  /**
+   * A bark mapping is answering this event now: if the bark will show as a speech bubble over
+   * an NPC in view (npc-barks.js answersInView: same room, lit, on camera, no minigame), mark the
+   * event's data, so the sender can tell straight after its emit. doors.js refuseAtGate reads
+   * `answeredInView` and drops its own refusal notification, which covered the guard's bubble
+   * (UX slice 5 R1 M2). Only for a bark that has text now (R2 m4): a plain bark's text, or a
+   * knot bark once its ink has given a line, which is known in time only when the story is
+   * already loaded (_showBarkFromKnot runs to the end without waiting then). A knot that gives
+   * nothing, or ink still loading, leaves the event unmarked, so the refusal keeps its
+   * notification and is never silent.
+   * Returns the extras the bark carries when marked: the sender's `answerFollowUp` (a gate's
+   * lockedHint, shown in the bubble after the line: R2 m3), else null.
+   */
+  _markAnsweredInView(npcId, eventData) {
+    if (!eventData || typeof eventData !== 'object' || Object.isFrozen(eventData)) return null;
+    let inView = false;
+    try { inView = !!this.barkSystem?.answersInView?.(npcId); } catch (e) { inView = false; }
+    if (!inView) return null;
+    eventData.answeredInView = true;
+    eventData.answeredBy = npcId;
+    // One NPC carries the follow-up: the first to answer
+    const followUp = eventData.answerFollowUpTaken ? null : (eventData.answerFollowUp || null);
+    if (followUp) eventData.answerFollowUpTaken = npcId;
+    return { followUp };
+  }
+
+  /**
+   * Show a mapping's bark `barkDelay` ms after its event (staggered reactions). The
+   * mapping's onceOnly, cooldown and actions have already run at the event; only the
+   * bark waits. When the delay is up the bark is dropped if its condition (stillValid)
+   * no longer holds, or the NPC is knocked out, has changed room (walking out counts)
+   * or been hidden. Otherwise showBark takes it as usual, so an open minigame or
+   * conversation, including one with this NPC, holds it until it closes. show() is
+   * handed a stillValid that repeats the condition, knocked-out and hidden checks, so a
+   * held bark is also dropped on release (bark-release-policy.js) if its NPC was knocked
+   * out or hidden while it was held. The room check runs only when the delay ends: NPCs
+   * keep walking behind a minigame, and a patroller that crosses rooms during a long
+   * hold keeps its bark. Timers live with the NPC's delayMs timers, so _cancelDelayedMappings
+   * (NPC re-registered or removed, manager destroyed) cancels them too.
+   */
+  _delayBark(npcId, delayMs, show, stillValid) {
+    if (!(delayMs > 0)) { show(stillValid); return; }
+    const where = () => {
+      const npc = this.getNPC(npcId);
+      const room = window.npcBehaviorManager?.getBehavior?.(npcId)?.roomId ?? npc?.roomId ?? null;
+      return { room, hidden: npc?.isVisible === false };
+    };
+    const before = where();
+    if (!this._delayedMappings.has(npcId)) this._delayedMappings.set(npcId, new Map());
+    const pending = this._delayedMappings.get(npcId);
+    const key = `bark:${++this._delayedBarkSeq}`;
+    // Why the bark should not show now, or null. Run when the delay ends (with the room
+    // check) and again, through stillValid, when a held bark is released (without it).
+    const lapse = (checkRoom) => {
+      const now = where();
+      if (typeof stillValid === 'function' && !stillValid()) return 'condition no longer holds';
+      if (window.npcHostileSystem?.isNPCKO?.(npcId)) return 'NPC knocked out';
+      if (checkRoom && now.room !== before.room) return `NPC left ${before.room}`;
+      if (now.hidden && !before.hidden) return 'NPC hidden';
+      return null;
+    };
+    pending.set(key, setTimeout(() => {
+      pending.delete(key);
+      const reason = lapse(true);
+      if (reason) { console.log(`⏭️ Delayed bark for ${npcId} dropped: ${reason}`); return; }
+      show(() => {
+        const why = lapse(false);
+        if (why) console.log(`⏭️ Held delayed bark for ${npcId} is stale: ${why}`);
+        return !why;
+      });
+    }, delayMs));
   }
 
   // Handle when a mapped event fires
@@ -1092,16 +1482,26 @@ export default class NPCManager {
     // A handler that opens a minigame is saved once that minigame closes normally (below), the
     // same way a conversation is, so a reload mid-exercise lets it fire again.
     const opensMinigame = !!config.openMinigame && !opensConversation;
-    if ((config.once || config.maxTriggers) && !opensConversation && !opensMinigame) triggered.persist = true;
+    // A ring mapping's trigger is saved when the call is offered, not when it closes: from
+    // then the beat lives in the ringer (plan 2.7). This is the one place a trigger is persisted.
+    const isRing = !!config.ring && config.conversationMode === 'phone-chat' && npc.npcType === 'phone'
+      && typeof window.phoneRinger?.offer === 'function';
+    if ((config.once || config.maxTriggers) && ((!opensConversation && !opensMinigame) || isRing)) triggered.persist = true;
     this.triggeredEvents.set(eventKey, triggered);
-    const persistOnClose = (config.once || config.maxTriggers) && opensConversation
+    const persistOnClose = (config.once || config.maxTriggers) && opensConversation && !isRing
       ? () => this._persistTriggerOnClose(npcId, eventKey)
       : () => {};
     
-    // Set global variables if specified
+    // Set global variables if specified. For a ring mapping (R1 m2) snapshot the keys' pre-offer
+    // values first: a ring dropped quietly by the `ringWhile` re-check restores them, so the mapping's
+    // own latch does not block its twin (or the same trigger later) for a ring that never happened.
+    // Keep what the mapping wrote too, so the restore can skip a key something else has since changed.
+    let ringSetGlobalRestore = null;
     if (config.setGlobal && window.gameState?.globalVariables) {
+      if (isRing) ringSetGlobalRestore = {};
       Object.entries(config.setGlobal).forEach(([varName, value]) => {
         const oldValue = window.gameState.globalVariables[varName];
+        if (isRing) ringSetGlobalRestore[varName] = { wrote: value, prev: oldValue };
         window.gameState.globalVariables[varName] = value;
         console.log(`🌐 Event setGlobal: ${varName} = ${value}`);
         if (window.npcConversationStateManager) {
@@ -1293,8 +1693,10 @@ export default class NPCManager {
     }
 
     // Update NPC's current knot if specified (use targetKnot or knot for backwards compatibility)
+    // A ring mapping leaves it alone: the call knot is set when the call opens (the ringer
+    // adapter's openCall), so a declined or missed ring never leaves the thread on it (A2b R2 M1).
     const knotToSet = config.targetKnot || config.knot;
-    if (knotToSet) {
+    if (knotToSet && !isRing) {
       npc.currentKnot = knotToSet;
       console.log(`📍 Updated ${npcId} current knot to: ${knotToSet}`);
     }
@@ -1511,13 +1913,30 @@ export default class NPCManager {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
 
+        // skipIfGlobal already set at the event: no call, and the open minigame is left
+        // alone (the queue below would close it first). Same check as a timedConversation.
+        if (config.skipIfGlobal && this._skipGlobalSet(config.skipIfGlobal)) {
+          console.log(`📵 video call for ${npcId} (${eventPattern}) skipped: ${config.skipIfGlobal} is set`);
+          return;
+        }
+
         // Closes whatever is open and opens 500 ms later, or waits behind another
-        // scripted conversation (_queueScriptedConversation)
+        // scripted conversation (_queueScriptedConversation). interrupt: it also closes
+        // a minigame the player opens during those 500 ms.
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          interrupt: config.interrupt === true,
+          // skipIfGlobal: a call that waited (behind an open minigame or another call) is
+          // dropped if the global became set meanwhile (m02 P9).
+          beforeOpen: () => {
+            if (config.skipIfGlobal && this._skipGlobalSet(config.skipIfGlobal)) {
+              console.log(`📵 video call for ${npcId} (${eventPattern}) dropped at open: ${config.skipIfGlobal} is set`);
+              return false;
+            }
+          },
           params: () => ({
             npcId: npc.id,
             startKnot: knotToUse,
@@ -1543,6 +1962,28 @@ export default class NPCManager {
     if (config.conversationMode === 'phone-chat' && npc.npcType === 'phone') {
       if (window.MinigameFramework) {
         const knotToUse = config.targetKnot || config.knot || npc.currentKnot;
+
+        if (isRing) {
+          // A ringing call: the ringer's table decides when it rings, queues or replaces it.
+          // dropped / refused are handled (trigger already persisted); nothing falls through to
+          // _queueScriptedPhoneCall (A2a_NOTES, A2b contract).
+          const outcome = window.phoneRinger.offer({
+            npcId: npc.id,
+            knot: knotToUse,
+            ring: config.ring,
+            disableClose: config.disableClose || false,
+            resume: config.resume === true,
+            callLabel: config.callLabel || null,
+            // The opt-in `ring.ringWhile` (normalised in the ringer adapter) is re-checked while the
+            // call is queued or ringing. The mapping's trigger `condition` is NOT re-checked (M1 R4):
+            // a trigger-time guard never silently drops a call.
+            // R1 m2: the pre-offer values of the mapping's own setGlobal keys. A quiet ringWhile drop
+            // puts them back, so a dropped ring leaves its latch where a twin can still ring.
+            ringSetGlobalRestore
+          });
+          console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
+          return;
+        }
 
         // The params are built when the call opens: a call queued behind another reads
         // the NPC's saved story (resume) as it is by then
@@ -1577,9 +2018,12 @@ export default class NPCManager {
     // If bark text is provided, show it directly
     if (this.barkSystem && (config.bark || config.message)) {
       const barkText = config.bark || config.message;
-      const barkDelay = config.barkDelay || 0;
+      // A delayed bark is not an answer in view: the sender keeps its own notification
+      const delayed = Number(config.barkDelay) > 0;
+      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
+      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
 
-      const fireBark = () => {
+      const fireBark = (stillValid) => {
         // Add bark message to conversation history (marked as bark)
         this.addMessage(npcId, 'npc', barkText, {
           eventPattern,
@@ -1598,32 +2042,40 @@ export default class NPCManager {
           startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid: this._barkStillValid(npcId, config, eventData)
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
         });
       };
 
-      if (barkDelay > 0) {
-        setTimeout(fireBark, barkDelay);
-      } else {
-        fireBark();
-      }
+      this._delayBark(npcId, config.barkDelay, fireBark, this._barkStillValid(npcId, config, eventData));
     }
     // Otherwise, if we have a knot, load the Ink story and get the text
     else if (this.barkSystem && config.knot && npc.storyPath) {
       console.log(`📖 Loading Ink story from knot: ${config.knot}`);
 
-      // Load the Ink story and navigate to the knot
-      this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, this._barkStillValid(npcId, config, eventData));
+      // Load the Ink story and navigate to the knot. The event is marked answered only once the
+      // knot has given text, and only while this call has not yet returned (story already
+      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
+      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
+      const stillValid = this._barkStillValid(npcId, config, eventData);
+      let inTime = true;
+      const onText = Number(config.barkDelay) > 0
+        ? null
+        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
+      this._delayBark(npcId, config.barkDelay,
+        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
+      inTime = false;
     }
     
     console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
   }
   
   // Load Ink story, navigate to knot, and show the text as a bark
-  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid) {
+  async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid, onText = null) {
     try {
-      // OPTIMIZATION: Fetch story from cache or network
-      let storyJson = this.storyCache.get(npc.storyPath);
+      // OPTIMIZATION: Fetch story from cache (ours or the room loader's: R4 n3) or network
+      let storyJson = this._storyFromLoader(npc.storyPath);
       if (!storyJson) {
         // Use Rails API endpoint instead of direct file fetch
         const gameId = window.breakEscapeConfig?.gameId;
@@ -1643,7 +2095,8 @@ export default class NPCManager {
       // OPTIMIZATION: Reuse cached InkEngine or create new one
       let inkEngine = this.inkEngineCache.get(npcId);
       if (!inkEngine) {
-        const { default: InkEngine } = await import('./ink/ink-engine.js');
+        // No await once the class is loaded (preloaded with the story, R3 n4)
+        const InkEngine = InkEngineClass || await loadInkEngineClass();
         inkEngine = new InkEngine(npcId);
         inkEngine.loadStory(storyJson);
         this.inkEngineCache.set(npcId, inkEngine);
@@ -1667,8 +2120,10 @@ export default class NPCManager {
         result = inkEngine.continue();
       }
       
-      if (result.text) {
-        
+      if (result.text && result.text.trim()) {
+        let answered = null;
+        try { answered = onText?.(result.text) || null; } catch (e) { answered = null; }
+
         // Add to conversation history (marked as bark)
         this.addMessage(npcId, 'npc', result.text, { 
           eventPattern,
@@ -1686,7 +2141,9 @@ export default class NPCManager {
           startKnot: knotName,
           phoneId: npc.phoneId,
           useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
         });
       } else {
         console.warn(`⚠️ No text found in knot: ${knotName}`);
@@ -1763,6 +2220,15 @@ export default class NPCManager {
     this._npcVisibility.set(npcId, !!visible);
     const entry = this.npcs.get(npcId);
     if (entry) entry.isVisible = !!visible;
+  }
+
+  /**
+   * True when a setVisible mapping has hidden this NPC (recorded false, and restored
+   * after a reload). An NPC that starts hidden and was never revealed or hidden by a
+   * mapping has no record, so this is false for it.
+   */
+  isHiddenByMapping(npcId) {
+    return this._npcVisibility.get(npcId) === false;
   }
 
   /** { npcId: bool } for the server (state-sync.js). */
@@ -1905,7 +2371,7 @@ export default class NPCManager {
   //     }
   //   }
   scheduleTimedConversation(opts) {
-    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, callLabel, videoCall, videoLabel, participantTag } = opts;
+    const { npcId, targetKnot, triggerTime, delay, background, waitForEvent, skipIfGlobal, setGlobalOnStart, disableClose, voiced, callLabel, ring, videoCall, videoLabel, participantTag } = opts;
 
     if (!npcId || !targetKnot) {
       console.error('[NPCManager] scheduleTimedConversation requires npcId and targetKnot');
@@ -1928,12 +2394,27 @@ export default class NPCManager {
       disableClose: disableClose === true, // no ×, no Esc (documented; was dropped before 2026-10-21)
       voiced: voiced === true, // phone-chat: speak the NPC's lines through TTS (F17)
       callLabel: callLabel || null, // phone-chat voiced call: caption under the caller's name
+      ring: videoCall === true ? null : (ring || null), // phone-chat: an incoming call that rings (plan 3.1)
+      offered: false,                          // a ring offer was made (its delivered mark is saved, A4)
       videoCall: videoCall === true,           // open as a person-chat video call (any npcType)
       videoLabel: videoLabel || null,          // label on the video-call bar
       participantTag: participantTag || null   // participant tag on the video-call bar
     };
 
+    // A ring conversation's delivered mark survives a reload (plan 2.3, A4): the id is the
+    // contact, the knot and which of that pair this is, so scenario order keeps it stable.
+    if (conversation.ring) {
+      const nth = this.timedConversations.filter(c => c.ring && c.npcId === npcId && c.targetKnot === targetKnot).length;
+      conversation.id = `conv:${npcId}:${targetKnot}:${nth}`;
+    }
     this.timedConversations.push(conversation);
+
+    if (conversation.id && this._restoredTimedDelivered.has(conversation.id)) {
+      conversation.delivered = true;
+      conversation.offered = true;
+      console.log(`[NPCManager] Timed call ${conversation.id} was offered before the reload; not scheduled again`);
+      return;
+    }
 
     if (waitForEvent) {
       console.log(`[NPCManager] Scheduled timed conversation from ${npcId} waiting for event '${waitForEvent}' (delay: ${actualDelay}ms) to knot: ${targetKnot}`);
@@ -1986,6 +2467,11 @@ export default class NPCManager {
     const globals = window.gameState?.globalVariables || {};
     // A timedConversation delivered but queued behind another scene is still to come
     if (this._scriptedCallQueue.some(c => c.opening)) return true;
+    // A timed ring call still queued, ringing or held (row 30)
+    if (window.phoneRinger?.hasOpeningOffer?.()) return true;
+    // An answered call is `connected` and not yet a minigame during the open delay:
+    // hasOpeningOffer leaves it out, and the brief would open in that gap (A2b R1 M1)
+    if (window.phoneRinger?.callActive?.()) return true;
     return this.timedConversations.some(c =>
       !c.delivered &&
       (c.delay || 0) <= withinMs &&
@@ -2064,8 +2550,7 @@ export default class NPCManager {
 
     // Skip if a guard global is already truthy (e.g. don't nag about ESD after it's been pressed).
     if (message.skipIfGlobal) {
-      const globalValue = window.gameState?.globalVariables?.[message.skipIfGlobal];
-      if (globalValue) {
+      if (this._skipGlobalSet(message.skipIfGlobal)) {
         console.log(`[NPCManager] Skipping timed message from ${message.npcId}: global '${message.skipIfGlobal}' is already set`);
         return;
       }
@@ -2092,10 +2577,12 @@ export default class NPCManager {
         inkStoryPath: npc.storyPath,
         startKnot: message.targetKnot || null,   // none: a click reopens the thread (npc-barks.js)
         phoneId: message.phoneId,
+        // A timed message is a text in the phone whoever sends it (B2: the phone notification)
+        channel: 'phone',
         useTTS: npc.npcType === 'person' && !!npc.voice,
         // Same guard as at delivery: if the global is set by the time it's released, drop it
         stillValid: message.skipIfGlobal
-          ? () => !window.gameState?.globalVariables?.[message.skipIfGlobal]
+          ? () => !this._skipGlobalSet(message.skipIfGlobal)
           : undefined
       });
     }
@@ -2114,8 +2601,7 @@ export default class NPCManager {
     // Skip this conversation if a guard global variable is already truthy.
     // Used to prevent replaying one-shot cutscenes (e.g. opening briefing) on session resume.
     if (conversation.skipIfGlobal) {
-      const globalValue = window.gameState?.globalVariables?.[conversation.skipIfGlobal];
-      if (globalValue) {
+      if (this._skipGlobalSet(conversation.skipIfGlobal)) {
         console.log(`[NPCManager] Skipping timed conversation for ${conversation.npcId}: global '${conversation.skipIfGlobal}' is already set`);
         return;
       }
@@ -2131,6 +2617,25 @@ export default class NPCManager {
     // A video call is always a person-chat, whatever the NPC's type (as for an event mapping)
     const isVideo = conversation.videoCall === true;
     const isPhone = npc.npcType === 'phone' && !isVideo;
+    if (isPhone && conversation.ring && typeof window.phoneRinger?.offer === 'function') {
+      // An incoming call that rings. It is marked delivered by the caller, and its
+      // setGlobalOnStart is applied by the ringer at the first ring (plan 2.3).
+      // npc.currentKnot is not moved here: a call that is declined, missed or still
+      // queued would leave the thread to open on the call knot as silent texts
+      // (A2b R1 M2). openCall passes the knot as startKnot.
+      const outcome = window.phoneRinger.offer({
+        npcId: conversation.npcId,
+        knot: conversation.targetKnot,
+        ring: conversation.ring,
+        disableClose: conversation.disableClose === true,
+        callLabel: conversation.callLabel || null,
+        opening: true,
+        setGlobalOnStart: conversation.setGlobalOnStart ? { [conversation.setGlobalOnStart]: true } : null
+      });
+      conversation.offered = true;
+      console.log(`[NPCManager] Timed conversation from ${conversation.npcId} → ring offer: ${outcome}`);
+      return;
+    }
     this._queueScriptedConversation({
       npcId: conversation.npcId,
       label: 'timedConversation',
@@ -2139,7 +2644,7 @@ export default class NPCManager {
       opening: true,
       beforeOpen: () => {
         // Queued behind another scene: its guard may have been set meanwhile
-        if (conversation.skipIfGlobal && window.gameState?.globalVariables?.[conversation.skipIfGlobal]) {
+        if (conversation.skipIfGlobal && this._skipGlobalSet(conversation.skipIfGlobal)) {
           console.log(`[NPCManager] Skipping timed conversation for ${conversation.npcId}: global '${conversation.skipIfGlobal}' is already set`);
           return false;
         }
@@ -2200,6 +2705,10 @@ export default class NPCManager {
     const elapsed = Date.now() - this.gameStartTime;
     const pending = [];
     const delivered = [];
+    // A ring conversation that has been offered must not be scheduled again after a reload (A4)
+    for (const c of this.timedConversations) {
+      if (c.id && c.offered && c.id.length <= 300 && !delivered.includes(c.id)) delivered.push(c.id);
+    }
     for (const m of this.timedMessages) {
       if (m.delivered) {
         if (typeof m.id === 'string' && m.id.startsWith('npc:')) delivered.push(m.id);
@@ -2236,6 +2745,8 @@ export default class NPCManager {
       this._restoredTimedDelivered.add(id);
       const existing = this.timedMessages.find(m => m.id === id);
       if (existing) existing.delivered = true;
+      const conv = this.timedConversations.find(c => c.id === id);
+      if (conv) { conv.delivered = true; conv.offered = true; }
     }
     let queued = 0;
     for (const p of Array.isArray(saved.pending) ? saved.pending : []) {
@@ -2289,7 +2800,15 @@ export default class NPCManager {
     for (const npc of this.npcs.values()) {
       if (npc.npcType !== 'phone') continue;
       const entry = this._phoneStateEntry(npc);
-      if (!entry) continue;
+      if (!entry) {
+        // The server still holds a call slot for a contact that has nothing else to save: tell it
+        // the slot is gone (A4 R1 m2). Sent once; the sync records the marker as what it holds.
+        const sent = this._phoneStateSent.get(npc.id);
+        let hadSlot = false;
+        try { hadSlot = !!(sent && JSON.parse(sent).pendingCall); } catch (e) { /* ignore */ }
+        if (hadSlot) out[npc.id] = { history: [], pendingCall: null };
+        continue;
+      }
       if (onlyChanged && this._phoneStateSent.get(npc.id) === keyOf(entry)) continue;
       out[npc.id] = entry;
     }
@@ -2319,6 +2838,9 @@ export default class NPCManager {
     const history = (this.conversationHistory.get(npc.id) || [])
       .slice(-C.PHONE_HISTORY_MAX_MESSAGES)
       .filter(msg => msg && typeof msg === 'object' && typeof msg.type === 'string' && typeof msg.text === 'string' && msg.text)
+      // game.rb drops a line whose type is too long, and a call row whose text is not the plain engine shape
+      .filter(msg => C.cpWithin(msg.type, C.MAX_PHONE_TYPE_CHARS))
+      .filter(msg => msg.type !== 'call' || C.PHONE_CALL_ROW_TEXT.test(msg.text))
       .map(msg => {
         const copy = {};
         for (const field of C.PHONE_MESSAGE_FIELDS) {
@@ -2335,6 +2857,17 @@ export default class NPCManager {
             case 'gameTime':
               if (typeof value === 'number') copy[field] = value;
               break;
+            case 'callEvent':
+              if (typeof value === 'string' && C.PHONE_CALL_EVENTS.includes(value)) copy.callEvent = value;
+              break;
+            case 'deliveryTags': {
+              // clean_phone_delivery_tags: strings within the cap, no control characters but tab and newlines
+              if (!Array.isArray(value)) break;
+              const tags = value.filter(t => typeof t === 'string' && C.cpWithin(t, C.PHONE_DELIVERY_TAG_MAX_CHARS) &&
+                !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(t)).slice(0, C.PHONE_DELIVERY_TAGS_MAX);
+              if (tags.length > 0) copy.deliveryTags = tags;
+              break;
+            }
             default: // read, isBark, timed, preloaded: boolean only
               if (value === true || value === false) copy[field] = value;
           }
@@ -2345,8 +2878,12 @@ export default class NPCManager {
       });
     const storyState = typeof npc.storyState === 'string' &&
       C.utf8ByteLength(npc.storyState) <= C.PHONE_STORY_STATE_MAX_BYTES ? npc.storyState : null;
-    if (history.length === 0 && !storyState) return null;
+    // A call in flight or a callback waiting is saved with its contact (plan 2.7, A4)
+    const pendingCall = npc.pendingCall && typeof npc.pendingCall === 'object'
+      ? JSON.parse(JSON.stringify(npc.pendingCall)) : null;
+    if (history.length === 0 && !storyState && !pendingCall) return null;
     const entry = { history };
+    if (pendingCall) entry.pendingCall = pendingCall;
     if (storyState) {
       entry.storyState = storyState;
       // A story position only fits the story it came from (changeStoryPath)
@@ -2420,6 +2957,14 @@ export default class NPCManager {
             if (msg[field] !== undefined) copy[field] = msg[field];
           }
           copy.read = !!msg.read;
+          // A preloaded call opening's note tags: plain strings only, as the server keeps them
+          if (copy.deliveryTags !== undefined) {
+            const tags = Array.isArray(copy.deliveryTags)
+              ? copy.deliveryTags.filter(t => typeof t === 'string' && t.length <= NPCManager.PHONE_DELIVERY_TAG_MAX_CHARS)
+                  .slice(0, NPCManager.PHONE_DELIVERY_TAGS_MAX)
+              : [];
+            if (tags.length) copy.deliveryTags = tags; else delete copy.deliveryTags;
+          }
           if (typeof copy.timestamp !== 'number') copy.timestamp = Date.now();
           // A thread saved before U3 holds "You: …" lines as the NPC's
           const line = classifyPhoneLine(copy.type, copy.text);
@@ -2436,6 +2981,11 @@ export default class NPCManager {
       if (typeof saved.lastEnteredKnot === 'string') npc.lastEnteredKnot = saved.lastEnteredKnot;
       if (typeof saved.preloadedKnot === 'string') npc.preloadedKnot = saved.preloadedKnot;
     }
+    if (saved.pendingCall && typeof saved.pendingCall === 'object' && !npc.pendingCall) {
+      npc.pendingCall = saved.pendingCall;
+    }
+    // After game_loaded the ringer is waiting for it already (resumePendingCalls)
+    if (this._pendingCallsResumed) this._resumeCallState(npc);
     if (Array.isArray(saved.deferredTags) && saved.deferredTags.length > 0) {
       npc.deferredTags = saved.deferredTags.filter(t => typeof t === 'string');
     }
@@ -2450,6 +3000,159 @@ export default class NPCManager {
       try { window.updatePhoneBadge(npc.phoneId); } catch (e) { /* inventory not ready yet */ }
     }
     console.log(`📱 Restored ${npcId}'s phone thread (${(this.conversationHistory.get(npcId) || []).length} message(s))`);
+  }
+
+  /**
+   * A reload (plan 2.3 row 27), run on game_loaded by the ringer's adapter and for any contact
+   * that registers later. A saved pendingCall is the slot `{ forced: [...], live }` (A2a notes).
+   * Forced calls ring again through phoneRinger.restore(). A non-forced call that was queued,
+   * ringing, held or connected is missed: a row, no toast, phone_call_missed after game_loaded.
+   * A callback already saved (state "missed") is handed back to the ringer; a missed live call runs its
+   * `onMissed` (callback or voicemail) with no toast (A6).
+   */
+  resumePendingCalls() {
+    this._pendingCallsResumed = true;
+    for (const npc of this.npcs.values()) this._resumeCallState(npc);
+  }
+
+  /** What a reload does for one contact: its saved call slot (row 27), then a thread left inside a call (A5 R1 M1). */
+  _resumeCallState(npc) {
+    const forcedResumed = this._resumePendingCall(npc);
+    if (!forcedResumed) this._resumeMidCallStory(npc);
+  }
+
+  /** The knots a ringer call opens on: `call` entries, `ring` mappings and a `ring` timedConversation (never a legacy voiced call). */
+  _ringerCallKnots(npc) {
+    const knotOf = (path) => String(path || '').split('.')[0];
+    const knots = new Set();
+    const rings = (v) => !!v && v.ring !== undefined && v.ring !== null && v.ring !== false;
+    const timed = npc?.timedConversation;
+    if (timed && rings(timed) && timed.targetKnot && timed.videoCall !== true && timed.conversationMode !== 'video-call') knots.add(knotOf(timed.targetKnot));
+    for (const m of (Array.isArray(npc?.eventMappings) ? npc.eventMappings : [])) {
+      const target = m && (m.targetKnot || m.knot);
+      if (m && rings(m) && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
+    }
+    const entries = npc?.call === undefined || npc?.call === null ? [] : (Array.isArray(npc.call) ? npc.call : [npc.call]);
+    for (const e of entries) {
+      if (e && typeof e.knot === 'string' && e.knot.trim()) knots.add(knotOf(e.knot.trim()));
+    }
+    return knots;
+  }
+
+  /**
+   * Item 7 follow-up: the `ring.callbackWhen` of the ring mapping whose call opens on `knot`, or null.
+   * The save writes only { knot, state, onMissed, callLabel } (the format is unchanged), so a callback
+   * restored after a reload lost its stale-clear condition. We recover it from the live scenario config
+   * by knot, so a stale callback still clears after a reload.
+   * @param {Object} npc
+   * @param {string} knot
+   * @returns {string|null}
+   */
+  _ringCallbackWhenFor(npc, knot) {
+    if (!npc || typeof knot !== 'string' || !knot) return null;
+    const knotOf = (p) => String(p || '').split('.')[0];
+    const want = knotOf(knot);
+    const fromRing = (ring, target) => (ring && typeof ring === 'object'
+      && knotOf(target) === want && typeof ring.callbackWhen === 'string' && ring.callbackWhen)
+      ? ring.callbackWhen : null;
+    for (const m of this._normalizeEventMappings(npc.eventMappings)) {
+      if (!m) continue;
+      const w = fromRing(m.ring, m.targetKnot || m.knot);
+      if (w) return w;
+    }
+    const t = npc.timedConversation;
+    if (t) { const w = fromRing(t.ring, t.targetKnot); if (w) return w; }
+    return null;
+  }
+
+  /**
+   * A call that was dialling, connected or held when the game was saved (incoming or outgoing) leaves the
+   * thread on the call's knot and its choices, which would show as silent text. The call is gone after a
+   * reload, so the thread goes back to its home knot, as at End (`_resetAfterRingerCall`); the thread's own
+   * read-ahead settles on the lines it already shows. A forced call that resumes keeps its place (the
+   * caller skips it). An outgoing call cut by a reload leaves no row: the time on the line is not known.
+   */
+  _resumeMidCallStory(npc) {
+    if (!npc || npc._midCallChecked) return;
+    npc._midCallChecked = true;
+    const knotOf = (path) => String(path || '').split('.')[0];
+    const home = knotOf(npc.homeKnot || 'start');
+    const current = knotOf(npc.currentKnot);
+    if (!current || current === home || !this._ringerCallKnots(npc).has(current)) return;
+    npc.currentKnot = home;
+    npc.lastEnteredKnot = home;
+    if (typeof npc.storyState !== 'string' || !npc.storyState) return;
+    Promise.resolve(this._resetStoryToHome(npc)).then(() => {
+      try { window.stateSync?.sync?.()?.catch?.(() => {}); } catch (e) { /* the next tick sends it */ }
+    }).catch((e) => console.error('[NPCManager] reset after a reload mid-call failed', e));
+  }
+
+  /** Move a contact's saved story to its home knot (see PhoneChatConversation.resetToHome). */
+  async _resetStoryToHome(npc) {
+    const [conversationModule, inkModule] = await Promise.all([
+      import('../minigames/phone-chat/phone-chat-conversation.js'),
+      import('./ink/ink-engine.js'),
+    ]);
+    return conversationModule.default.resetToHome(npc, this, new inkModule.default(npc.id));
+  }
+
+  _resumePendingCall(npc) {
+    const raw = npc?.pendingCall;
+    if (!raw || typeof raw !== 'object' || npc._pendingCallResumed) return false;
+    const ringer = typeof window !== 'undefined' ? window.phoneRinger : null;
+    if (!ringer || typeof ringer.restore !== 'function') return false;
+    npc._pendingCallResumed = true;
+    // The old single record is one forced entry when forced, else a live one
+    const slot = Array.isArray(raw.forced) || raw.live || Array.isArray(raw.voicemails) || raw.callback ? raw
+      : (raw.knot ? (raw.disableClose ? { forced: [raw] } : { live: raw }) : {});
+    const forced = (Array.isArray(slot.forced) ? slot.forced : []).filter(e => e && typeof e.knot === 'string');
+    const live = slot.live && typeof slot.live === 'object' && typeof slot.live.knot === 'string' ? slot.live : null;
+    // Voicemails that were still waiting to run (A6 R2 M1), in order, and an older slot's single one in
+    // `live` (A6 R1 M1): deliver them now, quietly; their missed rows are already in the thread
+    const voicemails = (Array.isArray(slot.voicemails) ? slot.voicemails : [])
+      .filter(v => v && typeof v.knot === 'string' && v.knot)
+      .map(v => ({ knot: v.knot, withheld: v.withheld === true }));
+    const heldVoicemail = !!live && live.state === 'missed' && live.onMissed === 'voicemail'
+      && typeof live.voicemailKnot === 'string' && !!live.voicemailKnot;
+    if (heldVoicemail) voicemails.push({ knot: live.voicemailKnot, withheld: live.withheld === true });
+    const callback = slot.callback && typeof slot.callback === 'object' && typeof slot.callback.knot === 'string' ? slot.callback : null;
+    const keepCallback = live && live.state === 'missed' && !heldVoicemail;
+    npc.pendingCall = null;
+    for (const vm of voicemails) {
+      Promise.resolve(this.runVoicemail(npc.id, vm.knot, { withheld: vm.withheld, quiet: true })).catch(() => {});
+    }
+    // Item 7 follow-up: recover each restored callback's callbackWhen from the ring config by knot
+    // (the save never carried it), so a stale callback still clears after a reload.
+    if (callback) {
+      callback.callbackWhen = callback.callbackWhen || this._ringCallbackWhenFor(npc, callback.knot) || undefined;
+      ringer.restoreCallback?.(npc.id, callback);
+    }
+    if (heldVoicemail) {
+      // handled above
+    } else if (keepCallback) {
+      // A callback saved before the reload (state "missed"): the ringer holds it again
+      live.callbackWhen = live.callbackWhen || this._ringCallbackWhenFor(npc, live.knot) || undefined;
+      ringer.restoreCallback?.(npc.id, live);
+    } else if (live) {
+      this.addCallRow(npc.id, 'missed', { withheld: live.withheld === true });
+      // After game_loaded: mappings on phone_call_missed are all registered by then
+      setTimeout(() => {
+        this.eventDispatcher?.emit?.(`phone_call_missed:${npc.id}`, { npcId: npc.id, knot: live.knot, reload: true });
+      }, 0);
+      // onMissed (callback or voicemail) as for any missed call, without a toast (A6)
+      ringer.missedOffline?.(npc.id, live);
+    }
+    if (forced.length) {
+      const outcome = ringer.restore(npc.id, { forced });
+      console.log(`[NPCManager] Restored ${forced.length} forced call(s) for ${npc.id}: ${outcome}`);
+    }
+    // The resume changed what the slot holds: save it now so the server's copy is cleared too.
+    // Without this a second reload inside the 30 s tick, with an oversized unload flush, would
+    // find the old slot and miss the call again (A4 R2 m1)
+    ringer.refreshSave?.(npc.id);
+    // Only a forced call on the line (not queued) on the knot the thread is on keeps its place (A6 R1 m3)
+    const knotOf = (path) => String(path || '').split('.')[0];
+    return forced.some((e) => e.state !== 'queued' && knotOf(e.knot) === knotOf(npc.currentKnot));
   }
 
   // Load timed messages from scenario data
@@ -2614,6 +3317,7 @@ export default class NPCManager {
    */
   clearStoryCache(storyPath) {
     this.storyCache.delete(storyPath);
+    this._knotPreloads?.delete(storyPath);
   }
 
   /**
@@ -2622,6 +3326,7 @@ export default class NPCManager {
   clearAllCaches() {
     this.inkEngineCache.clear();
     this.storyCache.clear();
+    this._knotPreloads?.clear();
     console.log(`[NPCManager] Cleared all caches`);
   }
 

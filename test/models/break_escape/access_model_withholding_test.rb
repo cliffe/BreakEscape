@@ -17,18 +17,20 @@ module BreakEscape
       { 'globalVariables' => { 'se_captures' => entries } }
     end
 
-    test 'room NPCs lose creds, role, awareness, habits and workarounds' do
+    test 'room NPCs lose creds, role, awareness and workarounds, and ship only allow-listed habits' do
       room = build.filtered_room_data('finance')
       room['npcs'].each do |npc|
-        %w[creds role awareness habits workarounds].each do |key|
+        %w[creds role awareness workarounds].each do |key|
           refute npc.key?(key), "#{npc['id']} must not carry #{key}"
         end
+        # Step 8c: a shipped habits block holds only the allow-listed office-life keys.
+        assert_equal [], (npc['habits'] || {}).keys - %w[screen print], npc['id']
       end
       AccessModelScenario::PASSWORDS.each { |pw| refute_includes room.to_json, pw }
     end
 
-    # Slice 9.1 step 1: awareness, habits and the top-level roles never reach the browser;
-    # the filled screenHabit does, and no PC gains a lock field.
+    # Slice 9.1 step 1: awareness, the server-only habits and the top-level roles never reach the
+    # browser; the filled habits.screen does (step 8c allow list), and no PC gains a lock field.
     def habits_scenario
       data = AccessModelScenario.scenario
       data['roles'] = { 'finance' => { 'awareness' => 'low' }, 'staff' => { 'awareness' => 'medium' } }
@@ -39,7 +41,9 @@ module BreakEscape
       data
     end
 
-    test 'awareness and habits are in no room data (a door unlock uses the same filter) or added NPC; no roles in the bootstrap' do
+    SERVER_ONLY_HABITS = %w[locksScreen writesDown password passwordPattern holdsDoors usb].freeze
+
+    test 'awareness and server-only habits are in no room data (a door unlock uses the same filter) or added NPC; no roles in the bootstrap' do
       game = build(scenario: habits_scenario)
       stored = game.scenario_data['rooms']['finance']['npcs']
       assert stored.all? { |n| n.key?('habits') }, 'the saved data keeps the expanded habits'
@@ -47,10 +51,17 @@ module BreakEscape
       room = game.filtered_room_data('finance')
       room['npcs'].each do |npc|
         refute npc.key?('awareness'), npc['id']
-        refute npc.key?('habits'), npc['id']
+        # Step 8c allow list: a shipped habits block holds only screen and print.
+        kept = npc['habits']
+        next unless kept
+
+        assert_equal [], kept.keys - %w[screen print], "#{npc['id']} ships only screen/print"
+        SERVER_ONLY_HABITS.each { |k| refute kept.key?(k), "#{npc['id']} #{k}" }
       end
       jake = room['npcs'].find { |n| n['id'] == 'jake' }
-      assert_equal({ 'lockChance' => 0 }, jake['screenHabit'], 'the filled screenHabit reaches the browser')
+      assert_equal({ 'lockChance' => 0 }, jake['habits']['screen'], 'the filled habits.screen reaches the browser')
+      dana = room['npcs'].find { |n| n['id'] == 'dana' }
+      refute dana.key?('habits'), 'a block of only server-only habits (password) is dropped whole'
       room['objects'].each do |obj|
         refute obj.key?('lockChance'), obj['id']
         refute obj.key?('locksScreenOnLeave'), obj['id']
@@ -59,12 +70,12 @@ module BreakEscape
       assert game.move_npc_to_room!('jake', 'finance', 'lobby')
       moved = game.filtered_room_data('lobby')['npcs'].find { |n| n['id'] == 'jake' }
       refute moved.key?('awareness')
-      refute moved.key?('habits')
+      assert_equal({ 'lockChance' => 0 }, moved['habits']['screen'], 'a moved NPC keeps its shipped habits.screen')
 
       filtered = game.filtered_scenario_for_bootstrap
       refute filtered.key?('roles')
       refute_includes filtered.to_json, '"awareness"'
-      refute_includes filtered.to_json, '"habits"'
+      SERVER_ONLY_HABITS.each { |k| refute_includes filtered.to_json, %("#{k}"), k }
     end
 
     test 'an account holder keeps usePayload address and host but not its secret, nor any addCapture secret' do

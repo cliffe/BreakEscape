@@ -242,6 +242,16 @@ test('the brief lists held board sentences and the authored scope, and hides wha
     assert.ok(paused > 0);
 });
 
+test('the call target is labelled "Calling: <name>", not a bare word (C-PP2)', () => {
+    const scene = open({
+        call: brandtCall,
+        npc: { id: 'brandt_desk', npcType: 'phone', displayName: 'Brandt', currentKnot: 'start' },
+        globals: held('teague_trusts_shah')
+    });
+    const who = scene.container.querySelector('.pretext-who');
+    if (who) assert.match(who.textContent, /^Calling: /, 'the target name carries a Calling: label');
+});
+
 test('a contact blank offers the held sender name and not a recipient name', () => {
     const scene = open({
         call: brandtCall,
@@ -270,10 +280,13 @@ test('nothing held hides the un-fillable line, names the blank, and still allows
     const button = blank(scene, 'contact');
     assert.equal(button.disabled, true);
     assert.match(button.textContent, /Contact: nothing held yet/);
-    assert.match(scene.container.querySelector('.pretext-readiness').textContent, /Contact: nothing held yet/);
+    // No separate orange readiness note: it only restated the disabled buttons, which already name
+    // every gap, so it read like an error (C-PP3, user 2026-11-15). The disabled button is the one
+    // place the gap is named.
+    assert.equal(scene.container.querySelector('.pretext-readiness'), null, 'the readiness note is gone (C-PP3)');
     // The only text line's blank can never be filled, so the "____ asked me to chase this" line is
     // not shown: an un-fillable gap beside the disabled "nothing held yet" button only puzzled the
-    // learner (E3 N4). The blank control and the readiness note still name what is missing.
+    // learner (E3 N4). The blank control still names what is missing.
     assert.equal(scene.container.querySelector('[data-line="open_ref"]'), null, 'the un-fillable line is hidden');
     assert.equal(scene.container.querySelector('.pretext-line'), null, 'no pretext line is shown when none can be filled');
     assert.equal(scene.beginButton.disabled, false);
@@ -293,7 +306,7 @@ test('Esc closes the picker and leaves the overlay open; Close is a clean exit w
     assert.equal(scene.gameState.isActive, true);
     assert.deepEqual(ended, []);
     // F11: a plain Close is a clean exit (success, no aborted flag, no payload), not a failure.
-    scene.container.querySelector('.pretext-close').click();
+    scene.container.querySelector('.se-overlay-close').click();
     assert.deepEqual(ended, [{ success: true, result: {} }]);
 });
 

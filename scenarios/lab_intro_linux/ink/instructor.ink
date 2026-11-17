@@ -291,7 +291,9 @@ Example: "man ls" shows every flag and option for ls. The man pages are detailed
 
 Alternative: info command provides similar documentation, sometimes more detailed.
 
-Pro tip: if you're really stuck, try "command --help" for a quick summary. Many tools also have online documentation, but man pages are always available, even when you're offline on a compromised system with no internet.
+Pro tip: if you're really stuck, try "command --help" for a quick summary.
+
+Many tools also have online documentation, but man pages are always available, even when you're offline on a compromised system with no internet.
 
 * [How do I search man pages?]
     You: Can I search across all man pages for a topic?
@@ -415,7 +417,9 @@ Here are real-world examples you'll use constantly:
 
 Finding running processes: Command: ps aux, pipe to grep ssh. This lists all processes and filters for SSH-related ones.
 
-Analyzing logs: Command: cat logfile, pipe to grep ERROR, pipe to sort, pipe to uniq -c, pipe to sort -nr. This finds errors, sorts them, counts unique occurrences, sorts by frequency. One line, powerful analysis.
+Analyzing logs: Command: cat logfile, pipe to grep ERROR, pipe to sort, pipe to uniq -c, pipe to sort -nr.
+
+This finds errors, sorts them, counts unique occurrences, sorts by frequency. One line, powerful analysis.
 
 Network analysis: Command: netstat -an, pipe to grep ESTABLISHED. This shows active network connections.
 
@@ -851,7 +855,9 @@ Realistic expectations: online SSH bruteforce might test 10-50 passwords per sec
 
 Compare to offline cracking (like hashcat on GPUs), which can test billions of passwords per second. Online attacks are fundamentally slower.
 
-Strategic implication: online attacks work best when you have good intelligence. If you know username is "admin" and password is probably from a short list of defaults, Hydra excels. Blind bruteforce against random accounts? Impractical.
+Strategic implication: online attacks work best when you have good intelligence.
+
+If you know username is "admin" and password is probably from a short list of defaults, Hydra excels. Blind bruteforce against random accounts? Impractical.
 
 ~ instructor_rapport += 8
 # influence_increased
@@ -863,7 +869,9 @@ Strategic implication: online attacks work best when you have good intelligence.
 
 Critical question. Shows good judgment.
 
-Legal status: Hydra itself is legal to possess and use in authorized security testing. Unauthorized use against systems you don't own or have explicit permission to test? That's computer fraud. Felony-level crime in most jurisdictions.
+Legal status: Hydra itself is legal to possess and use in authorized security testing.
+
+Unauthorized use against systems you don't own or have explicit permission to test? That's computer fraud. Felony-level crime in most jurisdictions.
 
 In this training: You're attacking lab systems we control, with explicit permission. This is legal and ethical training.
 

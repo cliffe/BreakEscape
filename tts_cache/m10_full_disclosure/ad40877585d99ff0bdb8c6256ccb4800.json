@@ -1,0 +1,13 @@
+{
+  "key": "ad40877585d99ff0bdb8c6256ccb4800",
+  "npc": "tunnel_guard",
+  "text": "I get paid either way.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:22:55Z"
+}

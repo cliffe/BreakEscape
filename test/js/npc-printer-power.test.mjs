@@ -1,6 +1,6 @@
 // Office life slice 22 (OFFICE_LIFE_PLAN 12.12): printer power. revealOutput (and the print
 // command's producer) may list printers in preference order; a print goes to the first that is on
-// (affordance.offWhen does not hold) and has a free or recyclable slot; with none on nothing prints
+// (offWhen does not hold) and has a free or recyclable slot; with none on nothing prints
 // (print_blocked, npc_print_blocked:<npcId>, a grumble_printer_off line or the blocked picture). The
 // owner's errand walks to whichever printer printed, with a longer expectedAwayMs; a print on a tray
 // stays when its printer is switched off, and an errand already walking there still collects; a
@@ -26,12 +26,12 @@ const BOTH = ['office_copier', 'kitchen_copier'];
  * in the kitchen (kitchen_copier_off) with two slots. Tom prints at his PC to `list`; his other
  * needs are slowed so that his day is quiet. Sanjay does not print.
  */
-function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, kitchen = true, chatter, seed = SIMS_SEED } = {}) {
+function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, kitchen = true, chatter, seed = SIMS_SEED, hears = null } = {}) {
     const w = makeSimsWorld();
     addCopierBeat(w);
     const office = w.objs.find(o => o.id === 'office_copier');
-    office.affordance = { ...office.affordance, offWhen: 'copier_off' };
-    w.objs.push({ id: 'kitchen_copier', room: 'kitchen', x: -150, y: 200, affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 }, offWhen: 'kitchen_copier_off' } });
+    office.offWhen = 'copier_off';
+    w.objs.push({ id: 'kitchen_copier', room: 'kitchen', x: -150, y: 200, offWhen: 'kitchen_copier_off', affordance: { useSeconds: 8, capacity: 1, useFrom: { dx: 0, dy: 1 } } });
     for (const id of ['kitchen_out_a', 'kitchen_out_b']) {
         const o = { id, room: 'kitchen', x: -150, y: 186, needsTag: 'printout', slot: true, pickable: false, outputOf: 'kitchen_copier', global: `${id}_shown`, takeable: true, home: { roomId: 'kitchen', x: -150, y: 186 } };
         w.objs.push(o);
@@ -40,14 +40,14 @@ function powerWorld({ tickCache = true, list = BOTH, habit = null, power = {}, k
     const tom = w.cfgNpcs.tom.rec;
     tom.needs = { caffeine: { decayPerMin: 0.1, urgentAt: 40, initial: 99 }, hunger: { decayPerMin: 0.1, urgentAt: 40, initial: 99 }, work: { decayPerMin: 0.1, urgentAt: 50, initial: 99 } };
     tom.onUse = { ...tom.onUse, tom_pc: { revealOutput: list } };
-    if (habit) tom.printHabit = habit;
+    if (habit) tom.habits = { ...(tom.habits || {}), print: habit };
     w.cfgNpcs.sanjay.rec.onUse = {};
     delete w.cfgNpcs.amara.rec.interests.printout;
     const globals = { copier_off: false, kitchen_copier_off: false, ...power };
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
     w.world.playerAtPost = () => ({ distance: null, inMinigame: false });
     w.world.playerProximity = () => ({ nearby: false, distance: null });
-    w.world.playerHears = () => ({ overheard: false, distance: null });
+    w.world.playerHears = hears || (() => ({ overheard: false, distance: null }));
     if (chatter !== undefined) w.world.chatterConfig = () => chatter;
     const sys = new NPCNeedsSystem(w.world, { seed, manualClock: true, tickCache });
     w.attach(sys);
@@ -122,7 +122,8 @@ test('fallback past a full pool: every office slot gone, the kitchen copier prin
 test('none on: nothing prints, print_blocked and npc_print_blocked, a grumble_printer_off line, no printing icon', () => {
     for (const tickCache of CACHE) {
         const chatter = { grumble_printer_off: ['The printers are all off.'] };
-        const p = powerWorld({ tickCache, power: { copier_off: true, kitchen_copier_off: true }, chatter });
+        // SIMS-5 design R3 m1: the line is spoken within earshot; out of it, the blocked picture
+        const p = powerWorld({ tickCache, power: { copier_off: true, kitchen_copier_off: true }, chatter, hears: () => ({ overheard: true, distance: 60 }) });
         p.work();
         p.until(() => p.evs('using', 'tom').length);
         assert.equal(p.sys.getState('tom').job.prints, false, 'no printing icon');
@@ -139,6 +140,12 @@ test('none on: nothing prints, print_blocked and npc_print_blocked, a grumble_pr
         assert.equal(say.topic, 'grumble_printer_off');
         assert.equal(say.line, 'The printers are all off.');
         assert.ok(!p.log().some(e2 => e2.ev === 'print_reserved'));
+        const far = powerWorld({ tickCache, power: { copier_off: true, kitchen_copier_off: true }, chatter });
+        far.work();
+        far.until(() => far.evs('print_blocked', 'tom').length);
+        const farSay = far.sys.states.get('tom').saying;
+        assert.equal(farSay.line, null, 'out of earshot: no line spent');
+        assert.ok(farSay.picture, 'the blocked picture instead');
     }
 });
 
@@ -253,7 +260,7 @@ test('a copier that satisfies a need turns its walker back when switched off (18
     const T = 32;
     const globals = { copier_off: false };
     const w = makeWorld({ npcs: { tom: { pos: { x: 100, y: 500 }, rec: { id: 'tom', needsHome: { room: 'office', x: 100 / T, y: 500 / T }, needs: { work: { decayPerMin: 1, urgentAt: 50, initial: 90 } } } } },
-        objects: [{ id: 'copier', x: 700, y: 100, affordance: { satisfies: 'work', restores: 60, useSeconds: 8, offWhen: 'copier_off' } }] });
+        objects: [{ id: 'copier', x: 700, y: 100, offWhen: 'copier_off', affordance: { satisfies: 'work', restores: 60, useSeconds: 8 } }] });
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
     w.world.playerHears = () => ({ overheard: false, distance: null });
     w.world.playerProximity = () => ({ nearby: false, distance: null });
@@ -278,7 +285,7 @@ function validate(npcPatch, { mappings = [], kitchenPrivate = false } = {}) {
         rooms: {
             office: { type: 'room_office', connections: { west: 'kitchen' }, objects: [
                 { type: 'pc', id: 'tom_pc', name: 'PC', takeable: false, affordance: { satisfies: 'work', restores: 60, useSeconds: 10 } },
-                { type: 'photocopier1', id: 'office_copier', name: 'Copier', takeable: false, affordance: { offWhen: 'copier_off' } },
+                { type: 'photocopier1', id: 'office_copier', name: 'Copier', takeable: false, offWhen: 'copier_off' },
                 { type: 'wall_socket1', id: 'socket', name: 'Wall socket', takeable: false, triggerOnInteract: [{ type: 'set_global', key: 'copier_off', value: true }] },
                 { type: 'notes1', id: 'out_a', name: 'Printout', takeable: true, readable: true, text: 'x', outputOf: 'office_copier', revealOnGlobal: 'out_a_shown' }
             ], npcs: [{ id: 'tom', displayName: 'Tom', npcType: 'person', position: { x: 2, y: 2 }, spriteSheet: 'hacker', needsHome: 'tom_pc',
@@ -301,7 +308,7 @@ function validate(npcPatch, { mappings = [], kitchenPrivate = false } = {}) {
 
 test('validator: revealOutput and print lists', () => {
     const lines = out => out.split('\n').filter(l => /ERROR|WARNING/.test(l) && /revealOutput|print/i.test(l)).join('\n');
-    const ok = validate({ onUse: { tom_pc: { revealOutput: BOTH } }, printHabit: {} }, { mappings: [{ eventPattern: 'x', needs: { print: { producer: BOTH, forget: true } } }] });
+    const ok = validate({ onUse: { tom_pc: { revealOutput: BOTH } }, habits: { print: {} } }, { mappings: [{ eventPattern: 'x', needs: { print: { producer: BOTH, forget: true } } }] });
     assert.equal(lines(ok), '', ok);
     assert.match(validate({ onUse: { tom_pc: { revealOutput: ['office_copier', 'nope'] } } }), /ERROR.*revealOutput names 'nope'/);
     assert.match(validate({ onUse: { tom_pc: { revealOutput: [] } } }), /ERROR.*revealOutput is an empty list/);
@@ -310,6 +317,6 @@ test('validator: revealOutput and print lists', () => {
     assert.match(validate({}, { mappings: [{ eventPattern: 'x', needs: { print: ['office_copier', 'nope'] } }] }), /ERROR.*print producer 'nope'/);
     assert.match(validate({}, { mappings: [{ eventPattern: 'x', needs: { print: { producer: [] } } }] }), /ERROR.*needs.print must be/);
     // The owner cannot get into the kitchen (private to Rosa): its prints there are never fetched
-    assert.match(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, printHabit: {} }, { kitchenPrivate: true }), /WARNING.*prints to 'kitchen_copier' in room 'kitchen'/);
-    assert.doesNotMatch(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, printHabit: {} }, { kitchenPrivate: true }), /prints to 'office_copier'/);
+    assert.match(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, habits: { print: {} } }, { kitchenPrivate: true }), /WARNING.*prints to 'kitchen_copier' in room 'kitchen'/);
+    assert.doesNotMatch(validate({ onUse: { tom_pc: { revealOutput: BOTH } }, habits: { print: {} } }, { kitchenPrivate: true }), /prints to 'office_copier'/);
 });

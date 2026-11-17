@@ -1,0 +1,13 @@
+{
+  "key": "7f99fc4c4ce485cc4ea314eb21a3d99a",
+  "npc": "rosa",
+  "text": "Who keeps taking the mugs?",
+  "voice": "Leda",
+  "style": "Team lead, forties, Spanish-born, years in the UK. Relaxed and friendly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:25:57Z"
+}

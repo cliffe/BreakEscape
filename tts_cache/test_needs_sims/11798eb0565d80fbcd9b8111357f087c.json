@@ -1,0 +1,13 @@
+{
+  "key": "11798eb0565d80fbcd9b8111357f087c",
+  "npc": "amara",
+  "text": "Tom's phone, Amara speaking.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:09:21Z"
+}

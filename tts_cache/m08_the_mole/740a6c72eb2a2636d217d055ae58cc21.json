@@ -1,0 +1,13 @@
+{
+  "key": "740a6c72eb2a2636d217d055ae58cc21",
+  "npc": "closing_debrief",
+  "text": "They spent fifteen years turning one of ours into a weapon and pointing it at the rest of us. Tonight you took it off them.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:23:58Z"
+}

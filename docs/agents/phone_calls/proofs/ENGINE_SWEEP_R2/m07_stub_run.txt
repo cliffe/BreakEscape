@@ -1,0 +1,6 @@
+game 2333 (m07_stub)
+thread choices: ["1. (Hang up.)"] player bubbles=0 player history=[]
+shot m07_stub_before
+"chose (Hang up.)"
+after (Hang up.): mg=null player bubbles=0 player history=[] closed events=["conversation_closed:the_architect"]
+shot m07_stub_after

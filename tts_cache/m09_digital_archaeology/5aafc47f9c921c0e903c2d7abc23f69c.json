@@ -1,0 +1,13 @@
+{
+  "key": "5aafc47f9c921c0e903c2d7abc23f69c",
+  "npc": "nightshade_phone",
+  "text": "I'd rather be useful than watched. Tonight I get to be both.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst, now a triple agent. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, collegial; serene and a little tired.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:22:44Z"
+}

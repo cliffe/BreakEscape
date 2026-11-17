@@ -186,13 +186,7 @@ export class MixerMatchBoard {
 
         root.innerHTML = `
             <div class="bce-panel bce-mx">
-                <div class="bce-header">
-                    <div class="bce-title-group">
-                        <span class="bce-title-icon">⛓</span>
-                        <span class="bce-title">${esc(this.title)}</span>
-                    </div>
-                    ${this.caseRef ? `<span class="bce-case-ref">${esc(this.caseRef)}</span>` : ''}
-                </div>
+                ${this.caseRef ? `<div class="bce-header"><span class="bce-case-ref">${esc(this.caseRef)}</span></div>` : ''}
                 ${this.renderRules()}
                 ${this.showHelp ? this.renderHelp() : ''}
                 <div class="bce-mx-body">
@@ -221,8 +215,7 @@ export class MixerMatchBoard {
                         </span>
                     </div>
                     <div class="bce-mx-footer-btns">
-                        ${hasFiles ? `<button class="bce-close-btn bce-mx-files-btn" id="bce-mx-files" type="button">${esc(this.filesLabel)}</button>` : ''}
-                        <button class="bce-close-btn" id="bce-close-btn" type="button">Close</button>
+                        ${hasFiles ? `<button class="bce-mx-files-btn" id="bce-mx-files" type="button">${esc(this.filesLabel)}</button>` : ''}
                     </div>
                 </div>
             </div>`;
@@ -352,7 +345,6 @@ export class MixerMatchBoard {
         root.querySelectorAll('[data-slot]').forEach(el => on(el, () => this.nameSlot(el.dataset.slot)));
         on(root.querySelector('#bce-mx-help'), () => { this.showHelp = !this.showHelp; this.render(); });
         on(root.querySelector('#bce-mx-work'), () => { if (this.selected) this.working.add(this.selected); this.render(); });
-        on(root.querySelector('#bce-close-btn'), () => this.close());
         on(root.querySelector('#bce-mx-files'), () => this.openFiles());
     }
 

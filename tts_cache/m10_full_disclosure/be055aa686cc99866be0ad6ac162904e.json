@@ -1,0 +1,13 @@
+{
+  "key": "be055aa686cc99866be0ad6ac162904e",
+  "npc": "asante",
+  "text": "You're the one off the office wall. Don't touch my console and we'll get on.",
+  "voice": "Callirrhoe",
+  "style": "Systems lead, forty-five, Ghanaian-British from Peckham. Consistent South London accent throughout -- do not shift to any other accent. Crisp, exact, a little impatient; a true believer in the software who wants the numbers honest.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:32:13Z"
+}

@@ -1,0 +1,31 @@
+game 2326 (bring_clear)
+  close_brief: "closed briefing"
+  close_brief: "closed NotesMinigame"
+  close_brief: "none"
+"declined tutorial"
+optional open: []
+tasks: ["copy_staff_badge:completed","submit_distcc_flag:active","find_operational_logs:active","danny_choice_made:completed","decode_directive:completed","zero_detection:completed","call_in_after_sweep:locked"]
+"opened agent_0x99"
+hub: {"choices":["1. I'm done in here. Bring me in.","2. Send me a field guide.","3. Where do I stand?","4. Nothing right now"],"header":null}
+shot bring_clear_hub
+dialling: {"bar":"CALLING"}
+shot bring_clear_calling
+call: {"bar":"ON CALL | 0:03","subs":["AGENT HAX: Last look. Once you're out, the search team has that building.","AGENT HAX: The server room safe's still shut, for one."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot bring_clear_call
+after Not yet: mg="PhoneChatMinigame phone-chat" call-open=false debrief={"ok":true,"cmd":"eval"} task=["call_in_after_sweep:locked"]
+shot bring_clear_not_yet
+"no contact agent_0x99"
+hub again: {"choices":["1. I'm done in here. Bring me in.","2. Send me a field guide.","3. Where do I stand?","4. Nothing right now"]}
+redial: {"subs":["AGENT HAX: Still in there. That search team's getting restless.","AGENT HAX: The server room safe's still shut, for one."],"choices":["1. Bring me in.","2. Not yet. I'm still looking."]}
+shot bring_clear_redial
+confirm: {"subs":["Agent HaX: Still in there. That search team's getting restless.","Agent HaX: The server room safe's still shut, for one.","YOU: Bring me in.","AGENT HAX: Side door, two minutes. Don't use the lobby."],"choices":["1. On my way."]}
+shot bring_clear_confirm
+task now: ["call_in_after_sweep:completed"]
+overlay: null
+shot bring_clear_after_on_my_way
+after call: debrief={"ok":true,"cmd":"eval"} mg="PersonChatMinigame person-chat" victoria_choice_made=true
+shot bring_clear_debrief
+debrief later: mg="PersonChatMinigame person-chat"
+shot bring_clear_debrief2
+handler /tts: "Last look. Once you're out, the search team has that building." "The server room safe's still shut, for one." "Go on, then. She's not leaving her desk tonight." "Still in there. That search team's getting restless." "The server room safe's still shut, for one." "Side door, two minutes. Don't use the lobby." "Leave her to us." 
+["minigame_completed@125.8","conversation_closed:agent_0x99@125.8","objective_task_completed:call_in_after_sweep@150.8","global_variable_changed:victoria_choice_made@152.9","global_variable_changed:victoria_choice_made@152.9","minigame_completed@154.8","conversation_closed:agent_0x99@154.8"]

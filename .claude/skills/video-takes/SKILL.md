@@ -20,7 +20,7 @@ Brief the agent with: this skill, the picks file, the take ids and entry states 
 | Path | What |
 |---|---|
 | `tools/video/takes/<mission>/<id>.mjs` | the take script (checked in) |
-| `video_out/<mission>/takes/<id>.trimmed.mkv` | trimmed take with audio (git-ignored) |
+| `$FOOTAGE_ROOT/<mission>/takes/<id>.trimmed.mkv` | trimmed take with audio, in the catalogue library (FOOTAGE_ROOT, default `/data/footage`) |
 | `.../<id>.trimmed.markers.json`, `<id>.check.json`, `<id>.contact.jpg` | marks in the trimmed file's clock, check result, contact sheet (1 frame per second) |
 | `docs/video/takes_<mission>.md` | the table: id, entry state flags, length, drop %, A/V offset, key marks checked against frames, problems |
 
@@ -34,7 +34,7 @@ The tooling is mission-aware. A mission is named by its short key (`m02`, `sis01
 | Take scripts | `tools/video/takes/<mission>/<take id>.mjs`; make the folder for a new mission |
 | Shared helpers | `tools/video/takes/lib/`: `lib.mjs`, `dlg.mjs`, `walklib.mjs`. Import them as `../lib/lib.mjs` and so on. Do not copy them: a fix lands once |
 | Mission-specific bits | in the mission's own folder: the opening-cutscene gate (m01's `briefing_played`), room names, coordinates, a shared `setup()` such as `t04_lockpick.mjs` exports |
-| Outputs | `video_out/<mission>/takes/` |
+| Outputs | `$FOOTAGE_ROOT/<mission>/takes/` (default `/data/footage`, the catalogue library; the old `video_out/<mission>` is now a symlink to the archive) |
 
 Take ids need no mission prefix: the folder separates missions (`m02` and `m01` can both have a `t01_title`). The edit list's `"mission"` field points lint, mix, `.srt` and render at the same folder.
 
@@ -155,7 +155,7 @@ Expect to re-record about one take in three. Do not tune a failing take; re-run 
 The orchestrator's selects depend on this, so the takes agent does it first and records it in the table. **Marks are not the picture.** Dialogue marks come from real TTS playback edges and are safe to cut on (the game's subtitle appears 0.1 to 0.2 s before the line-start mark and stays until the next line). **Minigame marks can drift from the picture by seconds** (m01 t04: lock-open marked 14.36 s, visible at about 10.8 s; t14: output marks lag by 0.5 s). Extract frames at each mark and a little either side:
 
 ```bash
-tools/video/scout/extract-frames.sh video_out/<mission>/takes/<id>.trimmed.mkv <scratch>/marks-<id> 5.2 5.6 6.0   # PNGs plus sheet.png; SCALE=960x540 shrinks them
+tools/video/scout/extract-frames.sh $FOOTAGE_ROOT/<mission>/takes/<id>.trimmed.mkv <scratch>/marks-<id> 5.2 5.6 6.0   # PNGs plus sheet.png; SCALE=960x540 shrinks them
 ```
 
 For each key mark, say in the table "frame at T shows X". Check digits on keypad frames against the code. Look for toasts ("Influence: Kevin Park"), objectives panels and text boxes in frame.
@@ -178,7 +178,7 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 - Leave display 97 and the sink up between batches; stop them at the end of the stage with `env-down.sh 97` unless the next stage is another batch.
 - Headless browsers and ffmpeg processes left by a crashed take: list with `ps`, kill by PID.
 - **Never `pkill -f <pattern>`** when the pattern appears in your own command line: it kills your own shell (exit 144) and whatever you queued after it. Find PIDs with `ps -eo pid,args | grep` and `kill` those.
-- **The container can restart between turns.** Postgres, the keyless server, Xvfb and PulseAudio are then all down while `video_out/` survives. Restart them (Step 1, and `video-scout` Step 1); a stale `/tmp/.X97-lock` makes `env-up.sh` say the display is in use, and an old `env-97.pids` in `VIDEO_STATE_DIR` must go too.
+- **The container can restart between turns.** Postgres, the keyless server, Xvfb and PulseAudio are then all down while the footage library (`$FOOTAGE_ROOT`, on `/data`) survives. Restart them (Step 1, and `video-scout` Step 1); a stale `/tmp/.X97-lock` makes `env-up.sh` say the display is in use, and an old `env-97.pids` in `VIDEO_STATE_DIR` must go too.
 - **A take that looks wrong may be a game bug.** m01's key insertion lagged and jumped because the minigame stepped pins per frame and sampled the key 14 px off; re-recording would not have helped. Look at the minigame frame by frame (ffmpeg `fps=5` contact strip) and read its code before re-recording; fix the game where the bug is (it helps players too) and say so.
 
 ## Related

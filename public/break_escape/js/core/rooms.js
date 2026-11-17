@@ -565,6 +565,46 @@ function createSpriteFromMatch(tiledItem, scenarioObj, position, roomId, index, 
     return sprite;
 }
 
+// Place a room object from its scenario position. Tile x/y are room-relative and win
+// when present (every authored object). Otherwise a stored px/py is the sprite centre
+// in absolute world pixels, the form an NPC put-down or KO drop writes to
+// objects_added (room-state-sync.js putDownObject/koDropObject): without this a
+// reload rebuilt such an object at a random spot instead of where it was set down
+// (NPC carried items slice C, T1/T2 live run). Same centring as the live put-down.
+// A px/py is accepted only when the centre lies inside the owning room's rectangle
+// (roomPos origin, roomSize from the map); a value outside it (tampered, stored under
+// the room an NPC was leaving, or stale after a layout change) keeps the random spot.
+function roomPixelSize(map) {
+    let width = 10 * TILE_SIZE;   // same fallback as createSpriteAtRandomPosition
+    let height = 10 * TILE_SIZE;
+    const src = map && (map.json || map.data || map);
+    if (src && src.width && src.height) {
+        width = src.width * TILE_SIZE;
+        height = src.height * TILE_SIZE;
+    }
+    return { width, height };
+}
+
+function applyScenarioObjectPosition(sprite, scenarioPos, roomPos, roomSize) {
+    if (!sprite || !scenarioPos || typeof scenarioPos !== 'object') return;
+    const hasTile = scenarioPos.x !== undefined || scenarioPos.y !== undefined;
+    // A tile value outside the room (tampered or stale) keeps the random spot, as px/py does.
+    // Without a room size the tile value is trusted, as before.
+    const tileOk = (v, limit) => v === undefined
+        || (Number.isFinite(v) && (!roomSize || (v >= 0 && v * TILE_SIZE <= limit)));
+    const tilesOk = tileOk(scenarioPos.x, roomSize && roomSize.width)
+        && tileOk(scenarioPos.y, roomSize && roomSize.height);
+    if (hasTile && !tilesOk) return;
+    if (scenarioPos.x !== undefined) sprite.x = Math.round(roomPos.x + scenarioPos.x * TILE_SIZE);
+    if (scenarioPos.y !== undefined) sprite.y = Math.round(roomPos.y + scenarioPos.y * TILE_SIZE);
+    if (!hasTile && Number.isFinite(scenarioPos.px) && Number.isFinite(scenarioPos.py) && roomSize
+        && scenarioPos.px >= roomPos.x && scenarioPos.px <= roomPos.x + roomSize.width
+        && scenarioPos.py >= roomPos.y && scenarioPos.py <= roomPos.y + roomSize.height) {
+        sprite.x = Math.round(scenarioPos.px - (sprite.displayWidth || 0) / 2);
+        sprite.y = Math.round(scenarioPos.py - (sprite.displayHeight || 0) / 2);
+    }
+}
+
 /**
  * Helper: Create sprite at random position when no matching Tiled item found
  * Ensures position doesn't overlap with existing items
@@ -574,28 +614,8 @@ function createSpriteFromMatch(tiledItem, scenarioObj, position, roomId, index, 
  * - 2 tiles (64px) + 16px from bottom, plus sprite height to prevent overlap with southern room walls
  */
 function createSpriteAtRandomPosition(scenarioObj, position, roomId, index, map) {
-    // Get actual room dimensions from the tilemap
-    let roomWidth = 10 * TILE_SIZE;   // fallback
-    let roomHeight = 10 * TILE_SIZE;  // fallback
-
-    if (map) {
-        let width, height;
-        if (map.json) {
-            width = map.json.width;
-            height = map.json.height;
-        } else if (map.data) {
-            width = map.data.width;
-            height = map.data.height;
-        } else {
-            width = map.width;
-            height = map.height;
-        }
-
-        if (width && height) {
-            roomWidth = width * TILE_SIZE;
-            roomHeight = height * TILE_SIZE;
-        }
-    }
+    // Get actual room dimensions from the tilemap (shared with the position bound)
+    const { width: roomWidth, height: roomHeight } = roomPixelSize(map);
 
     // Get sprite texture dimensions to calculate proper placement
     let spriteHeight = TILE_SIZE;  // fallback to 1 tile if texture not found
@@ -1017,6 +1037,8 @@ async function loadRoomOnce(roomId) {
     window.screenStates?.syncRoom(roomId);
     // A jack with a device in it shows its plantedSprite (slice 9.3a, network-links.js)
     window.networkLinks?.syncRoom?.(roomId);
+    // Plants that can take a held device, and the overlay of a hidden one (plant-hiding.js)
+    window.plantHiding?.syncRoom?.(roomId);
     // The sticky note picture on a sign-in PC whose screen shows a note (slice 9.1, 5.3)
     window.postitMarks?.syncRoom(roomId);
     // A door a frustrated NPC propped stays open after a reload (slice 9.2 B, npc-workarounds.js)
@@ -2220,6 +2242,15 @@ export function createRoom(roomId, roomData, position) {
 
             // 2. Process each scenario object
             roomData.objects.forEach((scenarioObj, index) => {
+                // A patch-panel jack (panelOf) lives only on the panel's UI, never in the room.
+                // Keep its data on the room entry: the panel finds it there (the bootstrap
+                // scenario holds no room objects and createRoom's data is not stored back).
+                if (scenarioObj.panelOf) {
+                    if (scenarioObj.id) (rooms[roomId].panelJacks ||= {})[scenarioObj.id] = scenarioObj;
+                    return;
+                }
+                // hiddenWith: drawn as an overlay by plant-hiding.js; it gets this room's console fields.
+                if (scenarioObj.hiddenWith) return void window.plantHiding?.noteHiddenWith?.(roomId, scenarioObj);
                 const objType = scenarioObj.type;
 
                 // Handle table objects with explicit tableItems list.
@@ -2459,9 +2490,9 @@ export function createRoom(roomId, roomData, position) {
 
                     // Override with explicit room-relative coordinates when specified.
                     // Tiled designer positions are ignored for coordinates-specified items.
-                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE)
-                    if (scenarioObj.position?.x !== undefined) sprite.x = Math.round(position.x + scenarioObj.position.x * TILE_SIZE);
-                    if (scenarioObj.position?.y !== undefined) sprite.y = Math.round(position.y + scenarioObj.position.y * TILE_SIZE);
+                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE);
+                    // an NPC put-down's px/py world-pixel centre is honoured too
+                    applyScenarioObjectPosition(sprite, scenarioObj.position, position, roomPixelSize(map));
 
                     // A table-layer match joins the table it overlaps; anything else (or a
                     // table-layer match moved off every table) is stored at its own depth
@@ -2473,9 +2504,9 @@ export function createRoom(roomId, roomData, position) {
                     sprite = createSpriteAtRandomPosition(scenarioObj, position, roomId, index, map);
 
                     // Override with explicit room-relative coordinates when specified.
-                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE)
-                    if (scenarioObj.position?.x !== undefined) sprite.x = Math.round(position.x + scenarioObj.position.x * TILE_SIZE);
-                    if (scenarioObj.position?.y !== undefined) sprite.y = Math.round(position.y + scenarioObj.position.y * TILE_SIZE);
+                    // Coordinates are tile-based and converted to pixels (multiply by TILE_SIZE);
+                    // an NPC put-down's px/py world-pixel centre is honoured too
+                    applyScenarioObjectPosition(sprite, scenarioObj.position, position, roomPixelSize(map));
 
                     // Set depth and store
                     setDepthAndStore(sprite, position, roomId, false, scenarioObj);

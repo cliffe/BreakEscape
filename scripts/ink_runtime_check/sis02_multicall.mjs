@@ -63,8 +63,9 @@ const { startEventConversation } = await import(pathToFileURL(join(tmp, 'event-s
 // ---------------------------------------------------------------- scenario
 function loadScenario() {
   if (ARGS['scenario-json']) return JSON.parse(readFileSync(resolve(ARGS['scenario-json']), 'utf8'));
-  const r = spawnSync('ruby', ['-rerb', '-rjson', '-e',
-    'puts JSON.generate(JSON.parse(ERB.new(File.read(ARGV[0])).result(binding)))',
+  // Plan step 5: one binding for every renderer. Renders through the server's BreakEscape::ScenarioBinding.
+  const r = spawnSync('ruby', ['-r', join(REPO, 'lib/break_escape/scenario_binding.rb'), '-e',
+    'print BreakEscape::ScenarioBinding.render(File.read(ARGV[0]))',
     join(REPO, 'scenarios/sis02_energy/scenario.json.erb')], { encoding: 'utf8', maxBuffer: 1 << 26 });
   if (r.status !== 0) throw new Error('could not render scenario.json.erb: ' + r.stderr);
   return JSON.parse(r.stdout);

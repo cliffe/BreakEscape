@@ -42,13 +42,15 @@ module BreakEscape
     # sync_state — locked room teleport
     # =========================================================================
 
+    # R4 MINOR 1 contract (GATED_DOOR_SERVER_CHECK): a currentRoom the server cannot vouch
+    # for is skipped, not rolled back. The request succeeds, names currentRoom in notSaved,
+    # and the saved room is left unchanged, so a forge still cannot teleport into gated space.
     test "SECURITY: sync_state cannot teleport player to a locked room" do
       put sync_state_game_url(@game), params: { currentRoom: "locked_office" }
 
-      assert_response :forbidden
-      json = JSON.parse(response.body)
-      assert_equal false, json["success"]
-      assert_match(/locked room/i, json["message"])
+      assert_response :success
+      assert_includes Array(JSON.parse(response.body)["notSaved"]), "currentRoom",
+        "a refused currentRoom must be reported in notSaved"
 
       @game.reload
       assert_equal "lobby", @game.player_state["currentRoom"],
@@ -58,7 +60,8 @@ module BreakEscape
     test "SECURITY: sync_state cannot teleport player to a non-existent room" do
       put sync_state_game_url(@game), params: { currentRoom: "made_up_room" }
 
-      assert_response :forbidden
+      assert_response :success
+      assert_includes Array(JSON.parse(response.body)["notSaved"]), "currentRoom"
       @game.reload
       assert_equal "lobby", @game.player_state["currentRoom"]
     end
@@ -521,17 +524,40 @@ module BreakEscape
     end
 
     # =========================================================================
-    # complete_task — enter_room (client-trusted)
+    # complete_task — enter_room (server-validated: GATED_DOOR §8, Chunk F)
+    # The server now refuses an enter_room completion unless the player has
+    # durably reached the room (unlockedRooms / npcRouteRooms / startRoom /
+    # awareness world room). A forge is refused (retryable); an honest player is
+    # never stranded because the durable unlockedRooms write carries the check.
     # =========================================================================
 
-    test "SECURITY: complete_task accepts enter_room task (client-trusted validation)" do
+    test "SECURITY: complete_task refuses enter_room task for a room never reached" do
+      setup_enter_room_task # targetRoom locked_office; never unlocked, never reached
+
+      post complete_task_game_url(@game, task_id: "task_enter_office")
+
+      assert_response :unprocessable_entity
+      json = JSON.parse(response.body)
+      assert_equal false, json["success"],
+        "enter_room must not complete for a room the player never reached"
+      assert_equal "Room not reached", json["error"]
+      assert_equal true, json["retryable"]
+
+      @game.reload
+      task_status = @game.player_state.dig("objectivesState", "tasks", "task_enter_office", "status")
+      assert_not_equal "completed", task_status
+    end
+
+    test "SECURITY: complete_task accepts enter_room task once the room is durably reached" do
       setup_enter_room_task
+      @game.player_state["unlockedRooms"] << "locked_office"
+      @game.save!
 
       post complete_task_game_url(@game, task_id: "task_enter_office")
 
       json = JSON.parse(response.body)
       assert json["success"],
-        "enter_room task should complete (client-trusted, low-stakes)"
+        "enter_room completes once the room is in the server's durable unlockedRooms"
 
       @game.reload
       task_status = @game.player_state.dig("objectivesState", "tasks", "task_enter_office", "status")
@@ -699,19 +725,21 @@ module BreakEscape
         "WARNING: This task type is EXPLOITABLE for scoring - recommend using flags scoring for competitive events"
     end
 
-    test "SECURITY: enter_room tasks are client-trusted (document for scoring)" do
-      setup_enter_room_task
+    test "SECURITY: enter_room tasks are server-validated against reached rooms" do
+      setup_enter_room_task # targetRoom locked_office; never reached
 
-      # No server-side validation for enter_room
+      # GATED_DOOR §8 (Chunk F): enter_room is no longer client-trusted. A forge that
+      # never reached the room is refused and does not score.
       post complete_task_game_url(@game, task_id: "task_enter_office")
 
+      assert_response :unprocessable_entity
       json = JSON.parse(response.body)
-      assert json["success"],
-        "DOCUMENTED: enter_room tasks are client-trusted (low-stakes)"
+      assert_equal false, json["success"],
+        "a forged enter_room (room never reached) is refused, not scored"
 
       @game.reload
-      assert_equal 1, @game.tasks_completed,
-        "NOTE: enter_room tasks should be weighted lower in scoring calculations"
+      assert_equal 0, @game.tasks_completed,
+        "tasks_completed must not increment for an unreached enter_room"
     end
 
     test "SECURITY: custom tasks have no validation (document for scoring)" do

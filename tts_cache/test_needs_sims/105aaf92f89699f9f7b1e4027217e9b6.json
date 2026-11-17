@@ -1,0 +1,13 @@
+{
+  "key": "105aaf92f89699f9f7b1e4027217e9b6",
+  "npc": "tom",
+  "text": "No, the big boxes, not the small ones.",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:06Z"
+}

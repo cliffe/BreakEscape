@@ -11,7 +11,22 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '../..');
 const ruby = spawnSync('ruby', ['--version']);
 const skip = ruby.status !== 0 && 'ruby not found';
 
+// Format 2: needsHome no longer derives ownership. The loader (and the template rewrite) write an
+// explicit `owner` onto each id-bearing PC an NPC's needsHome names; reproduce that here so the
+// fixtures carry the owner the old derivation used to supply. An explicit owner set in a fixture wins.
+function assignOwners(scenario) {
+    for (const room of Object.values(scenario.rooms || {})) {
+        const objs = room.objects || [];
+        for (const n of room.npcs || []) {
+            if (typeof n.needsHome !== 'string') continue;
+            const pc = objs.find(o => o && o.id === n.needsHome && o.type === 'pc');
+            if (pc && pc.owner === undefined) pc.owner = n.id;
+        }
+    }
+    return scenario;
+}
 function run(scenario, fn = 'check') {
+    assignOwners(scenario);
     const script = `require ${JSON.stringify(join(root, 'scripts/validate_scenario.rb'))}
       puts JSON.generate(ValidateAccessWork.${fn}(JSON.parse(STDIN.read)))`;
     const r = spawnSync('ruby', ['-e', script], {
@@ -122,14 +137,14 @@ function workClean() {
         },
         resources: {
             email: { name: 'Email', kind: 'email' },
-            finance_share: { name: 'Finance share', kind: 'file_share', access: { roles: ['finance'] }, downIf: 'share_down' }
+            finance_share: { name: 'Finance share', kind: 'file_share', access: { roles: ['finance'] }, offWhen: 'share_down' }
         },
         roles: { staff: { workNeeds: ['email'], frustration: { perFail: 20 } }, finance: { workNeeds: ['finance_share'] } },
         globalVariables: { share_down: false, dana_pc_off: false },
         rooms: {
             office: {
                 type: 'room_office',
-                objects: [pc('dana_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } })],
+                objects: [pc('dana_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } })],
                 npcs: [worker('dana', { role: ['finance', 'staff'] })]
             }
         }
@@ -182,15 +197,15 @@ test('Work: an NPC with a resource it is not admitted to is warned (Kai, "work n
     assert.equal(w.length, 1, w.join('\n'));
 });
 
-test('Work: a resource its station can never reach, and an undeclared downIf, are warned', { skip }, () => {
+test('Work: a resource its station can never reach, and an undeclared offWhen, are warned', { skip }, () => {
     const s = workClean();
     s.networks = { corp: { name: 'Corp' }, fin: { name: 'Finance' } };
     s.rooms.office.network = 'corp';
     s.resources.finance_share.network = 'fin';
-    s.resources.email.downIf = 'mail_down';
+    s.resources.email.offWhen = 'mail_down';
     const w = warnings(issues(s));
     assertHas(w, "dana needs 'finance_share' but its station can never reach it");
-    assertHas(w, "resources.email.downIf 'mail_down' is not declared");
+    assertHas(w, "resources.email.offWhen names 'mail_down', which is not declared");
 });
 
 test('Work: needsDeferMin under 0.5 is warned for a work plan and for social media with no phone, not with a phone', { skip }, () => {
@@ -204,24 +219,24 @@ test('Work: needsDeferMin under 0.5 is warned for a work plan and for social med
     assert.ok(!has(issues(t), 'sam has'));
 });
 
-test('Work: the station warnings (no work affordance, a coordinate with a screenOwner PC, no restores)', { skip }, () => {
+test('Work: the station warnings (no work affordance, a coordinate with an owner PC, no restores)', { skip }, () => {
     const s = workClean();
     s.rooms.office.objects[0].affordance = { useSeconds: 5 };
     assertHas(warnings(issues(s)), "dana has a work plan, but its needsHome is 'dana_pc', which satisfies no work");
     const t = workClean();
-    t.rooms.office.objects[0].screenOwner = 'dana';
+    t.rooms.office.objects[0].owner = 'dana';
     t.rooms.office.npcs[0].needsHome = { x: 3, y: 4 };
     const w = warnings(issues(t));
     assertHas(w, 'its needsHome is a coordinate');
-    assertHas(w, "It owns 'dana_pc' through screenOwner");
+    assertHas(w, "It owns 'dana_pc' through owner");
     const u = workClean();
     delete u.rooms.office.objects[0].affordance.restores;
     assertHas(warnings(issues(u)), "dana's station 'dana_pc' satisfies work but has no affordance.restores");
     // an account holder with the role and no work need has no plan, so no warning
     const v = workClean();
-    v.rooms.office.objects.push(pc('pat_pc', { affordance: undefined, screenOwner: 'pat' }));
+    v.rooms.office.objects.push(pc('pat_pc', { affordance: undefined, owner: 'pat' }));
     v.rooms.office.npcs.push({ id: 'pat', npcType: 'person', role: 'staff', creds: { username: 'pat', password: 'pw-pat-long' } });
-    v.resources.email.downIf = undefined;
+    v.resources.email.offWhen = undefined;
     assert.ok(!has(issues(v), 'pat'), issues(v).join('\n'));
 });
 
@@ -268,7 +283,7 @@ test('Work: the report lines (resources, honest time, earliest by the park floor
     s.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'emit', event: 'dana_gave_up' }];
     s.rooms.office.npcs[1].workarounds = [{ at: 50, do: 'writes_down' }];
     const lines = run(s, 'report_lines');
-    assertHas(lines, 'Work dana: finance_share (admitted, down while share_down); email (admitted, nothing takes it down); station \'dana_pc\' off while dana_pc_off.');
+    assertHas(lines, 'Work dana: finance_share (admitted, down while share_down); email (admitted, nothing takes it down); station \'dana_pc\' off while "dana_pc_off".');
     assertHas(lines, 'Work kai: email (admitted, nothing takes it down); finance_share (NOT admitted, down while share_down).');
     // dana: n = ceil(50/20) = 3; honest 5 + 2 x (30 + 5) = 75; earliest 2 x (0.9 x 5 - 3) = 3
     assertHas(lines, 'Workaround dana[0] emit at 50: opens event \'dana_gave_up\'; 3 failed use(s) at perFail 20; tell 1, tell 2, then the workaround; about 75 s of outage; earliest by a modified browser 3 s');
@@ -286,7 +301,7 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     // fail alternate: half the park floor, 2 x 24 / 2 = 24
     const s = withKai(workClean());
     s.rooms.office.npcs[1].workarounds = [{ at: 50, do: 'writes_down' }];
-    s.rooms.office.objects[1].affordance.offWhen = 'kai_pc_off';
+    s.rooms.office.objects[1].offWhen = 'kai_pc_off';
     s.globalVariables.kai_pc_off = false;
     assertHas(run(s, 'report_lines'), 'earliest by a modified browser 24 s after');
 
@@ -296,6 +311,7 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
     n.networks = { corp: { name: 'Corp' } };
     n.resources.email.network = 'corp';
     n.rooms.office.objects[0].affordance = { satisfies: 'work', useSeconds: 5, restores: 10 };
+    delete n.rooms.office.objects[0].offWhen; // dana_pc is not off here: the station is the only ease place
     n.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'emit', event: 'dana_gave_up' }];
     assertHas(run(n, 'report_lines'), 'earliest by a modified browser 48 s after');
     // review R2 m3: a non-desk place changes nothing, the server refuses every work ease for a
@@ -308,7 +324,7 @@ test('Work: earliest by a modified browser (review R1 m1, m2): halved park floor
 // Sub-slice L (plan 6.6 and 10): a lockout at the NPC's own sign-in PC under maxAttempts
 const withJake = s => {
     s.policies = { strict: { autoLockMin: 5, maxAttempts: 3 } };
-    s.rooms.office.objects.push(pc('jake_pc', { policy: 'strict', lockChance: 1 }));
+    s.rooms.office.objects.push(pc('jake_pc', { policy: 'strict', lockChance: 1, owner: 'jake' }));
     s.rooms.office.npcs.push(worker('jake', { workarounds: [{ at: 50, do: 'emit', event: 'jake_gave_up' }] }));
     return s;
 };
@@ -324,7 +340,7 @@ test('Work L: a lockout station is a cause: clean with a station_fail line, warn
     t.policies.strict.maxAttempts = null;
     assert.ok(!has(issues(t), 'jake can fail for'), issues(t).join('\n'));
     t.policies.strict.maxAttempts = 3;
-    t.rooms.office.objects.find(o => o.id === 'jake_pc').screenOwner = 'dana';
+    t.rooms.office.objects.find(o => o.id === 'jake_pc').owner = 'dana';
     assert.ok(!has(issues(t), 'locked out at its station'), issues(t).join('\n'));
 });
 
@@ -363,7 +379,7 @@ function wkClean() {
     s.chatter.wk_prop_door = ["I'm not badging in every time."];
     s.globalVariables.store_propped = false;
     s.rooms.office.connections = { north: 'store' };
-    s.rooms.office.objects.push(pc('tom_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+    s.rooms.office.objects.push(pc('tom_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
         { id: 'store_wedge', type: 'fire_extinguisher1', name: 'Extinguisher', revealOnGlobal: 'store_propped' });
     s.rooms.office.npcs[0].workarounds = [{ at: 50, do: 'writes_down' }];
     s.rooms.office.npcs.push(worker('tom', {
@@ -467,10 +483,10 @@ test('Workarounds: a setGlobal that a server gate also reads is warned (review 9
     s.exportGlobals = ['store_propped'];
     assertHas(warnings(issues(s)), `${frag} (exportGlobals)`);
     s = wkClean();
-    s.resources.finance_share.downIf = 'store_propped';
-    assertHas(warnings(issues(s)), `${frag} (resources.finance_share.downIf)`);
+    s.resources.finance_share.offWhen = 'store_propped';
+    assertHas(warnings(issues(s)), `${frag} (resources.finance_share.offWhen)`);
     s = wkClean();
-    s.rooms.office.objects.find(o => o.id === 'tom_pc').affordance.offWhen = { store_propped: true };
+    s.rooms.office.objects.find(o => o.id === 'tom_pc').offWhen = { store_propped: true };
     assertHas(warnings(issues(s)), `${frag} (tom_pc offWhen)`);
     // An event mapping or a reveal reads it in the browser only: no warning
     s = wkClean();
@@ -480,13 +496,13 @@ test('Workarounds: a setGlobal that a server gate also reads is warned (review 9
 
 test('Workarounds: writes_down on a PC another NPC owns, or with no password, is an error', { skip }, () => {
     let s = wkClean();
-    s.rooms.office.objects[0].screenOwner = 'tom';
+    s.rooms.office.objects[0].owner = 'tom';
     assertHas(errors(issues(s)), "'dana_pc' belongs to \"tom\"");
     s = wkClean();
     s.rooms.office.npcs[0].creds.password = '';
     assertHas(errors(issues(s)), 'dana has no password');
     s = wkClean();
-    s.rooms.office.objects[0].screenOwner = 'dana';
+    s.rooms.office.objects[0].owner = 'dana';
     assert.deepEqual(issues(s), []);
 });
 
@@ -533,11 +549,11 @@ function hClean() {
     s.chatter.wk_borrow = ["I'll use the spare PC."];
     s.chatter.wk_share_login = ['Ruth, a quick favour?'];
     s.chatter.login_aloud = ["Use mine. It's the usual one."];
-    s.rooms.office.objects.push(pc('ian_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
-        pc('hot_desk'), pc('sam_pc', { affordance: { satisfies: 'work', useSeconds: 5, restores: 10, offWhen: 'dana_pc_off' } }),
+    s.rooms.office.objects.push(pc('ian_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
+        pc('hot_desk'), pc('sam_pc', { offWhen: 'dana_pc_off', affordance: { satisfies: 'work', useSeconds: 5, restores: 10 } }),
         pc('ruth_pc'));
     s.rooms.office.npcs.push(
-        worker('ian', { screenHabit: { lockChance: 0 }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot_desk' }] }),
+        worker('ian', { habits: { screen: { lockChance: 0 } }, workarounds: [{ at: 50, do: 'borrow_session', pc: 'hot_desk' }] }),
         worker('sam', { workarounds: [{ at: 50, do: 'share_login', with: 'ruth' }] }),
         worker('ruth'));
     return s;
@@ -553,19 +569,19 @@ test('H: a clean fixture raises nothing; the work report no longer says "Not per
     assert.ok(!has(lines, 'Not performed'), lines.join('\n'));
 });
 
-test('H: a borrower with no screenHabit is warned (it opens nothing); lockChance 0 or locksScreen never is not', { skip }, () => {
+test('H: a borrower with no habits.screen is warned (it opens nothing); lockChance 0 or locksScreen never is not', { skip }, () => {
     let s = hClean();
-    delete npcOf(s, 'ian').screenHabit;
+    delete npcOf(s, 'ian').habits;
     assertHas(warnings(issues(s)), "ian's workaround 0 (borrow_session): ian is a careful guest");
     s = hClean();
-    npcOf(s, 'ian').screenHabit = { lockChance: 1 };
+    npcOf(s, 'ian').habits = { screen: { lockChance: 1 } };
     assertHas(warnings(issues(s)), 'ian is a careful guest');
     s = hClean();
-    delete npcOf(s, 'ian').screenHabit;
+    delete npcOf(s, 'ian').habits;
     npcOf(s, 'ian').habits = { locksScreen: 'never' };
     assert.ok(!has(issues(s), 'careful guest'), issues(s).join('\n'));
     s = hClean();
-    delete npcOf(s, 'ian').screenHabit;
+    delete npcOf(s, 'ian').habits;
     npcOf(s, 'ian').habits = { locksScreen: 'always' };
     assertHas(warnings(issues(s)), 'ian is a careful guest');
 });
@@ -574,8 +590,8 @@ test('H: borrow_session errors on each bad hot desk', { skip }, () => {
     const cases = [
         [s => { delete npcOf(s, 'ian').creds; }, 'ian has no account'],
         [s => { delete hotDesk(s).lockType; hotDesk(s).workstation = true; }, "'hot_desk' is not a sign-in PC"],
-        [s => { hotDesk(s).screenOwner = 'ruth'; }, "'hot_desk' has an owner (ruth)"],
-        [s => { hotDesk(s).affordance.private = true; }, "'hot_desk' is private"],
+        [s => { hotDesk(s).owner = 'ruth'; }, "'hot_desk' has an owner (ruth)"],
+        [s => { hotDesk(s).private = true; }, "'hot_desk' is private"],
         [s => { hotDesk(s).headless = true; }, "'hot_desk' is headless"],
         [s => { hotDesk(s).access = { roles: ['finance'] }; }, "'hot_desk's access list does not admit ian"],
         [s => { s.policies = { kiosk: { autoLockMin: 0 } }; hotDesk(s).policy = 'kiosk'; }, 'autoLockMin: 0'],

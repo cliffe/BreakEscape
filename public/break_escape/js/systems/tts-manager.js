@@ -24,11 +24,14 @@ class TTSManager {
         this.playing = false;
         this._hasSrc = false; // Whether audio.src has been set to a real URL
         this.currentText = null; // Line now playing — read by portraits for lip-sync
+        this.playSeq = 0;        // Bumped by every play() call: a token for "this play, not a later one of the same line"
         this.lipSync = null;     // { text, timeline } fitted to the line's audio (see _alignLipSync)
 
         // Web Audio: one MediaElementSource per <audio> element, shared context
         this._mediaElementSource = null;
         this._analyser = null;
+        this._distanceNode = null;   // gain between the analyser and the voice bus (setDistanceGain)
+        this.distanceGain = 1;
         this._amplitudeBuffer = null;
         this._ttsAudioRouted = false;
 
@@ -57,9 +60,17 @@ class TTSManager {
      * @param {string} text - Clean dialogue text (no "Speaker: " prefix)
      * @param {Object} [options]
      * @param {string|null} [options.delivery] - the line's #delivery: note (tts-delivery.js), never shown
-     * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable
+     * @param {number} [options.volume] - 0..1 distance volume for this line (chatter, D34); 1 = full
+     * @param {Function|null} [options.cancelled] - asked once the clip has loaded and before its first
+     *   sample: true means the caller gave up on it (R3 m1), so it is dropped unplayed and null returned
+     * @returns {Promise<number|null>} Audio duration in ms, or null if unavailable or if a later
+     *   play() took over while this one was loading (it then leaves the audio element alone)
      */
-    async play(npcId, text, { delivery = null } = {}) {
+    async play(npcId, text, { delivery = null, volume = 1, cancelled = null } = {}) {
+        const seq = ++this.playSeq;
+        // A later play() owns the element once it has started: a superseded call must not set
+        // src (that fires 'emptied' on the newer clip) or play its own line over it
+        const superseded = () => seq !== this.playSeq;
         if (!this.enabled || !text || !text.trim()) return null;
 
         // Stop any current playback
@@ -86,7 +97,7 @@ class TTSManager {
             } else {
                 // Fetch from server
                 blob = await ApiClient.getTTS(npcId, text, delivery);
-                if (!blob) return null;
+                if (!blob || superseded()) return null;
                 audioUrl = URL.createObjectURL(blob);
             }
 
@@ -118,9 +129,12 @@ class TTSManager {
                 this.audio.addEventListener('loadedmetadata', onLoaded);
                 this.audio.addEventListener('error', onError);
             });
+            if (superseded()) return null;
+            if (cancelled && cancelled()) { this.stop(); return null; }   // R3 m1: given up on while it loaded: never audible
 
             this.currentText = text;
             this.playing = true;
+            this.setDistanceGain(volume, true);   // before the first sample, so a faint line never starts loud
 
             // Resume shared context if suspended (autoplay policy)
             if (MusicController.context?.state === 'suspended') {
@@ -128,10 +142,12 @@ class TTSManager {
             }
 
             await this.audio.play();
+            if (superseded()) return null;
 
             console.log(`[TTS] Playing for ${npcId}: "${text.substring(0, 40)}..." (${duration}ms)`);
             return duration;
         } catch (error) {
+            if (superseded()) return null;   // the newer play's state, not ours
             this.playing = false;
             console.warn('[TTS] Play failed:', error.message);
             return null;
@@ -212,6 +228,26 @@ class TTSManager {
     }
 
     /**
+     * Distance volume for the line playing (0..1), on top of the Voice slider. A gain node between
+     * the analyser (mouth animation keeps the full signal) and the voice bus; with no Web Audio
+     * routing it falls back to the element volume. Reset to 1 by the next play() without a volume.
+     * @param {number} vol
+     * @param {boolean} [immediate] - set at once (a new line) rather than easing (following the player)
+     */
+    setDistanceGain(vol, immediate = false) {
+        const v = Number.isFinite(vol) ? Math.max(0, Math.min(1, vol)) : 1;
+        this.distanceGain = v;
+        const ctx = MusicController?.context;
+        try {
+            if (this._distanceNode && ctx) {
+                if (immediate) { this._distanceNode.gain.cancelScheduledValues(ctx.currentTime); this._distanceNode.gain.setValueAtTime(v, ctx.currentTime); }
+                else this._distanceNode.gain.setTargetAtTime(v, ctx.currentTime, 0.1);
+            }
+            else if (!this._ttsAudioRouted) this.audio.volume = v * this.volume;
+        } catch (_) { /* a gain that cannot be set leaves the line at its last volume */ }
+    }
+
+    /**
      * Enable/disable TTS
      * @param {boolean} enabled
      */
@@ -236,6 +272,8 @@ class TTSManager {
         try { this._analyser?.disconnect(); } catch (_) {}
         this._mediaElementSource = null;
         this._analyser = null;
+        try { this._distanceNode?.disconnect(); } catch (_) {}
+        this._distanceNode = null;
         this._amplitudeBuffer = null;
         this._ttsAudioRouted = false;
         this._activeFXProfile = null;
@@ -381,7 +419,13 @@ class TTSManager {
             }
         }
         tail.connect(this._analyser);
-        this._analyser.connect(MusicController.voiceGain);
+        if (!this._distanceNode) {
+            this._distanceNode = ctx.createGain();
+            this._distanceNode.gain.value = this.distanceGain ?? 1;
+        }
+        try { this._distanceNode.disconnect(); } catch (_) {}
+        this._analyser.connect(this._distanceNode);
+        this._distanceNode.connect(MusicController.voiceGain);
     }
 
     /**

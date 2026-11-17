@@ -1,0 +1,13 @@
+{
+  "key": "01747c4128f65ba396f3f0cf75cc7781",
+  "npc": "hax_voice",
+  "text": "Portland. You sent the team to Austin, and dispatch is still answering. The hospitals are still rebooking operations.",
+  "voice": "Aoede",
+  "style": "Professional intelligence handler giving a mission briefing. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:26:52Z"
+}

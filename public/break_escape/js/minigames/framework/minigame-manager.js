@@ -54,6 +54,9 @@ export const MinigameFramework = {
             return null;
         }
 
+        // A tap or key menu left open would sit over the minigame
+        window.closeInteractionMenu?.();
+
         // If there's already a minigame running, end it first
         // (a minigame already mid-end, i.e. we were called from its onComplete, is
         // finished: ending it again would re-run cleanup and its callback)
@@ -163,24 +166,25 @@ export const MinigameFramework = {
         // Lets the UI themes (css/ui-themes.css) frame the generic tool windows
         container.dataset.minigame = sceneType;
 
-        // Show the popup overlay to darken the background
-        const popupOverlay = document.querySelector('.popup-overlay');
-        if (popupOverlay) {
-            popupOverlay.classList.add('active');
-        }
-        
         // Create and start the minigame
         const MinigameClass = this.registeredScenes[sceneType];
         this.currentMinigame = new MinigameClass(container, params);
         this.currentMinigame._sceneType = sceneType;
+        // The player's phone pose for a phone-style minigame (systems/player-poses.js)
+        try { window.playerPoses?.onMinigameStart?.(sceneType, params, this.currentMinigame); } catch (e) { /* cosmetic */ }
         this._updateBarkLayer();
         // A task or pickup toast raised just before this opened waits for it to close
         // (notifications.js; m07 confirmation N1)
         window.holdRecentNotifications?.();
+        // Warnings and errors over the panel are placed clear of its title, X and controls
+        // (ui/hud-lanes.js placeNotifyBlock, toast plan 2.8)
+        try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
         // The panel the toasts were waiting for is here: it holds them from now on
         window.clearExpectedPanel?.();
         this.currentMinigame.init();
         this.currentMinigame.start();
+        // The ringer re-checks after this swap has finished (phone calls plan 2.9)
+        try { window.phoneRinger?.onMinigameStarted?.(sceneType, params); } catch (e) { console.error('phoneRinger start hook failed', e); }
         
         console.log(`Started minigame: ${sceneType}`);
         return this.currentMinigame;
@@ -212,6 +216,59 @@ export const MinigameFramework = {
         document.body.classList.toggle('minigame-holds-barks', this.holdsBarks());
     },
 
+    /**
+     * A child opened from a chat (the NPC's inventory, the card reader) leaves a pending return
+     * to that chat. If the child ends any way but complete() handing back to it (force close,
+     * displaced by another scene), nothing would ever clear the record and the NPC would stay
+     * "in chat" for the session (POSE_FIXES_REVIEW_R3 M1).
+     */
+    _dropStrandedChatReturn(ending) {
+        if (typeof window === 'undefined' || !window.pendingConversationReturn) return;
+        const isChild = ending.mode === 'npc' || ending._sceneType === 'rfid';
+        if (isChild && ending._returnsToChat !== true) window.pendingConversationReturn = null;
+    },
+
+    /**
+     * The one clearing point for a pending chat return that nothing will resume
+     * (POSE_FIXES_REVIEW_R4 M1). A note, file or other item opened from the NPC's inventory
+     * hands the chat on to a reader; if the reader is closed by a hit, a knockout, a
+     * conversation or a room change, or the item never returns to a container, no later end
+     * names the record. So every minigame end that leaves a record behind queues one check a
+     * moment later (long enough for the 100 ms container reopen): the record stays only while
+     * the chat is coming back (`returning`), the NPC inventory or card reader is open, or a
+     * reader started from the inventory is still open (pendingContainerReturn). Otherwise it
+     * names nobody and is dropped.
+     */
+    CHAT_RETURN_SETTLE_MS: 400,
+
+    _queueChatReturnSettle() {
+        if (typeof window === 'undefined') return;
+        const rec = window.pendingConversationReturn;
+        if (!rec || rec.returning === true) return;
+        setTimeout(() => this._settleChatReturn(rec), this.CHAT_RETURN_SETTLE_MS);
+    },
+
+    _settleChatReturn(rec) {
+        if (typeof window === 'undefined' || window.pendingConversationReturn !== rec) return;
+        if (rec.returning === true) return;
+        const cur = this.currentMinigame;
+        const open = !!cur && !cur._ending;
+        // The inventory itself, or the clone reader this chat started (not a door reader)
+        if (open && (cur.mode === 'npc' || (cur._sceneType === 'rfid' && cur.params?.mode === 'clone'))) return;
+        // A reader started from THIS NPC's inventory; a stale return from any other container
+        // does not count
+        const fromInventory = rec.npcId != null
+            && window.pendingContainerReturn?.npcOptions?.npcId === rec.npcId;
+        if (open && fromInventory) return;
+        // An interactionWarning confirm for an inventory item is a dialog, not a minigame:
+        // look again once it is answered
+        if (!open && fromInventory && window.gameConfirmOpen?.()) {
+            setTimeout(() => this._settleChatReturn(rec), this.CHAT_RETURN_SETTLE_MS);
+            return;
+        }
+        window.pendingConversationReturn = null;
+    },
+
     endMinigame(success, result) {
         console.log('endMinigame called with success:', success, 'result:', result);
         if (this.currentMinigame && this.currentMinigame._ending) {
@@ -221,17 +278,16 @@ export const MinigameFramework = {
         if (this.currentMinigame) {
             const ending = this.currentMinigame;
             ending._ending = true;
+            this._dropStrandedChatReturn(ending);
+            try { window.playerPoses?.onMinigameEnd?.(ending); } catch (e) { /* cosmetic */ }
             // Held toasts wait a moment: a panel reopened a tick after this one closes would
             // otherwise pull them back and show them twice (notifications.js PANEL_SETTLE_MS)
             window.settleAfterPanelClose?.();
             console.log('Cleaning up current minigame');
+            // The end hook runs from the finally below, so a throwing cleanup or onComplete
+            // cannot skip it (phone calls plan 2.9, review R2 M2).
+            try {
             ending.cleanup();
-            
-            // Hide the popup overlay
-            const popupOverlay = document.querySelector('.popup-overlay');
-            if (popupOverlay) {
-                popupOverlay.classList.remove('active');
-            }
             
             // Remove minigame container only if it was auto-created
             // (remove THIS minigame's container, not whichever comes first in the DOM)
@@ -262,7 +318,11 @@ export const MinigameFramework = {
                 this.gameInputDisabled = false;
                 console.log('Re-enabled main game input');
             }
-            
+            // A minigame that cancels touch events can leave the main game's touch pointers
+            // held down (Phaser drops a cancelled touchend), and then the world ignores every
+            // later touch (slice 7 R4 B1): let go of any still held
+            this.releaseHeldTouchPointers();
+
             // Call completion callback
             // onComplete may start another minigame (cloner save -> return to the
             // conversation); that one is now currentMinigame and must not be
@@ -308,6 +368,24 @@ export const MinigameFramework = {
                 window.barkSystem?.drainDeferredBarks?.();
             }
             console.log(`Ended minigame with success: ${success}`);
+            } finally {
+                // A parent handing over to a child does not end for the ringer's purposes (2.9).
+                // The hook gets the ending minigame: it reads params.ringerCall, _endedByCall and
+                // _callFinished off it.
+                if (ending._suspendedForChild !== true) {
+                    try { window.phoneRinger?.onMinigameEnded?.(ending); } catch (e) { console.error('phoneRinger end hook failed', e); }
+                }
+                // Toasts placed over the panel go back to the lane; waiting ones show (toast plan 2.8)
+                try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
+                // Keyring Connect's returnTo listens for this (K3b R3 t1); a parent paused for a
+                // child has not ended, so it sends nothing
+                // The chat-return record is queued here so a throwing cleanup or onComplete cannot skip it;
+                // a parent handing over to a child leaves it to the child (POSE_FIXES_REVIEW_R5 m3)
+                if (ending._suspendedForChild !== true) {
+                    try { window.eventDispatcher?.emit?.('minigame_ended', { success: !!success }); } catch (e) { console.warn('minigame_ended listeners threw', e); }
+                    try { this._queueChatReturnSettle(); } catch (e) { console.error('chat return settle failed', e); }
+                }
+            }
         } else {
             console.log('No current minigame to end');
         }
@@ -396,6 +474,35 @@ export const MinigameFramework = {
         }
     },
     
+    /**
+     * Release the main game's touch pointers that are still marked down or active. Phaser
+     * 3.60 has a fixed number of touch pointers and gives a new touch only a free one, so a
+     * pointer whose touchend it never saw blocks touch input until a reload. The mouse
+     * pointer is left alone. Returns how many pointers were released.
+     */
+    releaseHeldTouchPointers() {
+        // The main scene, or failing that window.game: the main scene once its create() ran,
+        // or the Phaser.Game before then, whose `input` is the manager itself (slice 7 R5 m2)
+        const src = this.mainGameScene || (typeof window !== 'undefined' ? window.game : null);
+        const manager = src?.input?.manager || (Array.isArray(src?.input?.pointers) ? src.input : null);
+        const pointers = Array.isArray(manager?.pointers) ? manager.pointers : [];
+        let released = 0;
+        for (const p of pointers) {
+            if (!p || p === manager.mousePointer) continue;
+            if (!p.isDown && !p.active) continue;
+            p.isDown = false;
+            p.primaryDown = false;
+            p.buttons = 0;
+            p.active = false;
+            p.wasCanceled = true;
+            p.identifier = -1;
+            p.pointerId = null;
+            released += 1;
+        }
+        if (released) console.log(`Released ${released} held main-game touch pointer(s)`);
+        return released;
+    },
+
     // Force close any running minigame
     forceCloseMinigame() {
         if (this.currentMinigame) {

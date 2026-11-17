@@ -344,6 +344,110 @@ export async function batchUpdateRoomState(updates) {
     }
 }
 
+/**
+ * Internal: POST one update_room action and report the outcome. The server validates
+ * every field; the client never names an arbitrary room for a carried item.
+ *
+ * Returns true on a committed success, false ONLY on a true server refusal
+ * (an HTTP response whose body is `success: false`), and null on a transport error
+ * where the request may or may not have reached the server (review R2 m4). Carry
+ * callers reconcile their optimistic state on a strict `=== false` (a refusal the
+ * server owns) and leave it untouched on null, letting the next room fetch reconcile,
+ * so a dropped response never undoes a change the server actually committed.
+ */
+async function postRoomAction(body) {
+    const gameId = window.breakEscapeConfig?.gameId;
+    if (!gameId) {
+        console.error('Cannot sync room state: gameId not available');
+        return null;
+    }
+    try {
+        const response = await fetch(`/break_escape/games/${gameId}/update_room`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
+            },
+            body: JSON.stringify(body)
+        });
+        if (!response.ok) {
+            // A definite refusal (a 4xx that is not a timeout or rate limit: the room
+            // is locked, the NPC does not carry it, a mismatch) is one the client
+            // reconciles against. A 5xx, 408 or 429 is transient: the server may have
+            // committed, so leave the optimistic state for the next room fetch.
+            if (isDefiniteRefusal(response)) {
+                console.warn(`❌ Refused ${body.actionType}: ${response.status}`);
+                return false;
+            }
+            console.warn(`⚠️ Transient failure syncing ${body.actionType}: ${response.status}`);
+            return null;
+        }
+        const result = await response.json();
+        if (result.success) return true;
+        console.warn(`❌ Refused ${body.actionType}: ${result.message}`);
+        return false;
+    } catch (error) {
+        // No usable response (network loss, parse failure): the server may have
+        // committed. Do not reconcile; the next room fetch will.
+        console.error(`Error syncing ${body.actionType} (transport):`, error);
+        return null;
+    }
+}
+
+/**
+ * An NPC picks an object up to carry it (NPC_CARRIED_ITEMS_PLAN.md). The server
+ * moves the object into the NPC's held items and out of its origin room, so a
+ * later put-down or consume never names the wrong room (the old 422).
+ * @param {string} npcId
+ * @param {string} itemId - the scenario object id
+ * @param {string} fromRoom - the room the object is picked up from
+ */
+export async function carryObject(npcId, itemId, fromRoom) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: fromRoom, actionType: 'carry_object', data: { npcId, itemId } });
+}
+
+/**
+ * An NPC sets the carried object down in a room at a world-pixel position. The
+ * server lands it there from the scenario definition and clears the carry.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} toRoom
+ * @param {{px:number, py:number}} position - absolute world pixels
+ */
+export async function putDownObject(npcId, itemId, toRoom, position) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: toRoom, actionType: 'put_down_object', data: { npcId, itemId, position } });
+}
+
+/**
+ * The carried object is used up. The server clears the carry and leaves the
+ * object gone (its origin removal stays), so a reload keeps it gone. roomId is
+ * the NPC's current room, used only by the server's unlocked-room gate.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} npcRoom
+ */
+export async function consumeCarried(npcId, itemId, npcRoom) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: npcRoom, actionType: 'consume_carried', data: { npcId, itemId } });
+}
+
+/**
+ * A carrying NPC is knocked out: the carried object drops to the KO room floor and
+ * the carry ends. The server trusts the recorded KO (not put-down reachability), so
+ * the KO room need not be adjacent to the pick-up room, and clears the carry so the
+ * object is served once, on the floor.
+ * @param {string} npcId
+ * @param {string} itemId
+ * @param {string} koRoom - the room the NPC fell in
+ * @param {{px:number, py:number}} position - the body position, world pixels
+ */
+export async function koDropObject(npcId, itemId, koRoom, position) {
+    if (isStandInObjectId(itemId)) return false;
+    return postRoomAction({ roomId: koRoom, actionType: 'ko_drop_carried', data: { npcId, itemId, position } });
+}
+
 // Export to window for global access
 if (typeof window !== 'undefined') window.RoomStateSync = {
     addItemToRoom,
@@ -351,7 +455,11 @@ if (typeof window !== 'undefined') window.RoomStateSync = {
     updateObjectState,
     updateNpcState,
     removeNpcFromScene,
-    batchUpdateRoomState
+    batchUpdateRoomState,
+    carryObject,
+    putDownObject,
+    consumeCarried,
+    koDropObject
 };
 
 console.log('✅ Room State Sync system loaded');

@@ -37,7 +37,10 @@ const FACE_SIGHT_MS = 150;
 export const NPC_STUCK_MS = 4000;
 export const NPC_STUCK_MOVE_PX = TILE_SIZE / 2;
 const NPC_STUCK_GAP_MS = 500;
+const SETTLE_GRACE_MS = 600;       // after a settle ends, contact may not start another for this long
 const NPC_STUCK_NUDGE_MAX_PX = TILE_SIZE;   // never nudge further than one tile
+const NPC_NUDGE_OWN_CELL_PX = 6;    // half an 8 px grid cell's diagonal: the nearest walkable centre is the body's own cell
+const NPC_NUDGE_BODY_PX = 14;       // a needs nudge keeps this far from another moving body's centre
 const NPC_STUCK_PLAYER_PX = TILE_SIZE * 1.5; // the player this close: not wedged, held up
 // Wedged this close to a route waypoint that carries an action (unlockRoom at a badge
 // reader), the NPC has arrived: a chair or another body is standing on the spot.
@@ -66,6 +69,37 @@ const AVOID_REPATH_MS      = 400;   // at most one detour re-path this often
 const AVOID_GIVEUP_MS      = 2500;  // no detour found by now: back off or squeeze
 const AVOID_SQUEEZE_MS     = 450;   // a gentle nudge lasts this long, then a cooldown wait
 const AVOID_SQUEEZE_FACTOR = 0.45;  // squeeze/back-off speed as a fraction of patrol speed
+// Head-on yield (sims tidy R6 M1, games 6093 to 6104): a back-off used to last one behaviour
+// update (about 2 px), then the full wait and detour cycle ran again, so a yielder in a one-lane
+// passage gave ground at about 1 px a second and the two stood nose to nose for 20 s or more.
+// Now each back-off step lasts AVOID_BACKOFF_MS, and while the detour still finds nothing the
+// next step follows at once, so the yielder walks back out of the lane. A step that gains less
+// than AVOID_BACKOFF_PINNED_PX is pinned (a body behind it): the pinned NPC stops yielding for
+// this meeting and the NPCs that meet it yield to it instead (the one with room behind backs off).
+export const AVOID_BACKOFF_MS = 700;
+export const AVOID_BACKOFF_PINNED_PX = 3;
+const AVOID_BACKOFF_REACH_PX = TILE_SIZE * 2;   // how far ahead of the step its aim point lies
+// A yielder keeps yielding to the same NPC while it is still this close ahead, for up to
+// AVOID_YIELD_HOLD_MS from its first step (sims tidy R6, three-NPC lane test): a step that took it
+// just past AVOID_LOOKAHEAD_PX used to clear the meeting, so it walked straight back in and met
+// the same NPC again after a fresh wait, a back-and-forth in which neither got through the lane.
+export const AVOID_YIELD_HOLD_PX = TILE_SIZE * 3;
+export const AVOID_YIELD_HOLD_MS = 10000;
+// Sims tidy R7 M1: the whole-step back-off and the yield hold are only for a blocker that is
+// itself trying to come through (it has a path it is following, or it is walking towards the
+// yielder). Backing off from an NPC that stands still gains nothing: nothing clears the gap,
+// so the yielder paced to and fro in front of it for ever, and each step re-armed the patrol's
+// stall and stuck watches. Against a standing NPC the yielder keeps the older behaviour: a
+// one-update nudge away, then wait and detour again, so a waypoint patrol re-targets.
+// R7 m1: before a step it checks the ground behind (the player, or a wall within
+// AVOID_BACKOFF_BEHIND_PX); with either there it counts as pinned instead of stepping.
+const AVOID_BACKOFF_BEHIND_PX = TILE_SIZE * 0.75;
+// R8 m3: after this many back-off steps to the same NPC inside one yield hold, a yielder stands
+// instead of stepping again, so a queue that cannot clear (one against three in a one-body lane)
+// stops pacing and a waypoint patrol's stall check can re-target, as on main.
+export const AVOID_YIELD_MAX_STEPS = 6;
+// R8 m2: a body, for the player-behind check (a back-off step moves AVOID_BACKOFF_MS at the squeeze speed)
+const AVOID_BODY_PX = 20;
 
 /**
  * The nearest blocker that lies AHEAD of a walker on its heading, or null.
@@ -97,6 +131,79 @@ export function nearestBlockerAhead(pos, heading, blockers, lookAhead = AVOID_LO
         }
     }
     return best;
+}
+
+// Scratch segments for nearestBlockerOnPath, reused every call (no per-frame arrays)
+const _pathSegs = [];
+
+/**
+ * The nearest blocker that lies on the walker's PATH for its first `lookAhead`
+ * px, or null. `pos` {x,y} the walker's feet; `waypoints` the path points still
+ * to walk, the next one first. The path is the polyline pos -> waypoints[0] ->
+ * waypoints[1] ...; a blocker counts when it is within `laneHalf` of a segment,
+ * walking the segments until `lookAhead` px of path is used up. The first
+ * segment keeps the forward rule (a body behind or beside the walker never
+ * blocks); later segments use the distance to the segment, rounded at its
+ * start, so a body at a corner counts. The last segment runs on past the final waypoint for any
+ * look-ahead left, as the heading check does. So a body ahead of a short first
+ * segment where the path turns away no longer counts: a detour that bends
+ * round the player is walked, not stopped by the same check (game 5443).
+ * With fewer than two waypoints this is nearestBlockerAhead on the heading.
+ * `startIndex` reads `waypoints` from that index in place (the walker's pathIndex),
+ * so the frame loop copies no path.
+ * Returns the blocker nearest along the path (`.fwd` the path distance,
+ * `.lat` its offset), ties broken by id.
+ * @private exported for unit tests
+ */
+export function nearestBlockerOnPath(pos, waypoints, blockers, lookAhead = AVOID_LOOKAHEAD_PX, laneHalf = AVOID_LANE_HALF_PX, startIndex = 0) {
+    if (!blockers || !blockers.length || !waypoints) return null;
+    const left = waypoints.length - startIndex;
+    if (left <= 0) return null;
+    if (left < 2) {
+        const w = waypoints[startIndex];
+        return nearestBlockerAhead(pos, { x: w.x - pos.x, y: w.y - pos.y }, blockers, lookAhead, laneHalf);
+    }
+    let n = 0, used = 0, sx = pos.x, sy = pos.y;
+    for (let i = startIndex; i < waypoints.length && used < lookAhead; i++) {
+        const w = waypoints[i];
+        const dx = w.x - sx, dy = w.y - sy;
+        const full = Math.hypot(dx, dy);
+        if (full < 1e-6) continue;
+        const last = i === waypoints.length - 1;
+        const len = last ? lookAhead - used : Math.min(full, lookAhead - used);
+        const s = _pathSegs[n] || (_pathSegs[n] = {});
+        s.sx = sx; s.sy = sy; s.ux = dx / full; s.uy = dy / full; s.len = len; s.s0 = used; s.first = n === 0;
+        n++;
+        used += len;
+        sx = w.x; sy = w.y;
+    }
+    let best = null, bestFwd = 0, bestLat = 0;
+    for (const b of blockers) {
+        for (let k = 0; k < n; k++) {
+            const s = _pathSegs[k];
+            const dx = b.x - s.sx, dy = b.y - s.sy;
+            const t = dx * s.ux + dy * s.uy;
+            const lat = dx * -s.uy + dy * s.ux;
+            let along;
+            if (s.first) {
+                if (t <= 0 || t > s.len || Math.abs(lat) > laneHalf) continue;
+                along = t;
+            } else {
+                // A corner (segment start) is rounded; the far end is not, since
+                // the next segment's start covers a corner and the look-ahead stops.
+                if (t > s.len) continue;
+                along = Math.max(0, t);
+                if (Math.hypot(dx - along * s.ux, dy - along * s.uy) > laneHalf) continue;
+            }
+            const fwd = s.s0 + along;
+            if (!best || fwd < bestFwd ||
+                (fwd === bestFwd && String(b.id) < String(best.id))) {
+                best = b; bestFwd = fwd; bestLat = lat;
+            }
+            break;   // the first segment it touches is the nearest along the path
+        }
+    }
+    return best ? { ...best, fwd: bestFwd, lat: bestLat } : null;
 }
 
 /**
@@ -278,12 +385,31 @@ export class NPCBehaviorManager {
         // Always record the desired visibility on the NPC data so sprite creation
         // (room not yet loaded) honours it instead of behavior.initiallyHidden.
         const npcData = window.npcManager?.getNPC(npcId);
+        const wasRecordedHidden = window.npcManager?.isHiddenByMapping?.(npcId) === true;
+        const wasHidden = wasRecordedHidden
+            || npcData?.isVisible === false
+            || this.behaviors.get(npcId)?.sprite?.visible === false;
         if (npcData) {
             npcData.isVisible = visible;
         }
         // Saved with the state sync and re-applied when the NPC registers after a reload,
         // whether or not its sprite exists yet; a onceOnly reveal doesn't replay (N2)
         window.npcManager?.recordNpcVisibility?.(npcId, visible);
+
+        // The fight music follows the count of hostiles that can attack. Hiding a conscious
+        // hostile can leave none (music handler re-checks on npc_hidden); revealing one brings
+        // the fight back, as a restored hostile is announced after a reload.
+        const hostileSys = window.npcHostileSystem;
+        if (hostileSys?.isNPCHostile?.(npcId) && !hostileSys.isNPCKO?.(npcId)) {
+            if (!visible) {
+                // Only a real change: a repeat hide (reload, room_entered) must not re-run the
+                // all_hostiles_ko check. A never-shown initiallyHidden hostile has no record yet,
+                // so its first hide still emits.
+                if (!wasRecordedHidden) window.eventDispatcher?.emit?.('npc_hidden', { npcId, wasHostile: true });
+            } else if (wasHidden) {
+                hostileSys.announceRestoredHostile?.(npcId, this.behaviors.get(npcId)?.config?.hostile);
+            }
+        }
 
         const behavior = this.behaviors.get(npcId);
         const sprite = behavior?.sprite;
@@ -298,10 +424,26 @@ export class NPCBehaviorManager {
             }
             return;
         }
+        if (!visible) {
+            // A hidden NPC's update never runs, so nothing else would let go of what it holds.
+            // Stand a sitter up where it is (no walk): that ends its breathing image and crop,
+            // frees the chair's place and drops it from officeTypists. It shows standing.
+            window.seating?.unseatNPC?.(behavior, { instant: true });
+            // Pose and idle breathing end by themselves (NpcPoses.update hides the image on an
+            // invisible sprite); this is defensive
+            window.npcPoses?.stopBreath?.(npcId, sprite);
+        }
         sprite.setVisible(visible);
         sprite.setAlpha(visible ? 1 : 0);
         if (sprite.body) {
             sprite.body.enable = visible;
+        }
+        // A startHostile NPC created hidden turns hostile on its first reveal, so the one
+        // npc_hostile_state_changed fires with it on screen (see the NPCBehavior constructor)
+        // (a KO'd pending NPC stays down: clear the flag either way)
+        if (visible && behavior._startHostileOnReveal) {
+            behavior._startHostileOnReveal = false;
+            if (!window.npcHostileSystem?.isNPCKO?.(npcId)) behavior.setHostile(true);
         }
         // If revealing and patrol is configured, enable it
         if (visible && behavior.config.patrol.waypoints?.length > 0) {
@@ -324,8 +466,10 @@ export class NPCBehaviorManager {
 
 /**
  * NPCBehavior - Individual NPC behavior instance
+ * Exported for the SIMS-2 arrival unit test (test/js/npc-behavior-arrival.test.mjs); the manager
+ * remains the only constructor used in the game.
  */
-class NPCBehavior {
+export class NPCBehavior {
     constructor(npcId, sprite, config, scene, pathfindingManager) {
         this.npcId = npcId;
         this.sprite = sprite;
@@ -452,11 +596,26 @@ class NPCBehavior {
                 this.hostile = true;
                 if (!restored.ko) {
                     this.sprite?.setTint?.(0xff6666);
-                    window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    // A hostile a mapping hid can't attack: announce it when it is revealed
+                    // (setNPCVisible), not now, or the fight music would start for nobody
+                    // (or whose sprite starts hidden, a restored initiallyHidden hostile)
+                    if (this.sprite?.visible !== false) {
+                        window.npcHostileSystem.announceRestoredHostile?.(npcId, this.config.hostile);
+                    } else {
+                        // Counted and announced must agree: until the reveal it neither counts
+                        // (anyHostilesAlive) nor cues the music (R3 m3)
+                        window.npcManager?.recordNpcVisibility?.(npcId, false);
+                    }
                 }
             }
         } else if (this.config.hostile.startHostile) {
-            this.setHostile(true);
+            if (this.sprite?.visible === false) {
+                // Hidden at creation (initiallyHidden or a mapping): hostile only once shown, so
+                // it neither cues the fight music nor counts as a live hostile while unseen
+                this._startHostileOnReveal = true;
+            } else {
+                this.setHostile(true);
+            }
         }
 
         console.log(`✅ Behavior initialized for ${npcId} in room ${this.roomId}`);
@@ -771,17 +930,25 @@ class NPCBehavior {
                 return;
             }
 
+            // The once-per-chat turn flag resets whenever no chat is open, even on a frame the seat
+            // code takes over (a seat move, a step off, seated)
+            const needsChat = !!(window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId));
+            if (!needsChat) this._chatFaced = false;
+
             // A seated NPC (scenario "seated", seating.js) holds its chair until a move,
             // hostility or a KO gets it up
             if (window.seating?.updateSeatedNPC?.(this, playerPos)) {
+                this._avoid = null;   // R7 m2: no pin or yield hold carried off the path
                 return;
             }
 
             // Needs NPCs (npc-needs.js) hold still while the player talks to them,
             // even mid-walk: a goToAndStay move never pauses on its own. Scoped to
             // needs NPCs so every other NPC behaves as before.
-            if (window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId)) {
+            if (needsChat) {
+                this._avoid = null;
                 this.sprite.body.setVelocity(0, 0);
+                if (!this._chatFaced) { this._chatFaced = true; this.faceForChat(playerPos); }   // once per chat
                 if (this.isMoving) {
                     this.isMoving = false;
                     this.playAnimation('idle', this.direction);
@@ -963,6 +1130,10 @@ class NPCBehavior {
 
     executeState(state, time, delta, playerPos) {
         this.currentState = state;
+        // Sims tidy R7 m2: avoidance state (a pin, a yield hold) belongs to the walk it was set
+        // on. Off the path (facing the player, idle, chase, arrived, seated, timed out, a new
+        // walk) it is dropped, or a stale pin made every NPC that met this one yield to it.
+        if (state !== 'patrol') this._avoid = null;
 
         // Check if NPC is KO - if so, don't override death animation
         const isKO = window.npcHostileSystem && window.npcHostileSystem.isNPCKO(this.npcId);
@@ -1058,8 +1229,22 @@ class NPCBehavior {
         return clear;
     }
 
+    /**
+     * A conversation starts: release any pose hold (npc-poses.js) and turn to the player, which
+     * always wins over a pose's machine or phone. Needs NPCs return early during a chat, so
+     * face_player never runs for them; this is the one turn at chat start.
+     */
+    faceForChat(playerPos) {
+        this._poseHoldFacing = false;
+        if (!this.config?.facePlayer || !playerPos) return;
+        const { x: nx, y: ny } = this.npcBodyPos();
+        this.direction = this.calculateDirection(playerPos.x - nx, playerPos.y - ny);
+        this.playAnimation('idle', this.direction);
+    }
+
     facePlayer(playerPos) {
         if (!this.config.facePlayer || !playerPos) return;
+        if (this._poseHoldFacing) return; // turned to its machine or phone for a pose (npc-poses.js)
         if (!this.canSeePlayerToFace(playerPos)) return; // wall between
 
         const { x: nx, y: ny } = this.npcBodyPos();
@@ -1082,11 +1267,22 @@ class NPCBehavior {
             this.settleEndTime = time + this.settleDuration;
         }
 
+        // The settle grace is stamped and read on clockNow() (npc-sprites settleGraceRunning), so a
+        // stamp from another clock must not outlive one grace: it would switch off settling and
+        // avoidance for this walker. Pull it back like settleEndTime.
+        if (this._settleGraceUntil) {
+            const graceNow = this.clockNow();
+            if (this._settleGraceUntil - graceNow > SETTLE_GRACE_MS) this._settleGraceUntil = graceNow + SETTLE_GRACE_MS;
+        }
+
         // If settling after collision, pause patrol briefly to let physics settle
         if (this.isSettling) {
             if (time >= this.settleEndTime) {
                 // Settling complete, resume patrol
                 this.isSettling = false;
+                // A walker still touching a body that will not move away would re-settle on the
+                // next overlap callback, before its velocity ever moved it: the grace lets it walk.
+                this._settleGraceUntil = this.clockNow() + SETTLE_GRACE_MS;
                 console.log(`✅ [${this.npcId}] Finished settling, resuming patrol`);
             } else {
                 // Still settling - don't move, just idle
@@ -1247,6 +1443,7 @@ class NPCBehavior {
                     }
                     // Path complete, mark reached time and stop following path
                     this.patrolReachedTime = time;
+                    this._avoid = null;
                     // A route waypoint with an action runs it before the next leg
                     if (this.patrolTarget?.routeAction) { this._pendingRouteAction = this.patrolTarget.routeAction; this._routeUse = null; }
                     this.pathFollowingActive = false; // Path is done, dwell will start next frame
@@ -1331,6 +1528,19 @@ class NPCBehavior {
         return true;
     }
 
+    /**
+     * May a needs re-route nudge the body from (x, y)? (code review R2, m1) Only when its cell is
+     * grid-blocked (a walkable cell's nearest centre is its own, under NPC_NUDGE_OWN_CELL_PX
+     * away, and the nudge would only re-centre it), never with the player beside it (as
+     * _checkPathStuck), and never onto a cell another moving body covers.
+     */
+    _needsNudgeSafe(pfm, x, y) {
+        if (this._playerBeside(x, y)) return false;
+        const cell = pfm.findNearestWalkableStartCell?.(x, y);
+        if (!cell || (cell.x - x) ** 2 + (cell.y - y) ** 2 < NPC_NUDGE_OWN_CELL_PX ** 2) return false;
+        return !this._dynamicBlockers().some(b => (b.x - cell.x) ** 2 + (b.y - cell.y) ** 2 < NPC_NUDGE_BODY_PX ** 2);
+    }
+
     /** Is the player's body within NPC_STUCK_PLAYER_PX of (x, y)? */
     _playerBeside(x, y) {
         const p = window.player;
@@ -1366,6 +1576,8 @@ class NPCBehavior {
             return { x, y };
         }
 
+        // A wedged needs walk plans round seated and held bodies from here on (_planMovePath)
+        if (this._moveOwner === 'needs' && this._stopOnArrival) this._moveReroute = true;
         let at = { x, y };
         if (attempt >= 2) at = this._nudgeToWalkable(pfm, x, y);
         const from = pfm.findNearestWalkableStartCell?.(at.x, at.y) || at;
@@ -1457,6 +1669,47 @@ class NPCBehavior {
         return !!this._stopOnArrival;
     }
 
+    /**
+     * A new patrol target starts a new walk: no pin, no back-off step in progress. A yield hold
+     * that is still running survives (R8 m1), so a random patrol's 3 s re-target does not walk
+     * it straight back into the NPC it just gave way to.
+     */
+    _resetAvoidForNewTarget(time) {
+        const a = this._avoid;
+        if (a?.yieldTo && time < a.yieldUntil) {
+            this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0,
+                yieldTo: a.yieldTo, yieldUntil: a.yieldUntil, yieldCount: a.yieldCount || 0 };
+        } else {
+            this._avoid = null;
+        }
+    }
+
+    /** Pinned in a head-on meeting: its back-off gained no ground, so others yield to it. */
+    _avoidIsPinned() {
+        return !!this._avoid?.pinned;
+    }
+
+    /** Following a path in the patrol state (not dwelling, arrived, facing the player or idle). */
+    _avoidIsWalking() {
+        return this.currentState === 'patrol' && !!this.pathFollowingActive &&
+            Array.isArray(this.currentPath) && this.pathIndex < this.currentPath.length;
+    }
+
+    /**
+     * Is there no room to back off from `pos` towards `dir` (a unit vector)? The player in
+     * that lane within the look-ahead, or a wall within AVOID_BACKOFF_BEHIND_PX (R7 m1).
+     */
+    _avoidBackBlocked(pos, dir, blockers) {
+        const player = blockers.filter(b => b.isPlayer);
+        // Reach: the whole step plus a body; lane: a body each side (R8 m2)
+        const step = AVOID_BACKOFF_MS * AVOID_SQUEEZE_FACTOR * (this.config.patrol.speed || 0) / 1000;
+        if (player.length && nearestBlockerAhead(pos, dir, player, step + AVOID_BODY_PX, AVOID_BODY_PX - 1)) return true;
+        const pfm = this.pathfindingManager || window.pathfindingManager;
+        if (typeof pfm?.hasWorldPhysicsLineOfSight !== 'function') return false;
+        return !pfm.hasWorldPhysicsLineOfSight(pos.x, pos.y,
+            pos.x + dir.x * AVOID_BACKOFF_BEHIND_PX, pos.y + dir.y * AVOID_BACKOFF_BEHIND_PX, 0, 0);
+    }
+
     /** Feet centres of the player and every other active, non-seated NPC. */
     _dynamicBlockers() {
         const out = [];
@@ -1474,7 +1727,9 @@ class NPCBehavior {
                 if (!b || !b.enable || b.immovable) continue;  // skip disabled and seated/held NPCs
                 const beh = window.npcBehaviorManager?.getBehavior?.(sprite.npcId);
                 out.push({ x: b.center.x, y: b.center.y, id: sprite.npcId,
-                    busy: !!beh?._avoidIsBusy?.(), isPlayer: false, sprite });
+                    busy: !!beh?._avoidIsBusy?.(), pinned: !!beh?._avoidIsPinned?.(),
+                    walking: !!beh?._avoidIsWalking?.(), vx: b.velocity?.x || 0, vy: b.velocity?.y || 0,
+                    isPlayer: false, sprite });
             }
         }
         return out;
@@ -1496,8 +1751,25 @@ class NPCBehavior {
         if (window.__npcAvoidOff) { this._avoid = null; return false; }
         if (!(this.config.patrol.speed > 0)) return false;
         const pos = this.npcBodyPos();
-        const heading = { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y };
-        const hit = nearestBlockerAhead(pos, heading, this._dynamicBlockers());
+        // "Ahead" follows the path itself for the look-ahead, not just the heading
+        // to the next waypoint: a short first leg that points at a body before the
+        // path turns away (a detour round the player) is not blocked by it. With no
+        // path behind nextWaypoint, the heading check alone.
+        const path = this.currentPath;
+        const onPath = Array.isArray(path) && path[this.pathIndex] === nextWaypoint;
+        const blockers = this._dynamicBlockers();
+        const ahead = (list, reach) => onPath
+            ? nearestBlockerOnPath(pos, path, list, reach, AVOID_LANE_HALF_PX, this.pathIndex)
+            : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, list, reach);
+        // Trying to come through (R7 M1): following a path, or walking towards this NPC
+        const coming = b => !b.isPlayer && (b.walking || b.vx * (pos.x - b.x) + b.vy * (pos.y - b.y) > 0);
+        let hit = ahead(blockers, AVOID_LOOKAHEAD_PX);
+        // Still yielding: the NPC it backed off from, a little beyond the look-ahead, still counts
+        // while it is still coming through
+        const held = this._avoid;
+        if (!hit && held?.yieldTo && time < held.yieldUntil) {
+            hit = ahead(blockers.filter(b => b.id === held.yieldTo && coming(b)), AVOID_YIELD_HOLD_PX);
+        }
         if (!hit) { this._avoid = null; return false; }
 
         // A needs-driven NPC whose pickup/use cell has the player standing on or
@@ -1521,6 +1793,17 @@ class NPCBehavior {
         if (a.squeezeUntil && time >= a.squeezeUntil) {   // squeeze done → cooldown wait, re-assess
             a.squeezeUntil = 0; a.since = time; a.gaveUp = false; a.repathAfter = 0;
         }
+        // Phase: a back-off step (head-on yield) runs for AVOID_BACKOFF_MS. When it ends, a fresh
+        // detour try comes at once and, if none, the next step: no new wait (R6 M1).
+        if (a.backoffUntil && time < a.backoffUntil) {
+            this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+            return true;
+        }
+        if (a.backoffUntil) {
+            const gained = Math.hypot(pos.x - a.backoffFrom.x, pos.y - a.backoffFrom.y);
+            a.pinned = gained < AVOID_BACKOFF_PINNED_PX;   // a step that gains ground clears the pin
+            a.backoffUntil = 0; a.since = time - AVOID_GIVEUP_MS - 1; a.gaveUp = false; a.repathAfter = 0;
+        }
 
         // Default action while deciding: hold still (no shove).
         this._stopHere();
@@ -1537,7 +1820,11 @@ class NPCBehavior {
             return true;
         }
 
-        const amYielder = hit.isPlayer || avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy);
+        // A pinned NPC (no room behind) stops yielding; one that meets a pinned NPC yields to it.
+        // Both pinned (or neither): the usual tie-break, so two pinned NPCs never both hold (R6).
+        const amYielder = hit.isPlayer || (!!a.pinned === !!hit.pinned
+            ? avoidanceYieldsTo(this.npcId, this._avoidIsBusy(), hit.id, hit.busy)
+            : !!hit.pinned);
         // A higher-priority NPC first gives the yielder time to move, then tries its own detour.
         if (!amYielder && waited < AVOID_PRIORITY_WAIT_MS) return true;
 
@@ -1553,8 +1840,34 @@ class NPCBehavior {
             // No way round. A yielding NPC meeting another NPC backs off to clear the
             // path; otherwise (player, doorway) a short, gentle squeeze forward.
             if (!hit.isPlayer && amYielder) {
-                this._moveAwayFrom(hit, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
-                a.since = time; a.gaveUp = false; a.repathAfter = 0;   // re-assess after the step
+                const dx = pos.x - hit.x, dy = pos.y - hit.y, d = Math.hypot(dx, dy) || 1;
+                if (!coming(hit)) {
+                    // A blocker standing still (R7 M1): main's nudge, one update away, then wait
+                    // and detour again; a waypoint patrol held here re-targets (_patrolStalled)
+                    this._moveToward({ x: pos.x + dx, y: pos.y + dy }, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                if (this._avoidBackBlocked(pos, { x: dx / d, y: dy / d }, blockers)) {
+                    // The player or a wall behind (R7 m1): no step, so no push into or through
+                    // the player; pinned, so the other NPC yields instead. Re-assess after a wait.
+                    a.pinned = true;
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                if (a.yieldTo !== hit.id || time >= a.yieldUntil) { a.yieldTo = hit.id; a.yieldUntil = time + AVOID_YIELD_HOLD_MS; a.yieldCount = 0; }
+                if ((a.yieldCount || 0) >= AVOID_YIELD_MAX_STEPS) {
+                    // Gave way to this NPC often enough and it still has not cleared (R8 m3): stand, as
+                    // main does, so a waypoint patrol's stall check can re-target
+                    a.since = time; a.gaveUp = false; a.repathAfter = 0;
+                    return true;
+                }
+                a.yieldCount = (a.yieldCount || 0) + 1;
+                // One step of AVOID_BACKOFF_MS straight away from the blocker; re-assessed when it ends
+                a.backoffFrom = { x: pos.x, y: pos.y };
+                a.backoffTo = { x: pos.x + dx / d * AVOID_BACKOFF_REACH_PX, y: pos.y + dy / d * AVOID_BACKOFF_REACH_PX };
+                a.backoffUntil = time + AVOID_BACKOFF_MS;
+                this._moveToward(a.backoffTo, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
                 return true;
             }
             a.squeezeUntil = time + AVOID_SQUEEZE_MS;
@@ -1581,12 +1894,6 @@ class NPCBehavior {
         this.isMoving = true;
     }
 
-    /** Step directly away from a blocker (the yielder clearing a corridor). */
-    _moveAwayFrom(hit, speed) {
-        const pos = this.npcBodyPos();
-        this._moveToward({ x: pos.x - (hit.x - pos.x), y: pos.y - (hit.y - pos.y) }, speed);
-    }
-
     /**
      * Ask for a detour to the current target that routes round the player and
      * every other NPC. On success adopt it and clear the avoidance state; on
@@ -1600,25 +1907,47 @@ class NPCBehavior {
         const from = pfm.findNearestWalkableStartCell?.(pos.x, pos.y) || pos;
         a.pending = true;
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
-        const opts = { avoidDynamic: { exceptSprite: this.sprite } };
-        if (rooms?.length) opts.avoidRooms = rooms;
-        pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
-            a.pending = false;
-            if (this.patrolTarget !== target) { this._avoid = null; return; }  // re-targeted meanwhile
-            if (path && path.length > 0) {
-                this.currentPath = path;
-                this.pathIndex = 0;
-                this.pathFollowingActive = true;
-                this._avoid = null;        // detour adopted — resume normal following
-                console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints)`);
-            } else {
-                a.gaveUp = true;           // nothing routes round the blocker
-            }
-        }, false, opts);
+        // A needs walk first routes round held bodies too (chairs, seated staff); when their
+        // clearance rings close the only aisle that search finds nothing, so it tries the plain
+        // detour round the moving bodies before giving up (code review R1, M1)
+        const held = this._moveOwner === 'needs';
+        const search = (includeHeld) => {
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld } };
+            if (rooms?.length) opts.avoidRooms = rooms;
+            pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
+                if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
+                if (this._avoid !== a) { a.pending = false; return; }   // avoidance cleared or replaced meanwhile (R2 m4)
+                if (path && path.length > 0) {
+                    a.pending = false;
+                    this.currentPath = path;
+                    this.pathIndex = 0;
+                    this.pathFollowingActive = true;
+                    this._avoid = null;        // detour adopted — resume normal following
+                    console.log(`↪️ [${this.npcId}] Detoured round a blocker (${path.length} waypoints${includeHeld ? '' : ', plain'})`);
+                } else if (includeHeld) {
+                    search(false);             // held-aware found nothing: the plain detour
+                } else {
+                    a.pending = false;
+                    a.gaveUp = true;           // nothing routes round the blocker
+                }
+            }, false, opts);
+        };
+        search(held);
     }
 
     _planMovePath(pfm, sx, sy, ex, ey, callback) {
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
+        // A stalled needs walk (OFFICE_LIFE_STUCK_RETURN.md) plans round every other body,
+        // seated and held ones included; with no such path it takes the plain one.
+        if (this._moveOwner === 'needs' && this._moveReroute) {
+            const opts = { avoidDynamic: { exceptSprite: this.sprite, includeHeld: true } };
+            if (rooms?.length) opts.avoidRooms = rooms;
+            return pfm.findWorldPath(sx, sy, ex, ey, (path) => {
+                if (path && path.length > 0) { callback(path); return; }
+                if (rooms?.length) pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
+                else pfm.findWorldPath(sx, sy, ex, ey, callback);
+            }, false, opts);
+        }
         if (rooms?.length) return pfm.findWorldPath(sx, sy, ex, ey, callback, false, { avoidRooms: rooms });
         return pfm.findWorldPath(sx, sy, ex, ey, callback);
     }
@@ -1664,6 +1993,7 @@ class NPCBehavior {
      * Choose target from waypoint list (single-room or multi-room)
      */
     chooseWaypointTarget(time) {
+        this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
         // Handle multi-room routes
         if (this.config.patrol.multiRoom && this.config.patrol.route && this.config.patrol.route.length > 0) {
             this.chooseWaypointTargetMultiRoom(time);
@@ -2233,6 +2563,7 @@ class NPCBehavior {
      * Choose random patrol target (original behavior)
      */
     chooseRandomPatrolTarget(time) {
+        this._resetAvoidForNewTarget(time);   // no pin or back-off step; a live yield hold stays (R8 m1)
         // Ensure we have the latest pathfinding manager reference
         const pathfindingManager = this.pathfindingManager || window.pathfindingManager;
         
@@ -2962,10 +3293,14 @@ class NPCBehavior {
      */
     triggerSettling(time) {
         if (!this.isSettling) {
+            // Just after a settle: no new one, so contact that outlasts the pause (a face_player
+            // NPC or the player standing against the walker) cannot hold it still for ever.
+            if (this._settleGraceUntil > time) return false;
             this.isSettling = true;
             this.settleEndTime = time + this.settleDuration;
             console.log(`⏸️ [${this.npcId}] Settling after collision for ${this.settleDuration}ms`);
         }
+        return true;
     }
 
     /**
@@ -2979,7 +3314,7 @@ class NPCBehavior {
      */
     goToAndStay(worldX, worldY, speed, opts = {}) {
         window.seating?.unseatNPC?.(this); // a seated NPC gets up first
-        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this); // and drops a chair it was fetching
+        if (!opts?.fromSeating) window.seating?.cancelFetch?.(this, `move:${opts?.owner || 'script'}`); // and drops a chair it was fetching
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
         this._moveOwner = opts?.owner;
@@ -2990,8 +3325,25 @@ class NPCBehavior {
         else if (Array.isArray(opts.avoidRooms)) this._moveAvoidRooms = opts.avoidRooms.slice();
         // Walk-home moves pause for a nearby player like a patrol does.
         this._moveYieldsToPlayer = !!opts?.yieldToPlayer;
+        // A needs re-issue after a stall plans round other bodies (OFFICE_LIFE_STUCK_RETURN.md)
+        this._moveReroute = opts?.owner === 'needs' && !!opts?.reroute;
+        // The needs stall watch's last re-route in one place: step onto the nearest walkable cell
+        // first, the stuck recovery's attempt 2, which a needs walk's 3 s re-issues never reach.
+        // _lastNudge says where the body landed, or null when no nudge ran (refused by
+        // _needsNudgeSafe, or under 2 px), so the needs layer marks a place nudged only when it was
+        // (code review R3, M1)
+        this._lastNudge = null;
+        if (this._moveReroute && opts?.nudge && this.sprite?.body) {
+            const pfm = this.pathfindingManager || window.pathfindingManager;
+            const at = this.npcBodyPos();
+            if (pfm && this._needsNudgeSafe(pfm, at.x, at.y)) {
+                const to = this._nudgeToWalkable(pfm, at.x, at.y);
+                if (to.x !== at.x || to.y !== at.y) this._lastNudge = { x: to.x, y: to.y };
+            }
+        }
         if (opts?.owner !== 'needs') window.npcNeedsSystem?.onExternalMove?.(this.npcId, opts?.owner);
         // Stop current movement
+        this._avoid = null;
         this.currentPath = [];
         this.patrolTarget = null;
         this.pathIndex = 0;
@@ -3016,6 +3368,7 @@ class NPCBehavior {
         this.config.patrol.enabled = true;
         this._stopOnArrival = true; // New flag: disable patrol after reaching this waypoint
         this._goToStayDest = { x: worldX, y: worldY }; // Original destination for arrival-tolerance guard
+        this._moveId = opts?.moveId ?? null;   // SIMS-2: echoed in npc_arrived so needs can ignore a stale arrival
         this._arriveWithin = Number(opts?.arriveWithin) > 0 ? Number(opts.arriveWithin) : 0;   // 0: the 1-tile guard
         this._nearDestSince = 0;
 
@@ -3036,11 +3389,14 @@ class NPCBehavior {
      */
     /** Stop an in-flight goToAndStay with no arrival event. */
     cancelMove() {
+        this._avoid = null;
         this._stopOnArrival = false;
         this._goToStayDest = null;
+        this._moveId = null;   // SIMS-2: a cancelled move issues no arrival
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
         this.config.patrol.enabled = false;
         this.pathFollowingActive = false;
         this.currentPath = [];
@@ -3063,9 +3419,15 @@ class NPCBehavior {
 
     _triggerGoToStayArrival() {
         const owner = this._moveOwner;
+        // SIMS-2: read the move id and the steps the path had left before the path is cleared below.
+        const moveId = this._moveId ?? null;
+        const pathLeft = Math.max(0, (this.currentPath?.length || 0) - (this.pathIndex || 0));
+        this._moveId = null;
+        this._avoid = null;
         this._moveOwner = undefined;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
+        this._moveReroute = false;
         this._stopOnArrival = false;
         this._goToStayDest = null;
         this.config.patrol.enabled = false;
@@ -3098,7 +3460,9 @@ class NPCBehavior {
                 npcId: this.npcId,
                 x: arrivedPos.x,
                 y: arrivedPos.y,
-                owner
+                owner,
+                moveId,
+                pathLeft
             });
         }
     }
@@ -3151,6 +3515,10 @@ class NPCBehavior {
     }
 
     setHostile(hostile) {
+        // an explicit change replaces the deferred start; a calm set must be saved, since the
+        // early return below records nothing and a reload would re-apply startHostile (R3 m1)
+        if (!hostile && this._startHostileOnReveal) window.npcHostileSystem?.recordCalm?.(this.npcId);
+        this._startHostileOnReveal = false;
         if (this.hostile === hostile) return; // No change
         if (hostile) window.seating?.unseatNPC?.(this);
 

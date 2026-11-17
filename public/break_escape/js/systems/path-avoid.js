@@ -159,6 +159,49 @@ export function crossesAvoidRect(x1, y1, x2, y2, rects, { halfWidth = 9, margin 
 // ── Room leash (OFFICE_LIFE_PLAN 7.2, slice 2a) ─────────────────────────────
 
 /**
+ * Cells a path search avoids round seated chairs (sims tidy item 1). A seated NPC's chair is held
+ * still but is left out of the world grid (it moves once they stand), so each search avoids it
+ * instead, padded as avoidCells pads. ends: [start, goal] world points. A rect within one cell of
+ * the start is skipped whole (the walker is in or against it already). One within a cell of the
+ * goal is skipped only when it is in `keep` (the seat being walked to): a goal inside someone
+ * else's seated chair keeps that chair avoided (sims tidy R1 m3). The end cells, and padding cells
+ * within two cells of an end, stay open (a home beside a seated colleague).
+ */
+export function seatedAvoidCells(rects, gridBounds, grid, ends = [], { keep = [] } = {}) {
+    const { minX, minY, step } = gridBounds;
+    const at = (v, m) => Math.floor((v - m) / step);
+    const endCells = ends.map(p => ({ cx: at(p.x, minX), cy: at(p.y, minY) }));
+    const out = [];
+    for (const r of rects) {
+        if (ends.some((p, i) => inRect(p.x, p.y, r, step) && (i === 0 || keep.includes(r)))) continue;
+        const bx1 = at(r.left, minX), bx2 = at(r.right - 1, minX), by1 = at(r.top, minY), by2 = at(r.bottom - 1, minY);
+        for (const c of avoidCells([r], gridBounds, grid)) {
+            const pad = c.cx < bx1 || c.cx > bx2 || c.cy < by1 || c.cy > by2;
+            if (endCells.some(e => (e.cx === c.cx && e.cy === c.cy)
+                || (pad && Math.abs(e.cx - c.cx) <= 2 && Math.abs(e.cy - c.cy) <= 2))) continue;
+            out.push({ cx: c.cx, cy: c.cy, pad });
+        }
+    }
+    return out;
+}
+
+/**
+ * The grid cells a seated chair's body covers (no padding), as "cx,cy" keys: a goal snap treats
+ * them as blocked, since the live grid leaves seated chairs out (sims tidy R1 m3).
+ */
+export function seatedBodyCellKeys(rects, gridBounds) {
+    const { minX, minY, step } = gridBounds;
+    const at = (v, m) => Math.floor((v - m) / step);
+    const out = new Set();
+    for (const r of rects) {
+        for (let cy = at(r.top, minY); cy <= at(r.bottom - 1, minY); cy++) {
+            for (let cx = at(r.left, minX); cx <= at(r.right - 1, minX); cx++) out.add(`${cx},${cy}`);
+        }
+    }
+    return out;
+}
+
+/**
  * A room's floor by the player's room rule (core/rooms.js updatePlayerRoom): the full width, from
  * two tiles below the top (the wall rows) to the bottom edge. `room` is a window.rooms entry
  * ({ position, map: { widthInPixels, heightInPixels } }). Null when the room has no map yet.

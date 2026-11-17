@@ -234,7 +234,7 @@ test('phone-chat ended by another opening over it during the intro preload: star
                 opened.push(id);
                 this.ui.elements.contactListView.style.display = 'none';
             },
-            _flushPendingMessages() {}, _emitConversationClosed() {}, _endSocialRun() {}
+            _flushPendingMessages() {}, _emitConversationClosed() {}, _endSocialRun() {}, _resetRingerCallOnTeardown() {}
         };
         mg.start = method('start', true);
         mg.cleanup = method('cleanup', false);

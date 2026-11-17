@@ -23,6 +23,15 @@ function recordHostility(npcId, state) {
   // The way it fell, so a reload lays it in that death animation's last frame
   // rather than facing down (m08 confirmation R4: ATHENA fell right, came back down)
   if (state.isKO && KO_FACINGS.has(state.koFacing)) entry.facing = state.koFacing;
+  // Where it fell (room id and world x,y), so a reload lays it in the spot it
+  // dropped rather than at its spawn point, in the room it was knocked out in even
+  // when that is not its home room (D5). Written once at the KO; first fall wins.
+  if (state.isKO && typeof state.koRoom === 'string' && state.koRoom &&
+      Number.isFinite(state.koX) && Number.isFinite(state.koY)) {
+    entry.koRoom = state.koRoom;
+    entry.koX = state.koX;
+    entry.koY = state.koY;
+  }
   if (!state.isKO && state.currentHP > 0 && state.currentHP < state.maxHP) {
     entry.hp = state.currentHP;
     entry.maxHP = state.maxHP;
@@ -94,6 +103,7 @@ export function initNPCHostileSystem() {
     restoreHostility: (saved) => restoreHostility(saved),
     takeRestoredHostility: (npcId) => takeRestoredHostility(npcId),
     announceRestoredHostile: (npcId, config) => announceRestoredHostile(npcId, config),
+    recordCalm: (npcId) => recordCalm(npcId),
     resetHostilesForRespawn: () => resetHostilesForRespawn(),
     redropPending: (npcId) => redropPending(npcId)
   };
@@ -162,6 +172,14 @@ export function restoreHostility(saved) {
       state.isKO = true;
       state.currentHP = 0;
       if (KO_FACINGS.has(entry.facing)) state.koFacing = entry.facing;
+      // Carry the saved fall position back, so the re-export stays consistent (the
+      // server does the actual placement from this same record). First fall wins.
+      if (typeof entry.koRoom === 'string' && entry.koRoom &&
+          Number.isFinite(entry.koX) && Number.isFinite(entry.koY)) {
+        state.koRoom = entry.koRoom;
+        state.koX = entry.koX;
+        state.koY = entry.koY;
+      }
     } else if (validSavedHP(entry)) {
       state.maxHP = entry.maxHP;
       state.currentHP = entry.hp;
@@ -189,6 +207,16 @@ export function takeRestoredHostility(npcId) {
   if (!entry) return null;
   restoredPending.delete(npcId);
   return entry;
+}
+
+/**
+ * Save "calm" for an NPC that never turned hostile this session, so a reload does not
+ * re-apply its startHostile config (a calm set while the NPC was still hidden, R3 m1).
+ * No event. An NPC that already has a record keeps it.
+ */
+export function recordCalm(npcId) {
+  if (!npcId || hostilityRecord.has(npcId)) return;
+  hostilityRecord.set(npcId, { hostile: false, ko: false });
 }
 
 /**
@@ -225,9 +253,33 @@ function setNPCHostile(npcId, isHostile, config) {
     applyHostileStats(state, configuredHostileStats(npcId, config));
   }
 
+  // A calm set while the NPC is still pending its first reveal (startHostile, hidden at creation)
+  // cancels that pending start and is saved, so neither the reveal nor a reload turns it hostile
+  // (R4 m3). The behaviour's own setHostile does the same; this covers direct callers.
+  if (!isHostile) {
+    const pending = window.npcBehaviorManager?.getBehavior?.(npcId);
+    if (pending?._startHostileOnReveal) {
+      pending._startHostileOnReveal = false;
+      recordCalm(npcId);
+    }
+  }
+
   const wasHostile = state.isHostile;
   state.isHostile = isHostile;
   if (wasHostile !== isHostile) recordHostility(npcId, state);
+
+  // A hostile turn while the NPC is still hidden (a mapping hid it, or its sprite is hidden)
+  // is recorded but not announced: the threat cue would fire for nobody, and the reveal
+  // (setNPCVisible) announces it again. Re-arm the pending start so the reveal tints it and
+  // gives exactly one cue. A visible NPC is unchanged.
+  if (isHostile && wasHostile !== isHostile) {
+    const hiding = window.npcBehaviorManager?.getBehavior?.(npcId);
+    if (window.npcManager?.isHiddenByMapping?.(npcId) || hiding?.sprite?.visible === false) {
+      if (hiding) hiding._startHostileOnReveal = true;
+      console.log(`⚔️ NPC ${npcId} hostile while hidden: recorded, announced at the reveal`);
+      return true;
+    }
+  }
 
   console.log(`⚔️ NPC ${npcId} hostile: ${wasHostile} → ${isHostile}`);
 
@@ -300,8 +352,36 @@ function damageNPC(npcId, amount) {
     // The facing playNPCDeathAnimation reads below, saved with the KO
     if (sprite) {
       try { state.koFacing = getNPCDirection(npcId, sprite); } catch (e) { /* no facing */ }
+      // Where it fell: the room it is physically standing in (not its home room, so
+      // a cross-room KO comes back in the right room) and its world x,y (D5). First
+      // fall wins: set only once.
+      // Capture the body centre (the NPC's feet / world position), not the sprite
+      // anchor. Every NPC's x,y is restored as its body centre on reload (npc-sprites
+      // positions the body there), and roomIdAtFeet is documented to take the body
+      // centre too, so the drop path (which uses body.center) and this capture now
+      // resolve the same room and the body lands where it fell instead
+      // of the sprite-anchor-to-body-centre offset higher (the 30 px cross-room gap).
+      const koBc = sprite.body?.center;
+      const koFx = Number.isFinite(koBc?.x) ? koBc.x : sprite.x;
+      const koFy = Number.isFinite(koBc?.y) ? koBc.y : sprite.y;
+      if (state.koRoom === undefined && Number.isFinite(koFx) && Number.isFinite(koFy)) {
+        try {
+          const fellIn = roomIdAtFeet(koFx, koFy) || npc?.roomId || null;
+          if (typeof fellIn === 'string' && fellIn) {
+            state.koRoom = fellIn;
+            state.koX = Math.round(koFx);
+            state.koY = Math.round(koFy);
+          }
+        } catch (e) { /* no room */ }
+      }
     }
     recordHostility(npcId, state);
+    // Save the KO (npcHostility, globalVarOnKO) soon rather than at the next 30 s sync,
+    // so a crash just after a fight keeps it. Asked for here, before the animation, drops
+    // and listeners below, so a throw in any of them cannot cancel it. The sync is
+    // debounced in StateSync (a timer), so it still carries the globalVarOnKO set below,
+    // and several KOs in one fight share one delta sync.
+    window.stateSync?.requestSoon?.();
     
     // Sync NPC KO state to server for persistence. The drop below waits for it: the server
     // accepts a drop outside the NPC's own room only once the KO is recorded. Retried with a
@@ -385,6 +465,7 @@ function damageNPC(npcId, amount) {
       });
       console.log(`📋 Auto-completed task ${npcRef.taskOnKO} (NPC ${npcId} KO'd)`);
     }
+
   }
 
   return true;
@@ -683,6 +764,14 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   const toDrop = Array.isArray(onlyIds) ? npc.itemsHeld.filter(i => i && onlyIds.includes(i.id)) : npc.itemsHeld;
   if (toDrop.length === 0) return 0;
 
+  // A needs-carried object (NPC_CARRIED_ITEMS_PLAN.md) is not a scenario gift: its live
+  // sprite still exists, and the server holds the carry in npcCarry. It must end as a KO
+  // put-down (ko_drop_carried: clears npcCarry, lands it once), never as the generic
+  // npc_defeated add that would duplicate it (review R1 M1). Handled separately below.
+  const carriedDrop = toDrop.filter(i => i && i._needsCarried);
+  const plainDrop = toDrop.filter(i => !(i && i._needsCarried));
+  if (plainDrop.length === 0 && carriedDrop.length === 0) return 0;
+
   // Use the sprite we already have and find its room
   if (!sprite) {
     console.warn(`⚠️ Cannot drop items - no sprite found for NPC: ${npcId}`);
@@ -713,6 +802,20 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
   // as before (review R3 n4, logged), rather than moving its drops to that room's floor.
   const floor = fellIn ? roomFloorRect(room) : null;
   const feet = clampToFloor(bc ? { x: bc.x, y: bc.y } : { x: sprite.x, y: sprite.y }, floor);
+
+  // End any needs-carry as a KO put-down into the room the NPC fell in, at the body
+  // position: the needs world re-shows the carried sprite there and clears npcCarry
+  // server-side, so the object is on the floor exactly once (review R1 M1).
+  if (carriedDrop.length && window.npcNeedsSystem?.world?.koDropCarried) {
+    try { window.npcNeedsSystem.world.koDropCarried(npcId, npcRoomId, feet); } catch (e) {
+      console.error('Failed to KO-drop carried item:', e);
+    }
+  }
+  if (plainDrop.length === 0) {
+    // Nothing else to place; clear only what was carried (koDropCarried already pruned itemsHeld).
+    npc.itemsHeld = toDrop === npc.itemsHeld ? [] : npc.itemsHeld.filter(i => !toDrop.includes(i));
+    return carriedDrop.length;
+  }
   const pm = window.pathfindingManager;
   const obstacles = [];
   for (const o of Object.values(room.objects || {})) {
@@ -729,9 +832,9 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
     inRoom: (x, y) => roomIdAtFeet(x, y, window.rooms, 0) === npcRoomId,
     floor
   });
-  const spots = koDropSpots(feet, toDrop.length, { reachable, obstacles });
+  const spots = koDropSpots(feet, plainDrop.length, { reachable, obstacles });
 
-  toDrop.forEach((item, index) => {
+  plainDrop.forEach((item, index) => {
     // Create actual Phaser sprite for the dropped item, drawn as a reload draws it
     // (dropTextureFor: its own sprite, then its type's picture, 'key' only as a last resort)
     const texture = dropTextureFor(item, (key) => gameRef.textures.exists(key));
@@ -857,9 +960,10 @@ function dropNPCItems(npcId, afterSync = null, onlyIds = null) {
     }
   });
 
-  // Clear the NPC's inventory (a re-drop clears only what it dropped)
+  // Clear the NPC's inventory (a re-drop clears only what it dropped; koDropCarried
+  // already pruned any needs-carried items, so filter against the full toDrop)
   npc.itemsHeld = toDrop === npc.itemsHeld ? [] : npc.itemsHeld.filter(i => !toDrop.includes(i));
-  return toDrop.length;
+  return plainDrop.length + carriedDrop.length;
 }
 
 function isNPCKO(npcId) {

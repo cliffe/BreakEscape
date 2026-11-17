@@ -176,6 +176,7 @@ export function toastDuration(type, duration) {
 // names, observations, task titles and server text, none of which may become markup.
 // options.html === true: the caller built the title and message as HTML on purpose and has
 // escaped every piece of author text in it. options.plainText is accepted and changes nothing.
+// options.whole: lift the phone's two-line limit for this toast and nothing else.
 // options.verbatim: the message exactly as given, with no " -- " dash display,
 // for text the player must copy character for character (an overheard password).
 export function showNotification(message, type = 'info', title = '', duration = 5000, options = {}) {
@@ -200,9 +201,15 @@ export function showNotification(message, type = 'info', title = '', duration = 
  * A toast that is on its way out (closing, or pulled back behind a panel) does not count.
  */
 export function findShownDuplicate(container, message, type, title, options = {}) {
+    return findSameToast(container, message, type, title, options, false);
+}
+
+// pending true: the same toast still waiting to show over a panel (toast-pending, plan 2.5)
+function findSameToast(container, message, type, title, options, pending) {
     const mode = toastRenderMode(options);
     const shown = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
     return shown.find((el) => el._toast && !el._toast.pulled && !el._toast.closing
+        && (el._toast.pending === true) === pending
         && el._toast.message === message && el._toast.type === type && el._toast.title === title
         && sameRenderMode(toastRenderMode(el._toast), mode)) || null;
 }
@@ -218,7 +225,228 @@ function startCountdown(notification, duration) {
         progress.style.transition = `width ${duration}ms linear`;
         setTimeout(() => { progress.style.width = '0%'; }, 10);
     }
+    notification._countdownAt = Date.now();
+    notification._countdownMs = duration;
     notification._hideTimer = setTimeout(() => removeNotification(notification), duration);
+}
+
+// A toast that steps aside for a finished-task line (ui/hud-lanes.js, review R2 M4) keeps the
+// time it had left and gets it back when it shows again (at least TOAST_RESUME_MIN_MS).
+export const TOAST_RESUME_MIN_MS = 1500;
+function laneYieldHandler(notification) {
+    return (hidden) => {
+        const t = notification._toast;
+        if (!t || t.closing || !(t.duration > 0)) return;
+        if (hidden) {
+            if (notification._yieldLeft != null) return;
+            clearTimeout(notification._hideTimer);
+            const used = Date.now() - (notification._countdownAt || Date.now());
+            notification._yieldLeft = Math.max(0, (notification._countdownMs || t.duration) - used);
+        } else if (notification._yieldLeft != null) {
+            const left = Math.max(TOAST_RESUME_MIN_MS, notification._yieldLeft);
+            notification._yieldLeft = null;
+            startCountdown(notification, left);
+        }
+    };
+}
+
+// ---- Warnings and errors over an open panel (toast plan 2.5 to 2.7) ----
+// ui/hud-lanes.js alone can measure the panel, so it decides when a waiting warning or error
+// shows (its answers come in through el._onReplace); this file owns every timer, so no toast
+// waits on hud-lanes answering well. Without hud-lanes, toasts show at once as before.
+export const TOAST_WATCHDOG_MS = 500;        // no answer at all by then: show it
+export const TOAST_HARD_RELEASE_MS = 5500;   // shown by then whatever the answers (D6)
+export const WARNING_WAIT_MS = 5000;         // a warning behind errors is answered again by then
+const PANEL_TOAST_TYPES = new Set(['warning', 'error']);
+
+function hudLanesActive() {
+    return typeof window !== 'undefined' && typeof window.hudLanesRelayout === 'function' && !window.__hudLanesDisabled;
+}
+
+function relayoutLanes() {
+    try { if (hudLanesActive()) window.hudLanesRelayout(); } catch (e) { /* the hard release stands behind it */ }
+}
+
+// Errors first: with hud-lanes present an error goes before the first toast in the container
+// that is not an error (pending and closing ones included), so a cut at the bottom of the block
+// never falls on an error. A toast already in the right place is not moved.
+function placeInOrder(container, notification) {
+    if (notification._toast?.type !== 'error' || typeof container?.insertBefore !== 'function') {
+        if (notification.parentNode !== container) container.appendChild(notification);
+        return;
+    }
+    const all = [...container.querySelectorAll('.notification')];
+    const at = all.indexOf(notification);
+    if (at >= 0 && all.slice(0, at).every((el) => el._toast?.type === 'error')) return;
+    const firstOther = all.find((el) => el !== notification && el._toast?.type !== 'error');
+    if (firstOther) container.insertBefore(notification, firstOther);
+    else if (at < 0) container.appendChild(notification);
+}
+
+// Every shown error wakes the lanes when its floor is reached, so a toast told to wait behind
+// it is answered again then (plan 2.6 item 6). Re-armed by a duplicate restart.
+function armErrorFloor(notification) {
+    clearTimeout(notification._floorTimer);
+    notification._floorTimer = null;
+    const t = notification._toast;
+    if (!t || t.type !== 'error' || t.pending || !hudLanesActive()) return;
+    const due = (t.shownAt || Date.now()) + ERROR_TOAST_MIN_MS - Date.now();
+    notification._floorTimer = setTimeout(() => { notification._floorTimer = null; relayoutLanes(); }, Math.max(0, due));
+}
+
+function cancelSwap(notification) {
+    clearTimeout(notification._swapTimer);
+    notification._swapTimer = null;
+    notification._swap = null;
+}
+
+function clearPendingTimers(notification) {
+    for (const k of ['_watchdogTimer', '_hardTimer', '_deadlineTimer']) {
+        clearTimeout(notification[k]);
+        notification[k] = null;
+    }
+    cancelSwap(notification);
+}
+
+// When a shown toast may be replaced: up 1.5 s for a warning, 5 s for an error
+function floorOf(older) {
+    const o = older._toast;
+    return (o.shownAt || 0) + (o.type === 'error' ? ERROR_TOAST_MIN_MS : TOAST_STAGGER_MS);
+}
+
+// A waiting toast shows: its countdown starts now, the lanes place it, and only then it slides in
+function releaseToast(notification) {
+    const t = notification._toast;
+    if (!t || !t.pending || t.closing) return;
+    clearPendingTimers(notification);
+    t.pending = false;
+    notification.classList.remove('toast-pending');
+    if (notification.parentNode) placeInOrder(notification.parentNode, notification);
+    t.shownAt = Date.now();
+    if (t.duration > 0) startCountdown(notification, t.duration);
+    armErrorFloor(notification);
+    // The relayout's frame is queued first, so the toast is placed before its slide-in starts
+    relayoutLanes();
+    const show = () => { if (!t.closing) notification.classList.add('show'); };
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(show);
+        // rAF does not run in a hidden tab: the backstop keeps the toast from expiring unseen (R1 n2)
+        setTimeout(show, 50);
+    } else setTimeout(show, 10);
+}
+
+// Replace `older` once it has been up its floor, keyed on the pair (older, floor time)
+function scheduleSwap(notification, older) {
+    const floor = floorOf(older);
+    if (notification._swap && notification._swap.older === older && notification._swap.floor === floor) return;
+    cancelSwap(notification);
+    notification._swap = { older, floor };
+    notification._swapTimer = setTimeout(() => runSwap(notification), Math.max(0, floor - Date.now()));
+}
+
+function runSwap(notification) {
+    const swap = notification._swap;
+    notification._swapTimer = null;
+    if (!swap || !notification._toast?.pending) return;
+    const { older } = swap;
+    if (older._toast && !older._toast.closing) {
+        // A duplicate restart moved its floor after the swap was set: wait for the new one
+        if (floorOf(older) > Date.now()) {
+            notification._swap = null;
+            scheduleSwap(notification, older);
+            return;
+        }
+        removeNotification(older);
+    }
+    notification._swap = null;
+    releaseToast(notification);
+}
+
+// hud-lanes' answer for a waiting toast: 'stack' (show now), 'wait', or a shown toast to replace
+function replaceHandler(notification) {
+    return (answer) => {
+        const t = notification._toast;
+        if (!t || !t.pending || t.closing) return;
+        clearTimeout(notification._watchdogTimer);
+        notification._watchdogTimer = null;
+        if (answer === 'stack') releaseToast(notification);
+        else if (answer && typeof answer === 'object' && answer._toast) scheduleSwap(notification, answer);
+        else cancelSwap(notification);
+    };
+}
+
+// hud-lanes: two warnings shown over a panel with no clear place for both; the older one goes
+// once it has been up TOAST_STAGGER_MS (plan 2.5, "Panel opens with toasts shown")
+function supersedeHandler(notification) {
+    return (on = true) => {
+        const t = notification._toast;
+        if (!on) {   // the panel closed or room appeared: the older warning stays (review R1 m2)
+            clearTimeout(notification._supersedeTimer);
+            notification._supersedeTimer = null;
+            return;
+        }
+        if (!t || t.closing || t.pending || notification._supersedeTimer) return;
+        notification._supersedeTimer = setTimeout(() => {
+            notification._supersedeTimer = null;
+            if (!t.closing) removeNotification(notification);
+        }, Math.max(0, floorOf(notification) - Date.now()));
+    };
+}
+
+// At most one warning waits: a newer one replaces it (it was announced when it arrived)
+function dropWaitingWarnings(container, keep) {
+    const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
+    all.forEach((el) => {
+        const t = el._toast;
+        if (el === keep || !t || !t.pending || t.closing || t.type !== 'warning') return;
+        clearPendingTimers(el);
+        t.pending = false;
+        t.closing = true;
+        if (el.parentNode) el.parentNode.removeChild(el);
+    });
+}
+
+// Screen readers hear every toast once (plan 2.7): errors in an alert region, the rest in a
+// polite one. The regions sit on body (never in the toast container, which the lanes measure)
+// and are looked up by id on each use. Emptied first and filled a tick later, so the same text
+// twice is read twice. Nothing here may break a toast.
+function announceToast(type, text) {
+    try {
+        if (typeof document === 'undefined') return;
+        const body = document.body;
+        if (!body?.appendChild) return;
+        const id = type === 'error' ? 'toast-live-alert' : 'toast-live-polite';
+        let region = typeof document.getElementById === 'function' ? document.getElementById(id) : null;
+        if (!region) {
+            region = document.createElement('div');
+            region.id = id;
+            region.className = 'toast-live-region';
+            if (type === 'error') {
+                region.setAttribute?.('role', 'alert');
+            } else {
+                region.setAttribute?.('aria-live', 'polite');
+                region.setAttribute?.('aria-atomic', 'true');
+            }
+            body.appendChild(region);
+        }
+        region.textContent = '';
+        setTimeout(() => {
+            try {
+                const r = document.getElementById(id);
+                if (r) r.textContent = text;
+            } catch (e) { /* not announced */ }
+        }, 0);
+    } catch (e) { /* not announced */ }
+}
+
+function spokenText(notification, title, message, plainText, verbatim) {
+    const plainOf = (sel, raw) => {
+        const t = notification.querySelector?.(sel)?.textContent;
+        return typeof t === 'string' && t ? t : String(raw).replace(/<[^>]*>/g, ' ');
+    };
+    const head = !title ? '' : (plainText ? displayDashes(title) : plainOf('.notification-title', title));
+    const body = plainText ? (verbatim ? String(message) : displayDashes(message)) : plainOf('.notification-message', message);
+    return (head ? `${head}: ${body}` : body).replace(/\s+/g, ' ').trim();
 }
 
 // Plain text into an element: textContent per line, a <br> element between lines.
@@ -231,6 +459,13 @@ function setPlainLines(el, text) {
 
 // Toasts on screen at once; info and success toasts past this wait (renderNotification).
 export const MAX_SHOWN_TOASTS = 2;
+// On a phone the toast lane holds one toast at a time (UI decision H1 option A); the rest queue.
+// ui/hud-lanes.js marks the phone layout with body.hud-compact.
+export const MAX_SHOWN_TOASTS_COMPACT = 1;
+export function maxShownToasts(doc = (typeof document === 'undefined' ? null : document)) {
+    const cl = doc?.body?.classList;
+    return typeof cl?.contains === 'function' && cl.contains('hud-compact') ? MAX_SHOWN_TOASTS_COMPACT : MAX_SHOWN_TOASTS;
+}
 // The head of the waiting line shows after this long even if both places are still taken
 // (going over the limit by one for a moment), so it never lands long after the event it is
 // about. The rest follow it a TOAST_STAGGER_MS apart.
@@ -239,12 +474,12 @@ const waitingToasts = [];
 
 /**
  * Toasts on screen that count towards the limit: not closing, not pulled back behind a
- * panel, and timed. A toast that stays until closed (duration 0: the Key Ring, the Mission
+ * panel, not waiting to show over one (toast-pending), and timed. A toast that stays until closed (duration 0: the Key Ring, the Mission
  * Brief fallback) is left out, or one the player leaves open would halve the limit for good.
  */
 export function shownToasts(container) {
     const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
-    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && el._toast.duration > 0);
+    return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && !el._toast.pending && el._toast.duration > 0);
 }
 
 /** Number of info and success toasts waiting for a free place. */
@@ -281,12 +516,12 @@ function headDue() {
     head.waitTimer = null;
     const container = typeof document === 'undefined' ? null : document.getElementById('notification-container');
     const shown = shownToasts(container).length;
-    if (shown > MAX_SHOWN_TOASTS) {
+    if (shown > maxShownToasts()) {
         head.waitTimer = setTimeout(headDue, TOAST_STAGGER_MS);
         return;
     }
     waitingToasts.shift();
-    if (shown >= MAX_SHOWN_TOASTS) lastOverLimitAt = Date.now();
+    if (shown >= maxShownToasts()) lastOverLimitAt = Date.now();
     showWaitingToast(head, true);
     armHead();
 }
@@ -325,7 +560,7 @@ function holdForPanel(list) {
 function showNextWaiting() {
     if (typeof document === 'undefined') return;
     const container = document.getElementById('notification-container');
-    while (waitingToasts.length && shownToasts(container).length < MAX_SHOWN_TOASTS) {
+    while (waitingToasts.length && shownToasts(container).length < maxShownToasts()) {
         if (!showWaitingToast(waitingToasts.shift(), false)) break;
     }
     armHead();
@@ -339,12 +574,27 @@ function renderNotification(message, type, title, duration, seen = false, option
     // The same toast raised again while it is still on screen (a refusal hint clicked
     // three times) restarts its countdown instead of stacking a copy.
     // (A timed toast and one that stays until closed are not the same toast.)
+    // A repeat of a toast still waiting over a panel only refreshes its time: its countdown has
+    // not started (toast plan 2.5, "Duplicates")
+    const waiting = findSameToast(notificationContainer, message, type, title, options, true);
+    if (waiting && (duration > 0) === (waiting._toast.duration > 0)) {
+        waiting._toast.duration = duration;
+        return waiting;
+    }
     const same = findShownDuplicate(notificationContainer, message, type, title, options);
     if (same && (duration > 0) === (same._toast.duration > 0)) {
         same._toast.shownAt = Date.now();
+        // An error seen again keeps its 5 s floor from now; the lanes answer again with it
+        armErrorFloor(same);
+        relayoutLanes();
         if (duration > 0) {
             same._toast.duration = duration;
-            startCountdown(same, duration);
+            if (same._yieldLeft != null) {
+                // Stepped aside for a finished-task line: the fresh time waits with it (review R3 m3)
+                same._yieldLeft = duration;
+            } else {
+                startCountdown(same, duration);
+            }
         }
         return same;
     }
@@ -353,17 +603,23 @@ function renderNotification(message, type, title, duration, seen = false, option
     // success toast waits its turn and shows as one goes; warnings and errors answer
     // what the player just did, so they still show at once.
     // A toast that stays until closed takes no place and never waits for one.
-    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0
-        && shownToasts(notificationContainer).length >= MAX_SHOWN_TOASTS) {
+    // A finished task or aim (options.brief) does not wait: the pill blinks now, and the lanes
+    // step the other toasts aside for it (review R2 M4)
+    if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0 && options?.brief !== true
+        && shownToasts(notificationContainer).length >= maxShownToasts()) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
             addWaiting([message, type, title, duration, seen, options]);
         }
         return null;
     }
 
+    // A warning or error over an open panel waits, unshown, until hud-lanes has a place for it
+    // or one of the timers below shows it (toast plan 2.6)
+    const overPanel = PANEL_TOAST_TYPES.has(type) && hudLanesActive() && fullScreenPanelOpen();
+
     // Create notification element
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    notification.className = overPanel ? `notification ${type} toast-pending` : `notification ${type}`;
     
     // Create notification content
     let notificationContent = '';
@@ -373,7 +629,7 @@ function renderNotification(message, type, title, duration, seen = false, option
     }
     notificationContent += plainText ? '<div class="notification-message"></div>'
         : `<div class="notification-message">${displayDashes(message).replace(/\n/g, "<br>")}</div>`;
-    notificationContent += `<div class="notification-close">×</div>`;
+    notificationContent += `<button type="button" class="notification-close" aria-label="Close">×</button>`;
     
     if (duration > 0) {
         notificationContent += `<div class="notification-progress"></div>`;
@@ -386,35 +642,80 @@ function renderNotification(message, type, title, duration, seen = false, option
         setPlainLines(notification.querySelector('.notification-message'), verbatim ? message : displayDashes(message));
         // review R2 n1: a password's doubled, leading or trailing spaces are kept on screen
         if (verbatim) notification.querySelector('.notification-message').style.whiteSpace = 'pre-wrap';
+        // Never cut short on a phone (the two-line limit, css/notifications.css): it is copied
+        if (verbatim) notification.classList.add('verbatim');
     }
-    notification._toast = { message, type, title, duration, shownAt: Date.now(), seen, html: !plainText, verbatim };
-    
-    // Add to container
-    notificationContainer.appendChild(notification);
-    
-    // Show notification with animation
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
-    
-    // Progress bar and removal after the duration, if one is set
-    if (duration > 0) startCountdown(notification, duration);
-    
-    // Add close button event listener
+    // A short line with no title (a finished task on a phone, objectives-manager.js): its text
+    // is never cut, so the task's name can always be read (review R1 M2)
+    if (options?.brief === true) notification.classList.add('brief');
+    // options.whole only lifts the phone's two-line limit: a long sentence (a keyring find, a
+    // teaching line) is read whole, with none of brief's push-aside or skipped limit (K3b R1 m2)
+    if (options?.whole === true) notification.classList.add('whole');
+    notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim };
+    notification._onLaneYield = laneYieldHandler(notification);
+    if (hudLanesActive()) notification._onSupersede = supersedeHandler(notification);
+
+    // Add to container: errors first while hud-lanes places the block, else at the end
+    if (hudLanesActive()) placeInOrder(notificationContainer, notification);
+    else notificationContainer.appendChild(notification);
+
+    if (overPanel) {
+        notification._toast.pending = true;
+        notification._toast.arrivedAt = Date.now();
+        if (type === 'warning') dropWaitingWarnings(notificationContainer, notification);
+        notification._onReplace = replaceHandler(notification);
+        notification._watchdogTimer = setTimeout(() => {
+            notification._watchdogTimer = null;
+            releaseToast(notification);
+        }, TOAST_WATCHDOG_MS);
+        notification._hardTimer = setTimeout(() => releaseToast(notification), TOAST_HARD_RELEASE_MS);
+        if (type === 'warning') notification._deadlineTimer = setTimeout(relayoutLanes, WARNING_WAIT_MS);
+        relayoutLanes();
+    } else {
+        // Show notification with animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
+        // Progress bar and removal after the duration, if one is set
+        if (duration > 0) startCountdown(notification, duration);
+        armErrorFloor(notification);
+    }
+    announceToast(type, spokenText(notification, title, message, plainText, verbatim));
+
+    // The X is a real button. Enter and Space stop at it: the PIN pad's document handler
+    // would cancel the click on Enter and submit the PIN. Click is added last (some test
+    // stubs keep only the last listener) and takes no event.
     const closeBtn = notification.querySelector('.notification-close');
+    closeBtn.addEventListener('keydown', (e) => {
+        if (e?.key === 'Enter' || e?.key === ' ') e?.stopPropagation?.();
+    });
+    closeBtn.addEventListener('keyup', (e) => {
+        if (e?.key === ' ') e?.stopPropagation?.();
+    });
     closeBtn.addEventListener('click', () => {
         removeNotification(notification);
     });
-    
+
     return notification;
 }
 
 // Remove a notification with animation
 export function removeNotification(notification) {
     clearTimeout(notification._hideTimer);
-    if (notification._toast) notification._toast.closing = true;
+    clearTimeout(notification._floorTimer);
+    clearTimeout(notification._supersedeTimer);
+    clearPendingTimers(notification);
+    if (notification._toast) {
+        notification._toast.closing = true;
+        notification._toast.pending = false;
+    }
     notification.classList.remove('show');
-    
+    // The 300 ms fade keeps it in the container, in flow: it must not take a click meant for a
+    // control under it (the close X is pointer-events: auto in the stylesheet, so it needs its own)
+    if (notification.style) notification.style.pointerEvents = 'none';
+    const closeBtn = notification.querySelector?.('.notification-close');
+    if (closeBtn?.style) closeBtn.style.pointerEvents = 'none';
+
     // Remove from DOM after animation
     setTimeout(() => {
         if (notification.parentNode) {
@@ -443,10 +744,7 @@ export function gameDisplay(message, title = '', options = {}) {
             <div class="game-confirm-dialog game-display-dialog">
                 <button class="game-modal-close" aria-label="Close">&times;</button>
                 ${title ? `<div class="game-display-title">${html ? title : ''}</div>` : ''}
-                <div class="game-display-body">${html ? String(message).replace(/\n/g, '<br>') : ''}</div>
-                <div class="game-confirm-buttons">
-                    <button class="game-confirm-btn game-confirm-ok">Close</button>
-                </div>
+                <div class="game-display-body pixel-scroll">${html ? String(message).replace(/\n/g, '<br>') : ''}</div>
             </div>`;
         if (!html) {
             // Author text in, plain text out: textContent, never innerHTML.
@@ -454,15 +752,30 @@ export function gameDisplay(message, title = '', options = {}) {
             setPlainLines(overlay.querySelector('.game-display-body'), displayDashes(message));
         }
 
+        // The X is the only close control (UX design language: no Close button beside it),
+        // and Esc closes through the modal stack. Focus starts on the X so Enter or Space
+        // closes it from the keyboard, and goes back to whatever had it on close.
+        const closeBtn = overlay.querySelector('.game-modal-close');
+        const previousFocus = document.activeElement;
+        let done = false;
         const unregister = registerModal(() => finish());
-        const finish = () => { unregister(); overlay.remove(); resolve(); };
-        overlay.querySelector('.game-confirm-ok').addEventListener('click', finish);
-        overlay.querySelector('.game-modal-close').addEventListener('click', finish);
+        const finish = () => {
+            if (done) return;
+            done = true;
+            unregister();
+            overlay.remove();
+            try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
+            resolve();
+        };
+        closeBtn.addEventListener('click', finish);
         document.body.appendChild(overlay);
+        try { closeBtn.focus(); } catch (e) { /* best effort */ }
     });
 }
 
 // Show an in-game confirmation modal. Returns a Promise that resolves true (confirm) or false (cancel).
+// No close X: the two named buttons answer it, and Esc picks the cancel choice. Callers name both
+// buttons for what they do ("Switch off" and "Leave it"), never a bare Confirm or Cancel.
 // The message and both button labels are plain text (textContent) by default, newlines kept, so
 // author-written scenario text (an interactionWarning, a confirm action's text) is never markup.
 // options.html === true: all three were built as HTML on purpose, author text already escaped.
@@ -475,7 +788,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         if (plainText) {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message" style="white-space: pre-wrap;"></div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok"></button>
@@ -489,7 +801,6 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
         } else {
             overlay.innerHTML = `
             <div class="game-confirm-dialog">
-                <button class="game-modal-close" aria-label="Cancel">&times;</button>
                 <div class="game-confirm-message">${displayDashes(message).replace(/\n/g, '<br>')}</div>
                 <div class="game-confirm-buttons">
                     <button class="game-confirm-btn game-confirm-ok">${confirmLabel}</button>
@@ -498,20 +809,101 @@ export function gameConfirm(message, confirmLabel = 'Confirm', cancelLabel = 'Ca
             </div>`;
         }
 
-        // Esc and the X both cancel (resolve false), same as the Cancel button.
-        const unregister = registerModal(() => finish(false));
+        // A confirm has no X (UX q99): its two named buttons are the only way to answer, and
+        // Esc means the cancel button's choice (resolve false), the safe one.
+        const okBtn = overlay.querySelector('.game-confirm-ok');
+        const cancelBtn = overlay.querySelector('.game-confirm-cancel');
+        const previousFocus = document.activeElement;
+        let done = false;
+        // Keys already down when the dialog opened (an arrow the player was walking with):
+        // their keydowns are swallowed until the key comes up, so a held arrow can't move
+        // focus to the yes button (UX slice 16 R2 M1).
+        const staleKeys = new Set(heldKeys);
+        const onKeyUp = (e) => { staleKeys.delete(e.key); };
+        let unregister = () => {};
         const finish = (result) => {
+            if (done) return;
+            done = true;
+            openConfirms--;
+            countText(message, -1);
+            if (typeof window.removeEventListener === 'function') window.removeEventListener('keyup', onKeyUp, true);
             unregister();
             overlay.remove();
+            // Give focus back to whatever had it (the game canvas, a minigame field).
+            try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
             resolve(result);
         };
 
-        overlay.querySelector('.game-confirm-ok').addEventListener('click', () => finish(true));
-        overlay.querySelector('.game-confirm-cancel').addEventListener('click', () => finish(false));
-        overlay.querySelector('.game-modal-close').addEventListener('click', () => finish(false));
+        okBtn.addEventListener('click', () => finish(true));
+        cancelBtn.addEventListener('click', () => finish(false));
 
+        // Keyboard (UX slice 16 R1 m10): Enter or Space presses the focused button, Tab and the
+        // arrows move between the two, and none of these keys reach the game underneath.
+        // A repeat (a held key) or a key held since before the dialog opened does nothing: a
+        // held arrow flipped focus on every repeat and left it on yes (R2 M1).
+        overlay.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (e.repeat || staleKeys.has(key)) {
+                if (key === 'Enter' || key === ' ' || key === 'Tab' || String(key).startsWith('Arrow')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                return;
+            }
+            if (key === 'Enter' || key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.repeat && (e.target === okBtn || e.target === cancelBtn)) e.target.click();
+            } else if (key === 'Tab' || key === 'ArrowLeft' || key === 'ArrowRight' ||
+                       key === 'ArrowUp' || key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                (document.activeElement === okBtn ? cancelBtn : okBtn).focus();
+            }
+        });
+
+        // A click on the dimmed backdrop keeps focus on the buttons (R2 m2): without this the
+        // click moved focus to body, Enter did nothing and Tab walked the HUD.
+        overlay.addEventListener('mousedown', (e) => {
+            if (!e.target.closest || !e.target.closest('.game-confirm-btn')) e.preventDefault();
+        });
+        if (typeof window.addEventListener === 'function') window.addEventListener('keyup', onKeyUp, true);
+
+        // Count and register only once the dialog is wired, so a throw while building it
+        // can't leave the open count stuck (R2 m3).
+        unregister = registerModal(() => finish(false));
+        openConfirms++;
+        countText(message, 1);
         document.body.appendChild(overlay);
+        // Focus the safe choice, so a stray Enter or Space never says yes.
+        try { cancelBtn.focus(); } catch (e) { /* best effort */ }
     });
+}
+
+// How many gameConfirm dialogs are open. The interaction warning and confirm_action read it
+// (window.gameConfirmOpen) so a second copy of a confirm never opens over the first.
+// gameConfirmOpen(text) asks whether a confirm with that exact message is open, so
+// confirm_action drops only a second copy of the same confirm, not a different one (R2 m3).
+let openConfirms = 0;
+const openTexts = new Map();
+function countText(message, delta) {
+    const key = String(message);
+    const n = (openTexts.get(key) || 0) + delta;
+    if (n > 0) openTexts.set(key, n); else openTexts.delete(key);
+}
+export function gameConfirmOpen(text) {
+    if (text === undefined) return openConfirms > 0;
+    return openTexts.has(String(text));
+}
+
+// Keys down right now, for the confirm's held-key guard. Capture phase on window, so a
+// handler that stops propagation can't hide a key; a blur forgets them all (the keyup goes
+// to another window).
+const heldKeys = new Set();
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('keydown', (e) => { if (e.key) heldKeys.add(e.key); }, true);
+    window.addEventListener('keyup', (e) => { heldKeys.delete(e.key); }, true);
+    window.addEventListener('blur', () => heldKeys.clear());
 }
 
 // Export for global access
@@ -519,3 +911,4 @@ window.showNotification = showNotification;
 window.gameAlert = gameAlert;
 window.gameDisplay = gameDisplay;
 window.gameConfirm = gameConfirm;
+window.gameConfirmOpen = gameConfirmOpen;

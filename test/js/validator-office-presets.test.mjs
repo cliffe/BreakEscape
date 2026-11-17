@@ -82,13 +82,13 @@ test('the Ruby and JS resolvers agree on a mixed set', { skip }, () => {
 });
 
 test('test_needs_sims: no needs error, and every preset object is listed', { skip }, () => {
-    const r = spawnSync('ruby', ['-e', `require 'erb'; require 'json'; puts JSON.generate(JSON.parse(ERB.new(File.read(${JSON.stringify(join(root, 'scenarios/test_needs_sims/scenario.json.erb'))})).result))`], { encoding: 'utf8' });
+    const r = spawnSync('ruby', ['-r', join(root, 'lib/break_escape/scenario_binding.rb'), '-e', `print BreakEscape::ScenarioBinding.render(File.read(${JSON.stringify(join(root, 'scenarios/test_needs_sims/scenario.json.erb'))}))`], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stderr);
     const sims = JSON.parse(r.stdout);
     const issues = check(sims);
     assert.ok(!issues.some(s => s.startsWith('❌')), issues.filter(s => s.startsWith('❌')).join('\n'));
     if (sims.officePresets === true) {
         const listed = issues.filter(s => s.includes('Office preset')).map(s => /'([^']+)' \(type/.exec(s)[1]).sort();
-        assert.deepEqual(listed, ['amara_pc', 'fridge', 'kitchen_coffee', 'kitchen_copier', 'lounge_kettle', 'lounge_sofa', 'microwave', 'office_coffee', 'office_copier', 'sanjay_pc', 'tom_pc', 'tom_phone', 'water_cooler']);
+        assert.deepEqual(listed, ['amara_pc', 'fridge', 'it_copier', 'kitchen_coffee', 'kitchen_copier', 'lounge_kettle', 'lounge_sofa', 'microwave', 'office_coffee', 'office_copier', 'sanjay_pc', 'staff_boiler', 'staff_cooler', 'staff_microwave', 'tom_pc', 'tom_phone', 'water_cooler']);
     }
 });

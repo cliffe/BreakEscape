@@ -1,0 +1,13 @@
+{
+  "key": "e066467c0eb06c06f6c8112203c67524",
+  "npc": "closing_debrief",
+  "text": "The notice waits behind Montana. You said so.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:21:42Z"
+}

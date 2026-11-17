@@ -1,4 +1,4 @@
-// Office life slice 18a (OFFICE_LIFE_PLAN 12.4): coffee off. affordance.offWhen takes a source out
+// Office life slice 18a (OFFICE_LIFE_PLAN 12.4): coffee off. offWhen takes a source out
 // of the candidates; walkers and queuers turn back with reason `off` (outside _recheck, so with no
 // avoidance radius too); one using it finishes; the fallback takes the next source or parks; an off
 // turn-back leaves a later avoidance turn-back possible; switching it back on (a real change)
@@ -21,7 +21,7 @@ import { runSimsDay } from './fixtures/needs-sims-world.mjs';
 const T = 32;
 const coffee = (initial = 90) => ({ caffeine: { decayPerMin: 1, urgentAt: 50, initial } });
 // Approach cell of a stub object is one tile below it. The office machine can be switched off
-const officeMachine = (extra = {}) => ({ id: 'office_coffee', x: 300, y: 100, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, offWhen: 'coffee_off', ...extra } });
+const officeMachine = ({ offWhen = 'coffee_off', ...extra } = {}) => ({ id: 'office_coffee', x: 300, y: 100, offWhen, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10, ...extra } });
 const kitchenMachine = () => ({ id: 'kitchen_coffee', x: 900, y: 100, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 10 } });
 const nearQueue = { cells: [{ dx: -1, dy: 0 }, { dx: -2, dy: 0 }] };
 
@@ -170,14 +170,19 @@ const turnOff = (opts) => {
 };
 
 test('grumble_off is used when it has lines; a scenario with only a grumble pool still says a grumble line (the lab)', () => {
-    const own = turnOff({ chatter: { grumble: ['Not with him there.'], grumble_off: ["Machine's dead."] } });
+    // SIMS-5 design R3 m1: a grumble is spoken only within earshot, as chatter is
+    const heard = () => ({ overheard: true, distance: 60 });
+    const own = turnOff({ chatter: { grumble: ['Not with him there.'], grumble_off: ["Machine's dead."] }, hears: heard });
     assert.deepEqual([own.sys.getState('tom').talking.topic, own.sys.getState('tom').talking.line], ['grumble_off', "Machine's dead."]);
     assert.equal(own.evs('turned_back')[0].grumble, 'grumble_off');
-    const lab = turnOff({ chatter: { grumble: ['Not with him there.'] } });
+    const far = turnOff({ chatter: { grumble: ['Not with him there.'], grumble_off: ["Machine's dead."] } });
+    assert.deepEqual([far.sys.getState('tom').talking.topic, far.sys.getState('tom').talking.line, far.sys.getState('tom').talking.picture],
+        ['grumble_off', null, 'caffeine'], 'out of earshot: the picture, no line spent');
+    const lab = turnOff({ chatter: { grumble: ['Not with him there.'] }, hears: heard });
     assert.deepEqual([lab.sys.getState('tom').talking.topic, lab.sys.getState('tom').talking.line], ['grumble', 'Not with him there.']);
     assert.equal(lab.evs('turned_back')[0].grumble, 'grumble');
     // An NPC's own grumble_off lines count too
-    const npc = turnOff({ rec: { chatter: { grumble_off: ['Kitchen, then.'] } } });
+    const npc = turnOff({ rec: { chatter: { grumble_off: ['Kitchen, then.'] } }, hears: heard });
     assert.equal(npc.sys.getState('tom').talking.line, 'Kitchen, then.');
     // chatter false: no grumble at all
     const off = turnOff({ chatter: false });
@@ -241,7 +246,7 @@ test('deterministic for a seed, with Math.random throwing', () => {
     assert.equal(run(), run());
 });
 
-const GOLDEN_SIMS_DAY = 'a87a652c0b54abe9d8c237f6ba4b8cc097f193097a546267bbcf6b5b86b86948';
+const GOLDEN_SIMS_DAY = 'd6dbd5a503737c56739831f658d6c6be9c8ed2eceee8278a7b5a11fade52381e';   // the kitchen cooler at 40 s (E7 to E9 R1 m1)
 test('the sims day (no offWhen anywhere) is byte-identical', () => {
     const { sys } = runSimsDay(NPCNeedsSystem, { minutes: 15 });
     assert.equal(createHash('sha256').update(JSON.stringify(sys.getLog())).digest('hex'), GOLDEN_SIMS_DAY);
@@ -263,7 +268,7 @@ test('validator: offWhen names a declared global that some object sets; a hint w
     const socket = (hint) => ({ id: 'socket', type: 'wall_socket1', name: 'Wall socket', triggerOnInteract: [{ type: 'set_global', key: 'coffee_off', value: true }, hint] });
     const scen = (offWhen, objs = [], globals = { coffee_off: false }) => ({
         globalVariables: globals,
-        rooms: { office: { type: 'room_office', objects: [{ id: 'm', type: 'coffee_station1', affordance: { satisfies: 'caffeine', restores: 50, offWhen } }, ...objs], npcs: [npc] } }
+        rooms: { office: { type: 'room_office', objects: [{ id: 'm', type: 'coffee_station1', offWhen, affordance: { satisfies: 'caffeine', restores: 50 } }, ...objs], npcs: [npc] } }
     });
     const mine = list => list.filter(s => /offWhen|hint/.test(s));
     assert.deepEqual(mine(check(scen('coffee_off', [socket({ type: 'hint', title: 'Wall socket', message: 'The coffee machine is switched off at the wall.' })]))), []);

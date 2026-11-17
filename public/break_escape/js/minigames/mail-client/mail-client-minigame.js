@@ -842,6 +842,22 @@ export class MailClientMinigame extends SocialOverlayScene {
             console.error('mail send failed:', err);
         }
         if (sendInfo && !sendInfo.lockedOut) {
+            // Phish evidence Route 2: record the send server-side (plan sections 3.3, 5). Belt and
+            // braces for the client's own reveal, which is unchanged. A dynamic import keeps the
+            // network module off every mail-client test harness copy list, the way the builder
+            // isolates its build POST. Only a judged link send is posted; the server computes
+            // `landed` from its own page store and ignores anything here.
+            if (sendInfo.result && message && typeof message.link === 'string') {
+                const kit = (this.config?.payloadKit || []).find(
+                    (k) => k && k.id === message.link && k.kind === 'link');
+                if (kit && typeof kit.landingPageId === 'string') {
+                    import('../../systems/se-phish-send-client.js')
+                        .then((mod) => mod.recordPhishSend({
+                            message, targetId: message.targetId, kitId: message.link, pageId: kit.landingPageId,
+                        }))
+                        .catch(() => {});
+                }
+            }
             this.recordSend(sendInfo.gameResult);
             if (typeof sendInfo.record?.id === 'string') this.sentIds.push(sendInfo.record.id);
             // A judged send clears the saved draft so reopening Compose starts fresh,

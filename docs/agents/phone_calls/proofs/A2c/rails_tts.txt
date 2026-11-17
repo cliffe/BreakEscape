@@ -1,0 +1,14 @@
+/home/cliffe/.rbenv/versions/2.7.8/lib/ruby/2.7.0/net/protocol.rb:66: warning: already initialized constant Net::ProtocRetryError
+/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle/ruby/2.7.0/gems/net-protocol-0.1.3/lib/net/protocol.rb:68: warning: previous definition of ProtocRetryError was here
+/home/cliffe/.rbenv/versions/2.7.8/lib/ruby/2.7.0/net/protocol.rb:206: warning: already initialized constant Net::BufferedIO::BUFSIZE
+/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle/ruby/2.7.0/gems/net-protocol-0.1.3/lib/net/protocol.rb:208: warning: previous definition of BUFSIZE was here
+/home/cliffe/.rbenv/versions/2.7.8/lib/ruby/2.7.0/net/protocol.rb:503: warning: already initialized constant Net::NetPrivate::Socket
+/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle/ruby/2.7.0/gems/net-protocol-0.1.3/lib/net/protocol.rb:504: warning: previous definition of Socket was here
+Run options: --seed 52354
+
+# Running:
+
+..........................................................................................................................................
+
+Finished in 29.545610s, 4.6707 runs/s, 326.8844 assertions/s.
+138 runs, 9658 assertions, 0 failures, 0 errors, 0 skips

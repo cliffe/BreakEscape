@@ -8,8 +8,8 @@ class AccessWorkFeedSelectTest < ActiveSupport::TestCase
   AW = BreakEscape::AccessWork
 
   def data(globals = {})
-    { 'resources' => { 'srv' => { 'id' => 'srv', 'downIf' => 'srv_down' },
-                       'printer' => { 'id' => 'printer', 'downIf' => 'printer_down' } },
+    { 'resources' => { 'srv' => { 'id' => 'srv', 'offWhen' => 'srv_down' },
+                       'printer' => { 'id' => 'printer', 'offWhen' => 'printer_down' } },
       'globalVariables' => { 'srv_down' => false, 'printer_down' => false, 'calm' => false }.merge(globals) }
   end
 

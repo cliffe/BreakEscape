@@ -1,15 +1,59 @@
 // Container Minigame
 import { MinigameScene } from '../framework/base-minigame.js';
 import { addToInventory, removeFromInventory, inventoryImageKey } from '../../systems/inventory.js';
-import { containerImageUrl, containerImageHtml, takeStandIn } from './container-item-image.js';
+import { containerImageUrl, containerImageHtml, takeStandIn, SHARE_ICON, shareLabelParts, fitWholeScale } from './container-item-image.js';
 import { makeDraggable } from '../../utils/helpers.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { resolveObjectField } from '../../utils/conditional-text.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
+import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage, tokenExpiredMessage } from '../../utils/remote-host-text.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
+import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
 
+
+/**
+ * The route a folder under a sign-in PC names (keyring K3c, K2 m4): relay=1 for a relay
+ * session, foothold= for a remote one, nothing at the keyboard (no-route folder opens under
+ * a foothold session keep today's rule on the server). pcId is the folder's source PC.
+ */
+export function folderRouteQuery(pcId, sessions = (typeof window !== 'undefined' ? window.pcSessions : null)) {
+    if (!pcId) return '';
+    const s = sessions?.get?.(pcId);
+    if (!s) return '';
+    if (s.relay === true) return '?relay=1';
+    if (s.remote === true && s.footholdId) return `?foothold=${encodeURIComponent(s.footholdId)}`;
+    // K4: a folder under a desktop reached from another PC names that PC
+    if (s.remote === true && s.fromPcId) return `?from=${encodeURIComponent(s.fromPcId)}`;
+    return '';
+}
+
+/** "{displayName} ended the remote assist.", from pc-sessions.js (K3c, 8.3). */
+function relayEndedText(displayName) {
+    const line = typeof window !== 'undefined' ? window.pcSessions?.relayEndedLine?.(displayName) : null;
+    return line || 'Signed out';
+}
+
+/**
+ * A relay desktop's header block (K3c, 8.3): "Remote assist session", the account in the claim
+ * bar's form, one Disconnect in place of Switch user and Sign out, no link line, and the line
+ * where share folders would be.
+ */
+export function relayAccountBarHtml(session = {}) {
+    const name = session.displayName || session.username;
+    return `
+                    <div class="desktop-remote-line">${escapeHtml(RELAY_HEADER_TEXT)}</div>
+                    <div class="desktop-account-bar">
+                        <span class="desktop-account-name">Using ${escapeHtml(displayDashes(name || 'the account holder'))}'s session${session.username ? ` (${escapeHtml(session.username)})` : ''}</span>
+                        <span class="desktop-account-actions">
+                            <button type="button" class="minigame-button desktop-account-btn" id="desktop-disconnect">Disconnect</button>
+                        </span>
+                    </div>
+                    <div class="desktop-claim-line desktop-relay-noshares">${escapeHtml(RELAY_NO_SHARES_TEXT)}</div>`;
+}
 
 /**
  * The line a claimed session's desktop shows above the account bar (UX access R1 finding 5):
@@ -30,10 +74,12 @@ export function claimLineText(session) {
  * Copy to inventory, Move to inventory, Cancel; only Open (and Cancel) once it is held.
  * `"transfer": "copy" | "move" | "both"` (default both) restricts the two takes.
  */
-export function transferChoices(item, held) {
-    if (held) return ['open', 'cancel'];
+export function transferChoices(item, held, { connect = false } = {}) {
+    // K4: a saved connection on a desktop also offers Connect (it takes the file first if not held)
+    if (held) return connect ? ['open', 'connect', 'cancel'] : ['open', 'cancel'];
     const transfer = ['copy', 'move', 'both'].includes(item?.transfer) ? item.transfer : 'both';
     const out = ['open'];
+    if (connect) out.push('connect');
     if (transfer !== 'move') out.push('copy');
     if (transfer !== 'copy') out.push('move');
     out.push('cancel');
@@ -55,7 +101,9 @@ export function isNetworkScreenContainer(item) {
     if (item.sourceResourceId && !item.sourcePcId) return true;
     if (item.parentLockable) return isNetworkScreenContainer(item.parentLockable);
     const pcId = item.sourcePcId;
-    return !!(pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true);
+    // A session reached from another desktop (K4) has no foothold and is no network screen
+    const s = pcId && typeof window !== 'undefined' ? window.pcSessions?.get?.(pcId) : null;
+    return !!(s?.remote === true && s.footholdId);
 }
 if (typeof window !== 'undefined') window.isNetworkScreenContainer = isNetworkScreenContainer;
 
@@ -82,7 +130,7 @@ export function containerReturnBlocked(arm, ownClose = true) {
     if (!ownClose) return 'not_own_close';
     try { if (w.playerIsKnockedOut?.()) return 'knocked_out'; } catch (e) { /* no health system */ }
     if (w.minigameClosedByDamage?.()) return 'hit';
-    const hitAt = w.lastPlayerHitAt?.();
+    const hitAt = w.lastPlayerHitAtWall?.();
     if (arm && Number.isFinite(hitAt) && hitAt >= arm.at) return 'hit';
     if (w.MinigameFramework?.currentMinigame) return 'busy';
     if (arm && (w.currentPlayerRoom || '') !== arm.room) return 'room_changed';
@@ -106,29 +154,40 @@ export function networkScreenKind(item) {
     if (item.parentLockable) return networkScreenKind(item.parentLockable);
     if (item.sourceResourceId && !item.sourcePcId) return 'share';
     const pcId = item.sourcePcId;
-    return pcId && typeof window !== 'undefined' && window.pcSessions?.get?.(pcId)?.remote === true ? 'desktop' : null;
+    const s = pcId && typeof window !== 'undefined' ? window.pcSessions?.get?.(pcId) : null;
+    return s?.remote === true && s.footholdId ? 'desktop' : null;
 }
+// The text-file reader's bezel X (UI PC 2, E08) lands a network trip with this, without
+// importing this module
+if (typeof window !== 'undefined') window.networkScreenKind = networkScreenKind;
+
+// Set when a relay folder 403 closes the folder; the reopened relay desktop reads and clears it
+let pendingRelayFolderNote = null;
 
 // The keyboard refusal at a switched-off PC (user decision q72), if the server sends no text
 export const PC_OFF_TEXT = 'This PC is off.';
 
 /**
- * Does a sign-in PC's `affordance.offWhen` hold on these globals? The same reading as
+ * Does a sign-in PC's object-level `offWhen` hold on these globals? The same reading as
  * unlock-system.js pcSwitchedOff and the server's host_service_off? (a global name, or
  * { name: value } all to match). Kept here so this module imports nothing more.
  */
 export function offWhenHolds(pcData, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
-    const cond = pcData?.affordance?.offWhen;
+    const cond = pcData?.offWhen;
     if (cond === undefined || cond === null || cond === false || cond === '') return false;
     const g = globals || {};
     if (typeof cond === 'string') return !!g[cond];
-    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    if (typeof cond === 'object') {
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        const pairs = Object.entries(cond);
+        return pairs.length > 0 && pairs.every(([name, value]) => g[name] === value);
+    }
     return false;
 }
 
 /** The globals an offWhen reads, for the global_variable_changed listeners. */
 export function offWhenGlobals(pcData) {
-    const cond = pcData?.affordance?.offWhen;
+    const cond = pcData?.offWhen;
     if (typeof cond === 'string' && cond) return [cond];
     if (cond && typeof cond === 'object') return Object.keys(cond);
     return [];
@@ -192,12 +251,20 @@ function scheduleNetworkReturnCheck(ms) {
 }
 
 /** Arm the one return for a hand-over from a network screen (state: its pendingContainerReturn). */
-export function armNetworkReturn(state) {
+export function armNetworkReturn(state, { playerCloseOnly = false } = {}) {
     disarmNetworkReturn();
     if (!state?.containerItem) return;
     const dispatcher = window.eventDispatcher;
     const handler = (data) => {
         if (!networkReturn || networkReturn.handler !== handler) return;
+        // playerCloseOnly (a sign-in desktop at the keyboard): the ending screen is still
+        // the current minigame while it emits, so its closedByPlayer says whose close it was
+        if (playerCloseOnly && data?.success !== true
+            && window.MinigameFramework?.currentMinigame?.closedByPlayer !== true) {
+            disarmNetworkReturn();
+            if (window.pendingContainerReturn === state) window.pendingContainerReturn = null;
+            return;
+        }
         scheduleNetworkReturnCheck(data?.success === true ? NETWORK_RETURN_GRACE_MS : 0);
     };
     networkReturn = { handler, dispatcher, state, timer: null };
@@ -207,17 +274,313 @@ export function armNetworkReturn(state) {
     }
 }
 
-/** The folder picture for a share stub (it has no object sprite of its own). */
-const SHARE_ICON = '/break_escape/assets/objects/m09_folder1.png';
+/**
+ * How often a session token's bar line is looked at against pc-sessions.js's own timer (keyring K5,
+ * plan 10). refreshTokenLines rewrites only when the text changed, so a step shows within this many
+ * ms of its real minute (K5 R1 m1), not a mount-relative minute later.
+ */
+export const TOKEN_LINE_REFRESH_MS = 10 * 1000;
 
 const TRANSFER_LABELS = {
     open: 'Open',
     copy: 'Copy to inventory',
     move: 'Move to inventory',
+    connect: 'Connect',
     cancel: 'Cancel'
 };
 
+/** The desktop's scroll cue, the network view's words (utils/more-below.js). */
+export const DESKTOP_MORE_BELOW_TEXT = MORE_BELOW_TEXT;
+
+/**
+ * A share's file names are as wide as their text and centred under the file by -50%, so an
+ * odd width puts the text on a half pixel (UX slice 2c R1 live check at x1). Round each
+ * name's width up to an even number of pixels once it is laid out, and again when the
+ * pixel font arrives.
+ */
+
+export function evenShareLabels(grid, selector = '.container-content-label') {
+    if (!grid?.querySelectorAll) return;
+    const even = () => {
+        for (const label of grid.querySelectorAll(selector)) {
+            label.style.width = '';
+            const w = label.getBoundingClientRect?.().width || 0;
+            const z = cssZoomOf(label);
+            const local = w / z;
+            if (!(local > 0)) continue;
+            const target = Math.ceil(local - 1e-6) + (Math.ceil(local - 1e-6) % 2);
+            if (Math.abs(target - local) > 1e-6) label.style.width = `${target}px`;
+        }
+    };
+    even();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(even);
+    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
+}
+
+const LABEL_SEP = /[_.\-\/]/;
+const LABEL_TRAIL = /[_.\-\/\s]+$/;
+const LABEL_LINES = 3;
+const LABEL_ELLIPSIS = '…';
+
+// The icon whose file was opened in a reader: when the reader closes and this desktop
+// reopens, that icon takes the focus again (if it is still there). The mark travels on the
+// hand-over (window.pendingContainerReturn.focusReturn, then the reopen's params), so a
+// return that never happens leaves nothing behind. byKey: a key opened the file.
+const iconKeyOf = (item) => String(item?.id ?? item?.name ?? '');
+export function iconFocusMark(item, byKey) {
+    return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
+}
+
+/**
+ * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
+ * line it ends), except a leading run of separators (".config") and the first of two in a
+ * row ("a__b"). The break before an extension ("REVENUE." / "xlsx") is kept.
+ */
+export function splitLabelName(part) {
+    const chars = Array.from(String(part ?? ''));
+    const out = [];
+    let cur = '';
+    let onlySeps = true;
+    chars.forEach((ch, i) => {
+        cur += ch;
+        const sep = LABEL_SEP.test(ch);
+        if (!sep) onlySeps = false;
+        if (sep && !onlySeps && i < chars.length - 1 && !LABEL_SEP.test(chars[i + 1])) {
+            out.push(cur);
+            cur = '';
+        }
+    });
+    if (cur) out.push(cur);
+    return out;
+}
+
+const LABEL_SEP_ONE = new RegExp(`^${LABEL_SEP.source}$`);
+
+/**
+ * Split a fragment into { head, tail } where tail is its trailing separator run plus the
+ * whole grapheme before it (a surrogate pair, a letter with a combining mark or a VS16
+ * emoji stays in one piece). Null when there is no trailing separator, or no letter before it.
+ */
+const GRAPHEMES = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+    ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+    : null;
+
+// segmenter: the grapheme segmenter to use; null falls back to code points (Array.from)
+export function splitLabelTail(frag, segmenter = GRAPHEMES) {
+    const text = String(frag ?? '');
+    if (!text || !LABEL_SEP_ONE.test(Array.from(text).pop())) return null;
+    const g = segmenter
+        ? Array.from(segmenter.segment(text), s => s.segment)
+        : Array.from(text);
+    let i = g.length;
+    while (i > 0 && LABEL_SEP_ONE.test(g[i - 1])) i--;
+    if (i === g.length || i === 0) return null;
+    const letter = i - 1;
+    return { head: g.slice(0, letter).join(''), tail: g.slice(letter).join('') };
+}
+
+/** Fill a label with one span per fragment (text nodes and createElement only, no HTML parsing of the name). */
+function buildLabelFragments(label, full) {
+    const doc = label.ownerDocument;
+    label.textContent = '';
+    full.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { label.appendChild(doc.createTextNode(' ')); return; }
+        splitLabelName(part).forEach((frag, i) => {
+            if (i > 0) label.appendChild(doc.createElement('wbr'));
+            const word = doc.createElement('span');
+            word.className = 'desktop-icon-word';
+            // A fragment wider than the label breaks anywhere when the label is open: the
+            // last letter and the separator after it go in a nowrap span so the separator
+            // never lands alone on a line (the text reads the same)
+            const parts = splitLabelTail(frag);
+            if (parts) {
+                if (parts.head) word.appendChild(doc.createTextNode(parts.head));
+                const tail = doc.createElement('span');
+                tail.className = 'desktop-icon-tail';
+                tail.textContent = parts.tail;
+                word.appendChild(tail);
+            } else {
+                word.textContent = frag;
+            }
+            label.appendChild(word);
+        });
+    });
+}
+
+function labelMetrics(label) {
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(label) : null;
+    const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+    return {
+        lineHeight: num(cs?.lineHeight) || 18,
+        padTop: num(cs?.paddingTop),
+        z: cssZoomOf(label) || 1
+    };
+}
+
+/** Which text line (0-based) a fragment sits on, from its box against the label's content top. */
+function lineOf(label, el, m) {
+    const top = el.getBoundingClientRect().top - label.getBoundingClientRect().top;
+    // A fragment's border box starts above its text by its own padding-top (2px on the plain
+    // desktop, where a matching negative margin keeps the margin box on the line, 0 on the
+    // monitor); add it back so the result is the line box top, not one pixel pair short
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(el) : null;
+    const fragPad = parseFloat(cs?.paddingTop) || 0;
+    const rel = top / m.z - (label.clientTop || 0) - m.padTop + fragPad;
+    return Math.floor((rel + 1) / m.lineHeight);
+}
+
+/**
+ * Fit one desktop icon label. A name wraps at spaces and after _ . - / (fragments in spans),
+ * to three lines at most. A name that would run past three lines ends its third line in an
+ * ellipsis character, and a fragment still wider than the box ends in the CSS ellipsis; in
+ * either case the whole name goes in the title and the label's data-full-name. The font stays
+ * at its 16px base: GNF is crisp only at whole multiples of its 8px grid. Returns 'fits' (as
+ * plain text), 'wraps' (split, and every character is visible) or 'ellipsis' (something is hidden).
+ */
+export function fitIconLabel(label) {
+    if (!label?.style) return 'fits';
+    const full = String(label.dataset?.fullName ?? label.textContent ?? '');
+    if (label.dataset) label.dataset.fullName = full;
+    label.style.fontSize = '';
+    label.style.width = '';
+    label.style.marginBottom = '';
+    label.style.top = '';
+    label.removeAttribute?.('title');
+    label.classList?.remove('desktop-icon-label-cut', 'desktop-icon-label-open');
+    if (label.firstElementChild) label.textContent = full;
+    const sideways = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
+    const tooTall = () => (label.scrollHeight || 0) - (label.clientHeight || 0) > 1;
+    if (!sideways() && !tooTall()) return 'fits';
+    buildLabelFragments(label, full);
+    const m = labelMetrics(label);
+    const spans = () => Array.from(label.querySelectorAll('.desktop-icon-word'));
+    let clipped = false;
+    // First fragment on a line past the third: drop it and everything after it
+    const all = spans();
+    const past = all.findIndex(el => lineOf(label, el, m) >= LABEL_LINES);
+    if (past > 0) {
+        clipped = true;
+        for (let n = all[past - 1].nextSibling; n;) { const next = n.nextSibling; n.remove(); n = next; }
+        let cur = all[past - 1];
+        // The longest start of the fragment that, with the ellipsis, stays inside three lines
+        // and its box: a binary search on the kept length (a fragment of any size is about
+        // nine layouts, not one per character)
+        for (let removals = 0; cur && removals <= all.length; removals++) {
+            const chars = Array.from(cur.textContent);
+            const baseOf = n => chars.slice(0, n).join('').replace(LABEL_TRAIL, '');
+            const fitsAt = n => {
+                const base = baseOf(n);
+                if (!base) return false;
+                cur.textContent = base + LABEL_ELLIPSIS;
+                return lineOf(label, cur, m) < LABEL_LINES && cur.scrollWidth <= cur.clientWidth;
+            };
+            let lo = 0;
+            let hi = chars.length;
+            while (lo < hi) {
+                const mid = Math.ceil((lo + hi) / 2);
+                if (fitsAt(mid)) lo = mid; else hi = mid - 1;
+            }
+            if (lo > 0) { fitsAt(lo); break; }
+            // Not even one character and the ellipsis fit on line 3: drop this fragment and
+            // end the one before it instead
+            const prev = spans().filter(el => el !== cur).pop();
+            for (let n = cur.previousSibling; n && n !== prev; n = cur.previousSibling) n.remove();
+            cur.remove();
+            cur = prev || null;
+        }
+    }
+    if (!clipped && spans().some(el => el.scrollWidth > el.clientWidth)) clipped = true;
+    if (!clipped && tooTall()) clipped = true; // backstop: the CSS clamp hides something
+    if (!clipped) return 'wraps';
+    label.setAttribute?.('title', full);
+    label.classList?.add('desktop-icon-label-cut');
+    return 'ellipsis';
+}
+
+/**
+ * Show a clipped label's whole name (hover or focus): it grows over the icons below with a
+ * negative bottom margin, so the row does not move. Returns false when nothing is clipped.
+ */
+export function expandIconLabel(label) {
+    if (!label?.classList?.contains('desktop-icon-label-cut')) return false;
+    const full = label.dataset?.fullName;
+    if (!full) return false;
+    if (label.classList.contains('desktop-icon-label-open')) return true;
+    const z = cssZoomOf(label) || 1;
+    const h0 = label.getBoundingClientRect().height / z;
+    label.classList.add('desktop-icon-label-open');
+    buildLabelFragments(label, full);
+    const h1 = label.getBoundingClientRect().height / z;
+    if (h1 > h0) label.style.marginBottom = `${h0 - h1}px`;
+    return true;
+}
+
+/**
+ * After a label has opened: if it runs past the bottom of the area it sits in, keep it
+ * whole. A scrolling area (the monitor) scrolls by the overshoot, itself only (so it moves
+ * only as far as needed); the plain desktop clips, so the label is raised instead, by the
+ * overshoot, and grows over its own picture. Returns 'scrolled', 'raised' or null.
+ */
+export function keepLabelInView(label, area) {
+    if (!label?.isConnected || !area?.getBoundingClientRect) return null;
+    const z = cssZoomOf(label) || 1;
+    const over = (label.getBoundingClientRect().bottom - area.getBoundingClientRect().bottom) / z;
+    if (!(over > 0)) return null;
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(area) : null;
+    if (cs && /^(auto|scroll)$/.test(cs.overflowY)) {
+        // Only the area scrolls: scrollIntoView would move the page and the host frame too
+        area.scrollTop += Math.ceil(over);
+        return 'scrolled';
+    }
+    label.style.top = `${-Math.ceil(over)}px`;
+    return 'raised';
+}
+
+/** Put a label back to its fitted (clipped) form. */
+export function collapseIconLabel(label) {
+    if (!label?.classList?.contains('desktop-icon-label-open')) return false;
+    const width = label.style.width;
+    fitIconLabel(label);
+    label.style.width = width;
+    return true;
+}
+
+/** fitIconLabel for every label in a grid, again once laid out and once the pixel font arrives. */
+export function fitIconLabels(grid, selector = '.desktop-icon-label') {
+    if (!grid?.querySelectorAll) return;
+    // A label that was open (hovered, or the focus the reader returned to) stays open through
+    // a refit while its icon still holds it open; a label whose pointer left is not reopened
+    const fit = () => {
+        for (const label of grid.querySelectorAll(selector)) {
+            const wasOpen = !!label.classList?.contains('desktop-icon-label-open');
+            fitIconLabel(label);
+            if (wasOpen) {
+                const icon = label.closest?.('.desktop-icon');
+                if (icon?.labelWanted?.()) icon.openLabel?.();
+            }
+        }
+    };
+    fit();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
+    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(fit);
+}
+
+/**
+ * Centre an absolutely placed box in its host on whole pixels (R4 m3): left and top are
+ * the spare width and height halved and rounded down, never below 0.
+ */
+export function centreOnWholePixels(box, host) {
+    if (!box?.style || !host) return;
+    const left = Math.max(0, Math.floor(((host.clientWidth || 0) - (box.offsetWidth || 0)) / 2));
+    const top = Math.max(0, Math.floor(((host.clientHeight || 0) - (box.offsetHeight || 0)) / 2));
+    box.style.left = `${left}px`;
+    box.style.top = `${top}px`;
+}
+
 export class ContainerMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         super(container, params);
         this.containerItem = params.containerItem;
@@ -242,6 +605,12 @@ export class ContainerMinigame extends MinigameScene {
         this.sourcePcId = this.mode === 'npc' ? null
             : (params.sourcePcId || this.containerItem?.sourcePcId || this.loginPcId || null);
         if (this.loginPcId) this.desktopMode = true;
+        // A network share (mapped on a desktop, or opened from the network view) opens as a
+        // folder window: a title bar with its UNC path and a file list, no wallpaper, so it
+        // never reads as another PC's desktop (UX feedback slice 2a, main3-08). Its return
+        // paths (parentLockable, the remote desktop) are unchanged.
+        this.shareFolder = this.mode !== 'npc' && !this.loginPcId && data.type === 'network_share';
+        if (this.shareFolder) this.desktopMode = false;
         this._unregisterDesktop = null;
         this.transferDialog = null;
 
@@ -250,12 +619,68 @@ export class ContainerMinigame extends MinigameScene {
         // what is taken from it (or from a folder in it) carries sourceResourceId. A mapped
         // share on a desktop keeps the desktop's lockable (parentLockable) and reopens it.
         this.remote = this.loginPcId && data.remote && data.remote.footholdId ? data.remote : null;
+        // A relay desktop (keyring K3c, 8.3): remote: { relay: true }. It is no network screen
+        // (no foothold, no view to land on): its fetches say relay=1 and its end closes to the world.
+        this.relay = this.loginPcId && !this.remote && data.remote && data.remote.relay === true ? data.remote : null;
+        // A desktop reached from another PC's desktop (keyring K4, 3.7): remote: { fromPcId, fromHost }.
+        // Its fetches say from=; it is no network screen and never reopens itself on close.
+        this.fromRoute = this.loginPcId && !this.remote && !this.relay && data.remote && typeof data.remote.fromPcId === 'string' && data.remote.fromPcId
+            ? data.remote : null;
         this.parentLockable = this.mode === 'npc' ? null : (this.containerItem?.parentLockable || null);
         this.sourceResourceId = this.mode === 'npc' || this.sourcePcId ? null
             : (params.sourceResourceId || this.containerItem?.sourceResourceId
                 || (data.networkShare && data.networkShare.footholdId ? data.id : null) || null);
         // Why this screen closed, reported to networkLinks.landed from cleanup (4.3)
         this.exitReason = 'close';
+        // A PC's desktop and a share's folder window sit in the one PC monitor frame (UX
+        // slice 2c, utils/pc-monitor.js), the same frame as the PC's sign-in screen
+        this.pcView = this.mode !== 'npc' && (this.desktopMode || this.shareFolder);
+        this.pcMonitor = null;
+    }
+
+    /** The name on the monitor's top strip: the PC's (a share opened from a desktop keeps that PC's). */
+    monitorName() {
+        if (this.shareFolder && this.parentLockable?.scenarioData?.name) return this.parentLockable.scenarioData.name;
+        if (this.shareFolder) return shareLabelParts(this.containerItem?.scenarioData?.name).name || '';
+        return this.containerItem?.scenarioData?.name || '';
+    }
+
+    /** Put the game area in the PC monitor frame (after super.init()). */
+    mountMonitor() {
+        const raw = this.monitorPostit();
+        const note = raw ? escapeHtmlKeepWords(displayDashes(raw), { joinPunctuation: true }) : '';
+        this.pcMonitor = mountPcMonitor(this, { name: displayDashes(this.monitorName()), postitHtml: note, pcId: this.monitorPcId() });
+        if (this.pcMonitor?.postit) makeDraggable(this.pcMonitor.postit);
+    }
+
+    /**
+     * The post-it stuck on this PC's monitor, as raw text, or null (R4 m2). The note is on
+     * the monitor, not the desktop: a share window opened from a desktop shows that PC's
+     * note too. A share opened from the network view has no PC monitor of its own.
+     */
+    monitorPostit() {
+        if (this.mode === 'npc') return null;
+        const data = this.desktopMode ? this.containerItem?.scenarioData
+            : (this.shareFolder ? this.parentLockable?.scenarioData : null);
+        return data && data.showPostit && typeof data.postitNote === 'string' && data.postitNote.trim()
+            ? data.postitNote : null;
+    }
+
+    /** The PC whose frame this is (the share's PC for a folder window), for its kept post-it height. */
+    monitorPcId() {
+        if (this.shareFolder) return this.parentLockable?.scenarioData?.id || this.sourcePcId || null;
+        return this.loginPcId || this.containerItem?.scenarioData?.id || null;
+    }
+
+    // Footer buttons (Add to Notepad) go in the monitor's chin
+    controlsHost() {
+        return this.pcMonitor?.controls || null;
+    }
+
+    // In the monitor the X lives in the bezel's top strip (css/pc-monitor.css)
+    placeCloseButton() {
+        if (this.pcMonitor) return;
+        super.placeCloseButton();
     }
 
     /** The session this sign-in desktop shows (pc-sessions.js), or null. */
@@ -294,8 +719,9 @@ export class ContainerMinigame extends MinigameScene {
 
         const items = nodes.map((el, i) => {
             const isDesktop = el.classList.contains('desktop-icon');
+            const iconLabel = el.querySelector('.desktop-icon-label');
             const name = (el.title || el.alt ||
-                          el.querySelector('.desktop-icon-label')?.textContent || '').trim();
+                          iconLabel?.dataset?.fullName || iconLabel?.textContent || '').trim();
             // scenarioData for this entry, matched by name — tells us whether
             // clicking opens a viewer or just pockets the item.
             const data = (this.contents || []).find(c => displayDashes(c?.name || '') === name) || {};
@@ -317,6 +743,14 @@ export class ContainerMinigame extends MinigameScene {
             containerName: this.containerItem?.scenarioData?.name || null,
             // A sign-in desktop: the account shown, and the Copy / Move dialog when open
             signedInAs: this.loginSession() ? { username: this.loginSession().username, displayName: this.loginSession().displayName } : null,
+            // The taskbar (UX slice 6): computer name, the account shown, the panel's state
+            taskbar: this.taskbarModel ? {
+                host: this.taskbarModel.host,
+                account: this.taskbarModel.account ? { kind: this.taskbarModel.account.kind, name: this.taskbarModel.account.name } : null,
+                panelOpen: !!this.taskbar?.isOpen?.(),
+                places: ['Desktop', ...this.taskbarModel.places.map(p => p.name)],
+                actions: this.taskbarModel.actions
+            } : null,
             sourcePcId: this.sourcePcId || null,
             transferDialog: this.transferDialog ? { item: this.transferDialog.item?.name || null, choices: this.transferDialog.choices.map(c => TRANSFER_LABELS[c]) } : null,
             items,
@@ -340,8 +774,8 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     /** The header picture; nothing when the container has none to show. */
-    containerImageHtml() {
-        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name);
+    containerImageHtml(extraClass = '') {
+        return containerImageHtml(this.getContainerImageUrl(), this.containerItem?.scenarioData?.name, extraClass);
     }
 
     shouldUseDesktopMode() {
@@ -370,12 +804,24 @@ export class ContainerMinigame extends MinigameScene {
         console.log(`Loading contents for container: ${containerId} (gameId: ${gameId})`);
 
         try {
-            const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}`, {
+            // A folder under a sign-in PC names the route its session went by (K3c, K2 m4)
+            // (a share is its own scope, which the server judges without a route)
+            const query = this.shareFolder ? '' : folderRouteQuery(this.sourcePcId);
+            const response = await fetch(`/break_escape/games/${gameId}/container/${containerId}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
             this._loadStatus = response.status;
 
             if (!response.ok) {
+                // A folder from a relay desktop: any 403 only closes the folder. The server sends no
+                // reason for a locked or powered-off folder, so the reopened relay desktop decides
+                // whether the assist ended or the PC is off (K3c R2 m1)
+                if (response.status === 403 && this.sourcePcId && window.pcSessions?.isRelay?.(this.sourcePcId)) {
+                    // Said only if the reopened desktop answers 200 (a really locked folder)
+                    pendingRelayFolderNote = this.sourcePcId;
+                    this.complete(false);
+                    return [];
+                }
                 // A folder or share from a desktop whose PC is now off (review R3 nit 2): say so,
                 // rather than open it empty with a generic error
                 if (offWhenHolds(this.powerPcData())) {
@@ -413,14 +859,29 @@ export class ContainerMinigame extends MinigameScene {
         const gameId = window.gameId || window.breakEscapeConfig?.gameId;
         const pcId = this.loginPcId;
         // A remote desktop names its foothold on every fetch (slice 9.3a, 4.4)
-        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}` : '';
+        // A relay desktop says relay=1 on every fetch (K3c, 8.3)
+        // A desktop reached from another desktop says from= on every fetch (K4)
+        const query = this.remote ? `?foothold=${encodeURIComponent(this.remote.footholdId)}`
+            : (this.relay ? '?relay=1' : (this.fromRoute ? `?from=${encodeURIComponent(this.fromRoute.fromPcId)}` : ''));
         try {
             const response = await fetch(`/break_escape/games/${gameId}/container/${encodeURIComponent(pcId)}${query}`, {
                 headers: { 'Accept': 'application/json' }
             });
+            const folderNote = pendingRelayFolderNote === pcId;
+            pendingRelayFolderNote = null;
             let refusal = null;
             if (response.status === 403) {
                 try { refusal = await response.json(); } catch (e) { /* no body */ }
+            }
+            if (response.status === 403 && refusal?.reason === 'expired') {
+                // Keyring K5: the session token ran out (at a foothold, a `from` route or the keyboard). The copy goes with no request, the screen
+                // closes, and the player reads which token it was (never a sign-in screen).
+                const label = window.pcSessions?.get?.(pcId)?.label;
+                window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = 'expired';
+                this.complete(false);
+                window.gameAlert?.(tokenExpiredMessage(label), 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                return null;
             }
             if (response.status === 403 && this.remote) {
                 // Back to the network view, never the physical sign-in screen (4.3): with
@@ -430,6 +891,40 @@ export class ContainerMinigame extends MinigameScene {
                 if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
                 this.exitReason = reason;
                 this.complete(false);
+                return null;
+            }
+            if (response.status === 403 && this.fromRoute) {
+                // Same reasons as a foothold desktop (K3b R1 m4, K3c): unreachable and not_responding
+                // keep the session and close with the route line; any other 403 means no session
+                // is held, so the copy is dropped. Never the keyboard sign-in screen. A running trip
+                // says the line itself (landed); with none the line is said here.
+                const reason = ['unreachable', 'not_responding'].includes(refusal?.reason) ? refusal.reason : 'no_session';
+                if (reason === 'no_session') window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = reason;
+                this.complete(false);
+                if (!window.networkLinks?.trip) {
+                    const host = this.networkDetail().host;
+                    const line = reason === 'unreachable' ? unreachableMessage(host)
+                        : (reason === 'not_responding' ? notRespondingMessage(host) : sessionEndedMessage(host));
+                    window.gameAlert?.(line, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                }
+                return null;
+            }
+            if (response.status === 403 && this.relay && ['off', 'not_responding'].includes(refusal?.reason)) {
+                // A powered-off PC is not an end: the relay is kept for when it comes back (R1 m1)
+                this.complete(false);
+                window.gameAlert?.(refusal.error || PC_OFF_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                return null;
+            }
+            if (response.status === 403 && this.relay) {
+                // The relay ended (its sync answer was lost, or the holder ended it first): drop
+                // the copy and close to the world, never the sign-in screen (K3c, 8.3). Connect's
+                // GET /keyring answers ended from then on.
+                const name = window.pcSessions?.get?.(pcId)?.displayName;
+                window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = 'no_session';
+                this.complete(false);
+                window.gameAlert?.(relayEndedText(name), 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
                 return null;
             }
             if (response.status === 403 && refusal?.reason === 'off') {
@@ -463,6 +958,7 @@ export class ContainerMinigame extends MinigameScene {
                 this._unregisterDesktop = window.pcSessions.registerDesktop(pcId, (message, reason) => this.closeForSessionEnd(message, reason));
             }
             window.pcSessions?.desktopOpened?.(pcId);
+            if (folderNote && this.relay) window.gameAlert?.(RELAY_FOLDER_UNAVAILABLE_TEXT, 'info', this.containerItem?.scenarioData?.name || 'PC', 2500);
             return data.contents || [];
         } catch (error) {
             console.error('Failed to load the sign-in desktop:', error);
@@ -529,6 +1025,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     cleanup() {
+        this.stopTokenLineTimer();
         if (this._unwatchPower) {
             this._unwatchPower();
             this._unwatchPower = null;
@@ -537,8 +1034,16 @@ export class ContainerMinigame extends MinigameScene {
             this._unregisterDesktop();
             this._unregisterDesktop = null;
         }
+        this.taskbar?.destroy?.();
+        this.pcMonitor?.destroy?.();
         if (typeof super.cleanup === 'function') super.cleanup();
         this.reportNetworkExit();
+    }
+
+    /** The bezel X on a share window: the player's own close of the whole PC (UI PC 2, E08). */
+    closePc() {
+        this.closeWholePc = true;
+        this.closeByPlayer();
     }
 
     /** The PC this screen works through (the desktop's own, or the session a folder came from). */
@@ -551,7 +1056,7 @@ export class ContainerMinigame extends MinigameScene {
     /**
      * A network screen says why it closed (4.3, "Getting back"): exitReason is close unless
      * the closing path set another (handover, switch, item, share, no_session, unreachable,
-     * or a session end: sign_out, link_dropped, displaced). A container opened from another
+     * or a session end: sign_out, link_dropped, token_expired, displaced). A container opened from another
      * (a mapped share, or a folder opened below a network screen: parentLockable) reopens
      * that container when closed by its Close; a folder from a remote desktop with no parent
      * recorded reopens that desktop; every other network screen hands the pair to
@@ -567,7 +1072,11 @@ export class ContainerMinigame extends MinigameScene {
             && window.MinigameFramework.currentMinigame !== this;
         if (this.parentLockable) {
             const parent = this.parentLockable;
-            if (reason === 'close') {
+            if (reason === 'close' && this.closeWholePc === true) {
+                // The bezel X: the PC closes with nothing reopened; a remote desktop's trip lands as its own close would
+                const kind = networkScreenKind(parent);
+                if (kind) links?.landed?.(kind, 'close', kind === 'desktop' ? this.networkDetail() : {});
+            } else if (reason === 'close') {
                 setTimeout(() => {
                     if (!minigameOpen() && typeof window.startContainerMinigame === 'function') {
                         window.startContainerMinigame(parent, null, false, true);
@@ -587,10 +1096,38 @@ export class ContainerMinigame extends MinigameScene {
             links?.landed?.('share', reason, {});
             return;
         }
+        // The relay desktop itself closes to the world (K3c, 8.3). Its sourcePcId falls back to
+        // its own loginPcId, so without this its Close met the folder branch below and reopened
+        // the desktop, which reopened on every close (a loop).
+        if (this.relay) return;
+        // A desktop reached from another desktop (K4): its sourcePcId is its own loginPcId too,
+        // so it must not meet the folder branch below (it would reopen itself on every close).
+        // A running trip lands as a desktop close; with none it closes to the world.
+        if (this.fromRoute) {
+            links?.landed?.('desktop', reason, this.networkDetail());
+            return;
+        }
         const session = this.sourcePcId ? window.pcSessions?.get?.(this.sourcePcId) : null;
+        if (session?.remote === true && !session.footholdId && session.fromPcId && !this.loginPcId) {
+            // A folder opened from a desktop reached from another desktop: closed, that desktop again (K4)
+            if (reason === 'close' && this.closeWholePc !== true && typeof window.openFromDesktop === 'function') {
+                const pcId = this.sourcePcId;
+                const fromPcId = session.fromPcId;
+                setTimeout(() => { if (!minigameOpen()) window.openFromDesktop(pcId, fromPcId); }, 0);
+            }
+            return;
+        }
+        if (session?.relay === true && !this.loginPcId) {
+            // A folder opened from a relay desktop: closed, the relay desktop again (K3c)
+            if (reason === 'close' && this.closeWholePc !== true && typeof window.openRelayDesktop === 'function') {
+                const pcId = this.sourcePcId;
+                setTimeout(() => { if (!minigameOpen()) window.openRelayDesktop(pcId); }, 0);
+            }
+            return;
+        }
         if (session?.remote === true) {
             // A folder opened from a remote desktop: closed, the desktop again
-            if (reason === 'close' && typeof window.openRemoteDesktop === 'function') {
+            if (reason === 'close' && this.closeWholePc !== true && typeof window.openRemoteDesktop === 'function') {
                 const pcId = this.sourcePcId;
                 setTimeout(() => { if (!minigameOpen()) window.openRemoteDesktop(pcId, session.footholdId); }, 0);
                 return;
@@ -616,14 +1153,22 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     async init() {
+        // In the PC monitor the X closes it: no Close button beside it (UX slice 2c)
+        if (this.pcView) this.params = { ...this.params, showCancel: false };
         // Call parent init first
         super.init();
+        if (this.pcView) this.mountMonitor();
 
         // A container opening now means no reader is about to hand back to a network screen
         // recorded earlier (a locked folder that opened after its PIN leaves one behind), so
         // a later text file read from the world must not reopen it (slice 9.3a, 4.3)
+        // The same for a sign-in desktop's return (Ian's archive password): once the archive
+        // has opened, closing it, or the Notes later, must not bring the desktop back (UX
+        // slice 2a R3 m5)
         const pending = window.pendingContainerReturn;
-        if (pending?.containerItem && isNetworkScreenContainer(pending.containerItem)) window.pendingContainerReturn = null;
+        if (pending?.containerItem && (isNetworkScreenContainer(pending.containerItem) || pending.loginDesktopReturn === true)) {
+            window.pendingContainerReturn = null;
+        }
         disarmNetworkReturn();
 
         // A folder opened from a sign-in desktop shows the session's files too, so it closes
@@ -636,7 +1181,7 @@ export class ContainerMinigame extends MinigameScene {
         this.watchPcPower();
 
         // Play drawer/container opening sound (not for PC/desktop containers)
-        if (this.mode !== 'pc' && !this.desktopMode) {
+        if (this.mode !== 'pc' && !this.desktopMode && !this.shareFolder) {
             try {
                 if (window.game && window.game.sound) {
                     const sound = window.game.sound.get('drawer_open') || window.game.sound.add('drawer_open');
@@ -656,13 +1201,21 @@ export class ContainerMinigame extends MinigameScene {
         }
 
         // Add notebook button to minigame controls if postit note exists (before cancel button)
-        if (this.controlsElement && this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
+        // In the PC monitor the note's button follows the note onto every view (R4 m2)
+        const hasNote = this.pcMonitor ? !!this.monitorPostit()
+            : !!(this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit);
+        const controls = hasNote ? this.ensureControlsRow() : null;
+        if (controls) {
             const notebookBtn = document.createElement('button');
             notebookBtn.className = 'minigame-button';
             notebookBtn.id = 'minigame-notebook-postit';
-            notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            if (this.pcMonitor) {
+                notebookBtn.innerHTML = pcPostitButtonHtml();
+            } else {
+                notebookBtn.innerHTML = '<img src="/break_escape/assets/icons/notes.png" alt="Notepad" class="icon-small notepad-btn-icon"> Add to Notepad';
+            }
             // Insert before the cancel button (first child in controls)
-            this.controlsElement.insertBefore(notebookBtn, this.controlsElement.firstChild);
+            controls.insertBefore(notebookBtn, controls.firstChild);
         }
 
         // Show loading state
@@ -696,6 +1249,8 @@ export class ContainerMinigame extends MinigameScene {
             this.createNPCUI();
         } else if (this.desktopMode) {
             this.createDesktopUI();
+        } else if (this.shareFolder) {
+            this.createShareFolderUI();
         } else {
             this.createStandardUI();
         }
@@ -753,24 +1308,94 @@ export class ContainerMinigame extends MinigameScene {
         `;
     }
     
+    /**
+     * A share's folder window (UX feedback slice 2a, main3-08): the header with the share's
+     * icon and short name, then a window whose title bar carries the UNC path, over the file
+     * list (the standard contents grid, so taking, reading and Copy / Move work as before).
+     */
+    createShareFolderUI() {
+        const data = this.containerItem.scenarioData;
+        const { name, unc } = shareLabelParts(data.name);
+        const host = unc ? unc.replace(/^\\\\/, '').split('\\')[0] : '';
+        // The mapped stub has no observations; it gets the same line as a share opened from
+        // the network view (slice 2a review R1 n3)
+        const observations = this.headerObservations() || (host ? `A file share on ${host}.` : '');
+        if (this.pcMonitor) {
+            // On the monitor's screen (UX slice 2c): the folder window over the wallpaper, the
+            // description in its status bar, the header picture dropped
+            this.gameContainer.innerHTML = `
+            <div class="share-folder-layout pc-share">
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
+                        <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                        <button type="button" class="pc-window-close" id="pc-share-close" aria-label="Close folder" title="Close folder"></button>
+                    </div>
+                    <div class="container-contents-grid share-folder-files pixel-scroll" id="container-contents-grid">
+                        <!-- Files will be populated here -->
+                    </div>
+                    <div class="share-folder-status pixel-scroll">${escapeHtml(displayDashes(observations))}</div>
+                </div>
+            </div>
+            </div>
+        `;
+            this.mountTaskbar(this.gameContainer.querySelector('.share-folder-layout.pc-share'), { windowTitle: name });
+            // The window's X closes the folder, back to where it came from; the bezel X closes the PC
+            bindPcWindowCloses(this);
+            return;
+        }
+        this.gameContainer.innerHTML = `
+            <div class="share-folder-layout">
+            <div class="container-image-section">
+                ${this.containerImageHtml('share-header-icon')}
+                <div class="container-info">
+                    <h4>${escapeHtml(displayDashes(name))}</h4>
+                    <p>${escapeHtml(displayDashes(observations))}</p>
+                </div>
+            </div>
+            <div class="container-minigame share-folder">
+                <div class="share-folder-window">
+                    <div class="desktop-window-titlebar share-folder-titlebar">
+                        <img class="share-folder-icon" src="${escapeHtml(data.iconImage || SHARE_ICON)}" alt="">
+                        <span class="share-folder-path">${escapeHtml(unc || name)}</span>
+                    </div>
+                    <div class="container-contents-grid share-folder-files" id="container-contents-grid">
+                        <!-- Files will be populated here -->
+                    </div>
+                </div>
+            </div>
+            </div>
+        `;
+        // The folder icon at exactly x2 (26x18 drawn 52x36), centred in the 80px header box
+        fitWholeScale(this.gameContainer.querySelector('.share-header-icon'), 80, { maxScale: 2, pad: true });
+    }
+
     /** The signed-in account with Switch user and Sign out, for a sign-in desktop's header. */
     accountBarHtml() {
         const session = this.loginSession();
         if (!session) return '';
         const name = session.displayName || session.username;
+        if (this.relay || session.relay === true) return relayAccountBarHtml(session);
         const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
         const remoteLine = this.remote
             ? `
-                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>` : '';
+                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>`
+            : (this.fromRoute ? `
+                    <div class="desktop-remote-line">${escapeHtml(displayDashes(this.fromSessionText()))}</div>` : '');
         const claim = claimLineText(session);
         const claimLine = claim ? `
                     <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
         const who = session.via === 'claim'
-            ? `Using <strong>${escapeHtml(name)}</strong>'s session (${escapeHtml(session.username)})`
-            : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
+            ? `Using ${escapeHtml(name)}'s session (${escapeHtml(session.username)})`
+            : `Signed in as ${escapeHtml(name)} (${escapeHtml(session.username)})`;
+        // A keyring credential session adds how it signed in (K3a 8.1)
+        const credLine = credentialSessionLine(session);
+        const whoLines = credLine
+            ? `${who}<span class="desktop-account-credential">${credentialLineHtml(session)}</span>` : who;
         return `${remoteLine}${claimLine}
                     <div class="desktop-account-bar">
-                        <span class="desktop-account-name">${who}</span>
+                        <span class="desktop-account-name">${whoLines}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-switch-user">Switch user</button>
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-sign-out">Sign out</button>
@@ -779,6 +1404,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     createDesktopUI() {
+        if (this.pcMonitor) { this.createMonitorDesktopUI(); return; }
         this.gameContainer.innerHTML = `
             <div class="container-image-section">
                 ${this.containerImageHtml()}
@@ -805,8 +1431,9 @@ export class ContainerMinigame extends MinigameScene {
                 </div>
             </div>
         `;
+        titleCredentialLabels(this.gameContainer);
 
-        if (this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
+        if (!this.pcMonitor && this.containerItem.scenarioData.postitNote && this.containerItem.scenarioData.showPostit) {
             const postit = document.createElement('div');
             postit.className = 'postit-note';
             postit.innerHTML = escapeHtmlKeepWords(displayDashes(this.containerItem.scenarioData.postitNote));
@@ -817,6 +1444,196 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
+    /**
+     * The desktop on the monitor's screen (UX slices 2c and 6): a top strip only for a claimed
+     * or remote session's notice, the icons on the wallpaper, and
+     * the taskbar with Start, the account and the computer name (utils/pc-taskbar.js). The PC's
+     * name is on the bezel's top strip and the post-it on the frame.
+     */
+    createMonitorDesktopUI() {
+        const notices = this.sessionNoticesHtml();
+        this.gameContainer.innerHTML = `
+            <div class="container-minigame desktop-mode pc-desktop">
+                ${notices ? `<div class="pc-desktop-topbar">${notices}
+                </div>` : ''}
+                <div class="desktop-background pixel-scroll">
+                    <div class="desktop-icons" id="desktop-icons">
+                        <!-- Desktop icons will be populated here -->
+                    </div>
+                </div>
+                <div class="desktop-more" hidden aria-hidden="true"><span class="desktop-more-arrow"></span><span class="desktop-more-text">${DESKTOP_MORE_BELOW_TEXT}</span></div>
+            </div>
+        `;
+        this.mountTaskbar(this.gameContainer.querySelector('.pc-desktop'));
+        this.watchDesktopScroll();
+    }
+
+    /** A sign-in desktop's remote and claim lines (the account itself is on the taskbar). */
+    sessionNoticesHtml() {
+        const session = this.loginSession();
+        if (!session) return '';
+        // A relay desktop: the header and whose session it is (K3c, 8.3); no link line
+        if (this.relay || session.relay === true) {
+            return `
+                    <div class="desktop-remote-line">${escapeHtml(RELAY_HEADER_TEXT)}</div>
+                    <div class="desktop-claim-line">${escapeHtml(displayDashes(relayAccountText(session.displayName || session.username, session.username)))}</div>`;
+        }
+        const linkName = this.remote ? (window.networkLinks?.get?.(this.remote.footholdId)?.name || 'your link') : null;
+        const remoteLine = this.remote ? `
+                    <div class="desktop-remote-line">Remote session through ${escapeHtml(displayDashes(linkName))}</div>`
+            : (this.fromRoute ? `
+                    <div class="desktop-remote-line">${escapeHtml(displayDashes(this.fromSessionText()))}</div>` : '');
+        const claim = claimLineText(session);
+        const claimLine = claim ? `
+                    <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
+        // A token session's minutes left sit in the top strip, where a player working in the
+        // desktop sees them without opening Start (K5). refreshTokenLines rewrites it.
+        const tokenText = session.kind === 'token' ? credentialSessionLine(session) : null;
+        const tokenLow = typeof session.tokenSecondsLeft === 'number' && session.tokenSecondsLeft < 60;
+        const tokenLine = tokenText ? `
+                    <div class="desktop-claim-line desktop-token-line${tokenLow ? ' desktop-token-line-low' : ''}">${escapeHtml(displayDashes(tokenText))}</div>` : '';
+        return `${remoteLine}${claimLine}${tokenLine}`;
+    }
+
+    /** "Remote session from {fromHost}" for a desktop reached from another desktop (K4). */
+    fromSessionText() {
+        const s = window.pcSessions?.get?.(this.loginPcId);
+        const host = s?.fromHost || this.fromRoute?.fromHost || this.fromRoute?.fromPcId || 'another PC';
+        return `Remote session from ${host}`;
+    }
+
+    /** The desktop lockable this view belongs to: itself, the share's parent, or the kept one. */
+    desktopLockable() {
+        if (this.desktopMode) return this.containerItem;
+        if (this.parentLockable) return this.parentLockable;
+        return rememberedDesktop(this.monitorPcId())?.containerItem || null;
+    }
+
+    /**
+     * The taskbar and start panel along the bottom of the screen (UX slice 6) for a desktop or
+     * a share window opened from one. A share opened from the network view has no PC, so none.
+     */
+    mountTaskbar(host, { windowTitle = '' } = {}) {
+        if (!this.pcMonitor || !host || this.mode === 'npc') return;
+        const pcId = this.monitorPcId();
+        if (!pcId) return;
+        const desktop = this.desktopLockable();
+        const pcData = desktop?.scenarioData || findPcData(pcId);
+        const session = window.pcSessions?.get?.(pcId) || null;
+        const relay = !!this.relay || desktop?.scenarioData?.remote?.relay === true || session?.relay === true;
+        const remote = relay ? null : (this.remote || this.fromRoute || desktop?.scenarioData?.remote || (session?.remote === true ? { footholdId: session.footholdId } : null));
+        const linkName = remote?.footholdId ? (window.networkLinks?.get?.(remote.footholdId)?.name || null) : null;
+        // K4: a desktop reached from another desktop names that desktop on the start panel
+        const fromHost = !remote?.footholdId && (remote?.fromPcId || session?.fromPcId)
+            ? (session?.fromHost || remote?.fromHost || remote?.fromPcId || session?.fromPcId) : null;
+        let places;
+        if (this.desktopMode) {
+            places = (this.contents || []).filter(i => i?.type === 'network_share' && i.id);
+            rememberDesktop(pcId, { containerItem: this.containerItem, places });
+        } else {
+            places = rememberedDesktop(pcId)?.places || [];
+        }
+        const model = pcTaskbarModel({ pcData, session, remote: !!remote, relay, linkName, fromHost, places, lockSupported: lockSupported(), canLock: window.pcSessions?.canLock?.(pcId), canSwitch: !!desktop });
+        this.taskbarModel = model;
+        this.taskbar = mountPcTaskbar(host, model, {
+            windowTitle,
+            takeable: this.isTakeable && this.desktopMode,
+            shareIcon: SHARE_ICON,
+            onPlace: (p) => this.taskbarPlace(p),
+            onAction: (a) => this.taskbarAction(a, pcId)
+        });
+        this.startTokenLineTimer(pcId);
+    }
+
+    /**
+     * Keyring K5: a session token's bar line ("with a session token, about {n} min left") steps
+     * down each minute, read from the client's own timer in pc-sessions.js (no request). Runs
+     * only for a token session; cleanup() stops it.
+     */
+    startTokenLineTimer(pcId) {
+        this.stopTokenLineTimer();
+        if (window.pcSessions?.get?.(pcId)?.kind !== 'token') return;
+        this._tokenLineTimer = setInterval(() => {
+            const session = window.pcSessions?.get?.(pcId);
+            if (!session || session.kind !== 'token') { this.stopTokenLineTimer(); return; }
+            refreshTokenLines(this.gameContainer, session);
+        }, TOKEN_LINE_REFRESH_MS);
+    }
+
+    stopTokenLineTimer() {
+        if (this._tokenLineTimer) clearInterval(this._tokenLineTimer);
+        this._tokenLineTimer = null;
+    }
+
+    /** Start panel Places: the desktop, or a mapped share (opened as from the desktop). */
+    taskbarPlace(place) {
+        if (place?.kind === 'share') { this.openMappedShare(place.item, this.desktopLockable()); return; }
+        if (place?.kind !== 'desktop' || this.desktopMode) return;
+        // A share window's own Close goes back to the desktop it came from
+        if (this.parentLockable) { this.closeByPlayer(); return; }
+        const desktop = this.desktopLockable();
+        this.exitReason = 'share';
+        this.complete(false);
+        if (desktop && typeof window.startContainerMinigame === 'function') window.startContainerMinigame(desktop, null, false, true);
+    }
+
+    /** Start panel Lock, Switch user and Sign out (through pc-sessions.js). */
+    taskbarAction(action, pcId) {
+        if (action === 'signout') { window.pcSessions?.signOut?.(pcId); return; }
+        // A relay's Disconnect is POST /logout, as Sign out (K3c, 8.3)
+        if (action === 'disconnect') { window.pcSessions?.signOut?.(pcId, { message: RELAY_DISCONNECTED_TEXT }); return; }
+        // A refusal shows inside the monitor; on success pc-sessions.js closes this view
+        if (action === 'lock') { lockPcSession(pcId, { onRefuse: (msg) => this.taskbar?.notice?.(displayDashes(msg)) }); return; }
+        if (action === 'switch') this.switchUser();
+    }
+
+    /**
+     * Switch user: the sign-in screen replaces this view; the session stays until another
+     * account signs in, and leaving the screen comes back to the desktop.
+     */
+    switchUser() {
+        const desktop = this.desktopLockable();
+        if (!desktop) return;
+        const dr = desktop.scenarioData?.remote;
+        // K4: a desktop reached from another desktop switches on the same from screen
+        const remote = dr?.footholdId ? dr : (dr?.fromPcId ? { fromPcId: dr.fromPcId, fromHost: dr.fromHost || null } : null);
+        this.exitReason = 'switch';
+        // A remote desktop's Switch user is the remote screen: no tiles, no sticky note.
+        // It starts at once and replaces this view; if it did not, this view is still open
+        // and its own Close must land as a close (review R1 minor 1)
+        window.openLoginSignIn?.(desktop, remote ? { switching: true, remote } : { switching: true });
+        if (remote && window.MinigameFramework?.currentMinigame === this && !this._ending) this.exitReason = 'close';
+    }
+
+    /**
+     * The icon area scrolls inside the screen when the icons run past its bottom (R2 M2): the
+     * pixel scrollbar, and "More below" under it while there is more to see, as in the
+     * network view. Re-checked on scroll, on a resize and once the fonts are in.
+     */
+    watchDesktopScroll() {
+        const area = this.gameContainer?.querySelector?.('.pc-desktop > .desktop-background');
+        const more = this.gameContainer?.querySelector?.('.pc-desktop > .desktop-more');
+        if (!area || !more) return;
+        this.desktopScrollArea = area;
+        this.desktopMoreElement = more;
+        this.addEventListener(area, 'scroll', () => this.updateDesktopScrollCue());
+        if (typeof window !== 'undefined') this.addEventListener(window, 'resize', () => this.updateDesktopScrollCue());
+        if (typeof document !== 'undefined') document.fonts?.ready?.then?.(() => this.updateDesktopScrollCue());
+    }
+
+    /** Show "More below" while the desktop's icons run past the icon area's bottom edge. */
+    updateDesktopScrollCue() {
+        const area = this.desktopScrollArea;
+        const more = this.desktopMoreElement;
+        if (!area || !more || more.isConnected === false) return false;
+        const below = (area.scrollHeight - area.clientHeight - area.scrollTop) > 2;
+        const was = more.hidden;
+        more.hidden = !below;
+        // The centred words at an even width, so they land on a whole pixel (as a share's names)
+        if (below && was) evenShareLabels(more, '.desktop-more-text');
+        return below;
+    }
+
     populateContents() {
         if (this.desktopMode) {
             this.populateDesktopIcons();
@@ -842,9 +1659,10 @@ export class ContainerMinigame extends MinigameScene {
             itemImg.className = 'container-content-item';
             // An item may override its icon with an explicit path (e.g. a .zip archive on a
             // desktop that has no object sprite of its own).
-            itemImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
+            itemImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
             itemImg.alt = item.name;
-            itemImg.title = displayDashes(item.name);
+            // No tooltip that repeats the name printed under the item (slice 2a review R1 m1);
+            // a share's UNC path, which the label leaves out, is its title below
             
             // Add item data
             itemImg.scenarioData = item;
@@ -854,9 +1672,11 @@ export class ContainerMinigame extends MinigameScene {
             // Add click handler for all items (both takeable and interactive)
             itemImg.style.cursor = 'pointer';
             
-            if (item.type === 'network_share') {
+            const shareParts = item.type === 'network_share' ? shareLabelParts(item.name) : null;
+            if (shareParts) {
                 // A mapped share (4.5): its own folder, never the generic flow
                 if (!item.iconImage) itemImg.src = SHARE_ICON;
+                if (shareParts.unc) itemImg.title = shareParts.unc;
                 itemImg.addEventListener('click', () => this.openMappedShare(item));
             } else if (this.offersTransfer(item)) {
                 // A takeable file from a sign-in desktop offers Open / Copy / Move first
@@ -869,22 +1689,21 @@ export class ContainerMinigame extends MinigameScene {
                 itemImg.addEventListener('click', () => this.takeItem(item, itemImg));
             }
             
-            // Create tooltip
-            const tooltip = document.createElement('div');
-            tooltip.className = 'container-content-tooltip';
-            tooltip.textContent = displayDashes(item.name);
-            
             // A name under every item, so the player can read what is inside without
             // hovering each one (UX pass, 2026-11-12)
             const label = document.createElement('div');
             label.className = 'container-content-label';
-            label.textContent = displayDashes(item.name);
+            label.textContent = displayDashes(shareParts ? shareParts.name : item.name);
+
+            // In a share's folder window a file is drawn at a whole-number scale that fills
+            // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)
+            if (this.shareFolder) fitWholeScale(itemImg, 64);
 
             slot.appendChild(itemImg);
-            slot.appendChild(tooltip);
             slot.appendChild(label);
             contentsGrid.appendChild(slot);
         });
+        if (this.shareFolder) evenShareLabels(contentsGrid);
     }
     
     populateDesktopIcons() {
@@ -902,11 +1721,12 @@ export class ContainerMinigame extends MinigameScene {
             
             const iconImg = document.createElement('img');
             iconImg.className = 'desktop-icon-image';
-            iconImg.src = item.iconImage || `/break_escape/assets/objects/${item.type}.png`;
-            iconImg.alt = item.name;
+            iconImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
+            iconImg.alt = ''; // the icon's aria-label carries the name once
             
             const iconLabel = document.createElement('div');
             iconLabel.className = 'desktop-icon-label';
+            iconLabel.dir = 'auto';
             iconLabel.textContent = displayDashes(item.name);
             
             // Add item data
@@ -921,6 +1741,11 @@ export class ContainerMinigame extends MinigameScene {
             // handleObjectInteraction or POST /unlock
             if (item.type === 'network_share') {
                 if (!item.iconImage) iconImg.src = SHARE_ICON;
+                // The share's name under the icon; its UNC path in the tooltip, as the full
+                // path wrapped into a block of tiny text (UX feedback slice 2a, main3-05)
+                const { name, unc } = shareLabelParts(item.name);
+                iconLabel.textContent = displayDashes(name);
+                if (unc) icon.title = unc;
                 icon.dataset.resourceId = item.id || '';
                 icon.addEventListener('click', () => this.openMappedShare(item));
             } else if (this.offersTransfer(item)) {
@@ -934,12 +1759,98 @@ export class ContainerMinigame extends MinigameScene {
                 icon.addEventListener('click', () => this.takeItem(item, iconImg));
             }
             
+            // A whole-number scale in the icon's 56px box (48 plus its 4px padding): a 16px
+            // glyph at x3 as before, the 26x18 share folder at x2 (it was 1.85x; UX slice 2a
+            // R2 m2). The padding takes up what the picture leaves, so the box keeps its size.
+            fitWholeScale(iconImg, 56, { pad: true, onlyIfFits: true });
+
+            // Keyboard: the icon is a button named by the whole file name; Enter or Space opens
+            // it as a click does, and a clipped name shows in full while it is hovered or focused
+            icon.tabIndex = 0;
+            icon.setAttribute('role', 'button');
+            icon.setAttribute('aria-label', iconLabel.textContent);
+            icon.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.repeat) return;
+                // A key opened it: the Copy / Move dialog takes the focus and hands it back
+                this.openedByKey = true;
+                try { icon.click(); } finally { this.openedByKey = false; }
+            });
+            // Hover and keyboard focus both open a clipped name; it closes only when neither holds
+            const matches = (q) => { try { return icon.matches(q); } catch (_) { return false; } };
+            const wanted = () => matches(':hover') || matches(':focus-visible')
+                || (icon._keyReturn === true && document.activeElement === icon);
+            icon.labelWanted = wanted;
+            const open = () => {
+                if (!expandIconLabel(iconLabel)) return;
+                keepLabelInView(iconLabel, icon.closest?.('.desktop-background'));
+                this.updateDesktopScrollCue();
+            };
+            icon.openLabel = open;
+            const close = () => {
+                if (wanted()) return;
+                if (collapseIconLabel(iconLabel)) this.updateDesktopScrollCue();
+            };
+            // A mouse only: a tap fires pointerenter too, and its :hover sticks, so a touch
+            // would leave the label open after the reader closed
+            icon.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') open(); });
+            icon.addEventListener('pointerleave', close);
+            icon.addEventListener('focus', () => {
+                let visible = true;
+                try { visible = icon.matches(':focus-visible'); } catch (_) { /* older engines */ }
+                if (visible) open();
+            });
+            icon.addEventListener('blur', () => { icon._keyReturn = false; close(); });
+            icon.itemKey = iconKeyOf(item);
+
             icon.appendChild(iconImg);
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
         });
+        // On the monitor a label is a backed box as wide as its text (R2 m3): an even width,
+        // so centring it under the icon lands on a whole pixel
+        fitIconLabels(desktopIcons);
+        if (this.pcMonitor) evenShareLabels(desktopIcons, '.desktop-icon-label');
+        // After the labels are fitted, so a focus-visible icon opens its clipped label
+        this.focusReturnedIcon(desktopIcons);
+        this.updateDesktopScrollCue();
+        if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => this.updateDesktopScrollCue());
+        }
     }
     
+    /**
+     * After the reader a file was opened in closes: focus that file's icon again if it is
+     * still here. Only when a key opened the file does the icon show its frame and its full
+     * name; after a mouse open the focus is not taken at all, because Chrome would show the
+     * keyboard frame after the Esc that closed the reader. Never from a text field.
+     */
+    focusReturnedIcon(grid) {
+        const mark = this.params?.focusReturn;
+        if (mark) this.params = { ...this.params, focusReturn: null }; // once
+        if (!mark || mark.byKey !== true) return;
+        const icon = Array.from(grid.children).find(el => el.itemKey === mark.key);
+        if (!icon) return;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (active && !grid.contains(active)
+            && active.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+        icon._keyReturn = true;
+        icon.focus?.({ preventScroll: true });
+        icon.openLabel?.();
+    }
+
+    /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
+    focusAfterIconRemoved(slot) {
+        if (!slot?.classList?.contains('desktop-icon')) return;
+        const active = document.activeElement;
+        if (active && active !== document.body && !slot.contains(active) && active !== slot) return;
+        const next = slot.nextElementSibling || slot.previousElementSibling;
+        const target = next?.classList?.contains('desktop-icon') ? next : slot.closest?.('.desktop-background');
+        return target;
+    }
+
     setupEventListeners() {
         // Take container button
         const takeContainerBtn = document.getElementById('take-container-btn');
@@ -961,21 +1872,14 @@ export class ContainerMinigame extends MinigameScene {
 
         // A sign-in desktop's Switch user and Sign out (through pc-sessions.js)
         const switchBtn = this.gameContainer?.querySelector('#desktop-switch-user');
-        if (switchBtn) {
-            // The sign-in screen replaces this desktop; the session stays until another
-            // account signs in, and leaving the screen comes back here.
-            this.addEventListener(switchBtn, 'click', () => {
-                this.exitReason = 'switch';
-                // A remote desktop's Switch user is the remote screen: no tiles, no sticky note.
-                // It starts at once and replaces this desktop; if it did not, this desktop is
-                // still open and its own Close must land as a close (review R1 minor 1)
-                window.openLoginSignIn?.(this.containerItem, this.remote ? { switching: true, remote: this.remote } : { switching: true });
-                if (this.remote && window.MinigameFramework?.currentMinigame === this && !this._ending) this.exitReason = 'close';
-            });
-        }
+        if (switchBtn) this.addEventListener(switchBtn, 'click', () => this.switchUser());
         const signOutBtn = this.gameContainer?.querySelector('#desktop-sign-out');
         if (signOutBtn) {
             this.addEventListener(signOutBtn, 'click', () => window.pcSessions?.signOut?.(this.loginPcId));
+        }
+        const disconnectBtn = this.gameContainer?.querySelector('#desktop-disconnect');
+        if (disconnectBtn) {
+            this.addEventListener(disconnectBtn, 'click', () => window.pcSessions?.signOut?.(this.loginPcId, { message: RELAY_DISCONNECTED_TEXT }));
         }
     }
 
@@ -988,18 +1892,18 @@ export class ContainerMinigame extends MinigameScene {
      * Open a mapped share's stub (4.5): a folder whose contents come from
      * GET /container/<resourceId>. It keeps this desktop's lockable and reopens it on Close.
      */
-    openMappedShare(item) {
+    openMappedShare(item, parent = this.containerItem) {
         if (!item?.id) return;
         const share = {
             scenarioData: { ...item, locked: false },
             name: 'network_share',
             objectId: `share_${item.id}`,
             sourcePcId: this.sourcePcId || undefined,
-            parentLockable: this.containerItem
+            parentLockable: parent || this.containerItem
         };
         this.exitReason = 'share';
         this.complete(false);
-        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, true);
+        if (typeof window.startContainerMinigame === 'function') window.startContainerMinigame(share, null, false, false);
     }
 
     /**
@@ -1011,6 +1915,16 @@ export class ContainerMinigame extends MinigameScene {
         const extras = this.sourceExtras();
         if (this.mode !== 'npc' && isNetworkScreenContainer(this.containerItem)) extras.parentLockable = this.containerItem;
         return extras;
+    }
+
+    /**
+     * A file read from this desktop or share opens in the same PC monitor frame (UX slice 2c
+     * R3 M2): the reader takes the frame's name and the PC whose kept post-it height sizes it.
+     */
+    pcScreenExtras() {
+        if (!this.pcMonitor) return {};
+        const postitNote = this.monitorPostit();
+        return { pcScreen: { name: this.monitorName(), pcId: this.monitorPcId(), ...(postitNote ? { postitNote } : {}) } };
     }
 
     /** What a stand-in for an item taken or read from here carries: the PC or the share it came from. */
@@ -1029,10 +1943,11 @@ export class ContainerMinigame extends MinigameScene {
     showTransferDialog(item, element) {
         this.closeTransferDialog();
         const held = this.isHeld(item);
-        const choices = transferChoices(item, held);
-        const host = this.gameContainer.querySelector('.desktop-background') || this.gameContainer;
+        const choices = transferChoices(item, held, { connect: this.offersConnect(item) });
+        const host = this.gameContainer.querySelector('.desktop-background, .share-folder-window') || this.gameContainer;
         const dialog = document.createElement('div');
-        dialog.className = 'desktop-transfer-dialog';
+        // In the monitor it scrolls inside the screen if it must, never cut off (R3 live check)
+        dialog.className = this.pcMonitor ? 'desktop-transfer-dialog pixel-scroll' : 'desktop-transfer-dialog';
         dialog.setAttribute('role', 'dialog');
         dialog.innerHTML = `
             <div class="desktop-window-titlebar">
@@ -1041,36 +1956,118 @@ export class ContainerMinigame extends MinigameScene {
             <div class="desktop-window-body">
                 <p>${held ? 'You already have this file.' : 'What do you want to do with this file?'}</p>
                 <div class="desktop-window-buttons">
-                    ${choices.map(c => `<button type="button" class="minigame-button desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
+                    ${choices.map(c => `<button type="button" class="${this.pcMonitor ? 'pc-os-btn' : 'minigame-button'} desktop-transfer-btn" data-choice="${c}">${TRANSFER_LABELS[c]}</button>`).join('')}
                 </div>
             </div>`;
         host.appendChild(dialog);
-        this.transferDialog = { item, element, choices, el: dialog };
+        this.transferDialog = { item, element, choices, el: dialog, opener: element?.parentElement || null };
+        if (this.pcMonitor) {
+            // Centred on whole pixels on both axes (R4 m3): margin: auto split an odd spare
+            // width or height into half pixels. Again when the pixel font arrives and on resize.
+            this.centreTransferDialog();
+            if (typeof document !== 'undefined') document.fonts?.ready?.then?.(() => this.centreTransferDialog());
+            if (!this._transferDialogResize && typeof window !== 'undefined') {
+                this._transferDialogResize = true;
+                this.addEventListener(window, 'resize', () => this.centreTransferDialog());
+            }
+        }
         dialog.querySelectorAll('[data-choice]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
                 e.stopPropagation();
-                this.chooseTransfer(btn.dataset.choice);
+                this.chooseTransfer(btn.dataset.choice, e.detail === 0);
             });
         });
+        // Opened with Enter or Space on an icon: the first button takes the focus
+        if (this.openedByKey) dialog.querySelector('.desktop-transfer-btn')?.focus?.({ preventScroll: true });
+    }
+
+    /** Put the open Copy / Move dialog in the middle of its window, on whole pixels (R4 m3). */
+    centreTransferDialog() {
+        const dialog = this.transferDialog?.el;
+        if (dialog?.isConnected) centreOnWholePixels(dialog, dialog.parentElement);
     }
 
     closeTransferDialog() {
-        if (this.transferDialog?.el?.parentElement) this.transferDialog.el.parentElement.removeChild(this.transferDialog.el);
+        const open = this.transferDialog;
+        // Focus that was inside the dialog goes back to the icon that opened it
+        const hadFocus = !!open?.el && typeof document !== 'undefined' && open.el.contains(document.activeElement);
+        if (open?.el?.parentElement) open.el.parentElement.removeChild(open.el);
         this.transferDialog = null;
+        if (hadFocus && open.opener?.isConnected) open.opener.focus?.({ preventScroll: true });
     }
 
-    chooseTransfer(choice) {
+    chooseTransfer(choice, byKey = false) {
         const dialog = this.transferDialog;
         if (!dialog || !dialog.choices.includes(choice)) return;
         const { item, element } = dialog;
         this.closeTransferDialog();
         if (choice === 'cancel') return;
-        if (choice === 'open') { this.openFileInPlace(item); return; }
+        if (choice === 'open') { this.openFileInPlace(item, byKey); return; }
+        if (choice === 'connect') { this.connectFromDesktop(item, element); return; }
         this.takeItem(item, element, choice);
     }
 
+    /**
+     * Whether a file on this desktop offers Connect (keyring K4, plan 9): a saved connection
+     * (the server's display-only `connect: true`, or a held file the keyring already lists),
+     * on a sign-in desktop or a folder under one, never on a relay desktop or a share.
+     */
+    offersConnect(item) {
+        if (this.mode === 'npc' || !this.sourcePcId || this.relay || !item?.id) return false;
+        if (window.pcSessions?.isRelay?.(this.sourcePcId)) return false;
+        if (typeof window.keyring?.connect !== 'function') return false;
+        if (item.connect === true) return true;
+        try { return !!window.keyring.connectEntryFor?.(item.id); } catch (e) { return false; }
+    }
+
+    /**
+     * Connect from a desktop (K4): take the file first if it is not held (a copy when allowed,
+     * else a move), then keyring Connect from this desktop's PC. A foothold desktop hands over
+     * (its trip stays alive); when the screens Connect opened have closed, this desktop reopens.
+     */
+    async connectFromDesktop(item, element) {
+        if (!this.isHeld(item)) {
+            const transfer = item.transfer === 'move' ? 'move' : 'copy';
+            const took = await this.takeItem(item, element, transfer);
+            if (!took) return { outcome: 'not_taken' };
+        }
+        const from = this.sourcePcId;
+        const desktop = this.desktopLockable();
+        // This desktop knows its own host: the sign-in header names it, never the raw PC id
+        const fromHost = desktop?.scenarioData?.host || window.pcSessions?.get?.(from)?.host || null;
+        const marked = this.remote && !!from && !!window.networkLinks?.trip;
+        const returnTo = () => {
+            if (window.MinigameFramework?.currentMinigame) return;
+            // With the Connect-back mark set this only acts while the trip still holds it for this
+            // desktop: a landing that spent it (or a trip that ended) already did the reopening,
+            // so a late call from the screen watcher does nothing (K4 R2 M1)
+            if (marked) {
+                const nl = window.networkLinks;
+                if (!nl?.trip || nl.trip.connectBack !== from) return;
+                nl.setConnectBack(null);
+            }
+            if (desktop && typeof window.startContainerMinigame === 'function') window.startContainerMinigame(desktop, null, false, true);
+        };
+        this.exitReason = 'handover';
+        // A foothold desktop on a running trip: the target's X comes back here, not to the view
+        if (marked) window.networkLinks.setConnectBack(from);
+        let r;
+        try {
+            r = await window.keyring.connect({ scenarioData: { id: item.id, name: item.name } }, { from, fromHost, returnTo });
+        } finally {
+            // Connect only toasted and this desktop is still up: a later close is a plain close
+            if (window.MinigameFramework?.currentMinigame === this && !this._ending) {
+                this.exitReason = 'close';
+                if (marked) window.networkLinks?.setConnectBack?.(null);
+            }
+        }
+        return r;
+    }
+
     /** Open a file without taking it: the viewer (or notes) for something with text. */
-    openFileInPlace(item) {
+    openFileInPlace(item, byKey = false) {
+        // Keyring K3a: an "In file" tag waits until its file is opened in this page (no import)
+        try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
         const text = resolveObjectField(item, 'text', null);
         if (!text) {
             const obs = resolveObjectField(item, 'observations', '') || 'Nothing to open.';
@@ -1084,13 +2081,14 @@ export class ContainerMinigame extends MinigameScene {
         // note read in the world (review R2 n3)
         const opensReader = item.type === 'text_file' || (/^notes\d*$/.test(item.type) && !!item.readable);
         if (opensReader) {
-            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
+            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null, focusReturn: iconFocusMark(item, byKey) };
         }
         this.exitReason = 'item';
         this.complete(false);
         const viewItem = { ...item, takeable: false };
         if (window.handleObjectInteraction) {
-            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}` });
+            // In the PC monitor the reader opens in the same frame (R3 M2 live check)
+            window.handleObjectInteraction({ scenarioData: viewItem, name: item.type, objectId: `temp_${Date.now()}`, ...this.pcScreenExtras() });
         }
     }
     
@@ -1118,6 +2116,12 @@ export class ContainerMinigame extends MinigameScene {
             return true;
         }
         
+        // An unlocked folder on a desktop opens like a locked one after its unlock: the main
+        // handler loads its contents (server-side, by route). Without this its icon was inert.
+        if (item.type === 'folder' && ((Array.isArray(item.contents) && item.contents.length > 0) || item.hasContents)) {
+            return true;
+        }
+
         // Workstation (crypto workstation)
         if (item.type === 'workstation') {
             return true;
@@ -1138,6 +2142,8 @@ export class ContainerMinigame extends MinigameScene {
     
     handleInteractiveItem(item, itemElement) {
         console.log('Handling interactive item from container:', item);
+        // Keyring K3a: an "In file" tag waits until its file is opened in this page (no import)
+        try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
 
         // Apply onRead.setVariable (or legacy onPickup.setVariable) when item is read/used.
         // onRead is preferred for non-takeable readable items; onPickup is kept as fallback.
@@ -1204,7 +2210,8 @@ export class ContainerMinigame extends MinigameScene {
                 scenarioData: item,
                 name: item.type,
                 objectId: `temp_${Date.now()}`,
-                ...this.childExtras()
+                ...this.childExtras(),
+                ...this.pcScreenExtras()
             };
             
             // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -1240,6 +2247,7 @@ export class ContainerMinigame extends MinigameScene {
         
         // Store the container state globally so we can return to it
         this.exitReason = 'item';
+        containerState.focusReturn = iconFocusMark(item, this.openedByKey === true);
         window.pendingContainerReturn = containerState;
         
         // Close the container minigame first
@@ -1248,16 +2256,24 @@ export class ContainerMinigame extends MinigameScene {
         // From a network screen, a hand-over to anything but the text-file reader (which
         // reopens the screen itself) comes back here when it ends without opening a
         // container: a cancelled PIN pad, a key alert, a lockout, a phone (4.3)
+        const fromNetwork = isNetworkScreenContainer(this.containerItem);
+        // A sign-in PC's own desktop at the keyboard (Ian's archive password): the player's
+        // own close of the lock screen (its X or Esc) comes back to the desktop it was opened
+        // from, as a share's Close does (UX slice 2a R2). A forced close (a hit, too many
+        // wrong passwords) stays in the world.
+        const fromLoginDesktop = !fromNetwork && !!this.loginPcId && this.desktopMode;
         const armReturn = this.mode !== 'npc' && item.type !== 'text_file'
-            && isNetworkScreenContainer(this.containerItem);
-        if (armReturn) armNetworkReturn(containerState);
+            && (fromNetwork || fromLoginDesktop);
+        if (armReturn && fromLoginDesktop) containerState.loginDesktopReturn = true;
+        if (armReturn) armNetworkReturn(containerState, { playerCloseOnly: fromLoginDesktop });
         
         // Create a temporary sprite-like object for the main game handler
         const tempSprite = {
             scenarioData: item,
             name: item.type,
             objectId: `temp_${Date.now()}`,
-            ...this.childExtras()
+            ...this.childExtras(),
+            ...this.pcScreenExtras()
         };
         
         // Delegate to main game's handler for viewing/reading items (notes, phone, files, etc.)
@@ -1274,37 +2290,45 @@ export class ContainerMinigame extends MinigameScene {
     addPostitToNotebook() {
         console.log('Adding postit note to notebook:', this.containerItem.scenarioData.postitNote);
 
-        const postitNote = this.containerItem.scenarioData.postitNote;
+        // A share window on a PC notes that PC's post-it (R4 m2), without the share's file list
+        const sharesNote = this.pcMonitor && this.shareFolder;
+        const postitNote = sharesNote ? this.monitorPostit() : this.containerItem.scenarioData.postitNote;
         if (!postitNote || postitNote.trim() === '') {
             this.showMessage('No postit note to add.', 'error');
             return;
         }
 
-        // Create comprehensive notebook content
-        const notebookTitle = `Postit Note - ${this.containerItem.scenarioData.name}`;
-        let notebookContent = `Postit Note:\n${'-'.repeat(50)}\n\n${postitNote}`;
-        
-        // Add container contents list
-        notebookContent += `\n\n${'='.repeat(20)}\n`;
-        notebookContent += `CONTAINER CONTENTS: ${this.containerItem.scenarioData.name}\n`;
-        notebookContent += `${'='.repeat(20)}\n`;
-        
-        if (this.contents && this.contents.length > 0) {
-            this.contents.forEach((item, index) => {
-                notebookContent += `${index + 1}. ${item.name || item.type}`;
-                if (item.description) {
-                    notebookContent += ` - ${item.description}`;
-                }
-                notebookContent += '\n';
-            });
+        let notebookTitle, notebookContent, notebookObservations;
+        if (sharesNote) {
+            ({ title: notebookTitle, content: notebookContent, observations: notebookObservations }
+                = postitNotebookEntry(this.monitorName(), postitNote));
         } else {
-            notebookContent += 'No items found\n';
+            // Create comprehensive notebook content
+            notebookTitle = `Postit Note - ${this.containerItem.scenarioData.name}`;
+            notebookContent = `Postit Note:\n${'-'.repeat(50)}\n\n${postitNote}`;
+
+            // Add container contents list
+            notebookContent += `\n\n${'='.repeat(20)}\n`;
+            notebookContent += `CONTAINER CONTENTS: ${this.containerItem.scenarioData.name}\n`;
+            notebookContent += `${'='.repeat(20)}\n`;
+
+            if (this.contents && this.contents.length > 0) {
+                this.contents.forEach((item, index) => {
+                    notebookContent += `${index + 1}. ${item.name || item.type}`;
+                    if (item.description) {
+                        notebookContent += ` - ${item.description}`;
+                    }
+                    notebookContent += '\n';
+                });
+            } else {
+                notebookContent += 'No items found\n';
+            }
+
+            notebookContent += `${'='.repeat(20)}\n`;
+            notebookContent += `Date: ${new Date().toLocaleString()}`;
+
+            notebookObservations = `Postit note found in ${this.containerItem.scenarioData.name}.`;
         }
-        
-        notebookContent += `${'='.repeat(20)}\n`;
-        notebookContent += `Date: ${new Date().toLocaleString()}`;
-        
-        const notebookObservations = `Postit note found in ${this.containerItem.scenarioData.name}.`;
 
         // Check if notes minigame is available
         if (window.startNotesMinigame) {
@@ -1369,14 +2393,24 @@ export class ContainerMinigame extends MinigameScene {
         
         // Add to inventory
         const addResult = await addToInventory(tempSprite);
+        // Keyring K3a (R1 m2): a file taken (copied or moved) counts as opened for an "In file" tag
+        if (addResult && addResult.ok) {
+            try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
+        }
         if (addResult && addResult.ok && isCopy) {
             // A copy stays on the PC (and in its profile on every PC)
             if (window.playUISound) window.playUISound('item');
             this.showMessage(`Copied ${displayDashes(item.name)} to inventory`, 'success');
         } else if (addResult && addResult.ok) {
             if (window.playUISound) window.playUISound('item');
-            // Remove from container display
-            itemElement.parentElement.remove();
+            // Remove from container display; the focus moves on to the next icon (or the desktop)
+            const slot = itemElement.parentElement;
+            const focusNext = this.focusAfterIconRemoved(slot);
+            slot.remove();
+            if (focusNext) {
+                if (!focusNext.classList.contains('desktop-icon')) focusNext.setAttribute('tabindex', '-1');
+                focusNext.focus?.({ preventScroll: true });
+            }
             
             // Remove from contents array
             const itemIndex = this.contents.findIndex(content => content === item);
@@ -1416,6 +2450,8 @@ export class ContainerMinigame extends MinigameScene {
             if (window.playUISound) window.playUISound('reject');
             this.showMessage(`Failed to add ${displayDashes(item.name)} to inventory`, 'error');
         }
+        // K4: Connect from a desktop takes the file first and reads this
+        return !!(addResult && addResult.ok);
     }
 
     // async for the same reason as takeItem above.
@@ -1463,17 +2499,29 @@ export class ContainerMinigame extends MinigameScene {
      * Override to handle returning to conversation for NPC inventory mode
      */
     complete(success) {
+        // A superseded instance is ignored by the base class: flag and restart nothing (R4 m2)
+        if (window.MinigameFramework && window.MinigameFramework.currentMinigame !== this) {
+            return super.complete(success);
+        }
         // If in NPC mode, return to the conversation instead of just closing
         if (this.mode === 'npc') {
             // Check if we're in the middle of transitioning to another minigame (e.g., notes)
             // If pendingContainerReturn exists, it means we should return to container, not conversation
             if (window.pendingContainerReturn) {
                 console.log('Container minigame (NPC mode) closing - but pendingContainerReturn exists, so just closing');
+                // The hand-over continues the chat chain: keep the pending return
+                this._returnsToChat = true;
                 // Just close normally - we'll return to container after the next minigame
                 super.complete(success);
             } else {
                 console.log('Container minigame (NPC mode) closing - returning to conversation');
                 
+                // The framework keeps the pending return for a close that hands back to the chat
+                // and drops it for any other end (minigame-manager _dropStrandedChatReturn)
+                const canReturn = !!window.returnToConversationAfterNPCInventory;
+                this._returnsToChat = canReturn;
+                if (canReturn && window.pendingConversationReturn) window.pendingConversationReturn.returning = true;
+
                 // Call the parent complete to close the minigame
                 super.complete(success);
                 
@@ -1523,6 +2571,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // A reopen after a reader closed: a sign-in desktop never falls through to the
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
+        focusReturn: extra?.focusReturn || null,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -1634,7 +2683,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true }
+            { fromReturn: true, focusReturn: containerState.focusReturn || null }
         );
     } else {
         console.log('No pending container return found');
@@ -1652,27 +2701,37 @@ export function returnToConversationAfterNPCInventory() {
     if (window.pendingConversationReturn) {
         const conversationState = window.pendingConversationReturn;
         
-        // Clear the pending return state
-        window.pendingConversationReturn = null;
-        
+        // Keep the pending return state until the chat has restarted, so the NPC (npc-needs
+        // inChatWith) never sees a gap between the inventory closing and the chat resuming
+
         console.log('Restoring conversation:', conversationState);
         
         // Restart the appropriate conversation minigame
-        if (window.MinigameFramework) {
+        if (!window.MinigameFramework) {
+            window.pendingConversationReturn = null;
+        } else if (!conversationState.resuming) {
+            conversationState.resuming = true;
             // Small delay to ensure container is fully closed
             setTimeout(() => {
-                if (conversationState.type === 'person-chat') {
-                    // Restart person-chat minigame
-                    window.MinigameFramework.startMinigame('person-chat', null, {
-                        npcId: conversationState.npcId,
-                        fromTag: true  // Flag to indicate we're resuming from a tag action
-                    });
-                } else if (conversationState.type === 'phone-chat') {
-                    // Restart phone-chat minigame
-                    window.MinigameFramework.startMinigame('phone-chat', null, {
-                        npcId: conversationState.npcId,
-                        fromTag: true  // Flag to indicate we're resuming from a tag action
-                    });
+                try {
+                    if (conversationState.type === 'person-chat') {
+                        // Restart person-chat minigame
+                        window.MinigameFramework.startMinigame('person-chat', null, {
+                            npcId: conversationState.npcId,
+                            fromTag: true  // Flag to indicate we're resuming from a tag action
+                        });
+                    } else if (conversationState.type === 'phone-chat') {
+                        // Restart phone-chat minigame
+                        window.MinigameFramework.startMinigame('phone-chat', null, {
+                            npcId: conversationState.npcId,
+                            fromTag: true  // Flag to indicate we're resuming from a tag action
+                        });
+                    }
+                } catch (err) {
+                    // The chat cannot be restored: say so, rather than losing it silently (R3 m2)
+                    console.warn('Could not resume the chat with', conversationState.npcId, 'after the NPC inventory:', err);
+                } finally {
+                    if (window.pendingConversationReturn === conversationState) window.pendingConversationReturn = null;
                 }
             }, 50);
         }

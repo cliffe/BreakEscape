@@ -28,10 +28,12 @@ copy('minigames/phone-chat/phone-chat-conversation.js', 'phone-chat-conversation
 writeFileSync(join(dir, 'base-minigame.mjs'), 'export class MinigameScene {}\n');
 copy('utils/display-dashes.js', 'display-dashes.mjs');
 copy('utils/escape-html.js', 'escape-html.mjs');
+copy('utils/pc-monitor.js', 'pc-monitor.mjs');
 copy('minigames/text-file/text-file-minigame.js', 'text-file-minigame.mjs',
     s => s.replace("'../framework/base-minigame.js'", "'./base-minigame.mjs'")
         .replace("'../../utils/display-dashes.js'", "'./display-dashes.mjs'")
-        .replace("'../../utils/escape-html.js'", "'./escape-html.mjs'"));
+        .replace("'../../utils/escape-html.js'", "'./escape-html.mjs'")
+        .replace("'../../utils/pc-monitor.js'", "'./pc-monitor.mjs'"));
 
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.inkjs = createRequire(import.meta.url)(join(here, '../../public/break_escape/assets/vendor/ink.js'));

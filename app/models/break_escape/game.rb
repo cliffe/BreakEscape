@@ -6,6 +6,8 @@ module BreakEscape
     include ScoreBreakdown
     include NetworkAccess
     include CaptureProofs
+    include CredentialKeyring
+    include CredentialLogin
     include NpcFrustration
     include SocialFeed
     include Wearables
@@ -31,6 +33,7 @@ module BreakEscape
     # Callbacks
     before_create :sync_vm_set_id_column
     before_create :generate_scenario_data
+    before_create :stamp_format_version # Step 7: stamp the current format on data with no formatVersion
     before_create :resolve_imported_globals # CarryOver: earlier missions' choices, before player_state is built
     before_create :initialize_player_state
     before_create :set_started_at
@@ -138,6 +141,535 @@ module BreakEscape
       world.is_a?(Hash) && world['room'].is_a?(String) && world['room'] == room_id
     end
 
+    # Gated-door tailgating (GATED_DOOR_SERVER_CHECK_PLAN.md §3). A room an NPC route
+    # opened for the player's slip-in but which the player has not yet earned. Kept apart
+    # from unlockedRooms: the player may stand in a route room, but its contents stay gated
+    # (§3.6) until the pass is earned. Server-written only; never part of the client sync
+    # payload (SYNC SIZE §9). Defaults to [] on first read.
+    def npc_route_rooms
+      list = player_state.is_a?(Hash) ? player_state['npcRouteRooms'] : nil
+      list.is_a?(Array) ? list : []
+    end
+
+    def in_npc_route_room?(room_id)
+      return false if room_id.blank?
+      npc_route_rooms.include?(room_id)
+    end
+
+    # Record a route room for the player's slip-in, keeping it out of unlockedRooms.
+    def record_npc_route_room!(room_id)
+      return if room_id.blank?
+      player_state['npcRouteRooms'] ||= []
+      player_state['npcRouteRooms'] << room_id unless player_state['npcRouteRooms'].include?(room_id)
+      save!
+    end
+
+    # True when `name` is a global a client sync_state cannot write: a worn-costume global,
+    # an imported global, a server-credit global (creditOnPass, §3.4), or a named server-owned
+    # global. The same union the viaPass check uses (§3.3a).
+    def server_owned_global_name?(name)
+      return false if name.blank?
+      (worn_global_names + imported_global_names + server_credit_global_names +
+       self.class::SERVER_OWNED_GLOBAL_NAMES).include?(name.to_s)
+    end
+
+    # --- Server writes the client has not seen (tailgate sync) ---
+    #
+    # A server-side credit inside sync_state or the door unlock (creditOnPass, a task's
+    # onComplete.setGlobal on a server completion) writes globals and completes tasks that the
+    # client would otherwise learn only on a reload. Each write is noted here and the answer to
+    # that same request carries it back (serverGlobals / serverCompletedTasks). The record is an
+    # instance variable on this in-memory row: never stored in player_state, so it never grows or
+    # rides a later sync, and the next request's fresh load starts with it empty.
+    def server_write_record
+      @server_write_record ||= { globals: [], tasks: [], concluded: nil }
+    end
+
+    def record_server_global_writes(names)
+      list = server_write_record[:globals]
+      names.each { |name| list << name.to_s unless list.include?(name.to_s) }
+    end
+
+    def record_server_completed_task(task_id)
+      list = server_write_record[:tasks]
+      list << task_id.to_s unless list.include?(task_id.to_s)
+    end
+
+    # The task that concluded the mission during this request, if one did
+    def record_server_mission_concluded(task_id)
+      server_write_record[:concluded] ||= task_id.to_s
+    end
+
+    # The rule the bootstrap uses for savedGlobalVariables (games_controller show): every stored
+    # global goes to the client except a server-owned one (se_captures, shipped as `captures`).
+    #
+    # Deliberately NOT the wider server_owned_global_name? (worn, imported and credit globals as
+    # well). That one means "the client may not write this"; this one means "the client may not
+    # see this". Credit globals such as kp_badge_tailgated are server-written but the client must
+    # read them, so tightening this filter to server_owned_global_name? silently breaks every
+    # credit (the client never learns it, on a reload or on the sync answer).
+    def client_visible_global?(name)
+      !self.class::SERVER_OWNED_GLOBAL_NAMES.include?(name.to_s)
+    end
+
+    def client_visible_globals(globals)
+      return {} unless globals.is_a?(Hash)
+      globals.select { |name, _| client_visible_global?(name) }
+    end
+
+    # Add this request's server writes to an answer body. Values are read back from
+    # player_state, so a name written twice reports its final value and a name the request later
+    # deleted is left out. Nothing is added when the server wrote nothing.
+    def add_server_writes_to_answer!(body)
+      stored = client_visible_globals(player_state.is_a?(Hash) ? player_state['globalVariables'] : nil)
+      names = server_write_record[:globals].select { |name| stored.key?(name) }
+      body[:serverGlobals] = names.to_h { |name| [name, stored[name]] } if names.any?
+      tasks = server_write_record[:tasks]
+      body[:serverCompletedTasks] = tasks.dup if tasks.any?
+      # A credit that concluded the mission: the client runs the ending as it would for its own
+      # completion (the task id names the aim whose conclusion screen to show)
+      concluded = server_write_record[:concluded]
+      body[:serverMissionConcluded] = concluded if concluded
+      body
+    end
+
+    # True when the scenario defines any rfid_cloner object (presence is enough; §3.1). The
+    # runtime split predicate does not trace whether a specific card is reachable from it;
+    # the validator (§11) owns the sharper check.
+    def scenario_has_rfid_cloner?
+      return false unless scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return false unless rooms.is_a?(Hash)
+
+      rooms.each_value.any? do |room|
+        next false unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+        room['objects'].any? { |obj| object_subtree_rfid_cloner?(obj) }
+      end
+    end
+
+    # A gate splits (its NPC route unlock records the room in npcRouteRooms rather than
+    # unlockedRooms) only when a provable path into it exists (§3.1). The runtime test is the
+    # simplest safe one: the gate's playerMayPassIf is a server-owned global, or the scenario
+    # contains an rfid_cloner object at all. It may over-split, but an over-split gate credits
+    # nothing it should not (§3.1).
+    # A gate splits (its NPC route records the room in npcRouteRooms, not unlockedRooms) when a
+    # provable path exists: a server-owned pass global, or an rfid_cloner anywhere in the scenario
+    # (no condition on the target room's requires). This is the single source of truth for the
+    # split predicate; scripts/validate_scenario.rb (check_gated_door_credit) and
+    # scripts/generate_dungeon_graph.rb mirror it exactly (R3 minor 3). Change all three together.
+    def gate_splits?(gate)
+      return false unless gate.is_a?(Hash)
+      pass_global = gate['playerMayPassIf']
+      return true if pass_global.present? && server_owned_global_name?(pass_global)
+      scenario_has_rfid_cloner?
+    end
+
+    # The gate (with openFor) on the door whose connectedRoom is `room_id`, or nil. Doors live
+    # per-room, so the door into a room sits in the adjacent room's doors array.
+    def gate_for_connected_room(room_id)
+      return nil if room_id.blank? || !scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return nil unless rooms.is_a?(Hash)
+
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          next unless door.is_a?(Hash) && door['connectedRoom'] == room_id
+          gate = door['gate']
+          return gate if gate.is_a?(Hash) && gate['openFor'].present?
+        end
+      end
+      nil
+    end
+
+    # NPC-keyed (§3.1): true when a door into room_id has a gate.openFor naming npc_id and the
+    # split condition holds. Selects the method: npc route branch of the unlock action (§3.5).
+    def gated_route_room?(npc_id, room_id)
+      return false if npc_id.blank? || room_id.blank?
+      gate = gate_for_connected_room(room_id)
+      return false unless gate
+      return false unless Array(gate['openFor']).map(&:to_s).include?(npc_id.to_s)
+      gate_splits?(gate)
+    end
+
+    # Door-keyed, attempt-independent (§3.1): true when the room's door has a gate.openFor and
+    # the split condition holds. Selects the credential branch (§3.3b, Chunk B), where the
+    # method: rfid unlock carries attempt: null and the NPC-keyed helper would never match.
+    def split_gated_door?(room_id)
+      gate = gate_for_connected_room(room_id)
+      gate ? gate_splits?(gate) : false
+    end
+
+    # The object-action gate predicate (§3.6): true when `target_id` resolves to an object
+    # whose room is a served-but-unearned route room (in npcRouteRooms, not in unlockedRooms).
+    # An object added at runtime resolves to room_id: nil and is not gated (§3.2, permissive).
+    def object_in_unpromoted_route_room?(target_id)
+      room_id = login_scope_of(target_id)&.[](:room_id)
+      return false if room_id.blank?
+      in_npc_route_room?(room_id) &&
+        !Array(player_state['unlockedRooms']).include?(room_id)
+    end
+
+    # True when this object, or anything nested in its contents, is an rfid_cloner.
+    def object_subtree_rfid_cloner?(obj)
+      return false unless obj.is_a?(Hash)
+      type = obj['type'] || obj.dig('scenarioData', 'type')
+      return true if type == 'rfid_cloner'
+      contents = obj['contents']
+      contents.is_a?(Array) && contents.any? { |item| object_subtree_rfid_cloner?(item) }
+    end
+
+    # --- Gated-door credit, server-owned (GATED_DOOR_SERVER_CHECK_PLAN.md §3.3, §3.4) ---
+
+    # The distinct global names any gate credits through creditOnPass.*.setGlobal (§3.4). Derived
+    # once from the scenario and memoised in player_state, as worn_global_names does, so the read
+    # path never saves. sync_state loads the narrow row without scenario_data, so that is read on
+    # its own there. Unioned into the read-only list in merge_global_variables! and into
+    # server_owned_global_name?, so a client sync_state can never write one.
+    def server_credit_global_names
+      return [] unless player_state.is_a?(Hash)
+
+      names = player_state['serverCreditGlobals']
+      return names.grep(String) if names.is_a?(Array)
+
+      # Memo absent. Derive only when scenario_data is already loaded in-request (game creation,
+      # show, the credit paths that call ensure_scenario_data_loaded! first); never read it here.
+      # An ordinary sync runs on the narrow SYNC_STATE_COLUMNS row, so reading scenario_data would
+      # reload the whole blob on every sync (the sync-deltas / SYNC SIZE rule forbids it). The memo
+      # is seeded at creation (initialize_player_state), so a game created by this code always has
+      # it. An absent memo therefore means a game stored before this change, whose scenario snapshot
+      # predates creditOnPass and so credits no global at all; [] is correct and the safe direction
+      # (a client cannot write a credit global that does not exist for this game).
+      return [] unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      player_state['serverCreditGlobals'] = self.class.credit_global_names_in(scenario_data)
+    end
+
+    # Walk every door gate's creditOnPass block and collect the setGlobal names, sorted/unique.
+    def self.credit_global_names_in(data)
+      return [] unless data.is_a?(Hash)
+      rooms = data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      names = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+          credit.each_value do |block|
+            set = block.is_a?(Hash) ? block['setGlobal'] : nil
+            names.concat(set.keys.map(&:to_s)) if set.is_a?(Hash)
+          end
+        end
+      end
+      names.uniq.sort
+    end
+
+    # The task ids any gate credits through creditOnPass.*.completeTask (§7). A task in this set
+    # is server-completed only: complete_task! refuses it unless called with trusted: true, and
+    # skip_task! refuses it outright, so a tampered client cannot forge the objective tick that
+    # the server-checked passage is meant to earn. Derived once and memoised in player_state as
+    # server_credit_global_names does, so the read path never saves; sync_state loads the narrow
+    # row without scenario_data, so that is read on its own there.
+    def server_completed_only_task_ids
+      return [] unless player_state.is_a?(Hash)
+
+      ids = player_state['serverCompletedOnly']
+      return ids.grep(String) if ids.is_a?(Array)
+
+      # Same rule as server_credit_global_names: derive only when scenario_data is already loaded,
+      # never read it on the narrow sync row. Seeded at creation; an absent memo is a pre-change
+      # game whose snapshot predates creditOnPass, so no task is server-completed-only and [] is the
+      # safe default (complete_task!/skip_task! then impose no extra server-completed-only guard,
+      # matching that game's scenario, which has no such tasks).
+      return [] unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(scenario_data)
+    end
+
+    # Walk every door gate's creditOnPass block and collect the completeTask ids, sorted/unique.
+    def self.completed_only_task_ids_in(data)
+      return [] unless data.is_a?(Hash)
+      rooms = data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      ids = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          credit = door.is_a?(Hash) && door['gate'].is_a?(Hash) ? door['gate']['creditOnPass'] : nil
+          next unless credit.is_a?(Hash)
+          credit.each_value do |block|
+            task = block.is_a?(Hash) ? block['completeTask'] : nil
+            ids << task.to_s if task.present?
+          end
+        end
+      end
+      ids.uniq.sort
+    end
+
+    # Make the record whole for a credit about to fire on the sync path, which loads the narrow
+    # SYNC_STATE_COLUMNS (§3.3a). The viaPass credit runs the whole complete_task! tree, which
+    # reads scenario_data and reads/writes the stat columns (tasks_completed, score,
+    # mission_concluded_at) and whose save! validates mission and status, none of which are on the
+    # narrow row. Load every column the row is missing except player_state (the in-flight sync
+    # merge, which a reload would clobber) in one query, set each on the record and clear its dirty
+    # state, so the follow-up save! writes only the columns the credit genuinely changed
+    # (player_state and the stats) and never rewrites the large, unchanged scenario_data column.
+    # A no-op on a full load (the unlock/credential path), where nothing is missing.
+    def ensure_scenario_data_loaded!
+      missing = self.class.column_names.reject { |c| c == 'player_state' || has_attribute?(c) }
+      return if missing.empty?
+
+      values = self.class.where(id: id).pick(*missing)
+      values = [values] if missing.size == 1
+      missing.each_with_index do |col, i|
+        write_attribute(col, values[i])
+        clear_attribute_change(col)
+      end
+      nil
+    end
+
+    # Apply a gate's creditOnPass block for the path that passed (§3.4): set its globals through
+    # write_server_globals! (bypassing the sync read-only check, the teeth) and complete its task.
+    # Returns true when a block existed and was applied.
+    def apply_credit_on_pass!(room_id, path_key)
+      gate = gate_for_connected_room(room_id)
+      return false unless gate.is_a?(Hash)
+      credit = gate['creditOnPass']
+      return false unless credit.is_a?(Hash)
+      block = credit[path_key.to_s]
+      return false unless block.is_a?(Hash)
+
+      set_globals = block['setGlobal']
+      write_server_globals!(set_globals) if set_globals.is_a?(Hash) && set_globals.any?
+
+      task_id = block['completeTask']
+      # trusted: the server itself is crediting a server-completed-only task (§7); the
+      # complete_task! guard would otherwise refuse it as a client forge.
+      complete_task!(task_id, trusted: true) if task_id.present?
+      true
+    end
+
+    # Promote a route room to earned (§3.3): unlock it, remove it from npcRouteRooms (keep the two
+    # lists disjoint, or "in npcRouteRooms means unearned" misfires after promotion), and apply the
+    # path's creditOnPass. Callers gate on !room_unlocked?, so a room earned by one path is never
+    # re-credited by the other. Saves (unlock_room! and complete_task! each save; the final save!
+    # here covers a credit block that sets a global but completes no task).
+    def promote_route_room!(room_id, path_key)
+      unlock_room!(room_id)
+      remove_npc_route_room!(room_id)
+      apply_credit_on_pass!(room_id, path_key)
+      save! if changed?
+      true
+    end
+
+    def remove_npc_route_room!(room_id)
+      list = player_state['npcRouteRooms']
+      return unless list.is_a?(Array) && list.include?(room_id)
+      list.delete(room_id)
+    end
+
+    # viaPass credit on the currentRoom sync (§3.3a). The cheap player_state gate runs first, so a
+    # sync whose currentRoom is not a served-but-unearned route room reads no scenario. Only once
+    # that holds is scenario_data loaded (dirty cleared, so no scenario_data write) to read the
+    # gate: promote only when the gate's playerMayPassIf is a server-owned global and true. On a
+    # fail (the honest no-vest slip-in) nothing is credited and the room stays a route room.
+    def credit_via_pass_on_sync!(room_id)
+      return false if room_id.blank?
+      # Cheap player_state gate first (no scenario read, so the common sync pays nothing): a route
+      # room is never the start room, so unlockedRooms membership is the only "already earned" test
+      # needed here, and room_unlocked? -> start_room? would raise on the narrow sync row.
+      return false unless in_npc_route_room?(room_id) &&
+                          !Array(player_state['unlockedRooms']).include?(room_id)
+
+      ensure_scenario_data_loaded!
+      gate = gate_for_connected_room(room_id)
+      return false unless gate.is_a?(Hash)
+
+      pass_global = gate['playerMayPassIf']
+      return false unless pass_global.present? && server_owned_global_name?(pass_global)
+      return false unless global_variable_value(pass_global)
+
+      promote_route_room!(room_id, 'viaPass')
+    end
+
+    # viaCredential credit in the unlock door branch (§3.3b). Credited only when the server
+    # possession check passes: a held keycard or a live clone whose id is in the door's requires
+    # (rfid), or a held key (key). validate_unlock already refused a non-holder, so this re-asserts
+    # the same server result at the credit site, never a client-sent boolean. Callers pass the room
+    # unlocked by serve_opened_room and gate on it not having been unlocked before; this removes it
+    # from npcRouteRooms (closing the Chunk A dual-list interim) and applies the viaCredential block.
+    def credit_via_credential!(room_id, method, card_ids)
+      return false if room_id.blank?
+
+      lock = room_data(room_id)
+      return false unless lock.is_a?(Hash)
+
+      passes = case method.to_s
+      when 'rfid' then rfid_lock_passes?(lock, card_ids)
+      when 'key'  then lock['requires'].present? && has_key_in_inventory?(lock['requires'])
+      else false
+      end
+      return false unless passes
+
+      remove_npc_route_room!(room_id)
+      applied = apply_credit_on_pass!(room_id, 'viaCredential')
+      save! if changed?
+      applied
+    end
+
+    # True when the server's durable record shows the player has legitimately
+    # reached this room (plan section 8). A room becomes a member of one of these
+    # lists only through a server-checked route the avatar cannot skip, so the
+    # union passes every player who honestly entered and refuses only a forge:
+    # - unlockedRooms (via room_unlocked?): added by a server-checked door unlock
+    #   before the avatar can cross, and monotonic (never shrinks on leaving).
+    # - startRoom (via room_unlocked?) and an awareness world room: open from the
+    #   start.
+    # - npcRouteRooms: a room an NPC route opened for a legitimate slip-in. The
+    #   list is server-written only.
+    # - currentRoom (last synced): a soft, defensive disjunct. The sync guard only
+    #   ever sets the saved currentRoom to a room already in one of the durable
+    #   lists, so it adds no coverage of its own; the durable terms carry the check.
+    # Room entry is low-stakes control flow, so this is a server sanity check, not
+    # a hard secret gate (cheat policy).
+    def player_reached_room?(room_id)
+      return false if room_id.blank?
+      return true if room_unlocked?(room_id)
+      return true if awareness_world_room?(room_id)
+      return true if in_npc_route_room?(room_id)
+      player_state['currentRoom'] == room_id
+    end
+
+    # True when a sync_state request may set the saved currentRoom to this room. The acceptance set
+    # mirrors player_reached_room? minus its own circular currentRoom disjunct: the player
+    # legitimately occupies the room, so saving it is not a forge. A room outside this set is a
+    # forge and the sync refuses it (GATED_DOOR §3.3a). The three cheap player_state checks come
+    # first, so an ordinary sync into an unlocked room (the start room included, since unlockedRooms
+    # is seeded with it) reads no scenario. The scenario is loaded only when they all miss, to admit
+    # the awareness world room, which enterWorld (public/.../utils/world-play.js) places the player
+    # in without a door unlock, so it is never in unlockedRooms; before this method existed that was
+    # a genuine room the player stood in yet the guard would have 403'd once currentRoom began to
+    # sync. Runs on the narrow sync row (SYNC_STATE_COLUMNS), so it loads scenario_data lazily.
+    def may_sync_current_room?(room_id)
+      return false if room_id.blank?
+      return true if Array(player_state['unlockedRooms']).include?(room_id)
+      return true if in_npc_route_room?(room_id)
+      ensure_scenario_data_loaded!
+      return true if start_room?(room_id)
+      awareness_world_room?(room_id)
+    end
+
+    # Stored-game soft-lock migration (GATED_DOOR_SERVER_CHECK_PLAN.md §10). A game saved before this
+    # work may have a split gate's room already in unlockedRooms (Len's route ran) but no credit set,
+    # because the player had not yet worn the hi-vis or cloned a badge when the client still wrote the
+    # credit. After deploy the client credit writers are gone and promotion runs only for a room in
+    # npcRouteRooms, so such a room would be stuck unlocked-but-uncredited and its credited task
+    # (tailgate_in) could never complete. One-shot fix: move each soft-locked split room back into
+    # npcRouteRooms so the earn check re-runs on the next entry (viaPass on the currentRoom sync, or
+    # viaCredential on an rfid unlock). A room whose credit is already earned stays in unlockedRooms,
+    # untouched. Runs only on a full load (scenario_data present), pinned to the game show action (§10),
+    # never the narrow sync row, and before any auto-unlock that reads unlockedRooms.
+    #
+    # show is a read-only action that must not routinely pay a row lock. So this scans lock-free first
+    # (any_soft_locked_route_room?) and returns without a write for every game with nothing stuck (the
+    # common case). Only when a genuinely soft-locked stored game is found does it take its own row lock,
+    # re-check under it (a concurrent earn may have promoted the room meanwhile), demote and stamp
+    # routeRoomsMigrated once. The flag short-circuits later loads of a game that was migrated.
+    def migrate_soft_locked_route_rooms!
+      return unless player_state.is_a?(Hash)
+      return if player_state['routeRoomsMigrated']
+      return unless has_attribute?(:scenario_data) && scenario_data.is_a?(Hash)
+      return unless any_soft_locked_route_room?
+
+      # The lock-free scan derives and memoises serverCreditGlobals into player_state as a read-path
+      # side effect (as worn_global_names does); with_lock refuses a record with unpersisted changes,
+      # so discard that transient dirty state. with_lock reloads the row under the lock and re-derives
+      # it, so nothing is lost. show has no other pending player_state write at this point.
+      clear_attribute_change('player_state')
+
+      with_lock do
+        # next, not return: leave the block normally on the concurrent-migrate race (R3
+        # observation) so the lock/transaction closes cleanly rather than unwinding through a
+        # non-local return. No mutation has happened yet, so the empty transaction is a no-op.
+        next if player_state['routeRoomsMigrated']
+
+        unlocked = player_state['unlockedRooms']
+        unlocked = [] unless unlocked.is_a?(Array)
+
+        split_gated_room_ids.each do |room_id|
+          next unless unlocked.include?(room_id)
+          gate = gate_for_connected_room(room_id)
+          next unless gate.is_a?(Hash)
+          credit = gate['creditOnPass']
+          next unless credit.is_a?(Hash)
+          next unless route_room_soft_locked?(credit)
+
+          unlocked.delete(room_id)
+          player_state['npcRouteRooms'] ||= []
+          player_state['npcRouteRooms'] << room_id unless player_state['npcRouteRooms'].include?(room_id)
+        end
+
+        player_state['unlockedRooms'] = unlocked
+        player_state['routeRoomsMigrated'] = true
+        save!
+      end
+    end
+
+    # Read-only (no lock, no write): true when a split gated room is in unlockedRooms and still
+    # soft-locked, so the migration has demotion work to do. The gate that keeps show lock-free.
+    def any_soft_locked_route_room?
+      unlocked = Array(player_state['unlockedRooms'])
+      split_gated_room_ids.any? do |room_id|
+        next false unless unlocked.include?(room_id)
+        gate = gate_for_connected_room(room_id)
+        credit = gate.is_a?(Hash) ? gate['creditOnPass'] : nil
+        credit.is_a?(Hash) && route_room_soft_locked?(credit)
+      end
+    end
+
+    # The connectedRoom id of every door whose gate has an openFor and splits (§3.1). Doors live in the
+    # adjacent room's doors array, so this walks all rooms. Used by the soft-lock migration (§10).
+    def split_gated_room_ids
+      return [] unless scenario_data.is_a?(Hash)
+      rooms = scenario_data['rooms']
+      return [] unless rooms.is_a?(Hash)
+
+      ids = []
+      rooms.each_value do |room|
+        next unless room.is_a?(Hash) && room['doors'].is_a?(Array)
+        room['doors'].each do |door|
+          next unless door.is_a?(Hash)
+          gate = door['gate']
+          next unless gate.is_a?(Hash) && gate['openFor'].present?
+          room_id = door['connectedRoom']
+          next if room_id.blank?
+          ids << room_id if gate_splits?(gate)
+        end
+      end
+      ids.uniq
+    end
+
+    # True when a split gated room is soft-locked: every creditOnPass global is still false/unset and
+    # every credited task is still incomplete, so the player had not earned the pass when the room was
+    # unlocked (§10). A single truthy credit global or completed credited task means the pass was earned,
+    # so the room is left in unlockedRooms.
+    def route_room_soft_locked?(credit)
+      globals = player_state['globalVariables']
+      globals = {} unless globals.is_a?(Hash)
+
+      credit.each_value do |block|
+        next unless block.is_a?(Hash)
+        set = block['setGlobal']
+        if set.is_a?(Hash)
+          set.each_key { |name| return false if globals[name.to_s] }
+        end
+        task_id = block['completeTask']
+        return false if task_id.present? && task_status(task_id) == 'completed'
+      end
+      true
+    end
+
     # Object management
     def unlock_object!(object_id)
       player_state['unlockedObjects'] ||= []
@@ -170,6 +702,12 @@ module BreakEscape
     def add_inventory_item!(item)
       player_state['inventory'] ||= []
 
+      # `credential` is a forgeable field (stripped from every client contribution and
+      # by both client filters), so a stored take never carries it. Re-stamp it here
+      # from the scenario's own definition, matched by type and id, so the keyring's
+      # `held` proof can match. A client-supplied value is never trusted (K1 live fix).
+      restamp_item_credential!(item)
+
       # Check if item already exists in inventory (by id or combination of type and name)
       item_exists = inventory_includes?(item)
 
@@ -181,6 +719,41 @@ module BreakEscape
       else
         Rails.logger.info "[BreakEscape] Item already in inventory, skipping: #{item['type']} / #{item['name']}"
       end
+    end
+
+    # Re-stamp a stored inventory item's `credential` from the scenario's own definition
+    # (CredentialModel.item_definition, matched by type and id), never from the client.
+    # `credential` is forgeable, so any client-supplied value is dropped first; the
+    # authored value is restored only when the definition is the scenario's own item of
+    # the same type. Stamps onto the same level the keyring `held` proof reads
+    # (`inv['scenarioData'] || inv`). Without this, both client filters strip `credential`
+    # on the way out and the client posts the item back without it, so the `held` proof
+    # could never match through the real request path (K1 live fix).
+    def restamp_item_credential!(item)
+      return unless item.is_a?(Hash)
+
+      data = item['scenarioData'].is_a?(Hash) ? item['scenarioData'] : item
+      # Drop any client-supplied value up front (forgeable field). K4: the display-only `connect`
+      # marker is recomputed on every serve, so a stored copy never keeps one.
+      data.delete('credential')
+      data.delete('connect')
+
+      # The notepad and decor cups are client-built (no scenario lookup), so their id is
+      # client-chosen: never stamp a credential on them (R3 m1; the validator also errors).
+      return if BreakEscape::DeclaredGrants::ALWAYS_ALLOWED.include?(data['type'].to_s)
+      return if BreakEscape::DeclaredGrants::DECOR_CUPS.include?(data['type'].to_s)
+
+      # Look up by id, exactly as the `held` proof matches (def_id == data['id']).
+      item_id = data['id'].to_s
+      return if item_id.empty?
+
+      definition = BreakEscape::CredentialModel.item_definition(scenario_data, item_id)
+      return unless definition.is_a?(Hash)
+      return unless definition['type'].to_s == data['type'].to_s
+      return unless definition['id'].to_s == item_id
+
+      credential = definition['credential']
+      data['credential'] = credential if BreakEscape::CredentialModel.present_string?(credential)
     end
 
     # A deep copy of a stored inventory item without saved_cards, for any item an
@@ -237,7 +810,19 @@ module BreakEscape
       return if entries.any? { |e| e == entry }
 
       entries << entry
+      # m4 (slice C delivery hook): a carried object taken from the NPC's hand ends the
+      # carry, so apply_npc_carry! stops re-serving it held even without an inventory entry.
+      clear_npc_carry_on_delivery!(npc_id, entry['id'])
       save!
+    end
+
+    # Clear a carry when its object is delivered to the player (review R1 m4).
+    def clear_npc_carry_on_delivery!(npc_id, item_id)
+      carry = player_state['npcCarry']
+      return unless carry.is_a?(Hash) && item_id.present?
+
+      entry = carry[npc_id.to_s]
+      carry.delete(npc_id.to_s) if entry.is_a?(Hash) && entry['itemId'] == item_id
     end
 
     def remove_inventory_item!(item_id)
@@ -334,10 +919,22 @@ module BreakEscape
       # through record_capture! in the sync_state capture step, so the client's write (an old
       # tab's whole map, or a stray key) is dropped whenever it appears.
       variables = variables.reject { |key, _| SERVER_OWNED_GLOBAL_NAMES.include?(key.to_s) }
-      # Imported globals and the worn globals with pp_disguise (Wearables: only POST wear
-      # writes them)
-      read_only = imported_global_names + wearable_read_only_globals
+      # Imported globals, the worn globals with pp_disguise (Wearables: only POST wear writes
+      # them), and the gated-door credit globals (GATED_DOOR §3.4: only the server's creditOnPass
+      # write sets them, so a tampered client cannot forge a tailgate/clone finding).
+      read_only = imported_global_names + wearable_read_only_globals + server_credit_global_names
       variables.each do |key, value|
+        if key.to_s == REVOKED_CARDS_GLOBAL
+          # Grow-only union (the left-card consequence, apply-actions.js revoke_card, only ever
+          # adds ids). A client that drops or clears the key on a later sync cannot un-revoke a
+          # card the server has already recorded, so a cancelled card stays cancelled. Bounded:
+          # the set is the unique cancelled card ids, never a per-sync growth.
+          incoming = value.is_a?(Array) ? value.map(&:to_s).reject(&:empty?) : []
+          current = globals[REVOKED_CARDS_GLOBAL].is_a?(Array) ? globals[REVOKED_CARDS_GLOBAL].map(&:to_s) : []
+          merged = (current + incoming).uniq
+          globals[REVOKED_CARDS_GLOBAL] = merged unless merged == current
+          next
+        end
         if read_only.include?(key.to_s)
           # The first sync after a load resends every global, imports included
           # and unchanged; only a changed value is worth a warning. A fresh game has no
@@ -359,8 +956,8 @@ module BreakEscape
     # The current value of a scenario global for a server-side gate: the player's own value if
     # the key is set, else the scenario's declared default in globalVariables, else nil. Read
     # from server state alone, never a request parameter, so the server decides. This is the one
-    # shared globals reader for outages: NetworkAccess#outage_global (5.2) delegates here. NPC
-    # frustration and the reactive feed (9.2 C2) read the same key-presence merge through
+    # shared globals reader for outages: NetworkAccess reads it through frustration_globals (5.2).
+    # NPC frustration and the reactive feed (9.2 C2) read the same key-presence merge through
     # NpcFrustration#frustration_globals and AccessWork.
     def global_variable_value(name)
       globals = player_state['globalVariables']
@@ -649,6 +1246,397 @@ module BreakEscape
       true
     end
 
+    # ========================================================================
+    # NPC carried items (docs/achitechture/NPC_CARRIED_ITEMS_PLAN.md)
+    #
+    # A carried object becomes a held item of the carrying NPC, tracked by the
+    # per-NPC npcCarry delta. Its served location follows the NPC: it leaves its
+    # origin room (objects_removed at pick-up) and is served in the NPC's
+    # itemsHeld; a put-down lands it in the target room; a consume leaves it gone.
+    # Keys, credentials, locked content and forged items can never enter this path
+    # (carriable_object_index is the allowlist; put-down and the served held item
+    # are built from the scenario definition, never client fields).
+    # ========================================================================
+
+    # Stored carry positions: generous bounds that only reject tampering. Scenario
+    # elevations run 18..40; tile x/y are room-relative, 0 up to the room size (the
+    # largest authored room is 20 tiles wide), so 0..64 is three times that.
+    CARRY_TILE_BOUND = 64
+    CARRY_ELEVATION_RANGE = [0, 256].freeze
+
+    # Object types that may never be carried even with a needsTag: keys and the
+    # credential family. The structural lock-field checks below catch the rest.
+    CARRY_DISQUALIFYING_TYPES = %w[key keycard credential password badge smartcard rfid_card].freeze
+
+    # { item_id => { 'room' => room_id, 'object' => scenario_def } } for every
+    # scenario object the needs system may carry: one that carries a needsTag and
+    # is ordinary dressing (not a key, credential, locked, or holding contents).
+    # Memoised per instance; reads scenario_data (loaded for every carry action and
+    # every room serve, never the narrow sync load).
+    def carriable_object_index
+      @carriable_object_index ||= begin
+        index = {}
+        rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+        if rooms.is_a?(Hash)
+          rooms.each do |room_id, room|
+            next unless room.is_a?(Hash) && room['objects'].is_a?(Array)
+
+            room['objects'].each do |obj|
+              next unless obj.is_a?(Hash)
+
+              id = obj['id']
+              next unless id.is_a?(String) && obj['needsTag'].present? && carriable_object?(obj)
+              # Cross-reference (review R1 m1): an object whose id is a de facto key,
+              # named as a requirement by any lock, terminal or objective elsewhere, is
+              # never carriable even without a disqualifying field on its own definition.
+              next if lock_referenced_object_ids.include?(id)
+
+              index[id] = { 'room' => room_id, 'object' => obj }
+            end
+          end
+        end
+        index
+      end
+    end
+
+    # Object-reference fields that name another object/key by id: a lock the door or
+    # object needs, a key/card identity, or an objective/terminal requirement. A
+    # carriable candidate whose own id appears as one of these values is a de facto
+    # key for something and must not be carriable (review R1 m1).
+    LOCK_REFERENCE_KEYS = %w[
+      requires required requiredItem requiredItems requiredObject requiredObjects
+      key_id keyId card_id cardId opens_lock opensLock unlocks target
+      requiresItem targetObject targetId objectId unlockedBy
+    ].freeze
+
+    # Every object id referenced as a requirement anywhere in the scenario (locks,
+    # terminals, objectives). Memoised; reads scenario_data (loaded for every carry
+    # action and room serve). Bounded by the scenario.
+    def lock_referenced_object_ids
+      @lock_referenced_object_ids ||= begin
+        refs = Set.new
+        collect_lock_references(scenario_data, refs) if scenario_data.is_a?(Hash)
+        refs
+      end
+    end
+
+    # Walk the scenario tree collecting the values of LOCK_REFERENCE_KEYS (strings or
+    # arrays of strings). Only these named keys are read, so an ordinary field that
+    # happens to hold a carriable id (a needs mapping, an affordance) is never
+    # collected, and legitimate office dressing stays carriable.
+    def collect_lock_references(node, refs)
+      case node
+      when Hash
+        node.each do |key, value|
+          if LOCK_REFERENCE_KEYS.include?(key)
+            if value.is_a?(String)
+              refs << value
+            elsif value.is_a?(Array)
+              value.each { |v| refs << v if v.is_a?(String) }
+            end
+          end
+          collect_lock_references(value, refs) if value.is_a?(Hash) || value.is_a?(Array)
+        end
+      when Array
+        node.each { |v| collect_lock_references(v, refs) if v.is_a?(Hash) || v.is_a?(Array) }
+      end
+    end
+
+    # True when a scenario object is ordinary office dressing a needs NPC may carry:
+    # not a key/credential type, not locked, carrying no lock reference and no
+    # contents. Rejects anything that could pass for a key or hold locked loot.
+    def carriable_object?(obj)
+      return false if CARRY_DISQUALIFYING_TYPES.include?(obj['type'])
+      return false if obj['locked'] || obj['requires'].present? || obj['opens_lock'].present? ||
+                      obj['keyPins'].present? || obj['key_id'].present? || obj['card_id'].present? ||
+                      obj['lockType'].present?
+      return false if obj['contents'].is_a?(Array) && obj['contents'].any?
+      # A reveal slot (a copier output and the like: npc-needs.js isSlot) keeps its
+      # own client-only place-then-file flow, so it is not a server-tracked carry.
+      return false if obj['outputOf'].present? || obj.key?('revealOnGlobal') || obj.key?('hiddenWith') || obj.key?('leftBehindChance')
+
+      true
+    end
+
+    # The ids of the scenario NPCs the needs system drives (a needs or needsHome
+    # block), the only NPCs that may carry. A stranger NPC or another game's id is
+    # not in the set. Memoised per instance.
+    def needs_npc_ids
+      @needs_npc_ids ||= scenario_npc_records.each_with_object(Set.new) do |npc, set|
+        next unless npc.is_a?(Hash) && npc['id'].is_a?(String)
+
+        set << npc['id'] if npc.key?('needs') || npc.key?('needsHome')
+      end
+    end
+
+    # Pick up: the NPC carries the object. The object must be carriable, the NPC a
+    # needs NPC, and the object really in from_room now (the controller has already
+    # checked from_room is unlocked). Writes the npcCarry entry and removes the
+    # object from its origin room, so it leaves that room and is served in the NPC's
+    # itemsHeld. Idempotent: a repeat for the same npc/item is a no-op success; a
+    # second item while already carrying is refused.
+    def carry_object!(from_room, npc_id, item_id)
+      return false unless from_room.is_a?(String) && npc_id.is_a?(String) && item_id.is_a?(String)
+      return false unless needs_npc_ids.include?(npc_id)
+      # A knocked-out NPC is out of play: it cannot pick anything up, else the object
+      # leaves the world in the hand of an NPC that can never put it down.
+      return false if npc_defeated?(npc_id)
+
+      info = carriable_object_index[item_id]
+      return false unless info
+      # The object may be in any room now, not only its scenario room: a player drop,
+      # a put-down or a KO drop lands it elsewhere, and the needs system picks it up
+      # from there. The pick-up room must be one the NPC can reach (its own room or
+      # one adjacent to it): the server tracks only an NPC's scenario placement, and
+      # a needs walk only ever crosses into a neighbouring room.
+      return false unless npc_can_reach_room?(npc_id, from_room)
+
+      carry = player_state['npcCarry'] ||= {}
+      existing = carry[npc_id]
+      return true if existing.is_a?(Hash) && existing['itemId'] == item_id
+      return false if existing.is_a?(Hash) && existing['itemId'].present?
+      return false unless item_in_room?(from_room, item_id)
+
+      # Write the carry entry first so it rides remove_item_from_room!'s save!: a
+      # second save! after that one would not see the nested jsonb mutation as dirty.
+      player_state_will_change!
+      entry = { 'itemId' => item_id, 'fromRoom' => from_room }
+      # slice C C1: remember where the object was lying, so a reload mid-carry puts it
+      # back there, not at its scenario spot. The position is read from the server's own
+      # stored copy (objects_added) before remove_item_from_room! deletes it, never from
+      # the request. Only a placed copy (a player drop or a put-down) has one; an object
+      # picked up from its scenario spot has none, and end_stranded_carries! keeps the
+      # scenario position for it.
+      from_pos = sanitised_carry_position(from_room, item_id)
+      entry['fromPos'] = from_pos if from_pos
+      carry[npc_id] = entry
+      remove_item_from_room!(from_room, item_id)
+      true
+    end
+
+    # The pick-up position of a placed copy, read from the room's objects_added record
+    # (the drop and put-down paths write it there). Keep only the coordinate keys those
+    # paths write (x, y, px, py, elevation), each a valid coordinate; drop every other
+    # key, so no client-supplied field rides into the stored carry. Coordinates are kept
+    # only as complete valid pairs (x with y, px with py), and elevation only alongside a
+    # kept pair, so a half pair never rebuilds the object half at its pick-up spot and half
+    # at random. nil when the object has no stored placement or no pair survives.
+    def sanitised_carry_position(room_id, item_id)
+      added = player_state.dig('room_states', room_id, 'objects_added')
+      return nil unless added.is_a?(Array)
+
+      stored = added.find { |o| o.is_a?(Hash) && o['id'] == item_id }
+      pos = stored && stored['position']
+      return nil unless pos.is_a?(Hash)
+
+      cleaned = {}
+      [%w[x y], %w[px py]].each do |pair|
+        next unless pair.all? { |k| valid_ko_coord?(pos[k]) }
+        # Tile coordinates are room-relative, so bound them to 0..CARRY_TILE_BOUND (no room geometry here).
+        next if pair == %w[x y] && pair.any? { |k| !pos[k].between?(0, CARRY_TILE_BOUND) }
+
+        pair.each { |k| cleaned[k] = pos[k] }
+      end
+      elevation = pos['elevation']
+      if cleaned.any? && valid_ko_coord?(elevation) && elevation.between?(*CARRY_ELEVATION_RANGE)
+        cleaned['elevation'] = elevation
+      end
+      cleaned.presence
+    end
+
+    # Put down: the NPC sets the carried object down in to_room at position. Confirms
+    # the NPC really carries item_id, builds the object from the scenario definition
+    # (the client supplies only position), adds it to to_room, and clears the carry
+    # entry. The controller has checked to_room is unlocked; reachability from the
+    # pick-up room is checked here. Idempotent: a repeat does not add the item twice.
+    def put_down_carried!(to_room, npc_id, item_id, position = nil)
+      return false unless to_room.is_a?(String) && npc_id.is_a?(String) && item_id.is_a?(String)
+
+      carry = player_state['npcCarry']
+      entry = carry.is_a?(Hash) ? carry[npc_id] : nil
+      return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
+      # The player has already taken this object into their inventory, so a put-down
+      # would duplicate it onto the floor. Mirror the serve-path guard and refuse.
+      return false if carried_item_in_inventory?(item_id)
+      return false unless scenario_room_ids.include?(to_room)
+      return false unless put_down_room_reachable?(entry['fromRoom'], to_room)
+
+      info = carriable_object_index[item_id]
+      return false unless info.is_a?(Hash) && info['object'].is_a?(Hash)
+
+      item = info['object'].deep_dup.except('texture')
+             .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+      item = apply_carry_position(item, position)
+
+      player_state_will_change!
+      player_state['room_states'] ||= {}
+      player_state['room_states'][to_room] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+      player_state['room_states'][to_room]['objects_added'].reject! { |o| o['id'] == item_id }
+      player_state['room_states'][to_room]['objects_added'] << item
+      carry.delete(npc_id)
+      save!
+      true
+    end
+
+    # Consume: the carried object is used up. Confirms the carry entry and clears it;
+    # the origin room's objects_removed stays (written at pick-up), so the object is
+    # gone for good. No room is named by the client, so there is no wrong-room 422.
+    def consume_carried!(npc_id, item_id)
+      return false unless npc_id.is_a?(String) && item_id.is_a?(String)
+
+      carry = player_state['npcCarry']
+      entry = carry.is_a?(Hash) ? carry[npc_id] : nil
+      return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
+
+      player_state_will_change!
+      carry.delete(npc_id)
+      save!
+      true
+    end
+
+    # KO while carrying (slice C): the carrying NPC is knocked out, so the carried
+    # object drops to the KO room floor and the carry ends. The drop room must be the
+    # NPC's room or one adjacent to it (a needs NPC is at most a doorway from where it
+    # is placed), and the server trusts the KO itself, exactly as add_item_to_room!'s
+    # npc_defeated branch: the NPC must be defeated (its KO recorded) or KO-claimable,
+    # and if claimable but not yet recorded, this drop records the KO. Clears the carry
+    # so the object is served exactly once, on the floor, never also in the hand.
+    def ko_drop_carried!(room_id, npc_id, item_id, position = nil)
+      return false unless room_id.is_a?(String) && npc_id.is_a?(String) && item_id.is_a?(String)
+      return false unless scenario_room_ids.include?(room_id)
+
+      carry = player_state['npcCarry']
+      entry = carry.is_a?(Hash) ? carry[npc_id] : nil
+      return false unless entry.is_a?(Hash) && entry['itemId'] == item_id
+      # The player has already taken this object, so a KO drop would duplicate it
+      # onto the floor. Mirror the serve-path guard and refuse.
+      return false if carried_item_in_inventory?(item_id)
+
+      info = carriable_object_index[item_id]
+      return false unless info.is_a?(Hash) && info['object'].is_a?(Hash)
+
+      defeated = npc_defeated?(npc_id)
+      claimable = npc_ko_claimable?(npc_id)
+      return false unless defeated || claimable
+      # Bound the drop to the room the NPC is in or an adjacent one. The carrying NPC
+      # is always a needs NPC (only needs NPCs carry), so it is at most a doorway from
+      # its placed room; refuse a drop into a far room the client names. Known limit:
+      # the bound is measured from the scenario placement, not the live position, so a
+      # carrier made hostile and chased two or more rooms from home would have its KO
+      # drop refused; a reload then returns the object to the pick-up room. No shipped
+      # scenario does this.
+      return false unless npc_can_reach_room?(npc_id, room_id)
+
+      player_state_will_change!
+      player_state['room_states'] ||= {}
+      player_state['room_states'][room_id] ||= { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} }
+
+      # Record the KO when claimable but not yet recorded: the same trust as the gift
+      # KO drop (the server takes isKO from the browser). Match add_item_to_room! and
+      # update_npc_state! (review R2 m1): only write the KO record for an NPC actually
+      # in the named room, so a client cannot mark an unfought NPC KO'd in a room it
+      # was never in. The drop into room_id has already been bounded reachable above.
+      if !defeated && claimable && npc_in_room?(npc_id, room_id)
+        player_state['room_states'][room_id]['npc_states'] ||= {}
+        player_state['room_states'][room_id]['npc_states'][npc_id] ||= {}
+        player_state['room_states'][room_id]['npc_states'][npc_id].merge!('isKO' => true, 'currentHP' => 0)
+      end
+
+      item = info['object'].deep_dup.except('texture')
+             .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+      item = apply_carry_position(item, position)
+      player_state['room_states'][room_id]['objects_added'].reject! { |o| o['id'] == item_id }
+      player_state['room_states'][room_id]['objects_added'] << item
+      carry.delete(npc_id)
+      save!
+      true
+    end
+
+    # True when the object is recorded removed from the room (objects_removed). The
+    # carry action writes this at pick-up, so it is the authoritative marker that a
+    # carry really happened (review R1 M2).
+    def object_removed_from_room?(room_id, item_id)
+      return false unless room_id.is_a?(String) && item_id.is_a?(String)
+
+      removed = player_state.dig('room_states', room_id, 'objects_removed')
+      removed.is_a?(Array) && removed.include?(item_id)
+    end
+
+    # A carried object is set down in the room it was picked up from or a room
+    # adjacent to it (the needs system only walks it to a neighbouring room). The
+    # controller has already required to_room unlocked. The object is server-built
+    # from the scenario definition and is ordinary dressing, so this bound only
+    # stops a client naming a far room.
+    def put_down_room_reachable?(from_room, to_room)
+      return true if from_room == to_room
+
+      from_room.is_a?(String) && rooms_connected?(from_room, to_room)
+    end
+
+    # Merge the client position onto a put-down item: only finite world pixels are
+    # kept, nothing else; otherwise the scenario definition's own position stays.
+    def apply_carry_position(item, position)
+      return item unless position.is_a?(Hash)
+
+      px = position['px'] || position['x']
+      py = position['py'] || position['y']
+      return item unless valid_ko_coord?(px) && valid_ko_coord?(py)
+
+      item.merge('position' => { 'px' => px, 'py' => py })
+    end
+
+    # Carried items are written only by the four update_room carry actions, never by
+    # a client sync, so there is no npcCarry sync merge: an incoming npcCarry delta in
+    # sync_state is ignored (the controller drops it), which cannot mint, change or
+    # end a carry. The carry action owns the authoritative write (it records the object
+    # removed from its origin room), and the serve path (apply_npc_carry!) re-validates
+    # every stored carry against the allowlist under full scenario_data, so a stored
+    # entry that is not carriable is inert: never served, put down or consumed.
+
+    # Serve a carried object in the carrying NPC's itemsHeld, so it shows in the hand
+    # and can be taken. Driven by the npcCarry delta; the object left its origin room
+    # via objects_removed at pick-up. A carried item the player has already taken
+    # (delivered) is not re-served. Runs under full scenario_data, so this is the
+    # authoritative re-validation of every stored carry against the allowlist.
+    def apply_npc_carry!(room, _room_id)
+      carry = player_state['npcCarry']
+      return unless carry.is_a?(Hash) && carry.any? && room['npcs'].is_a?(Array)
+
+      room['npcs'] = room['npcs'].map do |npc|
+        next npc unless npc.is_a?(Hash)
+
+        entry = carry[npc['id'].to_s]
+        next npc unless entry.is_a?(Hash)
+
+        info = carriable_object_index[entry['itemId']]
+        next npc unless info.is_a?(Hash)
+        # Serve held only when the carry invariant holds: the object has actually left
+        # its origin room (review R1 M2). A stored entry without the matching removal
+        # (a forged sync that slipped through) is inert: never served in a hand.
+        next npc unless object_removed_from_room?(entry['fromRoom'], entry['itemId'])
+        # The carried id sits in the origin room's objects_removed, so delivered_item_ids
+        # would wrongly suppress it. Suppress only when the player has actually taken it
+        # into their inventory.
+        next npc if carried_item_in_inventory?(entry['itemId'])
+
+        existing = npc['itemsHeld'].is_a?(Array) ? npc['itemsHeld'] : []
+        next npc if existing.any? { |i| i.is_a?(Hash) && i['id'] == entry['itemId'] }
+
+        held = info['object'].deep_dup.except('texture').merge('takeable' => true)
+        npc.merge('itemsHeld' => existing + [held])
+      end
+    end
+
+    # True when the player holds the carried object in their inventory (they took it
+    # from the NPC's hand). Matches the item's scenario id, however the inventory
+    # entry wraps it.
+    def carried_item_in_inventory?(item_id)
+      Array(player_state['inventory']).any? do |inv|
+        data = inv.is_a?(Hash) ? (inv['scenarioData'] || inv) : nil
+        data.is_a?(Hash) && (data['id'] == item_id || inv['id'] == item_id)
+      end
+    end
+
     # Update object state (e.g., container opened, light switched on)
     def update_object_state!(room_id, object_id, state_changes)
       player_state['room_states'] ||= {}
@@ -793,23 +1781,6 @@ module BreakEscape
       self.class.where(id: id).pick(:scenario_data)
     end
 
-    # The request's own sent messages (sync deltas R2, 6b): each mailboxes.<box>.<msgId> update
-    # mail_state_updates keeps, sanitised, with folder 'sent', landed true, a targetId and a
-    # link.kitId. The capture stamp takes these as extra part 2 evidence, so a capture whose sent
-    # mail rides the same request, or whose mail section was refused over a cap, is still proven.
-    # Reads the parsed body; stores nothing.
-    def incoming_sent_messages(mail_incoming)
-      return [] unless mail_incoming.is_a?(Hash)
-
-      mail_state_updates(mail_incoming).filter_map do |path, value|
-        next unless path.is_a?(Array) && path[0] == 'mailboxes' && value.is_a?(Hash)
-        next unless value['folder'] == 'sent' && value['landed'] == true && value['targetId'].is_a?(String)
-
-        link = value['link']
-        value if link.is_a?(Hash) && link['kitId'].is_a?(String)
-      end
-    end
-
     private
 
     # True when prepare_bootstrap_state! must take the lock and write. Each check
@@ -817,8 +1788,16 @@ module BreakEscape
     # and 6a OR in cards_need_repair?, legacy_captures?, unrecorded_shared_logins?
     # and stampable_captures?; until then no bootstrap write is ever needed.
     def bootstrap_state_needs_write?
-      cards_need_repair? || legacy_cloned_cards? || legacy_captures? || unrecorded_shared_logins? ||
-        stampable_captures?
+      cards_need_repair? || legacy_cloned_cards? || legacy_captures? || legacy_phish_evidence? ||
+        unrecorded_shared_logins? || stampable_captures? || stranded_npc_carries? ||
+        credential_end_globals_stale?
+    end
+
+    # True when a carry is still stored at load time. A reload lands on the bootstrap
+    # before any room fetch, so a carry that outlived a reload is ended here.
+    def stranded_npc_carries?
+      carry = player_state['npcCarry']
+      carry.is_a?(Hash) && carry.any?
     end
 
     # Run the bootstrap writers inside the lock (none of which saves) and return
@@ -835,10 +1814,72 @@ module BreakEscape
       changed = repair_saved_cards! || changed
       changed = migrate_legacy_captures!(scenario: scenario) || changed
       changed = record_shared_logins!(scenario: scenario) || changed
+      # Legacy phish evidence (plan sections 9, 9.1): import the client-global build and send facts
+      # into the two server stores once, before the stamp, so a returning legacy save is migrated
+      # and stamped in one locked pass.
+      changed = migrate_legacy_phish_evidence!(scenario: scenario) || changed
       # 6b: an unproven entry whose page evidence now holds is stamped proven: true on the
       # bootstrap, so a secret earned across a reload is served without a fresh sync.
       changed = stamp_proven_captures!(scenario: scenario) || changed
+      # End any carry that outlived a reload: the client's needs state is fresh and
+      # cannot resume an in-flight carry, so put each carried object back on the floor
+      # and free the NPC.
+      changed = end_stranded_carries! || changed
+      # Keyring K2 (plan 7.1): cache the end-global map for the sync merge and end any invite whose
+      # global is already true.
+      changed = record_credential_end_globals!(scenario: scenario) || changed
       changed
+    end
+
+    # End every stored carry by putting its object back where it was picked up
+    # (fromRoom, at fromPos when the entry has one, else the scenario position) and
+    # dropping the entry. The client then sees the object on the floor and the NPC is
+    # free to carry again. Mirrors put_down_carried! (add to objects_added, keep the
+    # origin objects_removed), so nothing duplicates. An object the player has already
+    # taken into their inventory gets no floor copy (the same guard the carry actions
+    # use), so a stranded delivery entry drops without duplicating the item. Returns
+    # whether it changed anything.
+    def end_stranded_carries!
+      carry = player_state['npcCarry']
+      return false unless carry.is_a?(Hash) && carry.any?
+
+      player_state_will_change!
+      player_state['room_states'] ||= {}
+      carry.keys.each do |npc_id|
+        entry = carry[npc_id]
+        if entry.is_a?(Hash)
+          item_id = entry['itemId']
+          from_room = entry['fromRoom']
+          info = item_id.is_a?(String) ? carriable_object_index[item_id] : nil
+          if info.is_a?(Hash) && info['object'].is_a?(Hash) && from_room.is_a?(String) &&
+             !carried_item_in_inventory?(item_id)
+            room_state = (player_state['room_states'][from_room] ||=
+              { 'objects_added' => [], 'objects_removed' => [], 'object_states' => {}, 'npc_states' => {} })
+            item = info['object'].deep_dup.except('texture')
+                       .merge('takeable' => true, 'interactable' => true, 'active' => true, 'visible' => true)
+            # slice C C1: a placed copy goes back to the spot it was lying on, not its
+            # scenario position. fromPos is the sanitised server record from pick-up.
+            from_pos = entry['fromPos']
+            item['position'] = from_pos if from_pos.is_a?(Hash) && from_pos.any?
+            room_state['objects_added'].reject! { |o| o['id'] == item_id }
+            room_state['objects_added'] << item
+          end
+        end
+        carry.delete(npc_id)
+      end
+      true
+    end
+
+    # Keyring K4 (plan 9 Client): `connect: true` on a served item whose authored credential is a
+    # saved connection, set from the scenario's registry before the credential id is stripped.
+    # Display only (the sign-in still proves `held` server-side); any other `connect` is dropped.
+    def mark_saved_connection!(obj)
+      obj.delete('connect')
+      id = obj['credential']
+      return unless id.is_a?(String)
+
+      entry = CredentialModel.registry(scenario_data)[id]
+      obj['connect'] = true if entry.is_a?(Hash) && entry['kind'] == 'saved_connection'
     end
 
     def filter_inventory_for_client!(obj)
@@ -850,7 +1891,14 @@ module BreakEscape
         self.class.strip_puzzle_graph_keys!(obj)
         BreakEscape::DeclaredGrants.strip_grant_contents!(obj)
         strip_capture_secrets!(obj)
-        obj.delete('requires') if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # the `held` proof reads it from the stored inventory, the client never needs it (K3 draws
+        # Connect from GET /keyring), so it never rides a client inventory copy or echo (R1 m1).
+        # K4 (plan 9 Client): a saved connection carries display-only `connect: true` instead, so
+        # the file's dialog can offer Connect; never the credential id.
+        mark_saved_connection!(obj)
+        obj.delete('credential')
+        obj.delete('requires') if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
         obj.each_value { |value| filter_inventory_for_client!(value) }
       when Array
         obj.each { |item| filter_inventory_for_client!(item) }
@@ -1094,6 +2142,31 @@ module BreakEscape
       (scenario_has_npc && !removed) || added
     end
 
+    # The ids of the rooms an NPC is placed in by the scenario (minus a permanent
+    # removal, plus a permanent add). Bounded by the scenario.
+    def npc_scenario_room_ids(npc_id)
+      ids = Set.new
+      rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+      return ids unless rooms.is_a?(Hash)
+
+      rooms.each_key do |room_id|
+        ids << room_id if npc_in_room?(npc_id, room_id)
+      end
+      ids
+    end
+
+    # True when an NPC can reach a room for a carry action: it is placed in that
+    # room, or in a room adjacent to it. The server cannot see a needs NPC's live
+    # simulated position, only its scenario placement; a needs walk only ever steps
+    # into a neighbouring room, so same-or-adjacent covers every legitimate walk
+    # while still refusing a client that names a far, unreachable room.
+    def npc_can_reach_room?(npc_id, room_id)
+      return false unless npc_id.is_a?(String) && room_id.is_a?(String)
+      return true if npc_in_room?(npc_id, room_id)
+
+      npc_scenario_room_ids(npc_id).any? { |placed| rooms_connected?(placed, room_id) }
+    end
+
     # Check if item exists in a room
     def item_in_room?(room_id, item_id)
       room = scenario_data.dig('rooms', room_id)
@@ -1118,9 +2191,9 @@ module BreakEscape
 
       return false unless room1 && room2
 
-      # Check if room1 has connection to room2
-      room1_connections = room1['connections']&.values || []
-      room2_connections = room2['connections']&.values || []
+      # An exit may name one room or a list of rooms (several doors on one wall)
+      room1_connections = (room1['connections']&.values || []).flat_map { |v| Array(v) }
+      room2_connections = (room2['connections']&.values || []).flat_map { |v| Array(v) }
 
       room1_connections.include?(room2_id) || room2_connections.include?(room1_id)
     end
@@ -1222,6 +2295,48 @@ module BreakEscape
       BreakEscape::NpcHabits.expand!(scenario_data)
     end
 
+    # Step 7. Stamp the current format number onto data that carries none, at creation. A caller
+    # that supplied scenario_data with formatVersion: 0 (an upgrader test wanting an old game)
+    # keeps 0, because 0 is truthy in Ruby. Generated data (no formatVersion) is stamped with
+    # current, but only once current is non-zero (a rename step has landed). At current 0 (step 7)
+    # the whole subsystem is inert: version_of reads a missing key as 0, so stamping 0 would only
+    # mutate otherwise-untouched hand-set scenario_data for no behavioural gain. So nothing is
+    # written at current 0 and a game created without a formatVersion keeps its data byte for byte.
+    def stamp_format_version
+      return unless scenario_data.is_a?(Hash)
+
+      cur = BreakEscape::FormatUpgrade.current
+      return if cur.zero?
+
+      scenario_data['formatVersion'] ||= cur
+    end
+
+    # Step 7. Bring a stored game up to the current format at load time, under the row lock. Called
+    # from set_game and from every other path that reads scenario_data without set_game. A game
+    # already at current costs one integer comparison and takes no lock. A game stored above current
+    # (or with an unreadable formatVersion) is never loaded: version_of raises Unreadable and the
+    # too-new guard raises TooNew, which the caller turns into the refusal. prepare_scenario_data!
+    # runs again only when a step actually changed scenario_data, so an unprepared game stays
+    # unprepared and a prepared one keeps the ids and fills it was played with.
+    def ensure_current_format!
+      stored = BreakEscape::FormatUpgrade.version_of(scenario_data)
+      cur = BreakEscape::FormatUpgrade.current
+      raise BreakEscape::FormatUpgrade::TooNew.new(stored, cur) if stored > cur
+      return if stored == cur
+
+      with_lock do
+        reload
+        cur = BreakEscape::FormatUpgrade.current
+        stored = BreakEscape::FormatUpgrade.version_of(scenario_data)
+        raise BreakEscape::FormatUpgrade::TooNew.new(stored, cur) if stored > cur
+        next if stored == cur
+
+        result = BreakEscape::FormatUpgrade.upgrade!(scenario_data, player_state)
+        prepare_scenario_data! if result[:scenario_changed]
+        save!
+      end
+    end
+
     # An NPC has an account when creds.username is a non-empty string (section 3).
     def self.account_holder?(npc)
       return false unless npc.is_a?(Hash)
@@ -1277,6 +2392,15 @@ module BreakEscape
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
           self.class.strip_lock_answers!(kept_fields)
+          # A pad lock's answer never leaves this method: fill the PIN pad length first, then drop
+          # `requires` unless it names a card, as GamesController#filter_requires_recursive does
+          # again on the way out. Doing it here too means the client-bound bootstrap is safe on
+          # every path that calls this method, not only the one the controller wraps.
+          self.class.set_pin_length!(kept_fields)
+          lock_type = kept_fields['lockType']
+          if lock_type.is_a?(String) && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
+            kept_fields.delete('requires')
+          end
 
           # A motion-sensor room is lit only when someone's actually in it. NPCs are stripped
           # from the lazy payload, so expose just whether a present (non-phone, non-hidden) NPC
@@ -1304,6 +2428,10 @@ module BreakEscape
       # Strip top-level flag values — client must never see actual flag answers.
       filtered.delete('flags')
 
+      # Step 3: acknowledgedClues is an authoring record (each reason is a spoiler, though not a
+      # secret). No client code reads it; it never ships.
+      filtered.delete('acknowledgedClues')
+
       # Account profiles (access model 5.1) are served only by GET /container against a
       # sign-in session, never in the bootstrap. policies and defaultPolicy hold no
       # secrets and ship as authored (5.5).
@@ -1312,6 +2440,11 @@ module BreakEscape
       # The top-level roles (slice 9.1, 5.2; slice 9.2 adds its own keys): default
       # awareness levels by role. Nothing in the browser reads it.
       filtered.delete('roles')
+
+      # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6): the top-level `credentials`
+      # registry is server-only. No answer sends it whole; the keyring reaches the client only
+      # through GET /keyring, one proven entry at a time.
+      filtered.delete('credentials')
 
       # Networks (slice 9.3a, section 6): a network's name and what it exposes reach the
       # browser only through GET /network and GET /container, for a foothold or session
@@ -1459,7 +2592,7 @@ module BreakEscape
     def hard_access_capture_value?(secret)
       return false unless secret.is_a?(String) && !secret.empty?
 
-      (@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data)).include?(secret)
+      CaptureModel.lock_answer?(@hard_access_capture_values ||= CaptureModel.hard_access_values(scenario_data), secret)
     end
 
     # { target_id => { secret:, address:, proof: } } for every non-account capture writer with
@@ -1591,6 +2724,83 @@ module BreakEscape
       room
     end
 
+    # Place knocked-out NPCs where they fell (D5). Driven by the KO position stored on
+    # each npcHostility record (merge_ko_position!). A same-room KO moves the native
+    # NPC to its fall spot; a cross-room KO strips the NPC from its home room here and,
+    # when this is the room it fell in, injects a copy of its scenario def at that spot.
+    def apply_ko_positions!(room, room_id)
+      positions = ko_positions
+      return if positions.empty?
+
+      if room['npcs'].is_a?(Array)
+        room['npcs'] = room['npcs'].filter_map do |npc|
+          pos = npc.is_a?(Hash) ? positions[npc['id']] : nil
+          next npc unless pos
+
+          ko_room, kx, ky = pos
+          # Serve the fall spot in the form the client reads: createNPCSprite places
+          # the sprite via calculateNPCWorldPosition(npc.position), so a top-level x,y
+          # is ignored. px,py are absolute world pixels and land the body centre there
+          # (createNPCSprite in npc-sprites.js), which is the frame koX,koY was captured in.
+          ko_room == room_id ? npc.merge('position' => { 'px' => kx, 'py' => ky }) : nil
+        end
+      end
+
+      delivered = nil
+      positions.each do |npc_id, (ko_room, kx, ky)|
+        next unless ko_room == room_id
+        next if room['npcs'].is_a?(Array) && room['npcs'].any? { |n| n.is_a?(Hash) && n['id'] == npc_id }
+
+        npc_def = find_npc_in_scenario(npc_id)
+        next unless npc_def.is_a?(Hash)
+
+        injected = npc_def.deep_dup.merge(
+          # Absolute world pixels the client reads (see the same-room branch above);
+          # overwrites the scenario def's tile position so the body lands where it fell.
+          'position' => { 'px' => kx, 'py' => ky }, 'isKO' => true, 'currentHP' => 0
+        )
+        # Strip held items a real KO already dropped to the floor (objects_added) or that
+        # reached the player: the scenario def still lists them, but on a
+        # cross-room injection they must not be resurrected on the summoned body. Matches
+        # the delivered-item suppression a native room NPC gets in filtered_room_data.
+        if injected['itemsHeld'].is_a?(Array) && !injected['itemsHeld'].empty?
+          delivered ||= delivered_item_ids
+          injected['itemsHeld'] = injected['itemsHeld'].reject do |i|
+            i.is_a?(Hash) && i['id'].is_a?(String) && delivered.include?(i['id'])
+          end
+        end
+
+        room['npcs'] ||= []
+        room['npcs'] << injected
+      end
+    end
+
+    # { npc_id => [koRoom, koX, koY] } for every KO'd NPC whose hostility record holds
+    # a stored fall position. The values were validated at store time (ko_position_from).
+    # This serve path trusts the write-time reachability gate (ko_room_reachable?): it does
+    # not re-check koRoom against unlockedRooms, so if that set ever becomes shrinkable, the
+    # serve path must re-check reachability here.
+    def ko_positions
+      hostility = player_state['npcHostility']
+      return {} unless hostility.is_a?(Hash)
+
+      hostility.each_with_object({}) do |(npc_id, entry), out|
+        next unless npc_id.is_a?(String) && entry.is_a?(Hash) && entry['ko'] == true
+
+        room_id = entry['koRoom']
+        kx = entry['koX']
+        ky = entry['koY']
+        next unless room_id.is_a?(String) && kx.is_a?(Numeric) && ky.is_a?(Numeric)
+        # Re-check the room against the live scenario: a scenario edited
+        # mid-game could drop koRoom, and an entry pointing at a gone room would strip the
+        # NPC from its home room (apply_ko_positions!) without ever being re-injected. Skip
+        # it instead, so the NPC is served at home, still KO'd, rather than lost.
+        next unless scenario_room_ids.include?(room_id)
+
+        out[npc_id] = [room_id, kx, ky]
+      end
+    end
+
     # Apply room_states delta to room data
     def apply_room_state_changes!(room, room_id)
       # Apply room_states delta (removals, additions, state changes) if an entry exists.
@@ -1643,6 +2853,11 @@ module BreakEscape
           end
         end
       end
+
+      # Place knocked-out NPCs where they fell (D5), always, regardless of a
+      # room_states entry: a same-room KO moves the NPC to koX,koY; a cross-room KO
+      # takes the NPC out of its home room and injects it into the room it fell in.
+      apply_ko_positions!(room, room_id)
 
       # These filters always run regardless of whether a room_states entry exists,
       # so that items/notes already collected in a previous session are suppressed
@@ -1699,7 +2914,7 @@ module BreakEscape
           out = npc.merge('phone' => false)
           if npc['itemsHeld'].is_a?(Array)
             out['itemsHeld'] = npc['itemsHeld'].reject do |i|
-              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['phoneOf'] == npc['id']
+              i.is_a?(Hash) && i['type'] == SocialFeed::FRIENDFACE_PHONE && i['owner'] == npc['id']
             end
           end
           out
@@ -1710,6 +2925,9 @@ module BreakEscape
       # then a reload) lists the held items still owed, and the client drops them again
       # (npc-sprites.js, npc-hostile.js redropPending). Copy, as above.
       room['npcs'] = with_ko_drop_pending(room['npcs']) if room['npcs'].is_a?(Array)
+
+      # Serve a carried object in the carrying NPC's itemsHeld (NPC carried items).
+      apply_npc_carry!(room, room_id)
 
       # Mark previously-unlocked objects as locked=false so the client skips the
       # lock minigame and opens them directly on interaction.
@@ -1741,6 +2959,13 @@ module BreakEscape
       # Capture proofs (engine plan section 6): devices the server saw planted at a named
       # object, and items it accepted as player drops. Grow-only.
       'plantedItems' => [], 'droppedItems' => [],
+      # Phish evidence (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md section 3.1): two
+      # server-written-only stores that record the landing-page build and the landed send the
+      # server verified itself, so a tampered client cannot forge the evidence that gates a
+      # phished secret. seLandingPages = { pageId => entry }, sePhishSends = { sendKey => entry }.
+      # Never read from a sync body and never serialised to the client (section 7); bounded by
+      # scenario authorship (section 8), so they never grow per sync.
+      'seLandingPages' => {}, 'sePhishSends' => {},
       # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.4): frustration per room NPC, held on the server
       'npcFrustration' => {},
       # Slice 9.2 sub-slice H (9.4): who last left a borrowed session at each PC, and the
@@ -1749,7 +2974,18 @@ module BreakEscape
       # Review R1 m1: the server time each guest record was written, for the server's own lock
       'guestSessionsAt' => {},
       # Sub-slice C (9.4): how many of each NPC's feed posts are out, and when the last came out
-      'feedRevealed' => {}
+      'feedRevealed' => {},
+      # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): invites the NPC has ended (grow-only, at most 64)
+      # and the cached { global => [credId] } map the sync merge reads in place of scenario_data.
+      # Server-written only, never read from a sync body and never sent to the client.
+      'endedCredentials' => [], 'credentialEndGlobals' => {},
+      # Keyring K5 (plan 10): { tokenCredId => server time its clock started }. Grow-only, at most
+      # 64 entries, server-written only, never read from a sync body and never sent.
+      'credentialClock' => {},
+      # Keyring K3d R1 (CREDENTIAL_KEYRING_PLAN.md 8.7): { registryId => server ms } the first time
+      # GET /keyring listed each registry entry, so the Sign-ins order survives a reload.
+      # Server-written only, at most 128 keys, never sent to the client except as an entry's gainedAt.
+      'keyringGained' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -1759,6 +2995,12 @@ module BreakEscape
     # for the carry-over import guard (it cannot load this constant); carry_over_server_owned_globals_test
     # asserts the two stay in sync, so add a second server-owned global in both places.
     SERVER_OWNED_GLOBAL_NAMES = %w[se_captures].freeze
+
+    # The global that lists cancelled access cards (the left-card consequence, §3.3b). Not a
+    # SERVER_OWNED_GLOBAL_NAME (it still round-trips to the client for the UI filter), but merged
+    # grow-only in merge_global_variables! so a cancelled card can never be un-revoked by a client
+    # that drops the key. Read by the rfid unlock checks below; see revoked_card_ids.
+    REVOKED_CARDS_GLOBAL = 'revoked_card_ids'
 
     # loginFailures and loginLockouts keep at most this many entries for usernames that
     # are not accounts; entries for real accounts are never dropped (section 6).
@@ -1900,6 +3142,16 @@ module BreakEscape
       info
     end
 
+    # Whether the scenario declares at least one sign-in PC (UI slice 6, R1 minor 2): the Lock
+    # capability is offered only then, so it never surfaces in a mission with no sign-in PC.
+    def scenario_has_login_pc?
+      return false unless scenario_data.is_a?(Hash)
+
+      Array(scenario_data['rooms']).any? do |_room_id, room|
+        room.is_a?(Hash) && Array(room['objects']).any? { |obj| self.class.login_pc?(obj) }
+      end
+    end
+
     # "PC reachable" (section 6): its room is unlocked or never locked, and nothing it
     # sits in is still locked.
     def login_pc_reachable?(info)
@@ -1911,10 +3163,26 @@ module BreakEscape
       sessions.is_a?(Hash) ? sessions : {}
     end
 
-    # The NPC signed in at a sign-in PC right now, or nil.
+    # The NPC actively signed in at a sign-in PC right now, or nil. UI slice 6: a locked
+    # session admits nothing until the password is entered again, so it has no live identity
+    # here. This is the one shared predicate every read path (the desktop, a desktop folder,
+    # a profile, a share mapped on the desktop, a copy, the remote/foothold desktop) runs
+    # through, so a locked PC is refused exactly as a signed-out one and future routes inherit
+    # the gate. The session record itself stays held (session_for_client still reads it raw,
+    # so a reload keeps `locked`).
     def session_identity(pc_id)
       session = access_sessions[pc_id.to_s]
-      session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
+      return nil unless session.is_a?(Hash)
+      return nil if session_locked?(session)
+
+      scenario_room_npc(session['id'])
+    end
+
+    # Whether the held session at a PC is locked (UI slice 6), read from the server's own
+    # record. Used by the admit predicates that test for a held session Hash directly rather
+    # than through session_identity (the login_pc scope, a mapped share).
+    def session_locked_at?(pc_id)
+      session_locked?(access_sessions[pc_id.to_s])
     end
 
     # section 5.1: a sign-in PC scope needs a current session there; a profile scope a
@@ -1926,7 +3194,9 @@ module BreakEscape
       when 'login_pc'
         # Slice 9.3b O (5.2): a scoped request under a remote session whose route is no longer
         # reached is refused, read from the server's own session record (session_route_up?).
-        access_sessions[scope[:id].to_s].is_a?(Hash) && session_route_up?(scope[:id])
+        # UI slice 6: a locked session admits nothing until re-auth.
+        access_sessions[scope[:id].to_s].is_a?(Hash) && !session_locked_at?(scope[:id]) &&
+          session_route_up?(scope[:id])
       when 'profile'
         profile = account_profiles[scope[:id]]
         return false unless profile
@@ -2039,17 +3309,17 @@ module BreakEscape
       self.class.acl_admits?(pc['access'], npc)
     end
 
-    # The PC's owner (screenOwner, else the room NPC whose needsHome is the PC), or nil,
-    # as ownerOf does on the client (workstation-state.js:52-58).
+    # The PC's owner (its explicit owner, a single NPC id), or nil, as ownerOf does on the
+    # client (workstation-state.js). needsHome no longer sets an owner.
     def login_pc_owner(pc)
-      owner_id = pc['screenOwner']
+      owner_id = pc['owner']
       return scenario_room_npc(owner_id) if owner_id.is_a?(String) && !owner_id.empty?
 
-      self.class.scenario_room_npcs(scenario_data).find { |npc| npc['needsHome'] == pc['id'] }
+      nil
     end
 
     # A screen that locks on every leave, in decideLocked's order without the policy: the
-    # PC's lockChance, else its locksScreenOnLeave, else the owner's screenHabit, authored or
+    # PC's lockChance, else its locksScreenOnLeave, else the owner's habits.screen, authored or
     # filled by a locksScreen habit (slice 9.1, 5.2).
     def pc_always_locks?(pc, owner = login_pc_owner(pc))
       BreakEscape::AccessIdentities.screen_always_locks?(pc, owner)
@@ -2095,13 +3365,33 @@ module BreakEscape
     # With foothold (slice 9.3a, section 5): the host must be reachable through that
     # foothold and its policy must allow remote sign-in; the room is not consulted.
     # Without: a headless host is refused as an unreachable PC is.
-    def attempt_login!(pc_id, username, password, foothold: nil)
+    #
+    # Keyring K4 (plan 9): with from (the raw param; from_given true when the request named one),
+    # the sign-in is judged by the `from` route, not the keyboard: refused generically, uncounted,
+    # outside a scenario that declares credentials, for a malformed param, with a foothold too,
+    # or for a relay source, the target itself or a target on the source's chain; 403 for a
+    # source not held, locked, off or out of reach. Nothing is counted on a route refusal.
+    def attempt_login!(pc_id, username, password, foothold: nil, from: nil, from_given: false)
       info = find_login_pc(pc_id)
       return { status: :not_found, body: { success: false, message: 'Sign-in PC not found' } } unless info
 
       unreachable = { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
       foothold = foothold.presence&.to_s
-      if foothold
+      if from_given
+        return credential_login_refusal if foothold || !credentials_declared?
+
+        case from_route_refusal(from, info[:object])
+        when :generic then return credential_login_refusal
+        when :unreachable then return unreachable
+        end
+        if host_service_off?(info[:object])
+          return { status: :forbidden, body: { success: false, message: NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' } }
+        end
+        if remote_blocked?(info[:object])
+          return { status: :unprocessable_entity,
+                   body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
+        end
+      elsif foothold
         return unreachable unless host_reachable_through?(foothold, info[:object])
         # A host whose own service is off does not answer over the network (9.3b plan 5.2)
         if host_service_off?(info[:object])
@@ -2132,10 +3422,11 @@ module BreakEscape
         end
 
         login_failures.delete(key)
-        start_login_session!(pc['id'], npc, 'password', foothold: foothold)
+        from = from_given ? from : nil
+        ended = start_login_session!(pc['id'], npc, 'password', foothold: foothold, from: from)
         save!
-        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold)
-        return { status: :ok, body: { success: true }.merge(answer) }
+        answer = login_session_answer(npc, 'password', pc_id: pc['id'], foothold: foothold, from: from)
+        return { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
       end
 
       record_login_failure!(pc, key, account: !npc.nil?)
@@ -2180,8 +3471,9 @@ module BreakEscape
       return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
-      # A session already held here (a password sign-in) is never replaced by a claim
-      return refusal.call('a session is already held at this PC') if access_sessions[pc['id'].to_s].is_a?(Hash)
+      # A session already held here (a password sign-in) is never replaced by a claim. A relay
+      # session is not held at the keyboard (keyring K2, plan 3.8): a claim replaces it.
+      return refusal.call('a session is already held at this PC') if session_held_at_keyboard?(pc['id'])
 
       owner = login_pc_owner(pc)
       return refusal.call('no owner') unless owner
@@ -2204,9 +3496,9 @@ module BreakEscape
       end
 
       Rails.logger.info "[BreakEscape] login claim at #{pc['id']} for #{owner['id']}; client globals: #{globals.inspect}"
-      start_login_session!(pc['id'], owner, 'claim')
+      ended = start_login_session!(pc['id'], owner, 'claim')
       save!
-      { status: :ok, body: { success: true }.merge(login_session_answer(owner, 'claim')) }
+      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(login_session_answer(owner, 'claim')), ended) }
     end
 
     # Slice 9.2 sub-slice L (6.6): whether loginLockouts holds this NPC's normalised username at
@@ -2249,8 +3541,8 @@ module BreakEscape
       return pc_off_answer if host_service_off?(info[:object])
 
       pc = info[:object]
-      # 2. no session held here
-      return refusal.call('a session is already held at this PC') if access_sessions[pc['id'].to_s].is_a?(Hash)
+      # 2. no session held here (a relay session does not count: keyring K2, plan 3.8)
+      return refusal.call('a session is already held at this PC') if session_held_at_keyboard?(pc['id'])
 
       # 3. a guest record
       guests = player_state['guestSessions']
@@ -2262,7 +3554,15 @@ module BreakEscape
       return refusal.call('access list does not admit the guest') unless pc_admits_account?(pc, guest)
 
       auto_lock = effective_policy(pc)['autoLockMin']
-      return refusal.call('policy autoLockMin is 0') if auto_lock.is_a?(Numeric) && auto_lock.zero?
+      # Review R1 minor 2: a policy that locks outright never opens a guest session, so purge any
+      # stale record before refusing, as the locked-out and timed-out branches below do. Only
+      # reachable if a record predates a flip to autoLockMin 0, which static policies cannot do
+      # today; it keeps the three outright-refusal branches consistent if runtime policy ever lands.
+      if auto_lock.is_a?(Numeric) && auto_lock.zero?
+        end_guest_session_at!(pc['id'])
+        save!
+        return refusal.call('policy autoLockMin is 0')
+      end
       return refusal.call('a careful guest') if careful_guest?(guest)
       # Sub-slice L review R1 m1 (6.6): a guest who cannot sign in here left no session open.
       # Review R2 n2: the record goes too, as for a timed-out session, since it can never be claimed
@@ -2280,9 +3580,9 @@ module BreakEscape
         return refusal.call('the guest session has timed out')
       end
 
-      start_login_session!(pc['id'], guest, 'claim')
+      ended = start_login_session!(pc['id'], guest, 'claim')
       save!
-      { status: :ok, body: { success: true }.merge(login_session_answer(guest, 'claim')) }
+      { status: :ok, body: with_ended_pc_ids({ success: true }.merge(login_session_answer(guest, 'claim')), ended) }
     end
 
     # POST /logout: no checks (section 6). The PC is named as /login names it (id or
@@ -2317,10 +3617,10 @@ module BreakEscape
     # write that committed after this record was loaded (a pagehide PUT /sync_state, say)
     # is kept rather than overwritten with the stale player_state.
     def end_claimed_sessions!
-      return if claimed_session_ids.empty?
+      return if reload_ended_session_ids.empty?
 
       with_lock do
-        claimed = claimed_session_ids
+        claimed = reload_ended_session_ids
         next if claimed.empty?
 
         player_state['sessions'] = access_sessions.except(*claimed)
@@ -2335,23 +3635,156 @@ module BreakEscape
       access_sessions.select { |_pc_id, session| session.is_a?(Hash) && session['via'] == 'claim' }.keys
     end
 
+    # The sessions a reload ends (keyring K2, plan 3.8): every claim, and every relay session
+    # (the shared screen closes on reload; the invite itself is still held).
+    def reload_ended_session_ids
+      access_sessions.select do |_pc_id, session|
+        session.is_a?(Hash) && (session['via'] == 'claim' || relay_session?(session))
+      end.keys
+    end
+
+    # A session the holder's keyboard sees as held: any session but a relay (keyring K2, 3.8).
+    # An expired token session counts as not held either (K5, plan 10): a claim or sign-in there
+    # replaces it in the one slot.
+    def session_held_at_keyboard?(pc_id)
+      session = access_sessions[pc_id.to_s]
+      session.is_a?(Hash) && !relay_session?(session) && !credential_session_expired?(session)
+    end
+
+    # A sign-in answer gains endedPcIds when the sign-in replaced a session and the prune that
+    # followed ended any onward ones (keyring K2, plan 3.8). Absent otherwise, so the common
+    # answer is unchanged.
+    #
+    # Keyring K5 (plan 10): when that prune ended an expired token session, the answer also
+    # carries tokenExpiredPcIds (a subset of endedPcIds).
+    def with_ended_pc_ids(body, ended)
+      ended = Array(ended)
+      ended.empty? ? body : with_token_expired_pc_ids(body.merge(endedPcIds: ended))
+    end
+
     # { pcId => { npcId, username, displayName, via } } for the scenario response (5.3).
     def sessions_for_client
+      reload_ended = reload_ended_session_ids.map(&:to_s)
+      survivors = sessions_surviving_reload(reload_ended)
       access_sessions.each_with_object({}) do |(pc_id, session), out|
         next unless session.is_a?(Hash)
+        # Nor a session the reload's prune ends through a claimed pivot (keyring K4 R1 m1)
+        next if survivors && !reload_ended.include?(pc_id.to_s) && !survivors.include?(pc_id.to_s)
+        # The bootstrap ends relay sessions in the same request (end_claimed_sessions!), so
+        # it never hands one to the client (keyring K2, plan 3.8)
+        next if relay_session?(session)
+        # Keyring K4 (plan R10 m5): nor a `from` session whose source chain hits a session the
+        # same request ends (the prune that follows ends it), nor one whose chain repeats
+        if session.key?('from')
+          chain = from_chain(pc_id)
+          next if chain.nil? || (chain & reload_ended).any?
+        end
 
         answer = session_for_client(pc_id)
         out[pc_id] = answer if answer
       end
     end
 
-    # One PC's entry of sessions_for_client, or nil.
+    # The ids of the sessions left once end_claimed_sessions! has run, or nil when it ends
+    # nothing. A dry run of the same prune on the in-memory sessions (restored afterwards, never
+    # saved), so the bootstrap hands out no session the same request then ends, whichever
+    # pivot or source it hung from (keyring K4 R1 m1; it covers foothold sessions too).
+    def sessions_surviving_reload(reload_ended)
+      return nil if reload_ended.empty?
+
+      original = player_state['sessions']
+      begin
+        player_state['sessions'] = access_sessions.except(*reload_ended)
+        prune_unreachable_sessions!
+        access_sessions.keys.map(&:to_s)
+      ensure
+        player_state['sessions'] = original
+      end
+    end
+
+    # One PC's entry of sessions_for_client, or nil. A locked session (UI slice 6) carries
+    # `locked` so a reload keeps the lock; an unlocked one carries nothing (the absent key is
+    # "false"), so the answer never grows for the common case.
     def session_for_client(pc_id)
       session = access_sessions[pc_id.to_s]
+      # Keyring K5 (plan 10): an expired token session is never handed to the client
+      return nil if credential_session_expired?(session)
+
       npc = session.is_a?(Hash) ? scenario_room_npc(session['id']) : nil
       return nil unless npc && self.class.account_holder?(npc)
 
-      login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'])
+      answer = login_session_answer(npc, session['via'], pc_id: pc_id.to_s, foothold: session['foothold'],
+                                                         relay: relay_session?(session), credential: session['credential'],
+                                                         from: session['from'])
+      answer['locked'] = true if session_locked?(session)
+      answer
+    end
+
+    # A held session can be locked (UI slice 6): it stays held and signed in, but the player
+    # must re-enter the account's password (an ordinary POST /login, counted the same way) to
+    # use it again. The boolean lives on the existing session record, one per sign-in PC, so
+    # the synced state never grows past the number of sign-in PCs. One predicate and one
+    # setter serve every session kind (password, claim, a future keyring grant), so the same
+    # function locks and unlocks them all.
+    def session_locked?(session)
+      session.is_a?(Hash) && session['locked'] == true
+    end
+
+    # Lock or unlock a session record in place. Unlock (locked false) is reached only through
+    # a fresh sign-in, which start_login_session! builds with no `locked`; it is written here
+    # so a granted session can be reopened through the same function with no separate store.
+    def set_session_locked!(session, locked)
+      return unless session.is_a?(Hash)
+
+      if locked
+        session['locked'] = true
+      else
+        # No caller passes false yet: unlock happens by start_login_session! rebuilding a
+        # fresh record. Kept for a future keyring grant that reopens a session in place.
+        session.delete('locked')
+      end
+    end
+
+    # Whether a held session may be locked. A password sign-in (UI slice 6) unlocks with the
+    # password. Keyring K-lock (plan 8.6): a `via: "credential"` session the player opened as
+    # the account over a foothold or `from` route (a token session carries its proof foothold)
+    # unlocks with the account's password or a fresh sign-in with the same credential, which
+    # start_login_session! rebuilds without `locked`. A claim or guest session has no way back
+    # in, and a relay is the holder's own screen (Disconnect only): neither is lockable.
+    def session_lockable?(session)
+      return false unless session.is_a?(Hash)
+      return true if session['via'] == 'password'
+      return false unless session['via'] == 'credential' && !relay_session?(session)
+
+      session['foothold'].present? || session['from'].present?
+    end
+
+    # Lock the held session at a sign-in PC (UI slice 6). Only the session's holder can lock
+    # it: a PC with no held session is refused (:unprocessable_entity), which also covers a
+    # forged request for a PC the player does not hold. The session stays held and signedInPcs
+    # is untouched; the answer is the delta { pcId, locked }, never the whole sessions map.
+    def lock_session!(pc_id)
+      info = find_login_pc(pc_id)
+      key = info ? info[:object]['id'].to_s : pc_id.to_s
+      session = access_sessions[key]
+      unless session.is_a?(Hash)
+        return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
+      end
+      # An expired token session is not held (keyring K5): refused as an unheld PC. This does not
+      # prune or save: the record is cleared by the next write's prune, not by the lock route.
+      if credential_session_expired?(session)
+        return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
+      end
+      # Only a session with a way back in can be locked (owner decision, UI slice 6; widened by
+      # keyring K-lock, plan 8.6): see session_lockable?. Refused with the same 422 as before.
+      unless session_lockable?(session)
+        return { status: :unprocessable_entity, body: { success: false, message: 'Only a signed-in session can be locked' } }
+      end
+
+      player_state['sessions'] = access_sessions
+      set_session_locked!(player_state['sessions'][key], true)
+      save!
+      { status: :ok, body: { success: true, pcId: key, locked: true } }
     end
 
     def signed_in_pcs
@@ -2429,22 +3862,36 @@ module BreakEscape
       end.uniq
     end
 
+    # Cancelled access card ids (the left-card consequence, §3.3b), read from server state.
+    # Stored grow-only under the revoked_card_ids global (merge_global_variables!), so the server
+    # decides: a revoked id opens no rfid lock, of any kind, and a saved clone of a revoked card
+    # is dead too. Honest play reports the cancellation through an ordinary global sync; a client
+    # that drops the key cannot un-revoke it.
+    def revoked_card_ids
+      ids = player_state.dig('globalVariables', REVOKED_CARDS_GLOBAL)
+      ids.is_a?(Array) ? ids.map(&:to_s) : []
+    end
+
     # The cards the server knows the player holds: { card_id => uid_only }. A card_id is
     # the real card when a keycard in the inventory carries it and the scenario defines a
     # keycard with it (decided by card_id, never by name: two badges sharing a name are
     # still two cards); a recorded copy counts only while an rfid_cloner is held (4.2),
-    # and is UID-only when recorded so.
+    # and is UID-only when recorded so. A revoked card (and a clone of one) is excluded, so
+    # a cancelled card passes no access-list lock.
     def held_rfid_cards
       carried = held_keycard_ids
+      revoked = revoked_card_ids
       held = {}
       scenario_keycard_definitions.each do |card|
-        held[card['card_id'].to_s] = false if carried.include?(card['card_id'].to_s)
+        cid = card['card_id'].to_s
+        held[cid] = false if carried.include?(cid) && !revoked.include?(cid)
       end
       if rfid_cloner_held?
         server_clones.each do |card_id, record|
-          next if held.key?(card_id.to_s)
+          cid = card_id.to_s
+          next if held.key?(cid) || revoked.include?(cid)
 
-          held[card_id.to_s] = record.is_a?(Hash) && record['uidOnly'] == true
+          held[cid] = record.is_a?(Hash) && record['uidOnly'] == true
         end
       end
       held
@@ -2472,16 +3919,65 @@ module BreakEscape
       end
     end
 
-    # An rfid lock (section 6, /unlock check 2). Without access: today's trusted rule.
-    # With access and card_ids: the first held card that passes opens it. With access
-    # and no card_ids: only a lock that also has requires keeps the trusted rule.
+    # An rfid lock (section 6, /unlock check 2). Without access: the player must provably hold
+    # a card or clone whose id is named in `requires` (rfid_requires_held?), so a POST with no
+    # card can no longer open it. With access and card_ids: the first held card that passes
+    # opens it. With access and no card_ids (a mixed lock opened by its requires card, which the
+    # client sends with no card_ids): the same requires-held check.
     def rfid_lock_passes?(lock, card_ids)
-      return true unless self.class.acl_lock?(lock)
+      return rfid_requires_held?(lock) unless self.class.acl_lock?(lock)
 
       ids = self.class.normalise_card_ids(card_ids)
-      return Array(lock['requires']).any? if ids.nil?
+      return rfid_requires_held?(lock) if ids.nil?
 
       !rfid_passing_card_id(lock, ids).nil?
+    end
+
+    # True when the player provably holds, in server state, a non-revoked card whose id is named
+    # in the lock's `requires`. A keycard in the inventory counts when its card_id OR its
+    # opens_lock/key_id (ItemIdentity.lock_ref) is a required id, mirroring the client's
+    # getCardId; a recorded clone (serverClones) counts while an rfid_cloner is held. A UID-only
+    # clone counts only at a lock with acceptsUIDOnly (the rule rfid_passing_card_id applies to
+    # the access-list path). A revoked id never counts (the left-card consequence, 3.3b), so a
+    # cancelled card or a clone of one is refused. Honest play always holds the required keycard
+    # or a recorded clone of it; a card the server cannot see would be refused, but no scenario
+    # reaches a requires-only lock that way (phantom ids are opened by an NPC unlockDoor mapping).
+    def rfid_requires_held?(lock)
+      req = Array(lock['requires']).map(&:to_s).reject(&:empty?)
+      return false if req.empty?
+
+      revoked = revoked_card_ids
+      # A physical keycard is never UID-only, so a live one in requires always passes.
+      return true if ((req & held_keycard_ref_ids) - revoked).any?
+
+      return false unless rfid_cloner_held?
+
+      accepts_uid = lock['acceptsUIDOnly'] == true
+      server_clones.any? do |card_id, record|
+        cid = card_id.to_s
+        next false unless req.include?(cid) && !revoked.include?(cid)
+
+        uid_only = record.is_a?(Hash) && record['uidOnly'] == true
+        !uid_only || accepts_uid
+      end
+    end
+
+    # Inventory keycard ids resolved as the client resolves a card's id (card_id, else
+    # opens_lock/key_id via ItemIdentity.lock_ref), so a requires lock whose keycard carries only
+    # opens_lock and no card_id (m01, m02, m05, sis02) is matched the same way client-side.
+    # held_keycard_ids is kept card_id-only because the access list resolves an NPC's identity by
+    # card_id; only the requires path needs the lock_ref fallback.
+    def held_keycard_ref_ids
+      Array(player_state['inventory']).filter_map do |item|
+        next if BreakEscape::ItemIdentity.client_forged?(item)
+
+        data = item['scenarioData'] || item
+        next unless (item['type'] || data['type']) == 'keycard'
+
+        cid = item['card_id'].presence || data['card_id'].presence
+        cid ||= BreakEscape::ItemIdentity.lock_ref(data) || BreakEscape::ItemIdentity.lock_ref(item)
+        cid&.to_s
+      end.uniq
     end
 
     # The first of these held card ids that opens an access-list rfid lock, or nil.
@@ -2518,6 +4014,8 @@ module BreakEscape
     # copy at a lock without acceptsUIDOnly: the controller answers reason "uid_only".
     def uid_only_refusal?(target_type, target_id, card_ids)
       return false if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no uid_only reason for its objects.
+      return false if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return false unless lock.is_a?(Hash) && lock['lockType'] == 'rfid' && self.class.acl_lock?(lock)
@@ -2639,7 +4137,9 @@ module BreakEscape
     # all give nil, so they still answer exactly as an invented id. Only an object with every
     # folder above it already unlocked gets a reason. The lock screen counts no attempt.
     UNLOCK_REFUSAL_MESSAGES = { 'off' => NetworkAccess::PC_OFF_MESSAGE, 'not_responding' => 'This PC is not responding.',
-                                'unreachable' => "This PC can't be reached." }.freeze
+                                'unreachable' => "This PC can't be reached.",
+                                # Keyring K5 (plan 10): %{label} is the token's label
+                                'expired' => '%{label} has expired.' }.freeze
 
     def unlock_session_refusal(target_type, target_id)
       return nil if target_type.to_s == 'door' || !unlock_scope_refused?(target_id)
@@ -2665,10 +4165,20 @@ module BreakEscape
       return nil if pcs.empty? || pcs.any? { |pc_id| session_route_up?(pc_id) }
 
       pc_id = pcs.first
+      # Keyring K5 (plan 10): a session token that has run out
+      expired = access_sessions[pc_id]
+      if credential_session_expired?(expired)
+        label = credential_label(token_entry(expired['credential']))
+        label = 'The session token' if label.blank?
+        return { reason: 'expired', message: format(UNLOCK_REFUSAL_MESSAGES['expired'], label: label) }
+      end
+
       info = find_login_pc(pc_id)
       reason =
         if info && host_service_off?(info[:object])
-          access_sessions[pc_id]['foothold'].present? ? 'not_responding' : 'off'
+          # Any remote route field (foothold, from, relay) means the PC is not at hand (K2, 3.8)
+          s = access_sessions[pc_id]
+          s['foothold'].present? || remote_route_session?(s) ? 'not_responding' : 'off'
         else
           'unreachable'
         end
@@ -2797,27 +4307,83 @@ module BreakEscape
       lockouts << key
     end
 
-    def start_login_session!(pc_id, npc, via, foothold: nil)
+    # Writes the one session slot at a PC and returns the ids of the onward sessions that
+    # ended because this sign-in replaced a session there (keyring K2, plan 3.8: the prune runs
+    # after the write, so a relay replacing a pivot ends the sessions beyond it). [] when the
+    # slot was empty. The caller saves and answers the ids as endedPcIds.
+    #
+    # Keyring K2: credential: (a registry id) with via 'credential', and the route: foothold:
+    # or relay: true (K4 adds from:). A relay sign-in is not recorded in signedInPcs, so it
+    # never proves a `session` credential or completes a sign-in task.
+    def start_login_session!(pc_id, npc, via, foothold: nil, credential: nil, relay: false, from: nil)
       # A password (or remote) sign-in at a PC ends a guest session there (review R1 M1): one
       # screen holds one session. A claim is the guest's own session, or an owner's at an owned PC.
+      # A relay sign-in keeps that rule (one screen, one session; plan 7.2).
       end_guest_session_at!(pc_id) unless via == 'claim'
       player_state['sessions'] = access_sessions
-      player_state['sessions'][pc_id.to_s] = { 'id' => npc['id'], 'via' => via }
+      previous = player_state['sessions'][pc_id.to_s]
+      replaced = previous.is_a?(Hash)
+      # Keyring K4 R1 m2: a different account signing in at a source PC (Switch user) ends the
+      # `from` sessions opened from it, as losing a pivot does; the prune below then ends any
+      # chained beyond them. The same account signing in again keeps them.
+      switched = replaced && previous['id'].to_s != npc['id'].to_s ? from_sessions_of(pc_id) : []
+      record = { 'id' => npc['id'], 'via' => via }
+      record['credential'] = credential.to_s if credential.present?
       # A session opened over the network records its foothold (slice 9.3a, 4.1)
-      player_state['sessions'][pc_id.to_s]['foothold'] = foothold if foothold.present?
-      player_state['signedInPcs'] = signed_in_pcs
-      player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
+      record['foothold'] = foothold if foothold.present?
+      # Keyring K4: a sign-in from a desktop records its source PC (plan 3.8)
+      record['from'] = from.to_s if from.present?
+      record['relay'] = true if relay
+      player_state['sessions'][pc_id.to_s] = record
+      # Neither a relay nor a token sign-in is a lasting sign-in (K2, K5 plan 10): signedInPcs is
+      # grow-only and proves `session` credentials and sign-in tasks for good
+      unless relay || (credential.present? && token_entry(credential))
+        player_state['signedInPcs'] = signed_in_pcs
+        player_state['signedInPcs'] << pc_id.to_s unless player_state['signedInPcs'].include?(pc_id.to_s)
+      end
+      return [] unless replaced
+
+      player_state['sessions'] = player_state['sessions'].except(*switched) if switched.any?
+      switched + prune_unreachable_sessions!
+    end
+
+    # The ids of the sessions opened `from` the given PC (direct onward sessions only).
+    def from_sessions_of(pc_id)
+      access_sessions.select { |_id, session| session.is_a?(Hash) && session['from'].to_s == pc_id.to_s }.keys
     end
 
     # A remote session (slice 9.3a, 4.4) adds remote, footholdId and host, the PC's label,
     # because its room may never have loaded. A local session's answer is unchanged.
-    def login_session_answer(npc, via, pc_id: nil, foothold: nil)
+    #
+    # Keyring K2 (plan 3.8): a credential session adds its kind and label; a relay session adds
+    # relay: true and the host (remote stays absent: the mirror reads it as remote: false).
+    #
+    # Keyring K4: a `from` session adds remote: true, fromPcId, the host and the source's label
+    # (fromHost, for the "Remote sign-in from ..." header), and no footholdId.
+    def login_session_answer(npc, via, pc_id: nil, foothold: nil, relay: false, credential: nil, from: nil)
       answer = {
         'npcId' => npc['id'],
         'username' => npc['creds']['username'],
         'displayName' => npc['displayName'] || npc['id'],
         'via' => via
       }
+      # The account's picture source, so the desktop's taskbar shows its headshot even when the
+      # NPC's room never loaded (UI PC 2 fix round 1, M2). Computed here, never stored, and sent
+      # only with a sign-in answer or the scenario's `sessions` on load; nothing in player_state.
+      portrait = self.class.npc_talk_portrait(npc)
+      answer['portrait'] = portrait if portrait
+      answer['avatar'] = npc['avatar'] if npc['avatar'].is_a?(String) && !npc['avatar'].empty?
+      answer.merge!(credential_session_fields(credential)) if credential.present?
+      if relay
+        pc = find_login_pc(pc_id)&.dig(:object)
+        return answer.merge('relay' => true, 'host' => pc ? host_label(pc) : pc_id.to_s)
+      end
+      if from.present?
+        pc = find_login_pc(pc_id)&.dig(:object)
+        source = find_login_pc(from)&.dig(:object)
+        return answer.merge('remote' => true, 'fromPcId' => from.to_s, 'host' => pc ? host_label(pc) : pc_id.to_s,
+                            'fromHost' => source ? host_label(source) : from.to_s)
+      end
       return answer unless foothold.present?
 
       pc = find_login_pc(pc_id)&.dig(:object)
@@ -2878,19 +4444,13 @@ module BreakEscape
     # can only differ by an authoring slip. A blank secret or answer never opens.
     def self.lock_answer_matches?(lock_type, secret, attempt)
       case lock_type
-      when 'combination'
-        numbers = lambda do |value|
-          parts = value.is_a?(Array) ? value.map(&:to_s) : value.to_s.split(/[^0-9]+/)
-          parts = parts.map(&:strip).reject(&:empty?)
-          parts.all? { |p| p.match?(/\A\d+\z/) } ? parts.map(&:to_i) : nil
-        end
-        want = numbers.call(secret)
-        got = numbers.call(attempt)
-        want.present? && got.present? && want == got
-      when 'cryptex'
-        want = secret.is_a?(String) ? secret.strip : ''
-        got = attempt.is_a?(String) ? attempt.strip : ''
-        !want.empty? && want.casecmp?(got)
+      when 'combination', 'cryptex'
+        # The normalisation lives in one place, CaptureModel.answer_key, so the comparator and
+        # the two answer sets agree on what equal means. A blank, nil or malformed secret or
+        # attempt gives nil, which never equals a real key, so nothing opens.
+        want = CaptureModel.answer_key(lock_type, secret)
+        got = CaptureModel.answer_key(lock_type, attempt)
+        !want.nil? && want == got
       else
         false
       end
@@ -3163,6 +4723,8 @@ module BreakEscape
     def pin_cracker_feedback(target_type, target_id, attempt)
       return nil unless has_pin_cracker_in_inventory?
       return nil if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no pin pips for its objects.
+      return nil if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return nil unless lock && lock['lockType'] == 'pin' && lock['requires'].present?
@@ -3175,6 +4737,8 @@ module BreakEscape
     # It tells the player only that their own entry was right apart from case.
     def password_case_mismatch?(target_type, target_id, attempt)
       return false if target_type != 'door' && unlock_scope_refused?(target_id)
+      # Served-but-unearned route room (§3.6): leak no case hint for its objects.
+      return false if target_type != 'door' && object_in_unpromoted_route_room?(target_id)
 
       lock = target_type == 'door' ? room_data(target_id) : find_scenario_object(target_id)
       return false unless lock && lock['lockType'] == 'password'
@@ -3264,6 +4828,18 @@ module BreakEscape
       # has released (unlock gaps build, 2026-11-12)
       released_npc_containers.each do |container|
         found = find_object_in_contents(container, target_id)
+        return found if found
+      end
+      # A locked start item the player begins with (hardening item 4, 2026-11-13). Its answer
+      # is read from the authored scenario copy, which keeps `requires`, not the stored
+      # inventory copy that initialize_player_state strips. The bootstrap and sync payloads
+      # strip the answer (filter_requires_recursive / filter_requires_and_contents_recursive),
+      # so it is found here server-side only and never reaches the client. Without this source
+      # a locked start item could be found nowhere with its answer, so its /unlock never passed.
+      Array(scenario_data['startItemsInInventory']).each do |start_item|
+        next unless start_item.is_a?(Hash)
+
+        found = find_object_in_contents(start_item, target_id)
         return found if found
       end
       nil
@@ -3546,7 +5122,7 @@ module BreakEscape
     end
 
     # Complete a task with server-side validation
-    def complete_task!(task_id, validation_data = {})
+    def complete_task!(task_id, validation_data = {}, trusted: false)
       initialize_objectives
 
       task = find_task_in_scenario(task_id)
@@ -3554,7 +5130,37 @@ module BreakEscape
 
       # Check if already completed
       if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
-        return { success: true, taskId: task_id, message: 'Already completed' }
+        # Idempotent re-post. The task is done, but a concludeRequires global can
+        # reach the server only after the first completion raced ahead of its state
+        # sync (the conclude race). Re-evaluate the gate so a client retry, after
+        # flushing the globals, still concludes the mission instead of leaving it
+        # stranded with "Already completed". No-op once the mission has concluded.
+        was_not_concluded_before = mission_concluded_at.nil?
+        recheck_pending_mission_conclusions!
+        save! if changed?
+        mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
+        response = { success: true, taskId: task_id, message: 'Already completed',
+                     missionConcluded: mission_just_concluded }
+        if mission_concluded_at.nil?
+          aim = scenario_data['objectives']&.find { |a| a['aimId'] == task['aimId'] }
+          if aim && aim['missionConclusion'] && unmet_conclude_requirements(aim).any?
+            response[:warning] = 'Complete required objectives first to conclude the mission.'
+          end
+        end
+        return response
+      end
+
+      # Server-completed-only guard (§7, R3 minor 1): a task credited by a gate's creditOnPass
+      # completes only through the server-checked passage (apply_credit_on_pass! passes
+      # trusted: true). Every client route (POST /complete_task, and the ink/eventMapping/NPC
+      # completeTask mappings that drive it) lands here with trusted false, so a direct forge of
+      # the objective tick is refused. trusted is a real keyword, never read from validation_data,
+      # so a client cannot smuggle { "trusted": true } through the request body. The guard sits
+      # after the already-completed branch so an honest re-post of a task the server has already
+      # credited gets the idempotent "Already completed" rather than a hard block; a forge targets
+      # a not-yet-completed task, so it never enters that branch and still hits the guard here.
+      if !trusted && server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
       end
 
       # Validate based on task type
@@ -3600,8 +5206,16 @@ module BreakEscape
           return { success: false, error: 'NPC not encountered' }
         end
       when 'enter_room'
-        # Room entry is validated by the client having discovered the room
-        # Trust the client for this low-stakes validation
+        # Server sanity check (plan section 8): the player must have reached the
+        # target room per the server's durable record (player_reached_room?). The
+        # refusal is retryable so an honest ordering gap self-heals on the client's
+        # re-sync and re-post rather than stranding the task; a true forge (never
+        # unlocked the door, never slipped in on a route, never synced currentRoom
+        # there) is refused. Room entry is low-stakes control flow, so this is a
+        # sanity check, not a hard secret gate.
+        unless player_reached_room?(task['targetRoom'])
+          return { success: false, error: 'Room not reached', retryable: true }
+        end
       when 'submit_flags'
         unless validate_flag_submission(task, validation_data[:submittedFlags])
           return { success: false, error: 'Not all required flags submitted' }
@@ -3612,7 +5226,7 @@ module BreakEscape
 
       # Capture before any completion side-effects so we can report whether this
       # save is the one that first triggers mission conclusion.
-      was_concluded_before = mission_concluded_at.nil?
+      was_not_concluded_before = mission_concluded_at.nil?
 
       # Mark task complete
       player_state['objectivesState']['tasks'][task_id] = {
@@ -3637,8 +5251,12 @@ module BreakEscape
       self.score = calculate_task_score.round
 
       save!
+      # A server-side completion (a creditOnPass credit) is one the client did not ask for, so
+      # the sync_state or door answer reports it (add_server_writes_to_answer!)
+      record_server_completed_task(task_id) if trusted
 
-      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
+      record_server_mission_concluded(task_id) if trusted && mission_just_concluded
       response = { success: true, taskId: task_id, missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
@@ -3661,7 +5279,18 @@ module BreakEscape
       current = player_state.dig('objectivesState', 'tasks', task_id, 'status')
       return { success: true, taskId: task_id, status: current, message: "Already #{current}" } if %w[completed skipped].include?(current)
 
-      was_concluded_before = mission_concluded_at.nil?
+      # Server-completed-only guard (§7, R3 minor 1): skip_task! runs check_aim_completion for any
+      # task id the client names, so a tampered skip_task of a credited task would otherwise reach
+      # its aim without the server-checked passage. A credited task is never legitimately skipped,
+      # so this refuses outright (no trusted bypass). The guard sits after the already-completed/
+      # skipped branch so an honest re-post of a credited task already completed by the server gets
+      # the idempotent "Already completed"; a forge targets a not-yet-settled task and still hits
+      # the guard here.
+      if server_completed_only_task_ids.include?(task_id.to_s)
+        return { success: false, error: 'Task is server-completed only' }
+      end
+
+      was_not_concluded_before = mission_concluded_at.nil?
 
       entry = player_state['objectivesState']['tasks'][task_id] ||= {}
       entry['status'] = 'skipped'
@@ -3673,7 +5302,7 @@ module BreakEscape
 
       save!
 
-      mission_just_concluded = was_concluded_before && mission_concluded_at.present?
+      mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, status: 'skipped', missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
@@ -4290,12 +5919,97 @@ module BreakEscape
           facing = merged.dig(npc_id, 'facing')
           facing = entry['facing'] unless NPC_FACINGS.include?(facing)
           record['facing'] = facing if NPC_FACINGS.include?(facing)
+
+          # Where it fell (room id and world x,y), so a reload lays it in the spot it
+          # dropped, in the room it was knocked out in even when that is not its home
+          # room (D5). Untrusted client input: only a real room of this scenario and
+          # finite numbers in range are kept, nothing else; the first fall wins.
+          merge_ko_position!(record, merged[npc_id], entry)
         end
         merged[npc_id] = record
       end
       return if merged.size > MAX_NPC_VISIBILITY
 
       player_state['npcHostility'] = merged
+    end
+
+    # The largest KO coordinate magnitude the server will store: generous enough for
+    # any map, small enough to reject a huge forged number (D5). World coordinates are
+    # legitimately negative for rooms laid out left of or above the origin (e.g. the
+    # kitchen in test_needs_sims sits at x <= -260), so the bound is symmetric.
+    MAX_KO_COORD = 100_000
+
+    # Validate and store a KO's fall position (room id + world x,y) on the hostility
+    # record. First fall wins: a stored valid position is kept over an incoming one.
+    # The room id must be a real room of this scenario; x,y must be finite numbers in
+    # range. Anything else is dropped (the KO is still kept, just unplaced).
+    def merge_ko_position!(record, stored, entry)
+      room_id, kx, ky = ko_position_from(stored)
+      room_id, kx, ky = ko_position_from(entry) if room_id.nil?
+      return if room_id.nil?
+
+      record['koRoom'] = room_id
+      record['koX'] = kx
+      record['koY'] = ky
+    end
+
+    # Pull a valid (room_id, x, y) from a hostility-record-shaped hash, or nils.
+    def ko_position_from(source)
+      return [nil, nil, nil] unless source.is_a?(Hash)
+
+      room_id = source['koRoom']
+      kx = source['koX']
+      ky = source['koY']
+      return [nil, nil, nil] unless room_id.is_a?(String) && scenario_room_ids.include?(room_id)
+      return [nil, nil, nil] unless ko_room_reachable?(room_id)
+      return [nil, nil, nil] unless valid_ko_coord?(kx) && valid_ko_coord?(ky)
+
+      [room_id, kx, ky]
+    end
+
+    # A KO only ever happens in a room the player is standing in, so a stored fall
+    # position is kept only for a room the player has actually reached.
+    # Without this bound a forged sync could claim a met-but-unfought NPC was knocked
+    # out in any scenario room and have the server relocate it, with its full scenario
+    # definition, into a never-entered room. unlockedRooms is seeded with the start
+    # room at game creation and grows on every room access, so it is the same "the
+    # player has been here" notion GET /room gates on (games_controller.rb ~554), and
+    # it needs no scenario_data, which the narrow sync load leaves out. A forged
+    # position is dropped; the KO itself is still kept.
+    def ko_room_reachable?(room_id)
+      # Match the set GET /room serves (games_controller.rb ~554: start, unlocked,
+      # world, route). unlockedRooms already covers the start room (seeded at creation)
+      # and an awareness world room (auto-promoted into unlockedRooms on first fetch),
+      # so only a gated NPC route room needs adding: a player may legitimately stand and
+      # fight in one, but it is kept out of unlockedRooms by design. npcRouteRooms is read
+      # from player_state alone, so this stays correct under the narrow sync load that has
+      # no scenario_data.
+      Array(player_state['unlockedRooms']).include?(room_id) || in_npc_route_room?(room_id)
+    end
+
+    def valid_ko_coord?(value)
+      return false unless value.is_a?(Numeric)
+      return false if value.respond_to?(:nan?) && value.nan?
+      return false if value.respond_to?(:infinite?) && value.infinite?
+
+      value >= -MAX_KO_COORD && value <= MAX_KO_COORD
+    end
+
+    # The ids of every room in this scenario. Reads scenario_data when it is loaded;
+    # sync_state's narrow load leaves it out, so a jsonb query reads just the keys
+    # (as ko_claimable_room_npc_ids does). Memoised per instance for the sync pass.
+    def scenario_room_ids
+      @scenario_room_ids ||=
+        if has_attribute?(:scenario_data)
+          rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+          rooms.is_a?(Hash) ? rooms.keys.select { |k| k.is_a?(String) }.to_set : Set.new
+        else
+          keys = self.class.where(id: id).pick(
+            Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.keyvalue().key')")
+          )
+          keys = JSON.parse(keys) if keys.is_a?(String)
+          Set.new(Array(keys).select { |k| k.is_a?(String) })
+        end
     end
 
     MAX_PLAYER_HP = 100_000
@@ -4412,7 +6126,25 @@ module BreakEscape
     MAX_PHONE_HISTORY_MESSAGES = 150
     MAX_PHONE_MESSAGE_TEXT = 4000
     MAX_PHONE_STORY_STATE_BYTES = 60.kilobytes
-    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded].freeze
+    PHONE_MESSAGE_KEYS = %w[type text timestamp gameTime read isBark timed preloaded deliveryTags callEvent].freeze
+    PHONE_DELIVERY_TAG_MAX = 300
+    PHONE_DELIVERY_TAGS_MAX = 5
+
+    # Calls in the phone state (phone calls plan 4.1, slice A4). Row texts are fixed by the engine,
+    # so a `type: "call"` row is kept only when its text has this plain shape.
+    PHONE_CALL_EVENTS = %w[missed incoming outgoing no_answer voicemail].freeze
+    PHONE_CALL_ROW_TEXT = /\A[A-Za-z0-9 ,:]{1,60}\z/
+    PHONE_CALL_STATES = %w[queued ringing held connected missed].freeze
+    PHONE_CALL_ON_MISSED = %w[callback voicemail].freeze
+    PHONE_CALL_KNOT = /\A[A-Za-z0-9_.]{1,200}\z/
+    PHONE_CALL_LABEL_MAX = 100
+    PHONE_CALL_BOOLEANS = %w[disableClose resume withheld untilAnswered opening].freeze
+    PHONE_CALL_GLOBAL_NAME = /\A[A-Za-z0-9_]{1,100}\z/
+    PHONE_CALL_CONTROL = /[\u0000-\u001F\u007F]/
+    MAX_PHONE_FORCED_CALLS = 10
+    MAX_PHONE_VOICEMAILS = 10
+    MAX_PHONE_CALL_GLOBALS = 10
+    MAX_PHONE_ANSWER_SECONDS = 3600
     # Per-field caps inside sanitize_phone_state_entry, in code points.
     MAX_PHONE_TYPE_CHARS = 20
     MAX_PHONE_STORY_PATH_CHARS = 300
@@ -4434,7 +6166,13 @@ module BreakEscape
         next unless npc_id.is_a?(String) && npc_id.length <= 100 && entry.is_a?(Hash)
 
         clean = sanitize_phone_state_entry(entry)
-        merged[npc_id] = clean if clean
+        if clean
+          merged[npc_id] = clean
+        elsif entry.key?('pendingCall') && entry['pendingCall'].nil?
+          # A contact with no thread or story whose call slot was cleared: the client has
+          # no entry left to send, so it sends this marker and the saved slot goes (A4 R1 m2)
+          merged.delete(npc_id)
+        end
       end
 
       if merged.to_json.bytesize > MAX_PHONE_STATE_BYTES
@@ -4446,23 +6184,45 @@ module BreakEscape
       true
     end
 
+    # A preloaded call opening's #delivery: tags, kept so the first open speaks the
+    # line with its note after a reload. Untrusted text: plain strings only, capped,
+    # no control characters. Never rendered; it only reaches the TTS prompt, which
+    # TtsService cleans again.
+    def clean_phone_delivery_tags(value)
+      return nil unless value.is_a?(Array)
+
+      tags = value.select do |t|
+        t.is_a?(String) && t.length <= PHONE_DELIVERY_TAG_MAX && !t.match?(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/)
+      end.first(PHONE_DELIVERY_TAGS_MAX)
+      tags.empty? ? nil : tags
+    end
+
     def sanitize_phone_state_entry(entry)
       history = Array(entry['history']).last(MAX_PHONE_HISTORY_MESSAGES).filter_map do |msg|
         next unless msg.is_a?(Hash) && msg['type'].is_a?(String) && msg['text'].is_a?(String)
         next if msg['text'].empty?
+        next if msg['type'].length > MAX_PHONE_TYPE_CHARS # a typeless line would not draw
+        # Call rows are fixed engine text: plain shape only
+        next if msg['type'] == 'call' && !msg['text'].match?(PHONE_CALL_ROW_TEXT)
 
-        msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
+        kept = msg.to_h.slice(*PHONE_MESSAGE_KEYS).select do |key, value|
           case key
-          when 'type' then value.length <= MAX_PHONE_TYPE_CHARS
+          when 'deliveryTags' then false # cleaned below
+          when 'type' then value.length <= MAX_PHONE_TYPE_CHARS # always true: the `next` above already refused a longer type (A4 R1 n1)
+          when 'callEvent' then value.is_a?(String) && PHONE_CALL_EVENTS.include?(value)
           when 'text' then true
           # gameTime: elapsed game ms when the text arrived (the time its bubble shows)
           when 'timestamp', 'gameTime' then value.is_a?(Numeric)
           else value == true || value == false
           end
         end.merge('text' => msg['text'][0, MAX_PHONE_MESSAGE_TEXT])
+        delivery_tags = clean_phone_delivery_tags(msg['deliveryTags'])
+        delivery_tags ? kept.merge('deliveryTags' => delivery_tags) : kept
       end
 
       clean = { 'history' => history }
+      pending_call = clean_phone_pending_call(entry['pendingCall'])
+      clean['pendingCall'] = pending_call if pending_call
       story_state = entry['storyState']
       if story_state.is_a?(String) && story_state.bytesize <= MAX_PHONE_STORY_STATE_BYTES
         clean['storyState'] = story_state
@@ -4490,9 +6250,80 @@ module BreakEscape
         end
       end
 
-      return nil if history.empty? && !clean.key?('storyState')
+      return nil if history.empty? && !clean.key?('storyState') && !clean.key?('pendingCall')
 
       clean
+    end
+
+    # The saved call slot of one contact: { forced: [record], live: record, voicemails: [{ knot, withheld }], callback: record } (A2a notes), or the
+    # older single record. Untrusted: Hashes, plain strings, small numbers, nothing else.
+    def clean_phone_pending_call(value)
+      return nil unless value.is_a?(Hash)
+
+      unless value.key?('forced') || value.key?('live') || value.key?('voicemails') || value.key?('callback')
+        return clean_phone_call_record(value)
+      end
+
+      out = {}
+      if value['forced'].is_a?(Array)
+        forced = value['forced'].first(MAX_PHONE_FORCED_CALLS * 4).filter_map { |r| clean_phone_call_record(r) }.first(MAX_PHONE_FORCED_CALLS)
+        out['forced'] = forced if forced.any?
+      end
+      live = clean_phone_call_record(value['live'])
+      out['live'] = live if live
+      # Held voicemails, in arrival order (A6 R2 M1), and a callback kept beside a live record or a voicemail
+      if value['voicemails'].is_a?(Array)
+        vms = value['voicemails'].first(MAX_PHONE_VOICEMAILS * 4).filter_map { |r| clean_phone_voicemail(r) }.first(MAX_PHONE_VOICEMAILS)
+        out['voicemails'] = vms if vms.any?
+      end
+      callback = clean_phone_call_record(value['callback'])
+      out['callback'] = callback if callback
+      out.empty? ? nil : out
+    end
+
+    # One held voicemail: { knot, withheld }. Nothing else is kept.
+    def clean_phone_voicemail(rec)
+      return nil unless rec.is_a?(Hash)
+
+      knot = rec['knot']
+      return nil unless knot.is_a?(String) && knot.match?(PHONE_CALL_KNOT)
+
+      out = { 'knot' => knot }
+      out['withheld'] = rec['withheld'] if rec['withheld'] == true || rec['withheld'] == false
+      out
+    end
+
+    def clean_phone_call_record(rec)
+      return nil unless rec.is_a?(Hash)
+
+      knot = rec['knot']
+      return nil unless knot.is_a?(String) && knot.match?(PHONE_CALL_KNOT)
+
+      out = { 'knot' => knot }
+      vm = rec['voicemailKnot']
+      out['voicemailKnot'] = vm if vm.is_a?(String) && vm.match?(PHONE_CALL_KNOT)
+      out['state'] = rec['state'] if PHONE_CALL_STATES.include?(rec['state'])
+      out['onMissed'] = rec['onMissed'] if PHONE_CALL_ON_MISSED.include?(rec['onMissed'])
+      PHONE_CALL_BOOLEANS.each { |k| out[k] = rec[k] if rec[k] == true || rec[k] == false }
+      if rec['answerSeconds'].is_a?(Numeric) && rec['answerSeconds'].finite?
+        out['answerSeconds'] = rec['answerSeconds'].to_i.clamp(0, MAX_PHONE_ANSWER_SECONDS)
+      end
+      label = rec['callLabel']
+      # The engine draws it as text, but nothing markup-like belongs in a caption
+      if label.is_a?(String) && !label.empty? && label.length <= PHONE_CALL_LABEL_MAX &&
+         !label.match?(PHONE_CALL_CONTROL) && !label.match?(/[<>]/)
+        out['callLabel'] = label
+      end
+      globals = rec['setGlobalOnStart']
+      if globals.is_a?(Hash)
+        kept = globals.first(MAX_PHONE_CALL_GLOBALS * 4).select do |k, v|
+          k.is_a?(String) && k.match?(PHONE_CALL_GLOBAL_NAME) &&
+            (v == true || v == false || v.is_a?(Numeric) ||
+             (v.is_a?(String) && v.length <= 200 && !v.match?(PHONE_CALL_CONTROL) && !v.match?(/[<>]/)))
+        end.first(MAX_PHONE_CALL_GLOBALS).to_h
+        out['setGlobalOnStart'] = kept if kept.any?
+      end
+      out
     end
 
     # mailState: the social-engineering mail client's saved state (00 §10a,
@@ -5137,6 +6968,7 @@ module BreakEscape
           next
         end
         player_state['globalVariables'][name] = value
+        record_server_global_writes([name])
       end
     end
 
@@ -5267,7 +7099,7 @@ module BreakEscape
 
         self.class.set_pin_length!(obj)
         self.class.strip_lock_answers!(obj)
-        if lock_type && !%w[biometric bluetooth rfid].include?(lock_type)
+        if lock_type && !CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
           obj.delete('requires')
         end
 
@@ -5319,12 +7151,31 @@ module BreakEscape
         # it, so remove it outright rather than keeping a count.
         obj.delete('hintOnlyFlags')
 
+        # The item-level `credential` is a server-only field (CREDENTIAL_KEYRING_PLAN.md section 15):
+        # a credential item left loose in a room, on a desktop or in a share is served through this
+        # filter, so strip the field here too (R1 m1). The `held` proof reads it only from the
+        # stored inventory, never from a client payload. K4: a saved connection carries
+        # display-only `connect: true` instead (plan 9 Client), so a desktop can offer Connect.
+        mark_saved_connection!(obj)
+        obj.delete('credential')
+
         # Networks (slice 9.3a, section 6): membership never ships, and a jack's link
         # name and holder arrive on the link item instead.
         BreakEscape::NetworkAccess::WITHHELD_OBJECT_FIELDS.each { |field| obj.delete(field) }
 
         # Keep lockType - client needs it to show correct UI
         # Keep locked - client needs it to show lock status
+
+        # A room's `doors` array reaches the client through this room payload (the bootstrap
+        # drops `doors`). This filter descends into objects/npcs/contents but not `doors`, and
+        # it strips `requires` only from a hash carrying its OWN secret lockType, so a door
+        # entry's `requires` rode along untouched: a bare entry (no own lockType) resolving to
+        # a pad lock shipped the room code. Strip it here too, resolving the entry's lock type
+        # the client's way. Defence in depth behind the validator's door-entry leak guard; the
+        # client never needs a pad lock's `requires` (unlock-system.js validates server-side),
+        # only the card-reference kinds do (rfid/biometric/bluetooth name a collectible card
+        # or device, not a secret answer).
+        strip_door_entry_requires!(obj)
 
         # Recursively filter nested objects, NPCs, tableItems and NPC-held items.
         # itemsHeld matters: an NPC can carry a flag-station or launch-device
@@ -5345,6 +7196,34 @@ module BreakEscape
       end
     end
 
+    # Strip a room door entry's own `requires` unless the entry's resolved lock type is a
+    # card-reference kind (rfid/biometric/bluetooth). The resolved type is the entry's own
+    # `lockType`, else the connected room's (the client's rule, doors.js). For any other type
+    # (pin/password/combination/cryptex/key, or none) the answer never reaches the client and a
+    # `requires` on the entry would ship the code, so it is removed. An entry no doorway reads
+    # (NpcHabits.doorway_problem flags it) is never resolved by the client, so it is left alone.
+    # Mirrors CaptureModel.each_lock_answer's resolution and the validator's door_entry_issues.
+    CARD_REFERENCE_LOCK_TYPES = %w[biometric bluetooth rfid].freeze
+    def strip_door_entry_requires!(room)
+      doors = room['doors']
+      return unless doors.is_a?(Array)
+
+      rooms = scenario_data.is_a?(Hash) ? scenario_data['rooms'] : nil
+      doors.each_with_index do |entry, i|
+        next unless entry.is_a?(Hash) && entry.key?('requires')
+        next unless BreakEscape::NpcHabits.doorway_problem(room, i).nil?
+
+        lock_type = entry['lockType']
+        if lock_type.nil? && rooms.is_a?(Hash)
+          connected = rooms[entry['connectedRoom']]
+          lock_type = connected['lockType'] if connected.is_a?(Hash)
+        end
+        next if lock_type.is_a?(String) && CARD_REFERENCE_LOCK_TYPES.include?(lock_type)
+
+        entry.delete('requires')
+      end
+    end
+
     # Access model 5.6: what an NPC record never takes to the browser. Sign-in details,
     # role and (later slices) awareness, habits and workarounds go; so do usePayload.secret
     # and every addCapture.secret in its eventMappings, for every NPC, so an npc_used event
@@ -5352,14 +7231,22 @@ module BreakEscape
     # (copying it is the game): rfidCard is set from creds.card, as authored, so
     # clone_keycard and the RFID minigame keep working; an NPC with no creds.card
     # keeps any rfidCard it already has.
-    WITHHELD_NPC_KEYS = %w[creds awareness habits role workarounds].freeze
+    WITHHELD_NPC_KEYS = %w[creds awareness role workarounds].freeze
     # Slice 9.2 (ACCESS_MODEL_SLICE_9_2_PLAN.md 9.2): work needs, frustration settings and the
     # feed never ship; the NPC's resolved plan goes instead, as `work` (compile_npc_plan!).
-    # The USB habit (q39) ships inside that plan as `work.usb`.
-    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed usbHabit].freeze
+    # The USB habit (q39) ships inside that plan as `work.usb` (now habits.usb; filtered below).
+    WITHHELD_WORK_NPC_KEYS = %w[workNeeds frustration feed].freeze
+    # Step 8c: habits fold into one block. The office-life habits `screen` and `print` ship (the
+    # client reads npc.habits.screen/print); everything else in `habits` is server-only. The
+    # filter keeps an allow list of these two keys and deletes the rest of `habits` (the awareness
+    # habits locksScreen, writesDown, password, passwordPattern, holdsDoors, the USB habit `usb`,
+    # and any key added later), never a deny list, so a habit that hints at a password never
+    # ships. `usb` ships only inside the resolved plan as `work.usb` (compile_npc_plan! runs
+    # first). A `habits` that is not an object is dropped, as the old whole-block delete did.
+    SHIPPED_HABIT_KEYS = %w[screen print].freeze
 
     # Slice 9.2 (5.2): a room NPC with a `work` plan (a work need and a non-empty resolved work
-    # list) gains `work`: resource ids, kinds, `admitted`, `downIf` names, `object`, `routes`
+    # list) gains `work`: resource ids, kinds, `admitted`, `offWhen` values, `object`, `routes`
     # (with networks) and `breakDrain`, never a display name or a network. Runs before
     # withhold_npc_secrets!, which deletes the role it reads.
     # The plan is built from the scenario's own record of the NPC, never the room copy (which
@@ -5391,6 +7278,15 @@ module BreakEscape
       WITHHELD_NPC_KEYS.each { |key| npc.delete(key) }
       WITHHELD_WORK_NPC_KEYS.each { |key| npc.delete(key) }
       npc['rfidCard'] = card if card.is_a?(Hash)
+
+      # Step 8c: keep only the allow-listed habits (screen, print); drop the rest of the block.
+      habits = npc['habits']
+      if habits.is_a?(Hash)
+        kept = habits.slice(*SHIPPED_HABIT_KEYS)
+        kept.empty? ? npc.delete('habits') : npc['habits'] = kept
+      else
+        npc.delete('habits')
+      end
 
       # Every NPC, account or not (an account's secret is its password; another's is a PIN
       # read at a keypad or any code a capture records): GET /capture_secrets serves it once
@@ -5547,6 +7443,9 @@ module BreakEscape
             if item.is_a?(Hash)
               copy = item.deep_dup
               filter_requires_and_contents_recursive(copy)
+              # The filter strips `credential` (forgeable); restore it from the scenario's
+              # own definition so a credential start item still proves `held` (K1 live fix).
+              restamp_item_credential!(copy)
               self.player_state['inventory'] << copy
             else
               self.player_state['inventory'] << item
@@ -5583,6 +7482,18 @@ module BreakEscape
 
       # Worn globals (Wearables): read-only to sync_state from the start
       refresh_wearable_globals!
+
+      # Gated-door credit (GATED_DOOR §3.4, §7): derive the server-owned credit globals and the
+      # server-completed-only task ids once, from scenario_data (loaded here at creation), and
+      # memoise them into player_state. sync_state then reads them from the narrow player_state
+      # load and never reloads scenario_data (the sync-deltas / SYNC SIZE rule). Both are bounded,
+      # server-written only, and never grow per sync. A game created without this code (before this
+      # change) has no memo; its sync-path readers fall back to [] safely (its scenario predates
+      # creditOnPass, so it credits nothing).
+      if scenario_data.is_a?(Hash)
+        self.player_state['serverCreditGlobals'] = self.class.credit_global_names_in(scenario_data)
+        self.player_state['serverCompletedOnly'] = self.class.completed_only_task_ids_in(scenario_data)
+      end
     end
 
     def set_started_at

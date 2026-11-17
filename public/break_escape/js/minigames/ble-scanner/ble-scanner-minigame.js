@@ -1,10 +1,13 @@
 import { MinigameScene } from '../framework/base-minigame.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 // Device names, MACs and UUIDs are scenario text: escaped once on the way into HTML.
 
 export class BleScannerMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params) {
         params = params || {};
         if (!params.title) params.title = 'BLE Scanner';
@@ -23,8 +26,16 @@ export class BleScannerMinigame extends MinigameScene {
         this.UPDATE_THROTTLE = 100;
     }
 
+    // The list runs on past its bottom edge (A23)
+    static hasMoreBelow(box) {
+        if (!box) return false;
+        return box.scrollHeight - box.clientHeight - box.scrollTop > 2;
+    }
+
     init() {
         super.init();
+        // One scanner-panel look, themed by this scanner's accent (css/scanner-panel.css, A22)
+        this.container.classList.add('scanner-panel', 'scanner-panel--ble');
         this.container.className += ' ble-scanner-minigame-container';
         this.headerElement.innerHTML = '';
         this.gameContainer.className += ' ble-scanner-minigame-game-container';
@@ -34,25 +45,25 @@ export class BleScannerMinigame extends MinigameScene {
 
     createScannerInterface() {
         const header = document.createElement('div');
-        header.className = 'ble-scanner-header';
+        header.className = 'ble-scanner-header scan-header';
         header.innerHTML = `
-            <div class="ble-scanner-title">
-                <img src="/break_escape/assets/objects/bluetooth_scanner.png" alt="BLE Scanner" class="ble-scanner-icon">
+            <div class="ble-scanner-title scan-title">
+                <img src="/break_escape/assets/objects/bluetooth_scanner.png" alt="BLE Scanner" class="ble-scanner-icon scan-icon">
                 <span>BLE Scanner</span>
             </div>
-            <div class="ble-scanner-status">
+            <div class="ble-scanner-status scan-status">
                 <div class="ble-scanner-indicator active"></div>
                 <span>Scanning...</span>
             </div>
         `;
 
         const controls = document.createElement('div');
-        controls.className = 'ble-scanner-controls';
+        controls.className = 'ble-scanner-controls scan-controls';
         controls.innerHTML = `
             <div class="ble-search-container">
-                <input type="text" id="ble-search" placeholder="Search devices..." class="ble-search-input">
+                <input type="text" id="ble-search" placeholder="Search devices..." class="ble-search-input scan-search">
             </div>
-            <div class="ble-categories">
+            <div class="ble-categories scan-chips">
                 <div class="ble-category active" data-category="all">All</div>
                 <div class="ble-category" data-category="nearby">Nearby</div>
                 <div class="ble-category" data-category="saved">Saved</div>
@@ -62,13 +73,14 @@ export class BleScannerMinigame extends MinigameScene {
         `;
 
         const listContainer = document.createElement('div');
-        listContainer.className = 'ble-device-list-container';
+        listContainer.className = 'ble-device-list-container scan-list-wrap';
         listContainer.innerHTML = `
-            <div class="ble-device-list-header">
+            <div class="ble-device-list-header scan-list-header">
                 <span>Detected Devices</span>
-                <div class="ble-device-count">0 devices</div>
+                <div class="ble-device-count scan-count">0 devices</div>
             </div>
-            <div class="ble-device-list" id="ble-device-list"></div>
+            <div class="ble-device-list scan-list pixel-scroll" id="ble-device-list"></div>
+            <div class="ble-device-more" id="ble-device-more" hidden aria-hidden="true"><span class="ble-device-more-arrow"></span><span>${MORE_BELOW_TEXT}</span></div>
         `;
 
         const actionPanel = document.createElement('div');
@@ -78,7 +90,7 @@ export class BleScannerMinigame extends MinigameScene {
         actionPanel.innerHTML = `
             <div class="ble-action-header">
                 <span id="ble-action-title">No target selected</span>
-                <button class="ble-clear-target-btn" id="ble-clear-target">✕ Clear</button>
+                <button class="ble-clear-target-btn" id="ble-clear-target">Clear</button>
             </div>
             <div class="ble-action-target-info" id="ble-action-info"></div>
             <div class="ble-action-section" id="ble-pin-section" style="display:none">
@@ -106,6 +118,16 @@ export class BleScannerMinigame extends MinigameScene {
         this.gameContainer.appendChild(header);
         this.gameContainer.appendChild(controls);
         this.gameContainer.appendChild(listContainer);
+        const deviceList = listContainer.querySelector('#ble-device-list');
+        this._updateMoreBelow = () => {
+            const cue = listContainer.querySelector('#ble-device-more');
+            if (cue) cue.hidden = !BleScannerMinigame.hasMoreBelow(deviceList);
+        };
+        deviceList.addEventListener('scroll', this._updateMoreBelow, { passive: true });
+        if (typeof window.ResizeObserver === 'function') {
+            this._moreObserver = new window.ResizeObserver(this._updateMoreBelow);
+            this._moreObserver.observe(deviceList);
+        }
         this.gameContainer.appendChild(actionPanel);
         this.gameContainer.appendChild(hintPanel);
 
@@ -328,10 +350,12 @@ export class BleScannerMinigame extends MinigameScene {
                 ? `No ${activeCategory} devices found.`
                 : 'No BLE devices detected. Walk near a BLE device.';
             list.appendChild(empty);
+            this._updateMoreBelow?.();
             return;
         }
 
         devices.forEach(device => list.appendChild(this.renderDeviceRow(device)));
+        this._updateMoreBelow?.();
     }
 
     renderDeviceRow(device) {
@@ -357,8 +381,8 @@ export class BleScannerMinigame extends MinigameScene {
         }
 
         const statusIcons = [
-            device.targeted ? '<span class="ble-device-icon" title="Targeted">🎯</span>' : '',
-            device.paired   ? '<span class="ble-device-icon" title="Paired">✓</span>'  : '',
+            device.targeted ? '<span class="ble-device-icon" title="Targeted">TARGET</span>' : '',
+            device.paired   ? '<span class="ble-device-icon" title="Paired">PAIRED</span>'  : '',
         ].join('');
 
         el.innerHTML = `
@@ -375,7 +399,7 @@ export class BleScannerMinigame extends MinigameScene {
         const saveBtn = document.createElement('button');
         saveBtn.className = `ble-save-btn${device.saved ? ' ble-save-btn--saved' : ''}`;
         saveBtn.title = device.saved ? 'Saved' : 'Save device';
-        saveBtn.textContent = '💾';
+        saveBtn.textContent = 'SAVE';
         el.querySelector('.ble-device-icons').prepend(saveBtn);
         this.addEventListener(saveBtn, 'click', (e) => {
             e.stopPropagation();
@@ -470,7 +494,7 @@ export class BleScannerMinigame extends MinigameScene {
         }
 
         if (device.paired) {
-            this.showActionFeedback('✓ Device already paired', 'success');
+            this.showActionFeedback('Device already paired', 'success');
             this.disablePinButtons();
         }
     }
@@ -562,7 +586,7 @@ export class BleScannerMinigame extends MinigameScene {
         this.syncBleDevices();
         this.disablePinButtons();
         this.updatePanel();
-        this.showActionFeedback(`✓ Paired via ${method}`, 'success');
+        this.showActionFeedback(`Paired via ${method}`, 'success');
 
         const sd = device._scenarioData || {};
 
@@ -618,6 +642,7 @@ export class BleScannerMinigame extends MinigameScene {
     }
 
     cleanup() {
+        if (this._moreObserver) { this._moreObserver.disconnect(); this._moreObserver = null; }
         this.stopScanning();
         if (this._successTimeout) {
             clearTimeout(this._successTimeout);

@@ -25,6 +25,8 @@ export function openCryptoWorkstation() {
     
     // Show the laptop popup
     laptopPopup.style.display = 'block';
+    // Toasts over the popup keep clear of its title bar and X (ui/hud-lanes.js, toast plan 2.8)
+    window.hudLanesRelayout?.();
     
     // Disable game input while laptop is open
     if (window.game && window.game.input) {
@@ -49,6 +51,10 @@ export function closeLaptop() {
 
     // Barks held while the popup was open (npc-barks.js _shouldDefer)
     window.barkSystem?.drainDeferredBarks?.();
+    // A held or queued call can ring or open now (phone calls plan 2.9)
+    window.phoneRinger?.onPopupClosed?.();
+    // Toasts placed over the popup go back to the lane (toast plan 2.8)
+    window.hudLanesRelayout?.();
 }
 
 // Open the crypto workstation iframe in a new tab. CyberChef keeps the recipe

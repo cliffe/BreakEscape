@@ -32,7 +32,7 @@ const pc = (id, extra = {}) => ({
     affordance: { satisfies: 'work', useSeconds: 5, restores: 10 }, ...extra
 });
 
-// dana has a work plan (finance_share, downIf share_down), a social_media need (so she posts), and
+// dana has a work plan (finance_share, offWhen share_down), a social_media need (so she posts), and
 // a feed with one ordered post and one reactive vent. Her reactive `cause: down` is reachable.
 function reactiveClean() {
     return {
@@ -43,7 +43,7 @@ function reactiveClean() {
             work_fail_fed_up: ["That's it."]
         },
         resources: {
-            finance_share: { name: 'Finance share', kind: 'file_share', access: { roles: ['finance'] }, downIf: 'share_down' }
+            finance_share: { name: 'Finance share', kind: 'file_share', access: { roles: ['finance'] }, offWhen: 'share_down' }
         },
         roles: { staff: { workNeeds: [], frustration: { perFail: 20 } }, finance: { workNeeds: ['finance_share'] } },
         globalVariables: { share_down: false, office_party: false },
@@ -70,7 +70,7 @@ function reactiveClean() {
                               when: { cause: 'down', need: 'work' }, fact: 'dana_backups', deliberate: true }
                         ]
                     },
-                    itemsHeld: [{ type: 'phone_friendface', id: 'dana_phone', name: "Dana's phone", takeable: true, phoneOf: 'dana' }],
+                    itemsHeld: [{ type: 'phone_friendface', id: 'dana_phone', name: "Dana's phone", takeable: true, owner: 'dana' }],
                     // Dana offers her phone, so the phone check raises nothing (review R2 m2)
                     eventMappings: [{ eventPattern: 'global_variable_changed:lend_phone', action: 'give_item:phone_friendface' }]
                 }]

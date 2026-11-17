@@ -1,0 +1,41 @@
+game 2300 (seattle)
+fire T-1, let it ring
+T-1 banner: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+fire countdown_expired
+ringer: {"cur":{"npc":"the_architect","state":"ringing","knot":"seattle_call","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot seattle_seattle_banner
+{"t":531367,"last":null,"ch":[],"active":true,"mg":null}
+{"t":531999,"last":"No caller ID. The line opens before you speak.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":532457,"last":"No caller ID. The line opens before you speak.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":533129,"last":"No caller ID. The line opens before you speak.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":533780,"last":"Seattle first.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":534415,"last":"Seattle first. Exactly as schedul","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":534867,"last":"Seattle first. Exactly as scheduled.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":535500,"last":"Seattle first. Exactly as scheduled.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":536132,"last":"Seattle first. Exactly as scheduled.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":536768,"last":"Th","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":537413,"last":"Three to go, and you","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":538047,"last":"Three to go, and you're on the phone to","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":538682,"last":"Three to go, and you're on the phone to me.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":539123,"last":"Three to go, and you're on the phone to me.","ch":["1. How many?","2. This isn't over."],"active":true,"mg":"PhoneChatMinigame"}
+CLICK "1. How many?"
+{"t":541506,"last":"How many?","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":542146,"last":"Seattle","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":542783,"last":"Seattle will tell you in","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":543430,"last":"Seattle will tell you in the morning. Better","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":544063,"last":"Seattle will tell you in the morning. Better you hear it from th","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":544696,"last":"Seattle will tell you in the morning. Better you hear it from them than from me.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":545345,"last":"Seattle will tell you in the morning. Better you hear it from them than from me.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":545992,"last":"The line goes quiet.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":546634,"last":"The line goes quiet.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":547264,"last":"The line goes quiet.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":547899,"last":"The line goes quiet.","ch":[],"active":true,"mg":"PhoneChatMinigame"}
+{"t":548544,"last":null,"ch":[],"active":false,"mg":null}
+{"t":549165,"last":null,"ch":[],"active":false,"mg":null}
+{"t":549611,"last":null,"ch":[],"active":false,"mg":null}
+{"t":550244,"last":null,"ch":[],"active":false,"mg":null}
+{"t":550905,"last":null,"ch":[],"active":false,"mg":null}
+{"t":551563,"last":null,"ch":[],"active":false,"mg":null}
+shot seattle_after_end
+rows: ["Call: No caller ID"]
+architect /tts: "Seattle first. Exactly as scheduled." "Three to go, and you're on the phone to me." "Seattle will tell you in the morning. Better you hear it from them than from me." 

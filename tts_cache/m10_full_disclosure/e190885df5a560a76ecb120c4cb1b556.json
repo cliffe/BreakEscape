@@ -1,0 +1,13 @@
+{
+  "key": "e190885df5a560a76ecb120c4cb1b556",
+  "npc": "wendell_voice",
+  "text": "Kept my head down at the far panel. Never saw a thing, and I'll say so.",
+  "voice": "Algieba",
+  "style": "Power-room technician, sixty-three, white Montanan. Consistent rural Montana American accent throughout -- do not shift to any other accent. Slow, laconic, low; a man who has kept old machines running for forty years and asks no questions about who pays.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:14:25Z"
+}

@@ -1,8 +1,10 @@
 // The capture log (engine plan section 6): an inventory holder for credentials, sessions and
-// findings. Its screen lists three sections, each hidden when empty:
+// findings. Its screen lists four sections, each hidden when empty:
 //
-//   Captures  se_captures entries, oldest first: role, address, host, the secret or the mask, the
-//             note. Read in place.
+//   Sign-ins  credential rows (credential keyring plan 8.7, K3d), from se_captures, GET /keyring
+//             and GET /capture_secrets through signin-rows.js: one row per account's password,
+//             one per other sign-in. Read in place.
+//   Captures  capture rows that are not sign-ins: PINs, footholds and findings.
 //   Sessions  filed network link items (with 9.3a's networkLinks), the remote sessions under them
 //             (with 9.3a's pcSessions), and filed items whose click opens a view (contents).
 //   Findings  filed readable items; a click runs the item's ordinary click.
@@ -24,9 +26,13 @@ import { registerMinigameStarter } from '../../systems/minigame-registry.js';
 import { registerTrayRule, refreshInventoryTray } from '../../systems/inventory.js';
 import { writeGlobal } from '../../systems/global-writer.js';
 import {
-    SEEN_PREFIX, HOLDER_TYPE, buildSections, filedIn, isHolder, newKeys, readSeen, rowKeys
+    SEEN_PREFIX, HOLDER_TYPE, allRows, buildSections, filedIn, isHolder, newKeys, readSeen, rowKeys
 } from './capture-log-model.js';
-import { buildCaptureRow, captureBannerText, capturesReveal, applyCaptureSecrets, loadCaptureSecrets } from './capture-rows.js';
+import { captureBannerText, capturesReveal, loadCaptureSecrets } from './capture-rows.js';
+import { buildSignInRow } from './signin-rows.js';
+import {
+    SIGNINS_HEADING, CAPTURES_HEADING, SIGNINS_BANNER_TEXT, CAPTURES_ROWS_BANNER_TEXT
+} from '../../utils/remote-host-text.js';
 
 export const SCENE_TYPE = 'capture-log';
 
@@ -52,8 +58,58 @@ export function sessionsSource() {
     }
 }
 
-function sectionsFor(holder) {
-    return buildSections({ holder, items: items(), globals: globals(), sessionsSource: sessionsSource() });
+const EMPTY_SECTIONS = () => ({ signins: [], captures: [], sessions: [], findings: [] });
+
+/** The page's keyring (systems/keyring.js sets window.keyring), or null before it loads. */
+function keyringRef() {
+    const k = win().keyring;
+    return k && typeof k.listAnswer === 'function' ? k : null;
+}
+
+/**
+ * The no-screen GET /keyring answer the rows are built from (plan 8.7): its entries and captures
+ * map, when this page first got each entry, and the keyring's file wait for a registry password.
+ * Null before the first answer: the rows then come from the globals alone.
+ */
+export function keyringAnswer() {
+    const k = keyringRef();
+    let answer = null;
+    try { answer = k ? k.listAnswer() : null; } catch (err) { answer = null; }
+    if (!answer || typeof answer !== 'object') return null;
+    return {
+        entries: Array.isArray(answer.entries) ? answer.entries : [],
+        captures: answer.captures && typeof answer.captures === 'object' ? answer.captures : {},
+        firstSeen: k.firstSeen,
+        foundVisible: typeof k.foundVisible === 'function' ? (e) => k.foundVisible(e) : undefined,
+        tokenSecondsLeft: typeof k.tokenSecondsLeft === 'function' ? (id) => k.tokenSecondsLeft(id) : undefined
+    };
+}
+
+/**
+ * Ask GET /keyring in the background (after the pending sync), so the rows get the server's
+ * tags and joins. test_capture_log declares no credentials, so the page-start prime never runs:
+ * the device asks itself. Never throws; resolves when the answer has been taken (or failed).
+ */
+export async function askKeyring() {
+    let k = keyringRef();
+    if (!k) {
+        try {
+            const mod = await import('../../systems/keyring.js');
+            k = mod.getKeyring();
+        } catch (err) {
+            return null;
+        }
+    }
+    try {
+        return typeof k.refresh === 'function' ? await k.refresh() : await k.fetch(null);
+    } catch (err) {
+        return null;
+    }
+}
+
+function sectionsFor(holder, { secrets = null, secretsState = null } = {}) {
+    return buildSections({ holder, items: items(), globals: globals(), sessionsSource: sessionsSource(),
+        keyring: keyringAnswer(), secrets, secretsState, social: social() });
 }
 
 function findHolder(holderId) {
@@ -68,7 +124,8 @@ export function captureLogTrayRule(item, list) {
     const holderId = filedIn(item, list);
     if (holderId) return { hidden: true, holderId };
     if (isHolder(item)) {
-        const sections = buildSections({ holder: item, items: list, globals: globals(), sessionsSource: sessionsSource() });
+        const sections = buildSections({ holder: item, items: list, globals: globals(), sessionsSource: sessionsSource(),
+            keyring: keyringAnswer(), social: social() });
         return { badge: newKeys(sections, readSeen(globals())).length };
     }
     return null;
@@ -82,6 +139,30 @@ let openScene = null;
 function onCapturesChanged() {
     refreshInventoryTray();
     if (openScene) { openScene.redraw(); openScene.loadSecrets(); }
+    // A new capture changes the server's captures map (its tag and account join): ask again.
+    // Only a held capture log lists captures, so no ask is made for a game without one.
+    if (openScene || items().some((it) => it?.scenarioData?.type === HOLDER_TYPE)) askWithRetry();
+}
+
+export const CAPTURE_ASK_RETRY_MS = 2000;
+let retryTimer = null;
+/**
+ * askKeyring, and when the answer failed or timed out (null) one more ask after a short wait, so
+ * a capture the row guard holds back is not left off the list until some later trigger (K3d R2).
+ * One retry at a time; a retry that fails too is left to the next trigger.
+ */
+function askWithRetry() {
+    return askKeyring().then((answer) => {
+        if (answer !== null || retryTimer) return answer;
+        retryTimer = setTimeout(() => { retryTimer = null; askKeyring(); }, CAPTURE_ASK_RETRY_MS);
+        retryTimer.unref?.();
+        return answer;
+    });
+}
+/** The no-screen keyring answer changed (systems/keyring.js): re-badge and redraw in place. */
+function onKeyringChanged() {
+    refreshInventoryTray();
+    openScene?.redraw();
 }
 function onSessionsChanged() {
     refreshInventoryTray();
@@ -99,6 +180,7 @@ export function ensureListening() {
     d.on('global_variable_changed:se_captures', onCapturesChanged);
     for (const name of ['pc_signed_in', 'pc_signed_out', 'network_device_unplugged']) d.on(name, onSessionsChanged);
     d.on('inventory_changed', onInventoryChanged);
+    d.on('keyring_changed', onKeyringChanged);
     return true;
 }
 
@@ -160,19 +242,48 @@ function el(tag, cls, text) {
     return node;
 }
 
+/**
+ * How often an open log looks at a live token row's time (K5 R1 m1). A look is cheap and the row
+ * redraws only when its text would change, so a step shows within this many ms of its real minute.
+ */
+export const SECRET_ATTEMPTS = 4;
+export const SECRET_RETRY_MS = 1500;
+export const TOKEN_ROW_REFRESH_MS = 10 * 1000;
+
+/** The step a token's line shows for `secs` left: changes exactly when the row's text changes. */
+export function tokenStep(secs) {
+    if (!Number.isFinite(secs)) return 'none';
+    return secs <= 0 ? 'over' : (secs < 60 ? 'under' : String(Math.ceil(secs / 60)));
+}
+
 export class CaptureLogMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): a short list, so it wraps its content
+    static consoleWindow = true;
+    // Pause between /capture_secrets asks while a capture is missing from the answer (a test may shorten it)
+    static secretRetryMs = SECRET_RETRY_MS;
+
     constructor(container, params) {
-        super(container, { title: 'Capture log', cancelText: 'Close', headerElement: true, ...params });
+        super(container, { title: 'Capture log', cancelText: 'Close', ...params });
         this.holderId = params?.holderId || null;
         this.secrets = null;
-        this.secretRows = [];
+        // 'loading' until /capture_secrets has a value for every captured credential, 'failed' if it will not
+        this.secretsState = 'loading';
+        this.secretsRun = 0;
         this.lastKeys = [];
+        // The keys marked New in this opening: a row stays marked while the device is open,
+        // through redraws, though its seen key was written on the first draw
+        this.shownNew = new Set();
+    }
+
+    consoleTitle() {
+        return this.params?.title || 'Capture log';
     }
 
     init() {
         super.init();
         this.container.classList?.add('capture-log-minigame');
-        this.root = el('div', 'capture-log');
+        this.gameContainer.classList?.add('capture-log-frame');
+        this.root = el('div', 'capture-log pixel-scroll');
         this.gameContainer.appendChild(this.root);
         this.redraw();
     }
@@ -181,9 +292,31 @@ export class CaptureLogMinigame extends MinigameScene {
         super.start();
         openScene = this;
         this.loadSecrets();
+        this.loadKeyring();
+        // K5: a live token row's minutes step as the page's own clock moves (no request), as the desktop's bar does; it stops when the log closes
+        this.tokenTimer = setInterval(() => this.tickTokens(), TOKEN_ROW_REFRESH_MS);
+    }
+
+    /** Redraw in place when a token row shows minutes, keeping the scroll position. */
+    tickTokens() {
+        if (openScene !== this || !this.root?.querySelector('[data-timed="true"]')) return;
+        // Redraw only when a row's text would change (a minute step, or a token running out)
+        const k = keyringAnswer();
+        const sig = (this.timedIds || []).map((id) => `${id}:${tokenStep(k?.tokenSecondsLeft?.(id))}`).join('|');
+        if (sig === this.tokenSig) return;
+        const top = this.root.scrollTop;
+        this.redraw();
+        this.root.scrollTop = top;
+    }
+
+    /** GET /keyring in the background, then a redraw (keyring_changed redraws too, when the rev moved). */
+    async loadKeyring() {
+        await askKeyring();
+        if (openScene === this) this.redraw();
     }
 
     cleanup() {
+        if (this.tokenTimer) { clearInterval(this.tokenTimer); this.tokenTimer = null; }
         if (openScene === this) openScene = null;
         super.cleanup();
     }
@@ -192,30 +325,58 @@ export class CaptureLogMinigame extends MinigameScene {
         return findHolder(this.holderId);
     }
 
+    /** Whether every captured credential has its value in the loaded map. */
+    secretsComplete() {
+        const caps = Object.values(globals()?.se_captures || {});
+        return caps.every((c) => c?.kind !== 'credential' || (this.secrets && typeof this.secrets[c.targetId] === 'string' && this.secrets[c.targetId]));
+    }
+
+    /**
+     * GET /capture_secrets, again a few times while a capture is not in the answer yet (its state
+     * sync may still be on the way). Rows read Loading... meanwhile and Could not load if it ends
+     * without the value; a newer call supersedes an older one.
+     */
     async loadSecrets() {
         if (!capturesReveal(social())) return;
-        const secrets = await loadCaptureSecrets();
-        if (!secrets || openScene !== this) return;
-        this.secrets = secrets;
-        applyCaptureSecrets(this.secretRows, secrets);
+        const run = ++this.secretsRun;
+        if (!this.secretsComplete()) this.secretsState = 'loading';
+        for (let attempt = 0; attempt < SECRET_ATTEMPTS; attempt++) {
+            if (attempt) await new Promise((r) => setTimeout(r, CaptureLogMinigame.secretRetryMs));
+            if (openScene !== this || run !== this.secretsRun) return;
+            const secrets = await loadCaptureSecrets();
+            if (openScene !== this || run !== this.secretsRun) return;
+            if (secrets) this.secrets = { ...(this.secrets || {}), ...secrets };
+            if (this.secretsComplete()) { this.secretsState = 'ready'; this.redraw(); return; }
+            if (secrets) this.redraw();
+        }
+        this.secretsState = 'failed';
+        this.redraw();
     }
 
     redraw() {
         if (!this.root) return;
         const holder = this.holder();
-        const sections = holder ? sectionsFor(holder) : { captures: [], sessions: [], findings: [] };
+        const sections = holder ? sectionsFor(holder, { secrets: this.secrets, secretsState: this.secretsState }) : EMPTY_SECTIONS();
         const seen = readSeen(globals());
-        const fresh = new Set(newKeys(sections, seen));
+        const unseen = newKeys(sections, seen);
+        const keys = rowKeys(sections);
+        for (const k of unseen) this.shownNew.add(k);
+        // A row marked earlier in this opening keeps its mark, also when the keyring's answer has
+        // since folded its capture into an account row (the old key is among its seenKeys)
+        const fresh = new Set(allRows(sections)
+            .filter((r) => this.shownNew.has(r.key) || (r.seenKeys || []).some((k) => this.shownNew.has(k)))
+            .map((r) => r.key));
+        this.timedIds = allRows(sections).filter((r) => r.timed && r.entry?.id).map((r) => r.entry.id);
+        this.tokenSig = this.timedIds.map((id) => `${id}:${tokenStep(keyringAnswer()?.tokenSecondsLeft?.(id))}`).join('|');
         this.root.textContent = '';
-        this.secretRows = [];
 
         const reveal = capturesReveal(social());
-        const appendSection = (id, title, rows, build) => {
+        const appendSection = (id, title, rows, build, banner = null) => {
             if (!rows.length) return;
             const section = el('section', `capture-log-section capture-log-${id}`);
             section.dataset.section = id;
             section.appendChild(el('h4', 'capture-log-heading', title));
-            if (id === 'captures') section.appendChild(el('p', 'lpb-captures-banner capture-log-banner', captureBannerText(reveal)));
+            if (banner) section.appendChild(el('p', 'lpb-captures-banner capture-log-banner', banner));
             const list = el('ul', 'capture-log-list');
             for (const row of rows) {
                 const node = build(row);
@@ -230,11 +391,10 @@ export class CaptureLogMinigame extends MinigameScene {
             this.root.appendChild(section);
         };
 
-        appendSection('captures', 'Captures', sections.captures, ({ entry }) => {
-            const { row, secretNode } = buildCaptureRow(entry, social(), this.secrets);
-            if (secretNode) this.secretRows.push({ targetId: entry.targetId, node: secretNode });
-            return row;
-        });
+        const signInRow = (r) => buildSignInRow(r).row;
+        appendSection('signins', SIGNINS_HEADING, sections.signins, signInRow,
+            reveal ? SIGNINS_BANNER_TEXT : captureBannerText(false));
+        appendSection('captures', CAPTURES_HEADING, sections.captures, signInRow, CAPTURES_ROWS_BANNER_TEXT);
         appendSection('sessions', 'Sessions', sections.sessions, (row) => this.sessionRow(row));
         appendSection('findings', 'Findings', sections.findings, (row) => this.itemRow(row, null, () => this.openItem(row.item)));
 
@@ -242,13 +402,12 @@ export class CaptureLogMinigame extends MinigameScene {
             this.root.appendChild(el('p', 'capture-log-empty', 'Nothing recorded yet.'));
         }
 
-        // A row is new until the device has been opened with it listed.
-        const keys = rowKeys(sections);
+        // A row is new until the device has been opened with it listed. Only the rows that read
+        // as new are written: an account row seen under an old capture key writes nothing.
         this.lastKeys = keys;
-        const grown = keys.filter((k) => !seen.includes(k));
-        if (grown.length) {
+        if (unseen.length) {
             // One key per new row (R3): the legacy whole-list is never written again.
-            for (const k of grown) writeGlobal(SEEN_PREFIX + k, true, { openChat: false });
+            for (const k of unseen) writeGlobal(SEEN_PREFIX + k, true, { openChat: false });
             refreshInventoryTray();
         }
     }
@@ -308,13 +467,16 @@ export class CaptureLogMinigame extends MinigameScene {
 
     getTestState() {
         const holder = this.holder();
-        const sections = holder ? sectionsFor(holder) : { captures: [], sessions: [], findings: [] };
+        const sections = holder ? sectionsFor(holder, { secrets: this.secrets, secretsState: this.secretsState }) : EMPTY_SECTIONS();
         const summary = (rows) => rows.map((r) => ({ key: r.key, kind: r.kind || 'capture', name: r.name || r.entry?.roleLabel || null }));
+        const signInSummary = (rows) => rows.map((r) => ({ key: r.key, type: r.type, kinds: [...(r.kinds || [])],
+            sources: [...(r.sources || [])], title: r.title || null, use: r.use ?? null, greyed: !!r.greyed }));
         return {
             ...super.getTestState(),
             captureLog: {
                 holderId: this.holderId,
-                captures: summary(sections.captures),
+                signins: signInSummary(sections.signins),
+                captures: signInSummary(sections.captures),
                 sessions: summary(sections.sessions),
                 findings: summary(sections.findings),
                 secrets: [...this.root.querySelectorAll('.lpb-captures-secret')].map((n) => n.textContent),

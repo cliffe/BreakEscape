@@ -49,6 +49,7 @@ export function introText(count) {
 
 /**
  * Optional objectives the player can see and has not settled: tasks with optional === true
+ * (or in an aim with optional === true)
  * whose status is active, in an aim that is active or completed. A locked task or aim is hidden from
  * the player, so naming it would give the story away. Returns [{ taskId, title }].
  */
@@ -58,7 +59,7 @@ export function openOptionalObjectives(manager = win()?.objectivesManager) {
     for (const aim of aims) {
         if (!aim || (aim.status !== 'active' && aim.status !== 'completed')) continue;
         for (const task of aim.tasks || []) {
-            if (task && task.optional === true && task.status === 'active') {
+            if (task && (task.optional === true || aim.optional === true) && task.status === 'active') {
                 open.push({ taskId: task.taskId, title: String(task.title || task.taskId) });
             }
         }
@@ -259,6 +260,10 @@ export function restoreHeldEnding(deps = {}) {
     win()?.objectivesManager?.notifyListeners?.();
     return true;
 }
+
+// Phone calls plan 2.3 row 28: nothing here closes the phone ringer. "End the mission now" starts an
+// ending that the server can still refuse (concludeRequires), so the ringer closes only where the
+// server has agreed: scenario-music-events.js (credits) and objectives-manager.js handleMissionConcluded.
 
 /** End the mission now, from the panel button or once nothing optional is open. */
 export function endHeldEnding() {

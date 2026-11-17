@@ -1,0 +1,13 @@
+{
+  "key": "7f6f96728f6cca6024c10096845261fb",
+  "npc": "nightshade_table",
+  "text": "You left me where they couldn't see me. I'm still useful. That's rarer than you'd think.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:09:30Z"
+}

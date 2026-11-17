@@ -20,6 +20,7 @@ for (const rel of [
     'minigames/sort-drill/sort-drill-minigame.js', 'minigames/sort-drill/sort-drill-model.js',
     'minigames/intel-board/board-model.js',
     'minigames/episode-runner/episode-runner-minigame.js', 'minigames/episode-runner/episode-model.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/episode-runner/step-strip.js', 'minigames/episode-runner/flip-view.js',
     'minigames/episode-runner/debrief-view.js', 'minigames/episode-runner/role-swap.js', 'systems/episode-starter.js',
     'systems/awareness-measure.js', 'systems/global-writer.js',
@@ -183,6 +184,14 @@ test('state is shown in words as well as colour, and the board flag shows for a 
     assert.match(q('[data-fact-id="leave"]').textContent, /Closed/);
     assert.doesNotMatch(q('[data-fact-id="leave"]').textContent, /Leave this off/, 'a closed fact drops the prompt');
     assert.equal(q('.pp-section').textContent, 'Sam');
+});
+
+test('the switch state pill reads Exposed when open and Closed when tightened (C-PV1)', () => {
+    openPanel();
+    const pill = () => q('[data-setting="audience"] .pp-switch-state');
+    assert.equal(pill().textContent, 'Exposed', 'an open setting is labelled Exposed, agreeing with the red note');
+    click('[data-setting="audience"]');
+    assert.equal(pill().textContent, 'Closed', 'a tightened setting is labelled Closed');
 });
 
 test('a setting with default tight starts closed', () => {

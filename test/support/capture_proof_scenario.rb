@@ -62,7 +62,7 @@ module CaptureProofScenario
             { 'id' => 'named_desk', 'type' => 'pc', 'name' => 'chris_desk_by_name', 'requiresItem' => 'kit_logger',
               'consumesItem' => true, 'triggerOnInteract' => [] },
             login_pc('chris_pc', 'chris'),
-            login_pc('mel_pc', 'mel', 'screenOwner' => 'mel', 'locksScreenOnLeave' => false),
+            login_pc('mel_pc', 'mel', 'owner' => 'mel', 'locksScreenOnLeave' => false),
             login_pc('sofia_pc', 'sofia'),
             login_pc('ned_pc', 'ned'),
             login_pc('quinn_pc', 'quinn')

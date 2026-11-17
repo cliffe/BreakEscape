@@ -1,0 +1,13 @@
+{
+  "key": "b094ea0973b252d9d3aaffa79d21f9c9",
+  "npc": "yusuf_demir",
+  "text": "The breaking-in part is about one day a month.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:43:18Z"
+}

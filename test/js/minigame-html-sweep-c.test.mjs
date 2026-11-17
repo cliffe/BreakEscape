@@ -88,7 +88,7 @@ test('forensic platform: block content keeps the allowed markup and drops the re
     mg._renderTabContent('tab1');
     const root = document.getElementById('mg');
     assertClean(root, 'forensic platform');
-    assertText(root.querySelector('.fdp-case'), 'forensic case ref');
+    assertText(document.querySelector('.console-subtitle'), 'forensic case ref');
     assertText(root.querySelector('.fdp-tab'), 'forensic tab label');
     assertText(root.querySelector('#fdp-confirm-btn'), 'forensic confirm label');
     assertText(root.querySelector('#fdp-confirm-hint'), 'forensic confirm hint');
@@ -257,7 +257,7 @@ test('RFID cloner: card fields and result messages are text', () => {
     try { ui.showProtocolInfo({ name: 'Card' }); } catch { /* past the fields */ }
     assertClean(screen(), 'protocol info');
     assertText(screen().querySelector('.flipper-card-data div'), 'protocol info field');
-    assert.equal(screen().querySelector('.flipper-card-data div strong').textContent, 'HEX:', 'the label stays bold');
+    assert.equal(screen().querySelector('.flipper-card-data div .mg-field-label').textContent, 'HEX:', 'the label is a field label');
     ui.showSuccess(HOSTILE);
     assertText(screen().querySelector('.flipper-success-message'), 'success message');
     ui.showError(HOSTILE);

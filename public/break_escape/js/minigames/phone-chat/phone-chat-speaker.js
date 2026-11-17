@@ -169,9 +169,12 @@ export function phoneBarkText(text, contact) {
  * @param {string} text - the line after displayPhoneLine
  * @param {{id?: string, displayName?: string}|null} contact - the thread's own contact
  * @param {string[]} knownNames - display names of the scenario's characters
- * @returns {{name: string, text: string}|null} the speaker's name as registered, and the line without it
+ * @param {Map<string,string>} [knownIds] - registered id -> display name. A line starting `<id>:` (exact id,
+ *   any case) names that character, so two same-named records can be told apart (plan 2.10).
+ *   Never the contact's own id, `narrator` or `player`.
+ * @returns {{name: string, id?: string, text: string}|null} the speaker's name as registered (and id, when matched by id), and the line without it
  */
-export function otherSpeaker(text, contact, knownNames) {
+export function otherSpeaker(text, contact, knownNames, knownIds) {
     if (typeof text !== 'string' || !Array.isArray(knownNames)) return null;
     const own = new Set(contactNames(contact));
     const trimmed = text.trim();
@@ -184,13 +187,27 @@ export function otherSpeaker(text, contact, knownNames) {
         const rest = trimmed.slice(match[0].length).trim();
         if (rest) return { name: name.trim(), text: rest };
     }
+    if (knownIds && typeof knownIds.entries === 'function') {
+        const ownId = String(contact?.id || '').toLowerCase();
+        const ids = Array.from(knownIds.entries())
+            .filter(([id]) => typeof id === 'string' && id.trim()
+                && !['narrator', 'player'].includes(id.trim().toLowerCase())
+                && id.trim().toLowerCase() !== ownId)
+            .sort((a, b) => b[0].length - a[0].length);
+        for (const [id, displayName] of ids) {
+            const match = trimmed.match(new RegExp(`^${escapeRegExp(id.trim())}\\s*:\\s*`, 'i'));
+            if (!match) continue;
+            const rest = trimmed.slice(match[0].length).trim();
+            if (rest) return { name: String(displayName || id).trim(), id: id.trim(), text: rest };
+        }
+    }
     return null;
 }
 
 /**
  * The start knots of a contact's voiced calls (F20): the targetKnot (or knot) of each
- * phone-chat eventMapping and of a timedConversation with `voiced: true` that is not a video call, as knot names, plus
- * the contact's own knot when the contact itself has `voiced: true`.
+ * phone-chat eventMapping and of a timedConversation with `voiced: true` or `ring` that is not a video call, as knot names, plus
+ * the contact's own knot when the contact itself has `voiced: true`, and the knot of each `call` entry.
  * Used by phone-call-voice.js (the call's knots) and the conversation's opening preload.
  * @param {Object} npc - the NPC entry
  * @returns {Set<string>}
@@ -201,10 +218,18 @@ export function callStartKnots(npc) {
     // `voiced: true` on the contact: a call the player starts (a pretext call from a desk phone) opens on its home knot
     if (npc?.voiced === true) knots.add(knotOf(npc.homeKnot || npc.currentKnot || 'start'));
     const timed = npc?.timedConversation;
-    if (timed && timed.voiced === true && timed.targetKnot && timed.videoCall !== true && timed.conversationMode !== 'video-call') knots.add(knotOf(timed.targetKnot));
+    // `ring` implies voiced (plan 3.1): a ringing call's knot is a call knot with or without `voiced`
+    const rings = (v) => !!v && v.ring !== undefined && v.ring !== null && v.ring !== false;
+    if (timed && (timed.voiced === true || rings(timed)) && timed.targetKnot && timed.videoCall !== true && timed.conversationMode !== 'video-call') knots.add(knotOf(timed.targetKnot));
     for (const m of (Array.isArray(npc?.eventMappings) ? npc.eventMappings : [])) {
         const target = m && (m.targetKnot || m.knot);
-        if (m && m.voiced === true && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
+        if (m && (m.voiced === true || rings(m)) && m.conversationMode === 'phone-chat' && target) knots.add(knotOf(target));
+    }
+    // `call` (plan 3.2): the knot of every entry the player can ring, `button: false` ones included
+    // (they are what `#place_call:<knot>` dials)
+    const callEntries = npc?.call === undefined || npc?.call === null ? [] : (Array.isArray(npc.call) ? npc.call : [npc.call]);
+    for (const e of callEntries) {
+        if (e && typeof e === 'object' && typeof e.knot === 'string' && e.knot.trim()) knots.add(knotOf(e.knot.trim()));
     }
     return knots;
 }

@@ -86,7 +86,10 @@ module BreakEscape
         player: break_escape_demo_users(:test_user),
         scenario_data: scenario.deep_dup
       )
-      assert_equal scenario, game.reload.scenario_data, 'generate_scenario_data returns at once when scenario_data is set'
+      # Step 8a stamps formatVersion at creation (current 1); the loader still leaves the hand-set
+      # fields byte for byte, which is what this pins.
+      assert_equal scenario, game.reload.scenario_data.except('formatVersion'),
+                   'generate_scenario_data returns at once when scenario_data is set'
       len = npc(game, 'lobby', 'len')
       refute len.key?('creds')
       assert_equal AccessModelScenario::LEN_CARD, Game.npc_card(len), 'server code reads creds.card || rfidCard'

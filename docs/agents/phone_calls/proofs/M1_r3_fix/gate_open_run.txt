@@ -1,0 +1,9 @@
+game 2177 (gate_open)
+  flag1_submitted=true (terminal still open: "FlagStationMinigame")
+gate tried at +5.6s
+  read-out toast tapped at 1s
+  +10.8s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=true flag1_read_done=false nightshade_rang=false" toast=true {"t":35,"ringer":null,"mg":"PhoneChatMinigame:phone-chat","layer":"","laptop":"none"}
+  mg: "PhoneChatMinigame"
+  no ring in 14s (good)
+  +29.2s room="restricted_stacks" "flag1_submitted=true flag1_read_heard=true flag1_read_done=false nightshade_rang=false" toast=true {"t":53.4,"ringer":null,"mg":"PhoneChatMinigame:phone-chat","layer":"","laptop":"none"}
+shot gate_open_gate_open_end

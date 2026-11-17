@@ -550,7 +550,7 @@ export function renderDebrief(container, { session, spec, onDone, theme = null }
     done.className = 'pretext-debrief-done minigame-button';
     done.textContent = 'Done';
     // The debrief is a centred modal over a full backdrop (batch-5 F-E12-3): the backdrop covers
-    // the open chat so nothing of the debrief runs behind End Conversation and the stale live bar
+    // the open chat so nothing of the debrief runs behind the chat's close X and the stale live bar
     // is not read beside the final outcome. The backdrop, not the panel, is removed on Done.
     const backdrop = document.createElement('div');
     backdrop.className = 'pretext-debrief-backdrop';

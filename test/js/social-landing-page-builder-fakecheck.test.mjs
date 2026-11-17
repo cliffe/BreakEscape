@@ -18,6 +18,7 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'social-lpb-fc-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
+    'minigames/helpers/step-stepper.js',
     'minigames/landing-page-builder/landing-page-builder-minigame.js',
     'minigames/landing-page-builder/landing-page-model.js',
     'minigames/landing-page-builder/landing-page-render.js',
@@ -29,6 +30,7 @@ for (const rel of [
     'utils/display-dashes.js', 'utils/escape-html.js', 'utils/author-html.js',
     'ui/modal-stack.js',
     'systems/global-writer.js',
+    'systems/se-landing-page-client.js',
     'systems/captures.js'
 ]) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });

@@ -23,6 +23,7 @@ mkdirSync(join(dir, 'systems/test-bridge'), { recursive: true });
 mkdirSync(join(dir, 'utils'), { recursive: true });
 writeFileSync(join(dir, 'systems/test-bridge/minigames.js'), bridgeSrc);
 writeFileSync(join(dir, 'systems/test-bridge/input.js'), readFileSync(join(js, 'systems/test-bridge/input.js'), 'utf8'));
+writeFileSync(join(dir, 'utils/overlay-open.js'), readFileSync(join(js, 'utils/overlay-open.js'), 'utf8'));
 writeFileSync(join(dir, 'utils/display-dashes.js'), readFileSync(join(js, 'utils/display-dashes.js'), 'utf8'));
 // state.js pulls in the room and door modules; log.js the wait helpers. Neither matters here.
 writeFileSync(join(dir, 'systems/test-bridge/state.js'), 'export const activeMinigameSummary = () => null;\n');

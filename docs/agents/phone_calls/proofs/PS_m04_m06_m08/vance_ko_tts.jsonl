@@ -1,0 +1,60 @@
+{"t":1794516103396,"npc_id":"narrator","text":"A SAFETYNET operations room. Director Netherton is already on his feet; Agent HaX is patching in the technical desk.","delivery":null,"status":200}
+{"t":1794516104019,"npc_id":"director_netherton","text":"Agent 0x00. ENTROPY used to steal. Now they break the things people can't live without.","delivery":null,"status":200}
+{"t":1794516104363,"npc_id":"director_netherton","text":"I want my best in the room and my best on the wire. Nightshade has read the control systems. HaX has the rest.","delivery":null,"status":200}
+{"t":1794516104827,"npc_id":"agent_nightshade","text":"The physics doesn't lie and neither do I. If they reach the safety interlocks, this stops being a hack and starts being a body count.","delivery":null,"status":200}
+{"t":1794516105145,"npc_id":"agent_nightshade","text":"Get me a real reading off that floor, and I'll tell you how much time we actually have.","delivery":null,"status":200}
+{"t":1794516105492,"npc_id":"director_netherton","text":"HaX. Go.","delivery":null,"status":200}
+{"t":1794516105838,"npc_id":"opening_briefing_cutscene","text":"A grid battery site, and ENTROPY are inside it.","delivery":null,"status":200}
+{"t":1794516106185,"npc_id":"opening_briefing_cutscene","text":"Worse than Ransomware Incorporated. This lot don't want paying.","delivery":null,"status":200}
+{"t":1794516107406,"npc_id":"opening_briefing_cutscene","text":"Albion Energy Storage. Two hundred megawatt-hours of grid batteries.","delivery":null,"status":200}
+{"t":1794516107808,"npc_id":"opening_briefing_cutscene","text":"A cell called Critical Mass got in as maintenance contractors, under the name OptiGrid Solutions.","delivery":null,"status":200}
+{"t":1794516108169,"npc_id":"opening_briefing_cutscene","text":"They own the SCADA network now, the control system that runs the battery racks.","delivery":null,"status":200}
+{"t":1794516108531,"npc_id":"opening_briefing_cutscene","text":"Two hundred and forty thousand people get their power through that site.","delivery":null,"status":200}
+{"t":1794516109532,"npc_id":"opening_briefing_cutscene","text":"Lithium cells are safe while they stay under their charge limit and their cooling holds.","delivery":null,"status":200}
+{"t":1794516109876,"npc_id":"opening_briefing_cutscene","text":"Critical Mass have bypassed the safety interlocks on all three rack banks and faked the temperature sensors. An overcharge trigger is armed.","delivery":null,"status":200}
+{"t":1794516110247,"npc_id":"opening_briefing_cutscene","text":"If it fires, the cells heat past the point where they can stop themselves, and they catch.","delivery":null,"status":200}
+{"t":1794516110627,"npc_id":"opening_briefing_cutscene","text":"One rack lights the next, then the hydrogen goes. The hall burns and the grid drops.","delivery":null,"status":200}
+{"t":1794516111567,"npc_id":"opening_briefing_cutscene","text":"Yes.","delivery":null,"status":200}
+{"t":1794516112603,"npc_id":"opening_briefing_cutscene","text":"ENTROPY's infrastructure cell. Power storage, generation, transport.","delivery":null,"status":200}
+{"t":1794516112925,"npc_id":"opening_briefing_cutscene","text":"They answer to Blackout: Dr James Mercer. He signs the casualty models, and he has never once revised one down.","delivery":null,"status":200}
+{"t":1794516113227,"npc_id":"opening_briefing_cutscene","text":"Mercer won't be on site. His lieutenant runs Albion, calls himself Voltage. Former grid engineer, which is why he got this one.","delivery":null,"status":200}
+{"t":1794516113578,"npc_id":"opening_briefing_cutscene","text":"Don't go in hoping to talk him round. He knows exactly what happens to the night crew. He's costed them.","delivery":null,"status":200}
+{"t":1794516114485,"npc_id":"opening_briefing_cutscene","text":"Ask. Quickly.","delivery":null,"status":200}
+{"t":1794516115410,"npc_id":"opening_briefing_cutscene","text":"Their traffic puts it at eight in the morning, local time.","delivery":null,"status":200}
+{"t":1794516115730,"npc_id":"opening_briefing_cutscene","text":"That's your window. It's tight, and they're ready for interference.","delivery":null,"status":200}
+{"t":1794516116050,"npc_id":"opening_briefing_cutscene","text":"Three operatives on site: Cipher, Relay and Static. And Voltage.","delivery":null,"status":200}
+{"t":1794516116984,"npc_id":"opening_briefing_cutscene","text":"Yes. More of them than you've faced before, and none of them amateurs.","delivery":null,"status":200}
+{"t":1794516117379,"npc_id":"opening_briefing_cutscene","text":"Cipher holds Battery Hall 1. Relay walks the inverter room. Static stays with Voltage in the plant room.","delivery":null,"status":200}
+{"t":1794516117714,"npc_id":"opening_briefing_cutscene","text":"You don't have to fight all of them. Your cover and that cloner will get you past more than your fists will. If they make you, you're cleared to.","delivery":null,"status":200}
+{"t":1794516118034,"npc_id":"opening_briefing_cutscene","text":"Whatever force it takes to stop that trigger. But I want Voltage breathing. He knows things.","delivery":null,"status":200}
+{"t":1794516118966,"npc_id":"opening_briefing_cutscene","text":"That's the order.","delivery":null,"status":200}
+{"t":1794516119932,"npc_id":"opening_briefing_cutscene","text":"You're the grid-safety regulator Albion is expecting today. Four hours early.","delivery":null,"status":200}
+{"t":1794516120229,"npc_id":"opening_briefing_cutscene","text":"Credentials are in your kit. Find Robert Vance. He runs the site, and he's on shift. He isn't expecting anyone before dawn.","delivery":null,"status":200}
+{"t":1794516120530,"npc_id":"opening_briefing_cutscene","text":"He doesn't know about ENTROPY. The cover gets you in.","delivery":null,"status":200}
+{"t":1794516121410,"npc_id":"opening_briefing_cutscene","text":"Your call. Vance is a career engineer, safety first, and he knows that plant.","delivery":null,"status":200}
+{"t":1794516121751,"npc_id":"opening_briefing_cutscene","text":"Tell him and he'll help. Nobody on site knows those control systems better.","delivery":null,"status":200}
+{"t":1794516122083,"npc_id":"opening_briefing_cutscene","text":"But if they're watching him, your cover goes with his.","delivery":null,"status":200}
+{"t":1794516122452,"npc_id":"opening_briefing_cutscene","text":"Read him first. Hard evidence will do the persuading for you.","delivery":null,"status":200}
+{"t":1794516123296,"npc_id":"opening_briefing_cutscene","text":"Good.","delivery":null,"status":200}
+{"t":1794516124248,"npc_id":"opening_briefing_cutscene","text":"The Zero Day job left us one line. \"Zero Day supplies, Critical Mass executes. Grid storage, this winter.\"","delivery":null,"status":200}
+{"t":1794516124525,"npc_id":"opening_briefing_cutscene","text":"Well, it's winter, and this is the site.","delivery":null,"status":200}
+{"t":1794516124861,"npc_id":"opening_briefing_cutscene","text":"Social Fabric are standing by to amplify the panic. Strikes across the region, all timed for eight o'clock.","delivery":null,"status":200}
+{"t":1794516125158,"npc_id":"opening_briefing_cutscene","text":"One mind behind it, the one the directive named: The Architect. Voltage answers up that chain. Take him, and we're closer to whoever's setting the clock on all of it.","delivery":null,"status":200}
+{"t":1794516126046,"npc_id":"opening_briefing_cutscene","text":"The same one. Stop it, take Voltage if you can, and bring out anything that names the next target.","delivery":null,"status":200}
+{"t":1794516126340,"npc_id":"opening_briefing_cutscene","text":"So. Get in on the regulator cover and find Vance.","delivery":null,"status":200}
+{"t":1794516126693,"npc_id":"opening_briefing_cutscene","text":"Then prove how they took the control network. Their jump server's in the engineering workshop. Whatever you pull off it goes into the drop-site terminal.","delivery":null,"status":200}
+{"t":1794516127014,"npc_id":"opening_briefing_cutscene","text":"The plant room has a hardwired Emergency Shutdown button, the ESD. No network path, so it's the one control they couldn't take.","delivery":null,"status":200}
+{"t":1794516127287,"npc_id":"opening_briefing_cutscene","text":"Press it and the banks isolate, once grid control believes you. They'll believe Nightshade, if you get a real reading off those racks.","delivery":null,"status":200}
+{"t":1794516127590,"npc_id":"opening_briefing_cutscene","text":"And the operatives. Voltage alive, if you can.","delivery":null,"status":200}
+{"t":1794516127954,"npc_id":"opening_briefing_cutscene","text":"Kit: your picks, the cloner from the WhiteHat job, and a laptop with CyberChef on it. No PIN cracker. We have one, it's ENTROPY's, and it isn't leaving the lab.","delivery":null,"status":200}
+{"t":1794516129010,"npc_id":"opening_briefing_cutscene","text":"Go carefully. They've had three days to get ready for you.","delivery":null,"status":200}
+{"t":1794516129316,"npc_id":"opening_briefing_cutscene","text":"The site's twenty minutes out. The gate will want your credentials.","delivery":null,"status":200}
+{"t":1794516129680,"npc_id":"opening_briefing_cutscene","text":"Show them the regulator badge. You're a routine audit that came early.","delivery":null,"status":200}
+{"t":1794516129973,"npc_id":"opening_briefing_cutscene","text":"If it comes to a fight, keep your head.","delivery":null,"status":200}
+{"t":1794516130261,"npc_id":"opening_briefing_cutscene","text":"Good luck. Find Vance first.","delivery":null,"status":200}
+{"t":1794516133109,"npc_id":"narrator","text":"The guard looks up from the desk and gets to his feet.","delivery":null,"status":200}
+{"t":1794516133889,"npc_id":"security_guard","text":"Morning. Bit early for visitors. Desk first, if you don't mind.","delivery":null,"status":200}
+{"t":1794516134850,"npc_id":"narrator","text":"He turns your badge over, glances at the clipboard, hands it back.","delivery":null,"status":200}
+{"t":1794516135176,"npc_id":"security_guard","text":"Regulator, is it.","delivery":null,"status":200}
+{"t":1794516135513,"npc_id":"security_guard","text":"Alright, sign in here. Mr Vance said there was an audit today. He's not happy about it, fair warning.","delivery":null,"status":200}
+{"t":1794516136450,"npc_id":"security_guard","text":"Go on through, my lover. Operations office is straight down the hall.","delivery":null,"status":200}

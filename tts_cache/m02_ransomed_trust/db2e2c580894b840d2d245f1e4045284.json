@@ -1,0 +1,13 @@
+{
+  "key": "db2e2c580894b840d2d245f1e4045284",
+  "npc": "ernesto_bautista",
+  "text": "The computers went, so the tube system went with them. I'm the tubes now.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:10:37Z"
+}

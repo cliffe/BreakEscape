@@ -436,18 +436,25 @@ module BreakEscape
         "Server should trust client validation for bluetooth unlocks"
     end
 
-    test "container with RFID lock: should trust client validation" do
+    test "container with RFID lock: refused without the required card, opened with it" do
+      # The requires-only rfid lock requires 'admin_badge'. A player holding no matching card
+      # or clone is refused (the trust gap): the server no longer trusts the client's claim.
       post unlock_game_url(@game), params: {
-        targetType: 'object',
-        targetId: 'door_rfid',
-        attempt: nil,
-        method: 'rfid'
+        targetType: 'object', targetId: 'door_rfid', attempt: nil, method: 'rfid'
       }
+      assert_response :unprocessable_entity
+      refute JSON.parse(@response.body)['success'], 'no card held: the rfid unlock is refused'
 
+      # Holding a keycard whose opens_lock is the required id opens it (the client resolves the
+      # same id with lockRef).
+      @game.player_state['inventory'] << { 'type' => 'keycard', 'opens_lock' => 'admin_badge',
+                                           'name' => 'Admin Badge', 'rfid_protocol' => 'EM4100' }
+      @game.save!
+      post unlock_game_url(@game), params: {
+        targetType: 'object', targetId: 'door_rfid', attempt: nil, method: 'rfid'
+      }
       assert_response :success
-      json = JSON.parse(@response.body)
-      assert json['success'],
-        "Server should trust client validation for RFID unlocks"
+      assert JSON.parse(@response.body)['success'], 'the held keycard opens the rfid lock'
     end
 
     # =============================================================================

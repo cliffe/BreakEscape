@@ -7,21 +7,26 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const mod = join(here, '../../public/break_escape/js/systems/action-menu.js');
+// The shared menu icons (ui/interaction-menu.js, read by action-menu.js through window)
+globalThis.window = {};
+const { openHandIcon, jabHandIcon, talkIcon } = await import(pathToFileURL(join(here, '../../public/break_escape/js/ui/interaction-menu.js')).href);
 
 let shown = null;
 function resetWindow(extra = {}) {
     shown = null;
     globalThis.window = {
         inventory: { items: [] },
-        showInteractionMenu: (actions, x, y, title) => { shown = { actions, title }; },
+        showInteractionMenu: (actions, x, y, title, opts) => { shown = { actions, title, opts }; },
         isInteractionMenuOpen: () => false,
         startRFIDMinigame: (...args) => { globalThis.window._rfid = args; },
         handleObjectInteraction: (sprite) => { globalThis.window._handled = sprite; },
         applyActions: (list, opts) => { globalThis.window._applied = { list, opts }; },
         gameAlert: () => {},
+        menuIcons: { openHand: openHandIcon, jabHand: jabHandIcon, talk: talkIcon },
         ...extra
     };
 }
@@ -103,6 +108,13 @@ test('maybeShowObjectActionMenu shows the menu for 2+ actions and returns true',
     assert.equal(r, true);
     assert.equal(shown.actions.length, 2);
     assert.equal(shown.title, 'Choose an action…');
+    assert.deepEqual(shown.opts, { holdKeys: true }, 'holds the game keys when no fight is on');
+});
+
+test('maybeShowObjectActionMenu does not hold the keys while a fight is on', () => {
+    resetWindow({ inventory: { items: [cloner] }, roomHasActiveHostile: () => true });
+    assert.equal(maybeShowObjectActionMenu(worldKeycard()), true);
+    assert.deepEqual(shown.opts, { holdKeys: false });
 });
 
 test('maybeShowObjectActionMenu returns false with fewer than 2 actions', () => {
@@ -122,4 +134,68 @@ test('bypass flag suppresses the menu (the Take re-entry)', () => {
     const card = worldKeycard();
     card._beActionMenuBypass = true;
     assert.equal(maybeShowObjectActionMenu(card), false);
+});
+
+// UX feedback slice 3a (main2-16): both entries carry an icon.
+test('Copy and Take carry pixel icons at whole-number scales', () => {
+    resetWindow({ inventory: { items: [cloner] }, breakEscapeConfig: { assetsPath: '/assets' } });
+    const [copy, take] = objectActions(worldKeycard());
+    assert.equal(take.icon.src, '/assets/icons/hand_frames.png');
+    assert.equal(take.icon.frame, 0, 'the open hand');
+    assert.equal(take.icon.cell, 32, '32px cells, x2 in the 64px box');
+    // Slice 3b (q90, q107): the card copier's own 16px menu icon, at x4, filling the box
+    assert.equal(copy.icon.src, '/assets/icons/card-copier.png');
+    assert.equal(copy.icon.width, 64, '16px at x4');
+    assert.equal(copy.icon.height, 64);
+    // Each icon's scale is pinned: the copier is 16px at x4, the hand a 32px cell at x2
+    // (64 / cell). A change to either scale fails here.
+    assert.equal(copy.icon.width / 16, 4, 'the copier at x4');
+    assert.equal(64 / take.icon.cell, 2, 'the hand at x2');
+    const png = readFileSync(join(here, '../../public/break_escape/assets/icons/card-copier.png'));
+    assert.equal(png.readUInt32BE(16), 16, 'the icon file is 16px wide');
+    assert.equal(png.readUInt32BE(20), 16, 'and 16px tall');
+    assert.ok(copy.icon.width <= 64 && copy.icon.height <= 64, 'fits the 64px box');
+});
+
+test('the menu icons fall back to the default assets path', () => {
+    resetWindow({ inventory: { items: [cloner] } });
+    const [copy, take] = objectActions(worldKeycard());
+    assert.match(copy.icon.src, /^\/break_escape\/assets\/icons\//);
+    assert.match(take.icon.src, /^\/break_escape\/assets\/icons\//);
+});
+
+// R1 n3: one hand-sheet definition, shared by the tap menu (game.js) and this menu
+test('Take uses the shared open-hand icon from the interaction menu', () => {
+    resetWindow({ inventory: { items: [cloner] }, breakEscapeConfig: { assetsPath: '/assets' } });
+    const [, take] = objectActions(worldKeycard());
+    assert.deepEqual(take.icon, openHandIcon());
+    const game = readFileSync(join(here, '../../public/break_escape/js/core/game.js'), 'utf8');
+    assert.doesNotMatch(game, /function (openHandIcon|interactionIconsBase)\(/, 'game.js keeps no copy of its own');
+    assert.match(game, /import \{[^}]*openHandIcon[^}]*\} from '\.\.\/ui\/interaction-menu\.js'/);
+    const self = readFileSync(mod, 'utf8');
+    assert.doesNotMatch(self, /hand_frames\.png/, 'action-menu.js keeps no copy of the hand sheet');
+});
+
+// R1 M1: the fact that separates Copy from Take stays in each entry's detail
+test('Copy says the card stays, Take says the owner will notice', () => {
+    resetWindow({ inventory: { items: [cloner] } });
+    const [copy, take] = objectActions(worldKeycard());
+    assert.match(copy.detail, /stays where it is/);
+    assert.match(take.detail, /owner will notice/);
+});
+
+// UX slice 3a R2 n3: takeIcon guards window like its neighbours: no window, no icon, no throw
+test('takeIcon returns no icon outside a browser, and the open hand in one', async () => {
+    const { takeIcon } = await import(pathToFileURL(mod).href);
+    const saved = globalThis.window;
+    try {
+        delete globalThis.window;
+        assert.equal(takeIcon(), undefined);
+        globalThis.window = {};
+        assert.equal(takeIcon(), undefined, 'menu icons not loaded yet: Take has no icon');
+        globalThis.window = { menuIcons: { openHand: openHandIcon } };
+        assert.deepEqual(takeIcon(), openHandIcon());
+    } finally {
+        globalThis.window = saved;
+    }
 });

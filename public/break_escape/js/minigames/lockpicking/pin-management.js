@@ -155,6 +155,10 @@ export class PinManagement {
                     fontSize: '18px',
                     fontFamily: 'VT323',
                     fill: '#00ff00',
+                    // A dark backing so the label reads over the pins and the orange shear
+                    // band (critique A08)
+                    backgroundColor: '#0b0f0c',
+                    padding: { x: 4, y: 1 },
                     fontWeight: 'bold'
                 });
                 springLabel.setOrigin(0.5);
@@ -166,6 +170,10 @@ export class PinManagement {
                     fontSize: '18px',
                     fontFamily: 'VT323',
                     fill: '#00ff00',
+                    // A dark backing so the label reads over the pins and the orange shear
+                    // band (critique A08)
+                    backgroundColor: '#0b0f0c',
+                    padding: { x: 4, y: 1 },
                     fontWeight: 'bold'
                 });
                 driverPinLabel.setOrigin(0.5);
@@ -177,6 +185,10 @@ export class PinManagement {
                     fontSize: '18px',
                     fontFamily: 'VT323',
                     fill: '#00ff00',
+                    // A dark backing so the label reads over the pins and the orange shear
+                    // band (critique A08)
+                    backgroundColor: '#0b0f0c',
+                    padding: { x: 4, y: 1 },
                     fontWeight: 'bold'
                 });
                 keyPinLabel.setOrigin(0.5);
@@ -327,6 +339,8 @@ export class PinManagement {
             fontSize: '16px',
             fontFamily: 'VT323',
             fill: '#00ff00',
+            backgroundColor: '#0b0f0c',
+            padding: { x: 4, y: 1 },
             fontWeight: 'bold'
         });
         shearLineText.setDepth(100); // Bring to front

@@ -10,13 +10,21 @@ import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
 import { escapeHtml } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
+    // The X sits inside the themed frame, not on its border (critique A26, A30)
+    static closeInsideFrame = true;
     static REWARD_ICONS = {
         give_item: '📦', unlock_door: '🔓', unlock_object: '🔓',
         emit_event: '⚡', hint: '💡', set_global: '✦'
     };
+    // Launch device (launch-abort mode): header colour per state. The words come from
+    // launchHeader(), built from the item's operationName and outcome texts.
+    static LAUNCH_COLORS = { prompt: '#ff4444', armed: '#ff4444', aborted: '#00ff00', launched: '#ff4444' };
+    // Neutral outcome lines for a device whose scenario gives none (abortedText, launchedText)
+    static DEFAULT_ABORTED_TEXT = 'Abort confirmed. The operation will not go ahead.';
+    static DEFAULT_LAUNCHED_TEXT = 'Launch confirmed. The operation is under way.';
 
     constructor(container, params) {
         super(container, params);
@@ -47,6 +55,13 @@ export class FlagStationMinigame extends MinigameScene {
         this.onLaunchConfig   = params.onLaunch         || null;
         this.abortConfirmText = params.abortConfirmText  || 'Abort the operation?';
         this.launchConfirmText= params.launchConfirmText || 'Execute the operation?';
+        // The name in every launch heading. Without one (a game stored before the field
+        // existed), the device's own name, so no mission's operation is named by the engine.
+        this.operationName    = (typeof params.operationName === 'string' && params.operationName.trim())
+            || (typeof params.stationName === 'string' && params.stationName.trim())
+            || 'LAUNCH DEVICE';
+        this.abortedText      = params.abortedText  || FlagStationMinigame.DEFAULT_ABORTED_TEXT;
+        this.launchedText     = params.launchedText || FlagStationMinigame.DEFAULT_LAUNCHED_TEXT;
         this.choiceMade       = false;
         // The device's own flagRewards (the server leaves them on the client copy). Its
         // set_global reward with value true is the "launch code accepted" marker, so the
@@ -93,7 +108,7 @@ export class FlagStationMinigame extends MinigameScene {
         style.textContent = `
             .flag-station {
                 padding: 20px;
-                font-family: 'VT323', 'Courier New', monospace;
+                font-family: 'VT323', monospace;
             }
             
             .flag-station-header {
@@ -134,7 +149,7 @@ export class FlagStationMinigame extends MinigameScene {
                 border: 2px solid #333;
                 color: #00ff00;
                 padding: 12px 15px;
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 font-size: 16px;
                 outline: none;
             }
@@ -153,7 +168,7 @@ export class FlagStationMinigame extends MinigameScene {
                 border: 2px solid #000;
                 padding: 12px 20px;
                 font-family: 'Press Start 2P', monospace;
-                font-size: 11px;
+                font-size: 16px;
                 cursor: pointer;
                 white-space: nowrap;
             }
@@ -207,7 +222,7 @@ export class FlagStationMinigame extends MinigameScene {
             
             .flag-history {
                 margin-top: 30px;
-                border-top: 1px solid #333;
+                border-top: 2px solid #333;
                 padding-top: 20px;
             }
             
@@ -237,9 +252,9 @@ export class FlagStationMinigame extends MinigameScene {
             }
             
             .flag-value {
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
                 color: #00ff00;
-                font-size: 13px;
+                font-size: 20px;
             }
             
             .flag-check {
@@ -297,9 +312,9 @@ export class FlagStationMinigame extends MinigameScene {
                 background: #00aa00;
                 color: #000;
                 padding: 4px 12px;
-                font-size: 14px;
+                font-size: 20px;
                 font-weight: bold;
-                font-family: 'Courier New', monospace;
+                font-family: 'VT323', monospace;
             }
         `;
         this.gameContainer.appendChild(style);
@@ -392,23 +407,23 @@ export class FlagStationMinigame extends MinigameScene {
     buildLaunchAbortUI() {
         const style = document.createElement('style');
         style.textContent = `
-            .flag-station { padding: 20px; font-family: 'VT323', 'Courier New', monospace; }
+            .flag-station { padding: 20px; font-family: 'VT323', monospace; }
             .flag-input-label { display: block; color: #ff4444; margin-bottom: 8px; font-size: 14px; }
             .flag-input-wrapper { display: flex; gap: 10px; }
             .flag-input { flex: 1; background: #000; border: 2px solid #440000; color: #ff4444;
-                padding: 12px 15px; font-family: 'Courier New', monospace; font-size: 16px; outline: none; }
+                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 16px; outline: none; }
             .flag-input:focus { border-color: #ff4444; }
             .flag-input::placeholder { color: #444; }
             .flag-submit-btn { background: #440000; color: #ff4444; border: 2px solid #ff4444;
-                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 11px; cursor: pointer; }
+                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 16px; cursor: pointer; }
             .flag-submit-btn:hover:not(:disabled) { background: #660000; }
             .flag-submit-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
             .flag-result { margin-top: 10px; padding: 10px; display: none; }
-            .flag-result.success { background: #001100; border: 1px solid #00ff00; color: #00ff00; }
-            .flag-result.error { background: #110000; border: 1px solid #ff0000; color: #ff4444; }
+            .flag-result.success { background: #001100; border: 2px solid #00ff00; color: #00ff00; }
+            .flag-result.error { background: #110000; border: 2px solid #ff0000; color: #ff4444; }
             .flag-result.loading { color: #888; }
             .reward-notification { margin-top: 10px; padding: 10px; background: #001100;
-                border: 1px solid #00aa00; color: #00ff00; }
+                border: 2px solid #00aa00; color: #00ff00; }
             @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
             @keyframes pulse-border { 0%,100%{border-color:#ff4444} 50%{border-color:#880000} }
         `;
@@ -417,14 +432,14 @@ export class FlagStationMinigame extends MinigameScene {
         const station = document.createElement('div');
         station.className = 'flag-station';
         station.innerHTML = `
-            <div style="text-align:center; margin-bottom:20px;">
-                <div style="font-size:48px; margin-bottom:10px;">⚠️</div>
-                <div style="color:#ff4444; font-size:16px; margin-bottom:6px;">OPERATION SHATTER — ENTER LAUNCH AUTHORIZATION CODE</div>
-                <div style="color:#888; font-size:13px;">This device is armed. Enter the authorization code to proceed.</div>
+            <div class="launch-abort-header" style="text-align:center; margin-bottom:20px;">
+                <div class="launch-abort-icon" style="font-size:48px; margin-bottom:10px;">⚠️</div>
+                <div class="launch-abort-heading" style="color:#ff4444; font-size:16px; margin-bottom:6px;"></div>
+                <div class="launch-abort-status" style="color:#888; font-size:13px;"></div>
             </div>
 
             <div class="flag-input-container">
-                <label class="flag-input-label">LAUNCH AUTHORIZATION CODE:</label>
+                <label class="flag-input-label">LAUNCH AUTHORISATION CODE:</label>
                 <div class="flag-input-wrapper">
                     <input type="text" class="flag-input" id="flag-input" placeholder="flag{...}"
                            autocomplete="off" spellcheck="false">
@@ -436,6 +451,7 @@ export class FlagStationMinigame extends MinigameScene {
             <div class="reward-notification" id="reward-notification" style="display: none;"></div>
         `;
         this.gameContainer.appendChild(station);
+        this.setLaunchHeader('prompt');
         this.attachEventHandlers();
 
         this.restoreLaunchState();
@@ -471,10 +487,10 @@ export class FlagStationMinigame extends MinigameScene {
     restoreLaunchState() {
         if (this.outcomeApplied(this.onAbortConfig)) {
             this.choiceMade = true;
-            this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+            this.showFinalState('aborted');
         } else if (this.outcomeApplied(this.onLaunchConfig)) {
             this.choiceMade = true;
-            this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+            this.showFinalState('launched');
         } else if (this.launchCodeAccepted()) {
             this.showLaunchAbortChoice();
         }
@@ -483,23 +499,23 @@ export class FlagStationMinigame extends MinigameScene {
     buildLockUI() {
         const style = document.createElement('style');
         style.textContent = `
-            .flag-station { padding: 20px; font-family: 'VT323', 'Courier New', monospace; }
+            .flag-station { padding: 20px; font-family: 'VT323', monospace; }
             .flag-input-label { display: block; color: #00ff00; margin-bottom: 8px; font-size: 14px; }
             .flag-input-wrapper { display: flex; gap: 10px; }
             .flag-input { flex: 1; background: #000; border: 2px solid #004400; color: #00ff00;
-                padding: 12px 15px; font-family: 'Courier New', monospace; font-size: 16px; outline: none; }
+                padding: 12px 15px; font-family: 'VT323', monospace; font-size: 16px; outline: none; }
             .flag-input:focus { border-color: #00ff00; }
             .flag-input::placeholder { color: #444; }
             .flag-submit-btn { background: #002200; color: #00ff00; border: 2px solid #00ff00;
-                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 11px; cursor: pointer; }
+                padding: 12px 20px; font-family: 'Press Start 2P', monospace; font-size: 16px; cursor: pointer; }
             .flag-submit-btn:hover:not(:disabled) { background: #003300; }
             .flag-submit-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
             .flag-result { margin-top: 10px; padding: 10px; display: none; }
-            .flag-result.success { background: #001100; border: 1px solid #00ff00; color: #00ff00; }
-            .flag-result.error { background: #110000; border: 1px solid #ff0000; color: #ff4444; }
+            .flag-result.success { background: #001100; border: 2px solid #00ff00; color: #00ff00; }
+            .flag-result.error { background: #110000; border: 2px solid #ff0000; color: #ff4444; }
             .flag-result.loading { color: #888; }
             .reward-notification { margin-top: 10px; padding: 10px; background: #001100;
-                border: 1px solid #00aa00; color: #00ff00; }
+                border: 2px solid #00aa00; color: #00ff00; }
         `;
         this.gameContainer.appendChild(style);
 
@@ -567,7 +583,9 @@ export class FlagStationMinigame extends MinigameScene {
         this.showResult(resultEl, 'loading', 'Validating...');
 
         try {
-            const response = await apiClient.unlock(targetType, targetId, flagValue, 'flag');
+            // Through the shared object-unlock retry so a correct flag on a route-room object is
+            // not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, flagValue, 'flag');
 
             if (response.success) {
                 if (window.playUISound) window.playUISound('confirm');
@@ -602,7 +620,7 @@ export class FlagStationMinigame extends MinigameScene {
             if (refusal) {
                 // The PC the lock sits on is off or out of reach (review R4 m2): the flag was
                 // not judged, so no rejection is told to the mission
-                this.showResult(resultEl, 'error', LOCK_SCOPE_REFUSAL_TEXT[refusal]);
+                this.showResult(resultEl, 'error', lockScopeRefusalLine(error));
             } else if (error?.status && error.status < 500) {
                 const body = error.body || {};
                 const reason = flagRejectReason(body.message || body.error, body.reason);
@@ -623,11 +641,13 @@ export class FlagStationMinigame extends MinigameScene {
     showLaunchAbortChoice() {
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
         if (!inputContainer) return;
+        // The code is in: the header stops asking for it
+        this.setLaunchHeader('armed');
 
         inputContainer.innerHTML = `
             <div class="launch-abort-armed" style="text-align:center; margin: 20px 0;">
                 <div style="color:#ff4444; font-size:16px; margin-bottom:8px; animation: blink 1s infinite;">
-                    ⚠ ARMED — LAUNCH WINDOW: SUNDAY 06:00 UTC
+                    ⚠ ARMED: LAUNCH WINDOW SUNDAY 06:00 UTC
                 </div>
                 <div style="display:flex; gap:20px; justify-content:center; margin-top:20px;">
                     <button id="abort-btn" style="
@@ -659,7 +679,7 @@ export class FlagStationMinigame extends MinigameScene {
         if (!confirm(this.abortConfirmText)) return;
         this.choiceMade = true;
         this.applyChoiceConfig(this.onAbortConfig);
-        this.showFinalState('OPERATION ABORTED', 'Abort signal transmitted. All attack vectors terminated.', '#00ff00');
+        this.showFinalState('aborted');
     }
 
     handleLaunch() {
@@ -667,7 +687,7 @@ export class FlagStationMinigame extends MinigameScene {
         if (!confirm(this.launchConfirmText)) return;
         this.choiceMade = true;
         this.applyChoiceConfig(this.onLaunchConfig);
-        this.showFinalState('OPERATION LAUNCHED', 'Attack vector deployed. 2,347,832 targets receiving payload.', '#ff4444');
+        this.showFinalState('launched');
     }
 
     applyChoiceConfig(config) {
@@ -681,16 +701,64 @@ export class FlagStationMinigame extends MinigameScene {
         if (config.emitEvent) {
             window.eventDispatcher?.emit(config.emitEvent, { source: 'launch_device' });
         }
+        // Save the choice now rather than on the 30 s timer or pagehide, so a crash or a
+        // hard close straight after it keeps the outcome. The sync sends only what changed
+        // (the choice's globals, plus anything else already pending). A failed request is
+        // tried again a few times at 250, 500 and 1000 ms (syncConfirmed: bounded, stops on
+        // a 403) rather than waiting for the timer; each retry resends the same delta.
+        // A config with only an event syncs too: its mapping can set the globals or the
+        // timed message itself. handleAbort/handleLaunch call this once per choice.
+        if (config.setGlobal || config.emitEvent) {
+            const sync = window.stateSync;
+            try {
+                const run = typeof sync?.syncConfirmed === 'function'
+                    ? sync.syncConfirmed({ attempts: 4 })
+                    : sync?.sync?.();
+                Promise.resolve(run).catch(() => {});
+            } catch (e) { /* the timer retries */ }
+        }
     }
 
-    showFinalState(title, message, color) {
+    /** Heading and status line for a launch-device state: prompt, armed, aborted, launched. */
+    launchHeader(state) {
+        const op = this.operationName.toUpperCase();
+        switch (state) {
+            case 'armed': return { heading: `${op}: CODE ACCEPTED`, status: 'Choose: abort the operation or execute the launch.' };
+            case 'aborted': return { heading: `${op}: ABORTED`, status: this.abortedText };
+            case 'launched': return { heading: `${op}: LAUNCHED`, status: this.launchedText };
+            default: return { heading: `${op}: ENTER LAUNCH AUTHORISATION CODE`, status: 'This device is armed. Enter the authorisation code to proceed.' };
+        }
+    }
+
+    /** Write a state's header (textContent: scenario text stays plain text). The warning
+     *  icon shows only while the device is armed (prompt and armed states). Colour is set
+     *  every time, so the helper can move between any two states. */
+    setLaunchHeader(state) {
+        const { heading, status } = this.launchHeader(state);
+        const q = (sel) => this.gameContainer.querySelector(sel);
+        const h = q('.launch-abort-heading');
+        const s = q('.launch-abort-status');
+        const i = q('.launch-abort-icon');
+        if (h) { h.textContent = displayDashes(heading); h.style.color = FlagStationMinigame.LAUNCH_COLORS[state] || ''; }
+        if (s) s.textContent = displayDashes(status);
+        if (i) i.style.display = (state === 'aborted' || state === 'launched') ? 'none' : '';
+    }
+
+    /** The result of the choice, 'aborted' or 'launched'. The header carries the outcome
+     *  (one heading, one status line); the input block and the submit step's result and
+     *  reward lines (which still said the attack was "yours to abort") are cleared. Same
+     *  on a reopen. */
+    showFinalState(outcome) {
+        if (outcome !== 'aborted' && outcome !== 'launched') return;
         const inputContainer = this.gameContainer.querySelector('.flag-input-container');
         if (!inputContainer) return;
-        inputContainer.innerHTML = `
-            <div style="text-align:center; padding:20px; color:${color}; font-size:14px;">
-                <div style="font-size:18px; margin-bottom:12px;">${title}</div>
-                <div style="color:#888;">${message}</div>
-            </div>`;
+        this.setLaunchHeader(outcome);
+        for (const id of ['flag-result', 'reward-notification']) {
+            const el = this.gameContainer.querySelector(`#${id}`);
+            // The ids are also the elements' base class names
+            if (el) { el.innerHTML = ''; el.className = id; el.style.display = 'none'; }
+        }
+        inputContainer.innerHTML = `<div class="launch-abort-final" data-outcome="${outcome}"></div>`;
     }
 
 

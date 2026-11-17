@@ -11,6 +11,8 @@
  *                       `[{ objectId, locked, sound, at }]`; every sound it plays is in there
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
  *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
+ *   hiddenDevices()     itemId -> { item, on, room, hostId? }: devices hidden in plants (plant-hiding.js);
+ *                       hostId (the plant drawn on, set once drawn) is client-only, never sent
  *   networkView(id)     the last network view network-links.js fetched for that foothold
  *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell;
  *                       sub-slice L adds lockedOut (stations a check found it locked out at) and
@@ -22,7 +24,8 @@
  *                       "no" leaves alone) and borrowCleared (`pcId|npcId` keys of borrowers
  *                       whose "no" cleared the mark for them)
  *   feed()              slice 9.2 C: revealed feed post ids by NPC, done NPCs, request count;
- *                       C3: threads, { postId: [replyId, ...] } oldest first
+ *                       C3: threads, { postId: [replyId, ...] } oldest first; reactions,
+ *                       { postId: { key: [npcId, ...] } }
  *   guest(pcId)         slice 9.2 H: the guest a borrower left at a hot desk ({ npcId, lockAt }),
  *                       who is using the PC now, and the NPC's pending borrow, if any
  *
@@ -76,7 +79,7 @@ export const accessBridge = {
      */
     feed() {
         const f = window.socialFeed;
-        if (!f) return { revealed: {}, done: [], requests: 0, threads: {} };
+        if (!f) return { revealed: {}, done: [], requests: 0, threads: {}, reactions: {} };
         // C3: { postId: [replyId, ...] } in thread order, for every revealed post with replies.
         // A null-prototype object, so no post id can reach a prototype key before json() copies it.
         const threads = Object.create(null);
@@ -88,7 +91,18 @@ export const accessBridge = {
                 }
             }
         }
-        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests, threads });
+        // Reactions: { postId: { key: [npcId, ...] } }, null-prototype objects throughout
+        const reactions = Object.create(null);
+        if (typeof f.reactionsFor === 'function' && f.reactions instanceof Map) {
+            for (const postId of f.reactions.keys()) {
+                const groups = f.reactionsFor(postId);
+                if (!groups.length) continue;
+                const byKey = Object.create(null);
+                for (const g of groups) byKey[g.key] = g.people.map((p) => p.npcId);
+                reactions[postId] = byKey;
+            }
+        }
+        return json({ revealed: f.revealed(), done: [...f.done].sort(), requests: f.requests, threads, reactions });
     },
 
     /**
@@ -135,7 +149,7 @@ export const accessBridge = {
         if (!ws || !ws.env) return { ok: false, reason: 'no-workstation-state' };
         const data = (ws.env.objects() || []).find(d => d?.id === pcId);
         if (!data) return { ok: false, reason: 'unknown-object', id: pcId };
-        const owner = ownerOf(data, ws.env.npcs()) || null;
+        const owner = ownerOf(data) || null;
         const rec = owner && ws.away instanceof Map ? ws.away.get(owner) : undefined;
         let present = null;
         if (owner) {
@@ -180,6 +194,11 @@ export const accessBridge = {
      * `list()` when it has one, else its `footholds` (a Map or an object keyed by foothold
      * id, or an array). Empty while the module does not exist.
      */
+    hiddenDevices() {
+        const mod = window.plantHiding;
+        return mod ? json(mod.hiddenMap()) : {};
+    },
+
     footholds() {
         const mod = window.networkLinks;
         if (!mod) return [];

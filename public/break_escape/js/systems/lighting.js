@@ -14,7 +14,11 @@
  *     "mode": "on" | "motion" | "dark",   // motion: off until the player walks in
  *     "startOn": false,                    // motion rooms with NPCs start lit unless this is false
  *     "offAfter": 30,                      // motion: seconds after the player leaves before lights go off
- *     "flicker": true,                     // one faulty fluorescent panel
+ *     "flicker": true,                     // one faulty fluorescent panel; or an object, clamped for
+ *                                          // photosensitivity: { "dips": 3, "dipMs": [150, 250],
+ *                                          // "gapMs": [2500, 8500], "depth": 0.6 } (see resolveFlicker).
+ *                                          // Omitted fields default to the stock panel: dips 2, dipMs [90, 90]
+ *                                          // (raised to 100 by the clamp), gapMs [2500, 8500], depth 0.45
  *     "ambient": "#dfe3ec", "darkAmbient": "#101424",
  *     "panels": false,                     // no ceiling panel pools
  *     "lights": [{ "x": 5, "y": 4, "color": "#ffd9a0", "radius": 80, "intensity": 0.8 }],  // tile coords
@@ -104,14 +108,116 @@ const RESOLVE_MS = 250;
 // offsetY comes from the base entry (kiosk screens sit high). `ransom` keeps the glow
 // above the light map in lit rooms too, and tints the floor red (see the draw loop).
 const RANSOM_VARIANT = { condition: 'globalVars.ransomware_deployed', color: 0xff3b30, radius: 44, intensity: 0.8, effect: 'breathe', ransom: true, floorTint: 0.85 };
-// Workstation indicators (OFFICE_LIFE_PLAN 2.3): a small `above` dot at the screen's top-right
-// corner while the owner is away. Locked: steady blue, listed first so it wins. Open (owner away,
+// Workstation indicators (OFFICE_LIFE_PLAN 2.3): a small `above` dot centred on the PC sprite
+// while the owner is away (UX slice 15, R13: a mark is centred on what it marks). Locked: steady blue, listed first so it wins. Open (owner away,
 // not locked): a larger warm-white dot that breathes. Colour is never the only cue: they differ
 // in size, and in motion unless reduced motion is on.
-const INDICATOR_LOCKED = { color: 0x3d8bff, radius: 10, intensity: 1, effect: null, above: true };
-const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true };
-// Inset of the dot from the object's top-right corner, px.
-const INDICATOR_INSET = 5;
+// `dotColor`: the mark's own fill, where `color` is the light it casts. The locked mark is a
+// lighter blue than its light, so it reaches 3:1 on the sky-blue and striped screens (pc5,
+// pc11) when a password session keeps the base picture (UX slice 15 R2 final, m1: 2.79 and
+// 2.48 with 0x3d8bff; 3.16 and 3.56 with this).
+const INDICATOR_LOCKED = { color: 0x3d8bff, dotColor: 0x7ab4ff, radius: 10, intensity: 1, effect: null, above: true, dotPx: 4 };
+const INDICATOR_OPEN = { color: 0xfff1c8, radius: 14, intensity: 1, effect: 'breathe', above: true, dotPx: 6 };
+// The indicator mark itself is a crisp whole-pixel sprite (UX slice 15 R1, m2: the pixel-art
+// rule bans a soft glow as a UI mark), white so it takes the variant's tint, NEAREST filtered.
+// The soft light it casts on the light map stays.
+const INDICATOR_DOT_TEX = 'be_indicator_dot_ring_';
+// A 1 px dark ring round the mark, so it reads on a bright or blue screen (UX slice 15 R2, m1:
+// the blue mark on pc7 and pc11 was 1.2:1). The open mark breathes no lower than this, as the
+// trough washed out on light screens. 0.85 since UX slice 15 R3 (m1): measured on the rendered
+// lit office, the open mark on pc5 fell to 2.96:1 at 0.8 and is 3.0 at 0.81.
+export const INDICATOR_RING = 0x1a1c2c;
+const INDICATOR_RING_CSS = '#1a1c2c';
+export const INDICATOR_BREATHE_FLOOR = 0.85;
+
+/** The open indicator's breathe level at `time` ms: between INDICATOR_BREATHE_FLOOR and 1. */
+export function indicatorBreathe(time, phase = 0) {
+  return INDICATOR_BREATHE_FLOOR + (1 - INDICATOR_BREATHE_FLOOR) * (0.5 + 0.5 * Math.sin(time / 700 + phase));
+}
+
+/**
+ * Depth of an emitter's glow image. An indicator mark (normal blend) draws above every glow,
+ * LIGHT_DEPTH + 2: at LIGHT_DEPTH + 1 the ADD screen glows of a dark room drew over it and
+ * washed the locked blue and the dark ring out to white and grey (UX slice 15 R3, m1).
+ * An `above` glow sits just over the light map; any other glow just in front of its object.
+ */
+export function emitterGlowDepth(indicator, above, objDepth) {
+  if (indicator) return LIGHT_DEPTH + 2;
+  return above ? LIGHT_DEPTH + 1 : objDepth + 0.01;
+}
+
+/** Pixel size of an indicator's mark: its `dotPx`, else from its radius (10 -> 4, 14 -> 6), even. */
+export function indicatorDotPx(def) {
+  const n = Number(def?.dotPx);
+  if (Number.isFinite(n) && n >= 2) return 2 * Math.round(n / 2);
+  return Math.max(2, 2 * Math.round((Number(def?.radius) || 10) * 0.2));
+}
+
+/** Whole-pixel top-left of an indicator mark n px wide centred at (x, y). */
+export function indicatorDotOrigin(x, y, n) {
+  return { x: Math.round(x - n / 2), y: Math.round(y - n / 2) };
+}
+
+/**
+ * Pixels of an n x n indicator mark, row by row: 1 lit, 0 clear. A square with its corner
+ * pixels cut once n is 4 or more, so it reads as a small stepped dot.
+ */
+export function indicatorDotPixels(n) {
+  const rows = [];
+  for (let y = 0; y < n; y++) {
+    const row = [];
+    for (let x = 0; x < n; x++) {
+      const corner = n >= 4 && (x === 0 || x === n - 1) && (y === 0 || y === n - 1);
+      row.push(corner ? 0 : 1);
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+/**
+ * Pixels of the n px indicator mark with its ring, (n + 2) px square, row by row: 1 the dot
+ * (indicatorDotPixels, one pixel in), 2 the ring (every clear pixel beside a dot pixel, by
+ * edge, so the ring steps round the dot's cut corners), 0 clear.
+ */
+export function indicatorMarkPixels(n) {
+  const dot = indicatorDotPixels(n);
+  const on = (x, y) => x >= 0 && y >= 0 && x < n && y < n && dot[y][x] === 1;
+  const rows = [];
+  for (let y = 0; y < n + 2; y++) {
+    const row = [];
+    for (let x = 0; x < n + 2; x++) {
+      const dx = x - 1, dy = y - 1;
+      if (on(dx, dy)) row.push(1);
+      else row.push(on(dx - 1, dy) || on(dx + 1, dy) || on(dx, dy - 1) || on(dx, dy + 1) ? 2 : 0);
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+// Screen centre of each workstation picture, as an offset in source pixels from the sprite's
+// centre (UX slice 15 R1, m1: the dot sits on the screen, not between the monitor and a
+// tower). Measured from the screen's inner box in each PNG. `<key>_locked` shares its base's.
+export const SCREEN_ANCHORS = {
+  pc: [-4, -4.5], pc_desktop: [-4, -4.5], pc1: [-1.5, -4.5], pc3: [0, -4], pc4: [0, -3],
+  pc5: [-3, -5], pc6: [-2.5, -6], pc7: [0, -5], pc8: [-6.5, -4.5], pc9: [0, -4],
+  pc10: [-2, -5], pc11: [-4.5, -3.5], pc12: [0, -4],
+};
+
+/**
+ * The indicator offset from the sprite centre for a picture `key` shown at `size`
+ * ({ width, height } display, { sourceWidth, sourceHeight } of the frame, flipX): the
+ * screen anchor scaled to the display size, mirrored when flipped; 0, 0 for an unknown key.
+ */
+export function screenAnchor(key, size = {}) {
+  const base = typeof key === 'string' ? key.replace(/_locked$/, '') : '';
+  const a = SCREEN_ANCHORS[base];
+  if (!a) return { offsetX: 0, offsetY: 0 };
+  const sx = size.sourceWidth > 0 && size.width > 0 ? size.width / size.sourceWidth : 1;
+  const sy = size.sourceHeight > 0 && size.height > 0 ? size.height / size.sourceHeight : 1;
+  return { offsetX: a[0] * sx * (size.flipX ? -1 : 1), offsetY: a[1] * sy };
+}
 // Lock flashes (slice 16): one per change of a screen's locked state (WCAG 2.3.1: one flash).
 const FLASH_KINDS = {
   lock: { color: INDICATOR_LOCKED.color, from: 18, to: INDICATOR_LOCKED.radius, fade: false },
@@ -137,13 +243,13 @@ export function flashShape(kind, t, reduced = false) {
 
 /**
  * Built-in indicator variants for a workstation object: none unless it is a workstation with a
- * known owner. Offsets put the dot at the object's top-right corner (from its display size).
+ * known owner. The dot sits on the screen: the picture's screen anchor (screenAnchor, from
+ * size.key) scaled to its display size, else the object's centre; the lock flash reads the same
+ * offsets, so it moves with the dot.
  */
 export function workstationIndicators(data, npcs, size = {}) {
-  if (!isWorkstation(data) || !ownerOf(data, npcs)) return [];
-  const w = size.width || 32, h = size.height || 32;
-  const offsetX = Math.round(w / 2 - INDICATOR_INSET);
-  const offsetY = -Math.round(h / 2 - INDICATOR_INSET);
+  if (!isWorkstation(data) || !ownerOf(data)) return [];
+  const { offsetX, offsetY } = screenAnchor(size.key, size);
   return [
     { ...INDICATOR_LOCKED, condition: `globalVars.${data.id}_screen_locked`, offsetX, offsetY },
     { ...INDICATOR_OPEN, condition: `globalVars.${data.id}_owner_away`, offsetX, offsetY },
@@ -211,13 +317,80 @@ function panelColorFor(ambient) {
 const smooth = (t) => t * t * (3 - 2 * t);
 
 // Fluorescent strike: [ms, level] keyframes, played per panel with a random delay.
-// Kept to two flashes per tube, and the faulty panel to two short dips per burst, so
+// Kept to two flashes per tube, and the faulty panel to three dips per burst at most (starts 0.55 s apart), so
 // nothing flashes more than three times a second (WCAG 2.3.1). With reduced motion
 // set, tubes fade up instead and the faulty panel holds steady.
 const STRIKE_SEQUENCE = [[0, 0], [60, 0.7], [160, 0.12], [420, 0.12], [460, 1]];
 const FADE_MS = 400;
 const DIP_MS = 90;
 const DIP_LEVEL = 0.55;
+
+// Faulty panel options. `flicker: true` is the stock panel (one or two 90 ms dips to 0.55,
+// 2.5 to 8.5 s apart). An object tunes it: { dips, dipMs: [min, max], gapMs: [min, max],
+// depth }. Missing fields take the stock values (see the defaults below). Everything is clamped for photosensitivity (WCAG 2.3.1): at most 3 dips a
+// burst, dips of at least 100 ms with at least 100 ms between them, dip starts at least
+// FLICKER_MIN_PERIOD_MS apart (so never more than 2 flashes in any second), and at least
+// 2 s between bursts.
+const FLICKER_MAX_DIPS = 3;
+// Defaults for fields the object form leaves out, so `{ depth: 0.7 }` is the stock panel but deeper:
+// 2 dips, 90 ms (raised to the 100 ms floor by the clamp), 2.5 to 8.5 s apart, depth 0.45.
+const FLICKER_DEFAULT_DIPS = 2;
+const STOCK_DIP_MS = 90;
+const FLICKER_MIN_DIP_MS = 100;
+const FLICKER_MAX_DIP_MS = 600;
+const FLICKER_MIN_IN_GAP_MS = 100;
+const FLICKER_MIN_PERIOD_MS = 550;
+const FLICKER_MIN_BURST_GAP_MS = 2000;
+const FLICKER_MAX_BURST_GAP_MS = 60000;
+const FLICKER_MIN_DEPTH = 0.1;
+const FLICKER_MAX_DEPTH = 0.9;
+
+function numberOr(v, fallback) { return Number.isFinite(v) ? v : fallback; }
+function clampRange(pair, lo, hi, fallback) {
+  const a = Array.isArray(pair) ? pair : (Number.isFinite(pair) ? [pair, pair] : fallback);
+  let min = Math.min(hi, Math.max(lo, numberOr(a[0], fallback[0])));
+  let max = Math.min(hi, Math.max(lo, numberOr(a[1], numberOr(a[0], fallback[1]))));
+  if (max < min) [min, max] = [max, min];
+  return [min, max];
+}
+
+/**
+ * Read a room's `lighting.flicker` into a clamped plan, or null when off.
+ * `true` (or anything not an object) is the stock panel.
+ */
+export function resolveFlicker(flicker) {
+  if (!flicker) return null;
+  if (typeof flicker !== 'object' || Array.isArray(flicker)) return { stock: true };
+  return {
+    stock: false,
+    dips: Math.min(FLICKER_MAX_DIPS, Math.max(1, Math.round(numberOr(flicker.dips, FLICKER_DEFAULT_DIPS)))),
+    dipMs: clampRange(flicker.dipMs, FLICKER_MIN_DIP_MS, FLICKER_MAX_DIP_MS, [STOCK_DIP_MS, STOCK_DIP_MS]),
+    gapMs: clampRange(flicker.gapMs, FLICKER_MIN_BURST_GAP_MS, FLICKER_MAX_BURST_GAP_MS, [2500, 8500]),
+    level: 1 - Math.min(FLICKER_MAX_DEPTH, Math.max(FLICKER_MIN_DEPTH, numberOr(flicker.depth, 1 - DIP_LEVEL))),
+  };
+}
+
+/** Plan the next burst from `now`: [{ at, len }] dips, the panel's level in a dip, and when the burst ends. */
+export function planFlickerBurst(plan, now, rand = Math.random) {
+  if (plan.stock) {
+    const first = now + 2500 + rand() * 6000;
+    const starts = rand() < 0.5 ? [first] : [first, first + 260 + rand() * 200];
+    const dips = starts.map(at => ({ at, len: DIP_MS }));
+    return { dips, level: DIP_LEVEL, end: starts[starts.length - 1] + DIP_MS };
+  }
+  const at0 = now + plan.gapMs[0] + rand() * (plan.gapMs[1] - plan.gapMs[0]);
+  const dips = [];
+  let at = at0;
+  for (let i = 0; i < plan.dips; i++) {
+    const len = plan.dipMs[0] + rand() * (plan.dipMs[1] - plan.dipMs[0]);
+    dips.push({ at, len });
+    // Gap of 150 to 350 ms, but never under the minimum gap or the minimum start-to-start period.
+    const gap = Math.max(FLICKER_MIN_IN_GAP_MS, FLICKER_MIN_PERIOD_MS - len, 150 + rand() * 200);
+    at += len + gap;
+  }
+  const last = dips[dips.length - 1];
+  return { dips, level: plan.level, end: last.at + last.len };
+}
 
 // Fire (effect "fire"): the glow flickers irregularly and shifts towards yellow, and
 // small flame tongues rise and fade across its width. Flash-safe: the glow's only
@@ -433,6 +606,26 @@ export class LightingSystem {
     scene.scale.on('resize', () => this.resizeLightMap());
   }
 
+  /**
+   * The indicator mark texture for an n px dot (indicatorMarkPixels: the dot in white, so it
+   * takes the variant's tint, inside a 1 px dark ring), (n + 2) px square, made once, NEAREST
+   * filtered. The tint multiplies the ring too, which keeps it dark under any colour.
+   */
+  indicatorDotTexture(n) {
+    const key = INDICATOR_DOT_TEX + n;
+    if (!this.scene.textures.exists(key)) {
+      const tex = this.scene.textures.createCanvas(key, n + 2, n + 2);
+      const ctx = tex.getContext();
+      const fills = { 1: '#ffffff', 2: INDICATOR_RING_CSS };
+      indicatorMarkPixels(n).forEach((row, y) => row.forEach((v, x) => {
+        if (fills[v]) { ctx.fillStyle = fills[v]; ctx.fillRect(x, y, 1, 1); }
+      }));
+      tex.refresh();
+      tex.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
+    return key;
+  }
+
   createLightTexture() {
     if (!this.scene.textures.exists(BLOCK_TEX)) {
       const block = this.scene.textures.createCanvas(BLOCK_TEX, BLOCK_SIZE, BLOCK_SIZE);
@@ -581,7 +774,9 @@ export class LightingSystem {
       })),
     });
     if (cfg.flicker && state.panels.length) {
-      state.panels[Math.floor(Math.random() * state.panels.length)].faulty = true;
+      const faulty = state.panels[Math.floor(Math.random() * state.panels.length)];
+      faulty.faulty = true;
+      faulty.flickerPlan = resolveFlicker(cfg.flicker);
     }
   }
 
@@ -705,13 +900,16 @@ export class LightingSystem {
       const id = obj.scenarioData?.id ?? obj.objectId;
       let indicators = id ? state.indicatorCfg?.[id] : null;
       if (!indicators && isWorkstation(obj.scenarioData)) {
-        indicators = workstationIndicators(obj.scenarioData, npcs || (npcs = knownNpcs()),
-          { width: obj.displayWidth, height: obj.displayHeight });
+        indicators = workstationIndicators(obj.scenarioData, npcs || (npcs = knownNpcs()), {
+          key: emitterKey(obj), width: obj.displayWidth, height: obj.displayHeight,
+          sourceWidth: obj.width, sourceHeight: obj.height, flipX: !!obj.flipX,
+        });
       }
       if (indicators?.length) {
         state.emitters.push({
           obj, key, base: null, variants: indicators, indicator: true, def: null, variantIdx: -2,
-          glow: this.scene.add.image(0, 0, LIGHT_TEX).setBlendMode(Phaser.BlendModes.ADD).setVisible(false),
+          glow: this.scene.add.image(0, 0, this.indicatorDotTexture(indicatorDotPx(indicators[0])))
+            .setOrigin(0, 0).setVisible(false),
           phase: Math.random() * Math.PI * 2, leds: [], ledsMax: 0, flames: [], glowK: 1, stampK: 1,
         });
       }
@@ -742,7 +940,10 @@ export class LightingSystem {
       }
       e.def = def;
       if (!def) continue;
-      e.glow.setTint(def.color).setScale((def.radius * 0.6) / (LIGHT_TEX_SIZE / 2));
+      if (e.indicator) {
+        e.dotPx = indicatorDotPx(def);
+        e.glow.setTexture(this.indicatorDotTexture(e.dotPx)).setTint(def.dotColor ?? def.color).setScale(1);
+      } else e.glow.setTint(def.color).setScale((def.radius * 0.6) / (LIGHT_TEX_SIZE / 2));
       e.leds.forEach(l => l.img.setTint(def.ledColor ?? l.color));
     }
     if (changed) this.clusterEmitters(state);
@@ -855,6 +1056,8 @@ export class LightingSystem {
       } else {
         p.level = 1; p.strikeAt = null;
       }
+      // Drop any burst planned before the lights went off, so none resumes right after the strike.
+      p.dips = null;
     });
   }
 
@@ -862,7 +1065,7 @@ export class LightingSystem {
     const state = this.rooms.get(roomId);
     if (!state) return;
     state.on = false;
-    state.panels.forEach(p => { p.level = 0; p.strikeAt = null; });
+    state.panels.forEach(p => { p.level = 0; p.strikeAt = null; p.dips = null; });
   }
 
   /** How loud a room's sounds are where the player is: own room 1, through a door 0.4, else 0. */
@@ -943,11 +1146,12 @@ export class LightingSystem {
       } else if (state.on && p.faulty && !this.reducedMotion) {
         // Mostly steady; every few seconds, one or two short dips.
         if (!p.dips || now > p.nextBurst) {
-          const first = now + 2500 + Math.random() * 6000;
-          p.dips = Math.random() < 0.5 ? [first] : [first, first + 260 + Math.random() * 200];
-          p.nextBurst = p.dips[p.dips.length - 1] + DIP_MS;
+          const burst = planFlickerBurst(p.flickerPlan || { stock: true }, now);
+          p.dips = burst.dips;
+          p.dipLevel = burst.level;
+          p.nextBurst = burst.end;
         }
-        p.level = p.dips.some(d => now >= d && now < d + DIP_MS) ? DIP_LEVEL : 1;
+        p.level = p.dips.some(d => now >= d.at && now < d.at + d.len) ? p.dipLevel : 1;
       }
     }
   }
@@ -1199,7 +1403,7 @@ export class LightingSystem {
             ? (Math.sin(time / 159 + e.phase) > 0 ? 1 : 0.1)
             : 0.7 + 0.3 * (Math.sin(time / 140 + e.phase) > 0.6 ? 1 : 0);
           else if (def.effect === 'pulse') k = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(time / 300 + e.phase));
-          else if (def.effect === 'breathe') k = 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
+          else if (def.effect === 'breathe') k = e.indicator ? indicatorBreathe(time, e.phase) : 0.75 + 0.25 * Math.sin(time / 700 + e.phase);
         }
         let glowColor = def.color;
         if (def.effect === 'fire') {
@@ -1228,7 +1432,11 @@ export class LightingSystem {
         // Indicator records (workstation dots) are small and must read across a lit room: full
         // strength, where other `above` glows are held at 0.6.
         const fade = e.indicator ? 1 : (def.ransom || def.above) ? 0.6 : glowFade;
-        e.glow.setPosition(x, y).setDepth(above ? LIGHT_DEPTH + 1 : obj.depth + 0.01).setVisible(true)
+        // An indicator mark sits at whole pixels, its top-left from the anchor point, one
+        // pixel up and left for the ring round the dot
+        const dotAt = e.indicator ? indicatorDotOrigin(x, y, e.dotPx || indicatorDotPx(def)) : null;
+        const at = dotAt ? { x: dotAt.x - 1, y: dotAt.y - 1 } : { x, y };
+        e.glow.setPosition(at.x, at.y).setDepth(emitterGlowDepth(e.indicator, above, obj.depth)).setVisible(true)
           .setAlpha(Math.min(1, def.intensity * k * e.glowK * fade * (above ? e.fade : GLOW_BOOST)) * (obj.behindWallK ?? 1));
         // Keep an `above` glow's hue in a lit room (reds stayed red, not pink): multiply
         // its colour into the map under it first. Ransom screens have their own tint.

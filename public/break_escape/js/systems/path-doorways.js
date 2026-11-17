@@ -135,3 +135,37 @@ export function lastPinnedIndex(path, from = 0) {
     for (let i = path.length - 1; i >= from; i--) if (path[i] && path[i].pinned) return i;
     return -1;
 }
+
+/** Window (ms) over which a direct (straight-line) player walk must gain ground before it counts as stalled. */
+export const DIRECT_WALK_STALL_MS = 180;
+/** Walking speed the stall watch compares against (core/constants MOVEMENT_SPEED), px per second. */
+export const DIRECT_WALK_SPEED = 150;
+/** A walk is stalled when it gained less than this share of what free walking would have gained. */
+export const DIRECT_WALK_STALL_SHARE = 1 / 3;
+
+/**
+ * One frame of a direct player walk's stall watch (sims tidy R1 m4, R2 m1). The straight walk is
+ * chosen once, on line of sight, and line of sight ignores movable bodies: a wheeled chair turns solid
+ * when its sitter mounts, so the walk can meet it later (game 5793, Amara's chair). `st` is per walk
+ * ({ replanned }, plus the (time, distance) history it keeps in `hist`). The window is time, not
+ * frames: physics steps are fixed at 60 a second, so the ground gained per render frame falls as the
+ * refresh rate rises, and a free walk at 360 Hz gains well under a pixel a frame. A stall is a real
+ * one: over the last `windowMs` the distance to the target fell by less than `share` of
+ * `speed * elapsed`. Being blocked on one axis while sliding along a wall towards the target gains
+ * ground, so it is not a stall.
+ * Returns:
+ *  'ok'     moving freely;
+ *  'wait'   blocked but not (yet) stalled: keep pushing (a slide along a wall goes on);
+ *  'replan' stalled: route through the grid, once per walk;
+ *  'stop'   blocked after the replan was used (the old stop on contact).
+ */
+export function directWalkStall(st, { blocked, dist, now }, { windowMs = DIRECT_WALK_STALL_MS, speed = DIRECT_WALK_SPEED, share = DIRECT_WALK_STALL_SHARE } = {}) {
+    const h = st.hist || (st.hist = []);
+    h.push({ t: now, d: dist });
+    // keep one sample at or before the window start, drop the rest
+    while (h.length > 1 && h[1].t <= now - windowMs) h.shift();
+    if (st.replanned) return blocked ? 'stop' : 'ok';
+    const elapsed = now - h[0].t;
+    if (elapsed >= windowMs && h[0].d - dist < share * speed * elapsed / 1000) { st.replanned = true; return 'replan'; }
+    return blocked ? 'wait' : 'ok';
+}

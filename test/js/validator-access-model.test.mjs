@@ -46,7 +46,7 @@ function clean() {
             lobby: {
                 type: 'room_office', connections: { north: 'finance_office' },
                 objects: [
-                    { id: 'jake_pc', type: 'pc', name: "Jake's PC", locked: true, lockType: 'login', access: { roles: ['staff'] }, lockChance: 0 },
+                    { id: 'jake_pc', type: 'pc', name: "Jake's PC", locked: true, lockType: 'login', access: { roles: ['staff'] }, lockChance: 0, owner: 'jake' },
                     { id: 'hot_desk', type: 'pc', name: 'Hot desk', locked: true, lockType: 'login' },
                     { id: 'jake_badge_copy', type: 'keycard', name: 'Badge', card_id: '4F00A1C2', identity: 'jake' }
                 ],
@@ -106,10 +106,10 @@ test('unresolved person, policy and card references are errors', { skip }, () =>
     assertHas(out, "requires card 'NO-SUCH-CARD', which no NPC or keycard carries");
 });
 
-test('a screenOwner naming no room NPC is an error on a sign-in PC', { skip }, () => {
+test('an owner naming no room NPC is an error on a sign-in PC', { skip }, () => {
     const sc = clean();
-    obj(sc, 'hot_desk').screenOwner = 'ghost';
-    assertHas(errors(issues(sc)), "sign-in PC 'hot_desk' screenOwner 'ghost' names unknown person");
+    obj(sc, 'hot_desk').owner = 'ghost';
+    assertHas(errors(issues(sc)), "sign-in PC 'hot_desk' owner 'ghost' names unknown person");
 });
 
 test('a profile item id shared with another profile item or a room object is an error', { skip }, () => {
@@ -258,8 +258,8 @@ test('an owner placed in a different room from its workstation is a warning', { 
     const jake = npc(sc, 'jake');
     lobby(sc).npcs = lobby(sc).npcs.filter(n => n.id !== 'jake');
     sc.rooms.finance_office.npcs = [jake];
-    // a plain workstation owned through screenOwner counts too
-    sc.rooms.finance_office.objects = [{ id: 'dana_ws', type: 'pc', name: 'Dana desk', workstation: true, screenOwner: 'dana' }];
+    // a plain workstation owned through owner counts too
+    sc.rooms.finance_office.objects = [{ id: 'dana_ws', type: 'pc', name: 'Dana desk', workstation: true, owner: 'dana' }];
     const out = warnings(issues(sc));
     assertHas(out, "NPC 'jake' owns workstation 'jake_pc' in room 'lobby' but is placed in room 'finance_office'");
     assertHas(out, "NPC 'dana' owns workstation 'dana_ws' in room 'finance_office' but is placed in room 'lobby'");
@@ -279,6 +279,9 @@ test('a capture route on an account holder without revealSecret is a warning', {
     npc(sc, 'jake').usePayload = { host: 'mail' };
     assertHas(warnings(issues(sc)), "NPC 'jake' has a capture route");
     sc.social = { captures: { revealSecret: true } };
+    assert.ok(!has(issues(sc), 'has a capture route'));
+    // An explicit false is a choice: the password is typed from its earned source
+    sc.social = { captures: { revealSecret: false } };
     assert.ok(!has(issues(sc), 'has a capture route'));
 });
 
@@ -305,6 +308,56 @@ test('a card carried by several NPCs and used at an access lock is a warning', {
     const out = issues(sc);
     assertHas(warnings(out), "card '4F00A1C2' is carried by 'jake', 'dana' and is used at access lock(s) 'finance_office'");
     assertHas(out, "ℹ️ Identity reach: card '4F00A1C2' (jake, dana) opens door 'finance_office'");
+});
+
+// ---- remoteScreen policy lint (credential keyring K0, section 5.3; review R1 B1/m1/m2) ----
+// A tiles policy reaches the policy-name resolution the validator does without ActiveSupport;
+// issues() asserts ruby exits 0, so each tiles fixture below is the B1 regression (the old
+// `.presence` raised NoMethodError and suppressed every other access-model message).
+
+function headlessPcUnder(sc, policy) {
+    lobby(sc).objects.push({
+        id: 'door_ctl', type: 'pc', name: 'Door controller', locked: true, lockType: 'login',
+        headless: true, access: { roles: ['it'] }, policy
+    });
+}
+
+test('a remote:blocked policy that sets remoteScreen warns, and the check does not crash', { skip }, () => {
+    const sc = clean();
+    sc.policies.blocked_rs = { remote: 'blocked', remoteScreen: 'typed' };
+    obj(sc, 'hot_desk').policy = 'blocked_rs';
+    const out = issues(sc);
+    assertHas(warnings(out), "policy 'blocked_rs' sets remoteScreen but remote is 'blocked'");
+    assert.ok(!has(out, 'could not run'), out.join('\n'));
+});
+
+test("remoteScreen 'tiles' on a policy whose only PC is headless draws the info line (B1 regression)", { skip }, () => {
+    const sc = clean();
+    sc.policies.headless_tiles = { remoteScreen: 'tiles' };
+    headlessPcUnder(sc, 'headless_tiles');
+    assertHas(issues(sc), "policy 'headless_tiles' has remoteScreen 'tiles' but every PC under it");
+});
+
+test('remoteScreen tiles with a tile-capable PC under it draws no info line', { skip }, () => {
+    const sc = clean();
+    sc.policies.open_tiles = { remoteScreen: 'tiles' };
+    obj(sc, 'hot_desk').policy = 'open_tiles';
+    assert.ok(!has(issues(sc), 'no PC tiles show'), 'a tile-capable PC means tiles do show');
+});
+
+test('remoteScreen tiles on a policy no PC uses draws no info line (R1 m1)', { skip }, () => {
+    const sc = clean();
+    sc.policies.spare_tiles = { remoteScreen: 'tiles' };
+    assert.ok(!has(issues(sc), "policy 'spare_tiles'"), 'an unused policy is not "every PC tiles hidden"');
+});
+
+test('a remote:blocked policy with remoteScreen tiles gets the warning only, never both (R1 m2)', { skip }, () => {
+    const sc = clean();
+    sc.policies.blocked_tiles = { remote: 'blocked', remoteScreen: 'tiles' };
+    headlessPcUnder(sc, 'blocked_tiles');
+    const out = issues(sc);
+    assertHas(warnings(out), "policy 'blocked_tiles' sets remoteScreen but remote is 'blocked'");
+    assert.ok(!has(out, "has remoteScreen 'tiles' but every PC under it"), 'the warning already explains it');
 });
 
 // check_lock_credentials (step 7): a keycard carrying an NPC's card opens every access lock
@@ -400,6 +453,82 @@ test('requiresItemHintVariants without requiresItem is a warning: the hints are 
     assert.ok(!has(validatorIssues('check_engine_limits', sc), 'but no requiresItem'));
 });
 
+// requiresItemCondition (lab blind-playtest fix): a known field, checked against the &&-only grammar
+// that evaluateGlobalCondition reads, with warnings for the cases where nothing would read it.
+function withCondition(extra) {
+    const sc = withHintVariants([]);
+    Object.assign(lobby(sc).objects.find(o => o.id === 'plain_pc'), {
+        requiresItemCondition: 'globalVars.plain_pc_owner_away',
+        requiresItemConditionHint: 'She is still there.', ...extra
+    });
+    return sc;
+}
+
+test('requiresItemCondition and its hints are known fields, with no issues on a good condition', { skip }, () => {
+    const sc = withCondition({ requiresItemConditionHintVariants: [{ condition: '!globalVars.plain_pc_owner_away && globalVars.n >= 2', value: 'Wait.' }] });
+    for (const f of ['requiresItemCondition', 'requiresItemConditionHint', 'requiresItemConditionHintVariants']) {
+        assert.ok(!has(validatorIssues('check_unknown_fields', sc), f), f);
+        assert.ok(!has(schemaErrors(sc), f), f);
+    }
+    const out = validatorIssues('check_engine_limits', sc);
+    assert.ok(!has(out.filter(s => s.includes('requiresItemCondition')), 'ERROR'), out.join('\n'));
+    assert.ok(!has(out, "requiresItemCondition' uses globalVars"), 'workstation globals need no declaration');
+    // the schema refuses a hint variant with no value
+    assertHas(schemaErrors(withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.x' }] })), 'requiresItemConditionHintVariants');
+});
+
+test('a requiresItemCondition the evaluator would mis-read is an error', { skip }, () => {
+    for (const bad of ['globalVars.a || globalVars.b', '(globalVars.a)', 'globalVars.a == true', 'globalVars.a === true && nonsense', 'globalVars.a.includes("x")', '']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: bad }));
+        assertHas(errors(out), "requiresItemCondition'");
+    }
+    for (const good of ['globalVars.a', '!globalVars.a', "globalVars.a === 'x' && !globalVars.b", 'globalVars.n >= 3', 'globalVars.a !== null']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: good }));
+        assert.ok(!has(errors(out), "requiresItemCondition'"), `${good}: ${out.join('\n')}`);
+    }
+});
+
+test('a requiresItemConditionHintVariants condition with || is an error, once', { skip }, () => {
+    const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.a || globalVars.b', value: 'x' }] }));
+    assert.equal(out.filter(s => s.includes('requiresItemConditionHintVariants[0]') && s.includes("uses '||'")).length, 1, out.join('\n'));
+    assert.ok(!has(validatorIssues('check_or_in_global_conditions', withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.a || globalVars.b', value: 'x' }] })), 'requiresItemConditionHintVariants'));
+});
+
+test('a requiresItemConditionHintVariants condition outside the grammar is an error, a valid one is not', { skip }, () => {
+    for (const bad of ['globalVars.a == true', 'globalVars.a === true && nonsense', 'globalVars.a.includes("x")', '']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: bad, value: 'x' }] }));
+        assertHas(errors(out), 'requiresItemConditionHintVariants[0]');
+    }
+    for (const good of ['globalVars.a', '!globalVars.a && globalVars.n >= 2', "globalVars.a === 'x'"]) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: good, value: 'x' }] }));
+        assert.ok(!has(errors(out), 'requiresItemConditionHintVariants[0]'), `${good}: ${out.join('\n')}`);
+    }
+});
+
+test('requiresItemCondition warns on an undeclared global, a missing requiresItem or triggerOnInteract, and orphan hints', { skip }, () => {
+    let out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: 'globalVars.nobody_sets_this' }));
+    assertHas(out, 'globalVars.nobody_sets_this, which is not in globalVariables');
+    const noItem = withCondition({}); delete lobby(noItem).objects.find(o => o.id === 'plain_pc').requiresItem;
+    assertHas(validatorIssues('check_engine_limits', noItem), 'has requiresItemCondition but no requiresItem');
+    const noTrigger = withCondition({}); delete lobby(noTrigger).objects.find(o => o.id === 'plain_pc').triggerOnInteract;
+    assertHas(validatorIssues('check_engine_limits', noTrigger), 'has requiresItemCondition but no triggerOnInteract');
+    const orphan = withCondition({}); delete lobby(orphan).objects.find(o => o.id === 'plain_pc').requiresItemCondition;
+    assertHas(validatorIssues('check_engine_limits', orphan), 'has requiresItemConditionHint(Variants) but no requiresItemCondition');
+    // a declared global passes
+    const declared = withCondition({ requiresItemCondition: 'globalVars.declared_flag' }); declared.globalVariables = { declared_flag: false };
+    assert.ok(!has(validatorIssues('check_engine_limits', declared), 'declared_flag'));
+});
+
+test('aim optional is a known objective field', { skip }, () => {
+    const sc = clean();
+    sc.objectives = [{ aimId: 'side', title: 'Side', status: 'active', order: 1, optional: true,
+        tasks: [{ taskId: 't', title: 'T', type: 'collect_items', targetItems: ['x'], targetCount: 1, currentCount: 0, status: 'active' }] }];
+    assert.ok(!has(validatorIssues('check_unknown_fields', sc), "'optional'"));
+    assert.ok(!has(schemaErrors(sc), 'optional'), schemaErrors(sc).join('\n'));
+    sc.objectives[0].optional = 'yes';
+    assertHas(schemaErrors(sc), 'optional');
+});
+
 // apply-actions.js runs a `hint` action from triggerOnInteract; the schema's action list has it.
 test('a hint action in triggerOnInteract passes the schema, and an unknown action type does not', { skip }, () => {
     const sc = withHintVariants([]);
@@ -429,7 +558,7 @@ test('a knock-out that always locks is no route; one that can find the PC open i
     assert.ok(!has(warnings(issues(sc)), NEVER_LEAVES), 'locksScreenOnLeave false: a knock-out leaves it open');
     sc = clean();
     delete obj(sc, 'jake_pc').lockChance;
-    npc(sc, 'jake').screenHabit = { lockIfAwayOverSeconds: 20 };
+    npc(sc, 'jake').habits = { screen: { lockIfAwayOverSeconds: 20 } };
     assertHas(warnings(issues(sc)), NEVER_LEAVES);
 });
 
@@ -438,13 +567,13 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
         'a need source elsewhere': sc => lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst' } }),
         "a colleague's phone": sc => {
             npc(sc, 'jake').answersPhones = true;
-            lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', phoneOwner: 'dana' });
+            lobby(sc).objects.push({ id: 'dana_phone', type: 'notes', name: 'Phone', deskPhone: true, owner: 'dana' });
         },
         'a print command': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { print: 'copier' } }]; },
-        'an own print hook with a printHabit': sc => {
+        'an own print hook with a habits.print': sc => {
             obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' };
             npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
-            npc(sc, 'jake').printHabit = {};
+            npc(sc, 'jake').habits = { print: {} };
         },
         'an interest with an item and a place': sc => {
             npc(sc, 'jake').interests = { mail: 2 };
@@ -462,7 +591,7 @@ test('each leave route keeps the never-leaves warning silent', { skip }, () => {
     const misses = {
         'the only source is the own PC': sc => { obj(sc, 'jake_pc').affordance = { satisfies: 'thirst' }; },
         'the only source is private to somebody else': sc => {
-            lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', affordance: { satisfies: 'thirst', private: true, owners: ['dana'] } });
+            lobby(sc).objects.push({ id: 'water', type: 'notes', name: 'Water', private: true, owner: ['dana'], affordance: { satisfies: 'thirst' } });
         },
         'a needs set command and a droppable item for another need': sc => {
             npc(sc, 'jake').eventMappings = [{ eventPattern: 'go', needs: { set: { thirst: 90 } } }];
@@ -487,7 +616,7 @@ test('droppable sources, social media prints and every cautious movement source 
         'B2: a print hook on the own station used for social media': sc => {
             npc(sc, 'jake').needs = { social_media: { decayPerMin: 10, urgentAt: 40 } };
             npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } };
-            npc(sc, 'jake').printHabit = {};
+            npc(sc, 'jake').habits = { print: {} };
         },
         'a patrol': sc => { npc(sc, 'jake').behavior = { patrol: { waypoints: [{ x: 2, y: 2 }] } }; },
         'a scripted move': sc => { npc(sc, 'jake').eventMappings = [{ eventPattern: 'alarm', patrolOverride: { targetTile: { x: 1, y: 1 } } }]; },
@@ -497,7 +626,7 @@ test('droppable sources, social media prints and every cautious movement source 
         'a station hook': sc => { npc(sc, 'jake').onUse = { jake_pc: { revealOutput: ['copier'] } }; },
         'an interest': sc => { npc(sc, 'jake').interests = { mail: 2 }; },
         'answersPhones with no colleague phone': sc => { npc(sc, 'jake').answersPhones = true; },
-        'a printHabit': sc => { npc(sc, 'jake').printHabit = { fetchAfterSeconds: [10, 20] }; }
+        'a habits.print': sc => { npc(sc, 'jake').habits = { print: { fetchAfterSeconds: [10, 20] } }; }
     };
     for (const [label, edit] of Object.entries(routes)) {
         const sc = clean();

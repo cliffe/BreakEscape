@@ -1,0 +1,669 @@
+// NPC poses (systems/npc-poses.js; docs/achitechture/NPC_POSES.md): the pose mapping, machine
+// recognition, per-NPC limits, seated precedence, blockers, and the postupdate pass with a
+// stub scene: a pose shows only when the atlas has its frames, and the idle comes back after.
+// Run with: node test/js/npc-poses.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { wantedPose, isMachine, npcAllows, poseBlocked, poseAnimKey, NpcPoses, USE_LEAD_MS, SETTLE_MS, POSE_RECHECK_MS,
+    facesWithin, facesObject, directionTo }
+    from '../../public/break_escape/js/systems/npc-poses.js';
+
+const using = (need, extra = {}) => ({ job: { need, kind: 'use', phase: 'using', targetId: 't', ...extra }, call: null });
+const obj = (type, affordance) => ({ affordance, _sprite: { scenarioData: { type }, texture: { key: type } } });
+
+test('drink needs: drink, after a short use at a machine', () => {
+    const coffee = obj('coffee_station1', { satisfies: 'caffeine' });
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: 0 }), 'use');
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: USE_LEAD_MS + 1 }), 'drink');
+    const cooler = obj('water_cooler1', { satisfies: ['thirst', 'social'] });
+    assert.equal(wantedPose({ s: using('thirst'), obj: cooler, usingMs: USE_LEAD_MS }), 'drink');
+    // A mug left on a table is no machine: drink from the start
+    const mug = obj('mug', { satisfies: 'caffeine' });
+    assert.equal(wantedPose({ s: using('caffeine'), obj: mug, usingMs: 0 }), 'drink');
+    // A social use of the cooler (owner call): drink, after the short use while facing it
+    assert.equal(wantedPose({ s: using('social'), obj: cooler, usingMs: 99999 }), 'drink');
+    assert.equal(wantedPose({ s: using('social'), obj: cooler, usingMs: 0 }), 'use');
+    // A social use of something with no drink: none
+    assert.equal(wantedPose({ s: using('social'), obj: obj('leather_sofa1', { satisfies: ['rest', 'social'] }) }), null);
+});
+
+test('use only while facing the object: turned away, drink for a drink, else none', () => {
+    const coffee = obj('coffee_station1', { satisfies: 'caffeine' });
+    const cooler = obj('water_cooler1', { satisfies: ['thirst', 'social'] });
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: 0, facing: false }), 'drink');
+    assert.equal(wantedPose({ s: using('social'), obj: cooler, usingMs: 0, facing: false }), 'drink');
+    assert.equal(wantedPose({ s: using('hunger'), obj: obj('photocopier1', {}), facing: false }), null);
+    assert.equal(wantedPose({ s: using('hunger'), obj: obj('photocopier1', {}), facing: true }), 'use');
+    assert.equal(facesWithin('down', 'down'), true);
+    assert.equal(facesWithin('down-left', 'down'), true);
+    assert.equal(facesWithin('right', 'up-right'), true);
+    assert.equal(facesWithin('up-right', 'right'), true);
+    assert.equal(facesWithin('left', 'down'), false);
+    assert.equal(facesWithin('up', 'down'), false);
+    assert.equal(directionTo(0, 10), 'down');
+    assert.equal(directionTo(-10, -9), 'up-left');
+    const npcAt = (x, y, direction) => ({ direction, sprite: { x, y } });
+    const machine = { affordance: {}, _sprite: { x: 100, y: 140 } };   // below the NPC
+    assert.equal(facesObject(npcAt(100, 100, 'down'), machine), true);
+    assert.equal(facesObject(npcAt(100, 100, 'down-right'), machine), true);
+    assert.equal(facesObject(npcAt(100, 100, 'up'), machine), false, 'turned to a colleague behind');
+    assert.equal(facesObject(npcAt(100, 100, 'left'), machine), false, 'turned to the player');
+    assert.equal(facesObject(npcAt(100, 100, 'up'), null), true, 'no object: no facing rule');
+});
+
+test('a microwave meal: use briefly while facing, then nothing', () => {
+    const mw = obj('microwave1', { satisfies: 'hunger' });
+    assert.equal(wantedPose({ s: using('hunger'), obj: mw, usingMs: 0 }), 'use');
+    assert.equal(wantedPose({ s: using('hunger'), obj: mw, usingMs: USE_LEAD_MS + 1 }), null);
+});
+
+test('other machines: use; non-machines: none', () => {
+    for (const type of ['photocopier1', 'printer2', 'keypad', 'wall_socket', 'hot_water_boiler1', 'shredder1']) {
+        assert.equal(wantedPose({ s: using('rest'), obj: obj(type, { satisfies: 'rest' }) }), 'use', type);
+    }
+    for (const type of ['qdc_fridge1', 'leather_sofa1', 'pc', 'cake1', 'coffee_cups1', 'glass_coffee_table1']) {
+        assert.equal(wantedPose({ s: using('hunger'), obj: obj(type, { satisfies: 'hunger' }) }), null, type);
+    }
+});
+
+test('machine recognition: the explicit field wins over type and texture', () => {
+    assert.equal(isMachine(obj('photocopier1', {})), true);
+    assert.equal(isMachine(obj('photocopier1', { machine: false })), false);
+    assert.equal(isMachine(obj('crate', { machine: true })), true);
+    assert.equal(isMachine({ affordance: {}, _sprite: { scenarioData: { type: 'custom', officeType: 'copier' } } }), true);
+    assert.equal(isMachine({ affordance: {}, _sprite: { scenarioData: {}, texture: { key: 'vending1' } } }), true);
+    assert.equal(isMachine(null), false);
+    // A machine word inside a non-machine name
+    assert.equal(isMachine(obj('coffee_cups1', {})), false);
+    assert.equal(isMachine(obj('glass_coffee_table1', {})), false);
+    // The resolved office preset wins over the name
+    const withPreset = (preset, type) => ({ affordance: {}, _sprite: { scenarioData: { type }, _officeAffordance: { preset } } });
+    for (const p of ['coffee', 'kettle', 'cooler', 'microwave', 'copier', 'shredder']) assert.equal(isMachine(withPreset(p, 'x')), true, p);
+    for (const p of ['filing', 'post_tray', 'desk_pc', 'fridge', 'sofa', 'desk_phone']) assert.equal(isMachine(withPreset(p, 'printer_shelf')), false, p);
+});
+
+test('affordance.pose overrides the mapping, false turns it off', () => {
+    assert.equal(wantedPose({ s: using('hunger'), obj: obj('crate', { pose: 'use' }) }), 'use');
+    assert.equal(wantedPose({ s: using('caffeine'), obj: obj('coffee_station1', { satisfies: 'caffeine', pose: false }) }), null);
+    assert.equal(wantedPose({ s: using('caffeine'), obj: obj('coffee_station1', { satisfies: 'caffeine', pose: 'phone' }) }), 'phone');
+    assert.equal(wantedPose({ s: using('caffeine'), obj: obj('crate', { pose: 'wave' }) }), null);
+});
+
+test('desk phone calls: phone, for the owner and an answering colleague', () => {
+    assert.equal(wantedPose({ s: { job: null, call: { phoneId: 'p', until: 9 } } }), 'phone');
+    assert.equal(wantedPose({ s: using(null, { phone: true }), obj: obj('desk_phone', {}) }), 'phone');
+    // Walking to a ringing phone is not yet a call
+    assert.equal(wantedPose({ s: { job: { phone: true, phase: 'goto_target' }, call: null } }), null);
+});
+
+test('no pose for visits, self (mobile) uses, the own desk, errands, or no job', () => {
+    const cooler = obj('water_cooler1', { satisfies: 'thirst' });
+    for (const extra of [{ kind: 'visit' }, { kind: 'self' }, { socialDesk: true }, { errand: true }]) {
+        assert.equal(wantedPose({ s: using('thirst', extra), obj: cooler, usingMs: 9999 }), null, JSON.stringify(extra));
+    }
+    assert.equal(wantedPose({ s: { job: null, call: null } }), null);
+    assert.equal(wantedPose({ s: using('thirst', { phase: 'goto_target' }), obj: cooler }), null);
+    assert.equal(wantedPose({ s: null }), null);
+});
+
+test('seated wins, and per-NPC limits', () => {
+    const coffee = obj('coffee_station1', { satisfies: 'caffeine' });
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: 9999, seated: true }), null);
+    assert.equal(wantedPose({ s: { job: null, call: { phoneId: 'p' } }, seated: true }), null);
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: 9999, npc: { poses: false } }), null);
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: 9999, npc: { poses: ['phone'] } }), null);
+    // use not allowed at the machine: straight to drink
+    assert.equal(wantedPose({ s: using('caffeine'), obj: coffee, usingMs: 0, npc: { poses: ['drink'] } }), 'drink');
+    assert.equal(npcAllows({}, 'drink'), true);
+    assert.equal(npcAllows(null, 'use'), true);
+});
+
+test('blockers: seat, movement, chase, chat, combat animations', () => {
+    const sprite = { anims: { currentAnim: { key: 'npc-a-idle-down' }, isPlaying: true } };
+    assert.equal(poseBlocked({ sprite }), false);
+    assert.equal(poseBlocked({ sprite, _seat: {} }), true);
+    assert.equal(poseBlocked({ sprite, _seatMove: {} }), true);
+    assert.equal(poseBlocked({ sprite, isMoving: true }), true);
+    assert.equal(poseBlocked({ sprite, currentState: 'face_player' }), false, 'facing the player keeps the pose');
+    assert.equal(poseBlocked({ sprite, currentState: 'chase' }), true);
+    assert.equal(poseBlocked({ sprite }, { inChat: true }), true);
+    assert.equal(poseBlocked({ sprite }, { ko: true }), true);
+    assert.equal(poseBlocked({ sprite: { anims: { currentAnim: { key: 'npc-a-attack-down' }, isPlaying: true } } }), true);
+    assert.equal(poseBlocked(null), true);
+});
+
+// A stub world: one needs NPC at a coffee machine (the machine just below it), a behaviour
+// whose playAnimation copies the real one's dedupe (lastAnimationKey and flipX), and a scene
+// whose anims hold the idle keys and whatever pose keys the test gives it. starts counts
+// sprite.play calls (each one fires Phaser's animation start event).
+function rig({ poseKeys = [], seat = null, settleMs = 0 } = {}) {
+    const played = [];
+    const sprite = {
+        x: 100, y: 100, flipX: false, destroyed: false,
+        anims: { currentAnim: { key: 'npc-ana-idle-down' }, isPlaying: true },
+        play(key) { this.anims.currentAnim = { key }; played.push(key); },
+        setFlipX(v) { this.flipX = v; }
+    };
+    const idleKeys = ['down', 'up', 'left', 'right', 'up-left', 'up-right', 'down-left', 'down-right'].map(d => `npc-ana-idle-${d}`);
+    const has = (k) => poseKeys.includes(k) || idleKeys.includes(k);
+    const scene = { anims: { get: (k) => (has(k) ? { frames: [{}] } : null), exists: has }, time: { now: 0 } };
+    const b = {
+        sprite, scene, direction: 'down', isMoving: false, currentState: 'idle', _seat: seat, lastAnimationKey: 'npc-ana-idle-down',
+        playAnimation(state, dir) {
+            if (this._seat) return;
+            const k = `npc-ana-${state}-${dir}`;
+            if (this.lastAnimationKey !== k || this.sprite.flipX !== false) {
+                if (scene.anims.exists(k)) { this.sprite.play(k, true); this.lastAnimationKey = k; }
+            }
+            this.sprite.setFlipX(false);
+        },
+        // NPCBehavior's idle state: playAnimation('idle', direction) on every behaviour tick
+        tick() { this.playAnimation('idle', this.direction); }
+    };
+    const s = using('caffeine', { targetId: 'coffee' });
+    let lookups = 0;
+    const machine = obj('coffee_station1', { satisfies: 'caffeine' });
+    machine._sprite.x = 100; machine._sprite.y = 140;
+    let chatting = false;
+    const sys = {
+        clockMs: 0,
+        states: new Map([['ana', s]]),
+        world: { getObject: () => { lookups++; return machine; }, inChatWith: () => chatting }
+    };
+    globalThis.npcNeedsSystem = sys;
+    globalThis.npcBehaviorManager = { getBehavior: () => b };
+    globalThis.npcManager = { getNPC: () => ({ id: 'ana' }) };
+    globalThis.npcHostileSystem = null;
+    globalThis.gameScenario = {};
+    const poses = new NpcPoses(scene);
+    poses.settleMs = settleMs;
+    return {
+        poses, b, s, sys, played, scene,
+        lookups: () => lookups, chat: (v) => { chatting = v; }
+    };
+}
+
+test('pass: use, then drink, then the idle back when the use ends', () => {
+    const { poses, b, s, sys, played } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'down')] });
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down');
+    assert.equal(b.lastAnimationKey, 'npc-ana-idle-down', 'left on the idle the behaviour would play');
+    sys.clockMs = USE_LEAD_MS + 10;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-down');
+    poses.update();
+    assert.equal(played.filter(k => k.includes('drink')).length, 1, 'a held pose is not replayed every frame');
+    s.job = null;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down');
+    assert.equal(poses.active.size, 0);
+    assert.deepEqual(poses.log.map(e => e.pose), ['use', 'drink', null]);
+});
+
+test('pass: an atlas without pose frames is never touched', () => {
+    const { poses, b, played } = rig({ poseKeys: [] });
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down');
+    assert.equal(played.length, 0);
+    assert.equal(poses.active.size, 0);
+});
+
+test('pass: only drink frames present: the drink shows at once, use is skipped silently', () => {
+    const { poses, b } = rig({ poseKeys: [poseAnimKey('ana', 'drink', 'down')] });
+    poses.update();
+    // use wanted for the first seconds, but the atlas lacks it: the idle stays until drink
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down');
+});
+
+test('pass: a seated NPC keeps its sit frame; walking off drops the pose without an idle replay', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'down')];
+    const seated = rig({ poseKeys: keys, seat: { chair: 'c' } });
+    seated.poses.update();
+    assert.equal(seated.played.length, 0);
+    const r = rig({ poseKeys: keys });
+    r.poses.update();
+    r.b.isMoving = true;
+    r.b.sprite.play('npc-ana-walk-left');
+    r.poses.update();
+    assert.equal(r.b.sprite.anims.currentAnim.key, 'npc-ana-walk-left');
+    assert.equal(r.poses.active.size, 0);
+});
+
+test('pass: facing follows the behaviour direction', () => {
+    const { poses, b, sys } = rig({ poseKeys: [poseAnimKey('ana', 'drink', 'down'), poseAnimKey('ana', 'drink', 'up-left')] });
+    sys.clockMs = USE_LEAD_MS + 1;
+    poses.update();
+    poses.update();
+    b.direction = 'up-left';
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-up-left');
+});
+
+test('pass: behaviour ticks between passes start no animation while a pose holds', () => {
+    const { poses, b, played } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+    poses.update();
+    const before = played.length;
+    for (let i = 0; i < 100; i++) { b.tick(); poses.update(); }   // 5 s of 50 ms behaviour ticks
+    assert.equal(played.length, before, 'no idle restart and no pose replay');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down');
+    // A turn replays the idle once in the behaviour and the pose once in the pass
+    b.direction = 'down-left';
+    b.tick();
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down-left', 'no down-left use frame: idle');
+});
+
+test('pass: turned away from the machine, the use is dropped (drink once its frames exist)', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'up')];
+    const { poses, b } = rig({ poseKeys: keys });
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down');
+    b.direction = 'up';   // paired with a colleague behind
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-up');
+});
+
+test('pass: the object is looked up once per job, not every frame', () => {
+    const { poses, s, lookups } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+    for (let i = 0; i < 20; i++) poses.update();
+    assert.equal(lookups(), 1);
+    s.job = { ...s.job, phase: 'queued' };
+    for (let i = 0; i < 20; i++) poses.update();
+    assert.equal(lookups(), 1, 'no lookup outside `using`');
+    s.job = { ...s.job, phase: 'using' };
+    poses.update();
+    assert.equal(lookups(), 2, 'a new job looks up again');
+});
+
+test('pass: a conversation pauses the use lead; the idle shows during it', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'down')];
+    const { poses, b, sys, chat } = rig({ poseKeys: keys });
+    poses.update();
+    sys.clockMs = 1000;
+    poses.update();
+    chat(true);
+    sys.clockMs = 10000;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down', 'chat drops the pose');
+    chat(false);
+    sys.clockMs = 10100;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down', 'the lead resumes where it stopped');
+    sys.clockMs = 10000 + USE_LEAD_MS;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-down');
+});
+
+test('pass: the first pose waits SETTLE_MS (no flash before sitting)', () => {
+    const { poses, b, scene, played } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')], settleMs: SETTLE_MS });
+    poses.update();
+    scene.time.now = SETTLE_MS - 50;
+    poses.update();
+    assert.equal(played.length, 0);
+    b._seat = { chair: 'c' };   // seating sat it within the tick
+    scene.time.now = SETTLE_MS + 50;
+    poses.update();
+    assert.equal(played.length, 0, 'never posed');
+    b._seat = null;
+    poses.update();
+    scene.time.now += SETTLE_MS;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down');
+});
+
+test('pass: officeVisuals false, hostility, KO, chat, leaving states and a destroyed sprite', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    let r = rig({ poseKeys: keys });
+    globalThis.gameScenario = { officeVisuals: false };
+    r.poses.update();
+    assert.equal(r.played.length, 0, 'office visuals off: no pose');
+    for (const [label, set] of [
+        ['hostile', () => { globalThis.npcHostileSystem = { isNPCHostile: () => true, isNPCKO: () => false }; }],
+        ['ko', () => { globalThis.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: () => true }; }],
+        ['chat', (x) => x.chat(true)]
+    ]) {
+        r = rig({ poseKeys: keys });
+        r.poses.update();
+        assert.equal(r.b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down', label);
+        set(r);
+        r.poses.update();
+        assert.equal(r.b.sprite.anims.currentAnim.key, 'npc-ana-idle-down', label);
+        assert.equal(r.poses.active.size, 0, label);
+    }
+    r = rig({ poseKeys: keys });
+    r.poses.update();
+    r.sys.states.delete('ana');
+    r.poses.update();
+    assert.equal(r.poses.active.size, 0);
+    assert.equal(r.poses.useStart.size, 0, 'stale use records go');
+    assert.equal(r.b.sprite.anims.currentAnim.key, 'npc-ana-idle-down');
+    r = rig({ poseKeys: keys });
+    r.poses.update();
+    r.b.sprite.destroyed = true;
+    r.poses.update();
+    assert.equal(r.poses.active.size, 0);
+});
+
+test('an atlas without pose frames: checked once, no per-frame pose work, looked at again later and on a new texture', () => {
+    const { poses, b, scene, lookups } = rig({ poseKeys: [] });
+    b.sprite.texture = { key: 'ana_v1' };
+    let gets = 0;
+    const get = scene.anims.get;
+    scene.anims.get = (k) => { gets++; return get(k); };
+    poses.update();
+    const first = gets;
+    assert.ok(first > 0, 'the first frame checks the atlas');
+    for (let i = 0; i < 5; i++) poses.update();
+    assert.equal(gets, first, 'no pose lookups while the no is fresh');
+    assert.equal(lookups(), 0, 'no object lookup for an NPC that cannot pose');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down');
+    // A new texture is checked at once
+    b.sprite.texture = { key: 'ana_v2' };
+    poses.update();
+    assert.ok(gets > first, 'a sprite swap checks the new atlas');
+    // Frames made later are found after the recheck time
+    const useKey = poseAnimKey('ana', 'use', 'down');
+    scene.anims.get = (k) => (k === useKey || get(k) ? { frames: [{}] } : null);
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-idle-down', 'still the cached no');
+    scene.time.now = POSE_RECHECK_MS + 1;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, useKey);
+});
+
+test('frames that appear mid-use keep the use clock: the lead is not restarted', () => {
+    const { poses, b, sys, scene } = rig({ poseKeys: [] });
+    b.sprite.texture = { key: 'ana_v1' };
+    poses.update();
+    sys.clockMs = USE_LEAD_MS + 10;   // the use has run past its lead with no frames
+    poses.update();
+    const drinkKey = poseAnimKey('ana', 'drink', 'down');
+    const get = scene.anims.get;
+    scene.anims.get = (k) => (k === drinkKey || k === poseAnimKey('ana', 'use', 'down') || get(k) ? { frames: [{}] } : null);
+    scene.time.now = POSE_RECHECK_MS + 1;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, drinkKey, 'straight to the drink, not a fresh use lead');
+});
+
+// ── pose fixes: turn to the object on arrival; a colleague on a phone call stands ──────────
+test('pass: arriving turned away from the machine, the NPC turns to it and the use pose shows', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'up'), poseAnimKey('ana', 'drink', 'down')];
+    const { poses, b, sys, played } = rig({ poseKeys: keys });
+    b.direction = 'up';   // came in facing away; the machine is below
+    poses.update();
+    assert.equal(b.direction, 'down', 'turned to face the machine');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down', 'the use lead plays');
+    sys.clockMs = USE_LEAD_MS + 10;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-down');
+    // turned away later (paired with a colleague behind): not turned back again
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'up');
+    assert.equal(played.filter(k => k.includes('pose_use')).length, 1);
+});
+
+test('pass: the turn uses the object centre, eight directions (down-right of the NPC)', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down-right')];
+    const { poses, b } = rig({ poseKeys: keys });
+    // The machine's centre is down-right of the NPC, its x/y (top-left) is not
+    const sp = globalThis.npcNeedsSystem.world.getObject()._sprite;
+    sp.x = 80; sp.y = 90; sp.getCenter = () => ({ x: 139, y: 137 });
+    b.direction = 'up-left';
+    poses.update();
+    assert.equal(b.direction, 'down-right');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_use-down-right');
+});
+
+test('pass: an NPC with no use frames still turns but shows nothing; a chat-blocked NPC does not turn', () => {
+    const { poses, b, chat } = rig({ poseKeys: [poseAnimKey('ana', 'wave', 'down')] });
+    // No use, drink or phone frames at all: the pose module touches nothing, so no turn either
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'up', 'a poseless atlas is never turned');
+    assert.equal(b._poseHoldFacing, undefined);
+    assert.equal(poses.active.size, 0);
+    // Frames for another pose only (phone, no use): it turns to the machine, shows the drink lead-in as nothing
+    const r2 = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    r2.b.direction = 'up';
+    r2.poses.update();
+    assert.equal(r2.b.direction, 'down', 'has some pose frames: turns to the machine');
+    assert.equal(r2.poses.active.size, 0, 'but shows no use pose without use frames');
+    chat(true);
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'up', 'in a conversation: left alone');
+    const r3 = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+    r3.b.direction = 'up';
+    r3.chat(true);
+    r3.poses.update();
+    assert.equal(r3.b.direction, 'up', 'a chat-blocked NPC with pose frames does not turn');
+    // Control: the same NPC, no chat, does turn (so the assertion above can fail)
+    const r4 = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+    r4.b.direction = 'up';
+    r4.poses.update();
+    assert.equal(r4.b.direction, 'down', 'control: without a chat it turns to the machine');
+});
+
+test('pass: a colleague answering a phone turns to it and plays pose_phone', () => {
+    const keys = [poseAnimKey('ana', 'phone', 'down')];
+    const { poses, b, s } = rig({ poseKeys: keys });
+    s.job = { need: null, kind: 'use', phase: 'using', targetId: 'phone', phone: true };
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'left';
+    poses.update();
+    assert.equal(b.direction, 'down', 'facing the phone');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_phone-down');
+    assert.deepEqual(poses.log.map(e => e.pose), ['phone']);
+});
+
+test('pass: a seated colleague on the phone keeps the sit frame (the seat is dropped by seating, not here)', () => {
+    const { poses, b, s } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')], seat: { chair: {} } });
+    s.job = { need: null, kind: 'use', phase: 'using', targetId: 'phone', phone: true };
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'left';
+    poses.update();
+    assert.equal(b.direction, 'left');
+    assert.equal(poses.active.size, 0);
+    // Control: the same colleague, standing, turns and plays the pose (so the assertions above can fail)
+    const r2 = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    r2.s.job = { need: null, kind: 'use', phase: 'using', targetId: 'phone', phone: true };
+    r2.s.call = { phoneId: 'phone', until: 9999 };
+    r2.b.direction = 'left';
+    r2.poses.update();
+    assert.equal(r2.b.direction, 'down', 'control: standing, it turns');
+    assert.equal(r2.poses.active.size, 1, 'control: and the pose plays');
+});
+
+test('pass: the turn holds face_player off until the pose is released', async () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    const { poses, b, s } = rig({ poseKeys: keys });
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b._poseHoldFacing, true);
+    // face_player (executeState) would turn the NPC back to the player every tick; it must not
+    globalThis.window ||= globalThis;
+    const { NPCBehavior } = await import('../../public/break_escape/js/systems/npc-behavior.js');
+    {
+        const fake = { config: { facePlayer: true }, _poseHoldFacing: true, direction: 'down',
+            canSeePlayerToFace: () => true, npcBodyPos: () => ({ x: 0, y: 0 }), calculateDirection: () => 'up',
+            playAnimation() {} };
+        NPCBehavior.prototype.facePlayer.call(fake, { x: 0, y: -50 });
+        assert.equal(fake.direction, 'down', 'held');
+        fake._poseHoldFacing = false;
+        NPCBehavior.prototype.facePlayer.call(fake, { x: 0, y: -50 });
+        assert.equal(fake.direction, 'up', 'free again');
+    }
+    s.job = null;
+    poses.update();
+    assert.equal(b._poseHoldFacing, false);
+});
+
+test('pass: an owner answering its own desk phone (a call, no job) turns to the phone and plays pose_phone', () => {
+    const { poses, b, s, sys } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    const phone = obj('phone1', {});
+    phone._sprite.x = 100; phone._sprite.y = 140;
+    sys.world.getObject = () => phone;
+    s.job = null;
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'left';
+    poses.update();
+    assert.equal(b.direction, 'down');
+    assert.equal(b._poseHoldFacing, true);
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_phone-down');
+    b.direction = 'left';   // turned away mid-call: not turned back
+    poses.update();
+    assert.equal(b.direction, 'left');
+});
+
+// ── R1 fixes ───────────────────────────────────────────────────────────────────────────────
+test('R1 M1: the hold is narrow: on for the use lead and for a phone call, off once the drink starts', () => {
+    const { poses, b, sys } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down'), poseAnimKey('ana', 'drink', 'down')] });
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b._poseHoldFacing, true, 'holds for the lead');
+    sys.clockMs = USE_LEAD_MS + 10;
+    poses.update();
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_drink-down');
+    assert.equal(b._poseHoldFacing, false, 'the drink needs no facing: face_player may turn the NPC to the player');
+});
+
+test('R1 M1/m5: the hold is released on chat start, pose end, interruption, hostility, KO and reload', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    const started = () => { const r = rig({ poseKeys: keys }); r.b.direction = 'up'; r.poses.update(); assert.equal(r.b._poseHoldFacing, true); return r; };
+    { const r = started(); r.chat(true); r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'chat start'); }
+    { const r = started(); r.s.job = null; r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'pose end'); }
+    { const r = started(); r.b.isMoving = true; r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'interruption (moving)'); }
+    { const r = started(); r.b.currentState = 'chase'; r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'interruption (chase)'); }
+    { const r = started(); globalThis.npcHostileSystem = { isNPCHostile: () => true, isNPCKO: () => false }; r.poses.update();
+      assert.equal(r.b._poseHoldFacing, false, 'hostility'); globalThis.npcHostileSystem = null; }
+    { const r = started(); globalThis.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: () => true }; r.poses.update();
+      assert.equal(r.b._poseHoldFacing, false, 'knocked out'); globalThis.npcHostileSystem = null; }
+    // Reload: the flag lives on the behaviour object and is never saved; a new behaviour and pose module start clear
+    { const r = started(); assert.equal(r.b._poseHoldFacing, true);
+      const fresh = rig({ poseKeys: keys });   // a new behaviour and pose module, as after a reload
+      assert.equal(fresh.b._poseHoldFacing, undefined, 'a fresh behaviour holds nothing');
+      assert.equal(fresh.poses.holding?.size ?? 0, 0, 'a fresh pose module remembers no hold');
+      fresh.poses.update();   // and its first frame, with the same job running, starts the pose and the hold afresh
+      assert.equal(fresh.b._poseHoldFacing, true, 'the hold is rebuilt from the job, not carried over');
+      assert.notEqual(fresh.b, r.b); }
+    // An NPC with no pose frames never gets the flag
+    { const r = rig({ poseKeys: [] }); r.b.direction = 'up'; r.poses.update(); assert.ok(!r.b._poseHoldFacing, 'poseless'); }
+});
+
+test('R1 m1: the hold is cleared on the pose loop exits that skip release()', () => {
+    const keys = [poseAnimKey('ana', 'use', 'down')];
+    // A real settle window, so the pose is only pending when the exit happens
+    const setup = () => { const r = rig({ poseKeys: keys, settleMs: 150 }); r.b.direction = 'up'; r.poses.update();
+        assert.equal(r.b._poseHoldFacing, true); assert.equal(r.poses.active.size, 0, 'pending, not shown'); return r; };
+    { // the texture changes and the frames are gone while the pose is pending
+        const r = setup(); r.b.sprite.texture = { key: 'other_atlas' }; keys.length = 0;
+        r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'mayPose false'); keys.push(poseAnimKey('ana', 'use', 'down')); }
+    { // the NPC leaves the needs states while pending
+        const r = setup(); r.sys.states.delete('ana'); r.poses.update(); assert.equal(r.b._poseHoldFacing, false, 'left states'); }
+    { // office visuals switched off while pending
+        const r = setup(); globalThis.gameScenario = { officeVisuals: false }; r.poses.update();
+        assert.equal(r.b._poseHoldFacing, false, 'officeVisuals false'); globalThis.gameScenario = {}; }
+});
+
+test('R1 m2: an owner mid own-desk use who answers the phone turns to the phone, not the PC', () => {
+    const { poses, b, s, sys } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'right')] });
+    const pc = obj('pc', {}); pc._sprite.x = 100; pc._sprite.y = 140;          // below
+    const phone = obj('phone1', {}); phone._sprite.x = 140; phone._sprite.y = 100;   // to the right
+    sys.world.getObject = id => (id === 'phone' ? phone : pc);
+    s.job = { need: 'work', kind: 'use', phase: 'using', targetId: 'pc' };
+    s.call = { phoneId: 'phone', until: 9999 };
+    b.direction = 'up';
+    poses.update();
+    assert.equal(b.direction, 'right', 'facing the phone');
+    assert.equal(b.sprite.anims.currentAnim.key, 'npc-ana-pose_phone-right');
+});
+
+test('R1 M1: chat start turns a held NPC to the player (NPCBehavior.faceForChat)', async () => {
+    globalThis.window ||= globalThis;
+    const { NPCBehavior } = await import('../../public/break_escape/js/systems/npc-behavior.js');
+    assert.equal(typeof NPCBehavior.prototype.faceForChat, 'function');
+    const fake = { config: { facePlayer: true }, _poseHoldFacing: true, direction: 'up', npcBodyPos: () => ({ x: 0, y: 0 }),
+        calculateDirection: (dx, dy) => (dy > 0 ? 'down' : 'up'), playAnimation(st, d) { this.played = `${st}-${d}`; } };
+    NPCBehavior.prototype.faceForChat.call(fake, { x: 0, y: 50 });
+    assert.equal(fake.direction, 'down', 'turned to the player despite the hold');
+    assert.equal(fake._poseHoldFacing, false, 'hold released');
+    assert.equal(fake.played, 'idle-down');
+    // A chat with an NPC that has no face_player config leaves it alone
+    const quiet = { config: { facePlayer: false }, _poseHoldFacing: true, direction: 'up', npcBodyPos: () => ({ x: 0, y: 0 }),
+        calculateDirection: () => 'down', playAnimation() {} };
+    NPCBehavior.prototype.faceForChat.call(quiet, { x: 0, y: 50 });
+    assert.equal(quiet.direction, 'up');
+    assert.equal(quiet._poseHoldFacing, false, 'but the hold is still released');
+});
+
+test('R2 m4: hasPhonePose follows the frames, the poses list and officeVisuals', () => {
+    const phone = poseAnimKey('ana', 'phone', 'down');
+    {   // frames in one direction only: enough
+        const { poses } = rig({ poseKeys: [phone] });
+        assert.equal(poses.hasPhonePose('ana'), true, 'phone frames, no poses list');
+    }
+    {   const { poses } = rig({ poseKeys: [poseAnimKey('ana', 'use', 'down')] });
+        assert.equal(poses.hasPhonePose('ana'), false, 'no phone frames');
+    }
+    {   const { poses } = rig({ poseKeys: [phone] });
+        globalThis.npcManager = { getNPC: () => ({ id: 'ana', poses: ['use', 'drink'] }) };
+        assert.equal(poses.hasPhonePose('ana'), false, 'a poses list without phone');
+        globalThis.npcManager = { getNPC: () => ({ id: 'ana', poses: ['phone'] }) };
+        assert.equal(poses.hasPhonePose('ana'), true, 'a poses list with phone');
+        globalThis.npcManager = { getNPC: () => ({ id: 'ana', poses: false }) };
+        assert.equal(poses.hasPhonePose('ana'), false, 'poses false');
+    }
+});
+
+test('R2 m3: hasPhonePose is false when officeVisuals is false', () => {
+    const { poses } = rig({ poseKeys: [poseAnimKey('ana', 'phone', 'down')] });
+    assert.equal(poses.hasPhonePose('ana'), true, 'control: visuals on');
+    const hadScenario = Object.prototype.hasOwnProperty.call(globalThis, 'gameScenario');
+    const prevScenario = globalThis.gameScenario;
+    globalThis.gameScenario = { officeVisuals: false };
+    try { assert.equal(poses.hasPhonePose('ana'), false, 'visuals off: the pose never shows, so the call must not stand the NPC'); }
+    finally { if (hadScenario) globalThis.gameScenario = prevScenario; else delete globalThis.gameScenario; }
+});
+
+// The NPCBehavior.update chat block, run on a bare object: only the parts under test are real
+async function chatRig() {
+    globalThis.window ||= globalThis;
+    const { NPCBehavior } = await import('../../public/break_escape/js/systems/npc-behavior.js');
+    const faced = [];
+    const sys = { has: () => true, world: { inChatWith: () => false } };
+    let seatBusy = false;
+    globalThis.npcNeedsSystem = sys;
+    window.seating = { updateSeatedNPC: () => seatBusy };
+    const b = {
+        npcId: 'ana', sprite: { destroyed: false, body: { enable: true, setVelocity() {} } }, isMoving: false, _avoid: null,
+        faceForChat(p) { faced.push(p); }, playAnimation() {}, updateDepth() {}, updateCurrentRoom() {}, checkAndEscapeWall() {},
+        checkAndHandleHomePush() {}, determineState: () => 'idle', executeState() {}, config: {}
+    };
+    const tick = () => NPCBehavior.prototype.update.call(b, 0, 16, { x: 0, y: 0 });
+    return { b, faced, sys, tick, seat: (v) => { seatBusy = v; } };
+}
+
+test('guard (R2 m4): update turns the NPC to the player once per chat, not every frame', async () => {
+    const { faced, sys, tick } = await chatRig();
+    sys.world.inChatWith = () => true;
+    tick(); tick(); tick();
+    assert.equal(faced.length, 1, 'once for the whole chat');
+    sys.world.inChatWith = () => false; tick();
+    sys.world.inChatWith = () => true; tick(); tick();
+    assert.equal(faced.length, 2, 'and once more for the next chat');
+});
+
+test('R2 m2: a chat opened while the seat code owns the frames still turns the NPC to the player', async () => {
+    const { b, faced, sys, tick, seat } = await chatRig();
+    // First chat: turned once, then it closes while Tom is mid seat move (the seat code owns every frame)
+    sys.world.inChatWith = () => true; tick();
+    assert.equal(faced.length, 1);
+    seat(true);
+    sys.world.inChatWith = () => false; tick(); tick();
+    assert.equal(b._chatFaced, false, 'the flag is reset during the seat move');
+    // A second chat opens as he steps off his chair: the frame is the seat code's, then the chat hold's
+    sys.world.inChatWith = () => true; tick();
+    seat(false); tick();
+    assert.equal(faced.length, 2, 'turned to the player for the second chat');
+});

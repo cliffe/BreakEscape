@@ -17,23 +17,21 @@ function setObservationText(div, text) {
 }
 
 
-// Load fonts
-const fontLink1 = document.createElement('link');
-fontLink1.href = 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600;700&display=swap';
-fontLink1.rel = 'stylesheet';
-if (!document.querySelector('link[href*="Pixelify+Sans"]')) {
-    document.head.appendChild(fontLink1);
-}
-
-const fontLink2 = document.createElement('link');
-fontLink2.href = 'https://fonts.googleapis.com/css2?family=VT323&display=swap';
-fontLink2.rel = 'stylesheet';
-if (!document.querySelector('link[href*="VT323"]')) {
-    document.head.appendChild(fontLink2);
-}
+// Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
 
 // Notes Minigame Scene implementation
 export class NotesMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
+    // The scene may draw a bottom button: only the Mission Brief at game start uses it, as
+    // Continue (A05). Every other note closes with the X or Esc alone.
+    static keepsCancelButton = true;
+
+    // The X sits in the notepad's top-right corner, not out at the window's edge
+    closeAnchor() {
+        return this.gameContainer?.querySelector?.('.notes-minigame-notepad') || this.gameContainer;
+    }
+
     constructor(container, params) {
         // Ensure params is defined before calling parent constructor
         params = params || {};
@@ -43,8 +41,8 @@ export class NotesMinigame extends MinigameScene {
             params.title = 'Reading Notes';
         }
         
-        // Enable cancel button for notes minigame with custom text
-        params.showCancel = true;
+        // Continue only for the Mission Brief popup (A05); X and Esc close every note
+        params.showCancel = notesShowsContinue(params);
         params.cancelText = 'Continue';
         
         super(container, params);
@@ -94,7 +92,7 @@ export class NotesMinigame extends MinigameScene {
 
         // Create content area
         const contentArea = document.createElement('div');
-        contentArea.className = 'notes-minigame-content-area';
+        contentArea.className = 'notes-minigame-content-area pixel-scroll';
 
                 // Create text box container to look like it's stuck in a binder
                 const textBox = document.createElement('div');
@@ -240,7 +238,10 @@ export class NotesMinigame extends MinigameScene {
                 noteCounter.textContent = `${this.currentNoteIndex + 1}/${this.collectedNotes.length}`;
                 navContainer.appendChild(noteCounter);
                 
-                this.container.appendChild(navContainer);
+                // In the shell's column straight under the notepad, above Continue
+                // (critique A04: it was drawn over the page)
+                if (this.gameContainer.after) this.gameContainer.after(navContainer);
+                else this.container.appendChild(navContainer);
             }
         }
         
@@ -746,6 +747,15 @@ export class NotesMinigame extends MinigameScene {
     }
 }
 
+/**
+ * Whether the notepad draws a Continue button (A05): only when it opens as the Mission
+ * Brief popup at game start (showMissionBrief passes missionBrief: true). Reading the brief
+ * later from the notepad, or any other note, has the X and Esc only. Pure.
+ */
+export function notesShowsContinue(params) {
+    return params?.missionBrief === true;
+}
+
 // Export the minigame for the framework to register
 // The registration is handled in the main minigames/index.js file
 
@@ -766,7 +776,7 @@ export function showMissionBrief() {
         }
     };
     
-    startNotesMinigame(missionBriefItem, window.gameScenario.scenario_brief, '', null, true);
+    startNotesMinigame(missionBriefItem, window.gameScenario.scenario_brief, '', null, true, true, { missionBrief: true });
 }
 
 // What the notepad last showed (client-only, never synced: it lasts until a reload).
@@ -806,7 +816,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Function to start the notes minigame
-export function startNotesMinigame(item, noteContent, observationText, navigateToNote = null, hideNavigation = false, autoAddToNotes = true) {
+export function startNotesMinigame(item, noteContent, observationText, navigateToNote = null, hideNavigation = false, autoAddToNotes = true, options = {}) {
     console.log('Starting notes minigame with:', { item, noteContent, observationText, navigateToNote, hideNavigation, autoAddToNotes });
     
     // Play page turn sound on open
@@ -839,6 +849,7 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
         autoAddToNotes: autoAddToNotes, // Automatically add notes to the notes system
         navigateToNote: navigateToNote, // Which note to navigate to
         hideNavigation: hideNavigation, // Whether to hide navigation buttons
+        missionBrief: options?.missionBrief === true, // the game-start brief keeps Continue (A05)
         requiresKeyboardInput: true, // Notes minigame has editable observations and search
         onComplete: (success, result) => {
             if (success && result && result.addedToInventory) {
@@ -866,8 +877,12 @@ export function startNotesMinigame(item, noteContent, observationText, navigateT
                 window.pendingTextFileReturn = null;
             };
 
-            // Check if we need to return to a container after notes minigame
-            if (window.pendingContainerReturn && window.returnToContainerAfterNotes) {
+            // Check if we need to return to a container after notes minigame. A file read
+            // from a container comes back first (below), and its own X then spends the
+            // container's return (R4 m1). A note to take (itemToTake) is always handled here.
+            const fileFirst = !!window.pendingTextFileReturn && !!window.returnToTextFileAfterNotes
+                && !window.pendingContainerReturn?.itemToTake;
+            if (window.pendingContainerReturn && window.returnToContainerAfterNotes && !fileFirst) {
                 console.log('Returning to container after notes minigame');
                 // The notes panel is closing and the container opens 100 ms later. Held
                 // toasts released in that gap showed, were pulled back by the container
@@ -921,6 +936,10 @@ function nextNoteId() {
 
 // Global addNote function for compatibility with the old notes system
 window.addNote = function(title, text, important = false) {
+    // Tolerate a missing body: a caller (e.g. introduceScenario with a scenario that
+    // ships no scenario_brief) may pass undefined/null. Coerce to '' so text.length and
+    // the later text.split calls never throw. A brief-less note is simply empty.
+    text = (text == null) ? '' : String(text);
     console.log('Global addNote called:', { title, important, textLength: text.length });
     
     // Initialize game state if not exists

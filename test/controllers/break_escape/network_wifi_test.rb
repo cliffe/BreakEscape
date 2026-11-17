@@ -47,6 +47,21 @@ module BreakEscape
       @game.reload.player_state['footholds'] || {}
     end
 
+    test 'another player cannot join a Wi-Fi network in a game they do not own' do
+      build_network_game({}, wifi_scenario)
+      theirs = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:other_user),
+                                  scenario: wifi_scenario, player_state: {})
+      get "/break_escape/games/#{theirs.id}/objectives", as: :json
+      expected = [response.status, response.body]
+      refute_equal 200, expected.first
+      post "/break_escape/games/#{theirs.id}/network/join", params: { ap_id: 'guest_ap', key: PSK }, as: :json
+      assert_equal expected, [response.status, response.body]
+      state = theirs.reload.player_state
+      assert_equal({}, state['footholds'] || {}, 'no foothold written into their game')
+      assert_empty Array(state['gainedFootholds'])
+      assert_equal({}, footholds, 'and none into the requester own game')
+    end
+
     test 'the right key joins and grants a foothold on the access point network' do
       build_network_game({}, wifi_scenario)
       body = join('guest_ap', PSK)

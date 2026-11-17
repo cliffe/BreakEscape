@@ -1,0 +1,12 @@
+game 2060 (replace)
+open a person-chat to hold the ringer
+[]
+
+"opened agent_0x99"
+mg open: "PhoneChatMinigame phone-chat"
+fire T-5 then T-1 while thread open
+ringer while held: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":null,"bimg":null}
+ringing after close: {"cur":{"npc":"the_architect","state":"ringing","knot":"taunt_t1","opened":false},"q":0,"banner":"☎ | No caller ID | Incoming call | Answer | Decline","bimg":null}
+shot replace_ringing_after_close
+opened call knot: {"cur":{"npc":"the_architect","state":"connected","knot":"taunt_t1","opened":true},"q":0,"banner":null,"bimg":null} screen={"subs":[]}
+shot replace_opened

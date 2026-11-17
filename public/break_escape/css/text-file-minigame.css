@@ -1,7 +1,6 @@
 /* Text File Minigame Styles */
 
-/* Import VT font */
-@import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&display=swap');
+/* VT323 is self-hosted in fonts.css */
 
 /* Text File Minigame Container */
 .text-file-container {
@@ -48,7 +47,7 @@
       2px 10px,
       0px 10px
     );
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 10px 0 rgba(0, 0, 0, 0.15);
     overflow: hidden;
 }
 
@@ -58,8 +57,10 @@
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    background: linear-gradient(to bottom, #f6f6f6 0%, #e8e8e8 100%);
-    border-bottom: 1px solid #d1d5db;
+    /* the X sits at the title bar's right end, inside the window (critique A34) */
+    padding-right: 48px;
+    background: #f6f6f6;
+    border-bottom: 2px solid #d1d5db;
     min-height: 28px;
 }
 
@@ -73,6 +74,7 @@
     width: 12px;
     height: 12px;
     border: none;
+    font-size: 12px;   /* whole-pixel size (the browser's button default is 13.33px) */
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -91,14 +93,14 @@
 
 .window-control:hover {
     transform: scale(1.1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
 }
 
 .window-title {
     font-size: 13px;
     font-weight: 500;
     color: #333333;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'GNF', monospace;
     flex: 1;
     text-align: center;
     margin: 0 20px;
@@ -176,6 +178,7 @@
 
 .content-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -188,19 +191,19 @@
     font-size: 18px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .action-btn:hover {
     background: #f3f4f6;
     border-color: #9ca3af;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:active {
     background: #e5e7eb;
     transform: translateY(1px);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* File Content Display */
@@ -232,7 +235,7 @@
     margin: 0;
     padding: 16px 20px 80px;
     background: #fff3cd;
-    border-top: 1px solid #ffeaa7;
+    border-top: 2px solid #ffeaa7;
 }
 
 .file-observations h4 {
@@ -254,9 +257,16 @@
    label beside it; the dark scheme below puts it back to white. */
 .action-btn .icon-small,
 .file-observations h4 .icon-small {
-    filter: brightness(0) opacity(0.75);
     margin-right: 4px;
     vertical-align: -2px;
+}
+
+/* Only the white copy icon is darkened: notes.png (Add to Notepad) is a white page with
+   its own dark outline and lines, which a brightness(0) filter turned into a solid block
+   (slice 7 R3 m4) */
+#copy-btn .icon-small,
+.file-observations h4 .icon-small {
+    filter: brightness(0) opacity(0.75);
 }
 
 .file-observations h4 .icon-small {
@@ -305,7 +315,7 @@
     }
     
     .text-file-window-header {
-        border-radius: 8px 8px 0 0;
+        border-radius: 0;
         padding: 6px 10px;
         min-height: 24px;
     }
@@ -336,15 +346,18 @@
     .content-header {
         padding: 6px 12px;
         min-height: 32px;
+        flex-wrap: wrap;
+        gap: 6px;
     }
     
     .content-label {
         font-size: 18px;
     }
     
+    /* Readable on a phone: the toolbar wraps rather than shrinking its text (critique A36) */
     .action-btn {
         padding: 3px 8px;
-        font-size: 11px;
+        font-size: 16px;
     }
     
     .file-content {
@@ -376,7 +389,7 @@
     }
     
     .text-file-window-header {
-        background: linear-gradient(to bottom, #374151 0%, #1f2937 100%);
+        background: #374151;
         border-bottom-color: #374151;
     }
     
@@ -452,7 +465,7 @@
         color: #fbbf24;
     }
 
-    .action-btn .icon-small,
+    #copy-btn .icon-small,
     .file-observations h4 .icon-small {
         filter: none;
     }
@@ -477,4 +490,124 @@
     .file-content::-webkit-scrollbar-corner {
         background: #374151;
     }
+}
+
+/* ── In the PC monitor (UX slice 2c R3 M2) ───────────────────────────────────────────
+   A file opened from a PC's desktop or a share opens in that PC's monitor frame, as a
+   maximised window in the share window's look (css/container-minigame.css .pc-share):
+   the file name in the title bar, the PC's buttons (.pc-os-btn), the text in GNF at 16px
+   on the dark pane, the observations in the status bar. The window's own X in the title
+   bar closes the file; the bezel's X closes the PC (UI PC 2, critique E08). */
+.pc-monitor .pc-file-icon {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+    flex: 0 0 auto;
+}
+
+/* The window's X (UI PC 2, E08): a raised grey square at the title bar's right end, as on the
+   desktop OS's own windows, with an 8x7 pixel cross drawn at x2. 2px bevel borders, square
+   corners. The drawn box is 28x24; on a phone or a touch screen the hit area is at least
+   44px (nothing more is drawn). */
+.pc-monitor .pc-share .share-folder-path {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.pc-monitor button.pc-window-close {
+    position: relative;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 28px;
+    height: 24px;
+    margin: 0 0 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #c0c0c0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='7' shape-rendering='crispEdges'%3E%3Cpath fill='%23000' d='M0 0h2v1H0zM6 0h2v1H6zM1 1h2v1H1zM5 1h2v1H5zM2 2h4v1H2zM3 3h2v1H3zM2 4h4v1H2zM1 5h2v1H1zM5 5h2v1H5zM0 6h2v1H0zM6 6h2v1H6z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-size: 16px 14px;
+    background-position: 4px 3px;
+    image-rendering: pixelated;
+    border: 2px solid;
+    border-color: #ffffff #404040 #404040 #ffffff;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.pc-monitor button.pc-window-close:hover,
+.pc-monitor button.pc-window-close:focus-visible {
+    background-color: #d8d8d8;
+    outline: none;
+}
+
+/* Pressed: the bevel turns over and the cross moves down and right by 2px */
+.pc-monitor button.pc-window-close:active {
+    border-color: #404040 #ffffff #ffffff #404040;
+    background-position: 6px 5px;
+}
+
+/* A 44px target on a phone. The top edge reaches only 8px above the button: the bezel's X
+   sits above the window's title bar with 12px between the two buttons, and the targets must
+   leave a gap (4px) rather than touch, at every size. */
+@media (max-width: 600px), (pointer: coarse) {
+    .pc-monitor button.pc-window-close::after {
+        content: '';
+        position: absolute;
+        inset: -8px -10px -12px -10px;
+    }
+}
+
+.pc-monitor .pc-file-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 6px;
+    margin: 0 0 4px;
+}
+
+.pc-monitor .pc-file-toolbar .pc-os-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pc-monitor .pc-file-toolbar .pc-os-btn .icon-small {
+    width: 16px;
+    height: 16px;
+    image-rendering: pixelated;
+}
+
+.pc-monitor .pc-file-message {
+    font-size: 16px;
+    line-height: 18px;
+    color: #000000;
+}
+
+.pc-monitor .pc-file-message.pc-file-message-error {
+    color: #8a0000;
+}
+
+.pc-monitor .pc-file-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 0;
+    padding: 6px 8px;
+    background: #1c1c1c;
+    border-bottom: 2px solid #3a3a3a;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.pc-monitor .pc-file-body .file-text {
+    min-height: 0;
+    margin: 0;
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    line-height: 18px;
+    font-weight: normal;
+    color: #dde6ee;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }

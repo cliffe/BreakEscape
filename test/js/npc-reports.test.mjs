@@ -128,11 +128,11 @@ test('a rejecting send loses that batch and the queue keeps going', async () => 
 });
 
 test('watchedGlobal: plan globals, a station offWhen as a string and as an object, an NPC with no work', () => {
-    const objects = { dana_pc: { affordance: { offWhen: 'dana_pc_off' } }, kai_pc: { affordance: { offWhen: { kai_pc_unplugged: true } } },
-                      amy_pc: { affordance: { offWhen: 'amy_pc_off' } } };
+    const objects = { dana_pc: { offWhen: 'dana_pc_off' }, kai_pc: { offWhen: { kai_pc_unplugged: true } },
+                      amy_pc: { offWhen: 'amy_pc_off' } };
     const w = {
         npcManager: { npcs: new Map([
-            ['dana', { needsHome: 'dana_pc', work: { needs: [{ id: 'share', downIf: 'share_down', routes: [['vpn_up']] }] } }],
+            ['dana', { needsHome: 'dana_pc', work: { needs: [{ id: 'share', offWhen: 'share_down', routes: [['vpn_up']] }] } }],
             ['kai', { needsHome: 'kai_pc', work: { needs: [] } }],
             ['amy', { needsHome: 'amy_pc' }]
         ]) },
@@ -153,7 +153,7 @@ test('installNpcReports: one listener, the wildcard name parsed, idempotent', ()
     const prev = globalThis.window;
     globalThis.window = {
         eventDispatcher: { on: (name, fn) => listeners.push({ name, fn }) },
-        npcManager: { npcs: new Map([['dana', { needsHome: 'dana_pc', work: { needs: [{ id: 's', downIf: 'share_down' }] } }]]) },
+        npcManager: { npcs: new Map([['dana', { needsHome: 'dana_pc', work: { needs: [{ id: 's', offWhen: 'share_down' }] } }]]) },
         npcNeedsSystem: { world: { getObject: () => null } }
     };
     try {

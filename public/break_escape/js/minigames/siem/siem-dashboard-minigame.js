@@ -227,8 +227,13 @@ function createSeededAlerts() {
 }
 
 export class SiemDashboardMinigame extends MinigameScene {
-    // Its frame keeps a bar at the bottom for Cancel (minigames-framework.css)
-    static controlsOverlay = true;
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
+    consoleTitle() {
+        return 'NORTHGATE TRUST // SIEM CONSOLE';
+    }
 
     constructor(container, params = {}) {
         super(container, {
@@ -386,11 +391,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         this.gameContainer.innerHTML = `
             <div class="siem-panel" id="siem-panel">
                 <div class="siem-result-banner" id="siem-result-banner"></div>
-                <div class="siem-header">
-                    <div class="siem-title">NORTHGATE TRUST // SIEM CONSOLE</div>
-                    <div class="siem-clock" id="siem-system-clock">00:00:00</div>
-                </div>
-                <div class="siem-body">
+                <div class="siem-body pixel-scroll">
                     <div class="siem-alert-pane">
                         <div class="siem-pane-title">ALERT STREAM</div>
                         <div class="siem-alert-list" id="siem-alert-list"></div>
@@ -403,6 +404,7 @@ export class SiemDashboardMinigame extends MinigameScene {
                 </div>
                 <div class="siem-status-bar">
                     <span id="siem-pending-count">ALERTS PENDING: 0</span>
+                    <span class="siem-clock" id="siem-system-clock">00:00:00</span>
                     <span id="siem-time-remaining">TIME REMAINING: 00:00</span>
                 </div>
             </div>
@@ -532,7 +534,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         // Add severity breakdown section
         const breakdownSection = document.createElement('div');
         breakdownSection.className = 'siem-queue-section-title';
-        breakdownSection.textContent = '▸ SEVERITY BREAKDOWN';
+        breakdownSection.textContent = '> SEVERITY BREAKDOWN';
         
         const severityChart = this.renderSeverityChart();
         const severityLegend = this.renderSeverityLegend();
@@ -540,7 +542,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         // Add alert score section
         const scoreSection = document.createElement('div');
         scoreSection.className = 'siem-queue-section-title';
-        scoreSection.textContent = '▸ ALERTS SCORE';
+        scoreSection.textContent = '> ALERTS SCORE';
         
         const scoreBox = document.createElement('div');
         scoreBox.className = 'siem-alert-score-box';
@@ -559,7 +561,7 @@ export class SiemDashboardMinigame extends MinigameScene {
         // Add top sources section
         const sourcesSection = document.createElement('div');
         sourcesSection.className = 'siem-queue-section-title';
-        sourcesSection.textContent = '▸ TOP SOURCES';
+        sourcesSection.textContent = '> TOP SOURCES';
 
         const sourcesBox = this.renderTopSources();
 

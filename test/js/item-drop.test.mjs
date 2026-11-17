@@ -199,11 +199,11 @@ test('a picture loaded on demand is placed by its own size: saved top-left, even
     await window.rooms.lab.objects.box._dropSync;
     const s = scene.sprites[0];
     assert.equal(s.key, 'big_box');
-    assert.deepEqual([s.x, s.y], [50, 60], 'centred on the feet by its own size');
-    assert.deepEqual(w.added[0].data.position, { x: 34 / 32, y: 44 / 32 }, 'the top-left of the 32x32 picture');
+    assert.deepEqual([s.x, s.y], [50, 68], 'centred one cell in front of the feet by its own size');
+    assert.deepEqual(w.added[0].data.position, { x: 34 / 32, y: 52 / 32 }, 'the top-left of the 32x32 picture');
     assert.equal(w.emitted.length, 1);
     assert.equal(w.emitted[0].name, 'item_dropped:box');
-    assert.deepEqual([payload.x, payload.y], [50, 60]);
+    assert.deepEqual([payload.x, payload.y], [50, 68]);
 });
 
 test('a magnet whose picture loads on demand snaps to the table by the loaded size', async () => {
@@ -279,4 +279,220 @@ test('an item picked up and then torn down is not put in the tray twice', async 
     assert.equal(await window.rooms.lab.objects.slow3._dropSync, false);
     assert.deepEqual(back, []);
     delete window.addToInventory;
+});
+
+test('UX slice 15 (R15): the drop is aimed in front of the feet, then snapped to a walkable cell', async () => {
+    const { dropPoint, DROP_AHEAD_PX } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    assert.deepEqual(dropPoint({ x: 50, y: 60 }, null), { x: 50, y: 60 + DROP_AHEAD_PX }, 'below the feet');
+    const asked = [];
+    const pm = { findNearestWalkableWorldCell: (x, y, r) => { asked.push([x, y, r]); return { x: 52, y: 68 }; } };
+    assert.deepEqual(dropPoint({ x: 50, y: 60 }, pm), { x: 52, y: 68 });
+    assert.deepEqual(asked, [[50, 60 + DROP_AHEAD_PX, 0]], 'the aim cell is tried first, on its own');
+    assert.ok(DROP_AHEAD_PX > 0);
+});
+
+// A grid of 8 px cells over (0,0)-(320,320); `blocked(cx, cy)` says which cells are walls.
+function gridPm(blocked = () => false) {
+    const step = 8;
+    const asked = [];
+    return {
+        asked,
+        worldGridBounds: { minX: 0, minY: 0, cols: 40, rows: 40, step },
+        findNearestWalkableWorldCell(x, y, r) {
+            asked.push([x, y, r]);
+            const cx0 = Math.floor(x / step), cy0 = Math.floor(y / step);
+            let best = null, bd = Infinity;
+            for (let cy = cy0 - r; cy <= cy0 + r; cy++) for (let cx = cx0 - r; cx <= cx0 + r; cx++) {
+                if (cx < 0 || cy < 0 || cx >= 40 || cy >= 40 || blocked(cx, cy)) continue;
+                const p = { x: cx * step + 4, y: cy * step + 4 };
+                const d = (p.x - x) ** 2 + (p.y - y) ** 2;
+                if (d < bd) { bd = d; best = p; }
+            }
+            return best;
+        }
+    };
+}
+
+test('UX slice 15 R1 (M1): a desk drawn just below the feet sends the drop to the feet or a side cell', async () => {
+    const { dropPoint, dropSpotClear } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // Feet at (60, 156): the aim cell (60, 164) is walkable floor by the grid (a desk's top
+    // counts as floor) but the desk sprite from y 166 down, depth 206, draws over it.
+    const desk = { x: 40, y: 166, w: 64, h: 40, depth: 206 };
+    const at = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, props: [desk] });
+    assert.ok(dropSpotClear(at, size, { roomRect, props: [desk] }), 'the chosen spot shows');
+    assert.ok(at.y < 164, 'not the aim cell inside the desk');
+    assert.ok(Math.abs(at.x - 60) <= 12 && Math.abs(at.y - 156) <= 4, 'the feet or one cell to the side');
+    // With the desk out of the way the aim cell is taken
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, props: [] }), { x: 60, y: 164 });
+    // A prop drawn under the item (lower depth) does not count
+    const rug = { ...desk, depth: 100 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, props: [rug] }), { x: 60, y: 164 });
+    // A static body over the aim box counts like a prop
+    const strip = { x: 40, y: 160, w: 64, h: 20 };
+    const b = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, bodies: [strip] });
+    assert.ok(b.y < 164);
+});
+
+test('UX slice 15 R1 (M1): the side cells are tried when the aim and the feet are both covered', async () => {
+    const { dropPoint } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    // A chair drawn over x 56..72 from y 140 down: it covers the aim and feet boxes
+    // (x 52..68) by half and the right cell's (60..76) by most; the left cell's box
+    // (44..60) only by a 4 px sliver, so the drop goes one cell left.
+    const chair = { x: 56, y: 140, w: 16, h: 40, depth: 400 };
+    const at = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect: { x: 0, y: 0, w: 320, h: 320 }, props: [chair] });
+    assert.deepEqual(at, { x: 52, y: 156 }, 'one cell left of the feet');
+});
+
+test('UX slice 15 R1 ruling: the wider rings run front before behind, nearer first, facing side first', async () => {
+    const { dropRingOffsets } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const none = dropRingOffsets();
+    assert.equal(none.length, 20, 'four diagonals and the 16 cells two steps out');
+    assert.deepEqual(none.slice(0, 4), [[-1, 1], [1, 1], [-1, -1], [1, -1]], 'diagonals: front first, left first with no facing');
+    assert.deepEqual(none[4], [0, 2], 'two steps: straight in front first');
+    assert.deepEqual(none.slice(-1)[0][1], -2, 'two steps behind last');
+    const right = dropRingOffsets('right');
+    assert.deepEqual(right.slice(0, 2), [[1, 1], [-1, 1]], 'facing right: front-right first');
+    assert.deepEqual(right.slice(4, 7), [[0, 2], [1, 2], [-1, 2]]);
+    assert.deepEqual(dropRingOffsets('down-left').slice(0, 2), [[-1, 1], [1, 1]]);
+});
+
+test('UX slice 15 R1 ruling: a diagonal cell, then a cell two steps out, when the first four are blocked', async () => {
+    const { dropPoint } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // Feet at (60, 156) = cell (7, 19). Aim (7, 20), feet, left (6, 19), right (8, 19) unwalkable
+    const firstFour = (cx, cy) => (cx === 7 && (cy === 19 || cy === 20)) || ((cx === 6 || cx === 8) && cy === 19);
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(firstFour), { size, roomRect }), { x: 52, y: 164 }, 'front-left diagonal');
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(firstFour), { size, roomRect, facing: 'right' }), { x: 68, y: 164 }, 'front-right when facing right');
+    // Everything within one cell unwalkable: straight in front, two steps
+    const ring1 = (cx, cy) => Math.abs(cx - 7) <= 1 && Math.abs(cy - 19) <= 1;
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(ring1), { size, roomRect }), { x: 60, y: 172 });
+    // ... and with the three cells two steps in front covered by a prop drawn over them,
+    // the facing side's front cell two steps out (2, 1)
+    const pot = { x: 44, y: 164, w: 32, h: 16, depth: 999 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(ring1), { size, roomRect, props: [pot], facing: 'right' }), { x: 76, y: 164 });
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(ring1), { size, roomRect, props: [pot], facing: 'left' }), { x: 44, y: 164 });
+    // A diagonal outside the room is skipped
+    const inRoom = { x: 56, y: 0, w: 264, h: 320 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(firstFour), { size: { w: 8, h: 8 }, roomRect: inRoom }), { x: 68, y: 164 });
+});
+
+test('UX slice 15 R1 (m4, n3): nothing clear falls back to the feet, never the raw aim, and stays in the room', async () => {
+    const { dropPoint } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const wall = { x: 0, y: 0, w: 320, h: 320, depth: 999 };
+    // Everything covered: the snapped feet
+    const pm = gridPm();
+    assert.deepEqual(dropPoint({ x: 61, y: 157 }, pm, { size, props: [wall] }), { x: 60, y: 156 });
+    assert.equal(pm.asked.at(-1)[2], 2, 'the feet snap searches two cells');
+    // Only the aim cell is unwalkable (a pathfinder that returns null for it): the feet
+    const onlyAim = gridPm((cx, cy) => cx === 7 && cy === 20);
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, onlyAim, { size }), { x: 60, y: 156 });
+    // No walkable cell anywhere: the raw feet, not the aim 8 px below them
+    const none = gridPm(() => true);
+    assert.deepEqual(dropPoint({ x: 61, y: 157 }, none, { size }), { x: 61, y: 157 });
+    // A doorway foot cell in a room that starts at x 100, where the only walkable cells
+    // are in the next room (x < 96): the raw feet, never a cell over there, shifted so the
+    // box (x 96..112) lies inside the room (R2 n1): centre x 108
+    const roomRect = { x: 100, y: 0, w: 220, h: 320 };
+    const nextRoom = gridPm((cx) => cx >= 12);
+    assert.deepEqual(dropPoint({ x: 104, y: 76 }, nextRoom, { size, roomRect }), { x: 108, y: 76 });
+});
+
+test('UX slice 15 R2 (n1): the last fallback box is clamped into the room on every side', async () => {
+    const { dropPoint, clampIntoRoom, dropBox } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // A foot cell in the top strip (y 4) with nothing walkable: the box starts 4 px above
+    // the room, so the centre moves down to y 8
+    const none = gridPm(() => true);
+    const at = dropPoint({ x: 228, y: 4 }, none, { size, roomRect });
+    assert.deepEqual(at, { x: 228, y: 8 });
+    const b = dropBox(at, size);
+    assert.ok(b.y >= 0 && b.x >= 0 && b.x + b.w <= 320 && b.y + b.h <= 320, 'the box is inside the room');
+    assert.deepEqual(clampIntoRoom({ x: 318, y: 316 }, size, roomRect), { x: 312, y: 312 }, 'right and bottom');
+    assert.deepEqual(clampIntoRoom({ x: 2, y: 100 }, size, roomRect), { x: 8, y: 100 }, 'left');
+    assert.deepEqual(clampIntoRoom({ x: 2, y: 3 }, size, null), { x: 2, y: 3 }, 'no room: unchanged');
+});
+
+test('UX slice 15 R2 (M1): a door gap or another room under the box is ranked last, not refused', async () => {
+    const { dropPoint, dropBox } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const size = { w: 16, h: 16 };
+    const roomRect = { x: 0, y: 0, w: 320, h: 320 };
+    // A door just south of the feet (60, 156): its rectangle (x 48..80, from y 166) touches
+    // the aim box (y 156..172), so the drop goes to a cell whose box clears it
+    const door = { x: 48, y: 166, w: 32, h: 64 };
+    const at = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, avoid: [door] });
+    const b = dropBox(at, size);
+    const touches = b.x < door.x + door.w && b.x + b.w > door.x && b.y < door.y + door.h && b.y + b.h > door.y;
+    assert.ok(!touches, `the drop box ${JSON.stringify(b)} clears the door`);
+    assert.deepEqual(at, { x: 60, y: 156 }, 'the feet: the first candidate whose box ends above the door');
+    // The next room's rectangle under everything in reach: the first clear candidate (the aim)
+    const nextRoom = { x: 0, y: 100, w: 320, h: 220 };
+    assert.deepEqual(dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, avoid: [nextRoom] }), { x: 60, y: 164 });
+    // A side cell when the aim and feet both touch the door (a door on the feet's column)
+    const column = { x: 56, y: 120, w: 8, h: 80 };
+    const side = dropPoint({ x: 60, y: 156 }, gridPm(), { size, roomRect, avoid: [column] });
+    assert.ok(Math.abs(side.x - 60) >= 8, 'off the door column');
+    const sb = dropBox(side, size);
+    assert.ok(sb.x >= 64 || sb.x + sb.w <= 56, 'the box clears the column');
+});
+
+test('UX slice 15 R2 (M1, n2): dropClearance lists door sprites and touching rooms to avoid, and only nearby bodies', async () => {
+    const { dropClearance } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    const body = (left, top, right, bottom) => ({ left, top, right, bottom, enable: true, gameObject: {} });
+    const statics = [body(10, 10, 40, 20), body(2000, 2000, 2040, 2020), body(-30, 50, -10, 60)];
+    const scene = { physics: { world: { staticBodies: { iterate: f => statics.forEach(f) }, bodies: { iterate: () => {} } } } };
+    const map = (w, h) => ({ widthInPixels: w, heightInPixels: h });
+    const lobby = { position: { x: 0, y: 0 }, map: map(320, 320), objects: {},
+        doorSprites: [{ x: 48, y: 32, displayWidth: 32, displayHeight: 64, originX: 0.5, originY: 0.5 }] };
+    const usb = { position: { x: 0, y: -256 }, map: map(320, 320), objects: {}, doorSprites: [] };
+    const far = { position: { x: 1000, y: 1000 }, map: map(320, 320), objects: {},
+        doorSprites: [{ x: 1048, y: 1032, displayWidth: 32, displayHeight: 64 }] };
+    const out = dropClearance(scene, usb, null, null, { lobby, usb, far });
+    assert.deepEqual(out.roomRect, { x: 0, y: -256, w: 320, h: 320 });
+    assert.deepEqual(out.bodies, [{ x: 10, y: 10, w: 30, h: 10 }, { x: -30, y: 50, w: 20, h: 10 }],
+        'the far body is left out; one just outside the room (within two cells) is kept');
+    assert.deepEqual(out.avoid, [{ x: 32, y: 0, w: 32, h: 64 }, { x: 0, y: 0, w: 320, h: 320 }],
+        'the lobby door and the lobby rectangle, not the far room or its door');
+});
+
+test('UX slice 15 R2 final (M1): a drop no feet point in its own room can pick up is refused', async () => {
+    const { dropPoint, pickupReachable } = await import(pathToFileURL(join(js, 'systems/item-drop.js')).href);
+    // Feet above y 56 stand in the north room; below, in the south room (the strip where the
+    // north floor overlaps the south room's back wall ends there). The sprite centre sits
+    // 28 px above the feet, as the player's does.
+    const pm = gridPm();
+    const deps = {
+        findCell: (x, y, r) => pm.findNearestWalkableWorldCell(x, y, r),
+        roomAt: (x, y) => (y < 56 ? 'north' : 'south'),
+        roomId: 'north',
+        footOffset: { x: 0, y: 28 },
+        range: 32,
+        step: 8
+    };
+    const reachable = c => pickupReachable(c, deps);
+    assert.equal(reachable({ x: 44, y: 60 }), false, 'the cell below the last north feet row: only south feet reach it');
+    assert.equal(reachable({ x: 44, y: 52 }), true, 'the feet cell itself is in reach from the feet');
+    assert.equal(pickupReachable({ x: 44, y: 60 }, { ...deps, roomId: 'south' }), true, 'from the south it is in reach');
+    const feet = { x: 44, y: 52 };
+    assert.deepEqual(dropPoint(feet, pm, { size: { w: 16, h: 16 } }), { x: 44, y: 60 }, 'with no rule: the aim');
+    assert.deepEqual(dropPoint(feet, pm, { size: { w: 16, h: 16 }, reachable }), { x: 44, y: 52 },
+        'with the rule: the aim is skipped and the feet cell taken');
+    // Nothing reachable: the feet cell, the fallback
+    assert.deepEqual(dropPoint(feet, pm, { size: { w: 16, h: 16 }, reachable: () => false }), { x: 44, y: 52 });
+    // No pathfinder or room lookup: every cell counts
+    assert.equal(pickupReachable({ x: 44, y: 60 }, { roomId: 'north' }), true);
+});
+
+test('UX slice 15 (R15): a 16x16 drop sits with its bottom below the feet, so it draws in front', async () => {
+    const scene = fakeScene(['pic']);
+    world(scene);
+    dropInventoryItem(trayEl({ id: 'stick', type: 'm', name: 'Stick', sprite: 'pic', droppable: true }));
+    const s = scene.sprites.at(-1);
+    assert.ok(s.y + s.displayHeight / 2 > 60 + 8, 'its bottom is clearly below the feet');
+    assert.ok(s.depth > 60 + 8, 'its depth is past the feet line');
 });

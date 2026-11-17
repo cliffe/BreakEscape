@@ -44,9 +44,9 @@ module ValidateAccessWork
 
   FRIENDFACE_PHONE = 'phone_friendface'
 
-  # An NPC's Friendface phone (`phoneOf`) sits in that NPC's itemsHeld, the NPC has a phone, and it
+  # An NPC's Friendface phone (`owner`) sits in that NPC's itemsHeld, the NPC has a phone, and it
   # holds at most one; an NPC with a social_media need, a feed and a phone holds its phone. A phone
-  # with no phoneOf is the player's own and may be anywhere; its `site` must be a social site.
+  # with no owner is the player's own and may be anywhere; its `site` must be a social site.
   def check_friendface_phones(json_data, issues)
     npcs = room_npcs(json_data).to_h { |e| [e[:npc]['id'], e[:npc]] }
     sites = osint_sites(json_data).to_h { |site| [site['id'], site] }
@@ -58,15 +58,9 @@ module ValidateAccessWork
     no_site_said = false
     all_objects(json_data).each do |o|
       item = o[:obj]
-      if item['type'] != FRIENDFACE_PHONE
-        if item.key?('phoneOf')
-          warn(issues, "'#{item['name'] || item['id'] || item['type']}' (type '#{item['type']}') has phoneOf, which only a " \
-                       "#{FRIENDFACE_PHONE} reads: it is ignored here.")
-        end
-        next
-      end
+      next if item['type'] != FRIENDFACE_PHONE
 
-      owner = item['phoneOf']
+      owner = item['owner']
       name = item['name'] || item['id'] || FRIENDFACE_PHONE
       # Review R1 m4: the phone opens a social site (its owner's feed site, else the first one)
       if !social_site && !no_site_said
@@ -81,13 +75,13 @@ module ValidateAccessWork
         next
       end
       if !owner.is_a?(String) || !npcs.key?(owner)
-        err(issues, "Friendface phone '#{name}' phoneOf '#{owner}' names no room NPC.")
+        err(issues, "Friendface phone '#{name}' owner '#{owner}' names no room NPC.")
       elsif !held_by[owner].any? { |i| i.equal?(item) }
-        err(issues, "Friendface phone '#{name}' is #{owner}'s (phoneOf) but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
+        err(issues, "Friendface phone '#{name}' is #{owner}'s but is not in #{owner}'s itemsHeld: an NPC's phone starts with that NPC.")
       elsif !AW.phone?(npcs[owner])
         err(issues, "Friendface phone '#{name}' belongs to #{owner}, who is \"phone\": false: that NPC has no personal phone.")
       end
-      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no phoneOf) takes one.") if item.key?('site')
+      err(issues, "Friendface phone '#{name}' has a site field; only the player's own phone (no owner) takes one.") if item.key?('site')
       # Review R1 m3: an NPC phone that is not takeable can never be given or picked up
       err(issues, "Friendface phone '#{name}' (#{owner}'s) is not \"takeable\": true, so it can never be given or picked up.") unless item['takeable'] == true
       # Review R2 m2, R3 m1: the server hands an NPC's phone over only when its story or record
@@ -117,12 +111,12 @@ module ValidateAccessWork
       err(issues, "Friendface phone id '#{id}' is used by #{list.size} phones: each phone needs its own id.") if list.size > 1
     end
     npcs.each do |nid, npc|
-      own = held_by[nid].select { |i| i['phoneOf'] == nid }
+      own = held_by[nid].select { |i| i['owner'] == nid }
       err(issues, "#{nid} holds #{own.size} Friendface phones of its own; an NPC carries one.") if own.size > 1
       next unless AW.need?(npc, 'social_media') && npc['feed'].is_a?(Hash) && AW.phone?(npc) && own.empty?
 
       err(issues, "#{nid} posts from a phone (social_media need, a feed, no \"phone\": false) but holds no Friendface phone: " \
-                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"phoneOf\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
+                  "add { \"type\": \"#{FRIENDFACE_PHONE}\", \"owner\": \"#{nid}\", \"takeable\": true } to its itemsHeld (q35).")
     end
   end
 
@@ -351,7 +345,16 @@ module ValidateAccessWork
   # ── sub-slice A: work, outages and frustration ───────────────────────
 
   AW = BreakEscape::AccessWork
-  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed usbHabit].freeze
+
+  # Format 1 (step 8a): the global names an outage condition (offWhen, requireGlobal form) reads.
+  def self.offwhen_global_names(cond)
+    case cond
+    when String then cond.strip.empty? ? [] : [cond]
+    when Hash then cond.keys.map(&:to_s)
+    else []
+    end
+  end
+  A_ONLY_FIELDS = %w[workNeeds frustration workarounds feed].freeze
   STATION_POOL = 'station_fail'
   NO_ACCESS_POOL = 'work_fail_no_access'
   FALLBACK_POOL = 'work_fail'
@@ -383,9 +386,9 @@ module ValidateAccessWork
     home.is_a?(Hash) || (home.is_a?(Array) && home.size == 2)
   end
 
-  # The PCs an NPC owns through screenOwner
+  # The PCs an NPC owns through its explicit owner
   def screen_owned_pcs(json_data, npc)
-    AW.object_index(json_data).values.map { |e| e[:obj] }.select { |o| o['screenOwner'] == npc['id'] }.map { |o| o['id'] }
+    AW.object_index(json_data).values.map { |e| e[:obj] }.select { |o| o['owner'] == npc['id'] }.map { |o| o['id'] }
   end
 
   def check_work(json_data, issues)
@@ -400,6 +403,10 @@ module ValidateAccessWork
         next unless npc.key?(field)
 
         err(issues, "'#{path}' has '#{field}', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
+                    'other NPC records reach the browser unfiltered.')
+      end
+      if npc['habits'].is_a?(Hash) && npc['habits'].key?('usb')
+        err(issues, "'#{path}' has 'habits.usb', which is allowed only on room NPCs (rooms.<id>.npcs[]): " \
                     'other NPC records reach the browser unfiltered.')
       end
     end
@@ -417,9 +424,10 @@ module ValidateAccessWork
       if r.key?('object') && !ids.include?(r['object'])
         err(issues, "resources.#{rid}.object '#{r['object']}' names no room object.")
       end
-      dn = r['downIf']
-      if AW.present_string?(dn) && !globals.key?(dn)
-        warn(issues, "resources.#{rid}.downIf '#{dn}' is not declared in globalVariables.")
+      if AW.off_when_present?(r['offWhen'])
+        offwhen_global_names(r['offWhen']).each do |g|
+          warn(issues, "resources.#{rid}.offWhen names '#{g}', which is not declared in globalVariables.") unless globals.key?(g)
+        end
       end
     end
 
@@ -501,7 +509,7 @@ module ValidateAccessWork
     nid = npc['id']
     plan = AW.work_plan?(json_data, npc)
     social = AW.need?(npc, 'social_media') && !AW.phone?(npc)
-    check_usb_habit(json_data, npc, plan, issues) if npc.key?('usbHabit')
+    check_usb_habit(json_data, npc, plan, issues) if npc['habits'].is_a?(Hash) && npc['habits'].key?('usb')
 
     if plan || social
       dm = npc['needsDeferMin']
@@ -537,8 +545,8 @@ module ValidateAccessWork
       owned = screen_owned_pcs(json_data, npc)
       what = coordinate?(home) ? 'a coordinate' : (st ? "'#{home}', which satisfies no work" : (home ? "'#{home}', which names no object" : 'unset'))
       hint = if owned.any?
-               " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through screenOwner: make that its needsHome " \
-                 '(a PC owned only through screenOwner is a desk like any other for a judged need).'
+               " It owns #{owned.map { |id| "'#{id}'" }.join(', ')} through owner: make that its needsHome " \
+                 '(a PC owned only through owner is a desk like any other for a judged need).'
       else
                ' Give it a station that authors affordance.satisfies "work" (a sign-in PC takes no office preset).'
       end
@@ -570,33 +578,33 @@ module ValidateAccessWork
   # The USB habit (USB_HABIT_PLAN.md, q39): its shape, its global, and whether it can act
   def check_usb_habit(json_data, npc, plan, issues)
     nid = npc['id']
-    h = npc['usbHabit']
+    h = npc.dig('habits', 'usb')
     unless h.is_a?(Hash)
-      err(issues, "#{nid}.usbHabit must be an object { every, setGlobal }.")
+      err(issues, "#{nid}.habits.usb must be an object { every, setGlobal }.")
       return
     end
     if h.key?('every') && !(h['every'].is_a?(Integer) && AW::USB_EVERY_RANGE.cover?(h['every']))
-      err(issues, "#{nid}.usbHabit.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
+      err(issues, "#{nid}.habits.usb.every is #{h['every'].inspect}; it must be a whole number from 1 to 10.")
     end
     if h.key?('setGlobal') && !(h['setGlobal'].is_a?(String) && declared_globals(json_data).key?(h['setGlobal']))
-      err(issues, "#{nid}.usbHabit.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
+      err(issues, "#{nid}.habits.usb.setGlobal #{h['setGlobal'].inspect} is not declared in globalVariables: the server only sets a declared global.")
     end
     check_usb_stick(json_data, npc, issues)
     unless plan
-      warn(issues, "#{nid} has a usbHabit but no work plan (a work need and a non-empty workNeeds list): only judged work " \
+      warn(issues, "#{nid} has a habits.usb but no work plan (a work need and a non-empty workNeeds list): only judged work " \
                    'uses are checked, so the habit never acts. Give it a work plan, or remove the habit.')
       return
     end
     # Review R1 m5: the copy is made at the NPC's own PC only
     st = AW.station(json_data, npc)
     unless st
-      warn(issues, "#{nid} has a usbHabit but no station (needsHome naming an object in a room): the copy is made only " \
+      warn(issues, "#{nid} has a habits.usb but no station (needsHome naming an object in a room): the copy is made only " \
                    "at the NPC's own PC, so the habit never acts. Set needsHome, or remove the habit.")
       return
     end
     return unless h['setGlobal'].is_a?(String) && !AW.usb_habit_refused?(json_data, npc)
 
-    warn(issues, "#{nid}.usbHabit.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
+    warn(issues, "#{nid}.habits.usb.setGlobal '#{h['setGlobal']}' can never be set: the policy at '#{st['id']}' allows a USB " \
                  'stick, so the copy is never refused. Check the policy name (an unknown one falls back to the default) ' \
                  'or its usb field.')
   end
@@ -608,7 +616,7 @@ module ValidateAccessWork
     unless stick
       other = Array(npc['itemsHeld']).find { |i| i.is_a?(Hash) && i['type'] == 'usb' && AW.present_string?(i['id']) }
       extra = other ? " ('#{other['id']}' has usbClass '#{other['usbClass']}'; a habit stick is a storage stick)" : ''
-      err(issues, "#{nid} has a usbHabit but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
+      err(issues, "#{nid} has a habits.usb but holds no USB stick#{extra}: add a { \"type\": \"usb\", \"id\": ..., \"sprite\": " \
                   "\"usb_bowl1\", \"usbClass\": \"storage\", \"takeable\": true } item to its itemsHeld. Its files default to " \
                   "#{AW::USB_STICK_DEFAULT_FILE}; list others in its contents.")
       return
@@ -673,13 +681,13 @@ module ValidateAccessWork
   # block gated on the habit's setGlobal.
   def check_usb_give_order(json_data, npc, stick, issues)
     nid = npc['id']
-    glob = npc.dig('usbHabit', 'setGlobal')
+    glob = npc.dig('habits', 'usb', 'setGlobal')
     return unless usb_refusal_beats?(json_data, nid, glob)
 
     ungated = usb_stick_gives(json_data, npc, stick).reject { |_where, conds| conds.any? { |c| names_global?(c, glob) } }
     return if ungated.empty?
 
-    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set usbHabit.setGlobal and gate on it)'
+    want = glob.is_a?(String) ? "a choice gated on {#{glob}}" : 'a choice offered only after the refusal (set habits.usb.setGlobal and gate on it)'
     warn(issues, "#{nid}'s ink gives the USB stick '#{stick['id']}' (#{ungated.map(&:first).join(', ')}) where the player " \
                  "can take it before #{nid}'s first refusal; the habit then stops and anything keyed on the refusal " \
                  "(npc_usb_refused:#{nid}#{glob ? ", #{glob}" : ''}, a usb_refused post) never happens. Offer the give from #{want}.")
@@ -692,7 +700,7 @@ module ValidateAccessWork
     nid = npc['id']
     return if npc['koImmune'] == true || json_data['disableAttacks'] == true
 
-    glob = npc.dig('usbHabit', 'setGlobal')
+    glob = npc.dig('habits', 'usb', 'setGlobal')
     vents = Array(npc.dig('feed', 'posts')).select { |p| p.is_a?(Hash) && p.dig('when', 'cause') == 'usb_refused' }.map { |p| p['id'] }.compact
     refusal = lambda do |m|
       pat = m['eventPattern'].to_s
@@ -743,7 +751,7 @@ module ValidateAccessWork
       case v
       when Hash
         v.each do |k, x|
-          next if %w[globalVariables usbHabit].include?(k)
+          next if %w[globalVariables usb].include?(k)
           found = true if k == 'cause' && x == 'usb_refused'
           walk.call(x, k)
         end
@@ -889,7 +897,7 @@ module ValidateAccessWork
 
       causes << ["no access to '#{rid}'", NO_ACCESS_POOL] unless AW.admitted?(r, npc)
       rt = AW.routes(json_data, npc, r)
-      can_drop = AW.present_string?(r['downIf']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
+      can_drop = AW.off_when_present?(r['offWhen']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
       kind = AW.present_string?(r['kind']) ? r['kind'] : nil
       causes << ["'#{rid}' going down", kind ? "work_fail_#{kind}" : nil] if can_drop
     end
@@ -989,7 +997,7 @@ module ValidateAccessWork
     end
 
     # Per room NPC, its resolved list: the kind's own rules. A guest's screen habit is read on
-    # the copy with slice 9.1's habits expanded (locksScreen fills screenHabit), as the server reads it.
+    # the copy with slice 9.1's habits expanded (locksScreen fills habits.screen), as the server reads it.
     expanded = expanded_room_npcs(json_data)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
@@ -1056,8 +1064,8 @@ module ValidateAccessWork
   end
 
   # { global name => [where] } for the places the server reads a global: an unlockCondition
-  # globalVariable, concludeRequires.globals, exportGlobals, a resource's downIf, a route's
-  # gate globals and an affordance offWhen
+  # globalVariable, concludeRequires.globals, exportGlobals, a resource's offWhen, a route's
+  # gate globals and an object's offWhen
   def server_read_globals(json_data)
     reads = Hash.new { |h, k| h[k] = [] }
     walk = lambda do |node|
@@ -1077,18 +1085,22 @@ module ValidateAccessWork
     walk.call(json_data)
     Array(json_data['exportGlobals']).each { |g| reads[g.to_s] << 'exportGlobals' }
     AW.resources(json_data).each do |rid, r|
-      reads[r['downIf']] << "resources.#{rid}.downIf" if r.is_a?(Hash) && AW.present_string?(r['downIf'])
+      if r.is_a?(Hash) && AW.off_when_present?(r['offWhen'])
+        offwhen_global_names(r['offWhen']).each { |g| reads[g] << "resources.#{rid}.offWhen" }
+      end
     end
     room_npcs(json_data).each do |e|
       AW.work_list(json_data, e[:npc]).each do |rid|
         res = AW.resources(json_data)[rid]
         next unless res
 
-        Array(AW.routes(json_data, e[:npc], res)).flatten.each { |g| reads[g.to_s] << "a route to '#{rid}'" }
+        Array(AW.routes(json_data, e[:npc], res)).flatten(1).each do |cond|
+          offwhen_global_names(cond).each { |g| reads[g] << "a route to '#{rid}'" }
+        end
       end
     end
     AW.object_index(json_data).each do |oid, entry|
-      off = AW.affordance(json_data, entry[:obj])&.dig('offWhen')
+      off = AW.object_off_when(entry[:obj])
       off_names = case off
       when String then [off]
       when Hash then off.keys.map(&:to_s)
@@ -1109,9 +1121,9 @@ module ValidateAccessWork
     {}
   end
 
-  # A PC marked private (office life: in its affordance, or on the object)
-  def private_pc?(json_data, pc)
-    pc['private'] == true || AW.affordance(json_data, pc)&.dig('private') == true
+  # A PC marked private (office life: an object-level private flag)
+  def private_pc?(_json_data, pc)
+    pc['private'] == true
   end
 
   # Sub-slice H (plan 6.4 and section 10): the hot desk's rules
@@ -1153,12 +1165,12 @@ module ValidateAccessWork
                    "#{lacking.include?('social_media') ? ' and its feed post is refused' : ''}.")
     end
     if BreakEscape::AccessIdentities.screen_always_locks?({}, guest)
-      warn(issues, "#{tag}: #{nid} is a careful guest (no screenHabit, or one that always locks), so it signs out of " \
-                   "'#{pid}' and the workaround opens nothing. Author \"screenHabit\": { \"lockChance\": 0 } or " \
+      warn(issues, "#{tag}: #{nid} is a careful guest (no habits.screen, or one that always locks), so it signs out of " \
+                   "'#{pid}' and the workaround opens nothing. Author \"habits\": { \"screen\": { \"lockChance\": 0 } } or " \
                    'locksScreen: "never" on a borrower meant to leave the session open.')
     end
     if pc.key?('lockChance') || pc.key?('locksScreenOnLeave')
-      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own screenHabit decides).")
+      warn(issues, "#{tag}: '#{pid}' sets lockChance or locksScreenOnLeave, which a guest ignores (its own habits.screen decides).")
     end
     if holds_forbidden?(pc)
       warn(issues, "#{tag} opens a session at '#{pid}', which is a flag station or VM launcher: a modified browser can reach " \
@@ -1209,11 +1221,11 @@ module ValidateAccessWork
           warn(issues, "#{tag}: '#{st['id']}' authors its own postitNote or sets showPostit: false, which wins over the " \
                        'written-down note: the workaround shows nothing new.')
         else
-          # The server's owner rule (Game#login_pc_owner): screenOwner first, else the first room
-          # NPC whose needsHome is the PC. Another owner means a mark on the screen and no note.
-          owner = st['screenOwner'].is_a?(String) && !st['screenOwner'].empty? ? st['screenOwner'] : room_npcs(json_data).map { |x| x[:npc] }.find { |n| n['needsHome'] == st['id'] }&.dig('id')
+          # The server's owner rule (Game#login_pc_owner): the PC's explicit owner. Another owner
+          # means a mark on the screen and no note.
+          owner = BreakEscape::AccessIdentities.owner_id(st, json_data)
           if owner != nid
-            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (screenOwner, else the first NPC with it as needsHome), " \
+            err(issues, "#{tag}: '#{st['id']}' belongs to #{owner.inspect} (its owner), " \
                         "not #{nid}, so the sign-in screen shows no note.")
           end
         end
@@ -1290,6 +1302,7 @@ module ValidateAccessWork
     feed_report_lines(json_data, lines)
     reactive_report_lines(json_data, lines)
     reply_report_lines(json_data, lines)
+    reaction_report_lines(json_data, lines)
     room_npcs(json_data).each do |e|
       npc = e[:npc]
       next unless AW.work_plan?(json_data, npc)
@@ -1302,13 +1315,13 @@ module ValidateAccessWork
         rt = AW.routes(json_data, npc, r)
         bits << 'never reachable from its station' if rt && rt.empty?
         downs = []
-        downs << r['downIf'] if AW.present_string?(r['downIf'])
-        rt&.each { |route| downs.concat(route) }
+        downs.concat(offwhen_global_names(r['offWhen'])) if AW.off_when_present?(r['offWhen'])
+        rt&.each { |route| route.each { |cond| downs.concat(offwhen_global_names(cond)) } }
         bits << (downs.empty? ? 'nothing takes it down' : "down while #{downs.uniq.join(' or ')}")
         "#{rid} (#{bits.join(', ')})"
       end
       st = AW.station(json_data, npc)
-      station_off = st && AW.off_when?(json_data, st) ? "; station '#{st['id']}' off while #{AW.affordance(json_data, st)['offWhen']}" : ''
+      station_off = st && AW.off_when?(json_data, st) ? "; station '#{st['id']}' off while #{AW.object_off_when(st).inspect}" : ''
       if AW.lockout_station?(json_data, npc)
         max = AW.policy_of(json_data, st)['maxAttempts']
         station_off += "; locked out at '#{st['id']}' after #{max.to_i} wrong passwords for its username there (a denial of service)"
@@ -1318,9 +1331,9 @@ module ValidateAccessWork
         nth = every == 1 ? 'every' : "every #{every}#{every == 2 ? 'nd' : every == 3 ? 'rd' : 'th'}"
         station_off += if AW.usb_habit_refused?(json_data, npc)
                          "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy refuses (cause usb_refused)"
-                       else
+        else
                          "; #{nth} use at '#{st['id']}' copies to a USB stick, which its policy allows"
-                       end
+        end
       end
       lines << "ℹ️ Work #{npc['id']}: #{parts.join('; ')}#{station_off}."
       AW.workarounds(json_data, npc).each_with_index do |w, i|
@@ -1393,7 +1406,7 @@ module ValidateAccessWork
     res = AW.resources(json_data)
     AW.work_list(json_data, npc).filter_map { |id| res[id] }.none? do |r|
       rt = AW.routes(json_data, npc, r)
-      !AW.admitted?(r, npc) || AW.present_string?(r['downIf']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
+      !AW.admitted?(r, npc) || AW.off_when_present?(r['offWhen']) || (rt && (rt.empty? || rt.any? { |route| !route.empty? }))
     end
   end
 
@@ -1633,6 +1646,7 @@ module ValidateAccessWork
     end
 
     check_replies(json_data, issues)
+    check_reactions(json_data, issues)
 
     # A feed fact may be granted only by its feed post (plan 8.3)
     unless feed_facts.empty?
@@ -1884,7 +1898,7 @@ module ValidateAccessWork
   end
 
   # When the NPC's work need first turns urgent (seconds, needs clock), if its work plan reaches
-  # a resource that starts down (its downIf, or its network's, is truthy at load); else nil.
+  # a resource that starts down (its offWhen, or its network's, holds at load); else nil.
   # That is the earliest its first counted work failure can come.
   def work_failure_seconds(json_data, npc)
     return nil unless AW.work_plan?(json_data, npc)
@@ -1892,7 +1906,7 @@ module ValidateAccessWork
     globals = json_data['globalVariables'].is_a?(Hash) ? json_data['globalVariables'] : {}
     nets = json_data['networks'].is_a?(Hash) ? json_data['networks'] : {}
     res = AW.resources(json_data)
-    down = ->(item) { item.is_a?(Hash) && AW.present_string?(item['downIf']) && ![nil, false, 0, ''].include?(globals[item['downIf']]) }
+    down = ->(item) { item.is_a?(Hash) && AW.off_when_present?(item['offWhen']) && AW.globals_hold?(item['offWhen'], globals) }
     starts_down = AW.work_list(json_data, npc).any? do |id|
       r = res[id]
       r && (down.call(r) || down.call(nets[r['network']]))
@@ -2189,18 +2203,18 @@ module ValidateAccessWork
           lines << if nth == 1
                      "ℹ️ Reply #{name.call(npc)} answers in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only if a reply " \
                        'is out by the time that post is due.'
-                   else
+          else
                      "ℹ️ Reply #{name.call(npc)} may answer again in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only " \
                        "if another NPC has replied since #{name.call(npc)}'s last answer by the time that post is due."
-                   end
+          end
           next
         end
         line = if nth == 1
                  "ℹ️ Reply #{name.call(npc)} replies to #{name.call(owner)}'s '#{r['replyTo']}', in place of '#{r['insteadOf']}'"
-               else
+        else
                  "ℹ️ Reply #{name.call(npc)} may reply again in the thread of '#{r['replyTo']}', in place of '#{r['insteadOf']}', only if " \
                    "#{name.call(owner)} has answered there since #{name.call(npc)}'s last reply by the time that post is due"
-               end
+        end
         line += ". When: #{reactive_condition_words(json_data, npc, r['when'])}" if r['when'].is_a?(Hash)
         if r['when'].is_a?(Hash) && tpost && tpost['when'].is_a?(Hash) &&
            %w[cause need].none? { |k| !r['when'][k].nil? && r['when'][k] == tpost['when'][k] }
@@ -2215,5 +2229,268 @@ module ValidateAccessWork
       lines << "ℹ️ Complaint '#{c}': #{rep.empty? ? 'no member' : rep.join(', ')} can reply in place of their vent. " \
                "Possible members: #{who.join(', ')}."
     end
+  end
+
+  # ── reactions (docs/achitechture/FRIENDFACE_REACTIONS_PLAN.md section 8) ─────────────
+
+  DEAD_PHRASES = {
+    never_posts: 'its NPC never posts',
+    when_unreachable: 'its when can never hold',
+    instead_of_dead: 'its insteadOf post can never fire',
+    answer_unopenable: 'no reply can open it',
+    thread_never_opens: 'its thread can never open'
+  }.freeze
+
+  # The reasons a feed post (own post or reply) certainly never comes out, as codes; [] when it
+  # can. Uses the same predicates as check_reply, whose messages stay where they are; the
+  # agreement test in test/js/validator-access-reactions.test.mjs keeps the two in step.
+  def post_dead_reasons(json_data, npc, post, index = feed_post_index(json_data))
+    codes = []
+    codes << :never_posts unless AW.feeds?(npc)
+    codes << :when_unreachable if AW.reactive_post?(post) && !AW.when_reachable?(json_data, npc, post['when'])
+    return codes unless AW.reply_post?(post)
+
+    instead = AW.feed_posts(npc).find { |p| p['id'] == post['insteadOf'] }
+    codes << :instead_of_dead if instead && AW.reactive_post?(instead) && !AW.when_reachable?(json_data, npc, instead['when'])
+    if answer?(npc, post)
+      codes << :answer_unopenable if answer_repliers(json_data, npc, post).empty?
+    else
+      threads = reply_threads(json_data, npc, post, index)
+      if !threads.empty? && threads.none? { |poster, t| AW.feeds?(poster) && (!AW.reactive_post?(t) || AW.when_reachable?(json_data, poster, t['when'])) }
+        codes << :thread_never_opens
+      end
+    end
+    codes
+  end
+
+  def dead_words(codes)
+    codes.map { |c| DEAD_PHRASES[c] }.join(' and ')
+  end
+
+  # The alternative set of own post P: P and every reply standing in for it
+  def alt_set(npc, pid)
+    [pid] + AW.feed_replies(npc).select { |r| r['insteadOf'] == pid }.map { |r| r['id'] }
+  end
+
+  # Section 8's static order helper for reactor X and target T (with its owner): nil when T has no
+  # required post, else { served: [ids certainly served before T], spent: [ids certainly spent] }
+  def reaction_order_bound(json_data, x, owner, target)
+    return nil unless AW.reply_post?(target)
+
+    own = AW.own_feed_posts(x)
+    pid =
+      if AW.present_string?(target['replyTo'])
+        own.find { |p| p['id'] == target['replyTo'] }&.dig('id')
+      elsif AW.present_string?(target['replyToComplaint'])
+        c = target['replyToComplaint']
+        holders = room_npcs(json_data).map { |e| e[:npc] }.reject { |n| n['id'] == owner['id'] || !same_site?(n, owner) }
+                                      .select { |n| AW.own_feed_posts(n).any? { |p| p['complaint'] == c } }
+        mine = own.select { |p| p['complaint'] == c }
+        holders.map { |n| n['id'] } == [x['id']] && mine.size == 1 ? mine[0]['id'] : nil
+      end
+    return nil unless pid
+
+    before = AW.walk_order(x).take_while { |p| p['id'] != pid }.reject { |p| AW.reactive_post?(p) }.map { |p| p['id'] }
+    { served: before + [pid], spent: alt_set(x, pid) - [pid] }
+  end
+
+  # Each well-formed reaction of each reactor, with what the checks found: used by both the
+  # issues and the report lines so the two cannot disagree
+  def reaction_entries(json_data)
+    out = []
+    room_npcs(json_data).each do |e|
+      x = e[:npc]
+      feed = x['feed']
+      next unless feed.is_a?(Hash) && feed.key?('reacts')
+
+      out << { x: x, list: feed['reacts'] }
+    end
+    out
+  end
+
+  def check_reactions(json_data, issues)
+    reaction_analysis(json_data).each { |a| a[:issues].each { |kind, msg| kind == :err ? err(issues, msg) : warn(issues, msg) } }
+  end
+
+  # Per reactor: { x:, issues: [[:err|:warn, msg]], rows: [{ i:, r:, never:, line: }] }
+  def reaction_analysis(json_data)
+    index = feed_post_index(json_data)
+    name = ->(n) { AW.friendface_name(json_data, n) }
+    reaction_entries(json_data).map do |rec|
+      x = rec[:x]
+      xid = x['id']
+      list = rec[:list]
+      found = []
+      rows = []
+      unless list.is_a?(Array)
+        found << [:err, "#{xid}.feed.reacts must be an array of reactions."]
+        next { x: x, issues: found, rows: rows }
+      end
+
+      dead_reactor = false
+      if !AW.feeds?(x) && !list.empty?
+        found << [:warn, "#{xid}.feed.reacts is on an NPC that never posts (no posts, or no paced social_media need): its reactions never come out."]
+        dead_reactor = true
+      elsif !list.empty? && AW.feed_done?(json_data, x, [])
+        found << [:warn, "#{xid} can never post: its reactions never come out."]
+        dead_reactor = true
+      end
+
+      valid = []
+      list.each_with_index do |r, i|
+        tag = "#{xid}.feed.reacts[#{i}]"
+        unless r.is_a?(Hash)
+          found << [:err, "#{tag} is not an object."]
+          next
+        end
+        # `_`-prefixed keys (`_comment`) are annotations, as elsewhere in a scenario
+        (r.keys - AW::REACTION_FIELDS).reject { |k| k.to_s.start_with?('_') }.each do |k|
+          hint = AW::REACTION_FIELDS.find { |f| f.casecmp?(k.to_s) }
+          found << [:warn, "#{tag}: '#{k}' is not a reaction field#{hint ? "; did you mean '#{hint}'?" : ' (to, toComplaint, key, alongside)'}"]
+        end
+        bad = false
+        AW::REACTION_FIELDS.each do |k|
+          next if r[k].nil? || AW.present_string?(r[k])
+
+          found << [:err, "#{tag}.#{k} is present but not a non-empty string."]
+          bad = true
+        end
+        n = %w[to toComplaint].count { |k| !r[k].nil? }
+        if n != 1
+          found << [:err, "#{tag} needs exactly one of to and toComplaint (it has #{n})."]
+          bad = true
+        end
+        if r['key'].nil?
+          found << [:err, "#{tag} has no key."]
+          bad = true
+        elsif AW.present_string?(r['key']) && !AW::REACTION_KEYS.include?(r['key'])
+          found << [:err, "#{tag}.key '#{r['key']}' is not a reaction key (#{AW::REACTION_KEYS.join(', ')})."]
+          bad = true
+        end
+        next if bad
+
+        owner = target = nil
+        if r['to']
+          owner, target = index[r['to']]
+          if !owner
+            found << [:err, "#{tag}.to '#{r['to']}' names no post on any room NPC's feed."]
+            next
+          elsif owner['id'] == xid
+            found << [:err, "#{tag}.to '#{r['to']}' names a post of #{xid}'s own."]
+            next
+          elsif !same_site?(owner, x)
+            found << [:err, "#{tag}.to '#{r['to']}' is on '#{owner.dig('feed', 'site')}', not #{xid}'s site."]
+            next
+          end
+        end
+        vents = []
+        if r['toComplaint']
+          vents = room_npcs(json_data).map { |e| e[:npc] }.reject { |o| o['id'] == xid || !same_site?(o, x) }
+                                      .flat_map { |o| AW.own_feed_posts(o).select { |p| p['complaint'] == r['toComplaint'] }.map { |p| [o, p] } }
+          if vents.empty?
+            found << [:err, "#{tag}.toComplaint '#{r['toComplaint']}' is carried by no own post on another NPC's feed on the same site."]
+            next
+          end
+        end
+        along = nil
+        if r['alongside']
+          along = AW.feed_posts(x).find { |p| p['id'] == r['alongside'] }
+          unless along
+            found << [:err, "#{tag}.alongside '#{r['alongside']}' names no post or reply of #{xid}."]
+            next
+          end
+        end
+        valid << { i: i, r: r, tag: tag, owner: owner, target: target, vents: vents, along: along }
+      end
+
+      valid.each do |v|
+        r = v[:r]
+        tag = v[:tag]
+        never = dead_reactor
+        if v[:target]
+          codes = post_dead_reasons(json_data, v[:owner], v[:target], index)
+          unless codes.empty?
+            found << [:warn, "#{tag}: '#{r['to']}' never comes out (#{dead_words(codes)}): this reaction never comes out."]
+            never = true
+          end
+        elsif v[:vents].all? { |o, p| !post_dead_reasons(json_data, o, p, index).empty? }
+          found << [:warn, "#{tag}: no '#{r['toComplaint']}' vent on another NPC's feed can ever come out: this reaction never comes out."]
+          never = true
+        end
+        bound = v[:target] && reaction_order_bound(json_data, x, v[:owner], v[:target])
+        if v[:along] && !dead_reactor
+          codes = post_dead_reasons(json_data, x, v[:along], index)
+          if !codes.empty?
+            found << [:warn, "#{tag}: '#{r['alongside']}' never comes out (#{dead_words(codes)}): this reaction never comes out."]
+            never = true
+          elsif bound && (bound[:served].include?(r['alongside']) || bound[:spent].include?(r['alongside']))
+            found << [:warn, "#{tag}: '#{r['alongside']}' always comes out before '#{r['to']}': this reaction never comes out."]
+            never = true
+          end
+        end
+        v[:never] = never
+        v[:finished] = bound && AW.feed_done?(json_data, x, bound[:served])
+        v[:bound] = bound
+      end
+
+      # Two reactions by one NPC that can land on the same post
+      valid.combination(2).each do |a, b|
+        ra = a[:r]
+        rb = b[:r]
+        clash =
+          (ra['to'] && ra['to'] == rb['to']) ||
+          (ra['toComplaint'] && ra['toComplaint'] == rb['toComplaint']) ||
+          (ra['to'] && rb['toComplaint'] && a[:target] && !AW.reply_post?(a[:target]) && a[:target]['complaint'] == rb['toComplaint']) ||
+          (rb['to'] && ra['toComplaint'] && b[:target] && !AW.reply_post?(b[:target]) && b[:target]['complaint'] == ra['toComplaint'])
+        next unless clash
+
+        if ra['alongside'] && rb['alongside'] && ra['alongside'] != rb['alongside']
+          sets = AW.own_feed_posts(x).map { |p| alt_set(x, p['id']) }
+          next if sets.any? { |s| s.include?(ra['alongside']) && s.include?(rb['alongside']) }
+        end
+        found << [:warn, "#{a[:tag]} and #{b[:tag]} can land on the same post: only the first to come out shows."]
+      end
+
+      xn = name.call(x)
+      valid.each do |v|
+        r = v[:r]
+        what =
+          if r['to']
+            "#{name.call(v[:owner])}'s '#{r['to']}'"
+          else
+            "the oldest '#{r['toComplaint']}' vent#{r['alongside'] ? ' out by then' : ''}"
+          end
+        line = "ℹ️ Reaction #{xn} reacts #{r['key']} to #{what}"
+        line += if r['alongside']
+                  # The toComplaint form already says "out by then" in `what`
+                  r['to'] ? ", alongside '#{r['alongside']}', if '#{r['to']}' is out by then" : ", alongside '#{r['alongside']}'"
+        elsif v[:finished]
+                  ", with it, since #{xn} has finished posting by then"
+        else
+                  ", with #{xn}'s first post after it, or with it if #{xn} has finished posting by then"
+        end
+        ends = []
+        if v[:never]
+          ends = ['never comes out']
+        else
+          if v[:target] && !AW.reply_post?(v[:target]) && AW.feed_replies(v[:owner]).any? { |p| p['insteadOf'] == r['to'] }
+            ends << "only if '#{r['to']}' comes out, not a reply in its place"
+          end
+          if r['alongside'] && AW.set_member_ids(x).include?(r['alongside']) &&
+             !(v[:bound] && v[:bound][:spent].include?(r['alongside']))
+            ends << "#{ends.empty? ? 'only if ' : ''}'#{r['alongside']}' is the member served"
+          end
+        end
+        # Two endings only when the first is the "not a reply in its place" one: the comma keeps
+        # the second out of that "not"
+        line += " (#{ends.join(', and ')})" unless ends.empty?
+        rows << { i: v[:i], line: "#{line}." }
+      end
+      { x: x, issues: found, rows: rows }
+    end
+  end
+
+  def reaction_report_lines(json_data, lines)
+    reaction_analysis(json_data).each { |a| a[:rows].each { |row| lines << row[:line] } }
   end
 end

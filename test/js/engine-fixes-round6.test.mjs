@@ -143,7 +143,9 @@ function phoneUnderTest({ closeDuringChoice }) {
     const tagsRun = [];
     const processGameActionTags = (tags, ui) => { tagsRun.push({ tags, ui }); };
     const phoneStepLines = (text) => (text ? [text] : []);
-    const handleChoice = new Function('processGameActionTags', 'phoneStepLines', 'delay',
+    const stepDeliveries = (n) => new Array(n).fill(null);
+    const deliveryFromTags = () => null;
+    const handleChoice = new Function('processGameActionTags', 'phoneStepLines', 'delay', 'stepDeliveries', 'deliveryFromTags',
         `return (async function(${params.join(',')}) { ${body} });`);
     const npc = { id: 'hax', storyState: 'BEFORE' };
     const history = [];
@@ -180,7 +182,7 @@ function phoneUnderTest({ closeDuringChoice }) {
         const [p, b] = methodParts(phoneSrc, name);
         self[name] = new Function('processGameActionTags', 'partitionSlowTags', `return function(${p.join(',')}) { ${b} }`)(processGameActionTags, partitionSlowTags);
     }
-    return { self, npc, history, tagsRun, run: (i) => handleChoice(processGameActionTags, phoneStepLines, () => Promise.resolve()).call(self, i) };
+    return { self, npc, history, tagsRun, run: (i) => handleChoice(processGameActionTags, phoneStepLines, () => Promise.resolve(), stepDeliveries, deliveryFromTags).call(self, i) };
 }
 
 test('m06 M3: a choice whose own output closes the phone is saved as taken', async () => {
@@ -210,7 +212,8 @@ test('m08: Add to Notepad uses the 16 px notes icon, drawn at its own size', () 
         'minigames/vm-launcher/vm-launcher-minigame.js']) {
         const src = read(rel);
         assert.ok(!src.includes('notes-sm.png'), `${rel}: no 9 px icon blown up to a white square`);
-        assert.match(src, /icons\/notes\.png" alt="Notepad" class="icon-small/);
+        // alt is "Notepad", or empty where the button carries the word and an aria-label (phone status bar)
+        assert.match(src, /icons\/notes\.png" alt="(?:Notepad)?" class="icon-small/);
     }
     // notes.png is 16x16, and .icon-small draws at 16x16
     const png = readFileSync(join(pub, 'assets/icons/notes.png'));

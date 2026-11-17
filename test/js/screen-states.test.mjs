@@ -79,8 +79,8 @@ function world({ objects, textures = ['pc_desktop', 'pc_desktop_locked', 'pc6'],
     return { d, played, globals, sprites, ws, left: (id) => d.emit(`npc_left_post:${id}`, { npcId: id }), back: (id) => d.emit(`npc_returned_post:${id}`, { npcId: id }) };
 }
 
-const pcA = (extra = {}) => ({ data: { id: 'pc_a', type: 'pc', workstation: true, ...extra }, key: 'pc_desktop' });
-const pcB = (extra = {}) => ({ data: { id: 'pc_b', type: 'pc', workstation: true, locksScreenOnLeave: false, ...extra }, key: 'pc_desktop' });
+const pcA = (extra = {}) => ({ data: { id: 'pc_a', type: 'pc', workstation: true, owner: 'ann', ...extra }, key: 'pc_desktop' });
+const pcB = (extra = {}) => ({ data: { id: 'pc_b', type: 'pc', workstation: true, locksScreenOnLeave: false, owner: 'bob', ...extra }, key: 'pc_desktop' });
 
 test('lockedKey: <key>_locked when that texture is loaded, else null; built from the key it is given', () => {
     const has = (k) => ['pc_desktop_locked', 'pc3_locked'].includes(k);
@@ -135,7 +135,7 @@ test('an owner who leaves the screen open: no transition and no sound, on the le
 });
 
 test('sound only when audible and the PC is in the player\'s room; the look and the record follow anyway', () => {
-    const w = world({ objects: [{ data: { id: 'pc_c', type: 'pc', workstation: true }, key: 'pc_desktop', room: 'far' }] });
+    const w = world({ objects: [{ data: { id: 'pc_c', type: 'pc', workstation: true, owner: 'cat' }, key: 'pc_desktop', room: 'far' }] });
     const ss = new ScreenStates().install();
     w.left('cat');
     assert.equal(w.sprites.pc_c.texture.key, 'pc_desktop_locked');
@@ -155,7 +155,7 @@ test('sound only when audible and the PC is in the player\'s room; the look and 
 });
 
 test('a base with no <key>_locked texture keeps its texture and size, and still sounds and records', () => {
-    const w = world({ objects: [{ data: { id: 'pc_a', type: 'pc', workstation: true }, key: 'pc6' }] });
+    const w = world({ objects: [{ data: { id: 'pc_a', type: 'pc', workstation: true, owner: 'ann' }, key: 'pc6' }] });
     const ss = new ScreenStates().install();
     w.left('ann');
     w.back('ann');
@@ -168,7 +168,7 @@ test('a base with no <key>_locked texture keeps its texture and size, and still 
 
 test('the locked key is built from the sprite\'s real texture key, not the object\'s type', () => {
     // type "pc" on a map item drawn as pc6: pc_desktop_locked is loaded but must not be used
-    const w = world({ objects: [{ data: { id: 'pc_a', type: 'pc', workstation: true }, key: 'pc6' }] });
+    const w = world({ objects: [{ data: { id: 'pc_a', type: 'pc', workstation: true, owner: 'ann' }, key: 'pc6' }] });
     new ScreenStates().install();
     w.left('ann');
     assert.equal(w.sprites.pc_a.texture.key, 'pc6');
@@ -214,6 +214,38 @@ test('a password session hides the padlock and its end shows it again, both sile
     assert.equal(ss.transitions.length, n);
 });
 
+test('K3a (3.8): a credential session hides the padlock like a password session, its end shows it again, both silent; a claim still never hides it', () => {
+    const w = world({ objects: [pcA()] });
+    const ss = new ScreenStates().install();
+    const sessions = new Map();
+    window.pcSessions = { has: (id) => sessions.has(id), get: (id) => sessions.get(id) || null };
+    w.left('ann');
+    w.played.length = 0;
+    sessions.set('pc_a', { pcId: 'pc_a', via: 'credential', kind: 'saved_connection', label: 'HB-FIN-02.rdp' });
+    w.d.emit('pc_signed_in', { pcId: 'pc_a' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop', 'the desktop look');
+    sessions.delete('pc_a');
+    w.d.emit('pc_signed_out', { pcId: 'pc_a' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked');
+    assert.deepEqual(w.played, [], 'no sound either way');
+    assert.deepEqual(ss.transitions.slice(1).map(t => [t.locked, t.sound]), [[false, null], [true, null]]);
+    const n = ss.transitions.length;
+    sessions.set('pc_a', { pcId: 'pc_a', via: 'claim' });
+    w.d.emit('pc_signed_in', { pcId: 'pc_a' });
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked', 'a claim keeps the lock');
+    assert.equal(ss.transitions.length, n);
+});
+
+test('K3a (3.8): a credential session held across the owner\'s leave keeps the base look, with no sound', () => {
+    const w = world({ objects: [pcA()] });
+    window.pcSessions = { get: () => ({ pcId: 'pc_a', via: 'credential', kind: 'saved_connection', label: 'a.rdp' }) };
+    const ss = new ScreenStates().install();
+    w.left('ann'); w.back('ann');
+    assert.deepEqual(w.sprites.pc_a.setCalls, []);
+    assert.deepEqual(w.played, []);
+    assert.deepEqual(ss.transitions, []);
+});
+
 test('an auto lock with a claimed session held sounds at once, whatever the listener order (the real tick path)', () => {
     // The workstation state's own policy, clock and tick: its _checkAutoLock sets the state and emits
     let clock = 0;
@@ -253,7 +285,7 @@ test('an owner knocked out at the desk: the padlock shows with no lock sound; th
 
 // Code review R1 m4: currentPlayerRoom is '' while the player's feet are in no room's floor.
 test('in a doorway or gap the last room the player stood in still hears the sound; another room does not', () => {
-    const w = world({ objects: [pcA(), { data: { id: 'pc_c', type: 'pc', workstation: true }, key: 'pc_desktop', room: 'far' }] });
+    const w = world({ objects: [pcA(), { data: { id: 'pc_c', type: 'pc', workstation: true, owner: 'cat' }, key: 'pc_desktop', room: 'far' }] });
     new ScreenStates().install();
     window.currentPlayerRoom = '';
     window.lastPlayerRoom = 'office';
@@ -282,6 +314,25 @@ test('a password session held across the owner\'s leave keeps the base look, wit
     assert.deepEqual(w.sprites.pc_a.setCalls, []);
     assert.deepEqual(w.played, []);
     assert.deepEqual(ss.transitions, []);
+});
+
+test('K3c (3.8): a relay session held across the owner\'s leave does not keep the base look: the screen locks with its sound', () => {
+    const w = world({ objects: [pcA()] });
+    window.pcSessions = { get: () => ({ pcId: 'pc_a', via: 'credential', kind: 'assist_invite', relay: true }) };
+    const ss = new ScreenStates().install();
+    w.left('ann');
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop_locked');
+    assert.deepEqual(w.played, [LOCK_SOUND]);
+    assert.deepEqual(ss.transitions.map(t => [t.locked, t.sound]), [[true, LOCK_SOUND]]);
+});
+
+test('K3c: only a relay is exempt from the held-session rule; a credential session without relay still keeps the base look', () => {
+    const w = world({ objects: [pcA()] });
+    window.pcSessions = { get: () => ({ pcId: 'pc_a', via: 'credential', relay: false }) };
+    new ScreenStates().install();
+    w.left('ann');
+    assert.equal(w.sprites.pc_a.texture.key, 'pc_desktop');
+    assert.deepEqual(w.played, []);
 });
 
 test('transitions keeps the last 50', () => {
@@ -325,7 +376,7 @@ test('the install pass and syncRoom show an owner already away and locked, silen
     assert.deepEqual(ss.transitions.map(t => [t.locked, t.sound]), [[true, null]]);
     // A room made later (its station found after the leave): syncRoom, silent, and the late
     // roll writes the globals the dot and the texts read
-    const late = sprite({ id: 'pc_c', type: 'pc', workstation: true }, 'pc_desktop');
+    const late = sprite({ id: 'pc_c', type: 'pc', workstation: true, owner: 'cat' }, 'pc_desktop');
     w.ws.onLeft('cat');
     window.rooms.far.objects.obj_pc_c = late;
     window.currentPlayerRoom = 'far';

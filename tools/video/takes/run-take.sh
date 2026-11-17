@@ -2,7 +2,7 @@
 # run-take.sh <mission> <take-id> ["<new-game flags>"] ["<record-take flags>"]
 #   <mission> is a folder under tools/video/takes/ (m01, m02, sis01 ...) or a scenario id (m02_ransomed_trust).
 # Creates a fresh game of that mission, records tools/video/takes/<mission>/<id>.mjs on display 97, checks it, deletes the raw .mkv on pass.
-# Outputs in video_out/<mission>/takes/<id>.* . Requires VIDEO_STATE_DIR and env-up.sh 97 (or BE_DISPLAY=<n>). Missions: see mission.sh.
+# Outputs in $FOOTAGE_ROOT/<mission>/takes/<id>.* (default /data/footage, the catalogue library). Requires VIDEO_STATE_DIR and env-up.sh 97 (or BE_DISPLAY=<n>). Missions: see mission.sh.
 # Old form still works and means m01:  run-take.sh <take-id> ["<new-game flags>"] ["<record-take flags>"]
 #
 # LIVE mode (the keyed dev Hacktivity server on :3000, so every voiced line plays, cached or not):
@@ -30,7 +30,11 @@ export LANG=C.UTF-8 LC_ALL=C.UTF-8 BUNDLE_FORCE_RUBY_PLATFORM=true BE_DB_USER=ro
 NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
 [ "$NODE_MAJOR" -ge 18 ] || { [ -x "$HOME/.local/node/bin/node" ] && export PATH="$HOME/.local/node/bin:$PATH"; }
 cd "$ROOT"
-OUT="$ROOT/video_out/$KEY/takes"; mkdir -p "$OUT"
+# Output into the canonical footage library (FOOTAGE_ROOT, default /data/footage); a new take and
+# its draft sidecar land beside the rest of the mission's footage. Override FOOTAGE_ROOT for a scratch
+# run. (Pre-migration this was $ROOT/video_out/<mission>/takes; now a symlink to the archive.)
+FOOTAGE_ROOT="${FOOTAGE_ROOT:-/data/footage}"
+OUT="$FOOTAGE_ROOT/$KEY/takes"; mkdir -p "$OUT"
 DISPLAY_N="${BE_DISPLAY:-97}"
 if [ -n "${LIVE_URL:-}" ]; then
   [ -z "$NG" ] || { echo "LIVE_URL: no new game is made, so the new-game flags must be empty (got: $NG)" >&2; exit 2; }

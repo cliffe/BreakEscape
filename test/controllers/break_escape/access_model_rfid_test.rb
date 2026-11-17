@@ -235,11 +235,21 @@ module BreakEscape
       assert_response :success
     end
 
-    test 'a mixed door keeps the trusted rule for a requires card' do
-      build
+    # The client opens a held requires card directly, with no card_ids (unlock-system.js step
+    # 1a): a mixed door opens for the held VISITOR-07 that way.
+    test 'a mixed door opens for a held requires card with no card_ids' do
+      build('inventory' => [keycard_item('visitor_badge')])
       door('mixed')
       assert_response :success
       assert_includes @game.reload.player_state['unlockedRooms'], 'mixed'
+    end
+
+    # The trust gap: a mixed (or requires-only) rfid door must refuse a player who holds no
+    # card and no clone, whether or not card_ids are sent.
+    test 'a mixed door with no card held is refused' do
+      build
+      assert_refused door('mixed')
+      refute_includes Array(@game.reload.player_state['unlockedRooms']), 'mixed'
     end
 
     test 'a mixed door opens for a held card in requires and for an admitted identity' do
@@ -301,6 +311,69 @@ module BreakEscape
       assert_response :success, body.inspect
       refute body.key?('cardId')
       refute body.key?('viaCopy')
+    end
+
+    # ---- requires-only rfid locks: server-held proof (trust gap fix) -------------------
+
+    # Builds a game with a requires-only rfid door 'badge_door' (requires BADGE-OPEN) and the
+    # given inventory, and a lobby-room keycard that opens it by opens_lock and no card_id (the
+    # m01/m02/m05 shape). The player starts in the lobby so held_* read the inventory as given.
+    def requires_only_build(inventory)
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                      'lockType' => 'rfid', 'requires' => ['BADGE-OPEN'] }
+      data['rooms']['lobby']['objects'] << { 'id' => 'opens_lock_badge', 'type' => 'keycard',
+                                             'name' => 'Facility badge', 'opens_lock' => 'BADGE-OPEN',
+                                             'rfid_protocol' => 'EM4100', 'takeable' => true }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'encounteredNPCs' => %w[len jake dana exec imran gary],
+                                                 'inventory' => inventory })
+    end
+
+    test 'a requires-only rfid door with no card held is refused' do
+      requires_only_build([])
+      assert_refused door('badge_door')
+      refute_includes Array(@game.reload.player_state['unlockedRooms']), 'badge_door'
+    end
+
+    # A keycard that carries only opens_lock (no card_id) must open its requires-only door, the
+    # same id the client resolves with lockRef (the m01/m02/m05/sis02 shape).
+    test 'a requires-only rfid door opens for a held opens_lock keycard' do
+      badge = { 'id' => 'opens_lock_badge', 'type' => 'keycard', 'name' => 'Facility badge',
+                'opens_lock' => 'BADGE-OPEN', 'rfid_protocol' => 'EM4100', 'takeable' => true }
+      requires_only_build([badge])
+      assert door('badge_door')['success'], 'the opens_lock keycard opens the requires-only door'
+    end
+
+    # A recorded clone of the required card (while the cloner is held) opens a requires-only door.
+    test 'a requires-only rfid door opens for a recorded clone' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                      'lockType' => 'rfid', 'requires' => [JAKE_CARD_ID] }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'encounteredNPCs' => %w[jake], 'inventory' => [CLONER.dup] })
+      assert_equal true, clone_card(JAKE_CARD_ID, npc_id: 'jake')['recorded']
+      assert door('badge_door')['success'], 'a recorded clone opens the requires-only door'
+    end
+
+    # A DESFire UID-only clone opens a requires-only door only when it accepts UID-only.
+    test 'a requires-only rfid door refuses a UID-only clone unless acceptsUIDOnly' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['uid_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                    'lockType' => 'rfid', 'requires' => [EXEC_CARD_ID] }
+      data['rooms']['uid_ok_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                       'lockType' => 'rfid', 'requires' => [EXEC_CARD_ID], 'acceptsUIDOnly' => true }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'encounteredNPCs' => %w[exec], 'inventory' => [CLONER.dup] })
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      assert_refused door('uid_door')
+      assert door('uid_ok_door')['success'], 'the UID-only clone opens a door that accepts UID-only'
     end
 
     test 'a UID-only copy at a lock without acceptsUIDOnly is refused with no card named' do
@@ -463,6 +536,110 @@ module BreakEscape
       assert_equal 'VISITOR-07', stored['card_id'], 'the server card_id survived the round trip'
       # mixed is locked rfid, requires VISITOR-07: the re-picked badge still opens it.
       assert door('mixed', card_ids: ['VISITOR-07'])['success'], 'the re-picked keycard still opens the rfid door'
+    end
+
+    # ---- POST /unlock, a revoked card (the left-card consequence, §3.3b) --------------
+
+    # A cancelled keycard no longer opens an access-list door, though the identity it carries
+    # still admits. The cancellation lives in the revoked_card_ids global, which the client syncs.
+    test 'a revoked keycard no longer opens an access-list door' do
+      build('inventory' => [keycard_item('jake_spare')],
+            'globalVariables' => { 'revoked_card_ids' => [JAKE_CARD_ID] })
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+      refute_includes @game.reload.player_state['unlockedRooms'], 'records'
+    end
+
+    # A saved clone of a cancelled card is dead too, even while the copier is held.
+    test 'a revoked card\'s saved clone no longer opens an access-list door' do
+      build('inventory' => [CLONER.dup], 'globalVariables' => { 'revoked_card_ids' => [JAKE_CARD_ID] })
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+    end
+
+    # Cheat policy q78: access honest play reached must not be refused. A revoked id in the list
+    # must not block a live card that also admits the door.
+    test 'a revoked card in the list does not block a live card that also admits' do
+      build('inventory' => [keycard_item('jake_spare'), keycard_item('visitor_badge')],
+            'globalVariables' => { 'revoked_card_ids' => ['VISITOR-07'] })
+      body = door('records', card_ids: ['VISITOR-07', JAKE_CARD_ID])
+      assert_response :success, body.inspect
+      assert_equal JAKE_CARD_ID, body['cardId']
+    end
+
+    # A requires-only rfid door (the trusted path, no access list): the server still refuses a
+    # held-but-revoked required card, whether or not the client sends card_ids.
+    test 'a revoked card is refused at a requires-only rfid door' do
+      data = AccessModelScenario.routes_scenario
+      data['rooms']['badge_door'] = { 'type' => 'room_office', 'connections' => {}, 'locked' => true,
+                                      'lockType' => 'rfid', 'requires' => ['VISITOR-07'] }
+      @game = create_access_game(mission: break_escape_missions(:ceo_exfil), player: break_escape_demo_users(:test_user),
+                                 scenario: data,
+                                 player_state: { 'currentRoom' => 'lobby', 'unlockedRooms' => ['lobby'],
+                                                 'inventory' => [keycard_item('visitor_badge')],
+                                                 'globalVariables' => { 'revoked_card_ids' => ['VISITOR-07'] } })
+      assert_refused door('badge_door')
+      assert_refused door('badge_door', card_ids: ['VISITOR-07'])
+      refute_includes @game.reload.player_state['unlockedRooms'], 'badge_door'
+    end
+
+    # A mixed door (requires VISITOR-07 or the it role): the revoked requires card is refused.
+    test 'a revoked requires card is refused at a mixed door' do
+      build('inventory' => [keycard_item('visitor_badge')],
+            'globalVariables' => { 'revoked_card_ids' => ['VISITOR-07'] })
+      assert_refused door('mixed', card_ids: ['VISITOR-07'])
+    end
+
+    # ---- POST /unlock, one copy per Emulate (UX slice 3b, q97) -------------------------
+    # Regression pins: the server is unchanged by the slice. The copier's Emulate now sends
+    # the one copy the player picked; the server still decides from its own records.
+
+    test 'Emulate: a single-id request for a recorded copy opens the door and says only viaCopy' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      body = door('records', card_ids: [JAKE_CARD_ID])
+      assert_response :success, body.inspect
+      assert_equal true, body['viaCopy']
+      refute body.key?('cardId')
+      assert_includes @game.reload.player_state['unlockedRooms'], 'records'
+    end
+
+    # Review R1 m1: once a door is open, any request is granted, so the answer names no card.
+    # Otherwise a request per remaining copy would tell the player which ones the list admits.
+    test 'Emulate: after a copy opened the door, further requests say nothing about the cards sent' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      assert_equal true, door('records', card_ids: [JAKE_CARD_ID])['viaCopy']
+      [[JAKE_CARD_ID], [EXEC_CARD_ID], [JAKE_CARD_ID, EXEC_CARD_ID]].each do |ids|
+        body = door('records', card_ids: ids)
+        assert_response :success, body.inspect
+        assert_equal true, body['success']
+        refute body.key?('viaCopy'), "no viaCopy for #{ids.inspect}"
+        refute body.key?('cardId'), "no cardId for #{ids.inspect}"
+        # It says the door was open already, so the toast credits no card (R2 m2)
+        assert_equal true, body['alreadyOpen'], "alreadyOpen for #{ids.inspect}"
+      end
+    end
+
+    test 'Emulate: a single-id request for a copy the server never saw made is refused' do
+      build('inventory' => [CLONER.dup])
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+      refute_includes @game.reload.player_state['unlockedRooms'], 'records'
+    end
+
+    test 'Emulate: a single-id request for a recorded copy of a cancelled card is refused' do
+      build('inventory' => [CLONER.dup])
+      clone_card(JAKE_CARD_ID, npc_id: 'jake')
+      @game.reload
+      @game.player_state['globalVariables'] = { 'revoked_card_ids' => [JAKE_CARD_ID] }
+      @game.save!
+      assert_refused door('records', card_ids: [JAKE_CARD_ID])
+    end
+
+    test 'Emulate: a single-id request for a UID-only copy is refused with reason uid_only' do
+      build('inventory' => [CLONER.dup])
+      clone_card(EXEC_CARD_ID, npc_id: 'exec')
+      assert_refused door('exec_suite', card_ids: [EXEC_CARD_ID]), reason: 'uid_only'
     end
 
     private

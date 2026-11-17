@@ -1,0 +1,13 @@
+{
+  "key": "e099d206a90239aa27cf6b8357e77cba",
+  "npc": "jodie",
+  "text": "Someone's brought a cake in!",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:15:23Z"
+}

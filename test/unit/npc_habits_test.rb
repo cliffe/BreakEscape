@@ -98,56 +98,56 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert_equal 1, NH.lock_chance('always')
   end
 
-  test 'locksScreen fills screenHabit for the owner of a workstation and of a sign-in PC, and no object gains a field' do
+  test 'locksScreen fills habits.screen for the owner of a workstation and of a sign-in PC, and no object gains a field' do
     { 'never' => 0, 'sometimes' => 0.5, 'always' => 1 }.each do |value, chance|
       [{ 'workstation' => true }, { 'lockType' => 'login' }].each do |kind|
-        pc = { 'type' => 'pc', 'id' => 'jake_pc' }.merge(kind)
+        pc = { 'type' => 'pc', 'id' => 'jake_pc', 'owner' => 'jake' }.merge(kind)
         data = scenario_with([npc('needsHome' => 'jake_pc', 'habits' => { 'locksScreen' => value })], [pc])
         before = deep(pc)
         NH.expand!(data)
-        assert_equal({ 'lockChance' => chance }, data['rooms']['office']['npcs'][0]['screenHabit'], "#{value} #{kind}")
+        assert_equal({ 'lockChance' => chance }, data['rooms']['office']['npcs'][0]['habits']['screen'], "#{value} #{kind}")
         assert_equal before, data['rooms']['office']['objects'][0], 'the PC is not written'
       end
     end
   end
 
-  test 'ownership through screenOwner and through needsHome' do
+  test 'ownership through an explicit owner on each PC' do
     data = scenario_with(
       [npc('id' => 'jake', 'awareness' => 'low'), npc('id' => 'mia', 'awareness' => 'high', 'needsHome' => 'mia_pc')],
-      [{ 'type' => 'pc', 'id' => 'desk_1', 'workstation' => true, 'screenOwner' => 'jake' },
-       { 'type' => 'pc', 'id' => 'mia_pc', 'lockType' => 'login' }]
+      [{ 'type' => 'pc', 'id' => 'desk_1', 'workstation' => true, 'owner' => 'jake' },
+       { 'type' => 'pc', 'id' => 'mia_pc', 'lockType' => 'login', 'owner' => 'mia' }]
     )
     report = NH.expand!(data)
     npcs = data['rooms']['office']['npcs']
-    assert_equal({ 'lockChance' => 0 }, npcs[0]['screenHabit'])
-    assert_equal({ 'lockChance' => 1 }, npcs[1]['screenHabit'])
+    assert_equal({ 'lockChance' => 0 }, npcs[0]['habits']['screen'])
+    assert_equal({ 'lockChance' => 1 }, npcs[1]['habits']['screen'])
     assert_equal ['desk_1'], report_for(report, 'jake')[:screen][:pcs].map { |pc| pc[:id] }
     assert_equal ['mia_pc'], report_for(report, 'mia')[:screen][:pcs].map { |pc| pc[:id] }
   end
 
-  test 'a needsHome that names a stamped id is owned in the copy' do
+  test 'an owner on an id-less PC owns its stamped id in the copy' do
     data = scenario_with([npc('needsHome' => 'office_pc_0', 'awareness' => 'low')],
-                         [{ 'type' => 'pc', 'workstation' => true }])
+                         [{ 'type' => 'pc', 'workstation' => true, 'owner' => 'jake' }])
     copy, report = NH.expanded_copy(data)
-    assert_equal({ 'lockChance' => 0 }, copy['rooms']['office']['npcs'][0]['screenHabit'])
+    assert_equal({ 'lockChance' => 0 }, copy['rooms']['office']['npcs'][0]['habits']['screen'])
     assert_equal ['office_pc_0'], report_for(report, 'jake')[:screen][:pcs].map { |pc| pc[:id] }
   end
 
-  test 'an NPC who owns two PCs gets one screenHabit and both PCs are listed' do
+  test 'an NPC who owns two PCs gets one habits.screen and both PCs are listed' do
     data = scenario_with([npc('awareness' => 'medium', 'needsHome' => 'pc_a')],
-                         [{ 'type' => 'pc', 'id' => 'pc_a', 'workstation' => true },
-                          { 'type' => 'pc', 'id' => 'pc_b', 'lockType' => 'login', 'screenOwner' => 'jake' }])
+                         [{ 'type' => 'pc', 'id' => 'pc_a', 'workstation' => true, 'owner' => 'jake' },
+                          { 'type' => 'pc', 'id' => 'pc_b', 'lockType' => 'login', 'owner' => 'jake' }])
     report = NH.expand!(data)
-    assert_equal({ 'lockChance' => 0.5 }, data['rooms']['office']['npcs'][0]['screenHabit'])
+    assert_equal({ 'lockChance' => 0.5 }, data['rooms']['office']['npcs'][0]['habits']['screen'])
     assert_equal %w[pc_a pc_b], report_for(report, 'jake')[:screen][:pcs].map { |pc| pc[:id] }.sort
   end
 
   test 'an owned PC with its own lock field keeps it and is reported not applied there' do
     data = scenario_with([npc('awareness' => 'low', 'needsHome' => 'pc_a')],
-                         [{ 'type' => 'pc', 'id' => 'pc_a', 'workstation' => true, 'lockChance' => 1 },
-                          { 'type' => 'pc', 'id' => 'pc_b', 'lockType' => 'login', 'screenOwner' => 'jake' }])
+                         [{ 'type' => 'pc', 'id' => 'pc_a', 'workstation' => true, 'lockChance' => 1, 'owner' => 'jake' },
+                          { 'type' => 'pc', 'id' => 'pc_b', 'lockType' => 'login', 'owner' => 'jake' }])
     report = NH.expand!(data)
-    assert_equal({ 'lockChance' => 0 }, data['rooms']['office']['npcs'][0]['screenHabit'])
+    assert_equal({ 'lockChance' => 0 }, data['rooms']['office']['npcs'][0]['habits']['screen'])
     assert_equal 1, data['rooms']['office']['objects'][0]['lockChance']
     pcs = report_for(report, 'jake')[:screen][:pcs].to_h { |pc| [pc[:id], pc] }
     refute pcs['pc_a'][:applied]
@@ -155,33 +155,33 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert pcs['pc_b'][:applied]
   end
 
-  test 'every PC sets a lock field, or no workstation: no screenHabit' do
+  test 'every PC sets a lock field, or no workstation: no habits.screen' do
     data = scenario_with([npc('awareness' => 'low', 'needsHome' => 'pc_a'), npc('id' => 'ian', 'awareness' => 'high')],
-                         [{ 'type' => 'pc', 'id' => 'pc_a', 'lockType' => 'login', 'locksScreenOnLeave' => true }])
+                         [{ 'type' => 'pc', 'id' => 'pc_a', 'lockType' => 'login', 'locksScreenOnLeave' => true, 'owner' => 'jake' }])
     report = NH.expand!(data)
     npcs = data['rooms']['office']['npcs']
-    refute npcs[0].key?('screenHabit')
-    refute npcs[1].key?('screenHabit')
+    refute (npcs[0]['habits'] || {}).key?('screen')
+    refute (npcs[1]['habits'] || {}).key?('screen')
     assert_equal :every_pc_sets_a_field, report_for(report, 'jake')[:screen][:reason]
     assert_equal :no_workstation, report_for(report, 'ian')[:screen][:reason]
   end
 
-  test 'an authored screenHabit is kept exactly and reported habit not applied' do
+  test 'an authored habits.screen is kept exactly and reported habit not applied' do
     [{ 'lockIfAwayOverSeconds' => 20 }, 'sometimes'].each do |authored|
-      data = scenario_with([npc('awareness' => 'high', 'needsHome' => 'pc_a', 'screenHabit' => authored)],
+      data = scenario_with([npc('awareness' => 'high', 'needsHome' => 'pc_a', 'habits' => { 'screen' => authored })],
                            [{ 'type' => 'pc', 'id' => 'pc_a', 'workstation' => true }])
       report = NH.expand!(data)
-      assert_equal authored, data['rooms']['office']['npcs'][0]['screenHabit']
+      assert_equal authored, data['rooms']['office']['npcs'][0]['habits']['screen']
       screen = report_for(report, 'jake')[:screen]
       refute screen[:filled]
       assert_equal :authored_screen_habit, screen[:reason]
     end
   end
 
-  test 'a workstation with no id beside an NPC with no needsHome: no screenHabit and no owner' do
+  test 'a workstation with no id beside an NPC with no needsHome: no habits.screen and no owner' do
     data = scenario_with([npc('awareness' => 'low')], [{ 'type' => 'pc', 'workstation' => true }])
     report = NH.expand!(data)
-    refute data['rooms']['office']['npcs'][0].key?('screenHabit')
+    refute (data['rooms']['office']['npcs'][0]['habits'] || {}).key?('screen')
     screen = report_for(report, 'jake')[:screen]
     assert_empty screen[:pcs]
     assert_equal :no_workstation, screen[:reason]
@@ -233,8 +233,8 @@ class NpcHabitsTest < ActiveSupport::TestCase
     data = scenario_with(
       [npc('awareness' => 'low', 'needsHome' => 'office_pc_1'), npc('id' => 'mia', 'awareness' => 'high')],
       [{ 'type' => 'desk', 'contents' => [{ 'type' => 'notes' }, { 'type' => 'box', 'contents' => [{ 'type' => 'key' }] }] },
-       { 'type' => 'pc', 'workstation' => true },
-       { 'type' => 'pc', 'lockType' => 'login', 'screenOwner' => 'mia' }]
+       { 'type' => 'pc', 'workstation' => true, 'owner' => 'jake' },
+       { 'type' => 'pc', 'lockType' => 'login', 'owner' => 'mia' }]
     )
     before = deep(data)
     copy, report = NH.expanded_copy(data)
@@ -247,14 +247,14 @@ class NpcHabitsTest < ActiveSupport::TestCase
     assert_equal 'office_pc_1', objects[1]['id']
 
     npcs = copy['rooms']['office']['npcs']
-    assert_equal({ 'lockChance' => 0 }, npcs[0]['screenHabit'], 'owned through a needsHome naming its stamped id')
-    assert_equal({ 'lockChance' => 1 }, npcs[1]['screenHabit'], 'owned through a screenOwner on an id-less PC')
+    assert_equal({ 'lockChance' => 0 }, npcs[0]['habits']['screen'], 'owned through an owner naming its stamped id')
+    assert_equal({ 'lockChance' => 1 }, npcs[1]['habits']['screen'], 'owned through an owner on an id-less PC')
     assert_equal ['office_pc_1'], report_for(report, 'jake')[:screen][:pcs].map { |pc| pc[:id] }
     assert_equal ['office_pc_2'], report_for(report, 'mia')[:screen][:pcs].map { |pc| pc[:id] }
   end
 
   test 'a scenario with no awareness, habits or roles is untouched' do
-    data = scenario_with([npc('needsHome' => 'pc_a', 'screenHabit' => { 'lockChance' => 0 })],
+    data = scenario_with([npc('needsHome' => 'pc_a', 'habits' => { 'screen' => { 'lockChance' => 0 } })],
                          [{ 'type' => 'pc', 'id' => 'pc_a', 'lockType' => 'login' }])
     before = deep(data)
     assert_equal [], NH.expand!(data)

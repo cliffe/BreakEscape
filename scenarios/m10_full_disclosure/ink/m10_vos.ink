@@ -23,7 +23,7 @@ VAR vos_l_seen = false    // the opener has played
         {m03_victoria_fate == "ko":
             Pieter Vos: You put Sterling in hospital. I sent flowers. Business is business.
         - else:
-            Pieter Vos: I don't do philosophy. I do delivery dates.
+            Pieter Vos: Whatever speech you have ready, I don't do philosophy. I do delivery dates.
         }
     }
     -> vos_rest
@@ -39,7 +39,7 @@ VAR vos_l_seen = false    // the opener has played
     {head_start_killed == "zero_day" or share_zero_day == "stopped":
         Pieter Vos: {&You are still here. My delivery is not.|Have you decided? I have a flight.}
     - else:
-        Pieter Vos: {&You are still here. So is my delivery, almost.|Have you decided? I have a flight.}
+        Pieter Vos: {&You are still here. My delivery nearly is.|Have you decided? I have a flight.}
     }
     -> vos_menu
 }
@@ -47,9 +47,9 @@ VAR vos_l_seen = false    // the opener has played
 {m03_victoria_fate == "ko":
     Pieter Vos: You put Sterling in hospital. I sent flowers. Business is business.
 }
-Pieter Vos: I don't do philosophy. I do delivery dates.
+Pieter Vos: Whatever speech you have ready, I don't do philosophy. I do delivery dates.
 {not vos_secret_known:
-    Pieter Vos: That guard has the code card. You can have it. My name stays off whatever you write tonight.
+    Pieter Vos: That guard has the code card. I have a copy, and you can have it. My name stays off whatever you write tonight.
 }
 -> vos_menu
 
@@ -67,7 +67,7 @@ Pieter Vos: I don't do philosophy. I do delivery dates.
     Pieter Vos: The order goes with me, and so do I. I'm leaving.
     // Regression fix pass n-4: the trace's cost, said at the pick.
     {head_start_killed == "trace":
-        Pieter Vos: Whoever you were waiting to watch collect it will be waiting a long time.
+        Pieter Vos: If you were waiting to see who collects it, you will be waiting a long time.
     }
     ~ vos_l_quiet = true
     #exit_conversation

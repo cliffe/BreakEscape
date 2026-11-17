@@ -1,0 +1,13 @@
+{
+  "key": "92bb42bdc40ad274ea4a3f261b1252d4",
+  "npc": "nightshade_phone",
+  "text": "I know. She's been listening since before you picked up.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst, now a triple agent. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, collegial; serene and a little tired.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T00:22:48Z"
+}

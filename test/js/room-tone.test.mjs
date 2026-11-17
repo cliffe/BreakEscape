@@ -286,7 +286,7 @@ test('startSound and outputSound: silent without roomTone; outputSound only with
     assert.ok(vis.onUseStarted({ npcId: 'tom', objectId: 'coffee' }) > 0);
     assert.equal(played[0].key, 'coffee_machine');
     vis.limiters.clear();
-    assert.equal(vis.onRevealed({ npcId: 'tom', objectId: 'badge', leftBehindBy: 'tom' }), 0, 'a left-behind reveal stays silent');
+    assert.equal(vis.onRevealed({ npcId: 'tom', objectId: 'badge', owner: 'tom' }), 0, 'a left-behind reveal stays silent');
     assert.ok(vis.onRevealed({ producerId: 'copier', npcId: 'tom', objectId: 'copier', cosmetic: true }) > 0);
     assert.equal(played.at(-1).key, 'copier_run');
     assert.equal(vis.playLog.at(-1).cosmetic, true);

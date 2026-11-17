@@ -73,6 +73,7 @@ if ARGV.include?('--help') || ARGV.include?('-h')
   puts File.read(__FILE__).lines.take_while { |l| l.start_with?('#') }.map { |l| l.sub(/\A# ?/, '') }.join
   exit
 end
+require_relative 'lib/reward_keys'
 
 imports_opt = 'none'
 seed_full_cloner = false
@@ -425,7 +426,7 @@ if complete_opts.any? || flag_opts.any?
           (ps['globalVariables'] ||= {})[r['key']] = r['value']
           applied << "set_global #{r['key']}=#{r['value'].inspect}"
         when 'unlock_object'
-          oid = r['object_id'] || r['target_object'] || r['id']
+          oid = RewardKeys.unlock_object_id(r)
           oid ? (g.unlock_object!(oid); applied << "unlock_object #{oid}") : applied << 'unlock_object: no id in reward'
         else
           applied << "#{r['type']} (client-only, not applied)"
@@ -496,9 +497,15 @@ end
 # (or restore-sprite.rb) puts it back.
 pref = g.player.respond_to?(:ensure_break_escape_preference!) ? (g.player.ensure_break_escape_preference!; g.player.break_escape_preference) : g.player.preference
 if pref && !pref.sprite_valid_for_scenario?(g.scenario_data)
-  pick = BreakEscape::PlayerPreference::AVAILABLE_SPRITES.find do |sp|
-    BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, '*') &&
-      Array(g.scenario_data['validSprites']).any? { |pat| BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, pat) }
+  # Prefer what the character screen would offer (the mission's own characters and
+  # unlocked avatars); a mission with no validSprites still needs a pick when the
+  # saved sprite is an avatar this user has not unlocked.
+  # The AVAILABLE_SPRITES fallback and the abort below cannot run today:
+  # available_sprites always exists and falls back to the starter set, which is
+  # in the catalogue (review R2 n8). Kept as a guard in case either changes.
+  offered = pref.respond_to?(:available_sprites) ? Array(pref.available_sprites(g.scenario_data)) : []
+  pick = offered.first || BreakEscape::PlayerPreference::AVAILABLE_SPRITES.find do |sp|
+    Array(g.scenario_data['validSprites'] || ['*']).any? { |pat| BreakEscape::PlayerPreference.sprite_matches_pattern?(sp, pat) }
   end
   abort "No available sprite matches validSprites #{g.scenario_data['validSprites'].inspect}" unless pick
   orig = pref.read_attribute(:selected_sprite)
@@ -510,7 +517,8 @@ end
 valid = g.send(:extract_valid_flags_from_scenario)
 puts "MISSION=#{mission.name} (id #{mission.id})"
 puts "GAME_ID=#{g.id}"
-puts "URL=http://127.0.0.1:#{ENV.fetch('PLAYTEST_PORT', '3000')}/break_escape/games/#{g.id}"
+require_relative 'lib/playtest_url'
+PlaytestUrl.lines(g.id, ENV['PLAYTEST_PORT']).each { |line| puts line }
 puts "FLAG_SOURCE=#{source}"
 puts "HEAD_START=#{head_start_notes.join(' | ')}" if head_start_notes.any?
 if g.scenario_data['importedGlobals'].present?

@@ -18,7 +18,19 @@ module BreakEscape
       'test_access_networks' => 5_833,
       'test-rfid'            => 1_103,
       'lab_social_engineering' => 69_125,
-      'lab_physical_pentest' => 23_762
+      # 2026-11-16, slice A2 (rogue AP, Kieran's account, wireless aim and hints): the lab's
+      # bootstrap measured 26,619 B, so its base is raised from the 23,762 B of 6a834437c to that
+      # figure. The growth is objectives (9,050 B), music, timers and globals; accountProfiles,
+      # networks and every secret are withheld from the bootstrap (checked: none in the body).
+      # 2026-11-17, merge of main into plant hiding: the lab bootstrap measured 27,966 B, so the
+      # base is raised to that figure. Growth since 26,619 B: reception's three AP blink emitters
+      # (+379 B, A3), the drop box's seven globals, one optional aim and one credits line (+563 B,
+      # B2), P3's gated network_port emitter (+191 B, LED), and the `hideables` entry of about 180 B
+      # (H5). H5 removed the duplicate deviceData (3,010 B): the hideable's only room is reception,
+      # where the console's device is authored, so the client takes it from GET /room/reception. accountProfiles,
+      # networks, the drawn Wi-Fi key, Chris's and the other passwords, PINs and lock answers are
+      # still withheld (checked: none in the body).
+      'lab_physical_pentest' => 27_966
     }.freeze
 
     FIXTURES = File.expand_path('../fixtures/files/sync_bodies', __dir__)

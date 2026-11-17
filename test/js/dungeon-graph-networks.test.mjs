@@ -438,7 +438,7 @@ test('a session implant on a headless PC is marked unusable and has no session e
 
 test('an outage is a condition on the network node, not a gate', { skip }, () => {
     const sc = linked();
-    sc.networks.server_net.downIf = 'servers_offline';
+    sc.networks.server_net.offWhen = 'servers_offline';
     sc.globalVariables = { servers_offline: true };
     let g = graph(sc);
     assert.match(g.nodes.net_server_net.label, /down while servers_offline \(down at start\)/);
@@ -461,7 +461,7 @@ test('a jack with port security (any truthy value) has no edge to its network', 
 
 test('malformed 9.3b fields draw nothing and do not crash the generator', { skip }, () => {
     const sc = scenario();
-    sc.networks.bad_wifi = { name: { not: 'a string' }, wifi: 'open', downIf: 7 };
+    sc.networks.bad_wifi = { name: { not: 'a string' }, wifi: 'open', offWhen: 7 };
     sc.networks.odd = { name: 'Odd', wifi: { ssid: 42, psk: ['x'] } };
     sc.networkLinks = ['office_lan', ['office_lan'], ['office_lan', 'office_lan'], [1, 2], null, ['office_lan', 'bad_wifi', 'odd']];
     sc.globalVariables = 'nonsense';
@@ -481,7 +481,7 @@ test('a clean scenario using every 9.3b field draws each feature once', { skip }
     const sc = linked();
     const w = wifi();
     const i = implants();
-    sc.networks.server_net.downIf = 'servers_offline';
+    sc.networks.server_net.offWhen = 'servers_offline';
     sc.networks.guest_wifi = w.networks.guest_wifi;
     sc.globalVariables = { servers_offline: false };
     sc.rooms.lobby.objects.push(...w.rooms.lobby.objects.slice(2), ...i.rooms.lobby.objects.slice(2));

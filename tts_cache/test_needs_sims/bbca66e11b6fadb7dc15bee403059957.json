@@ -1,0 +1,13 @@
+{
+  "key": "bbca66e11b6fadb7dc15bee403059957",
+  "npc": "grace",
+  "text": "Go on, just a small slice.",
+  "voice": "Kore",
+  "style": "Office manager, early sixties, Swedish-born, decades in the UK. Kind and brisk.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:21:02Z"
+}

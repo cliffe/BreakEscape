@@ -43,12 +43,15 @@ function randomHex(len) {
 // ──────────────────────────────────────────────────────────────────────────────
 
 export class DrugLibraryIntegrityMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there.
+    // Its tabs and panels scroll, so the window takes its full size.
+    static consoleWindow = true;
+    static consoleWindowFill = true;
+
     constructor(container, params = {}) {
         super(container, {
             ...params,
             title:      'Drug Library Integrity Terminal',
-            showCancel: true,
-            cancelText: 'Close',
         });
 
         const sd = params.sprite?.scenarioData?.minigameData || {};
@@ -75,6 +78,15 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
         // Tampered row index (match by name)
         this._tamperedIdx = this._lib.findIndex(e => e.name === this._tampered.drug);
         if (this._tamperedIdx === -1) this._tamperedIdx = 5; // fallback
+    }
+
+    // The fleet console's name and its subtitle are the shared bar's title and subtitle
+    consoleTitle() {
+        return this._data.consoleTitle || 'PUMP FLEET MANAGEMENT CONSOLE';
+    }
+
+    consoleSubtitle() {
+        return this._data.consoleSubtitle || '';
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -119,16 +131,13 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 
     _renderLayout() {
         const sd = this._data;
-        const title    = sd.consoleTitle    || 'PUMP FLEET MANAGEMENT CONSOLE';
-        const subtitle = sd.consoleSubtitle || '';
         const libFile  = sd.libraryFile     || 'drug_library.csv';
         const bakFile  = sd.backupFile      || 'drug_library.bak';
         const hashFile = sd.hashFile        || 'drug_library.sha256';
 
         this.gameContainer.innerHTML = `
+<div class="dli-wrap">
 <div class="dli-console-header">
-  <div class="dli-console-title">${escapeHtml(displayDashes(title))}</div>
-  ${subtitle ? `<div class="dli-console-subtitle">${escapeHtml(displayDashes(subtitle))}</div>` : ''}
   <div class="dli-console-files">
     <span>${escapeHtml(libFile)}</span><span>${escapeHtml(bakFile)}</span><span>${escapeHtml(hashFile)}</span>
   </div>
@@ -145,7 +154,8 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 <div class="dli-progress-wrap" id="dli-progress-wrap" style="display:none">
   <div class="dli-progress-bar" id="dli-progress-bar"></div>
 </div>
-<div class="dli-panel" id="dli-panel"></div>`;
+<div class="dli-panel pixel-scroll" id="dli-panel"></div>
+</div>`;
 
         this.gameContainer.querySelectorAll('.dli-tab').forEach(btn => {
             this.addEventListener(btn, 'click', () => this._onTabClick(btn.dataset.tab));
@@ -244,7 +254,7 @@ export class DrugLibraryIntegrityMinigame extends MinigameScene {
 </table>
 ${alreadyRestored ? this._buildRestoredBanner() : alreadyFailed ? this._buildResultBanner() : ''}
 ${alreadyFailed && !alreadyRestored ? this._buildHashDetail(false) : ''}
-${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
+${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY VERIFICATION ]</button>` : ''}`;
 
         if (!alreadyFailed) {
             const runBtn = panel.querySelector('#dli-run-btn');
@@ -263,7 +273,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         return `
 <div class="dli-result-banner dli-result-banner-restored" id="dli-result-banner" style="border-color:#33cc66;background:#0d2a16">
   <div class="dli-result-banner-title" style="color:#33cc66">&#x2713; Integrity Check Complete</div>
-  <p>${total} entries verified: <strong style="color:#33cc66">PASS</strong></p>
+  <p>${total} entries verified: <span style="color:#33cc66">PASS</span></p>
   <p>${escapeHtml(displayDashes(this._tampered.drug))} restored from ${escapeHtml(this._data.backupFile || 'drug_library.bak')}. The change made ${escapeHtml(this._tampered.modifiedAt)} (${this._changesText('current')}) is kept in the audit record.</p>
 </div>`;
     }
@@ -274,8 +284,8 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         return `
 <div class="dli-result-banner" id="dli-result-banner">
   <div class="dli-result-banner-title">&#x26A0; Integrity Check Complete</div>
-  <p>${pass} entries verified: <strong style="color:#33cc66">PASS</strong></p>
-  <p>1 entry: <strong style="color:#cc3333">HASH MISMATCH</strong> &mdash; DRUG LIBRARY MAY HAVE BEEN MODIFIED</p>
+  <p>${pass} entries verified: <span style="color:#33cc66">PASS</span></p>
+  <p>1 entry: <span style="color:#cc3333">HASH MISMATCH</span> &mdash; DRUG LIBRARY MAY HAVE BEEN MODIFIED</p>
 </div>`;
     }
 
@@ -290,7 +300,7 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
 <div class="dli-hash-detail" id="dli-hash-detail">
   <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${escapeHtml(displayDashes(t.drug))}</div>
   <div class="dli-hash-meta">
-    <span>File: <strong>${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</strong></span>
+    <span>File: <span class="dli-hash-file">${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</span></span>
     <span>Modified: <span class="dli-ts">${escapeHtml(t.modifiedAt)}</span></span>
   </div>
   <div class="dli-hash-row">
@@ -546,13 +556,13 @@ ${!alreadyFailed ? `<button class="dli-run-btn" id="dli-run-btn">[ RUN INTEGRITY
         else if (allConsulted) restoreClass += ' dli-restore-btn-active';
 
         const restoreLabel = restored
-            ? `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`
+            ? `LIBRARY RESTORED \u2014 ${this._changesText('backup', true)}`
             : allConsulted
-                ? `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} \u2713 confirmed by backup + ${sources.length} sources ]`
+                ? `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} : confirmed by backup + ${sources.length} sources ]`
                 : `[ RESTORE FROM BACKUP \u2014 ${this._changesText('backup', true)} ]`;
 
         const restoreHint = restored
-            ? `<div class="dli-restore-hint" style="color:#33cc66">\u2713 Library restored successfully.</div>`
+            ? `<div class="dli-restore-hint" style="color:#33cc66">Library restored successfully.</div>`
             : allConsulted
                 ? `<div class="dli-restore-hint">All sources consulted \u2014 restore authorised.</div>`
                 : `<div class="dli-restore-hint">Verify correct value from independent sources before restoring.</div>`;
@@ -679,13 +689,20 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
         overlay.className = 'dli-modal-overlay';
         overlay.innerHTML = `
 <div class="dli-modal">
-  <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
+  <div class="dli-modal-head">
+    <div class="dli-modal-title">${escapeHtml(displayDashes(source.label))}</div>
+    <button type="button" class="minigame-close-button dli-modal-close" aria-label="Close">&times;</button>
+  </div>
   <div class="dli-modal-body">${bodyHtml}</div>
   <button class="dli-modal-confirm-btn" id="dli-modal-confirm">CONFIRM &mdash; Value noted</button>
 </div>`;
 
         this.gameContainer.style.position = 'relative';
         this.gameContainer.appendChild(overlay);
+        this._sourceOverlay = overlay;
+        this._hideSceneX(true);
+
+        this.addEventListener(overlay.querySelector('.dli-modal-close'), 'click', () => this._closeSourceModal());
 
         const confirmBtn = overlay.querySelector('#dli-modal-confirm');
         this.addEventListener(confirmBtn, 'click', () => {
@@ -694,12 +711,32 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
 
         // Click outside to close without confirming
         this.addEventListener(overlay, 'click', (e) => {
-            if (e.target === overlay) overlay.remove();
+            if (e.target === overlay) this._closeSourceModal();
         });
     }
 
+    _closeSourceModal() {
+        if (this._sourceOverlay) this._sourceOverlay.remove();
+        this._sourceOverlay = null;
+        this._hideSceneX(false);
+    }
+
+    // One close control at a time: the pop-up carries its own X, so the scene X hides while it
+    // is open
+    _hideSceneX(hidden) {
+        const x = this.container?.querySelector?.('#minigame-close');
+        if (x) x.style.visibility = hidden ? 'hidden' : '';
+    }
+
+    // Esc closes the pop-up and leaves the scene open; with none open it closes the scene
+    handleEscapeKey() {
+        if (!this._sourceOverlay) return false;
+        this._closeSourceModal();
+        return true;
+    }
+
     _onSourceConfirmed(source, overlay) {
-        overlay.remove();
+        this._closeSourceModal();
         this._sourcesConsulted.add(source.id);
 
         // Fire progress action
@@ -727,7 +764,7 @@ ${c.warning ? `<div class="dli-modal-warning">${escapeHtml(displayDashes(c.warni
         if (restoreBtn) {
             restoreBtn.disabled = true;
             restoreBtn.className = 'dli-restore-btn dli-restore-btn-done';
-            restoreBtn.textContent = `\u2713 LIBRARY RESTORED \u2014 ${this._changesText('backup', true, true)}`;
+            restoreBtn.textContent = `LIBRARY RESTORED \u2014 ${this._changesText('backup', true, true)}`;
         }
 
         // Fire completion globals

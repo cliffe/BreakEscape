@@ -1,0 +1,13 @@
+{
+  "key": "a58251385bd7e3892bbf3d61fc479388",
+  "npc": "kowalczyk_post",
+  "text": "I packed that case with Kenji. Ask him where he was at ten past.",
+  "voice": "Pulcherrima",
+  "style": "SAFETYNET breaching lead in her late forties, Polish-British, grew up in Ealing. Consistent West London English accent throughout -- do not shift to any other accent. Warm, funny, practical; the one joke in a tense room. Nothing in her voice gives anything away.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:54:22Z"
+}

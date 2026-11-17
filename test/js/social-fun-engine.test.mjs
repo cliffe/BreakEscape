@@ -27,6 +27,7 @@ writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of [
     'minigames/episode-runner/episode-model.js', 'minigames/episode-runner/debrief-view.js',
     'minigames/episode-runner/role-swap.js',
+    'minigames/helpers/step-stepper.js',
     'minigames/inbox-triage/inbox-triage-minigame.js', 'minigames/inbox-triage/triage-scoring.js',
     'minigames/inbox-triage/triage-messages.js', 'minigames/inbox-triage/triage-flags.js',
     'minigames/inbox-triage/triage-kinds.js', 'minigames/inbox-triage/triage-comparison.js',

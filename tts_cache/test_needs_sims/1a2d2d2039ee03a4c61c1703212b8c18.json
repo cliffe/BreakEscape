@@ -1,0 +1,13 @@
+{
+  "key": "1a2d2d2039ee03a4c61c1703212b8c18",
+  "npc": "amara",
+  "text": "Who switched the coffee off?",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:16:16Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "b586e9e68debf060e3ef1ad7f66a9e83",
+  "npc": "vos",
+  "text": "I am waiting for a delivery. You are in the way of it.",
+  "voice": "Schedar",
+  "style": "Zero Day's broker, fifties, from Rotterdam. Consistent Dutch-accented English throughout -- do not shift to any other accent. Flat, courteous, unhurried; everything is a delivery date.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:36:51Z"
+}

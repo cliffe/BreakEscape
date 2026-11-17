@@ -67,7 +67,11 @@ function loadedGame() {
   const sent = new Map();
   Object.assign(globalThis.window, {
     gameState: { globalVariables: { briefing_played: true, intel_count: 3 }, notes: [{ id: 'n1', title: 'Lobby', text: 'A keypad by the door', sprite: {} }] },
-    currentRoom: { name: 'lobby' },
+    // The real page keeps the player's room in window.currentPlayerRoom (a string, set by
+    // core/rooms.js); window.currentRoom is the legacy null global. state-sync.js reads
+    // currentPlayerRoom (:392), so the harness must set it for buildChanges to see the room.
+    currentPlayerRoom: 'lobby',
+    currentRoom: null,
     gameClock: { exportState: () => ({ elapsedMs: 600000 }) },
     scenarioTimerDispatcher: { exportState: () => ({ elapsedMs: 600000, fired: [], cancelled: [], started: {} }) },
     npcManager: {
@@ -279,10 +283,12 @@ test('a single foothold capture (lab_physical_pentest, store_controller) is unde
 
 const logDir = mkdtempSync(join(tmpdir(), 'sync-sizes-log-'));
 {
-  const capturesUrl = pathToFileURL(join(js, 'systems/captures.js')).href;
+  // The model's imports point at the real files (signin-rows.js, since K3d, and through it
+  // captures.js and remote-host-text.js, by their own relative paths)
+  const signInRowsUrl = pathToFileURL(join(js, 'minigames/capture-log/signin-rows.js')).href;
   writeFileSync(join(logDir, 'capture-log-model.mjs'),
     readFileSync(join(js, 'minigames/capture-log/capture-log-model.js'), 'utf8')
-      .replace("'../../systems/captures.js'", `'${capturesUrl}'`));
+      .replace("'./signin-rows.js'", `'${signInRowsUrl}'`));
 }
 const { SEEN_PREFIX, buildSections, rowKeys, readSeen, newKeys } = await import(pathToFileURL(join(logDir, 'capture-log-model.mjs')).href);
 

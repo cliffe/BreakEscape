@@ -1,0 +1,13 @@
+{
+  "key": "b26d235f50da96d4ade6924e012f6c33",
+  "npc": "closing_debrief",
+  "text": "Before anything else. My jaw is fine, thank you for asking. We will not be discussing it.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:18:14Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "d1ad2a5e7faac3540897c46198a03783",
+  "npc": "amara",
+  "text": "Who keeps taking the mugs?",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:15:23Z"
+}

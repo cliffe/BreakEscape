@@ -15,6 +15,10 @@ VAR lockpicking_guide_hint_given = false
 VAR first_contact = true
 VAR operation_shatter_reported = false
 
+// Engine-written call variables (phone calls plan 2.11); only first_ring reads them
+VAR call_answer_seconds = 0
+VAR call_is_callback = false
+
 // External variables
 VAR player_name = "Agent 0x00"
 VAR current_task = ""
@@ -95,6 +99,38 @@ VAR lockpicking_guide_offered = false
 -> support_hub
 
 // ================================================
+// FIRST RING (incoming call, first entry to the main office)
+// Teaches Answer / Decline with nothing at stake, and gives the
+// texts a reason. Reached only by the ring mapping on agent_0x99.
+// ================================================
+
+=== first_ring ===
+// lint: call-knot
+#speaker:agent_0x99
+
+{
+    - call_is_callback: You rang back. Good habit.
+    - call_answer_seconds > 10: Took your time. Fine, nothing's on fire yet.
+    - else: You're in.
+}
+
+#set_global:m01_first_ring_done:true
+One test call before it's texts only.
+
+A contractor on the phone is nothing. A contractor overheard talking to me is the end of your cover.
+
+So: quiet, deniable. Message me the moment you're stuck and I'll walk you through it.
+
++ [Understood. Texts it is.]
+    Good. Off you go.
+    #exit_conversation
+    -> DONE
++ [What if I need you fast?]
+    Then you message me fast. I'm on the thread the whole way. Go.
+    #exit_conversation
+    -> DONE
+
+// ================================================
 // SUPPORT HUB (General Help)
 // ================================================
 
@@ -108,7 +144,8 @@ VAR lockpicking_guide_offered = false
 + {priv_esc_guide_offered and not priv_esc_guide_hint_given} [I need the privilege escalation guide]
     -> request_priv_esc_guide
 + {entropy_reveal_read and (player_aborted_attack or player_launched_attack)} [Operation Shatter resolved — I'm ready for debrief]
-    -> closing_debrief
+    #place_call:closing_debrief
+    -> DONE
 + {(entropy_reveal_read or (talked_to_maya and discussed_operation)) and not operation_shatter_reported} [I discovered what ENTROPY is planning - Operation Shatter]
     -> report_operation_shatter
 + {framing_evidence_seen and kevin_choice == ""} [Those files on Kevin's PC — what should I do with this?]
@@ -131,7 +168,7 @@ VAR lockpicking_guide_offered = false
     -> general_advice
 + [I'm good for now]
     #exit_conversation
-    Copy that. Call anytime.
+    Copy that. I'm a message away.
     -> support_hub
 
 // ================================================
@@ -174,7 +211,7 @@ Command format: hydra -l username -P passwordlist.txt target ssh
     It's "Derek"'s account you are trying to access.
     -> support_hub
 + [Thanks, that helps]
-    Good luck. Call if you hit a wall.
+    Good luck. Message me if you hit a wall.
     -> support_hub
 
 // ================================================
@@ -251,7 +288,7 @@ I've uploaded the lockpicking field guide to your secure terminal.
 Covers pin tumbler mechanics, tension control, and how to read pin feedback. Light pressure — if you're forcing it, ease off.
 
 + [Thanks, I'll use it]
-    Good. Work the pins one at a time. Call if you get stuck.
+    Good. Work the pins one at a time.
     -> support_hub
 + [Understood]
     The guide covers the rest. Patience is the technique.
@@ -273,7 +310,7 @@ You've got Linux fundamentals, SSH bruteforce with Hydra, and the filesystem nav
 The manual is in your inventory—reference it whenever you need it.
 
 + [Thanks, this will help]
-    Good luck in there. Call if you hit anything unexpected.
+    Good luck in there. Tell me if you hit anything unexpected.
     -> support_hub
 + [I appreciate the support]
     That's what I'm here for. Now go dark and finish this.
@@ -295,7 +332,7 @@ Once you've got SSH access, use it to check sudo permissions and move into the t
 Read it when you hit the wall on the remote system.
 
 + [Thanks, I'll use it]
-    Good. Keep pressure on the target account and call if you need a steer.
+    Good. Keep pressure on the target account and message me if you need a steer.
     -> support_hub
 + [Understood]
     Stay sharp. The next step is always the one that gets you closer to the archive.
@@ -414,7 +451,7 @@ Good work discovering this. Now we know what we're dealing with.
 
 Continue investigating. Find the Operation Shatter files, identify all operatives, and prepare to shut this down.
 
-Call me if you need support. This just became a race against the clock.
+Message me if you need support. This just became a race against the clock.
 
 + [Understood. I'll stop it.]
     #exit_conversation
@@ -940,18 +977,19 @@ Whatever you choose to do with Derek — choose carefully. The way this ends set
 // ================================================
 
 === closing_debrief ===
+// lint: call-knot
 #speaker:agent_0x99
 
 {
     - player_launched_attack:
-        Operation Shatter went through — the attack hit. Let's review what happened.
+        It went through. Not on an open line. Come back to HQ.
     - else:
-        Operation Shatter is neutralized. Let's review what happened.
+        Shatter's dead in the water. Pack up and come in. We'll do it properly at HQ.
 }
 
-+ [On my way]
-    #ending_check
++ [On my way. #ending_check]
     #set_global:start_debrief_cutscene:true
+    Walk out the way you came in. As far as Viral Dynamics knows, you were never here.
     #exit_conversation
     -> END
 

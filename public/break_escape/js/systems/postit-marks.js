@@ -1,5 +1,5 @@
 /**
- * Postit marks (ACCESS_MODEL_SLICE_9_1_PLAN.md, 5.3): a sticky note picture at the top-left
+ * Postit marks (ACCESS_MODEL_SLICE_9_1_PLAN.md, 5.3): a sticky note picture at the bottom-left
  * corner of a sign-in PC's monitor when its sign-in screen shows a note, so the player can see
  * from across the room that someone keeps their password on the screen.
  *
@@ -9,7 +9,8 @@
  * shown (`showPostit` not false). `mark(pcId, on)` adds or removes one mid-game (slice 9.2).
  *
  * The picture is `notes_postit1` (9 by 9 px, preloaded in core/game.js), inset from the
- * monitor's top-left corner, clear of the lighting system's indicator dot at the top-right. It
+ * monitor's left edge with its bottom on the sprite's bottom, clear of the lighting system's
+ * indicator dot at the top-right. It
  * sits just above the monitor (depth + POSTIT_DEPTH_OFFSET) and below the dot, follows the
  * sprite's visibility and position each frame, takes no clicks, and goes when the sprite does.
  *
@@ -32,7 +33,13 @@ export function wantsPostit(data) {
     return typeof data.postitNote === 'string' && data.postitNote.trim() !== '' && data.showPostit !== false;
 }
 
-/** The picture's centre for a sprite: inset from its top-left corner, whatever its origin. */
+/**
+ * The picture's anchor for a sprite, whatever its origin: x is the picture's left edge, inset
+ * from the sprite's left edge; y is the picture's bottom, level with the sprite's bottom (UX
+ * feedback slice 2a, main-11: it sat at the top-left). The picture is drawn with origin (0, 1),
+ * so both edges land on whole pixels (with origin 0.5 the 9px picture's left edge sat on a half
+ * pixel; UX slice 2a R2 n1).
+ */
 export function postitPosition(sprite) {
     const w = sprite.displayWidth ?? sprite.width ?? 32;
     const h = sprite.displayHeight ?? sprite.height ?? 32;
@@ -40,7 +47,7 @@ export function postitPosition(sprite) {
     const oy = sprite.originY ?? 0.5;
     const left = sprite.x - w * ox;
     const top = sprite.y - h * oy;
-    return { x: Math.round(left + POSTIT_INSET + POSTIT_SIZE / 2), y: Math.round(top + POSTIT_INSET + POSTIT_SIZE / 2) };
+    return { x: Math.round(left + POSTIT_INSET), y: Math.round(top + h) };
 }
 
 export class PostitMarks {
@@ -79,7 +86,7 @@ export class PostitMarks {
         if (!scene?.add?.image) return null;
         const { x, y } = postitPosition(sprite);
         const image = scene.add.image(x, y, POSTIT_TEXTURE);
-        image.setOrigin?.(0.5, 0.5);
+        image.setOrigin?.(0, 1);
         image.setDepth?.((sprite.depth ?? 0) + POSTIT_DEPTH_OFFSET);
         image.setVisible?.(sprite.visible !== false);
         image.disableInteractive?.();

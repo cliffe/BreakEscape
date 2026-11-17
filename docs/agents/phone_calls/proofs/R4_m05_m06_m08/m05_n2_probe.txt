@@ -1,0 +1,27 @@
+game 2312 (n2_probe)
+before phone: {"npc":"recruiter","state":"ringing","ringMs":4666,"t":43.3}
+before phone: {"npc":"recruiter","state":"ringing","ringMs":6025,"t":44.5}
+before phone: {"npc":"recruiter","state":"ringing","ringMs":7118,"t":45.7}
+before phone: {"npc":"recruiter","state":"ringing","ringMs":8480,"t":47}
+before phone: {"npc":"recruiter","state":"ringing","ringMs":9623,"t":48.2}
+before phone: {"npc":"recruiter","state":"ringing","ringMs":11028,"t":49.5}
+phone open: {"npc":"recruiter","state":"ringing","ringMs":14666,"t":53.2} queue=1
+"opened agent_0x99_handler"
+in call: {"npc":"agent_0x99_handler","state":"connected","ringMs":0,"t":63.9} queue=1
+after End: {"npc":"agent_0x99_handler","state":"connected","ringMs":0,"t":64.6}
+after End: {"npc":"recruiter","state":"ringing","ringMs":18125,"t":65.9}
+after End: {"npc":"recruiter","state":"ringing","ringMs":19251,"t":67.1}
+after End: {"t":68.4}
+after End: {"t":69.6}
+after End: {"t":70.8}
+after End: {"t":72.1}
+after End: {"t":73.3}
+after End: {"t":74.6}
+after End: {"t":75.8}
+after End: {"t":77.1}
+after End: {"t":78.3}
+after End: {"t":79.6}
+after End: {"t":80.8}
+after End: {"t":82}
+after End: {"t":83.3}
+["global_variable_changed:flag4_submitted@50.7","conversation_closed:agent_0x99_handler@64.3","phone_call_missed:recruiter@67.8"]

@@ -54,6 +54,10 @@ module BreakEscape
       show?
     end
 
+    def keyring?
+      show?
+    end
+
     def complete_task?
       show?
     end
@@ -83,6 +87,10 @@ module BreakEscape
     end
 
     def logout?
+      show?
+    end
+
+    def lock_session?
       show?
     end
 
@@ -116,6 +124,18 @@ module BreakEscape
 
     # Wearable items (docs/achitechture/WEARABLE_BUILD_LOG.md)
     def wear?
+      show?
+    end
+
+    # Phish evidence Route 1 (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md): record a
+    # landing-page build. Same access as viewing the game.
+    def se_landing_page?
+      show?
+    end
+
+    # Phish evidence Route 2 (docs/achitechture/PHISH_EVIDENCE_SERVER_PLAN.md): record a phish
+    # send. Same access as viewing the game.
+    def se_phish_send?
       show?
     end
 

@@ -131,7 +131,7 @@ test('the schema knows an action condition and wants a non-empty string', { skip
     assert.equal(r.status, 0, r.stderr);
     return JSON.parse(r.stdout.trim().split('\n').pop()).filter(e => /condition/.test(e));
   };
-  const base = JSON.parse(ruby("JSON.generate(JSON.parse(ERB.new(File.read(File.join(input, 'scenarios/test_exercise_station/scenario.json.erb'))).result))", root));
+  const base = JSON.parse(ruby("JSON.generate(JSON.parse(BreakEscape::ScenarioBinding.render(File.read(File.join(input, 'scenarios/test_exercise_station/scenario.json.erb')))))", root));
   const room = Object.values(base.rooms)[0];
   const withAction = (action) => {
     const j = structuredClone(base);

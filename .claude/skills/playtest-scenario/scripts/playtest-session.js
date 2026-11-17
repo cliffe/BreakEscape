@@ -76,7 +76,9 @@ const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
 const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
+const { installToastCapture } = require('./toast-capture');
 const { createResponseCapture } = require('./response-capture');
+const endingGuard = require('./ending-overlay-guard');
 
 const args = process.argv.slice(2);
 const argv = {};
@@ -204,29 +206,7 @@ const vmSteps = createVmSteps({
   // raised during load. Watches the whole document for added .notification
   // nodes (the container, #notification-container, may not exist yet) and
   // records their text; the `toasts` command returns and clears the list.
-  await page.addInitScript(() => {
-    window.__toastLog = [];
-    const grab = (el) => {
-      if (!el || el.nodeType !== 1 || window.__toastSeen?.has(el)) return;
-      const list = el.matches?.('.notification') ? [el] : [...(el.querySelectorAll?.('.notification') || [])];
-      for (const n of list) {
-        (window.__toastSeen ||= new WeakSet());
-        if (window.__toastSeen.has(n)) continue;
-        window.__toastSeen.add(n);
-        const q = (sel) => n.querySelector(sel)?.innerText?.trim() || '';
-        window.__toastLog.push({
-          at: Date.now(),
-          type: ['success', 'warning', 'error', 'info'].find(t => n.classList.contains(t)) || undefined,
-          title: q('.notification-title'),
-          message: q('.notification-message') || (n.innerText || '').trim()
-        });
-      }
-    };
-    const start = () => new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(grab)))
-      .observe(document.documentElement, { childList: true, subtree: true });
-    if (document.documentElement) start();
-    else document.addEventListener('DOMContentLoaded', start, { once: true });
-  });
+  await page.addInitScript(installToastCapture);
 
   // Disable HTTP cache. A game JS file edited between runs (e.g. a bridge fix
   // applied while iterating) can otherwise be served from a prior Playwright
@@ -339,7 +319,9 @@ const vmSteps = createVmSteps({
     });
     // openTasks matches the objectives panel (locked tasks hidden); see brief-tasks.js
     const { recentGlobals, ...rest } = b;
-    return { ...rest, ...briefTasks(_aims), recentGlobals };
+    // The ending-check overlay is not in __test's blockingUi; report it so it is not missed.
+    const overlay = await page.evaluate(endingGuard.describeEndingOverlayInPage).catch(() => null);
+    return { ...rest, blockingUi: endingGuard.mergeBlockingUi(rest.blockingUi, overlay), ...briefTasks(_aims), recentGlobals };
   }
 
   /**
@@ -624,6 +606,10 @@ const vmSteps = createVmSteps({
       return r;
     },
     pressKey: async (c) => {
+      if (endingGuard.isEscapeKey(c.key)
+          && await page.evaluate(id => !!document.getElementById(id), endingGuard.ENDING_OVERLAY_ID)) {
+        return { ...endingGuard.REFUSAL };
+      }
       let r = await page.evaluate(k => window.__test.pressKey(k), c.key);
       // The "Continue?" title card is a minigame that takes the keyboard (Space, Enter or a click),
       // but window.__test.pressKey refuses any key while a minigame owns the screen ('minigame-active').
@@ -675,6 +661,10 @@ const vmSteps = createVmSteps({
     },
 
     mg: async (c) => {
+      if (endingGuard.isEscapeStyleMg(c.action, c.args)
+          && await page.evaluate(id => !!document.getElementById(id), endingGuard.ENDING_OVERLAY_ID)) {
+        return { ...endingGuard.REFUSAL };
+      }
       // Containers render "Loading contents..." for a beat. A getState during
       // that window reports an empty container, and a caller concludes the
       // safe is empty. Wait it out first.

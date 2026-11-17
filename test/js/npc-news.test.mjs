@@ -27,7 +27,7 @@ const POOL = { news_cake: ['Someone brought cake in!'] };
 // grace (the knower) sits at (300, 300) in the office; others by tile offset from her
 const at = (dx, dy = 0) => ({ x: 300 + dx * T, y: 300 + dy * T });
 
-function office(npcs, { objects = [cake()], chatter = POOL, globals = {}, tickCache = true, arrive = false } = {}) {
+function office(npcs, { objects = [cake()], chatter = POOL, globals = {}, tickCache = true, arrive = false, hears = true } = {}) {
     const cfg = { npcs: {}, objects };
     for (const [id, n] of Object.entries(npcs)) {
         const pos = n.pos || at(0);
@@ -39,7 +39,8 @@ function office(npcs, { objects = [cake()], chatter = POOL, globals = {}, tickCa
     w.world.globalHolds = cond => requiredGlobalsHold(cond, globals);
     w.world.getGlobal = name => globals[name];
     w.world.setGlobal = (name, v) => { globals[name] = v; };
-    w.world.playerHears = () => ({ overheard: false, distance: null });
+    // m7: announces are voiced only in earshot; most tests stand the player within it
+    w.world.playerHears = () => (hears ? { overheard: true, distance: 50 } : { overheard: false, distance: null });
     w.world.playerProximity = () => ({ nearby: false, distance: null });
     w.world.removeMagnet = id => { const o = w.objs.find(x => x.id === id); if (o) o.roomId = null; return true; };
     w.world.chatterConfig = () => chatter;
@@ -349,4 +350,19 @@ test('validator: announce names a scenario chatter pool with lines; newsRadius i
     assert.deepEqual(validate(scen({ announce: 'news_cake' }, { rooms })).filter(l => /announce/.test(l)), []);
     assert.ok(validate(scen({ announce: 'news_cake' }, { rooms, chatter: { news_cake: ['Cake in the kitchen, come on!'] } }))
         .some(l => l.includes('WARNING') && l.includes('kitchen')), 'a line naming a room is flagged: a dropped magnet can be anywhere');
+});
+
+// SIMS-5 design R2 m7: an announce line was spent 465 px from the player (game 5019)
+test('m7: out of earshot the knower still tells, as a news picture; no line is taken or voiced', () => {
+    const o = office({ grace: { rec: { needs: calm() } }, tom: { pos: at(3), rec: { needs: calm() } } }, { hears: false });
+    o.ticks(1);
+    o.know('grace');
+    o.ticks(1);
+    assert.ok(o.knows('tom'), 'the telling happens');
+    const a = o.emitted('npc_announced:grace');
+    assert.equal(a.length, 1);
+    assert.equal(a[0].data.line, null);
+    assert.ok(a[0].data.picture, 'a picture instead');
+    assert.equal(o.spoken.length, 0, 'nothing voiced');
+    assert.equal(o.sys._bags.get('grace|news_cake'), undefined, 'no bag line taken');
 });

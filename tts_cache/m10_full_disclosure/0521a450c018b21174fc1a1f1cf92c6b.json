@@ -1,0 +1,13 @@
+{
+  "key": "0521a450c018b21174fc1a1f1cf92c6b",
+  "npc": "six_oclock",
+  "text": "Our tap on Zero Day's brokers dropped at ten past five.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:17:35Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "d00c5297ba3bd3837bfc9fc418262c1e",
+  "npc": "amara",
+  "text": "Missed it.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:16:26Z"
+}

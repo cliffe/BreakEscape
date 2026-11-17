@@ -515,7 +515,8 @@
    not as the avatar's portrait ring or the inventory's thin slot frames. The
    64px hand overhangs the 44px opening; its transparent margin takes it. */
 [data-ui-theme] #combat-buttons {
-  --combat-strip-height: 108px;
+  /* the strip grows by a classic scrollbar's height (--tray-scrollbar, inventory.js) */
+  --combat-strip-height: calc(108px + var(--tray-scrollbar, 0px));
   --combat-button-size: 68px;
 }
 
@@ -566,10 +567,11 @@
 }
 
 /* The portrait group is taller than the old 80px strip, so the strip and
-   the things stacked above it move up together */
+   the things stacked above it move up together, also by the height a classic
+   (desktop) scrollbar adds to the strip (UX slice 4 R2 m2) */
 [data-ui-theme] #inventory-container { height: 108px; }
-[data-ui-theme] #hud-info-label { bottom: 148px; }
-[data-ui-theme] #npc-bark-container { bottom: 108px; }
+[data-ui-theme] #hud-info-label { bottom: calc(148px + var(--tray-scrollbar, 0px)); }
+[data-ui-theme] #npc-bark-container { bottom: calc(108px + var(--tray-scrollbar, 0px)); }
 
 /* Health, inside the portrait group (health-ui.js moves it there) */
 [data-ui-theme] #player-hud-buttons #health-ui-container {
@@ -646,6 +648,88 @@
 @keyframes health-low-pulse {
   0%, 100% { filter: none; }
   50% { filter: drop-shadow(0 0 4px var(--ui-danger)); }
+}
+
+/* Phone width (UX slice 4 R1 M3): the group shrinks to the avatar ring, so
+   four slots fit beside it, and health sits above the ring. Fixed, because the
+   strip scrolls and would clip anything drawn above it. */
+@media (max-width: 480px) {
+  [data-ui-theme] #inventory-container {
+    padding: 0 8px;
+  }
+
+  [data-ui-theme] #player-hud-buttons,
+  [data-ui-theme][data-health-style="bar"] #player-hud-buttons {
+    width: 80px;
+    margin-right: 4px !important;
+  }
+
+  [data-ui-theme] #player-hud-buttons #health-ui-container,
+  [data-ui-theme][data-health-style="bar"] #player-hud-buttons #health-ui-container {
+    position: fixed;
+    left: 8px;
+    top: auto;
+    /* hud-lanes.js sets --hearts-lift when Block/Punch would meet them */
+    bottom: calc(108px + var(--tray-scrollbar, 0px) + var(--hearts-lift, 0px));
+  }
+}
+
+/* The "more" cue at the strip's right edge while slots are out of view
+   (inventory.js updateTrayOverflow): the small button skin with the theme's
+   chevron turned to point right, or left once the strip is at its end. */
+#inventory-more {
+  position: fixed;
+  z-index: 1001;
+  width: calc(44px * var(--hud-zoom, 1));
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-style: solid;
+  border-width: var(--ui-small-button-px, 2px);
+  border-image-source: var(--ui-small-button-image, none);
+  border-image-slice: var(--ui-small-button-slice, 2) fill;
+  border-image-width: var(--ui-small-button-px, 2px);
+  border-radius: 0;
+  background: none;
+  image-rendering: pixelated;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+#inventory-more[hidden] {
+  display: none;
+}
+
+#inventory-more::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(28px * var(--hud-zoom, 1));
+  height: calc(16px * var(--hud-zoom, 1));
+  margin: calc(-8px * var(--hud-zoom, 1)) 0 0 calc(-14px * var(--hud-zoom, 1));
+  background: url('/break_escape/assets/icons/chevron-down.png') no-repeat 0 0 / 100% 100%;
+  image-rendering: pixelated;
+  transform: rotate(-90deg);
+}
+
+#inventory-more[data-side="left"]::before {
+  transform: rotate(90deg);
+}
+
+#inventory-more:hover {
+  filter: brightness(1.2) var(--ui-glow-filter, brightness(1));
+}
+
+/* Room at the strip's end for the cue, so the last slot scrolls clear of it */
+#inventory-container.tray-overflows {
+  padding-right: 52px;
+}
+
+/* A classic scrollbar (desktop) takes height from the strip: add it back
+   (inventory.js measures it into --tray-scrollbar) */
+[data-ui-theme] #inventory-container.pixel-scroll {
+  height: calc(108px + var(--tray-scrollbar, 0px));
 }
 
 
@@ -912,6 +996,22 @@
   filter: saturate(0.6) brightness(0.85);
 }
 
+/* The Background voices switch on the themed skin: the same button face as its neighbours at full
+   strength in both states, no dimming filter (off is a choice, not a disabled control; UX access R1
+   finding 12). The CSS marker in music-widget.css (filled on, hollow off) shows the state; on is
+   the accent colour, off the normal button text. */
+[data-ui-theme] #music-widget-panel .mw-toggle-btn {
+  white-space: nowrap;
+}
+
+[data-ui-theme] #music-widget-panel .mw-toggle-btn[aria-pressed="true"] {
+  color: var(--ui-accent);
+}
+
+[data-ui-theme] #music-widget-panel .mw-toggle-btn[aria-pressed="false"] {
+  color: var(--ui-button-text);
+}
+
 [data-ui-theme] .player-preferences-modal-content .btn:disabled,
 [data-ui-theme] #music-widget-panel .mw-btn:disabled {
   filter: grayscale(1) brightness(0.6);
@@ -924,7 +1024,8 @@
 [data-ui-theme] .game-modal-close,
 [data-ui-theme] .modal-close-button,
 [data-ui-theme] #music-widget-panel .mw-close-btn,
-[data-ui-theme] .game-menu-close {
+[data-ui-theme] .game-menu-close,
+[data-ui-theme] .notification-close {
   border-style: solid;
   border-width: var(--ui-small-button-px);
   border-image-source: var(--ui-small-button-image);
@@ -942,10 +1043,36 @@
 [data-ui-theme] .game-modal-close:hover,
 [data-ui-theme] .modal-close-button:hover,
 [data-ui-theme] #music-widget-panel .mw-close-btn:hover,
-[data-ui-theme] .game-menu-close:hover {
+[data-ui-theme] .game-menu-close:hover,
+[data-ui-theme] .notification-close:hover {
   background: none;
   color: var(--ui-danger);
   filter: brightness(1.3) var(--ui-glow-filter);
+}
+
+/* R2 m1: the shredded-document close reuses the framework .minigame-close-button
+   but carries the shared .se-overlay-close class so it must draw the flat red SE X,
+   the same look as the 14 social overlays, not the themed steel skin. The two-class
+   selector (0,3,0) beats the themed rule above (0,2,0); only an element with both
+   classes (the SE scenes) is affected, so the themed X is unchanged elsewhere. */
+[data-ui-theme] .minigame-close-button.se-overlay-close {
+  border-style: solid;
+  border-width: 4px;
+  border-image: none;
+  border-color: #c0392b;
+  background: #e74c3c;
+  color: #fff;
+  filter: none;
+}
+[data-ui-theme] .minigame-close-button.se-overlay-close:hover {
+  background: #c0392b;
+  color: #fff;
+  filter: none;
+}
+[data-ui-theme] .minigame-close-button.se-overlay-close:active {
+  background: #a93226;
+  color: #fff;
+  filter: none;
 }
 
 /* Dark theme surface under the coloured text: the base style's bright green
@@ -975,6 +1102,26 @@
 
 [data-ui-theme] .objectives-panel.collapsed {
   max-height: calc(40px + 2 * var(--ui-frame-px));
+}
+
+/* Phones: the one-line pill takes the small square frame, not the 18px panel frame, so the
+   aim's text has the room (review R1 M2). Same test as ui/hud-lanes.js isCompactViewport. */
+@media (max-width: 899.98px), (max-height: 500px) {
+  [data-ui-theme] .objectives-panel.collapsed {
+    border-width: var(--ui-square-px);
+    border-image-source: var(--ui-square-image);
+    border-image-slice: var(--ui-square-slice) fill;
+    border-image-width: var(--ui-square-px);
+    max-height: calc(40px + 2 * var(--ui-square-px));
+  }
+}
+
+/* Phones held upright: the pill's aim may take two lines, so the panel is sized from its content
+   instead of the one-line cap above (review R3 m2; the same test as objectives.css) */
+@media (max-width: 899.98px) and (min-height: 501px) and (orientation: portrait) {
+  [data-ui-theme] .objectives-panel.collapsed {
+    max-height: none;
+  }
 }
 
 [data-ui-theme] .objectives-header {
@@ -1008,6 +1155,8 @@
 [data-ui-theme] .aim-header:hover .aim-toggle { color: var(--ui-text-dim); }
 [data-ui-theme] .aim-tasks { border-left-color: var(--ui-line); }
 [data-ui-theme] .objective-task { color: var(--ui-text-dim); }
+/* An optional active task stays a step dimmer than a required one under every theme (the rule above would flatten it). */
+[data-ui-theme] .objective-task.task-active.task-optional { color: color-mix(in srgb, var(--ui-text-dim) 70%, var(--ui-surface)); }
 [data-ui-theme] .task-icon { color: var(--ui-text-faint); }
 [data-ui-theme] .task-required-mark { color: var(--ui-accent); }
 [data-ui-theme] .aim-completed .aim-header,
@@ -1143,7 +1292,7 @@
    =================================================================== */
 
 /* --- Conversations (person-chat): the portrait stays full-bleed and the
-       caption fade stays; the names and buttons take the theme --- */
+       caption band stays; the names and buttons take the theme --- */
 [data-ui-theme] .person-chat-speaker-name.npc-speaker {
   color: var(--ui-accent);
   text-shadow: var(--ui-text-glow);
@@ -1177,6 +1326,8 @@
 [data-ui-theme] .person-chat-continue-button:focus {
   background: none;
   border-color: transparent;
+  /* The 9-slice skin is the button's edge: no square ring around it (slice 7 R1 m3) */
+  box-shadow: none;
   color: var(--ui-accent);
   filter: brightness(1.2) var(--ui-glow-filter);
 }
@@ -1209,7 +1360,43 @@
 [data-ui-theme] .notification.warning { box-shadow: inset 4px 0 0 #f39c12; }
 [data-ui-theme] .notification.error   { box-shadow: inset 4px 0 0 var(--ui-danger); }
 [data-ui-theme] .notification-title { color: var(--ui-accent); font-family: var(--ui-heading-font); }
-[data-ui-theme] .notification-close { color: var(--ui-text-dim); }
+
+/* --- Bark toasts (UI decision B2 option A): a phone text takes the toasts' small frame with
+       its green stripe; speech in the building takes the caption's frame, as they share the
+       message lane --- */
+[data-ui-theme] .npc-bark--phone {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .npc-bark--phone:hover { background: none; filter: brightness(1.15); }
+[data-ui-theme] .npc-bark--speech {
+  border-style: solid;
+  border-width: var(--ui-frame-px);
+  border-image-source: var(--ui-frame-image);
+  border-image-slice: var(--ui-frame-slice);
+  border-image-width: var(--ui-frame-px);
+  border-image-repeat: var(--ui-frame-repeat, stretch);
+  background: var(--ui-surface);
+  background-clip: padding-box;
+  color: var(--ui-text);
+  image-rendering: pixelated;
+}
+[data-ui-theme] .npc-bark-dismiss { color: var(--ui-text-dim); }
+[data-ui-theme] .npc-bark-clear-all {
+  border-style: solid;
+  border-width: var(--ui-square-px);
+  border-image-source: var(--ui-square-image);
+  border-image-slice: var(--ui-square-slice) fill;
+  border-image-width: var(--ui-square-px);
+  background: none;
+  color: var(--ui-text);
+}
 
 /* --- Interaction choice menu (several things under the pointer); its own
        styles are injected at run time, hence the id in each selector --- */
@@ -1223,7 +1410,21 @@
   image-rendering: pixelated;
 }
 
-[data-ui-theme] #be-interaction-menu .be-im-title { color: var(--ui-accent); text-shadow: var(--ui-text-glow); }
+[data-ui-theme] #be-interaction-menu .be-im-title { color: var(--ui-accent); text-shadow: var(--ui-text-glow); font-family: var(--ui-heading-font); }
+[data-ui-theme] #be-interaction-menu .be-im-more { color: var(--ui-text-dim); font-family: var(--ui-heading-font); }
+
+/* The menu's X is the shared small-button close; the menu's own rules set its size and
+   position (id selector), so state the skin's border width again here to keep the 9-slice */
+[data-ui-theme] #be-interaction-menu .be-im-close {
+  border-width: var(--ui-small-button-px);
+  border-radius: 0;
+  font-family: 'Press Start 2P', monospace;
+}
+[data-ui-theme] #be-interaction-menu .be-im-list:focus-visible,
+[data-ui-theme] #be-interaction-menu .be-im-close:focus-visible {
+  outline: 2px solid var(--ui-line);
+  outline-offset: 0;
+}
 [data-ui-theme] #be-interaction-menu .be-im-label { color: var(--ui-text); }
 [data-ui-theme] #be-interaction-menu .be-im-detail { color: var(--ui-text-dim); }
 

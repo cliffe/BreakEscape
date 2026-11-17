@@ -1,0 +1,13 @@
+{
+  "key": "563066e4295f53d1192a27a3be325442",
+  "npc": "tunnel_guard",
+  "text": "I read it. It doesn't say let you past.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:22:51Z"
+}

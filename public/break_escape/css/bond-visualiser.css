@@ -5,7 +5,7 @@
    when the 'victory' playlist is activated (mission complete).
 ─────────────────────────────────────────────────────────────────────────── */
 
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+/* VT323 and Press Start 2P are self-hosted in fonts.css */
 
 :root {
   --bv-gold:      #FFD700;

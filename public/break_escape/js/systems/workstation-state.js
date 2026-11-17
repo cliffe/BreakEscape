@@ -2,8 +2,8 @@
  * Workstation screen state: is an unattended workstation's screen locked or left open?
  *
  * A workstation is a scenario object with `workstation: true`, or with `locksScreenOnLeave` or
- * `lockChance` set. Its owner is `screenOwner` (an NPC id), else the NPC whose `needsHome` is
- * the object's id. Config on the object:
+ * `lockChance` set. Its owner is `owner` (a single NPC id); an object with no `owner` has none.
+ * Config on the object:
  *
  *   locksScreenOnLeave  true | false (default true): the screen locks when the owner leaves
  *   lockChance          0..1: overrides locksScreenOnLeave. Rolled on each leave from the needs
@@ -77,7 +77,7 @@
  *
  * Lock habits and auto-lock (OFFICE_LIFE_PLAN 12.2, slice 16):
  *
- *   NPC `screenHabit: { lockChance, lockIfAwayOverSeconds }`: the person's habit, used only when
+ *   NPC `habits.screen: { lockChance, lockIfAwayOverSeconds }`: the person's habit, used only when
  *     the object has neither lockChance nor locksScreenOnLeave (the object wins). A trip expected
  *     (npc_left_post expectedAwayMs) to last at most lockIfAwayOverSeconds stays open; a longer one
  *     (or one with no estimate) rolls lockChance (implied 1 when only the threshold is set), salt
@@ -112,27 +112,32 @@ export function isWorkstation(data) {
          data.lockType === 'login');
 }
 
-/** The NPC id that owns a workstation: explicit screenOwner, else the NPC with needsHome === id. */
-export function ownerOf(data, npcs) {
-    if (typeof data.screenOwner === 'string' && data.screenOwner) return data.screenOwner;
-    for (const npc of npcs || []) {
-        if (npc?.needsHome === data.id) return npc.id;
-    }
+/** The NPC id that owns a workstation: its `owner` (a single NPC id), else null. */
+export function ownerOf(data) {
+    if (data && typeof data.owner === 'string' && data.owner) return data.owner;
     return null;
 }
 
 /** The owner's screen habit, or null. */
 export function habitOf(ownerId, npcs) {
     const npc = (npcs || []).find(n => n?.id === ownerId);
-    const h = npc?.screenHabit;
+    const h = npc?.habits?.screen;
     return h && typeof h === 'object' ? h : null;
 }
 
 /**
+ * The PC's own setting beats its owner's habit (user decision q89, 2026-11-13; it has always
+ * worked this way). The order, first match wins: the policy's autoLockMin 0, then the object's
+ * lockChance, then the object's locksScreenOnLeave, then the owner's habits.screen, then "locks".
+ * A habit is never read for a PC that sets lockChance or locksScreenOnLeave. The server's
+ * AccessIdentities.screen_always_locks? and OwnerClaim.open_without_estimate? read the same
+ * order; README_scenario_design.md "Who decides the lock" documents it for authors, and
+ * test/js/workstation-state.test.mjs plus test/unit/pc_screen_lock_precedence_test.rb pin it.
+ *
  * Decide whether the screen locks on this leave. A lockChance wins over locksScreenOnLeave and
  * is resolved through `roll(npcId, salt)` (NPCNeedsSystem.roll, seeded); without a roller it
  * falls back to the plain config so the mechanic still works in a stub world. With neither
- * field on the object, the owner's `habit` (screenHabit) decides; `expectedAwayMs` is the
+ * field on the object, the owner's `habit` (habits.screen) decides; `expectedAwayMs` is the
  * leave's estimate (null counts as a long trip). With no habit either, the screen locks.
  * A `policy` (access model 5.5) with autoLockMin 0 locks whatever the object or habit says.
  */
@@ -205,6 +210,10 @@ export class WorkstationState {
         this.env.on('npc_returned_post:*', (d) => this.onReturned(d?.npcId));
         this.env.on('npc_ko:*', (d) => this.onKnockedOut(d?.npcId));
         this.env.on('npc_guest_left:*', (d) => this.onGuestLeft(d?.objectId, d?.npcId));
+        // The borrower left a leave-open borrow signed in here. For a policy that locks outright
+        // (autoLockMin 0) this is the real event, since the server answers guest: false and no
+        // npc_guest_left ever reaches the client (onBorrowedSession).
+        this.env.on('npc_borrowed_session:*', (d) => this.onBorrowedSession(d?.objectId, d?.npcId));
         this.env.on('npc_sat_at:*', (d) => this.onSatAt(d?.objectId, d?.npcId));
         // Review R1 M1: the player's own sign-out at a PC, or a sign-in there that is not a
         // claim, ends the guest session there, as the server does
@@ -246,7 +255,7 @@ export class WorkstationState {
     presence(objectId) {
         const data = this._find(objectId);
         if (!data) return { ownerId: null, present: null, userId: null, guestId: null };
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         const present = ownerId && typeof this.env.ownerPresent === 'function' ? !!this.env.ownerPresent(ownerId) : null;
         return { ownerId, present, userId: this._userOf(objectId), guestId: this.guestOf(objectId) };
     }
@@ -261,7 +270,7 @@ export class WorkstationState {
         const data = this._find(objectId);
         if (!data) return false;
         if (this.guests.get(objectId)?.npcId === npcId) return true;
-        return ownerOf(data, this.env.npcs()) === npcId && !!this.away.get(npcId)?.away;
+        return ownerOf(data) === npcId && !!this.away.get(npcId)?.away;
     }
 
     _userOf(objectId) {
@@ -283,12 +292,37 @@ export class WorkstationState {
         this.env.setGlobal(`${pcId}_owner_away`, !!away);
     }
 
+    /**
+     * npc_borrowed_session:<pcId>: an NPC left a leave-open borrow signed in here. A policy with
+     * autoLockMin 0 locks the screen the instant the borrower leaves, so no guest session is ever
+     * open at such a PC. This is the real event for that lock: the server refuses the guest claim
+     * for an autoLockMin 0 PC (game.rb "policy autoLockMin is 0") and record_borrow_done! writes
+     * no guest record, so borrow_body answers guest: false and no npc_guest_left reaches the
+     * client. Lock the screen outright here to agree with the server, as the owner-leave roll does
+     * (_rollScreen, decideLocked's autoLockMin 0). A policy above 0 (or none) leaves the open
+     * session to the guest flow (onGuestLeft), which the server's guest: true answer drives.
+     */
+    onBorrowedSession(pcId, npcId) {
+        const data = this._find(pcId);
+        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data)) return false;
+        if (this._policy(data)?.autoLockMin !== 0) return false;
+        this.guests.delete(pcId);
+        data.screenLocked = true;
+        this._publishGuest(pcId, true, true);
+        this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: npcId, guest: true });
+        // Emit the screen-changed event the office visuals key their lock cue on, as the sibling
+        // outright-lock paths (guestClaimRefused, _autoLock) do; without it the kiosk guest-leave
+        // auto-lock plays no flash/glyph/chime (npc-office-visuals.js line 580).
+        this._changed(data, npcId, true, 'auto');
+        return true;
+    }
+
     /** npc_guest_left:<pcId>: the borrower left the session open; a leave with the screen open. */
     onGuestLeft(pcId, npcId) {
         const data = this._find(pcId);
-        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data, this.env.npcs())) return false;
-        const rec = { npcId };
+        if (!data || typeof npcId !== 'string' || !npcId || ownerOf(data)) return false;
         const min = this._policy(data)?.autoLockMin;
+        const rec = { npcId };
         if (typeof min === 'number' && Number.isFinite(min) && min > 0) rec.lockAt = this._clock() + min * 60000;
         this.guests.set(pcId, rec);
         this._publishGuest(pcId, true, false);
@@ -352,6 +386,8 @@ export class WorkstationState {
         this.guests.delete(pcId);
         this._publishGuest(pcId, true, true);
         const data = this._find(pcId) || { id: pcId };
+        // Set the queryable state too (the test bridge reads data.screenLocked), as _autoLock does.
+        data.screenLocked = true;
         this.env.emit(`workstation_auto_locked:${pcId}`, { objectId: pcId, ownerId: g.npcId, guest: true });
         this._changed(data, g.npcId, true, 'auto');
         return true;
@@ -416,7 +452,7 @@ export class WorkstationState {
     isLocked(objectId) {
         const data = this._find(objectId);
         if (!data) return false;
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         const rec = ownerId ? this.away.get(ownerId) : null;
         if (!rec?.away) return false;
         this._lateRoll(data, ownerId, rec);
@@ -426,7 +462,7 @@ export class WorkstationState {
     /** Lock one open screen whose lockAt has passed while its owner is still away. */
     _checkAutoLock(data) {
         if (!data || data.lockAt === undefined || data.screenLocked) return false;
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         if (!this.away.get(ownerId)?.away) return false;
         if (this._clock() < data.lockAt) return false;
         this._autoLock(data, ownerId);
@@ -477,13 +513,12 @@ export class WorkstationState {
     }
 
     _stationsOf(npcId) {
-        const npcs = this.env.npcs();
         const out = [];
         const seen = new Set();
         for (const data of this.env.objects()) {
             if (!isWorkstation(data) || seen.has(data.id)) continue;
             seen.add(data.id);
-            if (ownerOf(data, npcs) === npcId) out.push(data);
+            if (ownerOf(data) === npcId) out.push(data);
         }
         return out;
     }
@@ -495,7 +530,7 @@ export class WorkstationState {
 
     _publish(data) {
         this.env.setGlobal(`${data.id}_screen_locked`, !!data.screenLocked);
-        const owner = ownerOf(data, this.env.npcs());
+        const owner = ownerOf(data);
         this.env.setGlobal(`${data.id}_owner_away`, !!this.away.get(owner)?.away);
     }
 
@@ -563,7 +598,7 @@ export class WorkstationState {
             const data = this._find(objectId);
             const ms = autoLockMs(data);
             if (!data || ms === null || data.screenLocked !== false) { this.idle.delete(objectId); continue; }
-            const ownerId = ownerOf(data, this.env.npcs());
+            const ownerId = ownerOf(data);
             if (!this.away.get(ownerId)?.away) { this.idle.delete(objectId); continue; }
             if (typeof this.env.inMinigame === 'function' && this.env.inMinigame(objectId)) { this.idle.set(objectId, nowMs); continue; }
             if (nowMs - since < ms) continue;
@@ -580,7 +615,7 @@ export class WorkstationState {
         if (!data) return null;
         // 9.2 H (6.4): anybody using the PC now is present, owner or not
         if (this._userOf(objectId)) return 'attended';
-        const ownerId = ownerOf(data, this.env.npcs());
+        const ownerId = ownerOf(data);
         if (!ownerId) {
             const guestId = this.guestOf(objectId);
             if (!guestId) return 'signin';

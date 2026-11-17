@@ -94,7 +94,9 @@ function assertText(el, label, { dashes = true, wordSpans = false } = {}) {
 }
 
 test('the base header shows a hostile title and cancel text as text', () => {
-    const mg = new MinigameScene(fresh(), { title: HOSTILE, cancelText: HOSTILE, headerElement: true });
+    // A scene that keeps its bottom button (MinigameScene.keepsCancelButton, slice 7 R1)
+    class KeepsCancel extends MinigameScene { static keepsCancelButton = true; }
+    const mg = new KeepsCancel(fresh(), { title: HOSTILE, cancelText: HOSTILE, headerElement: true });
     mg.init();
     assertText(document.querySelector('.minigame-header h3'), 'base header');
     assertText(document.getElementById('minigame-cancel'), 'cancel button', { dashes: false });
@@ -128,14 +130,14 @@ test('the network segmentation map title bar shows a hostile title as text', () 
     window.gameState = { globalVariables: {} };
     const mg = new NetworkSegmentationMapMinigame(fresh(), { title: HOSTILE, rules: [] });
     initQuietly(mg);
-    assertText(document.querySelector('.nsm-title-text'), 'segmentation map title');
+    assertText(document.querySelector('.console-title'), 'segmentation map title');
 });
 
 test('the forensic data platform title shows a hostile title as text', () => {
     window.gameState = { globalVariables: {} };
     const mg = new ForensicDataPlatformMinigame(fresh(), { title: HOSTILE, tabs: [] });
     initQuietly(mg);
-    assertText(document.querySelector('.fdp-title'), 'forensic platform title');
+    assertText(document.querySelector('.console-title'), 'forensic platform title');
 });
 
 test('the password device panel shows a hostile title as text (deviceImage path)', () => {
@@ -148,6 +150,17 @@ test('the password device panel shows a hostile title as text (deviceImage path)
 
 test('the password device panel shows a hostile lockable name as text (lockable path)', () => {
     const lockable = { texture: { key: 'pc' }, scenarioData: { name: HOSTILE, observations: HOSTILE } };
+    const mg = new PasswordMinigame(fresh(), { title: 'Enter password', lockable, requiresKeyboardInput: true });
+    initQuietly(mg);
+    // A computer's lock sits in the PC monitor frame (UX slice 2c): the name on the bezel,
+    // the observations on the screen, no device picture
+    assertText(document.querySelector('.pc-monitor-name'), 'password lockable name (monitor bezel)');
+    assertText(document.querySelector('.pc-screen-note'), 'password lockable observations (screen note)');
+    assert.equal(document.querySelector('img.password-image'), null, 'no device picture in the monitor');
+});
+
+test('the password device panel shows a hostile lockable name as text (a non-computer lockable)', () => {
+    const lockable = { texture: { key: 'safe' }, scenarioData: { type: 'safe', name: HOSTILE, observations: HOSTILE } };
     const mg = new PasswordMinigame(fresh(), { title: 'Enter password', lockable, requiresKeyboardInput: true });
     initQuietly(mg);
     assertText(document.querySelector('.password-info h4'), 'password lockable name');
@@ -215,8 +228,10 @@ test('the container panel shows a hostile name and observations as text (desktop
     const mg = new ContainerMinigame(fresh(), { containerItem, contents: [], mode: 'pc', desktopMode: true });
     await initQuietlyAsync(mg);
     assert.ok(document.querySelector('.desktop-mode'), 'desktop mode rendered');
-    assertText(document.querySelector('.container-info h4'), 'desktop panel name');
-    assertText(document.querySelector('.container-info p'), 'desktop panel observations');
+    // In the PC monitor (UX slice 2c): the name on the bezel; the observations are no longer
+    // printed on the desktop (UI PC polish item 1), so the hostile text has nowhere to land
+    assertText(document.querySelector('.pc-monitor-name'), 'desktop monitor name');
+    assert.equal(document.querySelector('.desktop-taskbar-note'), null, 'no observations on the desktop');
 });
 
 test('the lockpicking item panel shows a hostile item name as text', () => {
@@ -316,9 +331,9 @@ test('a voice message transcript shows hostile ink text as text', async () => {
     try { await ui.addMessage('npc', `voice: ${HOSTILE}`); } catch { /* past the transcript */ }
     const t = document.querySelector('.transcript');
     assert.ok(t, 'the transcript renders');
-    assert.equal(t.querySelector('strong').textContent, 'Transcript:', 'the label is kept');
+    assert.equal(t.querySelector('.mg-field-label').textContent, 'Transcript:', 'the label is kept');
     const copy = t.cloneNode(true);
-    copy.querySelectorAll('strong, br').forEach(n => n.remove());
+    copy.querySelectorAll('.mg-field-label, br').forEach(n => n.remove());
     assertText(copy, 'voice transcript');
 });
 
@@ -329,7 +344,7 @@ test('the password hint and post-it show hostile scenario text as text', () => {
     });
     initQuietly(mg);
     const hint = document.querySelector('#password-hint').cloneNode(true);
-    hint.querySelector('strong').remove();
+    hint.querySelector('.mg-field-label').remove();
     assertText(hint, 'password hint');
     assertText(document.querySelector('.postit-note'), 'password post-it', { wordSpans: true });
 });

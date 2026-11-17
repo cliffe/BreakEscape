@@ -1,0 +1,13 @@
+{
+  "key": "c283d893994974e6bbe27e64857189a6",
+  "npc": "jodie",
+  "text": "No coffee here, then.",
+  "voice": "Zephyr",
+  "style": "Maintenance assistant, mid twenties, Glaswegian accent. Quick, warm, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:14:51Z"
+}

@@ -97,6 +97,51 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty AccessLeakScanner.new(scenario, served_npcs: ['jake']).scan(rows)
   end
 
+  # Scenario format hardening step 3: non-account capture secrets.
+  CAPTURE_SECRET = 'Dossier-Phrase-7781'.freeze
+
+  def capture_scenario
+    {
+      'rooms' => { 'office' => { 'type' => 'room_office', 'npcs' => [
+        # A non-account NPC (no creds) whose usePayload carries a capture secret.
+        { 'id' => 'informant', 'npcType' => 'person',
+          'usePayload' => { 'targetId' => 'informant', 'secret' => CAPTURE_SECRET } },
+        # An addCapture mapping with a secret, on a phone NPC (no account).
+        { 'id' => 'hax', 'npcType' => 'phone',
+          'eventMappings' => [{ 'eventPattern' => 'x', 'addCapture' => { 'targetId' => 'drop', 'secret' => 'Drop-Note-Code-99' } }] }
+      ] } }
+    }
+  end
+
+  test 'a non-account capture secret is served only by /capture_secrets, reported elsewhere' do
+    cap = '/break_escape/games/1/capture_secrets'
+    # Served through its own route: allowed.
+    assert_empty scan({ 'secrets' => { 'informant' => CAPTURE_SECRET } }, path: cap, data: capture_scenario)
+    # The same secret in a room response is a leak, named by its target id, never its value.
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'board', 'hint' => CAPTURE_SECRET }] } }, data: capture_scenario)
+    assert_equal [[1, 'capture_secret', 'capture:informant']], summary(findings)
+    refute_includes findings.first.json_path, CAPTURE_SECRET
+    # A capture page the tester read (a dom row) is the other allowed place.
+    page = [['dom.jsonl', 1, { 'dom' => "Captures\n#{CAPTURE_SECRET}", 'label' => 'capture log' }]]
+    assert_empty AccessLeakScanner.new(capture_scenario).scan(page)
+    # The mapping secret is caught the same way, by its own target id.
+    mapping = scan({ 'note' => "left behind: Drop-Note-Code-99" }, data: capture_scenario)
+    assert_equal [[1, 'capture_secret', 'capture:drop']], summary(mapping)
+    assert_equal 2, AccessLeakScanner.new(capture_scenario).counts[:capture_secrets]
+  end
+
+  test 'an account capture secret stays with the password rule, not the capture_secret rule' do
+    # A secret equal to an account holder's own creds.password is a password, not a capture secret:
+    # build_authored_capture_secrets skips a writer on an account holder, and so does the scanner.
+    data = { 'rooms' => { 'office' => { 'type' => 'room_office', 'npcs' => [
+      { 'id' => 'rhea', 'npcType' => 'person', 'creds' => { 'username' => 'r.m', 'password' => 'Rhea-Pass-55' },
+        'eventMappings' => [{ 'eventPattern' => 'x', 'addCapture' => { 'targetId' => 'rhea', 'secret' => 'Rhea-Pass-55' } }] }
+    ] } } }
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'board', 'hint' => 'Rhea-Pass-55' }] } }, data: data)
+    assert_equal [[1, 'password', 'npc:rhea']], summary(findings)
+    assert_equal 0, AccessLeakScanner.new(data).counts[:capture_secrets]
+  end
+
   test 'profile text in a room response is reported and in a container response is not' do
     budget = { 'id' => 'jake_budget', 'type' => 'text_file', 'name' => 'Q3 budget forecast.xlsx',
                'text' => 'PROFILE-BUDGET-SECRET-TEXT' }
@@ -367,7 +412,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       'startRoom' => 'office',
       'rooms' => { 'office' => {
         'type' => 'room_office', 'connections' => {},
-        'objects' => [{ 'id' => 'omar_pc', 'type' => 'pc', 'name' => "Omar's PC", 'locked' => true, 'lockType' => 'login' },
+        'objects' => [{ 'id' => 'omar_pc', 'type' => 'pc', 'name' => "Omar's PC", 'locked' => true, 'lockType' => 'login', 'owner' => 'omar' },
                       { 'id' => 'hot_desk', 'type' => 'pc', 'name' => 'Hot desk', 'locked' => true, 'lockType' => 'login' }],
         'npcs' => [
           { 'id' => 'omar', 'npcType' => 'person', 'needsHome' => 'omar_pc', 'habits' => { 'writesDown' => true },
@@ -428,21 +473,23 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
 
   test 'an NPC record with a withheld key is reported by key and NPC id; social characters and awareness are not' do
     body = {
-      'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'writesDown' => true } }] },
+      'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'password' => 'reused' } }] },
       'stray' => { 'id' => 'len', 'npcType' => 'person', 'role' => 'guard' },
       'social' => { 'characters' => { 'jo' => { 'role' => 'manager' } }, 'awareness' => { 'episodes' => [] } }
     }
     findings = scan(body, data: habits_scenario)
-    assert_equal [[1, 'withheld_key', 'npc:omar/habits'], [1, 'withheld_key', 'npc:len/role']], summary(findings)
+    # Step 8c: a shipped habits block is flagged per server-only subkey, not as the whole block.
+    assert_equal [[1, 'withheld_key', 'npc:omar/habits.password'], [1, 'withheld_key', 'npc:len/role']], summary(findings)
     lines = AccessLeakScanner.new(habits_scenario).report_lines(findings)
-    lines.each { |line| refute_includes line, 'writesDown' }
+    lines.each { |line| refute_includes line, 'reused' }
     lines.each { |line| refute_includes line, 'guard' }
   end
 
-  # USB habit review R1 m3: usbHabit ships only inside the resolved plan (work.usb)
-  test 'an NPC record carrying usbHabit is reported; work.usb is not' do
-    body = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'usbHabit' => { 'every' => 2 }, 'work' => { 'usb' => { 'every' => 2 } } }] } }
-    assert_equal [[1, 'withheld_key', 'npc:omar/usbHabit']], summary(scan(body, data: habits_scenario))
+  # USB habit review R1 m3: the usb habit ships only inside the resolved plan (work.usb)
+  test 'an NPC record carrying a usb habit is reported; work.usb is not' do
+    body = { 'room' => { 'npcs' => [{ 'id' => 'omar', 'habits' => { 'usb' => { 'every' => 2 } },
+                                      'work' => { 'usb' => { 'every' => 2 } } }] } }
+    assert_equal [[1, 'withheld_key', 'npc:omar/habits.usb']], summary(scan(body, data: habits_scenario))
   end
 
   # USB habit review R2 m2: a habit stick's files, authored or the default, are secrets outside
@@ -455,7 +502,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     stick = { 'type' => 'usb', 'id' => 'omar_usb', 'name' => "Omar's USB stick", 'usbClass' => 'storage', 'takeable' => true }
     stick['contents'] = contents if contents
     omar = data['rooms']['office']['npcs'][0]
-    omar['usbHabit'] = { 'every' => 2 }
+    (omar['habits'] ||= {})['usb'] = { 'every' => 2 }
     omar['itemsHeld'] = [stick]
     data
   end
@@ -746,5 +793,558 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_empty AccessLeakScanner.new(game.scenario_data, game: game).scan(
       post_rows(['GET', LOCKOUT_SCENARIO, { 'note' => 'try sam_pc|anything' }])
     )
+  end
+
+  # Credential keyring (CREDENTIAL_KEYRING_PLAN.md, section 6.1).
+  CRED_SCENARIO = { 'credentials' => { 'ops_rdp' => { 'kind' => 'saved_connection' },
+                                       'ops_pw' => { 'kind' => 'password' } } }.freeze
+
+  test 'K1: a credentials key in any response is reported' do
+    findings = scan({ 'credentials' => { 'ops_rdp' => { 'kind' => 'saved_connection' } } }, data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_registry', 'credentials']], summary(findings)
+  end
+
+  test 'K1: a registry password credential carrying its password value is reported' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry', 'password' => 'Hunter2-xyz' }
+    ] }
+    findings = scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_password_value', 'credential:ops_pw']], summary(findings)
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('Hunter2-xyz') })
+  end
+
+  test 'K1: a captured account entry may carry its password; it is not a registry leak' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => 'Biscuit2019' }
+    ] }
+    assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+  end
+
+  # K3d (plan 8.7): the captures map in a GET /keyring answer carries a tag, a source and an
+  # account id, never a value.
+  KEYRING_PATH = '/break_escape/games/1/keyring'.freeze
+
+  test 'K3d: a captures entry with only tag, source and account gives no finding' do
+    body = { 'rev' => 'abc123', 'entries' => [], 'captures' => {
+      'jake' => { 'tag' => 'password', 'source' => 'phished', 'account' => 'jake' },
+      'cupboard' => { 'tag' => 'pin', 'source' => 'recorded' }
+    } }
+    assert_empty scan(body, path: KEYRING_PATH, data: CRED_SCENARIO)
+  end
+
+  test 'K3d: a captures entry with any other key is reported, by target id and never the value' do
+    body = { 'rev' => 'abc123', 'entries' => [], 'captures' => {
+      'cupboard' => { 'tag' => 'pin', 'source' => 'recorded', 'secret' => '48213' },
+      'jake' => { 'tag' => 'password', 'source' => 'recorded', 'note' => 'a note' }
+    } }
+    findings = scan(body, path: KEYRING_PATH, data: CRED_SCENARIO)
+    assert_equal [[1, 'keyring_capture_key', 'capture:cupboard'], [1, 'keyring_capture_key', 'capture:jake']],
+                 summary(findings).sort_by(&:last)
+    assert_equal ['$.captures.cupboard.secret', '$.captures.jake.note'], findings.map(&:json_path).sort
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('48213') })
+  end
+
+  test 'K3d: a captures entry that is not an object is reported' do
+    body = { 'rev' => 'abc123', 'entries' => [], 'captures' => { 'cupboard' => '48213' } }
+    assert_equal [[1, 'keyring_capture_key', 'capture:cupboard']],
+                 summary(scan(body, path: KEYRING_PATH, data: CRED_SCENARIO))
+  end
+
+  test 'K3d: a captures key on another response is not a keyring answer' do
+    body = { 'captures' => { 'cupboard' => { 'tag' => 'pin', 'secret' => 'x' } } }
+    assert_empty scan(body, data: CRED_SCENARIO)
+  end
+
+  # K3d: the Sign-ins rows are capture log page text (a dom row); the existing password and
+  # capture-secret rules already apply to it.
+  test 'K3d: Sign-ins row text with an account password is reported unless the capture is served' do
+    row = [['dom.jsonl', 1, { 'dom' => "Sign-ins\nJake Lee\n#{JAKE_PASSWORD}", 'label' => 'capture log' }]]
+    assert_equal [[1, 'password', 'npc:jake']], summary(AccessLeakScanner.new(scenario, served_npcs: []).scan(row))
+    assert_empty AccessLeakScanner.new(scenario, served_npcs: ['jake']).scan(row)
+  end
+
+  # A game that reports a fixed set of credential ids as holding (the scanner reads @game once).
+  # captured: the NPC ids it reports as captured accounts (account_capture_usernames).
+  class HeldGame
+    def initialize(held, captured: [])
+      @held = held
+      @captured = captured
+    end
+
+    def credential_proof_holds?(id, _entry)
+      @held.include?(id)
+    end
+
+    def account_capture_usernames
+      @captured.to_h { |npc_id| [npc_id, "#{npc_id}@example.test"] }
+    end
+  end
+
+  test 'K1: a registry credential whose proof does not hold is reported, a held one is not' do
+    game = HeldGame.new(%w[ops_rdp])
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_rdp', 'kind' => 'saved_connection', 'source' => 'registry' },
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry' }
+    ] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200, 'body' => body }]]
+    findings = AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(rows)
+    assert_equal [[1, 'credential_unheld', 'credential:ops_pw']], summary(findings)
+  end
+
+  test 'K1: with no game the unheld check does not run' do
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'ops_pw', 'kind' => 'password', 'source' => 'registry' }
+    ] }
+    assert_empty scan(body, path: '/break_escape/games/1/keyring', data: CRED_SCENARIO)
+  end
+
+  # Item 1: a GET /keyring capture entry carries the captured account's own password, as GET
+  # /capture_secrets does; it is exempt (owner's own game). A registry-sourced entry is not.
+  test 'K1: a captured account keyring entry with its password is exempt for the owner' do
+    keyring = '/break_escape/games/1/keyring'
+    body = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => JAKE_PASSWORD }
+    ] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => body }]]
+    assert_empty AccessLeakScanner.new(scenario, game: HeldGame.new([], captured: %w[jake])).scan(rows),
+                 'capture-sourced password is allowed'
+
+    # The same password on a registry-sourced entry is still a leak.
+    reg = { 'rev' => 'abc123', 'entries' => [
+      { 'id' => 'jake_pw', 'kind' => 'password', 'source' => 'registry', 'password' => JAKE_PASSWORD }
+    ] }
+    reg_rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => reg }]]
+    findings = AccessLeakScanner.new(scenario, game: HeldGame.new([])).scan(reg_rows)
+    assert_includes summary(findings), [1, 'password', 'npc:jake'], 'a registry entry password is flagged'
+  end
+
+  # Carry-in m3: the `source: "capture"` label alone exempts nothing. The entry's id must be
+  # `<npcId>.password` for an account the recorded state serves as captured, and the password must
+  # be that NPC's own.
+  test 'K2 m3: a capture-labelled keyring password is exempt only for a captured account under its own id' do
+    keyring = '/break_escape/games/1/keyring'
+    scan_with = lambda do |entry, captured|
+      body = { 'rev' => 'abc123', 'entries' => [entry] }
+      rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => keyring, 'status' => 200, 'body' => body }]]
+      summary(AccessLeakScanner.new(scenario, game: HeldGame.new([], captured: captured)).scan(rows))
+    end
+    own = { 'id' => 'jake.password', 'kind' => 'password', 'source' => 'capture', 'password' => JAKE_PASSWORD }
+    assert_empty scan_with.call(own, %w[jake])
+
+    # Not captured in the recorded state: flagged although the label says capture.
+    assert_includes scan_with.call(own, []), [1, 'password', 'npc:jake']
+    # Another NPC is captured, and the entry claims capture under a made-up id.
+    forged = own.merge('id' => 'anything')
+    assert_includes scan_with.call(forged, %w[jake]), [1, 'password', 'npc:jake']
+    # A captured account's id carrying someone else's password.
+    other = own.merge('id' => 'sam.password')
+    assert_includes scan_with.call(other, %w[sam]), [1, 'password', 'npc:jake']
+  end
+
+  # A held keyring entry's label/foundIn are an intended disclosure; the sign-in item's name can
+  # match them. Held-ness comes from the same proof check as credential_unheld.
+  def keyring_signin_scan(entry, held:)
+    data = scenario.merge('credentials' => { 'jake_pw_note' => { 'kind' => 'password' } })
+    body = { 'rev' => 'abc123', 'entries' => [entry] }
+    rows = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200, 'body' => body }]]
+    AccessLeakScanner.new(data, game: HeldGame.new(held)).scan(rows)
+  end
+
+  test 'K1: a held keyring entry whose label and foundIn equal a sign-in item name gives no finding' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt', 'foundIn' => 'Local notes on this PC.txt' }
+    assert_empty keyring_signin_scan(entry, held: %w[jake_pw_note])
+  end
+
+  test 'K1: an unheld keyring entry whose label equals a sign-in item name is still flagged' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt' }
+    assert_equal [[1, 'signin_content', 'item:jake_local'], [1, 'credential_unheld', 'credential:jake_pw_note']],
+                 summary(keyring_signin_scan(entry, held: [])).sort_by(&:last).reverse
+  end
+
+  test 'K1: file body text in a held keyring entry is still flagged' do
+    entry = { 'id' => 'jake_pw_note', 'kind' => 'password', 'source' => 'registry',
+              'label' => 'Local notes on this PC.txt', 'body' => 'PC-LOCAL-SECRET-TEXT' }
+    assert_equal [[1, 'signin_content', 'item:jake_local']], summary(keyring_signin_scan(entry, held: %w[jake_pw_note]))
+  end
+
+  # R2 m3: the item-level `credential` field is server-only (both client filters strip it), so it is
+  # a second guard flagging it in any client response.
+  test 'K1: an item-level credential field in any response is reported' do
+    findings = scan({ 'room' => { 'objects' => [{ 'id' => 'f', 'type' => 'text_file', 'credential' => 'lena_rdp' }] } },
+                    data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_field', 'credential']], summary(findings)
+  end
+
+  # K5 (CREDENTIAL_KEYRING_PLAN.md, section 10): the token clock is server-only. The key never
+  # appears in an answer; with a game given, a recorded clock value never appears either.
+  class ClockGame
+    def initialize(clock)
+      @player_state = { 'credentialClock' => clock }
+    end
+    attr_reader :player_state
+  end
+
+  test 'K5: a credentialClock key in any response is reported, wherever it nests' do
+    findings = scan({ 'playerState' => { 'credentialClock' => { 'lena_token' => 1_731_700_000.5 } } }, data: CRED_SCENARIO)
+    assert_equal [[1, 'credential_clock', 'credentialClock']], summary(findings)
+    refute(AccessLeakScanner.new(CRED_SCENARIO).report_lines(findings).any? { |l| l.include?('1731700000') })
+  end
+
+  test 'K5: an empty credentialClock key is still reported' do
+    assert_equal [[1, 'credential_clock', 'credentialClock']],
+                 summary(scan({ 'credentialClock' => {} }, data: CRED_SCENARIO))
+  end
+
+  test 'K5: a recorded token clock value in an answer is reported, an expiresInS is not' do
+    game = ClockGame.new('lena_token' => 1_731_700_000.5)
+    leak = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200,
+                             'body' => { 'rev' => 'abc', 'entries' => [], 'note' => 1_731_700_000.5 } }]]
+    assert_equal [[1, 'credential_clock', 'credentialClock']],
+                 summary(AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(leak))
+    clean = [['r.jsonl', 1, { 'method' => 'GET', 'path' => '/break_escape/games/1/keyring', 'status' => 200,
+                              'body' => { 'rev' => 'abc', 'entries' => [], 'unchanged' => true, 'expiresInS' => { 'lena_token' => 237 } } }]]
+    assert_empty AccessLeakScanner.new(CRED_SCENARIO, game: game).scan(clean)
+  end
+
+  # ---- E0.3 (PHYSICAL_PENTEST_DEVICES_PLAN.md): a capture secret and a plant-proofed account ----
+  # password are served legitimately only after the plant; a Wi-Fi key with a proof is judged as
+  # a capture secret; a capture descriptor's secret is not public room text.
+  STAFF_PSK = 'Staff-Key-8841-alpha'.freeze
+  GUEST_PSK = 'Guest-Wifi-2024'.freeze
+  KIERAN_PASSWORD = 'tidy-orange-ladder'.freeze
+  CHRIS_PASSWORD = 'Chris-Pass-6603'.freeze
+  CAPTURES = '/break_escape/games/1/capture_secrets'.freeze
+  INVENTORY = '/break_escape/games/1/inventory'.freeze
+  # Legacy shape (an old scenario copy that still has the rogue_ap_spot pot, as saved games carry);
+  # the hideable shape, with no spot, is covered under "Plant hiding" below.
+  PLANT_PROOF = { 'planted' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot' }.freeze
+
+  # Ruth (a phone NPC, no account) writes the staff key with the plant proof; Kieran holds an
+  # account with the same proof, admitted at hot_desk_pc; Chris's keylogger proof sits on a
+  # jack, so it is not order-checked.
+  def pentest_scenario(psk_proof: true)
+    key_capture = { 'targetId' => 'staff_wifi_key', 'kind' => 'credential', 'secret' => STAFF_PSK }
+    key_capture['proof'] = PLANT_PROOF.dup if psk_proof
+    {
+      'startItemsInInventory' => [{ 'type' => 'kit', 'id' => 'kit_rogue_ap', 'name' => 'Rogue AP kit' }],
+      'social' => { 'captures' => { 'revealSecret' => true } },
+      'networks' => {
+        'office_lan' => { 'name' => 'Office LAN segment', 'wifi' => { 'ssid' => 'LW-Staff-Secure', 'psk' => STAFF_PSK } },
+        'guest_net' => { 'name' => 'Guest segment', 'wifi' => { 'ssid' => 'LW-Guest', 'psk' => GUEST_PSK } }
+      },
+      'rooms' => {
+        'reception' => {
+          'type' => 'room_office',
+          'objects' => [
+            { 'id' => 'guest_card', 'type' => 'notes', 'name' => 'Guest Wi-Fi card',
+              'text' => "Guest Wi-Fi: LW-Guest, key #{GUEST_PSK}" },
+            { 'id' => 'rogue_ap_spot', 'type' => 'plant_spot', 'name' => 'Behind the plant',
+              'requiresItem' => 'kit_rogue_ap', 'consumesItem' => true,
+              'triggerOnInteract' => [{ 'type' => 'set_global', 'key' => 'ap_planted', 'value' => true }] },
+            { 'id' => 'chris_jack', 'type' => 'network_port', 'name' => 'Port', 'networkJack' => true, 'network' => 'office_lan' },
+            { 'id' => 'hot_desk_pc', 'type' => 'pc', 'name' => 'Hot desk', 'lockType' => 'login', 'locked' => true,
+              'access' => { 'people' => %w[kieran chris] } }
+          ],
+          'npcs' => [
+            { 'id' => 'ruth', 'npcType' => 'phone', 'eventMappings' => [{ 'eventPattern' => 'npc_used:laptop', 'addCapture' => key_capture }] },
+            { 'id' => 'kieran', 'npcType' => 'person', 'creds' => { 'username' => 'k.doyle', 'password' => KIERAN_PASSWORD },
+              'captureProof' => [PLANT_PROOF.dup],
+              'eventMappings' => [{ 'eventPattern' => 'npc_used:laptop',
+                                    'addCapture' => { 'targetId' => 'kieran', 'kind' => 'credential', 'address' => 'k.doyle' } }] },
+            { 'id' => 'chris', 'npcType' => 'person', 'creds' => { 'username' => 'c.ward', 'password' => CHRIS_PASSWORD },
+              'captureProof' => [{ 'planted' => 'kit_logger', 'on' => 'chris_jack' }],
+              'eventMappings' => [{ 'eventPattern' => 'x',
+                                    'addCapture' => { 'targetId' => 'chris', 'kind' => 'credential', 'address' => 'c.ward' } }] }
+          ]
+        }
+      }
+    }
+  end
+
+  # A stand-in game: only the final-state proof check is read on these routes.
+  class ProofGame
+    attr_reader :player_state
+
+    def initialize(holds)
+      @holds = holds
+      @player_state = {}
+    end
+
+    def capture_proof_holds?(_proof)
+      @holds
+    end
+  end
+
+  def inv_row(inv: :absent, status: 200)
+    row = { 'method' => 'POST', 'path' => INVENTORY, 'status' => status, 'body' => { 'success' => true } }
+    row['inv'] = inv unless inv == :absent
+    row
+  end
+
+  def plant_row(item: 'kit_rogue_ap', on: 'rogue_ap_spot')
+    inv_row(inv: { 'action' => 'remove', 'itemId' => item, 'usedOn' => on })
+  end
+
+  def other_inv_row
+    inv_row(inv: { 'action' => 'add', 'itemId' => 'coffee', 'usedOn' => nil })
+  end
+
+  def served_psk
+    { 'method' => 'GET', 'path' => CAPTURES, 'status' => 200, 'body' => { 'secrets' => { 'staff_wifi_key' => STAFF_PSK } } }
+  end
+
+  def served_kieran
+    { 'method' => 'GET', 'path' => CAPTURES, 'status' => 200, 'body' => { 'secrets' => { 'kieran' => KIERAN_PASSWORD } } }
+  end
+
+  def dom_row(text, label)
+    { 'dom' => text, 'label' => label }
+  end
+
+  def plant_scan(rows, game: nil, data: pentest_scenario, served_npcs: nil)
+    AccessLeakScanner.new(data, game: game, served_npcs: served_npcs)
+                     .scan(rows.each_with_index.map { |row, i| ['r.jsonl', i + 1, row] })
+  end
+
+  # Several files read in argument order as one log
+  def plant_scan_files(files, game: nil, served_npcs: nil)
+    lines = files.flat_map { |name, rows| rows.each_with_index.map { |row, i| [name, i + 1, row] } }
+    AccessLeakScanner.new(pentest_scenario, game: game, served_npcs: served_npcs).scan(lines)
+  end
+
+  test 'E0.3: a proofed PSK on /capture_secrets with no prior plant and no game is flagged' do
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']], summary(plant_scan([other_inv_row, served_psk]))
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']], summary(plant_scan([served_psk]))
+  end
+
+  test 'E0.3: a log with no POST /inventory rows and a game whose proof holds is clean (the plant predates the log)' do
+    assert_empty plant_scan([served_psk], game: ProofGame.new(true))
+  end
+
+  test 'E0.3: a fully tagged log with no plant row for the item, a game whose proof holds: clean' do
+    assert_empty plant_scan([other_inv_row, plant_row(item: 'kit_other', on: 'desk'), served_psk], game: ProofGame.new(true))
+  end
+
+  test 'E0.3: an untagged remove row before the served row turns the shortcut off' do
+    assert_equal [[3, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([other_inv_row, inv_row(inv: nil), served_psk], game: ProofGame.new(true)))
+    # A remove row with no inv key in an otherwise tagged log is unreadable too
+    assert_equal [[3, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([other_inv_row, inv_row, served_psk], game: ProofGame.new(true)))
+  end
+
+  test 'E0.3: a pre-change log (no inv key on any POST /inventory row) keeps the old rules' do
+    rows = [inv_row, served_psk]
+    old = AccessLeakScanner.new(pentest_scenario).scan(rows.each_with_index.map { |row, i| ['r.jsonl', i + 1, row] })
+    assert_empty old
+    assert_empty plant_scan(rows, game: ProofGame.new(true))
+    assert_empty plant_scan(rows, game: ProofGame.new(false)), 'not order-checked, and the old exemption stands'
+  end
+
+  test 'E0.3: argument order is the log order across files' do
+    # The plant in a second file, served in the first: flagged
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan_files([['a.jsonl', [served_psk]], ['b.jsonl', [plant_row]]]))
+    # A DOM file after the response file it was read beside: clean
+    assert_empty plant_scan_files([['a.jsonl', [plant_row]], ['dom.jsonl', [dom_row("Wi-Fi key #{STAFF_PSK}", 'capture log')]]])
+    # The DOM file passed first sits before the plant: flagged
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan_files([['dom.jsonl', [dom_row("Wi-Fi key #{STAFF_PSK}", 'capture log')]], ['a.jsonl', [plant_row]]]))
+  end
+
+  test 'E0.3: served before the plant row, or with a failing proof, is flagged; after a tagged plant that held, clean' do
+    # No plant in the log, a game whose proof fails
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']], summary(plant_scan([served_psk], game: ProofGame.new(false)))
+    # The plant row comes after the served row, the proof holds now
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([served_psk, plant_row], game: ProofGame.new(true)))
+    # After the plant, a game whose proof fails (a refused plant)
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([plant_row, served_psk], game: ProofGame.new(false)))
+    # After a tagged plant with the proof held
+    assert_empty plant_scan([plant_row, served_psk], game: ProofGame.new(true))
+    assert_empty plant_scan([plant_row, served_psk])
+    # A plant row the server refused (not 200) is no plant
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([plant_row.merge('status' => 422), served_psk]))
+    # A plant of the right item on another object is no plant for this proof
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([plant_row(on: 'chris_jack'), served_psk]))
+  end
+
+  test 'E0.3: DOM rows are exempt only when labelled as a capture page' do
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([plant_row, dom_row("Clients: 3, key #{STAFF_PSK}", 'rogue-ap console')]))
+    assert_empty plant_scan([plant_row, dom_row("Wi-Fi key #{STAFF_PSK}", 'capture log')])
+    assert_empty plant_scan([plant_row, dom_row("Wi-Fi key #{STAFF_PSK}", 'Captures terminal')])
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([dom_row("Wi-Fi key #{STAFF_PSK}", 'capture log'), plant_row]))
+  end
+
+  test 'E0.3: the proofed PSK anywhere else is a capture secret, not a Wi-Fi secret' do
+    room = { 'method' => 'GET', 'path' => ROOM, 'status' => 200, 'body' => { 'room' => { 'objects' => [{ 'id' => 'n', 'text' => STAFF_PSK }] } } }
+    scen = { 'method' => 'GET', 'path' => '/break_escape/games/1/scenario', 'status' => 200, 'body' => { 'hint' => "key #{STAFF_PSK}" } }
+    boot = { 'method' => 'GET', 'path' => '/break_escape/games/1/bootstrap', 'status' => 200, 'body' => { 'x' => [STAFF_PSK] } }
+    findings = plant_scan([plant_row, room, scen, boot], game: ProofGame.new(true))
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key'], [3, 'capture_secret', 'capture:staff_wifi_key'],
+                  [4, 'capture_secret', 'capture:staff_wifi_key']], summary(findings)
+  end
+
+  test 'E0.3: a PSK whose writer has no proof stays a Wi-Fi secret, flagged even on /capture_secrets' do
+    findings = plant_scan([plant_row, served_psk], data: pentest_scenario(psk_proof: false))
+    assert_equal [[2, 'wifi_secret', 'network:office_lan']], summary(findings)
+  end
+
+  test 'E0.3: a value only in a capture descriptor is not public room text; the printed guest key is' do
+    scanner = AccessLeakScanner.new(pentest_scenario)
+    public_strings = scanner.send(:room_data_strings)
+    refute public_strings.any? { |s| s.include?(STAFF_PSK) }, 'an addCapture secret never ships'
+    assert public_strings.any? { |s| s.include?(GUEST_PSK) }
+    wifi = scanner.instance_variable_get(:@wifi_secrets)
+    refute wifi.key?(GUEST_PSK), 'the guest key on the card is not a secret'
+    refute wifi.key?(STAFF_PSK), 'the proofed staff key is judged as a capture secret'
+    # A usePayload's secret is a descriptor too
+    data = pentest_scenario
+    data['rooms']['reception']['npcs'] << { 'id' => 'payload_npc', 'usePayload' => { 'targetId' => 'p', 'secret' => 'Payload-Only-Value-91' } }
+    refute AccessLeakScanner.new(data).send(:room_data_strings).any? { |s| s.include?('Payload-Only-Value-91') }
+  end
+
+  test 'E0.3: an SSID not in room text is still flagged anywhere' do
+    row = { 'method' => 'GET', 'path' => CAPTURES, 'status' => 200, 'body' => { 'ssid' => 'LW-Staff-Secure' } }
+    assert_equal [[2, 'wifi_secret', 'network:office_lan']], summary(plant_scan([plant_row, row]))
+  end
+
+  test 'E0.3: a plant-proofed account password is order-checked on /capture_secrets' do
+    # Before the tagged plant row: flagged
+    assert_equal [[1, 'password', 'npc:kieran']],
+                 summary(plant_scan([served_kieran, plant_row], served_npcs: %w[kieran]))
+    # After it, served_npcs naming him: clean
+    assert_empty plant_scan([plant_row, served_kieran], served_npcs: %w[kieran])
+    # After it, served_npcs not naming him: flagged
+    assert_equal [[2, 'password', 'npc:kieran']], summary(plant_scan([plant_row, served_kieran], served_npcs: %w[chris]))
+    # The resumed-log rule: no inventory rows, a game whose proof holds
+    assert_empty plant_scan([served_kieran], game: ProofGame.new(true), served_npcs: %w[kieran])
+    # An unreadable remove row makes it unverifiable
+    assert_equal [[3, 'password', 'npc:kieran']],
+                 summary(plant_scan([other_inv_row, inv_row(inv: nil), served_kieran], game: ProofGame.new(true), served_npcs: %w[kieran]))
+  end
+
+  test 'E0.3: a plant-proofed account password in DOM rows' do
+    assert_empty plant_scan([plant_row, dom_row("k.doyle #{KIERAN_PASSWORD}", 'capture log')], served_npcs: %w[kieran])
+    assert_equal [[2, 'password', 'npc:kieran']],
+                 summary(plant_scan([plant_row, dom_row("k.doyle #{KIERAN_PASSWORD}", 'rogue-ap console')], served_npcs: %w[kieran]))
+  end
+
+  test 'E0.3: a jack-proofed password and a pre-change log give the same findings as before' do
+    chris = { 'method' => 'GET', 'path' => CAPTURES, 'status' => 200, 'body' => { 'secrets' => { 'chris' => CHRIS_PASSWORD } } }
+    # The jack plant is not order-checked: no plant row needed, served_npcs decides as before
+    assert_empty plant_scan([other_inv_row, chris], served_npcs: %w[chris])
+    assert_equal [[2, 'password', 'npc:chris']], summary(plant_scan([other_inv_row, chris], served_npcs: %w[kieran]))
+    # A pre-change log serving Kieran's password before any plant: the old rule (served_npcs only)
+    assert_empty plant_scan([inv_row, served_kieran], served_npcs: %w[kieran])
+    assert_empty plant_scan([inv_row, chris], served_npcs: %w[chris])
+  end
+
+  # ---- R1 fixes ----
+
+  def no_on_scenario
+    data = pentest_scenario
+    data['rooms']['reception']['npcs'].find { |n| n['id'] == 'ruth' }['eventMappings'][0]['addCapture']['proof'] =
+      { 'planted' => 'kit_rogue_ap' }
+    data
+  end
+
+  test 'R1 m2: a planted proof with no on is order-checked against a plant on any non-jack object' do
+    data = no_on_scenario
+    assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([served_psk, plant_row], data: data, game: ProofGame.new(true)))
+    assert_empty plant_scan([plant_row, served_psk], data: data, game: ProofGame.new(true))
+    # A plant on a jack is no plant for a proof with no on
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([plant_row(on: 'chris_jack'), served_psk], data: data))
+  end
+
+  test 'R2 m1: a remove of the kit on an object that does not take it is no plant for a proof with no on' do
+    data = no_on_scenario
+    data['rooms']['reception']['objects'] << { 'id' => 'decoy', 'type' => 'plant_spot', 'name' => 'Decoy', 'requiresItem' => 'kit_other' }
+    decoy = plant_row(on: 'decoy')
+    # The decoy remove comes first, the real plant after the served row: flagged
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([decoy, served_psk, plant_row], data: data, game: ProofGame.new(true)))
+  end
+
+  test 'R3 m2: a remove of the kit on a taker nested in a container is no plant for a proof with no on' do
+    data = no_on_scenario
+    data['rooms']['reception']['objects'] << { 'id' => 'cabinet', 'type' => 'safe', 'name' => 'Cabinet', 'contents' => [
+      { 'id' => 'nested_spot', 'type' => 'plant_spot', 'name' => 'Nested', 'requiresItem' => 'kit_rogue_ap',
+        'consumesItem' => true, 'triggerOnInteract' => [] }
+    ] }
+    nested = plant_row(on: 'nested_spot')
+    # The server records a plant on a top-level object only, so the nested remove is not the earliest plant
+    assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([nested, served_psk, plant_row], data: data, game: ProofGame.new(true)))
+  end
+
+  test 'R1 m1: a holder with a plant proof and another kind is not passed unconditionally' do
+    data = pentest_scenario
+    kieran = data['rooms']['reception']['npcs'].find { |n| n['id'] == 'kieran' }
+    kieran['captureProof'] = [PLANT_PROOF.dup, { 'session' => 'hot_desk_pc' }]
+    # Only the plant held (the stand-in game answers per proof kind): the session proof fails now,
+    # and the plant row comes after the served row, so he is flagged
+    game = Class.new(ProofGame) { def capture_proof_holds?(proof); proof.key?('planted'); end }.new(true)
+    assert_equal [[1, 'password', 'npc:kieran']],
+                 summary(plant_scan([served_kieran, plant_row], data: data, game: game, served_npcs: %w[kieran]))
+    # With the session proof holding, it is clean
+    assert_empty plant_scan([served_kieran, plant_row], data: data, game: ProofGame.new(true), served_npcs: %w[kieran])
+  end
+
+  test 'R1 t1: a tagged remove with a used_on but no item id makes the log unverifiable' do
+    unreadable = inv_row(inv: { 'action' => 'remove', 'itemId' => nil, 'usedOn' => 'rogue_ap_spot' })
+    assert_equal [[3, 'capture_secret', 'capture:staff_wifi_key']],
+                 summary(plant_scan([other_inv_row, unreadable, served_psk], game: ProofGame.new(true)))
+  end
+
+  # ---- Plant hiding (docs/achitechture/PLANT_HIDING_PLAN.md, section 7) ----
+
+  def hideable_scenario
+    data = no_on_scenario
+    data['startItemsInInventory'][0]['hideable'] = {
+      'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large13_34'],
+      'device' => 'planted_rogue_ap', 'overlay' => { 'sprite' => 'rogue_ap_tucked' }
+    }
+    data['rooms']['reception']['objects'] << { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'planter_fig1', 'name' => 'Pot A' }
+    data
+  end
+
+  def hide_row(spot, item: 'kit_rogue_ap', status: 200)
+    inv_row(inv: { 'action' => 'hide', 'itemId' => item, 'usedOn' => nil, 'hiddenIn' => spot }, status: status)
+  end
+
+  test 'plant hiding: a served secret after a hide row is not flagged, before it it is' do
+    data = hideable_scenario
+    [{ spot: 'pot_a' }, { spot: 'reception_plant-large12-top-ani1_77' }].each do |c|
+      assert_empty plant_scan([hide_row(c[:spot]), served_psk], data: data)
+      assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([served_psk, hide_row(c[:spot])], data: data))
+    end
+  end
+
+  test 'plant hiding: a hide row that fails, names an excluded or foreign spot, or another item is no plant' do
+    data = hideable_scenario
+    [hide_row('pot_a', status: 422), hide_row('reception_plant-large13_34'), hide_row('comms_plant-large6_1'),
+     hide_row('reception_notes_plantlog1_9'), hide_row('pot_a', item: 'kit_other')].each do |row|
+      assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([row, served_psk], data: data)), row.inspect
+    end
+  end
+
+  test 'plant hiding: an untagged hide row (no item or spot) turns the shortcut off before the served row' do
+    data = hideable_scenario
+    [{ 'action' => 'hide', 'itemId' => nil, 'usedOn' => nil }, { 'action' => 'hide', 'itemId' => 'kit_rogue_ap', 'usedOn' => nil }].each do |inv|
+      assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([inv_row(inv: inv), served_psk], data: data, game: ProofGame.new(true))), inv.inspect
+    end
   end
 end

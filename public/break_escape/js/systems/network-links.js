@@ -14,7 +14,8 @@
  *   trip       the way back from the network screens (4.3, "Getting back"), below.
  *
  * The jack. A click on an object with `networkJack: true` runs interactJack(sprite)
- * (interactions.js): a planted jack asks "Unplug it" / "Leave it"; with no rogue device
+ * (interactions.js): a planted jack opens its box's network view, with Unplug in it (UI PC 2,
+ * critique N05; unplugFromView); with no rogue device
  * held it shows the jack's requiresItemHint; otherwise it confirms with `jackConfirm` and
  * only then asks the server (POST /network/plant). The device leaves the tray and the link
  * item arrives through inventory.js's showServerItem and syncInventoryFromServer, with no
@@ -50,22 +51,24 @@
 
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { writeGlobal } from './global-writer.js';
+import { sessionEndedMessage, unreachableMessage, notRespondingMessage } from '../utils/remote-host-text.js';
 
 export const NO_DEVICE_HINT = 'You have nothing to plug into this port.';
 export const LINK_GONE_MESSAGE = 'The link is gone.';
 export const PLANT_LABEL = 'Plug it in';
-export const UNPLUG_LABEL = 'Unplug it';
 export const LEAVE_LABEL = 'Leave it';
+// The network view's button that takes a planted box back out (opened at its jack only)
+export const UNPLUG_LABEL = 'Unplug';
 // A dropped-device implant answered not_ready asks again this many times, this far apart, so a
 // timer that fires before the drop's save lands still grants the foothold (review I R3 m2)
 export const IMPLANT_NOT_READY_RETRIES = 3;
 export const IMPLANT_NOT_READY_DELAY_MS = 1500;
 // The longest the view waits for the globals sync before it fetches anyway (review R1 m1)
 export const VIEW_SYNC_WAIT_MS = 3000;
-export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
-export const unreachableMessage = (host) => `${host || 'That host'} can't be reached over this link.`;
-// A host whose own service is off (9.3b plan 5.2): the same words as its row in the view
-export const notRespondingMessage = (host) => `${host || 'That host'} is not responding.`;
+// unreachableMessage and notRespondingMessage (a host whose own service is off, 9.3b plan 5.2:
+// the same words as its row in the view) live in utils/remote-host-text.js, shared with the
+// remote sign-in screen (credential keyring plan 8.5)
+export { sessionEndedMessage, unreachableMessage, notRespondingMessage };
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const apiClient = () => win().ApiClient || win().APIClient || null;
@@ -109,11 +112,16 @@ const LANDINGS = {
     view: {
         close: () => ({ leave: 'closed' }),
         handover: () => null,
-        foothold_gone: () => ({ leave: 'foothold_gone', message: LINK_GONE_MESSAGE })
+        foothold_gone: () => ({ leave: 'foothold_gone', message: LINK_GONE_MESSAGE }),
+        // Unplug in the view: the box is back in the inventory and the jack shows it is empty
+        unplugged: () => ({ leave: 'unplugged' })
     },
     signin: {
         // Closed with no session at that PC: the view. With one (Switch user left with no
         // new sign-in): the desktop of the session still held.
+        // Note (K4 R2 m2): for a `from` target this reopens through the foothold, and that is only
+        // safe because openRemoteDesktop redirects a held `from` session (unlock-system.js); keep
+        // that redirect.
         close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : { resume: true }),
         handover: () => null
     },
@@ -128,7 +136,11 @@ const LANDINGS = {
         unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
         not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
-        link_dropped: () => ({ leave: 'link_dropped' })
+        link_dropped: () => ({ leave: 'link_dropped' }),
+        // K5: a session token ran out (the client timer, or the 403 `expired` refusal). The desktop
+        // already said which token; the view reopens without it (R12: the box no longer reaches the host)
+        token_expired: () => ({ resume: true }),
+        expired: () => ({ resume: true })
     },
     share: {
         close: () => ({ resume: true }),
@@ -369,7 +381,7 @@ export class NetworkLinks {
     }
 
     /** A click on a jack (interactions.js). Resolves to what happened, for tests. */
-    async interactJack(sprite) {
+    async interactJack(sprite, { quiet = false } = {}) {
         const data = sprite?.scenarioData;
         const jackId = data?.id;
         if (!jackId || !data.networkJack) return { action: 'none' };
@@ -378,11 +390,11 @@ export class NetworkLinks {
         const held = this.heldAt(jackId);
 
         if (held) {
-            const message = `Your ${this._deviceName(held)} is plugged in here. Open it from your inventory.`;
-            const unplug = typeof confirm === 'function'
-                ? await confirm(message, UNPLUG_LABEL, LEAVE_LABEL, { plainText: true }) : false;
-            if (!unplug) return { action: 'left' };
-            return this.unplug(jackId, sprite);
+            // The box's own network view, with Unplug inside it (UI PC 2, critique N05): the one
+            // thing worth doing at a planted jack is to look through the box, so the click acts
+            // at once. Unplug is offered there because the player is standing at the jack.
+            this.open(held.id, { atJack: jackId, jackSprite: sprite });
+            return { action: 'opened', footholdId: held.id };
         }
 
         const device = this._heldDevice();
@@ -397,13 +409,13 @@ export class NetworkLinks {
         const jackName = data.name || 'this port';
         const text = resolveObjectField(data, 'jackConfirm', `Plug ${deviceName} into ${jackName}?`)
             || `Plug ${deviceName} into ${jackName}?`;
-        const ok = typeof confirm === 'function' ? await confirm(text, PLANT_LABEL, 'Cancel', { plainText: true }) : false;
+        const ok = typeof confirm === 'function' ? await confirm(text, PLANT_LABEL, LEAVE_LABEL, { plainText: true }) : false;
         if (!ok) return { action: 'cancelled' };
-        return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name });
+        return this.plant(jackId, device.scenarioData.id, { deviceName: device.scenarioData.name, jackSprite: sprite, quiet });
     }
 
     /** POST /network/plant, then the tray, the jack, the global and the events. */
-    async plant(jackId, deviceId = null, { deviceName = null } = {}) {
+    async plant(jackId, deviceId = null, { deviceName = null, jackSprite = null, quiet = false } = {}) {
         const api = apiClient();
         if (!api?.networkPlant) return { action: 'error' };
         this._busy = true;
@@ -420,12 +432,16 @@ export class NetworkLinks {
             if (err?.status === 422 && b.reason === 'port_security') {
                 // Port security (section 5.4): the switch refused the device, which stays in
                 // the inventory. Show the authored message so the fix is not lost.
-                toast(b.error || 'That port only takes known machines.', 'info', 5000);
+                // quiet: the caller shows the message itself (the patch panel's footer)
+                const message = b.error || 'That port only takes known machines.';
+                if (!quiet) toast(message, 'info', 5000);
                 this._emit('network_device_refused', { jackId, reason: 'port_security' }, jackId);
-                return { action: 'refused', reason: 'port_security' };
+                return { action: 'refused', reason: 'port_security', message };
             }
-            toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
-            return { action: 'error', status: err?.status ?? null };
+            // quiet: the caller shows the message itself (the patch panel's footer)
+            const message = err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.';
+            if (!quiet) toast(message, 'error');
+            return { action: 'error', status: err?.status ?? null, message };
         } finally {
             this._busy = false;
         }
@@ -444,7 +460,8 @@ export class NetworkLinks {
         this._emit('network_device_planted', { jackId, footholdId: foothold.id, networkId, deviceId: deviceId ?? null }, jackId);
         this._emit('network_foothold_gained', { footholdId: foothold.id, via: foothold.via, networkId, sourceId: jackId }, jackId);
         // Seeing what is exposed is the point: the first foothold at a jack opens the view
-        if (body.first) this.open(foothold.id);
+        // The player is at the jack that was just planted, so the view offers Unplug (fix round 1, m1)
+        if (body.first) this.open(foothold.id, { atJack: jackId, jackSprite });
         return { action: 'planted', footholdId: foothold.id, first: !!body.first };
     }
 
@@ -525,8 +542,20 @@ export class NetworkLinks {
         return { action: 'implanted', footholdId: foothold.id, first };
     }
 
+    /**
+     * Unplug from the network view (its Unplug button): only for the jack the running trip was
+     * opened at, so a view opened from the inventory never offers it. The view closes itself on
+     * success (landed('view', 'unplugged')). Resolves to what unplug() resolves to.
+     */
+    async unplugFromView(jackId) {
+        if (!jackId || this.trip?.atJack !== jackId) return { action: 'none' };
+        if (this._busy) return { action: 'busy' };
+        // quiet: a refusal comes back as `message` for the view to show by its button, not as a toast
+        return this.unplug(jackId, this.trip.jackSprite || null, { quiet: true });
+    }
+
     /** POST /network/unplug: the device back, the link item and the foothold gone. */
-    async unplug(jackId, sprite = null) {
+    async unplug(jackId, sprite = null, { quiet = false } = {}) {
         const api = apiClient();
         if (!api?.networkUnplug) return { action: 'error' };
         const footholdId = footholdIdFor(jackId);
@@ -540,15 +569,16 @@ export class NetworkLinks {
             if (err?.status === 422 && b.reason === 'not_planted') {
                 // The server holds nothing here: the client's copy was stale
                 this._dropFoothold(foothold?.id || footholdId);
-                toast('Nothing is plugged in here.', 'info');
-                return { action: 'not_planted' };
+                if (!quiet) toast('Nothing is plugged in here.', 'info');
+                return { action: 'not_planted', message: 'Nothing is plugged in here.' };
             }
-            toast(err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.', 'error');
-            return { action: 'error', status: err?.status ?? null };
+            const message = err?.status === 403 ? "You can't reach that port from here." : 'The port did not respond. Try again.';
+            if (!quiet) toast(message, 'error');
+            return { action: 'error', status: err?.status ?? null, message };
         } finally {
             this._busy = false;
         }
-        if (!body?.success) return { action: 'error' };
+        if (!body?.success) return { action: 'error', message: 'The port did not respond. Try again.' };
         const id = foothold?.id || footholdId;
         // The link item leaves and the device that was plugged in comes back, both named in the
         // server's `added`/`removed` delta (sync deltas P2); no inventory scan is needed.
@@ -560,8 +590,10 @@ export class NetworkLinks {
         if (sprite) this.applyJackLook(sprite);
         this._publishPlanted(jackId, false);
         const endedPcIds = Array.isArray(body.endedPcIds) ? body.endedPcIds : [];
-        this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds }, jackId);
-        return { action: 'unplugged', footholdId: id, endedPcIds };
+        // Keyring K5: the expired token sessions among them (a subset), sent only when there are some
+        const tokenExpiredPcIds = Array.isArray(body.tokenExpiredPcIds) ? body.tokenExpiredPcIds.filter(id => endedPcIds.includes(id)) : [];
+        this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds, ...(tokenExpiredPcIds.length ? { tokenExpiredPcIds } : {}) }, jackId);
+        return { action: 'unplugged', footholdId: id, endedPcIds, ...(tokenExpiredPcIds.length ? { tokenExpiredPcIds } : {}) };
     }
 
     // ------------------------------------------------------------------ Wi-Fi (slice 9.3b W, 5.3)
@@ -675,9 +707,15 @@ export class NetworkLinks {
      * Open the network view for a held foothold, starting a trip. `returnTo({ reason })` is
      * called once when the player leaves the network screens (4.3, 13.4).
      */
-    open(footholdId, { returnTo = null } = {}) {
+    open(footholdId, { returnTo = null, atJack = null, jackSprite = null } = {}) {
+        // atJack: opened by a click on the planted jack itself, so the view offers Unplug (a box
+        // is pulled out by hand, at its jack; a view opened from the inventory never offers it).
+        // Kept on the trip, so a view reopened after a sign-in or a share on the same trip still
+        // offers it.
         const trip = this._startTrip({ footholdId, start: 'view', pcId: null,
-            returnTo: typeof returnTo === 'function' ? returnTo : null });
+            returnTo: typeof returnTo === 'function' ? returnTo : null,
+            atJack: typeof atJack === 'string' && atJack ? atJack : null,
+            jackSprite: atJack ? jackSprite : null });
         if (!this.footholds.has(footholdId)) {
             toast(LINK_GONE_MESSAGE, 'info');
             this.leave('foothold_gone');
@@ -697,6 +735,12 @@ export class NetworkLinks {
         const trip = this._startTrip({ footholdId, start: 'session', pcId,
             returnTo: typeof returnTo === 'function' ? returnTo : null });
         const startDesktop = win().openRemoteDesktop;
+        // A session opened from another desktop (K4) has no foothold; it reopens by its source
+        const fromPcId = !footholdId && typeof session?.fromPcId === 'string' && session.fromPcId ? session.fromPcId : null;
+        if (fromPcId && typeof win().openFromDesktop === 'function') {
+            win().openFromDesktop(pcId, fromPcId);
+            return trip;
+        }
         if (typeof startDesktop === 'function' && footholdId) {
             startDesktop(pcId, footholdId);
             return trip;
@@ -711,7 +755,7 @@ export class NetworkLinks {
     _showView(trip, message) {
         const start = win().startNetworkViewMinigame;
         if (typeof start === 'function') {
-            start(trip.footholdId, { message: message || null });
+            start(trip.footholdId, trip.atJack ? { message: message || null, unplugJack: trip.atJack } : { message: message || null });
             return;
         }
         // Until step 8's view exists: fetch it (so a run can read it), say which network
@@ -737,6 +781,8 @@ export class NetworkLinks {
             this.leave('foothold_gone');
             return false;
         }
+        // A view that reopens means Connect's screens are done: the mark is spent (K4 R2 M1)
+        trip.connectBack = null;
         this._showView(trip, message);
         return true;
     }
@@ -757,15 +803,48 @@ export class NetworkLinks {
         return true;
     }
 
+    _landDesktop(pcId) {
+        const startDesktop = win().openRemoteDesktop;
+        const footholdId = this.trip.footholdId;
+        nextTick().then(() => {
+            if (minigameOpen()) return;
+            if (typeof startDesktop === 'function') startDesktop(pcId, footholdId);
+            else this.resume();
+        });
+        return { landing: 'desktop', pcId };
+    }
+
+    /**
+     * Mark that the running trip's next desktop close returns to `pcId` (a foothold desktop
+     * that started Connect). Pass null to clear it. Returns whether a trip took the mark.
+     */
+    setConnectBack(pcId) {
+        if (!this.trip) return false;
+        this.trip.connectBack = typeof pcId === 'string' && pcId ? pcId : null;
+        return true;
+    }
+
     /**
      * A network screen closed: `screen` is view | signin | desktop | share, `reason` why
      * (close unless the closing path set another: handover, switch, item, share, sign_out,
      * no_session, unreachable, link_dropped, displaced, foothold_gone). `detail` may name
      * { pcId, host }. Looks the pair up in the landing table of 4.3. Resolves to the
      * landing taken, for tests.
+     *
+     * The Connect-back mark (setConnectBack) survives a desktop ending only for the four reasons
+     * that hand the player on to another screen (handover, item, switch, share); any other
+     * desktop ending clears it, a close spends it by returning to the marked desktop, and a view
+     * reopening (resume) clears it too.
      */
     landed(screen, reason = 'close', detail = {}) {
         if (!this.trip) return { landing: 'none' };
+        // Connect from a foothold desktop (K4, plan 9): the target's X goes back to that desktop,
+        // not the view. Any other ending of a desktop clears the mark.
+        if (screen === 'desktop' && this.trip.connectBack && !['handover', 'item', 'switch', 'share'].includes(reason)) {
+            const back = this.trip.connectBack;
+            this.trip.connectBack = null;
+            if (reason === 'close') return this._landDesktop(back);
+        }
         const row = LANDINGS[screen];
         const decide = row ? (row[reason] || row.close) : null;
         const out = decide ? decide(this, detail || {}) : null;
@@ -775,15 +854,13 @@ export class NetworkLinks {
             this.leave(out.leave);
             return { landing: 'world', reason: out.leave };
         }
-        if (out.desktop) {
-            const startDesktop = win().openRemoteDesktop;
-            const footholdId = this.trip.footholdId;
-            nextTick().then(() => {
-                if (minigameOpen()) return;
-                if (typeof startDesktop === 'function') startDesktop(out.desktop, footholdId);
-                else this.resume();
-            });
-            return { landing: 'desktop', pcId: out.desktop };
+        if (out.desktop) return this._landDesktop(out.desktop);
+        if (this.trip.start === 'session' && !this.trip.footholdId) {
+            // A `from` session opened from the capture log (K4) has no foothold, so there is no
+            // view to reopen: say the ending's own line and leave (never "The link is gone.")
+            if (out.message) toast(out.message, 'info');
+            this.leave('closed');
+            return { landing: 'world', reason: 'closed' };
         }
         this.resume(out.message || null);
         return { landing: 'view', message: out.message || null };

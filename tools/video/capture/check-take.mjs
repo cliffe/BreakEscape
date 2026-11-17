@@ -124,7 +124,7 @@ if (res.trimmed && res.trimmed.out) {
 if (res.trimmed && res.trimmed.out) {
   try {
     const p = res.trimmed.out;
-    const mMission = p.match(/\/video_out\/([a-z0-9_]+)\/takes\//) || p.match(/\/film\/([a-z0-9]+)_trailer\//);
+    const mMission = p.match(/\/footage\/(m\d\d)\//) || p.match(/\/video_out\/([a-z0-9_]+)\/takes\//) || p.match(/\/film\/([a-z0-9]+)_trailer\//);
     const mission = mMission ? mMission[1].replace(/_trailer$/, '') : null;
     const b = path.basename(p).toLowerCase();
     const kind = /\/solution\//.test(p) ? 'solution' : (/console|recon/.test(b) ? 'console' : 'ingame');

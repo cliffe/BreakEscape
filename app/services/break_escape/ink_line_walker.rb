@@ -257,9 +257,9 @@ module BreakEscape
         next if pending_note_within?(p)
 
         rest = if p == own then ''
-               elsif p.empty? then own
-               elsif own.start_with?("#{p}.") then own[(p.length + 1)..]
-               end
+        elsif p.empty? then own
+        elsif own.start_with?("#{p}.") then own[(p.length + 1)..]
+        end
         next unless rest && rest.split('.').all? { |seg| seg.match?(/\A\d+\z/) }
 
         @redirects[p] = target
@@ -422,6 +422,19 @@ module BreakEscape
         state[:tag_head] = nil
         return
       end
+      if item == '/#' && !state[:in_tag]
+        # `{cond: text #delivery: note}`: inklecate opens the tag inside the branch and closes it
+        # after the conditional, in this container, which never saw the open. Not supported:
+        # the line is left unresolved (so never listed or voiced as tagged) and logged, rather
+        # than raising and taking the whole story's extractor down. Write `{cond: text} #delivery: note`.
+        not_slot!(state, 'a #tag inside an inline conditional ({cond: text #tag}); put the tag after the closing brace')
+        unless @warned_inline_tag
+          @warned_inline_tag = true
+          Rails.logger.warn "[BreakEscape] InkLineWalker: #{path} has a tag inside an inline conditional " \
+                            '({cond: text #tag}); that line is skipped. Use {cond: text} #tag.'
+        end
+        return
+      end
       if item == '/#'
         state[:in_tag] = false
         tag = state[:tag_buf].strip
@@ -517,9 +530,9 @@ module BreakEscape
       else
         label = parts.map { |p| p.is_a?(Hash) ? p.keys.first + ':' + p.values.first.to_s : p.to_s }.join(' ')
         kind = if label == 'x():player_name' then :player_name
-               elsif label.start_with?('x():') then :text
-               else :number
-               end
+        elsif label.start_with?('x():') then :text
+        else :number
+        end
         state[:buf] << SlotValue.new("{#{label}}", kind)
         state[:partial] ||= "expression {#{label}}"
       end

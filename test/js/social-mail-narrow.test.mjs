@@ -301,3 +301,15 @@ test('the stylesheet has the narrow layout at 767px, 44px targets and reduced mo
     assert.match(css, /min-height: 44px/);
     assert.match(css, /focus-visible/);
 });
+
+test('C-MC1: below 1000px the send-as account takes its own row with a readable minimum', () => {
+    // The account picker must not shrink to a stub like "Cons" at the mid widths (800x600,
+    // 915x412) the 767px rules never reach: the active sender address is the fact the lesson
+    // turns on. From 1000px down the toolbar wraps and the account row is full width with a
+    // minimum width.
+    const block = css.match(/@media \(max-width: 1000px\)\s*\{[\s\S]*?\n\}/);
+    assert.ok(block, 'has a max-width: 1000px block for the account row');
+    assert.match(block[0], /\.mail-toolbar \{ flex-wrap: wrap; \}/);
+    assert.match(block[0], /\.mail-account \{ flex: 1 1 100%; margin-right: 0; \}/);
+    assert.match(block[0], /\.mail-account-select \{ width: 100%; min-width: 16ch; \}/);
+});

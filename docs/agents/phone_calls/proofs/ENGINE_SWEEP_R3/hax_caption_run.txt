@@ -1,0 +1,4 @@
+game 2380 (hax_caption)
+frames: [{"frame":1,"k":"SAFETYNET secure line","t":"1.520"},{"frame":2,"k":"SAFETYNET secure line","t":"1.562"},{"frame":3,"k":"SAFETYNET secure line","t":"1.603"}]
+mutations: [{"type":"childList","old":null,"now":"SAFETYNET secure line","t":"2.049"}]
+contact callLabel: "SAFETYNET secure line"

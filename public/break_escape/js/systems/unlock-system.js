@@ -17,6 +17,8 @@ import { playUISound } from './ui-sounds.js';
 import { appendLockedHint, lockedHintDuration, showLockedHintToast, doorRefusalTitle } from '../utils/locked-hint.js';
 import { startFingerprintReader } from '../minigames/biometrics/fingerprint-reader-minigame.js';
 import { catchLockpickInView } from './lockpick-catch.js';
+import { unlockWithRouteRoomRetry } from '../utils/lock-scope-refusal.js';
+import { remoteOffMessage, notRespondingMessage, unreachableMessage } from '../utils/remote-host-text.js';
 
 // Helper function to notify server of unlock and get room/container data
 export async function notifyServerUnlock(lockable, type, method) {
@@ -30,13 +32,17 @@ export async function notifyServerUnlock(lockable, type, method) {
             const targetId = unlockTargetId(lockable, type);
 
             console.log(`Notifying server of ${method} unlock:`, { type, targetId });
-            serverResponse = await apiClient.unlock(type, targetId, null, method);
+            // Shared object-unlock POST with the GATED_DOOR §3.6 route-room retry (one sync, one
+            // re-post on a room_not_reachable retryable body; never for a door).
+            serverResponse = await unlockWithRouteRoomRetry(type, targetId, null, method);
 
             // Populate container contents if returned
-            if (serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
+            if (serverResponse && serverResponse.hasContents && serverResponse.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = serverResponse.contents;
             }
         } catch (error) {
+            // Non-retryable refusal, or still refused after the one re-post (the room never
+            // promoted, i.e. a forge): surface as the normal refusal, exactly as before.
             console.error(`Failed to notify server of ${method} unlock:`, error);
         }
     }
@@ -121,20 +127,29 @@ export function hasRfidAccessList(lockRequirements) {
  * worked out as evaluateRfidCredential does. The client never resolves a card to its
  * owner's roles: the server does, because the admitted NPC may be in a room the client
  * has not loaded (access model 4.1).
+ *
+ * { copies: false } leaves the copier's saved cards out: the first request at an access-list
+ * door carries the physical keycards only, because a copy opens a door only through the
+ * copier's Emulate, one copy per request (UX slice 3b, q97).
  */
-export function heldRfidCardIds() {
+export function heldRfidCardIds({ copies = true } = {}) {
     const items = (window.inventory && window.inventory.items) || [];
     const getCardId = (cardData) => cardData.card_id || window.lockRef(cardData);
+    // A cancelled card_id (the left-card consequence, §3.3b) is left out, so the UI never
+    // offers it and the server is never asked to open an access-list door with it. The server
+    // refuses it anyway (Game#held_rfid_cards), but the two must agree, as evaluateRfidCredential
+    // already drops a revoked card from the requires path.
+    const revoked = (id) => (typeof window !== 'undefined' && window.isCardRevoked) ? window.isCardRevoked(id) : false;
     const ids = [];
     const add = (cardData) => {
         if (!cardData) return;
         const id = getCardId(cardData);
-        if (id != null && id !== '' && !ids.includes(String(id))) ids.push(String(id));
+        if (id != null && id !== '' && !revoked(id) && !ids.includes(String(id))) ids.push(String(id));
     };
     items.forEach(item => {
         if (item && item.scenarioData && item.scenarioData.type === 'keycard') add(item.scenarioData);
     });
-    items.forEach(item => {
+    if (copies) items.forEach(item => {
         if (item && item.scenarioData && item.scenarioData.type === 'rfid_cloner') {
             (item.scenarioData.saved_cards || []).forEach(add);
         }
@@ -175,9 +190,14 @@ export async function requestRfidAccessUnlock(lockable, type, cardIds) {
 /**
  * The success toast after an RFID unlock: which card opened it, and whether it was the
  * card itself or the copier playing back a copy. result: { cardName, emulated }, or
- * { viaCopy: true } when the server says only that a copy passed, not whose.
+ * { viaCopy: true } when the server says only that a copy passed, not whose, or
+ * { alreadyOpen: true } when it was open before the request. type: 'door' or an object.
  */
-export function rfidOpenedLine(result) {
+export function rfidOpenedLine(result, type = 'door') {
+    // The server says it was open before this request (R2 m2): no card is credited
+    if (result && (result.alreadyOpen === true || result.serverResponse?.alreadyOpen === true)) {
+        return type === 'door' ? 'The door is already open.' : 'It is already open.';
+    }
     if (result && result.viaCopy === true) return 'Opened with a copied card.';
     const name = result && typeof result.cardName === 'string' && result.cardName.trim();
     if (!name) return 'Card accepted.';
@@ -190,6 +210,7 @@ export function rfidOpenedLine(result) {
  * would tell the player whose identity the list admits.
  */
 export function rfidAccessUnlockResult(response) {
+    if (response && response.alreadyOpen === true) return { alreadyOpen: true };
     if (response && response.viaCopy === true) return { viaCopy: true };
     return rfidCardForId(response && response.cardId);
 }
@@ -236,6 +257,22 @@ export function rfidAccessDeniedLine(access, type = 'door') {
 // locked in every room response, so the next click comes back here. pc-sessions.js
 // (window.pcSessions) holds the sessions and does every sign-in and sign-out.
 
+/**
+ * A session the player holds at pcId's own keyboard (keyring K3c, 3.8 and 8.3): a relay
+ * session is the holder's, reached only by Connect, so here it counts as none. Falls back to
+ * has() for a mirror without heldAtKeyboard.
+ */
+export function heldAtKeyboard(pcId, sessions = window.pcSessions) {
+    if (!pcId || !sessions) return false;
+    if (typeof sessions.heldAtKeyboard === 'function') return sessions.heldAtKeyboard(pcId) === true;
+    return !!sessions.has?.(pcId);
+}
+
+/** The held session at pcId as the keyboard sees it: null for a relay (K3c). */
+function keyboardSession(pcId, sessions = window.pcSessions) {
+    return heldAtKeyboard(pcId, sessions) ? (sessions?.get?.(pcId) || null) : null;
+}
+
 /** True for a sign-in PC object (not a door). */
 export function isLoginPc(lockable, type = 'item') {
     return type !== 'door' && lockable?.scenarioData?.lockType === 'login';
@@ -249,7 +286,9 @@ export function openLoginPc(lockable) {
         showHeadlessObservations(lockable);
         return;
     }
-    if (pcId && window.pcSessions?.has(pcId)) {
+    // A locked session (UI slice 6) stays held, but opens the sign-in screen (account
+    // pre-chosen), not the desktop: the player re-enters the password to continue.
+    if (pcId && heldAtKeyboard(pcId) && !window.pcSessions?.isLocked?.(pcId)) {
         openLoginDesktop(lockable);
     } else {
         openLoginSignIn(lockable);
@@ -313,10 +352,106 @@ export function openRemoteSignIn(hostRow, footholdId) {
 }
 
 /**
+ * Connect's refused sign-in (keyring K3b, plan 8.2 step 8): the target's remote sign-in screen
+ * over the foothold Connect used, with the account and the credential chosen and the refusal
+ * (a saved connection's kindRefused or lockout) shown as on the screen itself (8.1).
+ */
+export function openCredentialSignIn({ pcId, host = null, footholdId, fromPcId = null, fromHost = null, username = null, refusal = null } = {}) {
+    // K4: a refusal by a desktop route opens the screen reached from that desktop
+    if (pcId && !footholdId && fromPcId) {
+        return openLoginSignIn(fromLockable(pcId, fromPcId, { host, fromHost }), { connect: { username, refusal } });
+    }
+    if (!pcId || !footholdId) return undefined;
+    const row = remoteRowFor(pcId, footholdId);
+    return openLoginSignIn(remoteLockable({ ...row, host: row?.host || host, name: row?.name || host || pcId }, footholdId),
+        { connect: { username, refusal } });
+}
+
+/**
+ * The lockable of a relay desktop (keyring K3c, 8.3): the PC's own sprite shape with
+ * remote: { relay: true }. Not a network screen: no foothold and no view to land on.
+ */
+export function relayLockable(pcId) {
+    const s = window.pcSessions?.get?.(pcId);
+    const pc = findPcObject(pcId);
+    const sprite = pc?.sprite || pc?.texture || 'pc_desktop';
+    const host = s?.host || pc?.host || null;
+    return {
+        scenarioData: {
+            id: pcId, name: pc?.name || host || pcId, host, type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
+            remote: { relay: true }
+        },
+        name: sprite,
+        texture: { key: typeof sprite === 'string' ? sprite : 'pc_desktop' },
+        objectId: `relay_${pcId}`
+    };
+}
+
+/**
+ * The lockable of a desktop reached from another PC's desktop (keyring K4, plan 3.7): the
+ * PC's own sprite shape with remote: { fromPcId, fromHost }. fromHost is the session's own
+ * (the server sends it), else the source session's host, else the source PC's name.
+ */
+export function fromLockable(pcId, fromPcId, { host: hostHint = null, fromHost: fromHostHint = null } = {}) {
+    const sessions = window.pcSessions;
+    const s = sessions?.get?.(pcId);
+    const pc = findPcObject(pcId);
+    const src = findPcObject(fromPcId);
+    const sprite = pc?.sprite || pc?.texture || 'pc_desktop';
+    const host = s?.host || pc?.host || hostHint || null;
+    const fromHost = fromHostHint || s?.fromHost || sessions?.get?.(fromPcId)?.host || src?.host || src?.name || fromPcId;
+    return {
+        scenarioData: {
+            id: pcId, name: pc?.name || host || pcId, host, type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
+            remote: { fromPcId, fromHost }
+        },
+        name: sprite,
+        texture: { key: typeof sprite === 'string' ? sprite : 'pc_desktop' },
+        objectId: `from_${fromPcId}_${pcId}`
+    };
+}
+
+/**
+ * A held session's desktop reached from fromPcId's desktop (K4): Connect, the network view and
+ * a folder's close open it. Returns false with no pc or source.
+ */
+export function openFromDesktop(pcId, fromPcId, fromHost = null) {
+    if (!pcId || !fromPcId) return false;
+    openLoginDesktop(fromLockable(pcId, fromPcId, { fromHost }));
+    return true;
+}
+
+/** The scenario's own object for pcId, from the loaded scenario's rooms, or null. */
+function findPcObject(pcId) {
+    const rooms = window.gameScenario?.rooms || {};
+    for (const room of Object.values(rooms)) {
+        const found = (Array.isArray(room?.objects) ? room.objects : []).find(o => o?.id === pcId);
+        if (found) return found;
+    }
+    return null;
+}
+
+/**
+ * A held relay session's desktop (K3c, 8.3): Connect on an accepted invite opens it, and
+ * Connect again reaches it (the network view never lists it). Returns false with no relay held.
+ */
+export function openRelayDesktop(pcId) {
+    if (!pcId || !window.pcSessions?.isRelay?.(pcId)) return false;
+    openLoginDesktop(relayLockable(pcId));
+    return true;
+}
+
+/**
  * A held remote session's desktop, through its foothold (network-links.js calls this from
  * the view and from openSession; it starts no trip of its own).
  */
 export function openRemoteDesktop(pcId, footholdId) {
+    // K4: a session held by a desktop route has no foothold; it opens from its source
+    const held = window.pcSessions?.get?.(pcId);
+    if (held?.remote === true && !held.footholdId && held.fromPcId) {
+        openFromDesktop(pcId, held.fromPcId);
+        return;
+    }
     openLoginDesktop(remoteLockable(remoteRowFor(pcId, footholdId), footholdId));
 }
 
@@ -330,22 +465,54 @@ async function remoteCapturedSignIns() {
     try {
         const { readCaptures } = await import('./captures.js');
         captures = readCaptures(window.gameState?.globalVariables);
-    } catch (e) { return []; }
-    if (!captures || Object.keys(captures).length === 0) return [];
+    } catch (e) { return { list: [], failed: false }; }
+    if (!captures || Object.keys(captures).length === 0) return { list: [], failed: false };
     const api = window.ApiClient || window.APIClient;
     let answer = null;
     try {
         try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
         answer = api?.get ? await api.get('/capture_secrets') : null;
     } catch (e) {
+        // Captures held but not loaded: the screen says so rather than "none yet" (2b0 R2 n1)
         console.warn('Could not load the captured sign-ins', e);
-        return [];
+        return { list: [], failed: true };
     }
     const accounts = answer && typeof answer.accounts === 'object' && answer.accounts ? answer.accounts : {};
     const secrets = answer && typeof answer.secrets === 'object' && answer.secrets ? answer.secrets : {};
     const list = window.capturedSignIns;
-    return typeof list === 'function' ? list(captures, accounts, secrets) : [];
+    return { list: typeof list === 'function' ? list(captures, accounts, secrets) : [], failed: false };
 }
+
+/**
+ * The keyring entries a sign-in screen may show (credential keyring K3a, plan 8.1): only in a
+ * scenario that declares credentials (the bootstrap's credentialsDeclared). keyring.js loads by
+ * dynamic import, as captures.js does, so no harness copy list grows. Resolves to
+ * { declared, list, failed }; never throws.
+ */
+export async function keyringForScreen(pcId, { foothold = null, from = null } = {}) {
+    if (window.gameScenario?.credentialsDeclared !== true) return { declared: false, list: [], failed: false };
+    try {
+        const { getKeyring, SCREEN_FOOTHOLD, SCREEN_KEYBOARD } = await import('./keyring.js');
+        const keyring = getKeyring();
+        try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
+        // K4: a screen reached from another desktop asks with from and shows as a remote screen
+        const route = foothold ? { foothold } : (from ? { from } : {});
+        const entries = await keyring.fetch(pcId, route);
+        return {
+            declared: true,
+            list: keyring.screenEntries(entries, { pcId, screen: (foothold || from) ? SCREEN_FOOTHOLD : SCREEN_KEYBOARD, foothold: route.foothold || null }),
+            failed: false
+        };
+    } catch (e) {
+        console.warn('Could not load the keyring', e);
+        return { declared: true, list: [], failed: true };
+    }
+}
+
+// The longest a remote sign-in screen shows only "Checking..." (2b0 R2 m1): the sync wait
+// before /capture_secrets can retry for about 8 s and the fetch has no timeout of its own, so
+// after this the typed form shows as for an empty list, and a late list adds its tiles.
+export const REMOTE_CAPTURES_WAIT_MS = 3000;
 
 // A switched-off PC at its own keyboard (user decision q72)
 export const PC_OFF_TEXT = 'This PC is off.';
@@ -353,16 +520,20 @@ export const PC_OFF_TEXT = 'This PC is off.';
 export const PC_OFF_SYNC_WAIT_MS = 3000;
 
 /**
- * Is this sign-in PC switched off: its office-life `affordance.offWhen` (a global name, or
+ * Is this sign-in PC switched off: its office-life object-level `offWhen` (a global name, or
  * { name: value }, all to match) holds on the client's globals? The server judges the same
  * field on its own copy (Game#host_service_off?). Exported for tests.
  */
 export function pcSwitchedOff(data, globals = (typeof window !== 'undefined' && window.gameState?.globalVariables) || {}) {
-    const cond = data?.affordance?.offWhen;
+    const cond = data?.offWhen;
     if (cond === undefined || cond === null || cond === false || cond === '') return false;
     const g = globals || {};
     if (typeof cond === 'string') return !!g[cond];
-    if (typeof cond === 'object') return Object.entries(cond).every(([name, value]) => g[name] === value);
+    if (typeof cond === 'object') {
+        // An empty object is "no condition" (matches Ruby off_when_present?), so it never holds.
+        const pairs = Object.entries(cond);
+        return pairs.length > 0 && pairs.every(([name, value]) => g[name] === value);
+    }
     return false;
 }
 
@@ -415,7 +586,7 @@ export async function showPcInUse(lockable, userAt = pcInUseBy(lockable)) {
 /**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
  *   0. a headless host (slice 9.3a): its observations, and stop;
- *   0b. switched off (affordance.offWhen holds, q72): "This PC is off.", and stop. A session
+ *   0b. switched off (offWhen holds, q72): "This PC is off.", and stop. A session
  *      held there is kept. A PC that has an offWhen but is on first sends the globals (at
  *      most PC_OFF_SYNC_WAIT_MS), so a switch flipped back on a moment ago is known;
  *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved
@@ -439,7 +610,7 @@ export async function interactLoginPc(lockable) {
         window.eventDispatcher?.emit?.('pc_off_shown', { pcId });
         return 'off';
     }
-    if (data.affordance?.offWhen !== undefined) {
+    if (data.offWhen !== undefined) {
         let timer;
         try {
             const synced = Promise.resolve(window.stateSync?.sync?.()).catch(() => false);
@@ -454,7 +625,13 @@ export async function interactLoginPc(lockable) {
         await showPcInUse(lockable, userAt);
         return 'in_use';
     }
-    if (sessions?.has?.(pcId)) {
+    if (heldAtKeyboard(pcId, sessions)) {
+        // A locked session (UI slice 6): the sign-in screen with the account pre-chosen, not
+        // the desktop and never a claim (the player already holds the session here).
+        if (sessions?.isLocked?.(pcId)) {
+            openLoginSignIn(lockable, { reason: 'locked' });
+            return 'signin';
+        }
         openLoginDesktop(lockable);
         return 'desktop';
     }
@@ -531,16 +708,19 @@ export function openLoginDesktop(lockable) {
  * lockable that does not carry it: a remote screen never asks for or shows the sticky note
  * GET /login_accounts serves at the keyboard (slice 9.1, 5.3).
  */
-export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null } = {}) {
+export async function openLoginSignIn(lockable, { switching = false, reason = undefined, remote: remoteOpt = null, connect = null } = {}) {
     const data = lockable?.scenarioData || {};
     const pcId = data.id;
     if (!pcId) return;
     const sessions = window.pcSessions;
-    const remote = data.remote && data.remote.footholdId ? data.remote
-        : (remoteOpt && remoteOpt.footholdId ? remoteOpt : null);
+    // K4: a desktop route ({ fromPcId }) is remote too
+    const isRemote = (r) => !!r && (!!r.footholdId || !!r.fromPcId);
+    const remote = isRemote(data.remote) ? data.remote : (isRemote(remoteOpt) ? remoteOpt : null);
     if (remote) {
-        const remoteLockableFor = data.remote ? lockable : { ...lockable, scenarioData: { ...data, remote: { footholdId: remote.footholdId } } };
-        return openRemoteSignInScreen(remoteLockableFor, { switching, reason });
+        const route = remote.footholdId ? { footholdId: remote.footholdId }
+            : { fromPcId: remote.fromPcId, fromHost: remote.fromHost || null };
+        const remoteLockableFor = isRemote(data.remote) ? lockable : { ...lockable, scenarioData: { ...data, remote: route } };
+        return openRemoteSignInScreen(remoteLockableFor, { switching, reason, connect });
     }
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
     // The sticky note (slice 9.1, 5.3): a written-down password comes only in this
@@ -548,6 +728,12 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     // again. Else the PC's own authored note, else none.
     let servedNote = '';
     const apiClient = window.ApiClient || window.APIClient;
+    // Keyring K3a (8.1): in a scenario with credentials, GET /keyring goes alongside
+    // /login_accounts under the remote screen's cap, with a late redraw
+    const declared = window.gameScenario?.credentialsDeclared === true;
+    const keyringStarted = Date.now();
+    const keyringP = declared ? keyringForScreen(pcId) : null;
+    let accountsFailed = false;
     if (apiClient?.loginAccounts && window.breakEscapeConfig?.gameId) {
         try {
             const answer = await apiClient.loginAccounts(pcId);
@@ -567,7 +753,13 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
                 return;
             }
             console.warn('Could not refresh the account tiles; using the room data', error);
+            accountsFailed = true;
         }
+    }
+    let keyringNow = null;
+    if (keyringP) {
+        const left = Math.max(0, REMOTE_CAPTURES_WAIT_MS - (Date.now() - keyringStarted));
+        keyringNow = await Promise.race([keyringP, new Promise(r => setTimeout(() => r(null), left))]);
     }
 
     const framework = window.MinigameFramework;
@@ -581,7 +773,11 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     const postitNote = servedNote || data.postitNote || '';
     const showPostit = !!postitNote && data.showPostit !== false;
     sessions?.screenShown?.(pcId, picker === false ? [] : tiles, switching ? 'switch' : reason, showPostit);
-    framework.startMinigame('password', null, {
+    // A locked session (UI slice 6) pre-chooses its own account: the player only re-enters the
+    // password. The username is the held session's; the server still checks the password.
+    // A relay held here is the holder's (K3c): at the keyboard it is no current session
+    const current = keyboardSession(pcId, sessions);
+    const keyboardScene = framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
         type: 'item',
@@ -590,25 +786,39 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
             pcName: data.name || pcId,
             picker,
             tiles: picker === false ? [] : tiles,
-            current: sessions?.get?.(pcId) || null
+            current,
+            preselect: current && current.locked ? current.username : null,
+            // Belt and braces: screenEntries already limits the keyboard to passwords; this keeps it so
+            ...(keyringNow ? { keyring: keyringNow.list.filter(e => e.kind === 'password'), keyringFailed: keyringNow.failed, accountsFailed } : {})
         },
         postitNote,
         showPostit,
         requiresKeyboardInput: true,
         onComplete: (success) => {
-            const signedIn = !!sessions?.has?.(pcId);
+            const signedIn = heldAtKeyboard(pcId, sessions);
             if ((success && signedIn) || (switching && signedIn)) {
                 openLoginDesktop(lockable);
             }
         }
     });
+    // A keyring answer later than the cap redraws the open screen in place (K3a 8.1)
+    if (keyringP && !keyringNow) {
+        const late = await keyringP;
+        const scene = keyboardScene || framework.currentMinigame;
+        if (scene && framework.currentMinigame === scene && typeof scene.setKeyringEntries === 'function') {
+            scene.setKeyringEntries({ keyring: late.list, keyringFailed: late.failed, accountsFailed });
+        }
+    }
 }
 
 /** The remote half of openLoginSignIn (4.4): no tiles, the foothold, and the way back (4.3). */
-async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined } = {}) {
+async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined, connect = null } = {}) {
     const data = lockable.scenarioData;
     const pcId = data.id;
-    const footholdId = data.remote.footholdId;
+    const footholdId = data.remote.footholdId || null;
+    // K4: a screen reached from another desktop names its source instead of a foothold
+    const fromPcId = !footholdId && data.remote.fromPcId ? data.remote.fromPcId : null;
+    const fromHost = fromPcId ? (data.remote.fromHost || null) : null;
     const sessions = window.pcSessions;
 
     // The screen starts at once, replacing the view or desktop that opened it, and its
@@ -621,12 +831,13 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     }
     if (!framework.mainGameScene && window.game) framework.init(window.game);
 
-    const linkName = window.networkLinks?.get?.(footholdId)?.name || null;
+    const linkName = footholdId ? (window.networkLinks?.get?.(footholdId)?.name || null) : null;
     const hostLabel = data.host || data.name || pcId;
-    sessions?.screenShown?.(pcId, [], switching ? 'switch' : (reason || 'remote'), false);
+    // The PC tiles shown go to sessions.screenShown once the server answers (plan item 5), with
+    // the server-fetched tiles, never [] as the opener did.
     // The current session, unless it is a claim: an unlocked screen is not offered over
     // the network (4.3), and a remote sign-in replaces it as a keyboard one would
-    const held = sessions?.get?.(pcId) || null;
+    const held = keyboardSession(pcId, sessions);
     const scene = framework.startMinigame('password', null, {
         title: data.name || 'Sign in',
         lockable,
@@ -637,7 +848,12 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             picker: false,
             tiles: [],
             current: held && held.via !== 'claim' ? held : null,
-            remote: { footholdId, linkName },
+            // A locked held session pre-chooses its own account, as the local screen does; a
+            // refused Connect (K3b) pre-chooses the credential's account and shows the refusal
+            preselect: connect?.username || (held && held.via !== 'claim' && held.locked ? held.username : null),
+            ...(connect?.refusal ? { connectRefusal: { ...connect.refusal } } : {}),
+            remote: fromPcId ? { footholdId: null, fromPcId, fromHost, linkName: null } : { footholdId, linkName },
+            host: hostLabel,
             captured: [],
             capturedLoading: true
         },
@@ -645,7 +861,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         showPostit: false,
         requiresKeyboardInput: true,
         onComplete: (success) => {
-            const signedIn = !!sessions?.has?.(pcId) && sessions.get(pcId)?.via !== 'claim';
+            const signedIn = heldAtKeyboard(pcId, sessions) && sessions.get(pcId)?.via !== 'claim';
             const links = window.networkLinks;
             if (success && signedIn) {
                 links?.landed?.('signin', 'handover', { pcId, host: hostLabel });
@@ -657,10 +873,100 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             if ((!landing || landing.landing === 'none') && switching && signedIn) openLoginDesktop(lockable);
         }
     });
-    const captured = await remoteCapturedSignIns();
-    if (scene && framework.currentMinigame === scene && typeof scene.setCapturedSignIns === 'function') {
-        scene.setCapturedSignIns(captured);
-    }
+    // The two fetches under one cap (credential keyring plan 5.2, K0): GET /login_accounts (the
+    // PC's own tiles, picker, headless, remoteScreen) and GET /capture_secrets (the captured
+    // sign-ins). Until both answer or the cap passes, the screen shows "Checking..." with no form
+    // and no focus; after the cap it shows the Other user form and "Still checking for accounts...",
+    // and each late answer redraws the merged row in place, keeping focus and typed text.
+    const api = window.ApiClient || window.APIClient;
+    const stillOpen = () => !!scene && framework.currentMinigame === scene && typeof scene.setRemoteAccounts === 'function';
+    const fetchRemoteAccounts = async () => {
+        try {
+            const answer = api?.loginAccounts ? await api.loginAccounts(pcId, fromPcId ? { from: fromPcId } : { foothold: footholdId }) : null;
+            return {
+                ok: true,
+                picker: answer?.loginPicker ?? 'accounts',
+                headless: !!answer?.headless,
+                remoteScreen: answer?.remoteScreen,
+                host: answer?.host || hostLabel,
+                tiles: Array.isArray(answer?.loginAccounts) ? answer.loginAccounts : []
+            };
+        } catch (error) {
+            // A 403 or 422 closes the screen with the shared remote strings (plan 5.2, 8.5)
+            if (error?.status === 422 && error?.body?.remoteBlocked) return { close: 'remoteBlocked' };
+            if (error?.status === 403 && error?.body?.reason === 'not_responding') return { close: 'not_responding' };
+            if (error?.status === 403 || error?.status === 404) return { close: 'unreachable' };
+            // Any other failure: the accounts could not be loaded (the state line names the host)
+            console.warn('Could not load the remote account tiles', error);
+            return { ok: true, failed: true, host: hostLabel, tiles: [] };
+        }
+    };
+
+    let loginAns = null, captureAns = { list: [], failed: false }, keyringAns = { list: [], failed: false };
+    // Keyring K3a (8.1): the third list under the same cap, only with credentials declared
+    const keyringWanted = window.gameScenario?.credentialsDeclared === true;
+    let loginDone = false, captureDone = false, keyringDone = !keyringWanted, capFired = false, closed = false, shown = false;
+
+    const closeScreen = (kind) => {
+        if (closed) return;
+        closed = true;
+        const msg = kind === 'remoteBlocked' ? remoteOffMessage(hostLabel)
+            : (kind === 'not_responding' ? notRespondingMessage(hostLabel) : unreachableMessage(hostLabel));
+        // The player already left this screen: no toast over the view they returned to
+        if (!stillOpen()) return;
+        window.gameAlert?.(msg, 'error', data.name || 'Sign in', 3000);
+        scene.closeByPlayer?.();
+    };
+
+    const paint = () => {
+        if (closed || !stillOpen()) return;
+        const both = loginDone && captureDone && keyringDone;
+        if (!both && !capFired) return; // keep "Checking..." until both answer or the cap passes
+        scene.setRemoteAccounts({
+            // A failed answer sends no picker: the screen keeps every captured sign-in visible
+            ...(loginDone ? {
+                ...(loginAns.failed ? {} : { picker: loginAns.picker }),
+                headless: loginAns.headless, remoteScreen: loginAns.remoteScreen,
+                host: loginAns.host, tiles: loginAns.tiles, accountsFailed: !!loginAns.failed
+            } : { accountsFailed: false }),
+            captured: captureAns.list,
+            capturedFailed: captureAns.failed,
+            ...(keyringWanted ? { keyring: keyringAns.list, keyringFailed: keyringAns.failed } : {}),
+            accountsPending: !loginDone,
+            capturedPending: !captureDone,
+            pending: !both
+        });
+        // pc_signin_shown fires once the screen has laid out with the server's answer, with the
+        // tiles the row actually shows (never the ones the merge dropped), and never after a close
+        if (loginDone && !shown) {
+            shown = true;
+            sessions?.screenShown?.(pcId, scene.signInState?.tiles || [], switching ? 'switch' : (reason || 'remote'), false);
+        }
+    };
+
+    const cap = setTimeout(() => { capFired = true; paint(); }, REMOTE_CAPTURES_WAIT_MS);
+
+    const loginP = fetchRemoteAccounts().then((a) => {
+        if (a.close) { clearTimeout(cap); closeScreen(a.close); return; }
+        loginAns = a;
+        loginDone = true;
+        if (loginDone && captureDone && keyringDone) clearTimeout(cap);
+        paint();
+    });
+    const captureP = remoteCapturedSignIns().then((c) => {
+        captureAns = { list: Array.isArray(c?.list) ? c.list : [], failed: !!c?.failed };
+        captureDone = true;
+        if (loginDone && captureDone && keyringDone) clearTimeout(cap);
+        paint();
+    });
+    const keyringP = keyringWanted ? keyringForScreen(pcId, fromPcId ? { from: fromPcId } : { foothold: footholdId }).then((k) => {
+        keyringAns = { list: Array.isArray(k?.list) ? k.list : [], failed: !!k?.failed };
+        keyringDone = true;
+        if (loginDone && captureDone && keyringDone) clearTimeout(cap);
+        paint();
+    }) : Promise.resolve();
+    await Promise.allSettled([loginP, captureP, keyringP]);
+    clearTimeout(cap);
 }
 
 export function handleUnlock(lockable, type) {
@@ -1103,10 +1409,41 @@ export function handleUnlock(lockable, type) {
                 try { playUISound('door_release'); } catch (e) {}
             };
 
-            // The card copier's reader screen: tap a held card or emulate a saved one
-            const startRfidReader = () => {
-                // Start RFID minigame in unlock mode
-                window.startRFIDMinigame(lockable, type, {
+            // An access-list unlock the server allowed: take the contents it sent back for
+            // an object, then open the target with that answer (no second unlock request). For
+            // an object with contents, the container opens only when the player was there to
+            // see it: a late yes (late: true) leaves it for the player to open (review R1 M1).
+            // A yes for a target the client has already opened is dropped, so two copiers
+            // answered yes on one door open it once (R1 m6).
+            const rfidTargetOpen = () => type === 'door'
+                ? lockable.doorProperties?.locked === false
+                : (lockable.scenarioData ? lockable.scenarioData.locked === false : lockable.locked === false);
+            const applyRfidAccessUnlock = (response, line, { late = false } = {}) => {
+                if (rfidTargetOpen()) return;
+                if (response && response.hasContents && response.contents && lockable.scenarioData) {
+                    lockable.scenarioData.contents = response.contents;
+                }
+                if (late) {
+                    // Another copier still up on this lock has nothing left to do
+                    const open = window.MinigameFramework?.currentMinigame;
+                    if (open && open.params && open.params.rfidLockTarget === lockable && typeof open.complete === 'function') {
+                        try { open.complete(false); } catch (e) { console.warn('closing the copier failed:', e); }
+                    }
+                }
+                playRfidUnlockSound();
+                unlockTarget(lockable, type, lockable.layer, response, { autoOpen: !late });
+                window.gameAlert(line, 'success', 'Access Granted', 3000);
+            };
+
+            // The card copier's reader screen: tap a held card or emulate a saved one.
+            // accessList: the lock is decided by the server from its access list (UX slice
+            // 3b): each Emulate (or tap) sends that one card's id and waits for the answer.
+            // refusedKeycards: the held keycards the server has just refused at this reader,
+            // which the copier names as refused rather than offering them again (R1 m3).
+            const startRfidReader = ({ accessList = false, refusedKeycards = [] } = {}) => {
+                const params = {
+                    // The lock this copier is held to, so a late yes can close it (R1 m6)
+                    rfidLockTarget: lockable,
                     mode: 'unlock',
                     requiredCardIds: requiredCardIds,
                     acceptsUIDOnly: acceptsUIDOnly,
@@ -1118,22 +1455,54 @@ export function handleUnlock(lockable, type) {
                     // wrong_card or uid_only), same as a refused key or fingerprint
                     onRefused: refusedWithHint,
                     onComplete: async (success, result) => {
-                        if (success) {
-                            // Notify server and get room/container data
-                            const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
-                            setTimeout(() => {
-                                playRfidUnlockSound();
-                                unlockTarget(lockable, type, lockable.layer, serverResponse);
-                                window.gameAlert(rfidOpenedLine(result), 'success', 'Access Granted', 3000);
-                            }, 100);
+                        if (!success) return;
+                        // At an access list the copier already has the server's yes
+                        if (result && result.serverResponse) {
+                            setTimeout(() => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result, type)), 100);
+                            return;
                         }
+                        // Notify server and get room/container data
+                        const serverResponse = await notifyServerUnlock(lockable, type, 'rfid');
+                        setTimeout(() => {
+                            playRfidUnlockSound();
+                            unlockTarget(lockable, type, lockable.layer, serverResponse);
+                            window.gameAlert(rfidOpenedLine(result, type), 'success', 'Access Granted', 3000);
+                        }, 100);
                     }
-                });
+                };
+                if (accessList) {
+                    params.accessList = true;
+                    params.refusedKeycards = refusedKeycards;
+                    params.requestAccess = (cardIds) => requestRfidAccessUnlock(lockable, type, cardIds);
+                    // The copier was closed while the server was still answering, and the answer
+                    // was yes: the server has unlocked it, so the world follows
+                    params.onLateAccessUnlock = (result) => applyRfidAccessUnlock(result.serverResponse, rfidOpenedLine(result, type), { late: true });
+                }
+                window.startRFIDMinigame(lockable, type, params);
             };
 
             // Access model 4.1: a lock with an access list (roles or people) is decided by
-            // the server from every card id the player holds.
-            const accessCardIds = hasRfidAccessList(lockRequirements) ? heldRfidCardIds() : [];
+            // the server. The first request carries the physical keycards only; a copy opens
+            // the door only through the copier, one copy per Emulate (UX slice 3b, q97).
+            const rfidAccessList = hasRfidAccessList(lockRequirements);
+            const accessKeycardIds = rfidAccessList ? heldRfidCardIds({ copies: false }) : [];
+            // Saved copies to offer at the reader. A cancelled one is still listed, so the
+            // copier shows it refused ("Card cancelled") rather than hiding it.
+            const copierHasCopies = hasCloner && savedCards.length > 0;
+            const showAccessRefusal = (outcome) => {
+                if (outcome === 'uid_only') {
+                    playUISound('reject');
+                    window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
+                    emitDoorUnlockFailed('uid_only');
+                } else if (outcome === 'denied') {
+                    playUISound('reject');
+                    const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
+                    window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
+                    emitDoorUnlockFailed('wrong_card');
+                } else {
+                    window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
+                }
+            };
 
             // STEP 1a: a held keycard matches `requires` - open directly (today's rule)
             if (hasValidCard) {
@@ -1155,33 +1524,31 @@ export function handleUnlock(lockable, type) {
             else if (hasValidClone) {
                 startRfidReader();
             }
-            // STEP 2: the lock has an access list - send every held card id in one request
-            // and show the server's answer
-            else if (accessCardIds.length > 0) {
-                console.log('RFID ACCESS LIST: asking the server', { cards: accessCardIds.length });
-                requestRfidAccessUnlock(lockable, type, accessCardIds).then(({ outcome, response }) => {
-                    if (outcome === 'unlocked') {
-                        // Container contents come back with an object unlock
-                        if (response.hasContents && response.contents && lockable.scenarioData) {
-                            lockable.scenarioData.contents = response.contents;
+            // STEP 2: the lock has an access list. The held keycards go in one request; if
+            // the server refuses them (or none is held) and the copier holds saved cards, the
+            // copier opens on the reader, where each Emulate asks the server about one copy.
+            else if (rfidAccessList && (accessKeycardIds.length > 0 || copierHasCopies)) {
+                if (accessKeycardIds.length === 0) {
+                    console.log('RFID ACCESS LIST: no keycard held, the copier opens at the reader');
+                    startRfidReader({ accessList: true });
+                } else {
+                    console.log('RFID ACCESS LIST: asking the server', { cards: accessKeycardIds.length });
+                    requestRfidAccessUnlock(lockable, type, accessKeycardIds).then(({ outcome, response }) => {
+                        if (outcome === 'unlocked') {
+                            // The server names the player's own card that passed
+                            applyRfidAccessUnlock(response, rfidOpenedLine(rfidAccessUnlockResult(response), type));
+                        } else if (outcome !== 'error' && copierHasCopies) {
+                            // The badges did not open it: the reader buzzes, the refusal is
+                            // reported as at any refused door (no toast, the copier says it),
+                            // and the copier comes up on the reader with the saved copies to try
+                            playUISound('reject');
+                            emitDoorUnlockFailed(outcome === 'uid_only' ? 'uid_only' : 'wrong_card');
+                            startRfidReader({ accessList: true, refusedKeycards: accessKeycardIds });
+                        } else {
+                            showAccessRefusal(outcome);
                         }
-                        playRfidUnlockSound();
-                        unlockTarget(lockable, type, lockable.layer, response);
-                        // The server names the player's own card that passed; a copy only as "a copied card"
-                        window.gameAlert(rfidOpenedLine(rfidAccessUnlockResult(response)), 'success', 'Access Granted', 3000);
-                    } else if (outcome === 'uid_only') {
-                        playUISound('reject');
-                        window.gameAlert(appendLockedHint('Reader requires full authentication', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Reader requires full authentication'));
-                        emitDoorUnlockFailed('uid_only');
-                    } else if (outcome === 'denied') {
-                        playUISound('reject');
-                        const deniedLine = rfidAccessDeniedLine(lockRequirements.access, type);
-                        window.gameAlert(appendLockedHint(deniedLine, lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, deniedLine));
-                        emitDoorUnlockFailed('wrong_card');
-                    } else {
-                        window.gameAlert('Failed to verify access', 'error', 'Error', 3000);
-                    }
-                });
+                    });
+                }
             }
             // STEP 3: today's flow. A cloner with nothing to offer (no keycards to tap, no
             // saved clones): the reader just refuses, rather than opening an empty cloner
@@ -1191,9 +1558,11 @@ export function handleUnlock(lockable, type) {
                 window.gameAlert(appendLockedHint('Access denied. No keycard, and nothing saved on the cloner.', lockable), 'error', doorRefusalTitle(lockable, 'Access Denied'), lockedHintDuration(lockable, 4000, 'Access denied. No keycard, and nothing saved on the cloner.'));
                 emitDoorUnlockFailed('no_card');
             }
-            // If player has RFID cloner, open minigame to emulate or read cards
+            // If player has RFID cloner, open minigame to emulate or read cards. At an access
+            // list (only cancelled or id-less keycards held, nothing saved) it opens on the
+            // reader, where a cancelled card is refused, not on the menu that would read it (R1 m5)
             else if (hasCloner) {
-                startRfidReader();
+                startRfidReader({ accessList: rfidAccessList });
             }
             // No valid keycard and no cloner
             else {
@@ -1308,7 +1677,10 @@ export function getLockRequirementsForItem(item) {
     };
 }
 
-export function unlockTarget(lockable, type, layer, serverResponse) {
+// opts.autoOpen false: an object with contents is unlocked and its contents kept, but the
+// container minigame is not launched (a late access-list yes, when the player may be
+// elsewhere or in another minigame: UX slice 3b R1 M1).
+export function unlockTarget(lockable, type, layer, serverResponse, { autoOpen = true } = {}) {
     console.log('🔓 unlockTarget called:', { type, lockable, serverResponse });
 
     if (type === 'door') {
@@ -1359,7 +1731,7 @@ export function unlockTarget(lockable, type, layer, serverResponse) {
 
                 // Automatically launch container minigame after unlocking
                 setTimeout(() => {
-                    if (window.handleContainerInteraction) {
+                    if (autoOpen && window.handleContainerInteraction) {
                         console.log('Auto-launching container minigame after unlock');
                         window.handleContainerInteraction(lockable);
                     }
@@ -1394,7 +1766,7 @@ export function unlockTarget(lockable, type, layer, serverResponse) {
                 
                 // Automatically launch container minigame after unlocking
                 setTimeout(() => {
-                    if (window.handleContainerInteraction) {
+                    if (autoOpen && window.handleContainerInteraction) {
                         console.log('Auto-launching container minigame after unlock');
                         window.handleContainerInteraction(lockable);
                     }
@@ -1420,4 +1792,10 @@ window.openLoginSignIn = openLoginSignIn;
 // The network screens (slice 9.3a): network-links.js looks openRemoteDesktop up on window
 window.openRemoteSignIn = openRemoteSignIn;
 window.openRemoteDesktop = openRemoteDesktop;
+// Keyring K3c (8.3): keyring.js's Connect and a relay folder's close look this up on window
+window.openRelayDesktop = openRelayDesktop;
+// Keyring K4: keyring.js, network-links.js and a from desktop's folders look this up on window
+window.openFromDesktop = openFromDesktop;
+// Connect from the tray (keyring K3b): keyring.js looks this up on window, so it needs no import
+window.openCredentialSignIn = openCredentialSignIn;
 

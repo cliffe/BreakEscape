@@ -37,6 +37,7 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/bluetooth-scanner.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ble-scanner.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/biometrics-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/scanner-panel.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/container-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/phone-chat-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/person-chat-minigame.css') %>">
@@ -45,6 +46,7 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/pin.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/minigames-framework.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/password-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/pc-monitor.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ransomware-display-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/siem-dashboard-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/ehr-terminal-minigame.css') %>">
@@ -68,9 +70,14 @@
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/blockchain-explorer-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/shredded-document-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/text-file-minigame.css') %>">
+  <%# A35 notepad look for the text viewers: remove this line to go back to the old looks %>
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/notepad-window.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/examine-minigame.css') %>">
-  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/vpn-log-viewer-minigame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/device-frame.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/rogue-ap.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/patch-panel-minigame.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/npc-barks.css') %>">
+  <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/phone-ring.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/objectives.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/tutorial.css') %>">
   <link rel="stylesheet" href="<%= be_asset_path('/break_escape/css/vm-launcher-minigame.css') %>">
@@ -131,7 +138,7 @@
   <div id="music-widget-btn-anchor"></div>
 
   <%# Inventory Container %>
-  <div id="inventory-container"></div>
+  <div id="inventory-container" class="pixel-scroll"></div>
 
   <%# Laptop Popup %>
   <div id="laptop-popup">
@@ -143,7 +150,7 @@
           <button id="crypto-close-btn" class="minigame-close-button">×</button>
         </div>
         <div id="cyberchef-container">
-          <iframe id="cyberchef-frame" src=""></iframe>
+          <iframe id="cyberchef-frame" title="CyberChef"></iframe>
         </div>
       </div>
     </div>
@@ -159,7 +166,7 @@
           <button id="lab-close-btn" class="minigame-close-button">×</button>
         </div>
         <div id="lab-container">
-          <iframe id="lab-frame" src=""></iframe>
+          <iframe id="lab-frame" title="Lab sheet"></iframe>
         </div>
       </div>
     </div>
@@ -185,9 +192,6 @@
 
   <%# Player Preferences Modal %>
   <%= render 'break_escape/player_preferences/modal' %>
-
-  <%# Popup Overlay %>
-  <div class="popup-overlay"></div>
 
   <%
     # Compute the embedded VM set panel URL directly so the JS widget can load it

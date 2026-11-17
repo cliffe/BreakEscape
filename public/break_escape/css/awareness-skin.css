@@ -39,16 +39,16 @@
 /* wordmark: drawn in CSS from the brand's logoText, no image */
 .aw-wordmark {
     display: inline-block; padding: 2px 10px; margin-right: 12px;
-    background: var(--aw-accent); color: #fff; border-radius: 3px;
+    background: var(--aw-accent); color: #fff; border-radius: 0;
     font-weight: 800; letter-spacing: 0.14em; font-size: 14px; text-transform: uppercase;
 }
 
 /* step strip */
 .aw-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 8px 12px; background: #fff; border-bottom: 2px solid var(--aw-line); }
 .aw-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.aw-step { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 1px solid var(--aw-line); border-radius: 999px; font-size: 14px; color: #52606d; background: #fff; }
-.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: var(--aw-line); color: var(--aw-ink); font-size: 13px; font-weight: 700; }
-.aw-step-current { border-color: var(--aw-accent); color: var(--aw-ink); font-weight: 700; }
+.aw-step { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 4px; border: 2px solid var(--aw-line); border-radius: 0; font-size: 14px; color: #52606d; background: #fff; }
+.aw-step-num { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 0; background: var(--aw-line); color: var(--aw-ink); font-size: 13px; font-weight: normal; }
+.aw-step-current { border-color: var(--aw-accent); color: var(--aw-ink); font-weight: normal; }
 .aw-step-current .aw-step-num { background: var(--aw-accent); color: #fff; }
 .aw-step-done .aw-step-num { background: var(--aw-accent); color: #fff; opacity: 0.7; }
 /* A stage passed over without running (e.g. the MFA demo after a refused call): greyed, not
@@ -57,6 +57,12 @@
 .aw-step-skipped .aw-step-label { text-decoration: line-through; }
 .aw-step-skipped .aw-step-num { background: var(--aw-line); color: #6b7680; opacity: 0.6; }
 .aw-step-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* C-X7 / C-ER2: at narrow widths the stepper stays one sideways-scrolling row rather than
+   wrapping to two or three, matching the inbox-triage and landing-page-builder steppers. */
+@media (max-width: 767px) {
+    .aw-steps { flex-wrap: nowrap; overflow-x: auto; }
+    .aw-step { flex: 0 0 auto; }
+}
 
 /* shared text */
 /* F13: the accent at heading size sits near the AA floor on the light surface; darken it a
@@ -64,7 +70,11 @@
    (older engines fall back to the raw accent, which still meets AA on the default skin). */
 .aw-heading { margin: 0 0 8px; font-size: 22px; color: var(--aw-accent); color: color-mix(in srgb, var(--aw-accent) 80%, #000); }
 .aw-lead, .aw-summary { margin: 0 0 12px; font-size: 16px; }
-.aw-button { margin-top: 14px; padding: 8px 18px; font: inherit; font-weight: 700; color: #fff; background: var(--aw-accent); border: 0; border-radius: 4px; cursor: pointer; }
+/* C-X9: one awareness primary button, square with a 2px border, matching .epr-button and the
+   password-guesser's action button so every action in the awareness windows reads the same.
+   No radius or faux-bold (pixel-art UI). A secondary variant keeps the border and drops the fill. */
+.aw-button { margin-top: 14px; padding: 8px 18px; font: inherit; font-weight: normal; color: #fff; background: var(--aw-accent); border: 2px solid var(--aw-accent); border-radius: 0; cursor: pointer; }
+.aw-button-secondary { color: var(--aw-ink); background: #fff; border-color: var(--aw-line); }
 .aw-button:focus-visible { outline: 3px solid var(--aw-ink); outline-offset: 2px; }
 
 /* flip: a built page (E5) and a pretext call (E3) as well as a sent email */

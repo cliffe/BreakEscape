@@ -174,6 +174,56 @@ module BreakEscape
       assert fresh.valid?, 'renaming keeps the character'
     end
 
+    test 'an exact validSprites key offers an avatar no NPC wears, in the listed order' do
+      pref = PlayerPreference.create!(player: @player, selected_sprite: 'female_hacker_hood_v2')
+      scenario = { 'rooms' => {}, 'validSprites' => %w[female_hacker_hood vivian_ashby mei_lin_chow] }
+
+      menu = AvatarUnlocks.stub(:catalogue, CATALOGUE.deep_dup) { pref.avatar_menu(scenario) }
+      mission = menu.select { |e| e['status'] == 'mission' }
+      assert_equal %w[female_hacker_hood_v2 vivian_ashby mei_lin_chow], mission.map { |e| e['sprite'] }
+      assert_equal ['Vivian Ashby', 'Mei Lin Chow'], mission.drop(1).map { |e| e['name'] }
+      refute(menu.any? { |e| e['sprite'] == 'vivian_ashby' && e['status'] == 'locked' })
+
+      pref.scenario_context = scenario
+      pref.selected_sprite = 'vivian_ashby'
+      assert pref.valid?, pref.errors.full_messages.inspect
+      pref.save!
+      refute PlayerPreference.find(pref.id).sprite_valid_for_scenario?({ 'rooms' => {} }),
+             'a listed starter belongs to the missions that list it'
+    end
+
+    test 'listed keys skip wildcards, retired keys and sprites that are not avatars' do
+      scenario = { 'validSprites' => ['vivian_*', 'female_spy', 'bed_mr_pryce', 'no_such_sprite', 7, 'daniel_seo'] }
+      assert_equal %w[daniel_seo], AvatarUnlocks.listed_avatars(scenario).keys
+      assert_empty AvatarUnlocks.listed_avatars(nil)
+    end
+
+    NOIR_STARTERS = %w[vivian_ashby mei_lin_chow lucia_moreno ngozi_adeyemi
+                       daniel_seo frank_callahan marcus_hale harjit_singh].freeze
+    SPY_MISSIONS = %w[m01_first_contact m02_ransomed_trust m03_ghost_in_the_machine m04_critical_failure
+                      m05_insider_trading m06_follow_the_money m07_architects_gambit m08_the_mole
+                      m09_digital_archaeology m10_full_disclosure].freeze
+
+    test 'the noir starters are full avatars with seated frames' do
+      dir = BreakEscape::Engine.root.join('public', 'break_escape', 'assets', 'characters')
+      NOIR_STARTERS.each do |key|
+        assert AvatarUnlocks.avatar_sprite?(key), key
+        animations = JSON.parse(dir.join("#{key}.json").read)['animations']
+        AvatarUnlocks::DIRECTIONS.each { |d| assert animations.key?("sit_#{d}"), "#{key} sit_#{d}" }
+      end
+    end
+
+    test 'm01 to m10 offer the noir starters and keep their earlier options' do
+      catalogue = PlayerPreference::AVAILABLE_SPRITES.to_h { |s| [s, { 'sprite' => s, 'name' => s, 'missions' => [] }] }
+      SPY_MISSIONS.each do |name|
+        data = Mission.new(name: name, display_name: name).generate_scenario_data({})
+        here = AvatarUnlocks.mission_sprites(data, catalogue)
+        assert_equal NOIR_STARTERS, here.last(8), name
+        earlier = name.start_with?('m01') ? %w[male_hacker_hood_v2 male_hacker_hood_down_v2 female_hacker_hood_v2 female_hacker_hood_down_v2] : PlayerPreference::AVAILABLE_SPRITES
+        assert_equal earlier.sort, here.first(here.size - 8).sort, name
+      end
+    end
+
     test 'a sprite with no walk atlas is never an avatar' do
       conclude(create_game(encountered: %w[patient]))
       assert_empty AvatarUnlocks.for_player(@player)

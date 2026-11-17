@@ -1,0 +1,13 @@
+{
+  "key": "f052e62a9b5240f6a16a3419d5f6017c",
+  "npc": "neil",
+  "text": "Who keeps taking the mugs?",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:08:35Z"
+}

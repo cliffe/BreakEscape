@@ -1,0 +1,13 @@
+{
+  "key": "7be03ba84f716a06742303d8aa0f4769",
+  "npc": "ernesto_bautista",
+  "text": "There you go. Fuss over nothing.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:13:25Z"
+}

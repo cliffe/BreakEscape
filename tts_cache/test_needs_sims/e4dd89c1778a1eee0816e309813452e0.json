@@ -1,0 +1,13 @@
+{
+  "key": "e4dd89c1778a1eee0816e309813452e0",
+  "npc": "tom",
+  "text": "No coffee here, then.",
+  "voice": "Charon",
+  "style": "Sales assistant, late twenties, white British, Yorkshire accent. Cheerful and easily distracted.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:18:35Z"
+}

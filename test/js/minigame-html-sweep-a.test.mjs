@@ -125,7 +125,9 @@ test('drug library terminal: header, every tab, source modals and pump log are t
     const el = fresh();
     const mg = new DrugLibraryIntegrityMinigame(el, dliParams());
     mg.init();
-    assertPlain(el.querySelector('.dli-console-header'), 'DLI header', 5);
+    // The title and subtitle are the shared bar's (X8); the three file names stay in the header
+    assertPlain(el.querySelector('.console-titlebar'), 'DLI shared title bar', 2);
+    assertPlain(el.querySelector('.dli-console-header'), 'DLI file header', 3);
     const panel = el.querySelector('#dli-panel');
     mg._phase = 'failed';
     mg._renderIntegrityTab(panel);

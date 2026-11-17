@@ -136,6 +136,7 @@ module BreakEscape
     def write_server_globals!(values)
       globals = (player_state['globalVariables'] ||= {})
       values.each { |k, v| globals[k] = v }
+      record_server_global_writes(values.keys)
     end
 
     def held_inventory_item(item_id)

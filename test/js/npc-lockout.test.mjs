@@ -452,8 +452,8 @@ test('the flag is restored from npcFrustration when the room loads and kept thro
 // ── the workstation layer ──────────────────────────────────────────────
 
 test('a flagged owner\'s screen locks on every leave whatever its lockChance; another owner\'s is unchanged', () => {
-    const a = { id: 'pc_a', workstation: true, lockChance: 0 };
-    const b = { id: 'pc_b', workstation: true, lockChance: 0 };
+    const a = { id: 'pc_a', workstation: true, lockChance: 0, owner: 'ann' };
+    const b = { id: 'pc_b', workstation: true, lockChance: 0, owner: 'bob' };
     const flagged = new Set();
     const env = {
         objects: () => [a, b],
@@ -474,7 +474,7 @@ test('a flagged owner\'s screen locks on every leave whatever its lockChance; an
         ws.onReturned('ann'); ws.onReturned('bob');
     }
     // an env without lockedOut keeps today's answer
-    const c = { id: 'pc_a', workstation: true, lockChance: 0 };
+    const c = { id: 'pc_a', workstation: true, lockChance: 0, owner: 'ann' };
     const ws2 = new WorkstationState({ ...env, objects: () => [c], lockedOut: undefined }).install();
     ws2.onLeft('ann');
     assert.equal(c.screenLocked, false);
@@ -584,7 +584,7 @@ test('R1 m2: the three layers on one dispatcher, in the live order: leave, locke
             if (hit) l.fn(data, name);
         }
     };
-    const pc = { id: 'dana_pc', workstation: true, lockChance: 1, policy: 'strict' };
+    const pc = { id: 'dana_pc', workstation: true, lockChance: 1, policy: 'strict', owner: 'dana' };
     const ws = new WorkstationState({
         objects: () => [pc], npcs: () => [rec], on, emit: (n, d) => w.world.emit(n, d), setGlobal: () => {},
         roll: () => 0.5, clockMs: () => sys.clockMs, lockedOut: (o, p) => sys.isLockedOut(o, p)

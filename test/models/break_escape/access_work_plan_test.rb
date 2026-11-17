@@ -32,7 +32,7 @@ module BreakEscape
     test "a room NPC's work holds its resolved list with admitted right" do
       list = npcs(build)
       assert_equal({ 'breakDrain' => 10.0,
-                     'needs' => [{ 'id' => 'finance_share', 'kind' => 'file_share', 'admitted' => true, 'downIf' => 'finance_share_down' },
+                     'needs' => [{ 'id' => 'finance_share', 'kind' => 'file_share', 'admitted' => true, 'offWhen' => 'finance_share_down' },
                                  { 'id' => 'email', 'kind' => 'email', 'admitted' => true }] }, list['dana']['work'])
       kai = list['kai']['work']['needs'].to_h { |n| [n['id'], n] }
       assert_equal false, kai['finance_share']['admitted'], 'a refused one'

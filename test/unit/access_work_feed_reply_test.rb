@@ -16,7 +16,7 @@ class AccessWorkFeedReplyTest < ActiveSupport::TestCase
   end
 
   def data(npcs, social: nil)
-    d = { 'resources' => { 'srv' => { 'id' => 'srv', 'downIf' => 'srv_down' } },
+    d = { 'resources' => { 'srv' => { 'id' => 'srv', 'offWhen' => 'srv_down' } },
           'globalVariables' => { 'srv_down' => true },
           'rooms' => { 'r1' => { 'npcs' => npcs } } }
     d['social'] = social if social

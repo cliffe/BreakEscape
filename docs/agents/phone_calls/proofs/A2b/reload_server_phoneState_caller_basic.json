@@ -1,0 +1,81 @@
+{
+  "keys": [
+    "texter",
+    "caller_basic",
+    "caller_queue",
+    "timed_caller",
+    "legacy_voiced",
+    "caller_debrief",
+    "caller_decline",
+    "caller_patient",
+    "caller_queue_b",
+    "caller_replace"
+  ],
+  "npc": "caller_basic",
+  "entry": {
+    "history": [
+      {
+        "read": true,
+        "text": "Basic here. Text me if you need anything.",
+        "type": "npc",
+        "gameTime": -3599716,
+        "preloaded": true,
+        "timestamp": 1794474133981
+      },
+      {
+        "read": true,
+        "text": "Good, you're there.",
+        "type": "npc",
+        "gameTime": 178182,
+        "timestamp": 1794477911879
+      },
+      {
+        "read": true,
+        "text": "I only wanted to check the line works.",
+        "type": "npc",
+        "gameTime": 179635,
+        "timestamp": 1794477913332
+      },
+      {
+        "read": true,
+        "text": "Keep talking.",
+        "type": "player",
+        "gameTime": 183363,
+        "timestamp": 1794477917060
+      },
+      {
+        "read": true,
+        "text": "Then listen carefully. This is the middle of the call.",
+        "type": "npc",
+        "gameTime": 184372,
+        "timestamp": 1794477918069
+      },
+      {
+        "read": true,
+        "text": "Nothing else to add.",
+        "type": "npc",
+        "gameTime": 185797,
+        "timestamp": 1794477919494
+      },
+      {
+        "read": true,
+        "text": "Thanks.",
+        "type": "player",
+        "gameTime": 199313,
+        "timestamp": 1794477933010
+      },
+      {
+        "read": true,
+        "text": "Anytime.",
+        "type": "npc",
+        "gameTime": 200320,
+        "timestamp": 1794477934017
+      }
+    ],
+    "storyPath": "scenarios/test_phone_calls/ink/caller_basic.json",
+    "storyState": "{\"flows\":{\"DEFAULT_FLOW\":{\"callstack\":{\"threads\":[{\"callstack\":[{\"cPath\":\"start\",\"idx\":0,\"exp\":false,\"type\":0}],\"threadIndex\":0}],\"threadCounter\":5},\"outputStream\":[\"^Anytime.\",\"\\n\"],\"currentChoices\":[]}},\"currentFlowName\":\"DEFAULT_FLOW\",\"variablesState\":{\"call_answer_seconds\":7},\"evalStack\":[],\"visitCounts\":{},\"turnIndices\":{},\"turnIdx\":4,\"storySeed\":95,\"previousRandom\":0,\"inkSaveVersion\":10,\"inkFormatVersion\":21}",
+    "currentKnot": "start",
+    "preloadedKnot": "start",
+    "lastEnteredKnot": "start"
+  }
+}

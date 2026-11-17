@@ -32,6 +32,7 @@
 
 import { SocialOverlayScene } from '../framework/social-overlay.js';
 import { writeGlobal } from '../../systems/global-writer.js';
+import { recordLandingPageBuild } from '../../systems/se-landing-page-client.js';
 import { createConceptCard } from '../osint-browser/concept-card.js';
 import { renderLandingPage, logoMissing, logoSrc } from './landing-page-render.js';
 import {
@@ -39,7 +40,8 @@ import {
 } from './landing-page-model.js';
 import { buildSuspectPage } from './landing-page-inspect.js';
 import { captureList, capturesReveal } from '../../systems/captures.js';
-import { buildCaptureRow, captureBannerText, applyCaptureSecrets, loadCaptureSecrets } from '../capture-log/capture-rows.js';
+import { buildCaptureRow, captureBannerText, applyCaptureSecrets, watchCaptureSecrets } from '../capture-log/capture-rows.js';
+import { buildStepItems, applyStepStates } from '../helpers/step-stepper.js';
 
 export const PAGES_KEY = 'se_landing_pages';
 export const DRAFTS_KEY = 'se_landing_drafts';
@@ -139,6 +141,9 @@ function h(tag, props = {}, ...kids) {
 }
 
 export class LandingPageBuilderMinigame extends SocialOverlayScene {
+    // Pause between /capture_secrets asks while a capture is missing from the answer (a test may shorten it)
+    static secretRetryMs = 1500;
+
     constructor(container, params) {
         super(container, params);
         this.pageDef = null;
@@ -423,10 +428,7 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _buildInvalid() {
         const wrap = h('div', { class: 'lpb-root lpb-invalid', tabindex: '-1' },
             h('p', { class: 'lpb-invalid-text', text: this._invalid }),
-            h('button', { type: 'button', class: 'se-overlay-close minigame-button', text: 'Close' }));
-        this.addEventListener(wrap.querySelector('button'), 'click', (e) => {
-            e.preventDefault?.(); this.requestClose();
-        });
+            this.buildCloseControl());
         this.root = wrap;
         this.gameContainer.appendChild(wrap);
     }
@@ -435,19 +437,14 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     _buildCaptures() {
         const reveal = capturesReveal(this.social);
         const entries = captureList(this.globals);
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button lpb-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.(); e.stopPropagation?.(); this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         const head = h('header', { class: 'lpb-head' },
             h('h2', { class: 'lpb-title', text: 'Captures' }),
             h('div', { class: 'lpb-head-buttons' }, close));
-        const banner = h('p', { class: 'lpb-captures-banner', role: 'note', text: captureBannerText(reveal) });
+        const banner = h('p', { class: 'lpb-captures-banner se-notice', role: 'note', text: captureBannerText(reveal) });
         const list = h('ul', { class: 'lpb-captures-list', 'aria-label': 'Captures' });
         if (!entries.length) {
-            list.appendChild(h('li', { class: 'lpb-captures-empty', text: 'No captures yet.' }));
+            list.appendChild(h('li', { class: 'lpb-captures-empty se-notice', text: 'No captures yet.' }));
         }
         this._secretRows = [];
         for (const entry of entries) list.appendChild(this._captureRow(entry));
@@ -474,20 +471,18 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
         applyCaptureSecrets(this._secretRows, secrets);
     }
 
-    /** Fetch the authored secret for each earned credential capture and reveal it (capture-rows.js). */
+    /** Fetch the authored secret for each earned credential capture and reveal it (capture-rows.js); rows read Loading... until then. */
     async _loadCaptureSecrets() {
-        const secrets = await loadCaptureSecrets();
-        if (secrets) this._applyCaptureSecrets(secrets);
+        await watchCaptureSecrets(this._secretRows, {
+            retryMs: LandingPageBuilderMinigame.secretRetryMs,
+            alive: () => this._capturesView && !!this.root?.isConnected,
+            onSecrets: (secrets) => { this._capturedSecrets = secrets; }
+        });
     }
 
     _buildShell() {
         const title = h('h2', { class: 'lpb-title', text: this.pageDef.title || 'Build a page' });
-        const close = h('button', { type: 'button', class: 'se-overlay-close minigame-button lpb-close',
-            text: 'Close', 'aria-label': 'Close' });
-        this.addEventListener(close, 'click', (e) => {
-            e.preventDefault?.(); e.stopPropagation?.(); this.requestClose();
-        });
-        this.closeButton = close;
+        const close = this.buildCloseControl();
         const head = h('header', { class: 'lpb-head' }, title, h('div', { class: 'lpb-head-buttons' }, close));
 
         this.stepStrip = h('ol', { class: 'lpb-steps', 'aria-label': 'Steps' });
@@ -516,14 +511,11 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
     }
 
     _renderSteps() {
-        this.stepStrip.textContent = '';
         const current = this._currentStep();
-        for (const step of STEPS) {
-            const li = h('li', { class: `lpb-step${step.id === current ? ' is-current' : ''}`,
-                'data-step': step.id, 'aria-current': step.id === current ? 'step' : false },
-                h('span', { class: 'lpb-step-label', text: step.label }));
-            this.stepStrip.appendChild(li);
-        }
+        const items = buildStepItems(this.stepStrip, STEPS,
+            { stepClass: 'lpb-step', dataKey: 'step', label: { as: 'span', class: 'lpb-step-label' } });
+        applyStepStates(items, STEPS, { currentClass: 'is-current' },
+            (step) => ({ current: step.id === current }));
     }
 
     _renderPreview() {
@@ -1025,6 +1017,19 @@ export class LandingPageBuilderMinigame extends SocialOverlayScene {
             ? ((this.choices.check && this.choices.check.hostId) || '')
             : (this.choices.domainId || '');
         writeGlobal(`landing_${this.pageId}_domain`, domainValue);
+
+        // Record the build server-side so the gate reads the server's own recomputed verdict,
+        // not the client's (PHISH_EVIDENCE_SERVER_PLAN.md section 3.2, Route 1). Fire-and-forget
+        // after the local writeGlobal so the UI is unchanged; the server recomputes the score
+        // from these choices and ignores any client verdict. The POST itself lives in
+        // systems/se-landing-page-client.js so the builder folder calls no network API (proven by
+        // social-landing-page-render.test.mjs). Guarded so the builder still runs headless (no
+        // window/fetch) in tests. The promise is kept so the send path can await the build landing
+        // before it posts (plan section 10).
+        this._buildPost = recordLandingPageBuild({
+            pageId: this.pageId, targetId: this.targetId, choices: this.choices
+        });
+
         this._attached = true;
         this._announce('Page attached.');
         this.gameResult = this.closeResult();

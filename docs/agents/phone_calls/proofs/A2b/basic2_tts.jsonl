@@ -1,0 +1,15 @@
+{"t":1794477017978,"npc_id":"debrief_host","text":"Welcome. This is the opening briefing. Close it when you are done.","delivery":null,"status":503}
+{"t":1794477018539,"npc_id":"debrief_host","text":"Good. A call will come in shortly.","delivery":null,"status":503}
+{"t":1794477035240,"npc_id":"caller_basic","text":"There you are. I was about to give up.","delivery":null,"status":503}
+{"t":1794477036660,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794477049442,"npc_id":"caller_basic","text":"Right. That is the whole call.","delivery":null,"status":503}
+{"t":1794477093906,"npc_id":"caller_basic","text":"Good, you're there.","delivery":null,"status":503}
+{"t":1794477095319,"npc_id":"caller_basic","text":"I only wanted to check the line works.","delivery":null,"status":503}
+{"t":1794477096609,"npc_id":"caller_basic","text":"Understood. Goodbye.","delivery":null,"status":503}
+{"t":1794477203390,"npc_id":"caller_patient","text":"You took your time. I almost gave up.","delivery":null,"status":503}
+{"t":1794477204804,"npc_id":"caller_patient","text":"That is all I had.","delivery":null,"status":503}
+{"t":1794477214229,"npc_id":"caller_patient","text":"Goodbye.","delivery":null,"status":503}
+{"t":1794477300774,"npc_id":"caller_debrief","text":"It is time. Are you ready to be brought in?","delivery":null,"status":503}
+{"t":1794477304503,"npc_id":"caller_debrief","text":"Bringing you in now.","delivery":null,"status":503}
+{"t":1794477305930,"npc_id":"caller_debrief","text":"Stay sharp in there, and say nothing you do not have to.","delivery":null,"status":503}
+{"t":1794477306092,"npc_id":"debrief_host","text":"Now the debrief. You came straight from the call.","delivery":null,"status":503}

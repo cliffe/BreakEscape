@@ -235,5 +235,61 @@ module BreakEscape
       body = container('server_public', foothold: OFFICE)
       assert_equal ['server_pub_note'], body['contents'].map { |c| c['id'] }
     end
+
+    def lock_session(pc_id)
+      post game_path('lock_session'), params: { pc_id: pc_id }, as: :json
+      response.parsed_body
+    end
+
+    # UI slice 6 (R2 minor 1): a locked pivot session extends no access reach, so an open share
+    # on a network bridged only through it is refused while locked, then served after the
+    # password. The network view still draws the structural link (structural_reach unchanged).
+    test 'UI slice 6: a locked pivot does not extend reach to a linked open share, served again after re-auth' do
+      build_network_game({}, with_open_server_share)
+      take_drop_box
+      plant('comms_port')
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      @game.reload
+      assert_includes @game.player_reach(OFFICE), 'server_net', 'the pivot reaches server_net while unlocked'
+      body = container('server_public', foothold: OFFICE)
+      assert_response :success
+      assert_equal ['server_pub_note'], body['contents'].map { |c| c['id'] }
+
+      # Lock the pivot: the access walk drops server_net, the open share answers "not found".
+      lock_session('lena_pc')
+      assert_response :success
+      @game.reload
+      refute_includes @game.player_reach(OFFICE), 'server_net', 'a locked pivot no longer bridges for access'
+      assert_includes @game.structural_reach(OFFICE), 'server_net', 'but the structural link (the view) is unchanged'
+      container('server_public', foothold: OFFICE)
+      assert_response :not_found
+
+      # The correct password clears the lock and the open share is reachable again.
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      assert_response :success
+      @game.reload
+      assert_includes @game.player_reach(OFFICE), 'server_net'
+      body = container('server_public', foothold: OFFICE)
+      assert_response :success
+      assert_equal ['server_pub_note'], body['contents'].map { |c| c['id'] }
+    end
+
+    # UI slice 6 (R2 minor 2): a session chained beyond a now-locked pivot keeps its network in
+    # structural_reach but not player_reach, so the view draws it as a greyed down block whose
+    # via names the bridge Locked (the access walk has already dropped the pivot).
+    test 'UI slice 6: a down block reached through a locked pivot names the bridge locked' do
+      with_pivot_foothold
+      sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      sign_in('sv_fs02', 'ishaw', NS::IAN_PASSWORD, foothold: OFFICE)
+      lock_session('lena_pc')
+      assert_response :success
+      @game.reload
+
+      server = networks_block(OFFICE).find { |b| b['id'] == 'server_net' }
+      assert server, 'server_net is still shown (the structural link is kept)'
+      assert_equal 'down', server['route'], 'but greyed: player_reach no longer includes it'
+      assert_equal 'lena_pc', server['via']['hostId'], 'the bridge is the locked pivot'
+      assert_equal true, server['via']['locked'], 'and it is marked locked'
+    end
   end
 end

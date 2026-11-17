@@ -23,6 +23,21 @@
  * tests import it directly with a stubbed window.
  */
 
+// Menu icons. The interaction menu draws them in a 64px box. Take uses the open hand,
+// defined once in ui/interaction-menu.js (window.menuIcons, set before this module
+// loads). Copy uses the card copier icon (icons/card-copier.png, 16x16, a small landscape
+// copier drawn by hand in the frame's colours) at x4, which fills the box. The user picked
+// it over two 32x32 drawings (UX slice 3b, q90, q107).
+function assetsBase() {
+    return (typeof window !== 'undefined' && window.breakEscapeConfig?.assetsPath) || '/break_escape/assets';
+}
+export const COPIER_ICON_SIZE = 16;
+export const COPIER_ICON_SCALE = 4;
+export function takeIcon() { return (typeof window !== 'undefined' && window.menuIcons?.openHand?.()) || undefined; }
+export function copyIcon() {
+    return { src: `${assetsBase()}/icons/card-copier.png`, width: COPIER_ICON_SIZE * COPIER_ICON_SCALE, height: COPIER_ICON_SIZE * COPIER_ICON_SCALE };
+}
+
 /** True when the player is carrying an RFID cloner. */
 function playerHasCloner() {
     const items = (typeof window !== 'undefined' && window.inventory && window.inventory.items) || [];
@@ -77,6 +92,7 @@ export function objectActions(sprite) {
         actions.push({
             label: `Copy it with the ${device}`,
             detail: `Read the card and save a copy on the ${device}. The card stays where it is.`,
+            icon: copyIcon(),
             onSelect: () => {
                 if (window.startRFIDMinigame) {
                     // A world keycard copied in place: its stamped id is the clone source, so the
@@ -90,6 +106,7 @@ export function objectActions(sprite) {
         actions.push({
             label: 'Take it',
             detail: 'Pick the card up and carry it. The owner will notice it gone.',
+            icon: takeIcon(),
             onSelect: () => runDefaultInteraction(sprite)
         });
     }
@@ -122,7 +139,7 @@ export function maybeShowObjectActionMenu(sprite) {
     if (window.isInteractionMenuOpen && window.isInteractionMenuOpen()) return false;
     if (!window.showInteractionMenu) return false;
 
-    window.showInteractionMenu(actions, undefined, undefined, 'Choose an action…');
+    window.showInteractionMenu(actions, undefined, undefined, 'Choose an action…', { holdKeys: !window.roomHasActiveHostile?.() });
     return true;
 }
 

@@ -54,7 +54,7 @@ export function installLeftCardConsequence() {
 
     sweep();
 
-    // A left-behind item is shown by object_revealed:<itemId> { objectId, leftBehindBy }.
+    // A left-behind item is shown by object_revealed:<itemId> { objectId, owner }.
     // Cache its config the moment it appears, before the player can take it.
     dispatcher.on('object_revealed:*', (data) => {
         const id = data && (data.objectId || data.itemId);

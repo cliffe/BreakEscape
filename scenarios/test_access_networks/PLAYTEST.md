@@ -53,9 +53,21 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 
 ## Harness notes for this scenario
 
+- **The capture cards (UX slice 2b0)** in the lobby, `capture_note_lena` and `capture_note_ian`,
+  record a credential capture each. Once the drop box is in the comms room, the remote sign-in
+  screen merges the PC's own account tiles and the captured sign-ins into one tile row
+  (credential keyring K0): a captured account is one tile tagged Captured
+  (`.signin-tile[data-username="lfox"] .signin-tag`), matched to a PC tile by username with no
+  duplicate. On a tiles screen with picker `accounts`, use `clickText('Other user')`
+  (`.signin-other`) before typing into field 0; a captured account the PC does not list is left
+  out there. A tile chooses the account and fills only the username: this scenario does not
+  reveal captured secrets, so the password is still typed from its earned source (P5 the letter,
+  P8 the handover note). Ian's tile is refused on Lena's PC. A run that skips the cards sees the
+  PC's own tiles (or the typed form on an NLA screen), as before.
 - **The jack's prompts are `gameConfirm` dialogs, not minigames.** Answer the plant confirm with
-  `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`), and the planted jack's prompt with
-  `{"cmd":"dismiss","label":"Unplug it"}` or `"Leave it"`. `mg clickSelector` cannot see them.
+  `{"cmd":"dismiss","label":"Plug it in"}` (or `"Cancel"`). `mg clickSelector` cannot see it.
+  A planted jack has no prompt (UI PC 2, 2026-11-14): a click opens the box's network view with
+  an Unplug button in its header (`[data-unplug]`, `networkView` test state `unplug`).
 - **The breaker and the two USB sockets also ask first** (`gameConfirm`, buttons "Confirm" and
   "Cancel"): `server_breaker` (N5, N7), `sam_dock` (N12) and `kiosk_dock` (N13). Answer with
   `{"cmd":"dismiss","label":"Confirm"}`; a run that does not answer sees nothing change.
@@ -87,18 +99,19 @@ The leak check must say `VERDICT: no leaks found` after every beat. Compare the 
 3. `interact` `comms_port`: the confirm "Plug the drop box into this port?". Answer `Cancel`: the
    box is still in the inventory and no request was sent.
 4. `interact` again and answer `Plug it in`. Expect: the box leaves the inventory, the link item
-   "Drop box: comms room" arrives (no `POST /inventory` in the responses), the port shows
+   "Drop box: Comms room" arrives (no `POST /inventory` in the responses), the port shows
    `pi_cluster1`, `comms_port_planted` is true, task `p2_plant` completes, and the one-line toast
    names the network. `window.__test.access.footholds()` lists `jack_comms_port`.
    - Server: `footholds` has `jack_comms_port` on `office_lan`; `gainedFootholds` has
      `comms_port`; the link item in the inventory and the box not.
 5. Click the link item in the inventory: the same one-line toast; `networkView('jack_comms_port')`
-   lists the hosts `door_box`, `kiosk_pc`, `lena_pc`, `sam_pc` (in that order), then
-   `ledger_archive`, `print_queue`, `scanned_inbox`, and nothing of the workshop network.
-6. `interact` `comms_port`: "Your Network drop box is plugged in here. Open it from your
-   inventory." with `Unplug it` and `Leave it`. Answer `Leave it`: nothing changes, no request.
-7. `interact` again and answer `Unplug it`: one box in the inventory, none on the lobby table, no
-   link item; the port is back to `network_rack1`; `comms_port_planted` is false.
+   lists the hosts `door_box`, `it_pc`, `kiosk_pc`, `lena_pc`, `ops_pc`, `sam_pc` (in that order),
+   then `ledger_archive`, `print_queue`, `scanned_inbox`, and nothing of the workshop network.
+6. `interact` `comms_port`: the drop box's network view opens, with Unplug in its header. Close
+   it with the X: nothing changes, no unplug request.
+7. `interact` again and press Unplug (`[data-unplug]`): the view closes; one box in the
+   inventory, none on the lobby table, no link item; the port is back to `network_rack1`;
+   `comms_port_planted` is false.
    - Server: no `footholds`; `gainedFootholds` still has `comms_port`; `p2_plant` still complete.
 8. Plant again (`Plug it in`): the link item is back; the toast does not repeat as a first
    foothold's view (the view opens by itself only the first time at a jack).
@@ -138,10 +151,11 @@ item in the inventory and the box not.
 
 ### P3 See
 
-The view: `HB-DESK-01` with **Open** and Sam's name (from P1), `HB-FIN-02` **Sign in**,
-`HB-KIOSK-01` remote sign-in off, `HB-DOOR-01` **Sign in**; then the open share with **Open**, the
-finance share with a padlock, the print queue. Nothing of the workshop network. Task `p3_see`
-completes (`network_viewed` for `office_lan` with all four hosts). The leak check over every
+The view: `HB-DESK-01` with **Open** and Sam's name (from P1), `HB-IT-01` **Sign in**, `HB-FIN-02`
+**Sign in**, `HB-KIOSK-01` remote sign-in off, `HB-OPS-02` **Sign in**, `HB-DOOR-01` **Sign in**;
+then the open share with **Open**, the finance share with a padlock, the print queue. Nothing of
+the workshop network. Task `p3_see` completes (`network_viewed` for `office_lan` with all six
+hosts, in order `door_box,it_pc,kiosk_pc,lena_pc,ops_pc,sam_pc`). The leak check over every
 response before P2 finds no network, host or share string.
 
 Server: no change.
@@ -158,7 +172,7 @@ Server: `copiedItems` has `inbox_letter`.
 From the view, `HB-FIN-02` (the finance door still locked). No tiles. Sam's right password:
 "This account can't sign in on this PC". A wrong password for Lena: 4 attempts left. Lena's
 password from the letter opens her desktop, its header naming her and "Remote session through
-Drop box: comms room", with the finance share mapped. Open the finance share and read the
+Drop box: Comms room", with the finance share mapped. Open the finance share and read the
 handover note: closing the reader shows the finance share again, and closing the share shows
 Lena's desktop. Click the locked folder and close the PIN pad without a PIN: the share shows again
 (4.3, a lock left without opening anything). Open the locked folder with the PIN from the note;
@@ -169,10 +183,44 @@ Server: `sessions.lena_pc = { id: "lena", via: "password", foothold: "jack_comms
 `signedInPcs` has `lena_pc`; `finance_office` still locked; no failure entry for Lena (her sign-in
 cleared it); `ledger_yearend` in `unlockedObjects`.
 
+### P5b The PC's own tiles, merged with the captured ones (Run B)
+
+In Run B, Sam's PC has not been opened at the keyboard. From the box's view, `HB-DESK-01`
+**Sign in**: the remote screen lists Sam's PC's own account tiles over the network. Every account
+holder has the `staff` role, so the row shows Sam, Lena and Ian (`.signin-tile[data-username]`).
+Before the lobby capture cards are read, none carries a tag; after them, Lena (`lfox`) and Ian
+(`iharper`) each carry one Captured tag on their own PC tile, matched by username with no duplicate
+(no separate captured tile). Other user (`.signin-other`) still types any name. Leaving the screen
+shows no desktop (no sign-in attempted).
+
+Server: no session change; `loginFailures` 0.
+
+### P5c HB-IT-01 after Ian's card: the captured tile is the PC's own, tagged (Run B)
+
+From the box's view, `HB-IT-01` **Sign in** (picker `accounts`, default policy, `it` role). After
+Ian's capture card, the row shows Ian's account as one tile tagged Captured
+(`.signin-tile[data-username="iharper"] .signin-tag` reads `Captured`), not a second captured
+tile. Lena's captured account is not listed (the PC does not admit the `finance` role on an
+`accounts` screen), so it is left out. Other user types any name.
+
+Server: no session change.
+
+### P5d HB-OPS-02: the typed NLA screen, captured tiles only (Run B)
+
+From the box's view, `HB-OPS-02` **Sign in**. Its `nla` policy is `remoteScreen: "typed"`, so the
+PC lists no accounts of its own: the message line reads "HB-OPS-02 lists no accounts until you sign
+in (NLA)." The only tiles are the captured ones (Lena and Ian, tagged), then Other user. The
+headless/NLA line sits under the Other user form too, until an account is picked.
+
+Server: no session change.
+
 ### P6 Switch user, remotely
 
-On Lena's remote desktop, Switch user: the remote sign-in screen with no tiles. Sam's details are
-refused; leaving the screen shows Lena's desktop again. Task `p6_switch_remote` completes.
+On Lena's remote desktop, Switch user: the remote sign-in screen. Lena's PC lists none of its own
+accounts (`loginPicker: false`), so the row holds only the captured tiles (Lena and Ian, tagged)
+when the cards were read, else just Other user. The held session shows as one merged "Lena Fox
+signed in, through Drop box: Comms room" slab (the fit merge). Sam's details are refused; leaving
+the screen shows Lena's desktop again. Task `p6_switch_remote` completes.
 
 Server: `sessions.lena_pc` unchanged.
 
@@ -210,8 +258,8 @@ Server, after the unplug: no `footholds`, no `sessions.door_box`, `sessions.lena
 
 ### P11 The other network
 
-Unplug, then plant at `bench_port` in the workshop. The link item is "Network drop box: Bench
-switch". Its view lists only the workshop share, which opens. Nothing of the office network. Task
+Unplug, then plant at `bench_port` in the workshop. The link item is "Drop box:
+Workshop" (the server default "<device>: <room>"). Its view lists only the workshop share, which opens. Nothing of the office network. Task
 `p11_other_network` completes.
 
 Server: `footholds.jack_bench_port` on `workshop_lan` only.
@@ -246,7 +294,7 @@ Server: no `implant_kiosk_pc` foothold; `kit_badusb` still held.
 Sign in at `sam_pc` (keyboard, the sticky note), then use the "USB socket by Sam's PC"
 (`sam_dock`) with the keystroke injector held, and answer the confirm "Plug the keystroke injector
 into Sam's PC?" with `{"cmd":"dismiss","label":"Confirm"}`. The server grants `implant_sam_pc` on `office_lan`,
-removes the injector, and the link item "BadUSB: Sam's desk" arrives. The implant's view lists the
+removes the injector, and the link item "Keystroke injector: Desks" arrives. The implant's view lists the
 office network's hosts and shares; it opens no account on its own. Task `n12_badusb_implant`
 completes.
 
@@ -307,7 +355,7 @@ covers it).
 ## Slice 9.3b sub-slice O: Outages (N5 to N7)
 
 Added by sub-slice O (`ACCESS_MODEL_SLICE_9_3B_PLAN.md`, section 5.2). `server_net` now carries
-`downIf: "servers_offline"` and the global starts `false` (up), so the pivot beats N1 to N4 are
+`offWhen: "servers_offline"` and the global starts `false` (up), so the pivot beats N1 to N4 are
 unchanged. In the server room (north of the comms room) a rack breaker (`server_breaker`) takes
 the network down, a power switch (`server_power`) restores it. All outage state is read on the
 server from its own globals, so a tampered client cannot reach a downed network, clear the global
@@ -322,7 +370,7 @@ it cannot set, or keep using a no-route session.
 ### N14: a host whose own service is off (plan 5.2)
 
 In the workshop, `bench_pc` (WS-BENCH-01, a sign-in PC on `workshop_lan`, `access` staff) carries
-`affordance.offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
+`offWhen: "bench_pc_off"`, true at the start. The `bench_power` switch flips it with two
 `confirm_action`s. The box's view sends the latest globals before it fetches, so a flip shows at
 once. Off is off at the keyboard too (user decision q72). While off the PC shows `aw_pc_off1` (a
 dark monitor and tower, through `spriteVariants`), and back on it shows its map picture again.
@@ -336,7 +384,7 @@ Its desktop holds a PIN folder, `bench_logs` (PIN 3141, given in its observation
 The scoped-request route test: a folder, inventory add or unlock scoped under the remote
 `sv_fs02` session is allowed only while the route is up, read from the server's own
 `sessions[sv_fs02].foothold`, never a client parameter. A local (keyboard or claim) session is
-never affected. A resource whose own `downIf` is truthy is withheld from the view and not served
+never affected. A resource whose own `offWhen` holds is withheld from the view and not served
 in the same way, returning when its global clears.
 
 ## Earned secrets
@@ -358,10 +406,10 @@ reload.
 `LANG=C.UTF-8`): no errors. One warning, the `maxAttempts` lockout warning the first slice gives
 for `lena_pc` (policy `counted`). No "doors skipped" warning (`counted` writes `remote` out).
 Information lines: the identity reach of each account (every account holder has the implicit
-`staff` role, so Lena and Ian also sign in at `sam_pc` and `kiosk_pc`); each jack's reach (now
-including `secure_port` on `office_lan`, sub-slice P); and
-"Reachable without a foothold" for `sam_pc` and `kiosk_pc` (open rooms, not headless) and for the
-finance share, which maps for Lena on both of those. The open shares are not on that list, nor is
+`staff` role, so Lena and Ian also sign in at `sam_pc`, `kiosk_pc` and `ops_pc`; `it_pc` admits
+the `it` role); each jack's reach (now including `secure_port` on `office_lan`, sub-slice P); and
+"Reachable without a foothold" for `sam_pc`, `it_pc`, `ops_pc` and `kiosk_pc` (open desk-room
+rooms, not headless) and for the finance share, which maps for Lena on both of those. The open shares are not on that list, nor is
 `lena_pc` (behind a PIN door) or `door_box` (headless): the chain's payoff, "Door codes", is on the
 headless host, so it still needs the box. Plus the generic suggestions every small test scenario
 gets.

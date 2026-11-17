@@ -12,6 +12,9 @@ import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { requiresItemHint } from './requires-item-hint.js';
+// Namespace import: test harnesses stub this module with requiresItemHint only, and a
+// namespace import tolerates the missing requiresItemConditionRefusal there.
+import * as requiresItemModule from './requires-item-hint.js';
 import { hintToastMs } from '../utils/locked-hint.js';
 import { plantRefusal } from './pc-policy.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
@@ -20,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
+import { reachX, reachY, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -164,11 +167,6 @@ function updateNPCTalkIcons() {
                 if (sprite.interactionIndicator && sprite.interactionIndicator.visible) {
                     sprite.interactionIndicator.setPosition(iconX, iconY);
                 }
-
-                // Also keep the bark-pulse icon tracking the NPC while it's visible
-                if (sprite.barkIcon && sprite.barkIcon.visible) {
-                    sprite.barkIcon.setPosition(iconX, iconY);
-                }
             });
         }
     });
@@ -260,7 +258,7 @@ export function checkObjectInteractions() {
 
             // Use simple radial distance from player centre (matches visual highlight zone)
             const dx = reachX(obj, px) - px; // nearest part of a wide object (interaction-reach.js)
-            const dy = obj.y - py;
+            const dy = reachY(obj, py) - py; // and of a tall wall-mounted one
             const distanceSq = dx * dx + dy * dy;
 
             // In range and no wall between (interaction-walls.js)
@@ -771,6 +769,8 @@ export function maybeInteractionWarning(sprite) {
     // Busy-guard (commit 1dd843566): never open over a chat or minigame the player is in.
     // Drop the interaction rather than barge over the open minigame and steal its input.
     if (window.MinigameFramework?.currentMinigame) return true;
+    // A confirm is already open (this warning, asked again): never stack a second copy.
+    if (window.gameConfirmOpen?.()) return true;
     if (!window.gameConfirm) return false; // no dialog available: don't block the object
 
     const text = typeof w.text === 'string' ? w.text : '';
@@ -827,6 +827,16 @@ export function examineHeldItem(sprite) {
     return true;
 }
 
+/**
+ * Open the rogue-ap console for a device sprite (a placed console object, or the overlay
+ * plant-hiding.js draws on a plant). Shared so the hosting tap does not go back through
+ * handleObjectInteraction, which would emit object_interacted a second time.
+ */
+export function openWifiTwin(sprite) {
+    return startRegisteredMinigame('rogue-ap', sprite);
+}
+if (typeof window !== 'undefined') window.openWifiTwin = openWifiTwin;
+
 export function handleObjectInteraction(sprite) {
     console.log('OBJECT INTERACTION', {
         name: sprite.name,
@@ -843,6 +853,10 @@ export function handleObjectInteraction(sprite) {
     // including the object_interacted event below. Returns true when it has taken over
     // this interaction (warning shown, or dropped because the player is busy).
     if (maybeInteractionWarning(sprite)) return;
+
+    // A short use pose facing the object when the player's atlas has one (systems/player-poses.js);
+    // cosmetic, the interaction goes on at once
+    try { window.playerPoses?.use?.(sprite); } catch (e) { /* cosmetic */ }
 
     // Emit object interaction event (for NPCs to react)
     if (window.eventDispatcher && sprite.scenarioData) {
@@ -935,6 +949,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A plant that hosts a hidden device, or could take the one the player holds (plant
+    // hiding plan, section 5): its click is plant-hiding.js's. Anything else falls through.
+    if (window.plantHiding?.claims?.(sprite)) {
+        window.plantHiding.interact(sprite);
+        return;
+    }
+
     // A network jack (slice 9.3a, 4.1): its click is the plant flow in network-links.js
     // (plant, or unplug a device already in it). It never runs the generic flow below.
     if (sprite.scenarioData.networkJack === true) {
@@ -946,6 +967,26 @@ export function handleObjectInteraction(sprite) {
     // network-links.js (an open network joins at once; a keyed one asks for the key).
     if (sprite.scenarioData.wifiAp === true) {
         window.networkLinks?.interactWifiAp?.(sprite);
+        return;
+    }
+
+    // A planted rogue access point (physical pentest A1, 4.3): its click opens the rogue-ap
+    // console (Recon, Clone, Log) through the starter registry. It never runs the generic flow
+    // below (no triggerOnInteract, no pickup); the console writes its own globals.
+    if (sprite.scenarioData.wifiTwin === true) {
+        openWifiTwin(sprite);
+        return;
+    }
+
+    // A patch panel (pentest slice B1, 5.4): an object with panelPorts opens the patch-panel
+    // minigame, whose ports plant through networkLinks.interactJack.
+    // A locked panel goes through the normal unlock flow first and opens on the next click.
+    if (Array.isArray(sprite.scenarioData.panelPorts)) {
+        if (sprite.scenarioData.locked === true) {
+            handleUnlock(sprite, 'item');
+            return;
+        }
+        window.startPatchPanelMinigame?.(sprite.scenarioData);
         return;
     }
 
@@ -1005,6 +1046,13 @@ export function handleObjectInteraction(sprite) {
                 // requiresItemHintVariants gives one hint per state (first match wins).
                 const hint = requiresItemHint(sprite.scenarioData);
                 window.gameAlert?.(hint, 'info', '', hintToastMs(hint));
+                return;
+            }
+            // requiresItemCondition: the item is held, but this is not the moment to use it
+            // (the keylogger while Chris is still at her desk). Nothing fires or is consumed.
+            const notNow = requiresItemModule.requiresItemConditionRefusal?.(sprite.scenarioData);
+            if (notNow) {
+                window.gameAlert?.(notNow, 'info', '', hintToastMs(notNow));
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);
@@ -1089,13 +1137,26 @@ export function handleObjectInteraction(sprite) {
         return; // Early return
     }
 
-    // Interactive takeable items: pick up on first interaction, auto-open 1 second later.
+    // Laptop-type tools (workstation, lab workstation, VM launcher, launch device) are only
+    // picked up: they add to the inventory with a notice and are opened from the inventory.
+    // Opening one on its own put its screen over the player and blocked movement (m02 ward
+    // clerk's laptop). The notice is inventory.js pickupToast, shown once by announcePickup.
+    const PICKUP_ONLY_TYPES = new Set([
+        'workstation', 'lab-workstation',
+        'vm-launcher', 'vm_launcher',
+        'launch-device'
+    ]);
+    if (sprite.scenarioData.takeable && PICKUP_ONLY_TYPES.has(sprite.scenarioData.type)) {
+        playUISound('item');
+        Promise.resolve(addToInventory(sprite)).then(res => { window.announcePickup?.(sprite, res); });
+        return;
+    }
+
+    // Phones and terminals: pick up on first interaction, open 1 second later.
     // Covers any item type whose in-inventory interaction opens a minigame or tool.
     // The specific handlers below already handle the takeable=false (in-inventory) case.
     const PICKUP_THEN_INTERACT_TYPES = new Set([
-        'workstation', 'lab-workstation',
-        'vm-launcher', 'vm_launcher',
-        'launch-device', 'phone',
+        'phone',
         'mail_terminal',  // SE: a takeable mail terminal is carried and opened from inventory (00 S14)
         'phone_friendface' // q35: a Friendface phone, opened from inventory
     ]);
@@ -1113,16 +1174,28 @@ export function handleObjectInteraction(sprite) {
         // The tool opens a second later: the pickup toast waits for it and shows once it
         // closes, not a glimpse that is pulled back and shown again (review m1, F13/F24)
         window.expectPanelWithin?.(1500);
-        Promise.resolve(addToInventory(sprite)).then(res => window.announcePickup?.(sprite, res));
-        setTimeout(() => {
-            // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
-            // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
-            // 1 s later threw the typing opening away, so leave a thread that is already open.
-            const open = window.MinigameFramework?.currentMinigame;
-            if (sprite.scenarioData.type === 'phone' && open && open.gameState?.isActive && open.phoneId &&
-                open.phoneId === sprite.scenarioData.phoneId) return;
-            handleObjectInteraction(sprite);
-        }, 1000);
+        // Open it only once the pickup has answered (review R1 M1). A refusal or a network
+        // failure leaves the floor copy takeable, so reopening it re-entered this branch:
+        // a POST, a sound and an error alert every second. A duplicate opens the copy the
+        // player already holds instead of the floor copy, which would loop the same way.
+        const pickedAt = Date.now();
+        Promise.resolve(addToInventory(sprite)).then(res => {
+            window.announcePickup?.(sprite, res);
+            let target = null;
+            if (res?.ok === true && res.reason === 'added') target = sprite;
+            else if (res?.ok === true && res.reason === 'already' && res.item && res.item !== sprite &&
+                     res.item.scenarioData?.takeable !== true) target = res.item;
+            if (!target) return;
+            setTimeout(() => {
+                // A pickup mapping may already have opened this phone's thread (m02 Ghost terminal:
+                // item_picked_up:phone -> phone-chat at knot start). Opening the contact list over it
+                // 1 s later threw the typing opening away, so leave a thread that is already open.
+                const open = window.MinigameFramework?.currentMinigame;
+                if (sprite.scenarioData.type === 'phone' && open && open.gameState?.isActive && open.phoneId &&
+                    open.phoneId === sprite.scenarioData.phoneId) return;
+                handleObjectInteraction(target);
+            }, Math.max(0, 1000 - (Date.now() - pickedAt)));
+        });
         return;
     }
 
@@ -1139,11 +1212,7 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         
-        // Otherwise, try to pick it up and add to inventory
-        console.log('WORKSTATION ADDED TO INVENTORY');
-        playUISound('item');
-        addToInventory(sprite);
-        window.gameAlert(`${sprite.scenarioData.name} added to inventory. You can now use it for cryptographic analysis.`, 'success', 'Item Acquired', 5000);
+        // A takeable one is picked up by the pickup-only branch above.
         return;
     }
     
@@ -1161,11 +1230,7 @@ export function handleObjectInteraction(sprite) {
             return;
         }
         
-        // Otherwise, try to pick it up and add to inventory
-        console.log('LAB WORKSTATION ADDED TO INVENTORY');
-        playUISound('item');
-        addToInventory(sprite);
-        window.gameAlert(`${sprite.scenarioData.name} added to inventory. You can now use it to access lab sheets.`, 'success', 'Item Acquired', 5000);
+        // A takeable one is picked up by the pickup-only branch above.
         return;
     }
     
@@ -1248,7 +1313,10 @@ export function handleObjectInteraction(sprite) {
             console.log('Starting RFID minigame from inventory (unlock mode)');
             window.startRFIDMinigame(null, null, {
                 mode: 'unlock',
-                availableCards: [],
+                // The copier's Read lists the keycards held, to copy one (it said "No
+                // keycards in inventory" while one was held: UX slice 3a R5)
+                availableCards: ((window.inventory && window.inventory.items) || []).filter(item =>
+                    item && item.scenarioData && item.scenarioData.type === 'keycard'),
                 hasCloner: true
             });
             return;
@@ -1433,6 +1501,9 @@ export function handleObjectInteraction(sprite) {
                 onLaunch:          sprite.scenarioData.onLaunch || null,
                 abortConfirmText:  sprite.scenarioData.abortConfirmText  || null,
                 launchConfirmText: sprite.scenarioData.launchConfirmText || null,
+                operationName:     sprite.scenarioData.operationName || null,
+                abortedText:       sprite.scenarioData.abortedText  || null,
+                launchedText:      sprite.scenarioData.launchedText || null,
                 flagsAllSubmitted: sprite.scenarioData.flagsAllSubmitted === true,
                 flagRewards:       Array.isArray(sprite.scenarioData.flagRewards) ? sprite.scenarioData.flagRewards : [],
                 // This station's own submitted flags, from the server (never the game-wide list)
@@ -1653,7 +1724,7 @@ export function handleObjectInteraction(sprite) {
         if (!player) return;
         
         // Measure distance with direction-based offset
-        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), sprite.y);
+        const distanceSq = getInteractionDistance(player, reachX(sprite, player.x), reachY(sprite, player.y));
         
         if (distanceSq > INTERACTION_RANGE_SQ) {
             console.log('INTERACTION_OUT_OF_RANGE', { 
@@ -1785,13 +1856,15 @@ export function handleObjectInteraction(sprite) {
             if (data.npcIds && data.npcIds.length > 0) {
                 console.log('Phone has npcIds, opening phone-chat directly', { npcIds: data.npcIds });
                 // Phone already has NPCs, open directly
-                window.MinigameFramework.startMinigame('phone-chat', null, {
+                const go = () => window.MinigameFramework.startMinigame('phone-chat', null, {
                     phoneId: phoneId,
                     npcIds: data.npcIds,
                     title: data.name || 'Phone',
                     app: data.app,
                     theme: window.npcManager.getNPC(data.npcIds[0])?.phoneTheme
                 });
+                // The phone pose shows a moment before the phone opens (systems/player-poses.js)
+                if (window.playerPoses?.openWithPhoneLead) window.playerPoses.openWithPhoneLead(go); else go();
                 return;
             }
             
@@ -1808,11 +1881,12 @@ export function handleObjectInteraction(sprite) {
                     data.npcIds = [npcId];
                     
                     // Open phone-chat with converted NPC
-                    window.MinigameFramework.startMinigame('phone-chat', null, {
+                    const go = () => window.MinigameFramework.startMinigame('phone-chat', null, {
                         phoneId: phoneId,
                         title: data.name || 'Phone',
                         theme: data.theme
                     });
+                    if (window.playerPoses?.openWithPhoneLead) window.playerPoses.openWithPhoneLead(go); else go();
                 } else {
                     console.error('Failed to convert phone object to virtual NPC');
                 }
@@ -1991,7 +2065,21 @@ export function handleObjectInteraction(sprite) {
         const added = addToInventory(sprite);
         // Every pickup says so ("Picked up <name>"), not only the few types with a
         // toast of their own (inventory.js announcePickup)
-        Promise.resolve(added).then(res => window.announcePickup?.(sprite, res));
+        Promise.resolve(added).then(res => {
+            // A wearable taken for the first time asks once whether to put it on now
+            // (UX slice 4, q91); it is put on, taken off, dropped and examined from the tray.
+            // That offer opens "Taken: <name>.", so it is the take's announcement and no
+            // "Picked up" toast is shown beside it (UX slice 4 R1 m6)
+            const offered = res?.ok && res.reason === 'added' && data.wearable;
+            const held = offered && typeof window.wearables?.offerSkipReason === 'function'
+                ? (window.inventory?.items || []).find(i => i?.scenarioData?.id === data.id) : null;
+            if (!(held && window.wearables.offerSkipReason(held) === null)) {
+                window.announcePickup?.(sprite, res);
+            }
+            if (offered) {
+                window.wearables?.offerAfterTake?.(data.id)?.catch?.(e => console.warn('[Interaction] wear offer failed:', e));
+            }
+        });
 
         // Only show the observation notification if item was NOT added (duplicate)
         // because addToInventory() already shows its own notification
@@ -2038,7 +2126,11 @@ export function handleObjectInteraction(sprite) {
         };
 
         if (data.onInteract.confirmationText && window.gameConfirm) {
-            window.gameConfirm(data.onInteract.confirmationText).then(confirmed => {
+            // The confirm has no X (UX q99): name both buttons when the author does.
+            const named = (v, fallback) => (typeof v === 'string' && v.trim() ? v : fallback);
+            window.gameConfirm(data.onInteract.confirmationText,
+                named(data.onInteract.confirmLabel, 'Confirm'),
+                named(data.onInteract.cancelLabel, 'Cancel')).then(confirmed => {
                 if (confirmed) { applyOnInteract(); showObservation(); }
             });
             return;
@@ -2158,7 +2250,7 @@ export function tryInteractWithNearest() {
     // Ids of the objects in reach: an owner on the move from her own PC among them gives way (review R2 m1)
     const inReachIds = [];
 
-    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX) {
+    function consider(objX, objY, handleFn, rangeSq = INTERACTION_RANGE_SQ, npcSprite = null, target = npcSprite, faceX = objX, faceY = objY) {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
@@ -2167,10 +2259,10 @@ export function tryInteractWithNearest() {
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
-        let score = angularDiff(faceX, objY) * 1000 + dist; // angle to the object's centre, range to its nearest part
+        let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
         if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
-        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY, handleFn }; }
+        if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
     }
 
     // E/W side doors are centered on their tile but the player stands at floor level (tile bottom).
@@ -2184,7 +2276,7 @@ export function tryInteractWithNearest() {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
-                consider(reachX(obj, px), obj.y, () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj));
+                consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), obj.y);
             });
         }
 
@@ -2271,13 +2363,15 @@ export function tryInteractWithNPC(npcSprite) {
 // Simple range check for click-based interactions (no direction offset).
 // Returns true if the given sprite is within INTERACTION_RANGE of the player centre
 // and no wall stands between them (so a click through a wall walks there instead).
-export function isObjectInInteractionRange(sprite) {
-    const player = window.player;
+// `from` is any player-like { x, y, body: { center, halfHeight } } (a stand point the overlap walk
+// is judging, overlap plan 4.1) and `range` a stricter reach; one argument means the player now.
+export function isObjectInInteractionRange(sprite, from = undefined, range = INTERACTION_RANGE) {
+    const player = from ?? window.player;
     if (!player || !sprite) return false;
     const dx = reachX(sprite, player.x) - player.x;
-    const dy = sprite.y - player.y;
+    const dy = reachY(sprite, player.y) - player.y; // a tall wall-mounted object: its nearest part
     const distSq = dx * dx + dy * dy;
-    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > INTERACTION_RANGE_SQ) return false;
+    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > range * range) return false;
     return interactionLineClear(player, sprite);
 }
 

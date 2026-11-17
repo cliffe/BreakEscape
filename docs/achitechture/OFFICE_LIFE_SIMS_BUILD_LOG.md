@@ -1,0 +1,626 @@
+# Office life sims showcase: build log
+
+One section per slice: commits, what was built, review rounds, proof games and screenshots.
+Engine and server changes are listed together at the end, because each one is an approval item for
+the owner even where the plan names it.
+
+## SIMS-1: test_needs_attack (attack and knockout probe)
+
+Commits 782381513, e93a7a70e, d01a0b218, fa140496e (build), probe rewrite + `ava_pc` fix (earlier
+session), then round-1 review fixes (earlier session): mugs moved off Ben's row, a real `office_lockpick`
+added, probe reworked to be deterministic and to poll for the right state before acting (real punch
+path for (a), walking/using state for (d)/(f)/(c), real close for (i)/(i2)/(h2), reload-after-print
+and KO-in-delay beats, kitchen-load and `completing` reporting), node-test pin, doc corrections.
+
+Round-2 review fixes (this session): Fran and Gil moved from `(6,6)`/`(7,6)` to `(6,8)`/`(7,8)` so
+Ben's cross-room cooler route is clear and beats (c)/(d) reach phase `using` (the earlier "unreachable
+cooler corner / E8" was the E-carry fault, Ben pinched by the two seated residents); beat (f)
+reordered (walk the player to the drawer first, set Dee's caffeine after, poll at 120 ms) so it passes
+in fresh games; (c) tightened to hard `phase === 'using'`, (d) recalls from the cooler, the probe
+parks the player off the office door for the cross-room Ben beats; (a) listens for `npc_attacked:ava`
+on the dispatcher; (g) requires `blocked === true`; (b)/(c) reload the kitchen before counting
+takeables; an `i2r` recovery beat added (a second conversation after the i2-lost page reprints); Dee's
+catch line reworded ("try to pick it", the pick is stopped before the cabinet opens). Owner items
+re-cited: E-carry widened to seated residents in any room, E-reload-mugs's cause moved to the client
+`dropHeld`, and the KO need bubble added as a fourth. No engine or server change.
+
+Status: **round-2 re-runs pass**, a fresh game per touched beat (a 4281, b 4282, c 4270, d 4271,
+f 4278/4279/4280 three fresh games, g 4287, i2r 4288); the untouched beats keep round-1 proof
+(e 4221, h 4222, h2 4215, i 4217, i2 4220). Beat (c)/(d) now reach phase `using` at the cooler, (f)
+passes 3/3, (a) shows `npc_attacked:ava`, (g) proves Fran down (`isKO`/idle), and (i2r) shows the
+i2-lost page is recoverable by a second conversation. Server keys dumped from `player_state`.
+`test/js/npc-needs.test.mjs` and `test/js/npc-needs-attack-scenario.test.mjs` pass; validator 0
+errors, 4 intended warnings (`--skip-ink --no-graph`; 5 with ink, the extra being the dialogue lint).
+The `completeTask` question stays settled (a probe timing artifact, not an engine fault).
+
+Four engine/server faults recorded (not fixed — owner items, see the table below and
+`scenarios/test_needs_attack/README.md`): **E-carry** (a needs move re-paths through a seated NPC's
+immovable body and the stuck watch does not route round it; hits Ava against seated Ben in the office
+and Ben's cooler errand against seated Fran/Gil in the kitchen, not a `_moveForPhase` 3110
+short-circuit); **E-reload-mugs** (an aborted carry's world object is rebuilt on its authored tile
+after a reload because the client `dropHeld` records no removal); **E-reload-ko-pos** (a KO'd NPC that
+fell outside its scenario room is restored at its spawn while its drop stays where it fell); and the
+**KO need bubble** (a knocked-out needs NPC still shows its thought bubble). The OLMP in-room fallback
+applies to KO-able needs NPCs until E-reload-ko-pos is fixed.
+
+## SIMS-2: an arrival counts only where the NPC is (OLMP E6)
+
+Branch `build/ol-sims-2` (from `build/ol-sims` a734d5f57). Commit 11b563d51 (engine + node tests),
+then the live-proof tool and docs. Review R1 (design/engine 0B/2M/4m, server 0B/0M/2m) fixes in a
+later commit: Design M1 (gate the arrival check to needs-issued moves), m1 (returning logs once per
+return), m2 (far guard keyed by phase+cell), m3 (node tests, rewritten capacity-2 test), and the
+corrected natural-run live evidence (Grace 16 of 20 real clock, game 4232; Tom's kitchen trips with
+a working office-coffee switch-off). The earlier "30 natural runs did not repeat the baseline" claim
+is dropped (no saved artefacts for 30 baseline runs).
+
+Review R1b (owner item 6, offWhen) fixed in commit `4fcda935b`: the live needs-world `describe` was
+dropping an object's top-level `offWhen` (broken in format step 8a, `33b3ea3bc`), so `_isOff` was
+always false live and a switched-off source was never excluded from need-picks. The one-line copy in
+`describe` restores it. Live proofs on the final tree (keyless :3094, headless, port games below):
+Tom's 20 caffeine trips with the office coffee switched off (game 4290) now pick the office coffee 0
+times and cross to the kitchen 14, `_isOff(office_coffee)` holds, every `using` within 7 px, zero
+`arrival_far`. Design M1 chair-fetch (game 4293, seat_office) completes sam's use with zero
+`arrival_far` and no mid-use re-issue. offWhen carried live across scenarios: `bench_pc` (networks,
+game 4297) carries offWhen and flips but satisfies nothing (no needs change, device view only);
+`l2_pc` (social, game 4316) and `ian_pc` (work, game 4317) carry offWhen, satisfy `work` and flip,
+so each is now excluded from a work pick when off. lab_physical_pentest's three open-plan staff
+(game 4295) each made 3 clean coffee trips, every `using` within 8 px, zero `arrival_far` /
+`arrival_ignored`; the lab's `lw_post_printer` offWhen is a resource, not a scene object, so the
+`describe` fix does not touch it. Full `bin/test-js` on the final tree: 649 files pass, 0 fail.
+
+Fault reproduced on the build as it stands. The baseline (game 3537) arrival did not repeat in
+natural play, so the stubbed short path is the reproduction, as the plan allows:
+Grace's `_planMovePath` was stubbed through the test bridge to end ~35% along her office->lounge
+route, and with the SIMS-2 distance check neutralised in-browser (the old "any arrival counts"
+behaviour) the build enters `using lounge_sofa` 164 px from the sofa cell, out in the **office**
+(`64 arrival  334`, `65 using lounge_sofa`; game 4178, `stub-legacy-4178.png`). With the real fix
+and the same stubbed short path, the arrival is logged `arrival_far` and Grace does not use the
+sofa there (`79 arrival 261`, `80 arrival_far lounge_sofa`; game 4178, `stub-fixed-4178.png`).
+
+E-carry (SIMS-1's recorded fault): **different cause, left.** SIMS-1 recorded Ava's cross-room
+carry failing in `goto_item`/`_failJob('timeout')` — she takes the job, never leaves her post and
+times out after 20 s with no arrival ever firing. SIMS-2's fault is the opposite: an arrival that
+*does* fire, at the wrong place, and is counted. The SIMS-2 fix guards arrivals that fire; it
+cannot make a never-firing arrival fire, so it does not address E-carry. E-carry is a cross-room
+path-planning failure (the goto-item move to the kitchen plans no usable path, so the behaviour
+layer emits no `npc_arrived` and `_advanceJob`'s `goto_item` branch, npc-needs.js ~3225, hits its
+`job.deadline` and `_failJob('timeout')`); left for its own slice, as the plan directs.
+
+### SIMS-2 R2 review minors (2026-11-14, docs only, no code change)
+
+Round-2 design review: 0 blockers, 0 major, 4 minor (+1 nit), all documentation. Reconciled in the README:
+- **m1.** The returning NPC that dithers at the office's north-east doorway for up to 75 s (games 4321, 4332) is recorded as owner item 5a next to the Amara-desk wedge, with coordinates, game ids and the `npc-needs.js:710-718` / `3905-3909` sites. It is not a correctness regression; the guard exposes a path that already ended early.
+- **m2.** The `offWhen` `describe` fix also restored slice 22's printer power (`_pickProducer` reads `offWhen` through the same `describe`); game 4332 probe shows office-on → `office_copier`, office-off → `kitchen_copier`, both-off → none. Added to the README with W6 (game 4323, real socket, Ian parks `off` and W6 ticks) as the station-path live proof; `greg_pc` has no setter so no change.
+- **m3.** The fault **does** repeat in natural play: game 4321's two `goto_target` far arrivals (331 and 371 px off, both caught). The README's "3537 did not repeat in natural play" is corrected; the natural cause is the doorway-short path of m1.
+- **m4.** Tom's 20-trip row (game 4290) reworded: it wrote the global directly (not the socket's `set_global`) and its "1 microwave, 2 own-desk, 3 timed out" mislabelled first-`using` samples and harness give-ups. The clean proof is the real-socket game 4332 (8 caffeine jobs, all to the kitchen, 7 within 39 px, 1 nav wedge).
+- **nit.** The queue-step `_farKey` reset (npc-needs.js:4548) is redundant (the key already includes the cell); left as a guard.
+
+## SIMS-3: the IT room and Neil, the still NPC who prints by command (m02's Gary)
+
+Branch `build/ol-sims` (from 32c87a72f, which carries SIMS-2's arrival check). Commit ebf7b1987
+(data, ink, node tests, README annotated example + tour rows + proof tool), then the live-proof
+rows and this log entry as a follow-up. No engine or server change (the Gary pattern is all data;
+the print command, `forget`, the reveal slots and `delayMs` all already exist).
+
+Built: `it_room` (`room_it`, private to Neil) off the office's new north door, and an empty
+`manager_office` (`room_ceo`) passthrough off IT's west door (Siân fills it in SIMS-9). `neil_mug`
+is a declared `office-misc-cup` that claims the drawn cup on the east bench (seat `stand`, own post,
+`useFrom` aimed under Neil's body so a suspend/resume keeps him on his spawn). `it_copier`
+(`photocopier1`, the copier preset by type) with six takeable `notes1` slots (`it_out_a` to `f`,
+neutral IT text, no account/address/password/code). Neil: one caffeine need (60/6/45) met only by
+his mug, leashed to `it_room`, `swivel: false`, `globalVarOnKO: neil_ko`, and a
+`conversation_closed:neil` mapping (`onceOnly`, `delayMs: 6000`, `forget`) that reveals the change
+log on `it_copier` when `neil_print_asked` holds and he is not KO. `neil.ink` is a Geordie hub whose
+change-log choice sets `neil_print_asked` with `#set_global`. Aim `watch_it` (`see_neil_sip`,
+`see_neils_page`) is wired on Amara's event mappings.
+
+Validator: 0 errors (32 warnings, all pre-existing cross-room-source and habits notes; line 79
+reports Neil's T1 2:30 / P 5:00 via `neil_mug`, line 82 `it_copier` with 1 printing NPC). Node: the
+full standard set passes (25 files), plus `test/js/npc-needs-sims-validator.test.mjs` (new, 7 tests)
+and three new `npc-needs.test.mjs` cases (a still own-post NPC never moves over 30 min; a `forget`
+command print reveals a slot and schedules no fetch; a forgotten command print recycles the oldest
+read-in-place slot once the tray is full). `validator-office-presets.test.mjs` gains `it_copier`.
+`ruby` format corpus 8a/8b/8c pass.
+
+Live proof (keyless :3093, headless, worktree p-ol-sims, `tools/playtest/needs-sims-neil.mjs`,
+games from `new-game.rb`; scratchpad `officelife-sims/s3/`): every beat PASS, see the README's
+SIMS-3 live-proof table. Step 1 placement (game 4289): the mug claim, Neil within HOME_EPS (7 px),
+copier cells clear, both rooms load, doors align. still_ask (game 4299): 10 min on the manual needs
+clock with 2 px max drift and 0 move events; natural sips at 2.70 and 7.76 needs-clock min;
+suspend/resume drift 0; a no-ask conversation prints nothing; the asked conversation reveals
+`it_room:it_out_a`, ticks `see_neils_page`, Neil's drift 0, no `print_fetched`; the page persists
+over a room change. reload_after (game 4300): the tray files empty on reload and a second ask
+reprints nothing (`onceOnly` saved). reload_during (game 4301): a reload 2.5 s after the close, in
+the 6 s delay, loses the pending print and reveals nothing (expected). Standard live set regression
+(office beats with every door open, incl. the new north door): all six core beats still tick
+(`see_coffee`, `see_work`, `see_back_at_desk`, `see_meal`, `see_drink` on game 4302; `see_rest` on
+game 4304, once Grace's full walk to the lounge sofa completes, `used lounge_sofa` with no
+`arrival_far`), and **no office NPC enters IT** (`it_intruders: []`): the leash and room privacy hold
+with the door open, so the office outcomes are unchanged.
+
+### SIMS-3 R1 review fixes (2026-11-14, commits 510a2e99e + 279080517 + the live-proof follow-up)
+
+Round-1 design review: 1 blocker, 4 major, 9 minor; server review: 3 minor. All fixed or reconciled.
+
+- **B1 (blocker): the mug and bench drew under the office's back wall.** `neil_mug` had no position and
+  claimed a drawn cup on a south bench; IT's bottom two rows (world y 0 to 64) overlap the office top
+  wall (depth 64), so the mug and benches were hidden and Neil appeared to drink from nothing. Fix:
+  `neil_mug` now has an explicit position on the lower IT desk, tile (6.2, 6.0) elevation 24, with
+  `useFrom { dx: -0.4, dy: 1 }`; Neil spawns at (5.8, 7.0) on the approach cell. The six `it_out_*`
+  slots moved from (8.2, 7.7) (straddling the wall line, m5) up to the west tray at (8.1, 7.2). Live
+  render game 4326: a cover probe at the mug finds only Neil's sprite over it (no `walls`/`room`
+  layer); home distance 5 px. Plan 3.3 gains a dated note that the IT south benches draw under the
+  office wall, so SIMS-6's `it_kettle` avoids them.
+- **M1/M2 (proof): the stillness check ran on the manual clock and four 5.3 checks were missing.** The
+  proof tool now runs stillness on the **real** needs clock (sampling the sprite), reads the
+  `drink_gulp`/`copier_run` sounds from `npcOfficeVisuals.playLog`, and adds the four checks: five
+  opens incl. one mid-sip, leave-within-6 s with the page landing while away (sound suppressed outside
+  IT), close-to-page timing with the run sound audible in IT, and the next-close-after-reload. Reproven
+  on fresh games 4327 (still_ask: drift 0.4 px, sips 2.70/7.77 with gulp sound in IT, 6 opens incl
+  mid-sip, suspend/resume drift 0, asked close reveals at 5857 ms with `copier_run` played:true in IT,
+  `see_neils_page`, 0 fetch), 4328 (leave_after: page lands at 5888 ms while in the office,
+  `copier_run` played:false), 4329 (reload_after), 4330 (reload_during).
+- **M3 (reload during the delay): the next close prints.** `neil_print_asked` is saved at the close,
+  before the delay, so after a reload during the 6 s the pending print is lost but a plain no-ask close
+  prints the page (game 4330: `next_close_printed: true`). The README, this log and plan 5.3 are
+  corrected (the earlier "nothing reprints" was wrong).
+- **M4 (ink): the ask choice is gated.** `neil.ink` declares `VAR neil_print_asked` (synced from the
+  global) and gates the change-log choice on `{not neil_print_asked}`; once asked it is replaced by an
+  "Is that change log ready?" line pointing at the tray, so Neil no longer promises a second print that
+  never comes. Recompiled `neil.json`.
+- **Minors:** m1 (README cup sentence removed), m2 (mug observation reworded), m3 (`readDisplay:
+  gameDisplay` on `it_out_a`, so all six match), m4 (the training printout is now fire-warden, no
+  security note), m6 (ink dialect eased to plain spelling for TTS, keeping "Howay"/"pet"/"Aye"; grown
+  from 5 to 7 NPC lines), m7 (the two node tests now assert per-condition true/false and run
+  `presetIdFor` over every IT object, so they can fail), m8 (stale report rerun), m9 (SIMS-6 kettle
+  note). Server m3: the `see_neils_page` condition gained `&& !data.cosmetic` so a full-tray cosmetic
+  reveal does not tick it. Server m1/m2 are recorded as owner items above (print-reveal global not
+  synced; pickup not reveal-gated); the docs and README are reconciled to the real client-only
+  behaviour. No engine or server code changed in this slice.
+- **Not fixed (not counted):** a "Neil Robson" hover name box lingers over the office copier after the
+  bridge's chats; it looks like a bridge pointer label, not a player-visible artefact, and belongs to
+  whoever owns the hover labels.
+- Office-beats regression after the move (games 4331, 4333): five core beats tick in each and
+  `it_intruders: []`; `see_rest` (Grace's lounge-sofa walk) did not complete inside the 180 s window in
+  either run, a proof-window timing artefact, not a regression from the IT-only change.
+
+New spoken lines: Neil's `neil.ink` conversation, now **7** single-speaker NPC lines (greeting + six
+choice replies, up from 5: the change-log ask, the "ready" line, what-he-looks-after, the coffee, a
+quiet-day line, and the exit). No pools (Neil is alone in IT in this slice, so a pool would never play).
+
+### SIMS-3 R2 review fixes (2026-11-14, commits 1591f2a4f + 6547681b0 + e580a4d17, keyless :3093 worktree p-ol-sims)
+
+Round-2 design/engine review: 0 blockers, 2 major, 7 minor; server review: 1 minor. All fixed. No engine or server code changed; all scenario data, ink and the proof tool. Proof games in scratch `officelife-sims/s3-fix-r2/`.
+
+- **M1 (mug off the desk).** `neil_mug` moved from tile (6.2, 6.0) elevation 24 (which drew at floor level off the desk's east end) onto the desk **top** at (5.85, 5.1) elevation 32; `useFrom` re-aimed `{ dx: -0.4, dy: 1 }` → `{ dx: -0.05, dy: 2 }` and Neil's spawn (5.8, 7.0) → (5.8, 7.1) so the approach cell is under his body centre. Render game 4362: the mug reads as a cup on the desk beside Neil, nothing covers its centre; suspend/resume drift **0 px** (also in still_ask game 4413). `place4-wide-4362.png`.
+- **M2 (the "ready" line false after a reload or a take).** `neil.ink`'s "Is that change log ready?" now branches on a new mirror global `neil_page_on_tray` (declared `false`), set true by an eventMapping on `object_revealed:it_out_a` (folded into the `see_neils_page` mapping on Amara) and false by the page's own `onRead.setVariable` on a take and by a `game_loaded` eventMapping on every reload. The slot's own `it_out_a_shown` is engine-owned and the validator forbids a mapping touching it, which is why the mirror exists; `game_loaded` clears it because a printed page still on the tray is always filed away on reload (stow on sight, R3 M1), so after a reload Neil says "Have a look on the copier tray, pet. It'll be there if it's come through." rather than false-claiming "help yourself". On tray: game 4364 "It's on the copier tray, pet. Help yourself." After a take: game 4385, `neil_page_on_tray` false, `neil_page_taken` true, "You've got it already, pet." (R3). Reload-after: the tray is always empty (4394/4396/4507), flag false, "have a look". Reload-during: game 4398, flag false after reload then true once the next close prints. (`item_picked_up:notes1` does **not** fire for an in-place readable note - it emits `item_removed_from_scene` with no id in the payload - so the take hook is `onRead`, not an `item_picked_up` mapping.)
+- **m3 (ask choice still offered within the asking chat).** Added `~ neil_print_asked = true` in the ask branch so the running story drops the choice; `#set_global` stays for the server global. Game 4410: after asking, the hub offers "Is that change log ready?" and "Could you print the change log?" is gone.
+- **m2 (goodbye opened the next chat).** The exit choice now ends the story (`-> END` after the farewell) instead of `-> hub`, so the conversation-state manager restarts it fresh on the next open (npc-conversation-state.js:49/96/165) and the stale farewell no longer re-shows. Game 4403: after the goodbye, the next open starts at Neil's greeting.
+- **m1 (page beside the copier, not on the tray).** The six slots moved from (8.1, 7.2) to (8.65, 6.95) elevation 20, onto the copier's top.
+- **m4 (ink/mug contradiction, "Howay").** "How's the coffee?" now "Lukewarm at best." (matches the mug observation); the goodbye is "No bother, pet. Mind the cables on your way out." (dropped "Howay").
+- **m5 (stale bench wording).** `scenario.json.erb` aim description :146 ("his bench" → "his desk"), task title :150 ("south bench" → "the IT desk"); plan line 298; and the README/this log `neil_print_asked` timing (set when the choice is picked, true mid-chat, reaches the server on the next 30 s sync or in the page-unload flush; R3 m1 corrects the earlier "by the close").
+- **m6 (office-regression row explained `see_rest` wrongly).** README row reworded: it is not a proof-window artefact; opening the kitchen starts Grace's carry which wedges (E-carry) and parks her rest `no_source` (games 4342/4343/4348, 480 s window game 4337). With lounge + IT only (game 4350) `see_rest` ticks in 43 s. Recorded as an owner item next to E-carry.
+- **m7 (mid-sip not shown to be mid-sip).** `needs-sims-neil.mjs` now records the sampler mode at the moment the mid-sip open is triggered (`sip_mode_at_trigger`) and asserts `mid_sip_open` on it being `job`/`using`; `mode_at_open` reads `frozen` (the chat freezing the sip) and is kept as the freeze proof, not the test. Game 4413.
+- **Server m1 (reveal "never synced / tray empty by design" over-corrected, then re-corrected in R3 M1).** The R2 wording ("not synced by the reveal, persisted by the next delta sync, so reload is nondeterministic, empty in 4394/4396, revealed in 4328") was itself wrong: 4394/4396 saved `it_out_a_shown=true`, so by its own rule they were the revealed branch, and a live reload always files the page away regardless. R3 M1 replaces all of it across the doc sites (README tour, README reload row, plan 5.3 sync, plan 6.5 sync table, the owner item below, the `game_loaded` mapping comment): on reload a printed page still on the tray is **always filed away** (stow on sight, by design: `npc-needs.js:1222-1227`, `stowRevealedSlots:5381-5395`, `slotHome:4854-4855`), so the tray is **always empty after a reload** (game 4507: true on the server before the reload, empty after); a **taken** page survives in the inventory (game 4512). The 4328 "revealed" citation is dropped. The showcase does not make the page survive a reload; the M2 ready line reads `neil_page_on_tray` (cleared on `game_loaded`) so it never false-claims.
+- **Not fixed (not counted):** the "Neil Robson" hover label still lingers over the office copier after the bridge's chats (whoever owns the hover labels).
+
+New spoken lines: Neil's `neil.ink` stays at **7** NPC lines (two reworded: the "ready" line now has two branch texts in one line, and the goodbye); no new voiced lines, no pools.
+
+### SIMS-3 R3 review fixes (2026-11-14, keyless :3095 worktree p-ol-sims)
+
+Round-3 design/engine review: 0 blockers, 1 major, 6 minor; server review: 0 blockers, 0 major, 3 minor. All fixed or recorded as caveats. No engine or server code changed; all scenario data, ink and docs. Proof game in scratch `officelife-sims/s3-fix-r3/`.
+
+- **M1 + server m1/m2 (the reload story and the sync wording).** The docs said reload was nondeterministic and that a page could be kept across a reload by setting its reveal global through an eventMapping `setGlobal` "which calls `_worldChanged`". Both are wrong. A printed page still on the tray is **always filed away on every reload** (stow on sight, by design: `npc-needs.js:1222-1227`, `stowRevealedSlots:5381-5395`, `slotHome:4854-4855`; game 4507 reads the global true on the server before the reload, empty after). (Corrected in S3 R4 m1: an eventMapping `setGlobal` changes `gameState.globalVariables` at once and reaches the server on the next periodic sync (30 s) or in the unload flush; a task completion only makes that sooner (S3 R4 m1; game 4608: `staff_room_seen`, set only by a bare mapping, read true on the server); `neil_page_on_tray` reaches it sooner because the same `object_revealed` mapping also completes `see_neils_page`.) Reworded every site the reviews list: README (reload passage, the reload proof row, the two M2 rows, the step-1 row marked superseded), plan (5.3 sync, 6.5 sync table, the reload-detail sync line), build log (the R2 server-m1 entry, the M2 entry, the owner-item table), and the `game_loaded` mapping comment in `scenario.json.erb`. Dropped the `_worldChanged` advice and the 4328 citation; cite 4507 (empty after reload) and 4512 (a taken page survives in the inventory). If m02 needs a printed page to survive a reload, that is a per-slot opt-out from stow on sight, recorded as an owner item.
+- **Design m1 ("reaches the server by the close").** README reload passage and the R2 log entry now say `neil_print_asked` "reaches the server on the next 30 s sync, or in the flush sent as the page unloads"; no sync fires on a conversation close.
+- **Server m3 (mirror not cleared when another producer recycles the slot).** Not reachable in SIMS-3 (Neil prints one page, nothing else prints to the IT copier). Recorded as a forward-looking SIMS-6 caveat in the owner-item table; no code.
+- **Design m2 (the "have a look" fallback read badly in two states).** The "Is that change log ready?" line now has four branches. New ink-only `asked_now` (set in the ask branch): "Soon as you let me get back to it, pet." when asked in the same chat before anything can print. Live note: the engine's ended-story restart saves and restores ink variables, so `asked_now` is **not** cleared by the exit ending the story (the review's assumption); it is reset by `~ asked_now = false` at the top of the `start` knot, which the restart runs (proved live: after a goodbye and take, the reopen read "You've got it already", not "Soon as"; game 4597). New scenario global `neil_page_taken`, set by the page's `onRead` alongside the existing `neil_page_on_tray` clear: "You've got it already, pet." once the player has taken it. The on-tray and after-reload lines are unchanged. The `asked_now` branch is guarded with `not neil_page_on_tray` so a post-print X-close reopen still reads the tray correctly.
+- **Design m3 (X-close reopen showed his last reply).** Added a re-entry line "Back again? What's up?" at the top of `hub`, with the choices moved under a `- (choices)` gather; the `start` knot and every in-chat reply divert to `hub.choices`, so the line shows only on a reopen. Two engine paths reach it: an X close at the choices saves the full story state and a reopen re-navigates to the `hub` knot (`person-chat-minigame.js:570-584`), and an X close mid-reply (before the reply auto-advances to the choices) saves mid-knot, for which Neil now sets `"reopenRefreshesHub": true` so the silent mid-knot reopen re-enters `hub` (`person-chat-reopen.js:101-114`). Both proved live (game 4597 at the choices, game 4585 mid-reply). `reopenContextLine` suppresses the stale-line fallback when the ink prints its own text, so lines are not doubled. No engine change.
+- **Design m4 (light choice offered before the staff room was seen).** New scenario global `staff_room_seen`, set by a `room_entered:staff_room` eventMapping on Amara (always loaded); `neil.ink` gates the flickering-light choice on `{ not job_called && staff_room_seen }`. Not `onceOnly`, so re-entry re-sets it; (corrected in S3 R4 m1) the bare `setGlobal` does reach the server on the next 30 s sync or the unload flush. Proved live (game 4597): the choice is absent on the first chat in a fresh game and present after the staff room has been entered.
+- **Design m5 (page shares every pixel with the copier).** Recorded as an owner item (below). The copier sprite is 35x46 px (barely one tile) and all six `it_out_*` slots stack on its tray at (8.65, 6.95); the tap-pick is geometric with no object-data priority field, so clearing `aim.clean` would move the page off the copier's lid and undo the R2 m1 "page on the tray" fix. The interaction works: `interact('it_out_a')` takes the page by name through the menu (`via-interaction-menu`), confirmed live (games 4597/4587).
+- **Design m6 (stale plan data).** Plan: the `neil_mug` row and `useFrom` now carry (5.85, 5.1) elevation 32 `{ dx: -0.05, dy: 2 }` (old (6.2, 6.0) elevation 24 `{ dx: -0.4, dy: 1 }` marked superseded); Neil's position (5.8, 7.0) → (5.8, 7.1); the tour row no longer says "south bench". README step-1 row marked "superseded by R2 M1/m1 below".
+
+New spoken lines: two new voiced NPC lines, each one line and under 40 characters: "Soon as you let me get back to it, pet." (39), "You've got it already, pet." (27). The re-entry line "Back again? What's up?" (22) is a reworded context line shown on reopen. Neil's `neil.ink` is now **9** NPC reply texts.
+
+## SIMS-4: the staff-room pair (Keith and Jodie, m02's porter and domestic) (2026-11-14, build/ol-sims-2)
+
+The staff room (`room_hospital_staff`, m02's own Night Handover map, used plainly) off IT's east door,
+private to Keith Dando (night security, West Country) and Jodie Kerr (maintenance, Glaswegian). All
+scenario data; **0 engine lines** (the pilot pattern needs no engine change). Built from plan 5.4.
+
+- **Objects** claim the drawn decor by base type: `staff_boiler` (`hot_water_boiler`, kettle preset
+  through `officeType`, capacity 2, `queue: false`, `chatter: staff_tea`, restores 40, 30 s),
+  `staff_cooler` (`water_cooler`, cooler preset, `chatter: staff_water`, restores 40, 25 s),
+  `staff_microwave` (`microwave`, microwave preset through `officeType`, Keith's solo hunger),
+  `job_board` (`notes`, dressing only, claims conditional `notes6`).
+- **Pair** on tile homes beside the two `STATIC_SEATS` chairs: Keith on `hospital_chair_south`
+  (home room-local (6.97, 4.85)), Jodie on `hospital_chair_north` ((4.2, 6.1)). `chatterCooldownMin:
+  0.25`, 6-line `staff_tea`/`staff_water` pools each, group `facilities`. Jodie's id sorts first so
+  her exchange list is read first.
+- **Coupling** on the use start (not `onceOnly`, writes nothing): Keith's boiler use sets Jodie's
+  caffeine to 20; Jodie's cooler use sets Keith's thirst to 20. **Break starts:** first-visit
+  (`room_entered:staff_room`, `firstVisit` condition, delayMs 2000) on Keith; Neil close
+  (`conversation_closed:neil`, cooldown 120 s) on Keith; private-office entry
+  (`room_entered:manager_office`, cooldown 120 s) on Jodie.
+- **Three exchanges** on Jodie's list: `exchange_job_called` (gated `job_called`, set in neil.ink's
+  new flickering-light choice), `exchange_job_cleared` (gated `job_cleared` + `heard_exchange_job_called`,
+  `job_cleared` set in jodie.ink), `exchange_waiting` (ungated). `roomToneTypes` maps
+  `room_hospital_staff` to `kitchen`.
+- **Objectives** (aim `watch_the_staff_room`): `see_shared_break`/`see_cooler_break`
+  (`npc_chatted` + `overheard`), `hear_waiting`/`hear_job_called` (`npc_exchange_heard`),
+  `see_microwave` (`npc_used`).
+- **Workarounds for E7/E8/E9 (not fixed, by brief):** `chatterCooldownMin 0.25` + 6-line pools (E7
+  spends a pool line at pairing unheard); the cooler `useFrom` dx -1 (E8, `besideCell` has no route
+  check and the preset's second-user cell is against the east wall); gates that avoid depending on
+  `heard_` of an earlier exchange save the one job-cleared gate (E9). Live observations: E7 seen
+  (3-5 pool lines spent unheard per run, games 4341/4344/4347); E8 worked around (both reach the
+  cooler, game 4347); E9 not triggered (player always in earshot, `heardLines` > 0).
+- **HUD (main-merged `npc-barks.js`/`ui/hud-lanes.js`):** no interference. Those systems never
+  reference `npc_chatted`/`npc_overheard`; staff-room chatter renders as NPC speech bubbles. The HUD
+  globals are absent in the standalone build; chatter is neither held nor laned.
+
+New spoken lines (SIMS-4): Keith `staff_tea` (6) + `staff_water` (6) = 12; Jodie `staff_tea` (6) +
+`staff_water` (6) = 12; exchanges `exchange_waiting` (5) + `exchange_job_called` (3) +
+`exchange_job_cleared` (3) = 11; Keith conversation 6; Jodie conversation 5; Neil's new
+flickering-light choice reply 1. **Total 47 new lines.** No `hush` (their own room). One line each,
+40 characters at most, no `{ }`, no speaker prefix on the pool lines (exchange lines carry a
+`Keith:`/`Jodie:` prefix that is stripped before timing and TTS).
+
+Tests: validator 0 errors (34 warnings, incl. Jodie's `female_telecom_v2_talk.png` art-request
+fallback and the `room_entered:manager_office` relay note, both expected); the standard node set
+(25 files) + the Ruby format corpus (8a/8b/8c) pass; `validator-office-presets.test.mjs` updated to
+add `staff_boiler`/`staff_cooler`/`staff_microwave` to the preset list. Door alignment OK.
+
+Live proof: `tools/playtest/needs-sims-staff-room.mjs` (+ `sims4-step1.mjs`). Step 1 (game 4340) and
+beats first_visit (4345), job_beat (4346), cooler_cross (4347) PASS; see the README SIMS-4 live-proof
+table. Counts (fresh game per run, 0 setup failures): step 1 first visit 5/5 (4368-4375); step 2 job
+beat 5/5 (4376-4383); step 3 boiler crossings pair 10/10, line heard 10/10, overlap 27.5 s
+(4384-4401); step 4 cooler crossings pair 10/10, line heard 10/10, overlap 21.2 s (4402-4428); step 5
+both returned and sat after every break. Step 7 speech lock (4369, 15 min): 0 of 6 office turns
+blocked (small sample), 13 of 13 staff pool lines spent unheard (E7); the kitchen cooler pair did not
+chat in that run (open for review). Step 6 schedule (4360, thirst 85): first visit 0:02, Keith's
+second tea 5:35 (computed 4:30-6:30), microwave 7:59 (8:00), Jodie's first cooler 8:58 (nominal
+10:00; the seed's jitter is about -6 %), boiler 13:52, cooler 16:46. The cooler fell 58 s after the
+microwave, inside step 1's one-minute rule, so **Jodie's initial thirst moved 85 to 90** (scenario
+data only). Rerun on the merged build, game 4434: 0:03 first visit, 5:36 second tea, 7:59 microwave,
+9:54 Jodie's first cooler, 13:53 boiler, 17:42 cooler, each within 3 s of the expected seed time (PASS). The standard live set on other scenarios was not rerun:
+SIMS-4 changes no engine or server line.
+
+### SIMS-4 R1 review fixes (2026-11-14, keyless :3094, worktree p-ol-sims)
+
+Round-1 design/engine review: 1 blocker, 3 major, 5 minor; server review: 0 blockers, 0 major, 2 minor. All fixed. No engine or server code changed; all scenario data, ink, node tests, the proof tool and docs. Proof games and screenshots in scratch `officelife-sims/s4-r1fix/`.
+
+- **M1 (Keith and Jodie opened every later chat with their goodbye).** Both exits now copy Neil's pattern: the farewell under `# speaker:npc`, then `# exit_conversation`, then `-> END` (keith.ink:26-29, jodie.ink:58-61), so a reopen restarts fresh at the greeting. Recompiled with inklecate. Proof: reopen each twice through the UI (see the reload row below).
+- **M2 (the plan 5.4 node tests were not written).** Added the six engine cases to `test/js/npc-needs.test.mjs` (coupling targets only the named partner's named need; every break emits `npc_use_started`; `chatterCooldownMin 0.25` allows a pool line 15 s on; a `needs.set` on an unregistered NPC is a no-op; the ungated exchange plays first then `exchange_job_called` once its global holds; `exchange_job_cleared` never before `heard_exchange_job_called`) and four static cases to `test/js/npc-needs-sims-validator.test.mjs` (the staff_tea/staff_water pools are six voiceable lines each; Jodie's three gated exchanges in reading order; the five globals declared false once; the ink exchange knots' line counts and voiceable text, with the reassurance line spoken by Keith). No new engine import.
+- **M3 (the flickering light did not flicker).** `staff_room` gains `"lighting": { "flicker": true, "variants": [{ "condition": "globalVars.job_cleared === true", "flicker": false }] }` through the existing lighting system (no engine line). The room's one faulty fluorescent flickers until Jodie swaps the tube (`job_cleared`), then holds steady. Rendered dark and lit, before and after the global (screenshots in the reload row below).
+- **m1 (Jodie's light choice stayed on screen and came too early).** Added `~ job_cleared = true` after the `#set_global` tag so the running story drops the choice at once. Gated the choice on `heard_exchange_job_called` as well (new VAR) so it follows the overheard job-called beat, and moved the "someone'll be up soon" reassurance from Jodie to Keith (`Keith: Someone'll be up soon, Jodie.`), so the maintenance worker is not waiting on herself. Judgement: the heard-gate plus the speaker change resolves the contradiction the review named (she cannot have swapped the tube while she has been at the boiler); ink cannot cheaply detect a literally-later visit and the showcase values reliable visibility, so no visit-counting machinery was added.
+- **m3 (step 1 did less than plan 5.4 step 1).** `sims4-step1.mjs` now runs a real path search (`findWorldPath`) from both homes to the boiler's and the cooler's second-user cells, and logs Keith's caffeine and Jodie's thirst jitter at load (configured initial vs loaded value and delta); restore-time jitter is logged per start in the schedule beat.
+- **m5 (doc and data nits).** README cooler-cell wording corrected to "one tile west and half a tile south of the preset's, `{ dx: -1, dy: 1.5 }` against `{ dx: 0, dy: 1 }`" (:124, :128, :929). Jodie's `room_entered:manager_office` mapping gains `"fireOnlyWhenLoaded": true`, stating the intent and clearing the validator relay warning (34 to 33 warnings). Jodie's upscaled chat portrait stays on the art-request list.
+- **Server m1/m2 (reload replay, docs only).** Plan 5.4 Sync and the README now state plainly what replays after a reload: the three `heard_exchange_*` markers persist only on the next periodic or page-hide sync, so a sub-30-second reload can replay a cosmetic optional exchange (the task stays ticked); and `firstVisit` is per-load (`discoveredRooms` resets on load), so the first post-reload staff-room entry re-arms the opening tea break. Neither double-ticks a task. No code change.
+- **B1 / m2 / m4 (the live counts measured the first visit, not the Neil close).** `tools/playtest/needs-sims-staff-room.mjs` rewritten: `job_beat` and `boiler_cross` now load the staff room first, settle (both NPCs home and more than 120 s of needs clock since the last staff start), then do the Neil close and walk in, asserting the first staff start comes from `conversation_closed:neil` with no `firstVisit` entry in the window; `cooler_cross` settles the same way before the private-office crossing (m4 spacing); the event capture now records `conversation_closed`; the speech-lock beat opens the kitchen and lounge doors too (m2). Live verification of the rewritten tool: one job beat on game 4474 passed cleanly (settle gap 125.8 s, Neil close at 154.5 s, Keith's first staff start 2 s later, `start_from_neil_close` true, `no_firstvisit_in_window` true, `exchange_job_called` heard complete, no setup failure), proving the break is now measured from the Neil close and not the first visit. Reruns by the lead: job beat 6/6 (4474, 4489-4511); boiler crossings start-from-close 9/10, pair 10/10, line heard 9/10 (4514-4570; 4570's close started no break, unexplained, while Neil's ink was being edited in the same tree); cooler crossings 10/10 on every gate (4490-4537). The doors-open speech-lock rerun (4546) hit the driver's 600 s timeout and wrote no report: rerun it with a longer timeout. Step 1 reran on game 4473 (both homes path-search-reachable to the boiler's and cooler's second-user cells; jitter at registration Keith caffeine 49.2 from 45, Jodie thirst 84.3 from 90). M3 lighting verified on game 4480 (faulty panel dips to 0.55 while flickering, holds at 1.0 after `job_cleared`, the flicker variant drops the faulty panel).
+
+New or changed spoken lines (SIMS-4 R1 fixes): one changed exchange line, `Keith: Someone'll be up soon, Jodie.` (was `Jodie: Someone'll be up to fix it soon.`). No other new voiced lines; the two conversation exits keep their existing farewell text.
+
+### SIMS-4 R2 and SIMS-3 R4 review fixes (2026-11-14, keyless :3093, worktree p-ol-sims, E7 to E9 merged)
+
+Commits ed270e239 (ink, scenario, tool), 20682cd6e (node tests), 0797e9b4e (docs), 3fe96a487 and two tool follow-ups, and the docs commit that carries this entry. No engine or server change.
+
+- **Design M1 (crossing counts measured the first-visit exchange). Fixed.** Every staff-room beat now stands by the boiler on the first visit until `exchange_waiting` is heard, then settles. The crossing is counted on its own: only Keith's and Jodie's turns at the crossing object from the Neil close or the private-office entry on, pool lines and exchange lines apart, "pair" as both use starts after it. Reruns: boiler 5/5 with 3 pool lines heard each, cooler 5/5 with 2 each, none spoken unheard (games 4662, 4675, 4676, 4678, 4686; 4692, 4699, 4700, 4701, 4703). README tour and crossing note say two or three lines and pictures.
+- **Design M2 (the job-cleared beat contradicted what the player sees). Fixed with an existing needs mechanism.** Choice: Jodie walks to a stand-in fixture rather than a reword, because the engine already supports it with data only and it makes the light change on something the player watches. Jodie gains an `upkeep` need (decay 0.01 a minute, never due on its own) met only by the drawn **staff lockers** (`staff_lockers`, new object, 12 s use). The job-called exchange now ends with her taking the job; its `npc_exchange_heard` mapping drops `upkeep` to 0, so after her break she walks to the lockers; `npc_used:staff_lockers` (Jodie) sets `job_cleared` and completes a new task `see_light_fixed`, and the light steadies as she finishes. Her hub reply no longer sets the global: "Did that light get sorted?" is offered only once `job_cleared` holds; before it, "Will you see to that light?" gets a new line. A `room_entered:staff_room` mapping re-sends her after a reload between the exchange and the fix (need levels are not saved). New optional task `hear_job_cleared`. Proved 5/5 (4704, 4707, 4733, 4933, 4934). Not animated: she stands at the lockers; there is no tube-swap or stepladder art (art request).
+- **Design m1 (tour lacked the light and cleared beat). Fixed.** Tour rows 1 to 5 now name the blinking pool, the lockers trip, both Jodie choices and the cleared exchange.
+- **Design m2 (stale README rows). Fixed.** The 4369 doors-open claim corrected; the round-0 table marked history; the 4570 row explained; the old speech-lock row marked superseded.
+- **Design m3 (no frame of the flicker). Withdrawn as a fix, kept as an owner item.** The faulty panel pinned at its real dip level (0.55) and at 1.0, same pose (4710, and 4704 at the crossing): the two frames are not distinguishable by eye at the game zoom. The flicker is kept short for WCAG 2.3.1, so a stronger flicker is the owner's call; the tour calls it subtle.
+- **Design m4 (node coupling test tested its own lambda). Fixed.** New `test/js/npc-needs-sims-mappings.test.mjs` reads the staff-room mappings from `scenario.json.erb` and runs them through NPCManager's real mapping path (5 cases: both couplings, the upkeep drop, the locker fix, the reload re-send). The chained-break test now holds the walk home and asserts no `npc_returned_post:keith` between the two starts.
+- **Server m1 (a sub-30 s reload can lose `job_cleared`). Fixed in docs.** README reload note and plan 5.4 Sync add `job_called` and `job_cleared`, and how the new mappings heal it.
+- **S3 R4 M1 (ready line after an X close). Fixed.** `~ asked_now = false` at the top of `hub` (only reopens pass there) and the `neil_page_taken` branch tested first; `neil.json` recompiled with inklecate. Game 4706 (the reviewer's script): after X close, take, reopen, "You've got it already, pet."; the asking chat still "Soon as". README X-path row added.
+- **S3 R4 m1 (bare `setGlobal` docs). Fixed.** Six sites reworded: a mapping `setGlobal` reaches the server on the next 30 s sync or the unload flush; a task completion only makes that sooner. (Corrected in S4 R3 server m1: sooner only in a scenario whose conclusion gates on a global, which `test_needs_sims` does not.)
+- **Probe race behind 4570. Fixed.** `talkNeil` returns true only on a `conversation_closed:neil` after the call, retries once after Neil's sip, else the run is a setup failure (exit 3). 0 setup failures in 15 staff-room runs.
+- **Speech-lock beat. Re-scoped and rerun.** The player stands by the office coffee pair while both pairs take forced breaks (needs set through the bridge, said). 4932, 10 min: 66 office turns, 0 blocked, 0 staff lines spoken. It now proves that a pair out of earshot holds no speech lock against the pair the player hears; the old measure cannot occur with E7.
+- **E7 regression on Sanjay and Rosa.** `e7e9-live-proof.mjs e7` COUPLED_ONLY=1, game 4708: no unheard draw, first line on entry.
+- **Tool fix during the round.** Freezing the game loop for the dip screenshot hung two job runs (4655, 4680, not counted); the shot now pins the panel's level instead.
+
+New or changed spoken lines: 5. Jodie, new: "Once I've finished this, aye." (job-called exchange), "Aye, spare tube's in my locker." (hub), "New tube. Should last a while." (cleared exchange, replaces "About time. Hurt my eyes, that did."). Keith, changed: "That'll be one for you, Jodie." (replaces "Someone'll be up soon, Jodie."), "Light's behaving now." (replaces "They sorted that flickering light."). Jodie's "Aye, I swapped the tube..." is unchanged, now behind `job_cleared`. Needs TTS for the five.
+
+Tests: `bin/test-js test/js/npc-needs*.test.mjs test/js/npc-behavior-arrival.test.mjs test/js/validator-office-life-v10.test.mjs` 15/15 files pass. Validator on test_needs_sims: 0 errors, 34 warnings, no V10 warning.
+
+## SIMS-5: V10, pools, exchanges and calls nothing can trigger (2026-11-14, build/ol-sims)
+
+New files: `scripts/validate_office_life.rb` (V10 only; the missions tooling adds V1 to V9 here
+later) and `test/js/validator-office-life-v10.test.mjs`. One line wires it into
+`scripts/validate_scenario.rb` (`run.call('ValidateOfficeLife') { ValidateOfficeLife.check(json_data) }`,
+beside `ValidateAccessWork`). V10 is a warning-only static check; it adds no engine or server line
+and nothing at runtime. It reuses `ValidateNpcNeeds`'s object/preset/leash/privacy helpers
+(`collect`, `expand_presets`, `use_rule`, `leash_reach`, `owners_of`, `pool_lines`) so its reasoning
+matches the needs engine (`npc-needs.js` `_pickBark` and its call sites: `_maybePair`,
+`_tickQueueChats`, `_tickChats`, `_grumbleTopic`, `_failTopic`, `_chooseCall`, `_tickNews`). The set
+of topics the engine speaks is read from `PICTURE_CHATTER` in `npc-needs.js`, so the list cannot
+drift; V10 judges triggerability for the office-life kinds it owns (chatter-object topics, the
+grumble family, phone topics, magnet announce pools, exchanges, phoneCalls) and leaves work-failure
+and access/workaround topics (spoken by other subsystems) to their own checks.
+
+**Step 1 (reproduce), the warnings V10 flags on the scenarios this branch owns:**
+
+- `test_needs_sims`: three per-NPC `cooler` pools that never play, `amara.cooler`, `tom.cooler`,
+  `marek.cooler`. Amara and Tom have own `cooler` pools but no `thirst` or `social` need, so they
+  never use the kitchen cooler (which satisfies `thirst`, `social`); their lines come only from the
+  scenario `cooler` pool. Marek needs `thirst` but avoids everyone (`avoids: ["*"]`), so he never
+  pairs. The scenario `cooler` pool is fine (Grace/Sanjay/Rosa can pair), as are every other pool,
+  the two exchanges and the two calls. These three are a content slip (the own pools read like they
+  were meant as `coffee` pools). (Superseded: commit 3f4068967 re-keyed Amara's and Tom's to
+  `coffee`, dropped Marek's and unpinned the test. The R1 fix round below then found five dead own
+  `grumble` pools and removed them; V10 gives no warning on this scenario now.)
+- `test_needs_attack`: none.
+
+**Scenarios owned by other work (no error; warnings listed, not pinned):** `test_needs_leash` none,
+`test_access_work` none (its work-failure and workaround pools are spoken by other subsystems and
+are out of V10's scope), `lab_physical_pentest` none. V10 was run across the whole scenario corpus
+(every ERB-free scenario directly; every ERB scenario rendered through the validator, m01 to m10,
+the labs, sis01 to sis03 included): no crash, no error, and no warning anywhere except the three
+`test_needs_sims` cooler pools. m02 (the pilot) is clean.
+
+Tests: the standard node set (25 files incl. the new V10 test) PASS; the three Ruby format corpus
+tests (8a/8b/8c) 0 failures. Live proof: see the README SIMS-5 live-proof rows. No new spoken lines.
+
+## SIMS-5 R1 and SIMS-4 R3 review fixes
+
+Reviews: `OFFICE_LIFE_SIMS_S5_REVIEW_R1_CODE.md` (1 B, 3 M, 5 m), `OFFICE_LIFE_SIMS_S4_REVIEW_R3_DESIGN.md`
+m1 to m5, `OFFICE_LIFE_SIMS_S4_REVIEW_R3_SERVER.md` m1. Each finding was checked against the engine
+before the fix; none was withdrawn. `scripts/validate_office_life.rb` was rewritten to mirror
+`npc-needs.js` as it stands (functions cited by name, not line).
+
+**SIMS-5 R1 (code).**
+
+- **B1. Fixed.** `grumble` now follows `_recheck` (returns unless `_avoidRadius` > 0, and only for a
+  deferrable need), `_avoidedAt` (any use object but the NPC's own `needsHome`; any avoided NPC,
+  either way, that can be in that room, needs or not; groups play no part; a `requireGlobal` avoid
+  counts while its global holds) and `_grumbleTopic` (an off or gone turn-back speaks `grumble` when
+  the merged `grumble_off` / `grumble_gone` pool has no lines). An off turn-back for a judged need
+  speaks `_failTopic` and is not counted (`_turnBack`'s `judged` branch; `AccessWork.work_plan?`). A
+  `failed` turn-back is always judged (`_failUse`), so it never falls back to `grumble`; `_printBlocked`
+  speaks `grumble_printer_off` with no fallback. `compatible?` is kept for pairing only. Every magnet
+  runs out (`magnetOf`: servings default 1), so a `grumble_gone` pool needs only a magnet the NPC may
+  use (the old check skipped a magnet with non-numeric servings, a false warning).
+- **M1. Fixed.** The blanket "another subsystem" pass now covers only `PICTURE_CHATTER` topics outside
+  the office set (`coffee cooler greet news`, the grumble family, the phone topics) plus `work_fail*`.
+  A chatter-object topic with no such object warns; `news` is the announce pool of a magnet with no
+  `announce` and is judged by the announce rule.
+- **M2. Fixed.** A colleague answers (`phone_message`, colleague `phoneCalls`) only with
+  `answersPhones: true`, a home room equal to the phone's room, and no unconditional avoid either way
+  with the owner (`_claimAnswerer`). A phone counts only with a non-empty String `owner` (`onPhoneRing`).
+- **M3. Fixed.** An announce pool needs a teller: an NPC that can be in the magnet's room (`_sight`,
+  need or not) or is told by one, whose home room is not the magnet's room, with another NPC able to be
+  in that home room that neither avoids unconditionally (`_tickNews`, `_newsHearers`); hearers become
+  knowers in turn. A room-less (held) magnet is permissive on rooms. Node test 9 rewritten.
+- **m1. Fixed.** One map from knot to its exchange and call entries; one warning per knot with more than
+  one entry; a mirrored pair (two NPCs naming each other) is exempt.
+- **m2. Fixed.** A queue counts only with a cell holding numeric `dx` and `dy` (`_queueCfg`). Held and
+  inventory objects are not sources, except a magnet, which `onItemDropped` makes a source where it is
+  dropped (the showcase cake is a start-inventory magnet with `chatter: "cake"`; skipping it outright
+  gave a false warning on the scenario `cake` pool, so the reviewer's fix was narrowed to non-magnets).
+  `gone` now checks the magnet's room against the NPC's leash and privacy.
+- **m3. Fixed.** Reasons are phrased whole (no "no an ..."), and every pool warning ends with "give it a
+  partner or trigger, or remove the lines".
+- **m4. Fixed.** The SIMS-5 step 1 paragraph above is marked superseded; Ruby comments cite functions,
+  not line numbers.
+- **m5. Fixed.** New node cases: exchange knot shared by two pairs, the preset path (`officePresets`,
+  coffee preset queue pairs; own `queue: false` does not), test 13 now asserts the exit status only and
+  prints a visible skip note for `lab_physical_pentest` without `json-schema`. Plus cases for every rule
+  changed: B1 (both directions, 8 asserts), M1 (greet, coffee, news, an access topic left alone), M2
+  (no `answersPhones`, in the room, avoiding the owner, another room, a list owner), m1, m2.
+  `test/js/validator-office-life-v10.test.mjs` has 18 tests.
+- **Plan note.** Plan 5.5 no longer lists "a queue" among grumble turn-backs (`_leaveQueue` on
+  `max_wait` leaves in silence) and states the B1 rule.
+
+**Scenario (plan 5.5).** V10 then flagged exactly the five own `grumble` pools B1 predicted. Each was
+removed rather than given a trigger: none of the five has an avoid radius (Amara, Tom, Grace, Rosa have
+no `needsCompany`; Marek has `avoidRadius: 0`), and giving one an avoid would refuse chats that the
+coffee, cooler and phone beats rely on, while the avoid grumble is already shown by Sanjay (radius 2,
+avoids Marek). Their off and gone turn-backs speak the scenario `grumble_off` / `grumble_gone` lines.
+The test pin stays `[]` for both owned scenarios.
+
+**SIMS-4 R3 (design).**
+
+- **m1. Fixed.** `actionIcons` gains `"upkeep": "icon:npc-work"` (`pickIconEntry` reads the need key
+  before the fallback dot). Art request: a tube or toolbox icon.
+- **m2. Fixed (option a, wording).** Jodie's lines now say what she visibly does (fetches a spare from
+  her locker); the task title says she "sorts" the light, which steadies "as she finishes there".
+- **m3. Fixed.** Plan 3.3 gains the `staff_lockers` row; 3.4 gives Jodie's `upkeep` need, the 4-line
+  job-called exchange and how `job_cleared` is set (marked S4 R2 M2, with "do not rebuild the dialogue
+  setter"); 5.4 step 2, Spoken lines, Objectives (`see_light_fixed`, `hear_job_cleared`) and Sync (7
+  `onceOnly` keys) match the scenario.
+- **m4. Fixed.** `test/js/npc-needs-sims-mappings.test.mjs` runs the real `_handleEventMapping`, with
+  only `window.npcNeedsSystem.control` and `window.objectivesManager.completeTask` stubbed; it asserts
+  the control call, `gameState.globalVariables.job_cleared`, the task ids and the persisted onceOnly
+  keys. The JSON lookup is gone.
+- **m5. Fixed.** Jodie's two onceOnly mappings on `npc_exchange_heard:exchange_job_called` are one
+  (`completeTask: hear_job_called` plus `needs.set.upkeep 0`, no condition). The validator warning is
+  gone.
+
+**SIMS-4 R3 (server) m1. Fixed (docs and comment only).** At the lockers-mapping comment, README (the
+IT reload passage and "On reload"), plan 5.3 Sync, 5.4 Sync (3) and 6.5, the wording now says a task
+completion brings the globals' sync sooner only in a scenario whose conclusion gates on a global
+(`objectives-manager.js` `scenarioGatesOnGlobals`, checked in `serverCompleteTaskWithRetry`);
+`test_needs_sims` has none, so `job_cleared` rides the periodic or page-hide sync and the design relies
+on the self-heal. Plan 6.5's stale "a bare setGlobal does not sync" is corrected too. The log entry for
+S3 R4 m1 carries a correction note.
+
+Spoken lines: 5 removed, 2 changed, 0 added. Removed: Amara "Never mind, I'll go later.", Tom "Oh,
+forget it.", Grace "I'll try again later.", Marek "Fine. Later, then.", Rosa "It can wait." (own
+`grumble` pools, never spoken). Changed: Jodie, cleared exchange, "Spare from my locker did it." (was
+"New tube. Should last a while."); Jodie, hub reply, "Aye, sorted. Spare tube was in my locker. Cheers
+for flagging it." (was "Aye, I swapped the tube. No more flickering. Cheers for flagging it."). Both
+need TTS when the showcase is voiced.
+
+Tests: `bin/test-js` (all files) 658 of 658 pass; `validate_scenario.rb` on test_needs_sims 0 errors, 33
+warnings (Jodie's onceOnly pair warning gone). Corpus: `validate_scenario.rb --skip-ink --no-graph` on all
+180 `scenarios/*/scenario.json.erb`: every run exit 0, no crash, no error, no V10 warning anywhere
+(test_needs_sims after the five removals; no other scenario gains one).
+
+Live (keyless :3093, game 4950, `needs-sims-staff-room.mjs job_beat` with GL): the job beat passes end to
+end with the merged mapping; the work icon shows over Jodie at the lockers
+(`s5-r1fix/sr-job_beat-02-jodie-at-lockers-4950.png`, `crop-lockers-icon-4950.png`); both reworded lines
+spoken and heard. No pool was given a new trigger, so there was none to prove. See the README rows.
+
+Engine and server changes: none (the validator script is tooling).
+
+## SIMS-5 live proof
+
+2026-11-14 to 15, keyless :3095, headless (physics `setFPS(20)`, fixed steps on), from a clean
+detached worktree `p-ol-sims5` at fd9842b83. The SIMS-5 R2 fixes (4e87d9bb0) touch only
+`scripts/validate_office_life.rb`, its node test and a review file, so these results hold at the tip.
+`_pickBark` was wrapped to log every line spoken (NPC, topic, room, player distance), and
+`eventDispatcher.emit` to log `npc_overheard`, `npc_chatted`, `npc_exchange_heard` and
+`npc_call_heard`. Needs were forced with `window.__test.needs.set` to start each beat in seconds;
+the staff-room counts ran on the natural clock. Scripts and dumps are in the session scratchpad
+`s5-proof/` (`beats.mjs`, `s3.mjs`, `fix.mjs`, `lib.mjs`; results in `out/`). No page errors in any run.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Staff room, player at the boiler (in earshot of the boiler, not the cooler), 20 game minutes | PASS for the boiler | Game 4985 (1204 s): 35 staff `_pickBark` turns. Per object: boiler (`staff_tea`) 7 lines of 19 turns (Keith 4, Jodie 3) and 12 pictures; cooler (`staff_water`) 0 lines of 16 turns, all pictures, because the cooler is beyond 160 px of the boiler (SIMS-5 design R2 M3; corrected 2026-11-15). `exchange_waiting` heard complete. `s3-in-4985.json`. From mid-room both are heard: see "SIMS-5 design R2 fixes" |
+| Staff room, player in the office (out of earshot), 10 game minutes | PASS | Game 4986 (604 s): 25 staff turns, **0** lines, 25 pictures, no exchange. No pool line is spent unheard (E7 holds). `s3-out-4986.json` |
+| Fixture `grumble_none` rerun (rule changed in 248293e6e) | PASS | Game 4983, 10 minutes: the warned NPC spoke nothing; the control pair spoke 4 `ctrl` lines (2 each). `fx-grumble_none-4983.json` |
+| Fixture `no_phone_calls` rerun (colleague rule changed in 248293e6e) | PASS | Game 4984, 10 minutes, spare phone read every 2 minutes: no call started, the warned NPC spoke nothing; the control pair spoke 2 `ctrl` lines. `fx-no_phone_calls-4984.json` |
+| Fixtures whose rule did not change (5 of 7) | NOT RERUN | Old and new V10 give the same warning set on all seven regenerated fixtures (only the wording changed), so games 4668 to 4674 stand |
+| `phone_message`, Amara answering Tom's empty desk | PASS | Game 4987: ring 1 played the `call_take_message` knot (5 lines overheard, `npc_call_heard:call_take_message`); rings 2 and 3 fell to her `phone_message` pool, 3 lines each, all voiced and overheard (`npc_overheard:amara` topic `phone_message`, every line drawn from that pool's bag). A pool call has no knot, so it emits no `npc_call_heard` (`_finishCall`, `npc-needs.js` emits only when `c.knot` is set); the probe's first tally counted only that event, hence the earlier "heard false". Ring 4 was not answered in the window. `beat-phone-4987.json` |
+| `grumble_printer_off`, both copier sockets off | PASS | Game 4988: both sockets switched off through the confirm dialog (globals true); Sanjay grumbled first (43 px, office), then Tom on his ninth forced work use: `print_blocked` `tom_pc` with both copiers as producers, his `grumble_printer_off` line spoken at 33 px in the office. `beat-printer-4988.json`, `pr-grumble-4988.png` |
+| `grumble_gone`, the cake taken from under two walkers | PASS | Game 5001: cake dropped by the office copier, Tom and Amara sent hungry; picked up while both were in `goto_target cake`; both `turned_back` reason `gone` with `grumble_gone`; Amara's line voiced at 62 px, Tom's turn a picture (the speech lock was hers). `beat-gone-5001.json`, `gone-5001.png` |
+| Amara's own `coffee` pool spoken as hers | PASS | Game 5003: over five forced coffee breaks with Tom, Amara spoke both lines that exist only in her own pool (the second break, then the fifth at 21 px in the office), alongside scenario `coffee` lines. `beat-amara-5003.json`, `amara-own-coffee-5003.png` |
+
+With these rows every item the SIMS-5 handover listed as open is proved live. Engine and server
+changes: none.
+
+## SIMS-5 design R2 fixes (2026-11-15, build/ol-sims)
+
+Review: `docs/achitechture/OFFICE_LIFE_SIMS5_DESIGN_REVIEW_R2.md` (0 blockers, 5 majors, 8 minors). This round took M1 to M4 and m1, m4 to m8; M5, m2 and m3 (V10's wording) went to the V10 fixer. Commits `7dbe11e50` (M4 engine and tests, M2 scenario), `962050a9b` (m8), `0100477ce` (m7), then the docs commit.
+
+- **M1.** README: a lever tour, "Office beats you can cause", at the top (fifteen rows: beat, lever and where it is, where to stand, what you see and hear, tasks), including the spare phone. The dated proof sections moved whole to `scenarios/test_needs_sims/PROOF_HISTORY.md`; the README keeps a one-line-per-section results appendix. Step 1 now describes the queue (m1); step 8 and tour row 2 say who shows `leashed` (m4); tour row 6 pairs the coffee socket with a walker (m5); a paragraph on copying levers into missions (m6).
+- **M2.** The four lever papers now use existing art and fixed places: Deadline Memo `notice_board1` (office back wall, right of the Activity Board), Print Queue `aes_clipboard1` (back wall, left of the copier), Coffee Notice `notes6` (east wall above the coffee socket), Kitchen Rota `rota_board1` (moved to the kitchen's back wall). All `readDisplay: gameDisplay`. Each top-left is at least 32 px from a neighbouring interactable's centre, so none shares a tap. No art was generated or is needed. The coffee machine, both copiers and the three sockets were not moved.
+- **M3.** Decision: keep the cooler where m02's map draws it and state the figure per standing spot. A real break room has its tea point and water cooler on different walls, and a player finds the talk by walking into the middle of the room; moving the cooler would change m02's map to fix where the player stood. The README gives per-spot counts (boiler spot, mid-room, office) and the tour sends the player mid-room; the SIMS-5 live-proof row above now gives per-object counts.
+- **M4.** `npc-needs.js`: `_pickBark` draws through `_bagPeek`/`_bagTake`, which pass over a line said by anyone within `ECHO_WINDOW_MS` (120 s) and `ECHO_RADIUS` (320 px) in the same room while the bag has another; the passed-over line keeps its place in the bag. `_recentLines` is in memory only (at most 32, cleared on `reset`); nothing new reaches `player_state`, so the sync rule holds. The old `_bagPeek(npcId, ...)` became `_bagOrderLeft` plus `_bagPeek(s, ...)`.
+- **m7.** `_tickNews` passes `unheard` when the player is out of the announce pool's earshot: the telling still happens, as a news picture, and no line is taken or voiced.
+- **m8.** `npc-action-icons.js` `speechCovers` and `hideFor`, `npc-world-bubbles.js` `showsBubble`: a speech bubble over an NPC hides its action icon and thought bubble in the same frame (the bubble pass runs in the camera's preRender, after the icon layer's update).
+
+**Spoken lines.** None added, changed or removed (0 / 0 / 0). The lever texts and observations that changed are read on screen, not voiced: Deadline Memo, Print Queue, Coffee Notice and Kitchen Rota observations now name where each hangs. Their `text` fields are unchanged.
+
+**Tests.** Node: `npc-voiced-chatter.test.mjs` five new M4 tests and the peek test moved to the new signature; `npc-news.test.mjs` one new (m7), its fixture now stands the player in earshot by default; `npc-action-icons.test.mjs` one new (m8). `bin/test-js` in full on `0100477ce`: 659 files passed, 0 failed. Validator on the scenario: 0 errors, 32 warnings (the same 32 as before). No new static imports.
+
+**Live proof** (keyless :3093, headless, `setFPS(20)` with fixed steps on, scratch worktree `p-ol-sims5` at `962050a9b`; scripts and outputs in the session scratchpad `s5-design-fix/`):
+
+| Check | Result | Evidence |
+|---|---|---|
+| M2: the four levers told apart at game zoom | PASS | Game 5049, `m2-office-clean-5049.png`, `m2-kitchen-clean-5049.png`, `m2-levers-crops-5049.png` |
+| M2: each reads alone and starts its beat | PASS | Game 5044: no pick-one menu; memo set Tom and Amara caffeine to 19; Print Queue showed `copier_out_a`; rota in the kitchen set Marek's thirst 94 to 10 (`m2-5044.json`) |
+| M3: staff room from mid-room | PASS | Game 5046, 13 minutes: boiler 4 lines of 11 turns, cooler 2 of 7, at 61 to 76 px; `exchange_waiting` complete (`m3-mid-5046.json`) |
+| M4: no echo on a shared pool | PASS | Game 5045: six cooler meetings, 14 lines, 4 passed over, 0 repeats within 120 s; Grace passed over "Friday drinks again?" 4 s after Rosa said it (`m4-5045.json`). Test aid: a 15 s cooldown set in the page for Grace, Rosa and Sanjay |
+| m8: no icon under a speech bubble | SEEN | Game 5045 `m4-cooler-5045.png`, game 5046 `m3-mid-mid-5046.png` |
+
+## SIMS-5 design R3 fixes (2026-11-15, build/ol-sims)
+
+Review: `docs/achitechture/OFFICE_LIFE_SIMS5_DESIGN_REVIEW_R3.md` (0 blockers, 4 majors, 4 minors; outcomes at its end). Commits `9a501c132` (scenario, README, V10 and its tests), then the docs commit.
+
+- **M1.** README tour split by door state: rows 1 to 3 (the queue, the Coffee Notice turn-back, the socket) under "Before you open any door", then "Now open the kitchen and lounge doors", then the rest. Rows renumbered in reading order: old 5 is now 2, old 6 is 3, old 2 is 4, old 3 is 5, old 4 is 6; rows 7 to 15 unchanged.
+- **M2.** Row 3 (the socket) now uses an Activity Board queue with the kitchen still shut, and says to switch the socket back on. The `npc_used:kitchen_coffee` + `office_coffee_off` mapping for `see_coffee_off` is gone; only the `off` turn-back ticks it. Task title rewritten to match. The coffee machine, copiers and their three sockets did not move.
+- **M3** (live proof open, see below). Marek's post and spawn moved from office (3,8) to (1.65,3.5), the north-west corner by the kitchen door, west of Sanjay's chair, so his walk to the cooler no longer passes behind a seated colleague. The engine's stuck recovery (E-carry above) is untouched; this sidesteps it. `see_outcast`: Sanjay's `npc_avoided` (avoidedId marek) now only sets `outcast_pending`; Marek's `npc_used:water_cooler` with it set ticks the task; `npc_returned_post:marek` clears it, so a walk that fails ticks nothing. New global `outcast_pending`.
+- **M4.** `scripts/validate_office_life.rb`: V10 ranks the blocks at an object nearest first (pair rules and the seat, then the object's own `private`, then a missing need, then an NPC not run, then a room leash). A need miss counts as far when either NPC is also leashed out of the room. Room-leash misses are dropped while a nearer one exists, objects are ordered by their nearest block, and the fixes come only from the nearest rank, so no fix opens a private room to bystanders. Fixtures f1 to f3 now read "'jodie' avoids 'keith'", "private to ["keith"]" and "'keith' has no need it meets", with no office staff named.
+- **m1.** Row 2 says to stand mid-office and that Sanjay may turn back at once from his desk. Grumbles still skip the earshot check: deferred, not a one-line change. Passing `unheard` in `_grumble` would turn every grumble in the node fixtures into a picture (their stub world answers `overheard: false` by default) and change the pinned sims-day hash, so it needs its own fixture changes and a browser regression. Owner item beside R2 m7.
+- **m2.** Row 4 (the memo) says Tom may join a short queue instead, and to read the memo again once he is back.
+- **m3.** V10's ring fix names any `desk_phone_ring:<id>` emit whose id is no desk phone's ("check the spelling").
+- **m4.** Not changed: owner note (toasts). The row 3 beat plays mid-screen with the player at the socket; the toasts cover the right third.
+
+**Spoken lines.** None added, changed or removed (0 / 0 / 0). Two task titles changed (`see_coffee_off`, `see_outcast`); they are read on screen, not voiced.
+
+**Tests.** `validator-office-life-v10.test.mjs` tests 36 (f1 to f3 as inline fixtures) and 37 (phone typo): 37 pass. `bin/test-js` in full on `9a501c132`: 662 files passed, 0 failed. Validator on the scenario: 0 errors, 32 warnings (the same set; only mapping indices moved).
+
+**Live proof** (keyless :3093, headless, `setFPS(20)` with fixed steps on, worktree `p-ol-sims5` detached at `9a501c132`; scripts and outputs in the session scratchpad `s5-design-r3-fix/`):
+
+| Check | Result | Evidence |
+|---|---|---|
+| M1: the tour top-down in one game | PASS | Game 5092: rows 1 to 6 in table order; each row's task ticked (`tour-5092.json`, `t-r1-queue-5092.png` to `t-r6-rota-0-5092.png`) |
+| M2: the socket beat on the queue, 3 runs | PASS 3/3 | Games 5092, 5093, 5094: Tom and Marek turned back with `off` and parked; `grumble_off` heard at 107 and 106 px (5092, 5094), a picture in 5093; `see_coffee_off` ticked on the turn-back; Marek drank at the kitchen machine once it opened (`t-r3-off-5092.png`) |
+| M3: the rota reaches the cooler, 3 runs | OPEN, 3 of 5 | Games 5092 (1/1) and 5093 (2/2): Marek drank at the cooler alone, Sanjay parked at his desk; `see_outcast` ticked after the drink (`t-r6-rota-1-5093.png`). Game 5094 (0/2): the rota was never read, the player stayed in the office with Marek idle at the new post by the west door (`t-r6-rota-0-5094.png`); suspected doorway crowding. Next: post (1.65, 4.0) and rerun |
+| m1: Sanjay's turn-back from mid-office | PASS | Line heard at 108, 21 and 99 px (5092 to 5094) |
+
+## SIMS-5 rota proof and V10 needsRooms (2026-11-15, build/ol-sims)
+
+- **Kitchen Rota (R3 M3 closed).** Marek's post and spawn moved from (1.65, 3.5) to (1.65, 4.0) (commit `e2b84421b`), README layout row updated. Proof on `e2b84421b`, keyless :3093 from `p-ol-sims5`, headless, `setFPS(20)` with fixed steps: 5 of 5 fresh games (5200, 5201, 5202, 5203, 5215), each with the kitchen entered, the rota read, Marek drinking at the cooler and `see_outcast` ticking after the drink. Screenshot `t-r6-rota-0-5201.png`. The tour script (`tour.mjs`, scratchpad `s5-design-r3-fix/`) now reports the kitchen entry, the read, whether Marek reached and finished the cooler, and whether the task ticked, with a reason on failure; it moves the player off the doorway line after the read (a player standing there blocked Marek once, game 5156).
+- **V10 and needsRooms.** The engine exempts only an NPC's home room from its leash (`_roomForbidden`), so a pair whose home stays in the staff room keeps its staff-room pools even when needsRooms names another room, and loses them when the home moves out (V10 already warned for that, now pinned by a test). The gap was the start room: `build_rooms` always counted it, so an NPC the engine runs, leashed out of its spawn room and homed elsewhere, still counted as able to stand there (for example as an avoided partner at a source). `build_rooms` now counts the start room only when the leash allows it, the NPC is not run by the engine, or it patrols (`96a5d2ad4`). Tests 37 and 38 in `validator-office-life-v10.test.mjs` (38 pass; test 38 fails without the change). Corpus (all 180 `scenarios/*/scenario.json.erb`, `--skip-ink --no-graph --no-lint`): no V10 warning before or after. `bin/test-js` in full: 665 files passed, 0 failed. No engine file changed.
+
+- **F2 live proof (SIMS-5 design R4, recorded after the R5 review).** The arm mapping needs `data.objectId === "water_cooler"` (`scenario.json.erb:572`). Game 5231: rota read, Marek drank at the cooler, `see_outcast` ticked. Games 5229 and 5230: no rota read, a natural cooler avoid (Sanjay and Marek) armed it and the task ticked. No run is recorded that read the Coffee Notice and showed no arm; the claim for the coffee-machine avoid rests on `_noteAvoided` carrying `objectId` and its only caller being the shared-object check (`npc-needs.js:1553`). Copy of this entry in `scenarios/test_needs_sims/PROOF_HISTORY.md`.
+- **R5 text fixes.** Row 6 and the note at README line 9 now say the tick needs Sanjay's social need due while Marek holds the cooler (it can tick without the rota, and may not tick straight after row 5); the task title no longer says the rota is the cause; a "leave these out when copying" list was added; Marek's post history moved to `PROOF_HISTORY.md`. Spoken lines: none changed.
+
+## Engine and server changes (every slice)
+
+SIMS-4 R2 / SIMS-3 R4 fix round: none.
+
+| Slice | File | Function | Change | Why | Branch |
+|---|---|---|---|---|---|
+| SIMS-5 | scripts/validate_office_life.rb (new), scripts/validate_scenario.rb (one line), test/js/validator-office-life-v10.test.mjs (new) | `ValidateOfficeLife.check` | new office-life validator, V10 only; warning-only static check, no runtime engine or server change | OLMP V10: a chatter pool, exchange or call nothing in the scenario can trigger is voiced and paid for and never heard | build/ol-sims |
+| SIMS-1 | none applied | | | | |
+| SIMS-3 | none applied | | the Gary pattern is all scenario data (declared mug, print command, `forget`, reveal slots, `delayMs`) | nothing in the engine needed changing | build/ol-sims |
+| SIMS-4 | none applied | | the pilot staff-room pattern is all scenario data (claimed decor, couplings on the use start, first-visit/close/private-office break starts, hand-written cooler cell, gated exchanges, roomToneTypes) | the plan builds SIMS-4 to work around E7/E8/E9 without touching the chatter engine | build/ol-sims-2 |
+| SIMS-2 | public/break_escape/js/systems/npc-needs.js | `onArrived` | now takes the arrival payload; logs `arrival {pathLeft,dist}` for a real behaviour-layer arrival; stores `{x,y,moveId,pathLeft}` in the `_arrivals` Map | step 1 diagnostic + carry the position/id the tick needs | build/ol-sims-2 |
+| SIMS-2 | npc-needs.js | `_phaseDest`, `_nextMoveId`, `_acceptArrival` (new) | distance-first + move-id check; a far arrival re-issues once then fails the job (returning re-issues once, never fails); synthetic own-post/home arrivals bypass | the fix: an arrival counts only within 48 px of the move's cell, and only for the current move | build/ol-sims-2 |
+| SIMS-2 | npc-needs.js | `_tickNpc` | consumes the stored arrival through `_acceptArrival` instead of a boolean Set membership | route every arrival through the distance/id guard | build/ol-sims-2 |
+| SIMS-2 | npc-needs.js | `_moveForPhase`, `_goHome` | stamp each issued move with a `moveId` (own-post/home shortcuts store a synthetic arrival) | give every move an id the arrival echoes | build/ol-sims-2 |
+| SIMS-2 | npc-needs.js | world `moveTo`, `installNpcNeeds` npc_arrived listener | pass `moveId` through; pass the whole payload to `onArrived` | wire the id and position end to end | build/ol-sims-2 |
+| SIMS-2 | public/break_escape/js/systems/npc-behavior.js | `goToAndStay`, `_triggerGoToStayArrival`, `cancelMove` | store `opts.moveId`; add `moveId` and `pathLeft` to the `npc_arrived` payload; clear on cancel | the behaviour layer echoes the move id and the steps the path had left | build/ol-sims-2 |
+| SIMS-2 | npc-behavior.js | `class NPCBehavior` | exported | reachable by the arrival unit test; the manager stays the only game constructor | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_acceptArrival` | gate the distance/id check to `returning`, `goto_item`, `goto_target`, `queued` only; an arrival in any other phase is dropped silently | review R1 Design M1: a seating chair fetch during `using` (owner needs, no move id) was going through the check and cutting the use short with a spurious `arrival_far` + mid-use re-issue at a non-own work object; drop it as before the slice | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_acceptArrival` | the job far guard is keyed by `${phase}:${dest cell}` (`job._farKey`), was `job._farPhase === phase` | review R1 m2 (both reviews): queue steps all share `queued`; a far arrival at a later queue cell (or after a freeze re-issue) was read as a repeat far arrival and failed the job on two different cells | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_tickNpc` (unfreeze), `_advanceQueued` (queue step) | clear `job._farKey` on the post-freeze re-issue and the step to a new queue cell | review R1 m2: a re-issue after a freeze or a queue-cell step is a fresh move, not a repeat far arrival | build/ol-sims-2 |
+| SIMS-2 R1 | npc-needs.js | `_acceptArrival` (returning branch), `_watchReturn` | log `arrival_far` once per return (gated on `!returnFarReissued`); `_watchReturn` re-plans with `keepFarFlag: true` so the flag persists | review R1 Design m1 / server minor 2: an unreachable home logged `arrival_far` and re-issued twice per `_watchReturn` cycle; now once per return, re-planned quietly | build/ol-sims-2 |
+| SIMS-2 R1b | npc-needs.js | `createEngineWorld` `describe` (~4780) | copy object-level `offWhen` onto the described needs object: `if (sd.offWhen !== undefined) out.offWhen = sd.offWhen;` | owner finding 6: format step 8a (`33b3ea3bc`) moved `affordance.offWhen` to object level and made `_isOff` read `o.offWhen`, but `describe` never copied it, so `_isOff` was always false live and no switched-off source was excluded (office coffee could not be switched off, game 4265). Commit `4fcda935b`; real-adapter node test `test/js/npc-needs-offwhen-adapter.test.mjs` (fails without the fix) | build/ol-sims-2 |
+
+### SIMS-1 owner items (engine/server faults, not fixed here)
+
+Raised with file:line for the owner. No edit applied; the probe measures each.
+
+| Item | File:line | What | Owner fix |
+|---|---|---|---|
+| E-carry | `public/break_escape/js/systems/npc-behavior.js` `_checkPathStuck` (~1305), `_recoverFromStuck` (~1348); surfaces as the timeout in `npc-needs.js:3149` → `_failJob` 3490 | A needs move re-paths through a seated NPC's immovable body/chair (not in the walk grid); stuck recovery re-paths to the same cells and never routes round the body. It is wider than one room: besides Ava against seated Ben in the office, it stopped Ben's cross-room cooler errand when Fran and Gil sat in his path (beat c, game 4231: he wedges at ~(6,4.5) in the pinch between the east wall and the two residents, not an unreachable cooler corner). Mission-local sidesteps: mugs moved off Ben's row; Fran/Gil moved to `(6,8)`/`(7,8)` so (c)/(d) reach `using`. | Route stuck recovery round NPC bodies / add seated bodies to the grid. |
+| E-carry → park `no_source` (SIMS-3 R2 m6) | same E-carry site; park at `npc-needs.js` `_parkNeed`/urgent-rest path | A visible consequence of E-carry in test_needs_sims: when the kitchen is open, Grace's `dirty_mugs` interest starts a carry that wedges and fails on `timeout` (E-carry); her then-urgent `rest` parks with `no_source`, and parks `no_source` again from her post ~16 min later (games 4342, 4343, 4348), so `see_rest` never ticks in the every-door regression even with a 480 s window (game 4337). With only the lounge and IT open (no kitchen, no carry) she walks to the sofa and `see_rest` ticks in 43 s (game 4350), so the IT move is not the cause and the slice is clear. The `no_source` after a failed carry suggests the dropped mugs also block her route to the lounge. | Fix E-carry (routing round bodies); then the failed carry no longer leaves her rest without a route. |
+| E-reload-mugs | Cause: `public/break_escape/js/systems/npc-needs.js:5124-5140` (`world.dropHeld`, with `pickUp` at `:5094`); the rebuild is `app/models/break_escape/game.rb:2108-2111` (`apply_room_state_changes!`) | A world object an NPC was carrying when the carry **aborts** (a KO or any mid-carry block) is rebuilt on its authored tile after a reload. `dropHeld` moves the sprite client-side only and never records a removal, unlike `consumeHeld` (`:5115-5123`) on delivery. So only a delivered carry writes `objects_removed` (game 4208); any aborted carry (KO beat b game 4184, attack beat a game 4183) writes none, and the server correctly rebuilds the authored object. Not lost, not duplicated. | Record the pickup / drop refusal as `objects_removed` in `dropHeld` if "gone" is wanted after an aborted carry. |
+| E-carry-422 (reported 2026-11-14, not yet traced) | `update_room` `remove_object` in `app/controllers/break_escape/games_controller.rb`; the client call from the needs carry's delivery (`npc-needs.js` `consumeHeld`, near `:5115`) | Game 4558 (a live check by another session): `update_room remove_object office_mugs` for room `kitchen` came back 422 "not found" while Grace washed office mugs she had carried there. Likely cause, unverified: the delivery names the room it was delivered to while the server holds the object under its authored room (the office). Same family as E-carry and E-reload-mugs | Trace the room the removal names against the object's saved room; send the authored (or last recorded) room, or let the server find the object by id across rooms. Needs its own slice with a node test and a live reload check |
+| E-reload-ko-pos | `app/models/break_escape/game.rb:1176-1177` and `:974` (save), `:2145-2151` (restore) | A KO saves only `isKO`/`currentHP`, keyed to the NPC's scenario room, with no position; on reload the body is restored at its authored spawn while its drop stays where it fell (an `objects_added` record at `:2108`). A cross-room KO leaves body and item in different rooms. | Persist the KO position and the room the NPC fell in. |
+| KO need bubble | `public/break_escape/js/systems/npc-action-icons.js` `thoughtBubble` `:218-222`, drawn from `update` `:563` | A knocked-out NPC still shows its pressing-need thought bubble: `thoughtBubble` checks `avoiding`/pressing/parked but not `isKO` or `blocked`, so a felled needs NPC keeps a need bubble over its body (`s1-fix-r1/c-c-down-4208.png`). | Guard `thoughtBubble` on `isKO`/`blocked`. |
+
+### SIMS-3 owner items (engine/server faults, not fixed here)
+
+Raised with file:line for the owner. No edit applied; the docs and proof are reconciled to the real behaviour (R1 server review).
+
+| Item | File:line | What | Owner fix |
+|---|---|---|---|
+| A printed page on the tray is filed away on every reload (stow on sight) | `public/break_escape/js/systems/npc-needs.js:1222-1227`, `stowRevealedSlots` at `:5381-5395`, `slotHome` at `:4854-4855` | When a room loads, the needs system files every revealed slot that no NPC holds and sets the slot's global false. After a reload nobody holds the page, so the tray is **always empty after a reload** even when the reveal global reached the server first (game 4507: `it_out_a_shown` and `neil_page_on_tray` true on the server before the reload, empty after). A **taken** page is in the inventory and survives (game 4512). Separately, a bare eventMapping `setGlobal` does **not** sync to the server: `npc-manager.js:1442-1455` writes `gameState.globalVariables` and broadcasts to the loaded inks (`npc-conversation-state.js:638-665`) but does not call `_worldChanged` or send anything. `neil_page_on_tray` persists at the reveal only because the same `object_revealed` mapping also completes `see_neils_page`, whose round-trip carries the globals. Harmless here (bounded booleans, nothing grows); the ready line reads `neil_page_on_tray`/`neil_page_taken`, cleared on `game_loaded`, so after a reload Neil says "have a look". | A reveal or marker that must survive a reload must be set by an eventMapping that **also completes a task** (or otherwise triggers a delta sync), not a bare `setGlobal`. A printed page that must itself survive a reload needs a per-slot opt-out from stow on sight (for example a `holdThroughLoad` flag on the slot); scenario data cannot express it today. |
+| SIMS-6 caveat: the on-tray mirror is not cleared when another producer recycles the slot | `scenarios/test_needs_sims/scenario.json.erb` `it_out_a` `onRead` and the `object_revealed` mapping | Within one session `neil_page_on_tray` only goes false on the player's take (`onRead`) or on reload (`game_loaded`). If the IT copier tray fills and a later print by another producer recycles `it_out_a` (the needs system's stow/recycle path resets the slot's own global but does not fire `onRead`), the page on the tray is replaced while `neil_page_on_tray` stays true, so Neil would say "Help yourself." to a page that is no longer his. This cannot happen in SIMS-3 (Neil prints one page and nothing else prints to the IT copier), so it is a forward-looking caveat for SIMS-6. | When SIMS-6 adds a second IT-copier producer: either keep the neutral "have a look" wording on the on-tray branch too, or clear the mirror when the slot is recycled. |
+| R3 m5: the change-log page shares every pixel with the copier, so a click raises the disambiguation menu | `scenarios/test_needs_sims/scenario.json.erb:959` (`it_out_a` at (8.65, 6.95)); tap-pick in `public/break_escape/js/core/game.js:2301-2324` | The copier sprite is 35x46 px (about one tile) and all six `it_out_*` slots stack on its tray; `aim.clean` is false (games 4586/4587), so a tap on the page lands on both and the engine raises the menu (`interact` still takes the page by name, `via-interaction-menu`). Clearing `aim.clean` by placement would move the page off the copier lid and undo the R2 m1 "page on the tray" fix, and there is no object-data priority to rank the slot above its producer. | An engine pick-order hint (an object-data field that ranks a slot above its producer when stacked), or a thinner copier sprite with a free tray edge, so the page can be both on the tray and the default pick. |
+| Pickup not reveal-gated on the server | `app/controllers/break_escape/games_controller.rb:3245` (`find_accessible_item`), `:2981` (`validate_item_collectible`) | Neither method consults `revealOnGlobal`, so a crafted `POST /inventory` for a takeable IT slot in the unlocked room is accepted before any reveal. Within cheat policy here (the pages carry no account, address, password or code; the slots tick only the optional `see_neils_page`). Recorded in the README. | Never place a gated or secret-bearing page on a `revealOnGlobal` slot expecting the server to withhold it; gate server-side if a future mission needs it. |
+
+## Prototypes not merged
+
+E7, E8 and E9 (missions plan section 9) are approval items. Any prototype lives on its own branch
+and is listed here with its tests and proof; nothing here is on `build/ol-sims`.
+
+## Merges of main
+
+- 2026-11-14: main 768f8d09c (with bb0a458b1: Kieran's lab_physical_pentest art, spy starters, the HUD ring banner, SE picks, minigames2 CSS, and the offWhen describe fix cherry-picked as 9e522da2a) merged into build/ol-sims as bf6d89338. No conflicts; the offWhen change matched this branch's 4fcda935b. Slice node tests (15 files incl. the V10 test) pass; validator on test_needs_sims 0 errors, 36 warnings.
+- 2026-11-14: main 9e23e384b merged into build/ol-sims as f8e23f7a2, and on into build/ol-sims-2
+  (69aa3c8ae). No conflicts. Main brought held barks and HUD lanes (`npc-barks.js`, `ui/hud-lanes.js`,
+  `hud.js`, `npc-barks.css`); none of it touches `npc-needs.js` or `npc-behavior.js`, and
+  npc-manager.js gained 2 lines. Full `bin/test-js` on build/ol-sims-2 after the merge: 648 files
+  pass, 0 fail. Needs chatter still reaches the screen through the bark system, so SIMS-4's
+  staff-room proof watches for chatter being held or laned by the new HUD code.
+- 2026-11-14: main cb6d7feb4 merged into build/ol-sims as 1bf6ad046. No conflicts. Main brought the
+  sync-stale-ring work (`games_controller.rb`, `sync_ring.rb`, `state-sync.js`, capture/merge tests);
+  none of it touches `npc-needs.js`, `npc-behavior.js` or `npc-action-icons.js`. Slice node tests
+  `npc-needs.test.mjs` and `npc-needs-attack-scenario.test.mjs` pass after the merge.
+- 2026-11-14: main `cb6d7feb4` merged into `build/ol-sims-2` as `5af54d887` before the review R1 fixes, to
+  carry the latest shared-tree changes (sync-ring build review R3). No conflicts in the SIMS-2 files.
+- 2026-11-14: main d69c29089 (sync-ring follow-up, keyring server half) merged into both branches, then
+  build/ol-sims-2 merged into build/ol-sims so SIMS-3 builds on the arrival check. Only this log conflicted.
+- 2026-11-15: Merge with V1 to V9 (main 082c51fb7, the office-life validator tools). Two conflicts.
+  `scripts/validate_office_life.rb` took main's file as the base (V1 to V9) with all of V10 appended below
+  V8; V10's entry point is renamed `check_v10(json)` (main's `check(json, scenario_id:, campaign:)` calls it
+  at the V10 slot) and V10 keeps its own world/held build. `scripts/validate_scenario.rb` kept main's
+  three-line `run.call`. `test/js/validator-office-life-v10.test.mjs` now calls `check_v10`, since `check`
+  also returns V3 to V8 warnings (test_needs_sims has three real V8 cap warnings). Corpus run (180
+  scenarios, `--skip-ink --no-graph --no-lint`): all exit 0, no V10 warning, and the `❌` lines on the six
+  scenarios that print any match main's run exactly.

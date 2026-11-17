@@ -241,15 +241,15 @@ test('Close with nothing done reports completed false; Close after filing report
     setWorld({ mailState: { metrics: {} } });
     let s = open();
     ended.length = 0;
-    s.container.querySelector('.er-close').click();
+    s.container.querySelector('.se-overlay-close').click();
     assert.equal(ended[0].result.completed, false);
     s = open();
     s.confirmResults('results');
     solve(s);
     ended.length = 0;
-    s.container.querySelector('.er-close').click();
+    s.container.querySelector('.se-overlay-close').click();
     assert.equal(ended[0].result.completed, true);
-    s.container.querySelector('.er-close')?.click();
+    s.container.querySelector('.se-overlay-close')?.click();
     assert.ok(ended.length <= 2);
 });
 

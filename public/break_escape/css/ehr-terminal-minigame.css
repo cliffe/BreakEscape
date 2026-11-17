@@ -1,56 +1,29 @@
-.ehr-terminal-minigame-container {
-    background: rgba(0, 0, 0, 0.92);
-    border: 2px solid #1f1f1f;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.6);
-    color: #eaf0ff;
-}
-
-.ehr-terminal-minigame-game-container {
-    padding: 0;
-    width: 100%;
-    max-width: 600px;
-    height: 100vh;
-    min-height: 100vh;
-    margin: 20px auto;
-}
-
-.ehr-terminal-minigame-game-container.ehr-online-mode {
-    width: 100vw;
-    max-width: none;
-    margin: 0;
-}
-
+/* The shared console window (css/minigames-framework.css) is the frame and the title bar;
+   the terminal panel fills its body. */
 .ehr-terminal-panel {
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
-    border: 2px solid #2f3b4f;
-    background: linear-gradient(180deg, #081733 0%, #050d20 100%);
+    min-height: 0;
+    background: #071430;
     box-sizing: border-box;
 }
 
 .ehr-terminal-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     gap: 12px;
-    padding: 12px 72px 12px 12px;
+    padding: 12px;
     border-bottom: 2px solid #2f3b4f;
     background: #0c1f43;
 }
 
-.ehr-terminal-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    line-height: 1.4;
-    color: #dfe8ff;
-}
-
 .ehr-terminal-status {
     font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    padding: 6px 8px;
+    font-size: 8px;
+    line-height: 16px;
+    padding: 4px 8px;
     border: 2px solid #2f3b4f;
     white-space: nowrap;
 }
@@ -71,10 +44,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: safe center;
     gap: 14px;
     padding: 20px;
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.ehr-online-mode .ehr-terminal-content {
+    justify-content: flex-start;
 }
 
 .ehr-terminal-offline-icon {
@@ -86,8 +65,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 34px;
-    font-weight: 700;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 32px;
+    line-height: 32px;
 }
 
 .ehr-terminal-online-icon {
@@ -99,14 +79,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 34px;
-    font-weight: 700;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 32px;
+    line-height: 32px;
 }
 
 .ehr-terminal-online-title {
     font-family: 'Press Start 2P', monospace;
     color: #9cff9c;
-    font-size: 12px;
+    font-size: 16px;
+    line-height: 24px;
     text-align: center;
 }
 
@@ -131,6 +113,10 @@
     width: 100%;
     gap: 10px;
     align-items: stretch;
+}
+
+.ehr-online-layout > * {
+    min-width: 0;
 }
 
 .ehr-patient-list {
@@ -187,6 +173,8 @@
 }
 
 .ehr-record-panel {
+    min-width: 0;
+    overflow-x: auto;
     border: 2px solid #2f8d3c;
     background: rgba(8, 20, 10, 0.85);
     padding: 10px;
@@ -253,7 +241,7 @@
     position: relative;
     height: 12px;
     border: 2px solid #3b6d46;
-    background: linear-gradient(90deg, #8d2f2f 0%, #2f8d3c 20%, #2f8d3c 80%, #8d2f2f 100%);
+    background: linear-gradient(90deg, #8d2f2f 0 20%, #2f8d3c 20% 80%, #8d2f2f 80% 100%);
 }
 
 .ehr-dose-bar span {
@@ -286,8 +274,9 @@
     background: #12294f;
     color: #eef4ff;
     padding: 12px 16px;
-    font-family: 'Press Start 2P', monospace;
+    font-family: 'GNF', monospace;
     font-size: 16px;
+    line-height: 24px;
     cursor: pointer;
 }
 
@@ -295,4 +284,19 @@
 .ehr-terminal-button:focus {
     background: #1b3a6e;
     outline: none;
+}
+
+/* Phones: the patient list sits above the record (critique B X3) */
+@media (max-width: 600px) {
+    .ehr-online-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ehr-patient-list {
+        max-height: 30vh;
+    }
+
+    .ehr-terminal-content {
+        padding: 12px;
+    }
 }

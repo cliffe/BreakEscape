@@ -10,6 +10,7 @@ VAR teaser_enabled = false
     -> hub
 
 === forced_call ===
+// lint: call-knot
 ~ call_started = true
 Agent HaX: You ran this mostly solo.
 Agent HaX: Don't hang up. First question.

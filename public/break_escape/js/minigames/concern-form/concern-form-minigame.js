@@ -32,6 +32,9 @@ function el(tag, className, text) {
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
 
 export class ConcernFormMinigame extends SocialOverlayScene {
+    // Draws in the shared console window (UI decision X8): title bar and X come from there
+    static consoleWindow = true;
+
     constructor(container, params) {
         super(container, params);
         this.config = null;
@@ -60,10 +63,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         this.root = root;
         this.gameContainer.appendChild(root);
 
-        const bar = el('div', 'cf-toolbar');
-        bar.appendChild(el('h2', 'cf-title', this.text('title')));
-        this.mountCloseControl(bar, 'Close');
-        root.appendChild(bar);
+        this._mountSharedClose();
 
         this.liveEl = el('p', 'cf-live');
         this.liveEl.setAttribute('aria-live', 'polite');
@@ -72,6 +72,29 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         this.stageEl = el('div', 'cf-stage');
         root.appendChild(this.stageEl);
         this._showStep('intro');
+    }
+
+    // The overlay turns the framework X off (disableClose); in the shared bar it is the one Close
+    // control, so show it and send it through requestClose (the keep-going check, Esc rules)
+    _mountSharedClose() {
+        const x = this.container.querySelector('#minigame-close');
+        if (!x) return;
+        x.style.display = '';
+        this.addEventListener(x, 'click', (e) => {
+            e.preventDefault?.();
+            e.stopPropagation?.();
+            this.requestClose();
+        });
+        this.closeButton = x;
+    }
+
+    // Called by the base init() before this scene's own init() has read the config
+    consoleTitle() {
+        if (!this.config) {
+            const raw = isObj(this.params.config) ? this.params.config : this.params.episode?.concernForm;
+            this.config = normaliseConfig(raw);
+        }
+        return this.text('title');
     }
 
     start() {
@@ -101,11 +124,23 @@ export class ConcernFormMinigame extends SocialOverlayScene {
 
     _renderIntro() {
         const p = el('section', 'cf-panel cf-intro');
-        const h = el('h3', 'cf-heading', this.text('heading'));
-        h.tabIndex = -1;
-        h.dataset.autofocus = '1';
-        p.appendChild(h);
-        p.appendChild(el('p', 'cf-text', this.text('intro')));
+        // The shared title bar already says the form's name: a heading with the same words is
+        // left out (one look per concept), and the intro text takes the first focus instead
+        const heading = this.text('heading');
+        const same = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+        const showHeading = !!heading && !same(heading, this.text('title'));
+        if (showHeading) {
+            const h = el('h3', 'cf-heading', heading);
+            h.tabIndex = -1;
+            h.dataset.autofocus = '1';
+            p.appendChild(h);
+        }
+        const intro = el('p', 'cf-text', this.text('intro'));
+        if (!showHeading) {
+            intro.tabIndex = -1;
+            intro.dataset.autofocus = '1';
+        }
+        p.appendChild(intro);
         if (this.config.guidance) p.appendChild(el('p', 'cf-guidance', this.config.guidance));
         // The form keeps no state across a close or reload, so a reopen starts the picks again. Say so
         // on the Start card, as the sort drill does (E16 F-E16-8). strings.reloadNote: '' suppresses it.
@@ -333,6 +368,8 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         row.append(keep, leave);
         box.appendChild(row);
         this.root.insertBefore(box, this.liveEl);
+        // The keep-going check has two named buttons and no X: the scene X hides while it is open
+        if (this.closeButton) this.closeButton.style.visibility = 'hidden';
         this._closeAsk = { box, pop: this.pushLayer(() => this._dropCloseAsk(true), 'close-ask') };
         keep.focus?.();
     }
@@ -343,6 +380,7 @@ export class ConcernFormMinigame extends SocialOverlayScene {
         this._closeAsk = null;
         ask.pop?.();
         ask.box.remove();
+        if (this.closeButton) this.closeButton.style.visibility = '';
         if (restoreFocus) this.closeButton?.focus?.();
     }
 

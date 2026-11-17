@@ -7,10 +7,30 @@
  * never by an object type, an ink tag or an openMinigame mapping, so it has no entry in
  * the minigame registry.
  *
- *   header        the link's name (its own network is the first block's heading; was "Drop box: comms room, on Harbour office
- *                 LAN"), the link item's observations, and an optional one-line message
+ *   header        the link's name, "<device>: <place>" from the server (UX feedback slice 1), a
+ *                 subtitle that adds what the name lacks (viewSubtitle), a Wi-Fi link's status
+ *                 line ("Joined. Reaches <n> hosts."), and an optional one-line message. Title,
+ *                 subtitle and status never repeat each other, so the link item's inventory
+ *                 line is not shown (code review R1 m1). The own network's block is headed
+ *                 "Reachable" on every view, since the subtitle already names the network
+ *                 (code review R2 m1); a further network's block keeps its name.
+ *   frame         the panel's 2px frame is a column: the header (holding the X, top right,
+ *                 inside the border), the scrolling list, and a "More below" strip pinned to
+ *                 the bottom edge until the end is reached (R1 m2, m4). The header is outside
+ *                 the scroll area, so the list's scrollbar (pixel art, .pixel-scroll) starts
+ *                 under it and never meets the X (R2 m2). The view closes with the X or Esc
+ *                 only: no Close button under it.
+ *   unplug        a planted box's view opened by a click on its jack (`unplugJack`) has an
+ *                 Unplug button under the header's lines (UI PC 2, critique N05). It takes the box
+ *                 out through networkLinks.unplugFromView and the view closes ('unplugged'). A
+ *                 view opened from the inventory has no Unplug.
+ *   down states   one helper, downState, for every kind (slice 1): "(down)" with "No route" for
+ *                 a network with no route and its rows, "(powered down)" alone for a host whose
+ *                 own service is off (R1 n1: the tag says it), "(down)" on the title when an
+ *                 implant's PC is off, and "Session kept: <name>" for a session held there.
+ *                 "Remote sign-in off" is not a down state: the row stays readable.
  *   a host row    host label, name and one action, decided in this order:
- *                   1. "remote sign-in off" when the PC's policy blocks it (no control);
+ *                   1. "Remote sign-in off" when the PC's policy blocks it (no control);
  *                   2. Open, with the account's name, when a password session is held there
  *                      (the server sends `session` only for one; a claim shows Sign in);
  *                   3. Sign in otherwise
@@ -35,28 +55,84 @@
 
 import { MinigameScene } from '../framework/base-minigame.js';
 import { escapeHtml } from '../../utils/escape-html.js';
+import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
 
 
-export const REMOTE_OFF_TEXT = 'remote sign-in off';
-export const NOT_RESPONDING_TEXT = 'not responding';
+// The down-state words (UX feedback slice 1): one set for every kind of row, block and link.
+// NOT_RESPONDING_TEXT is the powered-down state's name; its row shows only the tag.
+/**
+ * Escaped text with each space-separated word in a nowrap span, so a name can wrap at its
+ * spaces but never at a hyphen ("Ledger-Archive", "sign-in"). The text reads the same.
+ */
+// A word longer than this is left out of the nowrap span, so one very long name can still
+// break instead of pushing the list sideways on a phone (PC polish R2 m2)
+export const NOWRAP_WORD_MAX = 20;
+
+export function wordsHtml(text) {
+    return String(text ?? '').split(/(\s+)/).map((part) => {
+        if (!part || /^\s+$/.test(part)) return part;
+        if (part.length > NOWRAP_WORD_MAX) return escapeHtml(part);
+        return `<span class="network-row-word">${escapeHtml(part)}</span>`;
+    }).join('');
+}
+
+// A host label stays on one line (no break at its hyphen) unless it is too long to fit a phone
+// row at all; then it may break like any other very long word (PC polish R2 proof)
+export function hostnameClass(name) {
+    return String(name ?? '').length > NOWRAP_WORD_MAX ? 'network-row-hostname-long' : 'network-row-hostname';
+}
+
+export const REMOTE_OFF_TEXT = 'Remote sign-in off';
+export const NOT_RESPONDING_TEXT = 'Powered down';
+export const NO_ROUTE_TEXT = 'No route';
+export const DOWN_TAG = '(down)';
+export const POWERED_DOWN_TAG = '(powered down)';
+export const sessionKeptText = (name) => `Session kept: ${name}`;
+// The own block's heading on every view: the subtitle (or a Wi-Fi title) already names the
+// network (R1 n2, code review R2 m1)
+export const OWN_HEADING = 'Reachable';
+export { MORE_BELOW_TEXT };
 // Shown when the view was fetched before the latest globals reached the server (review R2 m3)
 export const STALE_TEXT = 'Still updating, so this may be out of date.';
 // An implant whose own PC is off (review R3 M1): the link is listed and reaches nothing
 export const linkOffText = (host) => `This link is not responding: ${host || 'its PC'} is off.`;
+// Two different reasons for a padlock badge, so two plain words: a held session that was locked
+// (its owner returns with the password), and a share that needs an account the player has not
+// signed in with. Both keep the same badge look.
+export const HOST_LOCKED_LABEL = 'Locked';
+export const SHARE_LOCKED_LABEL = 'Needs account';
+
+/** The padlock badge's label for a row: a locked session ('host') or a share needing an account. */
+export function lockBadgeLabel(kind) {
+    return kind === 'share' ? SHARE_LOCKED_LABEL : HOST_LOCKED_LABEL;
+}
+
+/** The padlock badge, the same look for either label. */
+function lockBadgeHtml(kind) {
+    return `<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> ${lockBadgeLabel(kind)}</span>`;
+}
+
+// A planted box's view opened at its jack (UI PC 2, critique N05): Unplug in the header takes
+// the box back out, through window.networkLinks.unplugFromView. Not offered from the inventory.
+export const UNPLUG_TEXT = 'Unplug';
+export const UNPLUGGING_TEXT = 'Unplugging...';
+
 export const SHARE_LOCKED_TEXT = "Needs an account with access. It opens from that account's desktop.";
-const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer' };
+const KIND_LABELS = { file_share: 'File share', printer: 'Printer', pc: 'Computer', phone: 'Phone' };
+const WIFI_ICON = '/break_escape/assets/icons/wifi.png';
 const KIND_ICONS = {
     pc: '/break_escape/assets/objects/pc_desktop.png',
     file_share: '/break_escape/assets/objects/m09_folder1.png',
-    printer: '/break_escape/assets/icons/npc-print.png'
+    printer: '/break_escape/assets/icons/npc-print.png',
+    phone: '/break_escape/assets/objects/phone5.png'
 };
 
 // The order rows are shown in (UX access R1 finding 10): computers, then shares, then
 // printers and other devices, each group by its name. The server's order is the scenario's.
-const KIND_RANK = { pc: 0, file_share: 1, printer: 2 };
-const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices' };
+const KIND_RANK = { pc: 0, file_share: 1, printer: 2, phone: 3 };
+const KIND_GROUPS = { pc: 'Computers', file_share: 'File shares', printer: 'Printers and devices', phone: 'Phones' };
 const rowLabel = (r) => String((r?.kind === 'pc' ? (r.host || r.id) : (r?.name || r?.id)) || '');
-const rowRank = (r) => KIND_RANK[r?.kind] ?? 3;
+const rowRank = (r) => KIND_RANK[r?.kind] ?? 4;
 
 /** Rows in display order: by kind, then by name (numbers compared as numbers). Exported for tests. */
 export function displayOrder(rows) {
@@ -64,12 +140,66 @@ export function displayOrder(rows) {
         || rowLabel(a).localeCompare(rowLabel(b), 'en', { numeric: true, sensitivity: 'base' }));
 }
 
+const NOT_DOWN = Object.freeze({ down: false, tag: null, reason: null, kept: null });
+
 /**
- * The link's observations as the view's subtitle: the item's "Open it to see what it
- * reaches." is for the inventory, and reads wrong once the view is open. Exported for tests.
+ * How a row, a block or the link itself is down (UX feedback slice 1), as { down, tag, reason,
+ * kept }: `tag` follows the name, `reason` stands where the control would be, `kept` names the
+ * account a held session is kept for. A link (a foothold, `via` a string) is down when its
+ * implant's PC is off; a block when it has no route, and every row in it with it
+ * (inDownBlock); a host row when its own service is off. Remote sign-in off has a reason and
+ * no tag, and is not down. Exported for tests.
  */
-export function viewObservations(text) {
-    return String(text || '').replace(/\s*Open it to see what it reaches\.?\s*$/i, '').trim();
+export function downState(item, { inDownBlock = false } = {}) {
+    if (!item || typeof item !== 'object') return NOT_DOWN;
+    if (typeof item.via === 'string') {
+        return item.responding === false
+            ? { down: true, tag: DOWN_TAG, reason: linkOffText(item.sourceHost), kept: null }
+            : NOT_DOWN;
+    }
+    const kept = item.heldAs ? String(item.heldAs) : null;
+    if (item.route === 'down' || inDownBlock) return { down: true, tag: DOWN_TAG, reason: NO_ROUTE_TEXT, kept };
+    // The tag says it: no "Powered down" reason beside "(powered down)" (code review R1 n1)
+    if (item.responding === false) return { down: true, tag: POWERED_DOWN_TAG, reason: null, kept };
+    if (item.kind === 'pc' && item.remoteSignIn === false) return { down: false, tag: null, reason: REMOTE_OFF_TEXT, kept: null };
+    return NOT_DOWN;
+}
+
+/** Whether a link name ends with ", <source>" or ", <source> <n>", as distinct_link_name writes it. */
+function nameEndsWithSource(name, source) {
+    if (typeof name !== 'string' || typeof source !== 'string' || !source) return false;
+    const tail = `, ${source}`;
+    if (name.endsWith(tail)) return true;
+    const cut = name.lastIndexOf(tail);
+    return cut >= 0 && /^ \d+$/.test(name.slice(cut + tail.length));
+}
+
+/**
+ * The header's subtitle (UX feedback slice 1): what the link's name lacks, never the name
+ * again. A physical link: "On <network>, at <source object>". A Wi-Fi link: "Access point:
+ * <access point>, <room>". Exported for tests.
+ */
+export function viewSubtitle(view) {
+    const v = view || {};
+    const src = v.source && typeof v.source === 'object' ? v.source : {};
+    let text;
+    if (v.via === 'wifi') {
+        const parts = [src.name, src.room].filter(Boolean);
+        text = parts.length ? `Access point: ${parts.join(', ')}` : '';
+    } else {
+        const parts = [];
+        if (v.network?.name) parts.push(`On ${v.network.name}`);
+        // A name the server suffixed with its source ("Drop box: Desks, Sam's PC", or "... 2"
+        // for a twin) already says where: no "at <source>" (code review R3 m1)
+        if (src.name && !nameEndsWithSource(v.name, src.name)) parts.push(`at ${src.name}`);
+        text = parts.join(', ');
+    }
+    return text && text !== v.name ? text : '';
+}
+
+/** A joined Wi-Fi link's status line, n counted from the rows drawn. Exported for tests. */
+export function joinedStatus(n) {
+    return `Joined. Reaches ${n} ${n === 1 ? 'host' : 'hosts'}.`;
 }
 
 /**
@@ -79,7 +209,9 @@ export function viewObservations(text) {
 export function hostAction(row) {
     if (row?.responding === false) return 'not_responding';
     if (row?.remoteSignIn === false) return 'off';
-    if (row?.session && row.session.via !== 'claim') return 'open';
+    // UI slice 6: a held-but-locked session is shown Locked, not Open: opening it is refused
+    // by the server until the account's password is entered again.
+    if (row?.session && row.session.via !== 'claim') return row.session.locked ? 'locked' : 'open';
     return 'sign-in';
 }
 
@@ -109,10 +241,24 @@ export function shareLockable(row, footholdId) {
 }
 
 export class NetworkViewMinigame extends MinigameScene {
+    // Draws in the shared console window (UI decision X8): the link's name is the title, the
+    // subtitle line is the bar's subtitle, the X is the shared one. The list wraps its rows.
+    static consoleWindow = true;
+    static consoleSubtitleEssential = true;
+
+    consoleTitle() {
+        return this.params?.title || 'Network link';
+    }
+
     constructor(container, params) {
-        super(container, { ...params, cancelText: 'Close', showCancel: true });
+        // The X and Esc close the view; no Close button under it (code review R1 m4)
+        super(container, { ...params, showCancel: false });
         this.footholdId = params?.footholdId || null;
         this.message = params?.message || null;
+        // The jack this view was opened at, when it was opened by a click on that jack
+        this.unplugJack = typeof params?.unplugJack === 'string' && params.unplugJack ? params.unplugJack : null;
+        this._unplugging = false;
+        this.unplugNotice = '';
         this.view = null;
         this.status = 'loading';
         this.exitReason = 'close';
@@ -135,8 +281,54 @@ export class NetworkViewMinigame extends MinigameScene {
     init() {
         super.init();
         if (this.container?.classList) this.container.classList.add('network-view-minigame');
+        this.buildFrame();
         this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-loading">Connecting...</div></div>';
+        // Unplug is there from the start: it does not wait for the link to answer
+        this.showHeader('');
         this.loaded = this.load();
+    }
+
+    /**
+     * The panel's frame (code review R1 m2, m4; R2 m2): one 2px border round a column of the
+     * header (which holds the X), the scrolling list (the framework's game area) and the
+     * "More below" strip. The X sits inside the frame at every size, the bottom border is
+     * never scrolled away, and the list's scrollbar runs only beside the list. Render fills
+     * the header and the game area.
+     */
+    buildFrame() {
+        const game = this.gameContainer;
+        const win = game?.parentNode;
+        if (!win || typeof document === 'undefined') return;
+        // Status lines (joined, message, stale) sit in a strip above the scrolling list
+        const header = document.createElement('div');
+        header.className = 'network-view-header';
+        header.hidden = true;
+        const headerBody = document.createElement('div');
+        headerBody.className = 'network-view-header-body';
+        header.appendChild(headerBody);
+        win.insertBefore(header, game);
+        game.classList?.add('pixel-scroll');
+        const more = document.createElement('div');
+        more.className = 'network-view-more';
+        more.hidden = true;
+        more.setAttribute('aria-hidden', 'true');
+        more.innerHTML = `<span class="network-view-more-arrow"></span><span>${MORE_BELOW_TEXT}</span>`;
+        game.after(more);
+        this.frameElement = win;
+        this.headerStrip = header;
+        this.headerElement = headerBody;
+        this.moreElement = more;
+        this.addEventListener(game, 'scroll', () => this.updateScrollCue());
+        if (typeof window !== 'undefined') this.addEventListener(window, 'resize', () => this.updateScrollCue());
+    }
+
+    /** Show "More below" while the list runs past the frame's bottom edge; hide it at the end. */
+    updateScrollCue() {
+        const game = this.gameContainer;
+        if (!game || !this.moreElement) return false;
+        const more = (game.scrollHeight - game.clientHeight - game.scrollTop) > 2;
+        this.moreElement.hidden = !more;
+        return more;
     }
 
     /** GET /network for this foothold (through network-links.js), then the rows. */
@@ -155,6 +347,7 @@ export class NetworkViewMinigame extends MinigameScene {
         if (!answer.ok) {
             this.status = 'error';
             this.gameContainer.innerHTML = '<div class="network-view"><div class="network-view-error">The link did not answer. Close this and try again.</div></div>';
+            this.showHeader('');
             return answer;
         }
         this.view = answer.view;
@@ -223,7 +416,12 @@ export class NetworkViewMinigame extends MinigameScene {
 
     /** One further-network block (up: live controls; down: greyed "No route" rows). */
     blockSectionHtml(block) {
-        const via = block.via ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}` : '';
+        // UI slice 6: a locked pivot still bridges structurally (the view draws structural
+        // reach), so the "through <host>" label stays but is marked Locked, matching that the
+        // far network's rows will not open until the password is re-entered.
+        const via = block.via
+            ? `, through ${escapeHtml(block.via.host || block.via.hostId || '')}${block.via.locked ? ' (Locked)' : ''}`
+            : '';
         if (block.route === 'down') {
             // Each row drawn as its own kind, under the same group headings as an up block
             // (code review R1 n3: every row was drawn as a PC, so a share sorted after the
@@ -233,62 +431,76 @@ export class NetworkViewMinigame extends MinigameScene {
                 return `
                 <li class="network-row network-row-host network-row-down" data-kind="${escapeHtml(kind)}">
                     <img class="network-row-icon" src="${KIND_ICONS[kind]}" alt="">
-                    <span class="network-row-label"><strong>${escapeHtml(r.host || r.id)}</strong>
-                        <span class="network-row-name">${escapeHtml(r.name || '')}</span></span>
-                    <span class="network-row-control"><span class="network-row-off">No route to ${escapeHtml(r.host || r.id)}</span></span>
+                    ${this.labelHtml(r.host || r.id, r.name || '', downState(r, { inDownBlock: true }))}
+                    ${this.downControlHtml(downState(r, { inDownBlock: true }))}
                 </li>`;
             });
-            return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} (no route)</h5><ul class="network-view-rows">${rows}</ul></div>`;
+            return `<div class="network-block network-block-down"><h5 class="network-block-title">${escapeHtml(block.name || block.id)} ${this.tagHtml(downState(block))}</h5><ul class="network-view-rows">${rows}</ul></div>`;
         }
         const rows = this.blockRows(block);
         const body = rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>';
         return `<div class="network-block network-block-up"><h5 class="network-block-title">${escapeHtml(block.name || block.id)}${via}</h5><ul class="network-view-rows">${body}</ul></div>`;
     }
 
-    /** The link item's own observations, shown in the header (13.4: a link item has no menu). */
-    linkObservations() {
-        const itemId = this.links()?.get?.(this.footholdId)?.itemId || `netlink_${this.footholdId}`;
-        const item = (window.inventory?.items || []).find(it => it?.scenarioData?.id === itemId);
-        return item?.scenarioData?.observations || '';
-    }
-
-    /** Rows in display order, with a group heading wherever the kind changes and more than one kind is listed. */
+    /**
+     * Rows in display order, with a group heading wherever the kind changes. Every list has its
+     * headings, one kind or several (UX feedback slice 1: the same layout on every view).
+     */
     rowsHtml(rows, rowFn = (r) => this.rowHtml(r)) {
         const ordered = displayOrder(rows);
-        const groups = new Set(ordered.map(r => KIND_GROUPS[r.kind] || 'Other devices'));
         let last = null;
         return ordered.map(r => {
             const group = KIND_GROUPS[r.kind] || 'Other devices';
-            const head = groups.size > 1 && group !== last ? `<li class="network-row-group">${group}</li>` : '';
+            const head = group !== last ? `<li class="network-row-group">${group}</li>` : '';
             last = group;
             return head + rowFn(r);
         }).join('');
     }
 
+    /** A down tag after a name, or nothing. */
+    tagHtml(ds) {
+        return ds?.tag ? `<span class="network-row-tag">${escapeHtml(ds.tag)}</span>` : '';
+    }
+
+    /** A row's label: its name, the down tag after it, and the line under it. */
+    labelHtml(title, sub, ds) {
+        return `<span class="network-row-label"><span class="network-row-title"><span class="${hostnameClass(title)}">${escapeHtml(title)}</span>${ds?.tag ? ` ${this.tagHtml(ds)}` : ''}</span>
+                        <span class="network-row-name">${escapeHtml(sub)}</span></span>`;
+    }
+
+    /** The reason where a control would be, and the held session it keeps. */
+    downControlHtml(ds) {
+        const kept = ds?.kept ? `<span class="network-row-kept">${escapeHtml(sessionKeptText(ds.kept))}</span>` : '';
+        return `<span class="network-row-control">${ds?.reason ? `<span class="network-row-off">${wordsHtml(ds.reason)}</span>` : ''}${kept}</span>`;
+    }
+
     rowHtml(row) {
         if (row.kind === 'pc') {
             const action = hostAction(row);
+            const ds = downState(row);
             let control;
-            if (action === 'not_responding') {
-                // A session held there is kept (5.2): say so, as a down block's "No route" row does
-                const kept = row.heldAs ? ` (still signed in as ${escapeHtml(row.heldAs)})` : '';
-                control = `<span class="network-row-off">${NOT_RESPONDING_TEXT}${kept}</span>`;
-            } else if (action === 'off') {
-                control = `<span class="network-row-off">${REMOTE_OFF_TEXT}</span>`;
+            if (action === 'not_responding' || action === 'off') {
+                control = null;
+            } else if (action === 'locked') {
+                // UI slice 6: the same padlock "Locked" badge a locked share shows, in place of
+                // the Open button; the server refuses the open until the password is re-entered.
+                // The row also offers Sign in (the remote sign-in screen with the held account
+                // pre-chosen), so a locked remote session is never stranded (review R2 blocker 1).
+                control = lockBadgeHtml('host')
+                    + '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             } else if (action === 'open') {
                 const who = row.session.displayName || row.session.username || 'session';
-                control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open (${escapeHtml(who)})</button>`;
+                control = `<button type="button" class="minigame-button network-row-action" data-action="open">Open <span class="network-row-who">(${escapeHtml(who)})</span></button>`;
             } else {
                 control = '<button type="button" class="minigame-button network-row-action" data-action="sign-in">Sign in</button>';
             }
-            // A PC that is off or not answering is greyed like a no-route row (UX access R2)
-            const down = action === 'not_responding' || action === 'off' ? ' network-row-down' : '';
+            // A powered-down PC is greyed like a no-route row; remote sign-in off stays readable
+            const down = ds.down ? ' network-row-down' : '';
             return `
                 <li class="network-row network-row-host${down}" data-host-id="${escapeHtml(row.id)}" data-kind="pc">
                     <img class="network-row-icon" src="${KIND_ICONS.pc}" alt="">
-                    <span class="network-row-label"><strong>${escapeHtml(row.host || row.id)}</strong>
-                        <span class="network-row-name">${escapeHtml(row.name || '')}</span></span>
-                    <span class="network-row-control">${control}</span>
+                    ${this.labelHtml(row.host || row.id, row.name || '', ds)}
+                    ${control === null ? this.downControlHtml(ds) : `<span class="network-row-control${action === 'locked' ? ' network-row-control-locked' : ''}">${control}</span>`}
                 </li>`;
         }
         const icon = KIND_ICONS[row.kind] || KIND_ICONS.file_share;
@@ -299,16 +511,16 @@ export class NetworkViewMinigame extends MinigameScene {
             // A locked share: a padlock badge where other rows have a button, and the reason
             // under the share's name as a plain line (not three lines of italics)
             control = action === 'locked'
-                ? '<span class="network-row-locked"><img class="network-row-padlock" src="/break_escape/assets/icons/padlock_32.png" alt=""> Locked</span>'
+                ? lockBadgeHtml('share')
                 : '<button type="button" class="minigame-button network-row-action" data-action="open">Open</button>';
         } else {
             control = '<button type="button" class="minigame-button network-row-action" data-action="observe">Look</button>';
         }
         return `
-                <li class="network-row network-row-resource" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
+                <li class="network-row network-row-resource${action === 'locked' ? ' network-row-wide' : ''}" data-resource-id="${escapeHtml(row.id)}" data-kind="${escapeHtml(row.kind || '')}">
                     <img class="network-row-icon" src="${icon}" alt="">
-                    <span class="network-row-label"><strong>${escapeHtml(row.name || row.id)}</strong>
-                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on ${escapeHtml(row.host)}` : ''}</span>${action === 'locked' ? `
+                    <span class="network-row-label"><span class="network-row-resource-title">${wordsHtml(row.name || row.id)}</span>
+                        <span class="network-row-name">${escapeHtml(kindLabel)}${row.host ? ` on <span class="${hostnameClass(row.host)}">${escapeHtml(row.host)}</span>` : ''}</span>${action === 'locked' ? `
                         <span class="network-row-note">${SHARE_LOCKED_TEXT}</span>` : ''}</span>
                     <span class="network-row-control">${control}</span>
                 </li>`;
@@ -319,29 +531,40 @@ export class NetworkViewMinigame extends MinigameScene {
         // UX access R2: the link's name alone as the title; its own network is a block heading
         // like any further network's, so "Wi-Fi: Guest Wi-Fi, on Guest Wi-Fi" no longer repeats
         // and the office network is named beside the networks reached through it.
+        // UX feedback slice 1: one header for every kind; a subtitle that adds what the title
+        // lacks; a Wi-Fi link shows the icon and, once joined, a status line. The inventory
+        // line ("Your drop box on ...") repeated the subtitle, so no view shows it (R1 m1).
         const title = v.name || 'Your link';
-        const ownName = v.network?.name || '';
-        const obs = viewObservations(this.linkObservations());
+        const ownName = OWN_HEADING;
+        const linkDown = downState(v);
+        const subtitle = viewSubtitle(v);
+        const status = this.statusLine();
         const rows = this.rows();
-        this.gameContainer.innerHTML = `
-            <div class="network-view">
-                <div class="network-view-header">
-                    <h4 class="network-view-title">${escapeHtml(title)}</h4>
-                    ${obs ? `<p class="network-view-observations">${escapeHtml(obs)}</p>` : ''}
+        const icon = v.via === 'wifi' ? `<img class="network-view-title-icon" src="${WIFI_ICON}" alt="">` : '';
+        // The name (with its down tag) and the subtitle are the shared bar's title and subtitle
+        this.setConsoleTitle(`${title}${linkDown.tag ? ` ${linkDown.tag}` : ''}`, subtitle || '');
+        const headerHtml = `
+                    ${status ? `<p class="network-view-status">${icon}<span>${escapeHtml(status)}</span></p>` : ''}
                     ${this.message ? `<p class="network-view-message">${escapeHtml(this.message)}</p>` : ''}
-                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}
-                </div>
+                    ${this.stale ? `<p class="network-view-stale">${STALE_TEXT}</p>` : ''}${this.unplugHintHtml()}`;
+        // The strip sits above the scroll area; with no strip (no DOM parent) it heads the list
+        const inList = !this.headerElement;
+        if (!inList) this.showHeader(headerHtml);
+        this.gameContainer.innerHTML = `
+            <div class="network-view${v.via ? ` network-view-${escapeHtml(v.via)}` : ''}">
+                ${inList ? `<div class="network-view-header">${headerHtml}${this.unplugHtml()}</div>` : ''}
                 ${(v.responding !== false && !rows.length && this.ownDownBlock()) ? '' : `<div class="network-block network-block-own">
                     ${ownName ? `<h5 class="network-block-title">${escapeHtml(ownName)}</h5>` : ''}
                     <ul class="network-view-rows">
                     ${v.responding === false
-                        ? `<li class="network-row-empty network-row-off">${escapeHtml(linkOffText(v.sourceHost))}</li>`
+                        ? `<li class="network-row-empty network-row-off">${escapeHtml(linkDown.reason)}</li>`
                         : (rows.length ? this.rowsHtml(rows) : '<li class="network-row-empty">Nothing answers on this network.</li>')}
                     </ul>
                 </div>`}
                 ${this.networkBlocks().map(b => this.blockSectionHtml(b)).join('')}
                 <div class="network-view-notice" aria-live="polite"></div>
             </div>`;
+        if (inList) this.bindUnplug(this.gameContainer);
         const lookup = this.allRows();
         this.gameContainer.querySelectorAll('[data-action]').forEach(btn => {
             const li = btn.closest('[data-host-id], [data-resource-id]');
@@ -349,6 +572,101 @@ export class NetworkViewMinigame extends MinigameScene {
             const row = lookup.find(r => r.id === id);
             if (row) this.addEventListener(btn, 'click', (e) => { e.preventDefault?.(); this.act(row, btn.dataset.action); });
         });
+        this.updateScrollCue();
+        // Images and fonts can change the height after this frame: look again once they settle
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => this.updateScrollCue());
+        this.gameContainer?.querySelectorAll?.('img').forEach(img => {
+            if (!img.complete) this.addEventListener(img, 'load', () => this.updateScrollCue());
+        });
+    }
+
+    /**
+     * Distinct hosts the drawn, live rows stand on (a share or printer counts its host). A
+     * powered-down host does not answer, so it is not counted (code review R1 n3).
+     */
+    reachedHostCount() {
+        return new Set(this.allRows().filter(r => !downState(r).down).map(r => String(r.host || r.id))).size;
+    }
+
+    /** A joined Wi-Fi link's status line, or '' (a link of any other kind, or one that is down). */
+    statusLine() {
+        const v = this.view || {};
+        if (v.via !== 'wifi' || v.responding === false) return '';
+        return joinedStatus(this.reachedHostCount());
+    }
+
+    /** The header's text (title, subtitle, lines) with the Unplug button after it, when offered. */
+    showHeader(html) {
+        if (!this.headerElement) return;
+        const full = `${html}${this.unplugHtml()}`;
+        this.headerElement.innerHTML = full;
+        if (this.headerStrip) this.headerStrip.hidden = !full.trim();
+        this.bindUnplug(this.headerElement);
+    }
+
+    /**
+     * A view opened from the inventory has no Unplug (the box can only be pulled out at its
+     * jack), so a plugged-in jack box says where: its link's name ends with the room and the
+     * port ("Drop box: Desks, Spare wall port"). Fix round 1, nit.
+     */
+    unplugHintHtml() {
+        if (this.unplugJack) return '';
+        const f = this.links()?.get?.(this.footholdId);
+        if (!f || f.via !== 'jack' || typeof f.name !== 'string') return '';
+        const where = f.name.includes(': ') ? f.name.slice(f.name.indexOf(': ') + 2).trim() : '';
+        if (!where) return '';
+        return `<p class="network-view-hint">${escapeHtml(`You can unplug the box at its port (${where}).`)}</p>`;
+    }
+
+    unplugHtml() {
+        if (!this.unplugJack) return '';
+        const label = this._unplugging ? UNPLUGGING_TEXT : UNPLUG_TEXT;
+        return `
+                    <div class="network-view-actions"><button type="button" class="minigame-button network-view-unplug" data-unplug${this._unplugging ? ' disabled' : ''}>${label}</button></div>
+                    <p class="network-view-unplug-notice" aria-live="polite"${this.unplugNotice ? '' : ' hidden'}>${escapeHtml(this.unplugNotice || '')}</p>`;
+    }
+
+    bindUnplug(root) {
+        const btn = root?.querySelector?.('[data-unplug]');
+        if (btn) this.addEventListener(btn, 'click', (e) => { e?.preventDefault?.(); this.unplugBox(); });
+    }
+
+    /**
+     * Unplug the box this view was opened at (network-links.js unplugFromView, POST
+     * /network/unplug). The view closes once the box is out ('unplugged': back to the world,
+     * the device in the inventory again); a refusal keeps it open, its message already shown.
+     */
+    async unplugBox() {
+        if (!this.unplugJack || this._unplugging || !this.gameState.isActive) return { action: 'none' };
+        const links = this.links();
+        if (typeof links?.unplugFromView !== 'function') return { action: 'none' };
+        const btn = () => this.container?.querySelector?.('[data-unplug]');
+        this.setUnplugNotice('');
+        this._unplugging = true;
+        if (btn()) { btn().disabled = true; btn().textContent = UNPLUGGING_TEXT; }
+        let out;
+        try {
+            out = await links.unplugFromView(this.unplugJack);
+        } finally {
+            this._unplugging = false;
+        }
+        if (out?.action === 'unplugged' || out?.action === 'not_planted') {
+            this.exitReason = 'unplugged';
+            if (window.MinigameFramework?.currentMinigame === this && !this._ending) this.complete(false);
+            return out;
+        }
+        if (btn()) { btn().disabled = false; btn().textContent = UNPLUG_TEXT; }
+        // A refusal is said here, next to the button, not as a toast over the header (fix round 1, m2)
+        this.setUnplugNotice(out?.message || 'The port did not respond. Try again.');
+        return out;
+    }
+
+    setUnplugNotice(text) {
+        this.unplugNotice = text || '';
+        const el = this.container?.querySelector?.('.network-view-unplug-notice');
+        if (!el) return;
+        el.textContent = this.unplugNotice;
+        el.hidden = !this.unplugNotice;
     }
 
     showNotice(text) {
@@ -371,7 +689,9 @@ export class NetworkViewMinigame extends MinigameScene {
             if (typeof start !== 'function') return false;
             // The view hands over: the screen it opens replaces it, and the trip goes on
             this.exitReason = 'handover';
-            if (action === 'open') start(row.id, footholdId);
+            const from = action === 'open' && typeof row.session?.route?.from === 'string' ? row.session.route.from : null;
+            if (from && typeof window.openFromDesktop === 'function') window.openFromDesktop(row.id, from);
+            else if (action === 'open') start(row.id, footholdId);
             else start(row, footholdId);
             return this.handedOver();
         }
@@ -410,9 +730,16 @@ export class NetworkViewMinigame extends MinigameScene {
             footholdId: this.footholdId,
             status: this.status,
             network: this.view?.network ? { id: this.view.network.id, name: this.view.network.name } : null,
+            title: this.view?.name || null,
+            subtitle: this.view ? viewSubtitle(this.view) : '',
+            // `status` is the load state (loading, ready, gone, error); the header's status line
+            // has its own field (code review R1 m3)
+            statusLine: this.view ? this.statusLine() : '',
+            moreBelow: !!(this.moreElement && !this.moreElement.hidden),
             responding: this.view?.responding !== false,
             message: this.message,
             notice: this.notice,
+            unplug: this.unplugJack ? { jackId: this.unplugJack, selector: '[data-unplug]' } : null,
             rows: this.rows().map(r => (r.kind === 'pc'
                 ? { id: r.id, kind: 'pc', host: r.host || null, name: r.name || null, action: hostAction(r),
                     session: r.session ? (r.session.displayName || r.session.username || null) : null,
@@ -438,7 +765,7 @@ export class NetworkViewMinigame extends MinigameScene {
  * Open the view for a held foothold (network-links.js looks this up on window). Starts no
  * trip: network-links.js has one running already.
  */
-export function startNetworkViewMinigame(footholdId, { message = null } = {}) {
+export function startNetworkViewMinigame(footholdId, { message = null, unplugJack = null } = {}) {
     const framework = window.MinigameFramework;
     if (!framework) {
         console.error('MinigameFramework not available for the network view');
@@ -449,7 +776,8 @@ export function startNetworkViewMinigame(footholdId, { message = null } = {}) {
     return framework.startMinigame('network-view', null, {
         title: name || 'Network link',
         footholdId,
-        message
+        message,
+        unplugJack
     });
 }
 

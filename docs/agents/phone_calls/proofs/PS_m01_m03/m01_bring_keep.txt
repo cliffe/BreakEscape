@@ -1,0 +1,20 @@
+game 2217 (bring_keep)
+optional open: ["collect_office_intel"]
+"opened agent_0x99"
+hub: {"choices":["1. Operation Shatter resolved — I'm ready for debrief","2. I discovered what ENTROPY is planning - Operation Shatter","3. Got any general advice?","4. I'm good for now"],"header":null}
+shot bring_keep_hub
+dialling: {"bar":"CALLING"}
+shot bring_keep_calling
+call: {"bar":"ON CALL | 0:01","subs":["AGENT HAX: It went through. Not on an open line. Come back to HQ."],"choices":["1. On my way."]}
+shot bring_keep_call
+overlay: "BEFORE THE MISSION ENDS | You have done what the mission needs. 1 optional objective is still open: | Collect pieces of office intelligence | End the mission now, or keep going? | Keep going | End the mission now"
+shot bring_keep_overlay
+after Keep going: call-open=true choices=["1. On my way."] debrief=false
+shot bring_keep_kept_going
+after End: mg="PhoneChatMinigame phone-chat" debrief=false
+"no contact agent_0x99"
+thread: {"choices":["1. Operation Shatter resolved — I'm ready for debrief","2. I discovered what ENTROPY is planning - Operation Shatter","3. Got any general advice?","4. I'm good for now"]}
+shot bring_keep_hub_after
+handler /tts:
+"It went through. Not on an open line. Come back to HQ."
+["conversation_closed:agent_0x99@69.7"]

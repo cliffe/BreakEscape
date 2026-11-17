@@ -24,6 +24,11 @@ module BreakEscape
     # `replyToComplaint` are server-only, and a reply's item never carries `fact`.
     POST_KEYS = %w[id text fact date note replyTo].freeze
 
+    # Reactions (FRIENDFACE_REACTIONS_PLAN.md section 5.3): a derivation fault is rescued and
+    # reported so the post's own answer survives, but in the test environment it re-raises unless
+    # a test that stubs the derivation to raise turns this on (and resets it in teardown).
+    mattr_accessor :rescue_reactions_in_test, instance_accessor: false, default: false
+
     def feed_revealed
       player_state['feedRevealed'] = {} unless player_state['feedRevealed'].is_a?(Hash)
       player_state['feedRevealed']
@@ -92,8 +97,41 @@ module BreakEscape
       store[id] = { 'shown' => shown + [post_id], 'at' => now,
                     'seq' => AccessWork.feed_seq_map(entry).merge(post_id => seq), 'to' => to }
       save!
-      answer = feed_answer(npc, post_id, shown.length, seq: seq, to: selected['to'])
-      { status: :ok, body: (answer || {}).merge('npcId' => id, 'done' => done) }
+      # Reactions: the pre-write map plus the one new entry equals revealed_map of the written store
+      served = AccessWork.feed_posts(npc).find { |p| p['id'] == post_id }
+      map = revealed.merge(post_id => { 'npc' => id, 'seq' => seq,
+                                        'to' => selected['to'].is_a?(Hash) ? selected['to']['post'] : nil,
+                                        'reply' => AccessWork.reply_post?(served) })
+      answer = feed_answer(npc, post_id, shown.length, seq: seq, to: selected['to'], revealed: map)
+      body = (answer || {}).merge('npcId' => id, 'done' => done)
+      if answer
+        list = answer_reactions(store, map, post_id)
+        body['reactions'] = list unless list.empty?
+      end
+      { status: :ok, body: body }
+    end
+
+    # The answer's `reactions` (section 5.3): every reaction that comes out with the post just
+    # served, in key order, then target id, then reactor id. Rescued and reported; [] on a fault.
+    def answer_reactions(store, map, post_id)
+      found = with_reactions_rescue(post_id) { AccessWork.feed_reactions(scenario_data, store, revealed: map, via: post_id) }
+      return [] unless found
+
+      found.flat_map { |t, list| list.map { |r| { 'postId' => t, 'npc' => r['npc'], 'person' => r['person'], 'key' => r['key'] } } }
+           .sort_by { |r| [AccessWork::REACTION_KEYS.index(r['key']), r['postId'], r['npc']] }
+    end
+
+    # Runs the derivation; on a fault, reports it and returns nil (re-raises in test unless the
+    # rescue is turned on). Rails 7.0's reporter does nothing without a subscriber, so the log line
+    # is the record an operator and the live proof read.
+    def with_reactions_rescue(post_id)
+      yield
+    rescue StandardError => e
+      raise if Rails.env.test? && !BreakEscape::SocialFeed.rescue_reactions_in_test
+
+      Rails.error.report(e, handled: true, context: { game_id: id, post_id: post_id })
+      Rails.logger.error("[reactions] derivation failed for game #{id} post #{post_id.inspect}: #{e.class}: #{e.message}")
+      nil
     end
 
     # The feedPosts block GET /scenario carries (9.4): per NPC with a post out, its site and
@@ -103,6 +141,9 @@ module BreakEscape
       store = player_state['feedRevealed']
       return {} unless store.is_a?(Hash)
 
+      # One revealed map for the whole block, handed to every feed_answer and to the reactions
+      map = AccessWork.revealed_map(scenario_data, store)
+      reactions = with_reactions_rescue(nil) { AccessWork.feed_reactions(scenario_data, store, revealed: map) } || {}
       store.each_with_object({}) do |(id, entry), out|
         npc = scenario_room_npc(id)
         next unless npc && entry.is_a?(Hash) && AccessWork.feeds?(npc)
@@ -123,7 +164,13 @@ module BreakEscape
           target = AccessWork.reply_post?(raw) ? AccessWork.reply_target(scenario_data, npc, raw, tos) : nil
           next if AccessWork.reply_post?(raw) && target.nil?
 
-          feed_answer(npc, pid, i, seq: seqs[pid] || 0, to: target)&.slice(*FEED_ITEM_KEYS)
+          item = feed_answer(npc, pid, i, seq: seqs[pid] || 0, to: target, revealed: map)&.slice(*FEED_ITEM_KEYS)
+          # Reactions merge after the slice, so FEED_ITEM_KEYS is unchanged
+          rx = reactions[pid]
+          if item && rx && !rx.empty? && map[pid] && map[pid]['npc'] == id
+            item['reactions'] = rx.map { |r| r.slice('npc', 'person', 'key') }
+          end
+          item
         end
         out[id] = { 'site' => feed['site'], 'person' => feed['person'],
                     # C2 R2 nit: feed_shown_ids drops a saved id the scenario no longer has
@@ -137,8 +184,8 @@ module BreakEscape
     FRIENDFACE_PHONE = 'phone_friendface'.freeze
 
     # The Friendface phone the player holds for `npc_id` (nil: the player's own phone, one with no
-    # phoneOf), or nil. Reads the server's inventory, and counts only a phone the scenario declares
-    # (review R1 m1: an unsourced room add cannot mint one); phoneOf is a field a client-built item
+    # owner), or nil. Reads the server's inventory, and counts only a phone the scenario declares
+    # (review R1 m1: an unsourced room add cannot mint one); owner is a field a client-built item
     # can never carry.
     def held_friendface_phone(npc_id)
       declared = declared_friendface_phones
@@ -186,7 +233,7 @@ module BreakEscape
       return true if gifted
       # Review R2 n3, R3 n3: scenario_room_npc asks this on every call; skip the scenario walk in
       # held_friendface_phone unless the inventory holds a Friendface phone of this NPC's (the
-      # player's own phone, with no phoneOf, never brings the walk back)
+      # player's own phone, with no owner, never brings the walk back)
       return false unless Array(player_state['inventory']).any? do |i|
         i.is_a?(Hash) && i['type'] == FRIENDFACE_PHONE && friendface_owner(i) == npc_id
       end
@@ -294,7 +341,7 @@ module BreakEscape
     end
 
     def friendface_owner(item)
-      item['phoneOf'].is_a?(String) && !item['phoneOf'].empty? ? item['phoneOf'] : nil
+      item['owner'].is_a?(String) && !item['owner'].empty? ? item['owner'] : nil
     end
 
     # The first social site in the scenario's osint block, or nil
@@ -331,7 +378,7 @@ module BreakEscape
     # 'npc' => named NPC }: the item gains post.replyTo, replyToNpc, replyToPerson, namedNpc and
     # namedPerson, `{name}` is filled with the named NPC's Friendface name as plain text, and
     # `fact` is never carried. nil for a reply whose thread poster is unknown.
-    def feed_answer(npc, post_id, reveal_index, seq: nil, to: nil)
+    def feed_answer(npc, post_id, reveal_index, seq: nil, to: nil, revealed: nil)
       raw = AccessWork.feed_posts(npc).find { |p| p['id'] == post_id }
       reply = AccessWork.reply_post?(raw)
       post = raw ? raw.slice(*(POST_KEYS - %w[replyTo])).select { |_k, v| v.is_a?(String) } : {}
@@ -340,7 +387,8 @@ module BreakEscape
       if reply
         return nil unless to.is_a?(Hash)
 
-        rec = AccessWork.revealed_map(scenario_data, player_state['feedRevealed'])[to['post']]
+        revealed = AccessWork.revealed_map(scenario_data, player_state['feedRevealed']) unless revealed.is_a?(Hash)
+        rec = revealed[to['post']]
         poster = rec && AccessWork.room_npc(scenario_data, rec['npc'])
         named = AccessWork.room_npc(scenario_data, to['npc'])
         return nil unless poster && named

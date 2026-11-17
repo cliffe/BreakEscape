@@ -1,0 +1,13 @@
+{
+  "key": "4384341637cae514c4ded57732bd4c64",
+  "npc": "ernesto_bautista",
+  "text": "Eleven lab runs tonight. All on paper.",
+  "voice": "Algieba",
+  "style": "Hospital night porter, early sixties, Filipino-British, thirty years in the job. Warm and unhurried, dry humour, a soft Filipino lilt over a Midlands base. Never raises his voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-16",
+  "recorded_at": "2026-11-16T02:33:24Z"
+}

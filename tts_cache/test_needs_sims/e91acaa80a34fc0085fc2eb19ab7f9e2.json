@@ -1,0 +1,13 @@
+{
+  "key": "e91acaa80a34fc0085fc2eb19ab7f9e2",
+  "npc": "amara",
+  "text": "It was. New headsets for the team.",
+  "voice": "Aoede",
+  "style": "Office administrator, thirties, British Nigerian, London accent. Warm and quick.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T12:09:09Z"
+}

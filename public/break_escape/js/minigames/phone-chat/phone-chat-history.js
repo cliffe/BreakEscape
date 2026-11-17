@@ -173,7 +173,8 @@ export default class PhoneChatHistory {
      */
     getUnreadCount() {
         const history = this.loadHistory();
-        return history.filter(msg => !msg.read && msg.type === 'npc').length;
+        return history.filter(msg => !msg.read &&
+            (msg.type === 'npc' || (msg.type === 'call' && msg.callEvent === 'missed'))).length;
     }
     
     /**
@@ -185,7 +186,7 @@ export default class PhoneChatHistory {
         let markedCount = 0;
         
         history.forEach(msg => {
-            if (!msg.read && msg.type === 'npc') {
+            if (!msg.read && (msg.type === 'npc' || msg.type === 'call')) {
                 msg.read = true;
                 markedCount++;
             }
@@ -270,7 +271,7 @@ export default class PhoneChatHistory {
         
         history.forEach((original, index) => {
             const message = { ...original, ...displayPhoneLine(original.type, original.text, npc) };
-            const speaker = message.type === 'npc' ? npcName : message.type === 'narrator' ? 'Narrator' : 'You';
+            const speaker = message.type === 'npc' ? npcName : message.type === 'narrator' ? 'Narrator' : message.type === 'call' ? 'Phone' : 'You';
             const timestamp = includeTimestamps ? ` [${this.formatTimestamp(message.timestamp)}]` : '';
             
             text += `${speaker}${timestamp}:\n`;

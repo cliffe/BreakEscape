@@ -1,0 +1,13 @@
+{
+  "key": "9a3cb3078ad8b2270a56b973c5a292ee",
+  "npc": "neil",
+  "text": "Back again? What's up?",
+  "voice": "Umbriel",
+  "style": "IT support engineer, mid forties, white British, Geordie accent. Dry, settled, unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "test_needs_sims",
+  "source": "generate",
+  "generated": "2026-11-15",
+  "recorded_at": "2026-11-15T18:05:53Z"
+}

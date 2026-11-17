@@ -67,3 +67,20 @@ test('cloner click while an RFID minigame is closing opens a fresh one', () => {
     const { started } = run({ _sceneType: 'rfid', _ending: true });
     assert.equal(started.length, 1);
 });
+
+// UX slice 3a R5: the tray copier's Read said "No keycards in inventory" with one held
+test('the tray copier opens with the held keycards for its Read list', () => {
+    const started = [];
+    const badge = { scenarioData: { type: 'keycard', name: 'Visitor card', card_id: 'v1' } };
+    const win = { MinigameFramework: withCurrent(null), startRFIDMinigame: (...a) => started.push(a),
+        inventory: { items: [{ scenarioData: { type: 'rfid_cloner' } }, badge, { scenarioData: { type: 'notes' } }, null] } };
+    clonerBranch()({ objectId: 'inventory_rfid_cloner', scenarioData: { type: 'rfid_cloner' } }, win);
+    assert.equal(started.length, 1);
+    assert.deepEqual(started[0][2].availableCards, [badge]);
+    assert.equal(started[0][2].hasCloner, true);
+    // No inventory at all: an empty list, not a throw
+    started.length = 0;
+    clonerBranch()({ objectId: 'inventory_rfid_cloner', scenarioData: { type: 'rfid_cloner' } },
+        { MinigameFramework: withCurrent(null), startRFIDMinigame: (...a) => started.push(a) });
+    assert.deepEqual(started[0][2].availableCards, []);
+});

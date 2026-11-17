@@ -111,9 +111,9 @@ VAR neth_plans_asked = false
 === briefing_name ===
 Director Magnus Netherton: An archive in Helena, last night, gave us three things. The first is a name.
 Director Magnus Netherton: The Architect is Dr Adrian Tesseract. We proved it from his own hand.
-Agent HaX: Our former chief strategist. He trained me, and half the field. He walked out seven years ago.
+agent_0x99: Our former chief strategist. He trained me, and half the field. He walked out seven years ago.
 + [You knew him well, then.]
-    Agent HaX: Well enough to know he's expecting us.
+    agent_0x99: Well enough to know he's expecting us.
     -> briefing_stakes
 + [What's the second thing?]
     Director Magnus Netherton: The hour.
@@ -144,11 +144,11 @@ Director Magnus Netherton: Full disclosure is one researcher, one flaw, publishe
 === briefing_invite ===
 {
 - not m09_completed:
-    Agent HaX: He rang me last night. He called me Ninety-nine. Nobody has since the course.
+    agent_0x99: He rang me last night. He called me Ninety-nine. Nobody has since the course.
 - else:
-    Agent HaX: He rang me last night, and asked for 0x00 by name.
+    agent_0x99: He rang me last night, and asked for 0x00 by name.
 }
-Agent HaX: The door will open for 0x00, he says. We should take our time getting there.
+agent_0x99: The door will open for 0x00, he says. We should take our time getting there.
 + [He wants us there?]
     Director Magnus Netherton: He has invited us. We are going in anyway, because the alternative is six o'clock.
 + [It's a trap.]
@@ -195,7 +195,7 @@ Agent 0x2D 'Anchor': For the record, I'd go in at noon tomorrow with twice the p
     Director Magnus Netherton: Mercer's statement drew us the server hall. It is on the map.
 }
 + [How long have we got?]
-    Agent HaX: Four for their head start. Six for everyone else.
+    agent_0x99: Four for their head start. Six for everyone else.
 + [What do you need from me first?]
     Director Magnus Netherton: The gate terminal. Their monitoring, before anything moves.
 - {not m09_completed and not neth_kow_gone():
@@ -208,7 +208,7 @@ Agent 0x2D 'Anchor': For the record, I'd go in at noon tomorrow with twice the p
     }
 }
 {m07_completed and m07_team_assignment != "trojan_horse":
-    Agent HaX: Day thirteen. Eleven counties.
+    agent_0x99: Day thirteen. Eleven counties.
 }
 ~ briefing_done = true
 Director Magnus Netherton: HaX. Go.
@@ -243,10 +243,10 @@ Director Magnus Netherton: Whoever it is wants the same room you do. Find them b
     Director Magnus Netherton: The arrests start at six, and no sooner. WREN would hear.
 }
 {m09_sleeper_shortlist and not m09_sleeper_named:
-    Agent HaX: Two faces from Helena. Watch both.
+    agent_0x99: Two faces from Helena. Watch both.
 }
 {m08_named_on_evidence and whodunit_live:
-    Agent HaX: You caught the last one on paper. Do it again.
+    agent_0x99: You caught the last one on paper. Do it again.
 }
 -> aside_end
 
@@ -271,7 +271,7 @@ Agent 0x5E 'Lantern': When did you know?
 === aside_double_cross ===
 Narrator: Netherton and HaX walk you to the van end. The team packs without her.
 Director Magnus Netherton: Kowalczyk has gone where he is. You will meet her there before any of us do.
-Agent HaX: If she's in that room, she means it. Get past her. Don't argue with her.
+agent_0x99: If she's in that room, she means it. Get past her. Don't argue with her.
 -> aside_end
 
 // HaX's pointer to the door scene by branch (SE §3.5; OT §3), and the gate
@@ -280,19 +280,19 @@ Agent HaX: If she's in that room, she means it. Get past her. Don't argue with h
 ~ temp neth_branch = door_branch()
 {
 - neth_branch == "shown":
-    Agent HaX: Nightshade's at the table. He's brought his payment.
+    agent_0x99: Nightshade's at the table. He's brought his payment.
 - neth_branch == "unshown":
-    Agent HaX: Nightshade's at the table. He asked for you.
+    agent_0x99: Nightshade's at the table. He asked for you.
 - neth_branch == "arrested":
-    Agent HaX: They've brought Nightshade up in cuffs. He asked for you.
+    agent_0x99: They've brought Nightshade up in cuffs. He asked for you.
 }
 ~ aside_done = true
 // R38: flag 1's reason, said once to every player. Their cameras watch the gate until we own their monitoring.
-Agent HaX: Start the gate console on your way past. Their cameras and doors watch this gate until we're inside their monitoring. It's slow to boot.
+agent_0x99: Start the gate console on your way past. Their cameras and doors watch this gate until we're inside their monitoring. It's slow to boot.
 // Scenario design R2 m4: on the silent branch Netherton asks his question now. R3 n1: HaX's van line
 // comes after the console line, so his "He…" follows a line about Nightshade.
 { neth_branch == "silent":
-    Agent HaX: Nightshade's in the van.
+    agent_0x99: Nightshade's in the van.
     -> tether
 }
 ~ neth_quiet = true

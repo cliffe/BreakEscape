@@ -1,0 +1,13 @@
+{
+  "key": "884376a744da2903b1153eaba883ecdc",
+  "npc": "sarah_mitchell",
+  "text": "Bed 2's pump argued with the chart? Come and tell me what it said.",
+  "voice": "Kore",
+  "style": "Black British charge nurse in her mid-40s, calm, tired but professional. Speak with a consistent Leeds, West Yorkshire accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "sis01_healthcare",
+  "source": "generate",
+  "generated": "2026-11-13",
+  "recorded_at": "2026-11-13T16:57:55Z"
+}

@@ -1,0 +1,9 @@
+{
+  "display_name": "Test: Needs under attack",
+  "description": "Probe of the NPC needs system under combat and knock-out (OFFICE_LIFE_SIMS_BUILD_PLAN SIMS-1). Seven office staff get thirsty, caffeinated and tidy; the player can attack and knock them out mid-errand and watch what drops, what resumes, and what survives a reload. Nothing to solve.",
+  "difficulty_level": 1,
+  "collection": "test_scenarios",
+  "estimated_duration_minutes": 6,
+  "test_type": "npc_needs",
+  "test_objective": "Prove needs NPCs behave under attack: a walking NPC turns hostile and aborts its carry; a knock-out drops the held item once and survives a reload; a hostile-from-start NPC never starts a job; a sight catch fires on a walking NPC; a knocked-out partner's coupled partner breaks alone; a still NPC knocked out before its print reveals nothing; a reload before a revealed page is taken clears the tray"
+}

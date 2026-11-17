@@ -26,6 +26,9 @@
 #   -j N   files to run at once (default: $TEST_JS_JOBS, else 4)
 #   -v     print the output of passing files too (failures are always printed)
 #   file   test files to run (default: test/js/*.test.mjs)
+# Memory: each file runs with a V8 heap cap of $TEST_JS_MAX_OLD_SPACE MB (default
+# 2048), so a runaway test fails on its own instead of exhausting the machine and
+# getting the editor killed for running out of memory.
 # Exit status: 0 if every file passed, 1 if any failed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
@@ -49,6 +52,9 @@ export out
 
 # The OS temp dir the fixtures mkdtemp under; a module reported missing when
 # "imported from <tmp>/..." is a transient fixture-resolution race, not a real bug.
+heap_mb=${TEST_JS_MAX_OLD_SPACE:-2048}
+export heap_mb
+
 tmp=$(node -p 'require("os").tmpdir()' 2>/dev/null || echo /tmp)
 export tmp
 
@@ -58,7 +64,7 @@ run_one() {
   start=$(date +%s)
   attempt=1
   while :; do
-    node "$f" >"$out/$b.log" 2>&1
+    node --max-old-space-size="$heap_mb" "$f" >"$out/$b.log" 2>&1
     code=$?
     if [ "$code" -ne 0 ] && [ "$attempt" -lt "${TEST_JS_RETRIES:-3}" ] \
        && grep -q "ERR_MODULE_NOT_FOUND" "$out/$b.log" \

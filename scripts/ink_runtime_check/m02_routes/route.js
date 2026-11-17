@@ -28,17 +28,9 @@ const MISSION = 'scenarios/m02_ransomed_trust';
 const DIR = path.join(REPO, MISSION, 'ink');
 const FILES = { briefing: 'm02_opening_briefing', debrief: 'm02_closing_debrief', phone: 'm02_phone_agent0x99' };
 
-const RUBY = `
-require 'erb'; require 'json'
-class R
-  def vm_context; nil; end
-  def vm_object(t, f = {}); f.to_json; end
-  def flags_for_vm(v, f = []); f.to_json; end
-  def vm_flags_json(v, f = []); f.to_json; end
-  def b; binding; end
-end
-print ERB.new(File.read(ARGV[0])).result(R.new.b)`;
-const scenario = JSON.parse(execFileSync('ruby', ['-e', RUBY, path.join(REPO, MISSION, 'scenario.json.erb')], { encoding: 'utf8' }));
+// Plan step 5: one binding for every renderer. Renders through the server's BreakEscape::ScenarioBinding.
+const RUBY = `print BreakEscape::ScenarioBinding.render(File.read(ARGV[0]))`;
+const scenario = JSON.parse(execFileSync('ruby', ['-r', path.join(REPO, 'lib/break_escape/scenario_binding.rb'), '-e', RUBY, path.join(REPO, MISSION, 'scenario.json.erb')], { encoding: 'utf8' }));
 const G = Object.assign({}, scenario.globalVariables);
 const route = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 Object.assign(G, route.globals || {});

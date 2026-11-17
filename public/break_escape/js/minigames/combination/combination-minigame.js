@@ -1,7 +1,9 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class CombinationMinigame extends MinigameScene {
+    // The X sits inside the frame (MinigameScene.closeInsideFrame)
+    static closeInsideFrame = true;
     constructor(container, params = {}) {
         super(container, {
             ...params,
@@ -219,6 +221,13 @@ export class CombinationMinigame extends MinigameScene {
     _refreshDials(opened = false) {
         for (let i = 0; i < 3; i++) this._updateDialDisplay(i, opened);
         this._updateDirectionIndicator(opened);
+        // When the next dial takes over, bring it on screen: on a phone the dials stack and
+        // the frame scrolls (critique A01)
+        if (!opened && this._shownActive !== this.activeDial) {
+            this._shownActive = this.activeDial;
+            const group = this.gameContainer.querySelector(`#comb-dial-${this.activeDial}`);
+            try { group?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' }); } catch { /* old browser */ }
+        }
     }
 
     _updateDialDisplay(dialIndex, opened = false) {
@@ -329,8 +338,9 @@ export class CombinationMinigame extends MinigameScene {
             const combinationStr = this.dials.join('-');
             console.log('Validating combination with server:', { targetType, targetId, combination: combinationStr });
 
-            const apiClient = window.ApiClient || window.APIClient;
-            const response = await apiClient.unlock(targetType, targetId, combinationStr, 'combination');
+            // Through the shared object-unlock retry so a correct combination on a route-room
+            // object is not refused during the pre-promotion window (§3.6).
+            const response = await unlockWithRouteRoomRetry(targetType, targetId, combinationStr, 'combination');
 
             if (response.success && response.hasContents && response.contents && lockable.scenarioData) {
                 lockable.scenarioData.contents = response.contents;
@@ -347,6 +357,7 @@ export class CombinationMinigame extends MinigameScene {
             const refusal = lockScopeRefusal(error);
             if (refusal) {
                 this.scopeRefusal = refusal;
+                this.scopeRefusalLine = lockScopeRefusalLine(error);
                 return false;
             }
             // A 5xx is a server fault, not a wrong answer (code review R3 n3): it takes the
@@ -365,7 +376,7 @@ export class CombinationMinigame extends MinigameScene {
     // Says why and closes as cancelled, counting no attempt (as the PIN pad does)
     _handleScopeRefusal(reason) {
         this.isLocked = true;
-        this._setStatus(LOCK_SCOPE_REFUSAL_TEXT[reason], '');
+        this._setStatus(this.scopeRefusalLine || LOCK_SCOPE_REFUSAL_TEXT[reason], '');
         this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
         setTimeout(() => this.complete(false), 2000);
     }
