@@ -74,3 +74,36 @@ Ama (phone):
 - Credits (scenario music event, not spoken) "Door controller: reached through the partner's PC, signed in with the password from facilities.txt"
 
 Verification: validator 0 errors, 11 warnings (same set); dialoguelint clean; inkcheck clean on ama and ama_phone; loopcheck over about 30 flag sets (fresh, short, full, unplugged on each route, lost, lost and back, all eight done) no errors; scripted ink driver output read for the W4/W6b/W7/W9/W14/W19 cases and all D5 branches; demo_access_tour*_test.rb 77 runs 0 failures; validator-network-model.test.mjs all pass; scoped corpus (tmp/handover/demo_access_build/slice5_fix_corpus.txt) 23 runs, 1 failure, the known m09 stale exceptions only.
+
+
+## R2 fixes (commit af843e03e; review SLICE5_R2_REVIEW.md)
+Files: scenarios/demo_access_tour/ink/ama.ink, ama_phone.ink (and compiled json), docs/achitechture/DEMO_ACCESS_TOUR_PLAN.md. No scenario.json.erb change. Nothing voiced.
+
+| Finding | Fix |
+|---|---|
+| M1 | `not done_t_unplug` dropped from W14a, W14b, W15, W16. W15's second sentence splits on `done_t_unplug`. |
+| M2 | W6b moved below the comms line (W10), above W7; `not done_t_copy_badge` dropped; split on `has_julian_rdp`. |
+| m1 | `VAR told_skip`; skip line shows at most twice; W15 sets no tail. |
+| m2 | D2 full-route reply replaced. |
+| m3 | Route reply, phone opener, M1 rewritten. |
+| m4 | W13 splits on `front_desk_signed_out`. |
+| n2 | hint_open_session says "she". |
+| n3 | D5a add-on reworded. |
+| n4 | Plan W table (W5, W10, W6b, W7, W13 to W15), D2 row, order note and julian_back note updated. |
+
+New or changed lines, verbatim:
+- W6b (Copy player, `has_julian_rdp`): "Julian's session went when you signed out at the front desk." / "Connect again from your keyring and it'll go through the box this time. You'll need it for the door controller."
+- W6b (otherwise): "Julian's session went when you signed out at the front desk." / "To get it back through the box, sign in there, copy his connection file, sign out, then connect from your keyring."
+- W13 (signed out): "Back to the front desk. Sign in again, then see what Delphine's USB ports will take."
+- W13 (not signed out): "Back to the front desk. See what Delphine's USB ports will take."
+- W15 box in: "Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy." / "If she doesn't, carry on. The Wi-Fi stops still work after the box comes out."
+- W15 box out: same first line, then "If she doesn't, carry on to the comms cupboard and come back."
+- Phone opener: "Ask me where next any time."
+- hint_open_session: "The cake might do it too, if she's hungry. The rota board always works."
+- Ama route reply (full): "Ama Owusu: The full walk-round, then. Most people only see half of it."
+- Ama M1: "Ama Owusu: Still going? Your phone will tell you where next."
+- D2 full-route reply: "Ama Owusu: Have a proper look. I'll be in reception when you're done."
+- D5a add-on: "Ama Owusu: Anything you'd reached another way didn't need the box."
+Unchanged text: W14a, W14b, W16 (guard only). No repeats of the new lines found in scenarios/ outside this mission.
+
+Checks: validator (--skip-ink --no-graph) 0 errors; 15 warnings, not 11: the extra four are reception pin-distance warnings from the separate scenario commit fb3ca4751 (counter objects), not from this change. dialoguelint clean, inkcheck and loopcheck clean on ama and ama_phone. inkjs driver over fresh, short, full, full unplugged before the AP, lost via Desktop Connect with Lorna done, lost via Copy, desk-held, all done, plus unplugged AP stages: all read as intended; the skip line stops after two asks.
