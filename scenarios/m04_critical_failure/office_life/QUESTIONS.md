@@ -44,3 +44,10 @@ The cooler's second standing cell is blocked by the coffee table and the planter
 
 - (a) Keep the cooler at one user. No dressing change. **Recommended**: reception stays quiet at four in the morning, and the talk waits for the kettle.
 - (b) Move the planter one tile (a room-dressing change, checked through mission-room-dressing and the object position diff) so the cooler takes a pair (and Joanne no longer draws behind the fig), with a `cooler` pool of four lines each (8 more clips) and early chat in reception.
+
+## Q7. A newcomer struck at the kettle
+
+The chase leash is tied to the newcomer's spawn room (reception) and their last stop. Struck at the ops-office kettle, a newcomer stands there hostile and does not hit back while the player stays in the ops office; if the player then walks into reception close to them (within 160 px), they may follow into reception. They never snap back to the sofa.
+
+- (a) Accept it and record what happens in the attack probe. It only happens after the player has attacked a bystander, the newcomer hits for 4, and the debrief already scolds the attack. **Recommended**.
+- (b) Lower the pair's `aggroDistance` (data only, no engine change) so a follow is less likely. It also makes a newcomer struck in reception slower to react.
