@@ -164,6 +164,10 @@ For each key mark, say in the table "frame at T shows X". Check digits on keypad
 
 `docs/video/takes_<mission>.md`, columns as `takes_v2.md`: id, entry state flags, trimmed length, drop %, A/V offset start/end (ms, corrected), key marks (trimmed seconds, checked against frames), problems. Add "Things to look at first": marks versus picture, spoiler content in the pre-target part of dialogue takes, short walking shots, and what is left running.
 
+## Step 6: finish the take's sidecar
+
+`check-take.mjs` writes a draft **`<take>.take.json`** beside each trimmed take (technical fields and a marks pointer; from `tools/video/capture/sidecar.mjs`). **Every take needs a finished sidecar** before it is catalogued: add `title`, one-line `description`, `characters`, `shot_type`, `spoiler` level, `quality.status`, and the `highlights` (timestamped moments with a 1-5 `trailer_score` - the key field for trailers), then set `_draft:false`. Pick highlight times from the frames you already checked. Keep it secret-free: no code, password, flag or PIN in any field. The footage catalogue is built from these (hacktivity-videos `catalogue/`, see its README).
+
 ## Traps
 
 - **Do not capture during a render, and do not render during a capture.** One at a time.

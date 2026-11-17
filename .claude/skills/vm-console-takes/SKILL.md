@@ -308,6 +308,8 @@ slate**, so `--video-only` finds the two white picture slates instead. A take pa
 
 As with `video-takes`, re-run a failing take; do not tune it. Keep a failed `.check.json` for the log.
 
+`check-take.mjs` also writes a draft **`<take>.take.json`** sidecar beside the trimmed take (`tools/video/capture/sidecar.mjs`). **Every console/solution take needs a finished sidecar** before it is catalogued: set `kind` (`console` for a clean beat, `solution` for the full raw solve), `shot_type` (`console_clean` / `full_solution`), a **neutral** `title`/`description` ("console: full solution, flag 2 stage") with **no** exploit, tool, CVE or technique named, `spoiler` (`major` for a solution, `none` for a clean beat), `quality.status`, `sensitive.needs_mask` with the mask-log filename and `safe_spans`/`mask_spans` (ranges only - never the secret), `thumbnail.t` in a safe span, and the `highlights`; then set `_draft:false`. NEVER a flag, credential or password in any field. The catalogue (hacktivity-videos `catalogue/`) is built from these and may be pushed.
+
 ## Where the footage lives
 
 The durable, git-ignored film folder is **`Hacktivity/tmp/playtest/film/<mission>_trailer/`** (for
