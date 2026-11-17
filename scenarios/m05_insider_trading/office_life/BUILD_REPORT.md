@@ -169,3 +169,36 @@ After a reload (all three `heard_` globals persisted), both staff were using the
 | m4 | Excuse me, I've a parcel to chase. | Thanks. These parcels won't chase themselves. |
 
 m5, m6 and n1 to n4 not applied, as briefed. Ink recompiled. Validator 0 errors, 27 warnings. lock_key_diff empty. V6: 27 clips, all uncached.
+
+## Slice 6: Bernadette Lyons, live checks and close-out
+
+Build commits 7c4adf286 onwards (see git log). Live runs on a keyless server on :3092 (boot log shows the missing-key warning), headless, setFPS(20), fixed steps on, one fresh game per run, ids printed by `new-game.rb`. The engine asks for `/tts` whenever a line shows and the keyless server answers 503, so the scripts abort `/tts` at the network layer (`tools/playtest/m05-ol-lib.mjs`) and nothing requested it by hand. No game row edited. Scripts: `tools/playtest/m05-ol-*.mjs`.
+
+| Check | Games | Result | Evidence |
+|---|---|---|---|
+| E5 skip route, no pop-in after the `door_opened` show | 7287 | PASS | `screenshots/s6-skip-entry-300ms.png`, `s6-skip-evening-break.png` |
+| Day: Bernadette hidden before `server_room_entered`, visible after | 7288, 7366 | PASS | `s6-day-break-room.png`, `s6-day-bpost.png` |
+| Seat: stands at her post (`"seated": false`) | 7298 | PASS | feet (170,225), home (160,224); parks about 25 px short after a trip, the same engine tolerance as other standing NPCs |
+| E7 bins trip: cell (7,6), clear of the vending machine and Lisa's tile | 7300 | PASS | `s6-bernadette-bins.png`; trip at about +150 s, 10 s use, walks back |
+| Talk at post, bins, espresso (no "Failed to load conversation", visemes png and json 200) | 7307 | PASS | `s6-talk-post.png`, `s6-talk-bins.png`, `s6-talk-espresso.png` |
+| `ex_late_again` heard once, persists over a reload | 7308 | PASS | espresso pair, `s6-bernadette-niamh-espresso.png` |
+| Goodbye line reads "Right you are. Mind how you go." (commit 9d1cf74ea) | 7378 | PASS | transcript: opener "Just the bins, love. Don't mind me.", choice "Carry on, I'll stay out of your way.", then the goodbye; `s6-bernadette-choice.png` |
+| KO with a real punch: trouble reaction, credits line | 7316 | PASS | credits "A MEMBER OF STAFF: HURT, ON YOUR ACCOUNT"; `s6-bernadette-ko.png` |
+| Diplomatic debrief with the KO | 7363 | PASS | "You said you'd read the room. Then you put people in it on the floor." Trust 65 after the briefing, 55 at the end (10 lower) |
+| Diplomatic debrief without the KO | 7325, 7354 | PASS | "You said you'd read the room. You did." Trust 65 at the end |
+| Reload, evening (start in break room, `server_room_entered` true) | 7374 | PASS | Bernadette at her post (160,193), visible from the first sampled frame; Niamh at her chair; Thandiwe hidden; 0 page errors; `s6-evening-before-reload.png`, `s6-evening-after-reload.png` |
+| Reload, night (`torres_identified` true) | 7368 | PASS | same positions; Bernadette on her bins/coffee job a few seconds later; Thandiwe hidden; `s6-night-before-reload.png`, `s6-night-after-reload.png` |
+| Reception-start game: Bernadette at (-160,65) in the break room | 7370 | PASS (no pop) | The break room origin is (-320,-128) in that game; (-160,65) is her post (160,193) plus the origin, her `home` is (-160,96) on the same basis. She is visible while the player is still in the corridor because the `door_opened` show fires at the door (5 of 36 samples), at her post, not at the origin |
+| E3 ten needs-minutes, torres set before the break room | 7377 | PASS | 60 steps of 10 s (clock 620 s): Niamh and Bernadette 120 of 120 samples in the break room and visible; corridor sightings 0 of 60; `qdc_cooler_off` true; frame delta mean 17.2 ms; 0 console and page errors |
+| E3, torres set while Niamh was already walking back from a cooler trip | 7376 | PASS with a note | Niamh was in the corridor (x 419 to 341) for the first 5 of 60 samples, finishing a trip that began before the turn, then 55 of 55 in the break room. Bernadette 60 of 60 in the break room. The corridor was empty from then on |
+| Sync request bodies during E3 | 7376 | PASS | PUT sync_state max 6334 bytes (3 puts), POST update_room 125 bytes, unlock 84 bytes; no growth |
+| `bin/test-js` | n/a | PASS | 752 passed, 0 failed, 752 total |
+| Validator | n/a | PASS | 0 errors, 29 warnings (the 4 V4 attack-probe warnings and the onceOnly/plain `room_entered:break_room` pair on Bernadette are expected) |
+| Lock/key diff | n/a | PASS | "lock and key diff: empty" |
+
+Notes
+- Reload within a few seconds of a global change loses it. Games 7366 and 7367 (4 s between `server_room_entered` / `torres_identified` and the reload) came back with both globals false while Bernadette stayed visible; with a 20 s wait (7368, 7374) both globals persisted. This is the synced-state debounce in the engine, not a scenario fault, but a player who reloads straight after the server room can see Bernadette before the flag is back. The next room entry corrects it. No fix proposed here.
+- Knock-out by punch is not deterministic in headless runs: 7354 (31 punches) and 7362 (61) left her hostile but standing, 7316, 7337 and 7363 took 10 to 30. The test script re-approaches every six punches.
+- The first KO attempt of this session (7335, 7337, 7343) never reached the briefing: a game started in the break room does not carry the briefing NPC. Runs that need it use `--carry-npc opening_briefing`.
+- `dungeon_graph.md` and `.html` were regenerated by the validator and kept: the graph in HEAD lacked Bernadette and the bins, so the diff is real (two nodes and their edges, ids renumbered).
+- Games this session: 7335, 7337 (no result), 7343, 7346, 7352, 7353, 7354, 7355, 7362, 7363, 7366 to 7370, 7374, 7376 to 7378.
