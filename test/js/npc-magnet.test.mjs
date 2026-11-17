@@ -214,7 +214,7 @@ test('setting a need above the tempt band cancels a tempted walk already in prog
     assert.equal(o.sys.states.get('tom').job?.targetId === 'cake', false, 'never tempted at 100');
 });
 
-test('a set that leaves the need urgent does not cancel the walk to the magnet; a set below urgentAt still stands for an urgent walk', () => {
+test('a set above the band does not cancel an urgent walk to the magnet', () => {
     const o = office({ tom: { rec: { needs: hunger(30) } } }, { objects: [cake()], arrive: false });
     o.sys.scanMagnets();
     o.know('tom');
