@@ -1,36 +1,49 @@
-# m06 office life: handover (plan phase, stage 0 done, stage 1 in progress)
+# m06 office life: handover (plan phase; Stage 0 complete, design drafted, ANALYSIS/PLAN not yet written)
 
-Branch `plan/ol-m06`, worktree `.claude/worktrees/p-ol-m06`, base main `3e00651a8`. Plan phase only: no build, no servers.
+Branch `plan/ol-m06`, worktree `.claude/worktrees/p-ol-m06`, base main `3e00651a8`. Plan phase only: no build, no servers. Env for rake/validator: `RBENV_VERSION=2.7.8 BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle`. Never stage `dungeon_graph.*`.
 
 ## Done
 
-- Stage 0 baseline files in this folder:
-  - `validator_info_lines.txt` (validator: 0 errors; warnings are music `comment` fields and onceOnly-overlap wiring warnings on `agent_0x99_handler`, all pre-existing).
-  - `v1_summary_base.txt` (11 NPC records, none with needs).
-  - `baseline_locks.json` (13 lock nodes, 0 gates).
-  - `positions_base.txt` (39 rows).
-- Not yet written: `BASELINE.md`, `ANALYSIS.md`, `PLAN.md`, the TTS office-lines count (V6). Env for rake/validator from this worktree: `RBENV_VERSION=2.7.8 BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle`.
+- Stage 0 complete: `BASELINE.md`, `validator_info_lines.txt`, `v1_summary_base.txt` (11 NPCs, no needs), `baseline_locks.json` (13 locks, 0 gates), `positions_base.txt` (39 rows), `v6_office_lines_base.txt` (0 clips).
+- Time of day resolved: evening at a 24-hour exchange (guard "Evening", `ink/m06_npc_checkpoint_guard.ink:49`; "Tonight", `ink/m06_opening_briefing.ink:30`). Not a QUESTIONS item.
+- `trading_workstation` (TRADE-WS-01, `scenario.json.erb:1977`) and `blockchain_workstation` (CHAIN-WS-01, `:2316`) are plain `pc`s: no `lockType`, no owner, no contents, `host` is only a taskbar label (schema `:5495`); m06 declares no networks, no sign-in PCs. So neither is a network host and `offWhen` is allowed on them. Neither is in the walkthrough.
+- A reader digest of the skill references was attempted and not finished; its notes are at `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/ol-m06/HANDOVER.txt` (line refs for mapping-patterns, gotchas, recipes, checklists, m05 PLAN headings `scenarios/m05_insider_trading/office_life/PLAN.md` :1 to :407, m02 sync table :346 to :364, m03 plan is `docs/achitechture/M03_OFFICE_LIFE_PLAN.md`). Rendered scenario JSON: same folder, `m06.json`.
 
-## Findings so far (for ANALYSIS.md)
+## Facts gathered (for ANALYSIS.md)
 
-- No `gameClock`; `npcThoughts: false`; `disableAttacks` not set; `officePresets` not set.
-- `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md:341` and `:629` already set m06's intended scope: Tier 2 in existing rooms; declare the floor's coffee point, copier and every same-image monitor twin; Dani and Priya posted and leashed with screen and print habits on their own PCs (the first openings); a seen-only cake magnet that draws Dani or Priya from a desk and opens a screen-habit window (first lever with a payoff; needs a hunger source or tempt band, `cake_servings` global, an in-world source for the cake; non-monotonic global, sync note required, `:660`); print-and-forget with fetch errands; one or two Dani and Priya exchanges; desk-phone call to prove (`:376`, `:480`). SIMS-5 "leftover pizza, for m06" (`:707`); the lab Tiled map has `pizza_boxes1`. Line 341 calls the setting "a crypto exchange late at night, still staffed"; check the mission text for time of day (the brief says a routine FCA visit).
-- Rooms (linear): reception_lobby (water cooler, reception desk, no receptionist) to security_checkpoint (water cooler; guard patrols with LOS) to trading_floor (key lock; Tiled: coffee_station1, photocopier1, mini_fridge1, phone1, phone3, 8 chairs, 4 desks, many pcs) with blockchain_lab east (open; pizza_boxes1, coffee_cups, energy cans, no machine), irina_office west (RFID), server_room north (password) to data_center (PIN) to executive_wing (RFID; Kemal, hostile patrol, holds `ceo_office_key`) to satoshi_office (key).
-- Cast classes (draft):
-  - `irina_volkova`: holding (itemsHeld: `m06_cto_badge` cloned by RFID proximity "while she talks", password wordlist, executive badge); key source; plot-located. No needs.
-  - `trader_npc` Dani Okonkwo (5,7) trading floor: optional task `question_the_trader` (`scenario.json.erb:386`), no itemsHeld, no NPC chatBackground, no Background lines found. Voice style says "jittery on caffeine". First-meeting narrator line places him at his charts (`ink/m06_npc_trader.ink:33`); "my desk" lines (`:106`, `:256`) are general. Candidate free NPC under D84: own-room coffee trip, found at post first via a first-talk gate. Check `trader_spoken` (`conversation_closed:trader_npc` onceOnly, HaX mapping 52) and `taskOnKO` for V2.
-  - `blockchain_analyst` Priya Raghavan (6,4) lab: optional task, narrator line places her at the monitor on first meeting (`ink/m06_npc_analyst.ink:43`). Lab has no machine; a trip would leave her room (V2 check needed) or need a declared lab object.
-  - `checkpoint_guard`, `satoshi_minder`: patrol/LOS, never needs. `satoshi_nakamoto`: confrontation, plot-located. Lobby HaX/Netherton/Nightshade/debrief records: cutscene or phone, never.
-- Existing trouble global usable for `offWhen`: `cover_strained` (set by KOs of trader, analyst, Irina, guard; HaX mappings 66 to 73). Irina-fate globals `irina_arrested`, `irina_taken` give exchange gates (Dani already reacts: "They walked Irina out past my desk").
-- Awareness cast atlases all have seated and pose frames and visemes, except `delphine_reception` (no atlas). Already used: graham_whitfield, fatima_begum (m01), zainab_hussain, yusuf_demir (m03), niamh_doherty, thandiwe_moyo (m05). m06 voices in use: Kore, Puck, Leda, Iapetus, Umbriel, Alnilam, Aoede, Charon, Enceladus (so avoid jun_watanabe/Puck, nilesh_solanki/Iapetus, graham_whitfield/Umbriel, yusuf_demir/Alnilam, anjali_rao/Kore, niamh/Leda). Draft picks for two floor extras: Lerato Dlamini (30s, South African, Gacrux) and Tomasz Wisniewski (50s, Polish-British, Algieba), jobs adapted to the exchange; alternatives Joanne Pell (late 40s, Zephyr), Sofia Marchetti (30s, Despina), Julian Sallow (60s, Rasalgethi).
-- Template to follow: `scenarios/m05_insider_trading/office_life/PLAN.md` (sections 0 to 10, built and reviewed); m02 `PLAN.md` for levers/openings framing.
+- NPC records (`scenario.json.erb`): opening_briefing_npc :870, director_netherton :903, agent_nightshade :922, agent_0x99_handler :939 (start room, phone/hub, all HaX mappings), closing_debrief_person :1683, checkpoint_guard :1767 (patrol :1788, los :1799), irina_volkova :1869 (itemsHeld 3, key source, required `meet_irina`, badge cloned while she talks `ink/m06_npc_irina_volkova.ink:225`), trader_npc :1951, blockchain_analyst :2290, satoshi_minder :2433 (patrol, challengeOnSight :2488), satoshi_nakamoto :2595.
+- Dani (`trader_npc`, (5,7) trading floor, sprite `dani_okonkwo`, Puck "jittery on caffeine") and Priya (`blockchain_analyst`, (6,4) lab, `priya_raghavan`, Leda): optional tasks only (`question_the_trader`, `question_the_analyst`), no itemsHeld, no NPC chatBackground, no `Background[` lines, no own eventMappings. HaX holds `conversation_closed:trader_npc`/`:blockchain_analyst` (set `trader_spoken`/`analyst_spoken`) and their KO mappings. V2 (`scripts/validate_office_life.rb:436`) is clear for both: no required task, no conversation-mode mapping, not key sources. D78 class: free (open-conversation rule holds). Only location lines are first-meeting narrator lines (`ink/m06_npc_trader.ink:36` "watches six price charts", `ink/m06_npc_analyst.ink:42` "bent over a wall-sized monitor"), so found-at-post-first via a first-talk break covers them. Dani's `:106` "walked Irina out past my desk" is past tense.
+- `cover_strained` is read by Irina's badge trust threshold (`ink/m06_npc_irina_volkova.ink:336`, `:351`), Kemal and Satoshi. Office life must NOT set it. Use a new trouble global `floor_staff_ko` (set by appended HaX mappings on `npc_ko` of trader_npc, blockchain_analyst, irina_volkova and the two extras; cooldown-only, not onceOnly) as the single `offWhen` on floor machines.
+- `find_transaction_records` collects `blockchain_evidence` (Priya's write-up); `daily_trading_report` is a clue (`entropy_wallets_known`). No office-life text may carry wallet names or substitute for either.
+- Trading floor Tiled (`public/break_escape/assets/rooms/room_hce_trading.json`, x,y in tiles, y = bottom): items photocopier1 (1.1,7.6), coffee_station1 (2.3,7.6), mini_fridge1 (3.1,7.5), 8 chair-grey-4; table_items pc10 (5.9,3.5) = trading_workstation, pc6 x3 (7.0,3.5)(1.3,5.2)(6.6,5.2), pc8 x2, pc11 x2, laptop1 (2.8,3.6) unique, phone1 (7.6,3.6), phone3 (7.6,5.2); `hce_trading_station1` (6.1,7.7) is in the `tables` layer (cannot be claimed, `core/rooms.js:2139`). Lab (`room_hce_lab.json`): pc10 (1.5,4.4) = blockchain_workstation, pizza_boxes1 (2.8,9.2) in items, no machine. Script: scratchpad `ol-m06/tiled.py`.
+- Desk phone: `deskPhone: true`, `officeType: "desk_phone"`, owner, within 1.5 tiles of owner post; a spare phone with `triggerOnInteract: [{type: emit_event, event_name: "desk_phone_ring:<id>"}]` is the lever (`scenarios/test_needs_sims/scenario.json.erb:238` to `:262`). `answersPhones: true` (schema `:4941`) makes an idle colleague in the same room walk over from the second ring.
+- Magnet shape: `scenarios/test_needs_sims/scenario.json.erb:93` to `:104` (`affordance.satisfies ["hunger","social"]`, `magnet {tempt, servings, perPerson, announce, newsRadius}`, `<id>_servings` declared, `grumble_gone` pool). Omit `announce` for seen-only.
+- Print habit (schema `:4420`): fetch carries the page back to the needsHome object, so give print habits only to NPCs whose home is an object.
+- Extras: Lerato Dlamini (`lerato_dlamini`, Gacrux) and Tomasz Wisniewski (`tomasz_wisniewski`, Algieba); atlases have 8 sit, use, phone and drink frames each (as do Dani and Priya), so no art. Voices unused in m06. Coordinator (AC0) asked: put final cast picks at the TOP of QUESTIONS.md; do not use the Office Life Tour cast (Chidi Okeke, Jun Watanabe, Graham Whitfield, Agnieszka Duda, Zainab Hussain).
+- `creditsOverlay` has no conditional lines (schema `:126` to `:133`), so no KO credits line is possible; say so in the plan.
+
+## Draft design (write into ANALYSIS.md then PLAN.md)
+
+Tier: 2 in existing rooms plus two ambient extras, no new room. Cast: Irina, guard, Kemal, Satoshi, lobby records stay put, no needs.
+
+- Dani: free, moved. Home tile {trading_floor,5,7}. Needs coffee (coffee_station) and hunger (mini_fridge, pizza); leash `needsRooms [trading_floor]`. Found at post first: `initial` 100, slow decay, plus a once-only first-talk break on his own `conversation_closed:trader_npc` (delayMs 2000) setting coffee and hunger into range. Owner of `trading_workstation` with `habits.screen` and readable `textVariants` (lore only). No answersPhones, interests or workarounds.
+- Priya: same pattern; home tile {blockchain_lab,6,4}; `needsRooms [blockchain_lab, trading_floor]`; owner of `blockchain_workstation`, readable lore.
+- Precondition to verify in build slice 3 (cannot measure now): `<pc>_owner_away` follows owner `atPost` when needsHome is a tile and the PC is elsewhere. Fallback: drop that NPC's screen, never move its post.
+- Lerato (extra, late-desk market operations): home a declared `pc6` at (7.0,3.5) with seat; declare the other two pc6 twins `decor: true`; owns desk phone `phone1` (`lerato_phone`). Coffee, hunger. Print fetch errand (never forgotten).
+- Tomasz (extra, evening settlements clerk): home `laptop1` (owner, screen habit, readable lore), `answersPhones: true`; print habit with one forgotten printout (lore page) on the copier, triggered once on `conversation_closed:irina_volkova`.
+- Machines: `officePresets: true`; declare `coffee_station`, `photocopier`, `mini_fridge` by base name, `offWhen: "floor_staff_ko"`; coffee capacity 2 with chatter pool and overhearRadius.
+- Levers: L1 leftover pizza (declare lab `pizza_boxes` as takeable, droppable magnet, servings 3, perPerson 1, no announce, `pizza_servings` non-monotonic); dropping it where Dani or Priya see it draws them off post and opens their screen window. L2 spare phone `phone3` rings Lerato's phone; when she is away, Tomasz crosses the floor to answer and his laptop window opens.
+- Exchanges (3, `heard_`): Dani+Priya at the coffee point (late shift); Lerato+Tomasz gated `irina_arrested`; Lerato+Tomasz gated `assets_seized`. All also `floor_staff_ko: false`.
+- Sync: workstation globals 9, heard_ 3, pizza_servings 1, dropped magnet 1, office items 2 (pizza, printout), reveal 1, onceOnly about 4, extras KO globals 2.
+- Voicing estimate about 54 clips (pools, exchanges, two short extras' ink files).
+- QUESTIONS draft: Q0 cast picks; Q1 readable screens on existing workstations vs new screens; Q2 pizza magnet vs cake vs none; Q3 phone lever with Tomasz covering vs proof only vs drop; Q4 move Dani and Priya vs Dani only vs none; Q5 extras' KO uses `floor_staff_ko` not `cover_strained`; Q6 extras get short conversations vs none.
 
 ## Next steps
 
-1. Write `BASELINE.md` and `ANALYSIS.md` (cast audit with file:line, rooms and machines, secrets list: server passphrase, data-centre PIN, safe PIN, badges, wordlist; tier).
-2. Check whether `trading_workstation` (host TRADE-WS-01) or any trading-floor PC is a network host; never put `offWhen` on it. Decide Dani's and Priya's PCs (declare monitor twins).
-3. Write `PLAN.md`, `QUESTIONS.md` (cast picks, magnet source, Priya movement, voicing), then plan review R1 on `opus55`, deltas per the skill, `REVIEW_R<n>.md`.
+1. Write `ANALYSIS.md` (cast audit table with the lines above, rooms and machines, secrets list, beats, tier), `PLAN.md` (m05 section order), `QUESTIONS.md` (cast picks first).
+2. Plan review R1 on `opus55`, then rounds per the skill to R5; `REVIEW_R<n>.md` with B/M/m; rewrite PLAN.md standalone each round.
+3. Commit with explicit paths after `git diff --cached --stat`.
 
 ## Files touched
 
-This folder only: `HANDOVER.md`, `validator_info_lines.txt`, `v1_summary_base.txt`, `baseline_locks.json`, `positions_base.txt`. Running the validator may rewrite `dungeon_graph.*` in the mission folder; not staged.
+This folder only: `HANDOVER.md`, `BASELINE.md`, `v6_office_lines_base.txt`, plus the Stage 0 files committed in `bcff36bf9`.
