@@ -22,7 +22,14 @@ module BreakEscape
       # bootstrap measured 26,619 B, so its base is raised from the 23,762 B of 6a834437c to that
       # figure. The growth is objectives (9,050 B), music, timers and globals; accountProfiles,
       # networks and every secret are withheld from the bootstrap (checked: none in the body).
-      'lab_physical_pentest' => 26_619
+      # 2026-11-17, B3 LED (blinking link LED on the planted drop box): the bootstrap measured
+      # 27,752 B (26,619 B at 3accd2adc, 27,561 B at main 19f6f3073), so the base is raised to that
+      # figure. The growth: reception's three AP blink emitters (+379 B, A3 reception dressing),
+      # the drop box's seven globals, one optional aim and one credits line (+563 B, B2 network
+      # wiring), and P3's gated network_port emitter (+191 B, this branch). accountProfiles,
+      # networks, the drawn Wi-Fi key, Chris's and the other passwords, PINs and lock answers are
+      # still withheld (checked: none in the body).
+      'lab_physical_pentest' => 27_752
     }.freeze
 
     FIXTURES = File.expand_path('../fixtures/files/sync_bodies', __dir__)
