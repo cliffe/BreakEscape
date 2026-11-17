@@ -1,4 +1,6 @@
 INCLUDE m10_carryover_vars.ink
+VAR fp_darren_ko = false
+VAR fp_sofia_ko = false
 // ===========================================
 // m10 Full Disclosure: 06:00 AT THE FORWARD POST (cutscene).
 // NPC id: six_oclock (hidden person NPC at the forward post).
@@ -331,7 +333,7 @@ Narrator: Netherton comes down the line of vans with a tablet under his arm.
 -> database_beat
 
 === more_menu ===
-{ not ((media_story_ran and ending != "executed") or kowalczyk_ko or quintero_ko or arakawa_ko or vector_ko or phantom_ko or victoria_gallery == "confronted" or (m06_assets_seized and ending != "executed")):
+{ not ((media_story_ran and ending != "executed") or kowalczyk_ko or quintero_ko or arakawa_ko or vector_ko or phantom_ko or fp_darren_ko or fp_sofia_ko or victoria_gallery == "confronted" or (m06_assets_seized and ending != "executed")):
     ->->
 }
 + [And the rest of it?]
@@ -372,7 +374,7 @@ agent_0x99: Then out of the release container onto its host, and out of his own 
 { media_story_ran and ending != "executed":
     Director Magnus Netherton: Social Fabric ran its story from outside as we breached. Your photograph is on it, and not a word of it is true.
 }
-{ kowalczyk_ko or quintero_ko or arakawa_ko or vector_ko or phantom_ko:
+{ kowalczyk_ko or quintero_ko or arakawa_ko or vector_ko or phantom_ko or fp_darren_ko or fp_sofia_ko:
     Director Magnus Netherton: Someone in the second van has bruises ENTROPY did not give them. I will want that explained.
 }
 { victoria_gallery == "confronted":

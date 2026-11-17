@@ -90,6 +90,32 @@
         ]
       },
       {
+        "name": "DARREN PRICE",
+        "clauses": [
+          {
+            "text": "Field support. Knocked out by the agent he kept the lights on for.",
+            "condition": "globalVars.fp_darren_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Field support. Kept the generator running till dawn."
+          }
+        ]
+      },
+      {
+        "name": "SOFIA MARCHETTI",
+        "clauses": [
+          {
+            "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
+            "condition": "globalVars.fp_sofia_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Welfare. Kept the kettle on all night."
+          }
+        ]
+      },
+      {
         "name": "AGENT 0x23 'VECTOR'",
         "clauses": [
           {
@@ -221,6 +247,32 @@
           },
           {
             "text": "Comms. Logged the minute it went out."
+          }
+        ]
+      },
+      {
+        "name": "DARREN PRICE",
+        "clauses": [
+          {
+            "text": "Field support. Knocked out by the agent he kept the lights on for.",
+            "condition": "globalVars.fp_darren_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Field support. Kept the generator running till dawn."
+          }
+        ]
+      },
+      {
+        "name": "SOFIA MARCHETTI",
+        "clauses": [
+          {
+            "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
+            "condition": "globalVars.fp_sofia_ko === true",
+            "style": "warning"
+          },
+          {
+            "text": "Welfare. Kept the kettle on all night."
           }
         ]
       },
