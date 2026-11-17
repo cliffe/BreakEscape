@@ -363,14 +363,14 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W1 | not `done_t_kit` | "Kit first. Meeting room, just off reception." |
 | W2 | not `done_t_drop_box` | "There's a live port by the kit table. Plug the box in before you go anywhere else." |
 | W3 | not `done_t_front_desk` | "Delphine's front desk next. Have a look round the screen." |
-| W4 | not `has_julian_rdp` | If `seen_julian_rdp`: "You've read Julian's connection file. Now take a copy of it." Otherwise: "Delphine's desktop had a saved connection on it. Copy it, don't connect from there." |
+| W4 | not `has_julian_rdp` and not `done_t_julian_pc` | If `seen_julian_rdp`: "You've read Julian's connection file. Now take a copy of it." Otherwise: "Delphine's desktop had a saved connection on it. Copy it, don't connect from there." |
 | W5 | not `front_desk_signed_out` and not `done_t_julian_pc` | "Sign out of Delphine's PC before you use that file, so the connection has to go through the box." |
 | W6 | not `done_t_julian_pc` | "Open your keyring and use Julian's saved connection." |
-| W7 F | not `done_t_door_controller` and not `done_t_unplug` and (not `julian_lost_with_desk` or `julian_back`) | "With Julian's session up, his PC can reach the server network. Open the network view at the box and try the door controller, with Lorna's password from facilities.txt." |
-| W8 F | not `done_t_server_room` | "You've got the codes. Server room's at the back of the open plan." |
 | W9 | not `done_t_copy_badge` | "Have a word with Lorna by the comms door. Bring the cloner." |
 | W10 | not `done_t_comms` | "Your copy of Lorna's card should open the comms cupboard. Try it." |
-| W6b F | `julian_lost_with_desk` and not `julian_back` and not `done_t_door_controller` and not `done_t_unplug` (below W10, above W7) | With `has_julian_rdp`: "Julian's session went when you signed out at the front desk. Connect again from your keyring and it'll go through the box this time. You'll need it for the door controller." Otherwise: "Julian's session went when you signed out at the front desk. To get it back through the box, sign in there, copy his connection file, sign out, then connect from your keyring." |
+| W6b F | `julian_lost_with_desk` and not `julian_back` and not `done_t_door_controller` and not `done_t_unplug` (below W10, above W7) | With `has_julian_rdp`: "Julian's session went when you signed out at the front desk. Sign out there if you're back on it, then connect from your keyring. It goes through the box that way, and you'll need it for the door controller." Otherwise: "Julian's session went when you signed out at the front desk. To get it back through the box, sign in there, copy his connection file, sign out, then connect from your keyring." |
+| W7 F | not `done_t_door_controller` and not `done_t_unplug` and (not `julian_lost_with_desk` or `julian_back`) | "With Julian's session up, his PC can reach the server network. Open the network view at the box and try the door controller, with Lorna's password from facilities.txt." |
+| W8 F | `done_t_door_controller` and not `done_t_server_room` | "You've got the codes. Server room's at the back of the open plan." |
 | W11 | not `saw_in_use` and not `done_t_open_session` | "Thandiwe's at her desk in the open plan. Try her laptop, then watch what happens when she gets up." |
 | W12 F | not `done_t_yasmin_pc` | "Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving." |
 | W13 F | not `done_t_implant` | With `front_desk_signed_out`: "Back to the front desk. Sign in again, then see what Delphine's USB ports will take." Otherwise: "Back to the front desk. See what Delphine's USB ports will take." |
@@ -382,7 +382,7 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W19 | otherwise | "That's the lot. Come and find me at reception." |
 
 - The phone has no `call` entry, so no line says "call me" (README:2361).
-- Hub order as built (slice 5 review): W9 and W10 (Lorna, comms cupboard) now sit ahead of W7 and W8, because required steps must not wait behind optional ones; W17 stays where it is but every optional line ahead of it (W6b, W7, W8, W11 to W14, W16) adds "Skip any of that you like, and pull the box out when you're ready.". W4 also needs `not done_t_julian_pc`. W7 needs `not julian_lost_with_desk or julian_back`; W8 needs `done_t_door_controller`; only W6b and W7 are hidden once `done_t_unplug` (the Wi-Fi stops W14 to W16 still work after the box is out). The skip line shows at most twice (`told_skip`) and never after W15. W14 splits on a new global `ap_planted` (mapping on `device_hidden:kit_rogue_ap`) so it changes once the access point is in the plant.
+- Hub order as built (slice 5 review): W9 and W10 (Lorna, comms cupboard) now sit ahead of W7 and W8, because required steps must not wait behind optional ones; W17 stays where it is but every optional line ahead of it (W6b, W7, W8, W11 to W14, W16) sets a tail that adds "Skip any of that you like, and pull the box out when you're ready.". W7 needs `not julian_lost_with_desk or julian_back`; only W6b and W7 are hidden once `done_t_unplug` (the Wi-Fi stops W14 to W16 still work after the box is out). The skip line shows on the first optional answer (`told_skip`, a bool) and again whenever the player asks twice at the same stop (`last_w`, an int from 0 to 16 set per line). W15 takes part in the repeat rule but sets no tail. W14 splits on a new global `ap_planted` (mapping on `device_hidden:kit_rogue_ap`) so it changes once the access point is in the plant.
 
 ### 2.10 Globals, mappings and timed texts
 
@@ -410,12 +410,12 @@ Timed texts, on `ama_phone`, each an eventMapping with `sendTimedMessage: { dela
 
 | Id | Event | Delay | Text (target knot) |
 |---|---|---|---|
-| P0 | `global_variable_changed:has_julian_rdp`, `value === true` | 4000 | `sendTimedMessage: { "delay": 4000, "message": "Before you use that: sign out of Delphine's PC. Leave no trace.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" }` |
+| P0 | `global_variable_changed:has_julian_rdp`, `value === true` | 4000 | `sendTimedMessage: { "delay": 4000, "message": "Before you use that, sign out of Delphine's PC.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" }` |
 | P1 | `pc_in_use:thandiwe_laptop` | 4000 | "She's signed in and sitting right there. Give it a minute, or read the coffee rota on the wall and watch her go." (hint_open_session) |
 | P2 | `network_foothold_gained:meeting_jack` | 5000 | "Box is talking. Have a look at the network view before you sign in anywhere." (hint_network_view) |
 | P3 | `usb_refused:usb_hub` | 4000 | "Storage is blocked on that hub. A keyboard isn't storage." (hint_injector) |
-| P4 | `network_device_refused:managed_port`, `condition: data.reason === "port_security"` | 4000 | "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." (hint_patch_panel) |
-| P5a | `network_device_unplugged:meeting_jack`, `condition: globalVars.tour_full !== true` | 6000 | "Box is out. Have a last look if you like, then come back to reception." (debrief_ready) |
+| P4 | `network_device_refused:managed_port`, `condition: data.reason === "port_security"` | 4000 | "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." (no targetKnot) |
+| P5a | `network_device_unplugged:meeting_jack`, `condition: globalVars.tour_full !== true` | 6000 | "Box is out. Have a last look if you like, then come back to reception." (no targetKnot) |
 | P5b | `network_device_unplugged:meeting_jack`, `condition: globalVars.tour_full === true` | 6000 | "Box is out. Take it to the comms cupboard and see what the ports in there make of it. Then come back to reception." (hint_ports) |
 | P6 | `magnet_placed:cake`, `condition: data.roomId !== 'open_plan'`, `cooldown: 30000`, no onceOnly | 4000 | "Take the cake through to the open plan, where the desks are." (hint_cake) |
 
@@ -451,24 +451,24 @@ Briefing (ama, stop 1):
 - A1 "Morning. You found us. This is Merrin & Sallow, and for the next little while you're my tester."
 - A2 "The partners want to know how far someone gets with a visitor badge and a bag of kit. So do I."
 - A3 "Your kit's in the meeting room. The visitor card opens that door and nothing else, in theory."
-- A3b "And there's a cake in your bag. Put it down in the open plan when you want people away from their desks."
+- A3b "And there's a cake in your bag. Put it down in the open plan and see if it gets anyone away from their desk."
 - A4 "I'll stay here. If you're stuck, check your phone. I'll text if I think of anything."
-- A5 (choice) "The quick version, or the full walk-round?" / "Quick version." / "The full walk-round."
+- A5 (choice) "The quick version's about fifteen minutes. The full walk-round is nearer thirty-five, every room and every gadget. Which?" / "Quick version." / "The full walk-round." Replies: "Quick it is. Doors, a desk, the box, and back to me." / "The full walk-round, then. Most people only see half of it."
 
 Mid-tour (ama, before `wrap_open()`):
-- M1 "Not done yet. Your phone's got the list. I'll be here."
-- M2 (choice, while `tour_full` is false) "Actually, show me the full walk-round." / reply: "Go on then. Your phone will keep you right."
+- M1 "Still going? Your phone will tell you where next."
+- M2 (choice, while `tour_full` is false) "Actually, show me the full walk-round." / reply: "Go on then. There's plenty more to see." Then "Right, back to it." gets "Good luck."
 
 "Where next?" answers: W1 to W19 in 2.9. Timed texts: P0 to P6 in 2.10.
 
 Debrief (ama, stop 19):
-- D1 "Right. Before we wrap up, anything else you want to try?"
-- D2 (choice) "I'll have another look round." / "I'm done, let's talk." The look-round reply while `tour_full` is false: "Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there." While `tour_full` is true: "Have a proper look. I'll be in reception when you're done."
-- D3 "The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's held because nobody copied his."
-- D4 "The box got you onto the network, and Julian's saved connection did the rest. His door never came into it."
-- D5a (`julian_ended_by_unplug`) "And when the box came out, everything you'd opened through it went with it." Full route only, add: "The desks you'd sat at stayed signed in."
+- D1 "Right. Before we wrap up, anything else you want to try?" (after a look-round: "Anything else, or shall we talk it through?")
+- D2 (choice) "I'll have another look round." / "I'm done, let's talk." The look-round reply while `tour_full` is false: "Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there." While `tour_full` is true: "Have a proper look. I'll be right here when you're done."
+- D3 "The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's door held only because nobody copied his card."
+- D4 "A saved connection on the front desk got you into Julian's PC. His door never came into it."
+- D5a (`julian_ended_by_unplug`) "And when the box came out, everything you'd opened through it went with it." Add-on when `done_t_implant`, `done_t_staff_wifi` or `done_t_yasmin_pc`: "Anything you'd reached another way didn't need the box."
 - D5c (`julian_lost_with_desk` and not `julian_back`) "You connected to Julian's from Delphine's desk, so when you signed out there, his went too."
-- D5b (otherwise) "Julian's session stayed up when the box came out. You'd connected from a desk you were signed in at, so it never needed the box. That's the bit people miss."
+- D5b (`done_t_julian_pc`) "Julian's session didn't go with the box. Connect from a desk you're signed in at and it never needs the box. That's the bit people miss."; fallback "Pulling the box ends what ran through it. Anything you reached another way stays up. That's the bit people miss."
 - D6 (last line) "Thanks. I'll write it up for the partners."
 
 Other NPCs (one each, also through review):

@@ -67,7 +67,7 @@ Ama Owusu: The quick version's about fifteen minutes. The full walk-round is nea
 }
 + { not tour_full and not done_t_unplug } [Actually, show me the full walk-round.]
     ~ tour_full = true
-    Ama Owusu: Go on then. Ask your phone where next.
+    Ama Owusu: Go on then. There's plenty more to see.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -91,7 +91,7 @@ Ama Owusu: It's all written up. Thanks again.
 + [I'll have another look round.]
     ~ asked_round = true
     { tour_full:
-        Ama Owusu: Have a proper look. I'll be in reception when you're done.
+        Ama Owusu: Have a proper look. I'll be right here when you're done.
     - else:
         Ama Owusu: Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there.
     }

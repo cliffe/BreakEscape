@@ -14,7 +14,8 @@ VAR julian_back = false
 VAR saw_in_use = false
 VAR staff_twin_up = false
 VAR ap_planted = false
-VAR told_skip = 0
+VAR told_skip = false
+VAR last_w = 0
 VAR done_t_kit = false
 VAR done_t_drop_box = false
 VAR done_t_front_desk = false
@@ -32,7 +33,7 @@ VAR done_t_unplug = false
 VAR done_t_guest_port = false
 
 === start ===
-Ask me where next any time.
+Ask me where next when you need it.
 -> hub
 
 === hub ===
@@ -44,6 +45,7 @@ Ask me where next any time.
 
 === where_next ===
 ~ temp tail = false
+~ temp w = 0
 {
 - not done_t_kit:
     Kit first. Meeting room, just off reception.
@@ -65,37 +67,47 @@ Ask me where next any time.
     Your copy of Lorna's card should open the comms cupboard. Try it.
 - tour_full and julian_lost_with_desk and not julian_back and not done_t_door_controller and not done_t_unplug and has_julian_rdp:
     Julian's session went when you signed out at the front desk.
-    Connect again from your keyring and it'll go through the box this time. You'll need it for the door controller.
+    Sign out there if you're back on it, then connect from your keyring. It goes through the box that way, and you'll need it for the door controller.
     ~ tail = true
+    ~ w = 6
 - tour_full and julian_lost_with_desk and not julian_back and not done_t_door_controller and not done_t_unplug:
     Julian's session went when you signed out at the front desk.
     To get it back through the box, sign in there, copy his connection file, sign out, then connect from your keyring.
     ~ tail = true
+    ~ w = 6
 - tour_full and not done_t_door_controller and not done_t_unplug and (not julian_lost_with_desk or julian_back):
     With Julian's session up, his PC can reach the server network.
     Open the network view at the box and try the door controller, with Lorna's password from facilities.txt.
     ~ tail = true
+    ~ w = 7
 - tour_full and done_t_door_controller and not done_t_server_room:
     You've got the codes. Server room's at the back of the open plan.
     ~ tail = true
+    ~ w = 8
 - not saw_in_use and not done_t_open_session:
     Thandiwe's at her desk in the open plan. Try her laptop, then watch what happens when she gets up.
     ~ tail = true
+    ~ w = 11
 - tour_full and not done_t_yasmin_pc:
     Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving.
     ~ tail = true
+    ~ w = 12
 - tour_full and not done_t_implant and front_desk_signed_out:
     Back to the front desk. Sign in again, then see what Delphine's USB ports will take.
     ~ tail = true
+    ~ w = 13
 - tour_full and not done_t_implant:
     Back to the front desk. See what Delphine's USB ports will take.
     ~ tail = true
+    ~ w = 13
 - tour_full and not ap_planted:
     Hide the access point in one of the reception plants, then open its console and copy the Staff Wi-Fi.
     ~ tail = true
+    ~ w = 14
 - tour_full and not staff_twin_up:
     The access point's in. Open its console from the plant and copy the Staff Wi-Fi.
     ~ tail = true
+    ~ w = 14
 - tour_full and not done_t_capture_key:
     Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy.
     { not done_t_unplug:
@@ -103,9 +115,11 @@ Ask me where next any time.
     - else:
         If she doesn't, carry on to the comms cupboard and come back.
     }
+    ~ w = 15
 - tour_full and not done_t_staff_wifi:
     You've got the Staff key. Join the Staff Wi-Fi and compare it with the guest one.
     ~ tail = true
+    ~ w = 16
 - not done_t_unplug:
     When you've had enough, pull the box out and see what drops.
 - tour_full and not done_t_guest_port:
@@ -113,10 +127,11 @@ Ask me where next any time.
 - else:
     That's the lot. Come and find me at reception.
 }
-{ tail and not done_t_unplug and told_skip < 2:
-    ~ told_skip = told_skip + 1
+{ not done_t_unplug and w > 0 and ((tail and not told_skip) or w == last_w):
+    ~ told_skip = true
     Skip any of that you like, and pull the box out when you're ready.
 }
+~ last_w = w
 -> hub
 
 // ---- Timed-text follow-ups: one short line, then back to the hub ----
