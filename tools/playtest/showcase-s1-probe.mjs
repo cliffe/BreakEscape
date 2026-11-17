@@ -109,13 +109,13 @@ if (phase === 'homes') {
   await shot('s1-office-posts');
 }
 if (phase === 'render') {
-  // Whole-room renders of both rooms: camera detached, zoom 2, room placed right of the objectives panel.
+  // Whole-room renders of both rooms: camera detached, zoom 1, room placed right of the objectives panel.
   const frame = id => ev(h, id => {
     const cam = window.player.scene.cameras.main, r = window.rooms[id], pos = r.position || window.roomPositions[id];
     const W = r.map.widthInPixels, H = r.map.heightInPixels;
-    cam.stopFollow(); cam.setZoom(2);
-    const sx = 420, sy = 40;
-    cam.setScroll(pos.x - (sx - cam.width / 2) / 2 - cam.width / 2, pos.y - (sy - cam.height / 2) / 2 - cam.height / 2);
+    cam.stopFollow(); cam.setZoom(1);
+    // Canvas is 600x400 game px (shown at 2x); the room is 320x320, so zoom 1 fits it. Top-left goes at (212,40), clear of the objectives panel.
+    cam.setScroll(pos.x - 212, pos.y - 40);
     return { id, pos, W, H, camW: cam.width, camH: cam.height };
   }, id);
   console.log('enterRoom kitchen', JSON.stringify(await ev(h, () => window.__test.enterRoom('kitchen'))).slice(0, 120));
