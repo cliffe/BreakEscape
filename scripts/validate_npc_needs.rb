@@ -1082,6 +1082,9 @@ module ValidateNpcNeeds
     if json.key?('npcThoughts') && ![true, false].include?(json['npcThoughts'])
       issues << "❌ ERROR: npcThoughts must be true or false (default true)."
     end
+    if json['npcThoughts'] == false && (json['showPressingNeeds'] == true || json['actionIcons'].is_a?(Hash))
+      issues << "⚠️ WARNING: showPressingNeeds or actionIcons is set while npcThoughts is false (D77); neither has any effect."
+    end
     if json.key?('showPressingNeeds') && ![true, false].include?(json['showPressingNeeds'])
       issues << "❌ ERROR: showPressingNeeds must be true or false."
     end
