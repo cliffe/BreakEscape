@@ -452,6 +452,29 @@ test('R2 M1: a device recorded on a spot that is no longer a plant is drawn on t
     assert.equal(w.ph.hostedEntry(host)?.item, KIT);
 });
 
+test('H5 hybrid: the migrated lab room with an old-save record on rogue_ap_spot shows the device on a reception plant, tappable, console opens', async () => {
+    const w = world({ held: false, hiddenDevices: [{ item: KIT, on: 'rogue_ap_spot', room: 'reception' }] });
+    // the migrated lab's two scenario plants (fig_plant1, planter_fig1), neither named rogue_ap_spot
+    const fig = scenarioPlant(w.scene, 'reception_planter', {}, { sprite: 'fig_plant1' });
+    const desk = scenarioPlant(w.scene, 'reception_plant_desk', { x: 500 }, { sprite: 'planter_fig1' });
+    w.room.objects.reception_planter = fig;
+    w.room.objects.reception_plant_desk = desk;
+    assert.ok(!w.room.objects.rogue_ap_spot, 'the migrated room has no spot object');
+    w.ph.syncRoom('reception');
+    assert.equal(w.scene.made.length, 1, 'one overlay');
+    const host = Object.values(w.room.objects).find(s => s._fadeCompanions?.size);
+    assert.ok(host, 'drawn on a reception plant');
+    assert.equal(w.ph.hostedEntry(host)?.item, KIT);
+    assert.equal(host.interactable, true, 'tappable');
+    const opened = [];
+    globalThis.openWifiTwin = (sp) => opened.push(sp);
+    const calls = stubFetch(() => jsonResp(200, {}));
+    assert.equal((await w.ph.interact(host)).action, 'opened');
+    assert.equal(opened.length, 1, 'console opens');
+    assert.equal(calls.length, 0, 'no request');
+    assert.equal(w.ph.hidden.get(KIT).on, 'rogue_ap_spot', 'the old record is kept as it is');
+});
+
 test('R3 t1: a recorded spot that still exists but is no longer a spot falls back to an eligible plant', () => {
     const w = world({ hiddenDevices: [{ item: KIT, on: 'lobby_fern', room: 'reception' }] });
     w.sp.scenarioData.hidingSpot = false;

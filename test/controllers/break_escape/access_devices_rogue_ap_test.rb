@@ -5,7 +5,8 @@ module BreakEscape
   # Physical pentest devices, slice A1 (docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md,
   # sections 4.1 to 4.3 and 7): the pocket rogue AP over HTTP, on an inline fixture in the
   # shape of test_access_devices. The console writes only globals, so every secret it leads
-  # to is gated on the server by the plant proof (kit_rogue_ap on rogue_ap_spot):
+  # to is gated on the server by the plant proof (kit_rogue_ap on rogue_ap_spot in this legacy-shaped fixture; the real scenarios
+  # now use a hide with no spot, covered by AccessDevicesRogueApScenarioTest below):
   # - the staff Wi-Fi key, a holderless addCapture.secret on a phone NPC (the key page);
   # - Kieran's account password, served by the account pass under his captureProof (the
   #   sign-in page).
@@ -440,6 +441,24 @@ module BreakEscape
       plant_ap
       assert_equal kieran_password, secrets['kieran']
       assert sign_in('hot_desk_pc', 'k.doyle', kieran_password)['success'], response.body
+    end
+
+    # A save made before the plant-hiding migration carries {kit_rogue_ap, on: rogue_ap_spot} in
+    # plantedItems while the scenario copy now has no rogue_ap_spot. The record still proves the
+    # plant, the client is told which room to draw the device in, and the secrets are served.
+    test 'hybrid: a plantedItems record on the removed rogue_ap_spot still serves both captures and shows the device' do
+      @game.player_state['plantedItems'] = [{ 'item' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot' }]
+      @game.save!
+      assert_equal [{ 'item' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot', 'room' => 'reception' }], @game.reload.hidden_devices_for_client
+      record_capture('staff_wifi_key', 'Ledgerwell-Staff')
+      record_capture('kieran', 'k.doyle')
+      assert_equal psk, secrets['staff_wifi_key']
+      assert_equal kieran_password, secrets['kieran']
+      assert join('lw_staff_ap', psk)['success']
+      bootstrap_scenario
+      assert_response :success
+      assert_equal 'rogue_ap_spot', response.parsed_body['hiddenDevices'].first['on']
+      refute_includes response.body, psk
     end
 
     test 'the bootstrap carries neither the PSK nor the password' do

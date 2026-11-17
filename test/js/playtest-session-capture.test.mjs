@@ -173,7 +173,7 @@ test('npcId is left out when the query string names an npc_id (the server takes 
 test('every POST /inventory line carries inv read from the request body (E0.3 plant tagging)', async () => {
   const { file, cap } = fresh();
   const INV = '/break_escape/games/7/inventory';
-  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' }) }));
+  cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'reception_planter' }) }));
   cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ actionType: 'remove', item: { id: 'usb_1' }, usedOn: 'desk' }) }));
   cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'remove', item: { id: 'coffee' } }) }));
   cap.onResponse(res(INV, { method: 'POST', postData: JSON.stringify({ action_type: 'add', item: { id: 'key_1', type: 'key' } }) }));
@@ -181,7 +181,7 @@ test('every POST /inventory line carries inv read from the request body (E0.3 pl
   cap.onResponse(res(INV, { method: 'GET' }));
   await cap.flush();
   const got = lines(file);
-  assert.deepEqual(got[0].inv, { action: 'remove', itemId: 'kit_rogue_ap', usedOn: 'rogue_ap_spot' });
+  assert.deepEqual(got[0].inv, { action: 'remove', itemId: 'kit_rogue_ap', usedOn: 'reception_planter' });
   assert.deepEqual(got[1].inv, { action: 'remove', itemId: 'usb_1', usedOn: 'desk' }, 'the camelCase names the controller also reads');
   assert.deepEqual(got[2].inv, { action: 'remove', itemId: 'coffee', usedOn: null });
   assert.deepEqual(got[3].inv, { action: 'add', itemId: 'key_1', usedOn: null });
@@ -205,7 +205,7 @@ test('inv is null when the inventory request body cannot be read', async () => {
 
 test('inv is null when the query names a field the controller reads (the query beats the body)', async () => {
   const { file, cap } = fresh();
-  const body = JSON.stringify({ action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' });
+  const body = JSON.stringify({ action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'reception_planter' });
   const INV = '/break_escape/games/7/inventory';
   for (const q of ['?used_on=elsewhere', '?usedOn=x', '?item%5Bid%5D=other', '?item=other', '?action_type=add', '?actionType=add', '?x=1;used_on=y']) {
     cap.onResponse(res(INV + q, { method: 'POST', postData: body }));
@@ -214,7 +214,7 @@ test('inv is null when the query names a field the controller reads (the query b
   await cap.flush();
   const got = lines(file);
   assert.deepEqual(got.slice(0, 7).map(l => l.inv), Array(7).fill(null));
-  assert.deepEqual(got[7].inv, { action: 'remove', itemId: 'kit_rogue_ap', usedOn: 'rogue_ap_spot' }, 'an unrelated query name does not decline');
+  assert.deepEqual(got[7].inv, { action: 'remove', itemId: 'kit_rogue_ap', usedOn: 'reception_planter' }, 'an unrelated query name does not decline');
 });
 
 test('playtest-session.js wires --capture-responses through the module', () => {
