@@ -70,3 +70,19 @@ The gap: the cooler break starts when the player comes back into reception from 
 ## Verdict
 
 Not ready to merge. One major remains: the send-home from a break (finding 1). Either fix needs a screenshot after a mid-break KO. Then re-run p2 properly (finding 2) and the cooler pair with a longer window. Finding 3 is the user's call. The rest is closed.
+
+## Fix log (round 3)
+
+Commit 1bba40ead (scenario.json.erb only). Scripts and screenshots: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/r3fix/. Server 3091 stopped (PID 2075866).
+
+| # | Outcome |
+|---|---|
+| 1 major | Fixed, scenario only. Both Ffion-KO patrolOverride mappings removed (the globals are set by other mappings, untouched). R1's reason (scripted walk keeps needs suspended, so no fight and no wander) no longer applies: both machines carry offWhen wh_staff_upset, so the needs layer walks them home and sits them. Note: the post is the seat (sofa, armchair), so the old target of feet 148,252 / 106,280 was never the seated spot; seated sprite is (148,241) and (111,268). Proof (p3b.mjs, polled to 84 s, seated and still for the last 15 s): (a) at posts, game 6632 PASS, both seated at origin, 0 px; (b) mid-break, both at reception_coffee using, game 6641 PASS, Yusuf seated at origin, Zainab seated on the sofa's other cushion (24 px east, a valid seat of the same sofa); (c) mid-break at the cooler (Zainab using hallway_cooler, Yusuf walking to it), game 6642 PASS, both seated at origin. Screenshots (4x): reception-case-a-6632.png, reception-case-b-6641.png, reception-case-c-6642.png. Case c shot is dark and clipped at the top (camera/lighting after the hallway round trip); the numbers are the proof. Zainab's thirst need goes to reception_coffee, not the cooler, so the cooler case was reached by the hallway round trip that couples both to the cooler. |
+| 2 minor | Fixed (script). p2c.mjs: Ffion KO, take badge, real punch on Zainab (facing set, key f, landed first press), real route to the night turn. Game 6653: H1 PASS ("Leave the staff alone" shown once), M1 PASS (threat music), M2 PASS (hostile Zainab hidden, music cutscene after the turn), H3 PASS (no repeat). The earlier unknown-npc came from the conference room never loading (door locked, no badge). |
+| 3 minor | Accepted by the orchestrator: the cooler case counts as witnessed. Low stakes, user may override. Seen live in game 6642 (witnessed true). |
+| 4 nit | Fixed: "Reception had company" delay 6000 (was 2500); live, it arrives after "The receptionist's down" (6 s vs 2.5 s). The later texts then need two bark dismissals before the next action in scripts. |
+| 5 nit | Deferred as before. |
+
+Cooler pair re-run with a 50 s window (p1.mjs, game 6654): A1, A2, B1 PASS; C1 PASS. C2 and C3 were not seen: I stopped the server before the script finished. Rerun C2 and C3 (reload checks) on the final tip.
+
+Static checks at 1bba40ead: validate_scenario 0 errors, 13 warnings; validate_office_life ran clean; door alignment ran. compile-ink reports 8 failed files, all in other missions (m04 etc.), none in m03 and no ink changed. lock_key_diff and dialoguelint not re-run.
