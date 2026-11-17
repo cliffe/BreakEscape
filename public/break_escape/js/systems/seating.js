@@ -1631,7 +1631,14 @@ export function seatNPC(behavior, chair, opts = {}) {
 export function unseatNPC(behavior, opts = {}) {
     const st = behavior?._seat;
     if (!st) {
-        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior, 'unseated');
+        // A hidden NPC's update never runs, so an instant unseat ends what it was part-way through:
+        // a seat move in any stage (the step too, which would hold its savedImm) and a chair fetch
+        // (releases the chair's reservation)
+        if (behavior?._seatMove && (behavior._seatMove.stage !== 'step' || opts.instant)) endSeatMove(behavior, 'unseated');
+        if (opts.instant && behavior?._fetch) {
+            if (behavior._goToStayDest) behavior.cancelMove?.();
+            cancelFetch(behavior, 'hidden');
+        }
         return false;
     }
     const sprite = behavior.sprite;
@@ -1642,6 +1649,15 @@ export function unseatNPC(behavior, opts = {}) {
     behavior._seat = null;
     // don't sit straight back down; a needs seat is let to sit again (updateNeedsSeat does the same)
     behavior._seatTried = !(opts.instant && needsStop);
+    if (opts.instant && needsStop) {
+        // The needs gate (updateNeedsSeat) is _seatStopKey and the retry counts, not _seatTried: clear them
+        // so the shown NPC takes the new-stop path and sits at once, spending no retry
+        behavior._seatStopKey = null;
+        behavior._seatTriedAt = undefined;
+        behavior._seatRetries = 0;
+        behavior._seatGaveUp = false;
+        behavior._seatGaveUpAt = undefined;
+    }
     releasePlace(chair, seat, placeIdx);
     if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
     const halt = behavior.hostile || window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
