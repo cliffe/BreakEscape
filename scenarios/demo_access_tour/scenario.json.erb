@@ -25,8 +25,25 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
 
   "startItemsInInventory": [
     { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone",
-      "npcIds": ["ama_phone"], "observations": "Your work phone, with Ama a message away." }
+      "npcIds": ["ama_phone"], "observations": "Your work phone, with Ama a message away." },
+    <%# The cake lever (office-life cake spec, minimal variant): held from the start, so nobody
+        knows of it until the player drops it. Dropped in the open plan it empties both desks.
+        servings 2 / perPerson 1; cake_servings below must equal servings. %>
+    { "type": "cake1", "id": "cake", "name": "Cake", "takeable": true, "droppable": true,
+      "observations": "A cake for the office. Choose Drop here in your inventory to put it out where people will see it.",
+      "affordance": {
+        "satisfies": ["hunger"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 30, "servings": 2, "perPerson": 1, "announce": "news_cake", "newsRadius": 5 }
+      } }
   ],
+
+  <%# Spoken pools. Bark text lives in these pools and in NPC JSON, never in engine text. %>
+  "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "Strong one today?"],
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."],
+    "news_cake": ["Someone's brought a cake in!", "There's cake going, if you're quick.", "Cake! It's somebody's birthday."],
+    "grumble_gone": ["Missed it."]
+  },
 
   "defaultPolicy": "desk",
 
@@ -112,6 +129,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
   },
 
   "globalVariables": {
+    "cake_servings": 2,
     "cloner_held": false,
     "seen_julian_rdp": false,
     "has_julian_rdp": false,
@@ -383,6 +401,9 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "eventMappings": [
             <%# The event carries the item's type; the cloner is the tour's only rfid_cloner. %>
             { "eventPattern": "item_picked_up:rfid_cloner", "onceOnly": true, "setGlobal": { "cloner_held": true } },
+            <%# P6: the cake went down outside the open plan. No onceOnly: the cooldown spaces repeats. %>
+            { "eventPattern": "magnet_placed:cake", "condition": "data.roomId !== 'open_plan'", "cooldown": 30000,
+              "sendTimedMessage": { "delay": 4000, "message": "Take the cake through to the open plan, where the desks are.", "targetKnot": "hint_cake" } },
             <%# Julian's session lost when the front desk was signed out (a box-route session has no
                 fromPcId; signing out of julian_pc itself has reason sign_out). Not onceOnly: a
                 second loss resets julian_back. %>
@@ -542,7 +563,22 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "storyPath": "scenarios/demo_access_tour/ink/thandiwe.json",
           "currentKnot": "start",
           "role": "design",
-          "creds": { "username": "tmoyo", "password": "<%= thandiwe_pw %>" }
+          "creds": { "username": "tmoyo", "password": "<%= thandiwe_pw %>" },
+          "needsHome": "thandiwe_laptop",
+          "needs": {
+            "hunger": { "decayPerMin": 0.5, "urgentAt": 30, "initial": 50 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 45 },
+            "work": { "decayPerMin": 1, "urgentAt": 30, "initial": 90 }
+          },
+          "eventMappings": [
+            <%# The rota board: the sure way to empty her desk (plan 2.6). %>
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee rota'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            <%# Stop 15: the twin is up, so she goes to her laptop. Heard only while her room is
+                loaded; if the player was not there yet, the room_entered mapping gives the same
+                nudge on arrival (the twin flag is read from the globals). %>
+            { "eventPattern": "global_variable_changed:staff_twin_up", "condition": "data.value === true", "onceOnly": true, "fireOnlyWhenLoaded": true, "needs": { "set": { "work": 10 } } },
+            { "eventPattern": "room_entered:open_plan", "condition": "globalVars.staff_twin_up === true", "cooldown": 600000, "needs": { "set": { "work": 10 } } }
+          ]
         },
         {
           "id": "yasmin",
@@ -557,7 +593,15 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "currentKnot": "start",
           "role": "finance",
           "creds": { "username": "ychaudhry", "password": "<%= yasmin_pw %>" },
-          "habits": { "writesDown": true }
+          "habits": { "writesDown": true },
+          "needsHome": "yasmin_pc",
+          "needs": {
+            "hunger": { "decayPerMin": 0.5, "urgentAt": 30, "initial": 50 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 50 }
+          },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Coffee rota'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
+          ]
         },
         {
           "id": "lorna",
@@ -634,7 +678,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "interactable": true,
           "active": true,
           "observations": "The kitchen's coffee machine, on the north counter.",
-          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 1, "dy": 0 }, { "dx": 2, "dy": 0 }], "maxWaitSeconds": 90 } }
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 1, "dy": 0 }, { "dx": 2, "dy": 0 }], "maxWaitSeconds": 90 }, "chatter": "coffee" }
         },
         {
           "type": "notes",
@@ -663,7 +707,12 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "storyPath": "scenarios/demo_access_tour/ink/julian.json",
           "currentKnot": "start",
           "role": "partner",
-          "creds": { "username": "jsallow", "password": "<%= julian_pw %>" }
+          "creds": { "username": "jsallow", "password": "<%= julian_pw %>" },
+          <%# Julian's post is where he stands, in the kitchen, so he never sits at julian_pc and a
+              remote session there lasts. Hunger starts above the tempt band and decays far too
+              slowly to bring him to the cake or the coffee within the tour. %>
+          "needsHome": { "room": "kitchen", "x": 1.7, "y": 6.5 },
+          "needs": { "hunger": { "decayPerMin": 0.1, "urgentAt": 5, "initial": 95 } }
         }
       ]
     },
