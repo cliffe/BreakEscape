@@ -107,3 +107,27 @@ New or changed lines, verbatim:
 Unchanged text: W14a, W14b, W16 (guard only). No repeats of the new lines found in scenarios/ outside this mission.
 
 Checks: validator (--skip-ink --no-graph) 0 errors; 15 warnings, not 11: the extra four are reception pin-distance warnings from the separate scenario commit fb3ca4751 (counter objects), not from this change. dialoguelint clean, inkcheck and loopcheck clean on ama and ama_phone. inkjs driver over fresh, short, full, full unplugged before the AP, lost via Desktop Connect with Lorna done, lost via Copy, desk-held, all done, plus unplugged AP stages: all read as intended; the skip line stops after two asks.
+
+
+## R3 fixes (commits 760fae2f7 and c04d0840f; review SLICE5_R3_REVIEW.md)
+Files: scenarios/demo_access_tour/ink/ama.ink, ama_phone.ink (and compiled json), docs/achitechture/DEMO_ACCESS_TOUR_PLAN.md. No scenario.json.erb change. Nothing voiced.
+
+| Finding | Fix |
+|---|---|
+| M1 | `told_skip` is now a bool and `last_w` an int (0 to 16). Each optional line sets `w` (W6b both variants 6, W7 7, W8 8, W11 11, W12 12, W13 both 13, W14 both 14, W15 15, W16 16); W15 sets no tail. The skip line shows when `not done_t_unplug and w > 0 and ((tail and not told_skip) or w == last_w)`; `last_w` is stored after every ask. |
+| m1 | W6b Copy variant rewritten (split over two phone lines, because the 25-word phone cap flagged the single line at 28). |
+| m2 | Plan 2.9 W rows reordered to W1 to W6, W9, W10, W6b, W7, W8, W11 to W19; W4 and W8 conditions folded into their rows; skip-line note updated. Plan 2.10 P0 text fixed, P4 and P5a no longer name knots. Plan 2.13 briefing, M1, M2, D1 to D5b and the D2 look-round reply copied from the built ink; "keep you right" removed. |
+| m3 | Switch reply changed. |
+| n2 | D2 full-route look-round reply changed. |
+| n3 | Phone opener changed. |
+| n4 | No change. |
+
+Changed lines, verbatim:
+- Skip line (unchanged text, new rule): "Skip any of that you like, and pull the box out when you're ready."
+- W6b (Copy player, `has_julian_rdp`): "Julian's session went when you signed out at the front desk." / "Sign out there if you're back on it, then connect from your keyring." / "It goes through the box that way, and you'll need it for the door controller."
+- Ama switch reply (M2): "Ama Owusu: Go on then. There's plenty more to see."
+- Ama D2 full-route reply: "Ama Owusu: Have a proper look. I'll be right here when you're done."
+- Phone opener: "Ask me where next when you need it."
+(No word-for-word repeats in scenarios/ outside this mission.)
+
+Checks: validator (--skip-ink --no-graph) 0 errors, 10 warnings. dialoguelint clean after the W6b split (one line-len error before it). inkcheck and loopcheck clean on ama and ama_phone. inkjs driver (scratchpad drv.js): fresh, short, full after comms, full unplugged before the AP, lost via Desktop Connect, lost via Copy, desk-held, all done, W15 box in, stuck at Yasmin with four asks. The skip line shows on the first optional answer, not on the first W15 answer, and comes back on every repeat ask at the same stop (four asks at Yasmin all show it). demo_access_tour*_test.rb 77 runs, 1112 assertions, 0 failures. Scoped corpus (PAYLOAD_SCAN_ONLY=demo_access_tour RUN_OPENED_SCAN=1, 7 files): 54 runs, 1 failure, the known m09 stale exceptions only.
