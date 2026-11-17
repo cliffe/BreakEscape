@@ -195,7 +195,7 @@ All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variabl
 |---|---|---|
 | `coffee` chatter (`{ lines, overhearRadius: 360 }`) | Dani, Lerato, Tomasz, 5 each | 15 |
 | `grumble` (machine off) | Dani, Lerato, Tomasz, 2 each | 6 |
-| `grumble_gone` (pizza gone) | Lerato, Tomasz, 2 each | 4 |
+| `grumble_gone` | not written: with two servings and two eaters at one each it cannot play (LIVE_S4.md) | 0 |
 | `phone` (answering her own phone) | Lerato | 3 |
 | `phone_message` (taking a message for her) | Tomasz | 3 |
 | exchange 1 `ex_dani_tomasz_late_shift`, on Tomasz, `with: "trader_npc"`, `requireGlobal: { floor_staff_ko: false }` | Dani, Tomasz | about 6 |
@@ -203,7 +203,7 @@ All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variabl
 | exchange 3 `ex_floor_after_seizure`, on Lerato, `with: "tomasz_wisniewski"`, `requireGlobal: { assets_seized: true, floor_staff_ko: false }` (`assets_seized` declared at `erb:748`, set late in `ink/m06_phone_agent_0x99.ink:575` and `ink/m06_satoshi_confrontation.ink:378`, so heard only if the player passes back through the floor); topic is the floor's reaction in plain words (everything frozen, the support queue on fire), with no wallets, funds or amounts | Lerato, Tomasz | about 5 |
 | short conversations, `ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink` (greeting, one question about the night, goodbye; no hub, task or item) | Lerato, Tomasz | about 12 |
 
-Total about 60 clips. Exchanges are heard once (`heard_<knot>`), their first line stands alone, and none touches wallets, the coin cap or anything in 3.3. Exchange 1's Dani lines sit in Tomasz's ink, prefixed with Dani's id. Existing lines changed: none.
+Total 55 clips as built (27 pool lines, 16 exchange lines, 12 conversation lines; `SPOKEN_LINES.md`). Exchanges are heard once (`heard_<knot>`), their first line stands alone, and none touches wallets, the coin cap or anything in 3.3. Exchange 1's Dani lines sit in Tomasz's ink, prefixed with Dani's id. Existing lines changed: none.
 
 `DIALOGUE_SAMPLE.md` (a few pool lines and exchange 1) goes to the user before slice 5 writes any line.
 

@@ -1,3 +1,7 @@
+# Build status (slice 5 spoken lines: static built and committed; live check in LIVE_S5.md)
+
+Pools, three exchanges, two short conversations (`ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink`), heard_ globals. 55 clips, none voiced (SPOKEN_LINES.md). `grumble_gone` dropped. Next: build review loop. Never stage dungeon_graph.*.
+
 # Build status (slice 4 live checks: all done, see LIVE_S4.md part 3; ready for the build review loop)
 
 Done and recorded: trip table and threshold 22 s, phone lever, handover sheet (prints once after the first Irina talk, planned text only, no reprint on a second talk or after a reload; an untaken page is gone after a reload, as PLAN says), workstation parity (both open, same text as main), lerato_phone useFrom (nominal cell on the desk edge, engine snaps it 8 px east to an open cell, Lerato reaches it), pizza (servings 2 to 0 with both extras; the engine removes the empty box, PLAN L1 corrected; reload with the box on the floor restores servings and the box; east-door stall not reproduced in three runs, cause unproven, no scenario fix applies). No engine change. Open: `grumble_gone` pool cannot play with two servings and two eaters (spare). Server 3096 stopped by PID at the end; start another per measurement-recipes section 1.
