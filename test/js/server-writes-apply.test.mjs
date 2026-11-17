@@ -122,7 +122,9 @@ test('serverCompletedTasks completes the task locally with no completion POST; t
   assert.equal(m.getTask('tailgate_in').status, 'completed');
   assert.ok(dispatcher.emitted.includes('objective_task_completed:tailgate_in'), 'eventMappings and ink hear it');
   assert.equal(requests.filter(r => !r.url.includes('sync_state')).length, 0, 'no second POST of the completion');
-  assert.match(render(m), /tailgate_in/);
+  const html = render(m);
+  assert.equal((html.match(/task-completed/g) || []).length, 1, 'the panel ticks the credited task');
+  assert.match(html, /task-completed[^]*tailgate_in/);
   assert.equal(m.getAim('get_in').status, 'active', 'the aim still has an open task');
 });
 
