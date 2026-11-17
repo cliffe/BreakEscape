@@ -1247,7 +1247,27 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         "east": "it_room",
         "west": "break_room"
       },
-      "npcs": [],
+      "npcs": [
+        {
+          "id": "fatima_begum",
+          "displayName": "Fatima Begum",
+          "npcType": "person",
+          "position": { "x": 1.37, "y": 4.91 },
+          "seated": true,
+          "spriteSheet": "fatima_begum",
+          "spriteTalk": "assets/characters/fatima_begum_talk.png",
+          "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
+          "storyPath": "scenarios/m01_first_contact/ink/m01_npc_fatima_begum.json",
+          "currentKnot": "start",
+          "voice": { "name": "Vindemiatrix", "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.", "language": "en-GB" },
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96,
+            "hostile": { "fightStyle": "cower", "fleeSpeed": 120, "attackDamage": 5, "attackCooldown": 1200, "pauseToAttack": true, "leash": true, "chaseRange": 160 }
+          },
+          "globalVarOnKO": "fatima_ko"
+        }
+      ],
       "objects": [
         {
           "type": "safe",
@@ -2257,6 +2277,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "audit_wrong_answers": 0,
     "sarah_ko": false,
     "maya_ko": false,
+    "fatima_ko": false,
 
     "found_casualty_projections": false,
     "found_target_database": false,
