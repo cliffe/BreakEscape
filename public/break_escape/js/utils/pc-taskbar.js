@@ -119,7 +119,7 @@ export function credentialLineHtml(session) {
     return `${escapeHtml(displayDashes(lead))}<span class="credential-label-nowrap">${escapeHtml(displayDashes(label))}</span>`;
 }
 
-export function pcTaskbarModel({ pcData = null, session = null, remote = false, relay = false, linkName = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
+export function pcTaskbarModel({ pcData = null, session = null, remote = false, relay = false, linkName = null, fromHost = null, places = [], lockSupported = false, canLock, canSwitch = true } = {}) {
     // A relay (an assist invite, K3c 8.3): the holder's own session, joined from the inventory
     const isRelay = relay === true || session?.relay === true;
     const signIn = pcData?.lockType === 'login' || !!session;
@@ -161,6 +161,8 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         pcName: typeof pcData?.name === 'string' ? pcData.name : '',
         remote: isRemote,
         linkName: isRemote ? (linkName || 'your link') : null,
+        // K4: a session reached from another desktop names that desktop, not a link
+        ...(isRemote && typeof fromHost === 'string' && fromHost ? { fromHost } : {}),
         relay: isRelay,
         // The server maps no share over a relay: none listed, and one line says why
         places: isRelay ? [] : (Array.isArray(places) ? places : []).filter(p => p && p.id),
@@ -231,7 +233,7 @@ export function pcStartPanelHtml(model, { shareIcon = PC_PLACE_SHARE_ICON } = {}
         </div>` : '';
     const lines = `<span class="pc-start-line pc-start-host">${escapeHtml(displayDashes(m.host))}</span>`
         + (m.pcName && m.pcName !== m.host ? `<span class="pc-start-line pc-start-pcname">${escapeHtml(displayDashes(m.pcName))}</span>` : '');
-    const remote = m.remote ? `<span class="pc-start-line pc-start-remote">Remote through ${escapeHtml(displayDashes(m.linkName))}</span>`
+    const remote = m.remote ? `<span class="pc-start-line pc-start-remote">${m.fromHost ? `Remote from ${escapeHtml(displayDashes(m.fromHost))}` : `Remote through ${escapeHtml(displayDashes(m.linkName))}`}</span>`
         : (m.relay ? `<span class="pc-start-line pc-start-remote pc-start-relay-header">${RELAY_HEADER_TEXT}</span>` : '');
     const noShares = m.relay ? `
             <span class="pc-start-line pc-start-noshares">${RELAY_NO_SHARES_TEXT}</span>` : '';

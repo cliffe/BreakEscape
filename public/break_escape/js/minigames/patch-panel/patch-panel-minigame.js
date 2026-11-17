@@ -31,6 +31,7 @@ export const LEGEND = [
     { cls: 'g', label: 'G guest' },
     { cls: 'm', label: 'M managed' },
     { cls: 'state-held', label: 'Your box' },
+    { cls: 'state-managed', label: 'Port security' },
     { cls: 'state-unpatched', label: 'Not patched' }
 ];
 
@@ -181,7 +182,6 @@ export class PatchPanelMinigame extends MinigameScene {
         const btn = el('button', 'patch-panel-port');
         btn.type = 'button';
         btn.dataset.port = String(port);
-        btn.appendChild(el('span', 'patch-panel-socket'));
         btn.appendChild(el('span', 'patch-panel-label'));
         btn.addEventListener('click', () => this.clickPort(port));
         this.paintPort(btn, port, entry);
