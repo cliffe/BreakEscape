@@ -19,7 +19,7 @@ Failing routes (same set on build and base): r1, r2, r3, r4, r5, r6, r9, r10, r1
 
 Comparison of the `[FAIL]` lines, build against base:
 
-- Every failure line matches the base except one. r5 on the build also fails `said: "ALL ELEVEN"`. This is the credits line, which office life changed on purpose to `ALL THIRTEEN ON SITE WALKED OUT` (`scenario.json.erb:243`, recorded in `office_life/DIALOGUE_SAMPLE.md`). The route still expects the old wording, so the assertion is stale. The route file has not been edited, per the brief.
+- Every failure line matches the base except one. r5 on the build also fails `said: "ALL ELEVEN"`. This is the credits line, which office life changed on purpose to `ALL THIRTEEN ON SITE WALKED OUT` (`scenario.json.erb:243`, recorded in `office_life/DIALOGUE_SAMPLE.md`). The route expected the old wording; commit 23f5c1e53 changed r5 to expect `ALL THIRTEEN` (and r6 to a `notSaid` on it), so that assertion is no longer stale. The suite ran at 11e562a0f, before the kettle `useFrom` change (data only); a re-run is optional.
 - No route fails on the build that passes on the base, apart from that stale assertion.
 - The 13 failing routes were not investigated further. They fail identically on the base commit, so they are not caused by office life.
 
@@ -43,4 +43,8 @@ Result: 760 files passed, 0 failed, 760 total. Exit 0. The run finished inside t
 
 ## 4. New failures on the build
 
-None that are not already on the base. The only build-specific difference is the stale r5 `ALL ELEVEN` expectation described above.
+None that are not already on the base. The `ALL ELEVEN` difference described above is fixed in the route files.
+
+## 5. Routes added after the run
+
+`r41_joanne_ko_debrief_credits.json` and `r42_ibrahim_ko_debrief_credits.json` (build review R2 m7): a newcomer KO taken to the debrief and the credits. Both pass (`all expectations met`): the debrief head-count takes the KO branch (`m04_closing_debrief.ink:436`), the credits carry "not all of them on their own feet" (`scenario.json.erb:244`) and "OFFICE STAFF: HURT, ON YOUR ACCOUNT" (`:250`), and "ALL THIRTEEN" is absent.

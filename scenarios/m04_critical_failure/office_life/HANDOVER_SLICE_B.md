@@ -1,3 +1,5 @@
+**Superseded:** the slice B work is finished; see `BUILD_LOG.md` (Slice B and Kettle fixes) and `LIVE_PROOF_1.md` to `LIVE_PROOF_5.md`. Kept for the measurements only.
+
 # Handover, slice B (partial)
 
 Nothing is edited in `scenario.json.erb` yet. All numbers below are measured live on the keyless :3097 server (headless, 20 fps fixed step, fresh games 7666 to 7693). Probe scripts are in the session scratchpad only (`lib.mjs`, `p2.mjs` posts, `p3.mjs` cooler, `p5.mjs` room switch, `p8.mjs` clock, `p9.mjs` kettle); rewrite them from the method below.

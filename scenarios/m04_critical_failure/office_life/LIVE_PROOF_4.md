@@ -22,6 +22,8 @@ Observed (7895):
 - After `stateSync.sync()` and a page reload, both still hidden (`visible: false`). Alpha reads 1 after reload with visible false, so they are not drawn. Screenshot `screenshots/lp4_c1_after_reload.png`.
 - No page errors.
 
+Correction (17 November 2026, build review R2 m4): the line above says the sofa shot was taken with the player in reception at (48, 210). `screenshots/lp4_sofa_after_evac.png` does not show that. The frame is centred on the SCADA control room with an examine box open; reception's sofa is at the top-left edge, half covered by the objectives panel, and the visible half is empty. It agrees with the text but is not the sofa render check. A re-shoot with the player in reception and the objectives panel collapsed is still open.
+
 Note (7888): the first sofa shot walked the player to (150, 200) and the guard's "Still need you at the desk first, my lover. Badge." challenge covered the frame. Not usable as the sofa shot, kept as `screenshots/lp4_c1_7888_guard_overlay_not_used.png`. Reload result on 7888 was the same as 7895.
 
 ## 2a. Attack Ibrahim while seated. Recorded
@@ -60,7 +62,7 @@ Game 7923. Six punches at seated Joanne, each with `moveToNear`.
 - After six punches: Joanne `hostile: true`, `ko: false`, `aes_staff_off` true. She moved from (239, 227) to (258, 227) during the punches.
 - Did not reach KO, so the M1 condition was not met. The phone call then ran and `crew_warned` fired (`evac`, `kettle_off` true).
 - Bark check after the warning: `window.__ev` shows no Joanne events after the warning (her three events are the hostile change, the attack, and a stand to the sofa, all before the call). No DOM text starting with "Joanne" on screen.
-- Expected outcome (no bark) is consistent with the data, but the run did not KO her, so this is not the M1 proof. Screenshot `screenshots/lp4_c3_joanne_ko.png`.
+- Expected outcome (no bark) is consistent with the data, but the run did not KO her, so this is not the M1 proof. Screenshot `screenshots/lp4_c3_joanne_hostile_not_ko.png`.
 
 ## 4. Credits after a newcomer KO. NOT RUN
 
