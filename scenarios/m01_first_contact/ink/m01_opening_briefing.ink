@@ -206,7 +206,7 @@ Agent HaX: He's not ENTROPY, just overworked and underpaid. He'll appreciate com
 === other_npcs ===
 Agent HaX: Sarah O'Brien is the receptionist. Professional, friendly. Don't give her any reason to flag you.
 
-Agent HaX: And Maya Chen—the analyst who contacted us. Be careful around her. Derek might be watching who she talks to.
+Agent HaX: And Maya Chen, the analyst who contacted us. Be careful around her. Derek might be watching who she talks to.
 
 -> deployment
 
