@@ -161,3 +161,97 @@ test('a task already done, in flight or unknown is left alone; a server-owned gl
   assert.equal(m.applyServerCompletedTask('tailgate_in'), false, 'twice completes once');
   assert.equal(dispatcher.emitted.filter(n => n === 'objective_task_completed:tailgate_in').length, 1);
 });
+
+test('a reduced keepalive flush applies the server writes of its answer', async () => {
+  const { sync, m } = setup();
+  await sync.sync();
+  reply = url => (url.includes('sync_state') ? credit : { success: true });
+  window.gameState.notes = [{ id: 'big', title: 'B', text: 'x'.repeat(70000) }]; // over the flush budget
+  window.gameState.globalVariables.courier_ready = false;
+  const before = requests.length;
+  sync.flush({ reason: 'hidden' });
+  await new Promise(r => setTimeout(r, 50));
+  const sent = requests.slice(before).find(r => r.url.includes('sync_state'));
+  assert.ok(sent, 'the flush went up');
+  assert.equal(sent.body.notes, undefined, 'it was the reduced body (notes left out)');
+  assert.equal(window.gameState.globalVariables.kp_badge_tailgated, true);
+  assert.equal(m.getTask('tailgate_in').status, 'completed');
+  delete window.gameState.notes;
+});
+
+test('an older answer cannot overwrite a newer server write of the same global', () => {
+  const { sync } = setup();
+  sync.applyServerWrites({ serverGlobals: { stage: 'two' } }, 200);
+  sync.applyServerWrites({ serverGlobals: { stage: 'one' } }, 100);
+  assert.equal(window.gameState.globalVariables.stage, 'two', 'the late older answer is ignored');
+  sync.applyServerWrites({ serverGlobals: { stage: 'three' } }, 300);
+  assert.equal(window.gameState.globalVariables.stage, 'three', 'a newer one still applies');
+  sync.applyServerWrites({ serverGlobals: { other: 'a' } }, 100);
+  assert.equal(window.gameState.globalVariables.other, 'a', 'another name is unaffected');
+});
+
+test('a late door unlock answer cannot overwrite a newer sync answer', async () => {
+  const { sync } = setup();
+  window.stateSync = sync;
+  let release;
+  const gate = new Promise(r => { release = r; });
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url: String(url), body: init?.body ? JSON.parse(init.body) : null });
+    if (String(url).includes('unlock')) await gate;
+    const json = String(url).includes('unlock')
+      ? { success: true, type: 'door', serverGlobals: { stage: 'old' } }
+      : { success: true, serverGlobals: { stage: 'new' } };
+    return { ok: true, status: 200, statusText: '', json: async () => json };
+  };
+  const unlock = ApiClient.unlock('door', 'secure_area', null, 'rfid'); // stamped first
+  window.gameState.globalVariables.courier_ready = false;
+  await sync.sync(); // a newer request, answered first
+  assert.equal(window.gameState.globalVariables.stage, 'new');
+  release();
+  await unlock;
+  assert.equal(window.gameState.globalVariables.stage, 'new', 'the older unlock answer lands late and is ignored');
+  delete window.stateSync;
+  globalThis.fetch = async (url, init) => {
+    const body = init?.body ? JSON.parse(init.body) : null;
+    requests.push({ url: String(url), body });
+    return { ok: true, status: 200, statusText: '', json: async () => reply(String(url), body) };
+  };
+});
+
+test('a credit that concluded the mission runs the ending on the client', () => {
+  const { sync, m, dispatcher } = setup();
+  sync.applyServerWrites({ serverCompletedTasks: ['tailgate_in'], serverMissionConcluded: 'tailgate_in' });
+  assert.ok(dispatcher.emitted.includes('mission_concluded'), 'the conclusion event fires');
+  sync.applyServerWrites({ serverMissionConcluded: 'nope' }); // unknown task: ignored, no throw
+  assert.equal(m.getTask('tailgate_in').status, 'completed');
+});
+
+test('a task still completing locally that the server refuses stays completed when the server credited it', async () => {
+  const { sync, m } = setup();
+  window.gameState.globalVariables.x = 1;
+  reply = url => {
+    if (url.includes('tailgate_in')) {
+      // the credit lands while this POST is in flight, then the server refuses the POST
+      sync.applyServerWrites({ serverCompletedTasks: ['tailgate_in'] });
+      return { success: false, error: 'Task is server-completed only' };
+    }
+    return { success: true };
+  };
+  await m.completeTask('tailgate_in');
+  assert.equal(m.getTask('tailgate_in').status, 'completed', 'the server completion wins');
+});
+
+test('a refused completion with no server credit still reverts to active', async () => {
+  const { m } = setup();
+  reply = () => ({ success: false, error: 'Not yet' });
+  await m.completeTask('find_file');
+  assert.equal(m.getTask('find_file').status, 'active');
+});
+
+test('a credited task with onComplete.setGlobal announces the global once', () => {
+  const { sync, events } = setup();
+  window.objectivesManager.taskIndex.tailgate_in.onComplete = { setGlobal: { kp_badge_tailgated: true } };
+  sync.applyServerWrites({ serverGlobals: { kp_badge_tailgated: true }, serverCompletedTasks: ['tailgate_in'] });
+  const heard = events.filter(([n]) => n === 'global_variable_changed:kp_badge_tailgated');
+  assert.equal(heard.length, 1, 'one global_variable_changed, not two');
+});

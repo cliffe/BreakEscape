@@ -345,15 +345,25 @@ export class StateSync {
    * Each global goes through the shared writer (gameState, ink, global_variable_changed) and is
    * marked confirmed at that value, so the next sync does not echo it back up (the server holds
    * credit globals read-only anyway). Each task completes locally with no POST.
+   * An answer carries the clientTs of its request (a door unlock takes one from nextClientTs at
+   * dispatch). A global an answer with a newer clientTs already wrote is not overwritten by an
+   * older answer that lands late, so a late answer cannot revert a newer value. Tasks are
+   * idempotent and need no guard.
    * @param {Object} answer
+   * @param {number} [clientTs] the request's clientTs; omitted, no ordering is applied
    */
-  applyServerWrites(answer) {
+  applyServerWrites(answer, clientTs) {
     const globals = answer?.serverGlobals;
     if (globals && typeof globals === 'object' && !Array.isArray(globals)) {
       const confirmed = this.confirmed.globalVariables ||= {};
       const held = this._held.globalVariables ||= new Set();
+      const writeTs = this._serverWriteTs ||= {};
       for (const [name, value] of Object.entries(globals)) {
         if (SERVER_OWNED_GLOBALS.has(name)) continue;
+        if (typeof clientTs === 'number') {
+          if (name in writeTs && clientTs < writeTs[name]) continue;
+          writeTs[name] = clientTs;
+        }
         confirmed[name] = stableJson(value);
         held.add(name);
         try {
@@ -377,6 +387,15 @@ export class StateSync {
         } catch (e) {
           console.warn(`State sync: could not apply the server's task ${taskId}:`, e?.message || e);
         }
+      }
+    }
+    // A credit that concluded the mission: show the ending as a client completion would
+    const concluded = answer?.serverMissionConcluded;
+    if (typeof concluded === 'string' && concluded) {
+      try {
+        window.objectivesManager?.applyServerMissionConcluded?.(concluded);
+      } catch (e) {
+        console.warn("State sync: could not apply the server's mission conclusion:", e?.message || e);
       }
     }
   }
@@ -973,7 +992,11 @@ export class StateSync {
         return response.json().then(answer => {
           // A stale answer saved none of the last-write-wins sections, so it has not
           // landed. A reduced body left sections out, so only a full one is confirmed.
-          if (reduced) return !answer?.stale;
+          // A reduced body left sections out, but the server's own writes still apply
+          if (reduced) {
+            this.applyServerWrites(answer, clientTs);
+            return !answer?.stale;
+          }
           return !this._applyAnswer(changes, clientTs, answer).stale;
         });
       }).catch(() => false).then(landed => {
@@ -1065,7 +1088,7 @@ export class StateSync {
   _applyAnswer(changes, clientTs, answer) {
     for (const part of this._parts.values()) part.onAnswer?.(answer);
     // What the server wrote is its state after this request, so it applies on a stale answer too
-    this.applyServerWrites(answer);
+    this.applyServerWrites(answer, clientTs);
     // A stale answer confirms nothing, so this request's sections are all resent on the
     // next sync. A stale-but-recent answer may now carry notSaved and mailTrimmed (the
     // server merged this request's pre-filtered sections and refused or trimmed some),

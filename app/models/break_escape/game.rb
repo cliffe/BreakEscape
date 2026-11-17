@@ -182,7 +182,7 @@ module BreakEscape
     # instance variable on this in-memory row: never stored in player_state, so it never grows or
     # rides a later sync, and the next request's fresh load starts with it empty.
     def server_write_record
-      @server_write_record ||= { globals: [], tasks: [] }
+      @server_write_record ||= { globals: [], tasks: [], concluded: nil }
     end
 
     def record_server_global_writes(names)
@@ -197,6 +197,17 @@ module BreakEscape
 
     # The rule the bootstrap uses for savedGlobalVariables (games_controller show): every stored
     # global goes to the client except a server-owned one (se_captures, shipped as `captures`).
+    #
+    # Deliberately NOT the wider server_owned_global_name? (worn, imported and credit globals as
+    # well). That one means "the client may not write this"; this one means "the client may not
+    # see this". Credit globals such as kp_badge_tailgated are server-written but the client must
+    # read them, so tightening this filter to server_owned_global_name? silently breaks every
+    # credit (the client never learns it, on a reload or on the sync answer).
+    # The task that concluded the mission during this request, if one did
+    def record_server_mission_concluded(task_id)
+      server_write_record[:concluded] ||= task_id.to_s
+    end
+
     def client_visible_global?(name)
       !self.class::SERVER_OWNED_GLOBAL_NAMES.include?(name.to_s)
     end
@@ -215,6 +226,10 @@ module BreakEscape
       body[:serverGlobals] = names.to_h { |name| [name, stored[name]] } if names.any?
       tasks = server_write_record[:tasks]
       body[:serverCompletedTasks] = tasks.dup if tasks.any?
+      # A credit that concluded the mission: the client runs the ending as it would for its own
+      # completion (the task id names the aim whose conclusion screen to show)
+      concluded = server_write_record[:concluded]
+      body[:serverMissionConcluded] = concluded if concluded
       body
     end
 
@@ -5224,6 +5239,7 @@ module BreakEscape
       record_server_completed_task(task_id) if trusted
 
       mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
+      record_server_mission_concluded(task_id) if trusted && mission_just_concluded
       response = { success: true, taskId: task_id, missionConcluded: mission_just_concluded }
       response[:warning] = 'Complete required objectives first to conclude the mission.' if conclusion_result == false
       response
