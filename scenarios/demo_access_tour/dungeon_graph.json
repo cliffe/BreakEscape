@@ -1,0 +1,104 @@
+{
+  "scenario": "demo_access_tour",
+  "start_room": "reception",
+  "nodes": [
+    {
+      "id": "door_server_room",
+      "label": "Server room<br/>PIN lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "server_room",
+      "label": "Server room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_partner_office",
+      "label": "Partner's office<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "partner_office",
+      "label": "Partner's office",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_meeting_room",
+      "label": "Meeting room<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "meeting_room",
+      "label": "Meeting room",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "door_comms_cupboard",
+      "label": "Comms cupboard<br/>RFID lock",
+      "kind": "lock",
+      "optional": false
+    },
+    {
+      "id": "comms_cupboard",
+      "label": "Comms cupboard",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "reception",
+      "label": "Reception",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "open_plan",
+      "label": "Open plan",
+      "kind": "room",
+      "optional": false
+    },
+    {
+      "id": "kitchen",
+      "label": "Kitchen",
+      "kind": "room",
+      "optional": false
+    }
+  ],
+  "edges": [
+    {
+      "from": "door_server_room",
+      "to": "server_room",
+      "soft": false
+    },
+    {
+      "from": "door_partner_office",
+      "to": "partner_office",
+      "soft": false
+    },
+    {
+      "from": "door_meeting_room",
+      "to": "meeting_room",
+      "soft": false
+    },
+    {
+      "from": "door_comms_cupboard",
+      "to": "comms_cupboard",
+      "soft": false
+    },
+    {
+      "from": "reception",
+      "to": "open_plan",
+      "soft": false
+    },
+    {
+      "from": "open_plan",
+      "to": "kitchen",
+      "soft": false
+    }
+  ]
+}

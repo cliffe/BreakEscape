@@ -1,0 +1,358 @@
+<%
+# demo_access_tour, slice 1 (DEMO_ACCESS_TOUR_PLAN.md section 5, item 1): the seven rooms, their
+# doors and locks, the sign-in PCs as plain objects, the cast placed static, the player's phone and
+# the signs. Accounts, networks, devices, office life and the real ink come in later slices.
+# The keypad PIN is rendered per game; it is not written anywhere else in this slice.
+server_room_pin = @random_pin
+%>
+{
+  "scenario_brief": "DEMO: Access tour\n\nMerrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT. The partners want a walk-round access test of the office. Ama stays at reception; you do the walking.",
+  "endGoal": "Demo only: walk the access tour.",
+  "startRoom": "reception",
+  "startPosition": { "x": 5.4, "y": 7 },
+  "npcNeedsSeed": "demo_access_tour",
+  "npcWindupMs": 0,
+
+  "startItemsInInventory": [
+    { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone",
+      "npcIds": ["ama_phone"], "observations": "Your work phone, with Ama a message away." }
+  ],
+
+  "globalVariables": {},
+
+  "objectives": [
+    {
+      "aimId": "aim_office",
+      "title": "Test the office",
+      "description": "Slice 1 stub: the full aims and tasks arrive with the objectives slice.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "t_kit", "title": "Get into the meeting room", "type": "unlock_room", "targetRoom": "meeting_room", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+
+    "reception": {
+      "type": "room_aw_merrin_lobby",
+      "door_sign": "Reception",
+      "connections": { "north": "open_plan", "west": "partner_office", "east": "meeting_room" },
+      "objects": [
+        <%# The lobby map's own pc8 (on the west table) and two planters stay as they are. The
+            front-desk PC sits on the counter's left end, and the two plants (hiding spots for the
+            rogue AP in a later slice) stand on clear floor beside the counter. %>
+        {
+          "type": "pc",
+          "id": "reception_pc",
+          "name": "Front desk PC",
+          "sprite": "pc10",
+          "position": { "x": 3.5, "y": 3.95 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "Delphine's PC at the front desk."
+        },
+        {
+          "type": "keycard",
+          "id": "visitor_card",
+          "name": "Visitor card 07",
+          "card_id": "VISITOR-07",
+          "position": { "x": 6.0, "y": 4.0 },
+          "takeable": true,
+          "observations": "A visitor card from the front desk, numbered 07."
+        },
+        {
+          "type": "plant",
+          "id": "reception_plant_west",
+          "name": "Plant by the front desk",
+          "sprite": "plant-large1",
+          "position": { "x": 2.1, "y": 3.3 },
+          "takeable": false,
+          "observations": "A tall plant at the end of the front desk."
+        },
+        {
+          "type": "plant",
+          "id": "reception_plant_east",
+          "name": "Plant beside the front desk",
+          "sprite": "plant-large1",
+          "position": { "x": 7.2, "y": 3.95 },
+          "takeable": false,
+          "observations": "A tall plant at the other end of the front desk."
+        },
+        {
+          "type": "notes",
+          "id": "sign_meeting_room",
+          "name": "Sign: meeting room",
+          "sprite": "uni_doorcard1",
+          "position": { "x": 9.0, "y": 3.1 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A card holder beside the meeting room door.",
+          "text": "Booked: Fenlow Managed IT, all day."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 6.9, "y": 5.6 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/ama.json",
+          "currentKnot": "start"
+        },
+        {
+          "id": "ama_phone",
+          "displayName": "Ama Owusu",
+          "npcType": "phone",
+          "avatar": "assets/characters/ama_owusu_headshot.png",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "phoneId": "player_phone",
+          "storyPath": "scenarios/demo_access_tour/ink/ama_phone.json",
+          "currentKnot": "start",
+          "livePreview": true
+        },
+        {
+          "id": "delphine",
+          "displayName": "Delphine Arvanitis",
+          "npcType": "person",
+          "position": { "x": 4.9, "y": 3.1 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "delphine_arvanitis",
+          "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
+          "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/delphine.json",
+          "currentKnot": "start"
+        }
+      ]
+    },
+
+    "open_plan": {
+      "type": "room_aw_merrin_sallow",
+      "door_sign": "Open plan",
+      "connections": { "south": "reception", "north": "server_room", "west": "kitchen", "east": "comms_cupboard" },
+      "objects": [
+        <%# Two desks against the north wall, square to it, each with its owner's chair on the
+            south side. The map's conference table, studio chairs and kiosk are untouched. %>
+        {
+          "type": "table",
+          "id": "desk_thandiwe",
+          "name": "Thandiwe's desk",
+          "sprite": "desk3",
+          "position": { "x": 3.1, "y": 2.0 },
+          "takeable": false,
+          "observations": "A tidy desk in the west half of the open plan."
+        },
+        {
+          "type": "chair",
+          "id": "chair_thandiwe",
+          "name": "Thandiwe's chair",
+          "sprite": "aw_studio_chair_n1",
+          "position": { "x": 3.3, "y": 3.3 },
+          "takeable": false,
+          "observations": "Thandiwe's chair."
+        },
+        {
+          "type": "pc",
+          "id": "thandiwe_laptop",
+          "name": "Thandiwe's laptop",
+          "sprite": "laptop1",
+          "position": { "x": 3.7, "y": 2.2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "Thandiwe's laptop on her desk."
+        },
+        {
+          "type": "table",
+          "id": "desk_yasmin",
+          "name": "Yasmin's desk",
+          "sprite": "desk3",
+          "position": { "x": 5.3, "y": 2.0 },
+          "takeable": false,
+          "observations": "A neat desk in the east half of the open plan."
+        },
+        {
+          "type": "chair",
+          "id": "chair_yasmin",
+          "name": "Yasmin's chair",
+          "sprite": "aw_studio_chair_n1",
+          "position": { "x": 5.5, "y": 3.3 },
+          "takeable": false,
+          "observations": "Yasmin's chair."
+        },
+        {
+          "type": "pc",
+          "id": "yasmin_pc",
+          "name": "Yasmin's PC",
+          "sprite": "pc3",
+          "position": { "x": 5.8, "y": 2.2 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "Yasmin's desktop PC."
+        },
+        {
+          "type": "notes",
+          "id": "rota_board",
+          "name": "Coffee rota",
+          "sprite": "rota_board1",
+          "position": { "x": 8.3, "y": 1.1 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "The coffee rota, on the wall by the window.",
+          "text": "Coffee rota. Whoever's name is up makes the next round."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "thandiwe",
+          "displayName": "Thandiwe Moyo",
+          "npcType": "person",
+          "position": { "x": 3.6, "y": 4.4 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "thandiwe_moyo",
+          "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
+          "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/thandiwe.json",
+          "currentKnot": "start"
+        },
+        {
+          "id": "yasmin",
+          "displayName": "Yasmin Chaudhry",
+          "npcType": "person",
+          "position": { "x": 5.8, "y": 4.4 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "yasmin_chaudhry",
+          "spriteTalk": "assets/characters/yasmin_chaudhry_talk.png",
+          "spriteVisemes": "assets/characters/yasmin_chaudhry_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/yasmin.json",
+          "currentKnot": "start"
+        },
+        {
+          "id": "lorna",
+          "displayName": "Lorna Easton",
+          "npcType": "person",
+          "position": { "x": 6.6, "y": 5.6 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "lorna_easton",
+          "spriteTalk": "assets/characters/lorna_easton_talk.png",
+          "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/lorna.json",
+          "currentKnot": "start"
+        }
+      ]
+    },
+
+    "server_room": {
+      "type": "room_servers",
+      "door_sign": "Server room",
+      "connections": { "south": "open_plan" },
+      "locked": true,
+      "lockType": "pin",
+      "requires": "<%= server_room_pin %>",
+      "objects": []
+    },
+
+    "kitchen": {
+      "type": "room_qdc_break",
+      "door_sign": "Kitchen",
+      "connections": { "east": "open_plan" },
+      "objects": [
+        <%# The coffee station is the map's own espresso machine on the north counter (claimed by
+            type, so nothing doubles up). The approach cell is the floor in front of it; the queue
+            runs east along the same row. %>
+        {
+          "type": "qdc_espresso",
+          "id": "coffee_station",
+          "name": "Coffee station",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The kitchen's coffee machine, on the north counter.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 1, "dy": 0 }, { "dx": 2, "dy": 0 }], "maxWaitSeconds": 90 } }
+        },
+        {
+          "type": "notes",
+          "id": "sign_kitchen",
+          "name": "Sign: coffee",
+          "sprite": "hq_break_sign1",
+          "position": { "x": 7.7, "y": 1.0 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "A sign by the coffee machine.",
+          "text": "Coffee's on a rota. The board's in the open plan. (Or just wait. Someone always comes in for coffee.)"
+        }
+      ],
+      "npcs": [
+        {
+          "id": "julian",
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "position": { "x": 1.9, "y": 5.3 },
+          "behavior": { "immovable": true },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "storyPath": "scenarios/demo_access_tour/ink/julian.json",
+          "currentKnot": "start"
+        }
+      ]
+    },
+
+    "partner_office": {
+      "type": "room_ceo",
+      "door_sign": "Partner's office",
+      "connections": { "east": "reception" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "people": ["julian"] },
+      "lockedHint": "Julian's office. His card only.",
+      "objects": [
+        {
+          "type": "pc",
+          "id": "julian_pc",
+          "name": "Julian's PC",
+          "sprite": "pc10",
+          "position": { "x": 4.0, "y": 3.3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "Julian's PC on the partner's desk."
+        }
+      ]
+    },
+
+    "meeting_room": {
+      "type": "room_meeting",
+      "door_sign": "Meeting room",
+      "connections": { "west": "reception" },
+      "locked": true,
+      "lockType": "rfid",
+      "requires": ["VISITOR-07"],
+      "objects": []
+    },
+
+    "comms_cupboard": {
+      "type": "room_lw_comms",
+      "door_sign": "Comms cupboard",
+      "connections": { "west": "open_plan" },
+      "locked": true,
+      "lockType": "rfid",
+      "access": { "roles": ["facilities", "it"] },
+      "objects": []
+    }
+  }
+}
