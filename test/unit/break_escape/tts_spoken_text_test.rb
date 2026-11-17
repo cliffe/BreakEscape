@@ -18,6 +18,11 @@ module BreakEscape
       assert_equal "Well -- maybe", TtsService.spoken_text("Well -- maybe")
     end
 
+    test "802.1X is respelt for the voice" do
+      assert_equal "authenticate with eight oh two dot one X.",
+                   TtsService.spoken_text("authenticate with 802.1X.")
+    end
+
     test "the cache key is unchanged by the spoken form" do
       line = "Notices come from payroll-notices at our domain."
       assert_equal TtsService.cache_key(line, *VOICE),

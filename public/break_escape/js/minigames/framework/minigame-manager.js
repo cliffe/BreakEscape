@@ -377,9 +377,12 @@ export const MinigameFramework = {
                 }
                 // Toasts placed over the panel go back to the lane; waiting ones show (toast plan 2.8)
                 try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
-                // Queued here so a throwing cleanup or onComplete cannot skip it; a parent
-                // handing over to a child leaves the record to the child (POSE_FIXES_REVIEW_R5 m3)
+                // Keyring Connect's returnTo listens for this (K3b R3 t1); a parent paused for a
+                // child has not ended, so it sends nothing
+                // The chat-return record is queued here so a throwing cleanup or onComplete cannot skip it;
+                // a parent handing over to a child leaves it to the child (POSE_FIXES_REVIEW_R5 m3)
                 if (ending._suspendedForChild !== true) {
+                    try { window.eventDispatcher?.emit?.('minigame_ended', { success: !!success }); } catch (e) { console.warn('minigame_ended listeners threw', e); }
                     try { this._queueChatReturnSettle(); } catch (e) { console.error('chat return settle failed', e); }
                 }
             }

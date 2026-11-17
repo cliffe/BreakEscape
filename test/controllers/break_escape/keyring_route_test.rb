@@ -52,6 +52,23 @@ module BreakEscape
       response.parsed_body
     end
 
+    test 'K3d R2: two GETs give the same gainedAt and the second writes nothing' do
+      first = keyring
+      assert_response :success
+      stamped = first['entries'].map { |e| [e['id'], e['gainedAt']] }.to_h
+      assert stamped.any?, 'the fixture lists entries'
+      assert stamped.values.all?(Integer), "every listed registry entry carries a gainedAt: #{stamped}"
+      stored = @game.reload.player_state['keyringGained']
+      assert_equal stamped.slice(*stored.keys), stored
+      before = @game.updated_at
+
+      travel 5.seconds do
+        second = keyring
+        assert_equal stamped, second['entries'].map { |e| [e['id'], e['gainedAt']] }.to_h
+      end
+      assert_equal before, @game.reload.updated_at, 'the second GET stamped nothing, so it wrote nothing'
+    end
+
     test 'answers rev and the proven entries, no-store' do
       body = keyring
       assert_response :success

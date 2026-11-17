@@ -68,12 +68,18 @@ module BreakEscape
 
       # 9. Write the session (3.8); a replaced session prunes, and the answer names what ended
       relay = route[:relay] == true
-      foothold = relay ? nil : route[:foothold]
-      ended = start_login_session!(pc['id'], npc, 'credential', credential: cred_id, foothold: foothold, relay: relay)
+      from = relay ? nil : route[:from]
+      foothold = relay || from ? nil : route[:foothold]
+      ended = start_login_session!(pc['id'], npc, 'credential', credential: cred_id, foothold: foothold, relay: relay,
+                                                                from: from)
       save!
       answer = login_session_answer(npc, 'credential', pc_id: pc['id'], foothold: foothold, relay: relay,
-                                                       credential: cred_id)
-      answer['route'] = relay ? { 'relay' => true } : { 'foothold' => foothold }
+                                                       credential: cred_id, from: from)
+      answer['route'] =
+        if relay then { 'relay' => true }
+        elsif from then { 'from' => from }
+        else { 'foothold' => foothold }
+        end
       { status: :ok, body: with_ended_pc_ids({ success: true }.merge(answer), ended) }
     end
 
@@ -172,10 +178,11 @@ module BreakEscape
     end
 
     # Step 4: nil when the route is allowed, else the answer. One route field only; no route (the
-    # keyboard) and a route the kind does not allow get the generic refusal. `from` is K4 and is
-    # refused generically here until it is built.
+    # keyboard) and a route the kind does not allow get the generic refusal. `from` (K4) is
+    # judged by from_route_refusal: a malformed param, a relay source, the target itself or a
+    # target on the source's chain get the generic refusal; any other source failure is 403.
     def credential_route_refusal(kind, pc, route)
-      given = %i[foothold from relay].select { |k| route[k].present? }
+      given = %i[foothold from relay].select { |k| route.key?(k) && !route[k].nil? }
       return credential_login_refusal unless given.length == 1
 
       name = given.first
@@ -194,8 +201,19 @@ module BreakEscape
         # The holder's own vendor relay: no reach check and remote: "blocked" does not apply,
         # but the PC must be on
         return credential_not_responding if host_service_off?(pc)
+      when :from
+        return credential_login_refusal unless credentials_declared?
+
+        case from_route_refusal(route[:from], pc)
+        when :generic then return credential_login_refusal
+        when :unreachable then return { status: :forbidden, body: { success: false, message: 'PC not reachable' } }
+        end
+        return credential_not_responding if host_service_off?(pc)
+        if remote_blocked?(pc)
+          return { status: :unprocessable_entity,
+                   body: { success: false, message: NetworkAccess::REMOTE_BLOCKED, remoteBlocked: true } }
+        end
       else
-        # K4: the `from` route (source session checks, from_reach)
         return credential_login_refusal
       end
       nil

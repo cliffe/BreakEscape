@@ -17,7 +17,7 @@ the world (take an item, sign in, read a card, plant the box) and read the answe
 - **Comms room (north).** The spare wall port `comms_port` (jack, `office_lan`); `SV-OPS-01`
   (`ops_pc`, `server_lan`, policy `pw_only`, IT only); Ian Shaw (IT, `ishaw`); Ian's capture card.
 - **Finance (east).** Lena's PC `lena_pc` (`HB-FIN-02`, `office_lan`, policy `finance_desk`, admits
-  Lena and Jake, sticky note `lfox / Ledger-Lena-9`); `passwords.txt` on her desktop; Jake Brooks
+  Lena and Jake, sticky note `lfox / Ledger-Lena-9`); `passwords.txt` and `SV-OPS-01 admin.rdp` (`ops_rdp_file`) on her desktop; Jake Brooks
   (finance, `jbrooks`).
 
 ## Registry (K1)
@@ -71,7 +71,7 @@ These extend this scenario and are **not built in K1**:
   connection; a saved-connection lockout refusal; unplugging the drop box ends its sessions.
 - **K3a to K3d (the sign-in UI and the capture log).** The Saved / In file / Captured tags, the
   greyed Connect for `ops_cookie`, Switch user to Jake from `passwords.txt`, the Sign-ins list.
-- **K4 (sign in from a desktop; `from` route).** Connect on the `.rdp` from Sam's keyboard session.
+- **K4 (sign in from a desktop; `from` route).** Connect on `SV-OPS-01 admin.rdp` (`ops_rdp`, on Lena's desktop; `SV-OPS-01.rdp` is the drop box cookie `ops_cookie`) from Lena's desktop. Sam's keyboard route waits for a scenario that builds Sam's office.
 - **K5 (tokens).** A session token for Lena recorded by the drop box, with `expiresMin`.
 - **assist_invite / relay (K2 and K3c).** Jake's remote assist code (`jake_assist`), Jake's office
   door, the invite timer and the relay desktop with `vendor_contract.txt`. Add a Jake's office room
@@ -89,3 +89,17 @@ These extend this scenario and are **not built in K1**:
 - Jake's ink offers the helpdesk line (gives `jake_assist_code`, credential `jake_assist`) and, once the contract
   is read, a suspicious ending that sets `jake_ended_assist`.
 - Not built: the Finance PIN and Sam's office from plan 9.1 (Finance stays open here).
+
+## K3d fixtures (the Sign-ins list, R13)
+
+- The start inventory holds a capture log (`holds: { captures: true, items: false }`), so its Sign-ins list can be read.
+- The lobby has a second capture card, `capture_card_pin` (8, 6). Reading it sets `capture_card_pin`, and Pat Doyle's mapping (an NPC with no account)
+  records `cupboard_pin`: a credential capture with the four-digit `secret` 4471, host "Stationery cupboard keypad" and an
+  address that is no account, so the server tags it `pin` and it lands under Captures.
+- **R13.** After the other beats, open the capture log. Sign-ins holds, oldest first: Ian (Captured password, Recorded, the
+  value), Lena's .rdp (Saved connection, Found), the ops .rdp (Saved connection, Found), Jake's password (Password in a
+  file, Found, "Type it from passwords.txt."), Jake's assist code (Remote assist, Given, greyed once ended) and
+  `SV-OPS-01.rdp` (`ops_cookie`: Saved connection, Recorded, "Use it on SV-OPS-01's sign-in screen."). There is no
+  duplicate row for Ian, and no token row until K5. Captures holds the stationery cupboard PIN (Captured PIN, no source
+  tag, "Stationery cupboard keypad: 4471") and nothing else. The page text must pass the leak check
+  (`tools/playtest/access-leak-check.rb`).
