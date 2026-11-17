@@ -2149,7 +2149,7 @@ export class PasswordMinigame extends MinigameScene {
             way.className = 'signin-cred-way';
             const b = doc.createElement('button');
             b.type = 'button';
-            b.className = `signin-cred ${inMonitor ? 'pc-os-btn' : 'minigame-button'}`;
+            b.className = `signin-cred ${inMonitor ? 'pc-os-btn' : 'minigame-button'}${cred.kind === 'token' ? ' signin-cred-token' : ''}`;
             b.dataset.credId = cred.id;
             const fixed = doc.createElement('span');
             fixed.className = 'signin-cred-fixed';
@@ -2165,7 +2165,7 @@ export class PasswordMinigame extends MinigameScene {
             if (!cred.accepted || cred.expired === true) {
                 b.setAttribute('aria-disabled', 'true');
                 const why = doc.createElement('div');
-                why.className = 'signin-cred-refused';
+                why.className = `signin-cred-refused${cred.expired === true ? ' signin-cred-expired' : ''}`;
                 why.textContent = cred.expired === true ? tokenExpiredMessage(cred.label)
                     : kindRefusedShort(cred.host || this.signInHost(), cred.kind);
                 way.appendChild(why);

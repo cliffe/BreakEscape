@@ -122,6 +122,12 @@ const FIXTURES = [
                           { id: 'p2', kind: 'password', source: 'registry', foundIn: 'f2', label: 'a sticky note under the second keyboard on the left desk', account: { username: 'sokafor', displayName: 'Sam Okafor' } }
                       ] },
                action: 'chosen', expectWays: true } },
+    { name: 'ways-token-expired', desc: 'K5 R3: the account\'s expired session token: the greyed Connect button and its expired line wrap, nothing cut',
+      build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: 'known', linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: 'known', host: 'HB-FIN-02', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [],
+                      keyring: [{ id: 'tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc', expired: true, accepted: true, forThisPc: true, account: { username: 'lfox', displayName: 'Lena Fox' } }] },
+               action: 'chosen', expectWays: true, expectExpired: true } },
     { name: 'ways-refused-short', desc: 'K3a: one greyed saved connection with its short reason under it, in the short window',
       build: { host: 'HB-FIN-03', pcName: 'Finance server (HB-FIN-03)', picker: 'known', linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
@@ -279,6 +285,19 @@ async function measure(page, fx) {
                     if (!fr || fr.top < ar.top - 1 || fr.bottom > ar.bottom + 1) { out.ok = false; out.notes.push('the first ways button is outside the visible area'); }
                     for (const fixed of box.querySelectorAll('.signin-cred-fixed')) {
                         if (fixed.scrollWidth > fixed.clientWidth + 1) { out.ok = false; out.notes.push('"Connect with" is cut'); break; }
+                    }
+                    // K5 R3: no token text is cut (no ellipsis, nothing hidden by overflow): the button, its label,
+                    // and a refusal or expired line show whole, wrapping when they are long
+                    for (const el of box.querySelectorAll('.signin-cred-token, .signin-cred-token .signin-cred-label, .signin-cred-expired')) {
+                        if (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1) {
+                            out.ok = false; out.notes.push(`ways text cut: "${el.textContent.slice(0, 40)}" (${el.scrollWidth}x${el.scrollHeight} in ${el.clientWidth}x${el.clientHeight})`);
+                        }
+                        if (getComputedStyle(el).textOverflow === 'ellipsis') { out.ok = false; out.notes.push(`ways text can be cut by an ellipsis: ${el.className}`); }
+                    }
+                    if (fx.build.expectExpired) {
+                        const why = box.querySelector('.signin-cred-refused')?.textContent;
+                        if (why !== 'HB-FIN-02 sign-in token has expired.') { out.ok = false; out.notes.push(`expired line reads ${JSON.stringify(why)}`); }
+                        if (box.querySelector('.signin-cred')?.getAttribute('aria-disabled') !== 'true') { out.ok = false; out.notes.push('the expired token button is not greyed'); }
                     }
                     if (out.ways.scrolls && document.querySelector('.pc-monitor #signin-ways-more')?.hidden) { out.ok = false; out.notes.push('a scrolling ways box shows no More below cue'); }
                 }
