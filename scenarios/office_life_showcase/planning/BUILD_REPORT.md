@@ -237,3 +237,63 @@ Server: keyless on :3094 (boot log shows the GEMINI_API_KEY warning), killed by 
 | news_cake removed | PASS with a note | 7579, 7580 | No `news_cake` in the scenario. Natural office drop (7579): no `npc_announced` or `npc_told` events, no announce or news lines, console errors only the expected aborted /tts. Kitchen drop (7580, `showcase-s3-news.mjs`): the engine's default topic still fires `npc_announced` (topic `news`, `line: null`, picture only) and `npc_told` for Graham, Jun and Chidi at 130.3 s, with no spoken or barked line; Chidi then says "Missed it." at 134 s. So no news lines, but picture-only word of mouth remains for a drop in the other room. The 7580 probe does not capture browser console errors; the server log is clean |
 
 Notes: Graham went to the cake on his social need, not hunger, in the natural run. "Missed it." on Agnieszka in 7579 showed as a speech bubble at the turn-back with no `speak` record; the same line was recorded as a speak for Chidi in 7580 and 7583. Games used: 7578 (cake probe, no pair chat), 7583 and 7584 (cake pair runs; 7583 pair did not overlap), 7579, 7580, 7586.
+
+## S4 build and proof (evening and lighting)
+
+Build commit 5b4f4caf8 (data only: `act_evening` global, office and kitchen lighting variants, four `setVisible:false` mappings, Zainab's B10 bark and delayed caffeine, Ama's evening branch and "Call it a day" hub choice). Validator 0 errors, 17 warnings (baseline). No scenario or ink edits in the proof pass.
+
+Keyless server on :3092 (boot log shows the GEMINI_API_KEY warning), PID 415023, killed at the end. Nothing was missing from the fresh worktree: the engine needs no ignored config, the Rails dummy app is tracked, `BUNDLE_PATH` pointed at the main checkout's `vendor/bundle` and the probe lib already requires Playwright from the main checkout's `node_modules`. Games from new-game.rb: 7590 (R10 run), 7595 (T17, T18, T19), 7599 and 7602 (T20, R5), 7605 (reload per act), 7608 (reload, lamp, kitchen), 7609 (before shots); 7591 to 7594, 7596 and 7604 were earlier probe iterations. Headless, setFPS(20), fixed steps on, only POST `/tts` aborted. Times are the needs clock (seconds).
+
+Scripts: `tools/playtest/showcase-s4-lib.mjs`, `showcase-s4-evening.mjs` (T17, T18, T19, R10; `noR10` argument skips the socket clicks), `showcase-s4-during-use.mjs` (T20, R5; `coffee` argument), `showcase-s4-reload.mjs` (reload in each act), `showcase-s4-lamp.mjs` (evening reload, lamp, kitchen), `showcase-s4-before.mjs` (clean before shots). Screens: `screens/s4-*.png` (`E` before, `T` and `R` after, `D` reload).
+
+### Proof table
+
+| # | Check | Games | Result | Evidence |
+|---|---|---|---|---|
+| T17 | Evening hides four staff, dims office | 7595, 7608 | PASS | `act_evening` true at 35.3. Chidi, Jun, Graham, Agnieszka: `isVisible` false, sprite `visible` false, alpha 0, no other display-list object with their texture key (`drawnOthers` 0). Office `variantIdx` -1 to 0, ambient #c4cad8 to #8f96b0, lights 0 to 1. Screens `s4-E-office-before.png`, `s4-T-office-after.png`, `s4-D-office-evening-after-reload.png`, `s4-E-kitchen-before.png`, `s4-T-kitchen-entered-evening.png`. |
+| T18 | B10, Zainab to office coffee, task ticks | 7591 (also 7599, 7602) | PASS | Bark "Quiet now. Time for a coffee in peace." at 35.0 (turn at 35.3 in the logged clock, bark queue delay 1.5 s), job `caffeine:office_coffee:goto_target` at 41.8, `npc_left_post:zainab_hussain` target `office_coffee` at 42.5, `see_who_stays` completed at 42.8, using 45, back at post 62.5. |
+| T19 | Kitchen dark until entered, lit on entry, dark 12 s after leaving | 7595, 7608 | PASS | Kitchen after the turn: mode motion, `on` false (viewer in office). On entry `on` true. 4 s after leaving `offTimer` armed and `on` true; 12.7 s after leaving `on` false. After reload (7608): on entry `on` true, 12.5 s after leaving `on` false. Needs Zainab back at her post first: while she is in the kitchen the sensor re-arms (see m1). |
+| T20 | Turn during a use | 7599 (food), 7602 (coffee plus food) | PASS | 7602 at 38.5: Chidi at microwave, Jun at fridge, Graham `caffeine:office_coffee:using`; claims office_coffee 1, microwave 1, fridge 1. At the turn all four hidden, jobs `idle` at 38.8, claims all 0, `drawnOthers` 0, still 0 25 s later. 7599 at 35.5 the same with Chidi using and Jun and Graham walking. No unseated-sitter error in the page log. |
+| R5 | No held capacity, no stuck NPC | 7599, 7602 | PASS | Zainab (visible) queued for and used the office coffee after the turn (46.8 to 62 in 7602), so the released machine was free. Hidden NPCs stay `idle`, not stuck at a machine. |
+| R10 | Coffee switched off, turn, one socket click | 7590 | PASS | Lever pulled before the turn: `office_coffee_off` true. Turn: Ama's `setGlobal` makes it false. One click: the confirm button reads "Switch off" (not "Switch on"); confirming sets it true again. Screen `s4-R-office-socket-click.png`. |
+| T21 | Reload in each act | 7605, 7608 | PASS | `page.reload()` only, 21 s after the key global each time. Morning: `kitchen_seen` true, all four visible, variantIdx -1. Midday: `act_midday` true, `act_evening` false, all visible. Evening: both true, `see_who_stays` still completed, four hidden with no drawn image, office variantIdx 0 and #8f96b0, kitchen motion mode. |
+| R6 | Needs reset after reload (accepted) | 7605 | PASS (as accepted) | Chidi (midday) hunger 79 to 90, caffeine 40 to 58; Zainab (evening) caffeine 80 to 95; all back near initial values. |
+| Lamp | Warm lamp at (2.3, 5.5) over Zainab's tool roll | 7608 | PASS, see m2 | `zainab_tool_roll` at world (64,173), lamp at (73.6,176), 10 px apart. The roll's desk is lit more than the surrounding floor in `s4-D-lamp-clip.png`. |
+
+### Findings
+- m1 (T19, timing): while an NPC is in the kitchen when the player leaves, `onRoomExited` re-arms the 10 s timer (`systems/lighting.js:1038`, `npcInRoom`), so the lights stay on past 10 s. In the first run (7590) Zainab used the kitchen coffee because the player's click had switched the office machine off, and the kitchen was still lit 12.5 s later. This is intended behaviour ("the sensor still sees someone"), not a defect; it only matters for a tester who leaves the kitchen while Zainab is there.
+- m2 (lamp): the lamp reads as a soft cream pool on the left of Zainab's desk, not a distinct warm colour. The other desks already carry similar white object glows, so against them it is easy to miss. The roll sprite shows as a pen pot. Proposed (scenario.json.erb:97, not edited): raise intensity from 0.8 or lower the office ambient further if a clearer warm cue is wanted.
+- m3 (probe note): Zainab's B10 shows twice in the `showBark` log in 7590 (38.5 and 41), once in 7595. Same recorder double-logging noted under S3 m4. Not an engine defect.
+- m4 (probe note): the Ama hub choice "Let's do lunch" failed once (7604) after a morning reload because Chidi or Jun was away at the time, the expected A29 gate; the next run passed. The mission brief popup reappears about 3 s after a reload and covers the view until dismissed (intended, per the reload convention).
+- No B or M findings. Dimming from #c4cad8 to #8f96b0 is modest but visible against `s4-E-office-before.png`.
+- Not proven: cake use at the turn (coffee and food uses cover R5); the kitchen seen dark from the office side (only the `on` flag, the viewer cannot see into the closed room).
+
+## S5 checks and full run
+
+Scripts: `tools/playtest/showcase-lines-check.mjs` (plan section 7 against data), `tools/playtest/showcase-s5-run.mjs` (timed full run). Screens: `screens/s5-01-spawn.png` to `s5-16-recap.png`. Server keyless on :3092 (GEMINI_API_KEY warning in the boot log), PID 536727, killed after the run. No scenario or ink edits.
+
+### Validator (T1)
+`ruby scripts/validate_scenario.rb scenarios/office_life_showcase/scenario.json.erb`: 0 errors, 17 warnings, the same as the S4 baseline (16 "target is in room kitchen, not the home room" load warnings plus the one `workstation_screen_changed:chidi_pc` leave-only habits warning). No V7 (repeated line) or V10 (unreachable pool, exchange or call) warning. V8: workstation globals 9/24; heard_ globals 1/8; magnet servings 1/2; reveal and left-behind globals 1/6; dropped magnet items 1/2; office-life onceOnly mappings 8/10; office-life items 2/4; small keys 20/64 (all within caps). V6 (`app:break_escape:tts:office_lines[office_life_showcase]`): 156 clips, all uncached (3689 characters; nothing voiced yet, as planned): Ama 31, Chidi 24, Jun 25, Graham 27, Agnieszka 26, Zainab 23. The count is per voice and includes shared pool lines for each speaker, so it is higher than the plan's 105 distinct lines.
+
+### Lines check (T22)
+`node tools/playtest/showcase-lines-check.mjs`: 80 plan table rows (31 Ama, 25 staff, 5 exchange, 11 barks, 8 extras) and 22 scenario pool lines. Every line is in the source ink and the compiled json (or the NPC `bark` or `chatter` field) word for word; the table's Chars and Words columns match; caps hold (ink 30 words, choices 15, chatter and exchange 40 characters, barks 50 characters and 12 words). PASS. Dialoguelint over the showcase: 0 findings by rule. Note that dialoguelint measures only `Name:`-prefixed ink lines; the staff and Ama lines here are unprefixed, so it counts lines=0 for four inks. The check script covers those caps.
+
+### Full run (T23)
+Game 7613, no needs nudges. Needs clock and wall clock agree (fixed steps at 20 fps): play time 389 s (6.5 minutes), target 5 to 10.
+
+| Task | Needs s | Wall s |
+|---|---|---|
+| see_queue | 51.5 | 61.9 |
+| hear_queue_chat | 54.8 | 65.1 |
+| see_coffee_off | 57.0 | 67.2 |
+| hear_cooler_exchange | 198.3 | 208.6 |
+| use_open_screen | 215.3 | 225.7 |
+| see_caught | 235.8 | 246.0 |
+| see_cake_eaten | 345.5 | 355.9 |
+| see_who_stays | 363.0 | 373.3 |
+
+Recap ("Give me the short version") finished at 390 s. `verify-run.rb --tasks 7613`: 8 tasks in objectivesState, 8 completed, score 100, VERDICT progress recorded. Server: status `in_progress`, `mission_concluded_at` nil; client `missionConcludedAt` unset, no credits. `git diff main -- scenarios/test_needs_sims` empty (T24).
+
+### Findings
+- m1 (`scenarios/office_life_showcase/ink/ama_owusu.ink:14-18`, `start`): after any conversation that ends with `-> END` (lunch, "Call it a day", "I'll have a look round."), the next talk to Ama restarts at `start` and replays A1 and A2 ("Today you watch an office instead of breaking into one...") before the hub. Closing mid-hub with Esc reopens at the hub line A0 as planned. Seen on the "Call it a day" and recap conversations. Proposed fix: guard `start` with a global or VAR that the first run sets, diverting to `hub.choices` when set.
+- m2 (probe note): bark recorders log some barks twice (B2, B3, B5, B6, B7); same double-logging noted in S3 m4, a recorder artefact.
