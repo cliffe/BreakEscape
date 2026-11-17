@@ -340,10 +340,10 @@
        scale the speaker is drawn at) stays the same from line to line. It used to take whatever
        the caption left, which made the scale step between 4x, 3x and 2x as lines and choices
        changed length. The caption below scrolls inside its own area instead. The canvas backing
-       is the same size as the box, so it needs no object-fit. */
+       is the same size as the box, so it needs no object-fit. 64% is the least that gives 3x at 390x667 and 4x at 390x844. */
     .person-chat-portrait-section {
         position: relative;
-        flex: 0 0 50%;
+        flex: 0 0 64%;
         height: auto;
         min-height: 0;
         max-height: none;
