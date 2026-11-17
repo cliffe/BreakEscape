@@ -1797,7 +1797,7 @@ scada_password = "CascadeWindow19"
           "takeable": false,
           "readable": true,
           "observations": "The muster board. Somebody has been crossing names off it in marker, fast, and then stopped partway down.",
-          "text": "SITE EVACUATION -- IN PROGRESS\nMUSTER POINT: NORTH PARKING LOT\n\nOPERATIONS ............ 31 / 34 CLEAR\nENGINEERING ........... 12 / 12 CLEAR\nFACILITIES ............  6 /  6 CLEAR\nSECURITY .............. 5 / 6 CLEAR\nCONTRACTORS ........... UNKNOWN\n\nDO NOT RE-ENTER THE BUILDING WITHOUT SITE CONTROLLER AUTHORISATION."
+          "text": "SITE EVACUATION -- IN PROGRESS\nMUSTER POINT: NORTH PARKING LOT\n\nOPERATIONS\n31 / 34 CLEAR\n\nENGINEERING\n12 / 12 CLEAR\n\nFACILITIES\n6 / 6 CLEAR\n\nSECURITY\n5 / 6 CLEAR\n\nCONTRACTORS\nUNKNOWN\n\nDO NOT RE-ENTER THE BUILDING WITHOUT SITE CONTROLLER AUTHORISATION."
         }
       ]
     },
@@ -1874,7 +1874,7 @@ scada_password = "CascadeWindow19"
             { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "value": "The wall-sized situation board the whole floor works from. One panel, top left, has gone red. The rest are still amber." }
           ],
           "observationDisplay": "gameDisplay",
-          "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION .............. 8,412,000  (WA / OR / N.CAL)\nSUBSTATIONS UNDER CONTROL ......       147\nAUTOMATED REBALANCING .......... DISABLED BY OPERATOR (unauthorised)\nBREAKER CONTROL ................ REMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\nSITE BACKUP GENERATION ......... ONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- PENDING\n  01  SEATTLE METRO      open critical breakers\n  02  PORTLAND          absorb shed load\n  03  OREGON            safety shutdown, sequential\n  04  NORTHERN CAL      load imbalance trip\n\nOUTSIDE TEMPERATURE: 28 F",
+          "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION\n8,412,000  (WA / OR / N.CAL)\n\nSUBSTATIONS UNDER CONTROL\n147\n\nAUTOMATED REBALANCING\nDISABLED BY OPERATOR (unauthorised)\n\nBREAKER CONTROL\nREMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\n\nSITE BACKUP GENERATION\nONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- PENDING\n01 SEATTLE METRO\nopen critical breakers\n\n02 PORTLAND\nabsorb shed load\n\n03 OREGON\nsafety shutdown, sequential\n\n04 NORTHERN CAL\nload imbalance trip\n\nOUTSIDE TEMPERATURE: 28 F",
           "textVariants": [
             {
               "condition": "globalVars.countdown_expired && !globalVars.grid_saved",
@@ -1917,7 +1917,7 @@ scada_password = "CascadeWindow19"
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "READ-ONLY GRID VIEW -- OPERATOR POSITION 3\n\nSUBSTATIONS ON LINE ........ 147 / 147\nREBALANCING ................ DISABLED BY OPERATOR\nBREAKER CONTROL ............ REMOTE SESSION -- this position cannot take control\n\nA sticky note on the bezel: \"If it says REMOTE, ring Halvorsen. Do NOT try to take control from here.\""
+          "text": "READ-ONLY GRID VIEW -- OPERATOR POSITION 3\n\nSUBSTATIONS ON LINE\n147 / 147\n\nREBALANCING\nDISABLED BY OPERATOR\n\nBREAKER CONTROL\nREMOTE SESSION -- this position cannot take control\n\nA sticky note on the bezel: \"If it says REMOTE, ring Halvorsen. Do NOT try to take control from here.\""
         }
       ]
     },
@@ -2212,7 +2212,7 @@ scada_password = "CascadeWindow19"
               "readable": true,
               "observations": "The console printed it without being asked. Grid control keeps paper for exactly this.",
               "observationDisplay": "gameDisplay",
-              "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL\nAUTOMATED SEQUENCE -- ABORT ACCEPTED\n\nSCHEDULED STEPS NOT YET EXECUTED ......... CANCELLED\nBREAKER STATE ............................. HOLDING\n\nOriginating host no longer reachable on the control VLAN.\nAbort authorised at this console.\n\nWhatever did not happen tonight, 8.4 million people will\nnever read about.",
+              "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL\nAUTOMATED SEQUENCE -- ABORT ACCEPTED\n\nSCHEDULED STEPS NOT YET EXECUTED\nCANCELLED\n\nBREAKER STATE\nHOLDING\n\nOriginating host no longer reachable on the control VLAN.\nAbort authorised at this console.\n\nWhatever did not happen tonight, 8.4 million people will\nnever read about.",
               "textVariants": [
                 {
                   "condition": "globalVars.countdown_expired",
@@ -2253,7 +2253,7 @@ scada_password = "CascadeWindow19"
           "readable": true,
           "observations": "A printed projection on the console beside Mercer, signed and dated in his own hand. He did not hide it.",
           "observationDisplay": "gameDisplay",
-          "text": "OPERATION BLACKOUT -- PROJECTED HUMAN COST, FIRST 72 HOURS\nPrepared and reviewed by: J. Mercer\n\nHospitals -- life support failure, delayed response .......... 120 - 180\nTraffic -- signal failure, collisions in darkness ............  40 -  65\nExposure -- hypothermia, elderly and vulnerable .............  80 - 140\n                                                              ---------\nTOTAL .......................................................  240 - 385\n\nPlant destroyed: $2.4bn. Wider economic damage: $18bn.\nWater treatment fails at 48 hours. Restoration 4-7 days -- transformers are not stock items.\n\nReviewer's note, handwritten at the foot of the page:\n\"Twice now the warnings have been costed and declined. This is the third submission. It will be read.\"",
+          "text": "OPERATION BLACKOUT -- PROJECTED HUMAN COST, FIRST 72 HOURS\nPrepared and reviewed by: J. Mercer\n\nHospitals -- life support failure, delayed response\n120 - 180\n\nTraffic -- signal failure, collisions in darkness\n40 - 65\n\nExposure -- hypothermia, elderly and vulnerable\n80 - 140\n\nTOTAL\n240 - 385\n\nPlant destroyed: $2.4bn. Wider economic damage: $18bn.\nWater treatment fails at 48 hours. Restoration 4-7 days -- transformers are not stock items.\n\nReviewer's note, handwritten at the foot of the page:\n\"Twice now the warnings have been costed and declined. This is the third submission. It will be read.\"",
           "onRead": { "setVariable": { "casualty_projection_found": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "mercer_read_and_signed_the_casualty_projection"
