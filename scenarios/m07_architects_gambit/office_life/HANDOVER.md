@@ -1,19 +1,21 @@
-# m07 office life: handover (plan phase, round 2 done)
+# m07 office life: handover (plan phase done, five review rounds)
 
-Branch `plan/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Nothing built. Stopped at the context guard after R2.
+Branch `plan/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Nothing built. Plan review loop finished at R5 with no blocker or major open.
 
 ## Done
 
 - Stage 0 baseline: `BASELINE.md`, `validator_info_lines.txt`, `v1_summary_base.txt`, `baseline_locks.json`, `positions_base.txt` (V6: 0 clips).
 - `ANALYSIS.md`, `PLAN.md` (rewritten after R1), `QUESTIONS.md` (picks for AC0 at the top: Adaeze Okafor, Gwen Pritchard).
-- R1 (opus55): B1 M3 m7, all fixed in the rewrite (`REVIEW_R1.md`).
-- R2 (opus55): B0 M3 m5 (`REVIEW_R2.md`), fixes listed there but NOT yet applied to PLAN.md.
+- R1 (planning tier): B1 M3 m7, all fixed in the rewrite (`REVIEW_R1.md`).
+- R2 (planning tier): B0 M3 m5 (`REVIEW_R2.md`), applied.
+- R3 (planning tier, full): B0 M3 m1 (`REVIEW_R3.md`), applied: real jitter mechanism, coupled row sets thirst 30, cooldown cut, m05 `hub_quiet` guard, ink-local keys in the sync budget.
+- R4 (delta): B0 M0 m2 (`REVIEW_R4.md`), applied: coupled cooldown 10000, 50-seed order check over three paths.
+- R5 (delta): B0 M0 m2 (`REVIEW_R5.md`), applied: two text corrections.
 
 ## Next
 
-1. Rewrite PLAN.md standalone applying every R2 fix in `REVIEW_R2.md` (no review references in PLAN.md). Commit.
-2. R3: R2 had majors on Opus, so R3 stays on opus55 as a full or delta round (diff since f342c2e1b plus R2 findings). R4 and R5 are delta rounds on Sonnet (back to opus55 if Sonnet finds a major or a new design decision appears). Stop at R5 unless a blocker is open. Save `REVIEW_R<n>.md` with "B x / M x / m x".
-3. Keep QUESTIONS.md in step (clip count now about 28; update if the M2 ink branches change it).
+1. AC0 answers QUESTIONS.md Q1 to Q4 (and the cast clash check).
+2. Then the build stage: `DIALOGUE_SAMPLE.md` for approval before slice 5, then slices per PLAN.md.
 
 ## Decisions taken (log for the user)
 
