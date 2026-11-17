@@ -6,8 +6,8 @@ Status of stop 12 (Thandiwe leaving her desk): BEING FIXED. In live walks she st
 
 ## 1. Setup
 
-1. Start the keyless server (no TTS, nothing is voiced yet): `tools/playtest/start-keyless-server.sh` gives http://127.0.0.1:3001. Never use or stop the :3000 server.
-2. Make a fresh game: `BREAK_ESCAPE_STANDALONE=true PLAYTEST_PORT=3001 bin/rails runner tools/playtest/new-game.rb demo_access_tour`. Open the game URL it prints in the browser. (Or start "Demo: Access tour" from the standalone missions page.)
+1. Start the tour from Hacktivity like any other Break Escape game (the event or course that lists "Demo: Access tour"), or from the standalone missions page on a local install. Start a fresh game for each class.
+2. Developers testing locally: run a keyless server on a free port of your own (`tools/playtest/start-keyless-server.sh`, see AGENTS.md for ports) and make a game with `tools/playtest/new-game.rb demo_access_tour`. Nothing is voiced yet, so no TTS is needed.
 3. One game per run. Do not reload mid-tour if you can help it (see section 5). Make a spare game before the class so a bad run can be swapped out.
 4. Screen: full-screen the browser, zoom so the pixel text reads from the back row. Close the notepad and phone overlays between stops; they cover the map.
 5. Audio: nothing is voiced. Mute or ignore. Ama's lines are text only.
@@ -121,7 +121,7 @@ The "Where next?" line picks the next open required step first, then optional on
 
 ## 6. Last checks before the class
 
-- The server answers on :3001 and the new game opens at reception with Ama talking.
+- The new game opens at reception with Ama talking.
 - The phone has "Ask me where next when you need it." and answers "Where next?".
 - You know which route you are on and where your spare game is.
 - Stop 12 status: BEING FIXED. Decide now whether you will use the skip.
