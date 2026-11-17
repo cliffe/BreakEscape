@@ -26,6 +26,16 @@ export function isHolder(item) {
     return isObj(dataOf(item).holds);
 }
 
+/** footholdId -> name of each held network link (K5: a token row names the link that recorded it). */
+export function linkNames(items) {
+    const out = new Map();
+    for (const it of Array.isArray(items) ? items : []) {
+        const d = dataOf(it);
+        if (d.type === 'network_link' && isStr(d.footholdId) && isStr(d.name) && !out.has(d.footholdId)) out.set(d.footholdId, d.name);
+    }
+    return out;
+}
+
 /** The held holder that files items with this id, or null. */
 export function heldHolder(items, holderId) {
     if (!isStr(holderId) || !Array.isArray(items)) return null;
@@ -74,7 +84,8 @@ export function buildSections({ holder, items, globals, sessionsSource = null, k
     const out = { signins: [], captures: [], sessions: [], findings: [] };
 
     if (holds.captures === true) {
-        const rows = buildSignInRows({ captures: isObj(globals?.se_captures) ? globals.se_captures : {}, secrets, keyring, social });
+        const rows = buildSignInRows({ captures: isObj(globals?.se_captures) ? globals.se_captures : {}, secrets, keyring, social,
+            linkNames: linkNames(items) });
         out.signins = rows.signins;
         out.captures = rows.captures;
     }

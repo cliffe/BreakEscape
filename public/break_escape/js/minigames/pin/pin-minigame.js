@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 // Attempts allowed per opening of the pad when the scenario doesn't set
 // maxAttempts and the player has no PIN cracker. With a cracker there is no
@@ -376,7 +376,7 @@ export class PinMinigame extends MinigameScene {
             this.updateDisplay();
             this.isLocked = true;
             this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
-            this.showPinMessage(PIN_SCOPE_REFUSAL_TEXT[reason], 'wrong', 2000);
+            this.showPinMessage(this.lastAttemptRefusalLine || PIN_SCOPE_REFUSAL_TEXT[reason], 'wrong', 2000);
             return;
         }
 
@@ -466,6 +466,7 @@ export class PinMinigame extends MinigameScene {
             if (lockScopeRefusal(error)) {
                 this.attemptCount--;
                 this.lastAttemptRefusal = lockScopeRefusal(error);
+                this.lastAttemptRefusalLine = lockScopeRefusalLine(error);
                 return false;
             }
             if (error?.status) {
@@ -643,7 +644,7 @@ export class PinMinigame extends MinigameScene {
             line.textContent = text || '';
             line.className = `pin-minigame-message${kind ? ` ${kind}` : ''}`;
         } else if (text) {
-            this.showFailure(text, closeAfterMs > 0, closeAfterMs || 2000);
+            this.showFailure(text, closeAfterMs > 0, closeAfterMs || 2000, { plainText: true });
             return;
         }
         if (closeAfterMs > 0) setTimeout(() => this.complete(false), closeAfterMs);

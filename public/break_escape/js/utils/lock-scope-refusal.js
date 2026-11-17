@@ -9,10 +9,34 @@ export const LOCK_SCOPE_REFUSAL_TEXT = Object.freeze({
     unreachable: "This PC can't be reached."
 });
 
-/** The refusal reason ('off', 'not_responding' or 'unreachable') in an unlock error, or null. */
+// Keyring K5 (plan 10): a lock on a PC reached by a session token that has run out answers
+// 403 { reason: 'expired', message: '{label} has expired.' }. The line names the token, so it
+// comes from the server's message, not this table. The fallback is only for an answer that
+// somehow lacks one.
+const EXPIRED_FALLBACK = 'This sign-in has expired.';
+const MAX_SERVER_LINE = 160;
+
+/** The refusal reason ('off', 'not_responding', 'unreachable' or 'expired') in an unlock error, or null. */
 export function lockScopeRefusal(error) {
     const reason = error?.status === 403 ? error.body?.reason : null;
+    if (reason === 'expired') return 'expired';
     return Object.prototype.hasOwnProperty.call(LOCK_SCOPE_REFUSAL_TEXT, reason) ? reason : null;
+}
+
+/**
+ * The line a lock screen says for a scope refusal in an unlock error, or null when the error
+ * is not one. Every lock minigame uses this one helper. For `expired` it is the server's own
+ * "{label} has expired." (callers show it as text: textContent, or showFailure with plainText); the rest come from the table.
+ */
+export function lockScopeRefusalLine(error) {
+    const reason = lockScopeRefusal(error);
+    if (!reason) return null;
+    if (reason === 'expired') {
+        const message = error.body?.message;
+        return typeof message === 'string' && message.trim() && message.length <= MAX_SERVER_LINE
+            ? message.trim() : EXPIRED_FALLBACK;
+    }
+    return LOCK_SCOPE_REFUSAL_TEXT[reason];
 }
 
 // One shared object-unlock POST with the GATED_DOOR §3.6 route-room retry. Every object unlock

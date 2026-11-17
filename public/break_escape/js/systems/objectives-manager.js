@@ -359,8 +359,9 @@ export class ObjectivesManager {
     // pc-sessions.js also emits pc_signed_in:<pcId>; listening to the bare name counts once.
     // A relay sign-in (an assist invite, keyring K3c 8.3) is the holder's session, not the
     // player's sign-in there: it meets no task, as the server's signedInPcs never counts it.
+    // A session token (K5) is no lasting sign-in either: the server never records it in signedInPcs.
     this.eventDispatcher.on('pc_signed_in', (data) => {
-      if (data?.relay === true) return;
+      if (data?.relay === true || data?.token === true) return;
       if (data?.pcId) this.handleObjectUnlock(data.pcId, data.pcId, data.pcId);
     });
 

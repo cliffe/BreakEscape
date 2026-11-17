@@ -10,7 +10,7 @@ import { applyActions } from '../../systems/apply-actions.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { flagRefusalLine, flagRejectReason } from '../../utils/flag-wording.js';
 import { escapeHtml } from '../../utils/escape-html.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
+import { lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class FlagStationMinigame extends MinigameScene {
     // The X sits inside the themed frame, not on its border (critique A26, A30)
@@ -620,7 +620,7 @@ export class FlagStationMinigame extends MinigameScene {
             if (refusal) {
                 // The PC the lock sits on is off or out of reach (review R4 m2): the flag was
                 // not judged, so no rejection is told to the mission
-                this.showResult(resultEl, 'error', LOCK_SCOPE_REFUSAL_TEXT[refusal]);
+                this.showResult(resultEl, 'error', lockScopeRefusalLine(error));
             } else if (error?.status && error.status < 500) {
                 const body = error.body || {};
                 const reason = flagRejectReason(body.message || body.error, body.reason);

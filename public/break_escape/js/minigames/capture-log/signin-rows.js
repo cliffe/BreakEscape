@@ -18,7 +18,7 @@ import { captureList, displaySecret, maskSecret } from '../../systems/captures.j
 import {
     rowKindName, SOURCE_TAG_TEXT, typeItFromLine, alsoInLine, connectFromInventoryLine,
     useOnSignInScreenLine, endedAssistMessage, expiredLine, moreNotesLine, footholdLine,
-    findingLine, pinLine
+    findingLine, pinLine, tokenUseLine
 } from '../../utils/remote-host-text.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -74,8 +74,10 @@ function makeVisible(keyring, openedFiles) {
  *                `foundVisible(entry)` when given decides a registry password's file wait
  *   social       the scenario's social block (revealSecret)
  *   openedFiles  a Set or predicate of item ids opened in this page (used without foundVisible)
+ *   linkNames    footholdId -> the held network link's name (a Map or object), for a token row
+ * The keyring answer may carry `tokenSecondsLeft(credId)` (K5): a live token row names its minutes.
  */
-export function buildSignInRows({ captures, secrets = null, keyring = null, social = {}, openedFiles = null } = {}) {
+export function buildSignInRows({ captures, secrets = null, keyring = null, social = {}, openedFiles = null, linkNames = null } = {}) {
     const meta = isObj(keyring?.captures) ? keyring.captures : {};
     const entries = Array.isArray(keyring?.entries) ? keyring.entries.filter((e) => isObj(e) && isStr(e.id)) : [];
     const firstSeen = keyring?.firstSeen;
@@ -86,6 +88,10 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
     // The server's gained time (stable across a reload); this page's first sight when it has none
     const gainedAt = (e) => (Number.isFinite(e.gainedAt) ? e.gainedAt : seenAt(e.id));
     const visible = makeVisible(keyring, openedFiles);
+    const linkNameOf = (id) => {
+        const v = linkNames instanceof Map ? linkNames.get(id) : (isObj(linkNames) ? linkNames[id] : null);
+        return isStr(v) ? v : null;
+    };
 
     const byKey = new Map();
     const accountRow = (npcId) => {
@@ -163,11 +169,18 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
         const row = { key, type: 'credential', kinds: [e.kind], sources: [], captures: [], seenKeys: [key],
             order: gainedAt(e), entry: e, title: who, subtitle: e.account?.username || null, label: e.label || null };
         if (e.kind === 'token') {
-            // K5 hook (plan 8.7, token row): K5 fills the "through {link}, about {n} min left" line
-            // from its own fields; until then a token row is drawn with its tag and source only.
+            // K5 (plan 10): where to use it, through the link that recorded it, and the minutes left
             pushOnce(row.sources, SOURCE_TAG_TEXT.recorded);
-            if (e.expired === true) { row.greyed = true; row.use = expiredLine(e.label); }
-            else row.use = useOnSignInScreenLine(e.host);
+            const left = typeof keyring?.tokenSecondsLeft === 'function' ? keyring.tokenSecondsLeft(e.id) : null;
+            // Run out by the page's own clock (K5 R1 m2): grey it now, without waiting for a GET;
+            // the server refuses it either way
+            if (e.expired === true || left === 0) { row.greyed = true; row.use = expiredLine(e.label); }
+            else {
+                const proof = Array.isArray(e.routes) ? e.routes.find((r) => isObj(r) && isStr(r.foothold))?.foothold : null;
+                const secs = typeof keyring?.tokenSecondsLeft === 'function' ? keyring.tokenSecondsLeft(e.id) : null;
+                row.use = tokenUseLine(e.host || e.connectsTo, proof ? linkNameOf(proof) : null, secs);
+                row.timed = Number.isFinite(secs);
+            }
         } else {
             pushOnce(row.sources, sourceTagOfHow(e.how));
             if (e.kind === 'assist_invite' && e.ended === true) {
@@ -236,6 +249,7 @@ export function buildSignInRow(r) {
     const row = el('li', 'signin-row');
     row.dataset.rowType = r.type;
     if (r.greyed) row.classList.add('signin-row-greyed');
+    if (r.timed) row.dataset.timed = 'true';
     const tags = el('div', 'signin-row-tags');
     for (const k of r.kinds || []) {
         const t = el('span', 'signin-row-tag signin-row-tag-kind', rowKindName(k));

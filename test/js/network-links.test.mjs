@@ -673,6 +673,36 @@ test('landing: a file opened from a remote desktop hands over to the reader', as
     assert.deepEqual(closed(), []);
 });
 
+// K5 R1 M1: a token that ran out (client timer: token_expired; 403: expired) resumes the view
+for (const reason of ['token_expired', 'expired']) {
+    test(`landing: ${reason} on a remote desktop returns to the view and keeps the trip`, async () => {
+        await tripFromView();
+        const before = views.length;
+        assert.equal(links.landed('desktop', reason, { pcId: 'lena_pc' }).landing, 'view');
+        await settle();
+        assert.equal(views.length, before + 1);
+        assert.deepEqual(closed(), []);
+        assert.notEqual(links.trip, null);
+    });
+}
+
+// ... also when the trip began at an open session (a plain `close` would leave there)
+for (const reason of ['token_expired', 'expired']) {
+    test(`landing: ${reason} on a session-started remote desktop resumes the view, not the world`, async () => {
+        await reset({ planted: true });
+        withStarters();
+        window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, footholdId: 'jack_comms_port', host: 'HB-FIN-02' }) };
+        const back = [];
+        links.openSession('lena_pc', { returnTo: (d) => back.push(d) });
+        const before = views.length;
+        assert.equal(links.landed('desktop', reason, { pcId: 'lena_pc' }).landing, 'view');
+        await settle();
+        assert.equal(views.length, before + 1);
+        assert.deepEqual(back, []);
+        assert.deepEqual(closed(), []);
+    });
+}
+
 test('landing: Sign out and a displaced session on a remote desktop return to the view', async () => {
     await tripFromView();
     assert.equal(links.landed('desktop', 'sign_out').landing, 'view');
@@ -1209,4 +1239,18 @@ test('openSession: a from session (no foothold) reopens through its source deskt
     assert.deepEqual(desktops, [], 'not the foothold route');
     assert.ok(trip, 'a trip started');
     delete window.openFromDesktop;
+});
+
+test('K5: an unplug answer naming tokenExpiredPcIds carries them (only those among endedPcIds) on the event and the result', async () => {
+    await reset({ planted: true });
+    withStarters();
+    const sprite = jackSprite();
+    window.rooms = { comms_room: { objects: { comms_port: sprite } } };
+    links.syncRoom('comms_room');
+    await links.interactJack(sprite);
+    window.ApiClient.networkUnplug = async () => ({ success: true, added: [box], removed: [linkItem.id], endedPcIds: ['fin_pc', 'door_box'], tokenExpiredPcIds: ['fin_pc', 'stray'] });
+    const out = await links.unplugFromView('comms_port');
+    assert.deepEqual(out.tokenExpiredPcIds, ['fin_pc']);
+    assert.deepEqual(named('network_device_unplugged').map(e => e.data),
+        [{ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['fin_pc', 'door_box'], tokenExpiredPcIds: ['fin_pc'] }]);
 });
