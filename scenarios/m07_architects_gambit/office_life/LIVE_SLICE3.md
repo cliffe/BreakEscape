@@ -88,3 +88,32 @@ Probe also fixed: the both-using predicate stopped at x 420, but the second cool
 - Probe errors: none in any run.
 
 Games used: 7767 (diagnosis, blocker values), 7774, 7779, 7789, 7792, 7793 (chair diagnosis), 7795, 7802.
+
+## Slice 3 live checks, part 2 (17 Nov 2026, same server)
+
+Server: keyless, port 3098, puma PID 2761755 (boot warning confirmed), stopped by PID at the end; port 3098 confirmed closed. Probe: `tools/playtest/m07-ol-s3.mjs`, modes `ex`, `walk`, `reload`, `atk`. The `ex` mode now forces no needs (the earlier version called `needs.set`, which the brief forbids); it prints world bubbles, needs-log exchange events and the ex/heard globals, and takes a screenshot on each exchange event. Times below are the needs-log game clock unless marked wall.
+
+Probe results are one game per row. Anything marked "probe" is a probe fault, not a scenario result. Not run: L6, 10.3 (b), L3 `ex_going_now`, and the server-room step of 10.4.
+
+| Check | Result | Games |
+|---|---|---|
+| L3 `ex_last_two` heard once, `heard_ex_last_two` true | Pass for 7805 (exchange_started 410, exchange_heard complete 504, global true at about 118 s wall). Not seen in 7826 | 7805, 7826 |
+| L3 bubbles from both operators, no repeat | Not verified: no exchange line appeared in the world-bubble log, and no screenshot was taken in 7805 (the screenshot hook was added after it ran) | 7805 |
+| L3 `ex_going_now` on a later trip | Not run: no second trip after the exchange (7805 ended at 420 s wall; 7826 had no exchange) | 7805, 7826 |
+| L5 west, desk, east, seated | Probe fault: west door lookup `unknown-entity`, east door `blocking-ui` | 7865 |
+| L5 west, desk, east, both at cooler | Probe fault: west door lookup `unknown-entity`; desk point not reached (feet at 440, 219); east door reached | 7870 |
+| L8 coffee station never used | Pass so far: no coffee job or use in any run. One bubble line mentions the coffee machine as broken (chatter text only) | all |
+| 10.3 (a) reload on ops floor, both at post, seated | Before reload both at post and seated (game 7876). After reload the run crashed in `snap()` (`needs.state` returned null), so the after-reload state is unproven | 7876 |
+| 10.3 (b) reload after server room, walk back | Not run | none |
+| 10.4 attack Adaeze while walking to cooler | Partial fail: KO after 11 punches, hostile, `ops_staff_upset` true, KO body still at (537, 294) from t129. She had left her post (448, 160) by about 150 px before the KO. Gwen stayed seated at post; no cooler job in the 60 s after | 7880 |
+| 10.4 attack Gwen while seated | Fail: KO after 9 punches and `ops_staff_upset` true, but Adaeze also turned hostile and knocked the player out (game-over screen). Gwen's body moved from (384, 160) to (412, 201) | 7889 |
+| 10.4 attack Adaeze while using the cooler | Pass on KO, hostile and body fixed: KO after 12 punches, body at (422, 201) from t130. Gwen went back to post (384, 160), no new cooler job. `ops_staff_upset` true in the globals | 7894 |
+
+Notes on the evidence:
+
+- Game 7805, needs log: `exchange_started` (ex_last_two, with Gwen) at 410 while both were `using` at the cooler. `exchange_heard` (complete true) at 504. Both `used` at 506, both `returned_post` at 514.
+- Game 7826, needs log: trip 1 at 370 to 480 and trip 2 at 2150 to 2260 (the clock jumped about 1,600 between them, not checked further). No exchange started on either trip, and `heard_ex_last_two` stayed false. Whether the exchange is random or conditional is not known; the scenario was not read for this.
+- The attack probe uses `window.playerCombat.attack({x, y})`, the same real punch path as the m01 music and barks probes. It does not use `debugKO`.
+- The 10.4 "seated" run shows the other operator going hostile when the player is knocked out or attacks the seated one. This is not the plan's "the other walks home" and needs a look at the engine or the plan.
+
+Probe changes still needed before the next run: the door lookup for `walk` (the doorway ids are `door:...`, and `moveToNear` returns `unknown-entity`), a reload that waits for the ops floor state before `snap()`, and a screenshot on the first exchange line in `ex`.

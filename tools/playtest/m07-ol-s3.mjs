@@ -108,14 +108,26 @@ if (mode === 'talk') {
 }
 
 if (mode === 'ex') {
-  for (let trip = 0; trip < 3 && T() < 480; trip++) {
-    await ev(h, () => window.__test.needs.set('adaeze_okafor', 'thirst', 20));
-    await watch(T() + 150, usingCooler, 'ex-trip' + trip);
-    await h.t(4000);
-    const g = await ev(h, () => { const gl = window.__test.getState().globals || {}; return Object.fromEntries(Object.entries(gl).filter(([k]) => /heard|ex_|last_two|going/.test(k))); });
-    log('globals after trip' + trip, g);
-    await h.t(15000);
+  // Natural trips only (no needs.set: the brief forbids forcing needs). Prints each world bubble once
+  // (speaker, event, text) and each change to the ex_/heard_ globals, so a repeat shows up as a second line.
+  const endAt = Number(arg) || 420;
+  const seen = new Set();
+  let prevG = ''; let prevUsing = false; const trips = [];
+  while (T() < endAt) {
+    const s = await snap();
+    const u = usingCooler(s);
+    if (u && !prevUsing) { trips.push(T()); log('both-using-cooler t' + T(), {}); }
+    prevUsing = u;
+    const bl = await ev(h, () => (window.npcWorldBubbles?.log || []).map(e => ({ t: e.t, npc: e.npcId, ev: e.event, text: e.text })));
+    for (const e of bl) { const k = JSON.stringify(e); if (!seen.has(k)) { seen.add(k); log('bubble', e); } }
+    const nl = await ev(h, () => window.__test.needs.log().map(e => ({ t: e.t, npc: e.npc, ev: e.ev, knot: e.knot || null, complete: e.complete ?? null, with: e.with || null })));
+    for (const e of nl) { const k = 'N' + JSON.stringify(e); if (!seen.has(k)) { seen.add(k); if (/exchange|going|speak|call/.test(e.ev) || /ex_/.test(e.knot || '')) { log('need-event', e); await shot(`ex-${e.ev}-${seen.size}`); } } }
+    const g = await ev(h, () => { const gl = window.__test.getState().globals || {}; return Object.fromEntries(Object.entries(gl).filter(([k]) => /heard|ex_|last_two|going|ops_staff/.test(k))); });
+    const gk = JSON.stringify(g);
+    if (gk !== prevG) { log('globals t' + T(), g); prevG = gk; }
+    await h.t(1000);
   }
+  log('both-using starts (s from entry)', trips);
   log('needs log since entry', await logTail(L0));
 }
 
@@ -135,6 +147,63 @@ if (mode === 'walk') {
   log('to east door', { ok: r3?.ok, feetAt: r3?.feetAt, reason: r3?.reason });
   await shot(`walk-${arg || 'post'}`);
   log('snap', await snap());
+}
+
+
+if (mode === 'atk') {
+  // arg: walk-adaeze | seat-gwen | cool-adaeze. Punches with the real playerCombat.attack (as m01-ol-music does).
+  const [when, who] = arg.split('-');
+  const target = who === 'gwen' ? 'gwen_pritchard' : 'adaeze_okafor';
+  const other = OPS.find(i => i !== target);
+  const home = await snap();
+  log('home', { target: home[target].x + ',' + home[target].y, other: home[other].x + ',' + home[other].y });
+  if (when === 'cool') await watch(T() + 200, usingCooler, 'atk-wait-cool');
+  if (when === 'walk') await watch(T() + 200, s => s[target].job && s[target].job[2] === 'goto_target', 'atk-wait-walk');
+  const pre = await snap();
+  log('attack start', { t: T(), target: pre[target].job, other: pre[other].job });
+  let ko = false; let n = 0;
+  for (; n < 40 && !ko; n++) {
+    await ev(h, (i) => window.__test.moveToNear(i), target);
+    await ev(h, (i) => { const s = window.npcBehaviorManager.getBehavior(i).sprite; window.playerCombat.attack({ x: s.x, y: s.y }); }, target);
+    await h.t(450);
+    ko = await ev(h, (i) => window.npcHostileSystem.isNPCKO(i), target);
+  }
+  log('punches', { n, ko, hostile: await ev(h, (i) => window.npcHostileSystem.isNPCHostile(i), target) });
+  await shot(`atk-${when}-${who}-ko-${gid}`);
+  const koAt = T();
+  // Watch 60 s after the KO: does the other operator walk home, does anyone start a cooler job?
+  const jobs = [];
+  for (let k = 0; k < 60; k++) {
+    const s = await snap();
+    const kk = JSON.stringify(OPS.map(i => [s[i].m, s[i].job && s[i].job[0], s[i].job && s[i].job[2], s[i].x, s[i].y]));
+    if (!jobs.length || jobs[jobs.length - 1][1] !== kk) jobs.push([T(), kk]);
+    await h.t(1000);
+  }
+  for (const j of jobs) log('after-ko t' + j[0], j[1]);
+  const fin = await snap();
+  const g = await ev(h, () => { const gl = window.__test.getState().globals || {}; return Object.fromEntries(Object.entries(gl).filter(([k]) => /upset|ops_staff|hostile|ko/.test(k))); });
+  log('globals', g);
+  log('state', { ko: await ev(h, (i) => window.npcHostileSystem.isNPCKO(i), target), hostile: await ev(h, (i) => window.npcHostileSystem.isNPCHostile(i), target),
+    otherHostile: await ev(h, (i) => window.npcHostileSystem.isNPCHostile(i), other), targetPos: fin[target].x + ',' + fin[target].y, home: home[target].x + ',' + home[target].y,
+    otherPos: fin[other].x + ',' + fin[other].y, blockingUi: await ev(h, () => window.__test.getState().blockingUi ?? null) });
+  log('bubbles', await ev(h, () => (window.npcWorldBubbles?.log || []).slice(-8).map(e => ({ t: e.t, npc: e.npcId, text: e.text }))));
+  log('needs log since entry', await logTail(L0));
+}
+
+if (mode === 'reload') {
+  // arg: 'pre' = reload on the ops floor before the server room. Both sample before and after the reload.
+  await ev(h, () => window.__test.enterRoom('operations_floor', { timeoutMs: 20000 }));
+  await h.t(40000);
+  log('before reload', await snap());
+  await shot('reload-before-' + gid);
+  await h.page.reload({ waitUntil: 'load' });
+  await h.t(6000);
+  await ev(h, () => window.__test.waitUntilReady ? window.__test.waitUntilReady({ timeoutMs: 30000 }) : null);
+  log('after reload, room', await ev(h, () => window.__test.getState().currentRoom ?? null));
+  await ev(h, () => window.__test.enterRoom('operations_floor', { timeoutMs: 20000 }));
+  await h.t(15000);
+  log('after reload, ops floor', await snap());
+  await shot('reload-after-' + gid);
 }
 
 log('errs', h.errs.filter(e => !/503/.test(e)).slice(0, 8));
