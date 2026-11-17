@@ -82,3 +82,20 @@ Stage 0 to Stage 2 and Stage 5 now agree on D84, found at post first, the beat g
 ## Verdict
 
 No blocker. Fix M1 (warning text, test, and the sources line), then the minors. M1 adds no new design decision beyond the exemption question, which goes to the user. Round 4 can be a delta on the cheaper tier once M1 is fixed. If the exemption is removed, that is a validator behaviour change and case 3 sends it back to `opus55`.
+
+## Outcomes
+
+Fixed in 152124c20. The `post_override?` exemption is unchanged and stays a user decision.
+
+- **M1.** Fixed. The V2 warning (`scripts/validate_office_life.rb`, `check_story_npcs_leave`) now points to a leash, the beat gate (protection 3) or no away needs, and does not mention `patrolOverride`; the `V2: NPC '<id>'` prefix is kept. New assertion in `test/js/validator-office-life.test.mjs` (V2 block). SKILL.md:14 says the plan's section 2 protection 3 and the V2 row are superseded; the plan has a short superseded note at its lines 68, 183, 288, 689 and 693. Stage 4 line now includes "no `patrolOverride` on any needs NPC".
+- **m1.** Fixed. SKILL.md beat-gate items name `<npc>_beat`, the direct `offWhen` case, the `<machine>_off` case with set and per-cause clear mappings, and the break negation; example added to `references/mapping-patterns.md` section 5; checklists.md and gotchas.md say "where a machine has two or more causes".
+- **m2.** Fixed. The VM pause and the frame-step citations are in `references/measurement-recipes.md` section 10 and SKILL.md lead-time paragraph.
+- **m3.** Fixed. Validator citations are by method name.
+- **m4.** Fixed in SKILL.md and checklists.md (timed conversation `background` and phone-to-person transition).
+- **m5.** Fixed. "Sign-in PC" is defined at each use (SKILL.md, checklists.md, gotchas.md).
+- **m6.** Fixed. A `null` state counts as at post and the poll has a timeout (SKILL.md, checklists.md).
+- **m7.** Comment wording only, no code: npc-needs.js (comments at the review's four sites plus the one at the old :3896), unlock-system.js (two comments), network_access.rb (one comment) now say object-level `offWhen`. The comment at npc-needs.js:5238 is correct and was left. `node --check` and `ruby -c` pass.
+- **m8.** Fixed. Protection 3 now reads "where a beat needs a story NPC with needs at its post spot"; the ban line says "see protection 3".
+- **m9.** Fixed. The Stage 4 line has the four missing items.
+
+Tests: `node test/js/validator-office-life.test.mjs` 33 of 33 pass. The Ruby validator on `scenarios/test_needs_attack` and on m03 gives output identical to the previous commit's validator (neither raises V2, so the new text does not appear there).
