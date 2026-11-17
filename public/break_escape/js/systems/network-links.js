@@ -586,8 +586,10 @@ export class NetworkLinks {
         if (sprite) this.applyJackLook(sprite);
         this._publishPlanted(jackId, false);
         const endedPcIds = Array.isArray(body.endedPcIds) ? body.endedPcIds : [];
-        this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds }, jackId);
-        return { action: 'unplugged', footholdId: id, endedPcIds };
+        // Keyring K5: the expired token sessions among them (a subset), sent only when there are some
+        const tokenExpiredPcIds = Array.isArray(body.tokenExpiredPcIds) ? body.tokenExpiredPcIds.filter(id => endedPcIds.includes(id)) : [];
+        this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds, ...(tokenExpiredPcIds.length ? { tokenExpiredPcIds } : {}) }, jackId);
+        return { action: 'unplugged', footholdId: id, endedPcIds, ...(tokenExpiredPcIds.length ? { tokenExpiredPcIds } : {}) };
     }
 
     // ------------------------------------------------------------------ Wi-Fi (slice 9.3b W, 5.3)

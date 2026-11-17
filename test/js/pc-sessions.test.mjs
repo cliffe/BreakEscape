@@ -1215,3 +1215,18 @@ test('credentialRefusalReason maps expired:true to expired, after the other flag
     assert.equal(credentialRefusalReason({ expired: true, wrongPc: true }), 'wrong_pc');
     assert.equal(credentialRefusalReason({}), 'no_longer_works');
 });
+
+test('an unplug event naming tokenExpiredPcIds ends that token session with the token line and the rest with the unplug line', async () => {
+    const handlers = {};
+    window.eventDispatcher = { emit: () => {}, on: (name, fn) => { handlers[name] = fn; } };
+    const toastsSeen = [];
+    window.gameAlert = (m) => toastsSeen.push(m);
+    const s = tokenSetup();
+    window.eventDispatcher = { emit: () => {}, on: (name, fn) => { handlers[name] = fn; } };
+    await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    s.sessions.set('ops_pc', { npcId: 'ian', username: 'ishaw', via: 'credential', kind: 'saved_connection', host: 'HB-OPS-01' });
+    s.listen();
+    handlers['network_device_unplugged']({ jackId: 'comms_port', footholdId: 'drop_box', endedPcIds: ['fin_pc', 'ops_pc'], tokenExpiredPcIds: ['fin_pc'] });
+    assert.deepEqual(toastsSeen, [TOKEN_LINE, unplugEndedMessage(['HB-OPS-01'])]);
+    delete window.gameAlert;
+});

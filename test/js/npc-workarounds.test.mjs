@@ -1236,3 +1236,24 @@ test('a dropped answer drops no sessions even when it carries endedPcIds', async
     await flush();
     assert.deepEqual(dropped, []);
 });
+
+test('an answer with tokenExpiredPcIds passes the ones among the dropped sessions on (K5)', async () => {
+    const calls2 = [];
+    const { runner } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true, endedPcIds: ['ops_pc', 'fin_pc'], tokenExpiredPcIds: ['fin_pc', 'elsewhere'] } } });
+    runner.deps.linkDropped = (ids, tokenExpired) => calls2.push([ids, tokenExpired]);
+    runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.deepEqual(calls2, [[['ops_pc', 'fin_pc'], ['fin_pc']]]);
+});
+
+test('tokenExpiredPcIds is filtered by the sessions held when the request left (K5)', async () => {
+    const calls2 = [];
+    const { runner } = stub({ answers: { mei: { pcId: 'mei_pc', hasPostit: true, endedPcIds: ['ops_pc', 'fin_pc'], tokenExpiredPcIds: ['fin_pc'] } } });
+    runner.deps.linkDropped = (ids, tokenExpired) => calls2.push([ids, tokenExpired]);
+    runner.deps.heldPcIds = () => ['ops_pc'];
+    runner.due({ npcId: 'mei', run: MEI_RUN, level: 60 });
+    runner.visitDone(visitDone('mei', MEI_RUN));
+    await flush();
+    assert.deepEqual(calls2, [[['ops_pc'], []]]);
+});

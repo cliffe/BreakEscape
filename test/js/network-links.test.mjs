@@ -1210,3 +1210,17 @@ test('openSession: a from session (no foothold) reopens through its source deskt
     assert.ok(trip, 'a trip started');
     delete window.openFromDesktop;
 });
+
+test('K5: an unplug answer naming tokenExpiredPcIds carries them (only those among endedPcIds) on the event and the result', async () => {
+    await reset({ planted: true });
+    withStarters();
+    const sprite = jackSprite();
+    window.rooms = { comms_room: { objects: { comms_port: sprite } } };
+    links.syncRoom('comms_room');
+    await links.interactJack(sprite);
+    window.ApiClient.networkUnplug = async () => ({ success: true, added: [box], removed: [linkItem.id], endedPcIds: ['fin_pc', 'door_box'], tokenExpiredPcIds: ['fin_pc', 'stray'] });
+    const out = await links.unplugFromView('comms_port');
+    assert.deepEqual(out.tokenExpiredPcIds, ['fin_pc']);
+    assert.deepEqual(named('network_device_unplugged').map(e => e.data),
+        [{ jackId: 'comms_port', footholdId: 'jack_comms_port', endedPcIds: ['fin_pc', 'door_box'], tokenExpiredPcIds: ['fin_pc'] }]);
+});

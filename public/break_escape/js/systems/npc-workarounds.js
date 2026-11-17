@@ -358,7 +358,9 @@ export class NpcWorkarounds {
         // K4: a borrow or hand that ended routes server-side reports them; drop their sessions
         if (Array.isArray(body.endedPcIds) && body.endedPcIds.length) {
             const ids = job.heldAtSend ? body.endedPcIds.filter(id => job.heldAtSend.has(id)) : body.endedPcIds;
-            if (ids.length) this.deps.linkDropped?.(ids);
+            // K5: the expired token sessions among them end with the token line
+            const tokenExpired = Array.isArray(body.tokenExpiredPcIds) ? body.tokenExpiredPcIds.filter(id => ids.includes(id)) : [];
+            if (ids.length) this.deps.linkDropped?.(ids, tokenExpired);
         }
         if (typeof body.pcId === 'string' && body.hasPostit === true) this.deps.markPostit?.(body.pcId, true);
         if (typeof body.roomId === 'string') {
@@ -484,7 +486,7 @@ export function installNpcWorkarounds(api) {
             gs.globalVariables[name] = value;
             w.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value, oldValue: old });
         },
-        linkDropped: ids => w.pcSessions?.linkDropped?.(ids, 'route_ended'),
+        linkDropped: (ids, tokenExpired = []) => w.pcSessions?.linkDropped?.(ids, 'route_ended', { tokenExpired }),
         heldPcIds: () => [...(w.pcSessions?.sessions?.keys?.() || [])],
         markPostit: (pcId, on) => w.postitMarks?.mark?.(pcId, on),
         openDoor: (roomId, roomData) => openProppedDoor(roomId, roomData, w),

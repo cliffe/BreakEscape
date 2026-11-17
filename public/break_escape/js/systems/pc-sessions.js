@@ -273,7 +273,7 @@ export class PcSessions {
         this._listening = dispatcher;
         dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
-        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged'));
+        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged', { tokenExpired: d?.tokenExpiredPcIds }));
         // 9.2 H (6.4): an NPC sitting down, or leaving a borrowed session, ends the player's there
         // The NPC's id goes too: the holder of a relay session sitting down keeps it (K3c, 8.3)
         const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId), d.npcId ?? null); };
