@@ -115,7 +115,9 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
     "cloner_held": false,
     "seen_julian_rdp": false,
     "has_julian_rdp": false,
-    "staff_twin_up": false
+    "staff_twin_up": false,
+    "julian_lost_with_desk": false,
+    "julian_back": false
   },
 
   "objectives": [
@@ -381,6 +383,14 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "eventMappings": [
             <%# The event carries the item's type; the cloner is the tour's only rfid_cloner. %>
             { "eventPattern": "item_picked_up:rfid_cloner", "onceOnly": true, "setGlobal": { "cloner_held": true } },
+            <%# Julian's session lost when the front desk was signed out (a box-route session has no
+                fromPcId; signing out of julian_pc itself has reason sign_out). Not onceOnly: a
+                second loss resets julian_back. %>
+            { "eventPattern": "pc_signed_out:julian_pc",
+              "condition": "data.reason === 'link_dropped' && data.fromPcId === 'reception_pc'",
+              "setGlobal": { "julian_lost_with_desk": true, "julian_back": false } },
+            { "eventPattern": "pc_signed_in:julian_pc", "condition": "globalVars.julian_lost_with_desk === true",
+              "setGlobal": { "julian_back": true } },
             <%# Stop 15: Thandiwe's laptop picks the copy and the key page takes the Staff key. The
                 secret is the psk's own render (@random_password, same binding as networks.office_lan),
                 never a pasted copy. No captureProof on Thandiwe: the address is an SSID, so this
