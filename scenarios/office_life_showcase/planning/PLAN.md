@@ -141,7 +141,7 @@ Switching the office coffee back on at the evening turn also switches the kitche
 
 ## 5. Objectives
 
-All three aims visible from the start (no `unlockAim`, so an early event never completes a task in a locked aim). No aim has `missionConclusion` (section 6). No task mapping uses `onceOnly`: `completeTask` returns early on a completed task (`systems/objectives-manager.js:742-744`).
+All three aims visible from the start (no `unlockAim`, so an early event never completes a task in a locked aim). No aim has `missionConclusion` (section 6). No task mapping uses `onceOnly` except the two that share a mapping with a bark, B2 (`see_queue`) and B3 (`see_coffee_off`); those tasks complete once anyway, so the single firing loses nothing. Every other task mapping stays without it, because `completeTask` returns early on a completed task (`systems/objectives-manager.js:742-744`).
 - Aim `morning` "Morning": `see_queue` "Someone waits their turn for coffee"; `hear_queue_chat` "Two in the coffee line pass the time"; `see_coffee_off` "Switch the coffee off and watch them turn back"; `hear_cooler_exchange` "Overhear the conversation at the cooler".
 - Aim `midday` "Midday": `use_open_screen` "Use a screen its owner left open"; `see_caught` "Get caught at someone's desk"; `see_cake_eaten` "Put the cake out and watch it go".
 - Aim `evening` "Evening": `see_who_stays` "See who stays late".
@@ -252,6 +252,8 @@ Player choice text (not voiced): "What am I looking at?", "What should I try nex
 Exit choice for each: "I'll let you get on." Each NPC answers it with one short exit reply (x5), and has a hub reopen line (x4) so a second talk does not open on a blank hub. The one topic choice per NPC is flavour: one topic each, no variable, no consequence. It is also the tour's hook (lock habit, cooler, mugs, avoiding people), so it is not a flat choice to fix.
 
 ### 7c. Exchange `exchange_cooler_chat` (in graham.ink, heard once)
+
+In the ink, each line carries the speaker's full display name as its prefix: "Graham Whitfield:" for X1, X3 and X5, "Agnieszka Duda:" for X2 and X4. The Speaker column below is shorthand. The prefix is not shown in the bubble; the engine uses it to pick the speaker.
 
 | Id | Speaker | Text | Chars |
 |---|---|---|---|

@@ -81,3 +81,44 @@ Line numbers are in `scenarios/office_life_showcase/scenario.json.erb` unless st
 - Ink compiles with no warnings; no em or en dashes in the new ink.
 
 Not proved live: this is the build and validator only.
+
+## S2 proof (live, keyless server on :3094)
+
+Method: headless, `setFPS(20)`, fixed steps on, `/tts` aborted. Times are the needs clock in seconds (m:ss). No `__test.needs.set` was used in any run. The only `__test` calls were player moves, `enterRoom` for the kitchen (the player opening the west door) and the socket interaction. A recorder in the page logs world emits, bubbles, barks, globals, task status and job changes; dumps are in `tmp/s2/` (gitignored).
+
+Games (all printed by `new-game.rb` in this run): 7507 (run A, timed), 7508 (run B, kitchen at 0:30), 7509 (run C, kitchen shut to 3:30), 7510 (run D, socket lever), 7513 (machine states), 7515 (viewer in the kitchen, T5). First timed run 7502 was a dry run (the lever was pulled too late to catch a queue) and is not counted.
+
+### Proof table
+
+| Check | Result | Figures |
+|---|---|---|
+| Timed run, four morning tasks, no nudge (A, 7507) | PASS | `see_queue` 0:53, `hear_queue_chat` 0:56, `hear_cooler_exchange` 3:19, `see_coffee_off` 3:35; all four `completed` at 4:03 |
+| First coffee queue (T4) | PASS | Chidi leaves 0:52 and is `using` at 0:55; Jun (place 1) and Zainab (place 2) queue at 0:53; same in B (0:51), C (0:53), D (0:52). Order Chidi, Jun, Zainab |
+| Queue chat (T5) | PASS | Chidi's line "Who keeps taking the mugs?" 0:56, Jun's "Third one today. Don't judge." 1:00; never Zainab. With the viewer in the kitchen (F, 7515) the lines play with `overheard:false` and `hear_queue_chat` stays `active` to 2:05, while `see_queue` still ticks |
+| Second coffee run (T6) | PASS | A: queue at 3:32 (Jun place 1, Zainab place 2) with the kitchen open since 1:48; C: 3:30. Two `npc_queued:office_coffee`, no `kitchen_coffee` target |
+| Door opening to mug pickup | PASS | A: door opened 1:48 (player), Agnieszka leaves for the tray 1:49, pickup 1:51 (B11 fires, toast because the viewer is in the kitchen); B: door 0:32, pickup 0:35; D: door 0:05, pickup 0:08; C: door 3:32, pickup 3:35. About 3 s after the door in every run. Agnieszka heads back at 2:02 (A) |
+| Cooler exchange (A) | PASS | Graham and Agnieszka leave 2:42; lines at 2:55 (Graham), 3:00 (Agnieszka), 3:05 (Graham), 3:10 (Agnieszka), 3:15 (Graham); `npc_exchange_heard` 3:19, `heard_exchange_cooler_chat` true, task ticks. Speaker bubbles checked on screen: X1 on Graham, X2 on Agnieszka (`s2-A-exchange-*.png`); the "Graham Whitfield:" and "Agnieszka Duda:" prefixes are stripped and pick the right head. A later cooler visit plays pool lines only ("Have you tried the new sandwich place?") |
+| Graham's lock after the exchange | PASS | `workstation_auto_locked:graham_pc` 20 s after he left (3:02), unlock on return 3:34 |
+| `chidi_pc_screen_locked` on Chidi's first leave | PASS | true at 0:53 (A), 0:51 (B), 0:52 (D) with `workstation_lock_heard:chidi_pc` (volume 0.068, the chime plays); false on return at 1:10 to 1:12. The second leave (3:32 in A) locks and chimes again |
+| T6b, kitchen opened at 0:30 (B, 7508) | PASS | First queue still forms at `office_coffee` at 0:51, `see_queue` and `hear_queue_chat` tick; `kitchen_coffee` reports off (`_isOff`, game 7513) |
+| T9, kitchen shut to 3:30 (C, 7509) | PASS | Graham and Agnieszka park `no_source` at 2:40; the kitchen opens 3:32; Graham leaves 3:34, Agnieszka does the mug run first then the cooler 3:47; exchange lines 3:55 to 4:14, `npc_exchange_heard` and the task tick at 4:19 |
+| Socket lever (D, 7510) | PASS | Kitchen opened once (0:05), lever pulled at 0:55 with Chidi using and Jun and Zainab queued. `npc_turned_back` reason `off` for Jun and Zainab at 0:55, B3 bark, `see_coffee_off` ticks; Zainab queues at `kitchen_coffee` the same tick, Jun walks to it; both use it (1:03, 1:19) and return. Chidi, mid-use, finishes at the office machine |
+| One machine on at a time (7513) | PASS | start: office on; kitchen opened: office on, kitchen off; lever off: office off, kitchen on; lever on: office on, kitchen off; the next run queued in the office at 0:52. Switching back in D set `office_coffee_off` false at 2:00 |
+| `kitchen_seen`, B1, B11 | PASS | `kitchen_seen` true on the first `room_entered:kitchen` in every run; B11 once per run; B2 and B3 once |
+
+No FAIL, and no nudge was needed.
+
+### Observations
+- Bark text appears in the `showBark` log twice for B2 and B3 (same time stamp). The player sees one bubble; the second call looks like the bark queue re-offering the same text. Not a scenario issue and not touched.
+- With the viewer in the kitchen, queue chat is silent for the task but still logged `overheard:false`, as the plan says.
+- Run A needed a lever pulled right after the second queue forms (3:32 to 3:35) because that is the only window with someone walking or queued at the office machine in the morning.
+
+### Scenario and plan changes made in this pass
+- No scenario or ink change was needed.
+- PLAN.md: 7c now says the exchange speaker prefixes are the full display names "Graham Whitfield:" and "Agnieszka Duda:"; section 6 now allows B2 (`see_queue`) and B3 (`see_coffee_off`) to share one `onceOnly` mapping with their task.
+
+### Screens (`scenarios/office_life_showcase/planning/screens/`)
+`s2-A-queue.png` (Jun and Zainab waiting, hourglasses, Chidi at the machine), `s2-A-exchange-graham.png` and `s2-A-exchange-agnieszka.png` (cooler bubbles), `s2-C-exchange-*.png` (same, late kitchen), `s2-D-coffee-off.png` (socket off, B3 bark, task complete), `s2-A-coffee-off.png`, `s2-B-queue.png`, `s2-C-queue.png`, `s2-F-queue.png`.
+
+### Scripts
+`tools/playtest/showcase-s2-lib.mjs` (recorder and helpers), `showcase-s2-run.mjs <gid> <A|B|C|D|F>`, `showcase-s2-lever.mjs <gid>` (machine states), `showcase-s2-analyse.mjs <dump>`, `showcase-s2-info.mjs`.
