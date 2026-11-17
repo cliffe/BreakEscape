@@ -1,6 +1,6 @@
 # m03 office life slice 7: seats and pose frames (done)
 
-Branch fix/ol-m03-night-sofa (main with the pose art is already merged in). First pass: game 6752. Fix and remaining items: games 6757, 6765 and 6766. Keyless server on :3091, each puma stopped by its recorded PID. The fix changes seating.js (startMount and seatNPC) and adds test/js/seating-post-side-place.test.mjs; no scenario or art file changed. Scratchpad (not in the repo): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/slice7/` holds lib.mjs, p1.mjs, p2.mjs (seat dump and zoomed crops), cyc.mjs (stand/walk/re-sit cycles with a 200 ms sampler), s4.mjs (player beside Zainab; written, NOT run), an.py and away.py (analysis), the sample JSON files and the PNGs.
+Branch fix/ol-m03-night-sofa (main with the pose art is already merged in). First pass: game 6752. Fix and remaining items: games 6757, 6765 and 6766. Keyless server on :3091, each puma stopped by its recorded PID. The fix changes seating.js (startMount and seatNPC) and adds test/js/seating-post-side-place.test.mjs; no scenario or art file changed. Scratchpad (not in the repo): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/slice7/` holds lib.mjs, p1.mjs, p2.mjs (seat dump and zoomed crops), cyc.mjs (stand/walk/re-sit cycles with a 200 ms sampler), s4.mjs (player beside Zainab; run, game 6766, item 4), rl.mjs (reload while both seated; run, game 6766, item 5), an.py and away.py (analysis), the sample JSON files and the PNGs.
 
 ## Done
 
@@ -23,7 +23,7 @@ Both at the machine together: coffee 3 of 3 pair runs (use_started within 0.3 to
 | Value | SLICE3_4.md | Now |
 |---|---|---|
 | Coffee real away | 22.0 to 22.4 s | 22.0, 22.0, 22.0, 22.2 (place 0 start) then 22.4, 20.6, 19.2 (place 1 start, shorter) |
-| Cooler real away | 32.2 to 33.0 s (alone) | 33.2, 33.1, 29.5, 29.6 |
+| Cooler real away | 32.2 to 33.0 s (alone) | 33.2, 33.1 (first trip of each run, before she had sat: no place, she leaves from the spawn walk-in), 29.5, 29.6 (place 0 start). The two long ones are start-of-run trips, not place-1 starts: the samples show no seat before them. |
 | Cooler real away, Yusuf joins late | 50.9 to 58.5 s | 58.4 |
 | Lock at 1.2 s after leaving | coffee open, cooler locked | coffee open (7 of 7), cooler locked (5 of 5) |
 Coffee expected 18.6 s and cooler 28.7 s (expectedAwayMs): NOT re-measured; my sampler read the wrong job field (null). Read it from the npc_left_post event payload (`expectedAwayMs`, workstation-state.js:544) in pair1-samples.json or a rerun. The 24 s lock threshold still separates coffee (max 22.4) and cooler (min 29.5) by real time. Finding 2 (minor): a place-1 start shortens the coffee trip to 19.2 to 20.6 s; this goes away with the finding 1 fix.
@@ -50,14 +50,16 @@ Test: `test/js/seating-post-side-place.test.mjs` (3 tests: far-side arrival take
 | Value | SLICE3_4.md (R1) | Now |
 |---|---|---|
 | Coffee expectedAwayMs (`npc_left_post` payload) | 18626 | Zainab 18626 (x3), Yusuf 19752 |
-| Cooler expectedAwayMs (payload) | 28724 | Zainab 28724 (x2), Yusuf 29000 (x3) |
+| Cooler expectedAwayMs (payload) | 28724 | Zainab 28724 (x2: z:thirst and b:thirst), Yusuf 29000 (x3) |
 | Coffee real away (global `zainab_laptop_owner_away`) | 22.0 to 22.4 s | 22.2, 22.0, 25.2 (Yusuf at the machine too) |
-| Cooler real away | 32.2 to 33.0 s alone, 50.9 to 58.5 s with Yusuf | 27.8, 29.0, 29.8 (paired) |
+| Cooler real away | 32.2 to 33.0 s alone, 50.9 to 58.5 s with Yusuf | 27.8 (start trip, alone), 29.0 (z:thirst, alone), 29.8 (b:thirst, paired). Only the last is paired: Yusuf's cooler uses at t=176.8 s (y:thirst) and t=243.5 s sit beside Zainab's only at the b:thirst trip. |
 | Lock 1.2 s after leaving | coffee open, cooler locked | coffee open (3 of 3), cooler locked (3 of 3) |
 | Coffee use cell (feet) | (276,244) | Zainab (273.9,243.8), (269.4,244), (270,244); Yusuf (236.7,244) |
 | Cooler cells (feet x, y) | x 198 and 234 | (197.3 to 198.8, -44 to -42.7) and (233 to 233.7, -44 to -42.1); one at 194.5 |
 The 24 s lock threshold still separates coffee (max 25.2 real, but expected 18.6 to 19.8 s, and the lock decision uses expected) from cooler (expected 28.7 s). Cooler real away is shorter than in SLICE3_4 (29 against 32 s) because she no longer detours to the east place: the place-1 start shortening (finding 2) is gone. The 25.2 s coffee case is Zainab and Yusuf together at the machine (capacity 2); the laptop stayed open at 1.2 s and is not re-checked later, so nothing relies on it ending before 24 s. useFrom is unchanged and her post cell and stand cell are the same on every cycle: stand spot feet (148,252 to 264) each time.
 Yusuf stand spot feet (108 to 108.3, 287 to 298), same as before.
+
+The cooler has three real away values (27.8, 29.0, 29.8 s) but two expectedAwayMs payloads: only z:thirst (left_post at t=104.0 s) and b:thirst (t=237.1 s) logged an `npc_left_post` with the payload. The 27.8 s start-of-run cooler trip (use_started at t=32.1 s) ran before the driver's sampler marks began (first mark t0=74.4 s), so it logged no `npc_left_post` and has no payload. Its lock was read, like all three, from the sampled laptop-lock flag (`lk` true in fix-samples.json), which is how "cooler locked (3 of 3)" was counted; the expected-time payload is not needed to read the lock.
 
 ## Not done
 Nothing in slice 7. The earlier "Draft nothing else until Finding 1 is decided" is now closed: no scenario change was needed.

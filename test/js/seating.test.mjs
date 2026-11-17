@@ -224,8 +224,11 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
 });
 
 // startMount's walk target on a two-place sofa (R10 m1): the place nearest the post's home cell when
-// the feet are within the post gate, else the place nearest the feet. Sofa at (80,90), 62x40: place
-// feet (99,130) west and (123,130) east.
+// the NPC is at its post and within the 48 px gate of home, else the place nearest the feet. A
+// south-facing sofa at (80,90), 62x40: place feet (99,130) west (place 0) and (123,130) east
+// (place 1). The object the NPC faces sits due south of the sofa so a south seat counts as toward
+// it (staticFacesToward). The NPC's feet are at x 124, nearer the east place; home is beside the
+// west place (99,127), 25 px away, inside POST_SNAP.
 function sofaRig(feetX, atPost) {
     const rig = labSeatRig(feetX);
     Object.assign(rig.chair, { x: 80, y: 90, width: 62, height: 40, depth: 10, objectId: 'pierce_chair',
@@ -233,11 +236,20 @@ function sofaRig(feetX, atPost) {
     rig.sprite.y = 127;
     const ns = window.npcNeedsSystem.states.get('pierce');
     ns.home = { x: 99, y: 127, roomId: 'open_plan', objectId: 'staff_pc_2' };
-    if (!atPost) ns.atPost = false;
+    // The work object is due south of the sofa, so a south-facing seat faces toward it
+    const faced = { id: 'staff_pc_2', roomId: 'open_plan', x: 111, y: 400, affordance: { satisfies: ['work'] } };
+    window.npcNeedsSystem.world.getObject = () => faced;
+    if (!atPost) {
+        // Away from the post: a `use` job at another object, so the stop is not a post stop and
+        // needsSeatRef returns the feet, not the home cell
+        ns.mode = 'job';
+        ns.job = { kind: 'use', targetId: 'sofa_stop', phase: 'using', need: 'work' };
+        ns.atPost = false;
+    }
     return rig;
 }
 
-test('startMount: feet 25 px east of home, inside the post gate, walks to the post-side place', () => {
+test('startMount: at the post, feet 25 px east of home, walks to the post-side place', () => {
     const rig = sofaRig(124, true);
     try {
         assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
@@ -250,8 +262,6 @@ test('startMount: feet 25 px east of home, inside the post gate, walks to the po
 test('startMount: away from the post, walks to the place nearest the feet', () => {
     const rig = sofaRig(124, false);
     try {
-        const ns = window.npcNeedsSystem.states.get('pierce');
-        ns.home = { x: 300, y: 127, roomId: 'open_plan', objectId: 'staff_pc_2' };   // beyond the 48 px gate
         assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
         const t = rig.behavior._seatMove?.target;
         assert.ok(t, 'a walk target is set on the first call');
