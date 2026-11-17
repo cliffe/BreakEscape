@@ -47,13 +47,13 @@ VAR staff_card_cloned = false
         Noor Haddad: You're the one they said would come. Here, my card. The staff door's around the side.
     }
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
-    Noor Haddad: I didn't send the last one. It's under the desk.
+    Noor Haddad: I didn't send the last box down. It's under the desk.
     ~ noor_opened = true
     -> back
 - m05_found_pipeline_list and m05_recruiter_deal_accepted and m05_recruiter_deal_confessed:
     // Warned late: the warning, and no card.
     #complete_task:meet_the_clerk
-    Noor Haddad: Somebody called me back in October and told me to watch my boss. Then nobody called back.
+    Noor Haddad: Somebody called me in October and told me to watch my boss. Then nobody called again.
     Noor Haddad: Peg's been in the cage since before I got here. She never feeds the shredder herself, and tonight she's sent me home twice.
     Noor Haddad: I don't know you. I'm not losing this job for a phone call.
     ~ noor_opened = true
@@ -126,7 +126,7 @@ VAR staff_card_cloned = false
     -> back
 // R2 B-R2-02: the bonus button only once she has mentioned the bonus.
 + {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and not ledger_page_seen and noor_asked_peg} [That bonus wasn't for filing. She was sizing you up.]
-    Noor Haddad: My dad's on dialysis in Dearborn. I never told her that. How did she know that?
+    Noor Haddad: She asked after my dad's dialysis once. I never told her he was sick. How did she know?
     -> reach
 + {not (m05_found_pipeline_list and not m05_recruiter_deal_accepted) and not noor_told and ledger_page_seen} [I've read her ledger. You're on it.]
     Noor Haddad: Was I going to say yes? Don't answer. I know I was.
@@ -138,7 +138,7 @@ VAR staff_card_cloned = false
 
 // She reaches for her phone; the player stops her (MC §4.2, R2-07).
 === reach ===
-Narrator: She has her phone out. Her thumb is already on his number.
+Narrator: She has her phone out. Her thumb is already on her dad's number.
 {not noor_tell_signposted:
     ~ noor_tell_signposted = true
     agent_0x99: She's a witness now. She goes tonight, and she doesn't ring her dad for a while.

@@ -583,7 +583,7 @@ Don't be kind about it. Thank you. Once. #delivery: a beat's pause before the th
 - else:
     Albion fixed its own plant. That controller also runs water works and substations. Four hundred sites, still open.
 }
-Our watch sits on that kit. Send it, the vendor starts a fix, and the watch comes down.
+Our watch sits on that kit. Send his notice, the vendor starts a fix, and the watch comes down.
 {m04_disclosure_choice == "full" or m04_crew_lost:
     And Albion's inquiry gets to ask when we knew.
 }

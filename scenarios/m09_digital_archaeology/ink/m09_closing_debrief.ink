@@ -143,7 +143,7 @@ Director Magnus Netherton: Dr Adrian Tesseract. It is easier to say in a hangar 
     Director Magnus Netherton: Hold it, and he can call us hoarders, and be right.
 }
 // Stage 8 SR minor 4 (ruling 19): full forms on Netherton's weighted lines.
-Director Magnus Netherton: You read it. You decide. I will sign whichever.
+Director Magnus Netherton: It is your find. You decide. I will sign whichever.
 + [Send it.]
     ~ notice_answered = true
     #set_global:albion_notified:true
@@ -161,7 +161,7 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
 // reload); "[Montana, sir.]" always there and goes to the spine.
 { asked_archive or asked_wren or asked_recruiter or asked_notice:
     // SE R1 optional trim: one re-entry line, not a three-way cycle.
-    Director Magnus Netherton: Anything more, before I sign?
+    Director Magnus Netherton: {&Anything more, before I sign?|What else?|Go on.}
 - else:
     Director Magnus Netherton: Ask me what you need to. Then I sign.
 }
@@ -187,7 +187,7 @@ Director Magnus Netherton: You read it. You decide. I will sign whichever.
         Director Magnus Netherton: Her handler list is with Analysis. Ours are on it by codename only; she kept the key to the names.
         Director Magnus Netherton: The police make the arrests at oh-six-hundred, day thirteen. Nobody moves before then. WREN would hear.
     - recruiter_offer == "double_crossed":
-        Director Magnus Netherton: About half of her network. She warned the rest, and she warned Kowalczyk.
+        Director Magnus Netherton: We have about half of her network. She warned the rest, and she warned Kowalczyk.
     - recruiter_offer == "taken":
         Director Magnus Netherton: You bought a name, and it was the right name. She will sell the invoice.
     - else:
@@ -269,9 +269,8 @@ Director Magnus Netherton: Then I sign, and that is the night closed. Anything e
 
 === spine ===
 // Beat 7, every player. The two names (fixed), read before he signs.
-Narrator: He takes a card from his breast pocket.
+Narrator: He takes a card from his breast pocket, reads the first name off it, and does not look down for the second.
 Director Magnus Netherton: Agent 0x19, Callum Fraser. Agent 0x6B, Ana Lúcia Ferreira.
-Narrator: He reads the first name off the card. He doesn't look down for the second.
 // The order, and his reply to the stance at the pen (N-07).
 // Scenario design R1 m3: the briefing's open question ("Not the bunker. Not
 // yet."), answered for every player before he signs.
@@ -286,7 +285,6 @@ Narrator: He reads the first name off the card. He doesn't look down for the sec
 }
 // Teaching R2-n5: the account lesson, brought back as a consequence (voiced).
 Director Magnus Netherton: A staff credential, seven years live. Every leaver's account is being checked before Monday.
-Narrator: He lays the Montana order on a crate and uncaps a pen.
 // R3 I-7: the ruthless save, remembered once (pays off the briefing's
 // "Nobody mentions why.").
 // Ink-local guard: ink variables survive a reload (visit counts don't), so a
@@ -295,9 +293,10 @@ Narrator: He lays the Montana order on a crate and uncaps a pen.
     ~ said_floor_line = true
     Director Magnus Netherton: You knocked me down at the Citadel. Nobody has mentioned it. I am mentioning it once.
 }
+Narrator: He lays the Montana order on a crate and uncaps a pen.
 {
 - memo_stance == "yes_albion":
-    Director Magnus Netherton: Then I sign for him too.
+    Director Magnus Netherton: Then he was right about Albion, and I sign this anyway.
 - memo_stance == "no":
     Director Magnus Netherton: Good. Then he can make that argument in court, and lose it.
 }
