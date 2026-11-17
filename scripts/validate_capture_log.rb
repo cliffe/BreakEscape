@@ -166,6 +166,12 @@ def check_capture_log(json_data)
       on = proof['on']
       item = item_defs[item_id]
       err.call("#{where}: planted names \"#{item_id}\", which is no item in the scenario") unless item
+      hideable = item.is_a?(Hash) && item['hideable'].is_a?(Hash)
+      if hideable
+        # A hideable device is planted through the hide flow (HidingSpots): `on` may be a decor plant
+        err.call("#{where}: planted \"#{item_id}\" needs hideable.rooms and, with `on`, a plant spot") unless ok
+        next
+      end
       if on && !object_ids.include?(on.to_s)
         err.call("#{where}: planted on \"#{on}\", which is no room object")
         next

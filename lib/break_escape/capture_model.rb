@@ -7,6 +7,8 @@ require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 # client reads. The guarded form the other lib files use; the engine autoloads lib/ inside Rails,
 # and NpcHabits uses AccessIdentities only inside methods, so this require order stays safe.
 require_relative 'npc_habits' unless defined?(BreakEscape::NpcHabits)
+# Plant hiding: HidingSpots.spot_object? / decor_room_and_image for hideable planted proofs.
+require_relative 'hiding_spots' unless defined?(BreakEscape::HidingSpots)
 
 module BreakEscape
   # Capture routes and capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md,
@@ -459,6 +461,16 @@ module BreakEscape
         return false unless item
 
         on = proof['on']
+        # A hideable device is planted through the hide flow (HidingSpots): a proof with no `on`
+        # is met when the item has at least one room; with `on`, when that is a spot.
+        if item['hideable'].is_a?(Hash)
+          rooms = Array(item['hideable']['rooms'])
+          return false if rooms.empty?
+          return true if on.nil?
+
+          return objects.any? { |o| o['id'].to_s == on.to_s && HidingSpots.spot_object?(o) } ||
+                 !HidingSpots.decor_room_and_image(on.to_s, rooms).nil?
+        end
         return false if on && objects.none? { |o| o['id'].to_s == on.to_s } && !jack_ids.include?(on.to_s)
         # A jack plant is recorded only against the jack it names: with no `on` the server reads
         # plantedItems alone (capture_proof_holds?), and only a non-jack plant writes that.

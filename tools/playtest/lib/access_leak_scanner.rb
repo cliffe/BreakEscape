@@ -5,6 +5,7 @@ require 'set'
 require 'cgi'
 require 'uri'
 require_relative '../../../lib/break_escape/credential_model' unless defined?(BreakEscape::CredentialModel)
+require_relative '../../../lib/break_escape/hiding_spots' unless defined?(BreakEscape::HidingSpots)
 
 # Checks the responses a playtest captured (playtest-session.js --capture-responses) for
 # access model secrets that should never have reached the browser
@@ -1614,7 +1615,20 @@ class AccessLeakScanner
       next unless row['status'].to_i == 200
 
       inv = row['inv']
-      if inv.is_a?(Hash)
+      if inv.is_a?(Hash) && inv['action'] == 'hide'
+        # Plant hiding (PLANT_HIDING_PLAN.md section 7): a 200 hide is the plant of its item when
+        # the spot passes HidingSpots for that item, as the server checks it.
+        unless inv['itemId'].is_a?(String) && inv['hiddenIn'].is_a?(String)
+          @untagged_remove = true
+          next
+        end
+        defn = BreakEscape::HidingSpots.item_defs(@data)[inv['itemId']]
+        finder = ->(id) { BreakEscape::HidingSpots.find_object(@data, id) }
+        if defn && BreakEscape::HidingSpots.resolve_spot(defn, inv['hiddenIn'], finder)
+          @plant_rows[[inv['itemId'], inv['hiddenIn']]] ||= index
+          @plant_rows_any[inv['itemId']] ||= index
+        end
+      elsif inv.is_a?(Hash)
         next unless inv['action'] == 'remove' && inv['usedOn'].is_a?(String)
 
         # A remove naming an object but no readable item id may have been the plant (t1)

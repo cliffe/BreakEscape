@@ -449,6 +449,20 @@ module BreakEscape
         # Footholds held and every jack one was gained from (slice 9.3a, section 6)
         filtered['footholds'] = @game.footholds_for_client
         filtered['gainedFootholds'] = @game.gained_footholds
+        # Hiding a device in a plant (plant-hiding plan, section 7): the static definitions of
+        # hideable items and where each hidden one sits. Scenario data and a derived read of the
+        # server's record; neither is player_state and neither is sent back.
+        hideables = @game.hideables_for_client
+        if hideables.any?
+          filtered['hideables'] = hideables
+          filtered['hiddenDevices'] = @game.hidden_devices_for_client
+          if filtered['startItemsInInventory'].is_a?(Array)
+            hidden_ids = filtered['hiddenDevices'].map { |h| h['item'] }
+            filtered['startItemsInInventory'] = filtered['startItemsInInventory'].reject do |i|
+              i.is_a?(Hash) && hidden_ids.include?(i['id'])
+            end
+          end
+        end
         # Frustration per NPC (slice 9.2, 5.4): level, tell, settled and each need's hold
         filtered['npcFrustration'] = @game.npc_frustration_for_client
         # Feed posts revealed so far, with their facts (slice 9.2 C, 9.4)
@@ -1403,6 +1417,19 @@ module BreakEscape
           @game.record_planted_item!(item['id'], used_on) if used_on.present?
           @game.remove_inventory_item!(item['id'])
           render json: { success: true }
+
+        when 'hide'
+          # Hide a device in a plant (plant-hiding plan, section 7): its own branch, because a
+          # refused hide must leave the device in the tray.
+          spot = params[:hidden_in] || params[:hiddenIn]
+          result = @game.hide_device!(item.respond_to?(:[]) ? item['id'] : nil, spot)
+          if result[:ok]
+            render json: { success: true, hidden: result[:hidden] }
+          else
+            body = { success: false, reason: result[:reason], message: result[:message] }
+            body[:hidden] = result[:hidden] if result[:hidden]
+            render json: body, status: :unprocessable_entity
+          end
 
         when 'update_saved_cards'
           # The RFID cloner's saved cards (kept for one release while old tabs still send

@@ -1291,7 +1291,7 @@ module BreakEscape
       return false if obj['contents'].is_a?(Array) && obj['contents'].any?
       # A reveal slot (a copier output and the like: npc-needs.js isSlot) keeps its
       # own client-only place-then-file flow, so it is not a server-tracked carry.
-      return false if obj['outputOf'].present? || obj.key?('revealOnGlobal') || obj.key?('leftBehindChance')
+      return false if obj['outputOf'].present? || obj.key?('revealOnGlobal') || obj.key?('hiddenWith') || obj.key?('leftBehindChance')
 
       true
     end
