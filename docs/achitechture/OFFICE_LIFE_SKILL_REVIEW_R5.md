@@ -51,3 +51,7 @@ Clean. A grep of SKILL.md and `references/*.md` finds `/tts` only in `gotchas.md
 ## Verdict
 
 Accept. 0 blockers and 0 majors; every R4 finding is fixed, the server recipe pastes and runs as written, and the skill never directs an agent to probe `/tts`, read credentials, start a keyed server or voice barks before build/tts-barks lands. Fix m1 (two short edits) before the skill is used on a mission; the nits are optional. No further review round is needed.
+
+## Outcomes
+
+All fixed in 9f43e1886: m1 (barks qualifier in SKILL.md approval item and mapping-patterns.md), the rule date in SKILL.md, the curl `--max-time 5` and the stop-the-PID failure message in measurement-recipes.md, and the `:12` to `:13` cite. The review loop for the skill ends here.
