@@ -792,6 +792,11 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "lerato_ko": false,
     "tomasz_ko": false,
     "floor_staff_ko": false,
+    "tomasz_laptop_owner_away": false,
+    "tomasz_laptop_screen_locked": false,
+    "tomasz_laptop_accessed": false,
+    "tomasz_handover_sheet_shown": false,
+    "pizza_servings": 3,
     "trader_spoken": false,
     "trader_heard_out": false,
     "analyst_spoken": false,
@@ -2047,6 +2052,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
             "caffeine": { "initial": 65, "decayPerMin": 8, "urgentAt": 40, "jitterPct": 20 },
             "hunger": { "initial": 80, "decayPerMin": 6, "urgentAt": 40, "jitterPct": 20 }
           },
+<%# Slice 4 (PLAN 2.4, 2.9): owner of tomasz_laptop; screen habit (threshold measured at build); covers the phones;
+    one handover sheet printed by this command only, after the first talk with Irina. %>
+          "answersPhones": true,
+          "habits": { "screen": { "lockChance": 0.2, "lockIfAwayOverSeconds": 30 } },
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:irina_volkova", "onceOnly": true, "condition": "!globalVars.floor_staff_ko", "needs": { "print": { "producer": "floor_copier", "forget": true } } }
+          ],
           "observations": "An evening app-support lead working a ticket queue on his laptop."
         }
       ],
@@ -2112,8 +2124,41 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "name": "Tomasz's Laptop",
           "takeable": false,
           "position": "as-type:laptop",
+          "workstation": true,
+          "owner": "tomasz_wisniewski",
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Tomasz's laptop. He keeps the screen tipped away from you.",
+          "textVariants": [
+            { "condition": "globalVars.tomasz_laptop_screen_locked", "value": "The screen is locked." },
+            { "condition": "globalVars.tomasz_laptop_owner_away", "value": "OVERNIGHT APP SUPPORT QUEUE\n\nQueue: quiet. Two tickets open.\n\n1. App crashes on launch after the last update. Waiting on the app engineer.\n2. Notification arrives twice. Low priority.\n\nCaller waiting on line two. Marked: call back." }
+          ],
           "observations": "A laptop open on a support ticket queue.",
           "affordance": { "useFrom": { "dx": 0, "dy": 1 } }
+        },
+<%# Slice 4: Lerato's desk phone and the spare phone that rings it (PLAN 3.1, 4 L2). Both base type phone, no
+    position, so they claim the Tiled phones in order (phone1 at 7.6,3.6 then phone3 at 7.6,5.2). %>
+        {
+          "type": "phone",
+          "id": "lerato_phone",
+          "name": "Lerato's Desk Phone",
+          "deskPhone": true,
+          "officeType": "desk_phone",
+          "owner": "lerato_dlamini",
+          "takeable": false,
+          "observations": "A desk phone with a handset worn smooth.",
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } }
+        },
+        {
+          "type": "phone",
+          "id": "floor_spare_phone",
+          "name": "Spare Desk Phone",
+          "takeable": false,
+          "observations": "A spare phone on an empty desk.",
+          "triggerOnInteract": [
+            { "type": "emit_event", "event_name": "desk_phone_ring:lerato_phone" }
+          ]
         },
         {
           "type": "notes",
@@ -2125,6 +2170,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "observations": "The trader's own flagged-transactions report — ENTROPY wallet names in plain text",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "entropy_wallets_known"
+        },
+<%# Slice 4: the one handover sheet (PLAN 3.1, 2.9). Declared after daily_trading_report, which claims the
+    floor's only Tiled notes sprite; this one has an explicit position. %>
+        {
+          "type": "notes",
+          "id": "tomasz_handover_sheet",
+          "name": "Shift Handover Sheet",
+          "takeable": true,
+          "readable": true,
+          "addToNotes": false,
+          "position": { "x": 1.1, "y": 7.0 },
+          "text": "SHIFT HANDOVER\n\nOn call tonight: Lerato, Tomasz, Dani, and the app engineer on the end of the phone.\n\nThe queue was quiet.\n\nThe coffee machine needs descaling. Whoever is in first, please run it.",
+          "observations": "A printout on the copier tray.",
+          "outputOf": "floor_copier",
+          "revealOnGlobal": "tomasz_handover_sheet_shown"
         }
       ]
     },
@@ -2480,6 +2540,21 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "puzzle_graph_reveals": "executive_safe_pin",
           "puzzle_graph_unlocks": "executive_safe",
           "puzzle_graph_optional": true
+        },
+<%# Slice 4 lever L1 (PLAN 3.2, 4): the lab's leftover pizza. Takeable, droppable magnet, seen only (no announce).
+    Only NPCs with a hunger need are tempted: the two extras. %>
+        {
+          "type": "pizza_boxes",
+          "id": "pizza",
+          "name": "Leftover Pizza",
+          "sprite": "pizza_boxes1",
+          "takeable": true,
+          "droppable": true,
+          "observations": "A box of cold pizza, a few slices left.",
+          "affordance": {
+            "satisfies": ["hunger"], "restores": 60, "useSeconds": 12,
+            "magnet": { "tempt": 60, "servings": 3, "perPerson": 1 }
+          }
         }
       ]
     },
