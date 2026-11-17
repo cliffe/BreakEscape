@@ -103,3 +103,20 @@ Distances are against the **seated sprite**, which draws about 20 px above the f
 ## 8. What to record
 
 For every run: game id, port, the commit hash tested, the trip table, each PASS or FAIL with the reason. A pass on a lineage that predates a fix does not count: slice 5's live runs were on the pre-R1 branch (random duplicate machines, old timings), and the merged tip had never been played when R2 reviewed it (`M03_SLICES3_5_REVIEW_R2.md` finding 1). Run the **merged tip**, not the branch you built on.
+
+## 9. Object position baseline
+
+No validator flag prints object positions (`validate_scenario.rb -o` mixes the rendered JSON into its report), so render the scenario with `LockKeyDiff.render` (`scripts/lock_key_diff.rb:85`, the seeded render the lock and key diff uses) and print one sorted line per declared object, per item inside a container (its position is `in:<container id>`, at any depth) and per NPC `itemsHeld` entry. From the worktree root:
+
+```bash
+ruby -r ./scripts/lock_key_diff.rb -rjson -e 'j = LockKeyDiff.render(ARGV[0]); rows = []; walk = ->(r, o, at) { id = o["id"] || o["name"]; rows << [r, id, o["type"], at || o["position"] || [o["x"], o["y"]].compact].to_json; Array(o["contents"]).each { |c| walk.(r, c, "in:" + id.to_s) } }; (j["rooms"] || {}).each { |r, d| Array(d["objects"]).each { |o| walk.(r, o, nil) }; Array(d["npcs"]).each { |n| Array(n["itemsHeld"]).each { |i| rows << [r, "held:" + n["id"].to_s, i["type"], i["id"] || i["name"]].to_json } } }; puts rows.sort' scenarios/<m>/scenario.json.erb > scenarios/<m>/office_life/positions_base.txt
+```
+
+After each slice, run it again into a scratch file and `diff` the two. Only objects the plan adds or moves may differ. Tiled-claimed objects print an empty position (the map places them); a change there shows as a new or missing row. The static diff does not see where items land at runtime: a knock-out away from post is covered by the attack probe. On m03 it gives 37 rows: 19 objects, 8 container items and 10 `itemsHeld`.
+
+## 10. Home dwell and the needs clock
+
+Two numbers the planner measures before choosing `initial`, `decayPerMin`, `urgentAt` and a home `useSeconds` for a moved NPC (SKILL.md, "Found at post first"). Use a test scenario on the branch, never globals set in the page.
+
+- **Does a newly urgent need cut a long home use short?** Give the NPC a home use of several minutes and a second need that crosses `urgentAt` part way through. Poll `window.__test.needs.state(<id>)` once a second: record when `job.need` and `job.targetId` change, against the use's start and its `useSeconds`. Five tries. If the use is cut short, the dwell is only as long as the time until the next need turns urgent; plan the decay rates for that.
+- **How needs-clock minutes map to real time.** Read one need's level from `state(<id>).levels` twice, a known number of real seconds apart, while that need is not being met (its decay pauses during its own use). The fall divided by `decayPerMin` gives needs-clock minutes; divide by the real minutes elapsed. Run at the headless setting (`setFPS(20)`, fixed steps on) and note it, since the needs clock advances by the same frame step the walks use (`core/game.js:2704` to `:2707`; `npc-needs.js:651` to `:671`, clamped at 1000 ms), so a throttled loop runs the clock and the walks slower than wall time together. The clock stops while the VM is open (`npc-needs.js:666`): a gate set while the VM is open gives no lead time, so count lead time from when the player leaves the VM. Write the ratio in the plan and convert every "quiet for N minutes" claim with it.
