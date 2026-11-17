@@ -327,6 +327,41 @@
     width: 0;
 }
 
+/* Phone landscape (844x390, 667x375, 915x412): wider than the phone layout's 600px but too short
+   for a tall band. The caption stays pinned to the foot, never grows past the chat box (it used
+   to grow upward off the top, cutting the speaker line and the first choices), and scrolls inside
+   itself if the line and five choices still do not fit. Padding and choice gaps tighten so
+   five choices usually fit without scrolling. The portrait section and its scale are untouched. */
+@media (min-width: 601px) and (max-height: 520px) {
+    .person-chat-caption-area {
+        max-height: 100%;
+        overflow-y: auto;
+        /* flex-start, not the desktop flex-end: overflow past the start edge of a flex-end box
+           cannot be scrolled to */
+        align-items: flex-start;
+        padding: 8px 16px;
+    }
+
+    .person-chat-caption-content,
+    .person-chat-choices-container {
+        gap: 6px;
+    }
+
+    /* speaker line starts at the top of the band, level with the first choice */
+    .person-chat-caption-content {
+        align-items: flex-start;
+        align-content: flex-start;
+    }
+
+    .person-chat-choice-button {
+        padding: 5px 10px;
+    }
+
+    .person-chat-talk-right {
+        gap: 6px;
+    }
+}
+
 /* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top and grows to fill the
    height above the caption (never below --pc-portrait-h), and the caption follows it in flow,
    so the speaker's name and line never cover the face;
