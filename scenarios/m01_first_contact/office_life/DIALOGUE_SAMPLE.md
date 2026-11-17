@@ -1,6 +1,6 @@
 # m01 First Contact: office-life dialogue sample
 
-How the new lines sound in play. Bracketed lines are stage directions, not spoken text. Tier 1 covers sections 1 and 2; tier 2 adds 3 and 4.
+How the new lines sound in play. Bracketed lines are stage directions, not spoken text. Tier 1 covers sections 1 and 2; tier 2 adds 3, 4 and 7.
 
 ## 1. First entry to the main office
 
@@ -32,7 +32,7 @@ Fatima's version:
 
 ## 3. At the cooler (tier 2)
 
-[Thirty seconds after the player comes back from the hallway, Fatima gets up, walks to the cooler against the south wall and fills a paper cup.]
+[About two seconds after the player comes back into the office from a hallway (the mapping sets her thirst low at once), Fatima gets up, walks to the cooler against the south wall and fills a paper cup, standing behind it with her face to the camera.]
 
 **Fatima:** Every CV says 'passionate' now.
 
@@ -64,7 +64,7 @@ Fatima's version:
 
 ## 5. After the reveal
 
-[The player picks up the file in the server room and walks back through the main office. Both desks are empty and the typing has stopped. Reception is quiet too. Derek is waiting in the break room.]
+[The player picks up the file in the server room and walks back through the main office. Both desks are empty and the typing has stopped. The two of them left while the player was in the server room, so nobody was seen going. Reception is quiet too. Derek is waiting in the break room.]
 
 No lines. The silence is the cue.
 
@@ -75,3 +75,9 @@ No lines. The silence is the cue.
 HaX, by text: *Stand down, Agent. She runs recruitment. She's not part of this.*
 
 The music switches to the threat track until she is down or the fight ends.
+
+## 7. Maya's trip (tier 2)
+
+[The player finishes the first conversation in Maya's office, where she has just told them about the operation. Two seconds after the conversation closes she gets up, walks out through the east hall and across the main office to the cooler, and fills a paper cup. Later she walks home.]
+
+No lines. The trip is silent. If the player talks to her on the way, it is her existing ink, and she picks up her trip afterwards.

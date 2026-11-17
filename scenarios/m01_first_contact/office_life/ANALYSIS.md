@@ -36,13 +36,15 @@ Classes are the skill's D78 classes (plan/ol-skill-movement SKILL.md:56-80). D84
 | kevin_park | 1602 | IT room | story-critical; holding, pinned by text | itemsHeld :1628 (lockpick kit, server keycard, notes); "He's been in the IT room all day." (:1836); Sarah: "usually in the IT room" (ink/m01_npc_sarah.ink:115) |
 | maya_chen | 1893 | Maya's office | optional flavour; free under D84 b | see below |
 
-No existing NPC gains needs unless Q3 says so.
+Only Maya gains needs among existing NPCs: one short trip after her first talk (PLAN.md 4.9).
 
 ### Maya
 
 Maya holds nothing (no `itemsHeld` in :1893-1919), has no line of sight (`challengeOnSight` appears nowhere in the scenario), and no ink line places her (only a comment at ink/m01_npc_maya.ink:3). Her task `talk_to_maya` is optional (:228-233). Her HaX texts are on attack and KO (:702-715). Her NPC record has no `chatBackground`. On the mechanical tests she is free.
 
-Her conversation is the problem. She is the informant: "Are you really here for a security audit? Or are you here because of my message?" (ink/m01_npc_maya.ink:40), with ENTROPY details at :99-103. Her own office has no machine, so a routine would take her to the main office cooler, and a player who talks to her there would have that whispered exchange in the open-plan office beside two colleagues. D84's tests do not catch this, because nothing places her; it is a reading of the scene. PLAN.md Q3 recommends she stays put.
+Her conversation is the problem. She is the informant: "Are you really here for a security audit? Or are you here because of my message?" (ink/m01_npc_maya.ink:40), with ENTROPY details at :99-103. Her own office has no machine, so a routine takes her to the main office cooler, and a player who talked to her there would have that whispered exchange in the open-plan office beside two colleagues. D84's tests do not catch this, because nothing places her; it is a reading of the scene.
+
+The settled answer (D88 c) is that she leaves her post only after the tip-off. The informant reveal ("I'm the one who contacted you") is reachable only in the first conversation, which always happens at her post. The marker is the global `discussed_operation`, set in her ink knot `operation_details` and on the "Tell me everything" choice; ink global writes sync before `conversation_closed:maya_chen` is emitted. Nothing else places her: Sarah's and HaX's lines, the briefing and the debrief name her office, her notes and voicemail do not need her there, and no cutscene moves or hides her. The residual is that her later hub topics (`derek_intel`, `patricia_story`, `tactical_advice`) can play away from post; her re-talk opener "Is it safe to talk?" is low and wary, which fits.
 
 ### Beats keyed on presence
 
@@ -54,7 +56,7 @@ Her conversation is the problem. She is the informant: "Are you really here for 
 
 ## The main office is empty
 
-The hub has four desks and six chairs (room_office.json `tables` and `items` layers: desks at (0.9, 6.4), (1.0, 4.9), (6.6, 4.9), (6.6, 6.4); chairs at (3.1, 7.1), (3.2, 3.6), (5.7, 2.9), (6.6, 7.0), (6.8, 5.4), (0.9, 5.4)) and a scenario `npcs` list that is empty (:1250). On a working morning that reads as a building with nobody in it. Every other room either has its story NPC or is a private office, a store, a corridor or a locked technical room.
+The hub has four desks and six chairs (room_office.json `tables` and `items` layers: desks at (0.9, 6.4), (1.0, 4.9), (6.6, 4.9), (6.6, 6.4); chairs at (3.1, 7.1), (3.2, 3.6), (5.7, 2.9), (6.6, 7.0), (6.8, 5.4), (0.9, 5.4); all of these are Tiled bottom-left anchors, and the two seated chairs have centres at (7.31, 4.89) and (1.37, 4.91)) and a scenario `npcs` list that is empty (:1250). On a working morning that reads as a building with nobody in it. Every other room either has its story NPC or is a private office, a store, a corridor or a locked technical room.
 
 The chairs are the `chair-white-*-rotate*` family, which seating.js treats as seats (seating.js:135-145).
 
@@ -67,13 +69,13 @@ Room types are stock maps shared with other scenarios. room_office.json alone is
 | reception_area | room_reception | none | reception_desk_phone is a scenario object (:1190-1208) without `deskPhone: true` |
 | main_office_area | room_office | none | motion lighting (:1231-1238); chatBackground (:1230) |
 | break_room | room_break | none | text mentions a coffee machine (:1487) and a "Sticky Note on Fridge" (:1518-1534, a bin item); neither appliance is placed |
-| it_room | room_IT | none | appliance images exist in the tileset only |
+| it_room | room_it | none | appliance images exist in the tileset only |
 | server_room | room_servers | none | authored `ambientSound` (:2123-2124) |
 | conference, hallways, small offices, storage | room_meeting, hall_1x2gu, small_* | none | |
 
-No coffee machine, kettle, fridge, cooler, vending machine, copier or printer is placed anywhere in m01. Desk phones and PCs are Tiled decor; none is declared.
+No coffee machine, kettle, fridge, cooler, vending machine, copier or printer is placed anywhere in m01. In the main office, desk PCs are Tiled decor and none is declared; story PCs and desk phones are declared in other rooms (derek_computer, Kevin's Workstation, the IT Monitoring Station, patricia_desk_phone, reception_desk_phone).
 
-A placed object does not need a map edit. A scenario object with its own `position` lands there whatever the map holds: the filing cabinet does it in this room (:1252-1262, position (5.49, 0.72)), and test_needs_leash declares a `water_cooler1` with a position and a hand-written affordance inside a room_office map (scenarios/test_needs_leash/scenario.json.erb:95-101). The art is `objects/hospital_extras/water_cooler1.png`.
+A placed object does not need a map edit. A scenario object with its own `position` lands there whatever the map holds: the filing cabinet does it in this room (:1252-1262, position (5.49, 0.72)), and test_needs_leash declares a `water_cooler1` with a position and a hand-written affordance inside a room_office map (scenarios/test_needs_leash/scenario.json.erb:95-101). The art is `assets/objects/water_cooler1.png`.
 
 ### officePresets would spill
 
@@ -81,7 +83,7 @@ With `officePresets: true`, every declared object of a preset type gets an affor
 
 ## Secrets
 
-Every PIN, password, key, card and flag in m01 stays where it is. The main office holds two of them: the filing cabinet's PIN lock (:1252-1262) and the recycling bin with the IT room checklist (:1312-1331). Office life adds no item, printout or readable text, so nothing new can carry a secret. The new objects (two desk PCs and, under Q1, a cooler) carry no text beyond a one-line observation.
+Every PIN, password, key, card and flag in m01 stays where it is. The main office holds two of them: the filing cabinet's PIN lock (:1252-1262) and the recycling bin with the IT room checklist (:1312-1331). Office life adds no item, printout or readable text, so nothing new can carry a secret. The new objects (two desk PCs and a cooler) carry no text beyond a one-line observation.
 
 ## Sound today
 
@@ -101,4 +103,4 @@ The key is absent at base and nothing on this base reads it. D77 gives m01 `"npc
 
 ## Tier
 
-Tier 2 with a machine, tier 1 without. The main office gets two awareness-cast extras at desks, which fixes the one room that looks wrong and touches no story NPC, lock or required step. Without a machine (tier 1) they sit and type, with one once-only bark each. With a water cooler placed as a scenario object (tier 2, Q1) they also take short breaks in the main office, talk at the cooler and have two exchanges. Both tiers add room tone with no phone rings, and nobody in any other room.
+Tier 2, settled (D88 a): tier 1 is the first build stage. The main office gets two awareness-cast extras at desks, which fixes the one room that looks wrong and touches no story NPC, lock or required step. At tier 1 they sit and type, with one once-only bark each. With a water cooler placed as a scenario object (tier 2) they also take short breaks in the main office, talk at the cooler and have two exchanges. Both tiers add room tone with no phone rings, and nobody in any other room.

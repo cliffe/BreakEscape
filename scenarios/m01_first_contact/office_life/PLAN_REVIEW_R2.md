@@ -59,3 +59,13 @@ If the spare `pc` is used (PLAN.md:84), it becomes an examinable object at pc6. 
 - `needsCompany` groups `vd_office_staff` declared and validator-clean.
 - Whether `facePlayer` on a seated swivel-chair extra fights the work facing.
 - Re-hide mappings: `setVisible: false` on a seated NPC releases its chair and PC reservation (test 9 covers it live).
+
+## Outcomes
+
+- M1: fixed. Spawns moved to the chair sprite centres, Fatima (1.37, 4.91) and Graham (7.31, 4.89); `useFrom` recomputed from sprite centres (Graham dx 0.16, dy 1.15; Fatima dx -1.38, dy -0.24); step 0 uses `"seated": true`, removed in step 2 when `work` is added; ANALYSIS.md labels the chair coordinates as bottom-left anchors with centres.
+- M2: fixed. Knots renamed `ex_interns` and `ex_biscuits`; `requireGlobal: null` dropped; both exchanges gated on `fatima_ko` and `graham_ko` false; `heard_ex_*` declared false.
+- m1: fixed. Stand point (5.78, 7.93) from the 24x47 sprite centre; facing named as the accepted compromise; queue wording dropped; dressing render checks a one-tile path from the south door with two users at the cooler; position stays as settled (D88 a).
+- m2: fixed. DIALOGUE_SAMPLE.md section 3 now says about two seconds.
+- m3: fixed. ANALYSIS.md has `room_it`, the main-office-only PC sentence with the declared story PCs and phones named, and the art path `assets/objects/water_cooler1.png`.
+- m4: fixed. The machine question is settled as the cooler (tier 2), so the Maya and machine dependence is gone; the D88 answers are in PLAN.md section 10.
+- m5: fixed. The fallback spare `pc` carries `"name": "Desk PC"` and `"observations": "A spare desk PC, switched off."`.

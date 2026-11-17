@@ -4,9 +4,11 @@ Every new line from PLAN.md, with speaker, trigger, voice and character count. S
 
 Rules checked: pool barks are 40 characters or fewer; no line carries a clue, a PIN or code, or a name the plot uses; none mentions the audit, late nights, boxes, laptops, the coffee machine or the fridge (the plot's false leads and clue surfaces).
 
-Voices: Fatima Begum, Vindemiatrix (British Bangladeshi, Yorkshire, thirties). Graham Whitfield, Umbriel (Halifax, early sixties). Both `en-GB`.
+Voices (settled, D88 d): Fatima Begum, Vindemiatrix (British Bangladeshi, Yorkshire, thirties). Graham Whitfield, Umbriel (Halifax, early sixties). Both `en-GB`.
 
-## Tier 1 (build default)
+Maya: no new lines. Her short trip to the cooler is silent; any line she speaks is existing ink.
+
+## Tier 1 (first build stage)
 
 ### Barks (once only, `delayMs` as shown)
 
@@ -38,7 +40,7 @@ HaX attacked texts, credits lines and observations are text on screen, not clips
 
 Tier 1 clip count: **6**.
 
-## Tier 2 additions (water cooler, Q1 answer a)
+## Tier 2 additions (water cooler, settled D88 a)
 
 ### Cooler chatter pools (`chatter.cooler`, each 40 or fewer)
 
@@ -57,7 +59,7 @@ Tier 1 clip count: **6**.
 
 Exchange lines are not pool barks, so the 40-character limit does not apply to them; each line is still short.
 
-`exchange_interns` (global `heard_ex_interns`)
+`ex_interns` (global `heard_ex_interns`)
 
 | # | Speaker | Text | Chars |
 |---|---|---|---|
@@ -66,7 +68,7 @@ Exchange lines are not pool barks, so the 40-character limit does not apply to t
 | 17 | fatima_begum | Next year. You said that last year. | 35 |
 | 18 | graham_whitfield | And I meant it both times. | 26 |
 
-`exchange_biscuits` (global `heard_ex_biscuits`)
+`ex_biscuits` (global `heard_ex_biscuits`)
 
 | # | Speaker | Text | Chars |
 |---|---|---|---|
@@ -82,4 +84,4 @@ Exchange lines are not pool barks, so the 40-character limit does not apply to t
 | 1 | 2 | 4 | 0 | 0 | 6 |
 | 2 | 2 | 4 | 8 | 8 | 22 |
 
-V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) is the check: the build records its actual total, expected 6 or 22, all uncached, and flags any difference.
+V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) is the check: the build records its actual total, expected 22 (6 if the build stops at tier 1), all uncached, and flags any difference. Maya's routine adds no clip.
