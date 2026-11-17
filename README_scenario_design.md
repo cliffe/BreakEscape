@@ -956,7 +956,7 @@ While the player holds the item, every eligible plant in the listed rooms is tap
 | Item | `hideable.spotAt` | Per-spot anchors, keyed by spot id. This is the only way to anchor a decor plant, which cannot carry fields |
 | Item | `hideable.device` | The id of the console object the overlay stands for (below) |
 | Item | `hideable.confirm` | The confirm text. Default: "Hide the <item name> in this plant?" |
-| Item | `hideable.onHidden` | Actions the server runs once it accepts the hide (`set_global` and the like). They are read from the held item at hide time and are not sent in the bootstrap |
+| Item | `hideable.onHidden` | Actions the client runs, through the same runner as `triggerOnInteract`, once the server has accepted the hide (`set_global` and the like). They are read from the held item at hide time and are not sent in the bootstrap |
 | Object | `hiddenWith` | Marks the console object: the id of the hideable item it belongs to. It is never placed from room data, only drawn as the overlay, and carries no `position` and no `revealOnGlobal` |
 | Object | `hidingSpot` | `true` makes this object a spot even if it is not a plant (a bin, a cable tray); `false` takes a plant out. A spot must not be `takeable` and must not carry `needsTag` |
 | Object | `hideAt` | `{ x, y }` in per cent: this spot's own anchor, which beats every other source |
