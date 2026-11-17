@@ -267,3 +267,33 @@ Scripts: `tools/playtest/showcase-s4-lib.mjs`, `showcase-s4-evening.mjs` (T17, T
 - m4 (probe note): the Ama hub choice "Let's do lunch" failed once (7604) after a morning reload because Chidi or Jun was away at the time, the expected A29 gate; the next run passed. The mission brief popup reappears about 3 s after a reload and covers the view until dismissed (intended, per the reload convention).
 - No B or M findings. Dimming from #c4cad8 to #8f96b0 is modest but visible against `s4-E-office-before.png`.
 - Not proven: cake use at the turn (coffee and food uses cover R5); the kitchen seen dark from the office side (only the `on` flag, the viewer cannot see into the closed room).
+
+## S5 checks and full run
+
+Scripts: `tools/playtest/showcase-lines-check.mjs` (plan section 7 against data), `tools/playtest/showcase-s5-run.mjs` (timed full run). Screens: `screens/s5-01-spawn.png` to `s5-16-recap.png`. Server keyless on :3092 (GEMINI_API_KEY warning in the boot log), PID 536727, killed after the run. No scenario or ink edits.
+
+### Validator (T1)
+`ruby scripts/validate_scenario.rb scenarios/office_life_showcase/scenario.json.erb`: 0 errors, 17 warnings, the same as the S4 baseline (16 "target is in room kitchen, not the home room" load warnings plus the one `workstation_screen_changed:chidi_pc` leave-only habits warning). No V7 (repeated line) or V10 (unreachable pool, exchange or call) warning. V8: workstation globals 9/24; heard_ globals 1/8; magnet servings 1/2; reveal and left-behind globals 1/6; dropped magnet items 1/2; office-life onceOnly mappings 8/10; office-life items 2/4; small keys 20/64 (all within caps). V6 (`app:break_escape:tts:office_lines[office_life_showcase]`): 156 clips, all uncached (3689 characters; nothing voiced yet, as planned): Ama 31, Chidi 24, Jun 25, Graham 27, Agnieszka 26, Zainab 23. The count is per voice and includes shared pool lines for each speaker, so it is higher than the plan's 105 distinct lines.
+
+### Lines check (T22)
+`node tools/playtest/showcase-lines-check.mjs`: 80 plan table rows (31 Ama, 25 staff, 5 exchange, 11 barks, 8 extras) and 22 scenario pool lines. Every line is in the source ink and the compiled json (or the NPC `bark` or `chatter` field) word for word; the table's Chars and Words columns match; caps hold (ink 30 words, choices 15, chatter and exchange 40 characters, barks 50 characters and 12 words). PASS. Dialoguelint over the showcase: 0 findings by rule. Note that dialoguelint measures only `Name:`-prefixed ink lines; the staff and Ama lines here are unprefixed, so it counts lines=0 for four inks. The check script covers those caps.
+
+### Full run (T23)
+Game 7613, no needs nudges. Needs clock and wall clock agree (fixed steps at 20 fps): play time 389 s (6.5 minutes), target 5 to 10.
+
+| Task | Needs s | Wall s |
+|---|---|---|
+| see_queue | 51.5 | 61.9 |
+| hear_queue_chat | 54.8 | 65.1 |
+| see_coffee_off | 57.0 | 67.2 |
+| hear_cooler_exchange | 198.3 | 208.6 |
+| use_open_screen | 215.3 | 225.7 |
+| see_caught | 235.8 | 246.0 |
+| see_cake_eaten | 345.5 | 355.9 |
+| see_who_stays | 363.0 | 373.3 |
+
+Recap ("Give me the short version") finished at 390 s. `verify-run.rb --tasks 7613`: 8 tasks in objectivesState, 8 completed, score 100, VERDICT progress recorded. Server: status `in_progress`, `mission_concluded_at` nil; client `missionConcludedAt` unset, no credits. `git diff main -- scenarios/test_needs_sims` empty (T24).
+
+### Findings
+- m1 (`scenarios/office_life_showcase/ink/ama_owusu.ink:14-18`, `start`): after any conversation that ends with `-> END` (lunch, "Call it a day", "I'll have a look round."), the next talk to Ama restarts at `start` and replays A1 and A2 ("Today you watch an office instead of breaking into one...") before the hub. Closing mid-hub with Esc reopens at the hub line A0 as planned. Seen on the "Call it a day" and recap conversations. Proposed fix: guard `start` with a global or VAR that the first run sets, diverting to `hub.choices` when set.
+- m2 (probe note): bark recorders log some barks twice (B2, B3, B5, B6, B7); same double-logging noted in S3 m4, a recorder artefact.
