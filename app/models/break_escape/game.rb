@@ -173,6 +173,51 @@ module BreakEscape
        self.class::SERVER_OWNED_GLOBAL_NAMES).include?(name.to_s)
     end
 
+    # --- Server writes the client has not seen (tailgate sync) ---
+    #
+    # A server-side credit inside sync_state or the door unlock (creditOnPass, a task's
+    # onComplete.setGlobal on a server completion) writes globals and completes tasks that the
+    # client would otherwise learn only on a reload. Each write is noted here and the answer to
+    # that same request carries it back (serverGlobals / serverCompletedTasks). The record is an
+    # instance variable on this in-memory row: never stored in player_state, so it never grows or
+    # rides a later sync, and the next request's fresh load starts with it empty.
+    def server_write_record
+      @server_write_record ||= { globals: [], tasks: [] }
+    end
+
+    def record_server_global_writes(names)
+      list = server_write_record[:globals]
+      names.each { |name| list << name.to_s unless list.include?(name.to_s) }
+    end
+
+    def record_server_completed_task(task_id)
+      list = server_write_record[:tasks]
+      list << task_id.to_s unless list.include?(task_id.to_s)
+    end
+
+    # The rule the bootstrap uses for savedGlobalVariables (games_controller show): every stored
+    # global goes to the client except a server-owned one (se_captures, shipped as `captures`).
+    def client_visible_global?(name)
+      !self.class::SERVER_OWNED_GLOBAL_NAMES.include?(name.to_s)
+    end
+
+    def client_visible_globals(globals)
+      return {} unless globals.is_a?(Hash)
+      globals.select { |name, _| client_visible_global?(name) }
+    end
+
+    # Add this request's server writes to an answer body. Values are read back from
+    # player_state, so a name written twice reports its final value and a name the request later
+    # deleted is left out. Nothing is added when the server wrote nothing.
+    def add_server_writes_to_answer!(body)
+      stored = client_visible_globals(player_state.is_a?(Hash) ? player_state['globalVariables'] : nil)
+      names = server_write_record[:globals].select { |name| stored.key?(name) }
+      body[:serverGlobals] = names.to_h { |name| [name, stored[name]] } if names.any?
+      tasks = server_write_record[:tasks]
+      body[:serverCompletedTasks] = tasks.dup if tasks.any?
+      body
+    end
+
     # True when the scenario defines any rfid_cloner object (presence is enough; §3.1). The
     # runtime split predicate does not trace whether a specific card is reachable from it;
     # the validator (§11) owns the sharper check.
@@ -5174,6 +5219,9 @@ module BreakEscape
       self.score = calculate_task_score.round
 
       save!
+      # A server-side completion (a creditOnPass credit) is one the client did not ask for, so
+      # the sync_state or door answer reports it (add_server_writes_to_answer!)
+      record_server_completed_task(task_id) if trusted
 
       mission_just_concluded = was_not_concluded_before && mission_concluded_at.present?
       response = { success: true, taskId: task_id, missionConcluded: mission_just_concluded }
@@ -6892,6 +6940,7 @@ module BreakEscape
           next
         end
         player_state['globalVariables'][name] = value
+        record_server_global_writes([name])
       end
     end
 

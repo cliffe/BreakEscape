@@ -342,7 +342,7 @@ module BreakEscape
         # These are merged over the scenario defaults in game.js, allowing flags like
         # `briefing_played` to persist across page reloads.
         if @game.player_state['globalVariables'].present?
-          filtered['savedGlobalVariables'] = @game.player_state['globalVariables']
+          filtered['savedGlobalVariables'] = @game.client_visible_globals(@game.player_state['globalVariables'])
         end
 
         # The server-owned capture record (sync deltas R2, 6a): shipped as `captures`. The client
@@ -950,6 +950,8 @@ module BreakEscape
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
         body[:endedRelayPcIds] = @ended_relay_pc_ids if @ended_relay_pc_ids.present?
+        # Globals and tasks a server credit wrote during this sync (a viaPass tailgate)
+        @game.add_server_writes_to_answer!(body)
         render json: body
       else
         body = { success: true }
@@ -957,6 +959,8 @@ module BreakEscape
         body[:mailTrimmed] = @mail_trimmed if @mail_trimmed.present?
         add_capture_answer_fields(body)
         body[:endedRelayPcIds] = @ended_relay_pc_ids if @ended_relay_pc_ids.present?
+        # Globals and tasks a server credit wrote during this sync (a viaPass tailgate)
+        @game.add_server_writes_to_answer!(body)
         render json: body
       end
     end
@@ -1286,6 +1290,8 @@ module BreakEscape
           door_answer.merge!(rfid_card_answer) if rfid_card_answer
           # Open before this request: say so, and name no card (R2 m2)
           door_answer[:alreadyOpen] = true if already_open
+          # Globals and tasks a viaCredential credit wrote during this unlock
+          @game.add_server_writes_to_answer!(door_answer)
           render json: door_answer
         else
           # Object/container unlock

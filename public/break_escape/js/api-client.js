@@ -103,13 +103,18 @@ export class ApiClient {
   // Validate unlock attempt. `extra` carries optional fields for some lock types:
   // { card_ids } for an rfid lock with an access list (access model 4.1).
   static async unlock(targetType, targetId, attempt, method, extra = {}) {
-    return this.post('/unlock', {
+    const answer = await this.post('/unlock', {
       ...extra,
       targetType,
       targetId,
       attempt,
       method
     });
+    // A door unlock may credit a gate (viaCredential): apply the globals and tasks it wrote
+    if (answer && (answer.serverGlobals || answer.serverCompletedTasks) && typeof window !== 'undefined') {
+      window.stateSync?.applyServerWrites?.(answer);
+    }
+    return answer;
   }
 
   // Record a card the card copier saved (access model 4.2). `source` is

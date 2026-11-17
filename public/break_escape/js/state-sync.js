@@ -333,6 +333,52 @@ export class StateSync {
     // Requests that must settle before syncConfirmed()'s first run (a card clone,
     // P1). Each promise removes itself when it settles.
     this._tracked = new Set();
+    // The shared global writer (systems/global-writer.js writeGlobal), set by main.js. Left
+    // unset (a test harness), applyServerWrites writes gameState.globalVariables directly.
+    this.writeGlobal = null;
+  }
+
+  /**
+   * Apply what the server wrote during a request the client did not ask it to write (tailgate
+   * sync): serverGlobals (a creditOnPass global such as kp_badge_tailgated) and
+   * serverCompletedTasks (its completeTask), carried on the sync_state and door unlock answers.
+   * Each global goes through the shared writer (gameState, ink, global_variable_changed) and is
+   * marked confirmed at that value, so the next sync does not echo it back up (the server holds
+   * credit globals read-only anyway). Each task completes locally with no POST.
+   * @param {Object} answer
+   */
+  applyServerWrites(answer) {
+    const globals = answer?.serverGlobals;
+    if (globals && typeof globals === 'object' && !Array.isArray(globals)) {
+      const confirmed = this.confirmed.globalVariables ||= {};
+      const held = this._held.globalVariables ||= new Set();
+      for (const [name, value] of Object.entries(globals)) {
+        if (SERVER_OWNED_GLOBALS.has(name)) continue;
+        confirmed[name] = stableJson(value);
+        held.add(name);
+        try {
+          if (typeof this.writeGlobal === 'function') {
+            this.writeGlobal(name, value, { openChat: true });
+          } else if (typeof window !== 'undefined' && window.gameState?.globalVariables) {
+            window.gameState.globalVariables[name] = value;
+          }
+        } catch (e) {
+          console.warn(`State sync: could not apply the server's ${name}:`, e?.message || e);
+        }
+      }
+    }
+    const tasks = answer?.serverCompletedTasks;
+    if (Array.isArray(tasks) && tasks.length) {
+      const manager = typeof window !== 'undefined' ? window.objectivesManager : null;
+      for (const taskId of tasks) {
+        if (typeof taskId !== 'string' || !taskId) continue;
+        try {
+          manager?.applyServerCompletedTask?.(taskId);
+        } catch (e) {
+          console.warn(`State sync: could not apply the server's task ${taskId}:`, e?.message || e);
+        }
+      }
+    }
   }
 
   /**
@@ -1018,6 +1064,8 @@ export class StateSync {
    */
   _applyAnswer(changes, clientTs, answer) {
     for (const part of this._parts.values()) part.onAnswer?.(answer);
+    // What the server wrote is its state after this request, so it applies on a stale answer too
+    this.applyServerWrites(answer);
     // A stale answer confirms nothing, so this request's sections are all resent on the
     // next sync. A stale-but-recent answer may now carry notSaved and mailTrimmed (the
     // server merged this request's pre-filtered sections and refused or trimmed some),

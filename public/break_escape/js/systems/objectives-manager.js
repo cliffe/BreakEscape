@@ -876,6 +876,27 @@ export class ObjectivesManager {
       return;
     }
 
+    this._completeTaskLocally(task, taskId);
+  }
+
+  /**
+   * A task the server completed on its own (a creditOnPass credit during a sync or door unlock,
+   * reported in serverCompletedTasks). The server already holds it, so this runs only the local
+   * completion (toast, onComplete, aim reveal and check, events) with no POST. A task already
+   * completed here, or unknown to this page, is left alone, and so is one whose own POST is in
+   * flight ('completing'): the server answers that POST "Already completed" and it finishes there.
+   * @param {string} taskId
+   * @returns {boolean} true when the task was completed here
+   */
+  applyServerCompletedTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.status === 'completed' || task.status === 'completing') return false;
+    this._completeTaskLocally(task, taskId);
+    return true;
+  }
+
+  /** The local tail of a completion, after the server has recorded it. */
+  _completeTaskLocally(task, taskId) {
     // Update local state
     task._pendingPickups = null;
     task.status = 'completed';

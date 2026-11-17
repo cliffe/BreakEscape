@@ -31,6 +31,7 @@ import './systems/npc-game-bridge.js'; // Bridge for NPCs to influence game stat
 
 // Import Objectives System
 import { getObjectivesManager } from './systems/objectives-manager.js';
+import { writeGlobal } from './systems/global-writer.js';
 // conclusionScreen type "success": sets window.showSuccessScreen for the objectives manager
 import './ui/success-screen.js';
 // The warning before an ending that leaves optional objectives open: sets window.endingCheck
@@ -156,6 +157,8 @@ function initializeGame() {
 
     // Start periodic global state sync (saves globalVariables to server every 30s)
     window.stateSync = new StateSync(30000);
+    // Globals the server writes during a sync or unlock (serverGlobals) reach ink and listeners too
+    window.stateSync.writeGlobal = writeGlobal;
     // Capture client (sync deltas R2, 6a): registers the `captures` sync part and sets
     // window.submitSECapture / window.mirrorSECapture, before any game code captures.
     installCaptureClient(window.stateSync);
