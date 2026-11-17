@@ -285,6 +285,15 @@ voice generation (5.6a).
 `noticed` and `blocked` (section 4.1, slice 3b). The old name `showNpcIntentBubbles` is no longer
 read; the validator warns on it.
 
+`npcThoughts`: boolean, default true (D77). `false` draws no NPC action icon and no thought bubble
+(pressing need, avoidance, parked need), whatever `showPressingNeeds` says. It also turns off picture
+chat (the icon-only chatter bubbles: grumbles, news, workaround starts, failure mutters, unheard
+turns, the desk-phone picture), since an icon bubble shows what an NPC wants. Barks, speech bubbles,
+spoken chatter lines, conversation UI and held items (`officeVisuals`) are untouched. The campaign
+missions m01 to m10 and the sis missions set it false; the labs and `test_needs_sims` keep their
+icons. The icons read it through `npcThoughtsOn()` in `systems/npc-action-icons.js`; the needs system
+reads it through its own world hook (`npcThoughtsOn` in `createEngineWorld`, `systems/npc-needs.js`).
+
 ---
 
 ## 4. Runtime architecture
@@ -621,6 +630,7 @@ during the walk home (exists). Player-facing behaviour:
 
 ### 5.6a Voiced chatter, scripted exchanges and picture chat (office life slice 15, `OFFICE_LIFE_PLAN.md` section 11)
 
+- **Turning picture chat off.** Two switches: `"chatter": false` (all chat) and `"npcThoughts": false` (picture chat and the action icons; spoken lines stay, see the flag paragraph earlier in this document).
 - **Where lines live.** Barks are strings in a scenario `chatter` pool or an NPC's `chatter`; they are
   voiced by the speaker's TTS voice on first play and cached like any bark. The server accepts them
   (`ScenarioBarkValidator.bark_texts`, `validate_shared`; `/tts` and `TtsExpectedLines`), so the pruner

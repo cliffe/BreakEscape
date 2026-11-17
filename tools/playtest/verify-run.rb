@@ -223,7 +223,7 @@ def workaround_log_section(log_path)
       m = WORKAROUND_EVENT.match(name) or next
       case m[1]
       when 'npc_workaround' then per_npc[m[2]] << "#{data['do']}[#{data['index']}] #{data['phase']}"
-      when 'npc_mutter' then per_npc[m[2]] << "said #{data['topic']}#{data['line'] ? '' : ' (picture)'}"
+      when 'npc_mutter' then per_npc[m[2]] << "said #{data['topic']}#{data['line'] ? '' : (data['picture'] ? ' (picture)' : ' (silent)')}"
       when 'door_propped' then propped << "#{m[2]} by #{data['npcId']}"
       when 'npc_sat_at' then per_npc[data['npcId'].to_s] << "sat at #{m[2]}"
       when 'npc_borrowed_session' then per_npc[data['npcId'].to_s] << "left #{m[2]} signed in (met #{data['met']})"
