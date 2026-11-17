@@ -1,6 +1,6 @@
 # Build status (slice 3)
 
-Slice 3 static build done and committed on build/ol-m06 (see BUILD_LOG.md). NOT done: all four live checks (LIVE_S3.md not yet written). Next agent: start keyless server on 3096 (measurement-recipes section 1), fresh game, run checks 1 to 4, tune extras' positions, write LIVE_S3.md and BUILD_LOG.md. Never stage dungeon_graph.* (they show modified in git status).
+Slice 3 static build done and committed on build/ol-m06 (see BUILD_LOG.md). Live checks 1 to 4 done and passing (LIVE_S3.md, extras' positions fixed in ec16c0b90). Next: slice 4 (laptop text, workstation owner/screen habit, handover sheet, print mapping, phones, pizza); re-run the home-dwell test then. Never stage dungeon_graph.* (they show modified in git status).
 
 # m06 office life: handover (plan phase; plan review rounds 1 to 6 done, plan ready for the user's answers)
 
