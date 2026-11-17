@@ -12,7 +12,8 @@ No `roomToneTypes`. To adjust: delete the line to return to Tier 0 with nothing;
 
 | Check | Result |
 |---|---|
-| Validator | 0 errors, 30 warnings. Main's own baseline for this file is 29 (the plan said 30; one warning has gone since), plus the one expected roomTone warning "no room resolves to a room tone profile" |
+| Validator | 0 errors; 31 warnings with ink (main's 30 plus the expected roomTone warning "no room resolves to a room tone profile"); 30 with `--skip-ink`, which leaves out the dialogue lint warning (main 29 the same way) |
+| V6 rake | 0 office-life clips (nothing voiced is added) |
 | `--office-summary` against `v1_summary_base.txt` | identical |
 | Lock and key diff | empty |
 | Object positions against `positions_base.txt` | identical |
@@ -41,15 +42,19 @@ Sound volume is `0.5 x level x duck` in every row. Level is the unducked normali
 
 ### Doorway deviation (L3)
 
-The plan expected a null-room hold in the north doorway. The rooms overlap: reading_room (y -256, height 192) has its top 64 px band inside restricted_stacks' floor (y -512, height 320), so the player is never in no room there (0 null samples across 10 crossings, 50 ms sampling). The loop never dips. The same holds for the dock and open_stacks. The hold code path is not exercised by m09's layout; plan section 4 and L3 should drop that expectation.
+The plan expected a null-room hold in the north doorway. The rooms overlap: reading_room (y -256, height 192) has its top 64 px band inside restricted_stacks' floor (y -512, height 320), so the player is never in no room there (0 null samples across 10 crossings, 50 ms sampling). The loop never dips. The same holds for the dock and open_stacks. The cause is the engine's placement rule (floors meet and are inclusive, `core/rooms.js:1460`, `:1555`, `:3197` to `:3203`), so no mission reaches the hold at a door. PLAN.md section 4 and L3 are corrected. The engine comments that describe the hold (`ambient-choice.js:10`, `core/rooms.js:3305`, `office-room-tone.js:133`) are stale; left for the room-tone owner.
 
 ### Debrief close gap (L8)
 
-Chat closed at +33 ms. Room tone's duck-off log entry at +333 ms. "credits: background stopped" at +382 ms. The bed stayed at 0.15 until +386 ms, faded to 0.019 by +1175 ms and stopped by +1276 ms. Peak 0.15: the duck lifted in state but the bed never swelled (the stop beat the 300 ms crossfade).
+Chat closed at +33 ms. Room tone's duck-off log entry at +333 ms. "credits: background stopped" at +382 ms. The bed stayed at 0.15 until +386 ms, faded to 0.019 by +1175 ms and stopped by +1276 ms. Peak 0.15: the duck lifted in state but the bed never swelled (the stop beat the 300 ms duck tween).
 
 ### Listen check for the levels (D111a)
 
-Numbers only; no human ear was available. Undimmed volumes at default sliders: closet 0.2, cage 0.25, tape room 0.175, salvage cage 0.3, against 0.075 in open_stacks. Under the three late scenes the salvage hum plays at 0.15, about 2.4 times today's 0.0625 bleed ducked. The user's persona listen judges whether these sit right.
+Numbers only; no human ear was available. Undimmed volumes at default sliders: closet 0.2, cage 0.25, tape room 0.175, salvage cage 0.3, against 0.075 in open_stacks. Under the three late scenes the salvage hum plays at 0.15, about 2.4 times today's undimmed 0.0625 bleed. The user's persona listen judges whether these sit right.
+
+## Not run
+
+Frame-time comparison against the baseline commit, the open_stacks frame time, the persona listen run, and front_desk and staff_passage readings (the harness could not solve the dock lockpick; both rooms border only loop-less rooms, so step 4 silence is the only possible result by the room connections). Live runs played commit d4584a4ad (the scenario is unchanged since).
 
 ## Notes for the user
 
