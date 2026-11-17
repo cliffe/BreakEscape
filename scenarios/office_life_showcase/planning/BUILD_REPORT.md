@@ -224,3 +224,33 @@ exact commands and expected evidence, and the final report for the results).
 
 Harness: `tools/playtest/showcase-s3-lib.mjs` now aborts only POST /tts via a URL predicate
 (`u => /\/tts$/.test(u.pathname)`), never the `**/tts**` glob (which also blocked tts-manager.js).
+
+## S4 build and proof (evening and lighting)
+
+Build commit 5b4f4caf8 (data only: `act_evening` global, office and kitchen lighting variants, four `setVisible:false` mappings, Zainab's B10 bark and delayed caffeine, Ama's evening branch and "Call it a day" hub choice). Validator 0 errors, 17 warnings (baseline). No scenario or ink edits in the proof pass.
+
+Keyless server on :3092 (boot log shows the GEMINI_API_KEY warning), PID 415023, killed at the end. Nothing was missing from the fresh worktree: the engine needs no ignored config, the Rails dummy app is tracked, `BUNDLE_PATH` pointed at the main checkout's `vendor/bundle` and the probe lib already requires Playwright from the main checkout's `node_modules`. Games from new-game.rb: 7590 (R10 run), 7595 (T17, T18, T19), 7599 and 7602 (T20, R5), 7605 (reload per act), 7608 (reload, lamp, kitchen), 7609 (before shots); 7591 to 7594, 7596 and 7604 were earlier probe iterations. Headless, setFPS(20), fixed steps on, only POST `/tts` aborted. Times are the needs clock (seconds).
+
+Scripts: `tools/playtest/showcase-s4-lib.mjs`, `showcase-s4-evening.mjs` (T17, T18, T19, R10; `noR10` argument skips the socket clicks), `showcase-s4-during-use.mjs` (T20, R5; `coffee` argument), `showcase-s4-reload.mjs` (reload in each act), `showcase-s4-lamp.mjs` (evening reload, lamp, kitchen), `showcase-s4-before.mjs` (clean before shots). Screens: `screens/s4-*.png` (`E` before, `T` and `R` after, `D` reload).
+
+### Proof table
+
+| # | Check | Games | Result | Evidence |
+|---|---|---|---|---|
+| T17 | Evening hides four staff, dims office | 7595, 7608 | PASS | `act_evening` true at 35.3. Chidi, Jun, Graham, Agnieszka: `isVisible` false, sprite `visible` false, alpha 0, no other display-list object with their texture key (`drawnOthers` 0). Office `variantIdx` -1 to 0, ambient #c4cad8 to #8f96b0, lights 0 to 1. Screens `s4-E-office-before.png`, `s4-T-office-after.png`, `s4-D-office-evening-after-reload.png`, `s4-E-kitchen-before.png`, `s4-T-kitchen-entered-evening.png`. |
+| T18 | B10, Zainab to office coffee, task ticks | 7591 (also 7599, 7602) | PASS | Bark "Quiet now. Time for a coffee in peace." at 35.0 (turn at 35.3 in the logged clock, bark queue delay 1.5 s), job `caffeine:office_coffee:goto_target` at 41.8, `npc_left_post:zainab_hussain` target `office_coffee` at 42.5, `see_who_stays` completed at 42.8, using 45, back at post 62.5. |
+| T19 | Kitchen dark until entered, lit on entry, dark 12 s after leaving | 7595, 7608 | PASS | Kitchen after the turn: mode motion, `on` false (viewer in office). On entry `on` true. 4 s after leaving `offTimer` armed and `on` true; 12.7 s after leaving `on` false. After reload (7608): on entry `on` true, 12.5 s after leaving `on` false. Needs Zainab back at her post first: while she is in the kitchen the sensor re-arms (see m1). |
+| T20 | Turn during a use | 7599 (food), 7602 (coffee plus food) | PASS | 7602 at 38.5: Chidi at microwave, Jun at fridge, Graham `caffeine:office_coffee:using`; claims office_coffee 1, microwave 1, fridge 1. At the turn all four hidden, jobs `idle` at 38.8, claims all 0, `drawnOthers` 0, still 0 25 s later. 7599 at 35.5 the same with Chidi using and Jun and Graham walking. No unseated-sitter error in the page log. |
+| R5 | No held capacity, no stuck NPC | 7599, 7602 | PASS | Zainab (visible) queued for and used the office coffee after the turn (46.8 to 62 in 7602), so the released machine was free. Hidden NPCs stay `idle`, not stuck at a machine. |
+| R10 | Coffee switched off, turn, one socket click | 7590 | PASS | Lever pulled before the turn: `office_coffee_off` true. Turn: Ama's `setGlobal` makes it false. One click: the confirm button reads "Switch off" (not "Switch on"); confirming sets it true again. Screen `s4-R-office-socket-click.png`. |
+| T21 | Reload in each act | 7605, 7608 | PASS | `page.reload()` only, 21 s after the key global each time. Morning: `kitchen_seen` true, all four visible, variantIdx -1. Midday: `act_midday` true, `act_evening` false, all visible. Evening: both true, `see_who_stays` still completed, four hidden with no drawn image, office variantIdx 0 and #8f96b0, kitchen motion mode. |
+| R6 | Needs reset after reload (accepted) | 7605 | PASS (as accepted) | Chidi (midday) hunger 79 to 90, caffeine 40 to 58; Zainab (evening) caffeine 80 to 95; all back near initial values. |
+| Lamp | Warm lamp at (2.3, 5.5) over Zainab's tool roll | 7608 | PASS, see m2 | `zainab_tool_roll` at world (64,173), lamp at (73.6,176), 10 px apart. The roll's desk is lit more than the surrounding floor in `s4-D-lamp-clip.png`. |
+
+### Findings
+- m1 (T19, timing): while an NPC is in the kitchen when the player leaves, `onRoomExited` re-arms the 10 s timer (`systems/lighting.js:1038`, `npcInRoom`), so the lights stay on past 10 s. In the first run (7590) Zainab used the kitchen coffee because the player's click had switched the office machine off, and the kitchen was still lit 12.5 s later. This is intended behaviour ("the sensor still sees someone"), not a defect; it only matters for a tester who leaves the kitchen while Zainab is there.
+- m2 (lamp): the lamp reads as a soft cream pool on the left of Zainab's desk, not a distinct warm colour. The other desks already carry similar white object glows, so against them it is easy to miss. The roll sprite shows as a pen pot. Proposed (scenario.json.erb:97, not edited): raise intensity from 0.8 or lower the office ambient further if a clearer warm cue is wanted.
+- m3 (probe note): Zainab's B10 shows twice in the `showBark` log in 7590 (38.5 and 41), once in 7595. Same recorder double-logging noted under S3 m4. Not an engine defect.
+- m4 (probe note): the Ama hub choice "Let's do lunch" failed once (7604) after a morning reload because Chidi or Jun was away at the time, the expected A29 gate; the next run passed. The mission brief popup reappears about 3 s after a reload and covers the view until dismissed (intended, per the reload convention).
+- No B or M findings. Dimming from #c4cad8 to #8f96b0 is modest but visible against `s4-E-office-before.png`.
+- Not proven: cake use at the turn (coffee and food uses cover R5); the kitchen seen dark from the office side (only the `on` flag, the viewer cannot see into the closed room).

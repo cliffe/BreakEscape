@@ -47,14 +47,16 @@ export async function waitFor(h, fn, arg, maxS, poll = 400) { const t0 = Date.no
 // Sprite presence for a hidden NPC: is there any visible drawn container/sprite for it?
 export const spriteState = (h, id) => ev(h, id => {
   const npc = window.npcManager.npcs.get(id);
-  const spr = npc?.sprite || npc?.container || npc?.gameObject;
-  return { isVisible: npc?.isVisible, exists: !!spr, spriteVisible: spr ? !!spr.visible : null, active: spr ? !!spr.active : null, alpha: spr ? spr.alpha : null };
+  const spr = npc?._sprite;
+  const key = spr?.texture?.key || null;
+  const drawn = key ? window.player.scene.children.list.filter(o => o !== spr && o.texture?.key === key && o.visible && o.active && !o.isMask).length : null;
+  return { isVisible: npc?.isVisible, drawnOthers: drawn, texKey: key, exists: !!spr, spriteVisible: spr ? !!spr.visible : null, active: spr ? !!spr.active : null, alpha: spr ? spr.alpha : null };
 }, id);
 // Room lighting state: current mode, on/off, ambient colours, light count, variant index.
 export const lightState = (h, room) => ev(h, room => {
   const ls = window.lightingSystem; const st = ls?.rooms?.get(room);
   const hex = n => '#' + ((n >>> 0) & 0xffffff).toString(16).padStart(6, '0');
-  return st ? { mode: st.mode, on: st.on, ambient: hex(st.ambient), darkAmbient: hex(st.darkAmbient), lights: (st.extraLights || []).length, offTimer: !!st.offTimer, variantIdx: st.variantIdx } : null;
+  return st ? { mode: st.mode, on: st.on, ambient: hex(st.litAmbient), darkAmbient: hex(st.darkAmbient), lights: (st.extraLights || []).length, offTimer: !!st.offTimer, variantIdx: st.variantIdx } : null;
 }, room);
 // Drive Ama: open, advance hub, pick a choice matching `pick`, advance until hub returns or chat closes.
 export async function amaPick(h, pick) {
