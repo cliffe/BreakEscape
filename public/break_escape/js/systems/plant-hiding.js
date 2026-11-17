@@ -230,7 +230,7 @@ export class PlantHiding {
         const info = this._spotInfo(sprite);
         if (!info) return null;
         for (const entry of this.hidden.values()) {
-            if (entry.on === info.id) return entry;
+            if ((entry.hostId ?? entry.on) === info.id) return entry;
         }
         return null;
     }
@@ -327,7 +327,10 @@ export class PlantHiding {
         if (!def || !room) return null;
         const deviceId = def.device || `${entry.item}_hidden`;
         const existing = room.objects?.[deviceId];
-        if (existing && existing._plantOverlay && existing.active !== false) return existing;
+        if (existing && existing._plantOverlay && existing.active !== false) {
+            if (entry.hostId === undefined && existing._fadeOwner) entry.hostId = this._spotInfo(existing._fadeOwner)?.id;
+            return existing;
+        }
 
         let host = this._findHost(room, entry.on);
         let spotId = entry.on;
@@ -341,6 +344,9 @@ export class PlantHiding {
             if (!host) return null;
             spotId = this._spotInfo(host)?.id || entry.on;
         }
+        // The plant that really hosts it (the fallback when `on` is gone): hostedEntry matches on this,
+        // so that plant is tappable. Never sent to the server and never stored.
+        entry.hostId = spotId;
         const scene = host.scene;
         const texKey = def.overlay.sprite;
         if (!scene?.add || !texKey) return null;

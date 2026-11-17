@@ -2879,7 +2879,9 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                 // Swivel props (rolling chairs, trolleys) count only when the tap is on their own
                 // sprite: the radial slop round their top-left put a chair into the menu for
                 // the PC on the desk in front of it (user review 2026-10-16, more chairs swivel).
-                if (obj.isSwivelChair ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
+                // Plants that are hiding spots or host a hidden device are the same: wide, in walking
+                // space, origin at the top-left (plant hiding R2 m1).
+                if (obj.isSwivelChair || obj._hidingSpot || obj._hpOrig ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
                 const detail = worldObservations(data, resolveObjectField(data, 'observations', obj.observations || null), window.pcSessions);

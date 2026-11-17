@@ -428,6 +428,29 @@ test('a missing host logs one warning and the overlay goes on the first eligible
     assert.equal(w.ph.hidden.get(KIT).on, 'reception_plant-large12-top-ani1_999', 'the record is not changed');
 });
 
+test('R2 M1: a device recorded on a spot that is no longer a plant is drawn on the fallback plant and a tap there opens the console', async () => {
+    const w = world({ held: false, hiddenDevices: [{ item: KIT, on: 'rogue_ap_spot', room: 'reception' }] });
+    w.ph.syncRoom('reception');
+    assert.equal(w.scene.made.length, 1, 'drawn');
+    const host = Object.values(w.room.objects).find(s => s._fadeCompanions?.size);
+    assert.ok(host, 'drawn on a fallback plant');
+    assert.equal(w.ph.claims(host), true, 'the fallback host is claimed');
+    assert.equal(host.interactable, true, 'and interactable');
+    assert.equal(w.ph.hidden.get(KIT).on, 'rogue_ap_spot', 'the record keeps its own spot');
+    const other = Object.values(w.room.objects).find(s => s !== host && w.ph.spotsFor(s).length);
+    assert.equal(w.ph.hostedEntry(other), null, 'no second host');
+    const opened = [];
+    globalThis.openWifiTwin = (sp) => opened.push(sp);
+    const calls = stubFetch(() => jsonResp(200, {}));
+    const r = await w.ph.interact(host);
+    assert.equal(r.action, 'opened');
+    assert.equal(opened.length, 1);
+    assert.equal(calls.length, 0);
+    // a second sync keeps the same host
+    w.ph.syncRoom('reception');
+    assert.equal(w.ph.hostedEntry(host)?.item, KIT);
+});
+
 test('load keeps only well-formed definitions and entries', () => {
     const ph = new PlantHiding();
     window.eventDispatcher = undefined;

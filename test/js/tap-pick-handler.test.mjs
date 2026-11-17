@@ -229,6 +229,26 @@ test('handler: in-reach item and far item both under the tap: the in-reach one a
     assert.deepEqual(w.log, ['use:coffee']);
 });
 
+// ── plant hiding R2 m1: a hiding spot or host takes a tap on its own bounds only ──
+test('plant hiding R2 m1: a tap 20 px beside a hosting plant does not use it; a tap on it does', () => {
+    const player = { x: 100, y: 100 };
+    const plant = sprite('plant', 100, 100, 40, 50, { _hpOrig: { interactable: false } });
+    const w = world({ player, objects: [plant] });
+    w.tap(80, 100);
+    assert.deepEqual(w.log, ['walk:80,100'], 'a plain move, not a use, inside the old one-tile slop of its top-left');
+    w.log.length = 0;
+    w.tap(120, 120);
+    assert.deepEqual(w.log, ['use:plant']);
+    const spot = sprite('spot', 100, 100, 40, 50, { _hidingSpot: true });
+    const w2 = world({ player, objects: [spot] });
+    w2.tap(80, 100);
+    assert.deepEqual(w2.log, ['walk:80,100'], 'a spot for a held device too');
+    const crate = sprite('crate', 100, 100, 40, 50);
+    const w3 = world({ player, objects: [crate] });
+    w3.tap(80, 100);
+    assert.deepEqual(w3.log, ['use:crate'], 'an ordinary object keeps the slop');
+});
+
 // ── UI PC polish 1: the menu line for a PC is its lock, and only while it is locked ──
 test('handler: a PC\'s observations show in the menu while it is locked and go once it is unlocked; a note keeps its own', () => {
     const player = { x: 100, y: 100 };
