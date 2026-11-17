@@ -1256,7 +1256,6 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "displayName": "Fatima Begum",
           "npcType": "person",
           "position": { "x": 1.37, "y": 4.91 },
-          "seated": true,
           "spriteSheet": "fatima_begum",
           "spriteTalk": "assets/characters/fatima_begum_talk.png",
           "spriteVisemes": "assets/characters/fatima_begum_visemes.png",
@@ -1268,10 +1267,67 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             "facePlayerDistance": 96,
             "hostile": { "fightStyle": "cower", "fleeSpeed": 120, "attackDamage": 5, "attackCooldown": 1200, "pauseToAttack": true, "leash": true, "chaseRange": 160 }
           },
-          "globalVarOnKO": "fatima_ko"
+          "globalVarOnKO": "fatima_ko",
+          "needsHome": "fatima_pc",
+          "needsSpeed": 70,
+          "needsRooms": ["main_office_area"],
+          "needs": {
+            "work": { "decayPerMin": 30, "urgentAt": 70, "initial": 60 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
+              "condition": "!globalVars.fatima_ko && !globalVars.entropy_reveal_read",
+              "bark": "Morning. Mind the cables by the door." }
+          ]
+        },
+        {
+          "id": "graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "npcType": "person",
+          "position": { "x": 7.31, "y": 4.89 },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/m01_first_contact/ink/m01_npc_graham_whitfield.json",
+          "currentKnot": "start",
+          "voice": { "name": "Umbriel", "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.", "language": "en-GB" },
+          "behavior": {
+            "facePlayer": true,
+            "facePlayerDistance": 96,
+            "hostile": { "fightStyle": "cower", "fleeSpeed": 120, "attackDamage": 5, "attackCooldown": 1200, "pauseToAttack": true, "leash": true, "chaseRange": 160 }
+          },
+          "globalVarOnKO": "graham_ko",
+          "needsHome": "graham_pc",
+          "needsSpeed": 70,
+          "needsRooms": ["main_office_area"],
+          "needs": {
+            "work": { "decayPerMin": 30, "urgentAt": 70, "initial": 60 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
+              "condition": "data.previousRoom !== 'reception_area' && !globalVars.graham_ko && !globalVars.entropy_reveal_read",
+              "bark": "Lost? This floor took me a month." }
+          ]
         }
       ],
       "objects": [
+        {
+          "_comment": "Declaration order decides which Tiled pc each claims (layer order: pc8 east, then pc6 west). Graham first. No position: a position-less declaration claims the Tiled sprite.",
+          "type": "pc",
+          "id": "graham_pc",
+          "name": "Finance PC",
+          "takeable": false,
+          "observations": "A spreadsheet with more tabs than anyone could need.",
+          "affordance": { "satisfies": "work", "restores": 40, "useSeconds": 40, "useFrom": { "dx": 0.16, "dy": 1.15 } }
+        },
+        {
+          "type": "pc",
+          "id": "fatima_pc",
+          "name": "Recruitment PC",
+          "takeable": false,
+          "observations": "A recruitment tracker, half full of candidate names.",
+          "affordance": { "satisfies": "work", "restores": 40, "useSeconds": 40, "useFrom": { "dx": -1.38, "dy": -0.24 } }
+        },
         {
           "type": "safe",
           "sprite": "filing_cabinet_locked2",
@@ -2281,6 +2337,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "sarah_ko": false,
     "maya_ko": false,
     "fatima_ko": false,
+    "graham_ko": false,
 
     "found_casualty_projections": false,
     "found_target_database": false,
