@@ -512,13 +512,13 @@
 }
 
 /* Focus states for keyboard navigation */
-.tutorial-btn:focus,
-.tutorial-next:focus,
-.tutorial-skip:focus {
+.tutorial-btn:focus-visible,
+.tutorial-next:focus-visible,
+.tutorial-skip:focus-visible {
     outline: 3px solid #00ff88;
     outline-offset: 3px;
 }
 
-.tutorial-btn-secondary:focus {
+.tutorial-btn-secondary:focus-visible {
     outline-color: #aaa;
 }

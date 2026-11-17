@@ -1,7 +1,9 @@
 // Phone landscape (844x390, 667x375, 915x412): the person-chat caption must stay inside the chat
 // box and scroll, so the speaker line and all five choices are reachable. It used to grow upward
 // off the screen. In landscape it is a left column (clear of the NPC and the X), shows the
-// "More below" cue, and clears the video-call status bar. Portrait scale logic stays untouched.
+// "More below" cue, and clears the video-call status bar. The cue itself shows at any width whenever
+// the caption scrolls (overlaid on the band's foot, in flow on phones). Portrait scale logic stays
+// untouched.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -12,8 +14,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const css = readFileSync(join(root, 'public/break_escape/css/person-chat-minigame.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const ui = readFileSync(join(root, 'public/break_escape/js/minigames/person-chat/person-chat-ui.js'), 'utf8');
 
-function mediaBlock(query) {
-    const start = css.indexOf(query);
+function mediaBlock(query, from = 0) {
+    const start = css.indexOf(query, from);
     assert.ok(start >= 0, `media query exists: ${query}`);
     let depth = 0, end = start;
     for (let i = css.indexOf('{', start); i < css.length; i++) {
@@ -45,7 +47,11 @@ test('base caption is capped to the chat box, scrolls and packs from the start e
     assert.match(b, /align-items:\s*flex-start/);
 });
 test('scrollbar-gutter is stable in the base caption rule, with scroll padding for the strip', () => {
-    assert.match(B('.person-chat-caption-area'), /scrollbar-gutter:\s*stable/);
+    assert.match(B('.person-chat-caption-area'), /scrollbar-gutter:\s*stable both-edges/);
+    // phone and landscape keep the one-sided gutter: both-edges would cost them 28px
+    assert.match(L('.person-chat-caption-area'), /scrollbar-gutter:\s*stable;/);
+    const ph = parse(mediaBlock('@media (max-width: 600px)').block);
+    assert.match(bodyOf(ph, '.person-chat-caption-area'), /scrollbar-gutter:\s*stable;/);
     assert.match(B('.person-chat-caption-area'), /scroll-padding-bottom:\s*36px/);
     assert.doesNotMatch(css, /@media \(max-height: 700px\)/);
 });
@@ -72,12 +78,29 @@ test('the More below cue: base rule lies over the foot at any width, ignores tap
     assert.match(b, /position:\s*absolute/);
     assert.match(b, /bottom:\s*0/);
     assert.match(b, /pointer-events:\s*none/);
+    // stops short of the caption's 14px scrollbar gutter so the track stays visible
+    assert.match(b, /left:\s*14px/);
+    assert.match(b, /right:\s*14px/);
+    assert.match(b, /width:\s*auto/); // the plain .person-chat-more rule's width:100% would push it past the right edge
     const l = L('.person-chat-more:not([hidden])');
+    assert.match(l, /left:\s*0/);
     assert.match(l, /right:\s*auto/);
-    assert.match(l, /width:\s*var\(--pc-caption-col\)/);
+    assert.match(l, /width:\s*calc\(var\(--pc-caption-col\) - 14px\)/);
     assert.doesNotMatch(l, /display:/);
     const phone = parse(mediaBlock('@media (max-width: 600px)').block);
     assert.match(bodyOf(phone, '.person-chat-more:not([hidden])'), /position:\s*static/);
+    // the base rule's width:auto would otherwise shrink the in-flow strip to a box in the centred column
+    assert.match(bodyOf(phone, '.person-chat-more:not([hidden])'), /width:\s*100%/);
+    assert.match(bodyOf(phone, '.person-chat-caption-area'), /scroll-padding-bottom:\s*4px/);
+    assert.match(B('.person-chat-caption-area'), /scroll-padding-top:\s*4px/);
+    // overlay scrollbars reserve no gutter: the strip insets go back to 0
+    const sup = mediaBlock('@supports not selector(::-webkit-scrollbar)');
+    assert.match(bodyOf(parse(sup.block), '.person-chat-more:not([hidden])'), /left:\s*0;\s*right:\s*0/);
+    // the landscape column width override is nested inside the @supports block, not after it
+    const inner = mediaBlock('@media (min-width: 600.02px) and (max-height: 520px) {', sup.start);
+    assert.ok(inner.start > sup.start && inner.start < sup.start + sup.block.length, 'nested in @supports');
+    const irules = parse(inner.block);
+    assert.match(bodyOf(irules, '.person-chat-more:not([hidden])'), /width:\s*var\(--pc-caption-col\)/);
     assert.match(ui, /updateScrollCue/);
 });
 test('desktop video call (heights 521-700) keeps the capped caption clear of the status bar and PiP', () => {

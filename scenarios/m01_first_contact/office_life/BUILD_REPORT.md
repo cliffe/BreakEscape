@@ -332,3 +332,6 @@ n2: the dead `if (false)` line is removed from tools/playtest/m01-ol-aisle.mjs. 
 
 ### n1
 No change needed beyond the 4.9 line above.
+
+### needsDeferMin dropped from maya_chen
+With the engine fixes for avoid parks (an avoid-parked NPC wakes when the avoided NPC leaves) and start-room no_source parks (wake when the home resolves) on main, `"needsDeferMin": 1` on Maya is no longer needed and has been removed. Probe: tools/playtest/m01-ol-maya-defer.mjs (both extras thirsty, Maya set thirsty while one uses the cooler, then timed from the cooler clearing). Three fresh games without the line (7463 to 7465) and three with it (7466 to 7468): in every game Maya parked with reason avoid (avoided fatima_begum), woke with avoid_cleared, set off 1 to 2 s after the cooler cleared, used it, and returned to her post. No difference between the two versions. Pass mark was within about 60 s.
