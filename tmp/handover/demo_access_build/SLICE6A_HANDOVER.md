@@ -483,3 +483,26 @@ case 3: game 7617
 | 3 | 7617 | FAIL | 4593 -> 5057 |
 exit=1
 ```
+
+## Cake reload (probe 8e264d2e4)
+
+Run on keyless server 127.0.0.1:3099 from this worktree (build/demo-access-tour, engine main a0290141b), stopped afterwards by PID. Probe: tools/playtest/showcase-bc1-cake-reload.mjs at 8e264d2e4, run from a scratchpad copy with m01-ol-lib.mjs. The probe calls tools/playtest/player-state-size.rb, which is not on main, so a copy from 8e264d2e4 was placed in the worktree for the run and moved to tmp/delete/ afterwards. Games are made by the probe through new-game.rb. Command: `node <scratch>/cake4/showcase-bc1-cake-reload.mjs --scenario demo_access_tour --room open_plan --cake cake --port 3099 --eaters thandiwe,yasmin --rooms open_plan,kitchen --staff thandiwe,yasmin` with `--cases 1,2` (task t_open_session) and `--cases 3,4 --task ""`.
+
+Final results (games whose JSON is in tmp/bc1/):
+
+| Case | Game | Result | Servings before / after reload | Cake | Eater | player_state bytes before -> after (growth by key) |
+|---|---|---|---|---|---|---|
+| 1 cake held | 7640 | PASS | 2 / 2 | In inventory before and after, in no room | none | 4493 -> 4971 (+478: notes +335, syncWrites +76, globalVariables +67) |
+| 2 cake down, untouched | 7643 | FAIL | 2 / 2 | open_plan (40,23) before; after reload only reception was loaded and no cake was found, magnet false | none (thandiwe did not walk) | 4687 -> 5165 (+478: notes +335, syncWrites +76, globalVariables +67) |
+| 3 one slice taken | 7648 | PASS | 2 -> 1 / 1 | open_plan (40,23), same spot before and after | thandiwe, first slice (before reload); thandiwe, second slice (after reload, event magnet_serving thandiwe left 0; yasmin turned back, reason gone) | 4856 -> 5269 (+413: notes +335, syncWrites +77, globalVariables +1) |
+| 4 cake finished | 7650 | PASS | 0 / 0 | gone from every room and the inventory after reload; magnet_finished:cake fired | not recorded (case 4 returns no event list) | 4471 -> 4935 (+464: notes +335, syncWrites +126, globalVariables +3) |
+
+Discarded games: 7636 to 7639 (first attempt, player-state script missing from the worktree, so player_state is null and cases 1 to 3 were marked FAIL by the probe; the attempt was stopped during case 4). Earlier 7555 to 7600 games are from prior runs.
+
+Notes:
+- Case 4 on the first full run (game 7647) failed only on the task check. `t_open_session` is the laptop task, not a cake task. The scenario has no cake task, so the task check must be off for this scenario (`--task ""`). Case 1 and 2 do not read the task.
+- Case 2 is not stable. Game 7637 (first attempt) passed placed, kept and eat; game 7643 (second run, same setup) failed with no cake found after reload. In 7643 only reception was loaded when the after-read ran, so the read may have come before open_plan loaded. Not separated; the probe does not re-read after entering open_plan.
+- Case 3 is not stable either. Game 7644 (second run) failed: 1 serving before reload, 0 after, and the last slice went during the 22 s wait after reload. Game 7648 passed, but the second slice was eaten by thandiwe, not yasmin, which breaks the one-slice-each expectation. The probe marks it PASS because it checks servings, not who ate. The probe does not record the pre-reload serving event (its recorder is reinstalled after reload).
+- The growth by key is the one-time Mission Brief note (notes +335) plus syncWrites (+76 to +152) and globalVariables (+1 to +68) on each reload. syncWrites growth is not explained here and should be checked against the delta rule. All growth is under the 2048 limit.
+- Warnings: none. No unknown or unregistered id warning appeared in the final runs.
+- Staff held after reload: the probe holds staff with calm() after the reload wait, yet an NPC ate during the post-reload wait in game 7644, and thandiwe ate after the reload in 7648. Consistent with the probe comment about needs resetting on reload. Not diagnosed.
