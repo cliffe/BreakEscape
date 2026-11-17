@@ -88,3 +88,25 @@ test('real EasyStar: a failed search far from every seated chair is not run twic
     pm.findWorldPath(s.x, s.y, t.x, t.y, p => { got = p; });
     assert.equal(cellsOf(got).join(' '), '0,0'.length ? '2,2 3,2 4,2' : '', 'a plain walk afterwards');
 });
+
+test('real EasyStar: a seated NPC with no chair in window.chairs is still routed round (m05 break room)', () => {
+    // Open 3-row band (y 9..11); a seated NPC body in the middle row, window.chairs empty.
+    const open = [];
+    for (let x = 2; x <= 20; x++) for (let y = 9; y <= 11; y++) open.push([x, y]);
+    const pm = realPm(open);
+    window.chairs = [];
+    const seatedBody = { ...rect(10, 10), immovable: true };
+    window.npcBehaviorManager = { behaviors: new Map([['niamh', { _seat: {}, sprite: { destroyed: false, body: seatedBody } }]]) };
+    const s = centre(3, 10), g = centre(19, 10);
+    let got;
+    pm.findWorldPath(s.x, s.y, g.x, g.y, p => { got = p; });
+    assert.ok(got && got.length > 2, 'a path is found');
+    const cells = cellsOf(got);
+    assert.ok(!cells.includes('10,10'), 'the path does not cross the seated body');
+    // A stood-up NPC (no _seat) is not avoided
+    window.npcBehaviorManager = { behaviors: new Map([['niamh', { sprite: { destroyed: false, body: seatedBody } }]]) };
+    pm.findWorldPath(s.x, s.y, g.x, g.y, p => { got = p; });
+    assert.ok(cellsOf(got).includes('10,10'), 'a standing NPC is not in the avoid set');
+    window.npcBehaviorManager = undefined;
+    window.chairs = undefined;
+});
