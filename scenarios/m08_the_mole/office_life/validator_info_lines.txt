@@ -1,0 +1,1 @@
+ℹ Desk boxes: legacy in 9 map(s) (room_hq_archives, room_hq_break, room_hq_crypto, room_hq_director, room_hq_intel, room_hq_interview, room_hq_lobby, room_hq_ops, room_hq_servers); footprint in 0
