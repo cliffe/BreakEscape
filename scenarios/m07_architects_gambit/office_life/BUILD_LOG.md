@@ -26,3 +26,39 @@ Four exchange lines exceed the validator's 40 character bubble limit (an ERROR):
 ## Placeholders to measure
 
 Positions Gwen tile (2,5), Adaeze tile (4,5) are estimates from the Tiled chairs (60,178) and (124,178); cooler `useFrom` is dx 0, dy -1, also an estimate.
+
+## Slice 3 measurements (2026-11-17, server :3098, keyless, setFPS(20) fixed steps)
+
+Commits: b72a83d5f (initial tuning), eb6df8486 (chair move). Needs-log units: `tickCount` is 250 ms, so a log gap of 4 is 1 s.
+
+### Needs clock to real seconds
+- Ratio needs-clock to real: 0.994 to 0.9996 over 79 to 112 s idle (five readings, three games). Take it as 1.0 (the clock steps with the same frame step as the walks).
+- Jitter does not differ between games: Adaeze first draw +8.1% (45 gave 48.72, 48.68; 40 gave 43.22, 43.22, 43.26), Gwen +7.5% (60 gave 64.56, 64.53; 55 gave 59.12, 59.12, 59.15). The seed is constant per scenario, so the first trip is deterministic; the small spread is decay between room load and the first read.
+- Before tuning (45/60), games 7657, 7658: first trip 114.9 s after entering the room (too close to 120).
+- Tuned `initial` Adaeze 45 to 40, Gwen 60 to 55 (gap kept at 15). Validator 0 errors, 31 warnings (unchanged).
+- First natural trip after the tune, three fresh games: 7661 81.7 s, 7662 81.7 s, 7663 81.8 s after entering the operations floor (79.7 s to 79.8 s after the player stops). Margin 36 s above 45, 38 s below 120. Adaeze urgent at clock about 79 s; Gwen follows 21 s (5 s after Adaeze starts using, via the coupled row, plus her walk).
+- Caveat: a different seed could move Adaeze's first urgency across 37 s to 84 s from load (initial 40 with +/-10%). The scenario seed is fixed, so this only matters if the seed ever changes.
+
+### Use time and walk home (forced trip, thirst set to 20; five games, 7667, 7669, 7670, 7671, 7674; 7668 failed to load the page and was dropped)
+| Game | A walk | A use | A home | A away | G walk | G use | G home | G away |
+|---|---|---|---|---|---|---|---|---|
+| 7667 | 3.0 | 22.0 | 4.0 | 29.0 | 3.5 | 22.0 | 5.75 | 31.25 |
+| 7669 | 3.0 | 22.0 | 4.0 | 29.0 | 3.25 | 22.0 | 14.0 | 39.25 |
+| 7670 | 3.0 | 22.0 | 4.25 | 29.25 | 3.5 | 22.0 | 17.25 | 42.75 |
+| 7671 | 3.0 | 22.0 | 4.25 | 29.25 | 3.25 | 22.0 | 11.0 | 36.25 |
+| 7674 | 3.0 | 22.0 | 4.25 | 29.25 | 3.25 | 22.0 | 5.5 | 30.75 |
+Seconds, from job start to returned_post. Adaeze is steady (29.0 to 29.25 s). Gwen's walk home varies 5.5 to 17.25 s because `return_resumed` re-issues a stalled return (seen in 7669, 7670, 7671), the known pair stall. Adaeze left before Gwen in all five (Gwen about 21 s behind; she starts using 22 to 24 s after Adaeze). No expectedAwayMs needed (no laptop lock here).
+
+### Order test, 50 seeds, three paths
+Method: pure node simulation of the decay and refill, not a live manual-clock run. It imports `createSeededRng` from the engine's `npc-needs.js` and uses the engine's seeding rule (`hash32("<seed>:<npcId>")`, first draw for `initial` jitter, later draws for each refill jitter, 10%), with the scenario's decay, urgentAt 30, cooler restore 70 and the measured walk, use and home times, stepped at 250 ms for four cycles each (script in the session scratchpad, not committed). The coupled row (Gwen set to 30 two seconds after Adaeze starts using) is modelled. Paths: A natural trip; B talk break from seated (Adaeze set to 20 at the start); C talk-break set (Adaeze to 20) landing 10 s into her use. Seeds 1 to 50.
+- Result: 0 failures in 150 runs. In every run the urgent events alternate Adaeze, Gwen, Adaeze, Gwen for four cycles. Smallest Adaeze-to-Gwen gap 5.3 s (the coupled follow-on); the next-cycle ranges do not overlap as PLAN 2.4 says.
+- The live seed gives the single sequence in the trip table above (Adaeze first each time).
+- Not done live: setManualClock run in the browser (not needed once the node simulation used the engine's own jitter function).
+
+### no_beside_cell
+Zero in the full logs of the six trips (five above plus a sixth after the chair move, game 7684) and in the first-trip logs. Cells: Adaeze local about (79 to 83, 244), Gwen about (112 to 115, 241 to 244).
+
+### Chair check (one render, both operators seated, game 7681 and 7682)
+- Before: the grey office chair Tiled object (gid 271, 24 x 38, bottom-left origin (60, 258), so footprint x 60..84, y 220..258) contained Adaeze's cooler cell (about (82, 244)). The render shows the chair standing directly above the cooler. Overlap confirmed.
+- Applied PLAN 3 fallback 1: moved that chair to x 32 (one cell west, against the wall column; tmj and json both). It spans x 32..56, clear of Gwen's walk lane (x 56..72), both cooler cells and the desk. Only m07 uses `room_pnw_ops`. The positions diff (10.6) now shows this chair as well as `ops_cooler`.
+- After: render (tmp/m07-chair-check.png, game 7682) shows the cooler's north side clear; a trip on game 7684 reached `using` for both with no `no_beside_cell`. Probe: tools/playtest/m07-ol-chair.mjs.

@@ -81,3 +81,10 @@ tools/playtest/m07-ol-{ng.sh,dump,seat,trip,first}.mjs. Run: `tools/playtest/m07
 - Game 7649 was reused for four exploratory measurement runs (rule says fresh game each); later runs use fresh ids.
 - My own `pgrep -f` pattern matched its own shell and killed the shell once (no other process hit). Stop servers by the PID only.
 - Server start command, keyless confirmed: measurement-recipes section 1, port 3098, pid file tmp/server-3098.pid.
+
+# Slice 3 measurements handover (2026-11-17, third agent, tasks 1 to 5 done)
+
+Commits: b72a83d5f (initial 40 and 55), eb6df8486 (chair x 32), plus the BUILD_LOG commit. Numbers are in BUILD_LOG.md ("Slice 3 measurements"). Server :3098 stopped by PID; nothing running. Game ids used up to 7684 (do not reuse).
+- Still to do: Step 3 of the earlier handover (L1 to L8, reload 10.3, attack probe 10.4, LIVE_SLICE3.md). The scenario changed (initial 40/55) so use fresh games. The positions diff 10.6 now also lists the chair (gid 271) in room_pnw_ops.
+- Order test was a node simulation with the engine's own jitter function, not a live manual-clock run.
+- Probes added: tools/playtest/m07-ol-chair.mjs (zoomed render of the cooler corner; uses pathfindingManager.scene camera).
