@@ -44,8 +44,8 @@ const stubs = {
   './pc-policy.js': readFileSync(join(js, 'systems/pc-policy.js'), 'utf8'),
   './interaction-reach.js': 'export function reachX(){return 0;} export function reachY(){return 0;} export function aimX(){return 0;} export function npcWalkingAway(){return false;} export function npcGivesWay(){return false;} export function objectIdOf(o){return o?.scenarioData?.id ?? o?.objectId ?? null;}',
   './minigame-registry.js': 'export function hasMinigameStarter(){return false;} export function startRegisteredMinigame(){}',
-  '../utils/display-dashes.js': readFileSync(join(js, 'utils/display-dashes.js'), 'utf8'),
-  '../utils/escape-html.js': readFileSync(join(js, 'utils/escape-html.js'), 'utf8'),
+  '../utils/display-dashes.js': 'export * from "' + pathToFileURL(join(js, 'utils/display-dashes.js')).href + '";',
+  '../utils/escape-html.js': 'export * from "' + pathToFileURL(join(js, 'utils/escape-html.js')).href + '";',
   './inventory-menu.js': 'export function hasTriggerOnInteract(d){return Array.isArray(d && d.triggerOnInteract);} export function isDroppableInventoryItem(){return false;} export function dropInventoryItem(){} export function inventoryMenuFor(){return null;}',
 };
 let interactionsSrc = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
@@ -62,6 +62,7 @@ const { handleObjectInteraction } = await import(pathToFileURL(join(dir, 'intera
 function run(data) {
   const shown = [], alerts = [], notes = [];
   globalThis.window = {
+    player: { x: 0, y: 0 },
     gameState: { globalVariables: {} },
     gameDisplay: (body, title, opts) => shown.push({ body, title, opts }),
     gameAlert: (...a) => alerts.push(a),
@@ -76,7 +77,7 @@ const board = { type: 'generic', name: 'Grid Situation Board', observationDispla
 
 test('title once, observation in <em>, then escaped text; no labels, no duplicated name', () => {
   const { shown, alerts } = run(board);
-  assert.equal(alerts.length, 0);
+  assert.deepEqual(alerts.map(a => a[2]), ['Note Added'], 'only the note toast, no observation alert');
   assert.equal(shown.length, 1);
   const { body, title, opts } = shown[0];
   assert.equal(title, 'Grid Situation Board');
