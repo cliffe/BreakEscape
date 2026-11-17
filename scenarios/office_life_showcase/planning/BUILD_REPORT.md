@@ -467,3 +467,37 @@ Probe history: the first run on game 7736 returned m2 FAIL. The cause was the ne
 Probe usage: the header still says `PORT=3094`. The shared lib defaults to 3092, and this run used `PORT=3092`. The header was not changed.
 
 Not changed: no engine or scenario edits in this pass.
+
+## BC1 diagnosis (after train 168)
+
+Verdict: both failures were probe faults. No engine bug, and the accepted limit (the per-NPC `ate` count resets on reload) did not show in either. The servings global, the logged `left` and `magnet_finished` agree in every run.
+
+Cause. After `page.reload()` the needs system exists before any NPC needs state registers (states come with their room). The probe's first post-reload `calm()` ran at that moment, found no states (`__test.needs.ids()` was `[]`) and held nobody. Needs reset to their initial levels on reload, and Graham's social starts at 72 with `urgentAt` 40, inside the cake's tempt band (40 to 85). So on the second or fifth needs tick he walked to the cake and took a serving. The probe's next `calm()` came about 6 s later, when he was already eating. The old recorder was reinstalled only after the 22 s post-reload wait, so it never saw that serving. The case 2 pass before 168 was timing luck.
+
+| Case | Game | What the instrumented old probe saw |
+|---|---|---|
+| 2 | 7738 | 2 servings just before the reload. Staff ids `[]` at the first calm. Tick 2: Graham `job_start` social on the cake; tick 16: `magnet_serving` Graham, left 1, matching the reading of 1. The `left 0` by Chidi (tick 151) is the probe's own eat step, logged after that reading: the event list was read at the end of the case. |
+| 3 | 7742 | 1 serving just before the reload (Chidi took slice 1 at tick 46). Same empty-ids calm. Tick 5: Graham `job_start` social; tick 19: `magnet_serving` Graham, left 0; tick 68: `magnet_finished` when his 12 s use ended. So the last slice went after the reload, to an NPC who had not eaten, and was finished correctly. 168's game 7721 matches this pattern. |
+
+"left 0 next to a reading of 1" (7701, 7738): both are right. They are two servings at different times. The reading of 1 came after Graham's post-reload slice; the `left 0` is Chidi's slice in the probe's later eat step. `_takeServing` (`npc-needs.js` 1054) decrements once, then writes the global and logs `left` from the same value, and it is the only place servings drop.
+
+Probe fixes (`tools/playtest/showcase-bc1-cake-reload.mjs`, commits 4954d5bcd and b1db1c1eb):
+- After the reload, one in-page poll every 5 ms waits until every staff member that had a needs state before the reload has one again and sets hunger and social to 100 in that same poll (held at tick 0 or 1 in every run).
+- The emit recorder is an init script that hooks the needs system the moment it exists, so the first ticks after a reload are logged.
+- A reading, the staff states, the event list and the needs decision log are saved just before `page.reload()`; staff are snapshot at reload and after the wait. All in each result's `diag`.
+- `eatBy` names the real eaters from `magnet_serving` events (`eaters`), not only the NPC it nudged (demo_access_tour game 7730 named the wrong one).
+- `whereAll` checks each `enterRoom` result, retries after `dismiss()` and reports `unloaded` rooms and `enterFails`, so an unloaded room no longer reads as "cake gone".
+
+Fixed probe, keyless :3094, cases 1 to 3, two runs:
+
+| Run | Case 1 | Case 2 | Case 3 |
+|---|---|---|---|
+| 1 | 7756 PASS | 7759 PASS: 2/2, Chidi eats (left 1) | 7762 PASS: 1/1, Jun eats (left 0), `magnet_finished`, task completed |
+| 2 | 7766 PASS | 7771 PASS: 2/2, Chidi eats (left 1) | 7776 PASS: 1/1, Jun eats (left 0), `magnet_finished`, task completed |
+
+No serving was taken in any post-reload settle. player_state growth: +73, +73, +169 bytes per run.
+
+demo_access_tour (commit ee909e396, read from its raw JSON, not rerun here):
+- 7719 and 7643 (case 2): after the reload only reception was loaded, so the read never looked in open_plan. 7643 dropped at the usual (40,23) and failed the same way, so the (40,-33) drop is not what lost the cake. The drop is clamped into `currentPlayerRoom`'s rect (`item-drop.js` about line 297) and was recorded in open_plan; a different stand point after `enterRoom` explains the different spot. Probe fault: the old `whereAll` ignored `enterRoom` failures. The new one reports them. Why `enterRoom` failed there was not measured.
+- 7706 (case 3): a staff member took the last slice in the post-reload settle: the same calm fault as here.
+- 7730: the accepted limit, with `second.npc` misnamed (fixed: `eaters`).
