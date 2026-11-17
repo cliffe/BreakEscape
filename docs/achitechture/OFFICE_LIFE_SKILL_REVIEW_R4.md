@@ -60,3 +60,15 @@ Safe. Nothing in the new text lets an agent start a keyed server, play through t
 ## Verdict
 
 Accept with minors. No blocker or major remains. m1 and m2 are short text fixes to the server recipe; m3 needs one line on the interim bark route. The R5 delta can run on the cheaper tier, unless the m3 fix chooses a new route, which would be a design decision.
+
+## Outcomes
+
+| Finding | Outcome | Where |
+|---|---|---|
+| m1 recipe `cd` and unbounded wait | Fixed. `cd <worktree>` on its own line, nohup with absolute log and pid paths, 60 tries at 2 s, failure message with the log tail, grep on the absolute log path. | `measurement-recipes.md` section 1 |
+| m2 `env -u` not a guarantee | Fixed. Says the key can also come from Rails credentials (initializer :12, `tts_service.rb:181`), quotes the warning text, and says that without it the agent stops the PID, plays nothing and reports. No `/tts` probe, no credentials read, no 503 check. | `measurement-recipes.md` section 1 |
+| m3 interim bark route | Fixed. Barks wait for build/tts-barks to land (or the user's call); no agent voices them another way. SKILL.md describes the batch as handling barks "once build/tts-barks is on main" and points to `gotchas.md`, "Voicing". | `gotchas.md` Voicing; SKILL.md :128, :230 |
+| n1 pid path | Fixed. Absolute `-P` path; the note says a relative one lands in `test/dummy/tmp/pids/`; the `mkdir` is gone. | `measurement-recipes.md` section 1 |
+| n2 503 wording | Fixed. 503 only for an uncached line; a cached bark still plays. | `gotchas.md` Voicing |
+| n3 Stage 6 spend | Fixed. States 15 generations per character plus about 6 for a blink, the yes at about 20, and that the talk sheet is still made as the fallback. | SKILL.md Stage 6 |
+| n4 stopping-rule citation | Fixed. Plan rounds cite AGENTS.md "Iterating"; the build loop cites the standing full-rounds rule and notes it departs from AGENTS.md:41. | SKILL.md :168 |

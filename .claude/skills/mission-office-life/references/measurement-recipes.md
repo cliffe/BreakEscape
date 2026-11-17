@@ -8,15 +8,21 @@ How to measure the numbers an office-life build depends on. Every figure below i
 
   ```bash
   ss -ltn | grep ':<port>'    # must print nothing; never 3000, 3001, 3002, 3085 or 3086
-  cd <worktree> && mkdir -p tmp/pids && env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle \
+  ```
+
+  ```bash
+  cd <worktree>
+  env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle \
     PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true nohup bin/rails server -b 127.0.0.1 -p <port> \
-    -P tmp/pids/server-<port>.pid > tmp/server-<port>.log 2>&1 &
-  until curl -s -o /dev/null http://127.0.0.1:<port>/; do sleep 2; done   # wait for boot; read the log if it never ends
-  grep -q 'GEMINI_API_KEY environment variable is not set' tmp/server-<port>.log && echo keyless
+    -P <worktree>/tmp/server-<port>.pid > <worktree>/tmp/server-<port>.log 2>&1 &
+  up=0; for i in $(seq 60); do curl -s -o /dev/null http://127.0.0.1:<port>/ && up=1 && break; sleep 2; done
+  [ "$up" = 1 ] || { echo "server did not come up"; tail -n 30 <worktree>/tmp/server-<port>.log; }
+  grep -q 'GEMINI_API_KEY environment variable is not set' <worktree>/tmp/server-<port>.log && echo keyless
   ss -ltnp | grep ':<port>'   # the puma PID is in this line; write it down
   ```
 
-  - `env -u GEMINI_API_KEY` keeps the server keyless: with a key every line played is generated and billed. The app prints no line when a key is present; it prints the "GEMINI_API_KEY environment variable is not set" warning at boot only when there is none (`config/initializers/break_escape.rb`), so the `grep` above must find it. It runs in the background with `-P tmp/pids/server-<port>.pid` so a second server from the same worktree does not hit "A server is already running".
+  - `env -u GEMINI_API_KEY` removes the environment key, but the app also reads a key from Rails credentials (`config/initializers/break_escape.rb:12`, `tts_service.rb:181`), so it is not a guarantee: with a key from either source every uncached line played is generated and billed. Only the boot warning proves the server keyless. The initializer prints `[BreakEscape] Warning: GEMINI_API_KEY environment variable is not set. ...` only when neither source has a key, so the `grep` above must print `keyless`. If it does not: stop that PID (the one from `ss -ltnp`) at once, play nothing, and report it to the orchestrator. Never probe `/tts` to test keylessness: on a keyed server it generates and bills. Never read Rails credentials.
+  - The pid file is given as an absolute path because `rails server` changes to the Rails root before writing it, so a relative `-P` lands in `test/dummy/tmp/pids/` in a worktree. The server runs in the background with a pid file so a second server from the same worktree does not hit "A server is already running". The wait loop stops after 120 s and prints the log tail; a boot failure (GemNotFound, schema) shows there.
   - A worktree has no `.bundle/config`, so every `bin/rails` or `rake` command run from it needs the same `RBENV_VERSION` and `BUNDLE_PATH`, or it fails with GemNotFound. That covers the V6 rake (`app:break_escape:tts:office_lines[<m>]`) too.
   - Create games with `new-game.rb` run from the same worktree with the same two variables: `cd <worktree> && env RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. It renders the scenario into the game row at save, so run from the main checkout the game holds main's scenario.
   - Do not use `tools/playtest/start-keyless-server.sh` for a worktree proof. It is fixed to :3001, exits 0 with "Already listening" when :3001 is up, and has no `BUNDLE_PATH` in a worktree, so it fails there.
