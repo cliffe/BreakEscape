@@ -32,6 +32,8 @@ const stubs = {
   './inventory.js': 'export function addToInventory(){return true;} export function createItemIdentifier(){return "";}',
   './ui-sounds.js': 'export function playUISound(){} export function playGameSound(){}',
   './apply-actions.js': 'export function applyActions(actions, opts){ (globalThis.__applied ||= []).push({ actions, opts }); }',
+  // resolveObjectField is stubbed as obj[key]: observationVariants/textVariants are NOT exercised
+  // here (gameDisplayParts takes already-resolved values; the variant path was proved live).
   '../utils/conditional-text.js': 'export function resolveObjectField(obj,key){ return obj ? obj[key] : undefined; }',
   '../utils/flag-lock.js': 'export function isRemoteFlagLock(){return false;} export function remoteFlagLockMessage(){return "";}',
   './npc-reach.js': 'export function npcReachDistSq(){return 0;}',
@@ -57,7 +59,7 @@ for (const [spec, body] of Object.entries(stubs)) {
 writeFileSync(join(dir, 'interactions.mjs'), interactionsSrc);
 
 globalThis.window = {};
-const { handleObjectInteraction } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
+const { handleObjectInteraction, examineHeldItem } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
 
 function run(data) {
   const shown = [], alerts = [], notes = [];
@@ -70,6 +72,22 @@ function run(data) {
   };
   handleObjectInteraction({ name: data.id, objectId: data.id, scenarioData: { id: data.id, ...data } });
   return { shown, alerts, notes };
+}
+
+// Deprecated onInteract.confirmationText route: the confirm resolves true, then the observation shows.
+async function runConfirmed(data) {
+  const shown = [], alerts = [];
+  globalThis.window = {
+    player: { x: 0, y: 0 },
+    gameState: { globalVariables: {} },
+    gameDisplay: (body, title, opts) => shown.push({ body, title, opts }),
+    gameAlert: (...a) => alerts.push(a),
+    gameConfirm: () => Promise.resolve(true),
+    addNote: () => true,
+  };
+  handleObjectInteraction({ name: data.id, objectId: data.id, scenarioData: { id: data.id, ...data } });
+  await new Promise(r => setTimeout(r, 0));
+  return { shown, alerts };
 }
 
 const board = { type: 'generic', name: 'Grid Situation Board', observationDisplay: 'gameDisplay',
@@ -113,4 +131,28 @@ test('without observationDisplay the alert message keeps its old form', () => {
   const { shown, alerts } = run({ type: 'generic', name: 'Lamp', observations: 'It is warm.' });
   assert.equal(shown.length, 0);
   assert.match(alerts[0][0], /^Lamp Observations: It is warm\./);
+});
+
+test('onInteract.confirmationText + display gameDisplay: same layout as the fixed branch', async () => {
+  const { shown } = await runConfirmed({ type: 'generic', name: 'Grid Situation Board',
+    observations: 'A wall map of <the> grid.', readable: true, text: 'PACIFIC -- 40%',
+    onInteract: { display: 'gameDisplay', confirmationText: 'Look at the board?' } });
+  assert.equal(shown.length, 1);
+  const { body, title, opts } = shown[0];
+  assert.equal(title, 'Grid Situation Board');
+  assert.deepEqual(opts, { html: true });
+  assert.ok(body.startsWith('<em>A wall map of &lt;the&gt; grid.</em>\n\nPACIFIC'), body);
+  assert.ok(!body.includes('Grid Situation Board'), 'name not repeated in the body');
+  assert.ok(!/Observations:|Text:/.test(body), 'no literal labels');
+});
+
+test('examineHeldItem falls back to an escaped <em> gameDisplay when the examine scene is absent', () => {
+  const shown = [];
+  globalThis.window = { gameDisplay: (body, title, opts) => shown.push({ body, title, opts }), gameAlert: () => {} };
+  const ok = examineHeldItem({ name: 'x', scenarioData: { name: 'Odd <Key>', observationDisplay: 'gameDisplay', observations: 'Cold & <sharp>.' } });
+  assert.equal(ok, true);
+  assert.equal(shown.length, 1);
+  assert.equal(shown[0].body, '<em>Cold &amp; &lt;sharp&gt;.</em>');
+  assert.equal(shown[0].title, 'Odd &lt;Key&gt;');
+  assert.deepEqual(shown[0].opts, { html: true });
 });
