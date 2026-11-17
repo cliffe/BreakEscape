@@ -67,20 +67,21 @@ module BreakEscape
     # the screen the client is drawing so the server can set forThisPc and accepted; they never
     # assert reach. All reach, sessionHeld and power fields are computed from server-held footholds
     # and sessions only.
-    def keyring_for_client(pc_id: nil, route: nil)
-      entries = implicit_keyring_entries + registry_keyring_entries
+    #
+    # The registry entries are built once per call. stamp: true (the GET route) also stamps the
+    # gained time on any newly listed registry entry, taking the game lock only when some are
+    # missing and re-checking just the id set inside it.
+    def keyring_for_client(pc_id: nil, route: nil, stamp: false)
+      registry = registry_keyring_entries
+      with_lock { stamp_keyring_gained!(registry.map { |e| e['id'] }) } if stamp && keyring_gained_pending(registry).any?
+      entries = implicit_keyring_entries + registry
+      gained = keyring_gained_map # server-written only, so an Integer check is enough
+      entries.each { |e| e['gainedAt'] = gained[e['id']] if gained[e['id']].is_a?(Integer) }
       # A pc_id is scoped (forThisPc/accepted) only when the player can open a screen for it,
       # by keyboard or by the named route (section 6.2); an unopenable pc_id is ignored.
       entries = keyring_scope_to_pc(entries, pc_id) if CredentialModel.present_string?(pc_id) && keyring_pc_openable?(pc_id, route)
-      { rev: keyring_rev(entries), entries: entries }
-    end
-
-    # The short digest of the answer (section 6.2): a stable hash of the entries. A token's
-    # expiresInS is left out (K5, section 10), so a running token does not change the digest each
-    # second; `expired` turning true does.
-    def keyring_rev(entries)
-      digested = entries.map { |e| e.is_a?(Hash) && e.key?('expiresInS') ? e.except('expiresInS') : e }
-      Digest::MD5.hexdigest(JSON.generate(digested))[0, 6]
+      captures = keyring_captures
+      { rev: keyring_rev(entries, captures), entries: entries, captures: captures }
     end
 
     # { credId => seconds left } for each live token entry of an answer, for the controller's
@@ -197,6 +198,66 @@ module BreakEscape
       ids.empty? ? body : body.merge(tokenExpiredPcIds: ids)
     end
 
+    KEYRING_GAINED_MAX = 128
+
+    def keyring_gained_map
+      map = player_state['keyringGained']
+      map.is_a?(Hash) ? map : {}
+    end
+
+    # Registry entries listed now that have no gained time yet (the Sign-ins list's order).
+    # Pass the entries (or just their ids) already built to avoid walking the registry again.
+    def keyring_gained_pending(listed = nil)
+      known = keyring_gained_map
+      return [] if known.size >= KEYRING_GAINED_MAX
+
+      listed ||= registry_keyring_entries
+      listed.map { |e| e.is_a?(Hash) ? e['id'] : e }.reject { |id| known.key?(id) }
+    end
+
+    # Stamp each newly listed registry entry with the server time it was first listed, one
+    # millisecond apart in registry order, so the order is the same after a reload. The caller
+    # holds the game lock. Returns whether anything was stamped. listed is the ids (or entries)
+    # already built; without it the registry is walked.
+    def stamp_keyring_gained!(listed = nil)
+      pending = keyring_gained_pending(listed)
+      return false if pending.empty?
+
+      map = keyring_gained_map.dup
+      base = capture_now_ms
+      pending.first(KEYRING_GAINED_MAX - map.size).each_with_index { |id, i| map[id] = base + i }
+      player_state['keyringGained'] = map
+      save!
+      true
+    end
+
+    # The short digest of the answer (section 6.2): a stable hash of the entries and (K3d) the
+    # captures map, so an `unchanged` answer never hides a capture's new tag. A token's
+    # expiresInS is left out (K5, section 10), so a running token does not change the digest each
+    # second; `expired` turning true does.
+    def keyring_rev(entries, captures = {})
+      digested = Array(entries).map { |e| e.is_a?(Hash) && e.key?('expiresInS') ? e.except('expiresInS') : e }
+      Digest::MD5.hexdigest(JSON.generate([digested, captures]))[0, 6]
+    end
+
+    # The Sign-ins list's capture map (K3d, plan 8.7): one entry per capture in the server's own
+    # record (player_state['seCaptures'], never the client's se_captures global) whose target id
+    # is declared, proven or not: { tag, source, account? }. It carries no value: a `pin` tag says
+    # only that a capture the player already holds is short and numeric.
+    def keyring_captures
+      record = player_state['seCaptures'] # not se_captures_record: bootstrap has migrated a legacy save by now
+      return {} unless record.is_a?(Hash) && record.any?
+
+      declared = declared_capture_target_ids
+      candidates = CaptureModel.all_capture_candidates(scenario_data)
+      record.each_with_object({}) do |(target_id, stored), out|
+        next unless stored.is_a?(Hash) && declared.include?(target_id)
+
+        meta = CaptureModel.capture_row_meta(scenario_data, stored.merge('targetId' => target_id), candidates: candidates)
+        out[target_id] = meta if meta
+      end
+    end
+
     private
 
     # Implicit password entries, one per captured account holder (section 3.1). Built from the same
@@ -216,7 +277,8 @@ module BreakEscape
           'kind' => 'password',
           'source' => 'capture',
           'account' => account_block(npc, address),
-          'label' => 'Captured'
+          'label' => 'Captured',
+          'how' => 'recorded'
         }
         secret = secrets[target_id] if secrets.is_a?(Hash)
         entry['password'] = secret if CredentialModel.present_string?(secret)
@@ -275,7 +337,8 @@ module BreakEscape
         'source' => 'registry',
         'account' => account_block(npc, npc.dig('creds', 'username')),
         'label' => label,
-        'foundIn' => found_in
+        'foundIn' => found_in,
+        'how' => credential_how(entry)
       }
     end
 
@@ -292,7 +355,8 @@ module BreakEscape
         'account' => account_block(npc, npc.dig('creds', 'username')),
         'label' => label,
         'host' => pc.is_a?(Hash) ? host_label(pc) : nil,
-        'connectsTo' => connects_to
+        'connectsTo' => connects_to,
+        'how' => credential_how(entry)
       }
       # The tray item that proves it (K3b): the client never sees an item's `credential` (it is
       # stripped on the way out), so Connect finds its entry by this id. Only a held proof names
@@ -343,6 +407,19 @@ module BreakEscape
       clock = player_state['credentialClock']
       value = clock.is_a?(Hash) ? clock[cred_id.to_s] : nil
       value.is_a?(Numeric) ? value : nil
+    end
+
+    # How the player came by a registry credential (K3d, plan 8.7), for the row's source tag:
+    # `given` for a held item from an NPC's or flag station's itemsHeld, a declared grant or the
+    # start inventory; `found` for any other held item and for a session, planted or dropped
+    # proof; `recorded` for a foothold proof (a token the foothold recorded).
+    def credential_how(entry)
+      proof = entry['proof']
+      case CredentialModel.proof_kind(proof)
+      when 'held' then CredentialModel.held_item_given?(scenario_data, proof['held']) ? 'given' : 'found'
+      when 'foothold' then 'recorded'
+      else 'found'
+      end
     end
 
     # A connecting credential's label: the entry's own `label`, else its held item's authored

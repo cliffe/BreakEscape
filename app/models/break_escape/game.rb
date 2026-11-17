@@ -2904,7 +2904,11 @@ module BreakEscape
       'endedCredentials' => [], 'credentialEndGlobals' => {},
       # Keyring K5 (plan 10): { tokenCredId => server time its clock started }. Grow-only, at most
       # 64 entries, server-written only, never read from a sync body and never sent.
-      'credentialClock' => {}
+      'credentialClock' => {},
+      # Keyring K3d R1 (CREDENTIAL_KEYRING_PLAN.md 8.7): { registryId => server ms } the first time
+      # GET /keyring listed each registry entry, so the Sign-ins order survives a reload.
+      # Server-written only, at most 128 keys, never sent to the client except as an entry's gainedAt.
+      'keyringGained' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
