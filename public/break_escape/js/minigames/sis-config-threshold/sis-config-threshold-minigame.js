@@ -83,9 +83,9 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             const clickableClass = status === 'GREEN' ? '' : 'sis-row-clickable';
 
             return `
-                <tr class="sis-row ${clickableClass}" data-row-index="${index}" data-clickable="${status !== 'GREEN'}">
+                <tr class="sis-row ${clickableClass}" data-row-index="${index}" data-clickable="${status !== 'GREEN'}"${status === 'GREEN' ? '' : ' tabindex="0"'}>
                     <td>
-                        <div>${escapeHtml(displayDashes(row.parameter || ''))}</div>
+                        <div>${wrapAtUnderscores(escapeHtml(displayDashes(row.parameter || '')))}</div>
                         <div class="sis-row-meta">${escapeHtml(displayDashes(row.lastModified || ''))} | ${escapeHtml(displayDashes(row.modifiedBy || ''))}</div>
                     </td>
                     <td data-label="Current Value">${escapeHtml(displayDashes(row.currentValue || ''))}</td>
@@ -96,7 +96,6 @@ export class SisConfigThresholdMinigame extends MinigameScene {
 
         container.innerHTML = `
             <div class="sis-threshold-main">
-            <div class="sis-table-wrap pixel-scroll">
             <table class="sis-threshold-table">
                 <thead>
                     <tr>
@@ -109,7 +108,6 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                     ${tableRows}
                 </tbody>
             </table>
-            </div>
             <div class="sis-actions">
                 <button class="sis-btn sis-btn-compare" id="sis-compare-btn" ${canCompare ? '' : 'disabled'}>${escapeHtml(displayDashes(this.compareTitle))}</button>
                 <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${escapeHtml(displayDashes(this.confirmLabel))}</button>
@@ -137,6 +135,13 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                 const index = Number(rowEl.getAttribute('data-row-index'));
                 const row = this.rows[index];
                 this.showDetail(row);
+            });
+            // Keyboard: Enter or Space opens the same detail pop-up as a click
+            this.addEventListener(rowEl, 'keydown', (event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                event.stopPropagation();
+                rowEl.click();
             });
         });
 

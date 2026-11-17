@@ -28,22 +28,12 @@
     margin: 0 auto;
 }
 
-/* A wide table scrolls sideways inside its own pane (shared pixel bar) rather than squashing */
-.sis-table-wrap {
-    width: 100%;
-    overflow-x: auto;
-    --pixel-scroll-track: #10161c;
-    --pixel-scroll-thumb: #2d3a44;
-    --pixel-scroll-edge: #6f8a9c;
-    --pixel-scroll-hover: #9ee6ff;
-}
-
 /* Fixed layout with set value and status columns: the header and body cells share one column
-   grid whatever the row text (auto layout let the long parameter row shrink "Current Value"
+   grid whatever the row text; long parameter names break at underscores (and anywhere as a
+   backstop) inside column 1 rather than spilling into the value column (auto layout let the long parameter row shrink "Current Value"
    and "Status" to their narrowest and wrap the header) */
 .sis-threshold-table {
     width: 100%;
-    min-width: 460px;
     table-layout: fixed;
     border-collapse: collapse;
     font-size: 16px;
@@ -51,12 +41,16 @@
 
 .sis-threshold-table th:nth-child(2),
 .sis-threshold-table td:nth-child(2) {
-    width: 160px;
+    width: 136px;
 }
 
 .sis-threshold-table th:nth-child(3),
 .sis-threshold-table td:nth-child(3) {
     width: 110px;
+}
+
+.sis-threshold-table td:first-child {
+    overflow-wrap: anywhere;
 }
 
 .sis-threshold-table th {
@@ -86,6 +80,12 @@
 }
 
 .sis-row-clickable:hover {
+    background: #313744;
+}
+
+.sis-row-clickable:focus-visible {
+    outline: 2px solid #9ee6ff;
+    outline-offset: -2px;
     background: #313744;
 }
 

@@ -491,10 +491,12 @@ export const minigameBridge = {
         if (displayX) {
             clickElement(displayX);
             await sleepFrames(2);
+            const stillOpen = !!document.querySelector('.game-display-dialog');
             const result = {
-                ok: true,
+                ok: !stillOpen,
                 closed: 'game-display',
-                stillOpen: !!document.querySelector('.game-display-dialog'),
+                stillOpen,
+                ...(stillOpen ? { reason: 'game-display-did-not-close' } : {}),
                 nowActive: activeMinigameSummary()?.id ?? null,
                 returnedToContainer: false
             };

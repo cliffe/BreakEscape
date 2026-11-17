@@ -48,7 +48,8 @@ html .tutorial-panel {
 }
 
 html .game-display-dialog {
-  max-height: calc(80vh / var(--hud-zoom, 1));
+  /* border-box: centred, so 116px each side clears the top HUD rows and the inventory bar (measured 390x844 and 1280x720) */
+  max-height: min(calc(80vh / var(--hud-zoom, 1)), calc((100vh - 232px) / var(--hud-zoom, 1)));
 }
 
 /* ===== PLAYER HUD BUTTONS (inside inventory) ===== */

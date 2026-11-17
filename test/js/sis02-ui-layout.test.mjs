@@ -1,5 +1,6 @@
 // sis02 UI fixes: (1) the SIS config table keeps its header and body on one fixed column
-// grid, scrolling sideways in its own pane instead of squashing; (2) the gameDisplay modal
+// grid, long parameter names breaking inside column 1 instead of spilling into the value
+// column; (3) rows reachable from the keyboard; (2) the gameDisplay modal
 // (the NIS form) scrolls its body inside the frame with the shared pixel scrollbar and a 16px
 // bottom pad, the frame adding no band of its own under it.
 // Run with: node --max-old-space-size=2048 test/js/sis02-ui-layout.test.mjs
@@ -25,19 +26,54 @@ function ruleBody(css, selector) {
     return m ? m[1] : null;
 }
 
-test('SIS table: fixed layout, nowrap header, set value and status columns', () => {
+test('SIS table: fixed layout, nowrap header, narrow value column, names break in column 1', () => {
     const css = readFileSync(join(root, 'css/sis-config-threshold-minigame.css'), 'utf8');
     const table = ruleBody(css, '.sis-threshold-table');
     assert.match(table, /table-layout:\s*fixed/);
-    assert.match(table, /min-width:\s*\d+px/);
+    assert.doesNotMatch(table, /min-width:\s*[1-9]/, 'no min-width: the old 460px wrapper never scrolled');
     assert.match(ruleBody(css, '.sis-threshold-table th'), /white-space:\s*nowrap/);
-    assert.match(ruleBody(css, '.sis-table-wrap'), /overflow-x:\s*auto/);
-    assert.ok(css.includes('.sis-threshold-table th:nth-child(2)'), 'column 2 width set');
+    assert.match(ruleBody(css, '.sis-threshold-table td:first-child'), /overflow-wrap:\s*anywhere/);
+    assert.match(ruleBody(css, '.sis-threshold-table th:nth-child(2),\n.sis-threshold-table td:nth-child(2)'), /width:\s*136px/);
+    assert.ok(!css.includes('.sis-table-wrap'), 'the sideways-scroll wrapper is gone');
 });
 
-test('SIS table: the minigame puts the table in a scrolling pixel-scroll pane', () => {
-    const js = readFileSync(join(root, 'js/minigames/sis-config-threshold/sis-config-threshold-minigame.js'), 'utf8');
-    assert.match(js, /class="sis-table-wrap pixel-scroll">\s*<table class="sis-threshold-table"/);
+async function renderSis(rows) {
+    const { SisConfigThresholdMinigame } = await import(pathToFileURL(join(root, 'js/minigames/sis-config-threshold/sis-config-threshold-minigame.js')).href);
+    const gc = document.createElement('div');
+    const fake = { rows, gameContainer: gc, container: document.createElement('div'), hasCertificationDoc: () => false, compareTitle: 'c', confirmLabel: 'x', addEventListener(el, ev, fn) { el.addEventListener(ev, fn); }, _hideSceneX() {} };
+    fake.showDetail = (r) => { fake.shown = r; };
+    SisConfigThresholdMinigame.prototype.render.call(fake);
+    SisConfigThresholdMinigame.prototype.bindEvents.call(fake);
+    return { gc, fake };
+}
+
+test('SIS table: a 40-character parameter name is breakable at underscores and has no scroll wrapper', async () => {
+    const long = "BATTERY_STRING_OVERCURRENT_TRIP_SETPT_X1";
+    assert.equal(long.length, 40);
+    const { gc } = await renderSis([{ parameter: long, currentValue: '1', status: 'AMBER' }]);
+    const cell = gc.querySelector('.sis-threshold-table tbody td:first-child > div');
+    assert.ok(cell.innerHTML.includes('_<wbr>'), 'wbr after each underscore');
+    assert.equal(cell.textContent, long);
+    assert.equal(gc.querySelector('.sis-table-wrap'), null);
+});
+
+test('SIS rows: amber and red rows are keyboard reachable and Enter or Space opens the detail', async () => {
+    const { gc, fake } = await renderSis([
+        { parameter: 'A_B', currentValue: '1', status: 'AMBER' },
+        { parameter: 'C_D', currentValue: '1', status: 'RED' },
+        { parameter: 'E_F', currentValue: '1', status: 'GREEN' }]);
+    const trs = [...gc.querySelectorAll('tbody tr')];
+    assert.deepEqual(trs.map((t) => t.getAttribute('tabindex')), ['0', '0', null]);
+    const key = (el, k) => el.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+    key(trs[0], 'Enter');
+    assert.equal(fake.shown.parameter, 'A_B');
+    key(trs[1], ' ');
+    assert.equal(fake.shown.parameter, 'C_D');
+    fake.shown = null;
+    key(trs[1], 'a');
+    assert.equal(fake.shown, null, 'other keys do nothing');
+    const css = readFileSync(join(root, 'css/sis-config-threshold-minigame.css'), 'utf8');
+    assert.match(ruleBody(css, '.sis-row-clickable:focus-visible'), /outline:\s*2px solid/);
 });
 
 test('SIS table: the phone card layout drops the fixed layout and min-width', () => {
@@ -47,7 +83,7 @@ test('SIS table: the phone card layout drops the fixed layout and min-width', ()
     assert.match(media, /table-layout:\s*auto/);
 });
 
-test('gameDisplay: the body is a pixel-scroll pane with a 16px bottom pad and the frame adds none', async () => {
+test('gameDisplay: the body is a pixel-scroll pane with a 16px bottom pad inside a 12px frame inset', async () => {
     const { gameDisplay } = await import(pathToFileURL(join(root, 'js/systems/notifications.js')).href);
     gameDisplay('line one\nline two', 'NIS Notification Form');
     const body = document.querySelector('.game-display-dialog .game-display-body');
@@ -56,7 +92,12 @@ test('gameDisplay: the body is a pixel-scroll pane with a 16px bottom pad and th
     assert.equal(document.querySelectorAll('.game-display-dialog .game-modal-close').length, 1, 'X is the only close');
     document.querySelector('.game-modal-close').click();
     const css = readFileSync(join(root, 'css/notifications.css'), 'utf8');
-    assert.match(ruleBody(css, '.game-display-dialog'), /padding-bottom:\s*0\b/);
+    const dlg = ruleBody(css, '.game-display-dialog');
+    assert.match(dlg, /padding-bottom:\s*12px/);
+    assert.match(dlg, /box-sizing:\s*border-box/);
+    assert.match(ruleBody(css, '.game-display-title'), /line-height:\s*20px/);
+    const hud = readFileSync(join(root, 'css/hud.css'), 'utf8');
+    assert.match(hud, /html \.game-display-dialog\s*\{[^}]*min\([^}]*100vh - 232px/);
     const b = ruleBody(css, '.game-display-body');
     assert.match(b, /padding-bottom:\s*16px/);
     assert.match(b, /overflow-y:\s*auto/);

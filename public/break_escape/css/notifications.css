@@ -369,14 +369,17 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    /* The body carries the bottom pad (16px, inside its scroll area), so the frame wraps
-       the text with no empty band under it and the last line never touches the edge */
-    padding-bottom: 0;
+    /* border-box so max-height covers the padding and frame (the long form must clear the HUD).
+       Bottom inset 12px plus the body's own 16px pad: 28px under the text, matching the top,
+       so scrolled text never touches the frame */
+    box-sizing: border-box;
+    padding-bottom: 12px;
 }
 
 .game-display-title {
     font-family: 'Press Start 2P', monospace;
     font-size: 13px;
+    line-height: 20px;
     color: #3498db;
     margin-bottom: 16px;
     padding-bottom: 10px;

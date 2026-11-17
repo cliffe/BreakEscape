@@ -128,3 +128,15 @@ test('close() with a game-display modal open over a popup closes the modal first
     assert.equal(d.clicks(), 1);
     assert.deepEqual(r.calls, [], 'the popup under it is left open');
 });
+
+test('close() reports ok:false when the game-display modal does not close', async () => {
+    rig(null);
+    const overlay = document.createElement('div');
+    overlay.innerHTML = '<div class="game-confirm-dialog game-display-dialog"><button class="game-modal-close">x</button></div>';
+    document.body.appendChild(overlay); // the X does nothing
+    const res = await minigameBridge.close();
+    assert.equal(res.ok, false);
+    assert.equal(res.stillOpen, true);
+    assert.equal(res.reason, 'game-display-did-not-close');
+    overlay.remove();
+});
