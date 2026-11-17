@@ -1550,9 +1550,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             }<% end %>,
 <%# Office life (PLAN.md 2.11): trouble. An attack on any of the break-room staff upsets the room; machines go off
     (offWhen) and needs walk the newcomers home. Appended last so no saved once index moves. %>
-<% %w[npc_attacked:thandiwe_moyo npc_attacked:niamh_doherty npc_attacked:lisa_park npc_ko:lisa_park].each do |ev| %>
-            { "eventPattern": "<%= ev %>", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
-<% end %>
+            { "eventPattern": "npc_attacked:thandiwe_moyo", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
+            { "eventPattern": "npc_attacked:niamh_doherty", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
+            { "eventPattern": "npc_attacked:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
+            { "eventPattern": "npc_ko:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "global_variable_changed:qdc_staff_upset", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
             { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } }
           ]
@@ -1772,7 +1773,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "currentKnot": "start",
           "globalVarOnKO": "lisa_ko",
           "taskOnKO": "talk_to_lisa",
-<%# Office life (PLAN.md 2A, D84 b): one kettle trip. Her single need is tea (decay 0.01, so it never
+<%# Office life (PLAN.md 2A, D84 b): one fridge trip. Her single need is tea (decay 0.01, so it never
     falls by itself); two mappings set it low when the player is two rooms away, and only once she
     has been met (lisa_met), so a first meeting always finds her at her post. %>
           "needsHome": { "room": "break_room", "x": 4, "y": 4 },
@@ -1780,8 +1781,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "needs": { "tea": { "initial": 100, "decayPerMin": 0.01, "urgentAt": 30 } },
           "eventMappings": [
             { "eventPattern": "conversation_closed:lisa_park", "onceOnly": true, "setGlobal": { "lisa_met": true } },
-            { "eventPattern": "room_entered:open_office_area", "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } }
+            { "eventPattern": "room_entered:open_office_area", "fireOnlyWhenLoaded": true, "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } },
+            { "eventPattern": "room_entered:reception_lobby", "fireOnlyWhenLoaded": true, "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } }
           ]
         },
 <%# Office life (PLAN.md 2.2 to 2.10, 2.12): two day extras at the east end of table 2. No storyPath and no
@@ -1815,7 +1816,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             { "eventPattern": "npc_use_started:corridor_cooler", "condition": "data.npcId === 'niamh_doherty' && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "room_entered:server_room", "condition": "globalVars.thandiwe_ko !== true", "setVisible": false },
             { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:main_corridor", "condition": "globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true", "onceOnly": true, "setVisible": false }
+            { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'break_room' && globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true", "onceOnly": true, "setVisible": false }
           ]
         },
         {
@@ -1842,9 +1844,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "thirst": { "initial": 75, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 }
           },
           "eventMappings": [
-            { "eventPattern": "room_entered:main_corridor", "condition": "data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:break_espresso", "condition": "data.npcId === 'thandiwe_moyo' && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "global_variable_changed:server_badge_obtained", "condition": "value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } }
+            { "eventPattern": "global_variable_changed:server_badge_obtained", "fireOnlyWhenLoaded": true, "condition": "value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } }
           ]
         }
       ],
