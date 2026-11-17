@@ -26,6 +26,15 @@ const snap = () => ev(h, (ids) => {
 const usingCooler = s => OPS.every(i => s[i].job && s[i].job[2] === "using" && s[i].x >= 360 && s[i].x <= 420 && s[i].y >= 225 && s[i].y <= 265);
 const shot = name => h.page.screenshot({ path: `tmp/m07-s3-${name}-${gid}.png` });
 const logTail = (from) => ev(h, (f) => window.__test.needs.log().slice(f).map(e => JSON.stringify(e).slice(0, 160)), from);
+const bg = () => ev(h, () => { const m = window.MinigameFramework?.currentMinigame; return m ? { bg: m.background ?? null, ui: m.ui?.background ?? null } : null; });
+// A seated operator's chair box (40 px wide, 19 px left of her sprite centre) sits under the centre aim
+// point that interact(id) picks, so the click can open the chair bark ("A chair.") instead of the chat.
+// Talk the way a player would: stand beside her and click her body, 12 px right of centre.
+const talkTo = async (id) => {
+  await ev(h, (i) => window.__test.moveToNear(i), id);
+  await h.t(500);
+  return ev(h, (i) => { const sp = window.npcBehaviorManager.getBehavior(i).sprite; return window.__test.clickAt(Math.round(sp.x) + 12, Math.round(sp.y)); }, id);
+};
 const nlog = () => ev(h, () => window.__test.needs.log().length);
 
 await h.t(3000);
@@ -74,11 +83,13 @@ if (mode === 'trip') {
 
 if (mode === 'talk') {
   await h.t(2000);
-  while (T() < 240 && (await ev(h, () => { const st = window.__test.getState(); return !!(st.blockingUi || st.activeMinigame); }))) { await dismiss(h); await h.t(2000); }
+  const blk = () => ev(h, () => { const st = window.__test.getState(); const dom = [...document.querySelectorAll('[id*=popup],[class*=popup],[id*=modal],[class*=modal],[class*=minigame],[id*=phone],[class*=dialog]')].filter(e => e.offsetParent !== null).map(e => (e.id || e.className).toString().slice(0, 50) + '|' + (e.innerText || '').replace(/\s+/g, ' ').slice(0, 90)).slice(0, 5); return { blockingUi: st.blockingUi ?? null, mg: st.activeMinigame ? (st.activeMinigame.id || 'open') : null, dom }; });
+  log('blk t' + T(), await blk());
+  while (T() < 240 && (await ev(h, () => { const st = window.__test.getState(); return !!(st.blockingUi || st.activeMinigame); }))) { log('blk t' + T(), JSON.stringify(await blk()).slice(0, 260)); await ev(h, () => window.__test.dismissBlockingUi()); await h.t(1500); }
   log('blocking cleared at T', T());
-  let it = null; for (let k = 0; k < 4 && !it?.ok; k++) { it = await ev(h, (id) => window.__test.interact(id), npc); if (!it?.ok) { await h.t(2000); } }
-  log('interact', { ok: it?.ok, mode: it?.mode, reason: it?.reason });
-  await h.t(2500); await shot(`talk1-${npc}`);
+  let it = await talkTo(npc);
+  log('interact', { ok: it?.ok, menu: it?.menu ? 'open' : null });
+  await h.t(2500); await shot(`talk1-${npc}`); log('chat1 bg', await bg());
   const r1 = await converse(h, '.', 40);
   const tClose = T();
   log('chat1', { closed: r1.closed, lines: r1.lines, picked: r1.picked, fail: r1.fail || null, closeAtT: tClose });
@@ -86,9 +97,9 @@ if (mode === 'talk') {
   log('chat1 close to first job (s)', firstJobAt === null ? null : firstJobAt - tClose);
   log('chat1 close to both-using (s)', hit === null ? null : hit - tClose);
   await h.t(3000);
-  const it2 = await ev(h, (id) => window.__test.interact(id), npc);
-  log('interact2', { ok: it2?.ok, mode: it2?.mode, reason: it2?.reason });
-  await h.t(2500); await shot(`talk2-${npc}`);
+  const it2 = await talkTo(npc);
+  log('interact2', { ok: it2?.ok, menu: it2?.menu ? 'open' : null });
+  await h.t(2500); await shot(`talk2-${npc}`); log('chat2 bg', await bg());
   const r2 = await converse(h, '.', 40);
   log('chat2', { closed: r2.closed, lines: r2.lines, fail: r2.fail || null });
   const lg = await logTail(L0);
