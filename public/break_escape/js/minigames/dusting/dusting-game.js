@@ -495,8 +495,8 @@ export class DustingMinigame extends MinigameScene {
             <div class="dusting-tools">${this._brushButtons()}</div>
             <p class="dusting-powder-line">Powder: ${escapeHtml(pw.label)}</p>
             <div class="dusting-meters">
-                <div class="dusting-meter"><label>Coverage <b data-dyn="cov-text"></b></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
-                <div class="dusting-meter"><label>Clarity <b data-dyn="clar-text"></b></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>
+                <div class="dusting-meter"><label>Coverage <span class="dusting-meter-value" data-dyn="cov-text"></span></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
+                <div class="dusting-meter"><label>Clarity <span class="dusting-meter-value" data-dyn="clar-text"></span></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>
                 <p class="dusting-estimate" data-dyn="estimate"></p>
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>
@@ -512,7 +512,7 @@ export class DustingMinigame extends MinigameScene {
             <h3>Lift with tape</h3>
             <p>The tape is laid over the print with air bubbles under it. Rub over it (drag, or hold Space and use the arrows) to press the bubbles out. Bubbles left in leave holes in the lift.</p>
             <div class="dusting-meters">
-                <div class="dusting-meter"><label>Tape pressed <b data-dyn="tape-text"></b></label><div class="dusting-bar"><i data-dyn="tape-bar"></i></div></div>
+                <div class="dusting-meter"><label>Tape pressed <span class="dusting-meter-value" data-dyn="tape-text"></span></label><div class="dusting-bar"><i data-dyn="tape-bar"></i></div></div>
                 <p class="dusting-estimate" data-dyn="estimate"></p>
             </div>
             <p class="dusting-feedback" data-dyn="feedback"></p>

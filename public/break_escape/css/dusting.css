@@ -112,7 +112,7 @@
 .dusting-meters { margin: 8px 0; }
 .dusting-meter { margin-bottom: 6px; }
 .dusting-meter label { display: block; }
-.dusting-meter b { font-weight: normal; color: var(--d-accent); }
+.dusting-meter .dusting-meter-value { font-weight: normal; color: var(--d-accent); }
 .dusting-bar { position: relative; height: 12px; border: 2px solid var(--d-line); background: #050806; }
 .dusting-bar i { display: block; height: 100%; width: 0; background: var(--d-accent); }
 .dusting-bar u { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #fff; }

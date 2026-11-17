@@ -26,6 +26,10 @@ test('no strong or b tag wraps a short label ending in a colon', () => {
   }
 });
 
+test('the dusting meters take no bold tag around their values', () => {
+  assert.doesNotMatch(js('dusting/dusting-game.js'), /<b[ >]/);
+});
+
 test('the RFID cloner builds its labels as mg-field-label spans', () => {
   const src = js('rfid/rfid-ui.js');
   assert.doesNotMatch(src, /createElement\(['"](strong|b)['"]\)/);
