@@ -36,8 +36,8 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
     "infra": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" }
   },
 
-  <%# The Staff psk is @random_password, used for this psk only. The capture mapping in a later
-      slice repeats the same render. Guest has an SSID and no psk: an open network. %>
+  <%# The Staff psk is @random_password, used for this psk only. Slice 3's capture mapping must
+      render @random_password again through ERB, never a pasted copy of the value. Guest has an SSID and no psk: an open network. %>
   "networks": {
     "office_lan": { "name": "Merrin & Sallow office LAN", "wifi": { "ssid": "MerrinSallow-Staff", "psk": "<%= @random_password %>" } },
     "server_lan": { "name": "Server network" },
@@ -170,7 +170,6 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
               "name": "julian.rdp",
               "takeable": true,
               "droppable": true,
-              "needsTag": "julian_rdp_file",
               "readable": true,
               "credential": "julian_rdp",
               "onRead": { "setVariable": { "seen_julian_rdp": true } },
@@ -337,7 +336,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "id": "thandiwe_laptop",
           "name": "Thandiwe's laptop",
           "sprite": "laptop1",
-          "position": { "x": 3.1, "y": 2.0, "elevation": 30 },
+          "position": { "x": 3.54, "y": 2.125, "elevation": 30 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -373,7 +372,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "id": "yasmin_pc",
           "name": "Yasmin's PC",
           "sprite": "pc3",
-          "position": { "x": 5.3, "y": 2.0, "elevation": 30 },
+          "position": { "x": 5.675, "y": 2.0625, "elevation": 30 },
           "takeable": false,
           "interactable": true,
           "active": true,
