@@ -45,3 +45,39 @@ Branch build/ol-m07, commit c36090d54.
 ## Gotchas
 - I ran `git checkout -- dungeon_graph.html` once to clear a generated file (rule slip); dungeon_graph.md is modified and unstaged: never stage it.
 - Write .md with heredocs. node_modules is a symlink or dir already in the worktree (untracked, do not stage).
+
+---
+
+# Slice 3 continuation handover (2026-11-17, second agent stopped at context limit)
+
+Branch build/ol-m07. Commit e1bccce0e (step 1) plus the commit that adds this note. Server on :3098 stopped (PID 1940844); nothing is running. Do not reuse any game id below.
+
+## Step 1 done (e1bccce0e)
+- Four exchange lines shortened in ink, SPOKEN_LINES.md (counts 38, 31, 39, 39) and DIALOGUE_SAMPLE.md; ink recompiled; exchanges block wired in adaeze_okafor (ERB comment removed).
+- `server_hall_reached` confirmed: set by HaX's `room_entered:server_room` mapping (scenario.json.erb ~:1136), declared false at :2689, so the exchanges' `server_hall_reached: false` gate holds until the first server-room entry.
+- Validator 0 errors, 31 warnings (baseline 30 plus the two V4 attack-mid-walk notes already justified). Lock/key diff empty.
+- dialoguelint shows one L1 delivery-note on both operator files (control tag `#exit_conversation` inside the hub's conditional). Same finding on m05's Thandiwe file, which is the model; not a voiced-line problem.
+
+## Step 2 partial (measured live, game 7649, a few runs; 7654 started and stopped)
+- Chair body-centre cells CONFIRMED, estimates correct: Gwen body centre local (64,160) = tile (2,5); Adaeze (128,160) = tile (4,5). Both visibly seated on the chairs in a screenshot. No change to `position` or `needsHome`.
+- Cooler: Tiled sprite claimed (one cooler, local top-left (60,253), 24x47). With `useFrom` dx 0, dy -1: Adaeze uses from local body-centre (82,244) (tile about 2.6, 7.6); Gwen (engine second cell, east side) at about (114,244). Both walkable. Both pairs reached `using` together; no `no_beside_cell` in the one forced trip. Screenshot (both using, bubble "Cooler's the only thing working, mind.") shows both clear of the key and the desk; Adaeze's cell lies within the grey chair (local 52..92 x 219..259) footprint rectangle, which was not visibly drawn as a chair in the shot (check this in a render with both seated: the chair near the cooler may be the empty (60,258) chair; if it shows, take PLAN section 3 fallback 1).
+- One forced trip (Adaeze thirst set to 20, Gwen coupled): Adaeze left at t=42 ticks, using 12 s later, away about 36 s, Gwen followed 8 s after Adaeze started using (coupled row at 2 s delay plus walk), Adaeze before Gwen. Use 22 s each, about 37 s home to home for Adaeze.
+- Initial thirst seen in 7649: Adaeze 48.68 (45 +8.2%), Gwen 64.53 (60 +7.5%). Jitter seed may be per scenario (check across 7654 and later fresh games; if identical, the first-trip time is deterministic).
+
+## Step 2 still to do
+1. Needs-clock ratio and first natural trip (45 to 120 s after room load): run `tools/playtest/m07-ol-first.mjs <gid> 3098` on three fresh games (script prints first-trip time since entering the room, initial levels and the ratio). At ratio about 1 Adaeze at 48.68 goes urgent at 1.87 min = 112 s: too close to 120. Likely retune Adaeze `initial` down (about 42) and keep Gwen's gap (about 57), then re-measure. Edit scenario.json.erb thirst initial for both, validator, commit, then re-test with fresh games.
+2. Use and walk-home times, five tries (m07-ol-trip.mjs, one try per run, fresh game each); expectedAwayMs not needed (no laptop lock here).
+3. 50-seed manual-clock order test over the three PLAN 2.4 paths (setSeed then setManualClock(true), step; Adaeze urgent before Gwen). Manual clock only here.
+4. No `no_beside_cell` across five trips (the trip script prints the needs log).
+5. Record all in BUILD_LOG.md (not yet written).
+
+## Step 3 not started
+L1, L2, L3, L4, L5, L6, L8, reload 10.3, attack probe 10.4, then LIVE_SLICE3.md. L6 needs a server-room entry: get a badge legitimately (shift handover sheet, Contractor Badge Station PIN 0616 at the checkpoint, or Hollis route); never set globals in the page.
+
+## Probes (committed)
+tools/playtest/m07-ol-{ng.sh,dump,seat,trip,first}.mjs. Run: `tools/playtest/m07-ol-ng.sh` prints GAME_ID and FLAGS_XML (PLAYTEST_PORT=3098 baked in). Probes use `m01-ol-lib.mjs` (headless Playwright, setFPS(20), fixed steps). They park the player at world (520,248) clear of the cooler lanes and enter via `__test.enterRoom('operations_floor')`.
+
+## Slips to note
+- Game 7649 was reused for four exploratory measurement runs (rule says fresh game each); later runs use fresh ids.
+- My own `pgrep -f` pattern matched its own shell and killed the shell once (no other process hit). Stop servers by the PID only.
+- Server start command, keyless confirmed: measurement-recipes section 1, port 3098, pid file tmp/server-3098.pid.
