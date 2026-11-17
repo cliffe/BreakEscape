@@ -57,14 +57,14 @@ Tier 1 clip count: **6**.
 
 ### Exchanges (heard once; knots in `m01_npc_fatima_begum.ink`; set `heard_ex_interns`, `heard_ex_biscuits`)
 
-Exchange lines are not pool barks, so the 40-character limit does not apply to them; each line is still short.
+The validator caps every exchange bubble at 40 characters, so lines 16, 21 and 22 were shortened in the build (not yet voiced, so no re-voice).
 
 `ex_interns` (global `heard_ex_interns`)
 
 | # | Speaker | Text | Chars |
 |---|---|---|---|
 | 15 | fatima_begum | Did finance sign off my two interns yet? | 40 |
-| 16 | graham_whitfield | One intern. The other's in next year's budget. | 46 |
+| 16 | graham_whitfield | One intern. The other's for next year. | 38 |
 | 17 | fatima_begum | Next year. You said that last year. | 35 |
 | 18 | graham_whitfield | And I meant it both times. | 26 |
 
@@ -74,8 +74,8 @@ Exchange lines are not pool barks, so the 40-character limit does not apply to t
 |---|---|---|---|
 | 19 | graham_whitfield | I've brought biscuits for quarter close. | 40 |
 | 20 | fatima_begum | Bribery, Graham? | 16 |
-| 21 | graham_whitfield | Morale. It's in the budget, under sundries. | 43 |
-| 22 | fatima_begum | I'm telling everyone it's under sundries. | 41 |
+| 21 | graham_whitfield | Morale. Budgeted under sundries. | 32 |
+| 22 | fatima_begum | I'll tell everyone it's under sundries. | 39 |
 
 ### New player text (not voiced)
 
