@@ -58,22 +58,22 @@ Sofia Marchetti: I'll keep one warm for you.
 
 // Briefing, before the split: brewing for a team that will not drink it yet.
 === ex_fp_kettle_on ===
-Darren Price: Kettle's on. They'll be talking a while yet.
-Sofia Marchetti: Then it'll be stewed by the time they want it.
-Darren Price: Stewed tea at three in the morning is still tea.
+Darren Price: Kettle's on. They'll be a while yet.
+Sofia Marchetti: Then it'll be stewed when they want it.
+Darren Price: Stewed tea at this hour is still tea.
 Sofia Marchetti: I'll do a fresh pot when they break.
 -> DONE
 
 // Between the split and the breach: the radios have gone quiet. Sofia opens (nearer the gate).
 === ex_fp_radios ===
 Sofia Marchetti: The radios have gone very quiet.
-Darren Price: Quiet's good. Quiet means nobody's shouting.
+Darren Price: Quiet's good. Means nobody's shouting.
 Sofia Marchetti: Then we wait. That's the job tonight.
 -> DONE
 
 // After the breach, until the close: the door is open. Sofia opens (nearer the gate).
 === ex_fp_door_open ===
 Sofia Marchetti: So the door's open, then.
-Darren Price: I'll top up the generator. Could be a long one.
-Sofia Marchetti: Kettle stays on for whoever walks out first.
+Darren Price: I'll top the generator up for them.
+Sofia Marchetti: Kettle stays on for whoever walks out.
 -> DONE
