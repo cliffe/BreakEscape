@@ -94,10 +94,14 @@ module BreakEscape
       hold('lena_rdp_file')
       with_foothold
       generic = { 'success' => false, 'message' => Game::LOGIN_INCORRECT }
-      [{}, { relay: true }, { foothold: OFFICE, relay: true }, { from: 'sam_pc' }].each do |extra|
+      [{}, { relay: true }, { foothold: OFFICE, relay: true }].each do |extra|
         assert_equal generic, cred_login('lena_pc', 'lena_rdp', extra), extra.inspect
         assert_response :unprocessable_entity
       end
+      # K4 (plan 9): from= is a route now; a source the player does not hold is 403, not generic
+      body = cred_login('lena_pc', 'lena_rdp', from: 'sam_pc')
+      assert_response :forbidden
+      assert_equal 'PC not reachable', body['message']
       assert_empty state['sessions']
     end
 

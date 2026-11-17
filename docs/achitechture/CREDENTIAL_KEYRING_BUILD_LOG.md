@@ -1272,3 +1272,105 @@ Outcomes for the round 2 review (`tmp/handover/ac0/K3D_REVIEW_R2.md`).
 Game 6585: Sign-ins order (Lena .rdp, Ian password, ops cookie, Jake password, SV-OPS-01 admin.rdp) holds across a plain resume; the assist row reads Given; the cupboard PIN sits under Captures. The player spawns at (7, 7), Pat's tile, so Pat moves to (6, 7). Ian's card is in the comms room, not the lobby: the capture note and the comms port text now say so (the R1 note said lobby).
 
 Game 6590 (2026-11-17): Pat at (6, 7) is clear of both lobby plants and her card at (8, 6) sits on open carpet. R6 and R7 pass: the assist Connect opens HB-FIN-03 as Jake, the contract read completes k3c_contract, the desktop closes 90 s after the read with "Jake Brooks ended the remote assist.", and the Remote assist row is greyed and Given. R13's quote of the label "SV-OPS-01.rdp" on the ops cookie row was wrong (8.7 rows carry no label; signin-rows.js:176-181), so R13 now names the entry id. Open, test scenario only: Lena's desktop has no door_code.txt and Finance is not PIN-locked, though plan 9.1 and R3 describe both; Jake's timer bark was not heard (the player was out of earshot).
+
+## Slice K4 run 2 (server model)
+
+Commit 3e21ce0fd on build/keyring-k4, syntax-checked only (tests came in run 3).
+
+- network_access.rb: `FROM_PARAM_PATTERN` (`/\A[A-Za-z0-9_-]{1,64}\z/`, a PC-id pattern, not the credential `ID_PATTERN`), `credentials_declared?`, `valid_from_param?`, `from_reach(net, ignore_outages:)` (cached under `[:from, net]` plus `reach_cache_key`), `reach_spread` (the pivot loop, shared with `reach_walk_uncached`), `from_chain` (nil on a repeat), `from_route_refusal` (nil, :generic or :unreachable), `from_session_pruned?` (structural, R10 m4), the prune judging `from` sessions, `from` branches in `session_route_up?`, `desktop_request_allowed?`, `desktop_refusal` and `desktop_route`, `settle_session_at_keyboard!` stripping `from`, unplug adding the prune's ids to `endedPcIds`, and `from_login_accounts` beside a split-out `remote_login_tiles_answer`.
+- game.rb: typed `attempt_login!(from:, from_given:)` checks the route before the password (uncounted); `start_login_session!` records `from`; the session answer gives `remote: true`, `fromPcId`, `host` and `fromHost`; `sessions_for_client` skips a `from` session whose chain repeats or reaches a session the same bootstrap ends (R10 m5).
+- credential_login.rb: the `:from` branch of `credential_route_refusal`; the answer carries `route: { from: }`.
+- credential_keyring.rb: `keyring_pc_openable?` judges `{ from: }` by the route; `credential_routes` adds `{ from: }` rows after the footholds, sorted by PC id.
+- npc_frustration.rb: `record_borrow_done!` prunes; the "done" answer carries `endedPcIds` only when non-empty.
+- Deviations the orchestrator accepted: the PC-id pattern for `from`, `fromHost` in the answer, 403 on GET /login_accounts for every source failure (400 only when malformed).
+
+## Slice K4 run 3 (server wiring and tests)
+
+Commits on build/keyring-k4: 8dee57a80 (controller), then the tests and the `connect` marker.
+
+- games_controller.rb: `from_param_given?` (any `from` except missing or exactly empty); POST /login refuses a claim naming `from` (LOGIN_CLAIM_REFUSED) and passes the raw `from` to the typed `attempt_login!`; `login_route_params` passes the raw value, so an array or hash is the generic refusal; GET /login_accounts has a `from` branch before the foothold branch (400 with a foothold too or without a registry); GET /keyring answers 400 for a `from` outside scope or malformed; `desktop_route_params` treats a structured `from` as `:conflict` (403 unreachable) and keeps a whitespace one as a `from` request.
+- Display-only `connect: true` (coordinator request): `mark_saved_connection!` sets it on a served item whose authored credential is a `saved_connection`, in both `filter_inventory_for_client!` and `filter_requires_and_contents_recursive`, before the credential id is deleted. Any authored or forged `connect` is dropped first, and `restamp_item_credential!` drops it on store, so a stored inventory copy never keeps one. The leak scanner flagged nothing.
+- New test/controllers/break_escape/credential_from_route_test.rb (`CredentialFromRouteTest`, 27 runs): every case in plan 9 "Tests" except the JS ones, plus the folder open with `from=`, GET /keyring route order and scoping, the target-off `not_responding`, the `from_reach` cache key with a session added and ended in one request, hostile `from` (array, hash, 80 chars, space, tab, unknown PC, the target) on POST typed and credential, GET /login_accounts, /keyring, /container and a folder, a claim with `from`, and the scope rule on every route. The borrow case runs on the access-work fixture with a network and a one-entry registry added in the test. The connect test covers a room's loose and crated .rdp, a forged marker, a password-kind item, the take answer and the bootstrap inventory.
+- Changed existing test: credential_login_test step 4 expected `from: sam_pc` (no session at sam_pc) to be the generic refusal, the K2 placeholder. Plan 3.7 makes a source the player does not hold 403 `PC not reachable`, so the case now asserts that.
+- No network test changed: unplug's added prune left every existing `endedPcIds` assertion as it was.
+- Mutation checks: dropping unplug's prune, keying `from_reach` without the session keys, and removing the chain check each fail a test.
+- Tests: full Rails suite 3136 runs, 0 failures, 4 skips. No fixture or validator change (test_access_keyring untouched).
+
+## K4 R1 fixes (server review round 1)
+
+Findings in tmp/handover/ac0/K4_SERVER_REVIEW_R1.md. Every new test was proved by mutating the model line, running credential_from_route_test.rb, seeing it fail, and restoring the file (the model files were copied back from a backup taken before each mutation; `git diff` of network_access.rb stayed empty).
+
+- M1: three tests added. A locked source refuses new typed and credential sign-ins, the login_accounts request and the existing `from` desktop, never prunes, and opens again after the password. An outage on the target network or on the pivot network refuses a `from` sign-in and the desktop, never prunes, and works when it clears. A two-hop chain whose first source is switched off refuses a new sign-in and the onward desktop. Mutations: dropping `session_locked?(source)` fails the lock test; dropping `session_route_up?(source_id, ...)` fails the two-hop test; `ignore_outages: true` in `from_route_refusal` fails the outage test. Each fails 1 run.
+- M2: a relay replacing the source (jake_pc with the assist invite) ends the `from` session and names it in `endedPcIds`; logging out of the sv_fs02 pivot ends the vault_pc `from` session. Mutations: dropping `relay_session?(source)` in `from_session_pruned?` fails the relay test; removing the structural reach test fails the pivot test (and the m1 test).
+- m1: `sessions_for_client` now runs a dry run of the reload prune (`sessions_surviving_reload`: the same `prune_unreachable_sessions!` on the in-memory sessions with the reload-ended ones removed, restored afterwards, never saved) and skips any session it ends, except the claimed ones themselves (still reported so the client can end them). It replaces nothing: the existing chain skip stays for a repeating chain. Chosen over editing the prune because it also fixes foothold sessions behind a claimed pivot, and the bootstrap and the prune cannot drift. Test: a `from` session hung from a claimed pivot is not handed out and is gone from state.
+- m2: `start_login_session!` ends the `from` sessions opened from a PC when a different account (a different NPC id) replaces the session there (Switch user, or a relay); the same account signing in again keeps them. The ended ids are returned first, then the prune's (chained beyond them), so they reach `endedPcIds`. Test: Lena's session at lena_pc with Ian's `from` it; Lena again keeps it; Jake over Lena ends sv_fs02 and names it. Mutation: removing the switch fails that test.
+- m3: GET /container (the desktop) answers 400 `malformed` for a bare `?from` (Rack gives nil); `desktop_route_params` also treats it as a conflict, so a folder under it is refused. Test added to the hostile-from list test. Mutation (guard off) fails it.
+- n1 deferred: desktop and folder answer 403, not 400, for `from` outside a credentials scenario. Harmless, and the desktop's 403 is the same answer every other unreachable route gives; add to the accepted deviations in the plan.
+- n2, n3 deferred: notes only (a `from` source at a headless host adds no reach; GET /keyring prefers `relay` over `from`/`foothold` without a conflict, K2 behaviour, display only).
+- n4 deferred: POST answers not_responding before remoteBlocked while GET /login_accounts does the reverse; both refuse, and aligning risks the K0 foothold branch's order.
+- Client review m2 (resent borrow answer): the "done" that ends `from` sessions stores the ids in its `lastSpent` entry (`endedPcIds`, only when non-empty), and a resent "done" answered from `lastSpent` carries them again. The K4 borrow test now asserts the resend names `dana_pc`. Mutation: leaving the ids out of the replay fails that test.
+
+## Slice K4 client half
+
+Branch `build/keyring-k4-client`, JS only (the server half is in the K4 server commits). Plan reference: section 9, Client bullet. Run 1 mapped the sites; runs 2 and 3 wrote the code.
+
+### Run 2
+
+- api-client: `from` beside `foothold` on `login`, `loginAccounts`, `keyring` and `loginWithCredential` (one route at a time).
+- pc-sessions: `fromPcId` and `fromHost` on a session only when the server sent them, so older shapes are unchanged; `signIn` and `signInWithCredential` take `from`; `openedOrder(pcId)` gives the open order Connect uses to pick the most recent source; `displaced()` reads the logout answer's `endedPcIds` and drops those sessions.
+- keyring: `connectRoute(entry, { from, sessions })` picks a `from` row for the desktop Connect was pressed on, else the most recently opened `from` source, then foothold, then relay. The Connect flow opens a held `from` session through `openFromDesktop`. The returnTo watcher now listens for `minigame_ended` (emitted by the minigame manager) instead of polling.
+- unlock-system: `fromLockable`, `openFromDesktop` (also `window.openFromDesktop`); a `from` session shows the remote sign-in screen, which asks `loginAccounts` and the keyring with `{ from }`. The password screen reads "Remote sign-in from {host}".
+- container: `?from=` on the desktop and folder fetches; "Remote session from {host}" lines; the taskbar start panel names the source. A `from` desktop never reopens itself on close (it met the folder branch because its `sourcePcId` is its own PC, the loop K3c fixed for relays); a folder under it reopens it.
+
+### Run 3
+
+- network-links `openSession` and the network view's Open open a `from` session (no foothold) through `openFromDesktop`, still starting a trip.
+- npc-workarounds hands an answer's `endedPcIds` to `pcSessions.linkDropped(ids, 'route_ended')`. The capture log lists a `from` session after the link rows, as "Remote session from {host}".
+- 403 on a `from` desktop (the orchestrator's open choice from run 2). The fetch follows the foothold desktop's reasons: `unreachable` and `not_responding` keep the session, set the exit reason and close; any other 403 drops the local copy (`no_session`). With a trip running, `networkLinks.landed` says the line. With none (the usual case for a desktop route), the container says it: the shared `unreachableMessage` or `notRespondingMessage`, or "Your session on {host} has ended." The keyboard sign-in screen never opens. It reuses the existing exit-reason path and remote-host-text strings; no new shared module.
+
+### Choices
+
+- Copy vs move for Connect: a file not yet held is copied first, or moved when the item is `transfer: "move"`; a held file takes nothing. Connect hands the desktop over (`exitReason` handover) so a foothold trip stays alive, and `returnTo` reopens the desktop only when nothing else is open.
+- Assist invites: Connect is offered for any item the server marks `connect: true` and for any held entry `keyring.connectEntryFor` lists, which covers assist invites as well as saved connections. It is never offered on a relay desktop or a share.
+
+### Tests
+
+New `access-from-desktop.test.mjs` (14: fetch, 403 reasons, trip line, no self-reopen, folder reopen, Connect copy/move/held/failed, offer rules; run capped like the relay one). Added tests in access-remote-signin, pc-sessions (displaced endedPcIds, from fields, open order), network-links, network-view, npc-workarounds and capture-log. access-relay-desktop passes (21) under the ulimit recipe.
+
+## K4 client R1 fixes
+
+- M1 fixed. A `from` session opened from the capture log has no foothold, so `landed()` (network-links.js) now leaves the trip with the ending's own line (session ended, unreachable, not responding) instead of resuming into "The link is gone."; Sign out and displaced leave quietly. Tests in network-links.test.mjs reproduced the wrong line first.
+- m1 done (plan 9 followed). Connect from a foothold desktop on a running trip marks the trip (`setConnectBack`); the target's X reopens that source desktop once. Any other ending of the target clears the mark; a toast-only Connect clears it too. Tested in network-links.test.mjs and access-from-desktop.test.mjs.
+- m2 skipped here (server side, another agent).
+- m3 deferred (pre-existing, same class as foothold folders): one-line entry added to docs/IDEAS_BACKLOG.md.
+- m4 deferred. A re-sign-in at the keyboard in another tab raises no client event, and the server answers `unreachable` (route mismatch), which the client must keep for real unreachable hosts. A correct drop needs the server to answer a distinct reason for a route mismatch; low impact.
+- t1 done: the "or a dropped one" test now tests a dropped answer carrying `endedPcIds`; the `openedOrder` test asserts it is stable across another PC and rises on a new open.
+- t2 done: `sessionEndedMessage` moved to utils/remote-host-text.js (re-exported by network-links.js) and used by the container; no new static import, so no harness copy list changes.
+
+## K4 R2 fixes
+
+Branch `build/keyring-k4` (worktree p-k4), client and server together.
+
+- Client M1 fixed. The Connect-back returnTo (container `connectFromDesktop`) now acts only while the trip still holds `connectBack` for that desktop and clears it before reopening, so a late call from the keyring screen watcher does nothing (the source desktop no longer opens twice, and a relay target's close reopens it once with the mark spent). `networkLinks.resume()` clears the mark, so a refused sign-in screen that closes into the view leaves nothing behind. Two tests (access-from-desktop, network-links) fail on the old code and pass now.
+- Client m1 (lingering watcher with no trip and no mark) deferred: with no trip there is no mark to check, and a safe stop needs the watcher to know who owns the reopen (the trip's own returnTo or Connect's). The M1 fix removes the trip case; the no-trip case is low impact. Logged to docs/IDEAS_BACKLOG.md after R3.
+- Client m2: a comment at the `signin` landing row says the reopen through the foothold depends on `openRemoteDesktop` redirecting held `from` sessions. t1: the `landed` doc comment names the keep list and who clears the mark.
+- Server m1: the plan (section 9, Scope) states the accepted deviation: bare `?from` is 400 on the desktop, a well-formed out-of-scope `from` is 403, a folder under a bare `?from` is 403.
+- Server t1: test added for a folder under a bare `?from` (403, record untouched).
+- Server t2: a claim cannot reach Switch user with onward children, because a claim is refused while any session is held at the keyboard (`session_held_at_keyboard?`) and a relay is never a `from` source. The test pins that refusal and the untouched `from` child. Switch user by password and credential stays covered by the existing tests.
+- Server t3 (client guard): the workaround runner snapshots the held PC ids when a job's first request leaves (`heldPcIds`), and an answer's `endedPcIds` closes only those, so a resent answer cannot close a desktop opened since. Test added.
+- m4 done (server only): `desktop_refusal`'s `from` branch answers `no_session` when no session is held at the PC by that route, and the controller sends reason `no_session`; the client already drops its copy on that reason. Test: no session, then another route, then the held route opens.
+
+## K4 live proof
+
+Game 6588 on `test_access_keyring`, worktree p-k4. The route proven is the one this scenario builds: plant the drop box, read Ian's card in the comms room, sign in at Lena's PC with the sticky note, take "SV-OPS-01 admin.rdp", Connect from her desktop, type Ian's password on "Remote sign-in from ...".
+
+Five PASSes: (1) Connect from Lena's desktop opens the remote sign-in screen for SV-OPS-01; (2) Ian's typed password signs in and the SV-OPS-01 desktop opens as a `from` session; (3) X returns once to Lena's desktop; (4) Sign out ends both sessions with "Your session on SV-OPS-01 ended: the session it went through was closed."; (5) a reload reopens nothing.
+
+Small items the proof found, fixed after it:
+
+- The screen header read "from lena_pc" while the desktop read "HB-FIN-02". A local session carries no host, so `fromLockable` fell to the raw id. `keyring.js` now passes `fromHost` (the source's session host, else the scenario PC's host or name; no new secret) through `openCredentialSignIn` to `fromLockable`. Test in `keyring-client.test.mjs`.
+- The Connect refusal path left the password empty although R5a says it is filled. `takeConnectRefusalTile` now fills the password the chosen tile already carries, as the tile click does. Test in `keyring-signin.test.mjs` (kind_refused and locked_out).
+- The minigame state helper (`base-minigame.js`) reported `disabled` from `.disabled` only; greyed Connect buttons use `aria-disabled="true"`, so it now reports both.
+- Docs: R10 and 9.1 re-scoped to this route (Sam's keyboard route waits for a scenario that builds Sam's office); Lena's file is "SV-OPS-01 admin.rdp" (`ops_rdp`) in the plan and PLAYTEST.md, matching the scenario ("SV-OPS-01.rdp" is `ops_cookie`).
+
+Re-proof after the header fix (commit 15acc7179, `container-minigame.js` `connectFromDesktop` passes the desktop's own host as `fromHost`; test in `keyring-client.test.mjs`): game 6618 on `test_access_keyring`, worktree p-k4, headless. Planted the drop box, read Ian's card, signed in at Lena's PC, clicked "SV-OPS-01 admin.rdp" and chose Connect; the remote sign-in header read "Remote sign-in from HB-FIN-02".

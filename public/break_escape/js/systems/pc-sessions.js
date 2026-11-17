@@ -153,6 +153,8 @@ function publicSession(pcId, s) {
     const out = { pcId, npcId: s.npcId ?? null, username: s.username ?? null, displayName: s.displayName ?? null, via: s.via ?? null };
     // Only a remote session carries remote, footholdId and host, as on the server (4.4)
     if (s.remote === true) Object.assign(out, { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null });
+    // A desktop-route session (keyring K4, 3.7) names its source PC and that PC's label
+    if (s.remote === true && typeof s.fromPcId === 'string' && s.fromPcId) Object.assign(out, fromFields(s));
     // A relay session (keyring K3c, 8.3) is the account holder's own session, joined by an
     // assist invite: relay and host, never remote or footholdId
     if (s.relay === true) Object.assign(out, { relay: true, host: s.host ?? null });
@@ -193,7 +195,15 @@ function relayFields(s) {
 /** The remote fields of a server session entry (4.4): only a remote one carries them. */
 function remoteFields(s) {
     if (!s || s.remote !== true) return { remote: false, footholdId: null, host: null };
-    return { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null };
+    const out = { remote: true, footholdId: s.footholdId ?? null, host: s.host ?? null };
+    // K4: a session reached from another desktop (remote, no foothold) names its source
+    if (typeof s.fromPcId === 'string' && s.fromPcId) Object.assign(out, fromFields(s));
+    return out;
+}
+
+/** The desktop-route fields of a session (keyring K4): the source PC and its label. */
+function fromFields(s) {
+    return { fromPcId: s.fromPcId, fromHost: typeof s.fromHost === 'string' && s.fromHost ? s.fromHost : null };
 }
 
 export class PcSessions {
@@ -210,6 +220,20 @@ export class PcSessions {
         this._listening = null;
         // The state-sync instance whose answers this mirror reads (endedRelayPcIds, K3c)
         this._syncHooked = null;
+        // pcId -> a rising counter, set each time a desktop opens or a sign-in lands there
+        // (keyring K4): the tray picks the most recently opened source desktop
+        this._openOrder = new Map();
+        this._openCounter = 0;
+    }
+
+    /** When the desktop at pcId last opened or signed in, as a rising number (0 if never). K4. */
+    openedOrder(pcId) {
+        return this._openOrder.get(pcId) || 0;
+    }
+
+    _markOpened(pcId) {
+        this._openCounter += 1;
+        this._openOrder.set(pcId, this._openCounter);
     }
 
     /**
@@ -389,13 +413,15 @@ export class PcSessions {
      * The current session at this PC (if any) stays until the new account's password is
      * accepted; then pc_signed_out fires for the old account and pc_signed_in for the new.
      */
-    async signIn(pcId, username, password, { foothold = null } = {}) {
+    async signIn(pcId, username, password, { foothold = null, from = null } = {}) {
         this.listen();
         const api = apiClient();
         if (!api?.login) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         let body;
         try {
-            body = await api.login(pcId, foothold ? { username, password, foothold } : { username, password });
+            // One route at a time: a foothold, else a source desktop (K4), else the keyboard
+            const route = foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {});
+            body = await api.login(pcId, { username, password, ...route });
         } catch (err) {
             const b = err?.body || {};
             if (err?.status === 422) {
@@ -447,14 +473,16 @@ export class PcSessions {
      *       (the generic 422 body: the credential no longer signs in)
      *   { ok: false, reason: 'error', error: true, status, message, serverReason }  (403/404/no answer)
      */
-    async signInWithCredential(pcId, credentialId, { foothold = null, relay = false } = {}) {
+    async signInWithCredential(pcId, credentialId, { foothold = null, relay = false, from = null } = {}) {
         this.listen();
         const api = apiClient();
         if (!api?.loginWithCredential) return { ok: false, reason: 'error', error: true, status: null, message: 'Sign-in is not available' };
         let body;
         try {
             // A relay (an assist invite, K3c) names relay only; never relay: false
-            const route = relay === true ? { relay: true } : (foothold ? { foothold } : {});
+            // K4: a source desktop names from
+            const route = relay === true ? { relay: true }
+                : (foothold ? { foothold } : (typeof from === 'string' && from ? { from } : {}));
             body = await api.loginWithCredential(pcId, credentialId, route);
         } catch (err) {
             const b = err?.body || {};
@@ -607,9 +635,12 @@ export class PcSessions {
         this._closeDesktop(pcId, message, 'displaced');
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'displaced', ...this._remoteOf(previous) });
         const api = apiClient();
+        let ended = null;
         if (api?.logout) {
-            try { await api.logout(pcId); } catch (e) { console.warn('[pc-sessions] logout of a displaced session failed', e); }
+            try { ended = (await api.logout(pcId))?.endedPcIds || null; } catch (e) { console.warn('[pc-sessions] logout of a displaced session failed', e); }
         }
+        // A desktop session reached from this one ends with it (keyring K4, 3.8)
+        this._dropEnded(ended, pcId);
         return true;
     }
 
@@ -629,6 +660,7 @@ export class PcSessions {
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch', ...this._remoteOf(previous) });
         }
         this.sessions.set(pcId, { remote: false, footholdId: null, host: null, ...session, restored: false, firstAtPc });
+        this._markOpened(pcId);
         if (!relay) this.signedIn.add(pcId);
         this._emit('pc_signed_in', {
             pcId, npcId: session.npcId, username: session.username, via: session.via,
@@ -775,7 +807,10 @@ export class PcSessions {
         if (!s || !session || typeof session !== 'object') return false;
         // A relay session stays a relay: its desktop is only ever fetched with relay=1
         if (s.relay === true) return true;
-        Object.assign(s, remoteFields(session));
+        const fields = remoteFields(session);
+        // A keyboard fetch drops a desktop route too (K4): no fromPcId in the answer, none here
+        if (!fields.fromPcId) { delete s.fromPcId; delete s.fromHost; }
+        Object.assign(s, fields);
         return true;
     }
 
@@ -786,7 +821,11 @@ export class PcSessions {
      */
     _remoteOf(s) {
         if (s?.relay === true) return { relay: true, kind: typeof s.kind === 'string' && s.kind ? s.kind : null };
-        return s?.remote === true ? { remote: true, footholdId: s.footholdId ?? null } : {};
+        if (s?.remote !== true) return {};
+        // K4: a desktop-route session adds its source PC
+        return typeof s.fromPcId === 'string' && s.fromPcId
+            ? { remote: true, footholdId: s.footholdId ?? null, fromPcId: s.fromPcId }
+            : { remote: true, footholdId: s.footholdId ?? null };
     }
 
     /** A desktop for pcId is open; `close(message, reason)` shuts it. Returns the unregister function. */
@@ -834,6 +873,7 @@ export class PcSessions {
     desktopOpened(pcId) {
         const s = this.sessions.get(pcId);
         if (!s) return;
+        this._markOpened(pcId);
         this._emit('pc_desktop_opened', { pcId, npcId: s.npcId ?? null, via: s.via ?? null, restored: !!s.restored, ...this._remoteOf(s) });
     }
 }

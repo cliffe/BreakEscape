@@ -914,3 +914,26 @@ test('R2 t2: TextFileMinigame.init records the file as opened', () => {
     const src = readFileSync(join(here, '../../public/break_escape/js/minigames/text-file/text-file-minigame.js'), 'utf8');
     assert.match(src, /init\(\)\s*\{[\s\S]*?window\.keyring\?\.noteOpened\?\.\(this\.textFileData\?\.itemId\)/);
 });
+
+test('R5a a Connect refusal fills the password the keyring already shows, as the tile click does', () => {
+    for (const reason of ['kind_refused', 'locked_out']) {
+        setup();
+        document.body.innerHTML = '<div id="mg"></div>';
+        window.MinigameFramework = { currentMinigame: null, endMinigame: (success, result) => ended.push([success, result]) };
+        const mg = new PasswordMinigame(document.getElementById('mg'), {
+            title: "Lena's PC", type: 'item',
+            signIn: { pcId: 'lena_pc', pcName: "Lena's PC (HB-FIN-02)", picker: false, tiles: [], current: null,
+                remote: { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' },
+                preselect: 'lfox', connectRefusal: { credentialId: 'k_rdp', reason, kind: 'saved_connection', attemptsLeft: 0, message: 'x' },
+                host: 'HB-FIN-02', captured: [], capturedLoading: true },
+            postitNote: '', showPostit: false
+        });
+        window.MinigameFramework.currentMinigame = mg;
+        mg.init();
+        mg.start();
+        answerRemote(mg, { keyring: [RDP, LENA_CAPTURED], captured: [{ username: 'lfox', displayName: 'Lena Fox', password: 'Ledger-Lena-9' }] });
+        assert.equal(mg.signInState.selected, 'lfox', `${reason}: the account is chosen`);
+        assert.equal(q('#password-field').value, 'Ledger-Lena-9', `${reason}: the shown password fills the field`);
+        assert.equal(mg.gameData.password, 'Ledger-Lena-9', `${reason}: and the game data`);
+    }
+});

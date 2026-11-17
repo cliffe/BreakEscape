@@ -459,7 +459,7 @@ export class MinigameScene {
             label: (el.innerText || el.value || el.getAttribute('aria-label') || '').trim().slice(0, 120),
             id: el.id || null,
             classes: el.className || null,
-            disabled: !!el.disabled
+            disabled: !!el.disabled || el.getAttribute('aria-disabled') === 'true'
         }));
 
         const fields = Array.from(

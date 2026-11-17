@@ -51,7 +51,7 @@
 
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { writeGlobal } from './global-writer.js';
-import { unreachableMessage, notRespondingMessage } from '../utils/remote-host-text.js';
+import { sessionEndedMessage, unreachableMessage, notRespondingMessage } from '../utils/remote-host-text.js';
 
 export const NO_DEVICE_HINT = 'You have nothing to plug into this port.';
 export const LINK_GONE_MESSAGE = 'The link is gone.';
@@ -65,11 +65,10 @@ export const IMPLANT_NOT_READY_RETRIES = 3;
 export const IMPLANT_NOT_READY_DELAY_MS = 1500;
 // The longest the view waits for the globals sync before it fetches anyway (review R1 m1)
 export const VIEW_SYNC_WAIT_MS = 3000;
-export const sessionEndedMessage = (host) => `Your session on ${host || 'that host'} has ended.`;
 // unreachableMessage and notRespondingMessage (a host whose own service is off, 9.3b plan 5.2:
 // the same words as its row in the view) live in utils/remote-host-text.js, shared with the
 // remote sign-in screen (credential keyring plan 8.5)
-export { unreachableMessage, notRespondingMessage };
+export { sessionEndedMessage, unreachableMessage, notRespondingMessage };
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 const apiClient = () => win().ApiClient || win().APIClient || null;
@@ -120,6 +119,9 @@ const LANDINGS = {
     signin: {
         // Closed with no session at that PC: the view. With one (Switch user left with no
         // new sign-in): the desktop of the session still held.
+        // Note (K4 R2 m2): for a `from` target this reopens through the foothold, and that is only
+        // safe because openRemoteDesktop redirects a held `from` session (unlock-system.js); keep
+        // that redirect.
         close: (self, d) => (self._sessionAt(d.pcId) ? { desktop: d.pcId } : { resume: true }),
         handover: () => null
     },
@@ -727,6 +729,12 @@ export class NetworkLinks {
         const trip = this._startTrip({ footholdId, start: 'session', pcId,
             returnTo: typeof returnTo === 'function' ? returnTo : null });
         const startDesktop = win().openRemoteDesktop;
+        // A session opened from another desktop (K4) has no foothold; it reopens by its source
+        const fromPcId = !footholdId && typeof session?.fromPcId === 'string' && session.fromPcId ? session.fromPcId : null;
+        if (fromPcId && typeof win().openFromDesktop === 'function') {
+            win().openFromDesktop(pcId, fromPcId);
+            return trip;
+        }
         if (typeof startDesktop === 'function' && footholdId) {
             startDesktop(pcId, footholdId);
             return trip;
@@ -767,6 +775,8 @@ export class NetworkLinks {
             this.leave('foothold_gone');
             return false;
         }
+        // A view that reopens means Connect's screens are done: the mark is spent (K4 R2 M1)
+        trip.connectBack = null;
         this._showView(trip, message);
         return true;
     }
@@ -787,15 +797,48 @@ export class NetworkLinks {
         return true;
     }
 
+    _landDesktop(pcId) {
+        const startDesktop = win().openRemoteDesktop;
+        const footholdId = this.trip.footholdId;
+        nextTick().then(() => {
+            if (minigameOpen()) return;
+            if (typeof startDesktop === 'function') startDesktop(pcId, footholdId);
+            else this.resume();
+        });
+        return { landing: 'desktop', pcId };
+    }
+
+    /**
+     * Mark that the running trip's next desktop close returns to `pcId` (a foothold desktop
+     * that started Connect). Pass null to clear it. Returns whether a trip took the mark.
+     */
+    setConnectBack(pcId) {
+        if (!this.trip) return false;
+        this.trip.connectBack = typeof pcId === 'string' && pcId ? pcId : null;
+        return true;
+    }
+
     /**
      * A network screen closed: `screen` is view | signin | desktop | share, `reason` why
      * (close unless the closing path set another: handover, switch, item, share, sign_out,
      * no_session, unreachable, link_dropped, displaced, foothold_gone). `detail` may name
      * { pcId, host }. Looks the pair up in the landing table of 4.3. Resolves to the
      * landing taken, for tests.
+     *
+     * The Connect-back mark (setConnectBack) survives a desktop ending only for the four reasons
+     * that hand the player on to another screen (handover, item, switch, share); any other
+     * desktop ending clears it, a close spends it by returning to the marked desktop, and a view
+     * reopening (resume) clears it too.
      */
     landed(screen, reason = 'close', detail = {}) {
         if (!this.trip) return { landing: 'none' };
+        // Connect from a foothold desktop (K4, plan 9): the target's X goes back to that desktop,
+        // not the view. Any other ending of a desktop clears the mark.
+        if (screen === 'desktop' && this.trip.connectBack && !['handover', 'item', 'switch', 'share'].includes(reason)) {
+            const back = this.trip.connectBack;
+            this.trip.connectBack = null;
+            if (reason === 'close') return this._landDesktop(back);
+        }
         const row = LANDINGS[screen];
         const decide = row ? (row[reason] || row.close) : null;
         const out = decide ? decide(this, detail || {}) : null;
@@ -805,15 +848,13 @@ export class NetworkLinks {
             this.leave(out.leave);
             return { landing: 'world', reason: out.leave };
         }
-        if (out.desktop) {
-            const startDesktop = win().openRemoteDesktop;
-            const footholdId = this.trip.footholdId;
-            nextTick().then(() => {
-                if (minigameOpen()) return;
-                if (typeof startDesktop === 'function') startDesktop(out.desktop, footholdId);
-                else this.resume();
-            });
-            return { landing: 'desktop', pcId: out.desktop };
+        if (out.desktop) return this._landDesktop(out.desktop);
+        if (this.trip.start === 'session' && !this.trip.footholdId) {
+            // A `from` session opened from the capture log (K4) has no foothold, so there is no
+            // view to reopen: say the ending's own line and leave (never "The link is gone.")
+            if (out.message) toast(out.message, 'info');
+            this.leave('closed');
+            return { landing: 'world', reason: 'closed' };
         }
         this.resume(out.message || null);
         return { landing: 'view', message: out.message || null };
