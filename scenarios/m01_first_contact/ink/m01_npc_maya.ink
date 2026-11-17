@@ -10,6 +10,8 @@ VAR revealed_informant = false
 VAR warned_about_derek = false
 VAR discussed_operation = false
 VAR asked_about_patricia = false
+VAR maya_away = false
+VAR maya_settled = false
 
 // ================================================
 // START: FIRST MEETING
@@ -23,9 +25,21 @@ VAR asked_about_patricia = false
     -> first_meeting
 }
 {met_maya:
+    {maya_away: -> not_here}
     Maya Chen: Is it safe to talk? #delivery: low and wary
     -> hub
 }
+
+// ================================================
+// NOT HERE (she is away from her office)
+// ================================================
+
+=== not_here ===
+{not maya_away: -> hub}
+Maya Chen: Is it safe to talk? #delivery: low and wary
++ [Not here. I'll come to your office.]
+    #exit_conversation
+    -> hub
 
 // ================================================
 // FIRST MEETING
@@ -93,6 +107,8 @@ Maya Chen: They're planning to kill people. On purpose. They call it "Operation 
 // ================================================
 
 === operation_details ===
+{maya_away: -> not_here}
+~ maya_settled = false
 ~ discussed_operation = true
 #unlock_task:inform_safetynet_operation_shatter
 
@@ -105,7 +121,7 @@ Maya Chen: The plan is to send fake emergency messages—hospital closures, bank
 Maya Chen: The panic will swamp real emergency capacity and cause deaths—delayed response, overcrowding, accidents. They've calculated it: 42 to 85 people will die in the first 24 hours.
 
 + [And they're okay with that?]
-    Maya Chen: Derek—he's the one running it—I've overhead him call it "education."
+    Maya Chen: Derek—he's the one running it—I've overheard him call it "education."
     Maya Chen: Says the deaths will teach people not to trust digital communications. He's insane. But he believes every word.
     -> hub
 + [When does it launch?]
@@ -118,6 +134,8 @@ Maya Chen: The panic will swamp real emergency capacity and cause deaths—delay
 // ================================================
 
 === derek_intel ===
+{maya_away: -> not_here}
+~ maya_settled = false
 ~ warned_about_derek = true
 
 Maya Chen: Derek Lawson. Senior Marketing Manager. But he's not really marketing.
@@ -141,6 +159,8 @@ Maya Chen: Derek's the operations lead. He built the target lists, wrote the fak
 // ================================================
 
 === hub ===
+~ maya_settled = true
+{maya_away: -> not_here}
 + {not discussed_operation} [Tell me about Operation Shatter]
     -> operation_details
 + {not warned_about_derek} [What can you tell me about Derek?]
@@ -159,6 +179,8 @@ Maya Chen: Derek's the operations lead. He built the target lists, wrote the fak
 // ================================================
 
 === patricia_story ===
+{maya_away: -> not_here}
+~ maya_settled = false
 ~ asked_about_patricia = true
 
 Maya Chen: Patricia Wells. She was our department manager.
@@ -185,6 +207,8 @@ Maya Chen: They didn't even let her take her briefcase. It's still in her office
 // ================================================
 
 === tactical_advice ===
+{maya_away: -> not_here}
+~ maya_settled = false
 Maya Chen: Derek's office, the server room—that's where the real answers are. Figure out how to get in.
 
 Maya Chen: Patricia was piecing this together before they got rid of her. Whatever she found might still be here somewhere.

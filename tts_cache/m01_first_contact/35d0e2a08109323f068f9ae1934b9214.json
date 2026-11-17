@@ -1,0 +1,13 @@
+{
+  "key": "35d0e2a08109323f068f9ae1934b9214",
+  "npc": "graham_whitfield",
+  "text": "One intern. The other's for next year.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:12Z"
+}

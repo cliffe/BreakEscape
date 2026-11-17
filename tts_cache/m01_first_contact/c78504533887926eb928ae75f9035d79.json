@@ -1,0 +1,13 @@
+{
+  "key": "c78504533887926eb928ae75f9035d79",
+  "npc": "graham_whitfield",
+  "text": "My grandson set up my phone again.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:31:21Z"
+}

@@ -54,7 +54,8 @@ export class BiometricsMinigame extends MinigameScene {
     }
     
     createScannerInterface() {
-        // Create expand/collapse toggle button
+        // Create expand/collapse toggle button. The class lets the CSS clear the toggle without :has()
+        this.container.classList.add('has-scan-toggle');
         const expandToggle = document.createElement('div');
         expandToggle.className = 'biometrics-expand-toggle scan-toggle';
         expandToggle.innerHTML = '+';
@@ -62,6 +63,8 @@ export class BiometricsMinigame extends MinigameScene {
         expandToggle.setAttribute('role', 'button');
         expandToggle.setAttribute('tabindex', '0');
         expandToggle.setAttribute('aria-label', 'Expand or collapse the scanner panel');
+        expandToggle.setAttribute('aria-expanded', 'false'); // the panel starts collapsed; the click handler keeps it current
+        expandToggle.setAttribute('aria-controls', this.container.id || (this.container.id = 'biometrics-scanner-panel'));
         
         // Create scanner header
         const scannerHeader = document.createElement('div');
@@ -210,6 +213,7 @@ export class BiometricsMinigame extends MinigameScene {
     
     setupExpandToggle(expandToggle) {
         this.addEventListener(expandToggle, 'keydown', (e) => {
+            if (e.repeat) return;
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandToggle.click(); }
         });
         this.addEventListener(expandToggle, 'click', () => {
@@ -220,11 +224,13 @@ export class BiometricsMinigame extends MinigameScene {
                 this.container.classList.remove('expanded');
                 expandToggle.innerHTML = '+';
                 expandToggle.title = 'Expand';
+                expandToggle.setAttribute('aria-expanded', 'false');
             } else {
                 // Expand
                 this.container.classList.add('expanded');
                 expandToggle.innerHTML = '-';
                 expandToggle.title = 'Collapse';
+                expandToggle.setAttribute('aria-expanded', 'true');
             }
         });
     }

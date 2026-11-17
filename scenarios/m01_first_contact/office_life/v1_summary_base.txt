@@ -1,0 +1,9 @@
+OFFICE-LIFE SUMMARY (V1): 7 NPC(s)
+  agent_0x99 (reception_area) class=task,task-mapping,conv post=reception_area leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  briefing_cutscene (reception_area) class=attackable post=reception_area leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  closing_debrief_person (reception_area) class=task-mapping,conv,attackable post=reception_area leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  derek_lawson (break_room) class=task,task-mapping,conv,fights,attackable post=break_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  kevin_park (it_room) class=task,key,fights,attackable post=it_room leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  maya_chen (maya_office) class=task,fights,attackable post=maya_office leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+  sarah_martinez (reception_area) class=task,key,fights,attackable post=reception_area leash=- needs=- groups=- avoids=- habits=- chatter=0 exchanges=0 calls=0
+

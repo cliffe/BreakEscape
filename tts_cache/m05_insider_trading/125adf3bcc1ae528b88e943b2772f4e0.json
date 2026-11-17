@@ -1,0 +1,13 @@
+{
+  "key": "125adf3bcc1ae528b88e943b2772f4e0",
+  "npc": "bernadette_lyons",
+  "text": "Just the bins, love. Don't mind me.",
+  "voice": "Callirrhoe",
+  "style": "Quantum Dynamics' evening cleaner, in her late 50s, dry, unhurried and kind. Speak with a consistent Dublin accent throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T18:07:21Z"
+}

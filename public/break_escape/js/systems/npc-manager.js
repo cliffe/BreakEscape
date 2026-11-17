@@ -1499,8 +1499,10 @@ export default class NPCManager {
     let ringSetGlobalRestore = null;
     if (config.setGlobal && window.gameState?.globalVariables) {
       if (isRing) ringSetGlobalRestore = {};
+      let globalChanged = false;
       Object.entries(config.setGlobal).forEach(([varName, value]) => {
         const oldValue = window.gameState.globalVariables[varName];
+        if (oldValue !== value) globalChanged = true;
         if (isRing) ringSetGlobalRestore[varName] = { wrote: value, prev: oldValue };
         window.gameState.globalVariables[varName] = value;
         console.log(`🌐 Event setGlobal: ${varName} = ${value}`);
@@ -1511,6 +1513,13 @@ export default class NPCManager {
           window.eventDispatcher.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
         }
       });
+      // Save the change soon instead of at the next 30 s sync. A mapping's other effects
+      // reach the server at once (setVisible posts update_npc_state), so a tab killed before
+      // the sync (a crash, or a closed browser, where no pagehide flush runs) came back with
+      // the effect but not the global. requestSoon is the normal delta sync, debounced (one
+      // sync per burst of mappings, at most 1.5 s after the first), and a sync with nothing
+      // changed sends nothing.
+      if (globalChanged) window.stateSync?.requestSoon?.();
     }
 
     // Complete tasks directly (bypasses broken ink knot jumping)

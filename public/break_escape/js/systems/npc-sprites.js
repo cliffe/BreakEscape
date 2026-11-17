@@ -1552,9 +1552,6 @@ export function handleNPCCollision(npcSprite, otherNPC) {
             const roomData = window.rooms?.[roomId];
             
             if (roomData) {
-                const roomWorldX = roomData.position?.x ?? roomData.worldX ?? 0;
-                const roomWorldY = roomData.position?.y ?? roomData.worldY ?? 0;
-                
                 // No walkability test here: chooseWaypointTarget snaps the waypoint to
                 // the nearest walkable world-grid cell. (The old per-room grid test read
                 // window.npcPathfindingManager, which was never set, so it never ran.)
@@ -1564,8 +1561,11 @@ export function handleNPCCollision(npcSprite, otherNPC) {
                     const avoidanceWaypoint = {
                         tileX: avoidTileX,
                         tileY: avoidTileY,
-                        worldX: roomWorldX + (avoidTileX * TILE_SIZE),
-                        worldY: roomWorldY + (avoidTileY * TILE_SIZE),
+                        // avoidTileX/Y come from the sprite's world position, so they are
+                        // already world tiles: adding the room origin again put the waypoint
+                        // (roomOrigin) px off route in any room not at 0,0.
+                        worldX: avoidTileX * TILE_SIZE,
+                        worldY: avoidTileY * TILE_SIZE,
                         isTemporary: true
                     };
                     
@@ -1744,9 +1744,6 @@ export function handleNPCPlayerCollision(npcSprite, player) {
             
             const roomData = window.rooms?.[roomId];
             if (roomData) {
-                const roomWorldX = roomData.position?.x ?? roomData.worldX ?? 0;
-                const roomWorldY = roomData.position?.y ?? roomData.worldY ?? 0;
-                
                 // No walkability test here: chooseWaypointTarget snaps the waypoint to
                 // the nearest walkable world-grid cell. (The old per-room grid test read
                 // window.npcPathfindingManager, which was never set, so it never ran.)
@@ -1756,8 +1753,11 @@ export function handleNPCPlayerCollision(npcSprite, player) {
                     const avoidanceWaypoint = {
                         tileX: avoidTileX,
                         tileY: avoidTileY,
-                        worldX: roomWorldX + (avoidTileX * TILE_SIZE),
-                        worldY: roomWorldY + (avoidTileY * TILE_SIZE),
+                        // avoidTileX/Y come from the sprite's world position, so they are
+                        // already world tiles: adding the room origin again put the waypoint
+                        // (roomOrigin) px off route in any room not at 0,0.
+                        worldX: avoidTileX * TILE_SIZE,
+                        worldY: avoidTileY * TILE_SIZE,
                         isTemporary: true
                     };
                     

@@ -100,6 +100,7 @@ export const AVOID_RADIUS_TILES = 2;  // needsCompany.avoidRadius default, only 
 export const NOTICE_RADIUS_TILES = 24;
 export const NEEDS_DEFER_MIN = 4;     // needsDeferMin default: how long a given-up need stays parked
 export const AVOID_BUBBLE_MS = 4000;  // the avoided person's face shows this long after a turn-back's grumble
+export const AVOID_RECHECK_MS = 1000;   // an avoid park re-checks whether the avoided NPC has left this often
 export const WAKE_BASE_MS = 1000;     // a door opening or a room loading retries parked needs after this...
 export const WAKE_STEP_MS = 500;      // ...plus this per parked NPC before it (id order), so they go one by one
 // Built-in needs that are environmental: the validator warns on `deferrable: false` for these
@@ -1550,7 +1551,17 @@ export class NPCNeedsSystem {
             const n = s.needs[name];
             // Parked (slice 14): level held, decay paused, until the timer runs out
             if (s.parked[name]) {
-                if (this.clockMs < s.parked[name].until) continue;
+                const p = s.parked[name];
+                if (this.clockMs < p.until) {
+                    // An avoid park ends when the avoided NPC has gone, not only on its timer (the
+                    // timer stays the ceiling). Checked about once a needs-clock second, not per tick.
+                    if (p.reason === 'avoid' && p.targetId && this.clockMs >= (p.recheckAt || 0)) {
+                        p.recheckAt = this.clockMs + AVOID_RECHECK_MS;
+                        const obj = this.world.getObject(p.targetId);
+                        if (obj && !this._avoidedAt(s, obj)) this._unpark(s, name, 'avoid_cleared');
+                    }
+                    continue;
+                }
                 this._unpark(s, name);
                 continue;
             }
@@ -1989,7 +2000,7 @@ export class NPCNeedsSystem {
         const until = this.clockMs + (Number.isFinite(why.untilMs) ? Math.max(0, why.untilMs) : this._deferMs(s));
         s.parked[name] = { reason: why.reason, until, since: this.clockMs, avoidedId: why.avoidedId || null };
         // Access 9.2 A (plan 5.2): a failure park keeps its station, the globals it wakes on and its causes
-        if (why.targetId && FAILURE_PARKS.includes(why.reason)) s.parked[name].targetId = why.targetId;
+        if (why.targetId && (FAILURE_PARKS.includes(why.reason) || why.reason === 'avoid')) s.parked[name].targetId = why.targetId;
         if (why.wakeOn) s.parked[name].wakeOn = [...why.wakeOn];
         if (why.missing) s.parked[name].missing = why.missing.map(c => ({ ...c }));
         s.levels[name] = clamp(n.urgentAt + 1, 0, 100);
@@ -4098,7 +4109,14 @@ export class NPCNeedsSystem {
     _updateHome(s, pos) {
         const h = this._resolveHome(s, pos);
         if (!h.provisional) {
-            if (s.home?.provisional) this._log(s.npcId, 'home_resolved', { target: h.objectId || undefined });
+            if (s.home?.provisional) {
+                this._log(s.npcId, 'home_resolved', { target: h.objectId || undefined });
+                // A start-room NPC's needs can go urgent before the room's objects register, and
+                // park `no_source` for the full defer. Its sources exist now, so those parks retry
+                // (once: a genuine no_source parks again for the full timer).
+                const woken = Object.keys(s.parked).sort().filter(n => s.parked[n].reason === 'no_source');
+                this._wakeParkedFor(s, woken);
+            }
             s.home = h;
             return;
         }

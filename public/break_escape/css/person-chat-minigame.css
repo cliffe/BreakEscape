@@ -96,8 +96,36 @@
     box-sizing: border-box;
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    /* flex-start, not flex-end: overflow past the start edge of a flex-end box cannot be scrolled
+       to. The band hugs its content, so this only matters once it hits max-height. */
+    align-items: flex-start;
+    /* Never taller than the chat box: a long line and many choices scroll inside the band
+       instead of growing upward off the top (heights up to ~700 px) */
+    max-height: 100%;
+    overflow-y: auto;
+    /* Reserve the scrollbar's width so it does not shift the text when the band starts to scroll.
+       Both edges, so the text stays centred on desktop; the phone and landscape blocks go back to
+       the start-edge-less "stable" because there the extra 14px would cost real width. */
+    scrollbar-gutter: stable both-edges;
+    /* A Tab-focused choice scrolls clear of the "More below" strip laid over the foot */
+    scroll-padding-bottom: 36px;
+    scroll-padding-top: 4px;
     padding: 20px;
+}
+
+/* "More below" (R2 m4): whenever the caption scrolls (the script toggles [hidden]) a strip lies
+   over its foot. It ignores taps, so the choice beneath still takes them. The phone block puts
+   it back in flow under the caption. */
+.person-chat-more:not([hidden]) {
+    display: flex;
+    position: absolute;
+    /* Stops 14px short on both sides (the caption's scrollbar gutter) so the scrollbar track and
+       its thumb stay visible beside the strip */
+    left: 14px;
+    right: 14px;
+    width: auto;
+    bottom: 0;
+    pointer-events: none;
 }
 
 /* Inner container for caption content - constrained to max-width */
@@ -244,6 +272,13 @@
     background-color: rgba(58, 58, 58, 0.95);
 }
 
+/* Keyboard focus: a 2px square outline, not only a colour change (backlog 3 item 2). The caption's
+   20px padding leaves room for it. */
+.person-chat-choice-button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
 /* Continue button */
 .person-chat-continue-button {
     background-color: rgba(42, 74, 42, 0.9);
@@ -290,6 +325,11 @@
     background-color: rgba(58, 90, 58, 0.95);
 }
 
+.person-chat-continue-button:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 2px;
+}
+
 .person-chat-continue-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -325,6 +365,98 @@
 /* Scrollbar styling for dialogue box - not needed with transparent background */
 .person-chat-dialogue-box::-webkit-scrollbar {
     width: 0;
+}
+
+/* Desktop video call (heights 521-700): the status bar (z20) and the self-view PiP (top 44,
+   176 x 132, or 120 x 90 up to 768 wide) would cover a capped caption, so it stops short of them.
+   Phone landscape and phone width have their own rules below. */
+@media (min-width: 600.02px) {
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 180px);
+    }
+}
+
+@media (min-width: 600.02px) and (max-width: 768px) {
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 138px);
+    }
+}
+
+/* Phone landscape (844x390, 667x375, 915x412): wider than the phone layout's 600px but too short
+   for a tall band. The caption becomes a left column (60% of the box) so the NPC, drawn about 70%
+   across, and the X close at the top right stay clear of it; it is pinned to the foot, capped to
+   the box by the base rule, and scrolls inside itself when the line and five choices still do not
+   fit. Padding and gaps tighten so five choices usually fit. The portrait section and its scale
+   are untouched. */
+@media (min-width: 600.02px) and (max-height: 520px) {
+    /* The one 60% column: the caption and the strip under it share it */
+    .person-chat-root {
+        --pc-caption-col: 60%;
+    }
+
+    .person-chat-caption-area {
+        right: auto;
+        width: var(--pc-caption-col);
+        padding: 8px 16px;
+        /* One-sided: the 14px stays on the right only */
+        scrollbar-gutter: stable;
+    }
+
+    .person-chat-caption-content {
+        flex-direction: column;
+        flex-wrap: nowrap;
+        align-items: stretch;
+        align-content: flex-start;
+    }
+
+    .person-chat-caption-content,
+    .person-chat-choices-container {
+        gap: 6px;
+    }
+
+    .person-chat-controls-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    /* GNF is crisp at multiples of 8 from 16, so 24 stays; 30px is a whole line height that fits
+       a second choice (36px did not) */
+    .person-chat-dialogue-text {
+        font-size: 24px;
+        line-height: 30px;
+    }
+
+    .person-chat-speaker-name {
+        font-size: 16px;
+    }
+
+    .person-chat-choice-button {
+        padding: 6px 10px;
+    }
+
+    .person-chat-talk-right {
+        gap: 6px;
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    /* "More below": at the foot of the caption column while its choices run on */
+    .person-chat-more:not([hidden]) {
+        left: 0;
+        right: auto;
+        width: calc(var(--pc-caption-col) - 14px);
+    }
+
+    /* Video call: the status bar (top 0) and the self-view PiP (top 44) would cover the top of
+       the caption, so the band starts below the bar and the PiP is dropped */
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 40px);
+    }
+
+    .video-call-mode .person-chat-pip {
+        display: none;
+    }
 }
 
 /* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top and grows to fill the
@@ -397,13 +529,20 @@
         min-width: 0;
     }
 
-    /* "More below" (R2 m4): under the caption while its choices run past the bottom edge */
+    /* "More below" (R2 m4): in flow under the caption while its choices run past the bottom edge */
     .person-chat-more:not([hidden]) {
-        display: flex;
+        position: static;
+        width: 100%;
+    }
+
+    .person-chat-caption-area {
+        scroll-padding-bottom: 4px;
+        scrollbar-gutter: stable;
     }
 }
 
-/* Hidden above 600 px, where the caption grows instead of scrolling */
+/* Hidden by default; the script un-hides it at any width while the caption scrolls (a phone block
+   puts it in flow, the base rule overlays it on the foot of the band) */
 .person-chat-more {
     display: none;
     flex: 0 0 auto;
@@ -628,4 +767,19 @@
 
 .se-chat-header .pretext-tells li {
     margin: 0 0 4px;
+}
+
+/* Overlay scrollbars (no ::-webkit-scrollbar, e.g. Firefox with thin/overlay bars) reserve no gutter,
+   so the "More below" strip goes back to the full edge instead of leaving a 14px notch */
+@supports not selector(::-webkit-scrollbar) {
+    .person-chat-more:not([hidden]) {
+        left: 0;
+        right: 0;
+    }
+    @media (min-width: 600.02px) and (max-height: 520px) {
+        .person-chat-more:not([hidden]) {
+            right: auto;
+            width: var(--pc-caption-col);
+        }
+    }
 }
