@@ -109,6 +109,65 @@
     will-change: transform;
 }
 
+/* Crisp pixel-font body text, labels and status lines: the same fix as the titles above, a second
+   explicit list. Measured on Chrome for Linux at 1280x720 and 390x844 (crisp-text-2): each class
+   shows LCD fringes on its opaque panel without the hint and none with it; several only fringe at
+   390 wide (the brief and person-chat text), so check both sizes. Only leaf text elements belong
+   here: a paragraph, a label, a status line, or a short run of such leaves (never more than about
+   twelve on screen). Never a wrapper that holds controls (.siem-alert-row, .combination-header,
+   .tri-panel, .device-frame: a stacking context and fixed-position containing block for everything
+   inside), never a skin-image button or tab (the residual there is the skin, not LCD), never a
+   row of a list (hint a text-only list container once if one measures clean). Each entry is one
+   class, or one class plus a tag; test/js/minigame-text-crisp-css.test.mjs checks the form and
+   that every class is emitted by the engine, not that every body text is listed. */
+.minigame-container :is(
+    .note-md-text,
+    .rogue-ap-note,
+    .rogue-ap-ssid,
+    .rogue-ap-known-label,
+    .rogue-ap-signal-word,
+    .rogue-ap-security,
+    .rogue-ap-clients,
+    .rogue-ap-ssid-pick-name,
+    .rogue-ap-template-label,
+    .rogue-ap-chosen,
+    .lpb-copy,
+    .lpb-address-text,
+    .lpb-field-label,
+    .lpb-not-secure,
+    .lpb-submit,
+    .combination-help,
+    .combination-status-message,
+    .combination-direction-indicator,
+    .combination-dial-label,
+    .combination-dial-display,
+    .cryptex-subtitle,
+    .cryptex-wheel-label,
+    .password-info-name,
+    .password-info-text,
+    .password-field-label,
+    .attempts-counter,
+    .tri-brief-title,
+    .tri-brief-text,
+    .tri-brief-kind,
+    .tri-brief-score,
+    .tri-brief-when,
+    .tri-brief-restart,
+    .tri-brief-note,
+    .siem-queue-count,
+    .ib-progress,
+    .ib-empty,
+    .ib-name,
+    .ib-infl-label,
+    .pin-minigame-attempt-empty,
+    .person-chat-dialogue-text,
+    .person-chat-speaker-name,
+    .ob-site-title,
+    .ob-page-title
+) {
+    will-change: transform;
+}
+
 /* Every pixel face in a minigame draws at its only weight. !important so the scene sheets'
    old `font-weight: bold` and the browser's bold headings, <th>, <b> and <strong> all
    resolve to 400 (the audit's faux-bold check reads the computed weight). Diegetic pages

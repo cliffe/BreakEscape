@@ -13,7 +13,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const css = readFileSync(join(root, 'public/break_escape/css/minigames-framework.css'), 'utf8');
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const rules = [...strip(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] }));
-const rule = rules.find((r) => /will-change:\s*transform/.test(r.body) && /-title/.test(r.sel));
+// The titles rule is the one that names .patch-panel-title (the body-text rule is tested in minigame-text-crisp-css.test.mjs).
+const rule = rules.find((r) => /will-change:\s*transform/.test(r.body) && /\.patch-panel-title\b/.test(r.sel));
 
 // The selector list inside `.minigame-container :is( ... )`, split on commas.
 const inner = rule && /^\.minigame-container\s+:is\(([\s\S]*)\)$/.exec(rule.sel);

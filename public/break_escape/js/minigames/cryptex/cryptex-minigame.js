@@ -80,6 +80,9 @@ export class CryptexMinigame extends MinigameScene {
   </div>
 </div>`;
 
+        // Name the bare subtitle so the crisp-text rule in minigames-framework.css can list it
+        this.gameContainer.querySelector('#cryptex-subtitle')?.classList.add('cryptex-subtitle');
+
         // Build wheels
         const wheelsContainer = this.gameContainer.querySelector('#cryptex-wheels');
         for (let i = 0; i < this.wheelCount; i++) {
