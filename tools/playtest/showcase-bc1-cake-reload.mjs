@@ -80,8 +80,19 @@ let reload = async function (h) {
   // What the needs system holds before the probe touches anything after the reload
   h.atReload = await ev(h, () => ({ ids: window.__test.needs.ids(), servings: window.gameState?.globalVariables?.cake_servings, clock: window.npcNeedsSystem.clockMs, tick: window.npcNeedsSystem.tickCount })).catch(e => ({ err: String(e) }));
   h.atReload.staff = await staff(h).catch(() => null);
-  // Hold the staff the moment the needs system exists: needs reset on reload (R6) and the cake's
-  // tempt band can send someone to it within the settle below, before any measurement.
+  // Hold the staff the moment their needs states exist again. Needs reset on reload (R6) and the
+  // cake's tempt band can send someone to it on the second needs tick. The needs system exists
+  // before any NPC state registers (states come with their room), so a calm() at that point holds
+  // nobody (game 7738: ids [] at calm, Graham took a serving at tick 2). The wait and the hold run
+  // in one in-page poll every 5 ms, well inside one 250 ms needs tick.
+  if (CALM && h.heldIds?.length) {
+    h.calmedAt = await h.page.waitForFunction((ids) => {
+      const sys = window.npcNeedsSystem;
+      if (!sys || !ids.every(i => sys.states.has(i))) return false;
+      for (const i of ids) { window.__test.needs.set(i, 'hunger', 100); window.__test.needs.set(i, 'social', 100); }
+      return { tick: sys.tickCount };
+    }, h.heldIds, { timeout: 90000, polling: 5 }).then(r => r.jsonValue()).catch(e => ({ err: String(e).slice(0, 160) }));
+  }
   await calm(h);
   await h.t(2000);
   await dismiss(h);
@@ -113,11 +124,31 @@ const where = (h) => ev(h, ({ cake, rooms }) => {
 }, { cake: CAKE, rooms: ROOMS });
 
 async function whereAll(h) {
-  // Visit each room once so every room is loaded before we claim "in no room".
-  for (const r of ROOMS) { if (r !== ROOM) { await ev(h, id => window.__test.enterRoom(id), r).catch(() => {}); await h.t(1200); } }
-  await ev(h, id => window.__test.enterRoom(id), ROOM).catch(() => {});
-  await h.t(1200);
-  return where(h);
+  // Visit each room so every room is loaded before we claim "in no room". enterRoom can refuse
+  // (a minigame or blocking UI still up after the reload, or no doorway from where the player
+  // stands); the old version ignored that, read with the room unloaded and reported the cake
+  // gone (demo_access_tour games 7643 and 7719). Retry after dismiss() and record each refusal.
+  const tries = [];
+  const visit = async (r) => {
+    for (let i = 0; i < 3; i++) {
+      const here = await ev(h, () => window.currentPlayerRoom || null).catch(() => null);
+      if (here === r) return true;
+      const res = await ev(h, id => window.__test.enterRoom(id), r).catch(e => ({ ok: false, reason: String(e).slice(0, 120) }));
+      await h.t(1200);
+      if (res?.ok) return true;
+      tries.push({ room: r, from: here, reason: res?.reason || res?.error || JSON.stringify(res).slice(0, 120) });
+      await dismiss(h).catch(() => {});
+      await h.t(800);
+    }
+    return false;
+  };
+  // Rooms other than --room first, then --room, so the read is taken standing in --room.
+  for (const r of ROOMS) if (r !== ROOM) await visit(r);
+  await visit(ROOM);
+  const out = await where(h);
+  out.unloaded = ROOMS.filter(r => !out.loaded.includes(r));
+  if (tries.length) out.enterFails = tries;
+  return out;
 }
 
 async function begin(c) {
@@ -207,6 +238,8 @@ reload = async function (h) {
   const a = psSize(h.gid);
   // The last reading before the reload, after the server-side size check (which takes a few seconds)
   h.preReload = { where: await where(h), staff: await staff(h), events: await events(h), log: await needsLog(h), at: Date.now() };
+  // The staff with a needs state now are the ones to hold the moment their state is back after the reload
+  h.heldIds = Object.entries(h.preReload.staff).filter(([, v]) => v).map(([k]) => k);
   await _reload(h);
   // Needs reset to their initial levels on reload (R6), which can sit inside the cake's tempt band:
   // hold the staff before the sync wait, or someone eats during it and the case measures that.
@@ -235,11 +268,15 @@ async function settle(h, why) { say(`  wait ${WAIT / 1000}s (${why})`); await ca
 
 async function eatBy(h, npc) {
   // set hunger to 60, then watch for the walk (job aimed at the cake) and the serving
+  // `npc` is the one nudged; `eaters` are who actually took a serving meanwhile (magnet_serving
+  // events), which can be someone else (demo_access_tour game 7730).
   const before = (await where(h)).servings;
+  const seen = (await events(h)).length;
   await hunger(h, npc, 60);
   const walked = await until(h, ([n, c]) => { const j = window.__test.needs.state(n)?.job; return !!j && j.targetId === c; }, [npc, CAKE]);
   const ate = await until(h, ([b]) => (window.gameState?.globalVariables?.cake_servings ?? b) < b, [before]);
-  return { npc, walked, ate };
+  const eaters = (await events(h)).slice(seen).filter(e => e.n === 'magnet_serving:' + CAKE).map(e => { try { const d = JSON.parse(e.d); return `${d.npcId}(left ${d.left})`; } catch (x) { return '?'; } });
+  return { npc, walked, ate, eaters };
 }
 
 async function waitDone(h, npc) {
@@ -310,7 +347,7 @@ for (const c of CASES) {
     const res = await cases[c](h);
     res.errs = h.errs.filter(e => !/503/.test(e));
     res.playerState = h.ps || null;
-    res.diag = { preReload: h.preReload || null, atReload: h.atReload || null, afterCalm: h.afterCalm || null, postWait: h.postWait || null };
+    res.diag = { preReload: h.preReload || null, atReload: h.atReload || null, calmedAt: h.calmedAt || null, afterCalm: h.afterCalm || null, postWait: h.postWait || null };
     if (h.ps && !h.ps.ok) res.pass = false;
     fs.writeFileSync(`tmp/bc1/${SCEN}-case${c}-game${gid}.json`, JSON.stringify(res, null, 1));
     rows.push({ c, gid, pass: res.pass, ps: h.ps ? `${h.ps.before} -> ${h.ps.after}` : '' });
