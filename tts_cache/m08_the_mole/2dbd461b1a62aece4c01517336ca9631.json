@@ -1,0 +1,13 @@
+{
+  "key": "2dbd461b1a62aece4c01517336ca9631",
+  "npc": "director_netherton",
+  "text": "Agent 0x88. Field coordinator, in intelligence analysis, north of the operations floor. Charming, connected, and lately asking questions that are not his to ask.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:24:57Z"
+}

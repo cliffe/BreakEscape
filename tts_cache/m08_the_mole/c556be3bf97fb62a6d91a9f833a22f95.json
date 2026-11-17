@@ -1,0 +1,13 @@
+{
+  "key": "c556be3bf97fb62a6d91a9f833a22f95",
+  "npc": "background_analyst",
+  "text": "You're the one the Director brought in. Don't tell me anything. Knowing things is how you end up in an interview room.",
+  "voice": "Vindemiatrix",
+  "style": "A junior SAFETYNET analyst in her mid-twenties who has not slept, watching a mole hunt happen around her desk. British-Indian, from Leicester: a consistent East Midlands accent throughout -- do not shift to any other accent. Soft, slightly high pitch; quick, quiet pace. Nervy, oversharing out of stress.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:34:06Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "1f20e8e3427963aa02ef3dbedca9db83",
+  "npc": "director_netherton",
+  "text": "He walked into his own lab twenty-three minutes before that plan opened, and out again eighteen minutes after it closed.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:51Z"
+}

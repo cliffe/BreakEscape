@@ -1,0 +1,13 @@
+{
+  "key": "8b523b2890a9ac71c16f0aad4cf4a54d",
+  "npc": "agent_phantom",
+  "text": "So it printed. Wheels up 10:09, forty passengers and a manifest. I wanted to see whether you'd check or take my word.",
+  "voice": "Fenrir",
+  "style": "A charismatic field coordinator in his early forties, running his own unauthorised investigation and enjoying being underestimated. British-Ghanaian, raised in Accra and educated in London: a consistent light, educated Ghanaian English accent throughout -- do not shift to any other accent. Warm, mid-low pitch; quick, easy pace. Deflects with charm and keeps turning your questions back on you -- which is exactly why he is on the suspect list.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:35:55Z"
+}

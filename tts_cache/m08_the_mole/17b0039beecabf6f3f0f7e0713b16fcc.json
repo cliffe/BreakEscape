@@ -1,0 +1,13 @@
+{
+  "key": "17b0039beecabf6f3f0f7e0713b16fcc",
+  "npc": "agent_vector",
+  "text": "You again. Come to cross me off, or add me back on?",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:30:59Z"
+}

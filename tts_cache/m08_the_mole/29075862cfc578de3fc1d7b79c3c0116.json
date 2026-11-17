@@ -1,0 +1,13 @@
+{
+  "key": "29075862cfc578de3fc1d7b79c3c0116",
+  "npc": "narrator",
+  "text": "You hold his eye a moment longer than you mean to. Then you go.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:45:14Z"
+}

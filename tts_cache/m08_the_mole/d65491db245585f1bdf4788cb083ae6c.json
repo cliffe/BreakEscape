@@ -1,0 +1,13 @@
+{
+  "key": "d65491db245585f1bdf4788cb083ae6c",
+  "npc": "narrator",
+  "text": "You type the entry. The countersignature arrives a minute later, from an office that won't open its door to you.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:45:00Z"
+}
