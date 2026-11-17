@@ -124,8 +124,10 @@ export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = s
  * coarser than the sprite's there. Both stay whole-pixel, so nothing shimmers.
  * With `anchorH` (phones: the fixed portrait height, canvas px) the room is placed as if the
  * canvas were that tall and then moved down by the extra height, so it keeps one distance
- * from the speaker, who stands on the canvas bottom, however tall the canvas grows. The
- * result is clamped so the image still covers the canvas.
+ * from the speaker, who stands on the canvas bottom, while the room has height to spare.
+ * The result is clamped so the image still covers the canvas, so once the growth uses up
+ * that spare height (the 1x floor on short DPR 1 windows, under about 640 px) the room
+ * stops moving down and the speaker slides against it.
  */
 export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH, fractionalCover = false, anchorH = 0) {
     // A scene shot has no animated sprite to match, so it may use the exact cover scale
