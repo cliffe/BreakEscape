@@ -143,6 +143,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           { "text": "KEVIN PARK: Wrongly reported as ENTROPY operative — Being cleared",      "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'wrongly_accused'" },
           { "text": "KEVIN PARK: Arrested under Derek's frame-up — Later cleared",            "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'ignore'" },
           { "text": "KEVIN PARK: Status unknown",                                              "style": "entry",   "condition": "!globalVars.kevin_ko && !globalVars.kevin_choice" },
+          { "text": "FATIMA BEGUM: Bystander knocked out, no ENTROPY connection",   "style": "entry",   "condition": "globalVars.fatima_ko" },
+          { "text": "GRAHAM WHITFIELD: Bystander knocked out, no ENTROPY connection", "style": "entry",   "condition": "globalVars.graham_ko" },
           { "text": "" },
           { "text": "The Architect remains at large...",         "style": "warning" }
         ]
@@ -1143,6 +1145,22 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
                 "delay": 1000,
                 "message": "Derek is contained. You still need to access the ENTROPY encrypted archive in the server room — the full picture is in there. Finish that, then call me."
               }
+            },
+            {
+              "eventPattern": "npc_attacked:fatima_begum",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "Stand down, Agent. She runs recruitment. She's not part of this."
+              }
+            },
+            {
+              "eventPattern": "npc_attacked:graham_whitfield",
+              "onceOnly": true,
+              "sendTimedMessage": {
+                "delay": 1500,
+                "message": "That's an accountant, Agent. Not a target. Stand down."
+              }
             }
           ]
         },
@@ -1277,7 +1295,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "eventMappings": [
             { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
               "condition": "!globalVars.fatima_ko && !globalVars.entropy_reveal_read",
-              "bark": "Morning. Mind the cables by the door." }
+              "bark": "Morning. Mind the cables by the door." },
+            { "eventPattern": "global_variable_changed:entropy_reveal_read", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:server_room", "onceOnly": true, "condition": "globalVars.entropy_reveal_read === true", "setVisible": false },
+            { "eventPattern": "room_entered:it_room", "onceOnly": true, "condition": "globalVars.entropy_reveal_read === true", "setVisible": false }
           ]
         },
         {
@@ -1306,7 +1327,10 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "eventMappings": [
             { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
               "condition": "data.previousRoom !== 'reception_area' && !globalVars.graham_ko && !globalVars.entropy_reveal_read",
-              "bark": "Lost? This floor took me a month." }
+              "bark": "Lost? This floor took me a month." },
+            { "eventPattern": "global_variable_changed:entropy_reveal_read", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:server_room", "onceOnly": true, "condition": "globalVars.entropy_reveal_read === true", "setVisible": false },
+            { "eventPattern": "room_entered:it_room", "onceOnly": true, "condition": "globalVars.entropy_reveal_read === true", "setVisible": false }
           ]
         }
       ],
