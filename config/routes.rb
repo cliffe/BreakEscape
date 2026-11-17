@@ -68,6 +68,9 @@ BreakEscape::Engine.routes.draw do
       # Hacktivity VM panel endpoints (vm_set_panel body added in Phase 4.4.3)
       get 'vm_panel'
       get 'vm_set_panel'
+      # Called by the vm-launcher minigame when it opens in Hacktivity mode, to set the
+      # reached VM's console to its default (attack VMs on, "*server*" targets stay locked).
+      post 'unlock_vm_console'
     end
   end
 

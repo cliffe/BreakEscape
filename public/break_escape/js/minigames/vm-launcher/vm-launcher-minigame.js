@@ -50,6 +50,7 @@ export class VmLauncherMinigame extends MinigameScene {
         super(container, params);
         this.vm = params.vm || null;
         this.hacktivityMode = params.hacktivityMode || false;
+        this.gameId = params.gameId || window.breakEscapeConfig?.gameId || window.gameConfig?.gameId;
         this.isLaunching = false;
         const rawPanelUrl = window.breakEscapeConfig?.vmPanelUrl;
         this.vmPanelUrl = safeVmPanelUrl(rawPanelUrl);
@@ -80,6 +81,15 @@ export class VmLauncherMinigame extends MinigameScene {
     }
     
     buildUI() {
+        // Reaching the launcher in-game is what unlocks the console in Hacktivity mode: tell
+        // the server now, before the panel needs the console token, so the VM's console is set
+        // to its default (attack VMs on, "*server*" targets stay locked). Non-blocking and
+        // idempotent server-side; the vm_panel endpoint re-checks when the iframe loads.
+        // Standalone mode never calls it.
+        if (this.hacktivityMode) {
+            this.requestConsoleUnlock();
+        }
+
         // Re-enabled: root causes fixed — user_not_authorized now uses root_path (not
         // request.referrer), vm_panel? policy includes admin check, and main.js has an
         // iframe guard preventing re-initialisation if the game page ever loads in a frame.
@@ -580,6 +590,36 @@ export class VmLauncherMinigame extends MinigameScene {
     //     }
     // }
     
+    getCsrfToken() {
+        const meta = (typeof document !== 'undefined')
+            ? document.querySelector('meta[name="csrf-token"]')
+            : null;
+        return meta ? meta.getAttribute('content') : '';
+    }
+
+    // Hacktivity mode only: POST to the server so it sets this VM's in-game console to its
+    // default now that the player has reached the launcher. The server re-verifies room access
+    // and never turns a "*server*" target's console on. Standalone mode and a missing game id
+    // are a no-op. Failures are swallowed — the panel still loads and vm_panel re-checks on open.
+    async requestConsoleUnlock() {
+        if (!this.hacktivityMode || !this.gameId) return;
+        let url = `/break_escape/games/${this.gameId}/unlock_vm_console`;
+        const title = this.vm?.title;
+        if (title) url += `?vm_title=${encodeURIComponent(title)}`;
+        try {
+            await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': this.getCsrfToken()
+                },
+                body: '{}'
+            });
+        } catch (error) {
+            console.warn('[VmLauncher] console unlock request failed:', error?.message || error);
+        }
+    }
+
     // VM titles, IPs and the console URL are server text: escaped once, quotes
     // included, because the URL lands in an href attribute.
     escapeHtml(str) {

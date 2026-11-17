@@ -162,6 +162,12 @@ module BreakEscape
       show? && record.status == 'in_progress'
     end
 
+    # Same rule as vm_panel?: only the owner (or managing staff) of an in-progress game may
+    # ask the server to unlock the console for a VM the player has reached in-game.
+    def unlock_vm_console?
+      show? && record.status == 'in_progress'
+    end
+
     def vm_set_panel?
       show? && record.status == 'in_progress'
     end
