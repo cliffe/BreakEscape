@@ -367,7 +367,7 @@ module BreakEscape
       entry = view['footholds'].find { |f| f['id'] == foothold }
       assert_equal 'office_lan', entry.dig('network', 'id')
       container('finance_share', foothold: foothold)
-      assert_includes [403, 404], response.status, 'the implant gives a foothold, not a finance session'
+      assert_equal 404, response.status, 'the implant gives a foothold, not a finance session (refused shares answer 404)'
       refute_includes response.body, password('lorna')
     end
 
@@ -573,7 +573,7 @@ module BreakEscape
       refute_includes entry.to_json, 'finance_share'
       refute_includes entry.to_json, 'door_controller'
       container('finance_share', foothold: foothold)
-      assert_includes [403, 404], response.status, 'the guest foothold reaches no office share'
+      assert_equal 404, response.status, 'the guest foothold reaches no office share (refused shares answer 404)'
     end
 
     test 'the unplug of the guest port gives the box back' do

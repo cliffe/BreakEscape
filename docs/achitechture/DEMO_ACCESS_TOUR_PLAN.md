@@ -80,7 +80,7 @@ Verdict: the build can start; it does not wait on any format branch.
 - The plant consumes the rogue device into the foothold record (network_access.rb:253-268); only the unplug gives it back (network_access.rb:303-308). A jack click with no held rogue device is refused on the client with `reason: 'no_device'` before any request (network-links.js:398-405).
 
 ### Devices
-- Implant: `grant_foothold` with `needsSession` and `needsHeld` (NetworkModel.grant_foothold_actions, network_model.rb:266; NetworkAccess#implant_foothold!, network_access.rb:468-512). One action per [pc, shape] (network_access.rb:445-450; README:1150). The session must be a keyboard session with a blank foothold and no relay or `from` route (496-501); the held item must not be client-forged (454-465); the USB policy refuses storage only under `storage_blocked` (access_work.rb:1198-1204, network_access.rb:506-512), so the injector (hid) passes the desk policy. Anything missing answers `implant_not_ready` (network_access.rb:491-518), including a held stick, since `needsHeld` names the injector. An implant meets no `unlock_object` (objectives-manager.js:368-375); its foothold event carries `via: "implant"` (network_access.rb:527).
+- Implant: `grant_foothold` with `needsSession` and `needsHeld` (NetworkModel.grant_foothold_actions, network_model.rb:266; NetworkAccess#implant_foothold!, network_access.rb:468-512). One action per [pc, shape] (network_access.rb:445-450; README:1150). The session must be a keyboard session with a blank foothold and no relay or `from` route (496-501); the held item must not be client-forged (454-465); the USB policy refuses storage only under `storage_blocked` (access_work.rb:1198-1204, network_access.rb:506-512), so the injector (hid) passes the desk policy. Anything missing answers `not_ready` (the method is implant_not_ready; the JSON reason is not_ready) (network_access.rb:491-518), including a held stick, since `needsHeld` names the injector. An implant meets no `unlock_object` (objectives-manager.js:368-375); its foothold event carries `via: "implant"` (network_access.rb:527).
 - An item plant cannot sit on the sign-in PC itself (README:943): the implant socket is a separate dock object, as `sam_dock` (test_access_networks:771-790).
 - USB stick refusal: a dock with its own `policy` and `requiresItem`; on a click the client's plantRefusal shows the policy kind's line and emits `usb_refused:<dockId>` (interactions.js:1015-1043). It grants nothing. It refuses only when every matching held item is refused, so the stick's hub and the injector's socket are two objects.
 - Port security: refusal with `reason: "port_security"` and the authored `portSecurityMessage` (network_access.rb:111-116, 243-245; client network-links.js:438; README 1024, 1138). The device stays held.
@@ -503,7 +503,7 @@ Hard-enforced (the client cannot fake these):
 
 Best-effort (client side, by design):
 
-- The USB stick refusal at the hub: plantRefusal grants nothing (interactions.js:1015-1043). On the server, the stick at the implant socket answers `implant_not_ready`.
+- The USB stick refusal at the hub: plantRefusal grants nothing (interactions.js:1015-1043). On the server, the stick at the implant socket answers `not_ready`.
 - Office-life timing: Thandiwe and Yasmin leaving their desks, the cake draw, the rota board's and the rogue AP nudge's `needs.set`, `pc_in_use`. No required task depends on any of it.
 - Yasmin's note while she is at her desk: GET /login_accounts serves it to any player who reaches yasmin_pc. t_yasmin_pc is optional.
 - Task completion from client eventMappings (t_copy_badge, t_implant, t_capture_key, t_unplug): custom tasks pass on the server (game.rb:5203-5204). The events behind them are server answers (a recorded clone, a granted implant, a served capture, an unplug), so a forged completion gains the player nothing a server check guards. Two of them are required (t_copy_badge, t_unplug); they stay best-effort and the demo says so.
@@ -583,7 +583,7 @@ Access:
 - Keypad admits the rendered code.
 
 Network and devices:
-- Implant: refused with no reception_pc session and from a remote or `from` session; with only the stick held it answers `implant_not_ready`; granted with the injector and a keyboard session.
+- Implant: refused with no reception_pc session and from a remote or `from` session; with only the stick held it answers `not_ready`; granted with the injector and a keyboard session.
 - Finance share refused from the bare foothold before any role session; admitted after a julian_pc session.
 - Capture before the plant refused; after the plant served; driven as AccessDevicesRogueApScenarioTest drives it (access_devices_rogue_ap_test.rb:348-362), reading the psk from `scenario_data.dig('networks', 'office_lan', 'wifi', 'psk')`. The key joins staff_ap; a wrong key is refused.
 - Guest AP joins with no key in the request.
