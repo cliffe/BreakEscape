@@ -15,7 +15,7 @@ Every person already in m05 is classed under D78 (plot-located, holding or guard
 | `recruiter` | `:1545` | lobby | plot-located, never (phone) | never | TalentStack thread, a clue |
 | `patricia_phone` | `:1611` | lobby | plot-located, never (phone) | never | |
 | `closing_debrief_trigger` | `:1638` | lobby | plot-located, never | never | debrief |
-| `lisa_park` | `:1731` | break room | free | one `tea` need, one kettle trip (PLAN.md section 2A) | "sit by the kettle" (`m05_npc_lisa_park.ink:61`), "nowhere to be" (`:138`), "I'll be here" (`:164`); the narrator puts her "by the break room counter... a collection tin at her elbow" (`:56`). The tin is `qdc_collection_tin1` (gid 1183, x 90 to 100, y 67 to 79), decor with no scenario id. No line-of-sight mappings in m05. Post-fate lines describe the office from her post (`:125` to `:136`). KO global `lisa_ko` (`:1748`), exported (`:662`). |
+| `lisa_park` | `:1731` | break room | free | one `tea` need, one fridge trip (PLAN.md section 2A) | "sit by the kettle" (`m05_npc_lisa_park.ink:61`), "nowhere to be" (`:138`), "I'll be here" (`:164`); the narrator puts her "by the break room counter... a collection tin at her elbow" (`:56`). The tin is `qdc_collection_tin1` (gid 1183, x 90 to 100, y 67 to 79), decor with no scenario id. No line-of-sight mappings in m05. Post-fate lines describe the office from her post (`:125` to `:136`). KO global `lisa_ko` (`:1748`), exported (`:662`). |
 | `owen_gallagher` | `:1782` | open office | holding or guarding (items `:1807` to `:1831`, post (6,4)) | no | RFID clone source by proximity, keycard, door log, password note; KO route. KO global `owen_ko` (`:1799`). |
 | `dr_halloran` | `:2073` | research lab | plot-located (suspect, `halloran_accused`; post (6,6)) | no | optional witness; `halloran_ko` (`:2091`) |
 | `patricia_morgan` | `:2153` | Patricia's office | holding (items `:2172` to `:2204`, post (3,3)) | no | badge and vetting files; `patricia_ko` (`:2170`) |
@@ -25,6 +25,7 @@ Every room NPC is attackable (no `disableAttacks`). The atlases for `lisa_park` 
 
 Beats keyed on presence or position that office life must not touch:
 - Lisa's whole conversation, at her post (4,4) by the kettle and the espresso. She may leave it only under the gates in PLAN.md section 2A.
+- Note: her one trip goes to the staff fridge (90 px from her post), not the kettle, so the walk out and back is visible; the kettle's use cell was 25 px from her post and the engine ends a walk within one tile of its goal. Details in PLAN.md section 2A.
 - Owen's RFID clone, which needs the player near him in the open office, and his KO route.
 - The lobby briefing and debrief cutscene records.
 - The pamphlet (`entropy_pamphlet`, notes3 slot at (202,104), at the free-standing espresso's east foot and not on a counter; sets `found_pamphlet`), "dropped behind the coffee machine".

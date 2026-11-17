@@ -33,7 +33,7 @@ After you have the server badge:
 > Thandiwe: Don't let them keep you past seven.
 > Niamh: Tell that to the comms calendar.
 
-When you come back from the server room, Thandiwe's chair is empty and Niamh is still at her table. She stays there all night, in the lit break room; she does not leave when the lights go down in the corridor. Once you have spoken to Lisa, she may step to the kettle while you are two rooms away. She returns to her post standing, and you can talk to her at the kettle too.
+When you come back from the server room, Thandiwe's chair is empty and Niamh is still at her table. She stays there all night, in the lit break room; she does not leave when the lights go down in the corridor. Once you have spoken to Lisa, she may walk over to the fridge for some milk while you are two rooms away. She comes back to her post, and you can talk to her at the fridge or on the way.
 
 ## The evening cleaner
 
