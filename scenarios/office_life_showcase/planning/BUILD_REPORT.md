@@ -426,3 +426,24 @@ From BUILD_REVIEW_R4.md: m1 board mugs line is now "- Note the mugs, then go to 
 ## Voicing dialogue review fixes
 
 From DIALOGUE_REVIEW_VOICING.md: A31 now names its subject ("The staff won't be back once they've gone home. Seen everything you wanted?"); "Not yet." gets a reply, new line A36 "Take your time.", before returning to the hub; the kitchen_seen, cooler-not-heard hint is new line A35 "Hang about by the water cooler." (the door is already open by then; A7 stays for the kitchen-unseen path). X4 kept: in context "You never do" agrees with "I'll not keep you long", and "Five minutes at most" supports it. Ink recompiled; validator 0 errors, 17 warnings; lines check PASS; dialoguelint no hits. The R2 probe asserts the new A31 text and A35.
+
+## BC1 after train 168 (magnet perPerson fix on the branch)
+
+Re-run of the probe on the keyless server on :3094 from this worktree. HEAD fc9b3d5c8 includes main 69d8bf05a. Command: `showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake --port 3094 --cases 1,2,3`. Case 3 was retried once on its own after the browser closed mid-case in the first run (game 7705, no JSON written). Raw results: `bc1-168.json` in this folder.
+
+| Case | Game | Result | What happened |
+|---|---|---|---|
+| 1 cake held | 7695 | PASS | Cake still in the inventory, in no room, servings 2 before and after reload. player_state 3266 to 3339 bytes (+73). |
+| 2 cake down, untouched | 7701 | FAIL | Before reload: cake in the office, servings 2, magnet true. After reload: same spot, servings 1, magnet true. One magnet_serving by chidi_okeke was logged after the reload with left 0, which does not match the reading of 1, and I have not worked out why. The probe's own eat step then showed Chidi walking to the cake and eating. player_state 3231 to 3450 bytes (+219). |
+| 3 cake down, one slice, reload | 7721 (retry) | FAIL | Chidi took the first slice before the reload: servings 2 to 1, reading 1 before the reload. After reload: cake gone, servings 0, magnet false, no magnet_finished recorded. Jun did not walk to the cake (his walk never started). player_state 3285 to 3305 bytes (+20). |
+
+Answers to the questions for case 3:
+- Who took slices before the reload: Chidi (one slice). The probe does not save the reading taken just before the reload, and the second slice is not logged by the probe, so I cannot name who took it.
+- Who took slices after the reload: none recorded. The recorder restarts at the reload and logged no magnet_serving after it. The likely explanation is that the last serving went during the 22 s settle, before the reload. That is inference, not measured.
+- Did any one NPC take two: not shown. Chidi is the only named eater in the run.
+- Servings left: 1 before the reload, 0 after it.
+- player_state growth: +20 bytes for case 3, +219 for case 2, +73 for case 1.
+
+Reading: with the perPerson fix in, case 3 still fails the reload check, but the cake was finished before or during the reload, not lost across it. Case 2 shows a serving between the two readings that the probe treats as "untouched". Servings still went during the 22 s settle, even with the five staff calmed. The probe does not record a slice count taken just before the reload, so it cannot say which side of the reload each serving fell.
+
+Not changed: no engine, scenario or probe edits in this pass.
