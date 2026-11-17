@@ -131,7 +131,7 @@ module BreakEscape
       assert_equal 'x', spoken.("\u2028Nia: x")
       assert_equal 'x', spoken.("\ufeffNia: x")
       # U+0085 is not JS whitespace, so the prefix is not at the start
-      assert_equal "Nia: x", spoken.("\u0085Nia: x")
+      assert_equal "\u0085Nia: x", spoken.("\u0085Nia: x")
       # "You:" followed only by NBSP is not a player line, it stays (trimmed)
       assert_equal 'You:', spoken.("You:\u00a0")
       assert_equal "x\nYou:", spoken.("Nia: x\nYou:\u00a0\nNarrator:\u00a0y")
