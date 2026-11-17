@@ -958,7 +958,7 @@ export class PasswordMinigame extends MinigameScene {
                         ${this.gameData.showHint ? `
                             <div class="password-hint-container">
                                 <div class="password-hint" id="password-hint" style="display: none;">
-                                    <strong>Hint:</strong> ${escapeHtml(displayDashes(this.gameData.passwordHint))}
+                                    <span class="mg-field-label">Hint:</span> ${escapeHtml(displayDashes(this.gameData.passwordHint))}
                                 </div>
                             </div>
                         ` : ''}

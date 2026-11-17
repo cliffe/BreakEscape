@@ -111,7 +111,7 @@ export class BluetoothScannerMinigame extends MinigameScene {
         instructionsContainer.innerHTML = `
             <summary>How to use the scanner</summary>
             <div class="instruction-text">
-                <strong>Instructions:</strong><br>
+                <span class="mg-section-label">Instructions:</span><br>
                 • Walk around to detect Bluetooth devices<br>
                 • Green signal bars indicate nearby devices<br>
                 • Click devices to save them for later reference<br>

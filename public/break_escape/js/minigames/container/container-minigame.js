@@ -47,7 +47,7 @@ export function relayAccountBarHtml(session = {}) {
     return `
                     <div class="desktop-remote-line">${escapeHtml(RELAY_HEADER_TEXT)}</div>
                     <div class="desktop-account-bar">
-                        <span class="desktop-account-name">Using <strong>${escapeHtml(displayDashes(name || 'the account holder'))}</strong>'s session${session.username ? ` (${escapeHtml(session.username)})` : ''}</span>
+                        <span class="desktop-account-name">Using ${escapeHtml(displayDashes(name || 'the account holder'))}'s session${session.username ? ` (${escapeHtml(session.username)})` : ''}</span>
                         <span class="desktop-account-actions">
                             <button type="button" class="minigame-button desktop-account-btn" id="desktop-disconnect">Disconnect</button>
                         </span>
@@ -1387,8 +1387,8 @@ export class ContainerMinigame extends MinigameScene {
         const claimLine = claim ? `
                     <div class="desktop-claim-line">${escapeHtml(claim)}</div>` : '';
         const who = session.via === 'claim'
-            ? `Using <strong>${escapeHtml(name)}</strong>'s session (${escapeHtml(session.username)})`
-            : `Signed in as <strong>${escapeHtml(name)}</strong> (${escapeHtml(session.username)})`;
+            ? `Using ${escapeHtml(name)}'s session (${escapeHtml(session.username)})`
+            : `Signed in as ${escapeHtml(name)} (${escapeHtml(session.username)})`;
         // A keyring credential session adds how it signed in (K3a 8.1)
         const credLine = credentialSessionLine(session);
         const whoLines = credLine

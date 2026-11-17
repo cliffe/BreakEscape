@@ -125,7 +125,8 @@ export class BiometricsMinigame extends MinigameScene {
             canvas.setAttribute('aria-label', `Example of a ${note.pattern} pattern`);
             canvas.dataset.pattern = note.pattern;
             const text = document.createElement('div');
-            const name = document.createElement('strong');
+            const name = document.createElement('span');
+            name.className = 'mg-section-label';
             name.textContent = note.pattern;
             text.append(name, document.createTextNode(note.text));
             row.append(canvas, text);
@@ -403,7 +404,8 @@ export class BiometricsMinigame extends MinigameScene {
             
             const header = document.createElement('div');
             header.className = 'sample-header';
-            const name = document.createElement('strong');
+            const name = document.createElement('span');
+            name.className = 'mg-section-label';
             name.textContent = displayDashes(labelForSample(sample));
             const type = document.createElement('span');
             type.className = 'sample-type';

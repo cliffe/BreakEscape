@@ -158,7 +158,7 @@ export class NcscBriefMinigame extends MinigameScene {
             ? `<p>Attribution confidence: <span class="ncsc-badge ${escapeHtml(s.confidence.cssClass)}">${authorHtml(s.confidence.text)}</span></p>`
             : '';
         const body = s.body ? `<p>${authorHtml(s.body)}</p>` : '';
-        const bulletsIntro = s.bullets?.length ? `<p><strong>Basis for attribution:</strong></p>` : '';
+        const bulletsIntro = s.bullets?.length ? `<p><span class="mg-section-label">Basis for attribution:</span></p>` : '';
         const bullets = s.bullets?.length
             ? `<ul class="ncsc-list">${s.bullets.map(b => `<li>${authorHtml(b)}</li>`).join('')}</ul>`
             : '';
