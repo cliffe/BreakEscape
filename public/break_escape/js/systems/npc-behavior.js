@@ -424,6 +424,12 @@ export class NPCBehaviorManager {
             }
             return;
         }
+        if (!visible) {
+            // The breathing image is a second display object; a hidden NPC's update never runs to
+            // hide it, so end it here (seated, pose and idle breathing)
+            window.seating?.endNpcBreath?.(behavior);
+            window.npcPoses?.stopBreath?.(npcId, sprite);
+        }
         sprite.setVisible(visible);
         sprite.setAlpha(visible ? 1 : 0);
         if (sprite.body) {

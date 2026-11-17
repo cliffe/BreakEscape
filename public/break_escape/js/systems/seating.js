@@ -90,6 +90,16 @@ export { breathRows, breathDown };
 // Tests (test/js/sprite-breath.test.mjs pins the seated output against a recorded trace)
 export { updateBreath as updateSeatedBreath, endBreath as endSeatedBreath };
 
+/**
+ * Drop a seated NPC's breathing image and crop (setNPCVisible hides it). A hidden NPC's body is
+ * off, so NPCBehavior.update never runs for it and nothing else would hide the image: it would
+ * stay drawn on the chair, a head and shoulders with no body, until a reload. updateSeatedNPC
+ * starts it again when the NPC is shown.
+ */
+export function endNpcBreath(behavior) {
+    if (behavior?._seat) endBreath(behavior._seat, behavior.sprite);
+}
+
 /** Seated breathing: the moving image sits a tenth of a seat depth step above the sitter. */
 function updateBreath(holder, sprite, on) {
     spriteUpdateBreath(holder, sprite, on, SEAT_DEPTH_STEP / 10);
@@ -2484,7 +2494,7 @@ export function installSeating(scene) {
 const seating = {
     seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey, queueSit,
     isSeated, isMounting, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
-    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, updateSeatedNPC, cancelFetch
+    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, endNpcBreath, updateSeatedNPC, cancelFetch
 };
 window.seating = seating;
 export default seating;
