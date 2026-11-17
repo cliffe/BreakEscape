@@ -185,11 +185,12 @@ export class Keyring {
      * K5: note each token's time left from an answer. `live` is an `unchanged` answer's
      * { credId: seconds } map (the full answer carries expiresInS on each entry). A held token
      * session's timer in pc-sessions is told the same figure, so the bar and the close follow
-     * the server's clock. Only numbers from 0 to a day count.
+     * the server's clock. Only numbers from 0 to a day count. For an `unchanged` answer only its
+     * map counts: the cached entries' expiresInS is as old as the full answer that carried it.
      */
-    noteTokenTimes(entries, live = null) {
+    noteTokenTimes(entries, live = undefined) {
         const okSecs = (n) => (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 86400 ? n : null);
-        const liveMap = live && typeof live === 'object' && !Array.isArray(live) ? live : null;
+        const liveMap = live === undefined ? null : (live && typeof live === 'object' && !Array.isArray(live) ? live : {});
         const now = Date.now();
         for (const e of Array.isArray(entries) ? entries : []) {
             if (!e || e.kind !== 'token' || typeof e.id !== 'string') continue;
@@ -226,7 +227,7 @@ export class Keyring {
             if (!hit || hit.rev !== answer.rev) return null;
             this.latest = hit.entries;
             if (hit.captures) this.latestCaptures = hit.captures;
-            this.noteTokenTimes(hit.entries, answer.expiresInS);
+            this.noteTokenTimes(hit.entries, answer.expiresInS ?? null);
             return hit.entries;
         }
         if (!Array.isArray(answer.entries)) return null;
