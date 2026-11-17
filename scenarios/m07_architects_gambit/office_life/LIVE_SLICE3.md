@@ -117,3 +117,32 @@ Notes on the evidence:
 - The 10.4 "seated" run shows the other operator going hostile when the player is knocked out or attacks the seated one. This is not the plan's "the other walks home" and needs a look at the engine or the plan.
 
 Probe changes still needed before the next run: the door lookup for `walk` (the doorway ids are `door:...`, and `moveToNear` returns `unknown-entity`), a reload that waits for the ops floor state before `snap()`, and a screenshot on the first exchange line in `ex`.
+
+## Attack probe diagnosis and route work (17 Nov 2026, part 3)
+
+Server: keyless, port 3098, puma PID 2978371, stopped by PID; port 3098 confirmed closed. No scenario or engine change in this run.
+
+### (a) Why Adaeze turned hostile when Gwen was struck seated (game 7889)
+
+Cause: the player's own punch, not an ally or group rule. Engine search: nothing in `npc-hostile.js`, `npc-behavior.js` or `player-combat.js` propagates hostility to a friend or group member. Hostility starts only from `setNPCHostile` (called by the punch hit, `player-combat.js:457`, per NPC in the cone), influence, `startHostile` or ink. `needsCompany` groups are used for needs only. Our `npc_attacked` rows on `agent_0x99` set only `ops_staff_upset`.
+
+Evidence: the probe now logs the player's feet, facing and the other operator's hostility after each punch (six fresh Gwen-seated runs). Adaeze stayed friendly in five (7909, 7914, 7918, 7921, 7924/7925/7926/7933/7939 all `otherHostile: false`, player feet about (374, 178) south-west of Gwen). In game 7930 Gwen, once hostile, pushed the player round to feet (410, 173), 38 px from Adaeze at (448, 160), facing up-left; after punch 7 Adaeze was hostile and the game-over screen followed. The seats are 64 px apart, and a punch has range 32 plus the target's body width, so a player standing in the gap clips both. Rate: 2 of 7 seated runs (7889, 7930).
+
+Outcome: engine geometry, shared by any ambient pair seated about 64 px apart (not checked in m02 or m03). Not changed. For m07: the plan's "the other operator walks home" holds only when the player stays on the open side of the struck operator; a player who fights from the gap can turn both hostile. The KO of one still sets `ops_staff_upset`, and the second hostile operator is then a second fight with no harm to the credits logic. The seats are Tiled chairs and Adaeze and Gwen are new NPCs, but their posts were measured and fixed, so no data change was made. Decision for the orchestrator: accept, or move one seat apart (needs a Tiled and positions change).
+
+### (b) Chase leash bound (game 7880)
+
+`behavior.hostile.leash` bounds the player, not the NPC: `hostileMayChase` (`npc-chase-leash.js`) lets the NPC keep chasing while the player is within `chaseRange` of the NPC's post (`_chasePost`: the home position for a stationary NPC) and in the same room. `chaseRange` defaults to 400 px (`combat-config.js:74`); our data sets none. So a leashed operator follows the player anywhere in the ops floor within 400 px of her post, and gives up and walks home past that or when the player leaves the room. Her 150 px move to (537, 294) was her chasing the probe's player, who stood within 400 px of her post. She cannot leave the room. The plan says "stays near post"; 150 px (about the distance from her seat to the cooler plus a bit) is inside the floor. Not wrong as written, so no change. If the orchestrator wants a tighter fight, add `"chaseRange": 200` to both `behavior.hostile` blocks (data only, validator and lock diff rerun needed). The 10.4 steps were not re-run because nothing was fixed.
+
+### Server-room route (new probe, not yet complete)
+
+`tools/playtest/m07-ol-route.mjs` (new, exported `route(h, log)`): enter the ops floor, clear the HaX bark (retry `dismissBlockingUi` until `blockingUi` is null), read the Shift Handover Sheet, return to the checkpoint, use `badge_printer`, click 0616 then ENTER, wait for the container to list "Printed Contractor Badge", `minigame.take('Printed Contractor Badge')`, close, then `enterRoom` ops floor and `server_room`. Findings:
+- The PIN is accepted ("PIN Correct! Access Granted.") and the container opens by itself afterwards; it first shows "Loading contents...", so the probe must wait for the badge text before `take` (fixed).
+- The badge goes into the inventory (7945) and `badge_obtained` is true. The Shift Handover Sheet did not appear in `window.inventory.items` after the read in 7931 and 7945 (it opened as a note only); the PIN works regardless.
+- The last step, `enterRoom('server_room')`, was not reached: in 7949 the return `enterRoom('operations_floor')` from the checkpoint failed after 2 attempts, and in 7943 the server door was `door-locked` because the badge was not yet taken. A retry loop for the ops-floor return was added after 7949 and is untested. Next step: run `route()` on a fresh game, confirm `enterRoom('server_room')` opens the RFID door with the badge.
+
+Games used: 7909, 7914, 7918, 7921, 7924, 7925, 7926, 7930 (hostile clip reproduced), 7933, 7939 (attack runs); 7928, 7929, 7931, 7934, 7935, 7943, 7945, 7949 (route work, not counted as checks).
+
+### Not run
+
+L6, the server-room step of 10.4, 10.3 (a) and (b), L3 `ex_going_now`, L5. None needs a scenario change; all wait on the route above, a reload that waits for needs.state before `snap()`, and the L5 door ids (`door:security_checkpoint->operations_floor` east at (304, 80), `door:operations_floor->server_room` east at (624, 80), `door:operations_floor->security_checkpoint` west at (336, 80)).

@@ -88,3 +88,10 @@ Commits: b72a83d5f (initial 40 and 55), eb6df8486 (chair x 32), plus the BUILD_L
 - Still to do: Step 3 of the earlier handover (L1 to L8, reload 10.3, attack probe 10.4, LIVE_SLICE3.md). The scenario changed (initial 40/55) so use fresh games. The positions diff 10.6 now also lists the chair (gid 271) in room_pnw_ops.
 - Order test was a node simulation with the engine's own jitter function, not a live manual-clock run.
 - Probes added: tools/playtest/m07-ol-chair.mjs (zoomed render of the cooler corner; uses pathfindingManager.scene camera).
+
+# Attack diagnosis and route handover (2026-11-17, fourth agent, stopped at the tool-call budget)
+
+Done: (a) and (b) diagnosed, see LIVE_SLICE3.md "part 3". No scenario change, so no validator rerun. (a) Adaeze hostile = player punch cone clipping her when Gwen's chase pushed the player into the 64 px gap (game 7930; 2 of 7 runs); no engine ally rule. (b) leash bounds the player's distance from her post (chaseRange 400 default), not hers.
+Server :3098 stopped by PID 2978371, port closed. Probe changes: m07-ol-s3.mjs atk mode logs player feet and the other operator's hostility per punch; new tools/playtest/m07-ol-route.mjs (route(h, log)) goes ops floor, sheet, checkpoint, PIN 0616, badge, back to ops floor, server_room. The last two steps are untested end to end.
+Still to do, each on a fresh game: wire `route` into a mode of m07-ol-s3.mjs (L6, 10.3 b, server-room KO step), make `reload` wait for needs.state before snap(), fix `walk` door ids (door:... ids above), L3 ex_going_now over a third trip.
+Scratch driver for route: scratchpad ex1.mjs (not committed; it only calls route()).

@@ -167,6 +167,10 @@ if (mode === 'atk') {
     await ev(h, (i) => { const s = window.npcBehaviorManager.getBehavior(i).sprite; window.playerCombat.attack({ x: s.x, y: s.y }); }, target);
     await h.t(450);
     ko = await ev(h, (i) => window.npcHostileSystem.isNPCKO(i), target);
+    if (n < 3 || !ko) {
+      const pp = await ev(h, (o) => { const p = window.player; return { px: Math.round(p.x), py: Math.round(p.y + 31), dir: p.lastDirection, oh: window.npcHostileSystem.isNPCHostile(o), hp: window.playerCombat?.playerHealth ?? null }; }, other);
+      if (n < 3 || pp.oh) { log('punch ' + n, pp); if (pp.oh) break; }
+    }
   }
   log('punches', { n, ko, hostile: await ev(h, (i) => window.npcHostileSystem.isNPCHostile(i), target) });
   await shot(`atk-${when}-${who}-ko-${gid}`);
