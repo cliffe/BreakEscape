@@ -117,7 +117,7 @@ test('V2: a key source whose needs leave its room warns; a leash, a post overrid
     assertHas(campaign(scenario({ npcs: [keyed] })), "V2: NPC 'gary' is a key or card source");
     assertHas(campaign(scenario({ npcs: [keyed] })), 'out of its own room (to kitchen (need))');
     assertNot(campaign(scenario({ npcs: [keyed] })).filter(l => l.includes('V2:')), 'patrolOverride'); // the advice is no longer a patrolOverride walk
-    assertNot(campaign(scenario({ npcs: [keyed] })).filter(l => l.includes('V2:')), 'beat gate'); // a beat gate does not clear V2
+    assertNot(campaign(scenario({ npcs: [keyed] })).filter(l => l.includes('V2:')), 'gate the machines'); // the text does not offer the beat gate as a way out
     assertNot(campaign(scenario({ npcs: [{ ...keyed, needsRooms: ['office'] }], officeObjs: [coffee('desk_coffee')] })), 'V2');
     const override = { ...keyed, eventMappings: [{ eventPattern: 'room_entered:office', patrolOverride: { targetTile: { x: 3, y: 3 } } }] };
     assertNot(campaign(scenario({ npcs: [override] })), 'V2');

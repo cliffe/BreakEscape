@@ -67,3 +67,14 @@ Stage 1 (:76 to :81), Stage 2 (:111, :133 to :143), Stage 4 (:244) and Stage 5 (
 ## Verdict
 
 No blocker. M1 is a one-line text change plus one assertion; M2 is two sentences in the skill and one clause in the checklist. Both are scoped, so round 5 can be a Sonnet delta.
+
+## Outcomes
+
+Fixes in a4f7ab12c plus a test-assertion follow-up.
+
+- M1 fixed. The V2 warning in `check_story_npcs_leave` now says to leash the NPC to its own room (`needsRooms`) or give it no away needs, and that a beat gate does not lift this. The test asserts the V2 line does not contain `gate the machines`. (Asserting on `beat gate` itself failed, because the new text names the beat gate in order to rule it out.)
+- M2 fixed. SKILL.md (derived-global bullet), `references/mapping-patterns.md` section 5 (bullet and example comment) and `references/checklists.md` now say the `<machine>_off` and `<npc>_beat` mappings are hosted on the phone NPC or another start-room NPC, never the moved NPC, citing `npc-lazy-loader.js:96` to `:103`, `npc-manager.js:1511` and `game.js:2210` to `:2215`.
+- m1 fixed. SKILL.md "Other NPCs" cite now reads `mapping-patterns.md:142`; line 142 is the cooler-case bullet.
+- m2 fixed. The rule-out sentence (Stage 1) and the "At its post" bullet list timed conversations and the phone-to-person transition.
+
+Checks: `node test/js/validator-office-life.test.mjs` 33 pass, 0 fail. The Ruby validator on `test_needs_attack` and `m03_ghost_in_the_machine` prints no V2 line for either; the only office-life output is the existing V4 warnings on m03.
