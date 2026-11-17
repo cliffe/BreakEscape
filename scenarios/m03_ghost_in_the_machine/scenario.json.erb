@@ -226,7 +226,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           { "text": "THE NEXT HOSPITAL: somewhere on the 214-site survey, still running St. Catherine's build", "style": "warning", "condition": "globalVars.danny_named_sites !== true" },
           { "text": "TERRY MOTT, NIGHT GUARD: KNOCKED OUT ON SHIFT", "style": "warning", "condition": "globalVars.guard_knocked_out === true" },
           { "text": "FFION REES, WHITEHAT RECEPTION: KNOCKED OUT AT HER OWN DESK", "style": "warning", "condition": "globalVars.receptionist_ko === true" },
-          { "text": "WHITEHAT STAFF: A COLLEAGUE OF HERS STRUCK BY DAY", "style": "warning", "condition": "globalVars.wh_staff_upset === true && globalVars.receptionist_ko !== true && !globalVars.zainab_ko && !globalVars.yusuf_ko" },
+          { "text": "WHITEHAT STAFF: SOMEONE STRUCK IN RECEPTION BY DAY", "style": "warning", "condition": "globalVars.wh_staff_attacked === true && !globalVars.zainab_ko && !globalVars.yusuf_ko" },
+          { "text": "WHITEHAT STAFF: WATCHED RECEPTION BEING KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.wh_staff_witnessed === true" },
           { "text": "ZAINAB HUSSAIN AND YUSUF DEMIR, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.zainab_ko === true && globalVars.yusuf_ko === true" },
           { "text": "ZAINAB HUSSAIN, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.zainab_ko === true && globalVars.yusuf_ko !== true" },
           { "text": "YUSUF DEMIR, WHITEHAT STAFF: KNOCKED OUT BY DAY", "style": "warning", "condition": "globalVars.yusuf_ko === true && globalVars.zainab_ko !== true" },
@@ -640,14 +641,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "puzzle_graph_optional": true
         },
 <%# Office life (SLICE3_4.md): the reception coffee station claims the drawn sprite (no position).
-    useSeconds 19 (preset 12; slice 4 raised it from 17 so the open laptop window lasts 20 s) so a coffee trip is long enough to read as a break. offWhen stops
+    useSeconds 16 (preset 12; raised so the open laptop window lasts over 20 s) so a coffee trip is long enough to read as a break. offWhen stops
     every use once the day staff are upset. zainab_laptop is Zainab's seat object (no preset)
     and, from slice 4, her readable laptop with the screen habit. %>
         {
-          "type": "coffee_station1", "id": "reception_coffee", "name": "Reception Coffee Station", "takeable": false,
+          "type": "coffee_station", "id": "reception_coffee", "name": "Reception Coffee Station", "takeable": false,
           "offWhen": "wh_staff_upset",
           "observations": "A pod machine on the side table, a stack of paper cups beside it.",
-          "affordance": { "useSeconds": 19, "capacity": 2, "chatter": "coffee", "overhearRadius": 360 }
+          "affordance": { "useSeconds": 16, "capacity": 2, "chatter": "coffee", "overhearRadius": 360 }
         },
         {
           "type": "laptop1", "id": "zainab_laptop", "name": "Zainab's Laptop", "takeable": false,
@@ -666,8 +667,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "affordance": { "useFrom": { "dx": -0.75, "dy": -1.06 } },
           "text": "Zainab's working on it.",
           "textVariants": [
-            { "condition": "globalVars.mission_phase === 'act2_infiltration'", "value": "The lid is shut. Zainab has gone home for the night." },
-            { "condition": "globalVars.wh_staff_upset", "value": "The lid is shut. Nobody is working on this laptop right now." },
+            { "condition": "globalVars.mission_phase === 'act2_infiltration'", "value": "The screen is dark. Zainab has gone home for the night." },
+            { "condition": "globalVars.wh_staff_upset", "value": "The screen is dark. Nobody is working on this laptop right now." },
             { "condition": "globalVars.zainab_laptop_screen_locked", "value": "The screen is locked. The lock screen shows a photo of a harbour and a cursor waiting for a password." },
             { "condition": "globalVars.zainab_laptop_owner_away", "value": "Zainab's laptop, left unlocked while she is away.\n\nCALENDAR, THIS WEEK\nMon: Penhallow Dental, wireless survey\nTue: Harcourt Haulage, phishing exercise debrief\nWed: Quayside Surgery, backup restore test\nThu: Marlowe & Pike, firewall rule review\nFri: write up, all of the above\n\nFROM VICTORIA STERLING: \"Client data stays on client kit. Nothing from a site goes on a personal drive, and nothing from a site goes home with you.\"\n\nDRAFT MESSAGE TO THE TEAM, UNSENT: \"Who are the after-hours lot? I keep finding the lights on at eight and nobody will tell me whose they are.\"" }
           ]
@@ -823,7 +824,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "globalVarOnKO": "zainab_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": "zainab_laptop",
-          "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 23, "_comment": "Slice 4: expectedAwayMs follows the start cell, the route and the use time: coffee 20.5 to 21.8 s (stays open), cooler about 24.2 s or more with its 18 s use (locks). 23 sits between them." } },
+          "habits": { "screen": { "lockChance": 1, "lockIfAwayOverSeconds": 24, "_comment": "R1 re-measured (game 6583, 5 trips each): Tiled machines (coffee at 262,189; cooler at 192,-101): coffee (use 16) expectedAwayMs about 18.6 s, real away about 22 s, so the screen stays open for over 20 s; cooler (use 20) expectedAwayMs about 28.7 s, real about 32 s, so it locks. 24 sits 5 s above one and 5 s below the other." } },
           "needsRooms": ["reception_lobby", "main_hallway"],
           "needsCompany": { "groups": ["wh_day_staff"] },
 <%# Slice 5 spoken lines (DIALOGUE_SAMPLE.md, clips 1 to 8 and 17 to 27). Exchanges are heard once; each gate keeps them to the afternoon with all three staff on their feet. %>
@@ -842,13 +843,21 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             "thirst": { "initial": 70, "decayPerMin": 3, "urgentAt": 30 }
           },
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.clone_call_done === true", "setVisible": false },
-            { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.clone_call_done === true", "setVisible": false },
+            { "eventPattern": "objective_task_completed:clone_rfid_card", "setVisible": false },
+            { "eventPattern": "global_variable_changed:mission_phase", "condition": "value === 'act2_infiltration'", "setVisible": false },
+            { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
             { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
+            { "_comment": "R1 mapped breaks (plan section 3). Cooler break: the player coming back from the hallway sends Zainab for water, so the long trip (laptop locks) happens while the player is around. Coffee coupling: Yusuf starting the pod machine brings her.",
+              "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === 'main_hallway' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:reception_coffee", "condition": "data.npcId === 'yusuf_demir' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }
+,
+            { "_comment": "R1: Ffion knocked out by day. The staffer goes back to the post and is held there (a scripted walk suspends needs), so no fight and no walk to an alternative badge route. A staffer already attacked is left to the hostile behaviour.",
+              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.zainab_attacked", "onceOnly": true, "patrolOverride": { "targetTile": { "x": 4.625, "y": 7.5 }, "stopOnArrival": true } },
             { "eventPattern": "npc_caught_at_post:zainab_hussain", "cooldown": 30000, "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset && !globalVars.zainab_ko", "bark": "That's my laptop. Can I help you?" }
           ],
-          "observations": "A WhiteHat analyst on a visitor-room sofa with a laptop on her knee."
+          "observations": "A WhiteHat field service engineer on the visitor-room sofa, her laptop open on the glass table in front of her."
         },
         {
           "id": "yusuf_demir",
@@ -878,13 +887,21 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             "thirst": { "initial": 75, "decayPerMin": 3, "urgentAt": 30 }
           },
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.clone_call_done === true", "setVisible": false },
-            { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.clone_call_done === true", "setVisible": false },
+            { "eventPattern": "objective_task_completed:clone_rfid_card", "setVisible": false },
+            { "eventPattern": "global_variable_changed:mission_phase", "condition": "value === 'act2_infiltration'", "setVisible": false },
+            { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "setVisible": false },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
             { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
+            { "_comment": "R1 mapped breaks (plan section 3). Coffee break: closing the chat with Ffion sends Yusuf for a coffee (Zainab follows, mapping on her). Cooler coupling: Zainab starting the cooler brings him.",
+              "eventPattern": "conversation_closed:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_use_started:hallway_cooler", "condition": "data.npcId === 'zainab_hussain' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } }
+,
+            { "_comment": "R1: Ffion knocked out by day. The staffer goes back to the post and is held there (a scripted walk suspends needs), so no fight and no walk to an alternative badge route. A staffer already attacked is left to the hostile behaviour.",
+              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.yusuf_attacked", "onceOnly": true, "patrolOverride": { "targetTile": { "x": 3.47, "y": 8.38 }, "stopOnArrival": true } },
             { "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && globalVars.clone_call_done !== true && !globalVars.zainab_ko && !globalVars.yusuf_ko", "onceOnly": true, "bark": "Zainab, ring someone. Now." }
           ],
-          "observations": "A WhiteHat engineer in the club chair, waiting on a call."
+          "observations": "A WhiteHat senior consultant in the club chair, waiting for a client who is running late."
         },
         {
           "id": "agent_0x99",
@@ -1350,11 +1367,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
 <%# Office life (SLICE3_4.md): a hit on either day staff member, a KO of one, or Ffion knocked out by
     day sets wh_staff_upset, which switches off the reception coffee station and hallway cooler. Text
     only. Appended last so no saved onceOnly handler index moves. %>
-            { "eventPattern": "npc_attacked:zainab_hussain", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
-            { "eventPattern": "npc_attacked:yusuf_demir", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
+            { "eventPattern": "npc_attacked:zainab_hussain", "onceOnly": true, "setGlobal": { "zainab_attacked": true, "wh_staff_attacked": true, "wh_staff_upset": true } },
+            { "eventPattern": "npc_attacked:yusuf_demir", "onceOnly": true, "setGlobal": { "yusuf_attacked": true, "wh_staff_attacked": true, "wh_staff_upset": true } },
             { "eventPattern": "global_variable_changed:zainab_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
             { "eventPattern": "global_variable_changed:yusuf_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
-            { "eventPattern": "global_variable_changed:receptionist_ko", "condition": "value === true && globalVars.clone_call_done !== true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } }
+            { "_comment": "R1: Ffion knocked out by day (plan section 2). Ffion's own KO at night, with the staff gone home, sets nothing. The send-home mappings on the staff react to the same event; HaX's text and Yusuf's bark are slice 5.",
+              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration'", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true, "wh_staff_upset": true } }
           ]
         },
         {
@@ -1551,9 +1569,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
       },
 <%# Office life (SLICE3_4.md): the hallway water cooler claims the drawn sprite (no position). %>
       "objects": [
-        { "type": "water_cooler1", "id": "hallway_cooler", "name": "Water Cooler", "takeable": false,
+        { "type": "water_cooler", "id": "hallway_cooler", "name": "Water Cooler", "takeable": false,
           "offWhen": "wh_staff_upset",
-          "affordance": { "useSeconds": 18, "overhearRadius": 360 },
+          "affordance": { "useSeconds": 20, "overhearRadius": 360 },
           "observations": "A water cooler by the wall, a stack of paper cones on top." }
       ],
       "npcs": []
@@ -2225,6 +2243,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "cloner_glimpsed": false,
     "cloner_deflection": "",
     "wh_staff_upset": false,
+    "wh_staff_attacked": false,
+    "wh_staff_witnessed": false,
+    "zainab_attacked": false,
+    "yusuf_attacked": false,
     "zainab_ko": false,
     "yusuf_ko": false,
     "heard_ex_open_door": false,
