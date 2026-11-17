@@ -1235,7 +1235,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
   def hideable_scenario
     data = no_on_scenario
     data['startItemsInInventory'][0]['hideable'] = {
-      'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large4_34'],
+      'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large13_34'],
       'device' => 'planted_rogue_ap', 'overlay' => { 'sprite' => 'rogue_ap_tucked' }
     }
     data['rooms']['reception']['objects'] << { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'planter_fig1', 'name' => 'Pot A' }
@@ -1257,7 +1257,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
 
   test 'plant hiding: a hide row that fails, names an excluded or foreign spot, or another item is no plant' do
     data = hideable_scenario
-    [hide_row('pot_a', status: 422), hide_row('reception_plant-large4_34'), hide_row('comms_plant-large6_1'),
+    [hide_row('pot_a', status: 422), hide_row('reception_plant-large13_34'), hide_row('comms_plant-large6_1'),
      hide_row('reception_notes_plantlog1_9'), hide_row('pot_a', item: 'kit_other')].each do |row|
       assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
                    summary(plant_scan([row, served_psk], data: data)), row.inspect

@@ -81,7 +81,16 @@
 
   "startItemsInInventory": [
     { "type": "rogue_ap", "sprite": "rogue_ap", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
-      "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Plant it in reception, then set it up from its console." },
+      "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Hide it in a plant in reception, then set it up from its console.",
+      "hideable": {
+        "rooms": ["reception"],
+        "spots": "plants",
+        "exclude": ["reception_plant-large11-top-ani3_76"],
+        "device": "planted_rogue_ap",
+        "overlay": { "sprite": "rogue_ap_tucked" },
+        "confirm": "Hide the pocket rogue AP in this plant?",
+        "onHidden": [ { "type": "set_global", "key": "ap_planted", "value": true } ]
+      } },
     { "type": "page-builder", "id": "captures_terminal", "name": "Harvested Credentials",
       "sprite": "tablet", "takeable": true,
       "observations": "Your capture tablet: the keys and passwords the test has recorded, each shown in full.",
@@ -125,39 +134,15 @@
       "objects": [
         {
           "type": "pc",
-          "id": "rogue_ap_spot",
-          "name": "Waiting-area planter",
-          "sprite": "rogue_ap_pot",
-          "spriteVariants": [
-            { "condition": "globalVars.ap_planted", "value": "rogue_ap_planted" }
-          ],
-          "position": { "x": 8.5, "y": 3 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "A planter in the waiting area, deep enough to hide a small box behind the leaves.",
-          "requiresItem": "kit_rogue_ap",
-          "requiresItemHint": "You would need the pocket rogue AP in hand to hide it here.",
-          "requiresItemHintVariants": [
-            { "condition": "globalVars.ap_planted", "value": "Your pocket rogue AP is tucked in behind the leaves." }
-          ],
-          "consumesItem": true,
-          "triggerOnInteract": [
-            { "type": "set_global", "key": "ap_planted", "value": true }
-          ]
-        },
-        {
-          "type": "pc",
           "id": "planted_rogue_ap",
           "name": "Planted rogue AP",
           "sprite": "rogue_ap_planted",
-          "position": { "x": 8.5, "y": 3, "elevation": 3 },
+          "hiddenWith": "kit_rogue_ap",
           "takeable": false,
           "interactable": true,
           "active": true,
-          "revealOnGlobal": "ap_planted",
           "wifiTwin": true,
-          "observations": "Your pocket rogue AP, hidden in the planter. Click it to open its console.",
+          "observations": "Your pocket rogue AP, tucked into the plant. Click the plant to open its console.",
           "apScan": [
             { "ssid": "Ledgerwell-Staff", "security": "WPA2", "signal": 4, "clients": 3, "inScope": true,
               "cloneGlobals": { "ap_twin_staff": true, "ap_twin_wrong": false },
@@ -278,7 +263,7 @@
           "currentKnot": "start",
           "eventMappings": [
             { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true", "onceOnly": true,
-              "addCapture": { "targetId": "staff_wifi_key", "roleLabel": "Ledgerwell Ltd, reception", "kind": "credential", "host": "Ledgerwell-Staff, rogue access point", "address": "Ledgerwell-Staff", "secret": "<%= @random_password %>", "note": "Kieran's laptop picked the copy and the Wi-Fi key page took the key (proof: planted).", "proof": { "planted": "kit_rogue_ap", "on": "rogue_ap_spot" } },
+              "addCapture": { "targetId": "staff_wifi_key", "roleLabel": "Ledgerwell Ltd, reception", "kind": "credential", "host": "Ledgerwell-Staff, rogue access point", "address": "Ledgerwell-Staff", "secret": "<%= @random_password %>", "note": "Kieran's laptop picked the copy and the Wi-Fi key page took the key (proof: planted).", "proof": { "planted": "kit_rogue_ap" } },
               "setGlobal": { "kp_twin_captured": true },
               "completeTask": "wireless_harvest" },
             { "eventPattern": "global_variable_changed:kp_twin_captured", "condition": "value === true", "onceOnly": true,
@@ -316,7 +301,7 @@
           "needsDeferMin": 0.5,
           "role": "facilities",
           "creds": { "username": "k.doyle", "password": "Quarry-Beacon-Saffron-59" },
-          "captureProof": [ { "planted": "kit_rogue_ap", "on": "rogue_ap_spot" } ],
+          "captureProof": [ { "planted": "kit_rogue_ap" } ],
           "needs": { "work": { "decayPerMin": 90, "urgentAt": 50, "initial": 40 } },
           "eventMappings": [
             { "eventPattern": "npc_used:kieran_laptop", "condition": "globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true", "onceOnly": true,

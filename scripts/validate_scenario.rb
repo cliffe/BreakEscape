@@ -27,6 +27,7 @@ require_relative 'validate_network'
 require_relative 'validate_capture_log'
 require_relative 'validate_secret_leaks'
 require_relative 'validate_wearable'
+require_relative 'validate_plant_hiding'
 require_relative 'validate_phone_calls'
 require_relative '../lib/break_escape/scenario_schema'
 require_relative '../lib/break_escape/author_notes'
@@ -8666,6 +8667,7 @@ def run_validation(report, erb_path, schema_path, repo_root, options)
   run.call('check_capture_log') { check_capture_log(json_data) }
   run.call('check_secret_leaks') { check_secret_leaks(json_data, erb_path) }
   run.call('check_wearables') { check_wearables(json_data, scenario_dir) }
+  run.call('check_plant_hiding') { check_plant_hiding(json_data, repo_root) }
   run.call('check_phone_calls') { check_phone_calls(json_data, repo_root) }
   run.call('ValidateAccessWork') { ValidateAccessWork.check(json_data) }
   run.call('ValidateOfficeLife') do

@@ -91,14 +91,14 @@ module BreakEscape
       refused('bin_a_missing', 'not_a_spot') # not a scenario object, not a decor shape
       refused('desk_a', 'not_a_spot')         # not a plant
       refused('pot_b', 'not_a_spot')          # hidingSpot false
-      refused('reception_plant-large4_34', 'not_a_spot') # excluded
+      refused('reception_plant-large13_34', 'not_a_spot') # excluded
       refused('comms_pot', 'not_a_spot')      # room not in hideable.rooms
       refused('comms_plant-large6_1', 'not_a_spot') # decor in a room not allowed
       refused('reception_notes_plantlog1_9', 'not_a_spot')
       refused('reception_plant-large-displacement1_9', 'not_a_spot')
       refused('reception_plant-large4_x', 'not_a_spot')
       refused('x' * 129, 'not_a_spot')
-      refused('reception_plant-large4_34 ', 'not_a_spot')
+      refused('reception_plant-large13_34 ', 'not_a_spot')
       refused('reception_plant!_3', 'not_a_spot')
       assert_equal ['kit_rogue_ap'], held_ids
     end

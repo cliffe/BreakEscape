@@ -5,7 +5,7 @@ module HidingScenario
   KIT = { 'type' => 'rogue_ap', 'sprite' => 'rogue_ap', 'id' => 'kit_rogue_ap', 'name' => 'Pocket rogue AP',
           'takeable' => true, 'droppable' => false,
           'hideable' => {
-            'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large4_34'],
+            'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large13_34'],
             'device' => 'planted_rogue_ap',
             'overlay' => { 'sprite' => 'rogue_ap_tucked', 'at' => { 'x' => 50, 'y' => 55 } },
             'onHidden' => [{ 'type' => 'set_global', 'key' => 'ap_planted', 'value' => true }]
