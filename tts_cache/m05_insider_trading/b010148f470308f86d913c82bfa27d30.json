@@ -1,0 +1,13 @@
+{
+  "key": "b010148f470308f86d913c82bfa27d30",
+  "npc": "thandiwe_moyo",
+  "text": "Well, I'm keeping my head down.",
+  "voice": "Pulcherrima",
+  "style": "Quantum Dynamics' office manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T17:40:05Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "bdfda2d0980a5de5a1858fbcf8d8c0c7",
+  "npc": "bernadette_lyons",
+  "text": "You again. Do they pay you overtime?",
+  "voice": "Callirrhoe",
+  "style": "Quantum Dynamics' evening cleaner, in her late 50s, dry, unhurried and kind. Speak with a consistent Dublin accent throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T18:07:29Z"
+}
