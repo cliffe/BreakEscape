@@ -1,0 +1,13 @@
+{
+  "key": "a078be30c380be6fe3f5fd468cf9cec4",
+  "npc": "tunnel_guard",
+  "text": "I watch the floor. I don't read it.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:23:28Z"
+}

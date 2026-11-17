@@ -1,0 +1,13 @@
+{
+  "key": "8d32c6e22e49bfa31993bbd4ae0bca56",
+  "npc": "arakawa",
+  "text": "I've asked Helena PD to keep their cars off that side of town tonight. Nobody asked who for. Nobody will.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:19:37Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "ec1122f8295a2e65c11507655b8c7ff0",
+  "npc": "narrator",
+  "text": "The wipe goes through. Then the room goes: the lights die, the suppression dumps, and somewhere behind the walls the blast doors start to cycle.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:57:45Z"
+}

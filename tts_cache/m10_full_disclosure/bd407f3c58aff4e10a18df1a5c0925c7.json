@@ -1,0 +1,13 @@
+{
+  "key": "bd407f3c58aff4e10a18df1a5c0925c7",
+  "npc": "elena_phone",
+  "text": "The little toggle under the row, painted over. Down. That's their camera on the walkway.",
+  "voice": "Leda",
+  "style": "A grid engineer in her early thirties who helped build an outage believing nobody would be hurt, and turned. Consistent Californian American accent with Mexican-American Spanish inflection throughout -- do not shift to any other accent. Mid-range pitch. Tonight she is on the line from custody: the technical sentences come out steady and fast, the ones about herself do not.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:09:13Z"
+}

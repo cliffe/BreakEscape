@@ -140,7 +140,7 @@ Dr Adrian Tesseract: Take your time. It goes at six whatever we say. Or now, if 
 Dr Adrian Tesseract: Ninety-nine. You've done well with them.
 agent_0x99: Still HaX.
 // R38: the reason first. If he reaches for the key, HaX wants a hand on the feed before anything leaves that console.
-agent_0x99: Get on his box — if anything moves off that console, I want a hand on the feed before it does. He'll keep.
+agent_0x99: Get on his box. If anything moves off that console, I want a hand on the feed before it does. He'll keep.
 ~ core_greeted = true
 ~ tess_menu = true
 -> arrival_menu
@@ -1100,7 +1100,8 @@ Agent 0x5E 'Lantern': Adrian.
 // named on the line (his "Too late to stop her walking in." covers that).
 === wren_react ===
 { not sleeper_caught:
-    agent_0x99: Kowalczyk. I sent her mum flowers. #delivery: the second sentence quietly
+    agent_0x99: Kowalczyk.
+    agent_0x99: I sent her mum flowers. #delivery: quietly
 }
 ->->
 
@@ -1400,6 +1401,8 @@ Narrator: He takes his coat from the back of his chair and holds the service doo
     Dr Adrian Tesseract: Thursday, Agent. Remember.
 - ending == "lethal" or ending == "executed":
     Narrator: He hasn't moved since.
+- ending == "joined":
+    Dr Adrian Tesseract: After you, Agent.
 }
 ~ tess_quiet = true
 #exit_conversation

@@ -23,7 +23,7 @@ VAR merc_seen = false
     Dr. James Mercer: When the fourth submission is declined, somebody does this.
 }
 + [(Back off. Leave him to his console.)]
-    Dr. James Mercer: Sensible. Use it if you must. I'm watching the numbers, not you.
+    Dr. James Mercer: Sensible. Leave me the console and we'll get along. I'm watching the numbers, not you.
     ~ merc_quiet = true
     #exit_conversation
     -> hall

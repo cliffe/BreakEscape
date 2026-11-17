@@ -1,0 +1,13 @@
+{
+  "key": "fcd442dbc850f58b94fbdac20c567a87",
+  "npc": "vance_phone",
+  "text": "Turn the key a quarter right and leave it. That takes the row off their board. It's ours now, not theirs.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Tonight he is on a phone line from Teesside, talking an agent through 1960s switchgear he has never seen.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:08:14Z"
+}

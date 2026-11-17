@@ -1,0 +1,13 @@
+{
+  "key": "de92b00fe943b874d583e1b8672f0163",
+  "npc": "background_agent",
+  "text": "Went through to the lab for the stapler. Just gone twenty past ten, half past at the latest.",
+  "voice": "Puck",
+  "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:47:31Z"
+}

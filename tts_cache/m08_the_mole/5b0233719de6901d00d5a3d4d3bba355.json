@@ -1,0 +1,13 @@
+{
+  "key": "5b0233719de6901d00d5a3d4d3bba355",
+  "npc": "background_agent",
+  "text": "You didn't hear it from me. Two days before Portland I was in here from before eight.",
+  "voice": "Puck",
+  "style": "An off-duty SAFETYNET agent in his forties pretending to read while eavesdropping on everyone. Consistent Geordie (Newcastle) accent throughout -- do not shift to any other accent. Low, conspiratorial pitch; unhurried pace. Gossipy and paranoid, enjoying the drama a little too much.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:47:26Z"
+}

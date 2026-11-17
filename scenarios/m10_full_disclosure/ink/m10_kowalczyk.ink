@@ -262,7 +262,7 @@ Agent 0x5E 'Lantern': Well. It was a good cracker. #delivery: flat on the first 
     Narrator: Arakawa looks away.
 }
 Agent 0x5E 'Lantern': When did you know?
-+ {clue_bench_log} [At the bench log. Then your name on the sign-out sheet.]
++ {clue_bench_log} [When the cloner turned up in our case. Then your name on the sheet.]
     ~ kowalczyk_answer = "bench"
 + [At the briefing. You laughed too easily.]
     ~ kowalczyk_answer = "briefing"

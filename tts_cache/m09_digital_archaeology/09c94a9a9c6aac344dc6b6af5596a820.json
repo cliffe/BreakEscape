@@ -1,0 +1,13 @@
+{
+  "key": "09c94a9a9c6aac344dc6b6af5596a820",
+  "npc": "old_coyote",
+  "text": "I'm paid to walk the fence. Nobody pays me to look in the cage.",
+  "voice": "Rasalgethi",
+  "style": "Night guard in his twenties from Lodge Grass, Montana, Crow (Apsaalooke). Consistent rural Montana American accent throughout -- do not shift to any other accent. Easy, dry, a little bored; sharp when treated as furniture. An ordinary young man, not a mystic and not a stoic.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:13Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "36633747b739405377fdf958b6de697f",
+  "npc": "archive_guard",
+  "text": "Dillard, Statewide Security. Stay where you are.",
+  "voice": "Algieba",
+  "style": "Contract security guard in his fifties, an ex-sheriff's deputy from Montana. Consistent Western American accent throughout -- do not shift to any other accent. Heavy, slow, bored; in it for the overtime.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:25Z"
+}
