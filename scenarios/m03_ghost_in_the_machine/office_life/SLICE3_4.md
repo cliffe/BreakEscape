@@ -62,3 +62,7 @@ Live (port 3091, own games 6507, 6513, 6521, 6531; needs set with `__test.needs.
 NOT proven: the text of each variant (my DOM scrape in game 6531 hit a password modal; capture at `interactions.js:2132` by wrapping `window.gameDisplay`), no note added on a read, trouble and night variants, paired Yusuf trips, the player reaching the laptop from the south side. Probe scripts live in the old scratchpad (`p/lib.mjs`, `trip.mjs`, `read.mjs`).
 Oddity, not touched: object `reception_coffee` reads at (91,152) while the Tiled coffee sprite is at (262,189); coffee trips use the former.
 Server on 3091 stopped.
+
+## R1 fix numbers (supersede the figures above)
+
+Coffee use 16 s, cooler use 20 s, threshold 24 s, on the Tiled machines. Game 6583: coffee expectedAwayMs 18626, real away 22.0 to 22.4 s, 5 of 5 open; cooler expectedAwayMs 28724, real 32.2 to 33.0 s (50.9 to 58.5 s when Yusuf joined), 5 of 5 locked. See M03_SLICES3_4_REVIEW_R1.md for the fix log.

@@ -105,3 +105,24 @@ Live checks after the fix, the laptop read in the browser (each variant, and no 
 ## Verdict
 
 Not ready. Finding 1 is a blocker: change both types to the base names (`coffee_station`, `water_cooler`), confirm one sprite each at the Tiled spots, then redo the slice 3 and 4 measurements and pick the threshold from the new figures (finding 2). Decide findings 3 and 4 against the plan, or record the deviations, and keep the branch off main until the placeholder ink is replaced.
+
+## Fix log (branch fix/ol-m03-r1)
+
+Live runs on :3094, games 6583 (trips), 6587 and 6589 (mapped breaks and hide), setFPS(20), fixed steps on.
+
+| # | Status | What was done |
+|---|---|---|
+| 1 | fixed | Types are `coffee_station` and `water_cooler`; one Tiled sprite each (game 6561, two loads). |
+| 2 | fixed | Re-measured on the Tiled machines. Coffee use 16 s, cooler use 20 s, threshold 24 s. Game 6583, player parked at (157,253), clear of the door lane: coffee expectedAwayMs 18626 in 5 of 5, real away 22.0 to 22.4 s, 5 of 5 left the laptop open (margin 5.4 s below the threshold). Cooler expectedAwayMs 28724, real 32.2 to 33.0 s on three clean trips, 50.9 and 58.5 s when Yusuf joined, 5 of 5 locked (margin 4.7 s above). Both margins exceed the 3 s target, so no further retune. |
+| 3 | fixed | Mappings on `clone_rfid_card`, `mission_phase` act2 and `clone_call_done`, plus `onceOnly` night re-hides. Game 6589: staff visible before the clone, both hidden once the phase turned and before any hallway entry, still hidden after a reload, after the night scene on re-entering reception, and after a reload at night. |
+| 4 | fixed | Mapped breaks built. Game 6589: closing the chat with Ffion sent Yusuf to the coffee (left post 2.9 s later) and Zainab followed, laptop open; coming back from the hallway sent Zainab to the cooler (use started, laptop locked), Yusuf followed. |
+| 5 | left to slice 5 | Placeholder ink is theirs on another branch; do not merge this branch to main before it lands. |
+| 6 | fixed | Night re-hides are `onceOnly`. |
+| 7 | fixed, send-home partly proved | `zainab_attacked`, `yusuf_attacked`, `wh_staff_attacked`, `wh_staff_witnessed` declared and set; Ffion KO by day sets upset and witnessed (game 6589). Send-home `patrolOverride` fired: Zainab moved (148,241) to (148,221) and Yusuf (111,268) to (106,249) after the KO, and both stayed idle and visible. I did not confirm the exact destination tile against the mapping, so treat the destination as unproved. Barks and HaX text left to slice 5. |
+| 8 | fixed | Coffee capacity 2 on the object. |
+| 9 | fixed | Credits line reads "SOMEONE STRUCK IN RECEPTION BY DAY", with a witnessed line. |
+| 10 | fixed | Observations match plan section 2. |
+| 11 | deferred | Text now says the screen is dark; closed-lid art not generated (low priority). |
+| 12 | explained | See below. |
+
+Validator (0 errors): one new warning against the base, `npc_ko:ffion_rees` on `agent_0x99`, onceOnly handlers at indices 6 and 59. Index 6 is the day "Sterling will notice" timed message and 59 sets `wh_staff_witnessed` and `wh_staff_upset`. Both run on the same day condition by design and do different things, each firing once. Index 7 is the night variant and is disjoint by `mission_phase`. The validator text says to ignore the warning when firing together is intended, so it is left.

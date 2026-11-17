@@ -19,3 +19,6 @@ Worktree .claude/worktrees/p-ol-m03-r1, branch fix/ol-m03-r1. Scratch dir: /tmp/
 5. Fix log at the end of M03_SLICES3_4_REVIEW_R1.md; update SLICE3_4.md numbers; report. Remove the node_modules symlink at the end.
 
 Gotchas: never pkill -f or kill via a ps|grep pipeline whose pattern is in the same command (it killed my shell twice); tools/playtest/*-flags-game*.xml: older ones are tracked, never rm the glob. Server on 3094 stopped.
+
+## Status (end of fix pass)
+Steps 1 to 3 done and logged in M03_SLICES3_4_REVIEW_R1.md. Remaining after this commit: merge main, bin/test-js, Rails suite.
