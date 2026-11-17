@@ -111,6 +111,28 @@ function seatedChairBodies() {
     return chairs.filter(c => c && !c.destroyed && c.seatedBy && c.body?.enable && c.body.immovable).map(c => c.body);
 }
 
+/**
+ * Bodies a per-search avoid set treats as seated: the seated chairs, plus the body of every NPC
+ * that is seated (behavior._seat, held immovable). A seated NPC's chair is normally in
+ * window.chairs, but a room whose chairs are not there (m05 break room, game 7430) left the
+ * sitter invisible: the world grid is built while it still walked, so planned paths ran through
+ * it and relied on the bump. An NPC body already overlapping a listed chair is skipped (the chair
+ * covers it). Only the per-search avoid and goal snap use this; the world grid keeps chairs only.
+ */
+function seatedAvoidBodies() {
+    const out = seatedChairBodies();
+    const mgr = (typeof window !== 'undefined') ? window.npcBehaviorManager : null;
+    if (!mgr?.behaviors?.values) return out;
+    const chairs = out.slice();
+    for (const beh of mgr.behaviors.values()) {
+        const b = beh?._seat ? beh.sprite?.body : null;
+        if (!b || !b.enable || !b.immovable || beh.sprite.destroyed) continue;
+        if (chairs.some(c => b.left < c.right && b.right > c.left && b.top < c.bottom && b.bottom > c.top)) continue;
+        out.push(b);
+    }
+    return out;
+}
+
 function isDebug() {
     return !!window.pathfindingDebug;
 }
@@ -606,7 +628,7 @@ export class NPCPathfindingManager {
         // which EasyStar's no-corner-cutting test ignores, so a diagonal step past the padding
         // still works as it did before the conditions (R2 m2). opts.keepSeated: chair bodies
         // the walk may end in (the seat being walked to).
-        const seatCells = opts?.ignoreSeated ? [] : seatedAvoidCells(seatedChairBodies(), this.worldGridBounds,
+        const seatCells = opts?.ignoreSeated ? [] : seatedAvoidCells(seatedAvoidBodies(), this.worldGridBounds,
             this.worldGrid, [{ x: startX, y: startY }, { x: endX, y: endY }], { keep: opts?.keepSeated || [] });
         const probe = { touched: false };
         let padCosted = false;
@@ -737,7 +759,7 @@ export class NPCPathfindingManager {
         const centerCY = Math.floor((worldY - minY) / step);
         // avoidSeated: the live grid leaves seated chairs out, so a goal snap marks their cells
         // blocked itself and moves a goal off someone's seat (sims tidy R1 m3)
-        const seated = avoidSeated ? seatedBodyCellKeys(seatedChairBodies(), this.worldGridBounds) : null;
+        const seated = avoidSeated ? seatedBodyCellKeys(seatedAvoidBodies(), this.worldGridBounds) : null;
         const open = (cx, cy) => this.worldGrid[cy][cx] === 0 && !(seated && seated.has(`${cx},${cy}`));
 
         if (centerCY >= 0 && centerCY < rows && centerCX >= 0 && centerCX < cols &&
