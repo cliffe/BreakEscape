@@ -186,3 +186,25 @@ Open, in order:
 Gotchas: Edit tool trims a trailing space in old_string (broke a test name once, fixed); K3d's GET
 /keyring writes keyringGained, so "GET writes nothing" tests must except that key; flag-station and
 password minigames no longer import LOCK_SCOPE_REFUSAL_TEXT.
+
+## Run 5 (2026-11-17): token tests, Sign-ins row, screen states. START HERE
+Commits: c79803b09 (keyring-token.test.mjs; fix: an `unchanged` answer with no map re-applied the cached
+full answer's stale expiresInS, resetting the countdown), a follow-up (keyringForScreen passes
+`route.foothold`, not `from ? null : foothold`), the Sign-ins token row commit, c9d864f91 (password screen).
+Integrator decision logged in the build log: while the capture log is open a token row's minutes redraw
+each minute from the client's own timer (no GET), as the taskbar's 60 s step; the timer stops on close.
+Done: step 1 tests (test/js/keyring-token.test.mjs, 17 tests); step 2 (remote-host-text `tokenUseLine`,
+`tokenTimeLeftLine`, `tokenMinutesLeft`; signin-rows `linkNames` + keyring `tokenSecondsLeft`, `row.timed`,
+DOM `data-timed`; capture-log-model `linkNames(items)`; capture-log-minigame `TOKEN_ROW_REFRESH_MS` interval,
+`tickTokens()`, cleared in cleanup; signin-rows.test.mjs:210 filled, capture-log.test.mjs K5 test);
+step 3 (password-minigame `expired` on creds, greyed line, no post, 422 expired greys; pc-sessions
+`credentialRefusalReason` b.expired -> 'expired'). Mutation checks: screen filter, foothold pass, stale
+time fix, capture-log timer clear: all caught.
+Open, in order: pc-sessions timer (`noteTokenExpiry`, `tokenSecondsLeft`, expiresAt from login answer and
+load(), per-PC timer -> linkDropped token_expired with tokenExpiredEndedMessage; texts copied import-free +
+a test keeping them equal to remote-host-text); `tokenExpiredPcIds` in network-links.js:~588 and
+npc-workarounds.js:~359; pc-taskbar token line (reuse the rounding: "with a session token, about {n} min
+left" / "under a minute left") + container-minigame 60 s refresh and 403 expired; signin-fit token bar and
+row; PLAYTEST R12 text; full bin/test-js (heap rules in the brief) and full bin/rails test (not run in run 5;
+the related 8 JS files pass).
+Gotcha: a mutation run that hangs node leaves the mutated file in place; restore it before anything else.
