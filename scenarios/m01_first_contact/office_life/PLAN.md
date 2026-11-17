@@ -127,7 +127,7 @@ Graham is the same shape: `graham_whitfield`, position (7.31, 4.89) east at `gra
 ```json
 { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
   "condition": "!globalVars.fatima_ko && !globalVars.entropy_reveal_read",
-  "bark": "Morning. Mind the cables by the door." }
+  "bark": "Morning. Busy week." }
 ```
 
 Graham's bark uses `condition: "data.previousRoom !== 'reception_area' && !globalVars.graham_ko && !globalVars.entropy_reveal_read"` so it fires on the first return to the office from elsewhere, not on the first entry, when HaX's call rings (6 s delay, :763-769) and Fatima has just spoken. Both are scenario data only; text in SPOKEN_LINES.md.
@@ -162,7 +162,7 @@ Both cower like Maya (the `hostile` block above). Music switching to the threat 
 { "eventPattern": "npc_attacked:fatima_begum", "onceOnly": true,
   "sendTimedMessage": { "delay": 1500, "message": "Stand down, Agent. She runs recruitment. She's not part of this." } }
 { "eventPattern": "npc_attacked:graham_whitfield", "onceOnly": true,
-  "sendTimedMessage": { "delay": 1500, "message": "That's an accountant, Agent. Not a target. Stand down." } }
+  "sendTimedMessage": { "delay": 1500, "message": "He's in finance, Agent. Nothing to do with this. Stand down." } }
 ```
 
 These follow the Maya format (:701-715) and are not voiced. Tier 2 adds `setGlobal` mappings so `m01_staff_alarmed` turns on from either `npc_attacked` or `global_variable_changed:derek_fight_triggered`.
@@ -221,7 +221,7 @@ Per NPC additions:
   "work":   { "decayPerMin": 30, "urgentAt": 70, "initial": 60 },
   "thirst": { "decayPerMin": 3, "urgentAt": 30, "initial": 70 }
 },
-"chatter": { "cooler": [ "Three interviews this afternoon. Three!", "Every CV says 'passionate' now.", "Locked my screen before I came over.", "Is it me, or is the heating on full?" ] },
+"chatter": { "cooler": [ "Three interviews today. Three!", "Every CV says 'passionate' now.", "Locked my screen before I came over.", "Is it me, or is the heating on full?" ] },
 "exchanges": [
   { "with": "graham_whitfield", "knot": "ex_interns",   "requireGlobal": { "fatima_ko": false, "graham_ko": false } },
   { "with": "graham_whitfield", "knot": "ex_biscuits", "requireGlobal": { "fatima_ko": false, "graham_ko": false } }
@@ -412,6 +412,7 @@ No question is open.
 - The cooler's aisle path is checked in the dressing render; `useFrom` is the only fallback lever.
 - The m01, sis01 and sis02 gate playtests run again before release, and the deploy gate stays closed until the user lifts it.
 - Maya's Derek topics away from her post are handled by the `maya_away` guard and the `maya_settled` hold (4.9). Accepted: a player just inside her office doorway can talk to her in the hall across the open door and get the full hub, with nobody else in earshot. Away from her office, `not_here` opens with her existing "Is it safe to talk?" (the cached clip), so no stale Derek line is re-displayed above the "Not here" choice. If any change to her ink is ruled out, the fallback is to drop 4.9 (D88 c), not to accept the leak.
+- Maya's `no_source` park (she waits when the main office has not loaded) cannot happen in normal play, because her office is reached only through the main office. Only a start-room test or a debug head start (`--start-room maya_office`) can reach it.
 - Not yet checked: whether hallway_east's motion lighting (:1702) reacts to Maya walking through.
 
 ## 12. Lab sheet

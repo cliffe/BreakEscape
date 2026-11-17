@@ -14,7 +14,7 @@ Maya: no new spoken lines. Her short trip to the cooler is silent; any line she 
 
 | # | Speaker | Trigger | Condition | Text | Chars |
 |---|---|---|---|---|---|
-| 1 | fatima_begum | `room_entered:main_office_area`, onceOnly, delayMs 2000 | `!globalVars.fatima_ko && !globalVars.entropy_reveal_read` | Morning. Mind the cables by the door. | 37 |
+| 1 | fatima_begum | `room_entered:main_office_area`, onceOnly, delayMs 2000 | `!globalVars.fatima_ko && !globalVars.entropy_reveal_read` | Morning. Busy week. | 19 |
 | 2 | graham_whitfield | `room_entered:main_office_area`, onceOnly, delayMs 2000 | `data.previousRoom !== 'reception_area' && !globalVars.graham_ko && !globalVars.entropy_reveal_read` | Lost? This floor took me a month. | 33 |
 
 Graham speaks on the first return from another room, not the first entry, so he does not talk over Fatima or HaX's first call (6 s after first entry).
@@ -23,19 +23,19 @@ Graham speaks on the first return from another room, not the first entry, so he 
 
 | # | Speaker | Trigger | Text | Chars |
 |---|---|---|---|---|
-| 3 | fatima_begum | `start` knot, first line | Sorry, I've a candidate on a video call in five minutes. | 56 |
+| 3 | fatima_begum | `start` knot, first line | Sorry, I'm halfway through a candidate's file. | 46 |
 | 4 | fatima_begum | `start` knot, after the choice | If it's the network, I only press the buttons. Nice to meet you. | 64 |
 | 5 | graham_whitfield | `start` knot, first line | Graham, finance. If it's about expenses, I'm not in. | 52 |
 | 6 | graham_whitfield | `start` knot, after the choice | Only joking. Not that I know much about computers, mind. | 56 |
 
-Player choices (not voiced): Fatima, "Let her get on". Graham, "Leave him to his figures".
+Player choices (not voiced): Fatima, "Don't let me keep you." Graham, "I'll leave you to it."
 
 ### Not voiced (text only)
 
 HaX attacked texts, credits lines and observations are text on screen, not clips:
 
 - "Stand down, Agent. She runs recruitment. She's not part of this." (64)
-- "That's an accountant, Agent. Not a target. Stand down." (54)
+- "He's in finance, Agent. Nothing to do with this. Stand down." (60)
 - Credits: "FATIMA BEGUM: Bystander knocked out, no ENTROPY connection" (58); "GRAHAM WHITFIELD: Bystander knocked out, no ENTROPY connection" (62)
 
 Tier 1 clip count: **6**.
@@ -46,11 +46,11 @@ Tier 1 clip count: **6**.
 
 | # | Speaker | Text | Chars |
 |---|---|---|---|
-| 7 | fatima_begum | Three interviews this afternoon. Three! | 39 |
+| 7 | fatima_begum | Three interviews today. Three! | 30 |
 | 8 | fatima_begum | Every CV says 'passionate' now. | 31 |
 | 9 | fatima_begum | Locked my screen before I came over. | 36 |
 | 10 | fatima_begum | Is it me, or is the heating on full? | 36 |
-| 11 | graham_whitfield | Quarter close. I dream in spreadsheets. | 39 |
+| 11 | graham_whitfield | Quarter close. Nobody speak to me. | 34 |
 | 12 | graham_whitfield | Nobody reads the expenses policy. | 33 |
 | 13 | graham_whitfield | Thirty years and still no decent mug. | 37 |
 | 14 | graham_whitfield | My grandson set up my phone again. | 34 |

@@ -6,7 +6,7 @@ How the new lines sound in play. Bracketed lines are stage directions, not spoke
 
 [The player takes the key from Sarah and steps into the main office. Two seconds later Fatima, seated at the west desk, glances up from her screen.]
 
-**Fatima:** Morning. Mind the cables by the door.
+**Fatima:** Morning. Busy week.
 
 [Typing carries on behind her. Four seconds later HaX's first call rings.]
 
@@ -16,7 +16,7 @@ How the new lines sound in play. Bracketed lines are stage directions, not spoke
 
 **Graham:** Graham, finance. If it's about expenses, I'm not in.
 
-> Choice: Leave him to his figures
+> Choice: I'll leave you to it.
 
 **Graham:** Only joking. Not that I know much about computers, mind.
 
@@ -24,9 +24,9 @@ How the new lines sound in play. Bracketed lines are stage directions, not spoke
 
 Fatima's version:
 
-**Fatima:** Sorry, I've a candidate on a video call in five minutes.
+**Fatima:** Sorry, I'm halfway through a candidate's file.
 
-> Choice: Let her get on
+> Choice: Don't let me keep you.
 
 **Fatima:** If it's the network, I only press the buttons. Nice to meet you.
 
@@ -38,7 +38,7 @@ Fatima's version:
 
 [Graham follows a few seconds later.]
 
-**Graham:** Quarter close. I dream in spreadsheets.
+**Graham:** Quarter close. Nobody speak to me.
 
 [Heard once, if both are at the cooler together.]
 
