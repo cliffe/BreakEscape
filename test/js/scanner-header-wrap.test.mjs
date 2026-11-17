@@ -37,3 +37,13 @@ test('no font downscaling and no radius on the count chip', () => {
     assert.doesNotMatch(b, /border-radius/);
     assert.match(b, /font-size:\s*12px/);
 });
+test('the label beside the icon grows so only the count chip wraps', () => {
+    const b = body(panel, '.scanner-panel .scan-title > img + span');
+    assert.match(b, /flex:\s*1 1 0/);
+    assert.match(b, /min-width:\s*6em/);
+});
+test('count chip has a steady width', () => {
+    const b = body(bio, '.samples-count-header');
+    assert.match(b, /min-width:\s*10ch/);
+    assert.match(b, /text-align:\s*center/);
+});

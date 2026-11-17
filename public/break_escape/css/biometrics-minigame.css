@@ -114,6 +114,8 @@
     border: 2px solid #4caf50;
     white-space: nowrap;
     flex: 0 0 auto;
+    min-width: 10ch;
+    text-align: center;
 }
 
 .scanner-icon {

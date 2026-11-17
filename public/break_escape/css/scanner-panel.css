@@ -110,6 +110,12 @@
     text-shadow: none;
 }
 
+.scanner-panel .scan-title > img + span {
+    /* the label stays beside the icon; only the count chip wraps below */
+    flex: 1 1 0;
+    min-width: 6em;
+}
+
 .scanner-panel .scan-icon {
     height: 24px;
     image-rendering: pixelated;
