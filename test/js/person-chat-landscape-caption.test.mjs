@@ -81,6 +81,7 @@ test('the More below cue: base rule lies over the foot at any width, ignores tap
     // stops short of the caption's 14px scrollbar gutter so the track stays visible
     assert.match(b, /left:\s*14px/);
     assert.match(b, /right:\s*14px/);
+    assert.match(b, /width:\s*auto/); // the plain .person-chat-more rule's width:100% would push it past the right edge
     const l = L('.person-chat-more:not([hidden])');
     assert.match(l, /left:\s*0/);
     assert.match(l, /right:\s*auto/);
