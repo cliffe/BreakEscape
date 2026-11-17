@@ -37,15 +37,21 @@ export function isPlantKey(key) {
 }
 
 // Per-family anchors in per cent of the plant's display box (where the overlay's bottom
-// centre sits). PLACEHOLDER values: step H3 measures them from the art at 6x. Longest
-// prefix wins.
+// centre sits), measured from each family's art in step H3: x is the pot's centre column, y is
+// three pixels below the rim so the box sits in the soil in front of the stems. Longest prefix
+// wins. The small plants (plant-large1 to 10, plant-flat-pot, office-misc-smallplant) have no
+// entry: their pots are narrower than the 12 px device, so they take the item's overlay.at or
+// the default until a smaller device sprite exists.
 export const PLANT_ANCHORS = {
-    'plant-flat-pot': { x: 50, y: 60 },
-    'plant-large11-top-ani': { x: 50, y: 60 },
-    'plant-large12-top-ani': { x: 50, y: 60 },
-    'plant-large': { x: 50, y: 60 },
-    'planter_fig1': { x: 50, y: 60 },
-    'office-misc-smallplant': { x: 50, y: 60 }
+    'plant-large11-top-ani': { x: 50, y: 83 },
+    'plant-large11': { x: 50, y: 82 },
+    'plant-large12-top-ani': { x: 53, y: 83 },
+    'plant-large12': { x: 56, y: 80 },
+    'plant-large13-top-ani': { x: 52, y: 76 },
+    'plant-large13': { x: 50, y: 76 },
+    'planter-fig1-top-ani': { x: 50, y: 70 },
+    'planter_fig1': { x: 52, y: 70 },
+    'fig_plant': { x: 50, y: 73 }
 };
 export const DEFAULT_ANCHOR = { x: 50, y: 60 };
 

@@ -20,7 +20,7 @@ process.on('exit', () => rmSync(dir, { recursive: true, force: true }));
 writeFileSync(join(dir, 'plant-hiding.mjs'), readFileSync(join(js, 'systems/plant-hiding.js'), 'utf8'));
 globalThis.window = globalThis;
 const mod = await import(pathToFileURL(join(dir, 'plant-hiding.mjs')).href);
-const { PlantHiding, isPlantKey, anchorPercent, anchorPoint, topLeft, PLANT_PREFIXES, PLANT_NEVER } = mod;
+const { PlantHiding, isPlantKey, anchorPercent, anchorPoint, topLeft, PLANT_PREFIXES, PLANT_NEVER, PLANT_ANCHORS } = mod;
 
 const src = (p) => readFileSync(join(js, p), 'utf8');
 
@@ -316,7 +316,8 @@ test('success: one POST, tray item removed with no second request, onHidden once
     assert.equal(ov.originX, 0.5);
     assert.equal(ov.originY, 1);
     assert.ok(w.p77._fadeCompanions.has(ov));
-    assert.deepEqual([ov.x, ov.y], [100 + 20, 200 + 30]);
+    const at = PLANT_ANCHORS['plant-large12-top-ani'];
+    assert.deepEqual([ov.x, ov.y], [100 + Math.round(at.x / 100 * 40), 200 + Math.round(at.y / 100 * 50)]);
     const names = w.emitted.map(e => e[0]);
     assert.deepEqual(names.filter(n => n.startsWith('device_hidden')), ['device_hidden', `device_hidden:${KIT}`]);
     assert.deepEqual(w.emitted.find(e => e[0] === 'device_hidden')[1], { itemId: KIT, spotId: SPOT, roomId: 'reception', deviceId: 'planted_rogue_ap' });
@@ -459,4 +460,19 @@ test('rooms.js skips hiddenWith objects and calls syncRoom; game.js loads and sy
 test('the bridge reads hiddenDevices and maps a device id to its host before interact', () => {
     assert.match(src('systems/test-bridge/access.js'), /hiddenDevices\(\) \{\s+const mod = window\.plantHiding;/);
     assert.match(src('systems/test-bridge/index.js'), /id = window\.plantHiding\?\.spotForDevice\?\.\(id\) \|\| id;/);
+});
+
+test('the measured table anchors every animated large family and stays inside the plant box', () => {
+    for (const k of ['plant-large11-top-ani', 'plant-large12-top-ani', 'plant-large13-top-ani', 'planter-fig1-top-ani', 'planter_fig1', 'fig_plant']) {
+        const a = PLANT_ANCHORS[k];
+        assert.ok(a, k);
+        assert.ok(a.x > 0 && a.x < 100 && a.y > 50 && a.y < 100, k);
+    }
+    const h = decor(fakeScene(), 'plant-large12-top-ani3', 78);
+    assert.deepEqual(anchorPercent(h, 'x', {}), PLANT_ANCHORS['plant-large12-top-ani']);
+});
+
+test('the tucked overlay art is on disk and preloaded', () => {
+    assert.ok(readFileSync(join(js, '../assets/objects/rogue_ap_tucked.png')).length > 50);
+    assert.match(src('core/game.js'), /this\.load\.image\('rogue_ap_tucked', 'objects\/rogue_ap_tucked\.png'\)/);
 });

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="676" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="677" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -2028,5 +2028,8 @@
  </tile>
  <tile id="685">
   <image source="../objects/rogue_ap_pot.png" width="16" height="16"/>
+ </tile>
+ <tile id="686">
+  <image source="../objects/rogue_ap_tucked.png" width="12" height="10"/>
  </tile>
 </tileset>
