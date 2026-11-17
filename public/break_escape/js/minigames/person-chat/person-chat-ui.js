@@ -14,7 +14,7 @@
 import PersonChatPortraits from './person-chat-portraits.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
-import { cameraViewFor } from './person-chat-camera.js';
+import { cameraViewFor, phonePortraitSize, PHONE_FRAME_PX } from './person-chat-camera.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
 export const MORE_BELOW_TEXT = 'More below';
@@ -100,6 +100,10 @@ export default class PersonChatUI {
 
             // Add to container
             this.container.appendChild(this.elements.root);
+
+            // Size the phone portrait now the box is attached and has a height (the observer path
+            // also runs, but browsers without ResizeObserver would otherwise wait for a resize)
+            this.updatePortraitHeight();
 
             // Initialize portrait renderer
             this.initializePortrait();
@@ -213,14 +217,19 @@ export default class PersonChatUI {
         mainContent.appendChild(moreBelow);
         this.elements.moreBelow = moreBelow;
         this._onCaptionChange = () => this.updateScrollCue();
+        // On a phone the portrait's height comes from the box, not the caption (see updatePortraitHeight)
+        this._onBoxChange = () => this.updatePortraitHeight();
+        // The ResizeObserver below covers the box; the window listener is only the fallback without one.
+        if (typeof ResizeObserver !== 'function' && typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', this._onBoxChange);
         captionArea.addEventListener('scroll', this._onCaptionChange);
         if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('resize', this._onCaptionChange);
         if (typeof ResizeObserver === 'function') {
             this._captionObserver = new ResizeObserver(this._onCaptionChange);
             this._captionObserver.observe(captionContent);
             this._captionObserver.observe(captionArea);
+            this._boxObserver = new ResizeObserver(this._onBoxChange);
+            this._boxObserver.observe(mainContent);
         }
-
         this.elements.mainContent = mainContent;
         this.elements.portraitSection = portraitSection;
         this.elements.portraitContainer = portraitContainer;
@@ -261,6 +270,7 @@ export default class PersonChatUI {
             // background before the view zooms to the NPC.
             this.portraitRenderer._characterHidden = true;
             this.portraitRenderer._holdingForContent = true;
+            this.applyPhoneScale();
             this.portraitRenderer.init();
             
             console.log('✅ Portrait initialized');
@@ -702,6 +712,39 @@ export default class PersonChatUI {
      * portrait renderers (including the video-call PiP) release their resize listeners / rAF loops.
      */
     /** Show "More below" while the caption runs past its bottom edge; hide it at the end. */
+    /**
+     * Phone width: set --pc-portrait-h, the portrait section's height, from the chat box and
+     * the device pixel ratio (phonePortraitSize), so the pixel scale is one for the whole
+     * conversation and changes only when the viewport does. Wider screens leave it unset.
+     */
+    updatePortraitHeight() {
+        const main = this.elements && this.elements.mainContent;
+        const sec = this.elements && this.elements.portraitSection;
+        if (!main || !sec) return;
+        const phone = typeof window !== 'undefined' && window.innerWidth <= 600;
+        const h = main.getBoundingClientRect().height;
+        if (!phone || !(h > 0)) {
+            main.style.removeProperty('--pc-portrait-h');
+            this._phoneFrameCanvasPx = null;
+            this.applyPhoneScale();
+            return;
+        }
+        const dpr = window.devicePixelRatio || 1;
+        const { scale, cssHeight } = phonePortraitSize(h, dpr);
+        // On the main box so the portrait section (its min-height) and the caption (its
+        // max-height) both read it
+        main.style.setProperty('--pc-portrait-h', cssHeight + 'px');
+        this._phoneFrameCanvasPx = scale * PHONE_FRAME_PX;
+        this.applyPhoneScale();
+    }
+
+    /** Hand the viewport's portrait height (canvas px) to the portrait renderer, or clear it off phones. */
+    applyPhoneScale() {
+        if (this.portraitRenderer && typeof this.portraitRenderer.setFixedHeight === 'function') {
+            this.portraitRenderer.setFixedHeight(this._phoneFrameCanvasPx || null);
+        }
+    }
+
     updateScrollCue() {
         const area = this.elements?.captionArea;
         const more = this.elements?.moreBelow;
@@ -712,6 +755,8 @@ export default class PersonChatUI {
     }
 
     destroy() {
+        if (this._boxObserver) { this._boxObserver.disconnect(); this._boxObserver = null; }
+        if (this._onBoxChange && typeof window !== 'undefined' && window.removeEventListener) window.removeEventListener('resize', this._onBoxChange);
         if (this._captionObserver) {
             this._captionObserver.disconnect();
             this._captionObserver = null;
