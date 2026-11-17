@@ -260,18 +260,19 @@ flowchart TD
   rc_npc_ama_owusu_6("Ama Owusu")
   rc_npc_ama_owusu_7("Ama Owusu")
   rc_npc_delphine_arvanitis_8("Delphine Arvanitis")
-  rc_desk_thandiwe_9{"Thandiwe's desk"}
-  rc_chair_thandiwe_10{"Thandiwe's chair"}
-  rc_desk_yasmin_11{"Yasmin's desk"}
-  rc_chair_yasmin_12{"Yasmin's chair"}
-  rc_rota_board_13{"Coffee rota"}
-  rc_npc_thandiwe_moyo_14("Thandiwe Moyo")
-  rc_npc_yasmin_chaudhry_15("Yasmin Chaudhry")
-  rc_npc_lorna_easton_16("Lorna Easton")
-  rc_coffee_station_17{"Coffee station"}
-  rc_sign_kitchen_18{"Sign: coffee"}
-  rc_npc_julian_sallow_19("Julian Sallow")
-  rc_julian_pc_20{"Julian's PC"}
+  rc_plan_chest_9{"Plan chest"}
+  rc_desk_thandiwe_10{"Thandiwe's desk"}
+  rc_chair_thandiwe_11{"Thandiwe's chair"}
+  rc_desk_yasmin_12{"Yasmin's desk"}
+  rc_chair_yasmin_13{"Yasmin's chair"}
+  rc_rota_board_14{"Coffee rota"}
+  rc_npc_thandiwe_moyo_15("Thandiwe Moyo")
+  rc_npc_yasmin_chaudhry_16("Yasmin Chaudhry")
+  rc_npc_lorna_easton_17("Lorna Easton")
+  rc_coffee_station_18{"Coffee station"}
+  rc_sign_kitchen_19{"Sign: coffee"}
+  rc_npc_julian_sallow_20("Julian Sallow")
+  rc_julian_pc_21{"Julian's PC"}
 
   reception --> open_plan
   reception --> partner_office
@@ -287,22 +288,23 @@ flowchart TD
   reception --> rc_npc_ama_owusu_6
   reception --> rc_npc_ama_owusu_7
   reception --> rc_npc_delphine_arvanitis_8
-  open_plan --> rc_desk_thandiwe_9
-  open_plan --> rc_chair_thandiwe_10
-  open_plan --> rc_desk_yasmin_11
-  open_plan --> rc_chair_yasmin_12
-  open_plan --> rc_rota_board_13
-  open_plan --> rc_npc_thandiwe_moyo_14
-  open_plan --> rc_npc_yasmin_chaudhry_15
-  open_plan --> rc_npc_lorna_easton_16
-  kitchen --> rc_coffee_station_17
-  kitchen --> rc_sign_kitchen_18
-  kitchen --> rc_npc_julian_sallow_19
-  partner_office --> rc_julian_pc_20
+  open_plan --> rc_plan_chest_9
+  open_plan --> rc_desk_thandiwe_10
+  open_plan --> rc_chair_thandiwe_11
+  open_plan --> rc_desk_yasmin_12
+  open_plan --> rc_chair_yasmin_13
+  open_plan --> rc_rota_board_14
+  open_plan --> rc_npc_thandiwe_moyo_15
+  open_plan --> rc_npc_yasmin_chaudhry_16
+  open_plan --> rc_npc_lorna_easton_17
+  kitchen --> rc_coffee_station_18
+  kitchen --> rc_sign_kitchen_19
+  kitchen --> rc_npc_julian_sallow_20
+  partner_office --> rc_julian_pc_21
 
   class reception,open_plan,kitchen room
   class server_room,partner_office,meeting_room,comms_cupboard lock
-  class rc_reception_pc_1,rc_visitor_card_2,rc_reception_plant_west_3,rc_reception_plant_east_4,rc_sign_meeting_room_5,rc_desk_thandiwe_9,rc_chair_thandiwe_10,rc_desk_yasmin_11,rc_chair_yasmin_12,rc_rota_board_13,rc_coffee_station_17,rc_sign_kitchen_18,rc_julian_pc_20 item
-  class rc_npc_ama_owusu_6,rc_npc_ama_owusu_7,rc_npc_delphine_arvanitis_8,rc_npc_thandiwe_moyo_14,rc_npc_yasmin_chaudhry_15,rc_npc_lorna_easton_16,rc_npc_julian_sallow_19 npc
+  class rc_reception_pc_1,rc_visitor_card_2,rc_reception_plant_west_3,rc_reception_plant_east_4,rc_sign_meeting_room_5,rc_plan_chest_9,rc_desk_thandiwe_10,rc_chair_thandiwe_11,rc_desk_yasmin_12,rc_chair_yasmin_13,rc_rota_board_14,rc_coffee_station_18,rc_sign_kitchen_19,rc_julian_pc_21 item
+  class rc_npc_ama_owusu_6,rc_npc_ama_owusu_7,rc_npc_delphine_arvanitis_8,rc_npc_thandiwe_moyo_15,rc_npc_yasmin_chaudhry_16,rc_npc_lorna_easton_17,rc_npc_julian_sallow_20 npc
   class node_start start
 ```
