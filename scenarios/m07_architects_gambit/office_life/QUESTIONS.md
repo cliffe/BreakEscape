@@ -8,7 +8,7 @@ The plan is written around the recommended answer to each question.
 
 The building is mid-evacuation at night. The muster board already shows three operations staff missing and the abandoned console has warm coffee.
 
-- **A. Tier 2 small, "the last two out" (recommended).** Two operators still on the ops floor, at their consoles, the coffee machine and the cooler; they talk as a pair, can be spoken to, offer nothing, and leave when the player goes into the server room. No levers, no openings, no existing NPC moves, no existing line changes. About 30 voiced clips.
+- **A. Tier 2 small, "the last two out" (recommended).** Two operators still on the ops floor, at their consoles and the cooler; they talk as a pair, can be spoken to, offer nothing, and leave when the player goes into the server room. No levers, no openings, no existing NPC moves, no existing line changes. About 28 voiced clips.
 - **B. Tier 0.** No office life. An empty building under a countdown is the mood the mission already has.
 - **C. Tier 1 as the missions plan had it (Elena gets a routine in the server room).** Not possible: her ink narrates her at the rack, and a lone NPC cannot chat.
 

@@ -50,7 +50,7 @@ First entry to the ops floor already carries the HaX hurt line (`:896` or `:903`
 | Room | Type | Machines (Tiled) | Declared machines | Notes |
 |---|---|---|---|---|
 | `security_checkpoint` | `room_pnw_checkpoint` | `drinks_vending1`, `phone1` | none | Hollis's patrol and LOS room; no vending `officeType` exists |
-| `operations_floor` | `room_pnw_ops` (10 x 10 tiles) | `coffee_station1` (34, 300) and `water_cooler1` (60, 300), both against the south wall; `phone2` (158, 278) on the supervisor's desk | none | west door to the checkpoint, east door to the server room; `chatBackground` `m07_operations_floor_blended.png` (`:1808`); lighting block `:1810` to `:1837` |
+| `operations_floor` | `room_pnw_ops` (10 x 10 tiles) | `coffee_station1` (34, 300, broken per the handover sheet, `:1904`) and `water_cooler1` (60, 300), both against the south wall; `phone2` (158, 278) on the supervisor's desk | none | west door to the checkpoint, east door to the server room; `chatBackground` `m07_operations_floor_blended.png` (`:1808`); lighting block `:1810` to `:1837` |
 | `server_room`, `scada_control`, `generator_room`, `cable_vault` | PNW types | none | none | no office-life use |
 
 The supervisor's desk (`desk1`, 118, 304) beside the coffee corner holds the Plant Maintenance Key (`generator_maintenance_key`, `:1846`, at 123, 281), a critical-path key, and the shift handover sheet (`shift_handover_sheet`, `:1899` to `:1908`, at 178, 281), which carries the badge-station PIN clue. Both are hard-rule items. Office life adds no printout, left-behind item or reveal near them, and no line names them.
@@ -78,6 +78,6 @@ Accent: both are British in an American facility. The course rule keeps their vo
 
 ## 6. Tier
 
-Recommend **Tier 2, small: "the last two out"**. Two of the three missing operators are still on the floor at night, finishing what they can before they go. They meet at the coffee station and the cooler, talk as a pair, can be spoken to, and offer nothing. When the player goes on into the server room they leave, so the deeper building is as empty as the plot says. No levers, no openings, no existing NPC moves, no existing line changes. The muster board's missing names and the warm coffee are already in the scenario; the pair gives that text a body without changing it.
+Recommend **Tier 2, small: "the last two out"**. Two of the three missing operators are still on the floor at night, finishing what they can before they go. They meet at the cooler (the coffee machine is broken, `:1904`), talk as a pair, can be spoken to, and offer nothing. When the player goes on into the server room they leave, so the deeper building is as empty as the plot says. No levers, no openings, no existing NPC moves, no existing line changes. The muster board's missing names and the warm coffee are already in the scenario; the pair gives that text a body without changing it.
 
 The alternative is **Tier 0**: an evacuated building at night under a countdown is a fair reason for no office life, and m07 would stay as it is. Tier 1 has nothing to work with: no NPC is free and a lone NPC cannot chat.
