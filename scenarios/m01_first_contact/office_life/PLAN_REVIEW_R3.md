@@ -82,3 +82,12 @@ Cost: one choice line of player text (check whether player choices are voiced; i
 - Whether player choice text is voiced in person-chat (affects M1's clip count).
 - The person-chat-minigame.js caller of the choice-point re-navigation. I read only the reopen helper and its comment.
 - Whether hallway_east's motion lighting (:1702) reacts to Maya walking through.
+
+## Outcomes
+
+- M1: fixed in PLAN.md 4.9 ("Talking to her away from her post"), with section 2 step 5, 3, 5, 6, 7, 8 (test 14), 9 and 11 updated. `maya_away` global (not monotonic) set by three `room_entered` mappings on agent_0x99; `not_here` is a player-choice-only knot, so no Maya line is added or reused; the guard goes on `hub`, `operation_details`, `derek_intel`, `patricia_story` and `tactical_advice`, each with the reason it leaks. Player choice text is not voiced (person-chat-minigame.js:1688). Build step: compile the ink, lint, run the m01 regression run. D84 note added. New player text P1 listed in SPOKEN_LINES.md.
+- m1: fixed in 4.9: `needsCompany.avoids` for Fatima and Graham, cited to npc-needs.js:4344-4365, with the 2-tile `avoidRadius` side effect and the one validator info line recorded.
+- m2: fixed in 4.9: the reveal is "reachable only while `discussed_operation` is false"; the false "Is it safe to talk?" claim is removed from section 11.
+- m3: fixed by adding the missing `!globalVars.<npc>_ko` guards to Fatima's break and Graham's cooler follow in 4.8, and rewording the 4.5 sentence to list them.
+- m4: heading corrected to "## 12. Lab sheet".
+- Not checked, carried into PLAN.md section 11: hallway_east motion lighting reacting to Maya.

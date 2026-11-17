@@ -80,4 +80,4 @@ The music switches to the threat track until she is down or the fight ends.
 
 [The player finishes the first conversation in Maya's office, where she has just told them about the operation. Two seconds after the conversation closes she gets up, walks out through the east hall and across the main office to the cooler, and fills a paper cup. Later she walks home.]
 
-No lines. The trip is silent. If the player talks to her on the way, it is her existing ink, and she picks up her trip afterwards.
+No new lines. The trip is silent. If the player talks to her on the way, the only choice offered is "Not here. I'll come to your office." (player text, not voiced), which ends the chat, and she picks up her trip afterwards.

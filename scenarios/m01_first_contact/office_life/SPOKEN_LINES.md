@@ -6,7 +6,7 @@ Rules checked: pool barks are 40 characters or fewer; no line carries a clue, a 
 
 Voices (settled, D88 d): Fatima Begum, Vindemiatrix (British Bangladeshi, Yorkshire, thirties). Graham Whitfield, Umbriel (Halifax, early sixties). Both `en-GB`.
 
-Maya: no new lines. Her short trip to the cooler is silent; any line she speaks is existing ink.
+Maya: no new spoken lines. Her short trip to the cooler is silent; any line she speaks is existing ink. One new player-facing choice is added to her ink (below); player choice text is not voiced (person-chat-minigame.js:1688), so it is no clip.
 
 ## Tier 1 (first build stage)
 
@@ -77,6 +77,14 @@ Exchange lines are not pool barks, so the 40-character limit does not apply to t
 | 21 | graham_whitfield | Morale. It's in the budget, under sundries. | 43 |
 | 22 | fatima_begum | I'm telling everyone it's under sundries. | 41 |
 
+### New player text (not voiced)
+
+| # | Speaker | Where | Text | Chars |
+|---|---|---|---|---|
+| P1 | player (choice) | `not_here` knot in `m01_npc_maya.ink`, shown only while the player is away from Maya's office | Not here. I'll come to your office. | 35 |
+
+Counts: new spoken lines 22 (6 at tier 1), unchanged; new player choice text 1, no clip; Maya spoken lines 0.
+
 ## Clip counts
 
 | Tier | Barks | Talk | Pool | Exchanges | Total clips |
@@ -84,4 +92,4 @@ Exchange lines are not pool barks, so the 40-character limit does not apply to t
 | 1 | 2 | 4 | 0 | 0 | 6 |
 | 2 | 2 | 4 | 8 | 8 | 22 |
 
-V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) is the check: the build records its actual total, expected 22 (6 if the build stops at tier 1), all uncached, and flags any difference. Maya's routine adds no clip.
+V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) is the check: the build records its actual total, expected 22 (6 if the build stops at tier 1), all uncached, and flags any difference. Maya's routine and her `not_here` choice add no clip.

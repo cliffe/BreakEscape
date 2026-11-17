@@ -22,7 +22,7 @@ Settled rulings this plan follows: D84 b (a few story NPCs with an always-open c
 2. Desk PCs and the two extras (4.2 to 4.4).
 3. Leaving after the reveal, attack handling, credits, HaX texts (4.5 to 4.7).
 4. Tier 2: cooler, needs, breaks, exchanges (4.8).
-5. Maya's routine (4.9).
+5. Maya's routine (4.9): the needs block and mapping, then the `maya_away` mappings and the ink guards, then compile the ink and run the m01 regression run.
 6. Tests (section 8), commit, report.
 
 ## 3. Tiers
@@ -33,7 +33,7 @@ Settled rulings this plan follows: D84 b (a few story NPCs with an always-open c
 | New objects | 2 desk PC declarations (claim existing Tiled sprites) | plus 1 water cooler |
 | Needs | `work` at own PC | plus `thirst`, `needsCompany`; Maya `thirst` |
 | Voiced lines | 2 barks, 4 talk lines = 6 clips | plus 8 pool, 8 exchange = 22 clips; Maya none new |
-| New globals | `fatima_ko`, `graham_ko` | plus `m01_staff_alarmed`, `heard_ex_interns`, `heard_ex_biscuits` |
+| New globals | `fatima_ko`, `graham_ko` | plus `m01_staff_alarmed`, `heard_ex_interns`, `heard_ex_biscuits`, `maya_away` |
 | Room tone | yes | yes |
 
 ## 4. Change per slice
@@ -149,7 +149,7 @@ Per NPC, so two onceOnly re-hides each plus the plain hide. Why this is safe:
 - The plain hide fires while the player is in the server room, so it is never seen. The extras' mappings are live by then: the only route to the server room passes through the main office, and rooms load when a door opens (npc-lazy-loader.js:96-105).
 - A reload restores `npcVisibility` before NPCs register (state-sync.js:548-550), and a reload spawns the player in reception (intentional), so the extras never appear.
 - The re-hides sit on the server room and IT room, not on reception or the main office, because a re-hide there would fire in view. The build renders the IT room's south-door camera view to confirm no main-office desk is in frame; if one is, the `it_room` re-hide is dropped.
-- The hide applies whether or not the extra was knocked out, so the body leaves out of sight. Every other mapping on the extras carries `!globalVars.<npc>_ko`; the hide is unguarded. There is no show mapping, so no needs state is set before a show.
+- The hide applies whether or not the extra was knocked out, so the body leaves out of sight. Every non-hide mapping on the extras (the barks, Fatima's break in 4.8, Graham's cooler follow in 4.8) carries `!globalVars.<npc>_ko`; the hide is unguarded. There is no show mapping, so no needs state is set before a show.
 - No second turn event exists in m01, only the global.
 
 The build renders the turn, including the seated hide, and confirms no seat or PC is left reserved.
@@ -234,11 +234,11 @@ Mapped break, so a player entering the office sees one go to the cooler (the sam
 
 ```json
 { "eventPattern": "room_entered:main_office_area", "cooldown": 150000, "delayMs": 2000,
-  "condition": "data.previousRoom !== 'reception_area' && !globalVars.entropy_reveal_read && !globalVars.m01_staff_alarmed",
+  "condition": "data.previousRoom !== 'reception_area' && !globalVars.fatima_ko && !globalVars.entropy_reveal_read && !globalVars.m01_staff_alarmed",
   "needs": { "set": { "thirst": 20 } } }
 ```
 
-on Fatima, and on Graham `{ "eventPattern": "npc_use_started:office_cooler", "condition": "data.npcId === 'fatima_begum'", "cooldown": 120000, "needs": { "set": { "thirst": 20 } } }`. The delay lets HaX's first call (6 s) ring before anyone walks.
+on Fatima, and on Graham `{ "eventPattern": "npc_use_started:office_cooler", "condition": "data.npcId === 'fatima_begum' && !globalVars.graham_ko", "cooldown": 120000, "needs": { "set": { "thirst": 20 } } }`. The delay lets HaX's first call (6 s) ring before anyone walks.
 
 ### 4.9 Maya: a short routine after the tip-off (settled, D88 c)
 
@@ -246,9 +246,10 @@ Maya is free by the D78 tests: no `itemsHeld`, no `challengeOnSight` anywhere, n
 
 She takes one trip, after her first talk, and only after the tip-off:
 
-- Found at post first. The informant reveal (`informant_reveal`, "I'm the one who contacted you") is reachable only in the first conversation, which always happens at her post, because she does not move until the marker is set.
+- Found at post first. The informant reveal (`informant_reveal`, "I'm the one who contacted you") is reachable only while `discussed_operation` is false, and she does not move until it is true, so the reveal always plays at her post (a player who closes the chat part-way through `reveal_check` resumes there, still at her post).
 - The marker is the existing global `discussed_operation` (declared :2278), set in her ink knot `operation_details` and on the "Tell me everything" choice. Ink global writes sync at once (npc-conversation-state.js:596-620), before person-chat emits `conversation_closed:maya_chen` (person-chat-minigame.js:1987-1997). The break fires on that close.
-- Why not gate by room instead: the engine opens a chat wherever the NPC stands (npc-needs.js:1434-1444) and has no room gate for talk, so that would need engine changes and edits to voiced informant ink.
+- Why not refuse talk away from her post: the engine opens a chat wherever the NPC stands (npc-needs.js:1434-1444) and has no option to refuse one, so an engine change would be needed. The ink guard below gets the same result with no engine change.
+- Her ink has no voiced line changed: every voiced line in `m01_npc_maya.ink` stays word for word. The change in "Talking to her away from her post" below adds guard lines and one player choice only.
 - Her NPC record has no `chatBackground` (room-level only), her ink has no Background line, and no `conversation_closed:maya_chen` mapping exists. The globals her ink sets drive no mapping (`discussed_operation` only gates a HaX phone choice, m01_phone_agent0x99.ink:149).
 
 All on Maya, appended at the end of her own `eventMappings` (she has none today):
@@ -258,6 +259,7 @@ All on Maya, appended at the end of her own `eventMappings` (she has none today)
 "needsRooms": ["maya_office", "hallway_east", "main_office_area"],
 "needsSpeed": 70,
 "needs": { "thirst": { "decayPerMin": 0.1, "urgentAt": 30, "initial": 100 } },
+"needsCompany": { "avoids": ["fatima_begum", "graham_whitfield"] },
 "eventMappings": [
   { "eventPattern": "conversation_closed:maya_chen", "onceOnly": true, "delayMs": 2000,
     "condition": "globalVars.discussed_operation === true && !globalVars.entropy_reveal_read && !globalVars.m01_staff_alarmed && !globalVars.maya_ko",
@@ -267,9 +269,53 @@ All on Maya, appended at the end of her own `eventMappings` (she has none today)
 
 - `decayPerMin` must be above zero (schema :4848; validate_npc_needs.rb:1287). From 100 to `urgentAt` 30 is about 700 needs-minutes, so she never leaves on her own. After the trip restores 70 the next one is about 600 needs-minutes away. The build measures the needs-minute to real-second mapping (measurement-recipes.md section 10) and records it.
 - A false `condition` does not use up `onceOnly`. After a reload the levels reset to 100 and the once key is saved, so she stays at post.
-- No chatter, no exchanges, no interests, no workarounds, no magnet. Her trip is silent, so there is no new spoken line. The cooler's `offWhen` (`m01_staff_alarmed`) also sends her home. If capacity 2 is full she waits at her post (no queue).
+- `needsCompany.avoids` (field name per npc-needs.js:4344-4352, `_avoidsOneWay`; the schema allows ids, `group:<name>`, `*` and `{ npc | group, requireGlobal }` entries) keeps her off the cooler with the extras. The engine's pairing rule `_compatible` (npc-needs.js:4368-4372) lets two NPCs chat when either declares no groups, so without it Maya could be the second user beside Fatima or Graham, and they would say their pool lines to her while she shows picture turns. An avoid acts both ways (`_avoids`, npc-needs.js:4363-4365), so an extra also never shares the cooler with her. Side effect: declaring `avoids` turns on the default `avoidRadius` of 2 tiles (npc-needs.js:96, :1896-1901), so Maya waits at her post while an extra stands within 2 tiles of the cooler's approach cell (`_avoidedAt`, npc-needs.js:1927-1946). Graham's desk is 3.4 tiles away, so this only bites when an extra is already at the cooler. The validator reports one info line for the declaration (validate_npc_needs.rb:1010-1033); the build records it with the other info lines.
+- No chatter, no exchanges, no interests, no workarounds, no magnet. Her trip is silent, so there is no new spoken Maya line. The cooler's `offWhen` (`m01_staff_alarmed`) also sends her home. If capacity 2 is full she waits at her post (no queue).
 - Attacked mid-walk: she carries no item, stays where she fell while knocked out or hostile, and walks home once available (npc-needs.js:1235-1239, :1418-1431). Her existing hostile block is unchanged.
-- Residual, accepted: her later hub topics can still play away from her post (see section 11).
+
+#### Talking to her away from her post
+
+D84 b: she is an always-open conversation, so talking to her away from her post is still allowed. Only a one-line decline is offered there, so her Derek topics never play in the open office or the east hall.
+
+Why a guard is needed. The engine opens a chat wherever she stands and has no option to refuse one (npc-needs.js:1434-1444). Her route is maya_office, hallway_east, main_office_area. With capacity 2 an extra can stand beside her at the cooler, and Derek's break room opens off the main office. Every topic left after the first talk names Derek as ENTROPY or blames him, and the briefing warns the player that Derek may be watching who she talks to (m01_opening_briefing.ink:209). The re-talk opener "Is it safe to talk?" (m01_npc_maya.ink:26) is only played after a reload. In the same session the hub exit (:152-155) diverts back to `-> hub`, so the story is saved at a choice point (npc-conversation-state.js:86-92) and the reopen resumes the hub straight away, re-displaying the last line (person-chat-reopen.js:1-14, :61-66).
+
+The fix, with no engine change:
+
+1. A global `maya_away`, declared false. It is not monotonic: it follows where the player is, and flips only on a change. It is enough because Maya is only ever in her office, hallway_east or the main office, and a talk needs both of them in one room. The engine emits `room_entered:<roomId>` with `previousRoom` from rooms.js:3231-3241, and a mapping can write a global with `setGlobal`. Three mappings go at the end of agent_0x99's list (always registered, appended so existing onceOnly indexes do not shift):
+
+```json
+{ "eventPattern": "room_entered:main_office_area", "condition": "!globalVars.maya_away", "setGlobal": { "maya_away": true } }
+{ "eventPattern": "room_entered:hallway_east", "condition": "!globalVars.maya_away", "setGlobal": { "maya_away": true } }
+{ "eventPattern": "room_entered:maya_office", "condition": "globalVars.maya_away === true", "setGlobal": { "maya_away": false } }
+```
+
+   `maya_away` is declared false in `globalVariables` with the other new globals. A reload is safe: every path to her desk enters maya_office, which clears the flag.
+
+2. In `m01_npc_maya.ink`, add `VAR maya_away = false` beside the other VARs (:7-12) and one knot that has no Maya line:
+
+```
+=== not_here ===
+{not maya_away: -> hub}
++ [Not here. I'll come to your office.]
+    #exit_conversation
+    -> hub
+```
+
+   Put `{maya_away: -> not_here}` as the first line of five knots. Each one is a place where a Derek line can play or be reached from a resumed choice point, which re-enters the knot that owns the choices (person-chat-reopen.js:79-110), so the guard also covers a resumed chat:
+
+   | Knot (m01_npc_maya.ink) | Guard goes | Why it leaks |
+   |---|---|---|
+   | `hub` (:143) | first line | its exit line (:154) says "Derek's paranoid", its choices are the Derek topics, and every topic diverts back to it |
+   | `operation_details` (:95) | after its set and unlock lines (:96-97) | :108 "Derek, he's the one running it"; only reachable away from her post by Esc in the knot just after the flag turns |
+   | `derek_intel` (:120) | first line, before `~ warned_about_derek` | :123-127 names him as ENTROPY and operations lead |
+   | `patricia_story` (:161) | first line, before `~ asked_about_patricia` | :179 "Derek arranged it" |
+   | `tactical_advice` (:187) | first line | :188 points the player at Derek's office and the server room |
+
+   The first-talk knots (`first_meeting`, `reveal_check`, `informant_reveal`) are not guarded: she is at her post for all of them, because her break only fires once `discussed_operation` is set. After a reload, "Is it safe to talk?" (:26) leads into the hub, which diverts to `not_here`, and that reads naturally.
+
+3. No new spoken Maya line. `not_here` is a player-choice-only knot, so no Maya text is added or reused. Player choice text is not voiced: person-chat plays TTS only for a block whose speaker is not `player` or `system` (person-chat-minigame.js:1688), so the choice needs no clip. Neither the plan nor the choice adds to the clip count; the choice line is listed as new player text in SPOKEN_LINES.md.
+
+4. Build step. The ink change is a build step in 5: compile `m01_npc_maya.ink` with `bin/inklecate`, run `dialoguelint.mjs` on it, then run the m01 critical-path regression run (test 12). The compile proves the knots and the VAR; the regression run proves the first talk, the hub and the Derek topics are unchanged in her office.
 
 ## 5. People
 
@@ -282,7 +328,7 @@ Classes are D78's (plan/ol-skill-movement SKILL.md:56-80). The "gate global, set
 | sarah_martinez | story-critical, holding and pinned | reception | none | none | holds badge and main office key; she is the check-in | unchanged |
 | kevin_park | story-critical, holding and pinned by text | IT room | none | none | holds lockpick, keycard, notes; text says he is in the IT room all day (:1836) | unchanged |
 | derek_lawson | story-critical, holding and plot-located | break room | none | none | holds the launch device; confrontation and fight happen where he stands (:1425-1439) | unchanged |
-| maya_chen | optional flavour, free (D84 b) | Maya's office | `thirst` only; one trip to the main office cooler after her first talk | found at post first: first-talk break gated on `discussed_operation`, set in her own ink; no beat needs her at post | her whispered informant talk (ink m01_npc_maya.ink:40, :99-103) happens at post, before she moves | stays where she fell while knocked out or hostile, then walks home; hostile block unchanged |
+| maya_chen | optional flavour, free (D84 b) | Maya's office | `thirst` only; one trip to the main office cooler after her first talk | found at post first: first-talk break gated on `discussed_operation`, set in her own ink; no beat needs her at post | her whispered informant talk (ink m01_npc_maya.ink:40, :99-103) happens at post, before she moves; away from post only the `not_here` choice is offered (4.9) | stays where she fell while knocked out or hostile, then walks home; hostile block unchanged |
 | briefing_cutscene, closing_debrief_person | cutscene | off-map, hidden | none | none | timed conversation and hidden until the ending | n/a |
 | agent_0x99 | phone | none | none | none | phone and text mappings | n/a |
 
@@ -292,8 +338,8 @@ D84 b count: one moved existing NPC (Maya). No other existing NPC gains needs.
 
 All additions are bounded scalars sent as deltas, never a growing structure re-sent whole:
 
-- Globals: `fatima_ko`, `graham_ko` (both tiers). Tier 2: `m01_staff_alarmed`, `heard_ex_interns`, `heard_ex_biscuits`. Five at most, all declared false at start, all booleans. Maya adds none: `discussed_operation` already exists.
-- onceOnly keys in `triggeredEvents` (each fires once and is then fixed): 2 barks, 4 re-hides, 2 HaX attacked texts, Maya's break (1); tier 2 adds the alarmed setGlobal mappings (2 keys). At most 11 keys.
+- Globals: `fatima_ko`, `graham_ko` (both tiers). Tier 2: `m01_staff_alarmed`, `heard_ex_interns`, `heard_ex_biscuits`, and `maya_away`. Six at most, all declared false at start, all booleans. `maya_away` is not monotonic: it follows the player between Maya's office and the rooms outside it, and its three mappings carry a condition so each writes only on a change, at most twice per visit to her office, as a delta. Maya's break itself adds no global: `discussed_operation` already exists.
+- onceOnly keys in `triggeredEvents` (each fires once and is then fixed): 2 barks, 4 re-hides, 2 HaX attacked texts, Maya's break (1); the `maya_away` mappings are not `onceOnly` and add no key; tier 2 adds the alarmed setGlobal mappings (2 keys). At most 11 keys.
 - `npcVisibility`: `setVisible` writes `npcManager._npcVisibility`, saved as `npcVisibility` and restored on register (state-sync.js:548-550; npc-manager.js:2205-2237). Two keys at most, one per extra, booleans, sent as a delta when the hide fires.
 - `npcHostility`: a KO or an attack goes into `npcHostility` (state-sync.js:552-554). Up to two keys, one per extra, bounded.
 - No other `player_state` growth. NPC need values and positions are local to the client sim, as for other needs NPCs.
@@ -303,7 +349,7 @@ All additions are bounded scalars sent as deltas, never a growing structure re-s
 
 - Lock and key diff against baseline_locks.json: empty in both tiers.
 - Validator: 0 errors, the baseline's 19 warnings (none office-life), possible new info lines only for room-tone sounds not loaded (none expected).
-- V1 summary: 9 NPCs, three with needs (Fatima, Graham, Maya); V6: 22 clips (6 if the build stops at tier 1), all uncached, with the keyless boot warning. Maya adds no clip.
+- V1 summary: 9 NPCs, three with needs (Fatima, Graham, Maya); V6: 22 clips (6 if the build stops at tier 1), all uncached, with the keyless boot warning. Maya adds no clip (the `not_here` choice is player text, which is not voiced).
 - Walkthrough: unchanged. The critical path touches no new object.
 
 ## 8. Tests
@@ -324,11 +370,11 @@ Live work uses a free port other than 3000, 3001, 3002, 3085, 3086 and 3091; the
 12. Gate playtests: m01, sis01, sis02 critical-path runs (scripted runs wait until any moved NPC is back at post; only Maya moves, and only after `discussed_operation`). Reload check for Mission Brief and start-room spawn is intentional behaviour, not a finding.
 13. Regressions the playtest checks: the main office key lock, the filing cabinet PIN, the recycling bin, HaX's first call at 6 s, the entire Derek confrontation.
 
-14. Maya: scripted runs poll `window.__test.needs.state('maya_chen')` before each interact until `atPost` is true and the job is null or home (a null state counts as at post); a timeout fails the step and records the last state. Never `setManualClock`. Live checks: found at post first, fresh and after a reload; talk to her away from post three ways (mid-walk, waiting at the cooler, at the cooler), where the background is the main office and she resumes her trip; attack her at the cooler.
+14. Maya: scripted runs poll `window.__test.needs.state('maya_chen')` before each interact until `atPost` is true and the job is null or home (a null state counts as at post); a timeout fails the step and records the last state. Never `setManualClock`. Live checks: found at post first, fresh and after a reload; talk to her away from post three ways (mid-walk, waiting at the cooler, at the cooler), where the background is the main office, she resumes her trip, and only the "Not here" choice is offered, in a fresh session, in the same session after the hub exit, after a reload, and after Esc in `operation_details` just after the flag turns; back in her office the full hub returns and `maya_away` is false; attack her at the cooler. Also confirm Maya never shares the cooler with an extra and records the one validator info line (4.9).
 
 ## 9. Build size
 
-Tier 1: about 120 lines of scenario JSON, two small ink files, two credits lines, three or four hours with the live checks. Tier 2 adds about 50 lines, a cooler placement render, two exchange knots and one more hour. Maya's routine adds about 15 lines, no ink, and a needs-clock measurement. No new art (cast art exists), no engine change. The 22 clips wait for the user's yes.
+Tier 1: about 120 lines of scenario JSON, two small ink files, two credits lines, three or four hours with the live checks. Tier 2 adds about 50 lines, a cooler placement render, two exchange knots and one more hour. Maya's routine adds about 15 lines of scenario JSON, three more mappings, and an ink change in her file (one VAR, one six-line knot, five guard lines, no voiced line changed), and a needs-clock measurement. No new art (cast art exists), no engine change. The 22 clips wait for the user's yes.
 
 ## 10. Settled (D88, 2026-11-17)
 
@@ -346,8 +392,9 @@ No question is open.
 - The needs clock to real-time ratio is not measured yet; the build measures it for Maya's trip (4.9).
 - The cooler's aisle path is checked in the dressing render; `useFrom` is the only fallback lever.
 - The m01, sis01 and sis02 gate playtests run again before release, and the deploy gate stays closed until the user lifts it.
-- Open point: after her tip-off, Maya's later topics (`derek_intel`, `patricia_story`, `tactical_advice`) can play away from her office, in the east hall or the main office. Whether any of them names the suspect in a place another NPC could plausibly overhear is not checked here. Her re-talk opener "Is it safe to talk?" is low and wary, which fits. Left for the next review to decide.
+- Maya's Derek topics away from her post are handled by the `maya_away` guard (4.9). If the user rules out any change to her ink, the fallback is to drop 4.9 (D88 c), not to accept the leak.
+- Not yet checked: whether hallway_east's motion lighting (:1702) reacts to Maya walking through.
 
-## 12. Lab sheet## 11. Lab sheet
+## 12. Lab sheet
 
 The student walkthrough is unaffected: no required step, item or location changes. After the build lands, add a note only if the main office bystanders appear in the hand-written sheet's screenshots. Lab sheets live in HacktivityLabSheets only; this repo carries none.
