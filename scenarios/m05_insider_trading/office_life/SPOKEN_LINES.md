@@ -1,6 +1,6 @@
 # m05 Insider Trading: office-life spoken lines
 
-Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchanges and conversations are ink knots. None changes an existing line. Ids use the recommended picks (PLAN.md question A); another pick changes speakers, not lines, except where a line names a job.
+Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchanges and conversations are ink knots. None changes an existing line. Speakers are settled under D82a and D82b.
 
 ## Pools (40 characters at most)
 
@@ -48,7 +48,7 @@ Each first line stands alone. The whispering and collection lines repeat only wh
 
 Thandiwe Moyo:
 1. Can I help? I'm only the office manager.
-2. Kitchen rota's on the fridge if you're staying.
+2. Help yourself to tea if you're staying.
 3. Excuse me, I've a parcel to chase.
 
 Niamh Doherty:
@@ -56,13 +56,13 @@ Niamh Doherty:
 2. Lisa's the one who knows everyone.
 3. I'll be here till late, sadly.
 
-## Cleaner block (slice 6, only on a yes to question B)
+## Cleaner block (Bernadette Lyons, D82b)
 
 Pool, `bernadette_lyons`, coffee:
 
 | Line | Chars |
 |---|---|
-| Just the bins, love. Don't mind me. | 35 |
+| Still here? You'll wear that chair out. | 39 |
 | Kettle's quicker, you know. | 27 |
 | Last floor before I'm done. | 27 |
 | Who leaves a teabag in the sink? | 32 |
@@ -72,19 +72,17 @@ Pool, `bernadette_lyons`, coffee:
 2. Niamh: They pay me in biscuits.
 3. Bernadette: Then I'll leave you the good ones.
 
-Conversation:
-1. Mind the floor, it's wet.
-2. Nearly done in here, love.
+Conversation (ink, offers nothing):
+1. Just the bins, love. Don't mind me.
+2. Mind the floor, it's wet.
 
 ## Clip count (estimate for V6)
 
 | Block | Clips |
 |---|---|
-| Pools | 16 |
-| Exchanges | 11 |
-| Conversations | 6 |
-| **Without the cleaner** | **33** |
-| Cleaner pool, exchange, conversation | 4 + 3 + 2 = 9 |
-| **With the cleaner** | **42** |
+| Pools | 20 |
+| Exchanges (4 + 3 + 4 + 3) | 14 |
+| Conversations (3 + 3 + 2) | 8 |
+| **Total** | **42** |
 
-Narrator lines for the extras' conversations, if the ink house style wants one, add one clip each.
+Pools are Niamh 8, Thandiwe 8 and Bernadette 4. Narrator lines for the extras' conversations, if the ink house style wants one, add one clip each. Bernadette's voice needs its own yes before any of her clips are made.

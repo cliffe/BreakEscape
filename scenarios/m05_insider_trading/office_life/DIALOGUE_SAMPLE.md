@@ -1,10 +1,10 @@
 # m05 Insider Trading: office-life dialogue sample
 
-For the user's yes before any line is written into the scenario. Speakers use the recommended extras: Thandiwe Moyo, office manager, and Niamh Doherty, internal comms, both from the awareness course cast.
+For the user's yes before any line is written into the scenario. Speakers are Thandiwe Moyo, office manager, and Niamh Doherty, internal comms, both from the awareness course cast, and Bernadette Lyons, the evening cleaner, a new character.
 
 ## Where you hear them
 
-Two staff sit at the break-room tables while Lisa keeps her place by the kettle. When you finish talking to Lisa, one of them gets up for a coffee and the other follows. Crossing the corridor, you may catch them at the water cooler.
+Two staff sit at the break-room tables while Lisa keeps her place at the counter. When you finish talking to Lisa, one of them gets up for a coffee and the other follows. Crossing the corridor, you may catch them at the water cooler.
 
 ## A few pool lines (one bubble at a time, voiced)
 
@@ -17,19 +17,30 @@ At the cooler:
 - Thandiwe: "Half five can't come soon enough."
 - Niamh: "Tomorrow's all-staff won't write itself."
 
-## One exchange (heard once, after you have the server badge)
+## Two exchanges (each heard once)
+
+Before the server badge:
+
+> Niamh: Is the security person still in?
+> Thandiwe: Went past twice. Very serious shoes.
+> Niamh: Lisa says they don't send just anyone.
+> Thandiwe: Well, I'm keeping my head down.
+
+After you have the server badge:
 
 > Thandiwe: Right, that's me after this one.
 > Niamh: Lucky. I've got the all-staff to finish.
 > Thandiwe: Don't let them keep you past seven.
 > Niamh: Tell that to the comms calendar.
 
-When you come back from the server room, Thandiwe's chair is empty and Niamh is still at her table. She stays there all night, in the lit break room; she does not leave when the lights go down in the corridor. If a kettle trip for Lisa is approved (PLAN.md section 2A), she may step to the kettle once while you are two rooms away, and is back at her seat and talkable when you return.
+When you come back from the server room, Thandiwe's chair is empty and Niamh is still at her table. She stays there all night, in the lit break room; she does not leave when the lights go down in the corridor. Lisa may step to the kettle once while you are two rooms away. She returns to her post standing, and you can talk to her at the kettle too.
 
-The whispering exchange (heard before the server badge) is not in this sample. Its lines are in `SPOKEN_LINES.md` and carry no clue; this sample's yes does not need to be asked again for the reworded lines.
+## The evening cleaner
 
-## If the cleaner is approved
+At the turn Bernadette Lyons arrives by the recycling bins. A pool line at the espresso: "Still here? You'll wear that chair out." Her conversation, to the player: "Just the bins, love. Don't mind me." When you walk back into the break room she and Niamh meet at the espresso:
 
 > Bernadette: You again. Do they pay you overtime?
 > Niamh: They pay me in biscuits.
 > Bernadette: Then I'll leave you the good ones.
+
+Her voice needs its own yes before any clip is made.

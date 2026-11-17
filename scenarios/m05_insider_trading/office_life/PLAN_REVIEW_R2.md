@@ -62,3 +62,19 @@ Suggested fix: add a 2.13 "Cleaner" with the skeleton, the show mappings and the
 - **Seats at table 2.** North chairs (gid 317) at x 168 and 188, y 132 to 167; south chairs (gid 316) at x 168 and 188, y 192 to 222. From the posts (6,4) and (6,6), the x 188 chair is about 12 px away and the x 168 chair about 32 px, both inside `seated`'s 40 px, so the nearer one wins; the build must confirm the x 188 chair is taken, as the plan intends.
 - **Sync.** Every new global is a declared boolean, set once, sent as a per-key delta; `heard_` keys are four; needs state is not saved (reload resets to posts). Nothing grows or is re-sent whole. The cleaner's show count depends on M4's shape. Lisa becoming a needs NPC adds no synced state.
 - **Default build without 2A or the cleaner** stood on its own; it no longer applies.
+
+## Outcomes
+
+All findings are fixed in the plan files as of this round.
+
+- M1: fixed. PLAN.md section 2.3 and L1 split into L1a (walk, last tile excluded, 48 px), L1b (Lisa talkable from two sides with a pair there and with her at the kettle) and L1c (second espresso user at (5,3), never the kettle cell); Niamh is "two tiles east, same row".
+- M2: fixed. `behavior.hostile.leash: true` on all three newcomers (2.2, people table, skeletons, 10.4).
+- M3: fixed. Section 2.11 adds three KO VARs, counts them in `friendly_kos()`, and takes -10 trust each; not exported; listed in section 9 as changed ink logic.
+- M4: fixed. New section 2.13 gives the cleaner's post, show mappings, skip-route check, `tidy` bins need, evening break coupling with Niamh, `ex_late_again`, leash, KO handling and skeleton; E5 to E7 added and section 7 recounted.
+- m1: fixed. Lisa's `tea` need has `urgentAt: 30`.
+- m2: fixed. Kettle declared with `"type": "kettle"` and `queue: false`; the tin is decor `qdc_collection_tin1` (gid 1183), now stated in PLAN.md and ANALYSIS.md.
+- m3: fixed by reasoning: naming before the server room is not reachable (section 2.10); no gate added.
+- m4: fixed. The cooler cells paragraph and L4 cover the east and north doors and the (3,2) collision note.
+- m5: fixed. Conditional wording removed from PLAN.md, ANALYSIS.md, SPOKEN_LINES.md and DIALOGUE_SAMPLE.md; Lisa returns to her post standing; the whispering exchange and a cleaner pool line are in the sample.
+- m6: fixed. Cites corrected (`npc-needs.js:1449`, `:5631`), `||` wording corrected, section 7 counts updated.
+- m7: fixed. Thandiwe's line is now "Help yourself to tea if you're staying." in SPOKEN_LINES.md.

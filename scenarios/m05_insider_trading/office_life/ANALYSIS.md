@@ -4,7 +4,7 @@ Line numbers are in `scenarios/m05_insider_trading/scenario.json.erb` unless ano
 
 ## 1. Cast audit
 
-Every person already in m05 is classed under D78 (plot-located, holding or guarding, free, or ambient; classes are the skill's cast-audit step). Only Lisa is free: she may take needs, one kettle trip, in a single leashed routine (PLAN.md section 2A, conditional on a user answer). The rest stay put, so office life here is mostly new ambient people.
+Every person already in m05 is classed under D78 (plot-located, holding or guarding, free, or ambient; classes are the skill's cast-audit step). Only Lisa is free: she takes a `tea` need and one kettle trip, in a single leashed routine (PLAN.md section 2A, built under D84 b). The rest stay put, so office life here is mostly new ambient people.
 
 | NPC | Line | Room | D78 class | Needs? | Why |
 |---|---|---|---|---|---|
@@ -15,7 +15,7 @@ Every person already in m05 is classed under D78 (plot-located, holding or guard
 | `recruiter` | `:1545` | lobby | plot-located, never (phone) | never | TalentStack thread, a clue |
 | `patricia_phone` | `:1611` | lobby | plot-located, never (phone) | never | |
 | `closing_debrief_trigger` | `:1638` | lobby | plot-located, never | never | debrief |
-| `lisa_park` | `:1731` | break room | free | one `tea` need, one kettle trip (PLAN.md section 2A, conditional) | "sit by the kettle" (`m05_npc_lisa_park.ink:61`), "nowhere to be" (`:138`), "I'll be here" (`:164`); the narrator puts her "by the break room counter... a collection tin at her elbow" (`:56`). The tin is ink and flyer only, not a world object. No line-of-sight mappings in m05. Post-fate lines describe the office from her seat (`:125` to `:136`). KO global `lisa_ko` (`:1748`), exported (`:662`). |
+| `lisa_park` | `:1731` | break room | free | one `tea` need, one kettle trip (PLAN.md section 2A) | "sit by the kettle" (`m05_npc_lisa_park.ink:61`), "nowhere to be" (`:138`), "I'll be here" (`:164`); the narrator puts her "by the break room counter... a collection tin at her elbow" (`:56`). The tin is `qdc_collection_tin1` (gid 1183, x 90 to 100, y 67 to 79), decor with no scenario id. No line-of-sight mappings in m05. Post-fate lines describe the office from her post (`:125` to `:136`). KO global `lisa_ko` (`:1748`), exported (`:662`). |
 | `owen_gallagher` | `:1782` | open office | holding or guarding (items `:1807` to `:1831`, post (6,4)) | no | RFID clone source by proximity, keycard, door log, password note; KO route. KO global `owen_ko` (`:1799`). |
 | `dr_halloran` | `:2073` | research lab | plot-located (suspect, `halloran_accused`; post (6,6)) | no | optional witness; `halloran_ko` (`:2091`) |
 | `patricia_morgan` | `:2153` | Patricia's office | holding (items `:2172` to `:2204`, post (3,3)) | no | badge and vetting files; `patricia_ko` (`:2170`) |
@@ -44,11 +44,11 @@ Candidates with free voices and full atlases (seated, `pose_drink`, `pose_use`, 
 | Gwen Pritchard, Nilesh Solanki, Ibrahim Diallo, Ama Owusu, Darren Price | various | IT or security roles | rejected: an IT or security staffer in the break room reads as a suspect or witness in a mission about who has been in the servers |
 | Chidi Okeke, Julian Sallow, Joanne Pell | various | fleet, founding partner, L&D | weak fit (fleet, a partner) or close to Patricia's vetting thread (L&D under HR) |
 
-The pick is an open question in PLAN.md section 9.
+The pick is settled: D82a, Thandiwe Moyo goes home on time and Niamh Doherty stays late.
 
 ### Cleaner
 
-No cleaner exists in the course cast with art or a voice. The course names "Bernadette Lyons, Carrholme cleaner" on screen only (`BRAND_SET.md:110`), and no cleaner or janitor atlas exists. A cleaner is new art, so it is an open question (PLAN.md section 9).
+No cleaner exists in the course cast with art or a voice. The course names "Bernadette Lyons, Carrholme cleaner" on screen only (`BRAND_SET.md:110`), and no cleaner or janitor atlas exists. Bernadette Lyons is settled under D82b: a new character, art made separately, sprite key `bernadette_lyons` (PLAN.md section 2.13).
 
 ## 2. Acts and the global that turns each
 
@@ -90,4 +90,4 @@ Existing barks or grumbles to move into pools: none.
 
 ## 5. Tier
 
-**Tier 2, small.** Two ambient extras with needs in the break room and corridor, two capacity-2 chat points (espresso and cooler), three exchanges, mapped breaks, one evening turn and the existing night turn. No new room, no levers, no openings. A cleaner is an optional addition for the evening (section 9 of PLAN.md). Tier 1 (presets only) gives nothing, because nobody in m05 can use a machine. Tier 3 would mean openings, and every candidate opening touches the whodunnit.
+**Tier 2, small.** Three ambient extras with needs (two by day, a cleaner in the evening), two capacity-2 chat points (espresso and cooler), four exchanges, mapped breaks, one evening turn and the existing night turn. No new room, no levers, no openings. A cleaner, Bernadette Lyons, joins for the evening (D82b, PLAN.md section 2.13). Tier 1 (presets only) gives nothing, because nobody in m05 can use a machine. Tier 3 would mean openings, and every candidate opening touches the whodunnit.
