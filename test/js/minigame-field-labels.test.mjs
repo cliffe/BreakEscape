@@ -105,8 +105,9 @@ test('the colour variables exist in the framework and on each minigame root', ()
   assert.match(css('dusting.css'), /\.dusting-jar\[aria-pressed="true"\] \.mg-section-label\s*\{\s*color:\s*var\(--d-text\)/);
 });
 
-test('a pressed jar has a non-colour marker, and the drug names are row headers', () => {
+test('a pressed jar has a non-colour marker, the changed drug row keeps its emphasis, the sever modal border is 2px', () => {
   assert.match(css('dusting.css'), /\.dusting-jar\[aria-pressed="true"\]::before/);
-  assert.match(js('drug-library-integrity/drug-library-integrity-minigame.js'), /<th scope="row">\$\{escapeHtml\(displayDashes\(drug\.name\)\)\}<\/th>/);
+  // The diff view underlines only the changed row's drug name (the other rows are plain cells): emphasis, kept
+  assert.match(js('drug-library-integrity/drug-library-integrity-minigame.js'), /<td><strong>\$\{escapeHtml\(displayDashes\(drug\.name\)\)\}<\/strong><\/td>/);
   assert.match(css('network-segmentation-map-minigame.css'), /\.nsm-modal\s*\{[^}]*border:\s*2px /);
 });

@@ -522,7 +522,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
                 return `<span class="dli-diff-value-large ${cls}">${escapeHtml(v)}</span>`;
             };
             return `<tr class="${rowCls}">
-  <th scope="row">${escapeHtml(displayDashes(drug.name))}</th>
+  <td><strong>${escapeHtml(displayDashes(drug.name))}</strong></td>
   <td>${escapeHtml(drug.concMgPerMl)}</td>
   <td>${cell('DOSE_MIN', drug.doseMin)}</td>
   <td>${cell('DOSE_MAX', drug.doseMax)}</td>
