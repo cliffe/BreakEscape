@@ -74,7 +74,7 @@ Pool, `bernadette_lyons`, coffee:
 
 Conversation (ink, offers nothing):
 1. Just the bins, love. Don't mind me.
-2. Mind the floor, it's wet.
+2. Right you are. Mind how you go.
 
 ## Clip count (estimate for V6)
 

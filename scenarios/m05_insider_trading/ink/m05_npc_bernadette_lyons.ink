@@ -28,7 +28,7 @@ VAR hub_quiet = false
     -> goodbye
 
 === goodbye ===
-Bernadette Lyons: Mind the floor, it's wet.
+Bernadette Lyons: Right you are. Mind how you go.
 ~ hub_quiet = true
 #exit_conversation
 -> choices
