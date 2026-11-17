@@ -122,3 +122,46 @@ No FAIL, and no nudge was needed.
 
 ### Scripts
 `tools/playtest/showcase-s2-lib.mjs` (recorder and helpers), `showcase-s2-run.mjs <gid> <A|B|C|D|F>`, `showcase-s2-lever.mjs <gid>` (machine states), `showcase-s2-analyse.mjs <dump>`, `showcase-s2-info.mjs`.
+
+## S3 (midday and cake)
+
+### Built (commit 60391659a, verified against PLAN this pass, no change needed)
+- `globalVariables`: `act_midday`, `chidi_pc_owner_away`, `jun_pc_owner_away` (the lunch gate's two declared engine globals), `cake_servings` 2.
+- `startItemsInInventory`: `cake` (type `cake1`), affordance satisfies hunger and social, restores 40, useSeconds 12, capacity 3, chatter `cake`, useSound `eat_snack`; magnet tempt 30, servings 2, perPerson 1, announce `news_cake`, newsRadius 5. Matches CAKE_ITEM.md.
+- Chatter pools added: `cake` ("Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good.") and `news_cake`.
+- Midday aim tasks: `use_open_screen`, `see_caught`, `see_cake_eaten`.
+- Ama `eventMappings`: B4 `workstation_screen_changed:chidi_pc` (`data.how === 'leave' && data.locked === true && globalVars.act_midday === true`), B5 `npc_left_post:jun_watanabe` (`act_midday`), `workstation_accessed:jun_pc` completeTask `use_open_screen`, B6 `npc_caught_at_post:jun_watanabe` delayMs 2500, B7 `magnet_finished:cake` completeTask `see_cake_eaten`, B9 `npc_left_item_gone:jun_watanabe`.
+- Lunch needs sets on `global_variable_changed:act_midday` (`data.value === true`): Chidi and Jun hunger 20, Graham and Agnieszka hunger 62.
+- Jun `eventMappings`: work coupling `workstation_accessed:jun_pc` (`act_midday`, cooldown 60000, work 5), B8 `npc_caught_at_post:jun_watanabe` completeTask `see_caught`.
+- Ama ink: VARs `act_midday`, `kitchen_seen`, `chidi_pc_owner_away`, `jun_pc_owner_away`; midday branch of "What should I try next?" (A9 to A11); "Let's do lunch." gate (A26 kitchen unseen, A29 owner away, A16 then A30 then `#set_global:act_midday:true` on success).
+- `jun_badge` object (id_badge, owner jun_watanabe, leftBehindChance 0.7, revealOnGlobal `jun_badge_left`); the badge is a bonus beat with no task, B9 the only line.
+- All voiced lines match PLAN 7a and 7d word for word; the recompiled ama_owusu.json matches the committed one.
+
+### Note on the brief's cake figures
+The brief's "hunger 0.5/30/50" is the demo_access_tour minimal variant (CAKE_ITEM.md), not office_life_showcase. The showcase keeps each office NPC's own hunger needs and tempts the cake through tempt 30 / servings 2 (PLAN section 4 row 2.7, band at or below 70). No change needed.
+
+### Validator
+`ruby scripts/validate_scenario.rb scenarios/office_life_showcase/scenario.json.erb`: 0 errors, 17 warnings.
+- S2 baseline (commit 8608d3151, both scenario and ink): 0 errors, 17 warnings = 16 cross-room "need target in room kitchen, not home room office; it may be unloaded when needed" (R2 wake-on-load, accepted) plus 1 "chatter pool grumble_gone ... no NPC will ever speak it".
+- S3: the same 16 cross-room warnings, and one NEW warning beyond S2's set:
+  - #64 "habits: the mapping on workstation_screen_changed:chidi_pc fires on some leaves only: it needs a locked screen, and whether workstation chidi_pc locks on a leave depends on the owner chidi_okeke habits.screen." Expected and intended: B4 requires `data.locked === true`; Chidi's `habits.screen.lockIfAwayOverSeconds 10` locks on every trip over 10 s, and the `act_midday` condition further gates B4 to the lunch trip. Not a fault.
+- The S2 grumble_gone warning is RESOLVED by S3: the cake magnet satisfies hunger and runs out, so an NPC can now speak `grumble_gone` ("Missed it.").
+- No cake-lying-in-a-room stale warning (validate_npc_needs.rb:275-277): the cake starts in the inventory, not a room.
+- V8 sync budget: workstation globals 9/24; heard_ 1/8; magnet servings 1/2; reveal and left-behind 1/6; dropped magnet items 1/2; office-life onceOnly 8/10; office-life items 2/4; small keys 20/64. All within budget.
+
+## BC1 (cake after reload) -- BLOCKED, not proven live this run
+
+Probe: `tools/playtest/showcase-bc1-cake-reload.mjs`.
+Usage: `node tools/playtest/showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake --port 3094 [--cases 1,2,3,4] [--eaters chidi_okeke,jun_watanabe] [--rooms office,kitchen] [--task see_cake_eaten] [--at x,y] [--near objectId] [--wait 22] [--games 1=ID,...]`. Scenario, room and cake are arguments so another session can reuse it.
+
+| Case | Game ids | Result |
+|---|---|---|
+| 1 cake held | 7525, 7529 | BLOCKED |
+| 2 cake down, untouched | 7526 | BLOCKED |
+| 3 cake down, one slice | 7527 | BLOCKED |
+| 4 cake finished | 7528 | BLOCKED |
+
+All four fail at the `page.reload()`, never reaching the cake logic. The first load of each fresh game builds the scene fine. After a reload the game has saved progress, so the session-resume overlay appears (confirmed on a diagnostic, games 7530 and 7531: `hasProgress` true, overlay `flex`, body text "RESUME SESSION?"). I added resume-overlay handling to the probe's `reload()` (wait for the overlay, click `#session-resume-btn`). That hides the overlay, but the Phaser scene still does not rebuild: `window.player` / `rooms` / `npcNeedsSystem` / `gameScenario` never return within 40 s, and the reloaded client does not re-fetch scenario/room/ink. The only 503 in the server log is `POST /tts` (expected under the keyless server and harmless: the first load succeeds with the same 503; the `ERR_FAILED` console lines are the probe's own `/tts` route abort). Root cause of the no-rebuild-on-reload is not yet isolated. Candidates: (a) a parallel session contending on :3094 -- during this run the harness working directory kept switching to the sibling worktree `.claude/worktrees/p-ol-m05`, which suggests another session was driving the same server; (b) a standalone-mode reload/resume path for this scenario that does not re-bootstrap (S1 R11 and an S2 reload were never actually proven live, so a reload of this scenario on :3094 has not been shown to work). Needs either an exclusively owned server or a root-cause fix before BC1 can be run. No engine edits were made.
+
+### Scripts (this pass)
+`tools/playtest/showcase-bc1-cake-reload.mjs` (resume-overlay-aware reload added). Diagnostics were scratch-only (`/tmp/.../bc1-diag*.mjs`), not committed.
