@@ -3,9 +3,12 @@
 
 Run: python3 -m unittest tools/test_pixellab_pipeline.py -v
 """
+import argparse
 import sys
 import tempfile
+import types
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +17,8 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pixellab_pipeline import (clear_edge_white, clear_white_backgrounds,  # noqa: E402
                                parse_pose_from, take_pose_from_state,
-                               apply_stored_import_settings)
+                               apply_stored_import_settings, clear_white_wanted)
+import pixellab_pipeline  # noqa: E402
 from convert_pixellab_to_spritesheet import normalize_anim_type  # noqa: E402
 
 WHITE = (254, 255, 254, 255)
@@ -348,3 +352,71 @@ class DriftAuditPoseNamesTest(unittest.TestCase):
             saved = ov / "k" / "pose_drink" / "south" / "frame_000.png"
             self.assertTrue(saved.exists())
             self.assertEqual(Image.open(saved).getpixel((30, 29)), (255, 0, 0, 255))
+
+
+class WhiteBackgroundOptInTest(unittest.TestCase):
+    """The white-background fill is off by default (it ate Sarah's white shirt) and runs only for
+    a key flagged white_bg in the manifest, or with --clear-white. --keep-white always wins."""
+
+    CID = "f9fdf0ce-34a5-424e-a4c1-af43aaaa8f37"
+
+    def run_offline_import(self, manifest_entry, **flags):
+        """Run cmd_import --offline on one white-background frame; return that frame afterwards."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            root = tmp / "export"
+            (root / "rotations").mkdir(parents=True)
+            Image.fromarray(figure_frame(), "RGBA").save(root / "rotations" / "south.png")
+            manifest = {"k": dict(character_id=self.CID, **manifest_entry)}
+            args = argparse.Namespace(target="k", key=None, pose_from=None, idle_from=None, sit_from=None,
+                                      white_threshold=None, keep_white=False, clear_white=False,
+                                      offline=True, ignore_drift=True, allow_incomplete=True,
+                                      assets_dir=str(tmp), workdir=None)
+            for name, value in flags.items():
+                setattr(args, name, value)
+            character = {"name": "K", "animations": []}
+            fake_api = mock.Mock()
+            fake_api.get.return_value = character
+            ov = tmp / "overrides"
+            ov.mkdir()
+            with mock.patch.object(pixellab_pipeline, "IMPORT_MANIFEST", tmp / "chars.json"), \
+                    mock.patch.object(Path, "read_text", lambda self, *a, **k: __import__("json").dumps(manifest)
+                                      if self.name == "chars.json" else Path.read_bytes(self).decode()), \
+                    mock.patch.object(Path, "exists", lambda self: True if self.name == "chars.json"
+                                      else __import__("os").path.exists(self)), \
+                    mock.patch.object(pixellab_pipeline, "PixelLab", return_value=fake_api), \
+                    mock.patch.object(pixellab_pipeline, "resolve_character", return_value=self.CID), \
+                    mock.patch.object(pixellab_pipeline, "missing_animations", return_value=([], None)), \
+                    mock.patch.object(pixellab_pipeline, "export_root_for", return_value=root), \
+                    mock.patch.object(pixellab_pipeline, "drop_unlisted_poses"), \
+                    mock.patch.object(pixellab_pipeline, "apply_overrides"), \
+                    mock.patch.object(pixellab_pipeline, "convert_and_record"):
+                pixellab_pipeline.cmd_import(args)
+            return np.asarray(Image.open(root / "rotations" / "south.png"))
+
+    def test_default_import_keeps_edge_connected_white(self):
+        b = self.run_offline_import({})
+        self.assertEqual(tuple(b[1, 1]), WHITE)
+
+    def test_flagged_character_clears_it(self):
+        b = self.run_offline_import({"white_bg": True})
+        self.assertEqual(b[1, 1, 3], 0)
+        self.assertEqual(tuple(b[9, 9]), WHITE, "enclosed badge must stay")
+
+    def test_clear_white_flag_clears_it(self):
+        b = self.run_offline_import({}, clear_white=True)
+        self.assertEqual(b[1, 1, 3], 0)
+
+    def test_keep_white_overrides_the_manifest(self):
+        b = self.run_offline_import({"white_bg": True}, keep_white=True)
+        self.assertEqual(tuple(b[1, 1]), WHITE)
+
+    def test_wanted_logic_and_stored_setting(self):
+        self.assertFalse(clear_white_wanted(argparse.Namespace()))
+        self.assertTrue(clear_white_wanted(argparse.Namespace(clear_white=True)))
+        self.assertTrue(clear_white_wanted(argparse.Namespace(), {"white_bg": True}))
+        self.assertFalse(clear_white_wanted(argparse.Namespace(keep_white=True, clear_white=True)))
+        a = argparse.Namespace(target="k", key=None, pose_from=None, idle_from=None, sit_from=None,
+                               white_threshold=None)
+        apply_stored_import_settings(a, {"k": {"character_id": self.CID, "white_bg": True}})
+        self.assertTrue(a.white_bg)
