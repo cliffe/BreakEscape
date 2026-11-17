@@ -133,12 +133,12 @@ Machines switch off on a single bounded global, and the needs layer does the res
 ```jsonc
 { "eventPattern": "global_variable_changed:wh_staff_upset", "condition": "value === true", "setGlobal": { "coffee_off": true } },
 { "eventPattern": "global_variable_changed:gary_beat",      "condition": "value === true", "setGlobal": { "coffee_off": true } },
-// one clearing mapping per cause, each checking every other cause (the validator rejects ||)
+// on the HaX phone NPC (registered at game start), appended last; one clearing mapping per cause, each checking every other cause (the validator rejects ||)
 { "eventPattern": "global_variable_changed:gary_beat",      "condition": "value === false && !globalVars.wh_staff_upset", "setGlobal": { "coffee_off": false } },
 { "eventPattern": "global_variable_changed:wh_staff_upset", "condition": "value === false && !globalVars.gary_beat",      "setGlobal": { "coffee_off": false } }
 ```
 
-  Never edit an existing mapping's `setGlobal`. Mapped breaks always negate `<npc>_beat`, not the machine global. A naive "beat over: `coffee_off` false" would re-open a machine the trouble gate still holds off.
+  Host these on the phone NPC or another start-room NPC (`public/break_escape/js/core/game.js:2210` to `:2215`), never on the moved NPC or an NPC in another room: a room NPC's mappings go live only when its room loads (`npc-lazy-loader.js:96` to `:103`), and a `global_variable_changed` missed before then (emitted once per write, `npc-manager.js:1511`) is not replayed. The same goes for any mapping that sets `<npc>_beat`. Never edit an existing mapping's `setGlobal`. Mapped breaks always negate `<npc>_beat`, not the machine global. A naive "beat over: `coffee_off` false" would re-open a machine the trouble gate still holds off.
 - The cooler case counts as witnessed (both staff out at the cooler while the player knocks Ffion out). m03 accepted that (R3 finding 3, accepted in the R3 fix log); the cure is a "staff out" global set on `npc_left_post`, more wiring than the stakes justify. Put it in the user's decisions list.
 - Space timed toasts at least 4 s apart (the validator checks). "The receptionist's down" at 2500 ms and "Reception had company" at 2500 ms landed together; 6000 left 3.5 s, still warned; 6500 gave 4.0 s (R3 nit 4, R5 minor 1, R6).
 - Unread globals (`zainab_attacked`, `yusuf_attacked`) draw a validator suggestion. Keep them only if the plan names a use.

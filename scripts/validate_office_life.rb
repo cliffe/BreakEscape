@@ -451,8 +451,8 @@ module ValidateOfficeLife
 
       issues << "⚠️ WARNING: office life V2: NPC '#{n['id']}' #{why.join(' and ')}, and its needs can take it out of " \
                 "its own room (to #{away.join(', ')}). A story NPC must stay reachable: leash it to its own room " \
-                '(needsRooms) with every need target there, gate the machines it may use away from its post with the beat gate ' \
-                '(mission-office-life, protection 3), or leave it without away needs. deferrable: false does not exempt it.'
+                '(needsRooms) with every need target there, or leave it without away needs. A beat gate does not lift this ' \
+                '(mission-office-life, Stage 1). deferrable: false does not exempt it.'
     end
   end
 
