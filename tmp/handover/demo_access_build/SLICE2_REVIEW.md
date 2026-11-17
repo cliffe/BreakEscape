@@ -39,7 +39,7 @@ Fix: add "same binding: write `<%= @random_password %>` again, never a copy" to 
 
 ## Open item (not counted)
 
-player_state growth. SLICE2_TEST_HANDOVER.md reports leaf count 132 to 145 after three repeats of the short route. From the code, every write these objects cause is bounded: plant/unplug add and remove one link item and one device (network_access.rb:262-279, 300-309), `gainedFootholds`, `signedInPcs`, `unlockedRooms`, `objects_removed`, `serverClones` all de-duplicate (network_access.rb:277, 1805; game.rb:120, 4325, 4054). I could not place the 13 leaves by reading. A probe (copy of the test with a per-key diff, in my scratchpad, run under tmp/tests.lock) was queued behind the lock and had not finished at handover. The test agent should print per-key leaf counts in that test before deciding.
+player_state growth: resolved, not a finding. SLICE2_TEST_HANDOVER.md reported leaf count 132 to 145 after three repeats on the first draft. A probe (the test at b7a1c9bc1, which opens meeting_room before the plant, with a per-key leaf diff added) ran 'player_state does not grow when the short route is repeated' under tmp/tests.lock: 1 run, 12 assertions, 0 failures, and no key changed its leaf count. The earlier growth came from the first draft's failed plants, not from the scenario. The code agrees: every write these objects cause is bounded (network_access.rb:262-279, 300-309, 1805; game.rb:120, 4325, 4054).
 
 ## Not checked
 - No live render or browser run on :3097 (m1's placement is from the code, not a screenshot).
