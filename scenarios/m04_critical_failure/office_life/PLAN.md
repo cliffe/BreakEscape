@@ -54,14 +54,14 @@ KO globals: `security_guard_ko` (735) and `robert_vance_ko` (1691) are exported 
 
 ### 2.2 The two newcomers
 
-From the awareness course cast (D53). Excluded: the Office Life Tour core cast (`chidi_okeke`, `jun_watanabe`, `agnieszka_duda`, `ama_owusu`, `graham_whitfield`, `zainab_hussain`), m06's draft picks (`lerato_dlamini`, `tomasz_wisniewski`), m10's (`darren_price`), and those already in m01, m03, m05 or `demo_access_tour`. m04's on-site cast is two men in their mid-fifties (Vance, British Pakistani; the guard, white British).
+From the awareness course cast (D53). Excluded: the Office Life Tour core cast (`chidi_okeke`, `jun_watanabe`, `agnieszka_duda`, `ama_owusu`, `graham_whitfield`, `zainab_hussain`), m06's draft picks (`lerato_dlamini`, `tomasz_wisniewski`), m10's (`darren_price`), and those already in m01, m03, m05 or `demo_access_tour`. m04's on-site cast is two men in their mid-fifties (Vance, British Pakistani; the guard, white British). The pair add a Black man and a white woman; both are in their forties, so every non-hostile person on site is 40 to 55. That suits a night shift of long-serving staff; `QUESTIONS.md` Q3 offers people in their thirties for more age spread.
 
 | NPC | Who | m04 job | Voice |
 |---|---|---|---|
 | `ibrahim_diallo` | 40s, Black, French-Senegalese, long settled in Leeds, patient and unhurried (`VOICE_CAST.md:93`) | Albion's office IT support lead, in overnight to swap the reception and office desktops while nobody is using them. Office IT only: "the plant network isn't mine" | Sadaltager |
 | `joanne_pell` | late 40s, white, Leicester, brisk and friendly (`VOICE_CAST.md:81`) | Albion's training and inductions coordinator, in early to run the six o'clock site inductions for the module-swap contractors | Zephyr |
 
-Both atlases have 288 frames: 8 seated, and 8 each of `pose_drink`, `pose_use` and `pose_phone`. Neither key nor voice is used in m04. Office IT, not plant IT, keeps anyone on site from looking as if they should have seen the attack.
+Both atlases have 288 frames: 8 seated, and 8 each of `pose_drink`, `pose_use` and `pose_phone`. Neither key nor voice is used in m04 or another campaign mission; both appear in the awareness course scenarios, which is no clash for a campaign mission. Office IT, not plant IT, keeps anyone on site from looking as if they should have seen the attack.
 
 **Voice styles** (rewritten for Albion, accents kept): Ibrahim, "Albion Energy Storage's office IT support lead, in his 40s, patient and unhurried; fifteen years in Leeds. Speak with a consistent English accent with a light French-West African inflection, now settled in Leeds, throughout, with no shift to any other accent." Joanne, "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent."
 
@@ -96,7 +96,7 @@ Slow decay keeps them seated most of the night; the mapped breaks give the timin
 
 ### 2.7 Machines, the kettle gate and the trouble global
 
-- **Cooler** (`water_cooler`, reception): preset cooler with `affordance` overrides `capacity: 1`, `chatter: false` (no pair can form), `useSeconds: 12`, `queue: false`, and a hand-written `useFrom` at the cell below the cooler, **estimate** (8,6), body centre (272,208): open, at least 64 px from the guard (body centre (234,128)) and clear of the speed-gate lane. A second user who finds it busy turns back and tries later. `offWhen: "aes_staff_off"`.
+- **Cooler** (`water_cooler`, reception): preset cooler with `affordance` overrides `capacity: 1`, `useSeconds: 12`, `queue: false`, and a hand-written `useFrom` at the cell below the cooler, **estimate** (8,6), body centre (272,208): open, at least 64 px from the guard (body centre (234,128)) and clear of the speed-gate lane. With one place and no queue no pair can form, so the cooler needs no chatter override. A busy, queue-less source is not a candidate (`_giveUpReason` returns null when busy, `npc-needs.js:1986` to `:1993`): the second NPC stays seated and picks the cooler once it is free, with no walk and no thrash. `offWhen: "aes_staff_off"`.
 - **Kettle** (`kettle`, ops office): preset kettle, with `affordance` overrides `capacity: 2`, `chatter: "coffee"`, `useSeconds: 25`, `useFrom: { dx: 0, dy: 2 }` (the counter's collision runs to y 92, so the cell below the kettle's own is blocked), `queue: false`, `overhearRadius: 360`. **Estimate** first user at (210,117), the beside cell to its east at (242,117), both open and about 118 px from Vance's body centre (160,224). The north door lane is clear if the door sits at the room's west corner (x 48), as `doors.js:196` to `:206` gives with reception at (0,0); the build confirms the door position before writing the cells. `offWhen: "ops_kettle_off"`.
 - **`ops_kettle_off`**, declared `true`. Three causes keep it on: Vance not yet met, his card not yet in the player's hands, and trouble or evacuation. Mappings on `agent_0x99`, appended last:
   - `global_variable_changed:vance_met`, `value === true && globalVars.vance_provided_keycard === true && !globalVars.aes_staff_off`, `onceOnly`, sets `ops_kettle_off: false`;
@@ -119,7 +119,7 @@ With the machines off, a walker or queued user turns back (`_turnBack(s, 'off')`
 
 ### 2.9 Coupled break (one way)
 
-- On `joanne_pell`: `npc_use_started:kettle`, condition `data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off`, `cooldown: 150000`, `needs: { set: { caffeine: 20 } }`.
+- On `joanne_pell`: `npc_use_started:ops_kettle` (the event is keyed by object id, `npc_use_started:${job.targetId}`, `npc-needs.js:3574`), condition `data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off`, `cooldown: 150000`, `needs: { set: { caffeine: 20 } }`.
 
 The kettle is coupled one way only, so it is never held for minutes. The cooler has no coupling: it takes one user.
 
@@ -141,25 +141,26 @@ The render check at the evacuation turn uses a seated newcomer (instant unseat o
 
 ### 2.12 Trouble, credits and debrief
 
-`globalVarOnKO`: `ibrahim_ko`, `joanne_ko`, declared `false`. `behavior.hostile.leash: true` on both, as for m05's extras.
+`globalVarOnKO`: `ibrahim_ko`, `joanne_ko`, declared `false`. Both get the guard's hostile numbers plus the leash: `behavior.hostile: { chaseSpeed: 100, attackDamage: 4, pauseToAttack: true, leash: true }` (the guard's block, 748, and its reason at 741 to 746: with no block an NPC hits for the engine default of 10 and chases at 120 to 400 px, `config/combat-config.js:67` to `:75`, harder than any operative). The leash keeps a struck newcomer near the sofa; the default chase range stands.
 
-**Credits.** The "ALL ... ON SITE WALKED OUT" entry (242) gains `&& !globalVars.ibrahim_ko && !globalVars.joanne_ko`. The "EVERYONE ON SITE GOT OUT ALIVE, not all of them on their own feet" entry (243) widens its bracket to `(globalVars.security_guard_ko || globalVars.robert_vance_ko || globalVars.ibrahim_ko || globalVars.joanne_ko)` (credits conditions may use `||`). A new `warning` entry after the casualties lines: "NIGHT STAFF: HURT, ON YOUR ACCOUNT", condition `globalVars.ibrahim_ko || globalVars.joanne_ko`. It names no room, because a newcomer can fall at the kettle as well as in reception.
+A struck newcomer is hostile and throws a punch instead of opening a chat (`interactions.js:901` to `:907`), so the curt talk line is heard from the newcomer who was not struck, or from both after a cause that strikes neither (the guard turning hostile, a KO of Vance or the guard).
+
+**Credits.** The "ALL ... ON SITE WALKED OUT" entry (242) gains `&& !globalVars.ibrahim_ko && !globalVars.joanne_ko`. The "EVERYONE ON SITE GOT OUT ALIVE, not all of them on their own feet" entry (243) widens its bracket to `(globalVars.security_guard_ko || globalVars.robert_vance_ko || globalVars.ibrahim_ko || globalVars.joanne_ko)` (credits conditions may use `||`). A new `warning` entry after the casualties lines: "OFFICE STAFF: HURT, ON YOUR ACCOUNT" (not "night staff", which reads as the Hall 2 night crew of the entry at 244), condition `globalVars.ibrahim_ko || globalVars.joanne_ko`. It names no room, because a newcomer can fall at the kettle as well as in reception.
 
 **Debrief** (`ink/m04_closing_debrief.ink`), logic only: add `VAR ibrahim_ko = false` and `VAR joanne_ko = false` beside `:36` and `:44`; the head-count branch at `:431` becomes `{security_guard_ko or robert_vance_ko or ibrahim_ko or joanne_ko:`. No new line. The guard keeps his own scold at `:158`; the newcomers get none (a new voiced line is listed as an option in `QUESTIONS.md` Q5). The two KO globals are not exported: no later mission reads them.
 
 ### 2.13 Head count
 
-Every count of "eleven on site" becomes false once two more people are in reception. It appears five times: credit 242 (text), and four voiced lines, `ink/m04_opening_briefing.ink:315`, `ink/m04_npc_voltage.ink:239`, `ink/m04_npc_voltage.ink:436` and `ink/m04_closing_debrief.ink:433` (comment `:429`, and the ERB comment at 238). The recommended change (`QUESTIONS.md` Q2) is "thirteen" in each:
+The story counts "eleven on site" in five places: credit 242 (text), and four voiced lines, `ink/m04_opening_briefing.ink:315` (HaX's intel), `ink/m04_npc_voltage.ink:239` and `:436` (Voltage's recon), and `ink/m04_closing_debrief.ink:433` (comment `:429`, and the ERB comment at 238). No other count of eleven, or of who is on site, is in the ink or the scenario; `stale_SOLUTION_GUIDE.md:21` and `ALIGNMENT_PLAN.md:166` also say eleven and are left as dated records. The lab sheet is checked at close.
+
+**The pair are off the roster.** Ibrahim's desktop swap was booked late and Joanne came in early on her own account; neither is on the night rota that HaX's intel and Voltage's recon were built from. So the briefing and Voltage's lines stay as they are: they are what each side believed. One exchange (`ex_not_on_the_rota`, section 6) says so in passing. What changes is the count after the night, which only the player's side can make (`QUESTIONS.md` Q2, option (d)):
 
 | Where | Old | New |
 |---|---|---|
 | credit 242 | ALL ELEVEN ON SITE WALKED OUT | ALL THIRTEEN ON SITE WALKED OUT |
-| briefing `:315` | The attack. Eleven people on site, nine of them on the night crew, and everyone on that feed. | The attack. Thirteen people on site, nine of them on the night crew, and everyone on that feed. |
-| Voltage `:239` | Eleven on site tonight. Nine on the night crew in Hall 2, the duty engineer, and the man on the gate. | Thirteen on site tonight. Nine on the night crew in Hall 2, the duty engineer, two in reception, and the man on the gate. |
-| Voltage `:436` | You save your eleven and your forty. ... | You save your thirteen and your forty. ... |
-| debrief `:433` | Eleven people walked out of there tonight. ... | Thirteen people walked out of there tonight. ... |
+| debrief `:433` | Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why. | Thirteen people walked out of there tonight, two of them not on anyone's list. Two hundred and forty thousand people kept their lights on and never knew why. |
 
-Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. Four lines need re-voicing, each needing the user's own yes. On an evacuation route the pair have left the building before the end, so "walked out" holds for them too.
+The comments at 238 and `:429` are updated to say thirteen: the nine night crew, Vance, the gate guard and the two office staff off the rota. One line needs re-voicing, with the user's own yes. On an evacuation route the pair have left the building before the end, so "walked out" holds for them too. If the user prefers the count in every line (Q2 (a)), the briefing, Voltage `:239` and `:436` also change, four re-voices in all.
 
 ### 2.14 Build skeletons
 
@@ -168,10 +169,13 @@ Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. 
   "spriteSheet": "joanne_pell", "voice": { "name": "Zephyr", "style": "<section 2.2>", "language": "en-GB" },
   "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_joanne_pell.json",
   "position": { "x": 7.47, "y": 7.47 }, "seated": true,
-  "needsHome": { "x": 7.47, "y": 7.47 }, "needsRooms": ["main_entrance", "operations_office"],
+  "spriteTalk": "<joanne_pell talk sheet>", "spriteVisemes": "<joanne_pell visemes>",
+  "avatar": "<joanne_pell headshot>", "spriteConfig": { "<as m05's extras>": "..." },
+  "currentKnot": "start",
+  "needsHome": { "room": "main_entrance", "x": 7.47, "y": 7.47 }, "needsRooms": ["main_entrance", "operations_office"],
   "needsCompany": { "groups": ["aes_night"] }, "chatterCooldownMin": 2,
   "globalVarOnKO": "joanne_ko",
-  "behavior": { "hostile": { "leash": true } },
+  "behavior": { "hostile": { "chaseSpeed": 100, "attackDamage": 4, "pauseToAttack": true, "leash": true } },
   "needs": { "thirst":   { "initial": 90, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 },
              "caffeine": { "initial": 85, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 } },
   "chatter": { "coffee": ["..."] },
@@ -179,7 +183,7 @@ Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. 
     { "eventPattern": "room_entered:main_entrance",
       "condition": "data.previousRoom === 'operations_office' && !globalVars.aes_staff_off",
       "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-    { "eventPattern": "npc_use_started:kettle",
+    { "eventPattern": "npc_use_started:ops_kettle",
       "condition": "data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off",
       "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
     { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true",
@@ -194,7 +198,7 @@ Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. 
 "exchanges": [
   { "with": "joanne_pell", "knot": "ex_six_oclock",
     "requireGlobal": { "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } },
-  { "with": "joanne_pell", "knot": "ex_four_on_nights",
+  { "with": "joanne_pell", "knot": "ex_not_on_the_rota",
     "requireGlobal": { "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } },
   { "with": "joanne_pell", "knot": "ex_stay_out_of_the_halls",
     "requireGlobal": { "vance_met": true, "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } } ]
@@ -232,11 +236,12 @@ All in scenario data or ink, voiceable, listed in `SPOKEN_LINES.md` at slice 5:
 - Pools: `coffee`, four lines per newcomer: 8 lines, each at most 40 characters, no variables, no speaker prefix, no repeat of a bark or of the newcomer's talk line. The cooler has no pool (capacity 1, no pair).
 - Talk lines: one per newcomer, plus a curt variant after trouble: 4 lines, in `ink/m04_night_staff.ink` and `ink/m04_npc_joanne_pell.ink`. Neither places its speaker.
 - Exchanges, three knots of three or four lines each, about 11 lines:
-  - `ex_six_oclock`: the contractors arrive at six for the module swap; Joanne has eleven inductions to run; Ibrahim has the reception PCs to finish first.
-  - `ex_four_on_nights`: there used to be four on nights; now it is the crew, Vance and the gate.
+  - `ex_six_oclock`: the contractors arrive at six for the module swap; Joanne has a dozen inductions to run; Ibrahim has the reception PCs to finish first.
+  - `ex_not_on_the_rota`: neither of them is on tonight's rota (his swap was booked last week, she came in early to get ahead); there used to be someone in the office on nights, now it is the crew, Vance and the gate.
   - `ex_stay_out_of_the_halls` (gated `vance_met`): Vance told them to stay in reception and the office and keep out of the halls till the crew's done. Neither says why; it carries no clue.
 - One bark (Joanne, evacuation).
-- Changed existing lines: the four head-count lines of section 2.13, only on Q2 option (a).
+- Changed existing lines: the debrief head-count line of section 2.13 (one re-voice), and the credit text; on Q2 (a) three more.
+- Speaker attribution in exchanges: every line carries a `Name:` prefix in the ink (`Ibrahim:` or `Joanne:`), which the chatter reader strips and uses as the speaker (`systems/npc-needs-chatter.js:64` to `:85`). A line with no prefix would be given to the owner, Ibrahim. `DIALOGUE_SAMPLE.md` follows the same convention.
 
 No line names a credential, a card, the attack, the telemetry or the operatives. `DIALOGUE_SAMPLE.md` (four pool lines, the two talk lines and `ex_six_oclock`) goes to the user before any line is written; built text matches it word for word.
 
@@ -245,7 +250,7 @@ No line names a credential, a card, the attack, the telemetry or the operatives.
 | Piece | Count | Notes |
 |---|---|---|
 | Workstation globals | 0 | no workstations |
-| `heard_` keys | 3 | `heard_ex_six_oclock`, `heard_ex_four_on_nights`, `heard_ex_stay_out_of_the_halls`, declared `false` |
+| `heard_` keys | 3 | `heard_ex_six_oclock`, `heard_ex_not_on_the_rota`, `heard_ex_stay_out_of_the_halls`, declared `false` |
 | Trouble and switch globals | 3 | `aes_staff_off`, `aes_staff_evacuated` (monotonic), `ops_kettle_off` (declared `true`, cleared once on `vance_met`, set again on trouble: non-monotonic, but each write follows the latest cause, so last-write-wins is right) |
 | KO globals | 2 | `ibrahim_ko`, `joanne_ko` |
 | Saved NPC visibility keys | 2 | one per newcomer, set by the evacuation hide |
@@ -259,20 +264,20 @@ All bounded booleans sent as per-key deltas; needs state is not saved. None is r
 
 ## 8. Field names to write
 
-`officePresets`, `storyPath`, `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`; on objects, object-level `offWhen` and `affordance` (`capacity`, `chatter` (a pool name, or `false` on the cooler), `overhearRadius`, `useSeconds`, `useFrom`, `queue`). On event mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, `bark`, and the `needs` action `{ "set": { "<need>": <level> } }`. Machines by base type name (`water_cooler`, `kettle`). Append new mappings at the end of `agent_0x99`'s list so existing `onceOnly` keys keep their index. No `||` in mapping conditions or `requireGlobal`. `scenario.json.erb` holds ERB comments with `%>`: edit with string replacement. Field names at `FormatUpgrade.current`; no office-life key inside an ERB loop.
+`officePresets`, `storyPath`, `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile` (`chaseSpeed`, `attackDamage`, `pauseToAttack`, `leash`), `spriteTalk`, `spriteVisemes`, `avatar`, `spriteConfig`, `currentKnot`; on objects, object-level `offWhen` and `affordance` (`capacity`, `chatter` (a non-empty pool name; the cooler sets none), `overhearRadius`, `useSeconds`, `useFrom`, `queue`). On event mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, `bark`, and the `needs` action `{ "set": { "<need>": <level> } }`. Machines by base type name (`water_cooler`, `kettle`). Append new mappings at the end of `agent_0x99`'s list so existing `onceOnly` keys keep their index. No `||` in mapping conditions or `requireGlobal`. `scenario.json.erb` holds ERB comments with `%>`: edit with string replacement. Field names at `FormatUpgrade.current`; no office-life key inside an ERB loop.
 
 ## 9. Costs and decisions
 
 | Item | Cost | Decision |
 |---|---|---|
 | Tier | none beyond the rest | Q1: recommend Tier 2 small |
-| Head count | four re-voiced lines and one credit | Q2: recommend thirteen |
+| Head count | one re-voiced line and one credit | Q2: recommend (d), off the roster |
 | Two extras from the course cast | no art | Q3: recommend Ibrahim Diallo and Joanne Pell |
 | Permit tablet opening | one object, lore text | Q4: recommend no |
-| Voicing | about 24 new clips (8 pool lines, 4 talk lines, about 11 exchange lines, 1 bark) plus 4 re-voiced | Q5: yes on `DIALOGUE_SAMPLE.md`, then a separate yes on the spend and on the four re-voices |
+| Voicing | about 24 new clips (8 pool lines, 4 talk lines, about 11 exchange lines, 1 bark) plus 1 re-voiced (4 on Q2 (a)) | Q5: yes on `DIALOGUE_SAMPLE.md`, then a separate yes on the spend and on the re-voice |
 | Planter move so the cooler takes a pair | one dressing change, 8 more pool lines | Q6: recommend no |
 | Engine changes | none | |
-| Changed existing lines | four (Q2 a); credits and debrief conditions change logic only | |
+| Changed existing lines | one voiced line (debrief `:433`) and one credit text; credits and debrief conditions change logic only | |
 
 Decided here, with reasons: nobody in the existing cast moves (2A); the security office and SCADA room stay empty (their design); the kettle waits for both `vance_met` and `vance_provided_keycard` so every meeting before the card is in hand, the clone included, is private; the cooler takes one user because its second cell is blocked; both newcomers are talkable with one line because the exchange owner needs a `storyPath`; evacuation hides on the next room change instead of a scripted walk-out (reception has no exit the pair could use, and `patrolOverride` on a needs NPC is ruled out).
 
@@ -284,14 +289,14 @@ The critical path end to end, unchanged, on the clone route and the KO-Vance rou
 
 ### 10.2 Live office-life checks (walking pace, five tries each)
 
-- **L1** Fresh game: both newcomers seated on the sofa at load, behind the briefing; the guard's sight check fires as before with the pair present.
-- **L2** Enter reception from the ops office: Joanne leaves for the cooler about 2 s later, reaches `using` at (272,208) (**estimate**), at least 64 px from the guard, with the speed-gate lane clear, and walks back to the sofa. If Ibrahim's thirst comes due while she uses it, he turns back or waits and goes later; nobody stands inside the cooler sprite.
+- **L1** Fresh game: both newcomers seated on the sofa at load, behind the briefing; the guard's sight check fires as before with the pair present (his challenge reads only the player, 750 to 758, so the pair inside his cone are a deliberate departure from the skill's keep-out-of-LOS rule: the sofa is reception's only seat and he is the receptionist's stand-in).
+- **L2** Enter reception from the ops office: Joanne leaves for the cooler about 2 s later, reaches `using` at (272,208) (**estimate**), at least 64 px from the guard, with the speed-gate lane clear, and walks back to the sofa. If Ibrahim's thirst comes due while she uses it, he stays seated and goes once she is done; nobody stands inside the cooler sprite.
 - **L3** Before the kettle opens, neither newcomer enters the ops office in ten needs-minutes. Three routes: the clone in the first meeting; the cover route ("I'll start on the staff records") then the clone in a later talk through the hub; the ally route ("I'm going.") then the clone later. On each, `ops_kettle_off` stays `true` until the card is in hand and no newcomer is in the ops office during any Vance conversation before then.
 - **L4** After `vance_met` and `vance_provided_keycard`, confirm the north door's position, then return to the ops office from the SCADA room: Ibrahim enters by the north door within about 4 s, Joanne follows, both reach `using` at the kettle cells, neither blocks the north door lane or touches Vance's tile.
 - **L5** Each exchange plays once; `ex_stay_out_of_the_halls` never before `vance_met`.
 - **L6** Evacuation on each cause in turn (`crew_warned` in person, `crew_warned` by phone, `hydrogen_alarm` from the timer): bark heard where in range; machines off; on the next room entry both are hidden, including on re-entering reception; a seated newcomer leaves no sprite on the sofa (rendered); a newcomer hidden mid-use at the kettle leaves it free (`__test.needs` shows no user).
 - **L7** The guard's challenge and `checkpoint_passed` unchanged with the pair present.
-- **L8** Talk to each newcomer seated, walking to the cooler and at the kettle: one line, the background is the room they stand in, and the trip resumes after the chat closes. After trouble, the curt line.
+- **L8** Talk to each newcomer seated, walking to the cooler and at the kettle: one line, the background is the room they stand in, and the trip resumes after the chat closes. After trouble, the curt line from the newcomer who was not struck (a struck one punches instead), and from both after the guard turns hostile.
 
 ### 10.3 Reload
 
