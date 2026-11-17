@@ -807,6 +807,20 @@ export function examineTextFor(sprite) {
 }
 
 /**
+ * The in-modal layout shared by readDisplay and observationDisplay "gameDisplay":
+ * the observation in <em>, a blank line, then the text. The name is the modal title,
+ * so it is not repeated. Dash display, then the shared escape (gameDisplay's html mode
+ * inserts the result as given). Returns { body, title } for window.gameDisplay(body, title, { html: true }).
+ */
+function gameDisplayParts(data, sprite, observations, text) {
+    const esc = (s) => escapeHtml(displayDashes(String(s)));
+    const title = esc(data.name || sprite?.name || '');
+    const body = (observations ? `<em>${esc(observations)}</em>` : '') +
+        (observations && text ? '\n\n' : '') + (text ? esc(text) : '');
+    return { body: body || title, title };
+}
+
+/**
  * "Examine" in the inventory click menu (inventory-menu.js): the examine view
  * of a held item, with the chain's own text. Without the examine scene (it is
  * always registered in the game) the observation is shown as the chain's last
@@ -820,7 +834,8 @@ export function examineHeldItem(sprite) {
     const name = data.name || sprite.name || '';
     const message = observations ? `${name} Observations: ${observations}\n` : name;
     if (data.observationDisplay === 'gameDisplay' && window.gameDisplay) {
-        window.gameDisplay(message, data.name);
+        const { body, title } = gameDisplayParts(data, sprite, observations, null);
+        window.gameDisplay(body, title, { html: true });
     } else {
         window.gameAlert?.(message, 'info', data.name, 5000);
     }
@@ -2118,7 +2133,10 @@ export function handleObjectInteraction(sprite) {
             if (!data.takeable || (data.observations && !data.takeable)) {
                 const displayMode = data.onInteract.display;
                 if (displayMode === 'gameDisplay' && window.gameDisplay) {
-                    window.gameDisplay(message, data.name);
+                    // Same layout as the fixed branch below: title once, <em> observation, then the text
+                    const { body, title } = gameDisplayParts(data, sprite, resolvedObservations,
+                        data.readable ? resolvedText : null);
+                    window.gameDisplay(body, title, { html: true });
                 } else {
                     window.gameAlert(message, 'info', data.name, 5000);
                 }
@@ -2159,10 +2177,9 @@ export function handleObjectInteraction(sprite) {
     if (readInPlace && window.gameDisplay) {
         // Dash display on the text, then the shared five-character escape: gameDisplay's
         // html mode inserts the result as given
-        const esc = (s) => escapeHtml(displayDashes(String(s)));
-        const body = (resolvedObservations ? `<em>${esc(resolvedObservations)}</em>\n\n` : '') + esc(resolvedText);
-        // Built as HTML on purpose (the <em>), every author piece escaped once above
-        window.gameDisplay(body, esc(data.name || sprite.name), { html: true });
+        const { body, title } = gameDisplayParts(data, sprite, resolvedObservations, resolvedText);
+        // Built as HTML on purpose (the <em>), every author piece escaped once in the helper
+        window.gameDisplay(body, title, { html: true });
         return;
     }
 
@@ -2178,7 +2195,11 @@ export function handleObjectInteraction(sprite) {
     if (!data.takeable || (data.observations && !data.takeable)) {
         const displayMode = data.observationDisplay || data.onInteract?.display;
         if (displayMode === 'gameDisplay' && window.gameDisplay) {
-            window.gameDisplay(message, data.name);
+            // Same layout as readDisplay: title once, <em> observation, then the text
+            // (the text only for a readable object, as the alert message does)
+            const { body, title } = gameDisplayParts(data, sprite, resolvedObservations,
+                data.readable ? resolvedText : null);
+            window.gameDisplay(body, title, { html: true });
         } else {
             window.gameAlert(message, 'info', data.name, 5000);
         }
