@@ -11,6 +11,7 @@ Worked example to copy: `tools/video/edits/m01_trailer60.json` (v7, 24 shots, 60
 
 ## Who does this
 
+- **Opus 5.5: the video's script.** The story, beat sheet, card and title text, and the shot list a recipe needs are written by Opus 5.5 (the orchestrator, or the `opus55` agent type). Sonnet or Haiku gather the shots it calls for (`video-takes`), never write the script (user, 2026-11-17).
 - **Orchestrator (Opus): selects and review.** Picks in and out points from contact sheets *and frames*, chooses the music window, reads every contact sheet of every render, runs the spoiler checklist. These are not delegated.
 - **Sonnet:** fills and fixes the edit list, runs `render.sh`, builds effects or components if a recipe needs one, makes the A/B renders. One agent per render batch.
 - **Haiku:** file chores only (extracting frames, contact sheets, listing take marks).

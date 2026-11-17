@@ -11,7 +11,9 @@ Needs the scout report and the picks file (`docs/video/scout/<mission>_scout.md`
 
 ## Who does this
 
-**Sonnet** writes and runs the take scripts, one agent per batch of takes, resumed between batches until it passes about 300k tokens. The **orchestrator (Opus)** reviews the takes table and the contact sheets and does the selects (`video-edit`). Captures are **serial**: one display, one take at a time. Do not parallelise.
+Model routing (user, 2026-11-17): writing a video's script (story, beat sheet, card text, shot list) is Opus 5.5 work; gathering the shots is Sonnet or Haiku work.
+
+**Sonnet** writes and runs the take scripts, one agent per batch of takes, resumed between batches until it passes about 300k tokens. **Haiku** may replay a take script that has already recorded cleanly (same entry state, no edits needed): it runs the script, checks the first frame and the take check, and reports. It stops on any surprise rather than improvising. One-shot beats (calls, endings) stay with Sonnet unless the script has been proven on a throwaway game. The **orchestrator (Opus)** reviews the takes table and the contact sheets and does the selects (`video-edit`). Captures are **serial**: one display, one take at a time. Do not parallelise.
 
 Brief the agent with: this skill, the picks file, the take ids and entry states to record, its own scratch subfolder as a full path (`<scratchpad>/video-takes-<mission>/`), "don't commit, don't edit the tooling", and "report as the final message; save the table as `docs/video/takes_<mission>.md`".
 
