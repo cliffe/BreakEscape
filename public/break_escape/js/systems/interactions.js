@@ -2133,7 +2133,10 @@ export function handleObjectInteraction(sprite) {
             if (!data.takeable || (data.observations && !data.takeable)) {
                 const displayMode = data.onInteract.display;
                 if (displayMode === 'gameDisplay' && window.gameDisplay) {
-                    window.gameDisplay(message, data.name);
+                    // Same layout as the fixed branch below: title once, <em> observation, then the text
+                    const { body, title } = gameDisplayParts(data, sprite, resolvedObservations,
+                        data.readable ? resolvedText : null);
+                    window.gameDisplay(body, title, { html: true });
                 } else {
                     window.gameAlert(message, 'info', data.name, 5000);
                 }
