@@ -493,7 +493,7 @@ export class DustingMinigame extends MinigameScene {
             <h3>Dust the print</h3>
             <p>Drag over the print with the ${this.powder === 'magnetic' ? 'wand' : 'brush'} (keys: hold Space and use the arrows, or Enter to keep brushing). Ridges appear stroke by stroke.</p>
             <div class="dusting-tools">${this._brushButtons()}</div>
-            <p class="dusting-powder-line">Powder: ${escapeHtml(pw.label)}</p>
+            <p class="dusting-powder-line"><span class="mg-field-label">Powder:</span> ${escapeHtml(pw.label)}</p>
             <div class="dusting-meters">
                 <div class="dusting-meter"><label>Coverage <span class="dusting-meter-value" data-dyn="cov-text"></span></label><div class="dusting-bar"><i data-dyn="cov-bar"></i><u data-dyn="cov-min"></u></div></div>
                 <div class="dusting-meter"><label>Clarity <span class="dusting-meter-value" data-dyn="clar-text"></span></label><div class="dusting-bar"><i data-dyn="clar-bar"></i></div></div>

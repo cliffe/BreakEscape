@@ -68,7 +68,7 @@ test('retargeted CSS selectors match the classes the markup emits', () => {
   assert.match(js('bluetooth/bluetooth-scanner-minigame.js'), /scan-instructions[^]*?<span class="mg-section-label">Instructions:/);
 
   const bio = js('biometrics/biometrics-minigame.js'), bcss = css('biometrics-minigame.css');
-  assert.match(bcss, /\.sample-header \.mg-section-label\s*\{/);
+  assert.match(bcss, /\.field-note \.mg-section-label\s*\{/);
   assert.match(bcss, /\.field-note \.mg-section-label\s*\{/);
   assert.match(bio, /className = 'sample-header'/);
   assert.match(bio, /className = 'field-note'/);
@@ -102,7 +102,7 @@ test('the colour variables exist in the framework and on each minigame root', ()
     assert.match(m[2], new RegExp(v + '\\s*:\\s*\\S'), `${sel} in ${file} sets ${v}`);
   }
   // Accent fails on the cyberpunk pressed jar (4.39:1): its label takes the body text colour
-  assert.match(css('dusting.css'), /\.dusting-jar\[aria-pressed="true"\] \.mg-section-label\s*\{\s*color:\s*var\(--d-text\)/);
+  assert.match(css('dusting.css'), /\[data-ui-theme="cyberpunk"\] \.dusting-jar\[aria-pressed="true"\] \.mg-section-label\s*\{\s*color:\s*var\(--d-text\)/);
 });
 
 test('a pressed jar has a non-colour marker, the changed drug row keeps its emphasis, the sever modal border is 2px', () => {

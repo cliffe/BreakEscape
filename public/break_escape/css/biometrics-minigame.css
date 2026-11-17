@@ -2,7 +2,7 @@
    instructions are in css/scanner-panel.css (A22). */
 
 .biometrics-minigame-container {
-    --mg-heading-colour: #e0e0e0;   /* 13.75:1 on the sample cards over #2e1a1a */
+    --mg-heading-colour: #ffd166;   /* gold, set apart from the #e0e0e0 body text; contrast measured in the field-labels fix notes */
     /* Compact interface similar to Bluetooth scanner */
     position: fixed !important;
     top: 5vh !important;
@@ -292,10 +292,6 @@
     align-items: center;
     margin-bottom: 6px;
     font-size: 14px;
-}
-
-.sample-header .mg-section-label {
-    color: #e0e0e0;
 }
 
 .sample-type {

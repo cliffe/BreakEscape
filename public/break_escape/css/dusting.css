@@ -94,8 +94,8 @@
 .dusting-ref:disabled:not([data-rejected]) { cursor: default; border-color: var(--d-accent); }
 .dusting-primary { background: #0e3b1b; border-color: var(--d-accent); color: #eaffef; }
 .dusting-btn[aria-pressed="true"], .dusting-jar[aria-pressed="true"] { border-color: var(--d-accent); background: #0e3b1b; }
-/* Accent on the pressed jar's #0e3b1b fails in the cyberpunk theme (4.39:1): body text colour there */
-.dusting-jar[aria-pressed="true"] .mg-section-label { color: var(--d-text); }
+/* Accent on the pressed jar's #0e3b1b fails in the cyberpunk theme (4.39:1): body text colour there only */
+[data-ui-theme="cyberpunk"] .dusting-jar[aria-pressed="true"] .mg-section-label { color: var(--d-text); }
 .dusting-btn[aria-pressed="true"]::before, .dusting-jar[aria-pressed="true"]::before { content: '\25CF '; color: var(--d-accent); }
 .dusting-tools { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .dusting-tool { display: inline-flex; align-items: center; gap: 6px; }

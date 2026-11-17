@@ -257,7 +257,7 @@ test('RFID cloner: card fields and result messages are text', () => {
     try { ui.showProtocolInfo({ name: 'Card' }); } catch { /* past the fields */ }
     assertClean(screen(), 'protocol info');
     assertText(screen().querySelector('.flipper-card-data div'), 'protocol info field');
-    assert.equal(screen().querySelector('.flipper-card-data div strong').textContent, 'HEX:', 'the label stays bold');
+    assert.equal(screen().querySelector('.flipper-card-data div .mg-field-label').textContent, 'HEX:', 'the label is a field label');
     ui.showSuccess(HOSTILE);
     assertText(screen().querySelector('.flipper-success-message'), 'success message');
     ui.showError(HOSTILE);
