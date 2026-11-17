@@ -172,7 +172,8 @@
       "height": 60
     },
     "imported": "2026-11-17",
-    "sit_from": "2030f54a-51e9-4253-84ed-529f4eb4b74f"
+    "sit_from": "2030f54a-51e9-4253-84ed-529f4eb4b74f",
+    "white_bg": true
   },
   "bernie_nwosu": {
     "character_id": "923f3e6c-10c0-4f2e-afe9-4d65cbc9c55e",
@@ -412,7 +413,8 @@
       "drink": "3188a6ae-c885-4599-ac19-275246d3b9ae",
       "phone": "368a7d20-b1de-41ec-9008-6d713109f789",
       "use": "7a019825-9fb1-466e-a2bf-21aeea684ec0"
-    }
+    },
+    "white_bg": true
   },
   "farah_qureshi": {
     "character_id": "39dfe7c3-8ef6-45b5-a240-d74e93f46ecd",
@@ -804,7 +806,8 @@
       "phone": "89513c03-3ca5-438d-b0ff-f4de5ac487cd",
       "use": "45751e8e-a4e2-4e53-800a-3fa421f21c52"
     },
-    "white_threshold": 185
+    "white_threshold": 185,
+    "white_bg": true
   },
   "ibrahim_diallo": {
     "character_id": "2970778d-a8b5-424d-8966-3baabcfd5e76",
@@ -1764,7 +1767,8 @@
       "drink": "e942a526-159e-4953-842c-cdcdce24298c",
       "phone": "07acb00b-d019-4ebe-a52c-e4f8a8bd072f",
       "use": "9ce446ef-96c4-48b0-a772-05fbbc0a29dc"
-    }
+    },
+    "white_bg": true
   },
   "thomas_park": {
     "character_id": "b5f70700-f3b0-4b11-b9fc-85f8b4319c02",

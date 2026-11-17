@@ -42,9 +42,12 @@ outside the pipeline:  pixellab_pipeline.py import <url> --key bernie_nwosu
 Other commands: status, collect (finish jobs a killed run left pending), balance, visemes.
 Every paid command accepts --dry-run, which prints the request without sending it.
 
-White backgrounds: `import` (online and --offline) and `reroll` make the near-white pixels
-connected to each frame's edges transparent, because some characters come back from PixelLab
-on opaque white. Enclosed white (eyes, badges) stays. `--keep-white` turns it off.
+White backgrounds: some characters come back from PixelLab on opaque white. For those only,
+`import` (online and --offline) and `reroll` can make the near-white pixels connected to each
+frame's edges transparent. It is OFF by default, because it eats a figure's own white clothing
+wherever the dark outline breaks (Sarah's shirt, November 2026). Turn it on with `--clear-white`
+(remembered in the manifest as "white_bg": true) or by setting that field. Enclosed white (eyes,
+badges) stays. `--keep-white` overrides it off.
 
 Auth: PIXELLAB_API_KEY (or PIXELLAB_API_TOKEN) env var, else the Authorization header of
 the `pixellab` MCP server in ~/.claude.json. The token is never printed.
@@ -1849,7 +1852,7 @@ def cmd_reroll(args):
             out.mkdir(parents=True, exist_ok=True)
             for i, url in enumerate(urls):
                 frame = api.download(url)
-                if not args.keep_white:
+                if clear_white_wanted(args, manifest.get(args.key)):
                     frame, _ = clear_edge_white(frame, args.white_threshold or
                                                 manifest[args.key].get("white_threshold") or WHITE_BG_THRESHOLD)
                 frame.save(out / f"frame_{i:03d}.png")
@@ -1960,6 +1963,15 @@ def clear_edge_white(im, threshold=WHITE_BG_THRESHOLD):
     return Image.fromarray(a, "RGBA"), n
 
 
+def clear_white_wanted(args, entry=None):
+    """The white-background fill is opt-in: --clear-white, or "white_bg": true in the key's
+    manifest entry (or args.white_bg, filled from it). --keep-white always wins."""
+    if getattr(args, "keep_white", False):
+        return False
+    return bool(getattr(args, "clear_white", False) or getattr(args, "white_bg", False)
+                or (entry or {}).get("white_bg"))
+
+
 def clear_white_backgrounds(root, threshold=WHITE_BG_THRESHOLD):
     """clear_edge_white on every rotation and animation frame under an export folder
     (rotations/*.png and animations/<template>/<direction>/*.png, the sit frames included).
@@ -1974,7 +1986,7 @@ def clear_white_backgrounds(root, threshold=WHITE_BG_THRESHOLD):
             pixels += n
     if frames:
         print(f"cleared the white background on {frames} of {len(files)} frame(s) "
-              f"({pixels} pixels; --keep-white turns this off)")
+              f"({pixels} pixels)")
     return frames, pixels
 
 
@@ -2000,6 +2012,7 @@ def apply_stored_import_settings(args, manifest):
         args.sit_from = getattr(args, "sit_from", None) or entry.get("sit_from")
         args.poses = parse_pose_from(getattr(args, "pose_from", None), entry.get("poses"))
         args.white_threshold = getattr(args, "white_threshold", None) or entry.get("white_threshold")
+        args.white_bg = bool(entry.get("white_bg"))
         args.target = entry["character_id"]
     if getattr(args, "poses", None) is None:
         args.poses = parse_pose_from(getattr(args, "pose_from", None))
@@ -2049,7 +2062,7 @@ def cmd_import(args):
         # Rebuild from the last download, e.g. after `fix`. Overrides are reapplied.
         root = export_root_for(key)
         drop_unlisted_poses(root, getattr(args, "poses", None))
-        if not args.keep_white:
+        if clear_white_wanted(args):
             clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
         apply_overrides(key, root)
         return convert_and_record(args, key, cid, character, DEFAULT_WORKDIR / "_export" / key)
@@ -2076,7 +2089,7 @@ def cmd_import(args):
         pose_cid = resolve_character(ref, args.workdir)
         pose_char = api.get(f"/characters/{pose_cid}")
         take_pose_from_state(root, state_folder(export_dir, pose_cid, pose_char, api), pose_char, name)
-    if not args.keep_white:
+    if clear_white_wanted(args):
         # Before the overrides, so a hand-edited frame is used exactly as committed.
         clear_white_backgrounds(root, args.white_threshold or WHITE_BG_THRESHOLD)
     apply_overrides(key, root)
@@ -2210,6 +2223,8 @@ def convert_and_record(args, key, cid, character, export_dir):
         manifest[key]["sit_from"] = resolve_character(args.sit_from, args.workdir)
     if getattr(args, "poses", None):
         manifest[key]["poses"] = {n: resolve_character(r, args.workdir) for n, r in sorted(args.poses.items())}
+    if clear_white_wanted(args):
+        manifest[key]["white_bg"] = True
     if getattr(args, "white_threshold", None):
         manifest[key]["white_threshold"] = args.white_threshold
     IMPORT_MANIFEST.write_text(json.dumps(dict(sorted(manifest.items())), indent=2) + "\n")
@@ -2540,12 +2555,15 @@ def main():
     p.add_argument("--offline", action="store_true", help="reconvert the last download (after `fix`) without downloading")
     p.add_argument("--ignore-drift", action="store_true",
                    help="replace the atlas even if it has hand edits not saved as overrides (they are lost)")
-    p.add_argument("--keep-white", action="store_true",
-                   help="skip the white-background fill. By default every rotation and animation frame "
+    p.add_argument("--clear-white", action="store_true",
+                   help="turn the white-background fill on for a character PixelLab returned on opaque "
+                   "white (remembered in the manifest as white_bg). Every rotation and animation frame "
                    "(sit frames included) has the near-white pixels connected to the frame edges made "
-                   f"transparent (4-connected flood fill, every channel >= {WHITE_BG_THRESHOLD}), because "
-                   "some PixelLab characters come back on opaque white. White enclosed by the figure "
-                   "(eyes, badges, highlights) stays; a transparent frame is unchanged")
+                   f"transparent (4-connected flood fill, every channel >= {WHITE_BG_THRESHOLD}). White "
+                   "enclosed by the figure (eyes, badges, highlights) stays. Off by default: it eats a "
+                   "figure's own white clothing wherever the outline breaks")
+    p.add_argument("--keep-white", action="store_true",
+                   help="never run the white-background fill, even if the manifest has white_bg")
     p.add_argument("--white-threshold", type=int,
                    help=f"near-white cut-off for that fill (default {WHITE_BG_THRESHOLD}). Lower it for a "
                    "character whose halo is darker and whose figure has no light greys of its own "
@@ -2572,8 +2590,10 @@ def main():
     p.add_argument("direction")
     p.add_argument("--tries", type=int, default=2, help="takes to generate (default 2)")
     p.add_argument("--accept", help="install take tNN as overrides")
+    p.add_argument("--clear-white", action="store_true",
+                   help="clear the white background on downloaded takes (default: only if the manifest has white_bg)")
     p.add_argument("--keep-white", action="store_true",
-                   help="keep a white background on downloaded takes (default: cleared, as in import)")
+                   help="keep a white background on downloaded takes even if the manifest has white_bg")
     p.add_argument("--white-threshold", type=int, help="fill cut-off (default: the manifest's, else "
                    f"{WHITE_BG_THRESHOLD})")
     p.add_argument("--dry-run", action="store_true")
