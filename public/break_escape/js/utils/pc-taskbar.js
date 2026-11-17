@@ -11,8 +11,9 @@
  * the remote link), Places (Desktop and the shares mapped on the desktop), then Lock, Switch
  * user and Sign out for a sign-in session. Lock shows only once the server reports that it
  * supports locking (pcSessions.lockingSupported() and lockSession), and only for a session
- * the player signed in to with a password: a claimed or guest session could not be unlocked
- * again by a password sign-in, so the server refuses those (422) and the panel hides Lock.
+ * with a way back in: a password sign-in, or a foothold or `from` credential session (K-lock).
+ * A claimed, guest or relay session could not be unlocked again, so the server refuses those
+ * (422) and the panel hides Lock.
  *
  * Who shows (q94, agreed with the data owner): a sign-in PC shows its live session's account
  * and never `desktopUser`; a PC that opens straight to its desktop shows `desktopUser` when
@@ -179,9 +180,11 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         if (du) account = { kind: 'desktopUser', name: du.name, character: du.character };
     }
     const isRemote = !isRelay && (!!remote || session?.remote === true);
-    // pcSessions.canLock is the one rule when the caller has it; without it the same test is made here
+    // pcSessions.canLock is the one rule when the caller has it; without it the same test as
+    // pc-sessions.js sessionLockable is made here (a password sign-in, or a foothold or `from`
+    // credential session, K-lock)
     const lockable = lockSupported && session?.guest !== true
-        && (typeof canLock === 'boolean' ? canLock : session?.via === 'password');
+        && (typeof canLock === 'boolean' ? canLock : fallbackLockable(session));
     // Switch user needs the PC's desktop to come back to; a view with none (a reader reached
     // without the desktop this page load) does not offer it rather than do nothing (R1 m3)
     // A relay has one Disconnect in place of Lock, Switch user and Sign out (8.3)
@@ -201,6 +204,12 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         places: isRelay ? [] : (Array.isArray(places) ? places : []).filter(p => p && p.id),
         actions
     };
+}
+
+function fallbackLockable(s) {
+    if (!s || s.relay === true) return false;
+    if (s.via === 'password') return true;
+    return s.via === 'credential' && s.remote === true && (!!s.footholdId || !!s.fromPcId);
 }
 
 /** Lock is offered only when the server reports it and the client can ask for it. */
