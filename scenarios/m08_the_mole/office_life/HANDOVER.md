@@ -35,6 +35,13 @@ Candidate tier: **0 to low 1**, to be decided in PLAN.md:
 4. `SPOKEN_LINES.md` (possibly empty) and `DIALOGUE_SAMPLE.md` only if lines are planned.
 5. Commit with explicit paths; the five plan-review rounds are for the orchestrator.
 
+## Second agent (2026-11-17)
+
+- Stage 0 finished: V6 rake gave 0 clips (run with `bundle exec rake`; there is no `bin/rake`); `BASELINE.md` written.
+- Checked: no room authors `ambientSound`, so the base has no room sound; `office_ambient` is air handling only (no murmur), `kitchen_tone` a fridge hum; typing loops need a `work` need, so none would play; profile beds do not bleed between rooms. Room tone with `roomToneTypes` adds no globals, objects or lines.
+- Proposed mapping: lobby, director, intel `quiet_office`; ops floor and crypto lab `it`; server room `server`; break room `kitchen`; archives and interrogation unmapped (silent). Lobby avoids `reception` so no distant-phone spots ring at night.
+- Writing `ANALYSIS.md` was refused by a tool guard ("Subagents should return findings as text, not write report files"). The analysis and plan content went to the orchestrator in the hand-back instead; `ANALYSIS.md`, `PLAN.md` and `SPOKEN_LINES.md` are not yet in this folder.
+
 ## Gotchas met
 
 - The validator regenerates `dungeon_graph.*` on every run; on this base they came out unchanged (check `git status` before committing).
