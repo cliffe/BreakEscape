@@ -163,3 +163,50 @@ What it shows:
 - player_state size was not measured. The probe does not record it, so the "grew or not" question is open.
 
 Next: the eat step needs its own check (why thandiwe and yasmin do not walk to the cake on this worktree's build), and the drop position needs a read after the settle, before and after the reload.
+
+## Continuation 2 (full route 10-19, game 7537)
+
+Run by the continuation 2 agent. Headless, setFPS(20) with fixed steps on (returned `fixedStep` true, not changed). Keyless server from this worktree on 127.0.0.1:3096, stopped afterwards (pids 189862 and 210768, port free). Start needs `BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle`; without it bundler fails on the worktree's missing gems. Session log: tmp/handover/demo_access_build/s6b_7537.jsonl. Server log: scratchpad server-3096.log.
+
+Mid-run, the server went down (another agent's `pkill -f`); it was restarted with the same recipe and game 7537 resumed. No step was failed for that.
+
+### Step table
+
+| Step | Result | Notes |
+|---|---|---|
+| 10 Comms cupboard | PASS | Walked through open plan, `interact` on the comms door (RFID). Reader offered "Emulate Lorna Easton FAC card": Access Granted. `t_comms` done. Screenshot 11_comms_cupboard.png. |
+| 11 Thandiwe's laptop | PASS | `interact` on thandiwe_laptop while she sat: events `pc_in_use`, `pc_in_use:thandiwe_laptop`. |
+| 12 The open session | STUCK | Tried three ways, Thandiwe stayed at her desk (chair at 122,-120, mode idle, atPost true). (1) Read the coffee rota: overlay showed, `thandiwe_laptop_owner_away` and `yasmin_pc_owner_away` set, but no move. Her caffeine was 79 (the rota adds 10). (2) Waited about 5 minutes in total: no move. (3) Dropped the cake in open plan: `item_dropped:cake`, `npc_saw_magnet:thandiwe`, `npc_left_post:thandiwe` fired, but she was still at 122,-120 and the laptop still reported `pc_in_use` 20 s later. Not reached: `t_open_session`. |
+| 13 Yasmin's PC | BLOCKED (same as 12) | `interact` on yasmin_pc gave `pc_in_use`, `pc_in_use:yasmin_pc`. Yasmin sat at 221,-171 (idle, atPost). Not reached the padlock or the note. |
+| 14 Front desk USB, injector | NOT RUN | Budget reached. |
+| 15 Rogue AP, Staff Wi-Fi clone | NOT RUN | Budget reached. |
+| 16 Staff Wi-Fi key | NOT RUN | Budget reached. |
+| 17 Unplug | NOT RUN | Budget reached. |
+| 18 Comms ports (guest VLAN) | NOT RUN | Budget reached. |
+| 19 Debrief and credits | NOT RUN | Budget reached. |
+| Walk behind open_plan back wall | NOT RUN | Budget reached. |
+| Kitchen, partner office, credits first entries | NOT RUN | Kitchen was not visited. |
+
+Stop 12 is the only blocker found. It may be the open-session trigger rather than a route fault, since she did not leave even after the cake drop fired `npc_left_post`. Worth a second look by someone who can read the office-life state for Thandiwe. Stop 13 has the same cause, because the plan needs both away.
+
+Caveat on stop 12: the NPC-needs log showed Yasmin using `coffee_station_open_plan` (in the open plan, not the kitchen) at t=624 before this run's rota read. The rota did not send either of them to the kitchen.
+
+### Phone answers ("Where next?")
+
+- After step 10 (comms cupboard done), first ask: "Have a word with Lorna by the comms door. Bring the cloner." (stale line from stop 7, shown above the new one).
+- After step 10, second ask: "Thandiwe's at her desk in the open plan. Try her laptop, then watch what happens when she gets up. Skip any of that you like, and pull the box out when you're ready."
+
+Not asked again after step 11, because the run stopped at step 12. The second answer names the laptop and the unplug. The plan's W11 and W12 lines were not checked against it.
+
+### Screenshots
+
+- tmp/handover/demo_access_build/screens6/11_comms_cupboard.png (first entry, comms cupboard, after access granted).
+- None other this run. The open_plan back-wall walk shot was not taken.
+
+### Harness notes
+
+- `interact` on a door with an RFID lock opens the reader minigame; `mg clickText` with the exact label "Emulate Lorna Easton FAC card" grants access. `mg close` then clears it.
+- `moveToNear` takes `id`, and works with the door id (`door:open_plan->comms_cupboard`) and object ids.
+- Phone: `openInventoryItem` `phone`, then `mg clickText` "Ama Owusu", then `mg clickText` "Where next?" (it repeats the top line first; read the last lines of the text).
+- `dismiss` with label "×" closes the rota board overlay (it is not a minigame).
+- An `eval` that uses a bare identifier fails when the name is not defined in the page; use string keys like `["thandiwe","yasmin"]`.
