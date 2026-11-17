@@ -1858,14 +1858,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "observations": "A free-standing espresso machine, a pamphlet lying at its foot.",
           "affordance": { "capacity": 2, "chatter": "coffee", "overhearRadius": 360, "useSeconds": 22, "useFrom": { "dx": 0, "dy": 1 }, "queue": false }
         },
+<%# Lisa's tea trip goes to the fridge (milk for the tea), 90 px from her post, so the walk there and back is
+    visible. The kettle is left undeclared: a nearer tea source would draw her back to a cell 25 px from her post,
+    where the walk home ends early (npc-behavior.js:1402 to 1416). The type is the Tiled base name (qdc_fridge1.png), so
+    the fridge preset (which lists qdc_fridge1) does not apply and the affordance is written out in full. %>
         {
-          "type": "kettle",
-          "id": "kettle1",
-          "name": "Kettle",
+          "type": "qdc_fridge",
+          "id": "qdc_fridge_milk",
+          "name": "Fridge",
           "takeable": false,
           "offWhen": "qdc_staff_upset",
-          "observations": "An electric kettle on the kitchenette counter.",
-          "affordance": { "satisfies": "tea", "queue": false }
+          "observations": "The staff fridge. Mostly milk and yoghurts with names on.",
+          "affordance": { "satisfies": "tea", "restores": 80, "useSeconds": 12, "capacity": 1, "useFrom": { "dx": 0, "dy": 1 }, "useSound": "drink_gulp", "queue": false }
         },
         {
           "type": "notes",
