@@ -19,3 +19,10 @@ Worktree `.claude/worktrees/p-ol-m09`, branch `plan/ol-m09`. The plan review loo
 - Doors start shut on every load and stay open once opened; in the reading room `open_stacks` always wins on the normal route.
 - The duck multiplies only the sound's volume; read `_ambientLevel`, `_ambientDuck` and the sound object's `volume` separately.
 - Long section rewrites in PLAN.md were done by Python splices; a bare `cat > file` with no heredoc hangs on stdin.
+
+## Build phase (branch build/ol-m09)
+
+- Scenario change: `"roomTone": true` beside `npcThoughts` (d4584a4ad). Static checks and live readings are in `BUILD_REPORT.md`.
+- Build review: R1 B0 M0 m6 (planning tier, full), R2 B0 M0 m2, R3 B0 M0 m0, R4 B0 M3 m6 (cheaper tier, report evidence overclaims), R5 B0 M1 m6 (planning tier). All fixed. Round 5 left a major open (now fixed in dfbdad0b5), so a round 6 delta on the cheaper tier should confirm it closes.
+- Not run: front_desk and staff_passage silence readings (route A), open_stacks frame time, baseline frame comparison, persona listen. Not yet written: per-round REVIEW_R files for the build (round results are only in this note and the commit messages).
+- Housekeeping done: server :3095 stopped; the worktree `node_modules` symlink pre-existed and is left alone.
