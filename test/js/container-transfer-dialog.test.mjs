@@ -393,6 +393,7 @@ test('K5: a remote desktop request refused 403 expired drops the local copy and 
     await mg2.init();
     assert.equal(sessions.has('hot_desk'), false, 'the copy is dropped');
     assert.equal(mg2.exitReason, 'expired');
+    await settle(80);
     assert.deepEqual(alerts.at(-1).slice(0, 2), ['HB-FIN-02 sign-in token has expired.', 'info']);
     assert.deepEqual(signInScreens, [], 'never the keyboard sign-in screen');
 });
@@ -412,6 +413,7 @@ test('K5 R1 t3: a keyboard desktop refused 403 expired says the token line, neve
     signInScreens.length = 0;
     await mg3.init();
     assert.equal(sessions.has('hot_desk'), false, 'the copy is dropped');
+    await settle(80); // the 50 ms timer that would open the sign-in screen has run
     assert.deepEqual(alerts.at(-1).slice(0, 2), ['HB-FIN-02 sign-in token has expired.', 'info']);
     assert.deepEqual(signInScreens, [], 'never the keyboard sign-in screen');
 });

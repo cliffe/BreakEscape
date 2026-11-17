@@ -442,6 +442,16 @@ module BreakEscape
       refute body.key?('tokenExpiredPcIds')
     end
 
+    test 'K5 R2 t2: unplugging the proof foothold after expiry names the token in tokenExpiredPcIds' do
+      build
+      signed_in_with_token
+      expire!
+      body = unplug('comms_port')
+      assert_response :success
+      assert_includes body['endedPcIds'], 'lena_pc'
+      assert_equal ['lena_pc'], body['tokenExpiredPcIds']
+    end
+
     # ---- the clock stays on the server ----------------------------------------------------
 
     test 'the clock is never in an answer and a sync body cannot set it' do

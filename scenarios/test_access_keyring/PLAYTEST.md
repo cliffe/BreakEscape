@@ -78,15 +78,17 @@ Run E starts a new game, plants the drop box in `comms_port` and never takes the
 
 - **R12.** The token toast on planting (the four minutes start at the plant): "Session token captured:
   HB-FIN-02 sign-in token for Lena Fox on HB-FIN-02." or, with a capture log held, the capture-log wording.
-  Lena is tagged "Token" from the drop box view only, never at the keyboard or from another foothold.
+  Lena is tagged "Token" from the drop box view only, never at the keyboard. (This scenario has one foothold,
+  `jack_comms_port`, so "from another foothold" is reachable only as a tampered request: see below.)
   "Connect with HB-FIN-02 sign-in token" signs in and the bar's second line says "with a session token, about
   {n} min left", stepping down each minute and reading "under a minute left" in the last one. Reload: the bar
   and timer resume from the server's `expiresInS`. The drop box view lists `server_lan` through Lena's
   session. When the four minutes are up the desktop closes with "HB-FIN-02 sign-in token expired. Your
   session on HB-FIN-02 ended."; the drop box view no longer lists `server_lan`; HB-FIN-02's row shows no
   held session; its sign-in screen through the drop box shows the greyed token button with "HB-FIN-02
-  sign-in token has expired.", and still does after a reload. A lock on Lena's PC after expiry says
-  "HB-FIN-02 sign-in token has expired." and counts no try. The capture log's Sign-ins row reads "Use it on
+  sign-in token has expired.", and still does after a reload. (Lena's PC has no lock beyond its login, so
+  there is no lock step here; the server's refusal of an unlock after expiry, with no try counted, is
+  covered by `credential_token_test.rb`.) The capture log's Sign-ins row reads "Use it on
   HB-FIN-02's sign-in screen, through Drop box: comms room. About {n} min left." and greys to "HB-FIN-02
   sign-in token has expired.". A token sign-in completes no `unlock_object` task for the PC (the server
   never records a token in `signedInPcs`).
