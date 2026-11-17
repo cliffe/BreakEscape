@@ -4,25 +4,24 @@
 // Run: node --max-old-space-size=2048 test/js/minigame-field-labels.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'break_escape');
 const js = (p) => readFileSync(join(root, 'js', 'minigames', p), 'utf8');
 
-const CONVERTED = [
-  'rfid/rfid-ui.js', 'dusting/dusting-game.js', 'network-segmentation-map/network-segmentation-map-minigame.js',
-  'bluetooth/bluetooth-scanner-minigame.js', 'password/password-minigame.js', 'ncsc-brief/ncsc-brief-minigame.js',
-  'biometrics/biometrics-minigame.js', 'phone-chat/phone-chat-ui.js', 'network-view/network-view-minigame.js',
-  'container/container-minigame.js', 'drug-library-integrity/drug-library-integrity-minigame.js',
-];
+const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+  e.isDirectory() ? walk(join(dir, e.name)) : (e.name.endsWith('.js') ? [join(dir, e.name)] : []));
+const ALL_MINIGAME_JS = walk(join(root, 'js', 'minigames'));
+const css = (f) => readFileSync(join(root, 'css', f), 'utf8');
 
-test('no strong or b tag wraps a short label ending in a colon', () => {
+test('no strong or b tag in any minigame wraps a short label ending in a colon', () => {
   const re = /<(strong|b)\b[^>]*>\s*[^<>]{1,40}:\s*<\/\1>/g;
-  for (const f of CONVERTED) {
-    const hits = js(f).match(re) || [];
-    assert.deepEqual(hits, [], `${f} still has a label in an emphasis tag`);
+  assert.ok(ALL_MINIGAME_JS.length > 50, 'the folder scan found the minigame sources');
+  for (const f of ALL_MINIGAME_JS) {
+    const hits = readFileSync(f, 'utf8').match(re) || [];
+    assert.deepEqual(hits, [], `${f} has a label in an emphasis tag`);
   }
 });
 
@@ -55,4 +54,59 @@ test('the label classes exist with no underline', () => {
   assert.match(rule[1], /text-decoration:\s*none/);
   assert.match(rule[1], /font-weight:\s*400/);
   assert.doesNotMatch(rule[1], /underline|border-radius/);
+});
+
+// CSS selectors retargeted off strong/b must match classes the markup now emits.
+test('retargeted CSS selectors match the classes the markup emits', () => {
+  const dusting = js('dusting/dusting-game.js'), dcss = css('dusting.css');
+  assert.match(dcss, /\.dusting-result \.dusting-result-value\s*\{/);
+  assert.match(dusting, /class="dusting-result"[^]*?class="dusting-result-value"/);
+  assert.match(dcss, /\.dusting-meter \.dusting-meter-value\s*\{/);
+  assert.match(dusting, /class="dusting-meter"><label>[^<]*<span class="dusting-meter-value"/);
+
+  assert.match(css('scanner-panel.css'), /\.scan-instructions \.mg-section-label\s*\{/);
+  assert.match(js('bluetooth/bluetooth-scanner-minigame.js'), /scan-instructions[^]*?<span class="mg-section-label">Instructions:/);
+
+  const bio = js('biometrics/biometrics-minigame.js'), bcss = css('biometrics-minigame.css');
+  assert.match(bcss, /\.sample-header \.mg-section-label\s*\{/);
+  assert.match(bcss, /\.field-note \.mg-section-label\s*\{/);
+  assert.match(bio, /className = 'sample-header'/);
+  assert.match(bio, /className = 'field-note'/);
+  assert.equal((bio.match(/className = 'mg-section-label'/g) || []).length, 2);
+
+  assert.match(css('phone-chat-minigame.css'), /\.transcript \.mg-field-label\s*\{/);
+  const phone = js('phone-chat/phone-chat-ui.js');
+  assert.match(phone, /className = 'transcript'/);
+  assert.match(phone, /transcriptLabel\.className = 'mg-field-label'/);
+});
+
+// Labels stand apart from their values by colour; each scene sets the variables on its own root.
+test('the colour variables exist in the framework and on each minigame root', () => {
+  const fw = css('minigames-framework.css');
+  assert.match(fw, /\.mg-field-label\s*\{\s*color:\s*var\(--mg-label-colour, inherit\)/);
+  assert.match(fw, /\.mg-section-label\s*\{\s*color:\s*var\(--mg-heading-colour, inherit\)/);
+  assert.doesNotMatch(fw, /--mg-(label|heading)-colour\s*:/, 'no global default');
+  const roots = [
+    ['rfid-minigame.css', '.flipper-card-data', '--mg-label-colour'],
+    ['dusting.css', '.dusting-container', '--mg-label-colour'],
+    ['dusting.css', '.dusting-container', '--mg-heading-colour'],
+    ['network-segmentation-map-minigame.css', '.nsm-modal', '--mg-heading-colour'],
+    ['ncsc-brief-minigame.css', '.ncsc-brief-content', '--mg-heading-colour'],
+    ['password-minigame.css', '.password-minigame-area', '--mg-label-colour'],
+    ['biometrics-minigame.css', '.biometrics-minigame-container', '--mg-heading-colour'],
+  ];
+  for (const [file, sel, v] of roots) {
+    const re = new RegExp('(^|\\n)' + sel.replace(/\./g, '\\.') + '\\s*\\{([^}]*)\\}');
+    const m = css(file).match(re);
+    assert.ok(m, `${sel} rule missing in ${file}`);
+    assert.match(m[2], new RegExp(v + '\\s*:\\s*\\S'), `${sel} in ${file} sets ${v}`);
+  }
+  // Accent fails on the cyberpunk pressed jar (4.39:1): its label takes the body text colour
+  assert.match(css('dusting.css'), /\.dusting-jar\[aria-pressed="true"\] \.mg-section-label\s*\{\s*color:\s*var\(--d-text\)/);
+});
+
+test('a pressed jar has a non-colour marker, and the drug names are row headers', () => {
+  assert.match(css('dusting.css'), /\.dusting-jar\[aria-pressed="true"\]::before/);
+  assert.match(js('drug-library-integrity/drug-library-integrity-minigame.js'), /<th scope="row">\$\{escapeHtml\(displayDashes\(drug\.name\)\)\}<\/th>/);
+  assert.match(css('network-segmentation-map-minigame.css'), /\.nsm-modal\s*\{[^}]*border:\s*2px /);
 });

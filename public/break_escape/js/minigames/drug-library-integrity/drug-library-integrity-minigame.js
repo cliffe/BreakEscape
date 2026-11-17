@@ -300,7 +300,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
 <div class="dli-hash-detail" id="dli-hash-detail">
   <div class="dli-hash-detail-title">&#x26A0; Hash Mismatch &mdash; ${escapeHtml(displayDashes(t.drug))}</div>
   <div class="dli-hash-meta">
-    <span>File: <span>${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</span></span>
+    <span>File: <span class="dli-hash-file">${escapeHtml(this._data.libraryFile || 'drug_library.csv')}</span></span>
     <span>Modified: <span class="dli-ts">${escapeHtml(t.modifiedAt)}</span></span>
   </div>
   <div class="dli-hash-row">
@@ -522,7 +522,7 @@ ${!alreadyFailed ? `<button class="minigame-button dli-run-btn" id="dli-run-btn"
                 return `<span class="dli-diff-value-large ${cls}">${escapeHtml(v)}</span>`;
             };
             return `<tr class="${rowCls}">
-  <td><strong>${escapeHtml(displayDashes(drug.name))}</strong></td>
+  <th scope="row">${escapeHtml(displayDashes(drug.name))}</th>
   <td>${escapeHtml(drug.concMgPerMl)}</td>
   <td>${cell('DOSE_MIN', drug.doseMin)}</td>
   <td>${cell('DOSE_MAX', drug.doseMax)}</td>

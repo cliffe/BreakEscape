@@ -251,7 +251,7 @@
 }
 
 .scanner-panel .scan-instructions summary:focus-visible { outline: 2px solid #fff; }
-.scanner-panel .scan-instructions .mg-section-label { color: var(--scan-accent); }
+.scanner-panel .scan-instructions .mg-section-label { color: var(--scan-accent); }   /* cyan 7.43:1 on #1a1a2e */
 
 /* Phones: the panel spans the window less its gutters; chips stay inline and wrap */
 @media (max-width: 768px) {

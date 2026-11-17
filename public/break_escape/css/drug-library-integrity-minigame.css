@@ -160,6 +160,23 @@
   text-align: left;
 }
 
+/* Drug names are row keys: <th scope="row">, drawn as the old body cell in the heading colour */
+.dli-lib-table tbody th {
+  background: #111830;
+  color: #7d8590;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: 0;
+  padding: 4px 8px;
+  border-bottom: 2px solid #1c2128;
+  text-align: left;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.dli-lib-table tbody tr:nth-child(even) th { background: #0e1424; }
+.dli-row-pass th { background: #0a1a10 !important; }
+.dli-row-fail th { background: #1a0808 !important; border-left: 3px solid #cc3333; }
+
 .dli-lib-table td {
   padding: 4px 8px;
   border-bottom: 2px solid #1c2128;

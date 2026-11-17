@@ -457,8 +457,9 @@
 }
 
 .nsm-modal {
+    --mg-heading-colour: #ff9944;   /* 9.08:1 on #0d0d1a */
     background: #0d0d1a;
-    border: 3px solid #cc2200;
+    border: 2px solid #cc2200;
     padding: 32px;
     max-width: 520px;
     width: 90%;
