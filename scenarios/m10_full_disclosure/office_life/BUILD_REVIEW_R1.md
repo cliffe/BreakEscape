@@ -28,3 +28,19 @@ Scope: `git diff da2a4dd8f..HEAD` (dungeon_graph excluded), branch build/ol-m10 
 - Globals: six new, all boolean, declared; sync budget as PLAN section 7. No lock, key, task, objective or VM flag touched; the only existing record changed is agent_0x99 (appended mappings, as planned). The five team `_ko` globals are written only by `globalVarOnKO`.
 - Lines: no em or en dashes, UK English, no team member, kit, sign-out sheet, code, flag or movement named.
 - Validator (`--no-graph`): 0 errors, 67 warnings; the three new warnings are the planned officePresets note and the two V4 lines.
+
+## Outcomes
+
+| # | Outcome |
+|---|---|
+| 1 | Deferred to the user. `DIALOGUE_SAMPLE.md` written with every new line as it stands; wording and voicing each await a separate yes. Not a build fix. |
+| 2 | Deferred to the live-proof slice now starting. No action here. |
+| 3 | Fixed: SPOKEN_LINES.md refreshed to the current ink and pool text, counts recomputed, OVER marks dropped. |
+| 4 | Fixed: BUILD_LOG.md brought up to date and linked to LIVE_B1.md and LIVE_B1B.md. |
+| 5 | Fixed: fp_kettle `_comment` gives the measured use cells (276,268) and (308,268) px. |
+| 6 | Fixed: Sofia's line is "Soup's in the flask, if anyone wants it." (40). |
+| 7 | Fixed: Darren's line is "I've run the lamp off a spare battery." (38). |
+| 8 | Withdrawn. The plain credit lines read fine whatever happened; the credits are not a log. No change. |
+| 9 | Fixed: both fp_darren and fp_sofia voice styles end "Calm and quiet, as at three in the morning; no urgent wording." |
+| 10 | Fixed: PLAN.md now states needsHome in tiles with the measured values. |
+| extra | `behavior.hostile.chaseRange` set to 32 on both extras (the table's items are reachable from cells 17 to 28 px from the extras, so no range clears the table); recorded in BUILD_LOG.md and PLAN.md section 2.1. |

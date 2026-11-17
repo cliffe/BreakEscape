@@ -519,8 +519,8 @@ voices = {
   farah: { 'name' => 'Zephyr', 'style' => 'Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.', 'language' => 'en-US' },
   minder: { 'name' => 'Sulafat', 'style' => "SAFETYNET van-team minder. #{rp} Calm, low, practical.", 'language' => 'en-GB' },
   # Office life (office_life/PLAN.md 2.7): the forward post's support staff. Swap Sofia's voice by changing the name here only.
-  fp_darren: { 'name' => 'Orus', 'style' => 'SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent.', 'language' => 'en-GB' },
-  fp_sofia: { 'name' => 'Despina', 'style' => "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent.", 'language' => 'en-GB' }
+  fp_darren: { 'name' => 'Orus', 'style' => 'SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.', 'language' => 'en-GB' },
+  fp_sofia: { 'name' => 'Despina', 'style' => "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.", 'language' => 'en-GB' }
 }
 voice = ->(key) { voices.fetch(key).to_json }
 # Walkthrough R1b-M1: once the night has closed, nobody in the raid can be
@@ -2623,9 +2623,9 @@ end
           "needsCompany": { "groups": ["fp_support"] },
           "chatterCooldownMin": 2,
           "globalVarOnKO": "fp_darren_ko",
-          "behavior": { "hostile": { "leash": true, "chaseRange": 64 } },
+          "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
           "needs": { "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "kettle_fp": ["The generator's holding. Just about.", "Van two's battery is on its last bar.", "Too cold for the laptops, never mind me.", "I've run the lamp off the spare cell."] },
+          "chatter": { "kettle_fp": ["The generator's holding. Just about.", "Van two's battery is on its last bar.", "Too cold for the laptops, never mind me.", "I've run the lamp off a spare battery."] },
           "exchanges": [
             { "with": "sofia_marchetti", "knot": "ex_fp_kettle_on", "requireGlobal": { "fp_staff_upset": false, "split_started": false } },
             { "with": "sofia_marchetti", "knot": "ex_fp_radios", "requireGlobal": { "fp_staff_upset": false, "split_started": true, "breach_open": false } },
@@ -2657,9 +2657,9 @@ end
           "needsCompany": { "groups": ["fp_support"] },
           "chatterCooldownMin": 2,
           "globalVarOnKO": "fp_sofia_ko",
-          "behavior": { "hostile": { "leash": true, "chaseRange": 64 } },
+          "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
           "needs": { "caffeine": { "initial": 90, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "kettle_fp": ["Who's not had a cup yet?", "Both vans have their heaters on now.", "Long night. The kettle's the easy bit.", "Soup's in the blue box, if anyone asks."] },
+          "chatter": { "kettle_fp": ["Who's not had a cup yet?", "Both vans have their heaters on now.", "Long night. The kettle's the easy bit.", "Soup's in the flask, if anyone wants it."] },
           "eventMappings": [
             <%= after_end_json.('forward_post') %>
             { "eventPattern": "npc_use_started:fp_kettle", "condition": "data.npcId === 'darren_price' && !globalVars.fp_staff_upset", "delayMs": 1500, "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
@@ -2862,7 +2862,7 @@ end
           "puzzle_graph_unlocks": "gate_terminal"
         },
         {
-          "_comment": "Office life (office_life/PLAN.md 3): the support staff's kettle, on the third kit crate south of the table. as-type:kettle claims the Tiled kettle1 placeholder on that crate. The whole affordance is by hand (no officePresets). useFrom aims at tile (8,8), the first user's cell; the second takes (9,8). Provisional, measured live in slice B.",
+          "_comment": "Office life (office_life/PLAN.md 3): the support staff's kettle, on the third kit crate south of the table. as-type:kettle claims the Tiled kettle1 placeholder on that crate. The whole affordance is by hand (no officePresets). useFrom dy -0.1 puts the use cells at (276,268) and (308,268) px, measured live; two users, one per cell.",
           "type": "kettle",
           "officeType": "kettle",
           "id": "fp_kettle",
