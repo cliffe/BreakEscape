@@ -1,0 +1,13 @@
+{
+  "key": "91c80887476e4f7a9779d9fe020455ae",
+  "npc": "yusuf_demir",
+  "text": "Here, at least, somebody else has to fix it.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:43:27Z"
+}

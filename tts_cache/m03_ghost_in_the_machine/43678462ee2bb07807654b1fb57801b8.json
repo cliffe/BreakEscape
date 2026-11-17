@@ -1,0 +1,13 @@
+{
+  "key": "43678462ee2bb07807654b1fb57801b8",
+  "npc": "yusuf_demir",
+  "text": "It is. Nobody gets past it.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:42:23Z"
+}

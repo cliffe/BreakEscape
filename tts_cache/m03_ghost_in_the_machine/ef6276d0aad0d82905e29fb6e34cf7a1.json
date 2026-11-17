@@ -1,0 +1,13 @@
+{
+  "key": "ef6276d0aad0d82905e29fb6e34cf7a1",
+  "npc": "yusuf_demir",
+  "text": "A coffee isn't a badge. Write it up.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:42:43Z"
+}
