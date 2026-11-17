@@ -71,4 +71,21 @@ class HidingSpotsUnitTest < ActiveSupport::TestCase
     refute cm.proof_satisfiable?({ 'planted' => 'kit', 'on' => 'comms_plant-large4_34' }, { 'kit' => kit }, objs)
     refute cm.proof_satisfiable?({ 'planted' => 'kit' }, { 'kit' => { 'id' => 'kit', 'hideable' => { 'rooms' => [] } } }, objs)
   end
+
+  test 'proof_satisfiable? with the scenario decides `on` through resolve_spot: rooms, exclude and spots' do
+    cm = BreakEscape::CaptureModel
+    scenario = { 'rooms' => {
+      'reception' => { 'objects' => [{ 'id' => 'pot', 'sprite' => 'plant-large1' }, { 'id' => 'pot_x', 'sprite' => 'plant-large2' }] },
+      'comms' => { 'objects' => [{ 'id' => 'comms_pot', 'sprite' => 'plant-large3' }] }
+    } }
+    objs = cm.top_level_room_objects(scenario)
+    proof = ->(on) { { 'planted' => 'kit', 'on' => on } }
+    sat = ->(hideable, on) { cm.proof_satisfiable?(proof.call(on), { 'kit' => { 'id' => 'kit', 'hideable' => hideable } }, objs, scenario: scenario) }
+    assert sat.call({ 'rooms' => ['reception'] }, 'pot')
+    refute sat.call({ 'rooms' => ['reception'] }, 'comms_pot'), 'a plant in a room the item may not be hidden in'
+    refute sat.call({ 'rooms' => ['reception'], 'exclude' => ['pot_x'] }, 'pot_x')
+    assert sat.call({ 'rooms' => ['reception'], 'exclude' => ['pot_x'] }, 'pot')
+    refute sat.call({ 'rooms' => ['reception'], 'spots' => ['pot'] }, 'pot_x')
+    assert sat.call({ 'rooms' => ['reception'], 'spots' => ['pot'] }, 'pot')
+  end
 end

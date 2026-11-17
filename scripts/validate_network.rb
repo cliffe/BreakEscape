@@ -306,7 +306,8 @@ def check_network_model(json_data, scenario_dir = nil)
     served_writers = cm.served_capture_writers(json_data)
     proven = capture_writers_of_psk.any? do |cap, *_|
       served_writers.any? { |c| c.equal?(cap) } && cm.proof_satisfiable?(cap['proof'], capture_item_defs, plant_objects, nil,
-                                                                      jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids)
+                                                                      jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids,
+                                                                      scenario: json_data)
     end
     unless readable.include?(psk) || proven
       # C3 (plan 9): a psk found only in alternative-set feed posts may never ship.

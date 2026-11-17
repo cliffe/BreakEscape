@@ -92,11 +92,13 @@ module BreakEscape
 
       held = (player_state['inventory'] || []).find do |inv|
         next false unless inv.is_a?(Hash)
+        # A forged clone ahead of the real kit is skipped, as record_planted_item! skips it
+        next false if BreakEscape::ItemIdentity.client_forged?(inv)
 
         data = inv['scenarioData'].is_a?(Hash) ? inv['scenarioData'] : inv
         data['id'].to_s == item_id
       end
-      return hide_refusal('not_held') if held.nil? || BreakEscape::ItemIdentity.client_forged?(held)
+      return hide_refusal('not_held') if held.nil?
 
       spot = HidingSpots.resolve_spot(defn, spot_id, method(:planted_target_object))
       return hide_refusal('not_a_spot') unless spot

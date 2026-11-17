@@ -1263,4 +1263,12 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
                    summary(plant_scan([row, served_psk], data: data)), row.inspect
     end
   end
+
+  test 'plant hiding: an untagged hide row (no item or spot) turns the shortcut off before the served row' do
+    data = hideable_scenario
+    [{ 'action' => 'hide', 'itemId' => nil, 'usedOn' => nil }, { 'action' => 'hide', 'itemId' => 'kit_rogue_ap', 'usedOn' => nil }].each do |inv|
+      assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([inv_row(inv: inv), served_psk], data: data, game: ProofGame.new(true))), inv.inspect
+    end
+  end
 end

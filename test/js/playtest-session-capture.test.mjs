@@ -15,7 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const require = createRequire(import.meta.url);
 const scripts = join(root, '.claude/skills/playtest-scenario/scripts');
-const { createResponseCapture } = require(join(scripts, 'response-capture.js'));
+const { createResponseCapture, inventoryTag } = require(join(scripts, 'response-capture.js'));
 
 const ORIGIN = 'http://127.0.0.1:3001';
 
@@ -239,4 +239,24 @@ test('R1 t2: an empty action_type is kept as Rails keeps it, not replaced by act
   const got = lines(file);
   assert.deepEqual(got[0].inv, { action: null, itemId: 'kit', usedOn: null });
   assert.deepEqual(got[1].inv, { action: 'remove', itemId: 'kit', usedOn: 'desk' }, 'null falls through, as Ruby || does');
+});
+
+const hideReq = (body) => ({ postData: () => JSON.stringify(body) });
+
+test('inventoryTag carries hiddenIn for a hide row, from either spelling, and omits it otherwise', () => {
+  assert.deepEqual(
+    inventoryTag(hideReq({ action_type: 'hide', item: { id: 'kit' }, hidden_in: 'pot_a' })),
+    { action: 'hide', itemId: 'kit', usedOn: null, hiddenIn: 'pot_a' });
+  assert.deepEqual(
+    inventoryTag(hideReq({ actionType: 'hide', item: { id: 'kit' }, hiddenIn: 'pot_b' })),
+    { action: 'hide', itemId: 'kit', usedOn: null, hiddenIn: 'pot_b' });
+  assert.deepEqual(
+    inventoryTag(hideReq({ action_type: 'remove', item: { id: 'kit' }, used_on: 'desk' })),
+    { action: 'remove', itemId: 'kit', usedOn: 'desk' });
+});
+
+test('inventoryTag declines a URL query that names hidden_in or hiddenIn', () => {
+  for (const q of ['?hidden_in=x', '?a=1&hiddenIn=x']) {
+    assert.equal(inventoryTag(hideReq({ action_type: 'hide', item: { id: 'kit' }, hidden_in: 'pot_a' }), new URL('http://h/inventory' + q)), null);
+  }
 });

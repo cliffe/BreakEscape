@@ -159,7 +159,8 @@ def check_capture_log(json_data)
                "or { \"session\": pc }, got #{proof.to_json}")
       next
     end
-    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder, jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids)
+    ok = cm.proof_satisfiable?(proof, item_defs, plant_objects, holder, jack_ids: jack_ids, sign_in_pc_ids: sign_in_pc_ids,
+                                scenario: json_data)
     case kind
     when 'planted'
       item_id = proof['planted'].to_s

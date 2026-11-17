@@ -242,5 +242,13 @@ module BreakEscape
       assert defn['deviceData']['wifiTwin']
       refute defn.key?('onHidden')
     end
+
+    test 'a forged clone ahead of the real kit is skipped and the real kit is hidden' do
+      forged = kit_entry.merge('clientAdded' => true)
+      build_game(inventory: [forged, kit_entry(top_id: 'real_kit')])
+      assert_equal true, @game.hide_device!('kit_rogue_ap', 'pot_a')[:ok]
+      assert_equal ['kit_rogue_ap'], held_ids, 'the forged clone stays, the real kit (id real_kit) left'
+      assert_equal [{ 'item' => 'kit_rogue_ap', 'on' => 'pot_a' }], planted
+    end
   end
 end
