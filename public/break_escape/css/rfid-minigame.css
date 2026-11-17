@@ -382,6 +382,7 @@
 
 /* Card Data */
 .flipper-card-data {
+    --mg-label-colour: #aaa;   /* 6.85:1 on #222, as .protocol-meta */
     background: #222;
     border: 2px solid #1a1a1a;
     padding: 15px;
