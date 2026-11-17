@@ -28,10 +28,39 @@
     margin: 0 auto;
 }
 
+/* A wide table scrolls sideways inside its own pane (shared pixel bar) rather than squashing */
+.sis-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    --pixel-scroll-track: #10161c;
+    --pixel-scroll-thumb: #2d3a44;
+    --pixel-scroll-edge: #6f8a9c;
+    --pixel-scroll-hover: #9ee6ff;
+}
+
+/* Fixed layout with set value and status columns: the header and body cells share one column
+   grid whatever the row text (auto layout let the long parameter row shrink "Current Value"
+   and "Status" to their narrowest and wrap the header) */
 .sis-threshold-table {
     width: 100%;
+    min-width: 460px;
+    table-layout: fixed;
     border-collapse: collapse;
     font-size: 16px;
+}
+
+.sis-threshold-table th:nth-child(2),
+.sis-threshold-table td:nth-child(2) {
+    width: 160px;
+}
+
+.sis-threshold-table th:nth-child(3),
+.sis-threshold-table td:nth-child(3) {
+    width: 110px;
+}
+
+.sis-threshold-table th {
+    white-space: nowrap;
 }
 
 .sis-threshold-table th,
@@ -276,6 +305,16 @@
 
     .sis-threshold-table thead {
         display: none;
+    }
+
+    .sis-threshold-table {
+        min-width: 0;
+        table-layout: auto;
+    }
+
+    .sis-threshold-table th:nth-child(n),
+    .sis-threshold-table td:nth-child(n) {
+        width: 100%;
     }
 
     .sis-threshold-table,

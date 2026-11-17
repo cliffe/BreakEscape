@@ -96,6 +96,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
 
         container.innerHTML = `
             <div class="sis-threshold-main">
+            <div class="sis-table-wrap pixel-scroll">
             <table class="sis-threshold-table">
                 <thead>
                     <tr>
@@ -108,6 +109,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
                     ${tableRows}
                 </tbody>
             </table>
+            </div>
             <div class="sis-actions">
                 <button class="sis-btn sis-btn-compare" id="sis-compare-btn" ${canCompare ? '' : 'disabled'}>${escapeHtml(displayDashes(this.compareTitle))}</button>
                 <button class="sis-btn sis-btn-confirm" id="sis-confirm-btn">${escapeHtml(displayDashes(this.confirmLabel))}</button>

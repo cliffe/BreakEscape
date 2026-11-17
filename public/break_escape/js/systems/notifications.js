@@ -744,7 +744,7 @@ export function gameDisplay(message, title = '', options = {}) {
             <div class="game-confirm-dialog game-display-dialog">
                 <button class="game-modal-close" aria-label="Close">&times;</button>
                 ${title ? `<div class="game-display-title">${html ? title : ''}</div>` : ''}
-                <div class="game-display-body">${html ? String(message).replace(/\n/g, '<br>') : ''}</div>
+                <div class="game-display-body pixel-scroll">${html ? String(message).replace(/\n/g, '<br>') : ''}</div>
             </div>`;
         if (!html) {
             // Author text in, plain text out: textContent, never innerHTML.

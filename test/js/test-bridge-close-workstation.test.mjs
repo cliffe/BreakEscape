@@ -95,3 +95,36 @@ test('a real minigame open over nothing else still closes by its X button, not t
     assert.equal(res.closed, undefined);
     assert.deepEqual(r.calls, []);
 });
+
+// A gameDisplay modal (a read note such as the sis02 NIS form) is a plain DOM overlay with only
+// an X (.game-modal-close). `mg close` answered no-active-minigame and the harness had to click
+// the X by hand.
+function openGameDisplay() {
+    const overlay = document.createElement('div');
+    overlay.className = 'game-confirm-overlay';
+    overlay.innerHTML = '<div class="game-confirm-dialog game-display-dialog"><button class="game-modal-close">x</button></div>';
+    let clicked = 0;
+    overlay.querySelector('.game-modal-close').addEventListener('click', () => { clicked++; overlay.remove(); });
+    document.body.appendChild(overlay);
+    return { overlay, clicks: () => clicked };
+}
+
+test('close() closes an open game-display modal with a click on its X', async () => {
+    rig(null);
+    const d = openGameDisplay();
+    const res = await minigameBridge.close();
+    assert.equal(res.ok, true, JSON.stringify(res));
+    assert.equal(res.closed, 'game-display');
+    assert.equal(res.stillOpen, false);
+    assert.equal(d.clicks(), 1);
+    assert.equal(document.querySelector('.game-display-dialog'), null);
+});
+
+test('close() with a game-display modal open over a popup closes the modal first', async () => {
+    const r = rig('laptop-popup');
+    const d = openGameDisplay();
+    const res = await minigameBridge.close();
+    assert.equal(res.closed, 'game-display');
+    assert.equal(d.clicks(), 1);
+    assert.deepEqual(r.calls, [], 'the popup under it is left open');
+});

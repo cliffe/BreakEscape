@@ -369,6 +369,9 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    /* The body carries the bottom pad (16px, inside its scroll area), so the frame wraps
+       the text with no empty band under it and the last line never touches the edge */
+    padding-bottom: 0;
 }
 
 .game-display-title {
@@ -390,6 +393,9 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     /* No button row below: the dialog's own padding closes the frame */
     margin-bottom: 0;
     padding-right: 4px;
+    padding-bottom: 16px;
+    min-height: 0;
+    /* Scrolls inside the frame; gameDisplay adds the shared .pixel-scroll class for the bar */
 }
 
 /* With no title the body starts at the top edge, under the close X */
