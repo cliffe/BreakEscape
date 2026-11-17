@@ -12,7 +12,12 @@ module BreakEscape
     include Engine.routes.url_helpers
 
     MAX_ENTRIES = 64
-    SIZE_LIMIT = 16 * 1024
+    # 2026-11-16, K3d R2: GET /keyring is a read sent only when its rev moves, never part of
+    # player_state, so the 16 KB sync budget does not apply to it. K3d added how and gainedAt
+    # (about 42 bytes per entry) and the fixture is now realistic, so the cap is 24 KB and a
+    # per-entry guard shows any later field that adds bloat.
+    SIZE_LIMIT = 24 * 1024
+    MAX_BYTES_PER_ENTRY = 360
 
     def keyring_path(game)
       "/break_escape/games/#{game.id}/keyring"
@@ -24,6 +29,7 @@ module BreakEscape
         id = format('cred%02d', i)
         out[id] = {
           'kind' => 'saved_connection', 'account' => 'acct', 'connectsTo' => "pc_#{i}",
+          'label' => format('Saved connection to finance server %02d', i)[0, 32],
           'proof' => { 'foothold' => 'fh1' }
         }
       end
@@ -35,9 +41,13 @@ module BreakEscape
         'rooms' => {
           'office' => {
             'npcs' => [
-              { 'id' => 'acct', 'displayName' => 'Account Holder',
-                'creds' => { 'username' => 'aholder', 'password' => 'Vault-Acct-9' } }
-            ]
+              { 'id' => 'acct', 'displayName' => 'Account Holder Finance',
+                'creds' => { 'username' => 'aholder.finance', 'password' => 'Vault-Acct-9' } }
+            ],
+            'objects' => (0...count).map do |i|
+              { 'id' => "pc_#{i}", 'type' => 'pc', 'lockType' => 'login', 'name' => "Finance PC #{i}",
+                'host' => format('HB-FIN-%02d.hartbridge.example', i) }
+            end
           }
         },
         'credentials' => registry(count)
@@ -63,13 +73,17 @@ module BreakEscape
       refute_match(/"credentials"\s*:/, response.body, 'the server-only registry must never reach the browser')
     end
 
-    test 'GET /keyring at the 64-entry cap stays well under 16 KB' do
+    test 'GET /keyring at the 64-entry cap stays under 24 KB and 360 bytes an entry' do
       game = build_game(MAX_ENTRIES)
       get keyring_path(game), as: :json
       assert_response :success
       assert_equal MAX_ENTRIES, response.parsed_body['entries'].length, 'all 64 proven entries are served'
       assert_operator response.body.bytesize, :<, SIZE_LIMIT,
                        "the keyring answer was #{response.body.bytesize} bytes"
+      assert_operator response.body.bytesize / MAX_ENTRIES, :<, MAX_BYTES_PER_ENTRY,
+                       "#{response.body.bytesize} bytes, #{response.body.bytesize / MAX_ENTRIES} an entry: a new field adds bloat"
+      sample = response.parsed_body['entries'].first
+      assert sample['label'].to_s.length >= 20 && sample['host'].present?, 'the fixture fills labels and hosts'
     end
 
     test 'a repeat with a matching rev returns a few bytes' do

@@ -2884,7 +2884,11 @@ module BreakEscape
       # Keyring K2 (CREDENTIAL_KEYRING_PLAN.md 7.1): invites the NPC has ended (grow-only, at most 64)
       # and the cached { global => [credId] } map the sync merge reads in place of scenario_data.
       # Server-written only, never read from a sync body and never sent to the client.
-      'endedCredentials' => [], 'credentialEndGlobals' => {}
+      'endedCredentials' => [], 'credentialEndGlobals' => {},
+      # Keyring K3d R1 (CREDENTIAL_KEYRING_PLAN.md 8.7): { registryId => server ms } the first time
+      # GET /keyring listed each registry entry, so the Sign-ins order survives a reload.
+      # Server-written only, at most 128 keys, never sent to the client except as an entry's gainedAt.
+      'keyringGained' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures

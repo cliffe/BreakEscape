@@ -374,7 +374,8 @@ class AccessLeakScanner
     'credential_registry' => 'a credentials key in a response (the credential registry is server-only, stripped from the bootstrap)',
     'credential_unheld' => 'a registry credential in a GET /keyring answer whose proof does not hold in the recorded state',
     'credential_password_value' => 'a registry password credential carrying its password value in a GET /keyring answer',
-    'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)'
+    'credential_field' => 'an item-level credential field in a response (server-only; both client filters strip it)',
+    'keyring_capture_key' => 'a captures entry in a GET /keyring answer with a key other than tag, source or account (the map carries no value)'
   }.freeze
 
   private
@@ -1252,6 +1253,7 @@ class AccessLeakScanner
     entries = keyring_entries_in(body)
     return if entries.nil?
 
+    scan_keyring_captures(body, add)
     entries.each_with_index do |entry, i|
       next unless entry.is_a?(Hash)
       next unless entry['source'].to_s == 'registry'
@@ -1264,6 +1266,27 @@ class AccessLeakScanner
       next if credential_proof_held_ids.nil?
 
       add.call('credential_unheld', "credential:#{id}", safe_path(base)) unless credential_proof_held_ids.include?(id)
+    end
+  end
+
+  KEYRING_CAPTURE_KEYS = %w[tag source account].freeze
+
+  # K3d (plan 8.7): the `captures` map of a GET /keyring answer carries a tag, a source and an
+  # account id per target, never a value. Any other key, or an entry that is not an object, is a
+  # finding named by its target id; the path is reported, the value never.
+  def scan_keyring_captures(body, add)
+    captures = body['captures']
+    return unless captures.is_a?(Hash)
+
+    captures.each do |target_id, entry|
+      owner = "capture:#{target_id}"
+      unless entry.is_a?(Hash)
+        add.call('keyring_capture_key', owner, safe_path("$.captures.#{target_id}"))
+        next
+      end
+      (entry.keys - KEYRING_CAPTURE_KEYS).each do |key|
+        add.call('keyring_capture_key', owner, safe_path("$.captures.#{target_id}.#{key}"))
+      end
     end
   end
 
