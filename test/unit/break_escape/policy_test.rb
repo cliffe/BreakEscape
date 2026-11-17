@@ -97,6 +97,25 @@ module BreakEscape
       @other.update!(role: 'user')
     end
 
+    # Keyring K-lock (plan 8.6): the session lock and the routes that unlock it (a sign-in, the
+    # keyring a Connect reads) follow show? for every role.
+    test "session lock and its unlock routes follow show? per role" do
+      actions = %i[lock_session? login? logout? keyring?]
+      actions.each do |action|
+        assert GamePolicy.new(@owner, @game).public_send(action), "owner: #{action}"
+        assert_not GamePolicy.new(@other, @game).public_send(action), "other user: #{action}"
+        assert_not GamePolicy.new(nil, @game).public_send(action), "nil user: #{action}"
+      end
+      %w[admin account_manager].each do |role|
+        @other.update!(role: role)
+        actions.each do |action|
+          assert_equal GamePolicy.new(@other, @game).show?, GamePolicy.new(@other, @game).public_send(action), "#{role}: #{action}"
+        end
+      end
+    ensure
+      @other.update!(role: 'user')
+    end
+
     # ─── Scope ────────────────────────────────────────────────────────────────
 
     test "scope returns only the owner's games for regular users" do
