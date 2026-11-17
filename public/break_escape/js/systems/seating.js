@@ -1489,7 +1489,9 @@ function startMount(behavior, m) {
     const block = seat.kind === 'swivel' && chair.body?.width ? seatedBlock(chair.body) : STATIC_SEATED_BLOCK;
     resizeAtFeet(sprite, block.w, block.h);
     if (seat.kind !== 'swivel' || !chair.body) {
-        const place = freePlaces(chair, seat, bodyFeet(sprite))[0] ?? 0;
+        // The place nearest the work cell (the post's home cell when it has one), not the feet: back
+        // from the far side of a two-place sofa the feet are nearer the other place (slice 7 finding 1)
+        const place = freePlaces(chair, seat, m.opts?.ref || bodyFeet(sprite))[0] ?? 0;
         const pf = placeFoot(chair, seat, place);
         m.target = { x: pf.x, y: pf.y - 2 };
     }
@@ -1606,7 +1608,9 @@ export function seatNPC(behavior, chair, opts = {}) {
     const block = seat.kind === 'swivel' && chair.body?.width ? seatedBlock(chair.body) : STATIC_SEATED_BLOCK;
     b.setSize?.(block.w, block.h, false);
     if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; stopGlide(chair); }
-    const placeIdx = takePlace(chair, seat, behavior.npcId, standFeet);
+    // A needs NPC back at its post takes the place nearest its stand cell, not nearest the feet it
+    // arrived on; if that place is taken the nearest free one is still the fallback
+    const placeIdx = takePlace(chair, seat, behavior.npcId, opts.standAt || standFeet);
     behavior._seat = { chair, seat, facing, saved, place: placeIdx, homeFacing: facing, facePlayer: opts.facePlayer !== false,
                        needsStop: opts.needsStop || null,
                        // needs seats: stand back up where the NPC works from
@@ -1618,6 +1622,18 @@ export function seatNPC(behavior, chair, opts = {}) {
     fitSeatedBody(sprite, behavior._seat);
     window.eventDispatcher?.emit?.('npc_sat', { npcId: behavior.npcId, objectId: chair.objectId, facing });
     return true;
+}
+
+/**
+ * The needs re-sit gate (updateNeedsSeat) is _seatStopKey and the retry counts, not _seatTried:
+ * clear them so a shown NPC takes the new-stop path and sits at once, spending no retry.
+ */
+function resetNeedsSeatGate(behavior) {
+    behavior._seatStopKey = null;
+    behavior._seatTriedAt = undefined;
+    behavior._seatRetries = 0;
+    behavior._seatGaveUp = false;
+    behavior._seatGaveUpAt = undefined;
 }
 
 /**
@@ -1634,11 +1650,14 @@ export function unseatNPC(behavior, opts = {}) {
         // A hidden NPC's update never runs, so an instant unseat ends what it was part-way through:
         // a seat move in any stage (the step too, which would hold its savedImm) and a chair fetch
         // (releases the chair's reservation)
+        // A needs seat move or fetch was started with the stop key set, so the re-sit gate is cleared too
+        const needsEnded = !!(opts.instant && (behavior?._seatMove?.stopKey || behavior?._fetch));
         if (behavior?._seatMove && (behavior._seatMove.stage !== 'step' || opts.instant)) endSeatMove(behavior, 'unseated');
         if (opts.instant && behavior?._fetch) {
             if (behavior._goToStayDest) behavior.cancelMove?.();
             cancelFetch(behavior, 'hidden');
         }
+        if (needsEnded) resetNeedsSeatGate(behavior);
         return false;
     }
     const sprite = behavior.sprite;
@@ -1649,15 +1668,7 @@ export function unseatNPC(behavior, opts = {}) {
     behavior._seat = null;
     // don't sit straight back down; a needs seat is let to sit again (updateNeedsSeat does the same)
     behavior._seatTried = !(opts.instant && needsStop);
-    if (opts.instant && needsStop) {
-        // The needs gate (updateNeedsSeat) is _seatStopKey and the retry counts, not _seatTried: clear them
-        // so the shown NPC takes the new-stop path and sits at once, spending no retry
-        behavior._seatStopKey = null;
-        behavior._seatTriedAt = undefined;
-        behavior._seatRetries = 0;
-        behavior._seatGaveUp = false;
-        behavior._seatGaveUpAt = undefined;
-    }
+    if (opts.instant && needsStop) resetNeedsSeatGate(behavior);
     releasePlace(chair, seat, placeIdx);
     if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
     const halt = behavior.hostile || window.npcHostileSystem?.isNPCKO?.(behavior.npcId);

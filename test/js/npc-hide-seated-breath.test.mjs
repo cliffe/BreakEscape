@@ -199,6 +199,12 @@ test('hiding a needs NPC mid-fetch releases the chair it reserved', () => {
     chair.seatedBy = 'f1';
     behavior._fetch = { chair, spot: { x: 90, y: 100 }, toward: null, stopKey: 'desk:1', phase: 'to_chair',
                         until: Date.now() + 60000, issued: true };
+    // A fetch is started with the re-sit gate set at the stop; hiding mid-fetch must clear it too
+    behavior._seatStopKey = 'desk:1';
+    behavior._seatTriedAt = 5000;
+    behavior._seatRetries = 2;
+    behavior._seatGaveUp = true;
+    behavior._seatGaveUpAt = 6000;
     let cancelled = false;
     behavior._goToStayDest = { x: 1, y: 1 };
     behavior.cancelMove = () => { cancelled = true; behavior._goToStayDest = null; };
@@ -207,6 +213,12 @@ test('hiding a needs NPC mid-fetch releases the chair it reserved', () => {
     assert.equal(behavior._fetch, null, 'the fetch is ended');
     assert.equal(chair.seatedBy, undefined, 'the chair reservation is released');
     assert.equal(cancelled, true, 'the walk to the chair is dropped');
+    // The gate is reset, so a shown NPC takes the new-stop path and sits at once
+    assert.equal(behavior._seatStopKey, null, 'the stop is new again on show');
+    assert.equal(behavior._seatRetries, 0, 'no retry is spent');
+    assert.equal(behavior._seatGaveUp, false);
+    assert.equal(behavior._seatTriedAt, undefined);
+    assert.equal(behavior._seatGaveUpAt, undefined);
 });
 
 test('hiding a needs NPC mid-fetch leaves another NPC\'s reservation alone', () => {
@@ -227,4 +239,24 @@ test('hiding an NPC that is stepping off a seat ends the step move', () => {
     const mgr = mkManager('s1', behavior);
     mgr.setNPCVisible('s1', false);
     assert.equal(behavior._seatMove, null, 'the step move is ended');
+});
+
+test('hiding a needs NPC mid seat move ends the move and resets the re-sit gate', () => {
+    const { behavior, sprite, chair } = mkNpc('w1');
+    chair.seatedBy = 'w1';
+    behavior._seatMove = { chair, stopKey: 'desk:1', stage: 'walk', savedImm: false, savedBody: null, ticks: 0, still: 0, last: Infinity };
+    behavior._seatStopKey = 'desk:1';
+    behavior._seatTriedAt = 5000;
+    behavior._seatRetries = 3;
+    behavior._seatGaveUp = true;
+    behavior._seatGaveUpAt = 6000;
+    mkManager('w1', behavior).setNPCVisible('w1', false);
+    assert.equal(behavior._seatMove, null, 'the walk is ended');
+    assert.equal(chair.seatedBy, undefined, 'the chair reservation is released');
+    assert.equal(behavior._seatStopKey, null, 'the stop is new again on show');
+    assert.equal(behavior._seatRetries, 0);
+    assert.equal(behavior._seatGaveUp, false);
+    assert.equal(behavior._seatTriedAt, undefined);
+    assert.equal(behavior._seatGaveUpAt, undefined);
+    assert.equal(sprite.visible, false);
 });

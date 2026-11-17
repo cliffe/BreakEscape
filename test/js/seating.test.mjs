@@ -223,6 +223,52 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
     } finally { rig.restore(); }
 });
 
+// startMount's walk target on a two-place sofa (R10 m1): the place nearest the post's home cell when
+// the NPC is at its post and within the 48 px gate of home, else the place nearest the feet. A
+// south-facing sofa at (80,90), 62x40: place feet (99,130) west (place 0) and (123,130) east
+// (place 1). The object the NPC faces sits due south of the sofa so a south seat counts as toward
+// it (staticFacesToward). The NPC's feet are at x 124, nearer the east place; home is beside the
+// west place (99,127), 25 px away, inside POST_SNAP.
+function sofaRig(feetX, atPost) {
+    const rig = labSeatRig(feetX);
+    Object.assign(rig.chair, { x: 80, y: 90, width: 62, height: 40, depth: 10, objectId: 'pierce_chair',
+        texture: { key: 'leather_sofa1' } });
+    rig.sprite.y = 127;
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.home = { x: 99, y: 127, roomId: 'open_plan', objectId: 'staff_pc_2' };
+    // The work object is due south of the sofa, so a south-facing seat faces toward it
+    const faced = { id: 'staff_pc_2', roomId: 'open_plan', x: 111, y: 400, affordance: { satisfies: ['work'] } };
+    window.npcNeedsSystem.world.getObject = () => faced;
+    if (!atPost) {
+        // Away from the post: a `use` job at another object, so the stop is not a post stop and
+        // needsSeatRef returns the feet, not the home cell
+        ns.mode = 'job';
+        ns.job = { kind: 'use', targetId: 'sofa_stop', phase: 'using', need: 'work' };
+        ns.atPost = false;
+    }
+    return rig;
+}
+
+test('startMount: at the post, feet 25 px east of home, walks to the post-side place', () => {
+    const rig = sofaRig(124, true);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+        const t = rig.behavior._seatMove?.target;
+        assert.ok(t, 'a walk target is set on the first call');
+        assert.equal(Math.round(t.x), 99, 'place 0, by the post, not the nearer east place');
+    } finally { rig.restore(); }
+});
+
+test('startMount: away from the post, walks to the place nearest the feet', () => {
+    const rig = sofaRig(124, false);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+        const t = rig.behavior._seatMove?.target;
+        assert.ok(t, 'a walk target is set on the first call');
+        assert.equal(Math.round(t.x), 123, 'place 1, nearest the feet');
+    } finally { rig.restore(); }
+});
+
 test('chairAtOtherPost: the nearest post owns a chair; within 36 px of a neighbour but nearer home stays own', () => {
     const home = { x: 92, y: 124 }, marek = { x: 53, y: 128 };
     assert.equal(seating.chairAtOtherPost({ x: 89, y: 126.4 }, home, [marek]), false, "Sanjay's tucked chair (live 5398)");
