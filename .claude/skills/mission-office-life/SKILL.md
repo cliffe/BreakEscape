@@ -33,6 +33,7 @@ References, read when the step needs them (this file is the procedure, they hold
 7. **Art needs a yes.** New sprites and pose frames need the user's yes before any PixelLab generation. No custom animations or states: the stock six plus seated frames only.
 8. **Commit each pass** with explicit paths. Run `git diff --cached --stat` before every commit. Never `git add -A` or a glob in the shared tree.
 9. Work on a branch (`plan/ol-<m>` for the plan, `build/ol-<m>` for the build) and merge main after each landing on main.
+10. **Campaign missions m01 to m10 and the sis missions keep `"npcThoughts": false` (D77), so `showPressingNeeds` and `actionIcons` do nothing there.** Do not offer them as levers; security windows must read from movement, barks, sounds and held items, not icons. The flag also turns off picture chat.
 
 ## Outputs
 
