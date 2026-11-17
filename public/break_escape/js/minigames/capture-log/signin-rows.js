@@ -14,7 +14,7 @@
 // carries `seenKeys`: its key plus each of its captures' old `capture:<targetId>` keys, so an
 // old save's New mark still reads as seen (a read; nothing is rewritten).
 
-import { captureList, capturesReveal, displaySecret, maskSecret } from '../../systems/captures.js';
+import { captureList, capturesReveal, displaySecret, maskSecret, SECRET_LOADING_TEXT, SECRET_FAILED_TEXT } from '../../systems/captures.js';
 import {
     rowKindName, SOURCE_TAG_TEXT, typeItFromLine, alsoInLine, connectFromInventoryLine,
     useOnSignInScreenLine, endedAssistMessage, expiredLine, moreNotesLine, footholdLine,
@@ -77,8 +77,6 @@ function makeVisible(keyring, openedFiles) {
  *   linkNames    footholdId -> the held network link's name (a Map or object), for a token row
  * The keyring answer may carry `tokenSecondsLeft(credId)` (K5): a live token row names its minutes.
  */
-export const SECRET_LOADING_TEXT = 'Loading...';
-export const SECRET_FAILED_TEXT = 'Could not load';
 
 /**
  * What a captured value reads as. The served secret when there is one; else, in a scenario that
