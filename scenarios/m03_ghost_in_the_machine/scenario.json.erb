@@ -665,12 +665,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "affordance": { "useFrom": { "dx": -0.75, "dy": -1.06 } },
-          "text": "Zainab's working on it.",
+          "text": "Zainab's laptop. She's working on it, and she tips the screen away from you.",
           "textVariants": [
-            { "condition": "globalVars.mission_phase === 'act2_infiltration'", "value": "The screen is dark. Zainab has gone home for the night." },
-            { "condition": "globalVars.wh_staff_upset", "value": "The screen is dark. Nobody is working on this laptop right now." },
-            { "condition": "globalVars.zainab_laptop_screen_locked", "value": "The screen is locked. The lock screen shows a photo of a harbour and a cursor waiting for a password." },
-            { "condition": "globalVars.zainab_laptop_owner_away", "value": "Zainab's laptop, left unlocked while she is away.\n\nCALENDAR, THIS WEEK\nMon: Penhallow Dental, wireless survey\nTue: Harcourt Haulage, phishing exercise debrief\nWed: Quayside Surgery, backup restore test\nThu: Marlowe & Pike, firewall rule review\nFri: write up, all of the above\n\nFROM VICTORIA STERLING: \"Client data stays on client kit. Nothing from a site goes on a personal drive, and nothing from a site goes home with you.\"\n\nDRAFT MESSAGE TO THE TEAM, UNSENT: \"Who are the after-hours lot? I keep finding the lights on at eight and nobody will tell me whose they are.\"" }
+            { "condition": "globalVars.mission_phase === 'act2_infiltration'", "value": "Zainab's laptop, lid shut, left on the coffee table for the night." },
+            { "condition": "globalVars.wh_staff_upset", "value": "The lid's been snapped shut. Nobody's working on it now." },
+            { "condition": "globalVars.zainab_laptop_screen_locked", "value": "Zainab's laptop. The screen's locked: a login box over a photo of the Yorkshire Dales." },
+            { "condition": "globalVars.zainab_laptop_owner_away", "value": "Zainab's laptop, open and unlocked on her calendar and the team chat.\n\nTHIS WEEK\nMon: Newport. Collect test laptops from client.\nTue: Swansea. Return loan kit, sign off.\nWed: Bristol. Site visit, set up test kit.\nThu: Bench room full again. Sofa.\nFri: Cardiff Bay. New client, kit drop.\n\nPINNED, from V. Sterling:\nReminder: client data stays on client kit. Nothing comes back on our own laptops. No exceptions.\n\nZainab, to Team:\nAnyone know who the after-hours lot are? Their pizza boxes are in the recycling every morning.\n\n(No replies.)" }
           ]
         }
       ],
@@ -805,9 +805,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             }
           ]
         },
-<%# Office life (SLICE3_4.md): two WhiteHat staff by day, hidden at the night turn. Each has four hide
-    mappings: the clone_call_done change (onceOnly), the plain room entries of reception and hallway
-    (so a reload re-hides), and a first-frame one (previousRoom === null) for a reload in reception.
+<%# Office life (SLICE3_4.md): two WhiteHat staff by day, hidden at the night turn. Each has five hide
+    mappings: three plain writes (the clone task, mission_phase act2, clone_call_done) and two onceOnly
+    re-hides on the first night entry of reception and of the hallway, so a reload in either room hides
+    them again (saved visibility is also applied when the NPC registers).
     Slice 5: short-form conversations and exchange knots in the ink. %>
         {
           "id": "zainab_hussain",
@@ -848,11 +849,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "setVisible": false },
             { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
             { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
             { "_comment": "R1 mapped breaks (plan section 3). Cooler break: the player coming back from the hallway sends Zainab for water, so the long trip (laptop locks) happens while the player is around. Coffee coupling: Yusuf starting the pod machine brings her.",
               "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === 'main_hallway' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "eventPattern": "npc_use_started:reception_coffee", "condition": "data.npcId === 'yusuf_demir' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } }
-,
+            { "eventPattern": "npc_use_started:reception_coffee", "condition": "data.npcId === 'yusuf_demir' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
             { "_comment": "R1: Ffion knocked out by day. The staffer goes back to the post and is held there (a scripted walk suspends needs), so no fight and no walk to an alternative badge route. A staffer already attacked is left to the hostile behaviour.",
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.zainab_attacked", "onceOnly": true, "patrolOverride": { "targetTile": { "x": 4.625, "y": 7.5 }, "stopOnArrival": true } },
             { "eventPattern": "npc_caught_at_post:zainab_hussain", "cooldown": 30000, "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset && !globalVars.zainab_ko", "bark": "That's my laptop. Can I help you?" }
@@ -892,11 +891,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "eventPattern": "global_variable_changed:clone_call_done", "condition": "value === true", "setVisible": false },
             { "eventPattern": "room_entered:reception_lobby", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
             { "eventPattern": "room_entered:main_hallway", "condition": "globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === null && globalVars.mission_phase === 'act2_infiltration'", "onceOnly": true, "setVisible": false },
             { "_comment": "R1 mapped breaks (plan section 3). Coffee break: closing the chat with Ffion sends Yusuf for a coffee (Zainab follows, mapping on her). Cooler coupling: Zainab starting the cooler brings him.",
               "eventPattern": "conversation_closed:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "npc_use_started:hallway_cooler", "condition": "data.npcId === 'zainab_hussain' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } }
-,
+            { "eventPattern": "npc_use_started:hallway_cooler", "condition": "data.npcId === 'zainab_hussain' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "_comment": "R1: Ffion knocked out by day. The staffer goes back to the post and is held there (a scripted walk suspends needs), so no fight and no walk to an alternative badge route. A staffer already attacked is left to the hostile behaviour.",
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.yusuf_attacked", "onceOnly": true, "patrolOverride": { "targetTile": { "x": 3.47, "y": 8.38 }, "stopOnArrival": true } },
             { "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && globalVars.clone_call_done !== true && !globalVars.zainab_ko && !globalVars.yusuf_ko", "onceOnly": true, "bark": "Zainab, ring someone. Now." }
@@ -1372,7 +1369,12 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "eventPattern": "global_variable_changed:zainab_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
             { "eventPattern": "global_variable_changed:yusuf_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
             { "_comment": "R1: Ffion knocked out by day (plan section 2). Ffion's own KO at night, with the staff gone home, sets nothing. The send-home mappings on the staff react to the same event; HaX's text and Yusuf's bark are slice 5.",
-              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration'", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true, "wh_staff_upset": true } }
+              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration'", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
+            { "_comment": "R2: witnessed only when a staffer is on their feet to see it (both KO'd means nobody saw). HaX's text (plan section 2) goes with the same test; wording as approved in DIALOGUE_SAMPLE.md.",
+              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && (!globalVars.zainab_ko || !globalVars.yusuf_ko)", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true },
+              "sendTimedMessage": { "delay": 2500, "message": "Reception had company. Get the badge and get out." } },
+            { "eventPattern": "global_variable_changed:wh_staff_attacked", "condition": "value === true", "onceOnly": true,
+              "sendTimedMessage": { "delay": 2500, "message": "Leave the staff alone. You're here to clone cards, not start fights." } }
           ]
         },
         {
