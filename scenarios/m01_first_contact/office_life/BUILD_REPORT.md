@@ -169,12 +169,12 @@ Probes: tools/playtest/m01-ol-barks.mjs, m01-ol-aisle.mjs, m01-ol-tone.mjs. Game
 | 3 / Test 8 KO suppression | PASS (Graham real KO, Fatima seeded) | game 7273: 9 real punches KO Graham (graham_ko true), later arrivals from elsewhere give no Graham bark; game 7274 seeded with fatima_ko and graham_ko true at creation: no bark in any entry |
 | 3 / Test 8 after entropy_reveal_read | PASS (seeded) | game 7279 created with entropy_reveal_read true: no barks on entry from reception or from elsewhere. Seeded at creation, not reached by the real path (that path is test 9, PASS) |
 | 5 / Test 11 aisle | PASS | game 7283: both users at the cooler (Fatima 5.62,7.87; Graham 6.88,7.68), BFS on the nav grid with their footprints blocked: south door (1.5,9) to north doors (1.5,1) 38 cells and (8.5,1) 50 cells. Player walked through both and back. Side doors (it_room, break_room) not part of the claim. Screenshot screenshots/cooler-aisle.png |
-| 5 / Test 11 third user | PARTIAL | Maya as third (set thirsty with both extras using): claims never above 2 and she did not share, but she also never went for her drink in 80 s after they left (idle at post, game 7312). Capacity and the avoids list cannot be told apart, because Maya avoids both. Possible engine point: a need blocked by avoidance seems to be dropped, not retried. Maya alone at the cooler (game 7310): claims 1, the extras began their own trip only after she had left (t=77 s) |
+| 5 / Test 11 third user | PARTIAL | Maya as third (set thirsty with both extras using): claims never above 2 and she did not share, but she also never went for her drink in 80 s after they left (idle at post, game 7312). Capacity and the avoids list cannot be told apart, because Maya avoids both. Later diagnosed (R4_TESTS_PART3.md section 1): not dropped, parked by avoidance for the defer time (default 4 minutes). Fixed in data with `needsDeferMin: 1` on maya_chen, proved in game 7342 (retry at 60 s). Engine-side proposal recorded there, not applied. Maya alone at the cooler (game 7310): claims 1, the extras began their own trip only after she had left (t=77 s) |
 | 7 / Test 14 Maya never shares the cooler | PASS | games 7282, 7310, 7312: never more than one extra beside her; extras waited while she used it |
 | 1 / Test 5 room tone per room | NOT RUN | handover: probe m01-ol-tone.mjs written (mode tour), never executed; rooms and graph in the file header |
 | 2 / Test 6 60 s dwell | NOT RUN | same probe, mode dwell (needs-clock based, positive control lastSlot) |
-| 4 / Test 10 music threat to noir on all_hostiles_ko | NOT RUN | no probe written |
-| 7 / Test 14 Maya away three ways, after reload; hallway_east motion light | NOT RUN | earlier runs (step 5, R2 n5) cover mid-walk, at the cooler, hub exit; fresh-session, after-reload and motion light remain |
+| 4 / Test 10 music threat to noir on all_hostiles_ko | PASS | game 7345, probe m01-ol-music.mjs: threat, threat, noir (one noir, last). Evidence: R4_TESTS_PART3.md section 2 |
+| 7 / Test 14 Maya away three ways, after reload; hallway_east motion light | PASS (waiting at the cooler cannot occur) | games 7349, 7357 (fresh and reload found-at-post, away at cooler, after reload) and 7356 (hallway_east light follows Maya). "Waiting at the cooler" is not reachable: with both users avoided she parks at her post. Evidence: R4_TESTS_PART3.md section 3 |
 | 6 / Test 12 sis01 and sis02 gates | DEFERRED | PLAN.md:411 puts them before release |
 
 ## Handover (fresh agent)
@@ -286,3 +286,46 @@ Reading:
 - Maya's position is missing from both samples. The dwell does not enter maya_office, so her needs state is never registered. A fix needs a visit to her room or a sample from another source.
 
 Logs: scenarios/m01_first_contact/office_life/tone-logs-r4p2/dwell-typing-7361.txt and dwell-typing-7365.txt.
+
+## R5 fixes (docs, Test 6 verdict, Maya walk_stuck)
+
+Server: keyless, :3095, puma PID 1507912, started with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec rails server -b 127.0.0.1 -p 3095`. Boot log tmp/server-3095-r5fix.log line 4 has "GEMINI_API_KEY environment variable is not set". Stopped with `kill 1507912` only; port 3095 is free. Headless, setFPS(20), fixed steps on, no engine edits, no game rows edited. Games from new-game.rb in this run: 7375, 7379 (void, the Mission Brief was still open), 7384, 7386, 7391. Their flags XML files are in tmp/delete/. Scratch probes lived outside the repo; the logs are in tone-logs-r4p2/ (idle-7375.txt, idle-7384.txt, maya-stay-7386.txt, maya-stay-7391.txt).
+
+### M1 (docs)
+BUILD_REPORT.md rows for Test 11 third user, Test 10 and Test 14 are corrected above (Maya's need parked by avoidance, `needsDeferMin: 1`, Tests 10 and 14 PASS). PLAN.md: the hallway_east light is checked, section 4.9 carries the `needsDeferMin: 1` line with the reason and the all-parks side effect (n1), and the example block shows the key. Evidence stays in R4_TESTS_PART3.md.
+
+### M2 (Test 6 typing): PASS, with the 7365 idle gap explained
+Question: after returning from the cooler, why did Fatima and Graham stand idle at their desk cells for 20 s or more (7365), when in 7361 they sat and typed at the same cells?
+
+Two causes, neither a re-seat fault. Both are in public/break_escape/js/systems/npc-needs.js.
+
+1. Expected cadence (normal entry). Game 7384, entered from reception with `enterRoom`, as a player would. At registration (tick 35 of the log) work is urgent (initial 60, urgentAt 70, scenario.json.erb:1320) and both start a work job at once and sit (using, 40 s: `useSeconds` 40). `used` restores 40, so the level goes to 100 (:3663-3665). Work then decays 30 per minute (`_decay`, :1548-1558) and `_select` runs on every idle tick (:1523-1530), so the next work job starts when the level crosses 70: 60 s later. Observed in 7384: returning at clock 49 s, idle at post from 50 s, level 99 falling to 71, next job_start at 109 s (60 s idle), using at 110 s. Cycle: about 40 s typing, 60 s standing at the desk cell, mode idle, atPost true, job null. Standing between jobs is the designed cadence, and the same wait follows every cooler trip, because a trip does not top up work. A 60 s dwell can therefore land entirely in the idle part: that is the 7344 and 7365 pattern. Typing is audible only during the 40 s use.
+2. Start-room artefact (explains 7344 and 7365 in full). Game 7375, started with `--start-room main_office_area` as the dwell games were: the needs log shows work `urgent` at tick 2 and `parked reason=no_source` the same tick, six ticks before `home_resolved` (tick 6) for fatima_pc and graham_pc. The park is held at 71 for the default `NEEDS_DEFER_MIN` of 4 minutes (:101, `_park` :1988-2005, `_giveUpReason` no_source return :1983), unparking only on a timer at tick 962 (`unparked reason=timer`, then job_start and using for both). Nothing wakes it, because `_onRoomsLoaded` (:1270-1272) and `onDoorOpened` (:798) fire before registration or not at all when the player starts in the room. They went to the cooler at the start (the room-entry thirst mapping) and then stood at their desks with work parked at 71 and not decaying (snapshot: work 71 from 33 s to 221 s). Same positions and modes as 7365. In 7361 the dwell route left the room and came back, which woke the park. Real players start in reception and enter through a door (7384), so this does not occur in a normal run; it only affects tests that start in the main office.
+
+Verdict: Test 6 PASS (7323, 7341, 7361 typing with seated extras; 7344 and 7365 explained by the idle part of the cadence and the head-start park; 7384 shows the normal path). Not a re-seat fault. No scenario change needed.
+
+Engine-side proposal, not applied (AC0 is editing npc-needs.js): a `no_source` park taken before the NPC's home is resolved should not last the default 4 minutes. Either wake parked needs when `home_resolved` is logged (the same call as `_wakeParked`, :2016-2031), or skip parking a need whose target is the NPC's own unresolved home object. A scenario-side workaround would be `needsDeferMin` on the extras, but that changes every park for them, so it is not applied. Tests that start in the main office should enter another room and come back first.
+
+Seated or not while idle: the samples show mode idle and no job; the sprites were standing at the desk cells. They seat only for the 40 s `work` use.
+
+### m1 (Maya walk_stuck with the player left in her office): does not recur
+Two fresh games, 7386 and 7391, created with `--start-room main_office_area` and `--unlock` for main_office_area, hallway_east and maya_office. Real path: enterRoom to hallway_east and maya_office, first talk, "What message?" and "Tell me more", the topic to the hub, "I need to keep investigating", close. The trip started 1.2 s later (the 2 s mapping delay). The player stayed in maya_office for the whole trip (no enterRoom call). In 7391 both extras were using their PCs when she set off, the 7322 condition.
+
+| Game | Walk to cooler | Using | Return | walk_stuck |
+|---|---|---|---|---|
+| 7386 | smooth path (224,-159) to (188,215) in 8 s, no stall at (212,-84) | 14 s at the cooler | back at post after 10 s | none |
+| 7391 | log: job_start, windup, arrival at tick 186, using 187, used 247 | yes | return_resumed 278, returned_post 284 | none (count 0) |
+
+So the 7322 `walk_stuck` at (212,-84) did not recur in two runs, and it was seen once in a run that had two failed `enterRoom` calls before it. Treat it as a harness artefact from those did-not-cross calls (as R4_TESTS_PART3.md section 1 said); no fault found.
+
+### m2 (waiting at the cooler)
+PLAN.md section 8 item 14 now says "waiting at the cooler" is not reachable, with the reason (both possible users are avoided, so she parks at her post, npc-needs.js:1975-1982).
+
+### m3 (pause menu)
+No run showed an unprompted pause-menu open. The 12 opens in game 7333 each followed a probe Escape within 200 ms, and 7341 and 7344 had none, so the probe is the cause. That is inferred from the timing; the branch `clearMenu` took was never logged.
+
+### n2, n3
+n2: the dead `if (false)` line is removed from tools/playtest/m01-ol-aisle.mjs. n3: the client's own POST /break_escape/games/<id>/tts calls to the keyless server returned 200 with no provider call (36 in this run's log, none requested by me or by the probes, which never call /tts). The game sends them while NPCs speak. No action needed.
+
+### n1
+No change needed beyond the 4.9 line above.

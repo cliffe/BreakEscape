@@ -25,7 +25,6 @@ let s, both = false; const t0 = Date.now(); const trail = [];
 while (Date.now() - t0 < 70000) {
   s = await snapUsers();
   const u = ['fatima_begum', 'graham_whitfield'].filter(i => s[i].job?.phase === 'using' && s[i].job?.need === 'thirst');
-  if (false) if (trail.length === 0 || JSON.stringify(trail.at(-1).s.maya_chen) !== JSON.stringify(s.maya_chen)) trail.push({ t: Math.round((Date.now() - t0) / 1000), s: { maya_chen: s.maya_chen } });
   if (u.length === 2) { both = true; break; }
   await h.t(700);
 }
