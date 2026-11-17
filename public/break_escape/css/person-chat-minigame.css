@@ -77,7 +77,6 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Changed from cover to contain to maintain aspect ratio and match main game scaling */
     border: none;
     background-color: #000;
 }
@@ -328,8 +327,9 @@
     width: 0;
 }
 
-/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top at its own 4:3 shape
-   and the caption follows it in flow, so the speaker's name and line never cover the face;
+/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top and grows to fill the
+   height above the caption (never below --pc-portrait-h), and the caption follows it in flow,
+   so the speaker's name and line never cover the face;
    the line and the choices stack in one column and the choices take the full width. The
    caption scrolls if a long line and many choices outgrow the space below the portrait. */
 @media (max-width: 600px) {
@@ -337,27 +337,29 @@
         justify-content: flex-start;
     }
 
-    /* C-PC2: the portrait grows to fill the spare height instead of being pinned to a 4:3 strip
-       that left a tall black gap under the dialogue. */
+    /* The portrait grows to fill the spare height, so the room background runs down to the
+       dialogue band and no black area is left under a short line. It never gets less than
+       --pc-portrait-h, which the UI sets from the box height (phonePortraitSize): the height of
+       the largest whole pixel scale that leaves about 330px for the caption. The sprite is drawn
+       at that viewport scale (PersonChatPortraits.setFixedHeight), not at a scale taken from the
+       canvas height, so it stays one size from line to line while the canvas grows and shrinks
+       with the band. 64% only applies before the script has measured. */
     .person-chat-portrait-section {
         position: relative;
         flex: 1 1 auto;
         height: auto;
-        min-height: 40%;
+        min-height: var(--pc-portrait-h, 64%);
         max-height: none;
     }
 
-    /* The grown portrait would otherwise letterbox a 4:3 scene with black bars; on a narrow phone
-       fill the section instead (the character stays centred, the sides crop), so no black gap. */
-    .person-chat-portrait-canvas-container canvas { object-fit: cover; }
-
     /* The dialogue band hugs its content and sits at the foot of the screen (the portrait above
-       takes the rest). A long line is capped and scrolls rather than pushing the portrait away. */
+       takes the rest). A long line scrolls inside the band, which can grow only as far as
+       leaves the portrait its --pc-portrait-h, so the head is never cropped. */
     .person-chat-caption-area {
         position: relative;
         flex: 0 1 auto;
         min-height: 0;
-        max-height: 60%;
+        max-height: calc(100% - var(--pc-portrait-h, 64%));
         overflow-y: auto;
         align-items: flex-start;
         padding: 16px;

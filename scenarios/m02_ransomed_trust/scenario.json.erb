@@ -2362,7 +2362,7 @@ boardroom_pin = "0417"
           "observations": "A floor-standing copier. It needs no network, which makes it one of the few things in here still working." },
         { "type": "notes", "id": "it_copier_page", "name": "Downtime Fault Log", "takeable": true, "readable": true,
           "position": { "x": 6.92, "y": 6.55 },
-          "text": "ST. CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG\n\nUse while clinical systems are unavailable.\nOne line per fault. Hand to IT at handover.\n\nTIME | WARD | EQUIPMENT / SYSTEM | FAULT | REPORTED BY\n-----+------+--------------------+-------+------------\n     |      |                    |       |\n     |      |                    |       |\n     |      |                    |       |",
+          "text": "ST. CATHERINE'S REGIONAL -- IT DOWNTIME FAULT LOG\n\nUse while clinical systems are unavailable.\nOne entry per fault. Hand to IT at handover.\n\nEntry 1\nTIME:\n______\nWARD:\n______\nEQUIPMENT / SYSTEM:\n__________\nFAULT:\n__________\nREPORTED BY:\n__________\n\nEntry 2\nTIME:\n______\nWARD:\n______\nEQUIPMENT / SYSTEM:\n__________\nFAULT:\n__________\nREPORTED BY:\n__________\n\nEntry 3\nTIME:\n______\nWARD:\n______\nEQUIPMENT / SYSTEM:\n__________\nFAULT:\n__________\nREPORTED BY:\n__________",
           "observations": "A blank downtime fault log. The only thing the copier has printed all night.",
           "outputOf": "it_photocopier", "revealOnGlobal": "it_copier_page_shown" }
       ]
@@ -2779,7 +2779,7 @@ boardroom_pin = "0417"
               "name": "ENTROPY Key Material",
               "takeable": true,
               "readable": true,
-              "text": "RI // SITE KEY MATERIAL -- ST CATHERINE'S\nop: TRIAGE    operator: ghost\n\nper-host session keys, wrapped ....... 1,184\nmaster unwrap ........................ HELD BY SUPPORT PORTAL (off site)\n\nnote to self: on their own these are noise. the site's offline escrow set would let them verify host by host and skip the slow path -- twelve hours becomes four. the escrow set is the one thing in this building i could not reach. so they will pay.",
+              "text": "RI // SITE KEY MATERIAL -- ST CATHERINE'S\nop: TRIAGE    operator: ghost\n\nper-host session keys, wrapped\n1,184\n\nmaster unwrap\nHELD BY SUPPORT PORTAL (off site)\n\nnote to self: on their own these are noise. the site's offline escrow set would let them verify host by host and skip the slow path -- twelve hours becomes four. the escrow set is the one thing in this building i could not reach. so they will pay.",
               "observations": "A ruggedised drive, taped to the inside of the cache lid. Ghost's own copy of the per-host keys -- the thing Ransomware Incorporated's 'support portal' would sell back to St. Catherine's for £150,000. Wrapped, and useless without the hospital's escrow set to unwrap them. With it, the recovery console can run the four-hour restore.",
               "puzzle_graph_role": "key",
               "puzzle_graph_unlocks": "hospital_recovery_console"
@@ -3293,7 +3293,7 @@ boardroom_pin = "0417"
           "addToNotes": false,
           "takeable": false,
           "readable": true,
-          "text": "CCTV -- MAIN SITE\n\nCAM 01  RECEPTION ........ NO SIGNAL\nCAM 04  WARD CORRIDOR .... NO SIGNAL\nCAM 07  SERVER ROOM DOOR . NO SIGNAL\nCAM 11  CAR PARK ......... NO SIGNAL\n\nRECORDER OFFLINE -- INDEX ENCRYPTED\n\nA sticky note on the bezel: \"Can't play anything back until IT get the index back. -- V.\"",
+          "text": "CCTV -- MAIN SITE\n\nCAM 01 RECEPTION\nNO SIGNAL\n\nCAM 04 WARD CORRIDOR\nNO SIGNAL\n\nCAM 07 SERVER ROOM DOOR\nNO SIGNAL\n\nCAM 11 CAR PARK\nNO SIGNAL\n\nRECORDER OFFLINE -- INDEX ENCRYPTED\n\nA sticky note on the bezel: \"Can't play anything back until IT get the index back. -- V.\"",
           "observations": "Four camera monitors on the wall, every one frozen on a grey frame under a red RECORDER OFFLINE banner."
         },
         {
@@ -3457,7 +3457,7 @@ boardroom_pin = "0417"
           "position": "as-type:directory_sign",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room .......... north off this corridor\nBoardroom .................... through Handover, west (KEYPAD -- ask the CTO)\nExecutive / CTO .............. through Handover, north\nIT Systems ................... through Handover, east (OVERRIDE KEY)\nSecurity Office .............. west end of this corridor\nServer Room .................. through Security Office (RESTRICTED)\nWard 3 (Critical Care) ....... down the ward link, south\nEmergency Equipment Store .... far end of Ward 3\nReception .................... through Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
+          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room\nnorth off this corridor\n\nBoardroom\nthrough Handover, west (KEYPAD -- ask the CTO)\n\nExecutive / CTO\nthrough Handover, north\n\nIT Systems\nthrough Handover, east (OVERRIDE KEY)\n\nSecurity Office\nwest end of this corridor\n\nServer Room\nthrough Security Office (RESTRICTED)\n\nWard 3 (Critical Care)\ndown the ward link, south\n\nEmergency Equipment Store\nfar end of Ward 3\n\nReception\nthrough Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
           "observations": "The corridor directory. Somebody has added the state of the access control system underneath in biro.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "map_orientation_and_confirmation_that_overrides_live_at_reception"
