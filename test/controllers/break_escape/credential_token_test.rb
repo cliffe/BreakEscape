@@ -186,7 +186,35 @@ module BreakEscape
       assert_equal ['lena_pc'], resent['tokenExpiredPcIds'], 'the resend names the token session again'
     end
 
-    test 'R1 m2:a later sign-in keeps the existing clock and never renews it' do
+    test 'K5 run 4: an expired token row names its proof foothold, only while the player holds it' do
+      build
+      with_foothold
+      refute token_row.key?('proofFoothold'), 'a live token routes through the foothold; no extra field'
+      expire!
+      row = token_row
+      assert_equal true, row['expired']
+      assert_equal OFFICE, row['proofFoothold']
+      refute state.to_json.include?('proofFoothold'), 'derived in the answer, never stored'
+
+      # The foothold is gone: no row, and the answer names no foothold
+      @game.reload
+      @game.player_state['footholds'] = {}
+      @game.save!
+      body = keyring
+      assert_nil token_row(body)
+      refute_includes response.body, 'proofFoothold'
+      refute_includes response.body, OFFICE
+
+      # Defence in depth: the builder itself never names a foothold missing from footholds
+      @game.reload
+      entry = CredentialModel.registry(@game.scenario_data)['lena_token']
+      pc = CredentialModel.sign_in_pc(@game.scenario_data, 'lena_pc')
+      built = @game.send(:registry_token_entry, {}, 'lena_token', entry, pc)
+      assert_equal true, built['expired']
+      refute built.key?('proofFoothold')
+    end
+
+    test 'R1 m2: a later sign-in keeps the existing clock and never renews it' do
       build
       with_foothold
       travel 2.minutes

@@ -383,16 +383,20 @@ module BreakEscape
     end
 
     # A token's keyring row (K5, section 10): its one route is the proof foothold, when that
-    # reaches connectsTo. An expired token carries expired: true and no routes.
+    # reaches connectsTo. An expired token carries expired: true, no routes and, so the greyed
+    # row can stay on that foothold's screen after a reload, `proofFoothold`: derived here on
+    # each answer, never stored, and only for a foothold the player holds now.
     def registry_token_entry(row, id, entry, pc)
+      proof = CredentialModel.token_proof_foothold(entry)
       if token_expired?(id)
         row['expired'] = true
         row['routes'] = []
         row['sessionHeld'] = false
+        held = player_state['footholds']
+        row['proofFoothold'] = proof if proof && held.is_a?(Hash) && held.key?(proof)
         return row
       end
 
-      proof = CredentialModel.token_proof_foothold(entry)
       routes = proof && pc.is_a?(Hash) && host_reachable_through?(proof, pc) ? [{ 'foothold' => proof }] : []
       row['routes'] = routes
       row['sessionHeld'] = credential_session_held?(entry['connectsTo'], id)
