@@ -5385,6 +5385,16 @@ def check_globals_never_read(json_data, repo_root)
           setters[v] ||= "#{path}/#{k}"
         elsif k == 'setGlobal' && v.is_a?(String)
           setters[v] ||= "#{path}/#{k}"
+        elsif k == 'onHidden' && v.is_a?(Array)
+          # hideable.onHidden actions: a set_global key is a setter, and its key string is not a read
+          v.each_with_index do |act, i|
+            if act.is_a?(Hash) && act['type'] == 'set_global' && act['key'].is_a?(String)
+              setters[act['key']] ||= "#{path}/#{k}[#{i}]"
+              walk.call(act.reject { |ak, _| ak == 'key' }, "#{path}/#{k}[#{i}]")
+            else
+              walk.call(act, "#{path}/#{k}[#{i}]")
+            end
+          end
         else
           walk.call(v, "#{path}/#{k}")
         end

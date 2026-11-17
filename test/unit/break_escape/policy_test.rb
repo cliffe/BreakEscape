@@ -119,6 +119,42 @@ module BreakEscape
       @other.update!(role: 'user')
     end
 
+    # Physical pentest devices (plan slices E0 to B3, plant hiding): every device action is show?,
+    # so each one is checked per role. A later edit that narrows or widens one fails here.
+    DEVICE_ACTIONS = %i[network_plant? network_unplug? network_join? network_implant?
+                        capture_secrets? keyring? wear? inventory?].freeze
+
+    test "device actions: owner allowed, other user and nil user denied" do
+      DEVICE_ACTIONS.each do |action|
+        assert GamePolicy.new(@owner, @game).public_send(action), "owner: #{action}"
+        assert_not GamePolicy.new(@other, @game).public_send(action), "other user: #{action}"
+        assert_not GamePolicy.new(nil, @game).public_send(action), "nil user: #{action}"
+      end
+    end
+
+    test "device actions: admin allowed, account manager only for their own organisation" do
+      @other.update!(role: 'admin')
+      DEVICE_ACTIONS.each { |action| assert GamePolicy.new(@other, @game).public_send(action), "admin: #{action}" }
+
+      @other.update!(role: 'account_manager')
+      # Host without orgs (DemoUser has no org_id): managing_account_manager? is true
+      DEVICE_ACTIONS.each { |action| assert GamePolicy.new(@other, @game).public_send(action), "account manager, no orgs: #{action}" }
+
+      # Host with orgs: same org allowed, other org and no org denied
+      player = @game.player
+      player.define_singleton_method(:org_id) { 7 }
+      [[7, true], [8, false], [nil, false]].each do |org, allowed|
+        manager = @other
+        manager.define_singleton_method(:org_id) { org }
+        DEVICE_ACTIONS.each do |action|
+          result = GamePolicy.new(manager, @game).public_send(action)
+          assert_equal allowed, result, "account manager org #{org.inspect} vs game org 7: #{action}"
+        end
+      end
+    ensure
+      @other.update!(role: 'user')
+    end
+
     # ─── Scope ────────────────────────────────────────────────────────────────
 
     test "scope returns only the owner's games for regular users" do
