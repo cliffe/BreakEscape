@@ -27,3 +27,50 @@ Closing card: "Merrin & Sallow: access tour complete." plus credits lines in sce
 - Scoped corpus (tmp/handover/demo_access_build/slice5_corpus.txt): fresh scan 0 findings (2 runs pass); opened scan 0 findings for demo_access_tour; the only failure is the known m09_digital_archaeology stale exceptions (3). 23 runs, 1 failure.
 - Condition forms checked against safeEvaluateCondition (npc-manager.js:25, supports && , !, ===, !==, .includes on strings and arrays, dotted data./globalVars. paths; no ||, no parentheses) and the music/credits evaluator (new Function, full JS). All ama_phone and needs conditions use supported forms. Event payloads confirmed: card_cloned.cardName, network_foothold_gained.via 'implant', network_device_refused.reason 'port_security', network_device_unplugged.endedPcIds (array), pc_signed_out.reason/fromPcId. Card name "Lorna Easton FAC card" matches the scenario.
 - No scenario edits needed. Item 5 (onceOnly overlap warning on unplug) left as intended.
+
+
+## Review fixes (commits 818514773, 54a158ba4, and the handover commit)
+
+Finding map (S = structural review, D = dialogue review):
+- S-M1: W4 (both lines) gain `and not done_t_julian_pc`.
+- S-M2 and D theme 1: W9 and W10 moved above W7 and W8 (Lorna and comms are required). W7 needs `not done_t_unplug` and `(not julian_lost_with_desk or julian_back)`. W8 needs `done_t_door_controller`. Every optional line ahead of W17 appends a tail line pointing at the unplug. Plan hub table has a note.
+- S-m1 and D-M3/M4: W6b, W7, W14 to W16 hidden once `done_t_unplug` (the flag the scenario already sets); the ama.ink mid-tour switch needs `not done_t_unplug`.
+- S-m2: Ama `taskOnKO` removed; added `koImmune: true` instead, because dropping taskOnKO alone made the validator add a 12th warning (no knockout-safe fallback for t_debrief). Back to 11.
+- S-m3: plan 2.12 item 5a says the credits end the mission. S-m4: no change.
+- D-M1: route choice states about fifteen and about thirty-five minutes (AC0's figure, not the reviewer's forty); full reply no longer repeats.
+- D-M2: D4 rewritten. D-m14 / AC0: D5b now has condition `done_t_julian_pc`, rewritten, plus a neutral fallback branch (unreachable in play). D-m13: D5a add-on conditioned on implant, Staff Wi-Fi or Yasmin's PC.
+- D-M5: quick-route look-round reply. D-M6: W13. D-M7: W14 split on a new global `ap_planted` (declared; mapping on `device_hidden:kit_rogue_ap` on ama_phone, no onceOnly). Plan note added.
+- D-m1 (A3b cake), m2 (W5 and P0), m3 (W7), m4 (W10), m5 (hint_open_session), m6 (W15), m9 (phone opener), m10 (M1 and D2 full), m11 (keep you right), m12 (D3): done as proposed.
+- D-m7/m8 and AC0 item 7: the follow-ups after P5a and P4 removed (targetKnot dropped from both mappings, knots debrief_ready and hint_patch_panel deleted). The reviewer's rewrites for those two knots are therefore moot.
+- D-n2: header comment now says Fenlow Managed IT. D-n3: credits line fixed. D-n1 (Ama voice block): not done, optional, belongs with voicing.
+- S-n1 to n5, D-n4: no change needed.
+
+New or changed spoken lines, verbatim.
+Ama (person):
+- "Ama Owusu: And there's a cake in your bag. Put it down in the open plan and see if it gets anyone away from their desk."
+- "Ama Owusu: The quick version's about fifteen minutes. The full walk-round is nearer thirty-five, every room and every gadget. Which?"
+- "Ama Owusu: The full walk-round, then. Your phone will tell you where next."
+- "Ama Owusu: Still going? Your phone's got the list if you need it."
+- "Ama Owusu: Go on then. Ask your phone where next."
+- "Ama Owusu: Take your time. I'm not going anywhere."
+- "Ama Owusu: Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there."
+- D3 last sentence: "Julian's door held only because nobody copied his card."
+- D4 "Ama Owusu: A saved connection on the front desk got you into Julian's PC. His door never came into it."
+- D5a add-on "Ama Owusu: Anything you'd reached another way stayed up."
+- D5b "Ama Owusu: Julian's session didn't go with the box. Connect from a desk you're signed in at and it never needs the box. That's the bit people miss."
+- D5 fallback "Ama Owusu: Pulling the box ends what ran through it. Anything you reached another way stays up. That's the bit people miss."
+Ama (phone):
+- start "Ask me where next whenever you're stuck."
+- W5 "Sign out of Delphine's PC before you use that file, so the connection has to go through the box."
+- W7 "With Julian's session up, his PC can reach the server network." then "Open the network view at the box and try the door controller, with Lorna's password from facilities.txt."
+- W10 "Your copy of Lorna's card should open the comms cupboard. Try it."
+- W13 "Back to the front desk. Sign in again, then see what Delphine's USB ports will take."
+- W14a "Hide the access point in one of the reception plants, then open its console and copy the Staff Wi-Fi."
+- W14b "The access point's in. Open its console from the plant and copy the Staff Wi-Fi."
+- W15 "Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy." then "If she doesn't, carry on. The Wi-Fi stops still work after the box comes out."
+- tail line after optional hints "Skip any of that you like, and pull the box out when you're ready."
+- hint_open_session "The cake might do it too, if they're hungry. The rota board always works."
+- P0 "Before you use that, sign out of Delphine's PC."
+- Credits (scenario music event, not spoken) "Door controller: reached through the partner's PC, signed in with the password from facilities.txt"
+
+Verification: validator 0 errors, 11 warnings (same set); dialoguelint clean; inkcheck clean on ama and ama_phone; loopcheck over about 30 flag sets (fresh, short, full, unplugged on each route, lost, lost and back, all eight done) no errors; scripted ink driver output read for the W4/W6b/W7/W9/W14/W19 cases and all D5 branches; demo_access_tour*_test.rb 77 runs 0 failures; validator-network-model.test.mjs all pass; scoped corpus (tmp/handover/demo_access_build/slice5_fix_corpus.txt) 23 runs, 1 failure, the known m09 stale exceptions only.
