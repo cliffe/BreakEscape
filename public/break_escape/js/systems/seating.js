@@ -1489,7 +1489,9 @@ function startMount(behavior, m) {
     const block = seat.kind === 'swivel' && chair.body?.width ? seatedBlock(chair.body) : STATIC_SEATED_BLOCK;
     resizeAtFeet(sprite, block.w, block.h);
     if (seat.kind !== 'swivel' || !chair.body) {
-        const place = freePlaces(chair, seat, bodyFeet(sprite))[0] ?? 0;
+        // The place nearest the work cell (the post's home cell when it has one), not the feet: back
+        // from the far side of a two-place sofa the feet are nearer the other place (slice 7 finding 1)
+        const place = freePlaces(chair, seat, m.opts?.ref || bodyFeet(sprite))[0] ?? 0;
         const pf = placeFoot(chair, seat, place);
         m.target = { x: pf.x, y: pf.y - 2 };
     }
@@ -1606,7 +1608,9 @@ export function seatNPC(behavior, chair, opts = {}) {
     const block = seat.kind === 'swivel' && chair.body?.width ? seatedBlock(chair.body) : STATIC_SEATED_BLOCK;
     b.setSize?.(block.w, block.h, false);
     if (chair.body) { chair.body.setVelocity(0, 0); chair.body.immovable = true; stopGlide(chair); }
-    const placeIdx = takePlace(chair, seat, behavior.npcId, standFeet);
+    // A needs NPC back at its post takes the place nearest its stand cell, not nearest the feet it
+    // arrived on; if that place is taken the nearest free one is still the fallback
+    const placeIdx = takePlace(chair, seat, behavior.npcId, opts.standAt || standFeet);
     behavior._seat = { chair, seat, facing, saved, place: placeIdx, homeFacing: facing, facePlayer: opts.facePlayer !== false,
                        needsStop: opts.needsStop || null,
                        // needs seats: stand back up where the NPC works from
