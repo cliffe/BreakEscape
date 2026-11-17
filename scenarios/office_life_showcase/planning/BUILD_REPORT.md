@@ -348,3 +348,38 @@ Notes:
 ### Screens (`scenarios/office_life_showcase/planning/screens/`)
 
 `r1fix-b1-zainab-before-turn.png`, `r1fix-b1-evening-turn.png`, `r1fix-b1-see-who-stays.png`, `r1fix-m1-ama-reopen-hub.png`, `r1fix-m1-chidi-reopen-hub.png`, `r1fix-m1-ama-after-reload.png`, `r1fix-m2-confirm.png`, `r1fix-m2-confirm-yes-offered.png`, `r1fix-m2-after-yes.png`, `r1fix-trynext-morning.png`, `r1fix-trynext-midday.png`, `r1fix-board.png`.
+
+## R2 fixes
+
+Reviewed in `planning/BUILD_REVIEW_R2.md` (9 minors, no blockers or majors), plus one from the R1 live proof: the `tour_notice` "Things to try" modal clipped its text, so the midday and evening lists sat below the fold.
+
+| Finding | Fix | Files |
+|---|---|---|
+| m1: Zainab's kitchen-coffee fallback in the evening does not tick `see_who_stays` | Widened the mapping from `npc_used:office_coffee` to `npc_used:*` with `data.npcId === 'zainab_hussain' && data.need === 'caffeine' && globalVars.act_evening === true`, so any caffeine source counts (`need` is carried on `npc_used`, `npc-needs.js:3701-3707`). The `npc_left_post:zainab_hussain` path is kept | `scenario.json.erb` |
+| m2: Evening aim said "most of them" with no warning | Rewrote the description: "Home time for nearly all of them, and they don't come back. Calling it a day closes the earlier aims, so finish those first. Each task ticks when you have seen that behaviour happen." (UI text) | `scenario.json.erb` |
+| m3: PLAN sections 4, 6, 9, 10 stale | Updated section 6 (start diverts to hub on later talks; try-next gated by act and progress globals, with A32/A33/A34; "Call it a day." offers the A31 confirm), row 3.1, section 9 (cake band `urgentAt 40 < level <= 85`, caffeine not thirst, the widened `npc_used` tick), and added R14 for the deferred lamp note (R1 m5) | `planning/PLAN.md` |
+| m4: notice board repeated its title and clipped | Dropped `THINGS TO TRY\n\n`; shortened every bullet to one short line and removed the blank separators so the 12-line modal fits without scrolling | `scenario.json.erb` |
+| m5: validator topic type-check had no test or backlog entry | Added a topic type-check test (number, empty, blank, valid string, no key) to `validator-exchange-line-length.test.mjs` (calls `ValidateNpcNeeds.check`); added the reachability-check backlog line | `test/js/validator-exchange-line-length.test.mjs`, `docs/IDEAS_BACKLOG.md` |
+| m6: Ama's midday hint stale after an early cake | Mirrored the engine-owned `cake_servings` global as a VAR in Ama's ink; when it is 0, A11 and A33 are replaced by A34 "The cake's gone already. Tell me when to call it a day." | `ink/ama_owusu.ink`, `.json` |
+| m7: A32 dropped the cooler pointer before the cooler beat | Gated A32 on `kitchen_seen and heard_exchange_cooler_chat`; `kitchen_seen` alone now gives A7 (back to the cooler); else A8, A7 (no new line) | `ink/ama_owusu.ink`, `.json` |
+| m8: "Not bad, you?" could open a cooler chat | Replaced with "Quiet one today, isn't it?" in the `cooler` pool (lines are drawn one at a time, so a reply opener could land first) | `scenario.json.erb` |
+| m9: A31 did not name the stake and echoed A33's "Once" | Rewrote A31 to "They won't be back once they've gone home. Any tasks still unticked first?" | `ink/ama_owusu.ink`, `.json` |
+
+### Lines changed (need the user's yes before voicing)
+
+- A31 (Ama): "They won't be back once they've gone home. Any tasks still unticked first?" (was "Once they go home, they're gone for the day. Ready?")
+- A34 (Ama, new): "The cake's gone already. Tell me when to call it a day."
+- `cooler` pool (chatter): "Quiet one today, isn't it?" (was "Not bad, you?")
+
+A32 (m7) changed only its gate, not its text, so it needs no re-voicing.
+
+### Checks
+
+- Inks recompiled (`ama_owusu.ink` -> `.json`); the END warnings are the expected hub-exit convention.
+- Validator (`validate_scenario.rb --no-graph`): 0 errors, 17 warnings (baseline).
+- `node tools/playtest/showcase-lines-check.mjs`: PASS (84 table rows + 24 pool lines).
+- `bin/test-js`: see the live-proof handover for the full run.
+
+### Live check (port 3094)
+
+Pending in `tmp/handover/showcase-r2fix.md`: m1 (Zainab's kitchen-coffee fallback ticks `see_who_stays` when the office coffee is switched off in the evening), A32's new gate, the board fits without scrolling, and A31's new confirm text with "Not yet." returning to the menu with no blank bubble.

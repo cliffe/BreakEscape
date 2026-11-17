@@ -18,6 +18,9 @@ VAR act_evening = false
 VAR kitchen_seen = false
 VAR chidi_pc_owner_away = false
 VAR jun_pc_owner_away = false
+// cake_servings mirrors the engine-owned cake_servings global (the magnet's remaining
+// servings), synced in when the conversation starts; 0 means an early cake has already gone.
+VAR cake_servings = 2
 // met_ama is an ink-local VAR (not a global): it survives an ended story on a
 // re-talk (restoreNPCState) and a reload (exportNpcInkVariables), so the opening
 // A1/A2 plays once and later talks open at the hub with A0. Pattern from m01 met_maya.
@@ -56,19 +59,28 @@ What can I help with?
             Lunch takes people away from their desks. Some lock their screens; some don't.
             # speaker:npc
             Use an open one, then close it and wait by the desk for its owner.
-            # speaker:npc
-            When they're all back and sitting, drop the cake from your inventory here in the office.
-            # speaker:npc
-            Once the cake is gone, tell me to call it a day.
+            {
+                - cake_servings > 0:
+                    # speaker:npc
+                    When they're all back and sitting, drop the cake from your inventory here in the office.
+                    # speaker:npc
+                    Once the cake is gone, tell me to call it a day.
+                - else:
+                    # speaker:npc
+                    The cake's gone already. Tell me when to call it a day.
+            }
         - else:
             # speaker:npc
             Wait for the coffee run. One person at a time; the rest queue.
             # speaker:npc
             They come back every few minutes. Switch the machine off at the wall socket while they queue.
             {
-                - kitchen_seen:
+                - kitchen_seen and heard_exchange_cooler_chat:
                     # speaker:npc
                     You've seen the kitchen. Ask me about lunch when you're ready.
+                - kitchen_seen:
+                    # speaker:npc
+                    Then open the kitchen door and hang about by the water cooler.
                 - else:
                     # speaker:npc
                     Before you open the kitchen, note the mugs on the floor. Someone dislikes them.
@@ -105,7 +117,7 @@ What can I help with?
     }
 + { act_midday and not act_evening } [Call it a day.]
     # speaker:npc
-    Once they go home, they're gone for the day. Ready?
+    They won't be back once they've gone home. Any tasks still unticked first?
     + + [Yes, call it a day.]
         # speaker:npc
         Right. Home time for nearly all of them.

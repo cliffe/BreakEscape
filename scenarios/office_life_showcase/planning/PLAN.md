@@ -131,7 +131,7 @@ Row 2.7 (built values): Chidi and Jun eat at the fridge (restores 80) and microw
 
 | # | Time | Viewer does | Viewer sees | Label | Task | Ticks on |
 |---|---|---|---|---|---|---|
-| 3.1 | about 6:00 | Ama: "Call it a day." | A17, A18 play; as A18 ends (the `#set_global` runs after it) Chidi, Jun, Graham and Agnieszka vanish, the office ambient dims, the lamp over Zainab's tool roll comes on, and the office coffee is switched back on (the kitchen machine goes off with it) | Ama A17, A18 | none | `global_variable_changed:act_evening` with `value === true` (one `setVisible false` mapping per hidden NPC; on Ama, `setGlobal { office_coffee_off: false }`) |
+| 3.1 | about 6:00 | Ama: "Call it a day.", then "Yes, call it a day." at the A31 confirm ("Not yet." returns to the hub) | A31 confirm, then A17, A18 play; as A18 ends (the `#set_global` runs after it) Chidi, Jun, Graham and Agnieszka vanish, the office ambient dims, the lamp over Zainab's tool roll comes on, and the office coffee is switched back on (the kitchen machine goes off with it) | Ama A31, A17, A18 | none | `global_variable_changed:act_evening` with `value === true` (one `setVisible false` mapping per hidden NPC; on Ama, `setGlobal { office_coffee_off: false }`) |
 | 3.2 | 1.5 s after the conversation closes | Watches Zainab | Zainab speaks | Zainab bark B10 | none | same event, `delayMs 1500` |
 | 3.3 | 8 s after close | Watches Zainab | Her caffeine is set to 10 and she goes to the office coffee | none | `see_who_stays` | `npc_left_post:zainab_hussain` with `globalVars.act_evening === true` |
 | 3.4 | about 6:30 | Walks into the kitchen | The dark kitchen lights on entry, and goes dark 10 s after the viewer leaves | Ama A15 (hint) | none | none |
@@ -150,14 +150,17 @@ All three aims visible from the start (no `unlockAim`, so an early event never c
 
 ## 6. Host and staff ink, and keeping the tour open
 
-`ama_owusu.ink`, the reopen pattern from `scenarios/test_needs_sims/ink/neil.ink` (`start` diverts to `hub.choices`; `hub` has a reopen line; `reopenRefreshesHub: true`). VARs mirrored from globals: `act_midday`, `act_evening`, `kitchen_seen`, `heard_exchange_cooler_chat`, `chidi_pc_owner_away`, `jun_pc_owner_away`.
-- `start`: A1, A2, then the hub choices.
+`ama_owusu.ink`, the reopen pattern from `scenarios/test_needs_sims/ink/neil.ink` (first talk: `start` plays A1, A2 and diverts to `hub.choices`; later talks: `met_ama` is true, so `start` diverts straight to `hub` for the reopen line A0; `hub` has a reopen line; `reopenRefreshesHub: true`). VARs mirrored from globals: `act_midday`, `act_evening`, `kitchen_seen`, `heard_exchange_cooler_chat`, `cake_servings`, `chidi_pc_owner_away`, `jun_pc_owner_away`. `met_ama` is an ink-local VAR (not a global), exported in `npcInkVariables`, so the opening plays once across re-talks and reloads.
+- `start`: first talk A1, A2, then the hub choices; later talks divert to `hub` (A0).
 - `hub`: reopen line A0, then choices (seven at most, under dialoguelint's hub limit of 10):
   - "What am I looking at?" (once): A3, A4.
-  - "What should I try next?": by act. Morning (`not act_midday`) A5, A6, A8, A7, in that order (the mugs hint comes before the kitchen hint, section 4 row 1.6); midday (`act_midday and not act_evening`) A9 to A11; evening A12, A15. No progress globals.
+  - "What should I try next?": by act, and within an act by progress globals.
+    - Morning (`not act_midday`): A5, A6, then by kitchen and cooler state: `kitchen_seen and heard_exchange_cooler_chat` gives A32 ("You've seen the kitchen. Ask me about lunch when you're ready."); `kitchen_seen` alone gives A7 (points back at the cooler); else A8, A7, in that order (the mugs hint comes before the kitchen hint, section 4 row 1.6). So A32 only appears once the cooler exchange has been heard, not the moment the kitchen is entered.
+    - Midday (`act_midday and not act_evening`): A9, A10, then by `cake_servings`: if above 0, A11 and A33 ("Once the cake is gone, tell me to call it a day."); if 0 (an early cake already eaten), A34 ("The cake's gone already. Tell me when to call it a day.") in place of A11 and A33.
+    - Evening (`act_evening`): A12, A15.
   - "What was that at the cooler?" (only when `heard_exchange_cooler_chat`): A13, A14.
   - "Let's do lunch." (`not act_midday`): if `not kitchen_seen`, A26 and back to the hub; else if `chidi_pc_owner_away or jun_pc_owner_away`, A29 and back to the hub; else A16, A30, `#set_global:act_midday:true`, exit. Globals sync into the story when the conversation starts, so a viewer who keeps the conversation open while Chidi and Jun walk back hears A29 again until the conversation is closed and reopened. A29 already tells them to give it a minute, which in practice closes the conversation; S3 checks the reopen.
-  - "Call it a day." (`act_midday and not act_evening`): A17, A18, `#set_global:act_evening:true`, exit.
+  - "Call it a day." (`act_midday and not act_evening`): the A31 confirm ("They won't be back once they've gone home. Any tasks still unticked first?") with two sticky sub-choices. "Yes, call it a day." plays A17, A18, `#set_global:act_evening:true`, exit. "Not yet." returns to the hub choices with nothing set.
   - "Give me the short version." (`act_evening`): A19 to A25, A28, back to the hub.
   - "I'll have a look round.": A27, exit.
 - Each staff NPC: a minimal five-line chat in its own ink file (start line; a hub reopen line; one flavour choice answered in two lines; a plain exit choice answered with one short reply). Graham's file also holds `exchange_cooler_chat` (Graham and Agnieszka, five lines). The exchange is declared on Graham: `"exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat" }]`, and `heard_exchange_cooler_chat: false` is declared in `globalVariables`.
@@ -216,13 +219,16 @@ Character counts are the full text in the table, punctuation and spaces included
 | A28 | short version, close | That's the tour. Stay and look round as long as you like. | 57 | 12 |
 | A29 | Let's do lunch, Chidi or Jun away | Hang on, Chidi or Jun is still out. Give it a minute. | 53 | 12 |
 | A30 | Let's do lunch, after A16 | Anyone in the middle of something finishes it first. | 52 | 9 |
-| A31 | Call it a day (confirm) | Once they go home, they're gone for the day. Ready? | 51 | 10 |
-| A32 | try next, morning (kitchen_seen) | You've seen the kitchen. Ask me about lunch when you're ready. | 62 | 11 |
-| A33 | try next, midday (after A11) | Once the cake is gone, tell me to call it a day. | 48 | 12 |
+| A31 | Call it a day (confirm) | They won't be back once they've gone home. Any tasks still unticked first? | 74 | 13 |
+| A32 | try next, morning (kitchen_seen and cooler heard) | You've seen the kitchen. Ask me about lunch when you're ready. | 62 | 11 |
+| A33 | try next, midday (after A11, cake still out) | Once the cake is gone, tell me to call it a day. | 48 | 12 |
+| A34 | try next, midday (cake already gone) | The cake's gone already. Tell me when to call it a day. | 55 | 12 |
 
 Player choice text (not voiced): "What am I looking at?", "What should I try next?", "What was that at the cooler?", "Let's do lunch.", "Call it a day.", "Yes, call it a day.", "Not yet.", "Give me the short version.", "I'll have a look round."
 
 R1 fixes (build review R1 and dialogue review): M1 guards each `start` with an ink-local VAR (`met_ama` and five `met_<staff>`), so the opening line plays once and a re-talk, after an ended story or a reload, opens at the hub reopen line (A0 and the staff reopen lines). M2 makes "Call it a day." confirm first with A31; A17 answers the Yes. Dialogue M2 adds A32 (morning pointer to lunch once the kitchen is seen) and A33 (midday pointer to the evening). A6 names the machine (was "it"); A13 is past tense ("That was"); A17 says "nearly all" (was "most").
+
+R2 fixes (build review R2): spoken lines changed, so they need the user's yes before voicing. A31 rewritten to name the risk (unticked tasks) and not echo A33's "Once" (was "Once they go home, they're gone for the day. Ready?") (m9). A32 now also gated on `heard_exchange_cooler_chat`, so it only replaces the cooler pointer once the cooler exchange has been heard, not the moment the kitchen is entered (m7, no text change). A34 added for the midday try-next when an early cake has already gone (`cake_servings` is 0), in place of A11 and A33 (m6). In the `cooler` pool "Not bad, you?" becomes "Quiet one today, isn't it?" (m8).
 
 ### 7b. Staff ink (five lines each)
 
@@ -292,7 +298,7 @@ B4 uses `workstation_screen_changed`, which is emitted on every screen change wh
 
 Scenario-level pools copied from sims `scenario.json.erb:14-23` (all 40 or fewer; copied, newly voiced):
 - `coffee` (6): "Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"
-- `cooler` (8): "Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "Have you tried the new sandwich place?" (38 characters; new, in place of the sims printer line, since the tour has no printer)
+- `cooler` (8): "Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Quiet one today, isn't it?", "Have you tried the new sandwich place?" (38 characters; new, in place of the sims printer line, since the tour has no printer. The seventh line replaced the earlier reply-style opener from R2 m8, because lines are drawn one at a time, so a reply opener could land first)
 - `grumble_off` (3): "Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."
 - `grumble_gone` (1): "Missed it."
 - `cake` (4): as `CAKE_ITEM.md`. The `news_cake` word-of-mouth pool and the magnet's `announce` were dropped (S3 fix): the tour drops the cake in the one room everyone shares, so every staff member sees it by sight and nobody is ever told, so the pool could never speak.
@@ -347,7 +353,7 @@ Nothing grows `player_state`; every key is a boolean or a small bounded integer,
 ## 9. Ending and reload behaviour
 
 - No conclusion, no credits, no ending warning (section 6). The objectives panel shows all three aims complete; the viewer can keep walking round, talking to Ama and replaying the recap.
-- Reload keeps act globals, NPC visibility, lighting variants and fired onceOnly mappings; needs reset to each NPC's `initial` (accepted for a tour: Ama's hints still hold, and the coffee run restarts from spawn timing). The `met_*` re-talk guards persist (they export in `npcInkVariables`), so a reload does not replay the opening or the staff greetings. A reload in the 8 s window after the evening turn is covered by a second Zainab mapping, `room_entered:office` with `globalVars.act_evening === true` and `caffeine: 10` (spawn fires `room_entered`), so `see_who_stays` still has a thirsty Zainab heading for the office coffee rather than waiting on her reset thirst. A dropped cake is covered by build check BC1 (section 10). Needs restart at 90 hunger, and the cake tempts only at 70 or below, so after a reload in midday nobody is hungry enough for the cake for about 4 minutes; a viewer who reloads and then drops it sees it sit untouched for that time.
+- Reload keeps act globals, NPC visibility, lighting variants and fired onceOnly mappings; needs reset to each NPC's `initial` (accepted for a tour: Ama's hints still hold, and the coffee run restarts from spawn timing). The `met_*` re-talk guards persist (they export in `npcInkVariables`), so a reload does not replay the opening or the staff greetings. A reload in the 8 s window after the evening turn is covered by a second Zainab mapping, `room_entered:office` with `globalVars.act_evening === true` and `caffeine: 10` (spawn fires `room_entered`), so `see_who_stays` still has a low-caffeine Zainab heading for coffee rather than waiting on her reset caffeine. `see_who_stays` also ticks on her coffee use itself, by a widened `npc_used:*` mapping (`data.need === 'caffeine'`), so a kitchen-coffee fallback counts too. A dropped cake is covered by build check BC1 (section 10). Needs restart at 90 hunger, and the cake magnet tempts at `urgentAt 40 < level <= 85` (`tempt 45`), so a hunger of 90 falls into the band in about a minute; a viewer who reloads in midday and then drops the cake sees it sit untouched only for that short time.
 
 ## 10. Risks and points to measure
 
@@ -366,6 +372,7 @@ Nothing grows `player_state`; every key is a boolean or a small bounded integer,
 | R11 | B1 on `room_entered:office` at spawn, and not again after a reload | S1: spawn, kitchen and back, reload; one B1 |
 | R12 | The kitchen coffee's object-form `offWhen` | Read by `_isOff` through `requiredGlobalsHold` (section 2); the schema allows it (`scripts/scenario-schema.json:5481`) and `check_off_when` (`scripts/validate_npc_needs.rb:442-466`) passes with the key declared and set by the socket. S2 (T6b, T7) shows it off at load and on after the switch-off |
 | R13 | The lunch gate reads stale VARs while Ama's conversation stays open | Accepted (section 6); S3 closes and reopens to check A16 then plays |
+| R14 | The lamp over Zainab's tool roll reads cream rather than a warm evening glow (R1 m5) | Deferred to a later lighting pass; recorded here so the pass finds it. Cosmetic only; no task or beat depends on it |
 
 Build check BC1, the cake after a reload (run in S3, recorded in the S3 commit message). From code: a drop is saved as a room object with `sourceType 'player_drop'` and its room-relative position, then removed from the server inventory (`persistDrop`, `systems/item-drop.js:16-18`, `:355-393`); on reload the room places it from the saved position and `scanMagnets` registers it again when the room loads (`systems/npc-needs.js:872-881`), with servings read from `cake_servings`. Four reloads, each on a fresh game:
 1. Cake still held: it is in the inventory, nowhere in a room.
