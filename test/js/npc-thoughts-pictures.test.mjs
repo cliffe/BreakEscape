@@ -60,7 +60,7 @@ test('createEngineWorld().npcThoughtsOn reads window.gameScenario.npcThoughts', 
 });
 
 // Review R2 m1: an unheard desk-phone item with picture chat off is not "talking"
-test('npcThoughts false: an unheard call item reports no talking state and the call still ends', () => {
+test('npcThoughts false: an unheard call item reports no talking state', () => {
     const sys = rig({ thoughts: false });
     sys._calls.set('ph', { phoneId: 'ph', speakerId: 'ann', current: { line: null, picture: null, until: 1000 }, items: [], i: 0, pictures: false });
     assert.equal(sys._talking('ann'), null, 'no line, no picture: not talking');

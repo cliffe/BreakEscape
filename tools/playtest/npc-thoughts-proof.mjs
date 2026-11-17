@@ -1,11 +1,9 @@
 // R1 m1/M1 live proof of the npcThoughts flag. Usage:
 //   node tools/playtest/npc-thoughts-proof.mjs <gameId> <label> <needs-csv npc:need,...> <phases> [port]
 // phases: comma list of "far" / "near" / "room:<id>[+<id>...]"; each phase runs PHASE_S seconds with the listed needs forced low at its start.
-import { createRequire } from 'node:module';
+import { chromium } from 'playwright';
 import fs from 'node:fs';
-const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/node_modules/');
-const { chromium } = require('playwright-core');
-const EXEC = '/home/cliffe/.cache/ms-playwright/chromium_headless_shell-1248/chrome-headless-shell-linux64/chrome-headless-shell';
+const EXEC = process.env.CHROMIUM_PATH || undefined;   // optional override; playwright finds its own browser otherwise
 const [gid, label, needsCsv = '', phases = 'far,near', port = '3093'] = process.argv.slice(2);
 const PHASE_S = Number(process.env.PHASE_S || 60);
 const out = (process.env.OUT_DIR || 'tmp/npc-thoughts-proof') .replace(/\/?$/, '/');   // relative to the repo root; screenshots are not committed

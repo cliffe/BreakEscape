@@ -73,3 +73,10 @@ Both commits show the same two outcomes on the flip run: either the two NPCs act
 - `room:a+b+c` walks one door at a time (m02 needs six hops from the lobby to staff_room).
 - The needs are forced again every 10 s, and the player is walked beside any NPC that is saying a picture, so the bubble is in view. The summary now carries `pictureTurnTicks`.
 - The idle-start case is not forced away. Count a flip run as valid only when `turns` lists a talking turn; rerun otherwise.
+
+## Outcomes
+
+- verify-run.rb label: fixed. A mutter with no line reads "(picture)" only when it carries a picture, otherwise "(silent)".
+- m1 test title: fixed; it now claims only what it asserts (no talking state).
+- Proof script paths: fixed. It imports playwright like the other proof scripts; CHROMIUM_PATH is an optional override.
+- Proof rerun: variance, not a regression (both commits show the same two outcomes); see the proof section above.
