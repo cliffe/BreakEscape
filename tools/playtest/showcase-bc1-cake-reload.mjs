@@ -149,10 +149,11 @@ async function calm(h) {
 }
 
 async function drop(h) {
-  await calm(h);
   // Drop in --room, not wherever the player happens to stand (the start room, if --room isn't it).
+  // Enter it before calm(): NPC needs states register only once their room has loaded.
   await ev(h, id => window.__test.enterRoom(id), ROOM).catch(() => {});
   await h.t(1200);
+  await calm(h);
   if (AT) await ev(h, ([x, y]) => window.__test.moveTo(x, y), AT).catch(() => {});
   if (NEAR) await ev(h, id => window.__test.moveToNear(id, { timeoutMs: 30000 }), NEAR).catch(() => {});
   await h.t(500);
