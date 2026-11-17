@@ -429,9 +429,15 @@ test('R1 m2: console fields come from the room answer when the bootstrap omits d
     assert.equal('x' in dev.scenarioData, false);
 });
 
+// Whether the server sends deviceData at all (it does when the hideable has more than the one
+// authored room) is decided in Ruby; hide_device_test.rb and lab_plant_hiding_test.rb guard that.
+// These two cases cover the client side of it: the overlay takes its console fields from the
+// bootstrap deviceData when the definition carries it, and has none when it does not.
 test('R2 M1: a two-room hideable hidden in the non-authored room opens with the bootstrap deviceData', () => {
     const w = world({ hiddenDevices: [{ item: KIT, on: 'comms_fern', room: 'comms' }] });
-    w.ph.hideables.get(KIT).rooms = ['reception', 'comms'];
+    const def = w.ph.hideables.get(KIT);
+    def.rooms = ['reception', 'comms'];
+    def.deviceData = { id: 'planted_rogue_ap', type: 'rogue_ap', name: 'bootstrap copy', wifiTwin: true, apScan: [{ ssid: 'from-bootstrap' }] };
     w.comms.objects.comms_fern = scenarioPlant(w.scene, 'comms_fern', { roomId: 'comms' });
     // The authored room (reception) never loads: no noteHiddenWith call. Comms loads first.
     w.ph.syncRoom('comms');
@@ -439,7 +445,20 @@ test('R2 M1: a two-room hideable hidden in the non-authored room opens with the 
     const dev = w.scene.made[0];
     assert.equal(dev.roomId, 'comms');
     assert.equal(dev.scenarioData.id, 'planted_rogue_ap');
-    assert.equal(dev.scenarioData.wifiTwin, true);
+    assert.equal(dev.scenarioData.name, 'bootstrap copy', 'the fields came from the bootstrap definition');
+    assert.deepEqual(dev.scenarioData.apScan, [{ ssid: 'from-bootstrap' }]);
+});
+
+test('R2 M1: with no bootstrap deviceData and the authored room never loaded, the overlay has no console fields', () => {
+    const w = world({ hiddenDevices: [{ item: KIT, on: 'comms_fern', room: 'comms' }] });
+    const def = w.ph.hideables.get(KIT);
+    def.rooms = ['reception', 'comms'];
+    delete def.deviceData;
+    w.comms.objects.comms_fern = scenarioPlant(w.scene, 'comms_fern', { roomId: 'comms' });
+    w.ph.syncRoom('comms');
+    const dev = w.scene.made[0];
+    assert.equal(dev.roomId, 'comms');
+    assert.equal('wifiTwin' in dev.scenarioData, false, 'nothing to fall back on, which is why the server sends deviceData for several rooms');
 });
 
 test('a missing host logs one warning and the overlay goes on the first eligible plant', () => {
