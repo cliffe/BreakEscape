@@ -103,3 +103,13 @@ Distances are against the **seated sprite**, which draws about 20 px above the f
 ## 8. What to record
 
 For every run: game id, port, the commit hash tested, the trip table, each PASS or FAIL with the reason. A pass on a lineage that predates a fix does not count: slice 5's live runs were on the pre-R1 branch (random duplicate machines, old timings), and the merged tip had never been played when R2 reviewed it (`M03_SLICES3_5_REVIEW_R2.md` finding 1). Run the **merged tip**, not the branch you built on.
+
+## 9. Object position baseline
+
+No validator flag prints object positions (`validate_scenario.rb -o` mixes the rendered JSON into its report), so render the scenario with `LockKeyDiff.render` (`scripts/lock_key_diff.rb:85`, the seeded render the lock and key diff uses) and print one sorted line per declared object and per NPC `itemsHeld` entry. From the worktree root:
+
+```bash
+ruby -r ./scripts/lock_key_diff.rb -rjson -e 'j = LockKeyDiff.render(ARGV[0]); rows = []; (j["rooms"] || {}).each { |r, d| Array(d["objects"]).each { |o| rows << [r, o["id"] || o["name"], o["type"], o["position"] || [o["x"], o["y"]].compact].to_json }; Array(d["npcs"]).each { |n| Array(n["itemsHeld"]).each { |i| rows << [r, "held:" + n["id"].to_s, i["type"], i["id"] || i["name"]].to_json } } }; puts rows.sort' scenarios/<m>/scenario.json.erb > scenarios/<m>/office_life/positions_base.txt
+```
+
+After each slice, run it again into a scratch file and `diff` the two. Only objects the plan adds or moves may differ. Tiled-claimed objects print an empty position (the map places them); a change there shows as a new or missing row. The static diff does not see where items land at runtime: a knock-out away from post is covered by the attack probe.

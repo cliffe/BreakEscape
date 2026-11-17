@@ -7,7 +7,7 @@ description: Takes a Break Escape campaign mission from no office life to the m0
 
 Make a finished campaign mission feel like a working building: people who drink coffee, talk at the cooler, lock their screens and go home, without moving a single lock, key or required step. m02 (`scenarios/m02_ransomed_trust/office_life/`) is the worked example; read its `PLAN.md` for the shape of every section below. `test_needs_sims` is the showcase for each feature.
 
-The skill assumes main includes the m03 office-life engine fixes (`build/ol-m03`, train 131): the pair side swap and the instant unseat when a seated NPC is hidden. Where it says "the engine now...", that is those fixes; engine line numbers are as on `build/ol-m03`.
+The skill assumes main includes the m03 office-life engine fixes (`build/ol-m03`, train 131): the pair side swap and the instant unseat when a seated NPC is hidden. Where it says "the engine now...", that is those fixes; engine line numbers are as on `build/ol-m03`. A bare engine file name (`npc-needs.js`) is in `public/break_escape/js/systems/`.
 
 Sources, read by section, never end to end:
 
@@ -17,7 +17,7 @@ Sources, read by section, never end to end:
 
 References, read when the step needs them (this file is the procedure, they hold the detail):
 
-- `references/measurement-recipes.md`: setup for live measurement, one machine not two, trip timing and the lock threshold, pair use, lazy rooms, hide/reload/night, trouble handling.
+- `references/measurement-recipes.md`: setup for live measurement, one machine not two, trip timing and the lock threshold, pair use, lazy rooms, hide/reload/night, trouble handling, the object position baseline.
 - `references/mapping-patterns.md`: JSON shapes for Tiled machines, the readable laptop, night hides, mapped breaks, trouble globals, pools and exchanges.
 - `references/gotchas.md`: what bit m02 and m03, with the fix for each.
 - `references/checklists.md`: per slice, per review round, per live check, before merge.
@@ -36,7 +36,7 @@ References, read when the step needs them (this file is the procedure, they hold
 
 ## Outputs
 
-All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_summary_base.txt`, `validator_info_lines.txt`, `ANALYSIS.md`, `PLAN.md`, `REVIEW_R<n>.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`, `BUILD_LOG.md`, `LIVE_*.md` (the live-proof write-ups; m02 named its two `STAGE4_LIVE*.md` and `STAGE5_LIVE*.md`), `LOG.md`, `HANDOVER.md`. The plan's sections follow m02's: aim and tier, people, story-safe movement (when any existing NPC is free), rooms and objects, levers, openings, spoken lines, sync budget, field names, costs and approvals, test plan.
+All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_summary_base.txt`, `positions_base.txt`, `validator_info_lines.txt`, `ANALYSIS.md`, `PLAN.md`, `REVIEW_R<n>.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`, `BUILD_LOG.md`, `LIVE_*.md` (the live-proof write-ups; m02 named its two `STAGE4_LIVE*.md` and `STAGE5_LIVE*.md`), `LOG.md`, `HANDOVER.md`. The plan's sections follow m02's: aim and tier, people, story-safe movement (when any existing NPC is free), rooms and objects, levers, openings, spoken lines, sync budget, field names, costs and approvals, test plan.
 
 ## Stage 0: baseline
 
@@ -44,6 +44,7 @@ All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_s
 - [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors. Save the `ℹ️` lines to `validator_info_lines.txt`.
 - [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb --office-summary > v1_summary_base.txt` (V1, one line per NPC, sorted so it diffs).
 - [ ] `ruby scripts/lock_key_diff.rb scenarios/<m>/scenario.json.erb --write scenarios/<m>/office_life/baseline_locks.json` (V9).
+- [ ] Object position baseline: every declared object's room, id or name, type and position, and every NPC's `itemsHeld`, sorted so it diffs, into `positions_base.txt`. No validator flag prints this; use the one-liner in `references/measurement-recipes.md` section 9. Stage 4 diffs against it.
 - [ ] `bin/rails "app:break_escape:tts:office_lines[<m>]"` from the worktree root with the env in `references/measurement-recipes.md` section 1 (V6; it does not count barks) for the cached clip count and any uncached clips that predate office life.
 - [ ] Note `gameClock`, `disableAttacks`, the base commit hash and the walkthrough file in `BASELINE.md`.
 
@@ -63,14 +64,18 @@ One row per NPC record, with file:line. Classify each:
 | patrolling or hostile from the start | never (a needs NPC may not have `behavior.patrol`) |
 | several records of one character, non-human, phone or cutscene only | never |
 
-- [ ] **Story NPCs stay where the plot needs them.** In most missions every existing person is story-critical (m02 and m03 both), so talk needs new ambient people or nothing.
+- [ ] **Story NPCs stay where the plot needs them.** In most missions every existing person is story-critical (m02 and m03 both), so talk needs new ambient people, or a short routine for an existing NPC that the D78 step below finds free.
 - [ ] **Existing NPCs: story-safe movement (D78).** Give every existing NPC one of five classes, with the line that decides it. Only a **free** NPC may move.
   - *Pinned by the text*: its own lines fix it in place (m08's analyst: "If I leave this desk, somebody writes down that I left this desk", `m08_background_analyst.ink:26`).
   - *Witness or line of sight*: a mapping depends on where it stands or what it can see.
-  - *Holding or guarding* an item or clue.
-  - *Plot-located*: a beat or cutscene needs it at a spot.
-  - *Free*: none of the above.
+  - *Holding or guarding*: an item or clue; any NPC with `itemsHeld` (a knock-out drops them in the room the NPC fell in, not its home room, `npc-hostile.js:781` to `:784`, and a carried needs item goes the same way, `:806` to `:810`); the `owner` of a workstation (`scripts/scenario-schema.json:5481`), above all one with `lockType: "login"`, because the PC of an owner the needs system tracks answers `attended` while the owner is at post and `accessed` or `locked` while away, where an untracked owner's answers `signin` (`workstation-state.js:51` to `:67`, `:677` to `:680`), a change the lock and key diff cannot see; and any NPC whose presence an `onInteract` or ink condition reads.
+  - *Plot-located*: a beat or cutscene needs it at a spot. A character with a phone or cutscene record counts here too, unless the plan shows that no phone or cutscene line places them and that no cutscene moves or hides that id while it is away: a phone call does not freeze the walking sprite (`inChatWith` counts person-chat only, `npc-needs.js:5389` to `:5400`), so "I'm at my desk" on the phone can be false on screen.
+  - *Free*: none of the above, and not ruled out by the open-conversation rule below.
   A suspect in a whodunnit is not free unless the plan argues it: movement can read as a behavioural tell. Record the class per NPC in the people table (Stage 2, "Story-safe movement").
+- [ ] **Open-conversation rule (D78, option a; M3 pending).** An NPC whose conversation is open at any time is not free.
+  - *PENDING (M3, awaits the user's decision), option b: talk away from post is allowed when the conversation reads no location and no beat hangs on it, since the engine freezes the NPC where it stands and uses that room's background (`npc-needs.js:1434` to `:1457`, `public/break_escape/js/minigames/person-chat/person-chat-background.js:15`).*
+  - To switch to b: make the option b sentence the rule, delete the option a sentence and this sub-list. The rule is referred to by name ("the open-conversation rule") everywhere else, so nothing else changes.
+- [ ] **The five classes decide whether an existing NPC moves at all; the cast table above decides how far.** A free NPC that the table calls story-critical keeps its needs in its own room with every target there. Any free NPC may leave its room only when V2 (`scripts/validate_office_life.rb:432` to `:452`) is clear for it with the planned leash; otherwise its leash is its own room. V2's `patrolOverride` exemption (`post_override?`, `:424` to `:430`) does not count for a moved existing NPC, which gets no `patrolOverride` recall (Stage 2).
 - [ ] For each NPC who might sit or pose: does the atlas have seated frames (`--sit-from`) and pose frames (`pose_drink_*`, `pose_use_*`, `pose_phone_*`)? List what is missing; it is an art item, not a blocker.
 - [ ] Mark every NPC "can be attacked" unless the scenario sets `disableAttacks`, and list each one's `globalVarOnKO`, `taskOnKO` and KO drops.
 - [ ] List beats keyed on NPC position or presence: `npc_arrived`, `room_entered` mappings, conversation-reachable knots, LOS and `challengeOnSight`, KO tasks, `initiallyHidden` reveals, cutscene triggers.
@@ -93,12 +98,14 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 
 ### People table
 
-| NPC | class | post | leash | needs | groups and avoids | habits | beats protected by | if attacked mid-walk |
-|---|---|---|---|---|---|---|---|---|
+| NPC | class | post | leash | needs | groups and avoids | habits | beats protected by | gate global, set by, lead time | if attacked mid-walk |
+|---|---|---|---|---|---|---|---|---|---|
+
+The class column holds the cast-table class and, for an existing NPC, its D78 class (`optional flavour / free`). The gate column is for moved existing NPCs only.
 
 - [ ] Every needs NPC has a post (`needsHome`), a leash (`needsRooms` or `needsAvoidRooms`) and stays out of private rooms (room `needsPrivateTo`).
-- [ ] Keep new NPCs out of a guard's patrol room and LOS window with `needsAvoidRooms`, and out of the room where a story beat happens at a fixed spot.
-- [ ] Name a protection for every story beat. Only three count: (1) the NPC has no `needs`; (2) its needs are confined to its own room and every target is in it; (3) a mapping on an event that always precedes the beat sends it home with `patrolOverride.targetTile`, and a `"needs": "resume"` mapping after the beat lets it go. `patrolOverride` ends within 32 px of its target, so it stops a tile short; for trouble (a hit, a KO) do not use it, put `offWhen` on the machines and let the needs layer walk staff home (`references/mapping-patterns.md` section 5). `deferrable: false` is **not** a protection; it makes the NPC leave more readily.
+- [ ] Keep new NPCs and moved existing NPCs out of a guard's patrol room and LOS window with `needsAvoidRooms`, and out of the room where a story beat happens at a fixed spot.
+- [ ] Name a protection for every story beat. Only four count: (1) the NPC has no `needs`; (2) its needs are confined to its own room and every target is in it; (3) a mapping on an event that always precedes the beat sends it home with `patrolOverride.targetTile`, and a `"needs": "resume"` mapping after the beat lets it go (never for a moved existing NPC, see Story-safe movement); (4) for a free existing NPC only (D78), a scalar global read by `offWhen` (and by the mapping `condition` of its breaks), with a measured lead time, as set out in Story-safe movement below. `patrolOverride` ends within 32 px of its target, so it stops a tile short; for trouble (a hit, a KO) do not use it, put `offWhen` on the machines and let the needs layer walk staff home (`references/mapping-patterns.md` section 5). `deferrable: false` is **not** a protection; it makes the NPC leave more readily.
 - [ ] Never add an `npc_arrived:<id>` mapping to a needs NPC (needs arrivals fire it).
 - [ ] Social compatibility: chat only between people who plausibly get on. Distrusted or suspect people carry `needsCompany.avoids`.
 - [ ] Hostile ambient staff get the chase `leash: true` (with `chaseRange`) so a punched NPC stays near its post. Add a credits line for KO and attack outcomes.
@@ -109,16 +116,22 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Natural rhythm first (`decayPerMin`, `urgentAt`, `initial`, `jitterPct`); then mapped breaks for timing: `room_entered:<room>` or `conversation_closed` with `delayMs` about 2000 and a cooldown of 120 to 150 s.
 - [ ] Coupled breaks: a mapping on `npc_use_started:<object>` with a condition on the partner's id sets the other's need low through `needs: { set: ... }`. Coupling both ways can hold a cooler for minutes and shut out NPCs that avoid `*` (`SIMS_TIDY_LOG.md:600` to 612); couple one way, or cap with a cooldown.
 - [ ] An NPC whose every need is met by its own post object never moves but stays registered, so it can print by command (`needs: { print: ... }`, `forget: true` leaves the page on the tray).
-- [ ] Reload resets needs to the posts. Only scalar globals survive; design for that.
+- [ ] Reload resets needs levels to `initial` and the NPCs to their posts. Only scalar globals survive; design for that. Two cases matter: inside a gate window the global still holds, so the NPC stays at post; outside one, a low `initial` can send it off at once.
 
 ### Story-safe movement (existing NPCs)
 
-Write this section when the audit found a free existing NPC; otherwise write "none free" and the reason. A free NPC may get a short routine (a coffee, the printer, stretching at a window) at non-plot times only.
+Write this section when the audit found a free existing NPC; otherwise write "none free" and the reason. A free NPC may get a short routine (a coffee, the cooler, the printer in its own room) at non-plot times only. A window is not a machine: `officeType` has no window (`scripts/scenario-schema.json:5474`), so stretching at one needs a hand-written affordance; leave it out unless the plan writes that affordance.
 
-- [ ] **Gated.** The routine switches off before and during the NPC's beats. Put `offWhen` (object level, a global name or `{ name: value }`, `scripts/scenario-schema.json:5480`) on the machine it uses, keyed on a global that holds from before the beat until after it: NPCs walking there turn back and park. For a mapped break, add a `condition` on the mapping (`scripts/scenario-schema.json:4973`). Where a global cannot cover it, a mapping with `"needs": "suspend"` at the event that opens the window and `"resume"` after (`scripts/scenario-schema.json:5099` to `5102`, `public/break_escape/js/systems/npc-needs.js:1096` to `1111`). `suspend` does not walk the NPC home: an NPC suspended mid-trip stands where it is, so pair it with a leash that keeps the whole trip short.
-- [ ] **Leashed** to its own room or to the nearest machine: `needsHome` (`scripts/scenario-schema.json:4881`), `needsRooms` (`:4894`) or `needsAvoidRooms` (`:4895`), and `needsPrivateTo` on rooms it must not use (`:4247`). The rhythm uses `needs` with `decayPerMin`, `urgentAt` and `initial` (`:4841` to `4850`) and, for timing, a mapped break (`cooldown` `:4983`, `delayMs` `:4984`). A seat on the machine is `affordance.seat` (`:3983`).
-- [ ] **At its post before any conversation can start.** Prove it: no conversation or `conversation_closed`-keyed beat can begin while the NPC is away (the machine is `offWhen` by then, the trip is short, and the NPC is home before the player can reach it). Do not rely on the NPC walking home once a conversation has started.
-- [ ] Name, per moved NPC, the beats it must be at post for and which gate covers each. A beat with no named gate means the NPC is not free.
+- [ ] **One gate: a scalar global read by `offWhen`, with a measured lead time.** Put `offWhen` (object level, a global name or `{ name: value }`, `scripts/scenario-schema.json:5480`) on every source the NPC may use, and the same global in the `condition` of each mapped break (`:4973`). The global is set from before the beat can first open until after it. Scalar globals survive a reload; nothing else here does.
+  - What the gate does: a switched-off source is no candidate for a new trip (`npc-needs.js:1734` to `:1737`). An NPC walking to it or queued for it turns back through `_turnBack(s, 'off')` (`:3480` to `:3484`); the `off` rule has `fallback: true` (`:172`), so it first takes the next acceptable source for the same need (`:2089` to `:2093`) and parks the need and walks home only when none is found (`:2095`). An NPC already using the machine finishes its use first (schema `:5480`).
+  - So the gate global must turn on before the earliest moment the beat can open by at least the use time plus the walk home plus a margin (3 s at least, as for the lock threshold). Measure use and walk-home as in `references/measurement-recipes.md` section 3 (five tries, real time, which runs over expected time), and write the lead time and the event that sets the global in the people table.
+- [ ] **No `suspend` route and no `patrolOverride` recall** for a moved existing NPC. `scriptSuspended` is client state: it starts `false` (`npc-needs.js:582`) and nothing restores it, so after a reload the routine runs again inside the beat window; and `suspend` does not walk the NPC home (`:1099` to `:1104`). A `patrolOverride` resolves `targetTile` in `npc.roomId` (`npc-manager.js:1622` to `:1626`), which follows the NPC as it walks (`npc-behavior.js:1012` to `:1018`), so one fired while the NPC is in the kitchen sends it to a kitchen tile; any scripted walk also suspends needs (`onExternalMove`, `npc-needs.js:778` to `:788`). m03 built a `patrolOverride` send-home, lost staff a tile short with needs suspended, and replaced it with `offWhen` (`references/mapping-patterns.md:129`). That lesson is why `offWhen` is the gate.
+- [ ] **Every way out is gated or removed.** List the NPC's V2 away rooms (`away_need_rooms`, `scripts/validate_office_life.rb:371` to `:420`: needs sources, print fetches, interests, magnets and workaround visits). Every need source in that list carries the gate. A free existing NPC gets no `interests`, no `workarounds` and no need a magnet satisfies (a magnet would also let the player lure it away during a beat). `offWhen` is checked on the way only for `use` jobs (`npc-needs.js:3480`), so print fetches, phone answers and work-plan checks stay in its own room.
+- [ ] **Leashed.** Its own room unless V2 is clear for it (the cast audit item above). The fields: `needsHome` (`scripts/scenario-schema.json:4881`), `needsRooms` (`:4894`) or `needsAvoidRooms` (`:4895`), and `needsPrivateTo` on rooms it must not use (`:4247`). The rhythm uses `needs` with `decayPerMin`, `urgentAt` and `initial` (`:4841` to `:4850`) and, for timing, a mapped break (`cooldown` `:4983`, `delayMs` `:4984`). A seat on the machine is `affordance.seat` (`:3983`).
+- [ ] **At its post before any conversation can start.** The proof is the measured lead time: for each beat that opens a conversation, or is keyed on `conversation_closed`, name the event that sets the gate global and show it comes earlier than the beat by the lead time. Under the open-conversation rule (Stage 1) an NPC whose talk is open at any time is not free. If a conversation does start away from post, the engine freezes the NPC where it stands (`npc-needs.js:1434` to `:1444`; `npc-behavior.js:945` to `:958`), the chat uses the background of the room it is in (`public/break_escape/js/minigames/person-chat/person-chat-background.js:15`), and the trip resumes when the chat closes (`npc-needs.js:1446` to `:1457`). Nothing walks it home first.
+- [ ] **If attacked mid-walk.** Fill this column of the people table for every moved NPC: the needs item it may be carrying and where that lands if it is knocked out away from post (the room it fell in, `npc-hostile.js:806` to `:810`; an NPC with `itemsHeld` is holding, Stage 1, and does not move, because its drops land there too, `:781` to `:784`); that it stays where it fell, not walked home, while knocked out or hostile, then walks home once available (`npc-needs.js:1235` to `:1239`, `:1418` to `:1431`); and the beats that read where it is.
+- [ ] **Other NPCs.** A moved NPC can change other NPCs' beats and witness logic: an `npc_ko` or LOS mapping that counts "staff present" can now find the room empty, or count a trip as witnessed (m03 counted a cooler trip as witnessed, `references/mapping-patterns.md:131`). List every mapping that reads another NPC's presence in the rooms the moved NPC leaves or enters, and its expected result with the NPC away.
+- [ ] Name, per moved NPC, the beats it must be at post for, the gate global for each and its lead time. A beat with no named gate means the NPC is not free.
 - [ ] The plan states the expected result of every check below under "Test plan".
 
 ### Rooms, affordances and machine presets
@@ -174,7 +187,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 ### Test plan
 
-- [ ] Walkthrough steps that must still pass; office-life checks to make live (five tries each at walking pace); reload checks; the attack probe (attack a moving NPC, a seated one and one leaving through a door, fresh game per step); the expected lock and key diff (empty, or exactly the approved items); for each moved NPC, the story-safe movement checks in Stage 4.
+- [ ] Walkthrough steps that must still pass; office-life checks to make live (five tries each at walking pace); reload checks; the attack probe (attack a moving NPC, a seated one and one leaving through a door, fresh game per step, plus each moved existing NPC while it is at the machine, checking where its carried item lands and that it walks home once available); the expected lock and key diff (empty, or exactly the approved items); for each moved NPC, the story-safe movement checks in Stage 4.
 
 ## Stage 3: the loop
 
@@ -218,7 +231,7 @@ After each slice:
 - [ ] Ink compiles; `dialoguelint.mjs` on changed ink; `tagdiff.mjs` against the last commit for any existing ink touched; inkcheck and loopcheck; `scripts/ink_runtime_check/reopencheck.mjs` and the mission's route suite (`scripts/ink_runtime_check/<m>_routes/`) where it has one.
 - [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors, every new warning cleared or justified. The office-life checks (`scripts/validate_office_life.rb`, called by `validate_scenario.rb`) cover V1, V2 (story NPC whose needs can leave its room), V3 (`npc_arrived` on a needs NPC), V4 (attackable needs NPC; an info line once the E1 attack probe has passed), V7 (repeated lines), V8 (sync budget, info until a cap is passed), V10 (a pool or exchange nothing can trigger) and V11 (a chatter pool line that names a credential), all warnings, and V5 (required content keyed on an office-life global or event), an error. V6 is the rake task and V9 the lock and key diff. The older needs, access and habits validators run too.
 - [ ] `--office-summary` diffed against `v1_summary_base.txt`: only the planned NPCs changed.
-- [ ] **Story-safe movement**, before and after: the lock and key diff is empty; item and clue positions are unchanged (compare the objects' room and position against the baseline); line-of-sight mappings and `challengeOnSight` are unchanged; no pinned, witness, holding, plot-located or suspect NPC gained `needs`.
+- [ ] **Story-safe movement**, before and after: the lock and key diff is empty; item and clue positions are unchanged (rerun the `references/measurement-recipes.md` section 9 one-liner and diff it against `positions_base.txt`; only planned objects may differ); line-of-sight mappings and `challengeOnSight` are unchanged; no pinned, witness, holding, plot-located or suspect NPC gained any needs-layer key (`needs`, `workNeeds`, `habits`, `interests`, `workarounds`, `answersPhones`, `socialUse`, `needsHome`, `needsRooms`, `needsAvoidRooms`, `needsCompany`); each moved NPC's `offWhen` gate is on every need source in its V2 away list, and it has no `interests`, `workarounds` or magnet-met need.
 - [ ] `ruby scripts/lock_key_diff.rb scenarios/<m>/scenario.json.erb scenarios/<m>/office_life/baseline_locks.json`: empty, or exactly the approved items. It regenerates the dungeon graph itself.
 - [ ] `python3 scripts/check_door_alignment.py` and the room depth check for new or changed rooms.
 - [ ] Field names at `FormatUpgrade.current`; office-life keys never inside an ERB loop or tag.
@@ -230,7 +243,7 @@ After each slice:
 - [ ] **A fresh game per check** from `new-game.rb`, run from the same worktree with the same env as the server (section 1 of the recipes). Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
 - [ ] **Never edit a game row's scenario copy or state, and never set globals in the page** to reach a state. If a check needs a head start, add it to a test scenario on the branch or ask. Type flags in play where a reward matters: seeding m02's flag 4 by `--submit-flag` did not open its cache.
 - [ ] Headless only: `game.loop.setFPS(20)` with **fixed steps on**. Never `fixedStep = false` (bodies tunnel 8 px walls).
-- [ ] **Story-safe movement live proof**: every story beat finds each moved NPC at post, five tries each at walking pace, including after a reload (needs reset to the posts on reload). A beat that finds one away fails the check and the NPC goes back to a class that does not move.
+- [ ] **Story-safe movement live proof**: every story beat finds each moved NPC at post, five tries each at walking pace, starting the approach to the beat as the NPC leaves for its longest trip. Reload twice: inside a gate window (the global is set: the NPC must stay at post) and outside one (with a low `initial` it may leave at once; it must still be back before the next beat). A beat that finds one away fails the check and the NPC goes back to a class that does not move. Then the attack probe on the moved NPC at the machine (Test plan).
 - [ ] Check through `window.__test.needs` that posts, leashes and privacy hold, both partners reach `using` at each chatter object, and nothing mapped to NPC position fires early or twice.
 - [ ] A run counts only when `tools/playtest/verify-run.rb` shows progress. A scripted run's "stuck" is checked by a persona run before it counts.
 - [ ] Stage 5 playtests: a scripted regression of the walkthrough with office life on; a persona run of 10 to 15 minutes that pulls each lever, tries each opening, attacks one moving NPC and reloads once; a frame-time reading; with `roomTone`, a listen through a north or south door and an east or west one. At most three rounds, then a short confirmation run.
@@ -259,3 +272,4 @@ Full list with fixes in `references/gotchas.md`. The ones that cost most: declar
 ## Decisions
 
 - D78, 2026-11-17: existing NPCs move only when free ("Yes, story-safe only"). Pinned, witness, holding, plot-located and, in a whodunnit, suspect NPCs stay put.
+- M3 (open-conversation rule), pending: the skill states option a (an NPC whose conversation is open at any time is not free) until the user picks a or b.

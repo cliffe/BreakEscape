@@ -39,7 +39,7 @@ m03 filed the coffee case in `docs/IDEAS_BACKLOG.md` (capacity-2 walk-home stall
 Both-way coupling of the same object holds a cooler for minutes and shuts out NPCs that avoid `*`. Couple one way each.
 
 ### Scripts win over needs
-A scripted walk suspends needs. A bare `suspend` freezes an NPC where it stands, possibly in another room. A `patrolOverride` send-home ends within 32 px of its target (`goToAndStay` arrival), so it stops a tile short and leaves needs suspended. Send staff home with `offWhen` on the machines instead (`mapping-patterns.md` section 5).
+A scripted walk suspends needs. A bare `suspend` freezes an NPC where it stands, possibly in another room. A `patrolOverride` send-home ends within 32 px of its target (`goToAndStay` arrival), so it stops a tile short and leaves needs suspended. Send staff home with `offWhen` on the machines instead (`mapping-patterns.md` section 5). A `suspend` is also lost on reload (`scriptSuspended` starts `false`, `npc-needs.js:582`, and nothing restores it), so for an existing NPC moved under D78 the only gate is a global read by `offWhen` (SKILL.md, "Story-safe movement").
 
 ### Story room collisions
 Do not let a needs walk or a new `room_entered` mapping collide with a cutscene trigger room or a fixed-spot beat.

@@ -12,7 +12,7 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 - [ ] `python3 scripts/check_door_alignment.py` for new or changed rooms.
 - [ ] No office-life key inside an ERB loop or tag; field names at `FormatUpgrade.current`.
 - [ ] Machines declared with base type names; one of each in the room after two loads.
-- [ ] Moved existing NPCs (SKILL.md, "Story-safe movement"): only free ones; lock and key diff empty; item, clue and line-of-sight positions unchanged.
+- [ ] Moved existing NPCs (SKILL.md, "Story-safe movement"): only free ones; V2 clear or leash is its own room; lock and key diff empty; `positions_base.txt` diff shows only planned objects (`measurement-recipes.md` section 9); line-of-sight mappings unchanged; no pinned, witness, holding, plot-located or suspect NPC gained any needs-layer key; each moved NPC's `offWhen` gate on every need source in its V2 away list, no `interests`, `workarounds` or magnet-met need, no `suspend` or `patrolOverride` recall.
 - [ ] Every new global declared (`globalVariables`, `heard_<knot>`, workstation globals; every key a `requireGlobal` tests for `false` too); sync budget updated.
 - [ ] New mappings appended at the end of the NPC's list.
 - [ ] Slice log written: what changed, measurements, what was not checked.
@@ -36,8 +36,8 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 - [ ] Five tries per timed trip; both expected and real away recorded.
 - [ ] Night turn rendered and looked at, not only read from state.
 - [ ] Reload at day and at night.
-- [ ] Attack probe on a moving, a seated and a leaving NPC, fresh game each.
-- [ ] Each story beat finds each moved NPC at post, five tries, and again after a reload.
+- [ ] Attack probe on a moving, a seated and a leaving NPC, fresh game each; and on each moved existing NPC at the machine (where its carried item lands, and that it walks home once available).
+- [ ] Each story beat finds each moved NPC at post, five tries, approach started as it leaves for its longest trip. Reload inside a gate window (it stays at post) and outside one (it may leave at once, and is back before the next beat).
 - [ ] Run on the merged tip; commit hash recorded.
 - [ ] Server stopped by PID; `unlink node_modules` done.
 
