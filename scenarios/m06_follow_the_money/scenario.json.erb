@@ -796,7 +796,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
     "tomasz_laptop_screen_locked": false,
     "tomasz_laptop_accessed": false,
     "tomasz_handover_sheet_shown": false,
-    "pizza_servings": 3,
+    "pizza_servings": 2,
     "trader_spoken": false,
     "trader_heard_out": false,
     "analyst_spoken": false,
@@ -2055,7 +2055,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
 <%# Slice 4 (PLAN 2.4, 2.9): owner of tomasz_laptop; screen habit (threshold measured at build); covers the phones;
     one handover sheet printed by this command only, after the first talk with Irina. %>
           "answersPhones": true,
-          "habits": { "screen": { "lockChance": 0.2, "lockIfAwayOverSeconds": 30 } },
+          "habits": { "screen": { "lockChance": 0.2, "lockIfAwayOverSeconds": 22 } },
           "eventMappings": [
             { "eventPattern": "conversation_closed:irina_volkova", "onceOnly": true, "condition": "!globalVars.floor_staff_ko", "needs": { "print": { "producer": "floor_copier", "forget": true } } }
           ],
@@ -2553,7 +2553,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
           "observations": "A box of cold pizza, a few slices left.",
           "affordance": {
             "satisfies": ["hunger"], "restores": 60, "useSeconds": 12,
-            "magnet": { "tempt": 60, "servings": 3, "perPerson": 1 }
+            "magnet": { "tempt": 60, "servings": 2, "perPerson": 1 }
           }
         }
       ]
