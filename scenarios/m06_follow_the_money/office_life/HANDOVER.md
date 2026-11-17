@@ -1,6 +1,6 @@
 # Build status (slice 5 spoken lines: static built and committed; live check in LIVE_S5.md)
 
-Pools, three exchanges, two short conversations (`ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink`), heard_ globals. 55 clips, none voiced (SPOKEN_LINES.md). `grumble_gone` dropped. Next: build review loop. Never stage dungeon_graph.*.
+Pools, three exchanges, two short conversations (`ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink`), heard_ globals. 55 clips, none voiced (SPOKEN_LINES.md). `grumble_gone` dropped. LIVE CHECKS NOT DONE (builder hit its context limit): one fresh game (new-game.rb with --unlock security_checkpoint --unlock trading_floor; scripts in the build scratchpad live/, lib.mjs boot/goRoom), then (1) walk onto the floor and confirm a coffee pair shows a pool line, (2) talk to Lerato and Tomasz once each: conversation opens, goodbye ends cleanly (#exit_conversation), game resumes, (3) an exchange only if reachable by play (irina_arrested needs the Irina detain route; exchange 1 needs Dani and Tomasz at the coffee point together, Dani goes after his first talk), else state why. Server 3096 was started and stopped by PID. Write results to LIVE_S5.md. Then the build review loop. Never stage dungeon_graph.*.
 
 # Build status (slice 4 live checks: all done, see LIVE_S4.md part 3; ready for the build review loop)
 
