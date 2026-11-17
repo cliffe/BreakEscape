@@ -162,3 +162,27 @@ and the capture-log find toast wording are out of scope until K3d lands; say so 
    static imports planned, so no harness copy list should grow (check if that changes).
 9. Fixture/PLAYTEST: lena_token already exists from run 2 step 9 (check PLAYTEST R12 text) and the
    build log "K5 client" section must list what R12's live check must see.
+
+## Run 4 (2026-11-17): K3d merged, decisions applied, client started. START HERE
+Commits: 79ef6957b (merge K3d), 79220e248, 714d0e00c (npc_frustration replay), 7885b5818 (proofFoothold), 85b50d291
+(lock refusal helper), no-reader fix, 49a395072 (client WIP, untested), build log. See build log
+"## Slice K5 run 4" for decisions, tests and the R12 checklist. Baseline before client work was green.
+Design changes vs "Client half design" above: K3d IS merged now (signin-rows.js exists; its token
+branch at signin-rows.js:165 is a marked hook; test/js/signin-rows.test.mjs:210 is a test.skip to fill);
+step 7 is DONE differently (lockScopeRefusalLine helper, server line, five call sites); step 2 is DONE
+in keyring.js (expired rows use server `proofFoothold`, plus a `tokenProofs` map) but has NO tests yet.
+Open, in order:
+1. Tests for keyring.js token code (noteTokenTimes full + unchanged, tokenSecondsLeft, screenEntries
+   token on its foothold only / other foothold / keyboard / from / expired by proofFoothold / held token
+   calls pcSessions.noteTokenExpiry) in keyring-client.test.mjs; remote-host-text token lines test.
+2. signin-rows token row: "Use it on {host}'s sign-in screen, through {link}. About {n} min left."
+   (under 60 s: "Under a minute left."). Pass link names (network_link items: footholdId -> name) from
+   capture-log-model buildSections(items) and `tokenSecondsLeft` from capture-log-minigame.js:77-83
+   (keyring answer object); fill the skipped test.
+3. Steps 3, 4, 5, 6, 8 of "Client half design" (password-minigame greyed/expired, pc-sessions timer and
+   noteTokenExpiry/tokenSecondsLeft + copied texts kept equal by a test, network-links/npc-workarounds
+   tokenExpiredPcIds, pc-taskbar line + container-minigame interval and 403 expired, signin-fit).
+4. Extend test_access_keyring PLAYTEST R12 with the build log checklist; full bin/test-js + Rails set.
+Gotchas: Edit tool trims a trailing space in old_string (broke a test name once, fixed); K3d's GET
+/keyring writes keyringGained, so "GET writes nothing" tests must except that key; flag-station and
+password minigames no longer import LOCK_SCOPE_REFUSAL_TEXT.
