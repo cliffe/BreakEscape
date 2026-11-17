@@ -254,6 +254,277 @@
     border: 2px solid transparent;
 }
 
+/* The icon is a keyboard stop: the 2px frame on its picture marks it, not a browser ring */
+.desktop-icon:focus-visible {
+    outline: none;
+}
+
+.desktop-icon:hover .desktop-icon-image,
+.desktop-icon:focus-visible .desktop-icon-image {
+    border-color: #00ff00;
+    background: rgba(0, 255, 0, 0.1);
+}
+
+.desktop-icon-label {
+    font-family: 'GNF', monospace;
+    font-size: 16px;
+    color: white;
+    text-align: center;
+    /* The 2px of padding above and at the sides leaves room for the text outline (the label
+       clips, and an outline is 2px outside the glyph); the margin keeps the old 4px gap */
+    margin-top: 2px;
+    padding: 2px 2px 0;
+    box-sizing: border-box;
+    /* A whole-pixel line box: three lines are 54px */
+    line-height: 18px;
+    /* A 2px square outline, one GNF pixel at this size (pixel-art UI rule) */
+    text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+        2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000;
+    /* A name wraps at spaces and after _ . - / (fitIconLabel splits it into one box per
+       fragment), never inside a fragment ("CONTINGENCY" broke as "CONTINGENC / Y"). It runs
+       to three lines: a longer name ends line 3 in an ellipsis character (fitIconLabel), a
+       fragment wider than the box ends in the CSS ellipsis, and the full name is in the title.
+       The clamp below is the backstop for a pass that runs before the font loads. */
+    overflow-wrap: normal;
+    word-break: normal;
+    max-width: 112px;
+    max-height: 56px; /* 2px padding plus 3 lines of 18px */
+    overflow: hidden;
+}
+
+/* A clipped label while its icon is hovered or focused: the whole name, over the icons
+   below (fitIconLabel / expandIconLabel add the class and a negative bottom margin, so the
+   row does not move). Same border and backing as the closed label. */
+.desktop-icon-label.desktop-icon-label-open {
+    max-height: none;
+    overflow: visible;
+    position: relative;
+    z-index: 3;
+}
+
+.desktop-icon-label .desktop-icon-word {
+    display: inline-block;
+    max-width: 100%;
+    box-sizing: content-box;
+    /* Padding and a matching negative margin: the box is as large as the text, but the
+       outline of the glyphs at its edge is inside the box that clips (no cut at a joint) */
+    padding: 2px;
+    margin: -2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.pc-monitor .pc-desktop .desktop-icon-label .desktop-icon-word {
+    padding: 0;
+    margin: 0;
+}
+
+.desktop-icon-label-open .desktop-icon-word {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
+}
+
+.desktop-taskbar {
+        padding: 6px 20px;
+        min-height: 36px;
+    }
+    .container-minigame.desktop-mode .desktop-background {
+        max-height: calc(100vh - 400px);
+        min-height: min(240px, max(140px, calc(100vh - 400px)));
+    }
+}
+
+/* Monitor bezel for desktop containers */
+.container-monitor-bezel {
+    background: #666;
+    border: 8px solid #444;
+    clip-path: polygon(
+      0px calc(100% - 10px),
+      2px calc(100% - 10px),
+      2px calc(100% - 6px),
+      4px calc(100% - 6px),
+      4px calc(100% - 4px),
+      6px calc(100% - 4px),
+      6px calc(100% - 2px),
+      10px calc(100% - 2px),
+      10px 100%,
+      calc(100% - 10px) 100%,
+      calc(100% - 10px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 2px),
+      calc(100% - 6px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 4px),
+      calc(100% - 4px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 6px),
+      calc(100% - 2px) calc(100% - 10px),
+      100% calc(100% - 10px),
+      100% 10px,
+      calc(100% - 2px) 10px,
+      calc(100% - 2px) 6px,
+      calc(100% - 4px) 6px,
+      calc(100% - 4px) 4px,
+      calc(100% - 6px) 4px,
+      calc(100% - 6px) 2px,
+      calc(100% - 10px) 2px,
+      calc(100% - 10px) 0px,
+      10px 0px,
+      10px 2px,
+      6px 2px,
+      6px 4px,
+      4px 4px,
+      4px 6px,
+      2px 6px,
+      2px 10px,
+      0px 10px
+    );
+    padding: 20px;
+    box-shadow: inset 0 0 0 4px rgba(0, 0, 0, 0.35);
+    position: relative;
+    margin: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-monitor-bezel::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    background: #555;
+    z-index: -1;
+}
+
+.container-monitor-bezel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    /* border-radius: 7px; */
+    z-index: 1;
+}
+
+/* Post-it notes for container monitor bezel */
+.container-monitor-bezel .postit-note {
+    position: absolute;
+    bottom: -15px;
+    left: 20px;
+    z-index: 15;
+    margin: 0;
+    transform: none;
+    background: #ffff88;
+    border: 2px solid #d8d060;
+    padding: 15px;
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.35);
+    font-family: 'GNF', monospace;
+    font-size: 18px;
+    color: #333;
+    max-width: 260px;
+}
+
+.container-monitor-bezel .postit-note::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-top: 15px solid #f0f0f0;
+}
+
+.container-monitor-bezel .postit-note::after {
+    content: '';
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
+    border: 2px solid #b03030;
+    box-sizing: border-box;
+}
+
+.container-monitor-bezel .postit-note:nth-child(2) {
+    left: 120px;
+    transform: none;
+}
+
+.container-monitor-bezel .postit-note:nth-child(3) {
+    left: 220px;
+    transform: none;
+}
+
+.desktop-background {
+    flex: 1;
+    position: relative;
+    background: #000;
+    overflow: hidden;
+    min-height: 250px;
+}
+
+.desktop-wallpaper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('../assets/mini-games/desktop-wallpaper.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    opacity: 1.0;
+}
+
+
+.desktop-icons {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 16px;
+}
+
+.desktop-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 112px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* No hover zoom: a 1.1x scale smears the pixel icon and label; the frame highlight marks it. */
+
+.desktop-icon-image {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    background: rgba(255, 255, 255, 0.1);
+    /* border-radius: 8px; */
+    padding: 4px;
+    border: 2px solid transparent;
+}
+
 .desktop-icon:hover .desktop-icon-image {
     border-color: #00ff00;
     background: rgba(0, 255, 0, 0.1);
@@ -934,7 +1205,9 @@
     box-sizing: border-box;
     max-width: 112px;
     line-height: 18px;
+    margin-top: 4px;
     padding: 0 2px;
+    max-height: 58px; /* 3 lines of 18px plus the 2px borders at top and bottom */
     background: #101820;
     border: 2px solid #2a3a48;
     color: #dde6ee;
@@ -953,7 +1226,8 @@
     background: transparent;
 }
 
-.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-label {
+.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-label,
+.pc-monitor .pc-desktop .desktop-icon:focus-visible .desktop-icon-label {
     border-color: #9ee6ff;
 }
 

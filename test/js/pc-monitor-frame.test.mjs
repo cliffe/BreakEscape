@@ -864,17 +864,71 @@ test('R2 m3 and m5: icon labels on the monitor have the dark backing, not the ou
     assert.match(frame.slice(s, frame.indexOf('}', s)), /font-size: 16px;\s*line-height: 16px;/);
 });
 
-// UI PC polish 2: labels wrap at spaces only; a word that cannot fit steps the pixel font down a
-// whole size, then ends in an ellipsis. jsdom has no layout, so the widths are stubbed from the
-// label's font size: a word is `chars` characters wide at `px` pixels per character.
-function stubWidths(label, chars, perChar = 0.5, box = 104) {
-    Object.defineProperty(label, 'clientWidth', { configurable: true, get: () => box });
-    Object.defineProperty(label, 'scrollWidth', { configurable: true, get: () => {
-        const size = parseInt(label.style.fontSize, 10) || 16;
-        if (label.querySelector('.desktop-icon-word')) return box;
-        return Math.round(chars * size * perChar);
-    } });
+// Icon labels: jsdom has no layout, so a small simulator stands in for it: every character is
+// 8px wide (GNF at 16px), the box is `box` px wide, lines are 18px, a label shows three lines.
+// It reads the label's current children, so a fit that removes fragments changes the result.
+const LINE = 18;
+const simulated = new WeakSet();
+function simLines(label, box) {
+    const lines = [];
+    let x = 0, line = 0, space = false;
+    const place = (el, w) => {
+        const eff = Math.min(w, box);
+        if (x > 0 && x + (space ? 8 : 0) + eff > box) { line++; x = 0; }
+        else if (x > 0 && space) x += 8;
+        space = false;
+        lines.push([el, line, w, eff]);
+        x += eff;
+    };
+    if (label.querySelector('.desktop-icon-word')) {
+        for (const n of label.childNodes) {
+            if (n.nodeType === 3) space = true;
+            else if (n.classList?.contains('desktop-icon-word')) place(n, Array.from(n.textContent).length * 8);
+        }
+    } else {
+        (label.textContent.match(/\S+/g) || []).forEach((wd, i) => { space = i > 0; place(null, wd.length * 8); });
+    }
+    return { lines, count: lines.length ? line + 1 : 0 };
 }
+const sims = new WeakMap();
+function stubWidths(label, _chars, _perChar, box = 104) {
+    sims.set(label, box);
+    const define = (k, get) => Object.defineProperty(label, k, { configurable: true, get });
+    const sim = () => simLines(label, box);
+    define('clientWidth', () => box);
+    define('scrollWidth', () => label.querySelector('.desktop-icon-word') ? box : Math.max(0, ...sim().lines.map(l => l[2])));
+    define('scrollHeight', () => sim().count * LINE);
+    define('clientHeight', () => Math.min(sim().count, 3) * LINE);
+    label.getBoundingClientRect = () => ({ top: 0, left: 0, width: box, height: 0 });
+    if (!simulated.has(label.ownerDocument.defaultView)) {
+        const E = label.ownerDocument.defaultView.Element.prototype;
+        const orig = {};
+        for (const k of ['scrollWidth', 'clientWidth']) orig[k] = Object.getOwnPropertyDescriptor(E, k);
+        const owner = (el) => el.closest?.('.desktop-icon-label, div') && el.parentNode && sims.has(el.parentNode) ? el.parentNode : null;
+        for (const k of ['scrollWidth', 'clientWidth']) {
+            Object.defineProperty(E, k, { configurable: true, get() {
+                const p = this.classList?.contains('desktop-icon-word') ? owner(this) : null;
+                if (!p) return orig[k].get.call(this);
+                const row = simLines(p, sims.get(p)).lines.find(l => l[0] === this);
+                return k === 'scrollWidth' ? row[2] : row[3];
+            } });
+        }
+        simulated.add(label.ownerDocument.defaultView);
+    }
+    // Another test swaps HTMLElement's rect and restores it as an own property, so check every time
+    const H = label.ownerDocument.defaultView.HTMLElement.prototype;
+    if (!H.getBoundingClientRect.__sim) {
+        const origRect = H.getBoundingClientRect;
+        const owner = (el) => el.parentNode && sims.has(el.parentNode) ? el.parentNode : null;
+        H.getBoundingClientRect = Object.assign(function () {
+            const p = this.classList?.contains('desktop-icon-word') ? owner(this) : null;
+            if (!p) return origRect.call(this);
+            const row = simLines(p, sims.get(p)).lines.find(l => l[0] === this);
+            return { top: row[1] * LINE, left: 0, width: row[3], height: LINE };
+        }, { __sim: true });
+    }
+}
+const wordsOf = (label) => [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
 
 test('UI PC polish 2: a label that fits keeps the 16px base; a wide word is never shrunk to a fractional size', async () => {
     const mod = await imp('minigames/container/container-minigame.js');
@@ -882,78 +936,213 @@ test('UI PC polish 2: a label that fits keeps the 16px base; a wide word is neve
     assert.equal(mod.LABEL_FIT_SIZES, undefined, 'no in-between font sizes (crisp GNF)');
     const fits = document.createElement('div');
     fits.textContent = 'Personal Notes - Safe';
-    stubWidths(fits, 12);
+    stubWidths(fits);
     assert.equal(fitIconLabel(fits), 'fits');
     assert.equal(fits.style.fontSize, '', 'a label that fits keeps the base size');
-    // 14 characters at 8px a character is 112px wide at 16px: wider than the box, so it is cut
+    // 14 characters at 8px a character is 112px wide: wider than the 104px box, so it is cut
     const word = document.createElement('div');
-    word.textContent = 'CONTINGENCYXY';
-    stubWidths(word, 14);
+    word.textContent = 'CONTINGENCYXYZ';
+    stubWidths(word);
     assert.equal(fitIconLabel(word), 'ellipsis');
     assert.equal(word.style.fontSize, '', 'the font size is never touched');
-    assert.equal(word.getAttribute('title'), 'CONTINGENCYXY');
-    assert.equal(word.textContent, 'CONTINGENCYXY', 'the text reads the same');
+    assert.equal(word.getAttribute('title'), 'CONTINGENCYXYZ');
+    assert.equal(word.textContent, 'CONTINGENCYXYZ', 'the text reads the same');
 });
 
 test('UI PC polish 2: a word too wide for the label ends in an ellipsis; the whole name stays in the title', async () => {
     const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
     const label = document.createElement('div');
     label.textContent = 'ELECTROENCEPHALOGRAPHY - Audit Response';
-    stubWidths(label, 40);
+    stubWidths(label);
     assert.equal(fitIconLabel(label), 'ellipsis');
     assert.equal(label.style.fontSize, '', 'back at the base size');
     assert.equal(label.getAttribute('title'), 'ELECTROENCEPHALOGRAPHY - Audit Response');
-    const words = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
-    assert.deepEqual(words, ['ELECTROENCEPHALOGRAPHY', '-', 'Audit', 'Response'], 'one box per word, so a break can only fall at a space');
+    assert.deepEqual(wordsOf(label), ['ELECTROENCEPHALOGRAPHY', '-', 'Audit', 'Response'], 'one box per word');
     assert.equal(label.textContent, 'ELECTROENCEPHALOGRAPHY - Audit Response', 'the text reads the same');
     // refitting from the cut state restores the whole name first
-    stubWidths(label, 5);
+    label.dataset.fullName = 'Short name';
     assert.equal(fitIconLabel(label), 'fits');
     assert.equal(label.querySelector('.desktop-icon-word'), null);
     assert.equal(label.getAttribute('title'), null);
+    assert.equal(label.classList.contains('desktop-icon-label-cut'), false);
 });
 
-test('Icon labels: a file name breaks after _ . - / and keeps the separator; a long fragment still ends in an ellipsis', async () => {
+test('Icon labels: a name that wraps in full shows no title and no cut class; the separators keep their line', async () => {
     const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
     const label = document.createElement('div');
     label.textContent = 'ENGAGEMENT_NOTE.txt';
-    stubWidths(label, 20);
-    assert.equal(fitIconLabel(label), 'ellipsis');
-    const frags = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
-    assert.deepEqual(frags, ['ENGAGEMENT_', 'NOTE.', 'txt']);
-    assert.equal(label.querySelectorAll('wbr').length, 2, 'a break opportunity between fragments');
-    assert.equal(label.textContent, 'ENGAGEMENT_NOTE.txt', 'the text reads the same');
-    assert.equal(label.getAttribute('title'), 'ENGAGEMENT_NOTE.txt');
+    stubWidths(label);
+    assert.equal(fitIconLabel(label), 'wraps', 'every character is visible after the split');
+    assert.deepEqual(wordsOf(label), ['ENGAGEMENT_', 'NOTE.', 'txt']);
+    assert.equal(label.querySelectorAll('wbr').length, 2);
+    assert.equal(label.textContent, 'ENGAGEMENT_NOTE.txt');
+    assert.equal(label.getAttribute('title'), null, 'a tooltip that repeats the visible text is noise');
+    assert.equal(label.classList.contains('desktop-icon-label-cut'), false);
     const path = document.createElement('div');
     path.textContent = 'a-b/c_d e';
-    stubWidths(path, 30);
+    stubWidths(path, 0, 0, 40);
     fitIconLabel(path);
-    assert.deepEqual([...path.querySelectorAll('.desktop-icon-word')].map(w => w.textContent), ['a-', 'b/', 'c_', 'd', 'e']);
-    // no separator: one fragment, ellipsis and title as before
-    const long = document.createElement('div');
-    long.textContent = 'ELECTROENCEPHALOGRAPHY';
-    stubWidths(long, 30);
-    assert.equal(fitIconLabel(long), 'ellipsis');
-    assert.deepEqual([...long.querySelectorAll('.desktop-icon-word')].map(w => w.textContent), ['ELECTROENCEPHALOGRAPHY']);
-    assert.equal(long.querySelector('wbr'), null);
-    assert.equal(long.getAttribute('title'), 'ELECTROENCEPHALOGRAPHY');
-    // a name with markup characters stays text
+    assert.deepEqual(wordsOf(path), ['a-', 'b/', 'c_', 'd', 'e']);
+    // a hostile name stays text
     const hostile = document.createElement('div');
     hostile.textContent = '<img src=x onerror=1>_a.b';
-    stubWidths(hostile, 30);
+    stubWidths(hostile);
     fitIconLabel(hostile);
     assert.equal(hostile.querySelector('img'), null);
-    assert.equal(hostile.textContent, '<img src=x onerror=1>_a.b');
+    assert.equal(plain(hostile.textContent).replace('…', ''), '<img src=x onerror=1>_a.b'.slice(0, plain(hostile.textContent).replace('…', '').length));
 });
 
-test('Icon labels: no innerHTML for the name; the cut label is clamped to three lines', () => {
+test('Icon labels: a name that needs a fourth line ends line 3 in an ellipsis; title and data-full-name hold the whole name', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const name = 'Client_Records_2009-2024_Archive_Final_Signed.docx';
+    const label = document.createElement('div');
+    label.textContent = name;
+    stubWidths(label);
+    assert.equal(fitIconLabel(label), 'ellipsis');
+    const words = wordsOf(label);
+    assert.ok(words.at(-1).endsWith('…'), `the last kept fragment ends in an ellipsis: ${words}`);
+    assert.doesNotMatch(words.at(-1), /[_.\-\/]…$/, 'no dangling separator before the ellipsis');
+    assert.ok(!words.join('').includes('docx'), 'the tail is gone');
+    assert.equal(label.getAttribute('title'), name);
+    assert.equal(label.dataset.fullName, name);
+    assert.ok(label.classList.contains('desktop-icon-label-cut'));
+    // the kept text fits on three lines
+    const rows = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.getBoundingClientRect().top / LINE);
+    assert.ok(Math.max(...rows) <= 2, `all kept fragments on lines 1-3: ${rows}`);
+    // refit is idempotent, starting from the full name
+    fitIconLabel(label);
+    assert.deepEqual(wordsOf(label), words);
+});
+
+test('Icon labels: multi-word and hyphenated names that run past three lines are clamped and titled too', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    for (const name of ['Quarterly board pack for the audit committee minutes archive', 'Q3-board-pack-draft-v2-final-signed-off-copy.docx']) {
+        const label = document.createElement('div');
+        label.textContent = name;
+        stubWidths(label, 0, 0, 64);
+        assert.equal(fitIconLabel(label), 'ellipsis', name);
+        assert.equal(label.getAttribute('title'), name);
+        assert.ok(wordsOf(label).at(-1).endsWith('…'), name);
+        const rows = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.getBoundingClientRect().top / LINE);
+        assert.ok(Math.max(...rows) <= 2, `${name}: three lines at most`);
+    }
+    // a multi-word name that fits in three lines is left alone
+    const ok = document.createElement('div');
+    ok.textContent = 'Personal notes safe';
+    stubWidths(ok, 0, 0, 64);
+    assert.equal(fitIconLabel(ok), 'fits');
+});
+
+test('Icon labels: no break at a leading separator or between two separators; the extension break stays', async () => {
+    const { splitLabelName } = await imp('minigames/container/container-minigame.js');
+    assert.deepEqual(splitLabelName('.config_backup_archive'), ['.config_', 'backup_', 'archive']);
+    assert.deepEqual(splitLabelName('a__b'), ['a__', 'b']);
+    assert.deepEqual(splitLabelName('..hidden.txt'), ['..hidden.', 'txt']);
+    assert.deepEqual(splitLabelName('REVENUE.xlsx'), ['REVENUE.', 'xlsx']);
+    assert.deepEqual(splitLabelName('trail_'), ['trail_']);
+    assert.deepEqual(splitLabelName(''), []);
+});
+
+test('Icon labels: expanding a clipped label shows the whole name; collapsing refits', async () => {
+    const { fitIconLabel, expandIconLabel, collapseIconLabel } = await imp('minigames/container/container-minigame.js');
+    const name = 'Client_Records_2009-2024_Archive_Final_Signed.docx';
+    const label = document.createElement('div');
+    label.textContent = name;
+    stubWidths(label);
+    fitIconLabel(label);
+    assert.equal(expandIconLabel(label), true);
+    assert.equal(plain(label.textContent), name);
+    assert.ok(label.classList.contains('desktop-icon-label-open'));
+    assert.equal(collapseIconLabel(label), true);
+    assert.ok(wordsOf(label).at(-1).endsWith('…'));
+    const fits = document.createElement('div');
+    fits.textContent = 'Short';
+    stubWidths(fits);
+    fitIconLabel(fits);
+    assert.equal(expandIconLabel(fits), false, 'nothing is clipped, nothing to show');
+});
+
+test('Icon labels: no innerHTML for the name; the label is clamped to three lines on both desktops', () => {
     const src = readFileSync(new URL('../../public/break_escape/js/minigames/container/container-minigame.js', import.meta.url), 'utf8');
-    const fn = src.slice(src.indexOf('export function fitIconLabel('), src.indexOf('export function fitIconLabels('));
-    assert.doesNotMatch(fn, /innerHTML|insertAdjacentHTML/);
+    for (const fnName of ['fitIconLabel', 'buildLabelFragments', 'expandIconLabel']) {
+        const at = src.indexOf(`function ${fnName}(`);
+        assert.ok(at > 0, fnName);
+        assert.doesNotMatch(src.slice(at, src.indexOf('\n}\n', at)), /innerHTML|insertAdjacentHTML/, fnName);
+    }
     const box = css('container-minigame.css');
-    const cut = box.slice(box.indexOf('.desktop-icon-label.desktop-icon-label-cut {'), box.indexOf('}', box.indexOf('.desktop-icon-label.desktop-icon-label-cut {')));
-    assert.match(cut, /max-height: calc\(1\.1em \* 3\);/);
-    assert.match(cut, /overflow: hidden;/);
+    const rule = (sel) => { const s = box.indexOf(sel); assert.ok(s >= 0, sel); return box.slice(s, box.indexOf('}', s)); };
+    const plainRule = rule('.desktop-icon-label {');
+    assert.match(plainRule, /max-height: 56px;/, '2px padding plus three 18px lines');
+    assert.match(plainRule, /line-height: 18px;/);
+    assert.match(plainRule, /overflow: hidden;/);
+    assert.match(plainRule, /padding: 2px 2px 0;/, 'room for the text outline inside the clamp');
+    assert.match(rule('.pc-monitor .pc-desktop .desktop-icon-label {'), /max-height: 58px;/, '3 x 18 plus the 2px borders');
+    assert.match(rule('.desktop-icon-label.desktop-icon-label-open {'), /max-height: none;[\s\S]*overflow: visible;[\s\S]*z-index: 3;/);
+    assert.match(rule('.desktop-icon:focus-visible .desktop-icon-image') + box.slice(box.indexOf('.pc-monitor .pc-desktop .desktop-icon:focus-visible .desktop-icon-image')), /border-color/);
+});
+
+test('Icon labels: each desktop icon is a keyboard button named by the whole file name; Enter and Space open it', async () => {
+    const mg = Object.create(ContainerMinigame.prototype);
+    mg.contents = [
+        { name: 'Client_Records_2009-2024_Archive_Final_Signed.docx', type: 'notes', takeable: true },
+        { name: 'ENGAGEMENT_NOTE.txt', type: 'notes', takeable: true }
+    ];
+    document.body.innerHTML = '<div id="desktop-icons"></div>';
+    const host = document.getElementById('desktop-icons');
+    const opened = [];
+    mg.takeItem = (item) => opened.push(item.name);
+    mg.isInteractiveItem = () => false;
+    mg.offersTransfer = () => false;
+    mg.updateDesktopScrollCue = () => {};
+    mg.populateDesktopIcons();
+    const icons = [...host.querySelectorAll('.desktop-icon')];
+    assert.equal(icons.length, 2);
+    icons.forEach((icon, i) => {
+        assert.equal(icon.getAttribute('tabindex'), '0');
+        assert.equal(icon.getAttribute('role'), 'button');
+        assert.equal(icon.getAttribute('aria-label'), mg.contents[i].name);
+        assert.equal(icon.querySelector('img').getAttribute('alt'), '', 'the name is read once');
+        assert.equal(icon.querySelector('.desktop-icon-label').getAttribute('dir'), 'auto');
+    });
+    let stopped = 0;
+    const key = (k, target) => {
+        const e = new dom.window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true });
+        e.stopPropagation = ((orig) => function () { stopped++; return orig.call(this); })(e.stopPropagation);
+        target.dispatchEvent(e);
+        return e;
+    };
+    const e1 = key('Enter', icons[0]);
+    assert.equal(e1.defaultPrevented, true);
+    key(' ', icons[1]);
+    key('a', icons[1]);
+    assert.deepEqual(opened, [mg.contents[0].name, mg.contents[1].name], 'Enter and Space click it; other keys do not');
+    assert.equal(stopped, 2, 'the keys do not travel on to the game');
+    document.body.innerHTML = '';
+});
+
+test('Icon labels: getTestState and the test bridge match a clipped name through data-full-name', async () => {
+    const name = 'Client_Records_2009-2024_Archive_Final_Signed.docx';
+    const mg = Object.create(ContainerMinigame.prototype);
+    mg.contents = [{ name, type: 'notes', takeable: true }];
+    document.body.innerHTML = '<div id="desktop-icons"></div>';
+    const root = document.body;
+    mg.container = root;
+    mg.takeItem = () => {};
+    mg.isInteractiveItem = () => false;
+    mg.offersTransfer = () => false;
+    mg.updateDesktopScrollCue = () => {};
+    mg.populateDesktopIcons();
+    const label = root.querySelector('.desktop-icon-label');
+    // a clipped label: the text is cut, the whole name rides in the dataset
+    label.textContent = 'Client_Records_2009…';
+    label.dataset.fullName = name;
+    Object.defineProperty(root.querySelector('.desktop-icon'), 'offsetParent', { configurable: true, get: () => root });
+    const items = mg.getTestState().items;
+    assert.equal(items[0].name, name);
+    assert.equal(items[0].type, 'notes', 'the scenario record is found by the full name');
+    const bridge = readFileSync(new URL('../../public/break_escape/js/systems/test-bridge/minigames.js', import.meta.url), 'utf8');
+    assert.match(bridge, /dataset\?\.fullName[\s\S]{0,120}textContent/, 'the bridge reads dataset.fullName before the text');
+    document.body.innerHTML = '';
 });
 
 test('UI PC polish 2: the label CSS breaks only at spaces and cuts a word with an ellipsis', () => {

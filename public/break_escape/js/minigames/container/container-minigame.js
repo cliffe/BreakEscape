@@ -317,15 +317,75 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
-/** Break opportunities inside a file name: after each of _ . - / (the separator stays). */
-export const LABEL_BREAK_AFTER = /(?<=[_.\-\/])/;
+const LABEL_SEP = /[_.\-\/]/;
+const LABEL_TRAIL = /[_.\-\/\s]+$/;
+const LABEL_LINES = 3;
+const LABEL_ELLIPSIS = '…';
 
 /**
- * A word wider than its box is the only reason a label overflows sideways (labels wrap at
- * spaces only, never inside a word). Fit one label: reset it, and when a word still sticks
- * out, cut that word short with an ellipsis and keep the whole name in the title. The font
- * stays at its 16px base: GNF is crisp only at whole multiples of its 8px grid, so there are
- * no in-between sizes. Never a break inside a fragment. Returns 'fits' or 'ellipsis'.
+ * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
+ * line it ends), except a leading run of separators (".config") and the first of two in a
+ * row ("a__b"). The break before an extension ("REVENUE." / "xlsx") is kept.
+ */
+export function splitLabelName(part) {
+    const chars = Array.from(String(part ?? ''));
+    const out = [];
+    let cur = '';
+    let onlySeps = true;
+    chars.forEach((ch, i) => {
+        cur += ch;
+        const sep = LABEL_SEP.test(ch);
+        if (!sep) onlySeps = false;
+        if (sep && !onlySeps && i < chars.length - 1 && !LABEL_SEP.test(chars[i + 1])) {
+            out.push(cur);
+            cur = '';
+        }
+    });
+    if (cur) out.push(cur);
+    return out;
+}
+
+/** Fill a label with one span per fragment (text nodes and createElement only, no HTML parsing of the name). */
+function buildLabelFragments(label, full) {
+    const doc = label.ownerDocument;
+    label.textContent = '';
+    full.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { label.appendChild(doc.createTextNode(' ')); return; }
+        splitLabelName(part).forEach((frag, i) => {
+            if (i > 0) label.appendChild(doc.createElement('wbr'));
+            const word = doc.createElement('span');
+            word.className = 'desktop-icon-word';
+            word.textContent = frag;
+            label.appendChild(word);
+        });
+    });
+}
+
+function labelMetrics(label) {
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(label) : null;
+    const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+    return {
+        lineHeight: num(cs?.lineHeight) || 18,
+        padTop: num(cs?.paddingTop),
+        z: cssZoomOf(label) || 1
+    };
+}
+
+/** Which text line (0-based) a fragment sits on, from its box against the label's content top. */
+function lineOf(label, el, m) {
+    const top = el.getBoundingClientRect().top - label.getBoundingClientRect().top;
+    const rel = top / m.z - (label.clientTop || 0) - m.padTop;
+    return Math.floor((rel + 1) / m.lineHeight);
+}
+
+/**
+ * Fit one desktop icon label. A name wraps at spaces and after _ . - / (fragments in spans),
+ * to three lines at most. A name that would run past three lines ends its third line in an
+ * ellipsis character, and a fragment still wider than the box ends in the CSS ellipsis; in
+ * either case the whole name goes in the title and the label's data-full-name. The font stays
+ * at its 16px base: GNF is crisp only at whole multiples of its 8px grid. Returns 'fits' (as
+ * plain text), 'wraps' (split, and every character is visible) or 'ellipsis' (something is hidden).
  */
 export function fitIconLabel(label) {
     if (!label?.style) return 'fits';
@@ -333,32 +393,73 @@ export function fitIconLabel(label) {
     if (label.dataset) label.dataset.fullName = full;
     label.style.fontSize = '';
     label.style.width = '';
+    label.style.marginBottom = '';
     label.removeAttribute?.('title');
-    label.classList?.remove('desktop-icon-label-cut');
+    label.classList?.remove('desktop-icon-label-cut', 'desktop-icon-label-open');
     if (label.firstElementChild) label.textContent = full;
-    const over = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
-    if (!over()) return 'fits';
-    label.style.fontSize = '';
+    const sideways = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
+    const tooTall = () => (label.scrollHeight || 0) - (label.clientHeight || 0) > 1;
+    if (!sideways() && !tooTall()) return 'fits';
+    buildLabelFragments(label, full);
+    const m = labelMetrics(label);
+    const spans = () => Array.from(label.querySelectorAll('.desktop-icon-word'));
+    let clipped = false;
+    // First fragment on a line past the third: drop it and everything after it
+    const all = spans();
+    const past = all.findIndex(el => lineOf(label, el, m) >= LABEL_LINES);
+    if (past > 0) {
+        clipped = true;
+        for (let n = all[past - 1].nextSibling; n;) { const next = n.nextSibling; n.remove(); n = next; }
+        let cur = all[past - 1];
+        let base = cur.textContent.replace(LABEL_TRAIL, '');
+        let guard = 400;
+        const put = () => { cur.textContent = base + LABEL_ELLIPSIS; };
+        put();
+        while (guard-- > 0 && (lineOf(label, cur, m) >= LABEL_LINES || cur.scrollWidth > cur.clientWidth)) {
+            base = Array.from(base).slice(0, -1).join('').replace(LABEL_TRAIL, '');
+            if (!base) {
+                const prev = spans().filter(el => el !== cur).pop();
+                for (let n = cur.previousSibling; n && n !== prev; n = cur.previousSibling) n.remove();
+                cur.remove();
+                if (!prev) break;
+                cur = prev;
+                base = cur.textContent.replace(LABEL_TRAIL, '');
+            }
+            put();
+        }
+    }
+    if (!clipped && spans().some(el => el.scrollWidth > el.clientWidth)) clipped = true;
+    if (!clipped && tooTall()) clipped = true; // backstop: the CSS clamp hides something
+    if (!clipped) return 'wraps';
     label.setAttribute?.('title', full);
     label.classList?.add('desktop-icon-label-cut');
-    label.textContent = '';
-    full.split(/(\s+)/).forEach(part => {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { label.appendChild(label.ownerDocument.createTextNode(' ')); return; }
-        // A file name is one "word" to the spaces rule, so it may also break after _ . - or /
-        // (kept on the line it ends): "ENGAGEMENT_" / "NOTE.txt". Only a fragment still wider
-        // than the box ends in an ellipsis. Text nodes and createElement only, no HTML parsing of the name.
-        part.split(LABEL_BREAK_AFTER).forEach((frag, i) => {
-            if (!frag) return;
-            if (i > 0) label.appendChild(label.ownerDocument.createElement('wbr'));
-            const word = label.ownerDocument.createElement('span');
-            word.className = 'desktop-icon-word';
-            word.textContent = frag;
-            label.appendChild(word);
-        });
-    });
-    // At most three lines (the CSS clamps the height); the whole name stays in the title
     return 'ellipsis';
+}
+
+/**
+ * Show a clipped label's whole name (hover or focus): it grows over the icons below with a
+ * negative bottom margin, so the row does not move. Returns false when nothing is clipped.
+ */
+export function expandIconLabel(label) {
+    if (!label?.classList?.contains('desktop-icon-label-cut')) return false;
+    const full = label.dataset?.fullName;
+    if (!full) return false;
+    const z = cssZoomOf(label) || 1;
+    const h0 = label.getBoundingClientRect().height / z;
+    label.classList.add('desktop-icon-label-open');
+    buildLabelFragments(label, full);
+    const h1 = label.getBoundingClientRect().height / z;
+    if (h1 > h0) label.style.marginBottom = `${h0 - h1}px`;
+    return true;
+}
+
+/** Put a label back to its fitted (clipped) form. */
+export function collapseIconLabel(label) {
+    if (!label?.classList?.contains('desktop-icon-label-open')) return false;
+    const width = label.style.width;
+    fitIconLabel(label);
+    label.style.width = width;
+    return true;
 }
 
 /** fitIconLabel for every label in a grid, again once laid out and once the pixel font arrives. */
@@ -523,8 +624,9 @@ export class ContainerMinigame extends MinigameScene {
 
         const items = nodes.map((el, i) => {
             const isDesktop = el.classList.contains('desktop-icon');
+            const iconLabel = el.querySelector('.desktop-icon-label');
             const name = (el.title || el.alt ||
-                          el.querySelector('.desktop-icon-label')?.textContent || '').trim();
+                          iconLabel?.dataset?.fullName || iconLabel?.textContent || '').trim();
             // scenarioData for this entry, matched by name — tells us whether
             // clicking opens a viewer or just pockets the item.
             const data = (this.contents || []).find(c => displayDashes(c?.name || '') === name) || {};
@@ -1525,10 +1627,11 @@ export class ContainerMinigame extends MinigameScene {
             const iconImg = document.createElement('img');
             iconImg.className = 'desktop-icon-image';
             iconImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
-            iconImg.alt = item.name;
+            iconImg.alt = ''; // the icon's aria-label carries the name once
             
             const iconLabel = document.createElement('div');
             iconLabel.className = 'desktop-icon-label';
+            iconLabel.dir = 'auto';
             iconLabel.textContent = displayDashes(item.name);
             
             // Add item data
@@ -1565,6 +1668,26 @@ export class ContainerMinigame extends MinigameScene {
             // glyph at x3 as before, the 26x18 share folder at x2 (it was 1.85x; UX slice 2a
             // R2 m2). The padding takes up what the picture leaves, so the box keeps its size.
             fitWholeScale(iconImg, 56, { pad: true, onlyIfFits: true });
+
+            // Keyboard: the icon is a button named by the whole file name; Enter or Space opens
+            // it as a click does, and a clipped name shows in full while it is hovered or focused
+            icon.tabIndex = 0;
+            icon.setAttribute('role', 'button');
+            icon.setAttribute('aria-label', iconLabel.textContent);
+            icon.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (!e.repeat) icon.click();
+            });
+            icon.addEventListener('mouseenter', () => expandIconLabel(iconLabel));
+            icon.addEventListener('mouseleave', () => collapseIconLabel(iconLabel));
+            icon.addEventListener('focus', () => {
+                let visible = true;
+                try { visible = icon.matches(':focus-visible'); } catch (_) { /* older engines */ }
+                if (visible) expandIconLabel(iconLabel);
+            });
+            icon.addEventListener('blur', () => collapseIconLabel(iconLabel));
 
             icon.appendChild(iconImg);
             icon.appendChild(iconLabel);
