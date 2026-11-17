@@ -654,8 +654,8 @@ module BreakEscape
 
     # ---- player_state does not grow ----
 
-    def devices_cycle
-      hold('kit_injector') unless held_ids.include?('kit_injector')
+    def devices_cycle(first_pass = false)
+      hold('kit_injector') if first_pass
       sign_in('reception_pc', username('delphine'), password('delphine'))
       implant
       join('guest_ap')
@@ -674,7 +674,7 @@ module BreakEscape
     test 'player_state does not grow when the device actions repeat' do
       hold('kit_dropbox', 'kit_rogue_ap')
       open_rooms('comms_cupboard', 'meeting_room')
-      devices_cycle # the first pass fills the sets
+      devices_cycle(true) # the first pass fills the sets
       first = state.deep_dup
       3.times { devices_cycle }
       again = state
