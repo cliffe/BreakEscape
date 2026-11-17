@@ -1,7 +1,9 @@
 // Phone landscape (844x390, 667x375, 915x412): the person-chat caption must stay inside the chat
 // box and scroll, so the speaker line and all five choices are reachable. It used to grow upward
 // off the screen. In landscape it is a left column (clear of the NPC and the X), shows the
-// "More below" cue, and clears the video-call status bar. Portrait scale logic stays untouched.
+// "More below" cue, and clears the video-call status bar. The cue itself shows at any width whenever
+// the caption scrolls (overlaid on the band's foot, in flow on phones). Portrait scale logic stays
+// untouched.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -45,7 +47,11 @@ test('base caption is capped to the chat box, scrolls and packs from the start e
     assert.match(b, /align-items:\s*flex-start/);
 });
 test('scrollbar-gutter is stable in the base caption rule, with scroll padding for the strip', () => {
-    assert.match(B('.person-chat-caption-area'), /scrollbar-gutter:\s*stable/);
+    assert.match(B('.person-chat-caption-area'), /scrollbar-gutter:\s*stable both-edges/);
+    // phone and landscape keep the one-sided gutter: both-edges would cost them 28px
+    assert.match(L('.person-chat-caption-area'), /scrollbar-gutter:\s*stable;/);
+    const ph = parse(mediaBlock('@media (max-width: 600px)').block);
+    assert.match(bodyOf(ph, '.person-chat-caption-area'), /scrollbar-gutter:\s*stable;/);
     assert.match(B('.person-chat-caption-area'), /scroll-padding-bottom:\s*36px/);
     assert.doesNotMatch(css, /@media \(max-height: 700px\)/);
 });
@@ -72,9 +78,13 @@ test('the More below cue: base rule lies over the foot at any width, ignores tap
     assert.match(b, /position:\s*absolute/);
     assert.match(b, /bottom:\s*0/);
     assert.match(b, /pointer-events:\s*none/);
+    // stops short of the caption's 14px scrollbar gutter so the track stays visible
+    assert.match(b, /left:\s*14px/);
+    assert.match(b, /right:\s*14px/);
     const l = L('.person-chat-more:not([hidden])');
+    assert.match(l, /left:\s*0/);
     assert.match(l, /right:\s*auto/);
-    assert.match(l, /width:\s*var\(--pc-caption-col\)/);
+    assert.match(l, /width:\s*calc\(var\(--pc-caption-col\) - 14px\)/);
     assert.doesNotMatch(l, /display:/);
     const phone = parse(mediaBlock('@media (max-width: 600px)').block);
     assert.match(bodyOf(phone, '.person-chat-more:not([hidden])'), /position:\s*static/);

@@ -1332,6 +1332,20 @@
   filter: brightness(1.2) var(--ui-glow-filter);
 }
 
+/* Keyboard focus marker (backlog 3 item 2): a 2px square outline in the theme accent, offset 2px
+   so it clears the 9-slice skin. :focus-visible only, so a mouse click does not show it. It is a
+   shape, not just a colour or glow, and the caption's 20px padding keeps it from being clipped. */
+[data-ui-theme] .person-chat-choice-button:focus-visible,
+[data-ui-theme] .person-chat-continue-button:focus-visible,
+[data-ui-theme] .minigame-button:focus-visible,
+[data-ui-theme] .minigame-close-button:focus-visible,
+[data-ui-theme] .tutorial-btn:focus-visible,
+[data-ui-theme] .game-menu-item:focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
 [data-ui-theme] .person-chat-choice-button:active,
 [data-ui-theme] .person-chat-continue-button:active {
   background: none;
