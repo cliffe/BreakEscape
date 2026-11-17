@@ -2102,5 +2102,43 @@ test('Icon labels: a trailing separator travels with the letter before it in a n
     }
     assert.equal(label.dataset.fullName, name, 'full name kept');
     assert.equal(label.querySelector('img'), null);
-    if (label.getAttribute('title') !== null) assert.equal(label.getAttribute('title'), name);
+    // A title is set exactly when the name is cut; either way the test says which
+    if (label.classList.contains('desktop-icon-label-cut')) assert.equal(label.getAttribute('title'), name, 'cut label carries the full name as title');
+    else assert.equal(label.getAttribute('title'), null, 'uncut label has no title');
+});
+
+test('Icon labels: the open state keeps the tail, and the CSS holds it on one line', async () => {
+    const { fitIconLabel, expandIconLabel } = await imp('minigames/container/container-minigame.js');
+    const name = 'Quarterly_Budget_Reconciliation_FINAL_v3_approved_by_finance.xlsx';
+    const label = document.createElement('div');
+    label.textContent = name;
+    stubWidths(label);
+    fitIconLabel(label);
+    assert.equal(label.classList.contains('desktop-icon-label-cut'), true, 'long name is cut');
+    assert.equal(label.getAttribute('title'), name);
+    assert.equal(expandIconLabel(label), true);
+    assert.ok(label.classList.contains('desktop-icon-label-open'));
+    assert.equal(plain(label.textContent), name, 'text unchanged when open');
+    const tails = [...label.querySelectorAll('.desktop-icon-word .desktop-icon-tail')];
+    assert.ok(tails.length >= 3, 'tails present in the open state');
+    const rec = [...label.querySelectorAll('.desktop-icon-word')].find(w => w.textContent === 'Reconciliation_');
+    assert.equal(rec.querySelector('.desktop-icon-tail').textContent, 'n_');
+    const box = css('container-minigame.css');
+    const at = box.indexOf('.desktop-icon-label .desktop-icon-tail {');
+    assert.ok(at >= 0, 'tail rule exists');
+    assert.match(box.slice(at, box.indexOf('}', at)), /white-space: nowrap;/);
+});
+
+test('Icon labels: splitLabelTail keeps a whole grapheme with the separator', async () => {
+    const { splitLabelTail } = await imp('minigames/container/container-minigame.js');
+    assert.deepEqual(splitLabelTail('Reconciliation_'), { head: 'Reconciliatio', tail: 'n_' });
+    assert.deepEqual(splitLabelTail('a_'), { head: '', tail: 'a_' });
+    assert.deepEqual(splitLabelTail('a._'), { head: '', tail: 'a._' });
+    assert.deepEqual(splitLabelTail('\u{1F600}_'), { head: '', tail: '\u{1F600}_' }, 'surrogate pair stays whole');
+    assert.deepEqual(splitLabelTail('x\u2764\uFE0F_'), { head: 'x', tail: '\u2764\uFE0F_' }, 'VS16 stays with its base');
+    assert.deepEqual(splitLabelTail('ab\u0065\u0301_'), { head: 'ab', tail: '\u0065\u0301_' }, 'decomposed e-acute stays whole');
+    assert.equal(splitLabelTail('___'), null, 'separators only: no tail');
+    assert.deepEqual(splitLabelTail('.config_'), { head: '.confi', tail: 'g_' });
+    assert.equal(splitLabelTail('xlsx'), null, 'no separator: no tail');
+    assert.equal(splitLabelTail(''), null);
 });

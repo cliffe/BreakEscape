@@ -354,6 +354,25 @@ export function splitLabelName(part) {
     return out;
 }
 
+const LABEL_SEP_ONE = new RegExp(`^${LABEL_SEP.source}$`);
+
+/**
+ * Split a fragment into { head, tail } where tail is its trailing separator run plus the
+ * whole grapheme before it (a surrogate pair, a letter with a combining mark or a VS16
+ * emoji stays in one piece). Null when there is no trailing separator, or no letter before it.
+ */
+export function splitLabelTail(frag) {
+    const text = String(frag ?? '');
+    const g = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+        ? Array.from(new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(text), s => s.segment)
+        : Array.from(text);
+    let i = g.length;
+    while (i > 0 && LABEL_SEP_ONE.test(g[i - 1])) i--;
+    if (i === g.length || i === 0) return null;
+    const letter = i - 1;
+    return { head: g.slice(0, letter).join(''), tail: g.slice(letter).join('') };
+}
+
 /** Fill a label with one span per fragment (text nodes and createElement only, no HTML parsing of the name). */
 function buildLabelFragments(label, full) {
     const doc = label.ownerDocument;
@@ -368,12 +387,12 @@ function buildLabelFragments(label, full) {
             // A fragment wider than the label breaks anywhere when the label is open: the
             // last letter and the separator after it go in a nowrap span so the separator
             // never lands alone on a line (the text reads the same)
-            const m = /^([\s\S]*?)(\S)([_.\-/]+)$/.exec(frag);
-            if (m && !LABEL_SEP.test(m[2])) {
-                if (m[1]) word.appendChild(doc.createTextNode(m[1]));
+            const parts = splitLabelTail(frag);
+            if (parts) {
+                if (parts.head) word.appendChild(doc.createTextNode(parts.head));
                 const tail = doc.createElement('span');
                 tail.className = 'desktop-icon-tail';
-                tail.textContent = m[2] + m[3];
+                tail.textContent = parts.tail;
                 word.appendChild(tail);
             } else {
                 word.textContent = frag;
