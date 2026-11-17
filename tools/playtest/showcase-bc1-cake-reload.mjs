@@ -50,8 +50,8 @@ function newGame() {
 
 // Reload exactly as a player does, then settle the page the way the lib's load() does.
 // A game with saved progress shows the session-resume overlay on reload (show.html.erb
-// strips skip_resume from the url, so page.reload() cannot keep it); that overlay gates
-// the scene build. A real player clicks Resume, which loads the saved state (the dropped
+// strips skip_resume from the url, so page.reload() cannot keep it); the scene build
+// does not wait on it. A real player clicks Resume, which loads the saved state (the dropped
 // cake). So, if the overlay is up, click Resume, then wait for the full build.
 async function reload(h) {
   await h.page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
@@ -108,7 +108,9 @@ async function begin(c) {
   const gid = GAMES[c] || newGame();
   say(`case ${c}: game ${gid}`);
   const h = await open(gid, PORT);
-  await h.page.route('**/tts**', r => r.abort());
+  // Match only the POST /tts endpoint. A glob like '**/tts**' also matches js/systems/tts-manager.js,
+  // which kills the module graph on reload (the BC1 'scene never rebuilds' cause).
+  await h.page.route(u => /\/tts$/.test(u.pathname), r => r.abort());
   for (const id of EATERS) await waitAtPost(h, id, 60000);
   // record world emits that matter, reinstalled after each load
   await recorder(h);
