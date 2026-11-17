@@ -1,0 +1,13 @@
+{
+  "key": "4c64c166869ab3ab8a5f02e2dc5d138a",
+  "npc": "narrator",
+  "text": "HaX climbs into the back of the van and sits with him for a minute. Nobody hears what they say.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:17:51Z"
+}

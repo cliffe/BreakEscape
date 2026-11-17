@@ -1,0 +1,13 @@
+{
+  "key": "5dfc404412990ef2feb2c97d6e617982",
+  "npc": "director_netherton",
+  "text": "Agent Quintero, come back up to the post. Now, please.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:56:25Z"
+}

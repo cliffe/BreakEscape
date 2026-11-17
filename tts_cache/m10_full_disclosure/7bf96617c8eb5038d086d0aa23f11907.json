@@ -1,0 +1,13 @@
+{
+  "key": "7bf96617c8eb5038d086d0aa23f11907",
+  "npc": "arakawa_post",
+  "text": "You were standing right next to me. Think.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:58:40Z"
+}

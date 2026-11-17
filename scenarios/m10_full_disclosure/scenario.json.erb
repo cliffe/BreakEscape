@@ -1975,7 +1975,7 @@ end
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && globalVars.m02_completed === true && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. You've seen that shape before.", "skipIfGlobal": "margin_note_read" } },
             <%# Dialogue R2 m5: a cold start hasn't met the shape in m02. %>
             { "eventPattern": "global_variable_changed:casualty_sheet_read", "condition": "value === true && !globalVars.m02_completed && !globalVars.margin_note_read && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 30000, "message": "Upper and lower case, digits, no spaces. That's encoded, not encrypted. Your kit can read it.", "skipIfGlobal": "margin_note_read" } },
-            { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.whodunit_live === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's a cloner in our own breaching kit. The case's sign-out sheet is on the table up here. Want the names?" } },
+            { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && globalVars.whodunit_live === true && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "That's a cloner in our own breaching kit. The case's sign-out sheet is on the table up here. Want the names?", "skipIfGlobal": "signout_read" } },
             <%# Puzzle chains P5: the rack seen is the evidence Kowalczyk's fourth card needs; a pointer if the bench log is read first. %>
             { "eventPattern": "object_interacted", "condition": "data.objectName === 'Cracker Rack' && data.roomId === 'workshop_floor' && !globalVars.cracker_rack_seen", "cooldown": 0, "setGlobal": { "cracker_rack_seen": true } },
             { "eventPattern": "global_variable_changed:clue_bench_log", "condition": "value === true && !globalVars.cracker_rack_seen && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 10000, "message": "Have a look at that rack in the corner bay.", "skipIfGlobal": "cracker_rack_seen" } },
@@ -3890,8 +3890,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
             <%= after_end_json.('gallery') %>
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery !== 'walked' && !globalVars.closing_done", "setVisible": true },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'escaped' && !globalVars.m03_sterling_on_call_seen && globalVars.victoria_gallery !== 'walked' && !globalVars.closing_done", "setVisible": true },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery !== 'walked' && !globalVars.victoria_sold && !globalVars.closing_done", "setVisible": true },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'escaped' && !globalVars.m03_sterling_on_call_seen && globalVars.victoria_gallery !== 'walked' && !globalVars.victoria_sold && !globalVars.closing_done", "setVisible": true },
             <%# She leaves back down the gallery stair, past the player: after selling the raid (trusted on a live or traced share), or on "[Go.]". %>
             { "eventPattern": "conversation_closed:victoria_gallery", "condition": "globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped'", "setVisible": false },
             { "eventPattern": "conversation_closed:victoria_gallery", "condition": "globalVars.victoria_gallery === 'walked'", "setVisible": false }
@@ -4596,6 +4596,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "victoria_line_done": false,
     "vos_secret_used": false,
     "victoria_gallery": "",
+    "victoria_sold": false,
     "vos_outcome": "",
     "head_start_killed": "",
     "share_zero_day": "live",

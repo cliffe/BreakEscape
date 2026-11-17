@@ -1,0 +1,13 @@
+{
+  "key": "cc8a5c55977d11e925cc21633c921a60",
+  "npc": "director_netherton",
+  "text": "He was our chief strategist until seven years ago. He trained half my field officers.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:14:55Z"
+}

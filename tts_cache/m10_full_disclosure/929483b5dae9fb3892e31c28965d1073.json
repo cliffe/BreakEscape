@@ -1,0 +1,13 @@
+{
+  "key": "929483b5dae9fb3892e31c28965d1073",
+  "npc": "victoria_gallery",
+  "text": "I walk out. Zero Day's order goes away, and I tell you which of them has the code card.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:34:25Z"
+}

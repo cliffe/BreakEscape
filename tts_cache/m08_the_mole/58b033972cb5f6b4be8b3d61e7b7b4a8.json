@@ -1,0 +1,13 @@
+{
+  "key": "58b033972cb5f6b4be8b3d61e7b7b4a8",
+  "npc": "closing_debrief",
+  "text": "And no deal. He goes to the police with every page of the case file, and a court hears what he did.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:22:12Z"
+}

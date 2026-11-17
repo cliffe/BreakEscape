@@ -1,0 +1,13 @@
+{
+  "key": "ca3aa326783bb45dca342c429ed55dd4",
+  "npc": "jesse_tran",
+  "text": "Interviews. Old ones, on reels. Nobody's played them since phones had cords.",
+  "voice": "Puck",
+  "style": "IT contractor in his late twenties from Seattle. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Fast, ironic, contemptuous, very online; talks to everyone as a tourist.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:30:01Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "250ae7b2d3538a4637122ab43a73eff4",
+  "npc": "narrator",
+  "text": "The forward post, a few minutes before six. Floodlights, engines running, people sitting on bumpers with their jackets open.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:09:25Z"
+}

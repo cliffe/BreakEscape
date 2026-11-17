@@ -718,8 +718,8 @@ Director Magnus Netherton: Breach. Go.
 - else:
     It's read your badge. They know you're in.
 }
-{m09_deck_pulled == "alpha_tapes":
-    The best lock there is. Tape two.
+{m09_deck_pulled == "alpha_tapes" and not nightshade_tethered:
+    Tape two. The best lock there is opens for the right name.
 }
 -> hax_close_way
 
@@ -758,12 +758,12 @@ Stair's open. Workshop floor's below you.
     Netherton sweeps the... I'm losing y...
     -> hax_close_und
 }
-Netherton sweeps the whole place at six. Whoever you leave standing up there, he collects.
-Up the stair, along the walkway, the lock's at the far end. He's jamming me.
-You're on your own for one room. I'll be at the door.
 {m03_victoria_fate == "arrested" and not victoria_line_done:
     Sterling's still on the line. She has something on Vos.
 }
+Netherton sweeps the whole place at six. Whoever you leave standing up there, he collects.
+Up the stair, along the walkway, the lock's at the far end. He's jamming me.
+You're on your own for one room. I'll be at the door.
 -> hax_close_und
 
 // The by-hand cut (CONTRACT §1.6), HaX's voice. Her own guarded resume knot:
@@ -813,7 +813,7 @@ Turn the key a quarter. That takes the row off their board, so nobody upstairs c
     -> cut_step_2
 + [Give me a minute.]
     // Puzzle chains R3 n1, R4 n1: the isolator click always rings her.
-    Take it. I'll ring when you're at the isolator.
+    Take it. Put your hand back on the key switch and I'll pick up.
     #exit_conversation
     -> DONE
 

@@ -1,0 +1,13 @@
+{
+  "key": "69d405af5f6cc47273035c73adeb1fd1",
+  "npc": "agent_vector",
+  "text": "Go on, then. Add it to the pile. 0x23, the one with the stickers.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties being questioned about treason. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Terrified of being misunderstood -- which reads as guilt to anyone not listening properly.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:32:54Z"
+}

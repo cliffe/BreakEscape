@@ -1,0 +1,13 @@
+{
+  "key": "69a8af5d0e9a5fe95b90579f4995b288",
+  "npc": "jesse_tran",
+  "text": "Paper. You people break into buildings at night for paper.",
+  "voice": "Puck",
+  "style": "IT contractor in his late twenties from Seattle. Consistent Pacific Northwest American accent throughout -- do not shift to any other accent. Fast, ironic, contemptuous, very online; talks to everyone as a tourist.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:29Z"
+}

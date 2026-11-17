@@ -1,0 +1,13 @@
+{
+  "key": "8a6ec3666658656592d4da30d358d595",
+  "npc": "wendell",
+  "text": "Wasn't planning on it.",
+  "voice": "Algieba",
+  "style": "Power-room technician, sixty-three, white Montanan. Consistent rural Montana American accent throughout -- do not shift to any other accent. Slow, laconic, low; a man who has kept old machines running for forty years and asks no questions about who pays.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:31:44Z"
+}

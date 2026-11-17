@@ -51,7 +51,7 @@ Agent 0x88 'Phantom': And yes, I put myself there too. Charmed?
 === hub ===
 { not hub_quiet:
     { mole_identified:
-        Agent 0x88 'Phantom': The hunt's over, I hear, and you came back anyway. Sit.
+        Agent 0x88 'Phantom': So you've named him, and you still came back. Sit.
     - else:
         Agent 0x88 'Phantom': {&Back again. Either you've cleared me or you've got nothing. Which is it?|You again. Sit. Tell me something I don't know.}
     }

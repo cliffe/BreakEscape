@@ -158,8 +158,10 @@ agent_0x99: Got it. A crate signed for at the service door on Tuesday. Raid-issu
     - gary_outcome == "taken_in":
         Imran Siddiqui: If Gary's going in, so am I. Cuffs, then.
     - else:
-        ~ imran_board_said = true
-        Imran Siddiqui: They sacked the whole team and kept the board. You'd have taken this job too.
+        {not imran_board_said:
+            ~ imran_board_said = true
+            Imran Siddiqui: They sacked the whole team and kept the board. You'd have taken this job too.
+        }
         Imran Siddiqui: Ask Gary. I go where he goes.
     }
 }

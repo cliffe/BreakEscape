@@ -1,0 +1,13 @@
+{
+  "key": "32cd9812c43bb5ee8265b59d097bfee5",
+  "npc": "arakawa_post",
+  "text": "She turns nine on Saturday. I promised I'd be home for it.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:57:54Z"
+}

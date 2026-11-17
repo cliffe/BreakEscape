@@ -111,7 +111,8 @@ Director Magnus Netherton: Take him down there and every guard in the place sees
     ~ nightshade_taken_in = false
     ~ tripwire_armed = nightshade_map_used and not payment_checked
     ~ door_scene_done = true
-    Agent 0x47 'Nightshade': I'd have liked to see his face. I'll settle for knowing you did. #delivery: the second sentence quietly
+    Agent 0x47 'Nightshade': I'd have liked to see his face.
+    Agent 0x47 'Nightshade': I'll settle for knowing you did. #delivery: quietly
     ~ ns_quiet = true
     #exit_conversation
     -> table_rest

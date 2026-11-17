@@ -1,0 +1,13 @@
+{
+  "key": "c943aebc04a82330d3e9bd8c897c3cfc",
+  "npc": "imran",
+  "text": "Gary landed on his feet. The rest of us got a reference and a box.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:27:21Z"
+}
