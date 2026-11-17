@@ -609,7 +609,9 @@ export default class PhoneChatConversation {
      * owns the first choice) whose run under the old globals lands on the choices the
      * player is looking at, so the choices and any new branch reflect the change. If
      * no entry reproduces them (the player is past a gather inside a stitch) the saved
-     * choices stay, unless the knot top now diverts to another knot or ends.
+     * choices stay. Either way a knot-top guard that the new globals have just made fire
+     * (diverting to another knot, or ending the thread) wins; a guard that already fired
+     * under the old globals does not.
      *
      * What the re-run prints is split in two. It is compared, step by step, with a
      * baseline run of the same knot from the same saved state under the OLD globals:
@@ -711,13 +713,20 @@ export default class PhoneChatConversation {
         if (stitchEntry && stitchEntry !== knot) entries.push(stitchEntry);
         const runs = entries.map(dryRun).filter(Boolean);
         let chosen = runs.find(r => r.baselineKey === savedKey && r.baselineFirst === sourcePath) || null;
-        if (!chosen) {
-            // Neither entry reproduces the saved choices (the player is past a gather inside a
-            // stitch, so a re-run would rewind them to its first question). The one re-run
-            // kept is a knot top whose guard now sends the thread on to another knot or ends
-            // it (m09 flag1_read: finished read-out, `{flag1_read_done: -> support_hub}`).
-            const top = runs.find(r => r.path === knot);
-            if (top && (top.choices.length === 0 || top.firstPath.split('.')[0] !== knot)) chosen = top;
+        // A guard at the knot top that today's globals have just made fire wins over the
+        // saved choices and over a stitch entry (m10 "already dead", m09 flag1 read-out sent
+        // to the hub, a recruiter call ended once the deck is chosen). "Just made fire" means
+        // the top's run under the OLD globals stayed in the knot and offered choices, while
+        // today's run leaves for another knot or ends. A guard that already fired under the
+        // old globals (m09 hour_read sets its own flag on its first line; m02 Ghost sets
+        // ghost_contacted_player before its first menu) is not new, so the saved menu stays.
+        // If the new run ends the thread, the phone closes on open, as tapping the choice would.
+        const top = runs.find(r => r.path === knot);
+        if (top && top !== chosen && top.baselineKey !== '[]' &&
+            String(top.baselineFirst || '').split('.')[0] === knot) {
+            const nowEnds = top.choices.length === 0;
+            const nowLeaves = top.choices.length > 0 && top.firstPath.split('.')[0] !== knot;
+            if (nowEnds || nowLeaves) chosen = top;
         }
 
         // Nothing new and the same choices as before: the thread's home knot may now divert

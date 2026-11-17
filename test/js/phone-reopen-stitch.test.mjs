@@ -172,14 +172,106 @@ test('new text in the re-run is shown and start is not tried on top of it', asyn
     assert.equal(conv.engine.story.variablesState.hour_read_done, false);
 });
 
-test('M2: a finished read-out resting on its closing choice goes to the hub when a global lands', async () => {
+test('R2 M1: a read-out resting on its closing choice, whose hub guard already fired, keeps the choice (flag1_read)', async () => {
     setGlobals({ flag2: false, scene_done: true });
     const saved = await openAtPath('gath.ask', [0]);
     setGlobals({ flag2: true, scene_done: true });
     const { conv, out } = await reopen(saved);
+    assert.equal(out.renavigated, false);
+    assert.ok(!texts(conv).includes('Q1.'), `re-asked the first question: ${JSON.stringify(texts(conv))}`);
+    assert.deepEqual(texts(conv), ['Got it.']);
+});
+
+test('R2 M1: a knot-top guard that the new globals make fire sends the thread on (hub)', async () => {
+    setGlobals({ gn_flag: false, scene_done: true });
+    const saved = await openAtPath('gathn.ask', [0]);
+    setGlobals({ gn_flag: true, scene_done: true });
+    const { conv, out } = await reopen(saved);
     assert.equal(out.renavigated, true);
-    assert.ok(!texts(conv).includes('Q1.'), `rewound to the questions: ${JSON.stringify(texts(conv))}`);
+    assert.ok(!texts(conv).includes('Q1.') && !texts(conv).includes('R1.'), JSON.stringify(texts(conv)));
     assert.deepEqual(texts(conv), ['Bye.']);
+});
+
+function finish(conv, index) {
+    const story = conv.engine.story;
+    story.ChooseChoiceIndex(index);
+    const lines = [];
+    while (story.canContinue) lines.push(story.Continue());
+    return lines.join('');
+}
+
+test('R2 M1: hour_read mid read-out keeps the read-out and can still finish it', async () => {
+    setGlobals({ ro_other: false });
+    const saved = await openAtPath('readout.body', [0]);
+    setGlobals({ ro_other: true });
+    const { conv, out } = await reopen(saved);
+    assert.equal(out.renavigated, false);
+    assert.deepEqual(texts(conv), ['Who?', 'What?']);
+    assert.equal(conv.engine.story.variablesState.ro_done, false);
+    const rest = finish(conv, 0);
+    assert.match(rest, /Who ans/);
+    assert.match(rest, /Read close/);
+    assert.equal(conv.engine.story.variablesState.ro_done, true);
+});
+
+test('R2 M1: the Ghost first menu keeps its lead-in and both answers', async () => {
+    setGlobals({ gl_other: false });
+    const saved = await openAt('ghostlike');
+    setGlobals({ gl_other: true });
+    const { conv, out } = await reopen(saved);
+    assert.equal(out.renavigated, false);
+    assert.deepEqual(texts(conv), ['Let me in?', 'Say nothing.']);
+    assert.deepEqual(out.messages || [], []);
+    assert.match(finish(conv, 0), /Ghost answer one/);
+});
+
+test('R2 m1: a stitch entry still honours a knot-top guard that the new globals make fire (recruiter)', async () => {
+    setGlobals({ deck_made: false });
+    const saved = await openAtPath('recruit.tape_choice');
+    assert.equal(saved.length > 0, true);
+    setGlobals({ deck_made: true });
+    const { conv, out } = await reopen(saved);
+    assert.equal(out.renavigated, true);
+    assert.ok(out.messages.some(m => /Done deal/.test(m)), `got ${JSON.stringify(out.messages)}`);
+    assert.equal(out.result.hasEnded, true);
+    assert.deepEqual(texts(conv), []);
+});
+
+test('R2 m1: with the guard unchanged the recruiter stitch menu is re-run as a stitch', async () => {
+    setGlobals({ deck_made: false });
+    const saved = await openAtPath('recruit.tape_choice');
+    setGlobals({ deck_made: false, gn_flag: false });
+    const { out } = await reopen(saved);
+    assert.equal(out.renavigated, false);
+});
+
+test('R2 m3 (A): two places with the same choice texts are told apart by path', async () => {
+    setGlobals({ tw_flag: false });
+    const saved = await openAtPath('twin.second_place');
+    setGlobals({ tw_flag: true });
+    const { out } = await reopen(saved);
+    assert.equal(out.renavigated, true);
+    assert.equal(out.knot, 'twin.second_place');
+    assert.deepEqual(out.messages, []);
+});
+
+test('R2 m3 (B): a knot top whose run changes the menu text does not match by path alone', async () => {
+    setGlobals({ bt_flag: false });
+    const saved = await openAtPath('bumper');
+    setGlobals({ bt_flag: true });
+    const { conv, out } = await reopen(saved);
+    assert.equal(out.renavigated, false);
+    assert.deepEqual(texts(conv), ['Option 1.']);
+});
+
+test('R2 m3 (E): a kept nested menu still tries the home knot, which prints something new', async () => {
+    setGlobals({ flag3: false });
+    const saved = await openAtPath('gath2.ask', [0]);
+    setGlobals({ flag3: true });
+    const { out } = await reopen(saved, { homeKnot: 'lobby' });
+    assert.equal(out.renavigated, true);
+    assert.equal(out.knot, 'lobby');
+    assert.ok(out.messages.some(m => /Lobby news/.test(m)), `got ${JSON.stringify(out.messages)}`);
 });
 
 test('M2: a choice after a gather is kept, not rewound to the first question', async () => {
