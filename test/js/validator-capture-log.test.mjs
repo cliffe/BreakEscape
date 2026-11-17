@@ -486,7 +486,7 @@ test('R1 M2 parity: check_proof and proof_satisfiable? agree on every shorthand 
 function hideable(rooms = ['office']) {
     const sc = clean();
     obj(sc, 'kit_logger').hideable = { rooms, spots: 'plants', device: 'dev', overlay: { sprite: 'rogue_ap_tucked' } };
-    sc.rooms.office.objects.push({ id: 'pot_a', type: 'plant', sprite: 'plant-flat-pot1', name: 'Pot A' });
+    sc.rooms.office.objects.push({ id: 'pot_a', type: 'plant', sprite: 'planter_fig1', name: 'Pot A' });
     npc(sc, 'chris').captureProof = [{ dropped: 'kit_qr' }]; // the desk proof names a non-plant now
     return sc;
 }

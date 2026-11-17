@@ -1238,7 +1238,7 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
       'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large4_34'],
       'device' => 'planted_rogue_ap', 'overlay' => { 'sprite' => 'rogue_ap_tucked' }
     }
-    data['rooms']['reception']['objects'] << { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'plant-flat-pot1', 'name' => 'Pot A' }
+    data['rooms']['reception']['objects'] << { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'planter_fig1', 'name' => 'Pot A' }
     data
   end
 

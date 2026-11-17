@@ -17,17 +17,32 @@ module BreakEscape
     ].freeze
     PLANT_NEVER = %w[plant-large-displacement notes_plantlog m10_sign_plant].freeze
 
+    # Small plants are left out of the default spot rule: the 12x10 tucked device is as wide as
+    # their pots. A scenario can still opt one in with hidingSpot: true (spot_object?). A smaller
+    # overlay for them is a possible follow-up (integrator decision, 2026-11-17).
+    SMALL_PLANT = /\A(?:plant-flat-pot|office-misc-smallplant|plant-large(?:[1-9]|10)(?!\d))/.freeze
+
     SPOT_ID_PATTERN = /\A[A-Za-z0-9_.\-]+\z/.freeze
     SPOT_ID_MAX = 128
 
     # Whether a texture key (the image name Tiled gave a decor sprite, or an authored scenario
-    # sprite/type) names a plant.
+    # sprite/type) names a plant that is a hiding spot by default (small plants are not).
     def plant_key?(key)
+      plant_family_key?(key) && !small_plant_key?(key)
+    end
+
+    # Any plant texture, small or not (the client reserves decor items for scenario objects
+    # whatever their size, so decor_spots counts reservations over the whole family).
+    def plant_family_key?(key)
       key = key.to_s
       return false if key.empty?
       return false if PLANT_NEVER.any? { |bad| key.start_with?(bad) }
 
       PLANT_PREFIXES.any? { |prefix| key.start_with?(prefix) }
+    end
+
+    def small_plant_key?(key)
+      key.to_s.match?(SMALL_PLANT)
     end
 
     # Whether a scenario room object is a hiding spot by shape: hidingSpot false opts out,
@@ -181,7 +196,7 @@ module BreakEscape
 
         Array(layer['objects']).each do |obj|
           image = tiled_image_name(obj, map)
-          next unless image && plant_key?(image)
+          next unless image && plant_family_key?(image)
 
           base = image.sub(/\d+\z/, '')
           next if start_types.include?(base)
@@ -190,6 +205,8 @@ module BreakEscape
             reserved[base] -= 1
             next
           end
+          next unless plant_key?(image)
+
           out << { id: "#{room_id}_#{image}_#{obj['id']}", image: image, tiled_id: obj['id'] }
         end
       end

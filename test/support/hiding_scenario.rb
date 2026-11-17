@@ -21,11 +21,11 @@ module HidingScenario
         'reception' => {
           'type' => 'room_reception', 'connections' => { 'north' => 'comms' },
           'objects' => [
-            { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'plant-flat-pot1', 'name' => 'Pot A' },
-            { 'id' => 'pot_b', 'type' => 'plant', 'sprite' => 'plant-large2', 'name' => 'Pot B', 'hidingSpot' => false },
+            { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'planter_fig1', 'name' => 'Pot A' },
+            { 'id' => 'pot_b', 'type' => 'plant', 'sprite' => 'plant-large12', 'name' => 'Pot B', 'hidingSpot' => false },
             { 'id' => 'bin_a', 'type' => 'bin', 'sprite' => 'bin1', 'name' => 'Bin', 'hidingSpot' => true },
             { 'id' => 'desk_a', 'type' => 'table', 'sprite' => 'desk1', 'name' => 'Desk' },
-            { 'id' => 'swap_pot', 'type' => 'plant', 'sprite' => 'plant-flat-pot2', 'name' => 'Swap pot',
+            { 'id' => 'swap_pot', 'type' => 'plant', 'sprite' => 'plant-large11', 'name' => 'Swap pot',
               'spriteVariants' => [{ 'condition' => 'globalVars.x', 'value' => 'desk1' }] },
             { 'id' => 'planted_rogue_ap', 'type' => 'pc', 'sprite' => 'rogue_ap_planted', 'name' => 'Planted rogue AP',
               'hiddenWith' => 'kit_rogue_ap', 'wifiTwin' => true,
@@ -34,7 +34,7 @@ module HidingScenario
         },
         'comms' => {
           'type' => 'room_servers', 'connections' => { 'south' => 'reception' },
-          'objects' => [{ 'id' => 'comms_pot', 'type' => 'plant', 'sprite' => 'plant-large5', 'name' => 'Comms pot' }]
+          'objects' => [{ 'id' => 'comms_pot', 'type' => 'plant', 'sprite' => 'plant-large13', 'name' => 'Comms pot' }]
         }
       }
     }

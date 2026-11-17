@@ -20,7 +20,7 @@ process.on('exit', () => rmSync(dir, { recursive: true, force: true }));
 writeFileSync(join(dir, 'plant-hiding.mjs'), readFileSync(join(js, 'systems/plant-hiding.js'), 'utf8'));
 globalThis.window = globalThis;
 const mod = await import(pathToFileURL(join(dir, 'plant-hiding.mjs')).href);
-const { PlantHiding, isPlantKey, anchorPercent, anchorPoint, topLeft, PLANT_PREFIXES, PLANT_NEVER, PLANT_ANCHORS } = mod;
+const { PlantHiding, SMALL_PLANT, isPlantKey, anchorPercent, anchorPoint, topLeft, PLANT_PREFIXES, PLANT_NEVER, PLANT_ANCHORS } = mod;
 
 const src = (p) => readFileSync(join(js, p), 'utf8');
 
@@ -65,7 +65,7 @@ function decor(scene, image, tiledId, room = 'reception', x = 100, y = 200) {
 function scenarioPlant(scene, id, over = {}, data = {}) {
     return fakeSprite({
         scene, roomId: 'reception', objectId: id, interactable: true, x: 300, y: 300, originX: 0.5, originY: 1,
-        scenarioData: { id, type: 'plant', sprite: 'plant-large2', observations: 'A plant.', ...data }, ...over
+        scenarioData: { id, type: 'plant', sprite: 'plant-large12', observations: 'A plant.', ...data }, ...over
     });
 }
 
@@ -73,7 +73,7 @@ function world({ held = false, hiddenDevices = [] } = {}) {
     const scene = fakeScene();
     const p77 = decor(scene, 'plant-large12-top-ani1', 77);
     const p76 = decor(scene, 'plant-large11-top-ani1', 76, 'reception', 200, 200);
-    const p34 = decor(scene, 'plant-large4', 34, 'reception', 300, 200);
+    const p34 = decor(scene, 'plant-large4', 34, 'reception', 300, 200)  // small: not a spot by rule;
     const log = decor(scene, 'notes_plantlog1', 9);
     const disp = decor(scene, 'plant-large-displacement1', 5);
     const away = decor(scene, 'plant-large6', 1, 'comms');
@@ -112,8 +112,19 @@ const settle = async (n = 3) => { for (let i = 0; i < n; i++) await new Promise(
 
 // ---------------------------------------------------------------- the plant rule
 
+test('small plants are not default spots (flat pots, smallplant, plant-large1 to 10)', () => {
+    for (const k of ['plant-flat-pot1', 'plant-flat-pot7', 'office-misc-smallplant', 'office-misc-smallplant5',
+        'plant-large1', 'plant-large2', 'plant-large4', 'plant-large6', 'plant-large9', 'plant-large10']) {
+        assert.equal(isPlantKey(k), false, k);
+    }
+    for (const k of ['plant-large11', 'plant-large12-top-ani1', 'plant-large13']) assert.equal(isPlantKey(k), true, k);
+    assert.deepEqual(['plant-large4', 'plant-large6'].map(k => SMALL_PLANT.test(k)), [true, true]);
+});
+
 test('isPlantKey accepts each prefix and refuses the never list', () => {
-    for (const p of PLANT_PREFIXES) assert.equal(isPlantKey(`${p}x1`), true, p);
+    for (const p of PLANT_PREFIXES.filter(p => !SMALL_PLANT.test(p))) assert.equal(isPlantKey(`${p}x1`), true, p);
+    assert.equal(isPlantKey('plant-large11'), true);
+    assert.equal(isPlantKey('plant-large13'), true);
     assert.equal(isPlantKey('plant-large12-top-ani2'), true);
     for (const n of PLANT_NEVER) assert.equal(isPlantKey(`${n}1`), false, n);
     assert.equal(isPlantKey('plant-large-displacement3'), false);
@@ -144,11 +155,11 @@ test('spotsFor reads the static map: rooms, spots, exclude, hidingSpot', () => {
 
 test('a scenario plant is judged by its authored sprite, not its live texture', () => {
     const w = world();
-    const swapped = scenarioPlant(w.scene, 'fern2', { texture: { key: 'chair' } }, { sprite: 'plant-large3' });
+    const swapped = scenarioPlant(w.scene, 'fern2', { texture: { key: 'chair' } }, { sprite: 'plant-large13' });
     assert.deepEqual(w.ph.spotsFor(swapped), [KIT]);
-    const notPlant = scenarioPlant(w.scene, 'desk9', { texture: { key: 'plant-large3' } }, { sprite: 'desk', type: 'desk' });
+    const notPlant = scenarioPlant(w.scene, 'desk9', { texture: { key: 'plant-large13' } }, { sprite: 'desk', type: 'desk' });
     assert.deepEqual(w.ph.spotsFor(notPlant), []);
-    const typeOnly = scenarioPlant(w.scene, 'p3', {}, { sprite: undefined, type: 'plant-flat-pot1' });
+    const typeOnly = scenarioPlant(w.scene, 'p3', {}, { sprite: undefined, type: 'planter_fig1' });
     assert.deepEqual(w.ph.spotsFor(typeOnly), [KIT], 'type stands in when there is no sprite');
 });
 

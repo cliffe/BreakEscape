@@ -28,10 +28,16 @@ export const PLANT_PREFIXES = [
 ];
 export const PLANT_NEVER = ['plant-large-displacement', 'notes_plantlog', 'm10_sign_plant'];
 
-/** Whether a texture key (Tiled image name, or an authored sprite/type) names a plant. */
+// Small plants are not hiding spots by default: the 12x10 tucked device is as wide as their
+// pots (a scenario can opt one in with hidingSpot: true). Kept in step with
+// HidingSpots::SMALL_PLANT. A smaller overlay for them is a possible follow-up.
+export const SMALL_PLANT = /^(?:plant-flat-pot|office-misc-smallplant|plant-large(?:[1-9]|10)(?!\d))/;
+
+/** Whether a texture key (Tiled image name, or an authored sprite/type) names a default hiding-spot plant. */
 export function isPlantKey(key) {
     const k = typeof key === 'string' ? key : '';
     if (!k) return false;
+    if (SMALL_PLANT.test(k)) return false;
     if (PLANT_NEVER.some(bad => k.startsWith(bad))) return false;
     return PLANT_PREFIXES.some(p => k.startsWith(p));
 }
@@ -39,9 +45,8 @@ export function isPlantKey(key) {
 // Per-family anchors in per cent of the plant's display box (where the overlay's bottom
 // centre sits), measured from each family's art in step H3: x is the pot's centre column, y is
 // three pixels below the rim so the box sits in the soil in front of the stems. Longest prefix
-// wins. The small plants (plant-large1 to 10, plant-flat-pot, office-misc-smallplant) have no
-// entry: their pots are narrower than the 12 px device, so they take the item's overlay.at or
-// the default until a smaller device sprite exists.
+// wins. The small plants (plant-large1 to 10, plant-flat-pot, office-misc-smallplant) are not
+// spots by default (SMALL_PLANT); one opted in with hidingSpot takes overlay.at or the default.
 export const PLANT_ANCHORS = {
     'plant-large11-top-ani': { x: 50, y: 83 },
     'plant-large11': { x: 50, y: 82 },
