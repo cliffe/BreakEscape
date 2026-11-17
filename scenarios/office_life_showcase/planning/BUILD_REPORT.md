@@ -195,3 +195,32 @@ Scripts: `tools/playtest/showcase-s3-lib.mjs`, `showcase-s3-run.mjs` (gate plus 
 - m3: with natural hunger only Graham and Agnieszka (hunger 59.7) were tempted by the cake; Chidi (77.9) and Jun (98.3) were not, so "Missed it." does not occur in a natural lunch-then-cake run. It showed only with hunger 50 for all four (run C, nudged through `__test.needs.set`). Setting hunger 20 first (run B) sends them to the fridge instead (urgent beats tempt). Not a defect; the cake beat is lighter than the plan implies.
 - m4 (probe note): barks are logged twice at the same clock for Jun's B8 and `magnet_placed`, `npc_left_post` (world emit plus dispatcher both seen by the recorder). Jun's B8 appears twice in `showBark` at 118.0/118.3; Ama's B7 and B9 repeat 4 to 5 s later (162.5 after 158, 127.3 after 122.8). Likely the bark queue replaying; not investigated further, cooldown 30000 and onceOnly should stop a second firing.
 - Not proven: BC1 (reload), the 30% badge-not-left branch, Jun-only-away gate in isolation, news_cake line.
+
+## S3 fixes
+
+The S3 live-proof findings M1, m1, m2, m3 above are addressed. Code, scenario, schema, docs and unit
+tests are in; live proof on :3094 is run as a follow-up (see `tmp/handover/showcase-s3-fix.md` for the
+exact commands and expected evidence, and the final report for the results).
+
+- M1 (cooler exchange fired at the cake). New optional `exchanges[].topic` field. `_findExchange`
+  takes the chat's topic and skips an entry whose `topic` does not match; an entry with no `topic` is
+  unchanged (m01/m02/m03/m05 untouched). The showcase entry (`scenario.json.erb:325`) sets
+  `topic: "cooler"`, so the exchange plays at the water cooler (chat topic "cooler", from the cooler
+  preset) and never at the cake (chat topic "cake"). Schema `scripts/scenario-schema.json` and
+  `docs/achitechture/NPC_NEEDS_SYSTEM.md` document the field; three unit tests added to
+  `test/js/npc-exchange-heard.test.mjs` (topic matches / mismatch / absent).
+- m3 (only two tempted by the cake naturally). Cake magnet `tempt` 30 -> 45. The tempt band is
+  `urgentAt < level <= urgentAt + tempt` (hunger urgentAt 40), so the band is now 40..85: at the
+  natural lunch-then-cake drop Graham and Agnieszka (~59.7) and Chidi (~77.9, after his fridge meal)
+  are tempted, Jun (~98.3) is not. Three tempted, two servings, one "Missed it." No engine change.
+- m1 (news_cake can never speak for an office drop). Removed the `news_cake` chatter pool and the
+  magnet's `announce`/`newsRadius`. A one-room tour drop is seen by sight, so nobody is ever told;
+  the smaller, honest change (CAKE_ITEM.md already noted dropping it is allowed). PLAN.md and
+  DEMO_AUDIT.md word-of-mouth references updated to match.
+- m2 ("brings Jun back early"). Ama's ink only says "wait by the desk for its owner", so no spoken
+  line changed and nothing needs re-voicing. PLAN.md (rows under section 7 and the 2.4 row) reworded:
+  the jun_pc work coupling pulls his work need down but shortens his return only while he is walking,
+  not mid-meal.
+
+Harness: `tools/playtest/showcase-s3-lib.mjs` now aborts only POST /tts via a URL predicate
+(`u => /\/tts$/.test(u.pathname)`), never the `**/tts**` glob (which also blocked tts-manager.js).

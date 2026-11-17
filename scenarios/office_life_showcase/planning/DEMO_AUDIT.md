@@ -37,7 +37,7 @@ Keys are the ones scenarios use (grep-able). Sources: `docs/achitechture/NPC_NEE
 - `usePayload`, `onUse` `{setGlobal, emitEvent, revealOutput}`. S (`onUse` for parcel/board).
 - Reveal slots `outputOf` + `revealOnGlobal` (printouts). S (outputOf x13).
 - Left-behind items `leftBehindBy`/`leftBehindChance` (Tom's badge). S (line 669 region).
-- Word of mouth ("news_cake"), `grumble_*` pools, cake servings. S.
+- `grumble_*` pools, cake servings. S. (Word of mouth / `news_cake` dropped in S3: a single-room drop is seen by sight, so nobody is ever told.)
 
 ### Routines, schedules, movement outside needs
 - `behavior.patrol`, `patrolOverride` mappings, `waypoints`, per-room routes. Not in sims (patrol x0). Shown in `test_npc_avoidance/scenario.json.erb:24,45,66`, `test_npc_patrol_override`, m02 (1755, 3367), m03 (1915). Validator forbids patrol plus needs on one NPC (NEEDS 3.1).
@@ -194,7 +194,7 @@ Act 1, Morning (0:00 to 3:00)
 Act 2, Midday (3:00 to 6:00)
 7. 3:00 Host bark: "Right, lunch." The host sets a global (existing `setGlobal` via ink `#set_global`), which sets Tom's and Amara's hunger low (`needs: {set}`) so they leave their desks. Amara walks off with her screen open for a short trip and locks it with a chime (`hear_screen_lock`); Tom leaves his PC open (his habit `lockChance` low). The host says: "Notice the dot over a PC. White and breathing means open. Blue means locked." This is the security window moment, with a label.
 8. 3:30 Viewer uses Tom's open PC (or Amara's) while the owner is away. The PC text changes on `_owner_away` ("He has left it unlocked, his inbox open"). Tom comes back and catches the viewer (`npc_caught_at_post:tom` bark, line 667). Task 7 ticks on `see_caught`. This is the same logic as README rows 8 and 12, in one place and with a label. Optional second variation: send a print from the PC and watch Tom fetch it.
-9. 4:30 Drop the cake (the one inventory item; also the parcel if the user wants two, V8 item cap is 4). Hungry staff walk over, two eat, one says "Missed it." (`grumble_gone`). Word spreads in the office (`news_cake`). Task 8 ticks on `see_cake_eaten`.
+9. 4:30 Drop the cake (the one inventory item; also the parcel if the user wants two, V8 item cap is 4). Hungry staff walk over, two eat, one says "Missed it." (`grumble_gone`). Task 8 ticks on `see_cake_eaten`.
 10. 5:30 The desk phone rings (the host's ink or an `eventMapping` on a timer); Tom answers while seated and has the phone pose; if he is out, Amara answers. Optional.
 
 Act 3, Evening (6:00 to 8:00)

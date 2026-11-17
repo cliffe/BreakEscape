@@ -10,7 +10,9 @@ export const GLOBALS = ['chidi_pc_owner_away', 'jun_pc_owner_away', 'act_midday'
 export async function start(gid) {
   fs.mkdirSync(OUT, { recursive: true }); fs.mkdirSync('tmp/s3', { recursive: true });
   const h = await open(gid, PORT);
-  await h.page.route('**/tts**', r => r.abort());
+  // Abort only POST /tts (the keyless synth call). A URL-predicate route, never the '**/tts**' glob,
+  // which would also block tts-manager.js (MEMORY: BC1 probe; worktree live proof rules).
+  await h.page.route(u => /\/tts$/.test(u.pathname), r => (r.request().method() === 'POST' ? r.abort() : r.continue()));
   return h;
 }
 export const shot = (h, n) => h.page.screenshot({ path: `${OUT}/s3-${n}.png` });

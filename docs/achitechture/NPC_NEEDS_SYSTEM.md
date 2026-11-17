@@ -685,9 +685,12 @@ during the walk home (exists). Player-facing behaviour:
   speaker shows a speech bubble holding an icon, 2.5 s (`PICTURE_CHATTER`): coffee: caffeine, social,
   work; cooler: thirst, social, work; greet: social; grumble: avoid. `npc_chatted` fires with
   `line: null, picture`.
-- **Exchanges.** NPC field `exchanges: [{ with: "<npcId>" | "group:<name>", knot, requireGlobal }]`
+- **Exchanges.** NPC field `exchanges: [{ with: "<npcId>" | "group:<name>", knot, topic, requireGlobal }]`
   (the lower id's list is read first). A `knot` is an ink knot on the owner's story whose lines are
-  prefixed `Name:` for the other speaker. When a compatible pair meets and the player hears the
+  prefixed `Name:` for the other speaker. An optional `topic` is a chatter pool name (an object
+  affordance's `chatter`, e.g. `"cooler"`): the exchange then plays only on a chat whose topic
+  matches, so an exchange written for one object does not fire at another the pair happens to share
+  (for example a dropped cake, topic `"cake"`). With no `topic` it plays at any chatter object. When a compatible pair meets and the player hears the
   exchange's **first speaker** at the chat's radius (E9; checked every free turn, so walking up
   mid-meeting works), the first unheard exchange for the pair plays instead of a bark. Hearing only
   the partner gives a bark or picture turn instead. An entry skipped only because its
