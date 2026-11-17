@@ -824,6 +824,16 @@ export function examineHeldItem(sprite) {
     return true;
 }
 
+/**
+ * Open the rogue-ap console for a device sprite (a placed console object, or the overlay
+ * plant-hiding.js draws on a plant). Shared so the hosting tap does not go back through
+ * handleObjectInteraction, which would emit object_interacted a second time.
+ */
+export function openWifiTwin(sprite) {
+    return startRegisteredMinigame('rogue-ap', sprite);
+}
+if (typeof window !== 'undefined') window.openWifiTwin = openWifiTwin;
+
 export function handleObjectInteraction(sprite) {
     console.log('OBJECT INTERACTION', {
         name: sprite.name,
@@ -936,6 +946,13 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // A plant that hosts a hidden device, or could take the one the player holds (plant
+    // hiding plan, section 5): its click is plant-hiding.js's. Anything else falls through.
+    if (window.plantHiding?.claims?.(sprite)) {
+        window.plantHiding.interact(sprite);
+        return;
+    }
+
     // A network jack (slice 9.3a, 4.1): its click is the plant flow in network-links.js
     // (plant, or unplug a device already in it). It never runs the generic flow below.
     if (sprite.scenarioData.networkJack === true) {
@@ -954,7 +971,7 @@ export function handleObjectInteraction(sprite) {
     // console (Recon, Clone, Log) through the starter registry. It never runs the generic flow
     // below (no triggerOnInteract, no pickup); the console writes its own globals.
     if (sprite.scenarioData.wifiTwin === true) {
-        startRegisteredMinigame('rogue-ap', sprite);
+        openWifiTwin(sprite);
         return;
     }
 

@@ -1338,6 +1338,8 @@ const bridge = {
         const blocked = blockedByMinigame();
         if (blocked) return blocked;
 
+        // A hidden device has no tap target of its own: its host plant takes the tap
+        id = window.plantHiding?.spotForDevice?.(id) || id;
         let entity = findEntity(id);
         if (!entity) return fail(`unknown-entity:${id}`);
         ensureTargetRecorder();

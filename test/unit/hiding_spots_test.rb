@@ -15,6 +15,17 @@ class HidingSpotsUnitTest < ActiveSupport::TestCase
     refute HS.plant_key?('')
   end
 
+  test 'the plant lists match the JS lists in systems/plant-hiding.js' do
+    src = File.read(File.join(ROOT, 'public/break_escape/js/systems/plant-hiding.js'))
+    list = lambda do |name|
+      body = src[/export const #{name} = \[(.*?)\];/m, 1]
+      refute_nil body, "#{name} not found in plant-hiding.js"
+      body.scan(/'([^']+)'/).flatten
+    end
+    assert_equal HS::PLANT_PREFIXES, list.call('PLANT_PREFIXES')
+    assert_equal HS::PLANT_NEVER, list.call('PLANT_NEVER')
+  end
+
   test 'spot_object? reads the authored sprite or type and honours hidingSpot' do
     assert HS.spot_object?('sprite' => 'plant-flat-pot1')
     assert HS.spot_object?('type' => 'plant-large3')

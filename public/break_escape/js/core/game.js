@@ -66,6 +66,7 @@ import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlo
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
 import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
 import { networkLinks } from '../systems/network-links.js';  // Footholds and the jack (slice 9.3a; sets window.networkLinks)
+import { plantHiding } from '../systems/plant-hiding.js';  // Hide a device in any plant (plant-hiding plan; sets window.plantHiding)
 import { installPostitMarks } from '../systems/postit-marks.js';  // Sticky note picture on sign-in PCs (slice 9.1, 5.3)
 
 // Global variables that will be set by main.js
@@ -1773,6 +1774,8 @@ export async function create() {
     // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
     // <jackId>_planted before any room loads; no request.
     networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);
+    // Hideable devices and where each hidden one sits (plant-hiding plan, section 7): no request
+    plantHiding.load(gameScenario.hideables || {}, gameScenario.hiddenDevices || []);
     // A save never overrides an imported value.
     importedNames.forEach(name => {
         window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
@@ -2237,6 +2240,7 @@ export async function create() {
         // installPostitMarks ran before any room existed).
         window.screenStates?.syncRoom?.(startRoomId);
         window.networkLinks?.syncRoom?.(startRoomId);
+        window.plantHiding?.syncRoom?.(startRoomId);
         window.postitMarks?.syncRoom?.(startRoomId);
         // A propped door in the start room (slice 9.2 B); restore() covers it when the runner comes later
         window.npcWorkarounds?.syncRoom?.(startRoomId);

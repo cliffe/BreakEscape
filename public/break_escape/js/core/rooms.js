@@ -1037,6 +1037,8 @@ async function loadRoomOnce(roomId) {
     window.screenStates?.syncRoom(roomId);
     // A jack with a device in it shows its plantedSprite (slice 9.3a, network-links.js)
     window.networkLinks?.syncRoom?.(roomId);
+    // Plants that can take a held device, and the overlay of a hidden one (plant-hiding.js)
+    window.plantHiding?.syncRoom?.(roomId);
     // The sticky note picture on a sign-in PC whose screen shows a note (slice 9.1, 5.3)
     window.postitMarks?.syncRoom(roomId);
     // A door a frustrated NPC propped stays open after a reload (slice 9.2 B, npc-workarounds.js)
@@ -2247,6 +2249,9 @@ export function createRoom(roomId, roomData, position) {
                     if (scenarioObj.id) (rooms[roomId].panelJacks ||= {})[scenarioObj.id] = scenarioObj;
                     return;
                 }
+                // A device that hides in a plant (hiddenWith) is never placed from room data;
+                // plant-hiding.js draws it as an overlay on its host once hidden.
+                if (scenarioObj.hiddenWith) return;
                 const objType = scenarioObj.type;
 
                 // Handle table objects with explicit tableItems list.
