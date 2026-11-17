@@ -55,10 +55,11 @@
    at its size sits off the pixel grid, so greyscale gives it grey edge columns, not exact pixels:
    today .da-title (9px with 1px), .nsm-cons-rule-title (0.5px), .bce-mx-heading (1px),
    .combination-header h2 and .cryptex-header h2 (0.05em). The dusting kit's title (.dusting-title,
-   the h2 plus the object name) was re-measured on Chrome for Linux in all seven UI themes at
-   1280x720 and 390x844: no text-shadow or filter reaches it (computed none), and with the hint on
-   the wrapper both the h2 and the object name draw in exactly the text and background colours.
-   Hinting only the h2 leaves the object name at 374 fringe px at 390 wide, so the wrapper stays. */
+   the h2 plus the object name) was re-measured on Chrome for Linux at 1280x720 and 390x844: no
+   text-shadow or filter reaches it (computed none). The h2 draws in exactly the text and
+   background colours in all seven UI themes. The object name was measured in the default theme
+   only, where it is greyscale with no colour fringe. Hinting only the h2 leaves the object name
+   at 374 fringe px at 390 wide, so the wrapper stays. */
 .minigame-container :is(
     .patch-panel-title,
     .rogue-ap-title-text,
@@ -131,9 +132,9 @@
    their rows for one layer. Rows that interleave text with buttons stay out: .siem-alert-row
    (21 rows, a button pair in each), .patch-panel-row, and the person cards (.ib-people: the
    readiness checklist inside each card can hold a details element when a slot has a gapString,
-   so the list is a wrapper with controls). Each entry is one class, or one class plus a tag, or a parent class plus a child class
-   (`.mail-read-pane .ib-infl-label`: the one influence bar in the mail reader, not the per-card
-   bars on the board). test/js/minigame-text-crisp-css.test.mjs pins the exact list and checks
+   so the list is a wrapper with controls). Each entry is one class, or one class plus a tag, or a
+   parent class plus a child class (`.mail-read-pane .ib-infl-label`: the one influence bar in the
+   mail reader, not the per-card bars on the board). test/js/minigame-text-crisp-css.test.mjs pins the exact list and checks
    that every class is emitted by the engine, not that every body text is listed. */
 .minigame-container :is(
     .note-md-text,
@@ -166,7 +167,7 @@
     .tri-brief-buttons,
     .tri-steps,
     .siem-queue-count,
-    .siem-clock,
+    .siem-status-bar,
     .patch-panel-footer,
     .patch-panel-legend,
     .mail-subject,

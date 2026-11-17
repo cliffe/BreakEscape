@@ -49,7 +49,7 @@ const EXPECTED = [
     '.tri-brief-buttons',
     '.tri-steps',
     '.siem-queue-count',
-    '.siem-clock',
+    '.siem-status-bar',
     '.patch-panel-footer',
     '.patch-panel-legend',
     '.mail-subject',
@@ -111,11 +111,31 @@ test('wrappers with controls, skin buttons, sr-only text and repeated rows are n
 test('the hinted list containers hold no controls', () => {
     const js = (f) => readFileSync(join(root, 'public/break_escape/js/minigames', f), 'utf8');
     const between = (src, from, to) => { const a = src.indexOf(from); const b = src.indexOf(to, a); assert.ok(a >= 0 && b > a, `${from} .. ${to} found`); return src.slice(a, b); };
-    const controls = /'(?:button|input|select|textarea|a|details|summary)'/;
+    // Quoted tags (el/make/h/createElement calls) and tags inside template or HTML strings.
+    const controls = /['"`](?:button|input|select|textarea|a|details|summary)['"`]|<\s*(?:button|input|select|textarea|a|details|summary)\b/;
     const mail = js('mail-client/mail-reader.js');
     assert.doesNotMatch(between(mail, "el('dl', 'mail-headers')", 'pane.appendChild(head)'), controls);
     const tri = js('inbox-triage/inbox-triage-minigame.js');
     assert.doesNotMatch(between(tri, "el('dl', 'tri-brief-buttons')", 'p.appendChild(dl)'), controls);
+    // .tri-steps is an ol of li items from buildStepItems; the close control is a sibling elsewhere.
+    assert.match(tri, /this\.stepsEl = el\('ol', 'tri-steps'\)/);
+    assert.doesNotMatch(between(js('helpers/step-stepper.js'), 'export function buildStepItems', 'return items;'), controls);
+    const pp = js('patch-panel/patch-panel-minigame.js');
+    assert.doesNotMatch(between(pp, "el('div', 'patch-panel-legend')", 'this.frame.appendChild(this.legend)'), controls);
+    assert.doesNotMatch(between(pp, 'setFooter(text)', '\n    }'), controls);
+    assert.match(pp, /el\('div', 'patch-panel-footer'/);
+    // The SIEM status bar: three text spans in a template; the counts are updated by textContent.
+    const siem = js('siem/siem-dashboard-minigame.js');
+    const bar = between(siem, '<div class="siem-status-bar">', '</div>');
+    assert.doesNotMatch(bar, controls);
+    assert.equal((bar.match(/<span\b/g) || []).length, 3);
+    assert.equal((siem.match(/siem-status-bar/g) || []).length, 1, 'nothing else adds to the bar');
+    // The checker catches both forms.
+    assert.match("h('button', 1)", controls);
+    assert.match('<button class="x">', controls);
+    assert.match('<a href="#">', controls);
+    assert.match('<details>', controls);
+    assert.doesNotMatch('<span class="x">y</span> <div>', controls);
     // The person cards stay out: their checklist can hold a details element.
     assert.match(js('intel-board/intel-board-minigame.js'), /h\('details', \{ class: 'ib-slot-stuck' \}/);
 });
