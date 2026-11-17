@@ -339,8 +339,10 @@ class DriftAuditPoseNamesTest(unittest.TestCase):
             ex = figure(size=60, bottom=50)
             (root / "animations" / "pose_drink" / "south").mkdir(parents=True)
             ex.save(root / "animations" / "pose_drink" / "south" / "frame_000.png")
+            (root / "animations" / "breathing-idle" / "south").mkdir(parents=True)
+            ex.save(root / "animations" / "breathing-idle" / "south" / "frame_000.png")
             cell = Image.new("RGBA", (80, 80))
-            cell.paste(ex, (10, 11))
+            cell.paste(ex, (10, 19))   # the converter's offset for this export
             cell.putpixel((40, 40), (255, 0, 0, 255))   # the hand edit
             cell.save(assets / "k.png")
             (assets / "k.json").write_text(json.dumps({"frames": {"pose_drink_south_frame_000": {
@@ -351,7 +353,35 @@ class DriftAuditPoseNamesTest(unittest.TestCase):
                 pixellab_drift_audit.adopt("k", {"pose_drink_south_frame_000": 1}, root)
             saved = ov / "k" / "pose_drink" / "south" / "frame_000.png"
             self.assertTrue(saved.exists())
-            self.assertEqual(Image.open(saved).getpixel((30, 29)), (255, 0, 0, 255))
+            self.assertEqual(Image.open(saved).getpixel((30, 21)), (255, 0, 0, 255))
+
+    def test_adopted_hand_aligned_frame_rebuilds_where_it_was(self):
+        """A frame moved by hand inside its cell must come back at the same place after
+        the override is pasted at the converter's offset (it used to come back shifted by
+        the gap between the best-match origin and that offset)."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            assets, ov, root = tmp / "assets", tmp / "ov", tmp / "export"
+            assets.mkdir()
+            ex = figure(size=60, bottom=50)
+            for anim in ("breathing-idle", "walk"):
+                (root / "animations" / anim / "south").mkdir(parents=True)
+                ex.save(root / "animations" / anim / "south" / "frame_000.png")
+            ox, oy = pixellab_drift_audit.converter_offset(root, ex.size, (80, 80))
+            self.assertEqual((ox, oy), (10, 19))
+            cell = Image.new("RGBA", (80, 80))
+            cell.paste(ex, (ox - 9, oy + 2))   # hand-aligned: nudged left and down
+            cell.save(assets / "k.png")
+            (assets / "k.json").write_text(json.dumps({"frames": {"walk_south_frame_000": {
+                "frame": {"x": 0, "y": 0, "w": 80, "h": 80}}}}))
+            with mock.patch.object(pixellab_drift_audit, "ASSETS", assets), \
+                    mock.patch.object(pixellab_drift_audit, "OVERRIDES", ov), \
+                    mock.patch.object(pixellab_drift_audit, "REPO", tmp):
+                pixellab_drift_audit.adopt("k", {"walk_south_frame_000": 1}, root)
+            saved = Image.open(ov / "k" / "walk" / "south" / "frame_000.png").convert("RGBA")
+            rebuilt = Image.new("RGBA", (80, 80))
+            rebuilt.paste(saved, (ox, oy))
+            self.assertEqual(rebuilt.tobytes(), cell.tobytes())
 
 
 class WhiteBackgroundOptInTest(unittest.TestCase):
