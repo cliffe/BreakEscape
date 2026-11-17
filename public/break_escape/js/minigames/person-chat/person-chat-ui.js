@@ -201,9 +201,9 @@ export default class PersonChatUI {
         // Add content wrapper to caption area
         captionArea.appendChild(captionContent);
         
-        // At phone width the caption scrolls under the portrait (R1 m11): a pixel-art
-        // scrollbar, and a "More below" strip under it while the choices run on (R2 m4).
-        // The strip is hidden by CSS above 600 px, where the caption does not scroll.
+        // The caption scrolls when a long line and its choices outgrow it (R1 m11): a pixel-art
+        // scrollbar, and a "More below" strip while the choices run on (R2 m4). updateScrollCue
+        // toggles [hidden] at any width; CSS lays the strip over the foot (in flow on a phone).
         captionArea.classList.add('pixel-scroll');
         const moreBelow = document.createElement('div');
         moreBelow.className = 'person-chat-more';
