@@ -1267,3 +1267,14 @@ test('K4 step 8 refusal: the sign-in screen is given the host of the desktop it 
     assert.equal(fromLockable('lena_pc', 'a_pc', { fromHost: 'HB-FIN-02' }).scenarioData.remote.fromHost, 'HB-FIN-02');
     assert.equal(fromLockable('lena_pc', 'zz_pc').scenarioData.remote.fromHost, 'zz_pc', 'the raw id is only the last fallback');
 });
+
+test('K4 desktop file Connect: the source desktop passes its own host, so the header never shows the raw PC id', async () => {
+    setup();
+    // nothing in the session or the scenario names the source PC: only the desktop itself knows
+    pcSessions._replace('a_pc', { npcId: 'lena', via: 'password' });
+    window.gameScenario = { credentialsDeclared: true, rooms: { r: { objects: [] } } };
+    keyringAnswer = () => ({ entries: [FROM_RDP], rev: 'r1' });
+    loginAnswer = () => { throw refusal(422, { lockedOut: true, attemptsLeft: 0 }); };
+    await window.keyring.connect(ITEM, { from: 'a_pc', fromHost: 'HB-FIN-02' });
+    assert.equal(signIns[0].fromHost, 'HB-FIN-02');
+});

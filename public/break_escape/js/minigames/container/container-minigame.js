@@ -1700,6 +1700,8 @@ export class ContainerMinigame extends MinigameScene {
         }
         const from = this.sourcePcId;
         const desktop = this.desktopLockable();
+        // This desktop knows its own host: the sign-in header names it, never the raw PC id
+        const fromHost = desktop?.scenarioData?.host || window.pcSessions?.get?.(from)?.host || null;
         const marked = this.remote && !!from && !!window.networkLinks?.trip;
         const returnTo = () => {
             if (window.MinigameFramework?.currentMinigame) return;
@@ -1718,7 +1720,7 @@ export class ContainerMinigame extends MinigameScene {
         if (marked) window.networkLinks.setConnectBack(from);
         let r;
         try {
-            r = await window.keyring.connect({ scenarioData: { id: item.id, name: item.name } }, { from, returnTo });
+            r = await window.keyring.connect({ scenarioData: { id: item.id, name: item.name } }, { from, fromHost, returnTo });
         } finally {
             // Connect only toasted and this desktop is still up: a later close is a plain close
             if (window.MinigameFramework?.currentMinigame === this && !this._ending) {

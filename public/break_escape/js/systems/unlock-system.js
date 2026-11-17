@@ -415,9 +415,9 @@ export function fromLockable(pcId, fromPcId, { host: hostHint = null, fromHost: 
  * A held session's desktop reached from fromPcId's desktop (K4): Connect, the network view and
  * a folder's close open it. Returns false with no pc or source.
  */
-export function openFromDesktop(pcId, fromPcId) {
+export function openFromDesktop(pcId, fromPcId, fromHost = null) {
     if (!pcId || !fromPcId) return false;
-    openLoginDesktop(fromLockable(pcId, fromPcId));
+    openLoginDesktop(fromLockable(pcId, fromPcId, { fromHost }));
     return true;
 }
 
