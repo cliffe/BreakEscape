@@ -713,7 +713,9 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
         },
         <%# A second coffee machine on the north wall, east of Yasmin's desk. The engine simulates
             only rooms that have loaded, so a kitchen nobody has opened is no coffee source and the
-            rota board would park both staff. The kitchen's machine stays for when it is visited. %>
+            rota board would park both staff. The kitchen's machine stays for when it is visited.
+            A long brew (60 s) keeps Thandiwe away for about a minute, long enough for a player to
+            walk from the rota to her laptop; Yasmin queues behind her (maxWait 150 s). %>
         {
           "type": "coffee_station1",
           "id": "coffee_station_open_plan",
@@ -723,7 +725,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "interactable": true,
           "active": true,
           "observations": "The studio's coffee machine, on a stand against the north wall.",
-          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 0, "dy": 2 }, { "dx": 0, "dy": 3 }], "maxWaitSeconds": 90 }, "chatter": "coffee" }
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 60, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": 0, "dy": 2 }, { "dx": 0, "dy": 3 }], "maxWaitSeconds": 150 }, "chatter": "coffee" }
         },
         {
           "type": "notes",
