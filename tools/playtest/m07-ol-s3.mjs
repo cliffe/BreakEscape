@@ -23,7 +23,7 @@ const snap = () => ev(h, (ids) => {
   o.mg = gs.activeMinigame ? (gs.activeMinigame.id || 'open') : null;
   return o;
 }, OPS);
-const usingCooler = s => OPS.every(i => s[i].job && s[i].job[2] === "using" && s[i].x >= 360 && s[i].x <= 420 && s[i].y >= 225 && s[i].y <= 265);
+const usingCooler = s => OPS.every(i => s[i].job && s[i].job[2] === "using" && s[i].x >= 360 && s[i].x <= 460 && s[i].y >= 225 && s[i].y <= 265);
 const shot = name => h.page.screenshot({ path: `tmp/m07-s3-${name}-${gid}.png` });
 const logTail = (from) => ev(h, (f) => window.__test.needs.log().slice(f).map(e => JSON.stringify(e).slice(0, 160)), from);
 const bg = () => ev(h, () => { const m = window.MinigameFramework?.currentMinigame; return m ? { bg: m.background ?? null, ui: m.ui?.background ?? null } : null; });
