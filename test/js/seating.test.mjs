@@ -223,6 +223,42 @@ test('needs NPC back at its post sits in its own chair though the walk stopped a
     } finally { rig.restore(); }
 });
 
+// startMount's walk target on a two-place sofa (R10 m1): the place nearest the post's home cell when
+// the feet are within the post gate, else the place nearest the feet. Sofa at (80,90), 62x40: place
+// feet (99,130) west and (123,130) east.
+function sofaRig(feetX, atPost) {
+    const rig = labSeatRig(feetX);
+    Object.assign(rig.chair, { x: 80, y: 90, width: 62, height: 40, depth: 10, objectId: 'pierce_chair',
+        texture: { key: 'leather_sofa1' } });
+    rig.sprite.y = 127;
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.home = { x: 99, y: 127, roomId: 'open_plan', objectId: 'staff_pc_2' };
+    if (!atPost) ns.atPost = false;
+    return rig;
+}
+
+test('startMount: feet 25 px east of home, inside the post gate, walks to the post-side place', () => {
+    const rig = sofaRig(124, true);
+    try {
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+        const t = rig.behavior._seatMove?.target;
+        assert.ok(t, 'a walk target is set on the first call');
+        assert.equal(Math.round(t.x), 99, 'place 0, by the post, not the nearer east place');
+    } finally { rig.restore(); }
+});
+
+test('startMount: away from the post, walks to the place nearest the feet', () => {
+    const rig = sofaRig(124, false);
+    try {
+        const ns = window.npcNeedsSystem.states.get('pierce');
+        ns.home = { x: 300, y: 127, roomId: 'open_plan', objectId: 'staff_pc_2' };   // beyond the 48 px gate
+        assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'walking onto the seat');
+        const t = rig.behavior._seatMove?.target;
+        assert.ok(t, 'a walk target is set on the first call');
+        assert.equal(Math.round(t.x), 123, 'place 1, nearest the feet');
+    } finally { rig.restore(); }
+});
+
 test('chairAtOtherPost: the nearest post owns a chair; within 36 px of a neighbour but nearer home stays own', () => {
     const home = { x: 92, y: 124 }, marek = { x: 53, y: 128 };
     assert.equal(seating.chairAtOtherPost({ x: 89, y: 126.4 }, home, [marek]), false, "Sanjay's tucked chair (live 5398)");
