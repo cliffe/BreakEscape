@@ -39,3 +39,40 @@ Cooler check: `hallway_cooler` is a capacity-2 cooler (preset). With the player 
 ## Suites
 
 `bin/test-js`: 736 files passed, 0 failed. `bin/rails test`: 3186 runs, 50670 assertions, 0 failures, 0 errors, 4 skips (LabPhysicalPentestSecretsTest did not flake).
+
+## R7 follow-up (commit 28dac1dab)
+
+Round 7's delta review (`M03_REVIEW_R7.md`) raised two minor guards and a test fix. All three are now in.
+
+### What changed
+
+`public/break_escape/js/systems/npc-needs.js` and `test/js/npc-needs-pair-side-swap.test.mjs`:
+
+- M1: `_sideBlocker` skips any user whose `mode === 'frozen'`. A staff member the player is talking to while it walks to the machine is no longer re-routed mid-conversation; it keeps the main cell and the later claimant takes the side cell.
+- M2: before returning a swap, `_sideBlocker` confirms the re-routed user can get a side cell of its own (its own position, leash and avoided rooms, with the other users' cells counted as taken). With no free side cell for it the swap is skipped, so the first user keeps walking to the main cell rather than being failed with `no_beside_cell`.
+- N1: the "fresh move id" assertion now reads `clerkMoves[0].moveId` (the stub records the id at the top level of the move, not under `opts`), so it can actually fail. Three tests were added.
+
+### Tests and fail-before evidence
+
+`node --test test/js/npc-needs-pair-side-swap.test.mjs`: 6 tests, all pass. Each guard was proven by reverting its lines locally, running the file, then restoring (no git stash):
+
+- Frozen user not re-routed (M1): removing `if (o.mode === 'frozen') continue;` makes "a user frozen in a conversation is not re-routed" fail (the frozen clerk is swapped off the main cell).
+- No side cell, no swap (M2): removing the `besideCell` check makes "the first user has no side cell of its own" fail (the first user is swapped with nowhere of its own to stand).
+- Stale pre-swap arrival ignored: disabling the move-id guard in `_acceptArrival` makes "an arrival from the pre-swap move is ignored" fail (the old move's arrival is no longer dropped as `arrival_ignored`).
+
+In each case the other five tests stayed green and the file returned to its committed state (clean diff).
+
+### Live proof (port 3094, fresh m03 game 6719, keyless server)
+
+Two coffee breaks in one game, both needs set to 5 each time through `__test.needs.set`. Both runs had Zainab and Yusuf use `reception_coffee` together: the nearer claimant (Zainab, claims second) took the main cell and Yusuf took the west side cell, with `npc_use_started:reception_coffee` fired for both. Screenshot `pairfix2/proof-caffeine-rep0.png` shows the pair side by side at the machine (kept in the session scratchpad, not the repo).
+
+| Rep | Pair using together | Zainab cell | Yusuf cell | Expected away (Zainab) | Real away (Zainab) | Laptop locked while away |
+| --- | --- | --- | --- | --- | --- | --- |
+| 0 | yes, from 4.0 s | 276 (main) | 244 (side) | 18.6 s | 30.8 s | no |
+| 1 | yes, from 4.0 s | 276 | 244 | 18.6 s | 27.3 s | no |
+
+The real-away overshoot (the pair's shared walk home, review minor M3) is unchanged and stays in the backlog.
+
+### Suites
+
+`bin/test-js`: 737 files passed, 0 failed. `bin/rails test`: 3187 runs, 50683 assertions, 0 failures, 0 errors, 4 skips.
