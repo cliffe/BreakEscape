@@ -454,6 +454,7 @@ module BreakEscape
 
       player_state['globalVariables'] = {} unless player_state['globalVariables'].is_a?(Hash)
       player_state['globalVariables'][name] = true
+      record_server_global_writes([name])
     end
 
     # The USB habit's workaround (USB_HABIT_PLAN.md, q39): an accepted fail naming usb_refused
@@ -464,6 +465,7 @@ module BreakEscape
 
       player_state['globalVariables'] = {} unless player_state['globalVariables'].is_a?(Hash)
       player_state['globalVariables'][name] = true
+      record_server_global_writes([name])
     end
 
     # The "done" answer, composed from the scenario (and, for a borrow, the guest record now), so

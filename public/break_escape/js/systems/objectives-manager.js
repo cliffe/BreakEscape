@@ -805,6 +805,13 @@ export class ObjectivesManager {
         response = await this.serverCompleteTask(taskId);
       }
 
+      if (!response.success && task._serverCompleted) {
+        // The server completed this task itself (a credit) while its own POST was in flight and
+        // refused the POST: the server's completion wins, so finish it here instead of reverting
+        this._completeTaskLocally(task, taskId);
+        return;
+      }
+
       if (!response.success) {
         task.status = 'active'; // Revert on server rejection
         this.replayPendingPickups(task);
@@ -861,6 +868,10 @@ export class ObjectivesManager {
       // conclusion gated on it can no longer be met. Leave the task active so a
       // later trigger can retry it, and say so plainly.
       console.error('Failed to sync task completion with server:', error);
+      if (task._serverCompleted) {
+        this._completeTaskLocally(task, taskId);
+        return;
+      }
       task.status = 'active';
       this.replayPendingPickups(task);
       // An enter_room completion that threw (the second failure feed, plan
@@ -876,8 +887,55 @@ export class ObjectivesManager {
       return;
     }
 
+    this._completeTaskLocally(task, taskId);
+  }
+
+  /**
+   * A task the server completed on its own (a creditOnPass credit during a sync or door unlock,
+   * reported in serverCompletedTasks). The server already holds it, so this runs only the local
+   * completion (toast, onComplete, aim reveal and check, events) with no POST. A task already
+   * completed here, or unknown to this page, is left alone, and so is one whose own POST is in
+   * flight ('completing'): the server answers that POST "Already completed" and it finishes there.
+   * @param {string} taskId
+   * @returns {boolean} true when the task was completed here
+   */
+  applyServerCompletedTask(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task || task.status === 'completed') return false;
+    if (task.status === 'completing') {
+      // Its own POST is in flight. If the POST succeeds it finishes there; if the server refuses
+      // it, the server's completion still wins (completeTask checks this flag)
+      task._serverCompleted = true;
+      return false;
+    }
+    this._completeTaskLocally(task, taskId);
+    return true;
+  }
+
+  /**
+   * The server concluded the mission as the result of its own credit (serverMissionConcluded on a
+   * sync or unlock answer): show the ending as a client completion would.
+   * @param {string} taskId the credited task that concluded the mission
+   */
+  applyServerMissionConcluded(taskId) {
+    const task = this.taskIndex[taskId];
+    if (!task) return;
+    // The credited task's own aim concluded the mission when it is the missionConclusion aim.
+    // Otherwise (the server's recheck_pending_mission_conclusions! path, where a credit met a
+    // concludeRequires gate held by another aim) fall back to the missionConclusion aim, as
+    // main.js does on reload and as the POST path's server answer implies.
+    const own = this.aimIndex[task.aimId];
+    const aim = own?.missionConclusion
+      ? own
+      : (Object.values(this.aimIndex).find(a => a?.missionConclusion) || own);
+    this.handleMissionConcluded(aim);
+  }
+
+  /** The local tail of a completion, after the server has recorded it. */
+  _completeTaskLocally(task, taskId) {
     // Update local state
     task._pendingPickups = null;
+    delete task._serverCompleted;
     task.status = 'completed';
     task.completedAt = new Date().toISOString();
     
@@ -1084,7 +1142,9 @@ export class ObjectivesManager {
         if (window.npcConversationStateManager) {
           window.npcConversationStateManager.broadcastGlobalVariableChange(varName, value, null);
         }
-        if (window.eventDispatcher) {
+        // An unchanged value was already announced (a server credit wrote it through the shared
+        // writer first), so listeners do not hear it a second time
+        if (window.eventDispatcher && oldValue !== value) {
           window.eventDispatcher.emit(`global_variable_changed:${varName}`, { name: varName, value, oldValue });
         }
       });
