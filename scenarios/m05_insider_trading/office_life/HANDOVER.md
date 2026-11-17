@@ -42,3 +42,7 @@ Plan phase only: `BASELINE.md`, `ANALYSIS.md`, `PLAN.md` (m02 section shape: 0 p
 1. Write `BASELINE.md`, then `ANALYSIS.md` (cast audit table with file:line, rooms and machines, tier paragraph).
 2. Write `PLAN.md`, `SPOKEN_LINES.md` (about 16 pool lines plus 2 to 3 exchanges; add the cleaner's lines as a separate block), `DIALOGUE_SAMPLE.md`.
 3. Commit with explicit paths, `git diff --cached --stat` first, and report.
+
+## Status (third agent)
+
+Plan phase written: `BASELINE.md`, `PLAN.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`; `v1_summary_base.txt` trimmed to its 13 summary lines. `ANALYSIS.md` was refused by a harness rule on subagent report files; its full text went to the orchestrator in the report, to be committed from there. Next: the five plan review rounds, then the user's picks (questions A to C in PLAN.md section 9) and the dialogue-sample yes.
