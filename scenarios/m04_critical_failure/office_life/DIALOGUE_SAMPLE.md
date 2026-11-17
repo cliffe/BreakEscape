@@ -31,24 +31,27 @@ Joanne:
 
 ## Exchanges at the kettle (each heard once; knots in `ink/m04_npc_ibrahim_diallo.ink`)
 
+Each exchange line is at most 40 characters of speech (the validator's cap).
+
 `ex_six_oclock`:
 
-> Joanne Pell: Twelve contractors at six for the module swap, and every one needs an induction.
-> Ibrahim Diallo: I have the reception PCs to finish before then, or they sign in on paper.
-> Joanne Pell: Paper never needs rebooting.
-> Ibrahim Diallo: Paper never needs me either. That is the trouble with it.
+> Joanne Pell: Twelve contractors at six, all new.
+> Ibrahim Diallo: And the reception PCs half swapped.
+> Joanne Pell: They can sign in on paper, then.
+> Ibrahim Diallo: Paper never needs me. That's its flaw.
 
 `ex_not_on_the_rota`:
 
-> Ibrahim Diallo: Did you know neither of us is on tonight's rota? My swap was booked after it went out.
-> Joanne Pell: And I only came in early to get ahead. There used to be someone in the office on nights.
-> Ibrahim Diallo: Now it's the crew, Mr Vance and the gate. That's all.
+> Ibrahim Diallo: Neither of us is on tonight's rota.
+> Joanne Pell: Your swap was booked late, then?
+> Ibrahim Diallo: After it went out. And you're early.
+> Joanne Pell: We used to have someone on nights.
 
 `ex_stay_out_of_the_halls` (only after you have met Vance):
 
-> Joanne Pell: Robert said to stay in here or reception and keep out of the halls.
-> Ibrahim Diallo: Until the crew's done, he said. I wasn't planning a tour.
-> Joanne Pell: Me neither. Not at this hour.
+> Joanne Pell: Robert says keep out of the halls.
+> Ibrahim Diallo: Till the crew's done. Fine by me.
+> Joanne Pell: Not at this hour, no thank you.
 
 ## Bark (Joanne, when Vance sounds the evacuation; scenario eventMapping `bark`)
 
