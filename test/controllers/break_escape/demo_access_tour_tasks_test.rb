@@ -20,7 +20,7 @@ module BreakEscape
       @game = Game.create!(mission: @mission, player: break_escape_demo_users(:test_user)).reload
       @game.player_state['currentRoom'] = 'reception'
       @game.player_state['unlockedRooms'] = %w[reception open_plan kitchen]
-      @game.player_state['encounteredNPCs'] = []
+      @game.player_state['encounteredNPCs'] = PEOPLE.dup
       @game.save!
     end
 
@@ -129,7 +129,7 @@ module BreakEscape
                 't_door_controller' => 'unlock_object', 't_staff_wifi' => 'unlock_object',
                 't_guest_port' => 'unlock_object' }
       types.each do |id, type|
-        task = @game.find_task_in_scenario(id)
+        task = @game.send(:find_task_in_scenario, id)
         assert task, "#{id} missing"
         assert_equal type, task['type'], id
       end
@@ -138,7 +138,7 @@ module BreakEscape
     test 't_meet_ama is refused until Ama has been encountered' do
       assert_task_refused 't_meet_ama', 'before meeting'
       @game.reload
-      @game.player_state['encounteredNPCs'] = %w[ama]
+      @game.player_state['encounteredNPCs'] = PEOPLE + %w[ama]
       @game.save!
       assert_task_done 't_meet_ama'
     end
@@ -146,7 +146,7 @@ module BreakEscape
     test 't_debrief is refused until Ama has been encountered' do
       assert_task_refused 't_debrief', 'before meeting'
       @game.reload
-      @game.player_state['encounteredNPCs'] = %w[ama]
+      @game.player_state['encounteredNPCs'] = PEOPLE + %w[ama]
       @game.save!
       assert_task_done 't_debrief'
     end
@@ -202,6 +202,12 @@ module BreakEscape
     test 't_door_controller is refused until a door_controller session exists' do
       foothold = plant_box
       assert_task_refused 't_door_controller', 'before sign-in'
+      sign_in_ok('reception_pc', 'delphine')
+      hold('julian_rdp_file')
+      post game_path('logout'), params: { pc_id: 'reception_pc' }, as: :json
+      assert cred_through_box('julian_pc', 'julian_rdp', foothold)['success']
+      refute sign_in('door_controller', username('lorna'), 'wrong-password', foothold: foothold)['success']
+      assert_task_refused 't_door_controller', 'after a failed sign-in'
       body = sign_in('door_controller', username('lorna'), password('lorna'), foothold: foothold)
       assert body['success'], body.inspect
       assert_task_done 't_door_controller'
