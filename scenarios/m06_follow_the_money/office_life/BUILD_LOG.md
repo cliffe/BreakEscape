@@ -15,3 +15,6 @@ Numbers: validator T1 (needs clock): Dani 350 min, extras caffeine 3.1 to 3.75 m
 
 ## Slice 3 live checks (done)
 All four pass, see LIVE_S3.md. Fix: extras' spawn positions (Lerato 7.4,3.1; Tomasz 3.1,4.4), commit ec16c0b90. Clock ratio 1.000. Open: Lerato faces away from her monitor (Tiled chair); copier unused until a print habit; home-dwell cut-short test waits for a home use.
+
+## Slice 4 (static built, fe9a73feb; live checks partly done, see HANDOVER.md)
+Built: Tomasz laptop text and screen habit, handover sheet print command, lerato_phone and floor_spare_phone, lab pizza magnet, workstation/servings/reveal globals. Checks: validator 0 errors, 45 warnings (new: pizza magnet-not-held validator note, justified); summary diff only lerato, tomasz, trader; lock diff empty; positions diff only planned additions (pizza, tomasz_handover_sheet, lerato_phone, floor_spare_phone, earlier slice-3 rows). Live: Tomasz coffee trip expected 14.5 s, real 14.7 s, 4 of 4 open.
