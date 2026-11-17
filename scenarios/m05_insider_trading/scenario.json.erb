@@ -1557,9 +1557,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     (offWhen) and needs walk the newcomers home. Appended last so no saved once index moves. %>
             { "eventPattern": "npc_attacked:thandiwe_moyo", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_attacked:niamh_doherty", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
-            { "eventPattern": "npc_attacked:bernadette_lyons", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_attacked:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_ko:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
+            { "eventPattern": "npc_attacked:bernadette_lyons", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "global_variable_changed:qdc_staff_upset", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
             { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } }
           ]
@@ -1911,9 +1911,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             "tidy": { "initial": 50, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 }
           },
           "eventMappings": [
-            { "eventPattern": "room_entered:server_room", "condition": "globalVars.bernadette_ko !== true", "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
-            { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
-            { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "globalVars.server_room_entered === true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.bernadette_ko !== true", "setVisible": true },
+            { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true && globalVars.bernadette_ko !== true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
+            { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "globalVars.server_room_entered === true && globalVars.bernadette_ko !== true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
             { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'break_room' && globalVars.server_room_entered === true && globalVars.bernadette_ko !== true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
             { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
           ]
