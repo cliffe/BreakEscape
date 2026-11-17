@@ -89,3 +89,10 @@ Game 6885, first entry to the operations floor, player stayed:
 ## Lab sheet line
 
 Room tone changes nothing a student does: no lock, key, clue, NPC position or objective changed, the lock and key diff is empty, and the sound only varies by room. The bark holds no clue or suspect name and plays once; the m08 walkthrough needs no edit.
+
+## Notes after build review round 1
+
+- Test 7, north/south doorways: pass on intent. m08's N/S doorways have no roomless strip: `window.currentPlayerRoom` was never null in four crossings and eleven doorway stops, so `ambientChoice.keep` cannot occur on this map. The previous bed plays until the room switches, then crossfades. The `keep` branch itself is covered by test/js/room-tone.test.mjs:56-68.
+- Bark delay: "about 3.5 s" is the configured `delayMs` (3500); the measured 6.1 s gap included the walk and settle, so it is not a precise timing measurement.
+- Toast fallback (player leaves the ops floor within 3.5 s): not tested live on m08; the engine path is covered by test/js/ux-bark-bubbles.test.mjs:103-107.
+- Plan test 8 (scripted critical-path run): skipped by the orchestrator. Reason: the build adds room tone and one once-only bark, neither of which can block or change any lock, item or conversation; the lock/key diff is empty. The train's Rails run checks the bark line (tts_mission_lines_test.rb).
