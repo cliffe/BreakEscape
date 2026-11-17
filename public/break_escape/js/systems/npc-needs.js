@@ -919,18 +919,19 @@ export class NPCNeedsSystem {
     /** A magnet is a source only for an NPC that knows of it, while it shows and has servings left. */
     _magnetBarred(s, o) {
         if (!this._magnets.has(o.id)) return !!magnetOf(o.affordance);   // not yet seen by the registry
-        return !s.knows.has(o.id) || !this._shownMagnets()?.has(o.id) || this._servingsLeft(o.id) <= 0;
+        return !s.knows.has(o.id) || !this._shownMagnets()?.has(o.id) || this._servingsLeft(o.id) <= 0
+            || (s.ate[o.id] || 0) >= this._magnets.get(o.id).cfg.perPerson;   // one slice each, urgent or not
     }
 
-    /** Known, live magnets for a need; a tempted look skips those whose perPerson this NPC has had. */
-    _magnetsFor(s, name, tempted) {
+    /** Known, live magnets for a need; every look (tempted or urgent) skips those whose perPerson this NPC has had. */
+    _magnetsFor(s, name) {
         if (!s.knows.size) return null;
         const shown = this._shownMagnets();
         const out = [];
         for (const id of [...s.knows].sort()) {
             const m = this._magnets.get(id), o = shown?.get(id);
             if (!m || !o || m.servings <= 0 || !m.satisfies.includes(name)) continue;
-            if (tempted && (s.ate[id] || 0) >= m.cfg.perPerson) continue;
+            if ((s.ate[id] || 0) >= m.cfg.perPerson) continue;
             out.push(o);
         }
         return out;
@@ -940,7 +941,7 @@ export class NPCNeedsSystem {
     _temptBand(s, name) {
         if (!s.knows.size || s.parked[name]) return 0;   // a parked need is not tempted (OQ35)
         let band = 0;
-        for (const o of this._magnetsFor(s, name, true) || []) band = Math.max(band, this._magnets.get(o.id).cfg.tempt);
+        for (const o of this._magnetsFor(s, name) || []) band = Math.max(band, this._magnets.get(o.id).cfg.tempt);
         return band;
     }
 
@@ -1048,7 +1049,7 @@ export class NPCNeedsSystem {
     /** A serving is taken as eating starts; the count is written to <id>_servings. */
     _takeServing(s, id) {
         const m = this._magnets.get(id);
-        if (!m || m.servings <= 0) return false;
+        if (!m || m.servings <= 0 || (s.ate[id] || 0) >= m.cfg.perPerson) return false;
         m.servings--;
         s.ate[id] = (s.ate[id] || 0) + 1;
         this.world.setGlobal(m.key, m.servings);
@@ -1145,6 +1146,16 @@ export class NPCNeedsSystem {
                     if (s.parked[name]) this._unpark(s, name, 'set');
                     s.levels[name] = clamp(Number(v), 0, 100);
                     this._log(npcId, 'level_set', { need: name, level: round2(s.levels[name]) });
+                    // A tempted walk to a magnet ends quietly when the level is set above its tempt band
+                    // (a held NPC does not finish a walk it would no longer start); an urgent walk stands
+                    const j = s.job;
+                    if (j?.magnet && j.tempted && j.need === name && (j.phase === 'goto_target' || j.phase === 'queued')) {
+                        const n = s.needs[name], mc = this._magnets.get(j.targetId)?.cfg;
+                        if (!mc || s.levels[name] > Math.min(95, n.urgentAt + mc.tempt)) {
+                            this._abortJob(s, 'level_set', { cancel: true });
+                            this._goHome(s);
+                        }
+                    }
                 }
             }
             return true;
@@ -1691,7 +1702,7 @@ export class NPCNeedsSystem {
             const excludeId = exclude?.need === name ? exclude.targetId : null;
             let cand = null;
             // A known magnet first (an urgent need prefers it, OQ36), then the usual sources
-            const mags = this._magnets.size ? this._magnetsFor(s, name, tempted) : null;
+            const mags = this._magnets.size ? this._magnetsFor(s, name) : null;
             if (mags?.length) cand = this._useCandidate(s, name, mags, pos, excludeId, true);
             s.giveUp = null;
             if (tempted) {

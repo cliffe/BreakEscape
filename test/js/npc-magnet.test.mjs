@@ -153,7 +153,7 @@ test('one serving: an NPC arriving after the last is taken never starts eating',
     assert.equal(o.evs('using').filter(e => e.npc === 'bob').length, 0);
 });
 
-test('perPerson 1 stops a second helping by temptation; a plain urgent need may still use it', () => {
+test('perPerson 1 stops a second helping on every path: tempted, urgent, and a take at the serving itself', () => {
     const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 1, urgentAt: 40, initial: 30 } } } } },
         { objects: [cake({ affordance: { satisfies: 'hunger', restores: 20, useSeconds: 5, capacity: 3, magnet: { tempt: 30, servings: 5, perPerson: 1 } } })], arrive: true });
     o.sys.scanMagnets();
@@ -164,8 +164,37 @@ test('perPerson 1 stops a second helping by temptation; a plain urgent need may 
     o.ticks(40);
     assert.equal(o.evs('serving_taken').length, 1, 'no second helping by temptation');
     o.sys.control('tom', { set: { hunger: 20 } });
-    o.ticks(2);
-    assert.equal(o.evs('serving_taken').length, 2, 'urgent: it is still food');
+    o.ticks(20);
+    assert.equal(o.evs('serving_taken').length, 1, 'urgent: one slice each, so no second serving');
+    assert.equal(o.sys.states.get('tom').job?.targetId === 'cake', false, 'urgent look does not aim at the cake');
+    assert.equal(o.sys._takeServing(o.sys.states.get('tom'), 'cake'), false, 'the take itself refuses a second');
+    assert.equal(o.globals.cake_servings, 4);
+});
+
+test('one serving taken, then held at hunger 100 and ticked on: no second take (the repeat-take report)', () => {
+    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 0.5, urgentAt: 30, initial: 50 } } } } }, { objects: [cake()], arrive: true });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1 + useTicks(12));
+    assert.equal(o.evs('serving_taken').length, 1);
+    o.sys.control('tom', { set: { hunger: 100 } });
+    o.ticks(400);
+    assert.equal(o.evs('serving_taken').length, 1);
+    assert.equal(o.globals.cake_servings, 1);
+});
+
+test('setting a need above the tempt band cancels a tempted walk already in progress; a full need is never tempted', () => {
+    const o = office({ tom: { rec: { needs: hunger(65) } } }, { objects: [cake()], arrive: false });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake', 'tempted and walking');
+    o.sys.control('tom', { set: { hunger: 100 } });
+    assert.notEqual(o.sys.states.get('tom').job?.targetId, 'cake', 'walk cancelled');
+    o.ticks(200);
+    assert.equal(o.evs('serving_taken').length, 0);
+    assert.equal(o.evs('using').filter(e => e.npc === 'tom').length, 0);
+    assert.equal(o.sys.states.get('tom').job?.targetId === 'cake', false, 'never tempted at 100');
 });
 
 test('an urgent need prefers a known magnet over a nearer usual source; an unknown one is ignored', () => {
