@@ -70,3 +70,5 @@ and `reception_plant_desk` as plants, `planted_rogue_ap` with `hiddenWith` and n
 `revealOnGlobal`), Ruth's `eventMappings` and Kieran's `captureProof` (no `on`). The fold-related
 habit keys are untouched, and a diff of the fold of this fixture against a fresh render shows no
 non-note difference.
+
+Note (plant hiding R1 t1, 2026-11-17): the lab's `ap_planted` global and the kit's `hideable.onHidden` were removed (nothing read the global). The loader fixture was edited by hand to match: both lines dropped from the frozen output.

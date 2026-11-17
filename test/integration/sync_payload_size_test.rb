@@ -22,11 +22,13 @@ module BreakEscape
       # bootstrap measured 26,619 B, so its base is raised from the 23,762 B of 6a834437c to that
       # figure. The growth is objectives (9,050 B), music, timers and globals; accountProfiles,
       # networks and every secret are withheld from the bootstrap (checked: none in the body).
-      # 2026-11-17, plant hiding (H5 lab migration): the bootstrap now carries `hideables` for the
-      # lab's rogue AP kit, 3,441 B, of which the console's device data (apScan, apPortal,
-      # apCaptureLog) is 3,010 B. The lab measured 31,034 B (27,593 B without it, which the
-      # earlier figure plus other merged lab growth already exceeded), so the base is that figure.
-      'lab_physical_pentest' => 31_034
+      # 2026-11-17, plant hiding (H5 lab migration): the bootstrap carries `hideables` for the lab's
+      # rogue AP kit. The console's device data (3,010 B) is not in it: the device is authored in
+      # reception, a hideable room, so the client takes it from GET /room/reception (review R1 m2).
+      # Measured 27,775 B on 2026-11-17 (26,619 B at A2, grown by other merged lab work and the
+      # `hideables` entry of about 180 B). Main raises this same base for the LED: when merging,
+      # re-measure and set the larger of the two measures.
+      'lab_physical_pentest' => 27_775
     }.freeze
 
     FIXTURES = File.expand_path('../fixtures/files/sync_bodies', __dir__)

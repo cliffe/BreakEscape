@@ -386,6 +386,11 @@ module BreakEscape
       assert_response :success, response.body
     end
 
+    def hide_in(spot)
+      post game_path('inventory'), params: { action_type: 'hide', item: { id: 'kit_rogue_ap' }, hidden_in: spot }, as: :json
+      response.parsed_body
+    end
+
     def join(ap_id, key)
       post game_path('network/join'), params: { ap_id: ap_id, key: key }, as: :json
       response.parsed_body
@@ -443,7 +448,8 @@ module BreakEscape
       assert sign_in('hot_desk_pc', 'k.doyle', kieran_password)['success'], response.body
     end
 
-    # A save made before the plant-hiding migration carries {kit_rogue_ap, on: rogue_ap_spot} in
+    # This runs on test_access_devices (the same code path as the lab; the lab's own old-copy case is
+    # LabPlantHidingTest). A save made before the plant-hiding migration carries {kit_rogue_ap, on: rogue_ap_spot} in
     # plantedItems while the scenario copy now has no rogue_ap_spot. The record still proves the
     # plant, the client is told which room to draw the device in, and the secrets are served.
     test 'hybrid: a plantedItems record on the removed rogue_ap_spot still serves both captures and shows the device' do
@@ -459,6 +465,10 @@ module BreakEscape
       assert_response :success
       assert_equal 'rogue_ap_spot', response.parsed_body['hiddenDevices'].first['on']
       refute_includes response.body, psk
+      body = hide_in(PLANT_SPOT)
+      assert_response :unprocessable_entity
+      assert_equal 'already_hidden', body['reason'], 'hiding it again answers already_hidden with the old entry'
+      assert_equal 'rogue_ap_spot', body['hidden']['on']
     end
 
     test 'the bootstrap carries neither the PSK nor the password' do
