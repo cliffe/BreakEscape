@@ -30,3 +30,10 @@ About 24 clips (8 pool lines, 10 exchange lines, 6 conversation lines; the V6 co
 - **a. A third kit crate in the south-centre of the yard, east of the incident-file crate, with the kettle on it (recommended).** Existing crate and kettle art, one Tiled edit. Under the work lamp, 3 tiles or more from every cutscene and act spot, clear of the van tap areas and the incident file's reach.
 - **b. The existing kit crates by the fence near van one.** No dressing change, but the pair would stand between Vector (4,4) and Phantom (7,4.6) when they are on the team, 2 tiles from Netherton and beside van one's tap area.
 - **c. A new urn or camping-stove prop.** Needs new art and a PixelLab yes; nothing it adds over (a).
+
+## Q5. How far the kettle talk carries
+
+Two of the three exchanges are set off when the player is likely to be at the far end of the yard: the radios one when Arakawa's gate scene closes (often with the player at the gate console), and the door-open one as the player walks in from the east door after the breach. An exchange starts only if the player can hear it.
+
+- **a. Hearing radius about 320 px, ten tiles (recommended).** Covers the table, the vans, the gate console and the terminal. Pool lines are heard across most of the yard, but they are short, spaced at least two minutes apart and muted during every conversation.
+- **b. Keep 200 px, about six tiles.** The kettle talk stays local to the table; the radios and door-open exchanges play only when the player happens to be near the kettle.
