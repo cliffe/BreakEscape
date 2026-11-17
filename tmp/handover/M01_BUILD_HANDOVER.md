@@ -39,3 +39,6 @@ Games from this run: 7075, 7080 (cooler), 7083 (evening head-start: unlock hallw
 - Test 7 approach checks (recycling bin, filing cabinet vs cooler users), cooler aisle render, test 8 barks, test 11 third user and m01_staff_alarmed turning the cooler off, per-phase reloads.
 - V6 keyless: env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]", expect 22; run from the worktree root.
 - Finish BUILD_REPORT.md, copy the evening screenshot, commit. Do not kill by `pkill -f` with a pattern that matches your own command line. Another session's npc-thoughts-proof probe was also hitting :3094; server still running (puma 2279413).
+
+## Checks agent (third agent)
+Done and in BUILD_REPORT.md "Checks agent": tests 9 (evening, real flag route via the harness `<flag:1>` token, hide while in server room, seats released, reload), 10 (attack/KO each extra, cower so no chase), credits lines, test 7 approach, exchanges (run1 complete), reloads, V6 = 18 clips. New probes in tools/playtest/ m01-ol-evening-reload, -attack, -approach, -reloads. Open: Graham `_seat` truthy at the cooler (observation), chaseRange not exercisable (cower), overlay not played to the end. Games from this run: 7088, 7089, 7094, 7095, 7097, 7104, 7109.
