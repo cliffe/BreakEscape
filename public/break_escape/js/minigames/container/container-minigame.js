@@ -9,9 +9,9 @@ import { escapeHtml } from '../../utils/escape-html.js';
 import { escapeHtmlKeepWords } from '../../utils/escape-html.js';
 import { mentionsComputer } from '../../utils/computer-keywords.js';
 import { mountPcMonitor, bindPcWindowCloses, cssZoomOf, postitNotebookEntry, pcPostitButtonHtml } from '../../utils/pc-monitor.js';
-import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage } from '../../utils/remote-host-text.js';
+import { RELAY_FOLDER_UNAVAILABLE_TEXT, sessionEndedMessage, notRespondingMessage, unreachableMessage, tokenExpiredMessage } from '../../utils/remote-host-text.js';
 import { MORE_BELOW_TEXT } from '../../utils/more-below.js';
-import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
+import { mountPcTaskbar, pcTaskbarModel, credentialSessionLine, credentialLineHtml, refreshTokenLines, titleCredentialLabels, lockSupported, lockPcSession, rememberDesktop, rememberedDesktop, findPcData, RELAY_HEADER_TEXT, RELAY_NO_SHARES_TEXT, RELAY_DISCONNECTED_TEXT, relayAccountText } from '../../utils/pc-taskbar.js';
 
 
 
@@ -273,6 +273,9 @@ export function armNetworkReturn(state, { playerCloseOnly = false } = {}) {
         dispatcher.on('minigame_failed', handler);
     }
 }
+
+/** How often a session token's bar line is rewritten from pc-sessions.js's own timer (keyring K5, plan 10). */
+export const TOKEN_LINE_REFRESH_MS = 60 * 1000;
 
 const TRANSFER_LABELS = {
     open: 'Open',
@@ -658,6 +661,16 @@ export class ContainerMinigame extends MinigameScene {
             if (response.status === 403) {
                 try { refusal = await response.json(); } catch (e) { /* no body */ }
             }
+            if (response.status === 403 && refusal?.reason === 'expired' && (this.remote || this.fromRoute)) {
+                // Keyring K5: the session token ran out. The copy goes with no request, the view
+                // closes, and the player reads which token it was (never a sign-in screen).
+                const label = window.pcSessions?.get?.(pcId)?.label;
+                window.pcSessions?.dropLocal?.(pcId);
+                this.exitReason = 'expired';
+                this.complete(false);
+                window.gameAlert?.(tokenExpiredMessage(label), 'info', this.containerItem?.scenarioData?.name || 'PC', 3000);
+                return null;
+            }
             if (response.status === 403 && this.remote) {
                 // Back to the network view, never the physical sign-in screen (4.3): with
                 // no_session the client drops its copy; with unreachable or not_responding (the
@@ -800,6 +813,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     cleanup() {
+        this.stopTokenLineTimer();
         if (this._unwatchPower) {
             this._unwatchPower();
             this._unwatchPower = null;
@@ -1310,6 +1324,27 @@ export class ContainerMinigame extends MinigameScene {
             onPlace: (p) => this.taskbarPlace(p),
             onAction: (a) => this.taskbarAction(a, pcId)
         });
+        this.startTokenLineTimer(pcId);
+    }
+
+    /**
+     * Keyring K5: a session token's bar line ("with a session token, about {n} min left") steps
+     * down each minute, read from the client's own timer in pc-sessions.js (no request). Runs
+     * only for a token session; cleanup() stops it.
+     */
+    startTokenLineTimer(pcId) {
+        this.stopTokenLineTimer();
+        if (window.pcSessions?.get?.(pcId)?.kind !== 'token') return;
+        this._tokenLineTimer = setInterval(() => {
+            const session = window.pcSessions?.get?.(pcId);
+            if (!session || session.kind !== 'token') { this.stopTokenLineTimer(); return; }
+            refreshTokenLines(this.gameContainer, session);
+        }, TOKEN_LINE_REFRESH_MS);
+    }
+
+    stopTokenLineTimer() {
+        if (this._tokenLineTimer) clearInterval(this._tokenLineTimer);
+        this._tokenLineTimer = null;
     }
 
     /** Start panel Places: the desktop, or a mapped share (opened as from the desktop). */

@@ -174,6 +174,8 @@ function publicSession(pcId, s) {
     if (s.locked === true) out.locked = true;
     // A credential session (keyring K3a) names its kind and label for the desktop's second line
     if (s.via === 'credential') Object.assign(out, credentialFields(s));
+    // A token session says how long it has left, read live (keyring K5): the desktop's bar shows it
+    if (isToken(s) && typeof s.expiresAt === 'number') out.tokenSecondsLeft = Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 1000));
     // The account's picture source (a headshot key's portrait or avatar), only when the server sent it
     if (typeof s.portrait === 'string' && s.portrait) out.portrait = s.portrait;
     if (typeof s.avatar === 'string' && s.avatar) out.avatar = s.avatar;
