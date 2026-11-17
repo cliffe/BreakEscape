@@ -6,7 +6,7 @@
 // pc_signed_in for the second (with previousNpcId; firstAtPc marks the first sign-in at a PC);
 // on load, password sessions are kept (and a claimed one ends). pc_signed_out says why (reason).
 // Run with: node test/js/pc-sessions.test.mjs
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -1034,4 +1034,184 @@ test('openedOrder rises with each open of a desktop session (K4)', async () => {
     assert.equal(b, a, 'another PC signing in does not move this one');
     s._markOpened('hot_desk');
     assert.ok(s.openedOrder('hot_desk') > a, 'opening it again raises its order');
+});
+
+// ---- keyring K5: token sessions (plan section 10): the timer, the line and the lasting-sign-in rule ----
+
+const { tokenExpiredEndedMessage: tokenEndedText } = await import(dataUrl(readFileSync(join(js, 'utils/remote-host-text.js'), 'utf8')));
+const { tokenExpiredEndedMessage: tokenEndedCopy } =
+    await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
+
+const TOKEN_BODY = {
+    success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'token',
+    label: 'HB-FIN-02 sign-in token', remote: true, footholdId: 'drop_box', host: 'HB-FIN-02', expiresInS: 600
+};
+const TOKEN_LINE = 'HB-FIN-02 sign-in token expired. Your session on HB-FIN-02 ended.';
+
+function tokenSetup(body = TOKEN_BODY) {
+    const s = setup();
+    window.ApiClient.loginWithCredential = async (pcId, credentialId, route) => { calls.push(['loginWithCredential', pcId, credentialId, route]); return { ...body }; };
+    return s;
+}
+
+test('the token ended line in pc-sessions.js is the same text as remote-host-text.js', () => {
+    for (const [label, host] of [['HB-FIN-02 sign-in token', 'HB-FIN-02'], ['', ''], [null, undefined], ['A <b>token</b>', 'H & H']]) {
+        assert.equal(tokenEndedCopy(label, host), tokenEndedText(label, host));
+    }
+    assert.equal(tokenEndedCopy('HB-FIN-02 sign-in token', 'HB-FIN-02'), TOKEN_LINE);
+});
+
+test('a token sign-in is no lasting sign-in: not in signedIn, firstAtPc false, and it keeps no expiresAt in the public session', async () => {
+    const s = tokenSetup();
+    const out = await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    assert.equal(out.ok, true);
+    assert.equal(s.wasSignedIn('fin_pc'), false);
+    assert.deepEqual(s.signedInPcs(), []);
+    assert.equal(named('pc_signed_in')[0].firstAtPc, false);
+    assert.equal('expiresAt' in s.get('fin_pc'), false);
+    assert.equal(s.tokenSecondsLeft('fin_pc'), 600);
+    // A password session at a PC the token session replaced still records the sign-in
+    const pw = setup();
+    await pw.signIn('fin_pc', 'sokafor', 'right-sam');
+    assert.equal(pw.tokenSecondsLeft('fin_pc'), null);
+});
+
+test('load() keeps a token session with its time, off signedIn, and arms its timer', () => {
+    mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    try {
+        const s = setup();
+        const closed = [];
+        window.gameAlert = undefined;
+        s.load({ fin_pc: { ...TOKEN_BODY, restored: undefined } }, []);
+        s.registerDesktop('fin_pc', (m, r) => closed.push([m, r]));
+        assert.equal(s.has('fin_pc'), true);
+        assert.equal(s.wasSignedIn('fin_pc'), false);
+        assert.equal(s.tokenSecondsLeft('fin_pc'), 600);
+        mock.timers.tick(599 * 1000);
+        assert.deepEqual(closed, []);
+        assert.equal(s.tokenSecondsLeft('fin_pc'), 1);
+        mock.timers.tick(1000);
+        assert.deepEqual(closed, [[TOKEN_LINE, 'link_dropped']]);
+        assert.equal(s.has('fin_pc'), false);
+        assert.equal(named('pc_signed_out').at(-1).reason, 'link_dropped');
+        assert.equal(calls.some(c => c[0] === 'logout'), false);
+    } finally { mock.timers.reset(); }
+});
+
+test('a token session with no expiresInS has no timer and no figure', () => {
+    mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    try {
+        const s = setup();
+        s.load({ fin_pc: { ...TOKEN_BODY, expiresInS: undefined } }, []);
+        assert.equal(s.tokenSecondsLeft('fin_pc'), null);
+        mock.timers.tick(86400 * 1000 * 2);
+        assert.equal(s.has('fin_pc'), true);
+    } finally { mock.timers.reset(); }
+});
+
+test('noteTokenExpiry re-times the held token session and its timer; a non-token or absent PC is refused', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    try {
+        const s = tokenSetup();
+        await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+        const closed = [];
+        s.registerDesktop('fin_pc', (m, r) => closed.push([m, r]));
+        assert.equal(s.noteTokenExpiry('fin_pc', 30), true);
+        assert.equal(s.tokenSecondsLeft('fin_pc'), 30);
+        mock.timers.tick(29 * 1000);
+        assert.deepEqual(closed, []);
+        mock.timers.tick(1000);
+        assert.equal(closed.length, 1);
+        assert.equal(s.noteTokenExpiry('fin_pc', 30), false);
+        assert.equal(s.noteTokenExpiry('nope', 30), false);
+        const pw = setup();
+        await pw.signIn('hot_desk', 'sokafor', 'right-sam');
+        assert.equal(pw.noteTokenExpiry('hot_desk', 30), false);
+        // Out-of-range figures are ignored
+        const t = tokenSetup();
+        await t.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+        for (const bad of [-1, 86401, NaN, '5', null]) assert.equal(t.noteTokenExpiry('fin_pc', bad), false);
+        assert.equal(t.tokenSecondsLeft('fin_pc'), 600);
+    } finally { mock.timers.reset(); }
+});
+
+test('the timer does nothing for a session that was signed out or replaced meanwhile', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    try {
+        const s = tokenSetup();
+        await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+        await s.signOut('fin_pc');
+        mock.timers.tick(700 * 1000);
+        assert.equal(named('pc_signed_out').filter(d => d.reason === 'link_dropped').length, 0);
+        // replaced by a password sign-in: the old token timer must not drop the new session
+        const t = tokenSetup();
+        await t.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+        window.ApiClient.login = async () => ({ success: true, npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' });
+        await t.signIn('fin_pc', 'sokafor', 'right-sam');
+        mock.timers.tick(700 * 1000);
+        assert.equal(t.has('fin_pc'), true);
+    } finally { mock.timers.reset(); }
+});
+
+test('with no desktop open an expiring token toasts its line as plain text', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'Date'] });
+    const toastsSeen = [];
+    window.gameAlert = (m, ...rest) => toastsSeen.push([m, rest[3]]);
+    try {
+        const s = tokenSetup();
+        await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+        mock.timers.tick(600 * 1000);
+        assert.deepEqual(toastsSeen, [[TOKEN_LINE, { plainText: true }]]);
+        assert.equal(s.takeEndedMessage('fin_pc')?.message, TOKEN_LINE);
+    } finally { mock.timers.reset(); delete window.gameAlert; }
+});
+
+test('tokenExpired ids in one batch get the token line, the rest the batch reason', async () => {
+    const toastsSeen = [];
+    window.gameAlert = (m) => toastsSeen.push(m);
+    const s = tokenSetup();
+    await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    s.load({ ops_pc: { npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'credential', kind: 'saved_connection', label: 'x', remote: true, footholdId: 'drop_box', host: 'HB-OPS-01' } }, []);
+    // load() replaced the map: put the token session back
+    await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    const closed = [];
+    s.registerDesktop('fin_pc', (m) => closed.push(m));
+    s.registerDesktop('ops_pc', (m) => closed.push(m));
+    assert.deepEqual(s.linkDropped(['fin_pc', 'ops_pc'], 'route_ended', { tokenExpired: ['fin_pc'] }), ['fin_pc', 'ops_pc']);
+    assert.equal(closed[0], TOKEN_LINE);
+    assert.match(closed[1], /HB-OPS-01 ended/);
+    delete window.gameAlert;
+    // The same batch with no desktops open: the token line first, then the grouped batch toast
+    const t = tokenSetup();
+    window.gameAlert = (m) => toastsSeen.push(m);
+    toastsSeen.length = 0;
+    await t.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    t.linkDropped(['fin_pc'], 'route_ended', { tokenExpired: ['fin_pc'] });
+    assert.deepEqual(toastsSeen, [TOKEN_LINE]);
+    delete window.gameAlert;
+});
+
+test('a logout or sign-in answer naming tokenExpiredPcIds ends that token session with its line', async () => {
+    const s = tokenSetup();
+    await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    const closed = [];
+    s.registerDesktop('fin_pc', (m, r) => closed.push([m, r]));
+    s._dropEnded(['fin_pc', 'other'], 'kb_pc', ['fin_pc']);
+    assert.deepEqual(closed, [[TOKEN_LINE, 'link_dropped']]);
+    // signOut passes the answer's tokenExpiredPcIds along
+    const t = tokenSetup();
+    await t.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
+    t.sessions.set('kb_pc', { npcId: 'sam', username: 'sokafor', displayName: 'Sam', via: 'password', remote: false, footholdId: null, host: null });
+    window.ApiClient.logout = async () => ({ success: true, endedPcIds: ['fin_pc'], tokenExpiredPcIds: ['fin_pc'] });
+    const closed2 = [];
+    t.registerDesktop('fin_pc', (m, r) => closed2.push([m, r]));
+    await t.signOut('kb_pc');
+    assert.deepEqual(closed2, [[TOKEN_LINE, 'link_dropped']]);
+});
+
+test('credentialRefusalReason maps expired:true to expired, after the other flags', async () => {
+    const { credentialRefusalReason } = await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
+    assert.equal(credentialRefusalReason({ expired: true }), 'expired');
+    assert.equal(credentialRefusalReason({ expired: true, wrongPc: true }), 'wrong_pc');
+    assert.equal(credentialRefusalReason({}), 'no_longer_works');
 });
