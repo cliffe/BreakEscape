@@ -281,6 +281,8 @@ scada_password = "CascadeWindow19"
           { "text": "THOMAS PARK: Fought off, not stopped — finished the cut and walked out", "style": "warning", "condition": "globalVars.park_resolved === 'ko' && !globalVars.park_ko" },
           { "text": "THOMAS PARK: Seen, left to work — finished the cut and walked out", "style": "warning", "condition": "globalVars.vault_entered === true && !globalVars.park_ko && globalVars.park_resolved !== 'talked' && globalVars.park_resolved !== 'evaded' && globalVars.park_resolved !== 'ko'" },
           { "text": "THOMAS PARK: Never found — the backup was cut before anyone went down", "style": "warning", "condition": "!globalVars.vault_entered && !globalVars.park_ko" },
+          { "text": "OPERATIONS STAFF: HURT ON YOUR WAY THROUGH", "style": "warning", "condition": "globalVars.adaeze_ko || globalVars.gwen_ko" },
+          { "text": "OPERATIONS STAFF: STRUCK, LEFT THE BUILDING", "style": "warning", "condition": "globalVars.ops_staff_upset && !globalVars.adaeze_ko && !globalVars.gwen_ko" },
           { "text": "" },
           { "text": "── RECOVERED ──", "style": "section-header" },
           { "text": "TOMB GAMMA: Dossier recovered — the Architect's workshop, no coordinates on file", "style": "entry", "condition": "globalVars.found_tomb_gamma" },
@@ -784,6 +786,9 @@ scada_password = "CascadeWindow19"
 
 <%# LIGHTING (pass 5): a grid control facility at night, mid-evacuation. Night ambient as m02/m06. Plan: LIGHTING_PLAN.md. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
+
+<%# Office life (office_life/PLAN.md): the operations floor only. Two ambient operators, one declared cooler. %>
+  "officePresets": true,
 
   "rooms": {
 
@@ -1407,6 +1412,23 @@ scada_password = "CascadeWindow19"
               "setGlobal": { "badge_obtained": true },
               "_comment": "PASS 4 (design review fix 16): say the lesson once.",
               "sendTimedMessage": { "delay": 1500, "message": "PIN set to the audit date, and the date's on a sheet in the next room. Anyone who reads the paperwork can print themselves a badge." }
+            },
+<%# Office life: operations staff trouble (office_life/PLAN.md 2.7), appended after every existing mapping, outside every loop. %>
+            { "eventPattern": "npc_attacked:adaeze_okafor", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
+            { "eventPattern": "npc_attacked:gwen_pritchard", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
+            {
+              "eventPattern": "npc_ko:adaeze_okafor",
+              "condition": "!globalVars.hands_down_said",
+              "onceOnly": true,
+              "setGlobal": { "hands_down_said": true },
+              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+            },
+            {
+              "eventPattern": "npc_ko:gwen_pritchard",
+              "condition": "!globalVars.hands_down_said",
+              "onceOnly": true,
+              "setGlobal": { "hands_down_said": true },
+              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
             }
           ],
           "itemsHeld": [
@@ -1839,7 +1861,73 @@ scada_password = "CascadeWindow19"
         "west": "security_checkpoint",
         "east": "server_room"
       },
-      "npcs": [],
+      "npcs": [
+<%# Office life (office_life/PLAN.md section 2): two ambient operators, appended. Ink: ink/m07_npc_adaeze_okafor.ink, ink/m07_npc_gwen_pritchard.ink. They hide on the first server room entry; a KO body stays. %>
+        {
+          "id": "adaeze_okafor",
+          "displayName": "Adaeze Okafor",
+          "npcType": "person",
+          "gender": "female",
+          "observations": "A woman in her forties at an operator console, still closing out the load figures while the building empties around her.",
+          "spriteSheet": "adaeze_okafor",
+          "spriteTalk": "assets/characters/adaeze_okafor_talk.png",
+          "spriteVisemes": "assets/characters/adaeze_okafor_visemes.png",
+          "avatar": "assets/characters/adaeze_okafor_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_adaeze_okafor.json",
+          "currentKnot": "start",
+          "voice": { "name": "Gacrux", "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout, do not shift to any other accent.", "language": "en-GB" },
+          "position": { "x": 4, "y": 5 },
+          "seated": true,
+          "needsHome": { "room": "operations_floor", "x": 4, "y": 5 },
+          "needsRooms": ["operations_floor"],
+          "needsCompany": { "groups": ["ops_floor"] },
+          "chatterCooldownMin": 2,
+          "globalVarOnKO": "adaeze_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "needs": { "thirst": { "initial": 45, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
+          "chatter": { "cooler": ["Cold water again. Lovely.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Nearly done. Nearly."] },
+<%# Exchanges ex_last_two and ex_going_now are NOT wired yet: four of their lines are over the 40 character bubble limit (validator error). See office_life/BUILD_LOG.md for the ready block. %>
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:adaeze_okafor", "condition": "!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "conversation_closed:gwen_pritchard", "condition": "!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true", "delayMs": 4000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.server_hall_reached === true && globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'operations_floor' && globalVars.server_hall_reached === true && globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false }
+          ]
+        },
+        {
+          "id": "gwen_pritchard",
+          "displayName": "Gwen Pritchard",
+          "npcType": "person",
+          "gender": "female",
+          "observations": "A woman in her late thirties at an operator console, tidying up the floor's systems before she leaves.",
+          "spriteSheet": "gwen_pritchard",
+          "spriteTalk": "assets/characters/gwen_pritchard_talk.png",
+          "spriteVisemes": "assets/characters/gwen_pritchard_visemes.png",
+          "avatar": "assets/characters/gwen_pritchard_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_gwen_pritchard.json",
+          "currentKnot": "start",
+          "voice": { "name": "Sulafat", "style": "The facility's operations floor systems support lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout, do not shift to any other accent.", "language": "en-GB" },
+          "position": { "x": 2, "y": 5 },
+          "seated": true,
+          "needsHome": { "room": "operations_floor", "x": 2, "y": 5 },
+          "needsRooms": ["operations_floor"],
+          "needsCompany": { "groups": ["ops_floor"] },
+          "chatterCooldownMin": 2,
+          "globalVarOnKO": "gwen_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "needs": { "thirst": { "initial": 60, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
+          "chatter": { "cooler": ["Cooler's the only thing working, mind.", "Tidy up and out, that's the plan.", "I'd give a lot for a proper brew.", "Last glass, then I'm off."] },
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } },
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.server_hall_reached === true && globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'operations_floor' && globalVars.server_hall_reached === true && globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false }
+          ]
+        }
+      ],
       "objects": [
         {
           "_comment": "Primary source for the generator room key lock. Lockpick in the start inventory is the redundant route.",
@@ -1910,6 +1998,7 @@ scada_password = "CascadeWindow19"
         {
           "type": "pc",
           "id": "ops_floor_workstation",
+          "affordance": false,
           "name": "Abandoned Operator Workstation",
           "host": "OPS-WS-03",
           "position": "as-type:pnw_console_pos",
@@ -1919,6 +2008,16 @@ scada_password = "CascadeWindow19"
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "text": "READ-ONLY GRID VIEW -- OPERATOR POSITION 3\n\nSUBSTATIONS ON LINE\n147 / 147\n\nREBALANCING\nDISABLED BY OPERATOR\n\nBREAKER CONTROL\nREMOTE SESSION -- this position cannot take control\n\nA sticky note on the bezel: \"If it says REMOTE, ring Halvorsen. Do NOT try to take control from here.\""
+        },
+<%# Office life: the cooler in the room's south-west corner. Base type name, no position (claims the Tiled sprite). %>
+        {
+          "type": "water_cooler",
+          "id": "ops_cooler",
+          "name": "Water Cooler",
+          "takeable": false,
+          "offWhen": "ops_staff_upset",
+          "observations": "The floor's water cooler, a stack of paper cups beside it. It is the one machine in this corner that still works.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "useSeconds": 22, "overhearRadius": 360 }
         }
       ]
     },
@@ -2607,6 +2706,13 @@ scada_password = "CascadeWindow19"
     "nfs_guide_offered": false,
     "nfs_guide_hint_given": false,
     "privesc_guide_offered": false,
-    "privesc_guide_hint_given": false
+    "privesc_guide_hint_given": false,
+
+<%# --- Office life: operations staff (office_life/PLAN.md section 8) ------- %>
+    "ops_staff_upset": false,
+    "adaeze_ko": false,
+    "gwen_ko": false,
+    "heard_ex_last_two": false,
+    "heard_ex_going_now": false
   }
 }
