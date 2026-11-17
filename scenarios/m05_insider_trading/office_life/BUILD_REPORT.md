@@ -26,7 +26,7 @@ Branch plan/ol-m05. Data only: every change is in `scenario.json.erb` and the de
 | Route clearance from Lisa | at least 48 px | Niamh 48 to 52 px, Thandiwe 79 to 96 px (all samples, last tile included) |
 | Lisa trip: leave, use, return | about 1 s walk | left post 4.8 to 7.9 s after the player left, use 0.8 to 1.3 s later, back 12.7 to 13.9 s after use start |
 | Lisa walk-out distance | visible | 82 to 86 px from post |
-| Lisa return accuracy | within 8 px | 22 to 32 px short, 5 of 5 (see Known items) |
+| Lisa return accuracy | within one tile (was 8 px; relaxed by R1 m1) | 22 to 32 px short, 5 of 5, accepted (see Known items) |
 | Break length, pair | about 30 s | 30 s away, 5 breaks |
 | Sync budget | small | 4 flushes in 5 min, 6,892 bytes: 6,170 first (full seed), then 448 and two small deltas |
 | Night reload | posts reset | see table |
@@ -113,3 +113,18 @@ Setup: `new-game.rb --start-room break_room --carry-npc closing_debrief_trigger`
 - When optional objectives are open, the engine shows the "Before the mission ends" overlay (Keep going / End the mission now) before the debrief; it appeared in the Lisa run and had to be answered with "End the mission now". It is the engine's ending check, not an office-life change.
 - Not exercised: the debrief's `player_approach == "diplomatic"` branch ("You said you'd read the room..."), because the probes did not play the briefing choice. The trust -10 does show live, and the static `friendly_kos()` check passed earlier.
 - The `bernadette_ko` credits term from PLAN 2.11 is not in the scenario (slice 6 not built).
+
+## R1 fixes (build review R1, `BUILD_REVIEW_R1.md`)
+
+| Item | Fix | Proof |
+|---|---|---|
+| M1 | Fourth mapping on `thandiwe_moyo`: `door_opened`, condition `data.connectedRoom === 'break_room' && globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true`, `onceOnly`, `setVisible: false`. Payload fields checked in `systems/doors.js:951` (`roomId`, `connectedRoom`, `direction`). No `initiallyHidden`. PLAN lazy-load gap paragraph and section 7 updated (Thandiwe now has three `onceOnly` keys, total 13) | Live, skip route (server room first, then open the break room door from the corridor and stay there): games 7229 to 7233, every animation frame sampled from door open for about 3.5 s (209 to 223 frames each with her sprite present), visible frames 0 in all five tries. Day route (no server room), game 7234: visible 211 of 211 frames. Screenshots `screenshots/e4-r1-skip-route-door-open.png` (Lisa and Niamh in view, Thandiwe's chair empty) and `screenshots/e4-r1-day-route-door-open.png`. No page errors |
+| M2 | None, by decision. Thandiwe and Niamh have no `storyPath`, so clicking either shows "Failed to load conversation". **This branch must not go to a train before slice 5 lands**; slice 5's checklist must interact with both, seated and at each machine | n/a |
+| m1 | Pass mark relaxed: Lisa stopping 22 to 32 px short of her post is accepted (table row above, PLAN E-L1). `_goHome` passes no `arriveWithin` (`npc-needs.js:4144`), so the walk-end guard (`npc-behavior.js:1408` to `:1420`) ends the walk within one tile. The engine change (`arriveWithin: HOME_EPS` from `_goHome`, with unit tests and m02/m03 re-measures) is logged separately, not done here | Static |
+| m2 | PLAN 2.2 and the people table corrected: a struck newcomer stays hostile and standing about 34 px off her chair; she does not walk back to her post. PLAN section 10.4 (attack and KO check) text matches | Static |
+| m3 | `fireOnlyWhenLoaded: true` on the five mappings of validator warnings 11 to 15 (Lisa's two trip triggers, Thandiwe's corridor hide, Niamh's corridor break, Niamh's `server_badge_obtained` seed). The seed's miss when the badge is taken before the first break-room visit is accepted and noted in PLAN 2.7 | Validator: 0 errors, 29 warnings (was 34); the five are gone and no other warning changed |
+| m4 | The ERB loop over the four trouble events is written out as four JSON mappings in the same order, so no saved once index moves | Validator and lock/key diff clean |
+| m5 | `positions_base.txt` saved: the object position recipe (`measurement-recipes.md` section 9, `LockKeyDiff.render`) run on `scenario.json.erb` as it was on the main side of the merge (`9b7181245^2`, no office life), 40 rows | Diff against the current render: three added rows only (`break_espresso`, `qdc_fridge_milk`, `corridor_cooler`), matching the review |
+| n1 | Stale "one kettle trip" comment now reads "one fridge trip" | Static |
+
+Server for the proof: keyless (boot log warning present), :3092, puma PID 3378834, stopped at the end. Headless, `setFPS(20)`, fixed steps on, no `/tts` request. Games used, all printed by `new-game.rb` in this run: 7229 to 7234. No game row edited.
