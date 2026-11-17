@@ -201,14 +201,27 @@
     font-weight: 400 !important;
 }
 
-/* Emphasis that used to be bold (<strong>, <b>: "Instructions:", the changed row and field in
-   the drug library, the patient outcome) is a 2px pixel underline instead. */
+/* Emphasis that used to be bold (<strong>, <b>: the changed row and field in the
+   drug library, the patient outcome) is a 2px pixel underline instead. */
 .minigame-container :is(strong, b):not([data-diegetic] *) {
     text-decoration: underline;
     text-decoration-thickness: 2px;
     text-underline-offset: 3px;
     text-decoration-skip-ink: none;
 }
+
+/* Field labels, key names and panel headings are not emphasis: the pixel face has one weight
+   and these take no underline (an underline means emphasis above). They stand apart from
+   their values by colour: each scene sets --mg-label-colour and --mg-heading-colour on its
+   own root (there is no global default, as the device panels are not on --ui-surface), and
+   with neither set they inherit. .mg-field-label: "UID:", "Surface:". .mg-section-label: a
+   heading inside a panel. */
+.minigame-container :is(.mg-field-label, .mg-section-label) {
+    text-decoration: none;
+    font-weight: 400;
+}
+.minigame-container .mg-field-label { color: var(--mg-label-colour, inherit); }
+.minigame-container .mg-section-label { color: var(--mg-heading-colour, inherit); }
 
 /* Local copy of the shared `.pixel-scroll` scrollbar (css/utilities.css on build/ux-net,
    slice 1), as in infusion-pump-minigame.css's .ip-pixel-scroll, for the slice 7 panes that

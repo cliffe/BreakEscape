@@ -365,15 +365,21 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
 
 /* Display modal (gameDisplay) — extends confirm dialog styles */
 .game-display-dialog {
-    max-width: 600px;
+    max-width: 700px; /* keep in step with --be-dialog-max in hud.css: 700 less padding and frame leaves a 586-600px text column */
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    /* border-box so max-height covers the padding and frame (the long form must clear the HUD).
+       Bottom inset 12px plus the body's own 16px pad: 28px under the text, matching the top,
+       so scrolled text never touches the frame */
+    box-sizing: border-box;
+    padding-bottom: 12px;
 }
 
 .game-display-title {
     font-family: 'Press Start 2P', monospace;
     font-size: 13px;
+    line-height: 20px;
     color: #3498db;
     margin-bottom: 16px;
     padding-bottom: 10px;
@@ -390,6 +396,9 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     /* No button row below: the dialog's own padding closes the frame */
     margin-bottom: 0;
     padding-right: 4px;
+    padding-bottom: 16px;
+    min-height: 0;
+    /* Scrolls inside the frame; gameDisplay adds the shared .pixel-scroll class for the bar */
 }
 
 /* With no title the body starts at the top edge, under the close X */

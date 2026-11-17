@@ -412,12 +412,6 @@
     border-left: 4px solid #27ae60;
 }
 
-.sample-item strong {
-    color: #ecf0f1;
-    display: block;
-    margin-bottom: 5px;
-}
-
 .sample-details {
     display: flex;
     justify-content: space-between;

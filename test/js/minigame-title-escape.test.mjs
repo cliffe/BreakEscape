@@ -331,9 +331,9 @@ test('a voice message transcript shows hostile ink text as text', async () => {
     try { await ui.addMessage('npc', `voice: ${HOSTILE}`); } catch { /* past the transcript */ }
     const t = document.querySelector('.transcript');
     assert.ok(t, 'the transcript renders');
-    assert.equal(t.querySelector('strong').textContent, 'Transcript:', 'the label is kept');
+    assert.equal(t.querySelector('.mg-field-label').textContent, 'Transcript:', 'the label is kept');
     const copy = t.cloneNode(true);
-    copy.querySelectorAll('strong, br').forEach(n => n.remove());
+    copy.querySelectorAll('.mg-field-label, br').forEach(n => n.remove());
     assertText(copy, 'voice transcript');
 });
 
@@ -344,7 +344,7 @@ test('the password hint and post-it show hostile scenario text as text', () => {
     });
     initQuietly(mg);
     const hint = document.querySelector('#password-hint').cloneNode(true);
-    hint.querySelector('strong').remove();
+    hint.querySelector('.mg-field-label').remove();
     assertText(hint, 'password hint');
     assertText(document.querySelector('.postit-note'), 'password post-it', { wordSpans: true });
 });
