@@ -1,0 +1,13 @@
+{
+  "key": "175876d5324edfa1fb9095107ebc6ebc",
+  "npc": "thandiwe",
+  "text": "Someone's brought a cake in!",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:50:19Z"
+}

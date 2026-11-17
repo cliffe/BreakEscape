@@ -1,0 +1,13 @@
+{
+  "key": "6b6a2a96625ae1d880d20f034fea5ba6",
+  "npc": "lorna",
+  "text": "Still here? I'll be on my rounds in a minute.",
+  "voice": "Erinome",
+  "style": "Merrin & Sallow's reception and facilities lead, in her 40s, warm and reassuring. Speak with a consistent north-west England accent from Lancashire throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:47:50Z"
+}
