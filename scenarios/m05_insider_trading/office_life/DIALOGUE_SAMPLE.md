@@ -24,7 +24,9 @@ At the cooler:
 > Thandiwe: Don't let them keep you past seven.
 > Niamh: Tell that to the comms calendar.
 
-When you come back from the server room, Thandiwe's chair is empty and Niamh is still at her table.
+When you come back from the server room, Thandiwe's chair is empty and Niamh is still at her table. She stays there all night, in the lit break room; she does not leave when the lights go down in the corridor. If a kettle trip for Lisa is approved (PLAN.md section 2A), she may step to the kettle once while you are two rooms away, and is back at her seat and talkable when you return.
+
+The whispering exchange (heard before the server badge) is not in this sample. Its lines are in `SPOKEN_LINES.md` and carry no clue; this sample's yes does not need to be asked again for the reworded lines.
 
 ## If the cleaner is approved
 

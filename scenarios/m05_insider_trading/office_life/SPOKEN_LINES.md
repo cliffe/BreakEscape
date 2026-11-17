@@ -28,8 +28,8 @@ Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchang
 `ex_whispering`, gate `qdc_staff_upset: false`, `server_room_entered: false`:
 1. Niamh: Is the security person still in?
 2. Thandiwe: Went past twice. Very serious shoes.
-3. Niamh: Lisa reckons it's about the crypto lot.
-4. Thandiwe: Lisa reckons a lot of things.
+3. Niamh: Lisa says they don't send just anyone.
+4. Thandiwe: Well, I'm keeping my head down.
 
 `ex_collection`, same gate:
 1. Thandiwe: Have you put anything in Lisa's tin?
@@ -42,7 +42,7 @@ Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchang
 3. Thandiwe: Don't let them keep you past seven.
 4. Niamh: Tell that to the comms calendar.
 
-Each first line stands alone. The whispering and collection lines repeat only what Lisa and the noticeboard flyer already tell the player; neither names anyone.
+Each first line stands alone. The whispering and collection lines repeat only what Lisa and the noticeboard flyer already tell the player; neither names anyone. `ex_whispering` carries no clue: line 3 does not tie the security person to any team or to the tin, and an exchange can play before the player has talked to Lisa. Line 3 is 38 characters and line 4 is 31, inside the 40 limit. Clip counts are unchanged.
 
 ## Conversations (talkable extras, no choices that matter)
 

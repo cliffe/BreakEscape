@@ -51,3 +51,23 @@ Not ready. Fix M1 to M4 before round 2. None blocks the plan's approach.
 - D78 (2026-11-17, user): story-safe movement for existing NPCs is approved; the skill gains a cast-audit step (branch plan/ol-skill-movement). The reviewer's D78 note (Lisa could take one kettle trip, Owen stays) goes to the fixer as a proposal to apply under the new rules.
 - M1 to M4 and m1 to m9: to fix. Round 2 on opus55 (majors).
 - User questions D82a to c (extras, cleaner, levers) are on the decisions page, unanswered.
+
+## Outcomes (fixer, round 1)
+
+All findings are addressed in PLAN.md, ANALYSIS.md, SPOKEN_LINES.md and DIALOGUE_SAMPLE.md. Open questions D82a to c (A, B, C) are untouched, and question D is new.
+
+- **M1 (night hide in front of the player): fixed.** Niamh is no longer hidden at night. She stays in the lit break room, with reasons and cites in PLAN.md 2.10; the corridor is kept empty by `qdc_cooler_off`. Check E3 is rewritten (she never leaves the break room in ten needs-minutes) and E4 is added.
+- **M2 (credits contradict an extra's KO): fixed.** PLAN.md 2.11 adds `thandiwe_ko` and `niamh_ko` (and `bernadette_ko` in slice 6) to both existing conditions at `:285` and `:286`, lists that as a changed existing condition in section 9, and drops "BY DAY" from the new line.
+- **M3 (cooler in the door lane, no fallback): fixed.** PLAN.md section 3 names the cooler cells (`useFrom { dx: 1, dy: 1 }`, cells (3,2) and (4,2), `queue: false`), requires measuring both south-door parities, and adds fallbacks F1 (espresso), F2 (cooler) and F3 (both fail: ask the user), with a decision order.
+- **M4 (Lisa's tile on the extras' walk): fixed.** Both extras now sit at the east end of table 2 (PLAN.md 2.3, reasons given), and L1 is a path check with a 48 px pass mark and a remedy.
+- **m1 (evening hide shape, lazy-load gap): fixed** in PLAN.md 2.10 (plain hide plus two `onceOnly` re-hides, the gap, check E4 and the `initiallyHidden` fallback).
+- **m2 (sync section): fixed.** `onceOnly` re-summed to 8 (11 with the cleaner); the trouble and cooler-off mappings are counted; "T133" claims removed from sections 0 and 7.
+- **m3 (`offWhen`): fixed.** Both cooler-off mappings are listed on `agent_0x99_handler`, appended last, with the three globals declared (PLAN.md 2.11).
+- **m4 (trouble owners and coverage): fixed.** Owner stated, `npc_attacked:lisa_park` added, attack-Lisa-without-KO added to 10.4.
+- **m5 (espresso declaration): fixed.** `"type": "qdc_espresso"` written literally and `queue: false` (section 3).
+- **m6 (map facts): fixed.** Espresso x 158 to 202, kitchenette x 32 to 86, pamphlet at the espresso's east foot; the table-1 chair fact is moot because the extras moved to table 2. Also corrected in ANALYSIS.md.
+- **m7 (exchange clue): fixed.** `ex_whispering` lines 3 and 4 reworded (38 and 31 characters), no clue; recorded in SPOKEN_LINES.md and PLAN.md section 6.
+- **m8 (`ex_heading_home` rarely heard): fixed.** A `server_badge_obtained` mapping on Extra B pulls the pair to the cooler (PLAN.md 2.7), with a check in L5.
+- **m9 (stale cites, cast): fixed.** `_findExchange` at `:2975` as a preference, voice style rewritten for Quantum Dynamics (PLAN.md 2.12), Algenib added to the voice list in ANALYSIS.md.
+- **D78 note (Lisa's kettle trip): resolved as a conditional.** PLAN.md 2A is written in full, built only if the user answers question D with b (recommended); the default leaves Lisa fixed. The cast classes are written into ANALYSIS.md section 1 and the PLAN.md people table. Owen stays put.
+- **Q-B wording: fixed.** "Overstates" claim removed; option b states the D53 written reason.
