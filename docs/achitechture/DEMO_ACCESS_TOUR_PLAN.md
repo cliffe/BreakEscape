@@ -1,6 +1,6 @@
 # demo_access_tour: build plan
 
-Status: v3. Sections 0 and 1 are checked against the tree at 9f415ef21 (main 7ca03520e plus plan commits). Sections 2 to 5 give the design, server enforcement and sync budget, tests and proof, and the build slices.
+Status: v4. Sections 0 and 1 are checked against the tree at 9f415ef21 (main 7ca03520e plus plan commits). Sections 2 to 5 give the design, server enforcement and sync budget, tests and proof, and the build slices.
 
 User decisions: D100 (one two-act scenario, 35 min with a 15-min short route; Merrin & Sallow with Ama Owusu; office life light, 2 needs NPCs and a cake lever, overlay off, no task depends on an absence; no new engine work) and D101 (audience colleagues who know Break Escape; host lines text-only first, then dialogue review, then a voicing ask; reuse existing sprites; collection test_scenarios). Q1: Lorna Easton's card is the one the player copies. Q2: a presenter lever that sets a need level (the rota board) backs up the cake.
 
@@ -76,7 +76,7 @@ Verdict: the build can start; it does not wait on any format branch.
 - The unplug's `endedPcIds` lists expired tokens, sessions whose `foothold` is the unplugged jack, and `from` sessions whose source session went in the prune (network_access.rb:290-321, 410-415, 1378-1395, 1446-1475). A `from` session whose source is a keyboard session the player still holds survives.
 - So two things decide what the unplug ends:
   - Julian's session: its route. Connected with no desk session held, it rides the box and ends. Connected `from` a desk the player still holds, it survives.
-  - The door controller session: the foothold the network view was opened from. Opened at the box, it ends. Opened from the implant's or Staff Wi-Fi's link item, it survives.
+  - The door controller session: the foothold the network view was opened from. Opened at the box, it ends. Opened from the implant's or Staff Wi-Fi's link item, it survives, but only while another office_lan session is held. The door controller sits on server_lan, which is in reach only from a held office_lan session, so when the unplug ends Julian's box session and nothing else on office_lan is held, the next prune ends the door controller session too (network_access.rb:1255-1281, 1398-1412, 1453-1467).
 - The plant consumes the rogue device into the foothold record (network_access.rb:253-268); only the unplug gives it back (network_access.rb:303-308). A jack click with no held rogue device is refused on the client with `reason: 'no_device'` before any request (network-links.js:398-405).
 
 ### Devices
@@ -202,6 +202,7 @@ Needs. The cake numbers are the minimal variant in CAKE_ITEM.md at d7bc4cf95 (br
 Where the tour departs from the spec's minimal variant, and why:
 - Thandiwe's caffeine and work needs: stop 12 needs her coffee run and stop 15 needs her to use her laptop. The cost is the one the spec names: she may be away when the cake goes down, and then learns of it on her return (npc-needs.js:958-970), so the cake is a best-effort cue for her.
 - Yasmin's caffeine need: the rota board is the only lever that empties her desk on cue, and it works by setting a need the coffee station satisfies. Without it, stop 13 would rest on the cake alone, which is gone after two servings.
+- P6, the guard text, follows the spec's optional guard (a mapping on `magnet_placed:cake` with a cooldown and no onceOnly), but as a phone text from `ama_phone` and not a bark, since the phone has no position to bark from. A second wrong drop gets the text again after the cooldown.
 - Everything else (item fields, magnet numbers, inventory start, pools, `cake_servings`) is the spec as written.
 
 ### 2.5 Items and where they are
@@ -232,8 +233,10 @@ Meeting room, kit table (square to the walls):
 - `meeting_jack`: live wall port on office_lan
 
 Comms cupboard:
-- `managed_port`: `portSecurity`, `portSecurityMessage` "Port security: this device is not the one registered to this port."
-- `patch_panel` with `guest_vlan_port` (`panelOf`): plugging the box here lands on guest.
+- `managed_port`: `networkJack: true`, `network: "office_lan"`, `portSecurity: true`, `portSecurityMessage` "Port security: this device is not the one registered to this port.", `jackConfirm`.
+- `patch_panel`: `panelPorts` list (as the fixture's `p3_patch_panel`) whose spare port names `guest_vlan_port` under `jack`.
+- `guest_vlan_port`: `networkJack: true`, `network: "guest"`, `panelOf: "patch_panel"`, `linkName`, `jackConfirm`. Plugging the box here lands on guest.
+- Without `networkJack` and a network the scenario defines, the server cannot find the jack (`find_jack`, network_access.rb:99-107; network_model.rb:38-52) and the plant answers 404. Fixture: test_access_devices:342-390.
 
 Server room: `door_controller`: `headless: true`, `lockType: "login"`, on server_lan, access `roles: ["facilities"]`; its contents hold a door-codes file with the server room code (`<%= @random_pin %>`).
 
@@ -279,7 +282,7 @@ The guaranteed lever for any stop that must empty a desk on cue is the presenter
 | 7 | Pivot | With Julian's session held, open the network view at the box (meeting_jack or its tray link). server_lan is now in reach. Sign in to door_controller with Lorna's password; read the codes. The session carries the box's foothold. | |
 | 8 | Server room | Enter the code at the keypad. | |
 | 9 | Lorna's badge | Talk to Lorna; copy her card with the cloner from the conversation. The clone choice is sticky (`+`), so it is still there if the player first talks to her without the cloner. | S |
-| 10 | Comms cupboard | The copy opens it (role facilities). Look round; the ports come later, once the box is free. | S |
+| 10 | Comms cupboard | The copy opens it (role facilities). Look round. The ports in here come later (full route, stop 18), once the box is free. | S |
 | 11 | Thandiwe at her desk | Click her laptop while she sits: `pc_in_use`. | S |
 | 12 | The open session | Read the rota board (the sure way), drop the cake in the open plan (best-effort), or wait. She leaves; her laptop is still signed in. She returns, sits, and the player's session ends. Optional task. | S |
 | 13 | Yasmin | While both are away (rota board, or the cake if it worked), click Yasmin's PC: she padlocked it, but her note gets the player back in. | |
@@ -309,7 +312,7 @@ Presenter notes:
 - Stop 5: choose Copy, not Connect. Connect on the desktop is the `from` route: Julian's session then rides Delphine's desk, and signing out there takes it down. If that happens, it is a talking point, not a dead end: the hub says so (W6b) and Ama's debrief names it (D5c). Connect again from the keyring and it goes through the box.
 - Stop 5's sign-out is what makes stop 17 end Julian's session. If the player still holds a keyboard session on any office_lan PC when they Connect from the keyring, the keyring offers the `from` route first (keyring.js:75-88) and Julian's session rides that desk. The unplug then leaves it up, because a `from` session ends only when its source session goes (network_access.rb:1378-1395, 1460-1462). Good talking point: the box is not the only way in, and pulling it does not undo what was done from a desk. The debrief says which one happened (2.12).
 - After pressing Lock on Julian's session, unlock it at its own sign-in screen, which keeps its route. Connecting again from the keyring may take a different route (a desk, the implant or Staff Wi-Fi), and that session might survive the unplug.
-- Stop 7: the foothold the network view was opened from decides whether the door controller session survives the unplug. Open it at the box. Opened from the implant's or Staff Wi-Fi's link item, the session survives. Any held office_lan session puts server_lan in reach; Julian's is the one the story uses.
+- Stop 7: the foothold the network view was opened from decides whether the door controller session survives the unplug. Open it at the box. Opened from the implant's or Staff Wi-Fi's link item, the session survives while another office_lan session is held (the reception_pc keyboard session the implant needs counts); with none held, the prune ends it too. Any held office_lan session puts server_lan in reach; Julian's is the one the story uses.
 - Stop 13: the server serves Yasmin's note whether or not she is at her desk. Her absence is the story, not a lock.
 
 ### 2.8 Objectives
@@ -367,7 +370,7 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W12 F | not `done_t_yasmin_pc` | "Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving." |
 | W13 F | not `done_t_implant` | "Back to the front desk. Delphine's PC has a spare USB port or two." |
 | W14 F | not `staff_twin_up` | "The plants in reception have room for one more gadget." |
-| W15 F | not `done_t_capture_key` | "Give it a moment. Thandiwe's about to check her email." |
+| W15 F | not `done_t_capture_key` | "Give it a moment. Thandiwe's about to check her email. If she's busy, pull the box when you're ready: the Wi-Fi stops still work after." |
 | W16 F | not `done_t_staff_wifi` | "You've got the Staff key. Join the Staff Wi-Fi and compare it with the guest one." |
 | W17 | not `done_t_unplug` | "When you've had enough, pull the box out and see what drops." |
 | W18 F | not `done_t_guest_port` | "Take the box to the comms cupboard. Try the managed port, then the patch panel." |
@@ -386,30 +389,31 @@ Booleans, all false at start:
 | `seen_julian_rdp` | `onRead` on julian.rdp |
 | `has_julian_rdp` | `onPickup` on julian.rdp |
 | `front_desk_signed_out` | mapping on `pc_signed_out:reception_pc`, `condition: data.reason === "sign_out"`. No onceOnly: a later sign-out (stop 14) writes the same value, and sync sends only changes. |
-| `julian_via_desk` | mapping on `pc_signed_in:julian_pc`, `condition: data.fromPcId` |
-| `julian_lost_with_desk` | mapping on `pc_signed_out:reception_pc`, `condition: data.reason === "sign_out" && globalVars.julian_via_desk === true && globalVars.julian_back !== true` |
-| `julian_back` | mapping on `pc_signed_in:julian_pc`, `condition: globalVars.julian_lost_with_desk === true` |
+| `julian_lost_with_desk` | mapping on `pc_signed_out:julian_pc`, `condition: data.reason === 'link_dropped' && data.fromPcId === 'reception_pc'`, `setGlobal: { julian_lost_with_desk: true, julian_back: false }`. The engine emits exactly this when a session opened from the front desk is dropped because the desk was signed out (pc-sessions.js:887-888, with `fromPcId` from `_remoteOf`, 958-964; the server's answer carries `fromPcId`, game.rb:4344-4367). A box-route session has no `fromPcId`, so an unplug never matches; signing out of julian_pc itself has reason `sign_out`, so that never matches either. |
+| `julian_back` | mapping on `pc_signed_in:julian_pc`, `condition: globalVars.julian_lost_with_desk === true`. A second loss resets it to false (above), so W6b and D5c follow the latest loss. |
 | `saw_in_use` | mapping on `pc_in_use:thandiwe_laptop` |
 | `staff_twin_up` | the rogue AP console |
 | `julian_ended_by_unplug` | mapping on `network_device_unplugged:meeting_jack`, `condition: data.endedPcIds.includes('julian_pc')` |
 | `tour_debriefed` | Ama's last debrief line |
 
-The mappings that set globals have no onceOnly: each writes `true` and only a change is synced.
+The mappings that set globals have no onceOnly: each writes a boolean and only a change is synced.
 
-Timed texts, on `ama_phone`, each an eventMapping with `sendTimedMessage: { delay, message, targetKnot }` and `onceOnly`. Delays are 4000 to 6000 ms, so two that fire together never land at once (README:2993).
+Who holds the mappings. NPCs register, with their eventMappings, only when their room loads (npc-lazy-loader.js:37-60), and the kitchen is on neither route. So `ama_phone`, which registers with reception at load, holds every mapping that sets a global or completes a task (the `julian_*` globals, `front_desk_signed_out`, `saw_in_use`, `julian_ended_by_unplug`, the card, implant and unplug tasks, the capture) and every timed text. Only the rota board mappings (on thandiwe and yasmin, since `needs` acts on the NPC that holds the mapping) and the stop 15 work nudge (thandiwe) sit elsewhere, and all three fire only after the open plan has loaded. Nothing sits on julian or lorna.
+
+Timed texts, on `ama_phone`, each an eventMapping with `sendTimedMessage: { delay, message, targetKnot, skipIfGlobal? }` and `onceOnly` (P6 has a cooldown instead, below). A `skipIfGlobal` goes inside `sendTimedMessage`: the engine copies it into the scheduled text and checks it at delivery (npc-manager.js:1712-1722, 2540-2546). On the mapping itself it is read only by the video-call path (npc-manager.js:1236, 1905-1926), so it would do nothing here. Delays are 4000 to 6000 ms, so two that fire together never land at once (README:2993).
 
 | Id | Event | Delay | Text (target knot) |
 |---|---|---|---|
-| P0 | `global_variable_changed:has_julian_rdp`, `value === true`; `skipIfGlobal: "done_t_julian_pc"` | 4000 | "Before you use that: sign out of Delphine's PC. Leave no trace." (hint_sign_out) |
-| P1 | `pc_in_use:thandiwe_laptop` | 4000 | "She's signed in and sitting right there. Give it a minute, or give her a reason to get up." (hint_open_session) |
+| P0 | `global_variable_changed:has_julian_rdp`, `value === true` | 4000 | `sendTimedMessage: { "delay": 4000, "message": "Before you use that: sign out of Delphine's PC. Leave no trace.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" }` |
+| P1 | `pc_in_use:thandiwe_laptop` | 4000 | "She's signed in and sitting right there. Give it a minute, or read the coffee rota on the wall and watch her go." (hint_open_session) |
 | P2 | `network_foothold_gained:meeting_jack` | 5000 | "Box is talking. Have a look at the network view before you sign in anywhere." (hint_network_view) |
 | P3 | `usb_refused:usb_hub` | 4000 | "Storage is blocked on that hub. A keyboard isn't storage." (hint_injector) |
 | P4 | `network_device_refused:managed_port`, `condition: data.reason === "port_security"` | 4000 | "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." (hint_patch_panel) |
 | P5a | `network_device_unplugged:meeting_jack`, `condition: globalVars.tour_full !== true` | 6000 | "Box is out. Have a last look if you like, then come back to reception." (debrief_ready) |
 | P5b | `network_device_unplugged:meeting_jack`, `condition: globalVars.tour_full === true` | 6000 | "Box is out. Take it to the comms cupboard and see what the ports in there make of it. Then come back to reception." (hint_ports) |
-| P6 | `magnet_placed:cake`, `condition: data.roomId !== 'open_plan'` | 4000 | "Take the cake through to the open plan, where the desks are." (hint_cake) |
+| P6 | `magnet_placed:cake`, `condition: data.roomId !== 'open_plan'`, `cooldown: 30000`, no onceOnly | 4000 | "Take the cake through to the open plan, where the desks are." (hint_cake) |
 
-P0's `skipIfGlobal` keeps it from telling a player who has already connected (from the desktop's Connect) to sign out.
+P0's `skipIfGlobal` keeps it from telling a player who has already connected (from the desktop's Connect) to sign out. It is checked when the text is due, not when the event fires (npc-manager.js:1721, 2540-2546), and the onceOnly key is spent either way. A desktop Connect completes `unlock_object` on julian_pc at once, and `onComplete.setGlobal` writes `done_t_julian_pc` in the same call (objectives-manager.js:362-366, 1138-1144), well inside the 4 s delay. The text never reaches the phone thread in that case.
 
 ### 2.11 Signs and hints
 
@@ -427,9 +431,10 @@ P0's `skipIfGlobal` keeps it from telling a player who has already connected (fr
 
 1. P5a or P5b asks the player to come back to reception when they are done. Neither starts anything.
 2. aim_wrap unlocks when aim_office and aim_network are complete. Until `wrap_open()` is true, Ama's mid-tour knot answers.
-3. Once it is true, Ama opens with D1, a plain line, then the choice D2. "I'm done, let's talk." carries `#ending_check` inside its brackets, so the engine's "Before the mission ends" panel lists the open optional tasks before anything closes (ending-check.js:1-30). On the short route that list points at the full route.
-4. D3 and D4 follow. D5 branches three ways, first match wins: D5a on `julian_ended_by_unplug`; D5c on `julian_lost_with_desk`; D5b otherwise. Ama's last line carries `#complete_task:t_debrief` and sets `tour_debriefed`.
-5. The closing card is a `music` event entry, as in the lab (lab_physical_pentest:773, 780-800): `trigger: "conversation_closed:ama"`, `condition: globalVars.tour_debriefed === true`, `closingCard`, `credits`.
+3. Once it is true, Ama opens with D1, a plain line, then the choice D2. "I'm done, let's talk." carries `#ending_check` inside its brackets, so the engine's "Before the mission ends" panel lists the open optional tasks before anything closes (ending-check.js:1-30). On the short route that list shows what the full walk-round adds.
+4. D3 and D4 follow. D5 branches three ways, first match wins: D5a on `julian_ended_by_unplug`; D5c on `julian_lost_with_desk` and not `julian_back`; D5b otherwise. Ama's last line carries `#complete_task:t_debrief` and sets `tour_debriefed`.
+5. The short route ends at the debrief. After the unplug there is no mid-tour switch and no hub line for the network stops, because most of them need the box back in the jack and Julian reconnected.
+6. The closing card is a `music` event entry, as in the lab (lab_physical_pentest:773, 780-800): `trigger: "conversation_closed:ama"`, `condition: globalVars.tour_debriefed === true`, `closingCard`, `credits`.
 
 ### 2.13 Host and sign lines (text only)
 
@@ -451,11 +456,11 @@ Mid-tour (ama, before `wrap_open()`):
 
 Debrief (ama, stop 19):
 - D1 "Right. Before we wrap up, anything else you want to try?"
-- D2 (choice) "I'll have another look round." / "I'm done, let's talk."
+- D2 (choice) "I'll have another look round." / "I'm done, let's talk." The look-round reply while `tour_full` is false: "The box is out, so the network stops are done for today. The doors and desks are all still there if you want them." While `tour_full` is true: "Go on. I'll be here."
 - D3 "The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's held because nobody copied his."
 - D4 "The box got you onto the network, and Julian's saved connection did the rest. His door never came into it."
 - D5a (`julian_ended_by_unplug`) "And when the box came out, everything you'd opened through it went with it." Full route only, add: "The desks you'd sat at stayed signed in."
-- D5c (`julian_lost_with_desk`) "You connected to Julian's from Delphine's desk, so when you signed out there, his went too."
+- D5c (`julian_lost_with_desk` and not `julian_back`) "You connected to Julian's from Delphine's desk, so when you signed out there, his went too."
 - D5b (otherwise) "Julian's session stayed up when the box came out. You'd connected from a desk you were signed in at, so it never needed the box. That's the bit people miss."
 - D6 (last line) "Thanks. I'll write it up for the partners."
 
@@ -506,12 +511,12 @@ Best-effort (client side, by design):
 
 The state must not grow during play, and every change goes as a delta (state-sync.js:33-41, 262).
 
-- No counter rises over time. Every global the tour sets is a boolean (2.10): 17 `done_` globals and 11 others, 28 in all, each declared. `cake_servings` only falls, from 2 to 0.
+- No counter rises over time. Every global the tour sets is a boolean (2.10): 17 `done_` globals and 10 others, 27 in all, each declared. `cake_servings` only falls, from 2 to 0.
 - The rota board mappings write need levels, not globals, and have a 30 s cooldown.
 - Bounded sets: `gainedFootholds` takes jack, AP and implant PC ids, so at most 5 (meeting_jack, guest_vlan_port, staff_ap, guest_ap, reception_pc); signed-in PCs at most 6 (adding door_controller); captures at most 1.
-- onceOnly handlers land in `triggeredEvents` as fixed keys (game.rb:5711-5732). The tour has 10: P0, P1, P2, P3, P4, P5a, P5b, P6, the capture mapping and the rogue AP work nudge.
+- onceOnly handlers land in `triggeredEvents` as fixed keys (game.rb:5711-5732). The tour has 9: P0, P1, P2, P3, P4, P5a, P5b, the capture mapping and the rogue AP work nudge. P6 has a cooldown and no onceOnly, so it adds no key.
 
-V8 counts only office-life ones: the capture mapping (`npc_used:`), the work nudge (writes `needs`) and P6 (`magnet_placed:`), so 3.
+V8 counts only office-life onceOnly ones: the capture mapping (`npc_used:`) and the work nudge (writes `needs`), so 2. P6's `magnet_placed:` mapping has no onceOnly and is not counted.
 
 Expected counts against BUDGET_CAPS (scripts/validate_office_life.rb:766-770):
 
@@ -521,7 +526,7 @@ Expected counts against BUDGET_CAPS (scripts/validate_office_life.rb:766-770):
 | magnet servings (counts magnet objects) | 2 | 1 |
 | dropped magnet items | 2 | 1 |
 | office-life items | 4 | 1 |
-| office-life onceOnly mappings | 10 | 3 |
+| office-life onceOnly mappings | 10 | 2 |
 | frustration | 6 | 0 to 2 |
 | workaround slots | 4 | 0 |
 | workaround and onUse globals | 8 | 0 |
@@ -536,7 +541,7 @@ Expected counts against BUDGET_CAPS (scripts/validate_office_life.rb:766-770):
 - The scenario validator: no errors, no unknown errors, door alignment OK, no overlap.
 - `python3 scripts/predict_door_sides.py`: corners as in 2.2.
 - scripts/validate_office_life.rb: V2, V4, V5 clean; V8 within every cap in 3.2, with the report's cap names matching BUDGET_CAPS.
-- Every eventMapping `condition` uses only the forms in section 1 (Mapping conditions). Slice 5 lists them with a grep and checks each by eye; a builder who finds the validator already checks this says so and drops the grep.
+- Every eventMapping `condition` uses only the forms in section 1 (Mapping conditions). Slice 5 lists them with a grep and checks each by eye; keep the grep and the by-eye check even though the validator also checks conditions. The validator flags only `||` and parentheses (scripts/validate_scenario.rb:6335-6343, 6469-6478); `==`, `!=`, a method other than `includes`, arithmetic and bracket access pass it and are read as false by the evaluator (npc-manager.js:100-118).
 
 ### 4.2 Solvability
 
@@ -583,7 +588,8 @@ Network and devices:
 
 Unplug and routes:
 - Foothold route: sign in to reception_pc, sign out, Connect julian_pc on the foothold, sign in to door_controller through meeting_jack, unplug. `endedPcIds` lists julian_pc and door_controller, not reception_pc or thandiwe_laptop; an implant foothold on reception_pc survives.
-- Door controller through the implant's foothold: not in `endedPcIds` after the unplug.
+- Door controller through the implant's foothold: not in `endedPcIds` after the unplug, provided the reception_pc keyboard session is still held. With that session signed out first, POST /logout on reception_pc lists door_controller in the ended list.
+- Every jack resolves through `find_jack`: a plant at each of meeting_jack, managed_port and guest_vlan_port answers something other than 404.
 - `from` route: hold a reception_pc session, Connect julian_pc (`from: reception_pc`), unplug. `endedPcIds` lacks julian_pc, and the session is still held.
 - Desk sign-out: hold a reception_pc session, Connect julian_pc `from: reception_pc`, POST /logout on reception_pc. Julian's session is in the answer's ended list.
 
@@ -602,7 +608,7 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 - Short route: stops 1, 2, 3, 5, 6, 9, 10, 11, 12, 17, 19. Pass when every required task completes, the debrief gives D5a, and the closing card shows.
 - Full route: all 19 stops in order. Pass when every task completes; each refusal (partner door, Finance share from the foothold, managed port, USB hub) shows its line; reading the rota board sends Thandiwe and Yasmin to the kitchen within 30 seconds; the work nudge makes `npc_used:thandiwe_laptop` fire within 30 seconds; stop 17 ends exactly julian_pc and door_controller; stop 18's managed port fires P4 and the guest port completes t_guest_port.
 - No sign-out: skip stop 5's sign-out and Connect from the keyring. The unplug leaves Julian's session up and the debrief gives D5b.
-- Desktop Connect: choose Connect on julian.rdp at stop 5, then sign out. Check P0 does not arrive, W6b shows, Julian's session is gone, and with no reconnect the debrief gives D5c.
+- Desktop Connect: choose Connect on julian.rdp at stop 5, then sign out. Check P0 does not arrive in the phone thread, W6b shows, Julian's session is gone, and with no reconnect the debrief gives D5c. A reconnect through the box then sets `julian_back` and the debrief gives D5a or D5b instead. Variant: sign out of julian_pc first, then the front desk. Julian's sign-out has reason `sign_out`, so `julian_lost_with_desk` stays false and W6b does not show.
 - The hub: at each stop, "Where next?" names the line 2.9 expects for that route; on the full route W17 does not appear before W16, and W18 follows the unplug.
 - The cake: dropped in the open plan, it is checked as a cue, not a pass condition; dropped in reception, P6 arrives.
 - Headless physics: setFPS(20) with fixed steps on.
@@ -613,14 +619,17 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 - A keyless server from the worktree on :3002. Never :3000 or :3001. `db:seed` only; no other db task.
 - New game via tools/playtest/new-game.rb (finds the mission by id or name, lines 111-116).
 - On the real path, not a helper: the remote sign-in completes t_julian_pc; the door controller signed in from the network view opened at the box; the unplug answer's `endedPcIds` lists julian_pc and door_controller and not reception_pc; the implant survives the unplug; the captured key joins Staff Wi-Fi.
-- The surviving cases: a door controller session opened from the implant's link survives the unplug; a Julian session Connected from the keyring while holding a reception_pc keyboard session survives it.
-- Leak proof: tools/playtest/demo-access-tour-leak-proof.mjs, written in slice 6 on the pattern of tools/playtest/secret-leak-withholding-live-proof.mjs. It creates the game through new-game.rb, then reads the rendered keypad PIN, the Staff key and the five NPC passwords from the game row read-only (`Game.find(id).scenario_data` through `rails runner`, a read and nothing else). It scans the whole raw bootstrap, every GET /room, GET /keyring, GET /capture_secrets and GET /container answer, and GET /login_accounts. Pass when:
-  - Julian's and Thandiwe's passwords never appear.
-  - Delphine's and Yasmin's appear only in GET /login_accounts for their own PCs.
-  - Lorna's appears only after a reception_pc session (in facilities.txt).
-  - The PIN appears only after a door_controller session.
-  - The Staff key appears only after the plant and the laptop's use, in the capture answer.
-- The proof never writes a game row: no edits to a game's scenario copy or state.
+- The surviving cases: a door controller session opened from the implant's link survives the unplug while the reception_pc keyboard session is held (and is in the ended list once that session signs out); a Julian session Connected from the keyring while holding a reception_pc keyboard session survives it.
+- Leak proof: tools/playtest/demo-access-tour-leak-proof.mjs, written in slice 6 on the pattern of tools/playtest/secret-leak-withholding-live-proof.mjs. Read-only: it never writes a game row, and edits no game's scenario copy or state.
+  - Setup. It creates the game through new-game.rb with no state-changing flags (no `--set`, `--give`, `--unlock` or `--complete-task`). It then reads the secrets from the game row with `Game.find(id).scenario_data` through `rails runner`, a read and nothing else, at these paths: the Staff key at `networks.office_lan.wifi.psk`; the keypad PIN at the server_room lock's `requires`; each of the five passwords at that NPC's `creds.password`.
+  - Corpus. It scans the whole raw bootstrap, every GET /room, GET /keyring, GET /capture_secrets, GET /container, GET /login_accounts and GET /network answer, and the response body of every POST the walk sends (/login, /network/plant, /unplug, /join, /implant, /logout).
+  - Matching. The PIN is `rand(1000..9999)` (scenario_binding.rb:24), and four digits occur in coordinates, sizes, timestamps and ids, so a substring scan gives false hits (test/support/payload_scan.rb:19-25 declines it for the same reason). The script parses each JSON answer and walks its leaves. A PIN hit is a leaf that equals the PIN as a string or number, or a string leaf that contains it as a whole token (`(?<![0-9])PIN(?![0-9])`). It prints the JSON path of every hit. The Staff key (8 characters) and the passwords use a plain case-insensitive substring match on the leaf strings. Before the five passwords are written, check that none is an ordinary word that appears elsewhere in the scenario text.
+  - Pass when:
+    - Julian's and Thandiwe's passwords never appear.
+    - Delphine's and Yasmin's appear only in GET /login_accounts for their own PCs.
+    - Lorna's appears only after a reception_pc session (in facilities.txt).
+    - The PIN has no hit before a door_controller session, and at least one hit, in the door-codes file, after it.
+    - The Staff key appears only after the plant and the laptop's use, in the capture answer.
 
 ### 4.8 Build-time checks
 
@@ -636,7 +645,7 @@ Each slice is one builder's work. Each ends with the validator clean, the corpus
 
 1. **Skeleton and rooms.** Seven rooms, doors, locks (keypad, three RFID), sign-in PCs as plain objects, the cast placed static with art fields, `player_phone`, signs. Room dressing with the mission-room-dressing skill: the two open-plan desks, the kitchen's coffee station, the kit table, the rota board and the signs, all square to the walls; reception objects on clear spots; Lorna and Julian clear of approach and queue cells. Checks C1, C2, C3. Proves: grid, door corners, lock types, art keys; corpus tests pick the scenario up.
 2. **Access, kit and networks.** Accounts and creds for every NPC (2.4); visitor card, `rfid_cloner`, `kit_dropbox`, `meeting_jack`; office_lan with its Staff Wi-Fi block, server_lan, guest with its open Wi-Fi block; the APs; the shares; the policies (C5); reception_pc, yasmin_pc, julian_pc, door_controller (`headless`, `lockType: "login"`) with owners, `habits.writesDown` and contents; the credentials (facilities.txt, julian.rdp with `onRead` and `onPickup`); Lorna's card and a minimal ink knot with the sticky `#clone_keycard` choice. Write demo_access_tour_test.rb with the secrets, access, Finance share and every unplug and route case. Proves on the server: stops 2 to 10 and 17.
-3. **Devices and the capture.** `kit_injector`, `demo_stick`, `kit_rogue_ap`, `capture_tablet`; the USB hub and implant socket; the managed port and patch panel; the rogue AP console and plant; `revealSecret`; thandiwe_laptop's work affordance; a bare `ama_phone` in reception's `npcs` (no ink yet) carrying only the capture mapping (2.7). Extend the Rails test with the implant, ports after the unplug, capture, Staff and guest join cases. Proves on the server: stops 14, 15, 16 and 18, with the capture driven as access_devices_rogue_ap_test.rb drives it.
+3. **Devices and the capture.** `kit_injector`, `demo_stick`, `kit_rogue_ap`, `capture_tablet`; the USB hub and implant socket; the managed port and patch panel; the rogue AP console and plant; `revealSecret`; thandiwe_laptop's work affordance; a bare `ama_phone` in reception's `npcs` (no ink yet) carrying only the capture mapping (2.7). Extend the Rails test with the implant, ports after the unplug (every jack resolving through `find_jack`), capture, Staff and guest join cases. Proves on the server: stops 14, 15, 16 and 18, with the capture driven as access_devices_rogue_ap_test.rb drives it.
 4. **Office life.** Thandiwe's and Yasmin's needs (2.4), the coffee station, both rota board mappings, the cake in `startItemsInInventory` with its pools and `cake_servings` (C4), P6, the rogue AP work nudge. Add the scenario to validator-office-life.test.mjs:442. Proves, in a scripted browser walk of those stops: 11, 12 and 13 on the rota board (the cake is checked as a cue, not a pass condition), and the stop 15 trigger (`npc_used:thandiwe_laptop` after the nudge); V2, V4, V5, V8 clean.
 5. **Ama, objectives and ending.** Ama's three knots, `wrap_open()`, the route choice and the mid-tour switch; the phone's hub (2.9); P0 to P5b; the global mappings (2.10); aims and tasks with status, `optional` and `onComplete.setGlobal` (2.8); aim_wrap's `unlockCondition` and `conclusionScreen`; the debrief with its three D5 branches; the closing card music entry. Add the scenario to the validator no-unknown-errors list; check every condition's form (4.1). Proves: every task completes in a scripted short-route walk; the hub order; the ending order. Then npc-dialog-review on all new lines.
 6. **Proof.** Scripted walks of the four routes (4.6); the Rails test green; write and run tools/playtest/demo-access-tour-leak-proof.mjs and the live proof on :3002 (4.7); optional sync payload base. Then a one-page presenter run sheet next to this plan: stop order, the one sentence to say at each stop, the expected result on screen, and the presenter notes in 2.7. After this, and only after the dialogue review, the voicing ask goes to the user.
@@ -646,3 +655,4 @@ Each slice is one builder's work. Each ends with the validator clean, the corpus
 - Removing the lobby map's own pc8 and planters: the map is the awareness course's, so the tour places its objects on other spots instead (C3).
 - Switching off Connect on julian.rdp so the file is copy-only: the server sets `connect: true` on every saved connection and drops any authored value, so a scenario cannot do it without engine work. The tour asks for Copy and handles a Connect instead (2.7 presenter notes, W6b, D5c).
 - A spare drop box for the comms cupboard's ports: the ports beat moves after the unplug and uses the one box.
+- A hub line that holds W17 until Thandiwe's laptop is opened (a second "use the rota" line after `saw_in_use`): it would hold a required step behind an optional one. P1 names the rota board instead, and W12 names it on the full route.
