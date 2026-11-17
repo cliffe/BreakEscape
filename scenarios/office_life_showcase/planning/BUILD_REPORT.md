@@ -390,7 +390,7 @@ Probe: `tools/playtest/showcase-r2fix-proof.mjs` (modes `g1` and `g2`). Headless
 
 | # | Check | Game | Result | Evidence |
 |---|---|---|---|---|
-| 1 | Evening: office coffee switched off while Zainab walks to it; she falls back to the kitchen coffee; `see_who_stays` ticks | 7675 | PASS | At the switch her job was `caffeine:office_coffee:goto_target` and the task was active. Afterwards `office_coffee_off` was true and her job became `caffeine:kitchen_coffee:goto_target`. She reached `kitchen_coffee:using` 7.7 s later. The task went to completed. |
+| 1 | Evening: office coffee switched off while Zainab walks to it; she falls back to the kitchen coffee; `see_who_stays` ticks | 7675 | PASS | At the switch her job was `caffeine:office_coffee:goto_target` and the task was active. Afterwards `office_coffee_off` was true and her job became `caffeine:kitchen_coffee:goto_target`. She reached `kitchen_coffee:using` 7.7 s later. The task went to completed. Note (R4): the tick came from `npc_left_post` when she left her post, before the kitchen use, so the task PASS does not depend on the fallback; the fallback is shown by the job change alone. |
 | 2a | Morning, kitchen seen, cooler not heard: "What should I try next?" gives A7, not A32 | 7675 | PASS | `kitchen_seen` true, `heard_exchange_cooler_chat` false. Reply: "Then open the kitchen door and hang about by the water cooler." No "You've seen the kitchen." line. Screenshot `r2fix-trynext-morning-heard-false.png`. |
 | 2b | Same morning with the cooler exchange heard: gives A32 | 7665 | PASS | Game made with `--set heard_exchange_cooler_chat=true`, so the exchange was not heard in play. `kitchen_seen` and the flag both true. Reply: "You've seen the kitchen. Ask me about lunch when you're ready." Screenshot `r2fix-trynext-morning-heard-true.png`. |
 | 3 | `tour_notice` board fits the modal without scrolling | 7675 | FAIL | `.game-display-body` scrollHeight 511, clientHeight 444. The dialog itself (532 and 532) sits inside the 800 px viewport. The screenshot `r2fix-board-modal.png` shows the Evening lines cut off at the bottom. The observation sentence "A notice board with a short list of things to try on the tour." sits above the list and probably takes the extra height. That is not verified. |
@@ -418,3 +418,7 @@ Review: `planning/BUILD_REVIEW_R3.md` (0 blockers, 0 majors, 4 minors), plus the
 Live check (probe `tools/playtest/showcase-r3fix-board.mjs`, keyless server :3094, game 7685, PID file `tmp/r3fix/server.pid`, killed by PID afterwards): `.game-display-body` scrollHeight 379, clientHeight 379; dialog 467 and 467, inside the 800 px viewport. PASS. Screenshot `planning/screens/r3fix-board.png`. Evidence `tmp/r3fix/board-7685.json`. An earlier run with the observation kept as one line (game 7683) gave 445 against 444, so the sentence was dropped for margin.
 
 Checks: validator 0 errors, 17 warnings (known baseline); `showcase-lines-check.mjs` PASS; ink recompiled with no warnings.
+
+## R4 fixes
+
+From BUILD_REVIEW_R4.md: m1 board mugs line is now "- Note the mugs, then go to the cooler." (restores the order); m2 the R2 probe asserts the new A31 text; m3 the R2 check 1 title and report row say the tick comes from `npc_left_post`, not the kitchen use. The new board line is shorter than the one it replaces, so the R3 fit holds.

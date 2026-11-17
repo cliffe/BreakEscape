@@ -161,8 +161,8 @@ async function checkCallItADay(h) {
   C.midday = await gv(h, 'act_midday');
   C.notYet = await talk(h, 'ama_owusu', ['Call it a day', 'Not yet'], { snap: { 1: 'm2-confirm' } });
   C.actEveningAfterNotYet = await gv(h, 'act_evening');
-  const confirmStep = C.notYet.steps.find(s => s.choice && /They won't be back once they've gone home\. Any tasks still unticked first\?/.test(s.text || ''));
-  C.confirmText = confirmStep ? 'They won\'t be back once they\'ve gone home. Any tasks still unticked first?' : null;
+  const confirmStep = C.notYet.steps.find(s => s.choice && /They won't be back once they've gone home\. Seen everything you wanted\?/.test(s.text || ''));
+  C.confirmText = confirmStep ? 'They won\'t be back once they\'ve gone home. Seen everything you wanted?' : null;
   C.confirmChoices = C.notYet.choicesSeen.find(c => c.some(x => /Yes, call it a day/.test(x)) && c.some(x => /Not yet/.test(x))) || null;
   const mark = C.notYet.steps.findIndex(s => s.pick === 'Not yet');
   const after = mark >= 0 ? C.notYet.steps.slice(mark + 1) : [];
@@ -188,7 +188,7 @@ async function checkCallItADay(h) {
 
 // ---- check 1: evening, office coffee switched off while Zainab walks to it ----
 async function checkEveningCoffee(h) {
-  const C = R.checks.b1 = { check: 'evening: coffee off while Zainab walks to it; kitchen fallback; see_who_stays ticks', attempts: [] };
+  const C = R.checks.b1 = { check: 'evening: coffee off while Zainab walks to it; kitchen fallback (see_who_stays usually ticks first via npc_left_post, so the tick does not prove the fallback)', attempts: [] };
   C.actEvening = await gv(h, 'act_evening');
   C.coffeeOffBefore = await gv(h, 'office_coffee_off');
   for (let n = 1; n <= 3; n++) {
