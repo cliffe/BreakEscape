@@ -78,7 +78,7 @@ Adaeze leads every trip and Gwen follows (2.5). In the engine, jitter applies to
 - After a natural trip: Adaeze arrives at about 29 and refills to 92.5 to 100, urgent again 6.25 to 7.0 minutes later. The coupled row sets Gwen to 30 (her `urgentAt`), so she refills to 93 to 100 and is urgent again 7.8 to 8.75 minutes later, counting her later finish. The ranges do not overlap, so Adaeze is always the one who gets up next and Gwen never walks alone.
 - After a talk break both start from their set values (Adaeze 20, Gwen 30 through the coupled row), which keeps the same order.
 
-Five live tries cannot catch a rare order swap, so slice 3 also runs a manual-clock check: the needs system stepped with the real random source for 50 cycles, asserting that Adaeze reaches `urgent` before Gwen every cycle.
+Five live tries cannot catch a rare order swap, so slice 3 also runs a manual-clock check. Jitter is seeded per NPC (`npc-needs.js:483` to `:485`, `:515`), so the check runs 50 different needs seeds, and for each covers three paths: a natural trip, a talk break from seated, and a talk-break set landing while Adaeze is mid-use (her refill then lands on 20, giving 83 to 97 and urgent again after 5.2 to 6.6 minutes). It asserts that Adaeze reaches `urgent` before Gwen every time.
 
 The first natural trip must come no sooner than 45 s and no later than 120 s of real time after the room loads. The 45 s floor keeps both seated through the stacked first entry (the HaX hurt line at 1 s, the Architect's call at 5 s, the RFID guide text at 9.5 s; `:896`, `:903`, `:1604`, `:1306`). Slice 3 measures how needs-clock minutes map to real seconds (`references/measurement-recipes.md` section 10) and scales Adaeze's `initial` (and Gwen's, keeping the gap) to land in that window. After a reload both start at `initial` again (needs are not saved), which is harmless: they sit, then go.
 
@@ -88,7 +88,7 @@ Talk always sends Adaeze, so the pair still go together:
 
 - Talking to Adaeze: on Adaeze, `conversation_closed:adaeze_okafor`, `delayMs` 2000, `cooldown` 150000, `condition` `!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true`, `needs: { set: { thirst: 20 } }`.
 - Talking to Gwen: also on Adaeze, `conversation_closed:gwen_pritchard`, `delayMs` 4000, `cooldown` 150000, the same condition, `needs: { set: { thirst: 20 } }`. Gwen has no talk break of her own; she follows Adaeze through the coupled row below.
-- Coupled, one way, on Gwen: `{ "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 30000, "needs": { "set": { "thirst": 30 } } }`. Adaeze leads; Gwen follows. The cooler has no third user, so the pair shut nobody out. The mapping cooldown is wall-clock time from when the row fires; 30 s is shorter than any gap between two of Adaeze's uses (a 22 s use plus the walk home and back), so the row fires once per trip and is always ready for the next one, including a talk break straight after a natural trip.
+- Coupled, one way, on Gwen: `{ "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } }`. Adaeze leads; Gwen follows. The cooler has no third user, so the pair shut nobody out. The mapping cooldown is wall-clock time from when the row fires, 2 s after `npc_use_started`. At 10 s it is shorter than the 22 s use itself, so the row is ready for any second trip, even one that starts as soon as the first use ends (a talk break landing while Adaeze walks home). It cannot double-fire within one trip: `npc_use_started` is emitted once per use (`npc-needs.js:3574`) and a pending delayed row is deduplicated (`npc-manager.js:921`).
 - No mapping keys on `room_entered:operations_floor` for a break, so nothing new fires on the stacked first entry.
 
 ### 2.6 Long enough to talk; hearing
@@ -274,7 +274,7 @@ Attack Adaeze walking, Gwen seated, and one at the cooler: hostile with leash, s
 
 ### 10.5 Open numbers
 
-Chair cells, `useFrom` and the engine's second cell (slice 3); needs-clock to real seconds and the first-trip time, 45 s to 120 s after load (slice 3); the 50-cycle manual-clock order check (2.4); use time.
+Chair cells, `useFrom` and the engine's second cell (slice 3); needs-clock to real seconds and the first-trip time, 45 s to 120 s after load (slice 3); the 50-seed manual-clock order check (2.4); use time.
 
 ### 10.6 Static checks
 
