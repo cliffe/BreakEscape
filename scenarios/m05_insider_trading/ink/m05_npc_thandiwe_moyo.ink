@@ -28,7 +28,7 @@ VAR hub_quiet = false
     -> goodbye
 
 === goodbye ===
-Thandiwe Moyo: Excuse me, I've a parcel to chase.
+Thandiwe Moyo: Thanks. These parcels won't chase themselves.
 ~ hub_quiet = true
 #exit_conversation
 -> choices

@@ -139,3 +139,33 @@ Commit 8bd7d2c93. Scenario data and ink only; no engine change.
 - V6: 27 clips (Niamh 13, Thandiwe 14), all uncached. Plus 6 conversation lines, which V6 does not count: 33, which is SPOKEN_LINES.md's 42 minus Bernadette's 9 (slice 6).
 - Live (keyless :3092, game 7241): both seated chats open with no "Failed to load conversation", show the same break-room background (n2 reads fine), and reopen cleanly; no page errors.
 - Open: chat at each machine, exchange once-only, pool lines at both machines, reload mid-day, full `bin/test-js`.
+
+## Slice 5 checks and dialogue fixes
+
+Live runs on a keyless server at :3092, headless, setFPS(20), fixed steps on, fresh games (7262 aborted by a probe bug, 7263 for the results). No /tts request.
+
+### Pool bubble verdict: probe mistake, not a gap
+
+The earlier "fail" (checks 3a and 3b) read `npcNeedsSystem.states.get(id).saying` and listened for `npc_mutter` and `npc_announced`. Neither is where pair chatter goes. `saying` holds a lone grumble (`_pickBark` for mutters); a pair's lines live in the chat record (`_chats`, `c.current`) and are emitted as `npc_chatted:<objectId>`. The `npcThoughts: false` gate only removes picture chat (`chatterPool(...).pictures`); spoken pool lines are untouched. Read with `npcNeedsSystem._talking(id)` and `npc_chatted:*` events, both pools play:
+
+- Espresso, first meeting: Thandiwe "I'll descale this tomorrow. Probably." (pool, heard), then `ex_whispering` in full.
+- Espresso, later meeting after a reload: Thandiwe "I'll descale this tomorrow. Probably.", Niamh "Is it meant to make that noise?" (pool, heard). No exchange.
+- Cooler, first meeting: `ex_collection` in full. After a reload: Thandiwe "Facilities never fixed that blind.", Niamh "Tomorrow's all-staff won't write itself." (pool, heard).
+
+No scenario or engine change was needed. At the first cooler meeting the exchange took the whole overlap, which is why a single 75 s window there showed no pool line.
+
+### Check 2e: pass
+
+After a reload (all three `heard_` globals persisted), both staff were using the espresso together for the full window (`both` true, chat events logged) and `needs.log()` held no exchange entries. Pool lines played instead.
+
+### Dialogue fixes applied (DIALOGUE_REVIEW.md M1, m1 to m4)
+
+| Id | Was | Now |
+|---|---|---|
+| M1 | Lisa says they don't send just anyone. | Apparently they don't send just anyone. |
+| m1 | Who keeps leaving the jug empty? | Who keeps leaving the milk jug empty? |
+| m2 | Ten more minutes, then the deadline. | Nearly there with this deadline. |
+| m3 | Right, that's me after this one. | Right, I'm off once I've finished this. |
+| m4 | Excuse me, I've a parcel to chase. | Thanks. These parcels won't chase themselves. |
+
+m5, m6 and n1 to n4 not applied, as briefed. Ink recompiled. Validator 0 errors, 27 warnings. lock_key_diff empty. V6: 27 clips, all uncached.

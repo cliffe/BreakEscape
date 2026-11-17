@@ -23,12 +23,12 @@ Before the server badge:
 
 > Niamh: Is the security person still in?
 > Thandiwe: Went past twice. Very serious shoes.
-> Niamh: Lisa says they don't send just anyone.
+> Niamh: Apparently they don't send just anyone.
 > Thandiwe: Well, I'm keeping my head down.
 
 After you have the server badge:
 
-> Thandiwe: Right, that's me after this one.
+> Thandiwe: Right, I'm off once I've finished this.
 > Niamh: Lucky. I've got the all-staff to finish.
 > Thandiwe: Don't let them keep you past seven.
 > Niamh: Tell that to the comms calendar.

@@ -43,7 +43,7 @@ Niamh Doherty: I'll be here till late, sadly.
 === ex_whispering ===
 Niamh Doherty: Is the security person still in?
 Thandiwe Moyo: Went past twice. Very serious shoes.
-Niamh Doherty: Lisa says they don't send just anyone.
+Niamh Doherty: Apparently they don't send just anyone.
 Thandiwe Moyo: Well, I'm keeping my head down.
 -> DONE
 
@@ -56,7 +56,7 @@ Thandiwe Moyo: Then it's not ours to ask.
 
 // Once the player holds the server badge and before the server room: the pair are on their way out.
 === ex_heading_home ===
-Thandiwe Moyo: Right, that's me after this one.
+Thandiwe Moyo: Right, I'm off once I've finished this.
 Niamh Doherty: Lucky. I've got the all-staff to finish.
 Thandiwe Moyo: Don't let them keep you past seven.
 Niamh Doherty: Tell that to the comms calendar.

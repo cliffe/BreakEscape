@@ -12,9 +12,9 @@ Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchang
 | niamh_doherty | coffee | Is it meant to make that noise? | 31 |
 | niamh_doherty | cooler | I'm hiding from my inbox. | 25 |
 | niamh_doherty | cooler | Everyone's very quiet today. | 28 |
-| niamh_doherty | cooler | Ten more minutes, then the deadline. | 36 |
+| niamh_doherty | cooler | Nearly there with this deadline. | 32 |
 | niamh_doherty | cooler | Tomorrow's all-staff won't write itself. | 40 |
-| thandiwe_moyo | coffee | Who keeps leaving the jug empty? | 32 |
+| thandiwe_moyo | coffee | Who keeps leaving the milk jug empty? | 37 |
 | thandiwe_moyo | coffee | I'll descale this tomorrow. Probably. | 37 |
 | thandiwe_moyo | coffee | Two sugars. It's been that sort of day. | 39 |
 | thandiwe_moyo | coffee | Not the good mugs, please. | 26 |
@@ -28,7 +28,7 @@ Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchang
 `ex_whispering`, gate `qdc_staff_upset: false`, `server_room_entered: false`:
 1. Niamh: Is the security person still in?
 2. Thandiwe: Went past twice. Very serious shoes.
-3. Niamh: Lisa says they don't send just anyone.
+3. Niamh: Apparently they don't send just anyone.
 4. Thandiwe: Well, I'm keeping my head down.
 
 `ex_collection`, same gate:
@@ -37,7 +37,7 @@ Every line this plan adds. Pool lines are scenario data (NPC `chatter`); exchang
 3. Thandiwe: Then it's not ours to ask.
 
 `ex_heading_home`, same gate plus `server_badge_obtained: true`:
-1. Thandiwe: Right, that's me after this one.
+1. Thandiwe: Right, I'm off once I've finished this.
 2. Niamh: Lucky. I've got the all-staff to finish.
 3. Thandiwe: Don't let them keep you past seven.
 4. Niamh: Tell that to the comms calendar.
@@ -49,7 +49,7 @@ Each first line stands alone. The whispering and collection lines repeat only wh
 Thandiwe Moyo:
 1. Can I help? I'm only the office manager.
 2. Help yourself to tea if you're staying.
-3. Excuse me, I've a parcel to chase.
+3. Thanks. These parcels won't chase themselves.
 
 Niamh Doherty:
 1. Sorry, deadline. Can it wait?
