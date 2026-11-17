@@ -1155,6 +1155,8 @@
 [data-ui-theme] .aim-header:hover .aim-toggle { color: var(--ui-text-dim); }
 [data-ui-theme] .aim-tasks { border-left-color: var(--ui-line); }
 [data-ui-theme] .objective-task { color: var(--ui-text-dim); }
+/* An optional active task stays a step dimmer than a required one under every theme (the rule above would flatten it). */
+[data-ui-theme] .objective-task.task-active.task-optional { color: color-mix(in srgb, var(--ui-text-dim) 70%, var(--ui-surface)); }
 [data-ui-theme] .task-icon { color: var(--ui-text-faint); }
 [data-ui-theme] .task-required-mark { color: var(--ui-accent); }
 [data-ui-theme] .aim-completed .aim-header,
