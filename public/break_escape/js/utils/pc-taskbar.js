@@ -220,7 +220,8 @@ export function lockSupported(sessions = win().pcSessions) {
 export async function lockPcSession(pcId, { sessions = win().pcSessions, onRefuse = null } = {}) {
     if (!lockSupported(sessions)) return { ok: false, reason: 'unsupported' };
     const result = await sessions.lockSession(pcId);
-    if (result && result.ok === false && result.message) {
+    // An expired token was dropped with its own "expired" line (K5), so say nothing more (K-lock R2 n2)
+    if (result && result.ok === false && result.message && result.reason !== 'token_expired') {
         if (typeof onRefuse === 'function') onRefuse(result.message);
         else win().gameAlert?.(result.message, 'warning', 'Lock', 3000);
     }

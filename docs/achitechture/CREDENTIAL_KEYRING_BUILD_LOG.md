@@ -1560,3 +1560,17 @@ Results (head 147abbb2c):
   `access-relay-desktop` 21 tests pass alone under `ulimit -v 2000000` and a 300 MB heap.
 - `bin/rails test` 3233 runs, 51101 assertions, 0 failures, 0 errors, 4 skips.
 - rubocop on game.rb, credential_lock_test.rb and policy_test.rb: no offences.
+
+### K-lock R2 fixes
+
+Fixes: m1 (the locked profile-copy assertion now copies a second profile file, `lena_profile_doc_b`,
+that is not yet held, so `refute_includes held_ids` can fail, and it asserts the refusal says "Not
+signed in"); n1 (the signed-out lock request asserts `:forbidden`); n2 (`lockPcSession` adds no
+refusal line or alert for a `token_expired` result, and the text reader closes as after a
+successful lock, so the expiry line shows once; new test in `pc-taskbar.test.mjs`).
+
+n3 left as judged acceptable in review.
+
+Mutation proofs: n2 is caught with either half reverted (the line in `pc-taskbar.js`, the close in
+`text-file-minigame.js`). m1 is caught when the copy path alone skips the session and scope checks
+in `validate_login_item_collectible`. Files restored afterwards.

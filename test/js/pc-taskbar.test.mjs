@@ -446,6 +446,25 @@ test('R1 m2: Lock from a reader closes it only once the server agrees', async ()
     assert.equal(ended.length, 1, 'closed after a successful lock');
 });
 
+test('K-lock R2 n2: a lock refused for an expired token adds no refusal line, and the reader closes like a success', async () => {
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    sessions.lockingSupported = () => true;
+    sessions.lockSession = async () => ({ ok: false, reason: 'token_expired', status: 422, message: 'HB-FIN-02 sign-in token expired. Your session on HB-FIN-02 ended.' });
+    sessions.takeEndedMessage = () => null;
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    rememberDesktop('hot_desk', { containerItem: loginPc(), places: [] });
+    const mg = new TextFileMinigame(document.getElementById('mg'), { title: 'notes.txt', fileName: 'notes.txt', fileContent: 'hello', pcScreen: FILE });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init(); mg.start(); await mg.taskbarReady;
+    panelItem('pc-start-lock').click();
+    await settle();
+    assert.equal(document.querySelector('.pc-file-message-error'), null, 'no refusal line over the expiry line');
+    assert.equal(alerts.length, 0, 'and no alert');
+    assert.equal(ended.length, 1, 'the reader closes as after a successful lock');
+});
+
 test('R1 m3: a reader with no remembered desktop does not offer Switch user; with one, it opens the sign-in screen', async () => {
     const bare = await openReader({ withDesktop: false });
     startBtn().click();

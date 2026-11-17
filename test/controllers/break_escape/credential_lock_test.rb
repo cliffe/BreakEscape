@@ -38,7 +38,9 @@ module BreakEscape
       data['accountProfiles'] = (data['accountProfiles'] || {}).merge(
         'lena_files' => { 'for' => { 'people' => ['lena'] },
                           'contents' => [{ 'id' => 'lena_profile_doc', 'type' => 'text_file', 'name' => 'Q3.xlsx',
-                                           'takeable' => true, 'transfer' => 'copy', 'text' => 'PROFILE-LENA-7711' }] }
+                                           'takeable' => true, 'transfer' => 'copy', 'text' => 'PROFILE-LENA-7711' },
+                                          { 'id' => 'lena_profile_doc_b', 'type' => 'text_file', 'name' => 'Q4.xlsx',
+                                            'takeable' => true, 'transfer' => 'copy', 'text' => 'PROFILE-LENA-7712' }] }
       )
       data['resources']['server_public'] = {
         'kind' => 'file_share', 'name' => 'Server-Public', 'host' => NS::SV_HOST, 'network' => 'server_net',
@@ -180,7 +182,7 @@ module BreakEscape
       build
       rdp_session
       as_host_user(nil) { lock('lena_pc') }
-      refute response.successful?, 'no user, no lock'
+      assert_response :forbidden, 'no user, no lock'
       refute state['sessions']['lena_pc'].key?('locked')
     end
 
@@ -238,8 +240,9 @@ module BreakEscape
       refute_includes response.body, 'doc.txt'
       add_item('text_file', 'lena_local_b', 'budget2.txt', source_pc_id: 'lena_pc')
       refute_includes held_ids, 'lena_local_b', 'a take from the locked desktop is refused'
-      add_item('text_file', 'lena_profile_doc', 'Q3.xlsx', source_pc_id: 'lena_pc', transfer: 'copy')
-      assert_equal 1, held_ids.count('lena_profile_doc'), 'a profile copy under the locked session is refused'
+      add_item('text_file', 'lena_profile_doc_b', 'Q4.xlsx', source_pc_id: 'lena_pc', transfer: 'copy')
+      assert_includes response.body, 'Not signed in', "the refusal is the lock's: #{response.status} #{response.body}"
+      refute_includes held_ids, 'lena_profile_doc_b', 'a profile copy under the locked session is refused'
       body = unlock_object('lena_safe_b', 'pin', '1357')
       assert_equal false, body['success'], 'an unlock under the locked session is refused'
       refute_includes @game.player_reach(OFFICE), 'server_net', 'a locked session bridges nothing for access'
