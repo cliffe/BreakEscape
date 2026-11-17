@@ -67,6 +67,12 @@ Keyless server on port 3093 from the worktree, headless, setFPS(20), fixed steps
 
 Both commits show the same two outcomes on the flip run: either the two NPCs act (2 icons, 1 thought, 1 picture) or they stay at their desks for the whole phase (0 icons, 2 parked thoughts, no talking turns at all). The second outcome is the "0 icons, 2 thoughts, 0 pictures" of the earlier R3 rerun, and it also happens at faff59b48, so aa417656b did not cause it. It depends on where the NPCs start (the idle runs started at y 129 to 135, the active ones at y 201 to 243). The control never shows a picture in either commit: test_needs_sims has one talker (tom) and no pair.
 
+Reading the table:
+
+- The counts are icons / thoughts / pictures only. Each run's start y and its `turns` list sit in that run's summary JSON under tmp/ and are not copied here; the start y split above comes from those files.
+- The "valid only when `turns` lists a talking turn" rule below applies to reruns from this point on. The rows above predate it, so an idle row (0 / 2 / 0) is reported as it ran, not filtered out.
+- The script walks the player beside an NPC who is saying a picture (see below), so a picture count means "a picture bubble was in view with the player near", not that a distant player would see it.
+
 ### Proof script changes
 
 - No Escape key press. It opened the pause menu, which blocked `enterRoom`. A person-chat or title minigame is closed with `__test.minigame.close()`, then `dismissBlockingUi('Resume')`, as the other playtest scripts do.
