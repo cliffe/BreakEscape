@@ -94,7 +94,38 @@ export function pcHostName(pcData, session = null) {
 export function credentialSessionLine(session) {
     if (!session || session.via !== 'credential') return null;
     if (session.kind === 'saved_connection') return `with the saved connection ${credentialSessionLabel(session)}`;
+    if (session.kind === 'token') return tokenSessionLine(session.tokenSecondsLeft);
     return null;
+}
+
+/**
+ * The desktop's second line for a session token (keyring K5, plan 8.5): "with a session token,
+ * about {n} min left" (whole minutes, rounded up), "under a minute left" below 60 s, and just
+ * "with a session token" when the time is not known. Same rounding as remote-host-text.js
+ * tokenMinutesLeft (this module imports no text module; a test keeps them equal).
+ */
+export function tokenSessionLine(secs) {
+    if (typeof secs !== 'number' || !Number.isFinite(secs) || secs < 0) return 'with a session token';
+    return secs < 60 ? 'with a session token, under a minute left' : `with a session token, about ${Math.ceil(secs / 60)} min left`;
+}
+
+/**
+ * Rewrite the token line in a mounted desktop (the top strip, the account bar and the start panel) from the
+ * session's current figure (K5). Text only: the line is escaped by being set as textContent.
+ * Returns true when it changed a line.
+ */
+export function refreshTokenLines(root, session) {
+    const line = credentialSessionLine(session);
+    if (!root?.querySelectorAll || !line || session?.kind !== 'token') return false;
+    let changed = false;
+    root.querySelectorAll('.desktop-account-credential, .desktop-token-line, .pc-start-credential').forEach((el) => {
+        const text = displayDashes(line);
+        if (el.textContent !== text) { el.textContent = text; changed = true; }
+    });
+    // The top-strip line is neutral until under a minute is left, then amber (R4 m1)
+    const low = typeof session.tokenSecondsLeft === 'number' && session.tokenSecondsLeft < 60;
+    root.querySelectorAll('.desktop-token-line').forEach((el) => el.classList.toggle('desktop-token-line-low', low));
+    return changed;
 }
 
 /** The label a credential session shows: its own, else the generic name the sign-in screen uses. */
@@ -114,6 +145,8 @@ export function titleCredentialLabels(root) {
 export function credentialLineHtml(session) {
     const line = credentialSessionLine(session);
     if (!line) return '';
+    // A token line names no label: the whole line is escaped text
+    if (session.kind === 'token') return escapeHtml(displayDashes(line));
     const label = credentialSessionLabel(session);
     const lead = line.slice(0, line.length - label.length);
     return `${escapeHtml(displayDashes(lead))}<span class="credential-label-nowrap">${escapeHtml(displayDashes(label))}</span>`;

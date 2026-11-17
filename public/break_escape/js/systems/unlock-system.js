@@ -500,7 +500,7 @@ export async function keyringForScreen(pcId, { foothold = null, from = null } = 
         const entries = await keyring.fetch(pcId, route);
         return {
             declared: true,
-            list: keyring.screenEntries(entries, { pcId, screen: (foothold || from) ? SCREEN_FOOTHOLD : SCREEN_KEYBOARD }),
+            list: keyring.screenEntries(entries, { pcId, screen: (foothold || from) ? SCREEN_FOOTHOLD : SCREEN_KEYBOARD, foothold: route.foothold || null }),
             failed: false
         };
     } catch (e) {

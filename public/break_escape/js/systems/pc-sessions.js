@@ -12,7 +12,7 @@
  *              signedInPcs, used by unlock_object tasks);
  *   desktops   pcId -> close(message, reason) for a desktop that is open now, so a session
  *              that ends closes it with a one-line message; reason is why (sign_out,
- *              no_session, link_dropped, displaced, owner_returned, auto_locked), which a
+ *              no_session, link_dropped, token_expired, displaced, owner_returned, auto_locked), which a
  *              network screen hands to networkLinks.landed (slice 9.3a, 4.3).
  *
  * Remote sessions (slice 9.3a, ACCESS_MODEL_SLICE_9_3_PLAN.md 4.4). A sign-in through a
@@ -21,7 +21,7 @@
  * may never have loaded). The sign-in events carry remote and footholdId. A keyboard fetch
  * of the desktop settles a remote session (the server clears its foothold), and the answer's
  * session tells settle() so. network_device_unplugged ends exactly the sessions named in its
- * endedPcIds (pc_signed_out reason link_dropped; an open desktop closes with "The link
+ * endedPcIds (pc_signed_out reason link_dropped, or token_expired when a session token ran out; an open desktop closes with "The link
  * dropped"). A refusal because the PC's policy blocks remote sign-in (422 remoteBlocked)
  * emits pc_signin_failed with reason remote_blocked.
  *
@@ -38,11 +38,12 @@
  * Events for a relay carry relay: true and kind.
  *
  * Events (each also as `<name>:<pcId>`):
- *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId }
+ *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId, token? (K5: true for a session token) }
  *                      a sign-in (or the second half of a switch). previousNpcId is the account
  *                      signed in at this PC just before (a switch), else null; firstAtPc is true
  *                      when the player had never signed in at this PC before (signedIn).
  *   pc_signed_out      { pcId, npcId, reason }         reason: sign_out (the Sign out button) |
+ *                      token_expired (a session token ran out; K5; was link_dropped) |
  *                      switch (the first half of a switch) | no_session (a 403 from container) |
  *                      claim_ended (a claimed session ended on load) | owner_returned or
  *                      auto_locked (a claimed session ended by the owner's return or the
@@ -124,6 +125,13 @@ export function routeEndedMessage(hosts = []) {
 export const relayEndedMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
 export const backAtDeskMessage = (name) => `${name || 'The owner'} is back at the desk`;
 export const displacedMessage = (name) => `${name || 'Someone'} has signed in at this PC`;
+/**
+ * The line a token session's desktop closes with when the token runs out (keyring K5, plan 8.5;
+ * on-screen text, never voiced). A copy of remote-host-text.js tokenExpiredEndedMessage, as this
+ * module imports nothing; the equality test in test/js/pc-sessions.test.mjs keeps the two equal.
+ */
+export const tokenExpiredEndedMessage = (label, host) =>
+    `${label || 'That session token'} expired. Your session on ${host || 'that host'} ended.`;
 
 function npcName(npcId) {
     const w = typeof window !== 'undefined' ? window : {};
@@ -142,6 +150,8 @@ export function credentialRefusalReason(b = {}) {
     if (b.notPermitted) return 'not_permitted';
     if (b.lockedOut) return 'locked_out';
     if (b.ended) return 'ended';
+    // Keyring K5: a session token that has run out (POST /login's 422 { expired: true })
+    if (b.expired) return 'expired';
     return 'no_longer_works';
 }
 
@@ -165,6 +175,8 @@ function publicSession(pcId, s) {
     if (s.locked === true) out.locked = true;
     // A credential session (keyring K3a) names its kind and label for the desktop's second line
     if (s.via === 'credential') Object.assign(out, credentialFields(s));
+    // A token session says how long it has left, read live (keyring K5): the desktop's bar shows it
+    if (isToken(s) && typeof s.expiresAt === 'number') out.tokenSecondsLeft = Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 1000));
     // The account's picture source (a headshot key's portrait or avatar), only when the server sent it
     if (typeof s.portrait === 'string' && s.portrait) out.portrait = s.portrait;
     if (typeof s.avatar === 'string' && s.avatar) out.avatar = s.avatar;
@@ -178,6 +190,20 @@ function credentialFields(s) {
     if (typeof s?.label === 'string' && s.label) out.label = s.label;
     return out;
 }
+
+/**
+ * A token session's end time (keyring K5): the figure the server sent as expiresInS, turned into
+ * a clock time on this page. Only a token credential session with a number from 0 to a day has
+ * one; the server stays the authority, this only closes the desktop on time.
+ */
+function tokenFields(s) {
+    if (s?.via !== 'credential' || s?.kind !== 'token') return {};
+    const secs = s.expiresInS;
+    if (typeof secs !== 'number' || !Number.isFinite(secs) || secs < 0 || secs > 86400) return {};
+    return { expiresAt: Date.now() + secs * 1000 };
+}
+
+function isToken(s) { return s?.via === 'credential' && s?.kind === 'token'; }
 
 /** The picture source of a server session entry: portrait and avatar, each only when sent. */
 function pictureFields(s) {
@@ -224,6 +250,8 @@ export class PcSessions {
         // (keyring K4): the tray picks the most recently opened source desktop
         this._openOrder = new Map();
         this._openCounter = 0;
+        // pcId -> the timer that ends a token session when its token runs out (keyring K5)
+        this._tokenTimers = new Map();
     }
 
     /** When the desktop at pcId last opened or signed in, as a rising number (0 if never). K4. */
@@ -248,7 +276,7 @@ export class PcSessions {
         this._listening = dispatcher;
         dispatcher.on('workstation_owner_returned:*', (d) => { if (d?.objectId) this.ownerReturned(d.objectId); });
         dispatcher.on('workstation_auto_locked:*', (d) => { if (d?.objectId) this.screenAutoLocked(d.objectId); });
-        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged'));
+        dispatcher.on('network_device_unplugged', (d) => this.linkDropped(d?.endedPcIds, 'unplugged', { tokenExpired: d?.tokenExpiredPcIds }));
         // 9.2 H (6.4): an NPC sitting down, or leaving a borrowed session, ends the player's there
         // The NPC's id goes too: the holder of a relay session sitting down keeps it (K3c, 8.3)
         const sat = (d) => { if (d?.objectId) this.displaced(d.objectId, npcName(d.npcId), d.npcId ?? null); };
@@ -299,6 +327,7 @@ export class PcSessions {
      */
     load(sessions = {}, signedInPcs = [], { lockingSupported = false } = {}) {
         this.listen();
+        for (const id of [...this._tokenTimers.keys()]) this._disarmToken(id);
         this.sessions.clear();
         this.signedIn.clear();
         this._lockingSupported = lockingSupported === true;
@@ -321,14 +350,59 @@ export class PcSessions {
                 displayName: s.displayName ?? null,
                 via: s.via || 'password',
                 ...(s.via === 'credential' ? credentialFields(s) : {}),
+                ...tokenFields(s),
                 ...pictureFields(s),
                 restored: true,
                 // A locked session survives a reload like any other session state (UI slice 6)
                 ...(s.locked === true ? { locked: true } : {}),
                 ...remoteFields(s)
             });
-            this.signedIn.add(pcId);
+            // A token sign-in is not a lasting one: it never enters signedIn (K5, as a relay)
+            if (!isToken(this.sessions.get(pcId))) this.signedIn.add(pcId);
+            this._armToken(pcId);
         }
+    }
+
+    /**
+     * Keyring K5: the server's figure for the seconds a held token session has left (a GET
+     * /keyring answer). Re-times the session at pcId and its timer; false when none is held
+     * there or it is not a token session. The timer closes the desktop at zero.
+     */
+    noteTokenExpiry(pcId, secs) {
+        const s = this.sessions.get(pcId);
+        if (!isToken(s) || typeof secs !== 'number' || !Number.isFinite(secs) || secs < 0 || secs > 86400) return false;
+        s.expiresAt = Date.now() + secs * 1000;
+        this._armToken(pcId);
+        return true;
+    }
+
+    /** Whole seconds the token session at pcId has left (0 once over), or null when none or unknown. */
+    tokenSecondsLeft(pcId) {
+        const s = this.sessions.get(pcId);
+        if (!isToken(s) || typeof s.expiresAt !== 'number') return null;
+        return Math.max(0, Math.ceil((s.expiresAt - Date.now()) / 1000));
+    }
+
+    _armToken(pcId) {
+        this._disarmToken(pcId);
+        const s = this.sessions.get(pcId);
+        if (!isToken(s) || typeof s.expiresAt !== 'number') return;
+        const wait = Math.max(0, Math.min(s.expiresAt - Date.now(), 86400 * 1000));
+        const timer = setTimeout(() => {
+            this._tokenTimers.delete(pcId);
+            // A timer for a session since replaced or ended does nothing
+            if (this.sessions.get(pcId) === s) this.linkDropped([pcId], 'token_expired');
+        }, wait);
+        // A pending timer never keeps a test process (or a closing page) alive
+        if (timer && typeof timer.unref === 'function') timer.unref();
+        this._tokenTimers.set(pcId, timer);
+    }
+
+    _disarmToken(pcId) {
+        const t = this._tokenTimers.get(pcId);
+        if (t === undefined) return;
+        clearTimeout(t);
+        this._tokenTimers.delete(pcId);
     }
 
     /** UI slice 6: the server supports locking a held session (the scenario answer said so). */
@@ -454,14 +528,16 @@ export class PcSessions {
             ...remoteFields(body)
         };
         this._replace(pcId, session);
-        this._dropEnded(body.endedPcIds, pcId);
+        this._dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds);
         return { ok: true, session: publicSession(pcId, session) };
     }
 
     /** The sessions a sign-in's answer says ended (keyring K2 3.8), never the new one itself. */
-    _dropEnded(endedPcIds, pcId) {
+    _dropEnded(endedPcIds, pcId, tokenExpiredPcIds = null) {
         const ended = Array.isArray(endedPcIds) ? endedPcIds.filter(id => typeof id === 'string' && id && id !== pcId) : [];
-        if (ended.length) this.linkDropped(ended, 'route_ended');
+        // K5: the token sessions among them (a subset) end with the token line, the rest with the batch's reason
+        const tokenExpired = Array.isArray(tokenExpiredPcIds) ? tokenExpiredPcIds.filter(id => ended.includes(id)) : [];
+        if (ended.length) this.linkDropped(ended, 'route_ended', { tokenExpired });
     }
 
     /**
@@ -510,13 +586,14 @@ export class PcSessions {
         const session = {
             npcId: body.npcId, username: body.username ?? null, displayName: body.displayName ?? null, via: 'credential',
             ...credentialFields(body),
+            ...tokenFields({ ...body, via: 'credential' }),
             ...(body.route && typeof body.route === 'object' ? { route: body.route } : {}),
             ...pictureFields(body),
             ...remoteFields(body),
             ...relayFields(body)
         };
         this._replace(pcId, session);
-        this._dropEnded(body.endedPcIds, pcId);
+        this._dropEnded(body.endedPcIds, pcId, body.tokenExpiredPcIds);
         return { ok: true, session: publicSession(pcId, session) };
     }
 
@@ -610,6 +687,7 @@ export class PcSessions {
         const previous = this.sessions.get(pcId);
         if (!previous) return false;
         this.sessions.delete(pcId);
+        this._disarmToken(pcId);
         const api = apiClient();
         if (api?.logout) {
             this._emit('pc_signing_out', { pcId, reason });
@@ -631,16 +709,22 @@ export class PcSessions {
         // The holder sitting down at his own PC does not end the relay he invited the player into (K3c, 8.3)
         if (previous.relay === true && npcId && previous.npcId === npcId) return false;
         this.sessions.delete(pcId);
+        this._disarmToken(pcId);
         const message = displacedMessage(name);
         this._closeDesktop(pcId, message, 'displaced');
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'displaced', ...this._remoteOf(previous) });
         const api = apiClient();
         let ended = null;
+        let tokenExpired = null;
         if (api?.logout) {
-            try { ended = (await api.logout(pcId))?.endedPcIds || null; } catch (e) { console.warn('[pc-sessions] logout of a displaced session failed', e); }
+            try {
+                const out = await api.logout(pcId);
+                ended = out?.endedPcIds || null;
+                tokenExpired = out?.tokenExpiredPcIds || null;
+            } catch (e) { console.warn('[pc-sessions] logout of a displaced session failed', e); }
         }
         // A desktop session reached from this one ends with it (keyring K4, 3.8)
-        this._dropEnded(ended, pcId);
+        this._dropEnded(ended, pcId, tokenExpired);
         return true;
     }
 
@@ -653,18 +737,21 @@ export class PcSessions {
         const previous = this.sessions.get(pcId);
         // A relay is the holder's session, not the player's sign-in there: signedIn (and so
         // unlock_object tasks) never counts it (K3c, 8.3)
-        const relay = session.relay === true;
+        // A token sign-in is no lasting one either (K5): never in signedIn, never a first sign-in
+        const relay = session.relay === true || isToken(session);
         const firstAtPc = !relay && !this.signedIn.has(pcId);
         if (previous) {
             this.sessions.delete(pcId);
+            this._disarmToken(pcId);
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'switch', ...this._remoteOf(previous) });
         }
         this.sessions.set(pcId, { remote: false, footholdId: null, host: null, ...session, restored: false, firstAtPc });
+        this._armToken(pcId);
         this._markOpened(pcId);
         if (!relay) this.signedIn.add(pcId);
         this._emit('pc_signed_in', {
             pcId, npcId: session.npcId, username: session.username, via: session.via,
-            previousNpcId: previous?.npcId ?? null, firstAtPc, ...this._remoteOf(session)
+            previousNpcId: previous?.npcId ?? null, firstAtPc, ...(isToken(session) ? { token: true } : {}), ...this._remoteOf(session)
         });
     }
 
@@ -676,17 +763,25 @@ export class PcSessions {
         const previous = this.sessions.get(pcId);
         if (!previous) return false;
         this.sessions.delete(pcId);
+        this._disarmToken(pcId);
         const api = apiClient();
         let ended = null;
+        let tokenExpired = null;
         if (api?.logout) {
             this._emit('pc_signing_out', { pcId, reason: 'sign_out' });
-            try { ended = (await api.logout(pcId))?.endedPcIds || null; } catch (e) { console.warn('[pc-sessions] logout failed', e); }
+            try {
+                const out = await api.logout(pcId);
+                ended = out?.endedPcIds || null;
+                tokenExpired = out?.tokenExpiredPcIds || null;
+            } catch (e) { console.warn('[pc-sessions] logout failed', e); }
         }
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'sign_out', ...this._remoteOf(previous) });
         this._closeDesktop(pcId, message, 'sign_out');
         // Signing out of a pivot ends the onward sessions (slice 9.3b K, 5.1): the server
         // returned them, so their desktops close with "the link dropped".
-        if (Array.isArray(ended) && ended.length) this.linkDropped(ended, 'route_ended');
+        if (Array.isArray(ended) && ended.length) {
+            this.linkDropped(ended, 'route_ended', { tokenExpired: Array.isArray(tokenExpired) ? tokenExpired.filter(id => ended.includes(id)) : [] });
+        }
         return true;
     }
 
@@ -730,6 +825,7 @@ export class PcSessions {
         const previous = this.sessions.get(pcId);
         if (!previous) return false;
         this.sessions.delete(pcId);
+        this._disarmToken(pcId);
         this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'no_session', ...this._remoteOf(previous) });
         if (message) this._closeDesktop(pcId, message, 'no_session');
         else this.desktops.delete(pcId);
@@ -743,27 +839,43 @@ export class PcSessions {
      * The sessions whose desktop was not open (the usual case: the unplug happens at the jack)
      * get one toast naming their hosts. Returns the pcIds dropped.
      */
-    linkDropped(endedPcIds = [], reason = 'unplugged') {
+    linkDropped(endedPcIds = [], reason = 'unplugged', { tokenExpired = [] } = {}) {
         if (reason === 'relay_ended') return this._relayEnded(endedPcIds);
         const routeEnded = reason === 'route_ended';
         const dropped = [];
         const unseen = [];
+        const tokenLines = [];
         for (const pcId of (Array.isArray(endedPcIds) ? endedPcIds : [])) {
             const previous = this.sessions.get(pcId);
             if (!previous) continue;
             this.sessions.delete(pcId);
+            this._disarmToken(pcId);
             dropped.push(pcId);
+            // K5: an expired token session ends with its own line, whatever batch it came in
+            const tokenEnd = reason === 'token_expired' || (Array.isArray(tokenExpired) && tokenExpired.includes(pcId));
+            const tokenLine = tokenEnd && isToken(previous) ? tokenExpiredEndedMessage(previous.label, previous.host || 'a remote PC') : null;
             // The host label the server sent; never the internal PC id
-            if (!this.desktops.has(pcId)) unseen.push(previous.host || 'a remote PC');
-            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
+            if (!this.desktops.has(pcId)) {
+                if (tokenLine) tokenLines.push(tokenLine);
+                else unseen.push(previous.host || 'a remote PC');
+            }
+            // An expired token says so (reason token_expired, as the desktop's close reason does);
+            // no listener keys on link_dropped for a token session (the n4 sign-out objective is
+            // an unplug at a password session)
+            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: tokenLine ? 'token_expired' : 'link_dropped', ...this._remoteOf(previous) });
             // An open desktop of a pruned session names its host; an unplug keeps "The link dropped"
-            this._closeDesktop(pcId, routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE, 'link_dropped');
+            this._closeDesktop(pcId, tokenLine || (routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE),
+                // An expired token has its own close reason: the network view resumes (R12), where a
+                // dropped link ends the trip
+                tokenLine ? 'token_expired' : 'link_dropped');
         }
+        const messages = [...tokenLines];
         const message = routeEnded ? routeEndedMessage(unseen) : unplugEndedMessage(unseen);
-        if (message) {
+        if (message) messages.push(message);
+        for (const line of messages) {
             try {
                 // Host labels are author text: plain text, never markup
-                if (typeof window !== 'undefined') window.gameAlert?.(message, 'info', '', 5000, { plainText: true });
+                if (typeof window !== 'undefined') window.gameAlert?.(line, 'info', '', 5000, { plainText: true });
             } catch (e) { /* no notification layer */ }
         }
         return dropped;
@@ -781,6 +893,7 @@ export class PcSessions {
             const previous = this.sessions.get(pcId);
             if (!previous) continue;
             this.sessions.delete(pcId);
+            this._disarmToken(pcId);
             dropped.push(pcId);
             const message = relayEndedMessage(previous.displayName);
             const open = this.desktops.has(pcId);

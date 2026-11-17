@@ -9,7 +9,7 @@
 // with fixture data (never by solving the mission) and measured.
 //
 //   PORT=3062 node tools/playtest/signin-fit.mjs [gameId]
-//   (optional: CHROME=<executable> PLAYWRIGHT=<node_modules holding playwright> SHOTS=<dir>)
+//   (optional: CHROME=<executable> PLAYWRIGHT=<node_modules holding playwright> SHOTS=<dir> STRIP_SHOTS=<dir>)
 //
 // K3a fixtures (ways-longest, ways-refused-short, keyring-both-failed) need no VM and no keyring
 // route: the entries are passed to setRemoteAccounts directly. This script needs a running keyless
@@ -63,8 +63,8 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // the live proof names, so one run covers both specs.
 const SIZES = [[1400, 1000], [800, 600], [915, 412], [390, 844], [320, 640]];
 
-function newGame() {
-    const out = execFileSync('bundle', ['exec', 'rails', 'runner', 'tools/playtest/new-game.rb', 'test_access_networks'], {
+function newGame(scenario = 'test_access_networks') {
+    const out = execFileSync('bundle', ['exec', 'rails', 'runner', 'tools/playtest/new-game.rb', scenario], {
         env: { ...process.env, PLAYTEST_PORT: String(PORT), BREAK_ESCAPE_STANDALONE: 'true' }, encoding: 'utf8'
     });
     return Number(out.match(/GAME_ID=(\d+)/)[1]);
@@ -122,6 +122,12 @@ const FIXTURES = [
                           { id: 'p2', kind: 'password', source: 'registry', foundIn: 'f2', label: 'a sticky note under the second keyboard on the left desk', account: { username: 'sokafor', displayName: 'Sam Okafor' } }
                       ] },
                action: 'chosen', expectWays: true } },
+    { name: 'ways-token-expired', desc: 'K5 R3: the account\'s expired session token: the greyed Connect button and its expired line wrap, nothing cut',
+      build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: 'known', linkName: 'Drop box: Comms room',
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: 'known', host: 'HB-FIN-02', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [],
+                      keyring: [{ id: 'tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc', expired: true, accepted: true, forThisPc: true, account: { username: 'lfox', displayName: 'Lena Fox' } }] },
+               action: 'chosen', expectWays: true, expectExpired: true } },
     { name: 'ways-refused-short', desc: 'K3a: one greyed saved connection with its short reason under it, in the short window',
       build: { host: 'HB-FIN-03', pcName: 'Finance server (HB-FIN-03)', picker: 'known', linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
@@ -280,6 +286,19 @@ async function measure(page, fx) {
                     for (const fixed of box.querySelectorAll('.signin-cred-fixed')) {
                         if (fixed.scrollWidth > fixed.clientWidth + 1) { out.ok = false; out.notes.push('"Connect with" is cut'); break; }
                     }
+                    // K5 R3: no token text is cut (no ellipsis, nothing hidden by overflow): the button, its label,
+                    // and a refusal or expired line show whole, wrapping when they are long
+                    for (const el of box.querySelectorAll('.signin-cred-token, .signin-cred-token .signin-cred-label, .signin-cred-expired')) {
+                        if (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1) {
+                            out.ok = false; out.notes.push(`ways text cut: "${el.textContent.slice(0, 40)}" (${el.scrollWidth}x${el.scrollHeight} in ${el.clientWidth}x${el.clientHeight})`);
+                        }
+                        if (getComputedStyle(el).textOverflow === 'ellipsis') { out.ok = false; out.notes.push(`ways text can be cut by an ellipsis: ${el.className}`); }
+                    }
+                    if (fx.build.expectExpired) {
+                        const why = box.querySelector('.signin-cred-refused')?.textContent;
+                        if (why !== 'HB-FIN-02 sign-in token has expired.') { out.ok = false; out.notes.push(`expired line reads ${JSON.stringify(why)}`); }
+                        if (box.querySelector('.signin-cred')?.getAttribute('aria-disabled') !== 'true') { out.ok = false; out.notes.push('the expired token button is not greyed'); }
+                    }
                     if (out.ways.scrolls && document.querySelector('.pc-monitor #signin-ways-more')?.hidden) { out.ok = false; out.notes.push('a scrolling ways box shows no More below cue'); }
                 }
                 if (!document.querySelector('.pc-monitor #password-field')) { out.ok = false; out.notes.push('no Password field under the ways box'); }
@@ -347,7 +366,10 @@ async function measureCaptureLog(page, size) {
                 entries: [
                     { id: 'pw_lord', kind: 'password', source: 'registry', label, foundIn: 'f1', how: 'found', account: acct('lord', 'Samantha Lord-Whitfield', 's.lord') },
                     { id: 'rdp', kind: 'saved_connection', source: 'registry', label, heldItem: 'rdp_item', how: 'given', host: 'HB-FIN-03', account: acct('okafor', 'Sam Okafor', 'sokafor') },
-                    { id: 'assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist from Lena', how: 'given', ended: true, account: acct('lena', 'Lena Fox', 'lfox') }
+                    { id: 'assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist from Lena', how: 'given', ended: true, account: acct('lena', 'Lena Fox', 'lfox') },
+                    // K5: a live token (minutes left, the link that recorded it) and an expired one
+                    { id: 'tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc', routes: [{ foothold: 'drop_box' }], account: acct('lena', 'Lena Fox', 'lfox') },
+                    { id: 'tok_old', kind: 'token', source: 'registry', label, host: 'HB-FIN-02', connectsTo: 'lena_pc', expired: true, account: acct('okafor', 'Sam Okafor', 'sokafor') }
                 ],
                 captures: {
                     lord_qr: { tag: 'password', source: 'phished', account: 'lord' },
@@ -356,13 +378,17 @@ async function measureCaptureLog(page, size) {
                     harp_box: { tag: 'password', source: 'recorded', account: 'harper' },
                     pin: { tag: 'pin', source: 'recorded' }, fh: { tag: 'foothold', source: 'recorded' }, post: { tag: 'finding', source: 'recorded' }
                 },
-                firstSeen: new Map([['pw_lord', 0], ['rdp', 10], ['assist', 11]]),
+                firstSeen: new Map([['pw_lord', 0], ['rdp', 10], ['assist', 11], ['tok', 12], ['tok_old', 13]]),
+                tokenSecondsLeft: (id) => (id === 'tok' ? 187 : null),
                 foundVisible: () => true
             };
             const sections = sr.buildSignInRows({ captures, keyring, secrets: { lord_qr: 'Facilities!2026', harp_qr: 'Recruit-2026', pin: '4471' },
                 social: { captures: { revealSecret: true } } });
             const four = sections.signins.find(r => r.key === 'account:lord');
             if (!four || (four.kinds.length + four.sources.length) !== 4) { out.ok = false; out.notes.push('fixture: no four-tag row'); }
+            for (const id of ['tok', 'tok_old']) {
+                if (!sections.signins.some(r => r.key === `cred:${id}`)) { out.ok = false; out.notes.push(`fixture: no ${id} row`); }
+            }
             MF.startMinigame('capture-log', null, { title: 'Capture log', holderId: '__signin_fit_none__' });
             const scene = MF.currentMinigame;
             // The device's background GET /keyring and secrets answers redraw it from the game's
@@ -415,6 +441,138 @@ async function measureCaptureLog(page, size) {
         } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
         return out;
     }, { label: LABEL_32, size });
+}
+
+// ---- K5: the token line on a real opened token desktop ---------------------------------------
+// A second game of test_access_keyring is set up through the game's own routes from the page (take
+// the drop box, plant it in the comms port, sign in to Lena's PC with the token: all server-side),
+// then the real remote desktop is opened with window.openRemoteDesktop. At each size the checks run
+// on that live DOM: the monitor's bezel inside the viewport, the top bar (the compact rule at
+// 390x844 applies there), the token line in that top strip (sessionNoticesHtml; the first row of
+// desktop icons must stay in view under it), and the start panel's credential line after Start. Each line must stay
+// inside its box and take at most two lines, for the live figure, the sub-minute line and a 240-hour
+// figure (the widest a token line can get; a token line carries no label).
+async function setupTokenGame(page, gameId) {
+    await page.goto(`${BASE}/break_escape/games/${gameId}?skip_resume=1`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => !!window.__test, null, { timeout: 180000 });
+    await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 90000 }));
+    await page.evaluate(() => { window.game?.physics?.world?.setFPS?.(20); });
+    return page.evaluate(async () => {
+        const gid = window.breakEscapeConfig.gameId;
+        const csrf = document.querySelector('meta[name=csrf-token]')?.content;
+        const post = async (path, body) => {
+            const r = await fetch(`/break_escape/games/${gid}/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json', ...(csrf ? { 'X-CSRF-Token': csrf } : {}) }, body: JSON.stringify(body) });
+            return r.status;
+        };
+        const steps = [
+            await post('inventory', { action_type: 'add', item: { type: 'pc', id: 'kit_dropbox', name: 'Network drop box' } }),
+            await post('network/plant', { jack_id: 'comms_port' }),
+            await post('login', { pc_id: 'lena_pc', credential: 'lena_token', foothold: 'jack_comms_port' })
+        ];
+        return steps;
+    }).then(async steps => {
+        if (steps.some(c => c !== 200)) return { ok: false, why: `token setup answered ${steps.join('/')}` };
+        // reload so the session comes from the bootstrap, as a player's reload would
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForFunction(() => !!window.__test, null, { timeout: 180000 });
+        await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 90000 }));
+        await page.evaluate(() => { window.game?.physics?.world?.setFPS?.(20); });
+        const held = await page.evaluate(() => window.pcSessions?.get?.('lena_pc')?.kind);
+        return held === 'token' ? { ok: true } : { ok: false, why: `session after reload is ${held}` };
+    });
+}
+
+async function measureTokenDesktop(page, size) {
+    await page.evaluate(() => { const MF = window.MinigameFramework; while (MF?.currentMinigame) MF.endMinigame(false, null); });
+    await page.evaluate(() => window.openRemoteDesktop('lena_pc', 'jack_comms_port'));
+    try { await page.waitForSelector('.pc-monitor .pc-desktop-topbar', { timeout: 20000 }); } catch { /* reported below */ }
+    await sleep(300);
+    // STRIP_SHOTS=<dir>: the real token desktop as opened, before Start is touched
+    if (process.env.STRIP_SHOTS) {
+        try {
+            // hide the canvas and any other overlay (the resume menu) so only the monitor shows
+            await page.evaluate(() => {
+                const mon = document.querySelector('.pc-monitor');
+                document.querySelectorAll('body > *').forEach(e => { if (e !== mon && !e.contains(mon)) e.style.visibility = 'hidden'; });
+                document.querySelectorAll('canvas').forEach(c => { c.style.visibility = 'hidden'; });
+            });
+            await (await page.$('.pc-monitor'))?.screenshot({ path: `${process.env.STRIP_SHOTS}/token-strip-${size[0]}x${size[1]}.png` });
+            await page.evaluate(() => { document.querySelectorAll('body > *, canvas').forEach(e => { e.style.visibility = ''; }); });
+        } catch { /* the check still runs */ }
+    }
+    return page.evaluate(async ({ size }) => {
+        const out = { ok: true, notes: [], lines: [] };
+        try {
+            const tb = await import('/break_escape/js/utils/pc-taskbar.js');
+            const mon = document.querySelector('.pc-monitor');
+            const top = mon?.querySelector('.pc-desktop-topbar');
+            if (!mon || !top) { out.ok = false; out.notes.push('the token desktop did not open'); return out; }
+            const [vw, vh] = [window.innerWidth, window.innerHeight];
+            const mr = mon.getBoundingClientRect();
+            out.bezel = Math.round(mr.width);
+            out.compact = mon.hasAttribute('data-compact');
+            if (mr.left < -1 || mr.right > vw + 1 || mr.bottom > vh + 1) { out.ok = false; out.notes.push(`bezel outside the viewport (${Math.round(mr.left)},${Math.round(mr.top)} to ${Math.round(mr.right)},${Math.round(mr.bottom)} in ${vw}x${vh})`); }
+            if (size[0] === 390 && !out.compact) { out.ok = false; out.notes.push('the compact rule is not in force at 390x844'); }
+            const mg = window.MinigameFramework.currentMinigame;
+            const base = window.pcSessions.get('lena_pc');
+            const linesOf = (el) => {
+                const cs = getComputedStyle(el);
+                const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.2);
+                // offsetHeight is in layout px; the monitor is drawn at x2 by a transform, so a
+                // bounding rect would read twice the line count at 1400x1000
+                // minus padding and borders, so a boxed line (the strip's amber box) counts text lines
+                const box = ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'].reduce((n, k) => n + (parseFloat(cs[k]) || 0), 0);
+                return Math.max(1, Math.round((el.offsetHeight - box) / lh));
+            };
+            const within = (name, el, box) => {
+                const a = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+                const n = linesOf(el);
+                out.lines.push(`${name}:${n}`);
+                if (a.right > b.right + 1 || a.left < b.left - 1) { out.ok = false; out.notes.push(`${name}: runs past its box`); }
+                if (n > 2) { out.ok = false; out.notes.push(`${name}: takes ${n} lines`); }
+            };
+            // the top strip's own token line (the line a player sees without opening Start), drawn
+            // by sessionNoticesHtml(): its lines, that it fits the strip, and that the first row of
+            // desktop icons stays in view under it
+            const cases = [['live', base.tokenSecondsLeft ?? 187], ['sub-minute', 41], ['240h', 240 * 60 * 60]];
+            const strip = top.querySelector('.desktop-token-line');
+            if (!strip) { out.ok = false; out.notes.push('the top strip has no token line'); }
+            else {
+                const icon = mon.querySelector('.desktop-icon');
+                for (const [name, secs] of cases) {
+                    tb.refreshTokenLines(top, { ...base, tokenSecondsLeft: secs });
+                    within(`strip-${name}`, strip, top);
+                    const sr = strip.getBoundingClientRect(), tr = top.getBoundingClientRect();
+                    if (sr.bottom > tr.bottom + 1 || sr.top < tr.top - 1) { out.ok = false; out.notes.push(`strip-${name}: line outside the strip`); }
+                    if (tr.right > mr.right + 1) { out.ok = false; out.notes.push(`strip-${name}: strip outside the monitor`); }
+                    if (top.scrollWidth > top.clientWidth + 1) { out.ok = false; out.notes.push(`strip-${name}: strip scrolls sideways`); }
+                    if (!icon) { out.ok = false; out.notes.push('no desktop icons to check'); break; }
+                    // the first icon sits below the strip and wholly inside the viewport and the monitor
+                    const ir = icon.getBoundingClientRect(), mrr = mon.getBoundingClientRect();
+                    const floor = Math.min(vh, mrr.bottom);
+                    if (ir.top < tr.bottom - 1) { out.ok = false; out.notes.push(`strip-${name}: first icon row under the strip`); }
+                    if (ir.bottom > floor + 1 || ir.top < 0) { out.ok = false; out.notes.push(`strip-${name}: first icon row out of view (${Math.round(ir.top)} to ${Math.round(ir.bottom)} of ${Math.round(floor)})`); }
+                }
+                tb.refreshTokenLines(top, { ...base, tokenSecondsLeft: base.tokenSecondsLeft ?? 187 });
+            }
+            // the start panel's own line
+            mon.querySelector('.pc-start-btn')?.click();
+            await new Promise(r => setTimeout(r, 250));
+            const panel = mon.querySelector('.pc-start-panel');
+            const pc = mon.querySelector('.pc-start-credential');
+            if (!panel || panel.hidden || !pc) { out.ok = false; out.notes.push('the start panel did not open with a token line'); }
+            else {
+                for (const [name, secs] of cases) {
+                    tb.refreshTokenLines(panel, { ...base, tokenSecondsLeft: secs });
+                    within(`start-${name}`, pc, panel);
+                    const pr = panel.getBoundingClientRect(), r = pc.getBoundingClientRect();
+                    if (r.bottom > pr.bottom + 1 || pr.right > mr.right + 1) { out.ok = false; out.notes.push(`start-${name}: panel or line outside the monitor`); }
+                }
+                if (panel.scrollWidth > panel.clientWidth + 1) { out.ok = false; out.notes.push('start panel scrolls sideways'); }
+            }
+        } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
+        return out;
+    }, { size });
 }
 
 (async () => {
@@ -480,7 +638,25 @@ async function measureCaptureLog(page, size) {
         }
         await page.evaluate(() => { const MF = window.MinigameFramework; while (MF?.currentMinigame) MF.endMinigame(false, null); });
     }
-    console.log(`\n${failed === 0 ? 'ALL PASS' : failed + ' FAILURE(S)'} over ${rows.length} checks (game ${id})`);
+    // K5: the token line on a real opened token desktop (a second game, test_access_keyring)
+    const tokenId = Number(process.env.TOKEN_GAME) || newGame('test_access_keyring');
+    const tpage = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
+    await tpage.addInitScript(() => { try { localStorage.setItem('tutorial_declined', 'true'); } catch {} });
+    const setup = await setupTokenGame(tpage, tokenId);
+    for (const [w, h] of K3D_SIZES) {
+        const tag = `token-desktop @ ${w}x${h}`;
+        let m;
+        if (!setup.ok) m = { ok: false, notes: [setup.why], lines: [] };
+        else {
+            await tpage.setViewportSize({ width: w, height: h });
+            await sleep(300);
+            m = await measureTokenDesktop(tpage, [w, h]);
+        }
+        if (!m.ok) failed++;
+        rows.push({ tag, verdict: m.ok ? 'PASS' : 'FAIL', notes: m.notes });
+        console.log(`${m.ok ? 'PASS' : 'FAIL'}  ${tag.padEnd(34)} bezel=${m.bezel ?? '?'} compact=${m.compact ?? '?'} lines=${(m.lines || []).join(' ')}${m.notes?.length ? '  ' + m.notes.join('; ') : ''}`);
+    }
+    console.log(`\n${failed === 0 ? 'ALL PASS' : failed + ' FAILURE(S)'} over ${rows.length} checks (games ${id} and ${tokenId})`);
     await browser.close();
     process.exit(failed === 0 ? 0 : 1);
 })();

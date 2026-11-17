@@ -80,7 +80,8 @@ export function keyringAnswer() {
         entries: Array.isArray(answer.entries) ? answer.entries : [],
         captures: answer.captures && typeof answer.captures === 'object' ? answer.captures : {},
         firstSeen: k.firstSeen,
-        foundVisible: typeof k.foundVisible === 'function' ? (e) => k.foundVisible(e) : undefined
+        foundVisible: typeof k.foundVisible === 'function' ? (e) => k.foundVisible(e) : undefined,
+        tokenSecondsLeft: typeof k.tokenSecondsLeft === 'function' ? (id) => k.tokenSecondsLeft(id) : undefined
     };
 }
 
@@ -241,6 +242,18 @@ function el(tag, cls, text) {
     return node;
 }
 
+/**
+ * How often an open log looks at a live token row's time (K5 R1 m1). A look is cheap and the row
+ * redraws only when its text would change, so a step shows within this many ms of its real minute.
+ */
+export const TOKEN_ROW_REFRESH_MS = 10 * 1000;
+
+/** The step a token's line shows for `secs` left: changes exactly when the row's text changes. */
+export function tokenStep(secs) {
+    if (!Number.isFinite(secs)) return 'none';
+    return secs <= 0 ? 'over' : (secs < 60 ? 'under' : String(Math.ceil(secs / 60)));
+}
+
 export class CaptureLogMinigame extends MinigameScene {
     // Draws in the shared console window (UI decision X8): a short list, so it wraps its content
     static consoleWindow = true;
@@ -273,6 +286,20 @@ export class CaptureLogMinigame extends MinigameScene {
         openScene = this;
         this.loadSecrets();
         this.loadKeyring();
+        // K5: a live token row's minutes step as the page's own clock moves (no request), as the desktop's bar does; it stops when the log closes
+        this.tokenTimer = setInterval(() => this.tickTokens(), TOKEN_ROW_REFRESH_MS);
+    }
+
+    /** Redraw in place when a token row shows minutes, keeping the scroll position. */
+    tickTokens() {
+        if (openScene !== this || !this.root?.querySelector('[data-timed="true"]')) return;
+        // Redraw only when a row's text would change (a minute step, or a token running out)
+        const k = keyringAnswer();
+        const sig = (this.timedIds || []).map((id) => `${id}:${tokenStep(k?.tokenSecondsLeft?.(id))}`).join('|');
+        if (sig === this.tokenSig) return;
+        const top = this.root.scrollTop;
+        this.redraw();
+        this.root.scrollTop = top;
     }
 
     /** GET /keyring in the background, then a redraw (keyring_changed redraws too, when the rev moved). */
@@ -282,6 +309,7 @@ export class CaptureLogMinigame extends MinigameScene {
     }
 
     cleanup() {
+        if (this.tokenTimer) { clearInterval(this.tokenTimer); this.tokenTimer = null; }
         if (openScene === this) openScene = null;
         super.cleanup();
     }
@@ -311,6 +339,8 @@ export class CaptureLogMinigame extends MinigameScene {
         const fresh = new Set(allRows(sections)
             .filter((r) => this.shownNew.has(r.key) || (r.seenKeys || []).some((k) => this.shownNew.has(k)))
             .map((r) => r.key));
+        this.timedIds = allRows(sections).filter((r) => r.timed && r.entry?.id).map((r) => r.entry.id);
+        this.tokenSig = this.timedIds.map((id) => `${id}:${tokenStep(keyringAnswer()?.tokenSecondsLeft?.(id))}`).join('|');
         this.root.textContent = '';
 
         const reveal = capturesReveal(social());

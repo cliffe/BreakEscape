@@ -63,6 +63,43 @@ warning, by design:
   listed on the keyring (listing is by proof, not by acceptance); the refusal is a K3 UI concern
   (the greyed Connect button). This mirrors plan 9.1's `ops_rdp` expected warning.
 
+**K5 additions.** `lena_token` (token for Lena, `connectsTo: lena_pc`, proof `jack_comms_port`, `expiresMin: 4`)
+adds one info line and two expected warnings, both by design (a token sign-in never adds its PC to
+`signedInPcs`, so neither can be satisfied by it):
+
+- `credential 'jake_pw_note' proof is a session on 'lena_pc', a token's connectsTo` (the typed sign-in of K1b
+  still satisfies it).
+- `an unlock_object task targets 'lena_pc', a token's connectsTo` (task `k1_session`; a typed sign-in
+  completes it).
+
+## Run E / R12 (K5: the token)
+
+Run E starts a new game, plants the drop box in `comms_port` and never takes the .rdp.
+
+- **R12.** The token toast on planting (the four minutes start at the plant): "Session token captured:
+  HB-FIN-02 sign-in token for Lena Fox on HB-FIN-02." or, with a capture log held, the capture-log wording.
+  Lena is tagged "Token" from the drop box view only, never at the keyboard. (This scenario has one foothold,
+  `jack_comms_port`, so "from another foothold" is reachable only as a tampered request: see below.)
+  "Connect with HB-FIN-02 sign-in token" signs in and the top strip (the amber line under "Remote session through ...")
+  says "with a session token, about {n} min left", stepping down each minute and reading "under a minute left"
+  in the last one; it shows without opening Start, and Start's panel repeats it. Reload: the top strip
+  and timer resume from the server's `expiresInS`. The drop box view lists `server_lan` through Lena's
+  session. When the four minutes are up the desktop closes with "HB-FIN-02 sign-in token expired. Your
+  session on HB-FIN-02 ended."; the drop box view no longer lists `server_lan`; HB-FIN-02's row shows no
+  held session; its sign-in screen through the drop box shows the greyed token button with "HB-FIN-02
+  sign-in token has expired.", and still does after a reload. (Lena's PC has no lock beyond its login, so
+  there is no lock step here; the server's refusal of an unlock after expiry, with no try counted, is
+  covered by `credential_token_test.rb`.) The capture log's Sign-ins row reads "Use it on
+  HB-FIN-02's sign-in screen, through Drop box: comms room. About {n} min left." and greys to "HB-FIN-02
+  sign-in token has expired.". A token sign-in completes no `unlock_object` task for the PC (the server
+  never records a token in `signedInPcs`).
+- Fit: `tools/playtest/signin-fit.mjs` draws a live and an expired token row in the Sign-ins list and the
+  token line in the top strip, and the first row of desktop icons staying in view, at the four sizes (390x844, 915x412, 800x600, 1400x1000).
+- Tampered checks from the page: the token through another foothold (generic refusal); after expiry, POST
+  /login (422 `expired`), GET /container with `foothold=` (403, reason `expired`) and a share request through
+  the session; a cleared client state does not revive it. `credentialClock` and its values never appear in an
+  answer (the leak scanner's `credential_clock` finding).
+
 ## TODO: later slices (K2 to K5)
 
 These extend this scenario and are **not built in K1**:
