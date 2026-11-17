@@ -1,0 +1,13 @@
+{
+  "key": "d26f209cc1f4e73e96059c734c498683",
+  "npc": "yusuf_demir",
+  "text": "And you held the door for them.",
+  "voice": "Alnilam",
+  "style": "Senior security consultant, mid-forties, British Turkish. Steady and careful, a deadpan line in understatement; never hurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m03_ghost_in_the_machine",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T08:42:36Z"
+}
