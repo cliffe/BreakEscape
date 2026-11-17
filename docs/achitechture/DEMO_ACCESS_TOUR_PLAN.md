@@ -364,25 +364,25 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W2 | not `done_t_drop_box` | "There's a live port by the kit table. Plug the box in before you go anywhere else." |
 | W3 | not `done_t_front_desk` | "Delphine's front desk next. Have a look round the screen." |
 | W4 | not `has_julian_rdp` | If `seen_julian_rdp`: "You've read Julian's connection file. Now take a copy of it." Otherwise: "Delphine's desktop had a saved connection on it. Copy it, don't connect from there." |
-| W5 | not `front_desk_signed_out` and not `done_t_julian_pc` | "Sign out of Delphine's PC before you use that file. Leave no trace." |
+| W5 | not `front_desk_signed_out` and not `done_t_julian_pc` | "Sign out of Delphine's PC before you use that file, so the connection has to go through the box." |
 | W6 | not `done_t_julian_pc` | "Open your keyring and use Julian's saved connection." |
-| W6b F | `julian_lost_with_desk` and not `julian_back` and not `done_t_door_controller` | "Julian's session went when you signed out at the front desk. Connect again from your keyring and it'll go through the box this time, or carry on to Lorna." |
-| W7 F | not `done_t_door_controller` | "With Julian's session up, the box can see further. Open the network view at the box and try the door controller, with Lorna's password." |
+| W7 F | not `done_t_door_controller` and not `done_t_unplug` and (not `julian_lost_with_desk` or `julian_back`) | "With Julian's session up, his PC can reach the server network. Open the network view at the box and try the door controller, with Lorna's password from facilities.txt." |
 | W8 F | not `done_t_server_room` | "You've got the codes. Server room's at the back of the open plan." |
 | W9 | not `done_t_copy_badge` | "Have a word with Lorna by the comms door. Bring the cloner." |
-| W10 | not `done_t_comms` | "Lorna's card should open the comms cupboard. Try it." |
+| W10 | not `done_t_comms` | "Your copy of Lorna's card should open the comms cupboard. Try it." |
+| W6b F | `julian_lost_with_desk` and not `julian_back` and not `done_t_door_controller` and not `done_t_unplug` (below W10, above W7) | With `has_julian_rdp`: "Julian's session went when you signed out at the front desk. Connect again from your keyring and it'll go through the box this time. You'll need it for the door controller." Otherwise: "Julian's session went when you signed out at the front desk. To get it back through the box, sign in there, copy his connection file, sign out, then connect from your keyring." |
 | W11 | not `saw_in_use` and not `done_t_open_session` | "Thandiwe's at her desk in the open plan. Try her laptop, then watch what happens when she gets up." |
 | W12 F | not `done_t_yasmin_pc` | "Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving." |
-| W13 F | not `done_t_implant` | "Back to the front desk. Delphine's PC has a spare USB port or two." |
-| W14 F | not `staff_twin_up` | "The plants in reception have room for one more gadget." |
-| W15 F | not `done_t_capture_key` | "Give it a moment. Thandiwe's about to check her email. If she's busy, pull the box when you're ready: the Wi-Fi stops still work after." |
+| W13 F | not `done_t_implant` | With `front_desk_signed_out`: "Back to the front desk. Sign in again, then see what Delphine's USB ports will take." Otherwise: "Back to the front desk. See what Delphine's USB ports will take." |
+| W14 F | not `ap_planted`, then not `staff_twin_up` | "Hide the access point in one of the reception plants, then open its console and copy the Staff Wi-Fi." then "The access point's in. Open its console from the plant and copy the Staff Wi-Fi." |
+| W15 F | not `done_t_capture_key` | "Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy." Then, box still in: "If she doesn't, carry on. The Wi-Fi stops still work after the box comes out." Box out: "If she doesn't, carry on to the comms cupboard and come back." (sets no tail) |
 | W16 F | not `done_t_staff_wifi` | "You've got the Staff key. Join the Staff Wi-Fi and compare it with the guest one." |
 | W17 | not `done_t_unplug` | "When you've had enough, pull the box out and see what drops." |
 | W18 F | not `done_t_guest_port` | "Take the box to the comms cupboard. Try the managed port, then the patch panel." |
 | W19 | otherwise | "That's the lot. Come and find me at reception." |
 
 - The phone has no `call` entry, so no line says "call me" (README:2361).
-- Hub order as built (slice 5 review): W9 and W10 (Lorna, comms cupboard) now sit ahead of W7 and W8, because required steps must not wait behind optional ones; W17 stays where it is but every optional line ahead of it (W7, W8, W11 to W16) adds "Skip any of that you like, and pull the box out when you're ready.". W4 also needs `not done_t_julian_pc`. W7 needs `not julian_lost_with_desk or julian_back`; W8 needs `done_t_door_controller`; W6b, W7 and W14 to W16 are hidden once `done_t_unplug`. W14 splits on a new global `ap_planted` (mapping on `device_hidden:kit_rogue_ap`) so it changes once the access point is in the plant.
+- Hub order as built (slice 5 review): W9 and W10 (Lorna, comms cupboard) now sit ahead of W7 and W8, because required steps must not wait behind optional ones; W17 stays where it is but every optional line ahead of it (W6b, W7, W8, W11 to W14, W16) adds "Skip any of that you like, and pull the box out when you're ready.". W4 also needs `not done_t_julian_pc`. W7 needs `not julian_lost_with_desk or julian_back`; W8 needs `done_t_door_controller`; only W6b and W7 are hidden once `done_t_unplug` (the Wi-Fi stops W14 to W16 still work after the box is out). The skip line shows at most twice (`told_skip`) and never after W15. W14 splits on a new global `ap_planted` (mapping on `device_hidden:kit_rogue_ap`) so it changes once the access point is in the plant.
 
 ### 2.10 Globals, mappings and timed texts
 
@@ -396,7 +396,7 @@ Booleans, all false at start:
 | `has_julian_rdp` | `onPickup` on julian.rdp |
 | `front_desk_signed_out` | mapping on `pc_signed_out:reception_pc`, `condition: data.reason === "sign_out"`. No onceOnly: a later sign-out (stop 14) writes the same value, and sync sends only changes. |
 | `julian_lost_with_desk` | mapping on `pc_signed_out:julian_pc`, `condition: data.reason === 'link_dropped' && data.fromPcId === 'reception_pc'`, `setGlobal: { julian_lost_with_desk: true, julian_back: false }`. The engine emits exactly this when a session opened from the front desk is dropped because the desk was signed out (pc-sessions.js:887-888, with `fromPcId` from `_remoteOf`, 958-964; the server's answer carries `fromPcId`, game.rb:4344-4367). A box-route session has no `fromPcId`, so an unplug never matches; signing out of julian_pc itself has reason `sign_out`, so that never matches either. |
-| `julian_back` | mapping on `pc_signed_in:julian_pc`, `condition: globalVars.julian_lost_with_desk === true`. A second loss resets it to false (above), so D5c follows the latest loss. W6b is a full-route line that sits with W7 and stops once the door controller is done, because the door controller is the first stop that needs Julian's session. The short route never meets it, and a second loss at stop 14 does not put it ahead of W14 to W17. |
+| `julian_back` | mapping on `pc_signed_in:julian_pc`, `condition: globalVars.julian_lost_with_desk === true`. A second loss resets it to false (above), so D5c follows the latest loss. W6b is a full-route line that sits below W10 and above W7, and stops once the door controller is done or the box is out, because the door controller is the first stop that needs Julian's session. The short route never meets it, and a second loss at stop 14 does not put it ahead of W14 to W17. |
 | `saw_in_use` | mapping on `pc_in_use:thandiwe_laptop` |
 | `staff_twin_up` | the rogue AP console |
 | `julian_ended_by_unplug` | mapping on `network_device_unplugged:meeting_jack`, `condition: data.endedPcIds.includes('julian_pc')` |
@@ -463,7 +463,7 @@ Mid-tour (ama, before `wrap_open()`):
 
 Debrief (ama, stop 19):
 - D1 "Right. Before we wrap up, anything else you want to try?"
-- D2 (choice) "I'll have another look round." / "I'm done, let's talk." The look-round reply while `tour_full` is false: "The box is out, so the network stops are done for today. The doors and desks are all still there if you want them." While `tour_full` is true: "Go on. I'll be here."
+- D2 (choice) "I'll have another look round." / "I'm done, let's talk." The look-round reply while `tour_full` is false: "Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there." While `tour_full` is true: "Have a proper look. I'll be in reception when you're done."
 - D3 "The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's held because nobody copied his."
 - D4 "The box got you onto the network, and Julian's saved connection did the rest. His door never came into it."
 - D5a (`julian_ended_by_unplug`) "And when the box came out, everything you'd opened through it went with it." Full route only, add: "The desks you'd sat at stayed signed in."

@@ -52,7 +52,7 @@ Ama Owusu: The quick version's about fifteen minutes. The full walk-round is nea
     -> hub
 + [The full walk-round.]
     ~ tour_full = true
-    Ama Owusu: The full walk-round, then. Your phone will tell you where next.
+    Ama Owusu: The full walk-round, then. Most people only see half of it.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -63,7 +63,7 @@ Ama Owusu: The quick version's about fifteen minutes. The full walk-round is nea
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    Ama Owusu: Still going? Your phone's got the list if you need it.
+    Ama Owusu: Still going? Your phone will tell you where next.
 }
 + { not tour_full and not done_t_unplug } [Actually, show me the full walk-round.]
     ~ tour_full = true
@@ -91,7 +91,7 @@ Ama Owusu: It's all written up. Thanks again.
 + [I'll have another look round.]
     ~ asked_round = true
     { tour_full:
-        Ama Owusu: Take your time. I'm not going anywhere.
+        Ama Owusu: Have a proper look. I'll be in reception when you're done.
     - else:
         Ama Owusu: Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there.
     }
@@ -107,7 +107,7 @@ Ama Owusu: A saved connection on the front desk got you into Julian's PC. His do
 - julian_ended_by_unplug:
     Ama Owusu: And when the box came out, everything you'd opened through it went with it.
     { done_t_implant or done_t_staff_wifi or done_t_yasmin_pc:
-        Ama Owusu: Anything you'd reached another way stayed up.
+        Ama Owusu: Anything you'd reached another way didn't need the box.
     }
 - julian_lost_with_desk and not julian_back:
     Ama Owusu: You connected to Julian's from Delphine's desk, so when you signed out there, his went too.
