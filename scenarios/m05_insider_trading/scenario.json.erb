@@ -820,6 +820,9 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "torres_called_in": false,
     "heard_tin_story": false,
     "qdc_staff_upset": false,
+    "heard_ex_whispering": false,
+    "heard_ex_collection": false,
+    "heard_ex_heading_home": false,
     "qdc_cooler_off": false,
     "thandiwe_ko": false,
     "niamh_ko": false,
@@ -1785,8 +1788,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             { "eventPattern": "room_entered:reception_lobby", "fireOnlyWhenLoaded": true, "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } }
           ]
         },
-<%# Office life (PLAN.md 2.2 to 2.10, 2.12): two day extras at the east end of table 2. No storyPath and no
-    pool or exchange lines yet: those are slice 5 (see BUILD_REPORT.md). Thandiwe goes home at the evening
+<%# Office life (PLAN.md 2.2 to 2.10, 2.12): two day extras at the east end of table 2. Conversations,
+    pools and exchanges are slice 5. Thandiwe goes home at the evening
     turn (server_room_entered); Niamh stays. %>
         {
           "id": "thandiwe_moyo",
@@ -1801,12 +1804,18 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
           "avatar": "assets/characters/thandiwe_moyo_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_thandiwe_moyo.json",
+          "currentKnot": "start",
           "globalVarOnKO": "thandiwe_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": { "room": "break_room", "x": 6, "y": 7 },
           "needsRooms": ["break_room", "main_corridor"],
           "needsCompany": { "groups": ["qdc_staff"] },
           "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["Who keeps leaving the jug empty?", "I'll descale this tomorrow. Probably.", "Two sugars. It's been that sort of day.", "Not the good mugs, please."],
+            "cooler": ["My feet have given up.", "I've signed for four parcels today.", "Half five can't come soon enough.", "Facilities never fixed that blind."]
+          },
           "needs": {
             "caffeine": { "initial": 55, "decayPerMin": 4, "urgentAt": 30, "jitterPct": 10 },
             "thirst": { "initial": 75, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 }
@@ -1833,12 +1842,25 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
           "avatar": "assets/characters/niamh_doherty_headshot.png",
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_niamh_doherty.json",
+          "currentKnot": "start",
           "globalVarOnKO": "niamh_ko",
           "behavior": { "hostile": { "leash": true } },
           "needsHome": { "room": "break_room", "x": 6, "y": 5 },
           "needsRooms": ["break_room", "main_corridor"],
           "needsCompany": { "groups": ["qdc_staff"] },
           "chatterCooldownMin": 2,
+          "chatter": {
+            "coffee": ["This machine hates me personally.", "Oat milk's gone again.", "Third one today. Don't judge.", "Is it meant to make that noise?"],
+            "cooler": ["I'm hiding from my inbox.", "Everyone's very quiet today.", "Ten more minutes, then the deadline.", "Tomorrow's all-staff won't write itself."]
+          },
+<%# Exchanges (office_life/SPOKEN_LINES.md): read in order, the first unheard one whose gates hold plays when
+    the pair meet with the first line's speaker in earshot. The knots are in her ink. %>
+          "exchanges": [
+            { "with": "thandiwe_moyo", "knot": "ex_whispering", "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": false } },
+            { "with": "thandiwe_moyo", "knot": "ex_collection", "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": false } },
+            { "with": "thandiwe_moyo", "knot": "ex_heading_home", "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": false, "server_badge_obtained": true } }
+          ],
           "needs": {
             "caffeine": { "initial": 45, "decayPerMin": 4, "urgentAt": 30, "jitterPct": 10 },
             "thirst": { "initial": 75, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 }
