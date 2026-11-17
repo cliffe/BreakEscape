@@ -846,9 +846,9 @@ module BreakEscape
       tag = ROW_TAGS[kind].include?(source[:row_tag]) ? source[:row_tag] : nil
       tag ||= if kind == 'credential'
                 source[:secret].is_a?(String) && source[:secret].match?(PIN_PATTERN) && account.nil? ? 'pin' : 'password'
-              else
+      else
                 source[:phish_foothold] || source[:payload_owner] ? 'foothold' : 'finding'
-              end
+      end
       row_source = source[:page] || source[:phish_foothold] ? 'phished' : 'recorded'
       row_source = 'phished' if kind == 'credential' && source[:row_source] == 'phished'
 
