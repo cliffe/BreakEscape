@@ -61,3 +61,12 @@ reception dressing. Only the `briefing_room` `kit_rogue_ap` object and the `rece
 (`rogue_ap_spot`, `planted_rogue_ap`, `lw_staff_ap`, `lw_guest_ap`, `lw_guest_card`) and the
 reception `lighting` block changed, overlaid from the live render; the fold-related habit keys are
 untouched. The base did not grow beyond those few objects and a small lighting block.
+
+Note (plant hiding H5, 2026-11-17): the lab loader fixture was refreshed for the plant-hiding
+migration, by the same overlay method (not a live render of the whole file). Only the changed
+content was overlaid from the current lab render, after `NpcHabits.expand!`: the `briefing_room`
+`kit_rogue_ap` (now `hideable`), the `reception` objects (`rogue_ap_spot` removed, `reception_planter`
+and `reception_plant_desk` as plants, `planted_rogue_ap` with `hiddenWith` and no position or
+`revealOnGlobal`), Ruth's `eventMappings` and Kieran's `captureProof` (no `on`). The fold-related
+habit keys are untouched, and a diff of the fold of this fixture against a fresh render shows no
+non-note difference.
