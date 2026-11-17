@@ -51,7 +51,20 @@ What holds up:
 ## Outcomes
 
 - M1: fixed (user decision D86a: hide picture chat). `chatterPool` takes a `thoughtsOn` argument and the needs world reads `gameScenario.npcThoughts`; picture chat is off when it is false, spoken lines and barks are unchanged. Own commit, test/js/npc-thoughts-pictures.test.mjs, docs and schema name picture chat.
-- m1: done. Live proof on test_npc_thoughts_off, m02 and the test_needs_sims control; see the hand-off report for game ids and counts. Proof script tmp/npc-thoughts-proof.mjs, screenshots tmp/npc-thoughts-proof/.
+- m1: done. Live proof on test_npc_thoughts_off, m02 and the test_needs_sims control; game ids and counts in the Live proof section below. Proof script tools/playtest/npc-thoughts-proof.mjs, screenshots tmp/npc-thoughts-proof/ (gitignored).
 - m2: done. One line each in OFFICE_LIFE_MISSIONS_PLAN.md and the mission-office-life SKILL.md.
 - m3: decided (D87a). sis01, sis02 and sis03 now set `"npcThoughts": false` beside the m01 to m10 line; validator 0 errors on each.
 - m4: done. validate_npc_needs.rb warns when `showPressingNeeds` or `actionIcons` is set while `npcThoughts` is false; test/js/validator-npc-thoughts.test.mjs. test_npc_thoughts_off keeps its one warning on purpose.
+
+## Live proof
+
+Run on a keyless server (port 3093) from the worktree p-npc-thoughts at the R1 build, with `tools/playtest/npc-thoughts-proof.mjs` (samples action icons, thought bubbles, picture bubbles and spoken bubbles every 100 ms at setFPS(20), fixed steps on; writes nothing to the game row). Game ids are taken from the server log by request time, so treat the pairing as recorded after the fact.
+
+| Run | Game id | Scenario and flag | Icons / thoughts / pictures seen |
+| --- | --- | --- | --- |
+| off | 6976 | test_npc_thoughts_off, flag false | 0 / 0 / 0 |
+| offflip | 6966 | test_npc_thoughts_off, flag flipped true in the page only (`FLIP=1`, sensitivity control) | 2 / 2 / 2 |
+| control | 6932 | test_needs_sims, flag unset (on) | icons and pictures shown |
+| m02 | 6984, 6987 | m02, flag false | no icons or pictures; counts were not kept |
+
+The off and offflip counts are from the R2 review of the screenshots and script output; the control and m02 counts were not written down at the time, so only the screenshots back them. Screenshots (gitignored, local only): `tmp/npc-thoughts-proof/off-*.png`, `offflip-*.png`, `control-*.png`, `m02-*.png`. offflip-0-far-1.png shows two coffee bubbles over two NPCs; off-0-far-0.png shows none.

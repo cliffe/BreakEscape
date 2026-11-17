@@ -24,7 +24,7 @@
  *                        loads on first use and the text glyph shows until it arrives.
  *   npcThoughts          true (default). false: no action icon, no pressing, avoid or parked thought
  *                          bubble for any NPC, whatever showPressingNeeds says (the campaign missions,
- *                          D77). Barks, speech bubbles, chatter and held items are not affected.
+ *                          D77). Barks, speech bubbles, spoken chatter lines and held items are not affected (picture chat follows this flag too, read by the needs world hook).
  *   npcWindupMs          pre-action tell length before an NPC leaves its post (npc-needs.js). Default 700, 0 = off.
  *   showPressingNeeds    false (default). true: a thought bubble beside the head shows the NPC's
  *                          most pressing need it is not acting on (getState().pressing), the

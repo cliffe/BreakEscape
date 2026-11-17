@@ -23,7 +23,7 @@ Commit reviewed: cbf1d19cf on build/npc-thoughts (worktree p-npc-thoughts), main
 4. Sync (check 4). No file under app/, lib/, config/ or db/ is in the diff. The flag is read from `window.gameScenario` only. No player_state field is added and nothing new is sent.
 5. Tests (check 5). All three pass under `bin/test-js`. npc-thoughts-flag drives the real `update()`. npc-thoughts-pictures drives the real `_pickBark` and `chatterPool` through the shared stub world (test/js/fixtures/needs-stub-world.mjs). validator-npc-thoughts runs the real `ValidateNpcNeeds.check`. None of the three copy engine files into a temp harness; they import from the repo path. The build adds no static import to any engine module (`git diff main...HEAD -- public | grep import` is empty), so no copy list needs a change.
 6. Schema, validator, placement (check 6). The schema entry (scripts/scenario-schema.json:224) and the validator error and warning (scripts/validate_npc_needs.rb:1082-1087) are correct. sis01, sis02 and sis03 each add one line at the top level beside `startRoom` (sis01 :144, sis02 :50, sis03 :66). The validator gives each sis mission 0 errors with the schema passing (17, 11 and 12 warnings, none about the flag). test_npc_thoughts_off shows its one intended dead-config warning.
-7. Live proof (check 7). tmp/npc-thoughts-proof.mjs is credible. It samples `npcActionIcons` icons and bubbles, world-bubble pictures (image showing with no text) and spoken bubbles every 100 ms. It runs at setFPS(20) with fixed steps on, writes nothing to the game row, and the sensitivity run flips `window.gameScenario.npcThoughts = true` in the page only (env `FLIP`). Both readers re-read the flag on each call (npc-action-icons.js:579, npc-needs.js:5562), so an in-page flip is a fair control. The screenshots agree: offflip-0-far-1.png shows two coffee bubbles over Ravi and Tess, and off-0-far-0.png shows none.
+7. Live proof (check 7). tmp/npc-thoughts-proof.mjs (now tools/playtest/npc-thoughts-proof.mjs) is credible. It samples `npcActionIcons` icons and bubbles, world-bubble pictures (image showing with no text) and spoken bubbles every 100 ms. It runs at setFPS(20) with fixed steps on, writes nothing to the game row, and the sensitivity run flips `window.gameScenario.npcThoughts = true` in the page only (env `FLIP`). Both readers re-read the flag on each call (npc-action-icons.js:579, npc-needs.js:5562), so an in-page flip is a fair control. The screenshots agree: offflip-0-far-1.png shows two coffee bubbles over Ravi and Tess, and off-0-far-0.png shows none.
 
 ## m1. An unvoiced desk-phone item with picture chat off reports a talking state with no line and no picture
 
@@ -76,3 +76,11 @@ Commit reviewed: cbf1d19cf on build/npc-thoughts (worktree p-npc-thoughts), main
 - The m02 and test_needs_sims proof screenshots beyond file names.
 - The validator on m01 to m04 and m06 to m10 (R1 checked m02, m07 and m10).
 - Rails tests (the diff touches no Ruby outside scripts/).
+
+## Outcomes
+
+- m1: fixed. `_talking` skips a desk-phone item with neither line nor picture; the call still runs its time and finishes. Test in npc-thoughts-pictures.test.mjs.
+- m2: fixed. `_sayMutter` emits `npc_mutter` with no line when nothing was shown and picture chat is off, so `lineSaid` ends a share_login visit at once. Flag-on behaviour is unchanged. Test added.
+- m3: done. Comment in npc-action-icons.js, schema text, NPC_NEEDS_SYSTEM.md flag paragraph and a pointer in 5.6a updated.
+- m4: done. "Live proof" section in NPC_THOUGHTS_REVIEW_R1.md; script moved to tools/playtest/npc-thoughts-proof.mjs. Control and m02 counts were never recorded, only the off (0/0/0) and flipped (2/2/2) ones.
+- m5: done. Test drives `createEngineWorld().npcThoughtsOn()` for absent, null, true, false. No new engine import, so no copy list change.

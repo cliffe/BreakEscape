@@ -2254,6 +2254,10 @@ export class NPCNeedsSystem {
         const said = s.saying !== before ? s.saying : null;
         if (said) {
             this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: said.line || null, picture: said.picture || null });
+        } else if (!this._thoughtsOn()) {
+            // Picture chat is off (npcThoughts false): a mutter with no line shows nothing, but say so, so a
+            // share_login visit waiting on its login_aloud line ends at once as it did with a picture
+            this._emit(`npc_mutter:${npcId}`, { npcId, topic, line: null, picture: null });
         }
     }
 
@@ -4544,7 +4548,8 @@ export class NPCNeedsSystem {
         // Slice 19: half a desk-phone call (no partner in the room)
         for (const c of this._calls.values()) {
             const cur = c.current;
-            if (cur && c.speakerId === npcId && this.clockMs < cur.until) {
+            // An unheard item with picture chat off has no line and no picture: not talking (the call still runs its time)
+            if (cur && c.speakerId === npcId && this.clockMs < cur.until && (cur.line || cur.picture)) {
                 return { line: cur.line, picture: cur.picture || null, knot: c.knot || null, partnerId: null, topic: c.topic, objectId: c.phoneId, call: true, remainingMs: cur.until - this.clockMs };
             }
         }
