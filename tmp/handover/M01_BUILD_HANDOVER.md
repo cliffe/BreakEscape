@@ -25,3 +25,17 @@ Worktree .claude/worktrees/p-ol-m01, branch plan/ol-m01. Spec: scenarios/m01_fir
 - NPC tile position is body centre; seated engine snaps to chair (Fatima chair-white-2-rotate7, Graham rotate5).
 - Probe run time: waitForFunction on window.npcNeedsSystem; person-chat advance with Space, choose via __test.minigame.chooseMatching after the choice shows.
 - No delivery tags on the new extras' ink (not in approved text).
+
+## Update after steps 3 and 4 (second agent, stopped at context limit)
+Commits: 2b0cbe079 (step 3), 33038138a (step 4). Validator 0 errors, 22 warnings; lock diff empty. Both steps are code-complete.
+Exchange lines 16, 21, 22 shortened to fit the validator's 40 character cap (SPOKEN_LINES updated).
+Alarmed global: setGlobal added to the two HaX attacked mappings plus one new agent_0x99 mapping for derek_fight_triggered.
+Probes (new, tools/playtest/): m01-ol-cooler.mjs (done, results in BUILD_REPORT), m01-ol-exchanges.mjs (running on game 7080, output tmp/exchanges-run1.txt; 3 rounds then reload), m01-ol-evening.mjs (started; stops at the archive).
+Games from this run: 7075, 7080 (cooler), 7083 (evening head-start: unlock hallway_east/it_room/server_room, submit-flag shatter_server:flag_1; the archive still shows the flag-station "DECRYPTION KEY" prompt, so flag_1 submit via new-game did not open it).
+
+## Open for the next agent
+- Test 9 evening: get the archive open by the real path (the flag-station UNLOCK needs the key value; ask the user or use the stand-in flag file that new-game wrote, tools/playtest/m01_first_contact-flags-game7083.xml, only if allowed), take "ENTROPY Network Architecture", then check hide while in server_room, seats released (window.seating), empty-office screenshot, reload still hidden, no re-hide effect.
+- Test 10 attack/KO on fresh games each (playerCombat.attack, chaseRange tune), HaX text once, credits lines, music threat then noir.
+- Test 7 approach checks (recycling bin, filing cabinet vs cooler users), cooler aisle render, test 8 barks, test 11 third user and m01_staff_alarmed turning the cooler off, per-phase reloads.
+- V6 keyless: env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]", expect 22; run from the worktree root.
+- Finish BUILD_REPORT.md, copy the evening screenshot, commit. Do not kill by `pkill -f` with a pattern that matches your own command line. Another session's npc-thoughts-proof probe was also hitting :3094; server still running (puma 2279413).
