@@ -1755,11 +1755,12 @@ export class ContainerMinigame extends MinigameScene {
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
         });
-        this.focusReturnedIcon(desktopIcons);
         // On the monitor a label is a backed box as wide as its text (R2 m3): an even width,
         // so centring it under the icon lands on a whole pixel
         fitIconLabels(desktopIcons);
         if (this.pcMonitor) evenShareLabels(desktopIcons, '.desktop-icon-label');
+        // After the labels are fitted, so a focus-visible icon opens its clipped label
+        this.focusReturnedIcon(desktopIcons);
         this.updateDesktopScrollCue();
         if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => this.updateDesktopScrollCue());
@@ -2185,6 +2186,7 @@ export class ContainerMinigame extends MinigameScene {
         
         // Store the container state globally so we can return to it
         this.exitReason = 'item';
+        rememberIconFocus(this.containerItem, item);
         window.pendingContainerReturn = containerState;
         
         // Close the container minigame first
