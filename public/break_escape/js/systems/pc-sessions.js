@@ -43,6 +43,7 @@
  *                      signed in at this PC just before (a switch), else null; firstAtPc is true
  *                      when the player had never signed in at this PC before (signedIn).
  *   pc_signed_out      { pcId, npcId, reason }         reason: sign_out (the Sign out button) |
+ *                      token_expired (a session token ran out; K5; was link_dropped) |
  *                      switch (the first half of a switch) | no_session (a 403 from container) |
  *                      claim_ended (a claimed session ended on load) | owner_returned or
  *                      auto_locked (a claimed session ended by the owner's return or the
@@ -858,7 +859,10 @@ export class PcSessions {
                 if (tokenLine) tokenLines.push(tokenLine);
                 else unseen.push(previous.host || 'a remote PC');
             }
-            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
+            // An expired token says so (reason token_expired, as the desktop's close reason does);
+            // no listener keys on link_dropped for a token session (the n4 sign-out objective is
+            // an unplug at a password session)
+            this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: tokenLine ? 'token_expired' : 'link_dropped', ...this._remoteOf(previous) });
             // An open desktop of a pruned session names its host; an unplug keeps "The link dropped"
             this._closeDesktop(pcId, tokenLine || (routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE),
                 // An expired token has its own close reason: the network view resumes (R12), where a

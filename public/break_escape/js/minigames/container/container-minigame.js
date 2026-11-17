@@ -1281,8 +1281,9 @@ export class ContainerMinigame extends MinigameScene {
         // A token session's minutes left sit in the top strip, where a player working in the
         // desktop sees them without opening Start (K5). refreshTokenLines rewrites it.
         const tokenText = session.kind === 'token' ? credentialSessionLine(session) : null;
+        const tokenLow = typeof session.tokenSecondsLeft === 'number' && session.tokenSecondsLeft < 60;
         const tokenLine = tokenText ? `
-                    <div class="desktop-claim-line desktop-token-line">${escapeHtml(displayDashes(tokenText))}</div>` : '';
+                    <div class="desktop-claim-line desktop-token-line${tokenLow ? ' desktop-token-line-low' : ''}">${escapeHtml(displayDashes(tokenText))}</div>` : '';
         return `${remoteLine}${claimLine}${tokenLine}`;
     }
 

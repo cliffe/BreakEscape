@@ -1094,7 +1094,7 @@ test('load() keeps a token session with its time, off signedIn, and arms its tim
         mock.timers.tick(1000);
         assert.deepEqual(closed, [[TOKEN_LINE, 'token_expired']]);
         assert.equal(s.has('fin_pc'), false);
-        assert.equal(named('pc_signed_out').at(-1).reason, 'link_dropped');
+        assert.equal(named('pc_signed_out').at(-1).reason, 'token_expired', 'the event says why, as the desktop close reason does');
         assert.equal(calls.some(c => c[0] === 'logout'), false);
     } finally { mock.timers.reset(); }
 });
@@ -1143,7 +1143,7 @@ test('the timer does nothing for a session that was signed out or replaced meanw
         await s.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
         await s.signOut('fin_pc');
         mock.timers.tick(700 * 1000);
-        assert.equal(named('pc_signed_out').filter(d => d.reason === 'link_dropped').length, 0);
+        assert.equal(named('pc_signed_out').filter(d => d.reason === 'link_dropped' || d.reason === 'token_expired').length, 0);
         // replaced by a password sign-in: the old token timer must not drop the new session
         const t = tokenSetup();
         await t.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });

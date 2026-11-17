@@ -122,6 +122,9 @@ export function refreshTokenLines(root, session) {
         const text = displayDashes(line);
         if (el.textContent !== text) { el.textContent = text; changed = true; }
     });
+    // The top-strip line is neutral until under a minute is left, then amber (R4 m1)
+    const low = typeof session.tokenSecondsLeft === 'number' && session.tokenSecondsLeft < 60;
+    root.querySelectorAll('.desktop-token-line').forEach((el) => el.classList.toggle('desktop-token-line-low', low));
     return changed;
 }
 

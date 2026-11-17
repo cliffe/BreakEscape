@@ -470,4 +470,14 @@ test('K5: the taskbar token line rounds as remote-host-text.js tokenMinutesLeft 
     assert.equal(refreshTokenLines(document.body, t), false, 'nothing to change the second time');
     assert.deepEqual([...document.querySelectorAll('span')].map(e => e.textContent), ['with a session token, about 5 min left', 'with a session token, about 5 min left']);
     assert.equal(refreshTokenLines(document.body, { ...t, kind: 'saved_connection' }), false);
+    // R4 m1: the top-strip line is neutral, and amber (the -low class) only under a minute left
+    document.body.innerHTML = '<div class="desktop-claim-line desktop-token-line">x</div>';
+    const strip = document.querySelector('.desktop-token-line');
+    refreshTokenLines(document.body, t);
+    assert.equal(strip.classList.contains('desktop-token-line-low'), false, '5 min left is neutral');
+    refreshTokenLines(document.body, { ...t, tokenSecondsLeft: 59 });
+    assert.equal(strip.classList.contains('desktop-token-line-low'), true, 'under a minute is amber');
+    assert.match(strip.textContent, /under a minute left/);
+    refreshTokenLines(document.body, { ...t, tokenSecondsLeft: 600 });
+    assert.equal(strip.classList.contains('desktop-token-line-low'), false, 'a longer figure goes neutral again');
 });
