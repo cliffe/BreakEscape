@@ -44,7 +44,7 @@ Sound volume is `0.5 x level x duck` in every row. Level is the unducked normali
 
 ### Doorway deviation (L3)
 
-The plan expected a null-room hold in the north doorway. The rooms overlap: reading_room (y -256, height 192) has its top 64 px band inside restricted_stacks' floor (y -512, height 320), so the player is never in no room there (0 null samples across 5 crossings, 50 ms sampling). The loop never dips. The same holds for the dock and open_stacks. The cause is the engine's placement rule (floors meet and are inclusive, `core/rooms.js:1460`, `:1555`, `:3197` to `:3203`), so no mission reaches the hold at a door. PLAN.md section 4 and L3 are corrected. The engine comments that describe the hold (`ambient-choice.js:10`, `core/rooms.js:3305`, `office-room-tone.js:133`) are stale; left for the room-tone owner.
+The plan expected a null-room hold in the north doorway. The rooms overlap: reading_room (y -256, height 192) has its top 64 px band inside restricted_stacks' floor (y -512, height 320), so the player is never in no room there (0 null samples across 5 crossings, 50 ms sampling). The loop never dips. The dock and open_stacks stack the same way, so the same holds there by the geometry (no separate null sampling was recorded for them). The cause is the engine's placement rule (floors meet and are inclusive, `core/rooms.js:1460`, `:1555`, `:3197` to `:3203`), so no mission reaches the hold at a door. PLAN.md section 4 and L3 are corrected. The engine comments that describe the hold (`ambient-choice.js:10`, `core/rooms.js:3305`, `office-room-tone.js:133`) are stale; left for the room-tone owner.
 
 ### Debrief close gap (L8)
 
@@ -60,8 +60,8 @@ Frame-time comparison against the baseline commit, the open_stacks frame time, t
 
 ## Notes for the user
 
-- Old Coyote did not challenge on open_stacks entry in one run (the harness talked to him first; from the part 1 run report); not an office-life matter.
+- Old Coyote did not challenge on open_stacks entry in one run (the harness talked to him first). This comes from the run agent's report; the saved live notes do not record it. Not an office-life matter.
 - Extra readings: Recruiter call in open_stacks level 0.15, duck 0.5, volume 0.0375, rings about 15 s after entry; HaX phone chat in reading_room level 0.125, duck 0.5, volume 0.03125. The Recruiter call returned to 0.075 on close; no restore reading was taken for the HaX chat.
 - The debrief runs behind an "End the mission now" ending-check overlay, and the credits cannot be closed, which is why open_stacks frame time was not taken afterwards.
 - Odd (unconfirmed whether a real player hits it): after flag 4 the first open of the HaX thread showed a stale "Understood." choice that did nothing; close and reopen ran `hour_read`. Possibly a pending choice left by the identity thread. Not related to room tone; worth a check by someone who owns the ink.
-- Flag 3 started the identity scene only after the flag station closed.
+- The identity scene ran after flag 3 was typed (the saved notes do not say whether it waited for the flag station to close).
