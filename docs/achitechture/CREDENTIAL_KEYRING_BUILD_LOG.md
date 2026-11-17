@@ -1416,3 +1416,16 @@ Game 6585: Sign-ins order (Lena .rdp, Ian password, ops cookie, Jake password, S
 - `scenarios/test_access_keyring/PLAYTEST.md`: R12 now carries the full list (toast wording, Token tag from the drop box view only, the stepping bar line, reload, expiry text, greyed button and its persistence after reload, the lock refusal with no try counted, the Sign-ins row text, no `unlock_object` credit).
 
 **Run 7 results.** `bin/test-js` 734 files (732 in the batch plus `access-relay-desktop` 21 tests and `access-from-desktop` 16 tests, each under `ulimit -v 2000000` and a 300 MB heap), 0 failed. `bin/rails test` (test DB) 3198 runs, 50094 assertions, 0 failures, 0 errors, 4 skips. Still open: the browser run of `signin-fit.mjs` (token row and `token-bar`), and live R12 (Run E).
+
+## K5 R1 fixes
+
+- M1: a token that runs out now closes the desktop with its own reason, `token_expired` (pc-sessions.js `linkDropped`, for the client timer and for a `tokenExpired` batch). The desktop landing table has rows for `token_expired` and `expired` (the 403 path) that resume the view, so a drop box trip no longer ends in the world and the view shows `server_lan` gone (R12). The desktop already says the token line, so the rows add no second toast. Tests: network-links (four: view-started and session-started trips, both reasons; the session-started ones fail without the rows, since a plain `close` leaves there) and pc-sessions (close reason is `token_expired`, three assertions; fail without the change).
+- m1: the container bar line and the capture log row look at the token's time every 10 s (was 60 s from mount) and redraw only when the text would change (`refreshTokenLines` already did; the log compares a per-row step). A token mounted at 125 s now reads "under a minute left" within 10 s of 59 s left. Tests in container-transfer-dialog and capture-log; both fail on the old source.
+- m2: a timed Sign-ins row at 0 s on the page's clock is greyed locally ("{label} has expired."), no request; the 10 s look redraws it. The signin-rows 0 s assertion is updated.
+- m3: `showFailure` takes `{ plainText }` (textContent); the password and PIN fallbacks use it. Hostile-label test (`<img src=x onerror=alert(1)>`) in lock-scope-refusal; fails without the change.
+- t1: comments now name the equality test in pc-sessions.test.mjs.
+- t3: the 403 `expired` branch no longer needs `remote` or `fromRoute`, so a keyboard desktop says the token line (test fails without it).
+- t2: not done. It needs a race with the client timer (a full answer says `expired` before the client timer fires), the server already refuses, and the client closes seconds later.
+- signin-fit.mjs: the capture-log-signins check used the module-scope `LABEL_32` inside `page.evaluate`; it now uses the `label` argument already passed in. Node syntax check only; the live rerun covers it. t4 (the browser run and live R12) is still to do.
+
+Results: bin/test-js 734 files passed, 0 failed; access-relay-desktop (21) and access-from-desktop (16) pass under `ulimit -v 2000000` and a 300 MB heap. No Ruby changed, so no rubocop run.
