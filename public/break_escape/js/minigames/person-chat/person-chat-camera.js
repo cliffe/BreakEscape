@@ -152,3 +152,27 @@ export function canvasBackingSize(cssW, cssH, dpr = 1) {
         height: Math.max(1, Math.round(cssH * d))
     };
 }
+
+/** Side of the portrait frame the phone layout sizes for (idle image, talk cell, viseme column). */
+export const PHONE_FRAME_PX = 128;
+/** The least caption height (CSS px) a phone keeps for the speaker line and two choices. */
+export const PHONE_MIN_CAPTION_PX = 330;
+
+/**
+ * The phone portrait section, sized from the viewport and nothing else. It takes the largest
+ * whole pixel scale that still leaves `minCaption` CSS px for the caption below it, and its
+ * height is exactly what that scale needs (scale x frame, in device pixels), so there is no
+ * spare band above the speaker. The scale never depends on the line or the choices on screen,
+ * only on the box the chat sits in and the device pixel ratio.
+ * @param {number} boxH - height of the chat box, CSS px
+ * @param {number} [dpr]
+ * @param {number} [frame] - source frame side, px
+ * @param {number} [minCaption] - CSS px to keep for the caption
+ * @returns {{scale:number, cssHeight:number}} cssHeight is in CSS px
+ */
+export function phonePortraitSize(boxH, dpr = 1, frame = PHONE_FRAME_PX, minCaption = PHONE_MIN_CAPTION_PX) {
+    const d = dpr > 0 ? dpr : 1;
+    const scale = Math.max(1, Math.floor(((boxH - minCaption) * d) / frame + 1e-9));
+    // a hair over, so layout rounding to device pixels never drops the backing below scale x frame
+    return { scale, cssHeight: (scale * frame) / d + 0.01 };
+}

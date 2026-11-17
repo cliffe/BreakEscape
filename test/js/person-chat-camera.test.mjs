@@ -154,3 +154,40 @@ test('a scene shot may use the exact cover scale', () => {
     const whole = backgroundRect({ pan: 1, zoom: 1 }, 1, 400, 400, 1304, 680);
     assert.equal(whole.w, 1600);
 });
+
+// Phone portrait sizing: the section height comes from the box and a whole scale, never from the caption.
+import { phonePortraitSize, PHONE_FRAME_PX, PHONE_MIN_CAPTION_PX } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
+
+test('phone portrait height is a whole scale of the frame and leaves the caption its minimum', () => {
+    for (const dpr of [1, 2, 3]) {
+        for (const boxH of [474, 620, 647, 824, 895, 1000]) {
+            const { scale, cssHeight } = phonePortraitSize(boxH, dpr);
+            assert.ok(Number.isInteger(scale) && scale >= 1);
+            // the backing store (css x dpr) lands on exactly scale x frame, with no spare band
+            assert.equal(Math.floor(cssHeight * dpr), scale * PHONE_FRAME_PX);
+            assert.equal(canvasBackingSize(390, cssHeight, dpr).height, scale * PHONE_FRAME_PX);
+            // and it is the largest scale that keeps the caption minimum (unless 1x already cannot)
+            if (scale > 1) assert.ok(boxH - cssHeight >= PHONE_MIN_CAPTION_PX - 1e-6);
+            assert.ok(boxH - (scale + 1) * PHONE_FRAME_PX / dpr < PHONE_MIN_CAPTION_PX);
+        }
+    }
+});
+
+test('the drawn scale equals the section scale and ignores caption content', () => {
+    // the sprite scale is a function of the section box alone; the caption only gets what is left
+    for (const boxH of [474, 647, 824, 895]) {
+        const { scale, cssHeight } = phonePortraitSize(boxH, 1);
+        const p = portraitRect(FIRST_NPC_VIEW, 128, 128, 390, Math.round(cssHeight), 0);
+        assert.equal(p.scale, scale);
+        assert.equal(p.y + p.h, Math.round(cssHeight));
+        // the caption is not an input: the box height alone decides, so a longer line or more choices cannot move it
+        assert.deepEqual(phonePortraitSize(boxH, 1, PHONE_FRAME_PX, PHONE_MIN_CAPTION_PX), phonePortraitSize(boxH, 1));
+    }
+});
+
+test('the portrait scale changes only when the viewport does', () => {
+    assert.equal(phonePortraitSize(647).scale, 2);
+    assert.equal(phonePortraitSize(824).scale, 3);
+    assert.equal(phonePortraitSize(895).scale, 4);
+    assert.equal(phonePortraitSize(474).scale, 1);
+});
