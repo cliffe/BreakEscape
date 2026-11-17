@@ -860,7 +860,10 @@ export class PcSessions {
             }
             this._emit('pc_signed_out', { pcId, npcId: previous.npcId ?? null, reason: 'link_dropped', ...this._remoteOf(previous) });
             // An open desktop of a pruned session names its host; an unplug keeps "The link dropped"
-            this._closeDesktop(pcId, tokenLine || (routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE), 'link_dropped');
+            this._closeDesktop(pcId, tokenLine || (routeEnded ? (routeEndedMessage([previous.host || 'a remote PC']) || LINK_DROPPED_MESSAGE) : LINK_DROPPED_MESSAGE),
+                // An expired token has its own close reason: the network view resumes (R12), where a
+                // dropped link ends the trip
+                tokenLine ? 'token_expired' : 'link_dropped');
         }
         const messages = [...tokenLines];
         const message = routeEnded ? routeEndedMessage(unseen) : unplugEndedMessage(unseen);

@@ -1092,7 +1092,7 @@ test('load() keeps a token session with its time, off signedIn, and arms its tim
         assert.deepEqual(closed, []);
         assert.equal(s.tokenSecondsLeft('fin_pc'), 1);
         mock.timers.tick(1000);
-        assert.deepEqual(closed, [[TOKEN_LINE, 'link_dropped']]);
+        assert.deepEqual(closed, [[TOKEN_LINE, 'token_expired']]);
         assert.equal(s.has('fin_pc'), false);
         assert.equal(named('pc_signed_out').at(-1).reason, 'link_dropped');
         assert.equal(calls.some(c => c[0] === 'logout'), false);
@@ -1198,7 +1198,7 @@ test('a logout or sign-in answer naming tokenExpiredPcIds ends that token sessio
     const closed = [];
     s.registerDesktop('fin_pc', (m, r) => closed.push([m, r]));
     s._dropEnded(['fin_pc', 'other'], 'kb_pc', ['fin_pc']);
-    assert.deepEqual(closed, [[TOKEN_LINE, 'link_dropped']]);
+    assert.deepEqual(closed, [[TOKEN_LINE, 'token_expired']]);
     // signOut passes the answer's tokenExpiredPcIds along
     const t = tokenSetup();
     await t.signInWithCredential('fin_pc', 'lena_token', { foothold: 'drop_box' });
@@ -1207,7 +1207,7 @@ test('a logout or sign-in answer naming tokenExpiredPcIds ends that token sessio
     const closed2 = [];
     t.registerDesktop('fin_pc', (m, r) => closed2.push([m, r]));
     await t.signOut('kb_pc');
-    assert.deepEqual(closed2, [[TOKEN_LINE, 'link_dropped']]);
+    assert.deepEqual(closed2, [[TOKEN_LINE, 'token_expired']]);
 });
 
 test('credentialRefusalReason maps expired:true to expired, after the other flags', async () => {

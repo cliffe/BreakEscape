@@ -136,7 +136,11 @@ const LANDINGS = {
         unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
         not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
-        link_dropped: () => ({ leave: 'link_dropped' })
+        link_dropped: () => ({ leave: 'link_dropped' }),
+        // K5: a session token ran out (the client timer, or the 403 `expired` refusal). The desktop
+        // already said which token; the view reopens without it (R12: the box no longer reaches the host)
+        token_expired: () => ({ resume: true }),
+        expired: () => ({ resume: true })
     },
     share: {
         close: () => ({ resume: true }),

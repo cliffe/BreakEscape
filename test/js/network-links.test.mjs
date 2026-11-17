@@ -673,6 +673,36 @@ test('landing: a file opened from a remote desktop hands over to the reader', as
     assert.deepEqual(closed(), []);
 });
 
+// K5 R1 M1: a token that ran out (client timer: token_expired; 403: expired) resumes the view
+for (const reason of ['token_expired', 'expired']) {
+    test(`landing: ${reason} on a remote desktop returns to the view and keeps the trip`, async () => {
+        await tripFromView();
+        const before = views.length;
+        assert.equal(links.landed('desktop', reason, { pcId: 'lena_pc' }).landing, 'view');
+        await settle();
+        assert.equal(views.length, before + 1);
+        assert.deepEqual(closed(), []);
+        assert.notEqual(links.trip, null);
+    });
+}
+
+// ... also when the trip began at an open session (a plain `close` would leave there)
+for (const reason of ['token_expired', 'expired']) {
+    test(`landing: ${reason} on a session-started remote desktop resumes the view, not the world`, async () => {
+        await reset({ planted: true });
+        withStarters();
+        window.pcSessions = { has: () => true, get: (id) => ({ pcId: id, footholdId: 'jack_comms_port', host: 'HB-FIN-02' }) };
+        const back = [];
+        links.openSession('lena_pc', { returnTo: (d) => back.push(d) });
+        const before = views.length;
+        assert.equal(links.landed('desktop', reason, { pcId: 'lena_pc' }).landing, 'view');
+        await settle();
+        assert.equal(views.length, before + 1);
+        assert.deepEqual(back, []);
+        assert.deepEqual(closed(), []);
+    });
+}
+
 test('landing: Sign out and a displaced session on a remote desktop return to the view', async () => {
     await tripFromView();
     assert.equal(links.landed('desktop', 'sign_out').landing, 'view');
