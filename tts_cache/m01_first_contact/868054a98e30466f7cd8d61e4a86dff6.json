@@ -1,0 +1,13 @@
+{
+  "key": "868054a98e30466f7cd8d61e4a86dff6",
+  "npc": "fatima_begum",
+  "text": "Morning. Busy week.",
+  "voice": "Vindemiatrix",
+  "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:48Z"
+}

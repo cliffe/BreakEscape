@@ -1,0 +1,1160 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m01_first_contact",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_derek_office",
+        "optional": false
+      },
+      {
+        "id": "door_it_room",
+        "optional": false
+      },
+      {
+        "id": "door_main_office_area",
+        "optional": false
+      },
+      {
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "lock_derek_cabinet",
+        "optional": false
+      },
+      {
+        "id": "lock_derek_computer",
+        "optional": false
+      },
+      {
+        "id": "lock_derek_personal_safe",
+        "optional": false
+      },
+      {
+        "id": "lock_derek_storage_safe",
+        "optional": false
+      },
+      {
+        "id": "lock_entropy_encrypted_archive",
+        "optional": false
+      },
+      {
+        "id": "lock_kevin_s_workstation",
+        "optional": false
+      },
+      {
+        "id": "lock_main_filing_cabinet",
+        "optional": false
+      },
+      {
+        "id": "lock_patricia_briefcase",
+        "optional": false
+      },
+      {
+        "id": "lock_vm_launcher_intro_linux",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "derek_s_office_key",
+        "optional": false
+      },
+      {
+        "id": "lock_pick_kit",
+        "optional": false
+      },
+      {
+        "id": "main_office_key",
+        "optional": false
+      },
+      {
+        "id": "npc_kevin_park",
+        "optional": false
+      },
+      {
+        "id": "npc_sarah_o_brien",
+        "optional": false
+      },
+      {
+        "id": "server_room_keycard",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "break_room",
+      "conference_room",
+      "derek_office",
+      "hallway_east",
+      "hallway_west",
+      "it_room",
+      "kevin_office",
+      "main_office_area",
+      "manager_office",
+      "maya_office",
+      "reception_area",
+      "server_room",
+      "storage_closet"
+    ],
+    "edges": [
+      [
+        "andgate1",
+        "lock_derek_storage_safe",
+        false
+      ],
+      [
+        "andgate2",
+        "lock_derek_cabinet",
+        false
+      ],
+      [
+        "andgate2",
+        "lock_derek_computer",
+        false
+      ],
+      [
+        "anniversary_card",
+        "lock_derek_cabinet",
+        true
+      ],
+      [
+        "anniversary_card",
+        "lock_derek_computer",
+        true
+      ],
+      [
+        "break_room",
+        "anniversary_card",
+        true
+      ],
+      [
+        "break_room",
+        "conference_room",
+        false
+      ],
+      [
+        "cyberchef_workstation",
+        "andgate1",
+        true
+      ],
+      [
+        "cyberchef_workstation",
+        "andgate2",
+        true
+      ],
+      [
+        "derek_office",
+        "encoded_note_1",
+        false
+      ],
+      [
+        "derek_office",
+        "encoded_note_2",
+        false
+      ],
+      [
+        "derek_office",
+        "lock_derek_cabinet",
+        false
+      ],
+      [
+        "derek_office",
+        "lock_derek_computer",
+        false
+      ],
+      [
+        "derek_office",
+        "lock_derek_personal_safe",
+        false
+      ],
+      [
+        "derek_s_office_key",
+        "door_derek_office",
+        false
+      ],
+      [
+        "door_derek_office",
+        "derek_office",
+        false
+      ],
+      [
+        "door_it_room",
+        "it_room",
+        false
+      ],
+      [
+        "door_main_office_area",
+        "main_office_area",
+        false
+      ],
+      [
+        "door_server_room",
+        "server_room",
+        false
+      ],
+      [
+        "encoded_note_1",
+        "andgate1",
+        false
+      ],
+      [
+        "encoded_note_2",
+        "andgate2",
+        false
+      ],
+      [
+        "hallway_east",
+        "maya_office",
+        false
+      ],
+      [
+        "hallway_west",
+        "hallway_east",
+        false
+      ],
+      [
+        "hallway_west",
+        "kevin_office",
+        false
+      ],
+      [
+        "hallway_west",
+        "manager_office",
+        false
+      ],
+      [
+        "it_room",
+        "npc_kevin_park",
+        false
+      ],
+      [
+        "kevin_office",
+        "lock_kevin_s_workstation",
+        false
+      ],
+      [
+        "kevin_office",
+        "out_of_office_note",
+        true
+      ],
+      [
+        "lock_derek_computer",
+        "personal_notes_safe",
+        false
+      ],
+      [
+        "lock_derek_storage_safe",
+        "my_passwords",
+        false
+      ],
+      [
+        "lock_patricia_briefcase",
+        "cyberchef_workstation",
+        false
+      ],
+      [
+        "lock_patricia_briefcase",
+        "derek_s_office_key",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "door_derek_office",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "lock_patricia_briefcase",
+        false
+      ],
+      [
+        "main_office_area",
+        "lock_main_filing_cabinet",
+        false
+      ],
+      [
+        "main_office_area",
+        "maintenance_checklist",
+        true
+      ],
+      [
+        "main_office_key",
+        "door_main_office_area",
+        false
+      ],
+      [
+        "maintenance_checklist",
+        "door_it_room",
+        true
+      ],
+      [
+        "maintenance_log_backup",
+        "door_it_room",
+        true
+      ],
+      [
+        "manager_office",
+        "lock_patricia_briefcase",
+        false
+      ],
+      [
+        "my_passwords",
+        "lock_vm_launcher_intro_linux",
+        false
+      ],
+      [
+        "npc_kevin_park",
+        "lock_pick_kit",
+        false
+      ],
+      [
+        "npc_kevin_park",
+        "server_room_keycard",
+        false
+      ],
+      [
+        "npc_sarah_o_brien",
+        "main_office_key",
+        false
+      ],
+      [
+        "out_of_office_note",
+        "door_it_room",
+        true
+      ],
+      [
+        "personal_notes_safe",
+        "lock_derek_personal_safe",
+        false
+      ],
+      [
+        "reception_area",
+        "npc_sarah_o_brien",
+        false
+      ],
+      [
+        "reception_area",
+        "reception_desk_phone",
+        false
+      ],
+      [
+        "reception_desk_phone",
+        "door_it_room",
+        false
+      ],
+      [
+        "server_room",
+        "lock_entropy_encrypted_archive",
+        false
+      ],
+      [
+        "server_room",
+        "lock_vm_launcher_intro_linux",
+        false
+      ],
+      [
+        "server_room_keycard",
+        "door_server_room",
+        false
+      ],
+      [
+        "storage_closet",
+        "hallway_east",
+        false
+      ],
+      [
+        "storage_closet",
+        "lock_derek_storage_safe",
+        false
+      ],
+      [
+        "storage_closet",
+        "maintenance_log_backup",
+        true
+      ],
+      [
+        "vmch_submit_launch_code",
+        "vmfl_submit_launch_code",
+        false
+      ],
+      [
+        "vmch_submit_linux_flag",
+        "vmfl_submit_linux_flag",
+        false
+      ],
+      [
+        "vmch_submit_ssh_flag",
+        "vmfl_submit_ssh_flag",
+        false
+      ],
+      [
+        "vmch_submit_sudo_flag",
+        "vmfl_submit_sudo_flag",
+        false
+      ],
+      [
+        "vmfl_submit_linux_flag",
+        "vmch_submit_sudo_flag",
+        true
+      ],
+      [
+        "vmfl_submit_ssh_flag",
+        "lock_entropy_encrypted_archive",
+        false
+      ],
+      [
+        "vmfl_submit_ssh_flag",
+        "vmch_submit_linux_flag",
+        true
+      ],
+      [
+        "vmfl_submit_sudo_flag",
+        "vmch_submit_launch_code",
+        true
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/derek_office",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "0ef4761cde96fb4f",
+      "requiresHash": "74805efbf31b3687"
+    },
+    {
+      "path": "/rooms/derek_office/objects[derek_cabinet]",
+      "id": "derek_cabinet",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "caf4d88dbbbf8c4a",
+      "requiresHash": "1d5d23e35470cb8d"
+    },
+    {
+      "path": "/rooms/derek_office/objects[derek_computer]",
+      "id": "derek_computer",
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "8ec0b47e57173dfd",
+      "requiresHash": "1d5d23e35470cb8d"
+    },
+    {
+      "path": "/rooms/derek_office/objects[derek_personal_safe]",
+      "id": "derek_personal_safe",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "050c59d239a713da",
+      "requiresHash": "a31efbed4a8dccdf"
+    },
+    {
+      "path": "/rooms/it_room",
+      "id": null,
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "6e5a02d627bc4b10",
+      "requiresHash": "d7504bbb9eec5a5d"
+    },
+    {
+      "path": "/rooms/kevin_office/objects[pc|Kevin's Workstation]",
+      "id": "Kevin's Workstation",
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "a860bd2eb0de1d2f",
+      "requiresHash": "42addc33cd77e49a"
+    },
+    {
+      "path": "/rooms/main_office_area",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "399c0f81a3087a0d",
+      "requiresHash": "d5aba285a563e04a"
+    },
+    {
+      "path": "/rooms/main_office_area/objects[safe|Main Filing Cabinet]",
+      "id": "Main Filing Cabinet",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "9eb70946fdb67aa5",
+      "requiresHash": "42cadd63616e69c4"
+    },
+    {
+      "path": "/rooms/manager_office/objects[patricia_briefcase]",
+      "id": "patricia_briefcase",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "a3f2b53f1e59a3dc",
+      "requiresHash": "44136fa355b3678a"
+    },
+    {
+      "path": "/rooms/server_room",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "5aac622a39e68fce",
+      "requiresHash": "e4f72d5ed0d0201c"
+    },
+    {
+      "path": "/rooms/server_room/objects[entropy_encrypted_archive]",
+      "id": "entropy_encrypted_archive",
+      "lockType": "flag",
+      "locked": true,
+      "requirementHash": "a77ed0956b9ade40",
+      "requiresHash": "03fe0dcb461def52"
+    },
+    {
+      "path": "/rooms/storage_closet/objects[derek_storage_safe]",
+      "id": "derek_storage_safe",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "b5d2521277a16ede",
+      "requiresHash": "37f6e597b3596018"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "establish_access",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "check_in_reception",
+          "type": "npc_conversation",
+          "targetNPC": "sarah_martinez"
+        },
+        {
+          "taskId": "access_main_office",
+          "type": "enter_room",
+          "targetRoom": "main_office_area",
+          "onComplete": {
+            "unlockAim": "survey_offices"
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "survey_offices",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "collect_office_intel",
+          "type": "collect_items",
+          "targetItems": [
+            "notes"
+          ],
+          "targetCount": 4,
+          "optional": true
+        },
+        {
+          "taskId": "find_it_code",
+          "type": "unlock_room",
+          "targetRoom": "it_room"
+        }
+      ]
+    },
+    {
+      "aimId": "build_the_case",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "survey_offices"
+      },
+      "tasks": [
+        {
+          "taskId": "access_it_room",
+          "type": "enter_room",
+          "targetRoom": "it_room"
+        },
+        {
+          "taskId": "meet_kevin",
+          "type": "npc_conversation",
+          "targetNPC": "kevin_park"
+        },
+        {
+          "taskId": "talk_to_maya",
+          "type": "npc_conversation",
+          "targetNPC": "maya_chen",
+          "optional": true
+        },
+        {
+          "taskId": "collect_investigation_docs",
+          "type": "collect_items",
+          "targetItems": [
+            "notes2"
+          ],
+          "targetCount": 6,
+          "optional": true
+        },
+        {
+          "taskId": "find_derek_access",
+          "type": "collect_items",
+          "targetItemIds": [
+            "Derek's Office Key",
+            "derek_office_key",
+            "Lock Pick Kit"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "search_derek_office",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "build_the_case"
+      },
+      "tasks": [
+        {
+          "taskId": "access_derek_office",
+          "type": "enter_room",
+          "targetRoom": "derek_office",
+          "onComplete": {
+            "unlockAim": "capture_technical_evidence"
+          }
+        },
+        {
+          "taskId": "unlock_derek_computer",
+          "type": "unlock_object",
+          "targetObject": "derek_computer"
+        },
+        {
+          "taskId": "search_derek_computer",
+          "type": "collect_items",
+          "targetGroup": "dereks_computer_files",
+          "targetCount": 2
+        },
+        {
+          "taskId": "decode_derek_notes",
+          "type": "manual"
+        },
+        {
+          "taskId": "open_derek_cabinet",
+          "type": "unlock_object",
+          "targetObject": "derek_cabinet",
+          "onComplete": {
+            "unlockTask": "collect_operational_evidence",
+            "setGlobal": {
+              "derek_cabinet_opened": true
+            }
+          }
+        },
+        {
+          "taskId": "collect_operational_evidence",
+          "type": "collect_items",
+          "targetItems": [
+            "notes4"
+          ],
+          "targetCount": 3
+        },
+        {
+          "taskId": "open_derek_personal_safe",
+          "type": "unlock_object",
+          "targetObject": "derek_personal_safe",
+          "onComplete": {
+            "setGlobal": {
+              "derek_personal_safe_opened": true
+            }
+          }
+        },
+        {
+          "taskId": "open_derek_storage_safe",
+          "type": "unlock_object",
+          "targetObject": "derek_storage_safe",
+          "onComplete": {
+            "setGlobal": {
+              "derek_storage_safe_opened": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "capture_technical_evidence",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "access_server_room",
+          "type": "enter_room",
+          "targetRoom": "server_room",
+          "onComplete": {
+            "unlockAim": "capture_technical_evidence"
+          }
+        },
+        {
+          "taskId": "access_vm",
+          "type": "manual"
+        },
+        {
+          "taskId": "submit_ssh_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "shatter_server:flag_1"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "entropy_encrypted_archive",
+          "onComplete": {
+            "unlockAim": "decrypt_entropy_intel"
+          }
+        },
+        {
+          "taskId": "submit_linux_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:shatter_server-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "submit_sudo_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_dropsite:shatter_server-flag2"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "decrypt_entropy_intel",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "capture_technical_evidence"
+      },
+      "tasks": [
+        {
+          "taskId": "open_entropy_archive",
+          "type": "unlock_object",
+          "targetObject": "entropy_encrypted_archive",
+          "onComplete": {
+            "unlockTask": "collect_entropy_intel"
+          }
+        },
+        {
+          "taskId": "collect_entropy_intel",
+          "type": "collect_items",
+          "targetItems": [
+            "notes5"
+          ],
+          "targetCount": 2
+        }
+      ]
+    },
+    {
+      "aimId": "return_intel",
+      "order": 6,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "decrypt_entropy_intel"
+      },
+      "tasks": [
+        {
+          "taskId": "inform_safetynet_operation_shatter",
+          "type": "npc_conversation",
+          "targetNPC": "agent_0x99"
+        }
+      ]
+    },
+    {
+      "aimId": "disrupt_the_cell",
+      "order": 7,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "decrypt_entropy_intel"
+      },
+      "tasks": [
+        {
+          "taskId": "confront_derek",
+          "type": "npc_conversation",
+          "targetNPC": "derek_lawson",
+          "onComplete": {
+            "unlockAim": "deactivate_the_launch"
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "deactivate_the_launch",
+      "order": 8,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "disrupt_the_cell"
+      },
+      "tasks": [
+        {
+          "taskId": "submit_launch_code",
+          "type": "submit_flags",
+          "targetFlags": [
+            "entropy_launch_device:shatter_server-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "deactivate_launch",
+          "type": "manual"
+        }
+      ]
+    },
+    {
+      "aimId": "close_the_case",
+      "order": 9,
+      "optional": false,
+      "unlockCondition": {
+        "aimsCompleted": [
+          "deactivate_the_launch"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "use_launch_device",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[close_the_case]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_ssh_flag",
+          "submit_linux_flag",
+          "submit_sudo_flag",
+          "submit_launch_code"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "reception_area",
+    "briefing_cutscene": "reception_area",
+    "closing_debrief_person": "reception_area",
+    "contingency_files": "derek_office",
+    "cyberchef_workstation": "manager_office",
+    "derek_cabinet": "derek_office",
+    "derek_computer": "derek_office",
+    "derek_lawson": "break_room",
+    "derek_personal_safe": "derek_office",
+    "derek_storage_safe": "storage_closet",
+    "entropy_encrypted_archive": "server_room",
+    "entropy_launch_device": "break_room",
+    "flag_station_dropsite": "server_room",
+    "kevin_park": "it_room",
+    "maya_chen": "maya_office",
+    "patricia_briefcase": "manager_office",
+    "patricia_desk_phone": "manager_office",
+    "reception_desk_phone": "reception_area",
+    "safetynet_field_guide_encoding_decoding_cyberchef": "reception_area",
+    "safetynet_field_guide_lockpicking": "reception_area",
+    "safetynet_field_guide_priv_escalation": "reception_area",
+    "safetynet_field_guide_ssh_basics": "reception_area",
+    "sarah_martinez": "reception_area",
+    "vm_launcher_intro_linux": "server_room"
+  },
+  "layout": {
+    "start": "reception_area",
+    "adj": {
+      "break_room": [
+        "conference_room",
+        "main_office_area"
+      ],
+      "conference_room": [
+        "break_room"
+      ],
+      "derek_office": [
+        "hallway_east"
+      ],
+      "hallway_east": [
+        "derek_office",
+        "hallway_west",
+        "main_office_area",
+        "maya_office",
+        "storage_closet"
+      ],
+      "hallway_west": [
+        "hallway_east",
+        "kevin_office",
+        "main_office_area",
+        "manager_office"
+      ],
+      "it_room": [
+        "main_office_area",
+        "server_room"
+      ],
+      "kevin_office": [
+        "hallway_west"
+      ],
+      "main_office_area": [
+        "break_room",
+        "hallway_east",
+        "hallway_west",
+        "it_room",
+        "reception_area"
+      ],
+      "manager_office": [
+        "hallway_west"
+      ],
+      "maya_office": [
+        "hallway_east"
+      ],
+      "reception_area": [
+        "main_office_area"
+      ],
+      "server_room": [
+        "it_room"
+      ],
+      "storage_closet": [
+        "hallway_east"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "break_room",
+      "task confront_derek",
+      "derek_lawson"
+    ],
+    [
+      "break_room",
+      "task confront_derek (ink of 'derek_lawson')",
+      "derek_lawson"
+    ],
+    [
+      "break_room",
+      "task confront_derek (mapping 'global_variable_changed:derek_confronted')",
+      null
+    ],
+    [
+      "break_room",
+      "task submit_launch_code (flag station)",
+      "entropy_launch_device"
+    ],
+    [
+      "derek_office",
+      "task access_derek_office",
+      null
+    ],
+    [
+      "derek_office",
+      "task collect_operational_evidence",
+      null
+    ],
+    [
+      "derek_office",
+      "task decode_derek_notes (mapping 'global_variable_changed:whiteboard_cipher_seen')",
+      null
+    ],
+    [
+      "derek_office",
+      "task open_derek_cabinet",
+      "derek_cabinet"
+    ],
+    [
+      "derek_office",
+      "task open_derek_personal_safe",
+      "derek_personal_safe"
+    ],
+    [
+      "derek_office",
+      "task search_derek_computer (group 'dereks_computer_files')",
+      "IT Security Anomaly Report"
+    ],
+    [
+      "derek_office",
+      "task search_derek_computer (group 'dereks_computer_files')",
+      "Recovered Email - K.Park"
+    ],
+    [
+      "derek_office",
+      "task unlock_derek_computer",
+      "derek_computer"
+    ],
+    [
+      "it_room",
+      "task access_it_room",
+      null
+    ],
+    [
+      "it_room",
+      "task find_derek_access",
+      "Lock Pick Kit"
+    ],
+    [
+      "it_room",
+      "task find_it_code",
+      null
+    ],
+    [
+      "it_room",
+      "task meet_kevin",
+      "kevin_park"
+    ],
+    [
+      "it_room",
+      "task meet_kevin (ink of 'kevin_park')",
+      "kevin_park"
+    ],
+    [
+      "main_office_area",
+      "task access_main_office",
+      null
+    ],
+    [
+      "manager_office",
+      "task find_derek_access",
+      "Derek's Office Key"
+    ],
+    [
+      "reception_area",
+      "task access_vm (mapping 'object_interacted')",
+      null
+    ],
+    [
+      "reception_area",
+      "task check_in_reception",
+      "sarah_martinez"
+    ],
+    [
+      "reception_area",
+      "task check_in_reception (ink of 'sarah_martinez')",
+      "sarah_martinez"
+    ],
+    [
+      "reception_area",
+      "task deactivate_launch (mapping 'attack_aborted')",
+      null
+    ],
+    [
+      "reception_area",
+      "task deactivate_launch (mapping 'attack_launched')",
+      null
+    ],
+    [
+      "reception_area",
+      "task decode_derek_notes (mapping 'global_variable_changed:whiteboard_cipher_seen')",
+      null
+    ],
+    [
+      "reception_area",
+      "task inform_safetynet_operation_shatter",
+      "agent_0x99"
+    ],
+    [
+      "reception_area",
+      "task inform_safetynet_operation_shatter (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "reception_area",
+      "task open_derek_cabinet (mapping 'global_variable_changed:derek_cabinet_opened')",
+      null
+    ],
+    [
+      "reception_area",
+      "task open_derek_personal_safe (mapping 'global_variable_changed:derek_personal_safe_opened')",
+      null
+    ],
+    [
+      "reception_area",
+      "task open_derek_storage_safe (mapping 'global_variable_changed:derek_storage_safe_opened')",
+      null
+    ],
+    [
+      "reception_area",
+      "task submit_linux_flag (mapping 'global_variable_changed:linux_flag_submitted')",
+      null
+    ],
+    [
+      "reception_area",
+      "task submit_ssh_flag (mapping 'global_variable_changed:ssh_flag_submitted')",
+      null
+    ],
+    [
+      "reception_area",
+      "task submit_sudo_flag (mapping 'global_variable_changed:sudo_flag_submitted')",
+      null
+    ],
+    [
+      "reception_area",
+      "task use_launch_device (mapping 'conversation_closed:closing_debrief_person')",
+      "closing_debrief_person"
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_intro_linux"
+    ],
+    [
+      "server_room",
+      "task access_server_room",
+      null
+    ],
+    [
+      "server_room",
+      "task access_server_room (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task collect_entropy_intel",
+      null
+    ],
+    [
+      "server_room",
+      "task open_entropy_archive",
+      "entropy_encrypted_archive"
+    ],
+    [
+      "server_room",
+      "task submit_linux_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_linux_flag (mapping 'global_variable_changed:linux_flag_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task submit_ssh_flag (completesTask on 'entropy_encrypted_archive')",
+      "entropy_encrypted_archive"
+    ],
+    [
+      "server_room",
+      "task submit_ssh_flag (flag station)",
+      "entropy_encrypted_archive"
+    ],
+    [
+      "server_room",
+      "task submit_ssh_flag (mapping 'global_variable_changed:ssh_flag_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task submit_sudo_flag (flag station)",
+      "flag_station_dropsite"
+    ],
+    [
+      "server_room",
+      "task submit_sudo_flag (mapping 'global_variable_changed:sudo_flag_submitted')",
+      null
+    ],
+    [
+      "storage_closet",
+      "task open_derek_storage_safe",
+      "derek_storage_safe"
+    ]
+  ]
+}

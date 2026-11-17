@@ -1,0 +1,1 @@
+ℹ Desk boxes: legacy in 11 map(s) (hall_1x2gu, room_break, room_it, room_meeting, room_office, room_reception, room_servers, small_office_room1_1x1gu, small_office_room2_1x1gu, small_office_room3_1x1gu, small_room_storage_1x1gu); footprint in 0

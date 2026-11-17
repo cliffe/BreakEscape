@@ -1,0 +1,13 @@
+{
+  "key": "5ab73c50c59b16ac8f945b8d35db1e6c",
+  "npc": "fatima_begum",
+  "text": "Did finance sign off my two interns yet?",
+  "voice": "Vindemiatrix",
+  "style": "Recruitment lead in her thirties, British Bangladeshi, Yorkshire accent. Brisk, friendly, a little rushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:08Z"
+}
