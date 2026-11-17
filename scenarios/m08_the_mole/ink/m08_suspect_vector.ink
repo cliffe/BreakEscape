@@ -25,7 +25,7 @@ VAR apologised = false
 VAR found_badge_audit = false
 VAR vector_audit_confirmed = false
 VAR asked_audit = false
-// PASS 4 (fix 13): m04's ENTROPY operative also went by "Vector".
+// PASS 4 (fix 13): m04's ENTROPY operative is Cipher; no handle clash with Vector.
 VAR asked_handle = false
 VAR gave_locker_key = false
 // Phase 4 dialogue C1 (D8-2): the m03/m07 quiet flag. Every return from inside
@@ -92,12 +92,12 @@ Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. A
     -> back
 + { not asked_others } [Who do you think it is?]
     ~ asked_others = true
-    Agent 0x23 'Vector': Phantom reads logs he isn't cleared for. I've watched him do it over people's shoulders. #delivery: low, glancing round
+    Agent 0x23 'Vector': Phantom reads logs he isn't cleared for. I've watched him do it over people's shoulders. #delivery: low, wary
     Agent 0x23 'Vector': But I'm frightened and pattern-matching in the dark, so weight that accordingly.
     -> back
 + { not asked_handle } [Vector. Odd handle for a man who hates attention.]
     ~ asked_handle = true
-    Narrator: His jaw sets.
+    Narrator: He almost smiles.
     Agent 0x23 'Vector': I picked it at nineteen because it sounded like maths. Eleven years on, it sounds like a suspect.
     -> back
 // PASS 5 (M3): the apology is open before the evidence too, because the

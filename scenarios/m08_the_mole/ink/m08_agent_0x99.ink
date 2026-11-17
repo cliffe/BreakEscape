@@ -72,7 +72,7 @@ Agent HaX: Don't say anything kind, I'll come apart. Sit if you want. Don't, if 
 + { mole_identified and not told_her } [It's Nightshade.]
     ~ told_her = true
     Narrator: She already knew. It lands anyway.
-    Agent HaX: I heard it on the wire. Hearing it from you, in a room, is worse.
+    Agent HaX: The relay told me before you did. Hearing it from you, in a room, is worse.
     Agent HaX: Go and do the job, 0x00. I'll sit here and un-know a friend. I'll manage.
     -> back
 + { fate_decided and not told_fate } [It's done.]
