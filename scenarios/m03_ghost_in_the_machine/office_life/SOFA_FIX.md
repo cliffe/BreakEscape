@@ -54,3 +54,11 @@ Fix: on hide, `setNPCVisible` calls `seating.unseatNPC(behavior, { instant: true
 Tests (`test/js/npc-hide-seated-breath.test.mjs`, now 6): a real `seatNPC` on a stub sofa. Hide frees the place, nulls `_seat`, drops the typist; another NPC can then sit; show leaves the NPC standing with the collider restored. Test 2 of the earlier version (null holder after a show) is replaced by this post-show state, because a shown NPC is no longer seated and has no breath to rebuild. Before the fix 3 of the new tests fail, after 6 of 6 pass.
 
 Other missions: `test_seating` and `lab_physical_pentest` have seated NPCs and hide none; m02's hidden NPC is not seated. Left alone: the `sprite.once('destroy')` listener pile-up (`sprite-breath.js:81`), not a one-line safe fix.
+
+Live proof (keyless server :3091, fresh game 6709 from new-game.rb, the night turn script from the sofa fix). Scratchpad `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/seatrelease/` (`night.mjs`, `night.log`):
+
+- After the turn Zainab is hidden and unseated (`seat` false, sofa `_places` empty, officeTypists empty). `night-reception.png`, `night-sofa-before-sit.png`: sofa empty.
+- The player walked to the sofa and sat (`PLAYER-SIT`: seated, place 0 taken by "player"). `player-on-sofa.png`. Before the fix that click did nothing for a full chair; Zainab's sofa has two places, so the unit test with another NPC is the sharper proof for a single seat.
+- Stood up and showed Zainab: she is a needs NPC, so her routine sat her back down on the sofa (`ZAINAB-SHOWN`, `zainab-shown.png`, `zainab-shown-later.png`), at her usual seat, not floating, breath image built again by the normal update.
+
+Suites: `bin/test-js` 736 passed, 0 failed. `bin/rails test` 3186 runs, 50670 assertions, 0 failures, 0 errors, 4 skips. `seating.test.mjs` and the other seat tests are in the JS run. Server :3091 (PID 3682193) killed by PID.
