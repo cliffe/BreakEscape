@@ -39,7 +39,13 @@ m03 filed the coffee case in `docs/IDEAS_BACKLOG.md` (capacity-2 walk-home stall
 Both-way coupling of the same object holds a cooler for minutes and shuts out NPCs that avoid `*`. Couple one way each.
 
 ### Scripts win over needs
-A scripted walk suspends needs. A bare `suspend` freezes an NPC where it stands, possibly in another room. A `patrolOverride` send-home ends within 32 px of its target (`goToAndStay` arrival), so it stops a tile short and leaves needs suspended. Send staff home with `offWhen` on the machines instead (`mapping-patterns.md` section 5).
+A scripted walk suspends needs. A bare `suspend` freezes an NPC where it stands, possibly in another room. A `patrolOverride` send-home ends within 32 px of its target (`goToAndStay` arrival), so it stops a tile short and leaves needs suspended. Send staff home with `offWhen` on the machines instead (`mapping-patterns.md` section 5). Both suspensions are lost on reload (`scriptSuspended` starts `false`, `npc-needs.js:582`, and nothing restores it; the event that fired a `patrolOverride` does not fire again), so no needs NPC gets a `patrolOverride` recall, and a story NPC with needs that a beat needs at post is held by a global read by `offWhen` (SKILL.md, protection 3 and "Story-safe movement").
+
+### One `offWhen` per machine, and it is off for everyone
+`offWhen` takes one condition; an object form needs every key to match exactly (`npc-needs.js:830` to `:837`). A machine with a trouble gate or a breaker cannot take a second gate, and an AND of the two holds only when both are set. Use a derived global (`<machine>_off`) where a machine has two or more causes, set and cleared by one appended mapping per cause (`references/mapping-patterns.md` section 5). The gate also stops ambient pairs, exchanges and away-time windows at that machine. On a sign-in PC (a `lockType: "login"` PC, or any PC that is a network host for a remote sign-in, a share or a pivot) it refuses the player's sign-in too (403 "This PC is off"), so never gate one.
+
+### The test bridge reports a moved NPC's spawn room
+The bridge finds an NPC in any loaded room's `npcSprites` and reads the live sprite position (`test-bridge/state.js:466` to `:468`; `test-bridge/index.js:497` to `:512`), but the `room` it reports is the room whose list holds the sprite, the one it spawned in (`core/rooms.js:3362`; `state.js:415`). `roomContents(<home>)` lists a moved NPC standing in the kitchen, with kitchen coordinates. Do not read its `room` as where it stands; compare its position with the room bounds, or poll `__test.needs.state(<id>).atPost`.
 
 ### Story room collisions
 Do not let a needs walk or a new `room_entered` mapping collide with a cutscene trigger room or a fixed-spot beat.

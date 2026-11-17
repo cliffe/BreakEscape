@@ -1,0 +1,1099 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m08_the_mole",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "door_interrogation_room",
+        "optional": false
+      },
+      {
+        "id": "door_security_archives",
+        "optional": false
+      },
+      {
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "lock_badge_printer",
+        "optional": false
+      },
+      {
+        "id": "lock_director_safe",
+        "optional": false
+      },
+      {
+        "id": "lock_nightshade_locker",
+        "optional": false
+      },
+      {
+        "id": "lock_phantom_locker",
+        "optional": false
+      },
+      {
+        "id": "lock_vector_locker",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "director_s_access_keycard_all_zones",
+        "optional": true
+      },
+      {
+        "id": "interrogation_suite_code_card",
+        "optional": true
+      },
+      {
+        "id": "nightshade_s_locker_key",
+        "optional": false
+      },
+      {
+        "id": "npc_agent_0x23_vector",
+        "optional": false
+      },
+      {
+        "id": "npc_agent_0x47_nightshade",
+        "optional": false
+      },
+      {
+        "id": "npc_agent_0x88_phantom",
+        "optional": false
+      },
+      {
+        "id": "npc_director_magnus_netherton",
+        "optional": false
+      },
+      {
+        "id": "phantom_s_locker_key",
+        "optional": false
+      },
+      {
+        "id": "portland_intercept_full_decrypt",
+        "optional": false
+      },
+      {
+        "id": "printed_server_zone_badge",
+        "optional": true
+      },
+      {
+        "id": "vector_s_locker_key",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "break_room",
+      "cryptography_lab",
+      "director_office",
+      "intel_analysis",
+      "interrogation_room",
+      "main_lobby",
+      "operations_floor",
+      "security_archives",
+      "server_room"
+    ],
+    "edges": [
+      [
+        "action_clone_the_director_card",
+        "door_server_room",
+        false
+      ],
+      [
+        "action_read_the_door_audit_to_the_director",
+        "door_interrogation_room",
+        true
+      ],
+      [
+        "badge_audit_printout_leak_window",
+        "action_read_the_door_audit_to_the_director",
+        true
+      ],
+      [
+        "break_room",
+        "leak_timeline_someone_s_working_notes",
+        false
+      ],
+      [
+        "break_room",
+        "lock_nightshade_locker",
+        false
+      ],
+      [
+        "break_room",
+        "lock_phantom_locker",
+        false
+      ],
+      [
+        "break_room",
+        "lock_vector_locker",
+        false
+      ],
+      [
+        "break_room",
+        "post_it_on_the_coffee_machine",
+        false
+      ],
+      [
+        "break_room",
+        "staff_locker_0x23",
+        true
+      ],
+      [
+        "break_room",
+        "staff_locker_0x47",
+        false
+      ],
+      [
+        "break_room",
+        "staff_locker_0x88",
+        true
+      ],
+      [
+        "cryptography_lab",
+        "break_room",
+        false
+      ],
+      [
+        "cryptography_lab",
+        "npc_agent_0x47_nightshade",
+        false
+      ],
+      [
+        "director_office",
+        "director_s_safe",
+        false
+      ],
+      [
+        "director_office",
+        "lock_director_safe",
+        false
+      ],
+      [
+        "director_office",
+        "npc_director_magnus_netherton",
+        false
+      ],
+      [
+        "director_s_access_keycard_all_zones",
+        "door_server_room",
+        true
+      ],
+      [
+        "director_s_safe",
+        "door_interrogation_room",
+        false
+      ],
+      [
+        "door_interrogation_room",
+        "interrogation_room",
+        false
+      ],
+      [
+        "door_security_archives",
+        "security_archives",
+        false
+      ],
+      [
+        "door_server_room",
+        "server_room",
+        false
+      ],
+      [
+        "fingerprint_kit",
+        "usb_stick_personal_backup_enc",
+        true
+      ],
+      [
+        "gitlist_repository_server",
+        "vmch_recover_gitlist_exposure",
+        false
+      ],
+      [
+        "intel_analysis",
+        "four_site_night_tactical_board",
+        false
+      ],
+      [
+        "intel_analysis",
+        "npc_agent_0x88_phantom",
+        false
+      ],
+      [
+        "intel_analysis",
+        "phantom_s_off_book_notes",
+        false
+      ],
+      [
+        "interrogation_room",
+        "detention_disposition_screen",
+        false
+      ],
+      [
+        "interrogation_suite_code_card",
+        "door_interrogation_room",
+        true
+      ],
+      [
+        "leak_timeline_someone_s_working_notes",
+        "action_read_the_door_audit_to_the_director",
+        true
+      ],
+      [
+        "lock_badge_printer",
+        "printed_server_zone_badge",
+        true
+      ],
+      [
+        "lock_director_safe",
+        "interrogation_suite_code_card",
+        true
+      ],
+      [
+        "lock_director_safe",
+        "portland_intercept_full_decrypt",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "sealed_psych_evaluation_agent_0x47",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "sealed_standards_referral_agent_0x88",
+        false
+      ],
+      [
+        "lock_director_safe",
+        "sealed_vetting_query_agent_0x23",
+        false
+      ],
+      [
+        "lock_nightshade_locker",
+        "holdall_locker_0x47",
+        false
+      ],
+      [
+        "lock_nightshade_locker",
+        "insider_threat_initiative_deep_state_brief",
+        false
+      ],
+      [
+        "lock_nightshade_locker",
+        "usb_stick_personal_backup_enc",
+        false
+      ],
+      [
+        "lock_phantom_locker",
+        "boarding_pass_stub_locker_0x88",
+        true
+      ],
+      [
+        "lock_pick_kit",
+        "lock_nightshade_locker",
+        true
+      ],
+      [
+        "lock_pick_kit",
+        "lock_phantom_locker",
+        true
+      ],
+      [
+        "lock_pick_kit",
+        "lock_vector_locker",
+        true
+      ],
+      [
+        "lock_vector_locker",
+        "token_pouch_locker_0x23",
+        true
+      ],
+      [
+        "main_lobby",
+        "cryptography_lab",
+        false
+      ],
+      [
+        "main_lobby",
+        "director_office",
+        false
+      ],
+      [
+        "main_lobby",
+        "fingerprint_kit",
+        false
+      ],
+      [
+        "main_lobby",
+        "lock_badge_printer",
+        false
+      ],
+      [
+        "main_lobby",
+        "lock_pick_kit",
+        true
+      ],
+      [
+        "main_lobby",
+        "operations_floor",
+        false
+      ],
+      [
+        "main_lobby",
+        "rfid_cloner",
+        false
+      ],
+      [
+        "nightshade_s_locker_key",
+        "lock_nightshade_locker",
+        false
+      ],
+      [
+        "npc_agent_0x23_vector",
+        "vector_s_locker_key",
+        false
+      ],
+      [
+        "npc_agent_0x47_nightshade",
+        "nightshade_s_locker_key",
+        false
+      ],
+      [
+        "npc_agent_0x88_phantom",
+        "phantom_s_locker_key",
+        false
+      ],
+      [
+        "npc_director_magnus_netherton",
+        "action_clone_the_director_card",
+        false
+      ],
+      [
+        "npc_director_magnus_netherton",
+        "action_read_the_door_audit_to_the_director",
+        false
+      ],
+      [
+        "npc_director_magnus_netherton",
+        "director_s_access_keycard_all_zones",
+        true
+      ],
+      [
+        "operations_floor",
+        "intel_analysis",
+        false
+      ],
+      [
+        "operations_floor",
+        "npc_agent_0x23_vector",
+        false
+      ],
+      [
+        "operations_floor",
+        "personnel_print_job_director_s_investigation_request",
+        false
+      ],
+      [
+        "personnel_print_job_director_s_investigation_request",
+        "lock_director_safe",
+        false
+      ],
+      [
+        "phantom_s_locker_key",
+        "lock_phantom_locker",
+        false
+      ],
+      [
+        "portland_intercept_full_decrypt",
+        "vmch_recover_home_flag",
+        false
+      ],
+      [
+        "post_it_on_the_coffee_machine",
+        "door_security_archives",
+        false
+      ],
+      [
+        "post_it_on_the_coffee_machine",
+        "lock_badge_printer",
+        false
+      ],
+      [
+        "printed_server_zone_badge",
+        "door_server_room",
+        true
+      ],
+      [
+        "rfid_cloner",
+        "action_clone_the_director_card",
+        false
+      ],
+      [
+        "security_archives",
+        "badge_audit_printout_leak_window",
+        false
+      ],
+      [
+        "security_archives",
+        "global_threat_database_catalogue",
+        false
+      ],
+      [
+        "server_access_log_excerpt",
+        "action_read_the_door_audit_to_the_director",
+        true
+      ],
+      [
+        "server_room",
+        "gitlist_repository_server",
+        false
+      ],
+      [
+        "server_room",
+        "relay_printout",
+        false
+      ],
+      [
+        "server_room",
+        "server_access_log_excerpt",
+        false
+      ],
+      [
+        "vector_s_locker_key",
+        "lock_vector_locker",
+        false
+      ],
+      [
+        "vmch_escalate_to_root",
+        "vmfl_escalate_to_root",
+        false
+      ],
+      [
+        "vmch_recover_gitlist_exposure",
+        "vmfl_recover_gitlist_exposure",
+        false
+      ],
+      [
+        "vmch_recover_home_flag",
+        "vmfl_recover_home_flag",
+        false
+      ],
+      [
+        "vmch_recover_stashed_credentials",
+        "vmfl_recover_stashed_credentials",
+        false
+      ],
+      [
+        "vmfl_recover_gitlist_exposure",
+        "vmch_recover_stashed_credentials",
+        true
+      ],
+      [
+        "vmfl_recover_home_flag",
+        "vmch_escalate_to_root",
+        true
+      ],
+      [
+        "vmfl_recover_stashed_credentials",
+        "vmch_recover_home_flag",
+        true
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/break_room/objects[nightshade_locker]",
+      "id": "nightshade_locker",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "7f6f3a15ac78782e",
+      "requiresHash": "6693b7220469037d"
+    },
+    {
+      "path": "/rooms/break_room/objects[phantom_locker]",
+      "id": "phantom_locker",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "09d912c799d108f3",
+      "requiresHash": "5ecd25076bc20dd3"
+    },
+    {
+      "path": "/rooms/break_room/objects[vector_locker]",
+      "id": "vector_locker",
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "e3edffa7414c1b94",
+      "requiresHash": "ae52cd0670d2dc9d"
+    },
+    {
+      "path": "/rooms/director_office/objects[director_safe]",
+      "id": "director_safe",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "84e9fe7220f8c11b",
+      "requiresHash": "22ba10cafb8afe37"
+    },
+    {
+      "path": "/rooms/interrogation_room",
+      "id": null,
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "2fbc7de044dd5448",
+      "requiresHash": "7a3e393c8aebe156"
+    },
+    {
+      "path": "/rooms/main_lobby/objects[badge_printer]",
+      "id": "badge_printer",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "7b31c6a7880e1bf7",
+      "requiresHash": "f3c1ec949777f203"
+    },
+    {
+      "path": "/rooms/security_archives",
+      "id": null,
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "9fdd1c991face899",
+      "requiresHash": "ad95b4187197c32b"
+    },
+    {
+      "path": "/rooms/server_room",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "3cfb3a6bcaa12402",
+      "requiresHash": "18b31b5c74c24e5e"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "take_the_brief",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "brief_with_netherton",
+          "type": "npc_conversation",
+          "targetNPC": "director_netherton"
+        }
+      ]
+    },
+    {
+      "aimId": "work_the_suspects",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "take_the_brief"
+      },
+      "tasks": [
+        {
+          "taskId": "interview_vector",
+          "type": "custom"
+        },
+        {
+          "taskId": "interview_phantom",
+          "type": "custom"
+        },
+        {
+          "taskId": "interview_nightshade",
+          "type": "custom"
+        },
+        {
+          "taskId": "read_the_archives",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "name_the_mole",
+          "type": "custom"
+        }
+      ]
+    },
+    {
+      "aimId": "get_into_the_repo",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "take_the_brief"
+      },
+      "tasks": [
+        {
+          "taskId": "breach_server_room",
+          "type": "custom"
+        },
+        {
+          "taskId": "recover_gitlist_exposure",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence_relay:safetynet_gitlist_server-flag1"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "recover_stashed_credentials",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence_relay:safetynet_gitlist_server-flag2"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "correlate_the_evidence",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "get_into_the_repo"
+      },
+      "tasks": [
+        {
+          "taskId": "recover_home_flag",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence_relay:safetynet_gitlist_server-flag3"
+          ],
+          "targetCount": 1
+        },
+        {
+          "taskId": "escalate_to_root",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_evidence_relay:safetynet_gitlist_server-flag4"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "confront_the_mole",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimsCompleted": [
+          "work_the_suspects",
+          "correlate_the_evidence"
+        ]
+      },
+      "tasks": [
+        {
+          "taskId": "get_suite_code",
+          "type": "custom"
+        },
+        {
+          "taskId": "confront_nightshade",
+          "type": "npc_conversation",
+          "targetNPC": "nightshade_confrontation"
+        }
+      ]
+    },
+    {
+      "aimId": "close_the_investigation",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "confront_the_mole"
+      },
+      "tasks": [
+        {
+          "taskId": "decide_the_fate",
+          "type": "custom"
+        },
+        {
+          "taskId": "take_the_debrief",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[close_the_investigation]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "recover_gitlist_exposure",
+          "recover_stashed_credentials",
+          "recover_home_flag",
+          "escalate_to_root"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99": "main_lobby",
+    "agent_0x99_person": "break_room",
+    "agent_nightshade": "cryptography_lab",
+    "agent_phantom": "intel_analysis",
+    "agent_vector": "operations_floor",
+    "background_agent": "break_room",
+    "background_analyst": "operations_floor",
+    "badge_audit_printout": "security_archives",
+    "badge_printer": "main_lobby",
+    "clone_the_director_card": "director_office",
+    "closing_debrief": "main_lobby",
+    "cyberchef_workstation": "cryptography_lab",
+    "database_catalog": "security_archives",
+    "deep_state_manual": "break_room",
+    "director_netherton": "director_office",
+    "director_safe": "director_office",
+    "disposition_terminal": "interrogation_room",
+    "encrypted_backup": "break_room",
+    "evidence_display": "interrogation_room",
+    "flag_station_evidence_relay": "server_room",
+    "historical_leaks": "security_archives",
+    "interrogation_suite_code": "director_office",
+    "m08_cyberchef_field_guide": "main_lobby",
+    "m08_gitsecrets_field_guide": "main_lobby",
+    "m08_privesc_field_guide": "main_lobby",
+    "m08_recon_field_guide": "main_lobby",
+    "m08_scanning_field_guide": "main_lobby",
+    "m08_vulnanalysis_field_guide": "main_lobby",
+    "netherton_keycard": "director_office",
+    "nightshade_confrontation": "interrogation_room",
+    "nightshade_desk": "cryptography_lab",
+    "nightshade_go_bag": "break_room",
+    "nightshade_locker": "break_room",
+    "nightshade_locker_key": "cryptography_lab",
+    "nightshade_personnel_record": "operations_floor",
+    "nightshade_profile": "director_office",
+    "opening_briefing_cutscene": "main_lobby",
+    "operations_board": "operations_floor",
+    "password_sticky_note": "break_room",
+    "phantom_boarding_stub": "break_room",
+    "phantom_locker": "break_room",
+    "phantom_locker_key": "intel_analysis",
+    "phantom_notes": "intel_analysis",
+    "phantom_standards_referral": "director_office",
+    "phantom_suspect_wall": "break_room",
+    "portland_intercept_full": "director_office",
+    "printed_server_badge": "main_lobby",
+    "read_the_door_audit_to_the_director": "director_office",
+    "receptionist_ai": "main_lobby",
+    "recording_lamp": "interrogation_room",
+    "relay_printout": "server_room",
+    "security_notice": "main_lobby",
+    "server_access_logs": "server_room",
+    "suspect_dossiers": "director_office",
+    "tactical_board": "intel_analysis",
+    "timeline_reconstruction": "break_room",
+    "vector_locker": "break_room",
+    "vector_locker_key": "operations_floor",
+    "vector_project_sheet": "break_room",
+    "vector_token_pouch": "break_room",
+    "vector_vetting_query": "director_office",
+    "vm_launcher_gitlist": "server_room"
+  },
+  "layout": {
+    "start": "main_lobby",
+    "adj": {
+      "break_room": [
+        "cryptography_lab"
+      ],
+      "cryptography_lab": [
+        "break_room",
+        "interrogation_room",
+        "main_lobby"
+      ],
+      "director_office": [
+        "main_lobby"
+      ],
+      "intel_analysis": [
+        "operations_floor"
+      ],
+      "interrogation_room": [
+        "cryptography_lab"
+      ],
+      "main_lobby": [
+        "cryptography_lab",
+        "director_office",
+        "operations_floor"
+      ],
+      "operations_floor": [
+        "intel_analysis",
+        "main_lobby",
+        "security_archives",
+        "server_room"
+      ],
+      "security_archives": [
+        "operations_floor"
+      ],
+      "server_room": [
+        "operations_floor"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "break_room",
+      "task take_the_debrief (mapping 'room_entered:break_room')",
+      null
+    ],
+    [
+      "cryptography_lab",
+      "task interview_nightshade (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "cryptography_lab",
+      "task interview_nightshade (mapping 'global_variable_changed:nightshade_interviewed')",
+      null
+    ],
+    [
+      "cryptography_lab",
+      "task take_the_debrief (mapping 'room_entered:cryptography_lab')",
+      null
+    ],
+    [
+      "director_office",
+      "task breach_server_room (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "director_office",
+      "task brief_with_netherton",
+      "director_netherton"
+    ],
+    [
+      "director_office",
+      "task brief_with_netherton (ink of 'director_netherton')",
+      "director_netherton"
+    ],
+    [
+      "director_office",
+      "task get_suite_code (mapping 'global_variable_changed:mole_identified')",
+      null
+    ],
+    [
+      "director_office",
+      "task get_suite_code (mapping 'global_variable_changed:suite_code_found')",
+      null
+    ],
+    [
+      "director_office",
+      "task interview_nightshade (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "director_office",
+      "task interview_phantom (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "director_office",
+      "task interview_vector (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "director_office",
+      "task name_the_mole (ink of 'director_netherton')",
+      "director_netherton"
+    ],
+    [
+      "director_office",
+      "task take_the_debrief (mapping 'room_entered:director_office')",
+      null
+    ],
+    [
+      "intel_analysis",
+      "task interview_phantom (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "intel_analysis",
+      "task interview_phantom (mapping 'global_variable_changed:phantom_interviewed')",
+      null
+    ],
+    [
+      "intel_analysis",
+      "task take_the_debrief (mapping 'room_entered:intel_analysis')",
+      null
+    ],
+    [
+      "interrogation_room",
+      "task confront_nightshade",
+      "nightshade_confrontation"
+    ],
+    [
+      "interrogation_room",
+      "task confront_nightshade (ink of 'nightshade_confrontation')",
+      "nightshade_confrontation"
+    ],
+    [
+      "interrogation_room",
+      "task decide_the_fate (ink of 'nightshade_confrontation')",
+      "nightshade_confrontation"
+    ],
+    [
+      "interrogation_room",
+      "task decide_the_fate (mapping 'npc_ko:nightshade_confrontation')",
+      "nightshade_confrontation"
+    ],
+    [
+      "interrogation_room",
+      "task get_suite_code (mapping 'room_entered:interrogation_room')",
+      null
+    ],
+    [
+      "interrogation_room",
+      "task take_the_debrief (mapping 'room_entered:interrogation_room')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task breach_server_room (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task breach_server_room (mapping 'global_variable_changed:server_room_entered')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task brief_with_netherton (mapping 'npc_hostile_state_changed')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task get_suite_code (mapping 'global_variable_changed:all_flags_submitted')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task get_suite_code (mapping 'global_variable_changed:mole_identified')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task get_suite_code (mapping 'global_variable_changed:suite_code_found')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_nightshade (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_nightshade (mapping 'global_variable_changed:nightshade_hostile')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_nightshade (mapping 'global_variable_changed:nightshade_ko')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_phantom (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_phantom (mapping 'global_variable_changed:phantom_hostile')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_phantom (mapping 'global_variable_changed:phantom_ko')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_vector (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_vector (mapping 'global_variable_changed:vector_hostile')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task interview_vector (mapping 'global_variable_changed:vector_ko')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task name_the_mole (ink of 'agent_0x99')",
+      "agent_0x99"
+    ],
+    [
+      "main_lobby",
+      "task name_the_mole (mapping 'global_variable_changed:flag4_submitted')",
+      null
+    ],
+    [
+      "main_lobby",
+      "task take_the_debrief (ink of 'closing_debrief')",
+      "closing_debrief"
+    ],
+    [
+      "main_lobby",
+      "task take_the_debrief (mapping 'room_entered:main_lobby')",
+      null
+    ],
+    [
+      "operations_floor",
+      "task interview_vector (mapping 'global_variable_changed:brief_taken')",
+      null
+    ],
+    [
+      "operations_floor",
+      "task interview_vector (mapping 'global_variable_changed:vector_interviewed')",
+      null
+    ],
+    [
+      "operations_floor",
+      "task take_the_debrief (mapping 'room_entered:operations_floor')",
+      null
+    ],
+    [
+      "security_archives",
+      "task take_the_debrief (mapping 'room_entered:security_archives')",
+      null
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_gitlist"
+    ],
+    [
+      "server_room",
+      "task escalate_to_root (flag station)",
+      "flag_station_evidence_relay"
+    ],
+    [
+      "server_room",
+      "task name_the_mole (mapping 'global_variable_changed:flag4_submitted')",
+      null
+    ],
+    [
+      "server_room",
+      "task recover_gitlist_exposure (flag station)",
+      "flag_station_evidence_relay"
+    ],
+    [
+      "server_room",
+      "task recover_home_flag (flag station)",
+      "flag_station_evidence_relay"
+    ],
+    [
+      "server_room",
+      "task recover_stashed_credentials (flag station)",
+      "flag_station_evidence_relay"
+    ],
+    [
+      "server_room",
+      "task take_the_debrief (mapping 'room_entered:server_room')",
+      null
+    ]
+  ]
+}

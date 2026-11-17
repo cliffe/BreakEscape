@@ -605,6 +605,13 @@ CREDITS
   <%# Lighting stage (pass 5): the Citadel at night on Level Red. LIGHTING_PLAN.md. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
+  <%# Office life (office_life/PLAN.md 2): room tone only, no people. Keys are room types. %>
+  "roomTone": true,
+  "roomToneTypes": {
+    "room_hq_lobby": "quiet_office", "room_hq_director": "quiet_office", "room_hq_intel": "quiet_office",
+    "room_hq_ops": "it", "room_hq_crypto": "it",
+    "room_hq_servers": "server", "room_hq_break": "kitchen"
+  },
   "rooms": {
 
     "main_lobby": {
@@ -1719,6 +1726,10 @@ CREDITS
           "behavior": { "hostile": { "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           <%# Design C1 (m6): a KO is on the record and, before the naming, tips the mole off (HaX). %>
           "globalVarOnKO": "analyst_ko",
+          <%# Office life (office_life/PLAN.md Q5 b, D83): one once-only bark on first entering the ops floor. %>
+          "eventMappings": [
+            { "eventPattern": "room_entered:operations_floor", "condition": "!globalVars.analyst_ko", "onceOnly": true, "delayMs": 3500, "bark": "Nobody's said a word on this floor for an hour. I counted." }
+          ],
           "observations": "A junior analyst monitoring threat feeds she has read four times without seeing."
         }
       ],
