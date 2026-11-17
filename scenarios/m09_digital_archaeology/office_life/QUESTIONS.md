@@ -16,7 +16,7 @@ Noor could step to the front-desk water cooler and back. The rules rule it out t
 
 Today a room with its own hum next to an earlier room with one plays the neighbour's bleed (0.125), not its own level. Room tone plays each room's own authored level, which no player has heard yet: server closet 0.4, restricted cage 0.5, tape room 0.35, salvage cage 0.6 (normalised levels; the player's SFX and master sliders scale them).
 
-Three late scenes in the salvage cage play over that 0.6 hum, halved while the chat is open, so 0.3 against today's 0.125: the identity scene after flag 3, Tesseract's call after flag 4 (which the music deliberately leaves silent, so the hum is the only bed under it) and the hangar debrief. When the debrief closes, the hum may rise towards its full level for under a second before the ending visualiser silences it; the build measures how far.
+Three late scenes in the salvage cage play over that 0.6 hum, halved while the chat is open, so 0.3 against today's 0.125: the identity scene after flag 3, Tesseract's call after flag 4 (which the music deliberately leaves silent, so the hum is the only bed under it) and the hangar debrief. When the debrief closes, the hum may rise towards its full level for under a second, or not rise at all, before the ending visualiser silences it; the build measures it.
 
 - **(a) Keep the authored levels and judge them in the build's listen check**, which records the numbers; come back with a change only if they sound wrong. **Recommended; the plan follows it.**
 - **(b) Lower the four `ambientVolume` values now** (for example to 0.2 to 0.3). Changes existing scenario data.
