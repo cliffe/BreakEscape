@@ -1440,3 +1440,5 @@ Review: `tmp/handover/ac0/K5_REVIEW_R2.md` (m 2, t 4).
 - **t2.** New Rails test: unplugging after expiry names `tokenExpiredPcIds`. It failed first (`nil`): `unplug_device!` ended the session through the foothold before any expiry prune, so the answer said only `endedPcIds`. `unplug_device!` now calls `drop_expired_token_sessions!` first, so an already-expired token is named as expired. Bite: with that call removed the test fails (`Expected ["lena_pc"], Actual nil`).
 - **t3.** The scenario has one foothold (`jack_comms_port`), so "never from another foothold" is reachable only as a tampered request. R12 now says so.
 
+**Run 8 results (R2).** `signin-fit.mjs` on a keyless server from this worktree (port 3080, stopped after): ALL PASS over 58 checks, including `token-desktop` at 1400x1000, 390x844, 915x412 and 800x600. `bin/test-js` 734 files, 0 failed (`access-relay-desktop` 21 and `access-from-desktop` 16 run alone under `ulimit -v 2000000`, 300 MB heap). `bin/rails test` (test DB) 3199 runs, 50101 assertions, 0 failures, 0 errors, 4 skips. Rubocop clean on the changed Ruby. Live R12 (Run E) is still to do.
+
