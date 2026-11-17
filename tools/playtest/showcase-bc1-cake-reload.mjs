@@ -86,12 +86,24 @@ let reload = async function (h) {
   // nobody (game 7738: ids [] at calm, Graham took a serving at tick 2). The wait and the hold run
   // in one in-page poll every 5 ms, well inside one 250 ms needs tick.
   if (CALM && h.heldIds?.length) {
+    // Hold whoever of the held staff has a state, on every poll, until releaseHold(). States come
+    // with their room, so on a scenario whose rooms do not all load after a reload (demo_access_tour
+    // runs 6: only reception) some ids never return; waiting for all of them held nobody while the
+    // ones that were back ate during the settle. calmedAt records when all were back, or who never was.
+    await h.page.evaluate((ids) => {
+      clearInterval(window.__bc1Hold);
+      window.__bc1HoldIds = ids;
+      window.__bc1Hold = setInterval(() => {
+        const sys = window.npcNeedsSystem;
+        if (!sys || !window.__test?.needs) return;
+        for (const i of ids) if (sys.states.has(i)) { window.__test.needs.set(i, 'hunger', 100); try { window.__test.needs.set(i, 'social', 100); } catch (e) {} }
+      }, 5);
+    }, h.heldIds);
     h.calmedAt = await h.page.waitForFunction((ids) => {
       const sys = window.npcNeedsSystem;
-      if (!sys || !ids.every(i => sys.states.has(i))) return false;
-      for (const i of ids) { window.__test.needs.set(i, 'hunger', 100); window.__test.needs.set(i, 'social', 100); }
-      return { tick: sys.tickCount };
-    }, h.heldIds, { timeout: 90000, polling: 5 }).then(r => r.jsonValue()).catch(e => ({ err: String(e).slice(0, 160) }));
+      return sys && ids.every(i => sys.states.has(i)) ? { tick: sys.tickCount } : false;
+    }, h.heldIds, { timeout: 15000, polling: 50 }).then(r => r.jsonValue())
+      .catch(async () => ({ partial: true, missing: await ev(h, ids => ids.filter(i => !window.npcNeedsSystem?.states?.has(i)), h.heldIds).catch(() => null) }));
   }
   await calm(h);
   await h.t(2000);
@@ -266,10 +278,15 @@ async function until(h, fn, arg, ms = TMO, poll = 500) {
 
 async function settle(h, why) { say(`  wait ${WAIT / 1000}s (${why})`); await calm(h); await sleep(WAIT); }
 
+async function releaseHold(h) {
+  await ev(h, () => { clearInterval(window.__bc1Hold); window.__bc1Hold = null; }).catch(() => {});
+}
+
 async function eatBy(h, npc) {
   // set hunger to 60, then watch for the walk (job aimed at the cake) and the serving
   // `npc` is the one nudged; `eaters` are who actually took a serving meanwhile (magnet_serving
   // events), which can be someone else (demo_access_tour game 7730).
+  await releaseHold(h);
   const before = (await where(h)).servings;
   const seen = (await events(h)).length;
   await hunger(h, npc, 60);
