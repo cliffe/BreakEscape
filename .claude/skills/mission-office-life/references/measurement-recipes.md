@@ -4,13 +4,26 @@ How to measure the numbers an office-life build depends on. Every figure below i
 
 ## 1. Setup for every live measurement
 
-- Keyless server from the branch worktree on its own port (m03 used :3091 and :3094). Record the **puma process PID** when you start it, not the PID of the shell that launched it, and stop it by that PID when done. Never `pkill -f`, and never kill through a `ps | grep` pipeline whose pattern appears in the same command line (it killed the fixer's own shell twice, `R1_FIX_HANDOVER.md`, Gotchas). `./start_server.sh` runs `pkill -9 -f puma` and takes other servers with it (`playtest-scenario` skill). Killing the bash wrapper's PID in a real m03 run left puma holding the port. Find the puma PID with `ss -ltnp | grep <port>`.
+- Keyless server from the branch worktree on its own port (m03 used :3091 and :3094). Copy this, with `<worktree>`, `<main checkout>` and `<port>` filled in:
+
+  ```bash
+  ss -ltn | grep ':<port>'    # must print nothing; never 3000, 3001, 3085 or 3086
+  cd <worktree> && env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle \
+    PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true bin/rails server -p <port> -b 127.0.0.1
+  ss -ltnp | grep ':<port>'   # the puma PID is in this line; write it down
+  ```
+
+  - `env -u GEMINI_API_KEY` keeps the server keyless: with a key every line played is generated and billed.
+  - A worktree has no `.bundle/config`, so every `bin/rails` or `rake` command run from it needs the same `RBENV_VERSION` and `BUNDLE_PATH`, or it fails with GemNotFound. That covers the V6 rake (`app:break_escape:tts:office_lines[<m>]`) too.
+  - Create games with `new-game.rb` run from the same worktree with the same two variables: `cd <worktree> && env RBENV_VERSION=2.7.8 BUNDLE_PATH=<main checkout>/vendor/bundle PLAYTEST_PORT=<port> BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. It renders the scenario into the game row at save, so run from the main checkout the game holds main's scenario.
+  - Do not use `tools/playtest/start-keyless-server.sh` for a worktree proof. It is fixed to :3001, exits 0 with "Already listening" when :3001 is up, and runs the main checkout's code, so the result would belong to the wrong build.
+  - Stop only the PID from `ss -ltnp`. Record the **puma process PID**, not the PID of the shell that launched it. Never `pkill -f`, and never kill through a `ps | grep` pipeline whose pattern appears in the same command line (it killed the fixer's own shell twice, `R1_FIX_HANDOVER.md`, Gotchas). `./start_server.sh` runs `pkill -9 -f puma` and takes other servers with it (`playtest-scenario` skill). Killing the bash wrapper's PID in a real m03 run left puma holding the port.
 - A **fresh game per run** from `tools/playtest/new-game.rb <m>`, after every scenario edit. Use the id it prints. Do not reuse a game after editing `scenario.json.erb` (`R2_FIX_HANDOVER.md`).
 - `game.loop.setFPS(20)` with fixed steps on. Game time matched wall time to within 3 ms over each trip (`STAGE1_CHECKS.md`).
 - Force a need through the bridge so a trip does not wait for the natural rhythm: `__test.needs.set('<npc>', '<need>', 5)`. It stuck every time for Zainab (`SLICE3_4.md`, slice 4 results).
 - Park the player clear of every lane, for example at the cell where the player reads the object. A probe parked in a door lane produced a 120 s "returning" stall that was the probe's own artefact (`SLICE3_4.md`, slice 3 results).
 - Untracked `tools/playtest/*-flags-game*.xml`: leave them; older ones are tracked, so never `rm` the glob (`R1_FIX_HANDOVER.md`).
-- A worktree has no `node_modules`; symlink the main checkout's (`ln -s <main checkout>/node_modules node_modules`) for the run and remove the link at the end (`R2_FIX_HANDOVER.md`).
+- A worktree has no `node_modules`; symlink the main checkout's (`ln -s <main checkout>/node_modules node_modules`) for the run and `unlink node_modules` at the end, never `rm -r` (`R2_FIX_HANDOVER.md`).
 
 ## 2. One machine, not two (the R1 blocker)
 
@@ -66,7 +79,7 @@ Run each in a fresh game:
 3. Reload at day: still at posts. Reload at night: still hidden.
 4. **Render the night turn and look** (`SLICE6_DRESSING_LIGHTING.md`, finding 1). Do not trust `vis false`. Then dump the scene children within about 60 px of each seat (`g_probe.mjs` in m03, `SOFA_FIX.md` DUMP1) and expect only the hidden sprites and furniture, no Image from the NPC. A leftover seated breathing image drew a head and shoulders figure on the sofa after the turn and cleared only on reload.
 5. To prove the engine fix covers the unlucky phase, hide while the breathing image is verified visible (`SOFA_FIX.md` DUMP3): the image should be gone and the sofa empty.
-6. Show the NPC again (`setNPCVisible(id, true)` from the bridge). A needs NPC should sit back down within about a second at its usual seat (`SOFA_FIX.md`, R8 follow-up). Play-sit on the freed sofa from the player side as well.
+6. Show the NPC again (`setNPCVisible(id, true)` from the bridge). A needs NPC should sit back down within about a second at its usual seat (`SOFA_FIX.md`, R8 follow-up). A plain seated NPC comes back standing and stays standing (`SOFA_FIX.md:52` on `build/ol-m03`: it is marked `_seatTried`); that is intended, so check only that its chair is free and nothing is drawn on it. Play-sit on the freed sofa from the player side as well.
 
 ## 7. Send-home and trouble handling
 

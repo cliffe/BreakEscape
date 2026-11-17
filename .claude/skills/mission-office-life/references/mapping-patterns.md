@@ -150,9 +150,9 @@ Machines switch off on a single bounded global, and the needs layer does the res
 
 The exchange gates are the real m03 ones (`scenario.json.erb` on `build/ol-m03`, lines 838 to 840); only the chatter lines are elided.
 
-- Declare `heard_<knot>` for every exchange in `globalVariables`. A knot is heard once; it counts as heard after one overheard line (`npc-needs.js:2954`, `:3011`, `:3062`).
+- Declare `heard_<knot>` for every exchange in `globalVariables`. A knot is heard once; it counts as heard after one overheard line (`_exchangeHeard` read at `npc-needs.js:2954`, the `heard_<knot>` write at `:3062`; both on `build/ol-m03`).
 - The exchange knots live in the owner's ink and end `-> DONE`. A conversation hub in the same ink needs a line for the "upset" state that exits at once (`#exit_conversation`) and re-entry lines for after a goodbye ("Still about?").
 - A bark is an `eventMappings` entry with a `bark` string, listed with its cooldown and gate, appended last: `npc_ko:ffion_rees` for Yusuf (day, `clone_call_done` not true, neither staffer KO, `onceOnly`), `npc_caught_at_post:<npc>` (`npc-needs.js:3377`) with a 30 s cooldown.
-- Barks sit outside the TTS extractor, so a bark is voiced by hand. Prefer pools and knots.
+- Barks sit outside the TTS batch and V6, but the client does voice them (`npc-barks.js` `_speakBark`); see `gotchas.md`, "Voicing", for the step that gives one a clip. Prefer pools and knots.
 - Verify by script that every approved clip appears in the scenario or ink unchanged (R2 did all 49).
 - **`requireGlobal` compares with strict `===`** (`requiredGlobalsHold`, `npc-needs.js:310` to `:314`, also used for `needsCompany` gates). A key tested for `false` that is not declared `false` in `globalVariables` is `undefined`, and `undefined === false` is false, so the exchange silently never plays and nothing reports it. Declare every such key (`receptionist_ko`, `zainab_ko`, `wh_staff_upset` and the like), including KO globals that only `globalVarOnKO` sets.

@@ -46,7 +46,7 @@ Each R1 outcome was checked in the text at 166a146c1: M1 (SKILL.md:10, the train
 
 - Where: SKILL.md:171, :174; `checklists.md:179`.
 - Evidence: SKILL.md:174 says "later delta rounds run on the cheaper tier" after round 1, which reads as round 2 on. AGENTS.md:43 makes rounds deltas once an Opus round is clean or from round 4, and sends three kinds of delta back to Opus whatever the round: secret handling, what the server serves or access checks, and a new design decision. Office-life deltas often touch what a workstation's text shows when the owner is away (`mapping-patterns.md` section 2), which is in the first kind.
-- Fix: in SKILL.md:174 say "from round 4, or after a clean Opus round", and copy the three exceptions, naming the workstation text gate and openings as the usual office-life case.
+- Fix: in SKILL.md:174 say "from round 4, or after a clean stronger-tier round", and copy the three exceptions, naming the workstation text gate and openings as the usual office-life case.
 
 ### m3. Barks fall outside the "no unvoiced lines" check
 
@@ -78,3 +78,23 @@ Each R1 outcome was checked in the text at 166a146c1: M1 (SKILL.md:10, the train
 ## Verdict
 
 Revise. Both majors are text changes: give the worktree server command, and stop plan reviews at round 5. Round 3 should go back to the stronger tier per AGENTS.md:43, since this round found majors, and should cover the unchecked items listed at the top.
+
+## Outcomes
+
+Fixes are in `.claude/skills/mission-office-life/`. The three scope items R2 left unchecked were checked in the fix pass (last three rows).
+
+| Finding | Outcome | Where |
+|---|---|---|
+| M1 no worktree server recipe | Fixed. Copyable keyless command with `env -u GEMINI_API_KEY`, `RBENV_VERSION`, `BUNDLE_PATH`, `PLAYTEST_PORT`; same env for new-game.rb and the V6 rake; free port checked with `ss -ltn`, never 3000, 3001, 3085 or 3086; PID from `ss -ltnp`; `start-keyless-server.sh` ruled out for worktrees. | `measurement-recipes.md` section 1; SKILL.md Stage 0 (V6) and Stage 5; `checklists.md` Per live check |
+| M2 plan reviews past round 5 | Fixed. Stage 3 split into a plan loop (stop at round 5, leftovers listed open, a blocker allows round 6) and a build loop (this skill's own longer rule, with the reason logged). Description, flow line and checklists agree. | SKILL.md description, Stage 3; `checklists.md` Per review round |
+| m1 openings routed to the VM agent type | Fixed. Quotes AGENTS.md: under the Cyber Verification Program `opus55` or the cheaper tier take office-life builds and openings; `opus48` takes only social-engineering text and CTF or VM solve scripts; a safeguard stop is retried once on `opus48`. | SKILL.md Stage 2 (security windows) and Stage 4 |
+| m2 delta timing and exceptions | Fixed. Deltas start from round 4 or after a clean stronger-tier round; the three AGENTS.md exceptions copied, with the workstation away-owner text gate and new levers or openings named as the usual cases. | SKILL.md Stage 3; `checklists.md` |
+| m3 barks outside V6 | Fixed after checking the client. `npc-barks.js` `_speakBark` calls `TTSManager.play`, so barks are voiced through `/tts`, and the endpoint accepts bark texts; the batch (`tts_line_extractor.rb:13`) and V6 (`tts_office_lines.rb:9` to `:10`) skip them. The tts-audio skill has no bark step; the skill now gives the generic route (play once on a keyed server after the user's yes, commit the clip) and adds a by-hand check to Stage 7. | SKILL.md Stage 0, Stage 2, Stage 7; `gotchas.md` Voicing; `mapping-patterns.md` section 6 |
+| m4 plain sitter re-sit | Fixed. A needs NPC re-sits through its routine; a plain seated NPC comes back standing, which is intended (`SOFA_FIX.md:52` on build/ol-m03). | `gotchas.md` Hiding a seated NPC; `measurement-recipes.md` section 6 |
+| n1 Gotchas placement, stage file names | Fixed. Gotchas section moved to the end; `STAGE4_LIVE*.md` and `STAGE5_LIVE*.md` replaced by `LIVE_*.md` with a note on m02's names. | SKILL.md |
+| n2 stale R1 Outcomes row | Fixed. The m2 row now says the line is on build/ol-m03 (`docs/IDEAS_BACKLOG.md:284`) and the copy here was removed in 166a146c1. | `OFFICE_LIFE_SKILL_REVIEW_R1.md` Outcomes |
+| n3 loose `heard` cite | Fixed. `:3011` dropped; `_exchangeHeard` read `:2954`, write `:3062`. | `mapping-patterns.md` section 6 |
+| n4 `node_modules` removal | Fixed. `unlink node_modules`, never `rm -r`. | `measurement-recipes.md` section 1; `gotchas.md`; `checklists.md` |
+| Unchecked: bark voicing in the client | Checked (see m3). | as m3 |
+| Unchecked: Stage 6 and "four talk inits first" | Gap found and fixed. The pixellab-character-pipeline skill does not state the rule; Stage 6 now orders it: 4 alternative talk inits on a picks page, wait for the pick, then `visemes --from-talk` for every NPC. Not changed in that skill, which is outside this task. | SKILL.md Stage 6 |
+| Unchecked: AGENTS.md "Asking the user for input" | Checked. Stage 2 (costs and approvals), Stage 6 and Stage 7 already send picks and the voicing yes through the decisions page with Copy picks and saved inputs; Stage 6 now says the talk-init page carries the concept and bust beside the options. No other gap. | SKILL.md Stages 2, 6, 7 |

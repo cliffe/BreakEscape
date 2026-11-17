@@ -50,7 +50,7 @@ Do not let a needs walk or a new `room_entered` mapping collide with a cutscene 
 Measure a seated NPC against the seated sprite, not the post's foot point. m03's "20 px north of the post" finding was this offset, not a wrong target (`M03_SLICES3_5_REVIEW_R2.md`).
 
 ### Hiding a seated NPC
-A seated NPC hidden at the act turn kept a seated breathing image drawn on the sofa until reload, although `vis false` and `hiddenMap true` held. The engine now unseats instantly on hide (R6 to R9, `SOFA_FIX.md`). Every mission with seated staff who vanish: render the night turn and look, dump the scene children within about 60 px of each seat, hide while the breathing image is visibly up, then show the NPC again and confirm it re-sits within about a second (`measurement-recipes.md` section 6).
+A seated NPC hidden at the act turn kept a seated breathing image drawn on the sofa until reload, although `vis false` and `hiddenMap true` held. The engine now unseats instantly on hide (R6 to R9, `SOFA_FIX.md`). Every mission with seated staff who vanish: render the night turn and look, dump the scene children within about 60 px of each seat, hide while the breathing image is visibly up, then show the NPC again. A needs NPC re-sits through its routine within about a second; a plain seated NPC comes back standing and stays standing, which is intended (`SOFA_FIX.md` on `build/ol-m03`, "A plain seated NPC is marked `_seatTried`"). Do not log the standing story NPC as a bug (`measurement-recipes.md` section 6).
 
 ### Seated pose checks
 Not yet measured. Seated pose checks follow plan slice 7 (`docs/achitechture/M03_OFFICE_LIFE_PLAN.md`); the results will be in `SLICE7_SEATS_POSES.md` in the mission's `office_life/` folder. Until then, use the seated-offset note above and the night-turn render check above.
@@ -81,7 +81,7 @@ Slice 3 and 4 placed "(placeholder line)" ink on talkable NPCs. Reviewers rated 
 Text variants written ahead of `DIALOGUE_SAMPLE.md` drifted from what the user approved; the review caught it. Copy approved wording exactly.
 
 ### Voicing
-Barks sit outside the TTS extractor and are voiced by hand. A line a review changed after voicing needs the user's own yes before re-voicing.
+The game client does voice eventMapping barks: `npc-barks.js` `_speakBark` calls `TTSManager.play(npcId, text)`, which posts to `/tts`, and the endpoint accepts bark texts (`TtsLineResolver` through `ScenarioBarkValidator.canonical`). But the TTS batch skips them (`tts_line_extractor.rb:13` to `:14`) and V6 leaves them out (`tts_office_lines.rb:9` to `:10`), so "V6 shows 0 uncached" says nothing about a bark. On the keyless servers the bark plays silent (a 503, then the phone beep). The tts-audio skill has no bark step (it says only "barks are not extracted"); the step is its generic one: on a keyed server, after the user's yes on the spend, trigger the bark once so the endpoint generates and caches the clip, then commit `tts_cache/<scenario>/` with step 6 of that skill. List each bark in `SPOKEN_LINES.md` with that step, or move the line into a chatter pool or ink knot, which V6 counts. A line a review changed after voicing needs the user's own yes before re-voicing.
 
 ## Git, servers and tests
 
@@ -110,4 +110,4 @@ A live pass on a lineage that predates a fix does not count. Play the merged tip
 - `player_state` delta sync: every new value is a bounded key sent as a delta, never a growing list re-sent whole.
 - `scenario.json.erb` holds ERB comments with `%>`; edit with `str.replace`, never a Python `%` format.
 - Run V6 from the worktree root so it reads the branch's scenario.
-- A worktree has no `node_modules`; symlink the main checkout's for the run and remove the link after.
+- A worktree has no `node_modules`; symlink the main checkout's for the run and `unlink node_modules` after (never `rm -r`).

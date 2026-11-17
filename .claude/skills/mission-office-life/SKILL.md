@@ -1,6 +1,6 @@
 ---
 name: mission-office-life
-description: Takes a Break Escape campaign mission from no office life to the m02 standard: a cast audit, room affordances and machine presets, needs and routines for ambient staff, chatter pools and once-only exchanges, player levers and security windows, poses, lighting and door hearing, then the validator, lock/key diff and live proof. It plans first, reviews for 5+ rounds, builds, and reviews again. Story NPCs stay where the plot needs them and VM flags stay required. Trigger when the user asks to "bring office life into m0X", "add office life", "make the staff feel alive", "add a kitchen and coffee to the mission", "add needs to the NPCs", "add ambient staff", "add chatter/exchanges to m0X", "add physical-pentest openings to m0X", or "do the m02 office-life treatment on <mission>".
+description: Takes a Break Escape campaign mission from no office life to the m02 standard: a cast audit, room affordances and machine presets, needs and routines for ambient staff, chatter pools and once-only exchanges, player levers and security windows, poses, lighting and door hearing, then the validator, lock/key diff and live proof. It plans first, reviews the plan for five rounds, builds, and reviews the build until it is clean. Story NPCs stay where the plot needs them and VM flags stay required. Trigger when the user asks to "bring office life into m0X", "add office life", "make the staff feel alive", "add a kitchen and coffee to the mission", "add needs to the NPCs", "add ambient staff", "add chatter/exchanges to m0X", "add physical-pentest openings to m0X", or "do the m02 office-life treatment on <mission>".
 ---
 
 # Mission office life
@@ -36,7 +36,7 @@ References, read when the step needs them (this file is the procedure, they hold
 
 ## Outputs
 
-All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_summary_base.txt`, `validator_info_lines.txt`, `ANALYSIS.md`, `PLAN.md`, `REVIEW_R<n>.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`, `BUILD_LOG.md`, `STAGE4_LIVE*.md`, `STAGE5_LIVE*.md`, `LOG.md`, `HANDOVER.md`. The plan's sections follow m02's: aim and tier, people, rooms and objects, levers, openings, spoken lines, sync budget, field names, costs and approvals, test plan.
+All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_summary_base.txt`, `validator_info_lines.txt`, `ANALYSIS.md`, `PLAN.md`, `REVIEW_R<n>.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`, `BUILD_LOG.md`, `LIVE_*.md` (the live-proof write-ups; m02 named its two `STAGE4_LIVE*.md` and `STAGE5_LIVE*.md`), `LOG.md`, `HANDOVER.md`. The plan's sections follow m02's: aim and tier, people, rooms and objects, levers, openings, spoken lines, sync budget, field names, costs and approvals, test plan.
 
 ## Stage 0: baseline
 
@@ -44,7 +44,7 @@ All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_s
 - [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors. Save the `ℹ️` lines to `validator_info_lines.txt`.
 - [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb --office-summary > v1_summary_base.txt` (V1, one line per NPC, sorted so it diffs).
 - [ ] `ruby scripts/lock_key_diff.rb scenarios/<m>/scenario.json.erb --write scenarios/<m>/office_life/baseline_locks.json` (V9).
-- [ ] `bin/rails "app:break_escape:tts:office_lines[<m>]"` from the worktree root (V6) for the cached clip count and any uncached clips that predate office life.
+- [ ] `bin/rails "app:break_escape:tts:office_lines[<m>]"` from the worktree root with the env in `references/measurement-recipes.md` section 1 (V6; it does not count barks) for the cached clip count and any uncached clips that predate office life.
 - [ ] Note `gameClock`, `disableAttacks`, the base commit hash and the walkthrough file in `BASELINE.md`.
 
 ## Stage 1: analyse (ANALYSIS.md)
@@ -125,8 +125,8 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Talk needs a pair: two compatible NPCs using one capacity-2 chatter object at once. A lone NPC says nothing. `grumble` plays only on a turn-back; `greet` only at an affordance with `chatter: "greet"`.
 - [ ] Pool lines: one line, 40 characters at most (validator error above), no `{ }` variables, no speaker prefix, nothing that repeats a bark or the NPC's ink opener (V7).
 - [ ] Exchanges (`exchanges[{with, knot, requireGlobal}]`) are ink knots, heard once (`heard_<knot>`). The first line must stand alone, because the player may walk in on it. An exchange never leaks or contradicts a clue; gate one on the global that makes it true.
-- [ ] Barks sit outside the TTS extractor; a new bark is voiced by hand, so prefer pools and knots.
-- [ ] Put every line in a table in `SPOKEN_LINES.md`: speaker, pool or knot, line, characters. Plus the list of existing lines changed (old to new), ideally empty.
+- [ ] Barks are outside the TTS batch and V6, so a new bark has no clip until someone plays it on a keyed server and the clip is committed (`references/gotchas.md`, "Voicing"). Prefer pools and knots, which V6 counts.
+- [ ] Put every line in a table in `SPOKEN_LINES.md`: speaker, pool or knot, line, characters, and for a bark how it gets its clip. Plus the list of existing lines changed (old to new), ideally empty.
 - [ ] **Dialogue-sample rule.** Send `DIALOGUE_SAMPLE.md` (a few pool lines and one exchange) to the user and wait for the yes before slice 5 writes any line. Placeholder ink never reaches main, and built text matches the approved sample word for word.
 - [ ] **Re-voicing a line that a review changed needs the user's separate yes**, through the decisions page, even when the earlier voicing was approved.
 
@@ -138,7 +138,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 - [ ] `lockIfAwayOverSeconds` is compared with the **expected** away time in `npc_left_post`, not real time. m03's planned 45 s was wrong for that reason (Stage 1 measured 14.6 s and 23.1 s; the build settled at use 16/20 s, expected 18.6 s for coffee and 28.7 s for the cooler, threshold 24 s); measure both numbers per trip (`references/measurement-recipes.md` section 3).
 - [ ] Security windows: the gap while an owner is away (unlocked screen via `habits.screen`, a page on the copier via `habits.print`, a left-behind item, a propped door). Each opens optional content only: lore, an optional task, a side drawer. Never a critical-path door, the server room, a safe or a story-locked PC.
 - [ ] Openings that write state sent whole (capture log, cloned cards, footholds, disguises) need their own approval item with a sync note.
-- [ ] Physical-pentest openings and any text that names security techniques go to the agent type AGENTS.md names for VM and technical material.
+- [ ] Physical-pentest openings are office-life builds and follow AGENTS.md "Which work goes to `opus48`": under the Cyber Verification Program (this account) `opus55` or the cheaper tier take them, and `opus48` takes only the social-engineering text in an opening (pretexting, phishing) and CTF or VM solve scripts. A safeguard stop is retried once on `opus48`.
 
 ### Lighting and doors
 
@@ -162,16 +162,23 @@ Prefer **levers over schedules**: the player causes the event through existing s
 ## Stage 3: the loop
 
 ```
-plan -> review R1..R5+ (standalone rewrite after each) -> approvals -> implement in slices -> review R1..R5+ -> art follow-ups -> voice -> close
+plan -> plan review R1..R5 (standalone rewrite after each) -> approvals -> implement in slices -> build review until clean -> art follow-ups -> voice -> close
 ```
 
-- [ ] **At least five rounds** for the plan and again for the build. Each round is a fresh read-only reviewer (planning and review tier, per AGENTS.md "Choosing a model"), findings tagged blocker, major or minor with file:line, saved as `REVIEW_R<n>.md` with B/M/m counts.
-- [ ] After each plan round, **rewrite PLAN.md as a standalone document** with no references to reviews or earlier drafts. Every finding gets an outcome: fixed, withdrawn with the reason, or deferred with the reason.
-- [ ] After round 5, fix **minors only**. A major found after round 5 sends the next round to the stronger tier.
-- [ ] From R4, delta reviews (the diff since the last round) run on the cheaper tier.
-- [ ] Stop at a round with 0 blockers and 0 majors after round 5.
-- [ ] Plan reviewers check: the expected lock and key diff and aim chain; that no opening became required; V2 and V5 risks; each NPC's class and attack outcome; compatibility and leashes; spoken-line rules; sync sums; field names; cast diversity.
-- [ ] **Build review loop (m03 ran R1 to R9).** Round 1 runs on the `opus55` agent type; later delta rounds run on the cheaper tier; a major sends the next round back to `opus55`. A fixer takes each round's findings, re-measures what the fix could move, and logs outcomes. Reviewers play the merged tip, not the build branch (`references/checklists.md`).
+Two loops, two stopping rules. Each round is a fresh read-only reviewer (planning and review tier, per AGENTS.md "Choosing a model"), findings tagged blocker, major or minor with file:line, saved as `REVIEW_R<n>.md` with B/M/m counts.
+
+**Plan review** (AGENTS.md "Iterating"):
+
+- [ ] At least five rounds, and **stop at round 5**. Plan and design reviews do not run past it unless a blocker is still open. Whatever major or minor is left at round 5 goes in the plan as open, with the reason.
+- [ ] After each round, **rewrite PLAN.md as a standalone document** with no references to reviews or earlier drafts. Every finding gets an outcome: fixed, withdrawn with the reason, or deferred with the reason.
+- [ ] After round 5, fix minors only.
+- [ ] Reviewers check: the expected lock and key diff and aim chain; that no opening became required; V2 and V5 risks; each NPC's class and attack outcome; compatibility and leashes; spoken-line rules; sync sums; field names; cast diversity.
+
+**Build review** (m03 ran R1 to R9):
+
+- [ ] Round 1 runs on the `opus55` agent type. This skill runs at least five build rounds and carries on past round 5 only while a major or blocker is open (the skill's own rule for the build, which is longer than a plan; AGENTS.md's general standard is 2 to 5 rounds, so say in the log why a round past 5 ran). A fixer takes each round's findings, re-measures what the fix could move, and logs outcomes. Reviewers play the merged tip, not the build branch (`references/checklists.md`).
+- [ ] **Delta rounds start from round 4, or at the first round after a stronger-tier round with no blockers or majors, whichever comes first.** A delta review gets only the diff since the last round and the previous findings, and runs on the cheaper tier. AGENTS.md "Cheaper later rounds" sends a delta back to Opus (the `opus55` agent type) in three cases: (1) a cheaper-tier round found a major; (2) the delta touches secret handling, what the server serves or access checks (on an account without CVP, `opus48` instead); (3) the delta adds a new design decision.
+- [ ] In office life, case 2 is the usual one: a delta that changes what a workstation's text shows while its owner is away (the readable laptop and its text gate, `references/mapping-patterns.md` section 2), a PIN, password or card shown on a screen, or any opening that reveals a secret or item type. Case 3 is a new lever, opening or tier change. Send those to `opus55`, not the cheaper tier.
 - [ ] Live checks run on the cheap scripted tier; a reported "stuck" gets a persona recheck before it counts.
 - [ ] Every multi-step brief carries the handover rule: at about 150k tokens or 80 tool calls, finish the step, commit, write `HANDOVER.md`, report and stop.
 
@@ -187,7 +194,7 @@ Slice numbers below are m03's build slices, not stage numbers. Slice order (m03)
 6. **Slice 7**: seats and poses, after the pose art is on main. Render hidden seated NPCs at the night turn and dump the scene near the seats.
 7. **Slice 8**: voice (tts-audio), room tone, close.
 
-Levers and openings that need the VM and technical agent type slot into slice 4 or 5 as the plan says.
+Levers and openings slot into slice 4 or 5 as the plan says; any social-engineering text in them is the one part that goes to `opus48`.
 
 After each slice:
 
@@ -201,8 +208,8 @@ After each slice:
 
 ## Stage 5: live proof
 
-- [ ] Run a keyless server from the branch worktree on its own free port (never 3000, 3085 or 3086; the user's server and the integrator's are there). Record the puma PID and stop that PID. Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
-- [ ] **A fresh game per check** from `BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/new-game.rb <m>`. Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
+- [ ] Run a keyless server from the branch worktree on its own free port, with the exact command in `references/measurement-recipes.md` section 1 (never 3000, 3001, 3085 or 3086; do not use `tools/playtest/start-keyless-server.sh`, which is fixed to :3001 and serves main's code). Record the puma PID and stop that PID. Worktrees share the Postgres dev database: never `db:create`, `db:schema:load`, `db:migrate` or `db:reset`.
+- [ ] **A fresh game per check** from `new-game.rb`, run from the same worktree with the same env as the server (section 1 of the recipes). Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
 - [ ] **Never edit a game row's scenario copy or state, and never set globals in the page** to reach a state. If a check needs a head start, add it to a test scenario on the branch or ask. Type flags in play where a reward matters: seeding m02's flag 4 by `--submit-flag` did not open its cache.
 - [ ] Headless only: `game.loop.setFPS(20)` with **fixed steps on**. Never `fixedStep = false` (bodies tunnel 8 px walls).
 - [ ] Check through `window.__test.needs` that posts, leashes and privacy hold, both partners reach `using` at each chatter object, and nothing mapped to NPC position fires early or twice.
@@ -210,21 +217,22 @@ After each slice:
 - [ ] Stage 5 playtests: a scripted regression of the walkthrough with office life on; a persona run of 10 to 15 minutes that pulls each lever, tries each opening, attacks one moving NPC and reloads once; a frame-time reading; with `roomTone`, a listen through a north or south door and an east or west one. At most three rounds, then a short confirmation run.
 - [ ] The Mission Brief reappearing and the start-room spawn after a reload are intended, not findings.
 
-## Gotchas
-
-Full list with fixes in `references/gotchas.md`. The ones that cost most: declare machines by base type name; `lockIfAwayOverSeconds` reads expected, not real, away time; send staff home with `offWhen`, not `patrolOverride`; hiding a seated NPC needs a rendered check at the night turn; only loaded rooms simulate; stop servers by PID; one fresh game per scenario edit.
-
 ## Stage 6: art follow-ups
 
-- [ ] Art only for what the awareness cast atlases still lack (seated or pose frames), or for a new character the plan justified. After the user's yes: pixellab-character-pipeline (concept through agy, walk atlas with the stock six animations, seated frames if they sit, bust, `<key>_headshot.png`, visemes from a talk run). No custom animations. Hand edits go in `tools/pixellab_overrides/`. Never rescale pixel art.
+- [ ] Art only for what the awareness cast atlases still lack (seated or pose frames), or for a new character the plan justified. After the user's yes: pixellab-character-pipeline (concept through agy, walk atlas with the stock six animations, seated frames if they sit, bust, `<key>_headshot.png`). No custom animations. Hand edits go in `tools/pixellab_overrides/`. Never rescale pixel art.
+- [ ] **Talk visemes, in this order** (the pipeline skill does not state the first step): (1) make 4 alternative talk inits for each new character and put them side by side on a picks page with the character's concept and bust (decisions page, Copy picks box, saved inputs, per AGENTS.md "Asking the user for input"); (2) wait for the pick, since the viseme generations are the paid step; (3) make visemes for every NPC with `visemes --from-talk`, never inpaint, and keep the 2x2 talk sheet only as the fallback.
 - [ ] Swap stand-in atlases for the real keys, then re-measure posts, seats and each pairing.
 - [ ] room-pov-background for every changed room with a `chatBackground` (both halves of a split one), after dressing and lighting.
 - [ ] Closing check on the final commit: validator, `--office-summary` diff, lock and key diff, a short scripted regression playtest.
 
 ## Stage 7 and 8: voice and close
 
-- [ ] Voice with tts-audio only after the user's explicit yes on the spend, stating the V6 clip count, asked through the orchestrator's decisions page. Signed-off wording is not that yes. V6 must then show 0 uncached office-life clips. No release carries unvoiced office-life lines.
+- [ ] Voice with tts-audio only after the user's explicit yes on the spend, stating the V6 clip count, asked through the orchestrator's decisions page. Signed-off wording is not that yes. V6 must then show 0 uncached office-life clips. V6 does not see barks: list each new bark and play it once on a keyed server (only with the same yes), then confirm its clip is committed. No release carries unvoiced office-life lines.
 - [ ] Record each round's severity table and every finding's outcome in `LOG.md`.
 - [ ] **Lab sheet last.** Flag the lab-sheet impact (new optional routes and openings) to the user; the mission-lab-sheet skill runs only as the final step. Update `CYBOK_MAPPING.md` if an opening teaches something new.
 - [ ] Commit each pass; ask the integrator for a train. `tools/playtest/train-check.sh` (AGENTS.md) must be GREEN on the hash to be merged; do not hand-run the suites instead. The integrator merges the tested hash; the pass never moves main itself.
 - [ ] Fold new lessons into this skill.
+
+## Gotchas
+
+Full list with fixes in `references/gotchas.md`. The ones that cost most: declare machines by base type name; `lockIfAwayOverSeconds` reads expected, not real, away time; send staff home with `offWhen`, not `patrolOverride`; hiding a seated NPC needs a rendered check at the night turn; only loaded rooms simulate; stop servers by PID; one fresh game per scenario edit.

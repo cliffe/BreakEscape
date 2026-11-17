@@ -18,17 +18,17 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 
 ## Per review round
 
-- [ ] Fresh read-only reviewer; round 1 on the `opus55` agent type, delta rounds from round 4 on the cheaper tier (AGENTS.md "Choosing a model").
+- [ ] Fresh read-only reviewer; round 1 on the `opus55` agent type. Delta rounds on the cheaper tier from round 4, or after a stronger-tier round with no blockers or majors. A delta goes back to `opus55` when it touches secret handling, what the server serves or access checks (a workstation's away-owner text included), or adds a design decision, or when a cheaper-tier round found a major.
 - [ ] Findings tagged blocker, major or minor with file:line; saved as `M03_REVIEW_R<n>.md` style with B/M/m counts.
 - [ ] A major or blocker sends the next round back to the stronger tier.
 - [ ] Every finding gets an outcome: fixed, withdrawn with the reason, or deferred with the reason.
 - [ ] Reviewer re-measures anything the fix could move (trip table, machine count, lock diff).
-- [ ] Stop only at 0 blockers and 0 majors after round 5; after round 5 fix minors only.
+- [ ] Plan: stop at round 5, leave anything open listed as open (a blocker still open allows round 6). Build: at least five rounds, then stop at 0 blockers and 0 majors; after round 5 fix minors only.
 - [ ] Fixer brief carries the handover rule (about 150k tokens or 80 calls) and the explicit-path commit rule.
 
 ## Per live check
 
-- [ ] Keyless server on its own port from the worktree; puma PID recorded.
+- [ ] Keyless server from the worktree on its own port, started with the `measurement-recipes.md` section 1 command; puma PID from `ss -ltnp` recorded.
 - [ ] Fresh game from `new-game.rb`, id taken from its output.
 - [ ] Headless: `setFPS(20)`, fixed steps on.
 - [ ] Player parked clear of lanes.
@@ -37,7 +37,7 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 - [ ] Reload at day and at night.
 - [ ] Attack probe on a moving, a seated and a leaving NPC, fresh game each.
 - [ ] Run on the merged tip; commit hash recorded.
-- [ ] Server stopped by PID; node_modules link removed.
+- [ ] Server stopped by PID; `unlink node_modules` done.
 
 ## Before merge
 
