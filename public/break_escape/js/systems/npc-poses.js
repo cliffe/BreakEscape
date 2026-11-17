@@ -237,6 +237,14 @@ export class NpcPoses {
         updateBreath(h, sprite, true);
     }
 
+    /** Drop this NPC's pose or idle breathing image and crop now (a hidden NPC's update never runs). */
+    stopBreath(id, sprite) {
+        const h = this.breath.get(id);
+        if (!h) return;
+        endBreath(h, sprite);
+        this.breath.delete(id);
+    }
+
     /** Does this NPC's standing idle breathe? Opt-in: NPC idleBreathing, or the debug switch. */
     idleBreathes(npcRecord) {
         return this.idleBreathing === true || npcRecord?.idleBreathing === true;

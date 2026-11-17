@@ -11,8 +11,9 @@
  * the remote link), Places (Desktop and the shares mapped on the desktop), then Lock, Switch
  * user and Sign out for a sign-in session. Lock shows only once the server reports that it
  * supports locking (pcSessions.lockingSupported() and lockSession), and only for a session
- * the player signed in to with a password: a claimed or guest session could not be unlocked
- * again by a password sign-in, so the server refuses those (422) and the panel hides Lock.
+ * with a way back in: a password sign-in, or a foothold or `from` credential session (K-lock).
+ * A claimed, guest or relay session could not be unlocked again, so the server refuses those
+ * (422) and the panel hides Lock.
  *
  * Who shows (q94, agreed with the data owner): a sign-in PC shows its live session's account
  * and never `desktopUser`; a PC that opens straight to its desktop shows `desktopUser` when
@@ -24,6 +25,7 @@
 import { escapeHtml } from './escape-html.js';
 import { displayDashes } from './display-dashes.js';
 import { MORE_BELOW_TEXT } from './more-below.js';
+import { sessionLockable } from '../systems/pc-sessions.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor, SILHOUETTE_URL } from './npc-headshot.js';
 
 const ICONS = '/break_escape/assets/icons';
@@ -179,9 +181,10 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         if (du) account = { kind: 'desktopUser', name: du.name, character: du.character };
     }
     const isRemote = !isRelay && (!!remote || session?.remote === true);
-    // pcSessions.canLock is the one rule when the caller has it; without it the same test is made here
+    // pcSessions.canLock decides when the caller has it; without it the shared sessionLockable
+    // (pc-sessions.js: a password sign-in, or a foothold or `from` credential session, K-lock)
     const lockable = lockSupported && session?.guest !== true
-        && (typeof canLock === 'boolean' ? canLock : session?.via === 'password');
+        && (typeof canLock === 'boolean' ? canLock : sessionLockable(session));
     // Switch user needs the PC's desktop to come back to; a view with none (a reader reached
     // without the desktop this page load) does not offer it rather than do nothing (R1 m3)
     // A relay has one Disconnect in place of Lock, Switch user and Sign out (8.3)
@@ -217,7 +220,8 @@ export function lockSupported(sessions = win().pcSessions) {
 export async function lockPcSession(pcId, { sessions = win().pcSessions, onRefuse = null } = {}) {
     if (!lockSupported(sessions)) return { ok: false, reason: 'unsupported' };
     const result = await sessions.lockSession(pcId);
-    if (result && result.ok === false && result.message) {
+    // An expired token was dropped with its own "expired" line (K5), so say nothing more (K-lock R2 n2)
+    if (result && result.ok === false && result.message && result.reason !== 'token_expired') {
         if (typeof onRefuse === 'function') onRefuse(result.message);
         else win().gameAlert?.(result.message, 'warning', 'Lock', 3000);
     }
