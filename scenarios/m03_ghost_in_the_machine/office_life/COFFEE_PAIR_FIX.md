@@ -38,4 +38,4 @@ Cooler check: `hallway_cooler` is a capacity-2 cooler (preset). With the player 
 
 ## Suites
 
-See the end of this file (filled in after the runs).
+`bin/test-js`: 736 files passed, 0 failed. `bin/rails test`: 3186 runs, 50670 assertions, 0 failures, 0 errors, 4 skips (LabPhysicalPentestSecretsTest did not flake).
