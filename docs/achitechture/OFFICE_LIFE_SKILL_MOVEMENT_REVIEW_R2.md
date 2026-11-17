@@ -152,3 +152,16 @@ It works as written: run on m03 it exits 0 and gives 29 sorted rows. It misses c
 
 ## Verdict
 No blocker. Fix M1 to M4 (M1 is now the D84 switch), then run a delta round 3 on `opus55`. M1 and M2 change design rules, which is delta case 3.
+
+## Outcomes
+
+- M1: Fixed. D84 (option b) is the open-conversation rule in Stage 1, with "reads no location" covering the full background order (ink `Background[...]`, mapping `background`, NPC `chatBackground`, then the room's), "no beat hangs on it" defined, and the room limit kept (V2 story NPCs routine only in their own room); option a removed; the post item renamed "At its post before any beat that needs it"; the :134 line, the Stage 5 away-talk check, checklists Per live check and the Decisions entry (D84) updated.
+- M2: Fixed. Protection (3) is now the `offWhen` beat gate for every story NPC with needs; `patrolOverride` only for NPCs without needs; `post_override?` stated as not a protection in Stage 1, Stage 2 and gotchas.md.
+- M3: Fixed. Gate every source away from the post object, never a sign-in PC (server 403 cited), drop the need if that PC is the only away source; same wording in the beat gate, "Every way out", Stage 4 and checklists.md Per slice.
+- M4: Fixed. One derived global per gated machine, set by a mapping on each cause, written clearing rule, in the sync budget; other users of each gated machine listed under the people table; prefer a machine only the moved NPC uses. Gotcha added.
+- m1: Fixed. The kitchen-tile reason replaced by "stops a tile short" and "suspension lost on reload", with the roomId behaviour noted; the validate_office_life.rb comment above `post_override?` corrected (comment only, no logic change).
+- m2: Fixed in part. Line-number source now "as on main at 8894096d3". Withdrawn: `def render` is at `scripts/lock_key_diff.rb:85` on both 8894096d3 and this branch, so :85 stays.
+- m3: Fixed. The section 9 one-liner recurses into `contents` with `in:<id>` positions; on m03 it exits 0 with 37 rows (29 plus 8 container items).
+- m4: Fixed. Mapped-break condition written as `"!globalVars.<gate>"`.
+- m5: Fixed. Stage 0 baseline filtered with `sed -n '/^OFFICE-LIFE SUMMARY/,/^$/p'` (stops at the blank line after the block, so later warnings are left out); checked on m03.
+- D84 guidance: Folded in. At most two or three moved NPCs per mission; "Found at post first" (high `initial`, slow decay, long home dwell, optional once-only `conversation_closed` break preferred to a machine gate); the two open measurements as planner work with a new recipes section 10; scripted-run poll-before-interact and no `setManualClock` in Stage 5, the Test plan and checklists; the bridge's spawn-room report in gotchas.md.
