@@ -1,7 +1,7 @@
 // Camera shots for multi-NPC person-chats (person-chat-camera.js).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cameraViewFor, backgroundRect, portraitRect, PLAYER_VIEW, FIRST_NPC_VIEW } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
+import { cameraViewFor, backgroundRect, portraitRect, shotScale, canvasBackingSize, PLAYER_VIEW, FIRST_NPC_VIEW } from '../../public/break_escape/js/minigames/person-chat/person-chat-camera.js';
 
 test('player left, first NPC right, as before', () => {
     assert.deepEqual(cameraViewFor(true, 3), PLAYER_VIEW);
@@ -24,9 +24,10 @@ test('portrait and background share one pixel scale in every shot', () => {
 
 test('a fitted portrait sits where it always did', () => {
     const p = portraitRect(FIRST_NPC_VIEW, 128, 128, 1280, 720, 0.2);
-    assert.deepEqual([p.x, p.y, p.w, p.h], [(1280 - 720) / 2 - 256, 0, 720, 720]);
+    // 5x (the largest whole number that fits 720 px), centred vertically, shifted 20% of the width
+    assert.deepEqual([p.x, p.y, p.w, p.h], [(1280 - 640) / 2 - 256, 40, 640, 640]);
     const pip = portraitRect(null, 128, 128, 200, 150, 0);
-    assert.deepEqual([pip.x, pip.y], [25, 0]);
+    assert.deepEqual([pip.x, pip.y, pip.scale], [36, 11, 1]);
 });
 
 test('a close-up keeps the head in frame', () => {
@@ -47,12 +48,12 @@ test('later NPCs get centred middle shots, each different from the last', () => 
 });
 
 test('side views match the old edge alignment', () => {
-    // 400px background at 5.625x on a 1280x720 canvas
+    // 400px background at 5x (the portrait's whole-number scale) on a 1280x720 canvas
     const left = backgroundRect(PLAYER_VIEW, 5.625, 400, 400, 1280, 720);
     const right = backgroundRect(FIRST_NPC_VIEW, 5.625, 400, 400, 1280, 720);
     assert.equal(left.x, 0);
-    assert.equal(right.x, 1280 - 2250);
-    assert.equal(left.y, (720 - 2250) / 2);
+    assert.equal(right.x, 1280 - 2000);
+    assert.equal(left.y, (720 - 2000) / 2);
 });
 
 test('a middle shot always covers the canvas', () => {
@@ -61,4 +62,51 @@ test('a middle shot always covers the canvas', () => {
         assert.ok(r.x <= 0 && r.x + r.w >= 1280);
         assert.ok(r.y <= 0 && r.y + r.h >= 720);
     }
+});
+
+// ---- Pixel-perfect scale (the speaker's pixels flickered between 5 and 6 px wide) ----
+
+const SIZES = [[1280, 720], [1280, 680], [1366, 768], [1920, 1080], [390, 844], [844, 390], [768, 1024]];
+
+test('a source pixel covers a whole number of canvas pixels, in every shot and size', () => {
+    const views = [PLAYER_VIEW, FIRST_NPC_VIEW, ...[1, 2, 3, 4, 5].map(s => cameraViewFor(false, s))];
+    for (const [cw, ch] of SIZES) {
+        for (const v of views) {
+            const p = portraitRect(v, 128, 128, cw, ch, v.shift);
+            assert.ok(Number.isInteger(p.scale), `${cw}x${ch} scale ${p.scale}`);
+            assert.ok(Number.isInteger(p.x) && Number.isInteger(p.y), `${cw}x${ch} position ${p.x},${p.y}`);
+            const b = backgroundRect(v, Math.min(cw, ch) / 128, 400, 400, cw, ch);
+            assert.ok(Number.isInteger(b.w / 400), `${cw}x${ch} background scale ${b.w / 400}`);
+            assert.ok(Number.isInteger(b.x) && Number.isInteger(b.y), `${cw}x${ch} background position`);
+            assert.equal(b.w / 400, p.scale, 'background shares the portrait scale');
+        }
+    }
+});
+
+test('the scale is the largest whole number that fits', () => {
+    assert.equal(shotScale(5.625), 5);
+    assert.equal(shotScale(5), 5);
+    assert.equal(shotScale(3.05), 3);
+    assert.equal(shotScale(1.99), 1);
+    assert.equal(shotScale(0.7), 0.7); // smaller than the frame: cannot be shown at 1x without cropping
+    assert.equal(shotScale(5.625, 1.5), 8); // close-up: 5 x 1.5 rounds to a whole number
+});
+
+test('frames of different source sizes get one scale and a shared baseline', () => {
+    // a speaker whose idle image is 120 px and whose viseme column is 128 px
+    const big = portraitRect(FIRST_NPC_VIEW, 128, 128, 1280, 720, 0.2, 128, 128);
+    const small = portraitRect(FIRST_NPC_VIEW, 120, 120, 1280, 720, 0.2, 128, 128);
+    assert.equal(small.scale, big.scale);
+    assert.ok(Number.isInteger(small.scale));
+    assert.equal(small.y + small.h, big.y + big.h, 'same bottom edge');
+    assert.equal(small.x + small.w / 2, big.x + big.w / 2, 'same centre');
+    // fitted alone, 120 px would pick 6x and 128 px 5x: the old per-frame flicker
+    assert.notEqual(portraitRect(FIRST_NPC_VIEW, 120, 120, 1280, 720, 0.2).scale, big.scale);
+});
+
+test('the backing store is the CSS box times devicePixelRatio', () => {
+    assert.deepEqual(canvasBackingSize(1280, 680, 1), { width: 1280, height: 680 });
+    assert.deepEqual(canvasBackingSize(390, 844, 3), { width: 1170, height: 2532 });
+    assert.deepEqual(canvasBackingSize(1280, 720, 1.5), { width: 1920, height: 1080 });
+    assert.deepEqual(canvasBackingSize(0, 0, 1), { width: 1, height: 1 });
 });

@@ -42,33 +42,84 @@ export function cameraViewFor(isPlayer, slot = 0) {
 }
 
 /**
- * Where to draw a portrait frame, before any flip: contain-fitted, scaled by the
- * view's zoom, and moved away from the way it faces by `shift` of the canvas width.
- * A close-up keeps the head near the top instead of centring the frame.
+ * The one pixel scale a speaker is drawn at. A source pixel must cover a whole number of
+ * canvas pixels, or its neighbours come out 5 and 6 px wide and the edges shimmer as the
+ * frame changes. So the contain fit is rounded down to an integer (at least 1) and a
+ * close-up's zoom is applied to that integer and rounded again. Only a canvas smaller than
+ * the frame (the small self-view on a phone) falls back to the exact fractional fit, since
+ * it cannot be drawn at 1x without cropping.
+ * @param {number} fit - the contain fit, canvas size over source size (may be fractional)
+ * @param {number} [zoom] - the shot's zoom (1 = fit)
+ * @returns {number}
+ */
+export function shotScale(fit, zoom = 1) {
+    if (!(fit > 0)) return 1;
+    const z = zoom || 1;
+    if (fit < 1) return fit * z;
+    return Math.max(1, Math.round(Math.floor(fit + 1e-9) * z));
+}
+
+/**
+ * Where to draw a portrait frame, before any flip: contain-fitted at one integer scale
+ * (shotScale), scaled by the view's zoom, and moved away from the way it faces by `shift`
+ * of the canvas width. A close-up keeps the head near the top instead of centring the frame.
+ * Positions are whole canvas pixels.
+ *
+ * `refW`/`refH` are the largest frame the speaker has (idle image, talk sheet cell, viseme
+ * column). The scale comes from that box, so every frame of one speaker gets the same scale;
+ * a smaller frame is centred horizontally in the box and sits on its bottom edge.
  * @param {{zoom:number}|null} view
  * @param {number} srcW
  * @param {number} srcH
  * @param {number} canvasW
  * @param {number} canvasH
  * @param {number} shift - share of the canvas width
+ * @param {number} [refW] - defaults to srcW
+ * @param {number} [refH] - defaults to srcH
  * @returns {{x:number, y:number, w:number, h:number, scale:number}}
  */
-export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift) {
+export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = srcW, refH = srcH) {
     const zoom = view?.zoom || 1;
-    const scale = Math.min(canvasW / srcW, canvasH / srcH) * zoom;
+    const scale = shotScale(Math.min(canvasW / refW, canvasH / refH), zoom);
     const w = srcW * scale;
     const h = srcH * scale;
-    const x = (canvasW - w) / 2 - canvasW * shift;
-    const y = zoom > 1 ? 0 - CLOSE_UP_TOP_CROP * h : (canvasH - h) / 2;
+    const boxW = refW * scale;
+    const boxH = refH * scale;
+    const x = Math.round((canvasW - boxW) / 2 - canvasW * shift + (boxW - w) / 2);
+    const boxY = zoom > 1 ? 0 - CLOSE_UP_TOP_CROP * boxH : (canvasH - boxH) / 2;
+    const y = Math.round(boxY + (boxH - h));
     return { x, y, w, h, scale };
 }
 
+/**
+ * Where to draw the background: the same integer scale as the portrait (pass the portrait's
+ * unrounded contain fit as `scale`), raised to the next whole number only when that would
+ * leave the canvas uncovered. Positions are whole canvas pixels.
+ */
 export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH) {
-    const s = scale * (view?.zoom || 1);
+    const cover = Math.ceil(Math.max(canvasW / imgW, canvasH / imgH) - 1e-9);
+    const s = Math.max(shotScale(scale, view?.zoom || 1), cover);
     const w = imgW * s;
     const h = imgH * s;
     const pan = Math.min(1, Math.max(0, view?.pan ?? 1));
-    const x = 0 - pan * Math.max(0, w - canvasW);
-    const y = h > canvasH ? (canvasH - h) / 2 : 0;
+    const x = Math.round(0 - pan * Math.max(0, w - canvasW));
+    const y = h > canvasH ? Math.round((canvasH - h) / 2) : 0;
     return { x, y, w, h };
+}
+
+/**
+ * Canvas backing size for a CSS box: one backing pixel per device pixel, so the browser
+ * shows the canvas 1:1 and never resamples it (a backing store that is stretched by a
+ * non-integer factor gives pixels of uneven width).
+ * @param {number} cssW
+ * @param {number} cssH
+ * @param {number} [dpr]
+ * @returns {{width:number, height:number}}
+ */
+export function canvasBackingSize(cssW, cssH, dpr = 1) {
+    const d = dpr > 0 ? dpr : 1;
+    return {
+        width: Math.max(1, Math.round(cssW * d)),
+        height: Math.max(1, Math.round(cssH * d))
+    };
 }

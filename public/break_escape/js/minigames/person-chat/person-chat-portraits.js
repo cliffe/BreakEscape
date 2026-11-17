@@ -11,7 +11,7 @@
 import { ASSETS_PATH } from '../../config.js';
 import { textToVisemes, scaleTimeline, holdTimeline, visemeAt, buildVisemeColumnMap, isBlinking, seedFrom } from './lip-sync.js';
 import { influenceTintFilter } from '../../ui/pretext-chrome.js';
-import { backgroundRect, portraitRect } from './person-chat-camera.js';
+import { backgroundRect, portraitRect, canvasBackingSize } from './person-chat-camera.js';
 
 // Sprite sheets with no derivable portrait (e.g. prop sprites like hospital beds).
 // Remembered after the first failed lookup so later conversations skip the 404s.
@@ -190,6 +190,11 @@ export default class PersonChatPortraits {
             // Handle window resize (store the handler so destroy() can remove it — no leak)
             this._resizeHandler = () => this.handleResize();
             window.addEventListener('resize', this._resizeHandler);
+            // The box can change without a window resize (caption, layout), so watch it too
+            if (typeof ResizeObserver !== 'undefined' && this.portraitContainer) {
+                this._resizeObserver = new ResizeObserver(() => this.handleResize());
+                this._resizeObserver.observe(this.portraitContainer);
+            }
             
             // Parallax animation will start automatically when background image loads
             
@@ -202,78 +207,33 @@ export default class PersonChatPortraits {
     }
     
     /**
-     * Calculate optimal integer scale factor for current container
-     * Uses 16:9 aspect ratio (640x360) for landscape, 4:3 (640x480) for portrait
-     * @returns {Object} Object with scale, baseWidth, and baseHeight
-     */
-    calculateOptimalScale() {
-        // The PiP self-view sizes to its own small box; the full-screen portrait uses #game-container.
-        const gameContainer = this.sizeToContainer ? null : document.getElementById('game-container');
-        const container = gameContainer || this.portraitContainer;
-        
-        if (!container) {
-            return { scale: 2, baseWidth: 640, baseHeight: 360 }; // Default fallback (landscape)
-        }
-        
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-        
-        // Determine orientation: landscape (width > height) or portrait (height > width)
-        const isLandscape = containerWidth > containerHeight;
-        
-        // Base resolution based on orientation
-        // 16:9 for landscape (HD widescreen), 4:3 for portrait
-        const baseWidth = 640;
-        const baseHeight = isLandscape ? 360 : 480; // 16:9 for landscape, 4:3 for portrait
-        
-        // Calculate scale factors for both dimensions
-        const scaleX = containerWidth / baseWidth;
-        const scaleY = containerHeight / baseHeight;
-        
-        // Use the smaller scale to maintain aspect ratio
-        const maxScale = Math.min(scaleX, scaleY);
-        
-        // Find the best integer scale factor (prefer 2x or higher for pixel art)
-        let bestScale = 2; // Minimum for good pixel art
-        
-        // Check integer scales from 2x up to the maximum that fits
-        for (let scale = 2; scale <= Math.floor(maxScale); scale++) {
-            const scaledWidth = baseWidth * scale;
-            const scaledHeight = baseHeight * scale;
-            
-            // If this scale fits within the container, use it
-            if (scaledWidth <= containerWidth && scaledHeight <= containerHeight) {
-                bestScale = scale;
-            } else {
-                break; // Stop at the largest scale that fits
-            }
-        }
-        
-        return { scale: bestScale, baseWidth, baseHeight };
-    }
-    
-    /**
-     * Update canvas size to match available container space with pixel-perfect scaling
-     * Uses 16:9 aspect ratio for landscape, 4:3 for portrait
+     * Size the canvas backing store to its CSS box times devicePixelRatio, so the browser
+     * shows it 1:1. (It used to be a fixed 640x360 multiple stretched to the box with
+     * object-fit, a non-integer factor that made source pixels uneven widths.) The integer
+     * scale the portrait is drawn at is chosen per draw from this size (person-chat-camera.js).
+     * The backing store is only reset when its size changes, since resetting clears it.
      */
     updateCanvasSize() {
         if (!this.canvas) return;
-        
-        // Calculate optimal scale and base resolution based on orientation
-        const { scale: optimalScale, baseWidth, baseHeight } = this.calculateOptimalScale();
-        
-        // Set canvas internal resolution to scaled resolution for pixel-perfect rendering
-        this.canvas.width = baseWidth * optimalScale;
-        this.canvas.height = baseHeight * optimalScale;
-        
-        // CSS handles the display sizing (width/height 100% with object-fit: contain)
-        // The canvas internal resolution is set above for pixel-perfect rendering
-        
-        const aspectRatio = baseWidth / baseHeight;
-        const orientation = baseHeight === 360 ? 'landscape (16:9)' : 'portrait (4:3)';
-        console.log(`🎨 Canvas scaled to ${optimalScale}x (${this.canvas.width}x${this.canvas.height}px internal, ${orientation}, fits container)`);
+
+        // The canvas fills its container (CSS 100% x 100%)
+        const box = this.portraitContainer;
+        let cssW = box ? box.clientWidth : 0;
+        let cssH = box ? box.clientHeight : 0;
+        if (!cssW || !cssH) {
+            // Not laid out yet: the game container is the same full-screen box
+            const gc = this.sizeToContainer ? null : document.getElementById('game-container');
+            cssW = gc ? gc.clientWidth : 0;
+            cssH = gc ? gc.clientHeight : 0;
+        }
+        if (!cssW || !cssH) { cssW = 640; cssH = 360; }
+
+        const dpr = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+        const { width, height } = canvasBackingSize(cssW, cssH, dpr);
+        if (this.canvas.width !== width) this.canvas.width = width;
+        if (this.canvas.height !== height) this.canvas.height = height;
     }
-    
+
     /**
      * Handle canvas resize on window resize
      */
@@ -650,7 +610,7 @@ export default class PersonChatPortraits {
      * Fills the canvas while maintaining sprite's pixel scale (may extend beyond canvas if larger)
      * Framed by the speaker's camera shot (this.view); without one, right edge for NPCs
      * (flipped) and left edge for the player
-     * @param {number} spriteScale - The scale factor used for the sprite (must match sprite scale exactly)
+     * @param {number} spriteScale - The sprite's contain fit (canvas size over frame size); the background snaps it to the same integer scale as the sprite
      */
     drawBackground(spriteScale) {
         if (!this.backgroundImage || !this.ctx || !this.canvas || !spriteScale) return;
@@ -660,15 +620,12 @@ export default class PersonChatPortraits {
         const imgWidth = this.backgroundImage.width;
         const imgHeight = this.backgroundImage.height;
         
-        // Fill the canvas at the sprite's scale (cover style if the image is too small)
-        const scale = Math.max(spriteScale, canvasWidth / imgWidth, canvasHeight / imgHeight);
-
         // The speaker's camera shot: the player sees the left of the room, the first
         // NPC the right, and later NPCs a pushed-in middle shot (person-chat-camera.js).
         // Scene shots and the PiP ignore it and keep the side-aligned framing.
         const view = this._cameraView() || { pan: this.flipped ? 1 : 0, zoom: 1 };
         let { x, y, w: scaledWidth, h: scaledHeight } =
-            backgroundRect(view, scale, imgWidth, imgHeight, canvasWidth, canvasHeight);
+            backgroundRect(view, spriteScale, imgWidth, imgHeight, canvasWidth, canvasHeight);
 
         // Calculate subtle parallax effect - move background towards sprite once and stop
         const elapsed = (Date.now() - this.parallaxStartTime) / 1000; // Time in seconds
@@ -690,7 +647,7 @@ export default class PersonChatPortraits {
         // Move background towards sprite (towards center)
         // NPC on right: move left (negative), Player on left: move right (positive)
         const parallaxOffset = this.flipped ? parallaxAmount : -parallaxAmount;
-        x += parallaxOffset;
+        x += Math.round(parallaxOffset); // whole canvas pixels, so the background stays on the pixel grid
         
         // Draw background image at same pixel scale as sprite
         // Note: Canvas will clip anything outside its bounds, but background may extend beyond
@@ -727,8 +684,8 @@ export default class PersonChatPortraits {
                     // character's pixel scale, so the whole width of the scene shows
                     // (the small margin hides the parallax drift at the edge)
                     const img = this.backgroundImage;
-                    const cover = Math.max(this.canvas.width / img.width, this.canvas.height / img.height);
-                    this.drawBackground((cover * img.width + 24) / img.width);
+                    // A whole-number scale so the background's pixels stay square
+                    this.drawBackground(Math.ceil(Math.max((this.canvas.width + 24) / img.width, this.canvas.height / img.height)));
                 }
                 return;
             }
@@ -790,9 +747,7 @@ export default class PersonChatPortraits {
             const canvasWidth = this.canvas.width;
             const canvasHeight = this.canvas.height;
             
-            let scaleX = canvasWidth / spriteWidth;
-            let scaleY = canvasHeight / spriteHeight;
-            let scale = Math.min(scaleX, scaleY); // Fit contain style - ensures full sprite visible
+            const scale = Math.min(canvasWidth / spriteWidth, canvasHeight / spriteHeight); // contain fit; both the sprite and background snap it to one integer scale
             
             // Draw background with sprite scale if loaded
             if (this.backgroundImage) {
@@ -812,13 +767,13 @@ export default class PersonChatPortraits {
             if (this.flipped) {
                 // Save current state, flip horizontally, draw, restore
                 this.ctx.save();
-                this.ctx.translate(canvasWidth / 2, 0);
+                this.ctx.translate(canvasWidth, 0);
                 this.ctx.scale(-1, 1);
                 this.ctx.drawImage(
                     source,
                     frame.cutX, frame.cutY, // Source position
                     frame.cutWidth, frame.cutHeight, // Source size
-                    x - canvasWidth / 2, y, // Destination position
+                    x, y, // Destination position (x is already the mirrored left edge)
                     scaledWidth, scaledHeight // Destination size (scaled)
                 );
                 this.ctx.restore();
@@ -928,13 +883,28 @@ export default class PersonChatPortraits {
     }
     
     /**
+     * Side of the largest frame this speaker can show (viseme column, talk sheet cell or
+     * single talk image). The portrait's integer scale comes from this one size, so the
+     * idle, talk and viseme frames are all drawn at the same scale even if their sources differ.
+     * @returns {number} 0 when nothing is loaded yet
+     * @private
+     */
+    _speakerRefSize() {
+        const talk = this.spriteTalkImage
+            ? (this._isTalkSheet() ? this.spriteTalkImage.width / 2 : this.spriteTalkImage.width)
+            : 0;
+        const vis = this.visemeSheet ? this.visemeSheet.frameSize : 0;
+        return Math.max(talk, vis);
+    }
+
+    /**
      * Calculate contain-fit scale for the active talk frame against the canvas.
      * For a 2×2 spritesheet the scale is based on the per-frame size (half width/height),
      * keeping the rendered character the same size regardless of sheet dimensions.
      * @returns {number|null}
      */
     calculateSpriteTalkScale() {
-        const frameSize = this._getTalkFrameSize();
+        const frameSize = this._speakerRefSize();
         if (!frameSize || !this.canvas) return null;
         return Math.min(this.canvas.width / frameSize, this.canvas.height / frameSize);
     }
@@ -1003,19 +973,21 @@ export default class PersonChatPortraits {
             // Fit the frame to the canvas (zoomed with the background in a close-up),
             // centre it, then shift it away from the way the character faces
             // (skipped for the PiP self-view so the face stays centred in its small box)
+            const ref = this._speakerRefSize() || srcW;
             const { x, y, w: scaledWidth, h: scaledHeight } = portraitRect(this._cameraView(),
-                srcW, srcH, canvasWidth, canvasHeight, this._lookAwayShift());
+                srcW, srcH, canvasWidth, canvasHeight, this._lookAwayShift(),
+                Math.max(ref, srcW), Math.max(ref, srcH));
 
             this.ctx.imageSmoothingEnabled = false;
             this._setBandFilter();
 
             if (this.flipped) {
                 this.ctx.save();
-                this.ctx.translate(canvasWidth / 2, 0);
+                this.ctx.translate(canvasWidth, 0);
                 this.ctx.scale(-1, 1);
                 this.ctx.drawImage(img,
                     srcX, srcY, srcW, srcH,                  // source crop
-                    x - canvasWidth / 2, y, scaledWidth, scaledHeight); // dest
+                    x, y, scaledWidth, scaledHeight);        // dest (x is the mirrored left edge)
                 this.ctx.restore();
             } else {
                 this.ctx.drawImage(img,
@@ -1110,6 +1082,10 @@ export default class PersonChatPortraits {
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;
+        }
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
         }
 
         // Drop the ttsManager reference so the animation loop's keep-alive check goes false
