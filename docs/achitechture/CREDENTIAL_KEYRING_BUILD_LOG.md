@@ -1551,6 +1551,29 @@ Mutation proofs (file copied to the scratchpad, edited, run, copied back): passw
 (6 fail), relay lockable (2 fail), sessionHeld ignoring the lock (4 fail), expired token
 lockable (1 fail).
 
-Not yet run: bin/test-js in full, the access-relay-desktop and access-from-desktop runners, full
-`bin/rails test`, rubocop, the live proof on :3082. See tmp/handover/ac0/klock-HANDOVER.md in the
+Client mutation proof: `sessionLockable` cut back to `via === 'password'` (file copied aside, run,
+copied back): the new pc-sessions test fails (72 pass, 1 fail); restored, 73 pass.
+
+Results (head 9179d84d9 plus the follow-up commit that carries this section):
+- `bin/test-js` 736 files passed, 0 failed. `access-relay-desktop` 21 tests and `access-from-desktop`
+  16 tests pass under `ulimit -v 2000000` and a 300 MB heap.
+- `bin/rails test` 3229 runs, 51059 assertions, 0 failures, 0 errors, 4 skips.
+- rubocop on game.rb, credential_keyring.rb, credential_lock_test.rb and policy_test.rb: no offences.
+
+Live proof (keyless server on :3082, headless, fixed steps on at 20 FPS, game 6717 of
+test_access_keyring; driver `tmp/handover/ac0/klock-live/klock-drive.mjs` and `relay-drive.mjs`;
+screenshots in the main checkout's `tmp/handover/ac0/klock-live/`):
+1. Take HB-FIN-02.rdp, plant the drop box, Connect from the tray: signed in (PASS, 01).
+2. Start panel offers Lock for the foothold session; Lock keeps the session as `locked: true` and
+   closes the desktop (PASS, 02, 03). The driver's first check expected the session to leave the
+   client list; it stays there flagged locked, which is the intended model.
+3. GET /keyring: `sessionHeld` false for `lena_rdp` while locked (PASS).
+4. Network view row reads "Locked" with a Sign in button (PASS, 04).
+4b. Sign in from that row: a password-only screen, "Locked: Lena Fox. Enter the password to
+   unlock", username `lfox` prefilled, no "Connect with" .rdp button and no Change button
+   (`04b-signin-screen-from-network-view.png`). Review R1 M1 expects this; not changed here.
+5. Connect from the tray again: the desktop reopens unlocked, `sessionHeld` true (PASS, 05, 06).
+6. Relay: Jake's helpdesk line gives the assist code; Connect opens HB-FIN-03 and the start panel
+   offers only Disconnect, no Lock (PASS, 07, 08).
+No page errors.
 main checkout.
