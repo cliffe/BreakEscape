@@ -1,6 +1,6 @@
 // Graham Whitfield, office worker. Five-line staff chat (neil.ink reopen pattern).
 // One flavour topic (the cooler), no variable, no consequence.
-// The cooler exchange knot (exchange_cooler_chat) is a later slice, not here.
+// The cooler exchange knot (exchange_cooler_chat) is at the foot of this file.
 
 === start ===
 # speaker:npc
@@ -22,3 +22,13 @@ Go on, then.
     Right you are.
     # exit_conversation
     -> END
+
+// Played once by the needs system when Graham and Agnieszka chat at the cooler
+// and the viewer is in earshot. Never reached from the player's conversation.
+=== exchange_cooler_chat ===
+Graham Whitfield: Not seen you at the cooler all week.
+Agnieszka Duda: I've been hiding at my desk, Graham.
+Graham Whitfield: Deadline? I'll not keep you long.
+Agnieszka Duda: You never do. Five minutes, tops.
+Graham Whitfield: Then back to it. Same time tomorrow?
+-> DONE

@@ -49,3 +49,35 @@ Other games: 7476 (lever before the kitchen was opened), 7486, 7487, 7489 (rende
 ### Scripts
 
 `tools/playtest/showcase-s1-probe.mjs` (phases state, w0, post, homes, watch, lever, render), `showcase-s1-analyse.mjs`, `showcase-s1-path.mjs`.
+
+## S2 (morning)
+
+### Built
+
+Line numbers are in `scenarios/office_life_showcase/scenario.json.erb` unless stated.
+
+- Scenario pools (`:14`): `coffee`, `cooler` (the new sandwich-place line replaces the sims printer line), `grumble_off`, `grumble_gone`. `cake` and `news_cake` wait for S3.
+- Per-NPC pool extras P1 to P8: Chidi and Jun `coffee` (`:221`, `:244`), Graham and Agnieszka `cooler` (`:270`, `:298`). Zainab has none.
+- `office_coffee` (`:151`): `chatter: "coffee"` and `overhearRadius 200`. Queue capacity is the two queue cells already in S1 (`dx -1` and `dx -2`), so Chidi uses it, Jun is second and Zainab third. The preset capacity is left alone, as in sims.
+- Couplings: Jun on `npc_left_post:chidi_okeke` (`data.targetId === 'office_coffee'`, cooldown 30000, caffeine 10); Zainab on `npc_queued:office_coffee` (`data.npcId !== 'zainab_hussain'`, same cooldown and set); Graham on `npc_left_post:agnieszka_duda` (`data.targetId === 'water_cooler'`, social 10).
+- Kitchen coffee `offWhen {office_coffee_off: false}`, the socket lever and `office_mugs` (`:188`) were already in S1 and are unchanged.
+- Exchange: Graham's `exchanges` entry (`:292`) and the `exchange_cooler_chat` knot (X1 to X5) at the foot of `ink/graham_whitfield.ink`. Speaker prefixes are the display names ("Graham Whitfield:", "Agnieszka Duda:"), because the validator resolves speakers by id or display name only.
+- Ama's `eventMappings` (`:198`-`:218`): B1 (`room_entered:office`), B2 with `see_queue`, `hear_queue_chat` (condition `data.overheard === true`), B3 with `see_coffee_off` (condition `data.reason === 'off'`), `hear_cooler_exchange` on `npc_exchange_heard:exchange_cooler_chat`, B11 on `npc_picked_up:office_mugs`, and `kitchen_seen` on `room_entered:kitchen`.
+- Globals declared: `kitchen_seen`, `heard_exchange_cooler_chat` (`:28`).
+- Ama's ink (`ink/ama_owusu.ink`, recompiled): hub choices "What am I looking at?" (once, A3 A4), "What should I try next?" (morning only: A5, A6, A8, A7 in that order) and "What was that at the cooler?" (gated on `heard_exchange_cooler_chat`, A13 A14). `kitchen_seen` is not read by any ink yet; the lunch gate that reads it is S3.
+
+### Plan wording changes
+
+- Each bark and its task share one mapping (B2 with `see_queue`, B3 with `see_coffee_off`), marked `onceOnly`. Two mappings on the same event, one `onceOnly`, trip a validator warning; a task completes once anyway, so the plan's "no task mapping uses onceOnly" is not needed for these two. `hear_queue_chat` and `hear_cooler_exchange` have no `onceOnly`.
+- The plan did not say that exchange knots must name speakers by display name or id.
+
+### Validator
+
+`ruby scripts/validate_scenario.rb scenarios/office_life_showcase/scenario.json.erb`: 0 errors, 17 warnings (S1 baseline 17).
+- Gone: the built-in `cooler` picture-chat note on `water_cooler` (the pool now has lines).
+- New: `grumble_gone` has one line that nobody can speak yet. It is spoken when someone turns back because a magnet (the cake) ran out, which arrives in S3. Left in as the plan lists it under S2.
+- One suggestion (not counted): `kitchen_seen` is set but nothing reads it until the S3 lunch gate.
+- V8 sync budget: heard_ globals 1/8, onceOnly office-life mappings 3/10, small keys 14/64.
+- Ink compiles with no warnings; no em or en dashes in the new ink.
+
+Not proved live: this is the build and validator only.
