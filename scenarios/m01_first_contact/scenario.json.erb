@@ -2082,6 +2082,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "needsSpeed": 70,
           "needs": { "thirst": { "decayPerMin": 0.1, "urgentAt": 30, "initial": 100 } },
           "needsCompany": { "avoids": ["fatima_begum", "graham_whitfield"] },
+          "needsDeferMin": 1,
           "eventMappings": [
             { "eventPattern": "conversation_closed:maya_chen", "onceOnly": true, "delayMs": 2000,
               "condition": "globalVars.discussed_operation === true && globalVars.maya_settled === true && !globalVars.entropy_reveal_read && !globalVars.m01_staff_alarmed && !globalVars.maya_ko",
