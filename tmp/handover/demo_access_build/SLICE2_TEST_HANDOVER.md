@@ -18,3 +18,8 @@ The lock queues behind full train-checks (30+ minutes). The run itself takes 8 s
 - Check the remaining failures after the first fixes (output of the first run is in the task output; rerun to see).
 ## Scenario findings so far
 None yet that are scenario faults. rfidCard on the NPC reaches the client by design.
+
+## Status (after aa776e571): GREEN, 33 runs, 709 assertions, 0 failures
+- rfidCard in room answers is by design (same as access_model_no_password_test); the refute was dropped with a comment.
+- player_state growth closed by AC0 (first-draft plants while meeting_room was locked).
+- Refused shares answer 404 (same as an invented id), not 403; tests now assert that. The network view's 'open' flag is static (no access rule), so Finance stays false.

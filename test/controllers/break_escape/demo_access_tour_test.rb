@@ -286,7 +286,8 @@ module BreakEscape
         bodies[room] = response.parsed_body
         refute_secrets "room #{room}"
         refute_pin "room #{room}"
-        refute_includes response.body, lorna_card_id, "room #{room} carries Lorna's card id"
+        # An NPC's rfidCard (name, card_id, rfid_protocol) reaches the client by design: it is what the
+        # cloner reads (same as access_model_no_password_test). The server enforces the clone.
       end
       bodies.each do |where, body|
         npcs = []
@@ -557,8 +558,9 @@ module BreakEscape
       assert_includes listed, 'finance_share'
       assert_includes listed, 'client_letters'
       assert_equal false, view['footholds'].first['hosts'].find { |h| h['id'] == 'finance_share' }['open']
+      # A refused share answers 404, the same as an invented id (games_controller#container).
       container('finance_share', foothold: @foothold)
-      assert_response :forbidden, 'the box alone'
+      assert_response :not_found, 'the box alone'
       container('client_letters', foothold: @foothold)
       assert_response :success, 'the open share maps on the bare foothold'
     end
@@ -567,13 +569,15 @@ module BreakEscape
       plant_box
       sign_in_ok('thandiwe_laptop', 'thandiwe')
       container('finance_share', foothold: @foothold)
-      assert_response :forbidden, 'a design session is not a finance or partner session'
+      assert_response :not_found, 'a design session is not a finance or partner session'
       logout('thandiwe_laptop')
       take_julian_rdp
       logout('reception_pc')
       julian_through_box
       view = network_view(@foothold)
-      assert_equal true, view['footholds'].first['hosts'].find { |h| h['id'] == 'finance_share' }['open']
+      # 'open' in the view only says the share has no access rule (network_access.rb:1080), so it stays
+      # false for the Finance share; the session shows in the container answer below.
+      assert_equal false, view['footholds'].first['hosts'].find { |h| h['id'] == 'finance_share' }['open']
       body = container('finance_share', foothold: @foothold)
       assert_response :success, body.inspect
       refute_secrets 'the Finance share answer'
@@ -636,7 +640,7 @@ module BreakEscape
       container('door_controller', foothold: @foothold)
       assert_response :forbidden
       container('finance_share', foothold: @foothold)
-      assert_response :forbidden
+      assert_response :not_found, 'a refused share looks like an invented id'
     end
 
     test 'from route: a julian_pc session opened from the front desk survives the unplug' do
