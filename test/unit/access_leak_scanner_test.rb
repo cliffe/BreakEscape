@@ -1017,6 +1017,8 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
   CHRIS_PASSWORD = 'Chris-Pass-6603'.freeze
   CAPTURES = '/break_escape/games/1/capture_secrets'.freeze
   INVENTORY = '/break_escape/games/1/inventory'.freeze
+  # Legacy shape (an old scenario copy that still has the rogue_ap_spot pot, as saved games carry);
+  # the hideable shape, with no spot, is covered under "Plant hiding" below.
   PLANT_PROOF = { 'planted' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot' }.freeze
 
   # Ruth (a phone NPC, no account) writes the staff key with the plant proof; Kieran holds an
@@ -1302,5 +1304,47 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     unreadable = inv_row(inv: { 'action' => 'remove', 'itemId' => nil, 'usedOn' => 'rogue_ap_spot' })
     assert_equal [[3, 'capture_secret', 'capture:staff_wifi_key']],
                  summary(plant_scan([other_inv_row, unreadable, served_psk], game: ProofGame.new(true)))
+  end
+
+  # ---- Plant hiding (docs/achitechture/PLANT_HIDING_PLAN.md, section 7) ----
+
+  def hideable_scenario
+    data = no_on_scenario
+    data['startItemsInInventory'][0]['hideable'] = {
+      'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large13_34'],
+      'device' => 'planted_rogue_ap', 'overlay' => { 'sprite' => 'rogue_ap_tucked' }
+    }
+    data['rooms']['reception']['objects'] << { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'planter_fig1', 'name' => 'Pot A' }
+    data
+  end
+
+  def hide_row(spot, item: 'kit_rogue_ap', status: 200)
+    inv_row(inv: { 'action' => 'hide', 'itemId' => item, 'usedOn' => nil, 'hiddenIn' => spot }, status: status)
+  end
+
+  test 'plant hiding: a served secret after a hide row is not flagged, before it it is' do
+    data = hideable_scenario
+    [{ spot: 'pot_a' }, { spot: 'reception_plant-large12-top-ani1_77' }].each do |c|
+      assert_empty plant_scan([hide_row(c[:spot]), served_psk], data: data)
+      assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([served_psk, hide_row(c[:spot])], data: data))
+    end
+  end
+
+  test 'plant hiding: a hide row that fails, names an excluded or foreign spot, or another item is no plant' do
+    data = hideable_scenario
+    [hide_row('pot_a', status: 422), hide_row('reception_plant-large13_34'), hide_row('comms_plant-large6_1'),
+     hide_row('reception_notes_plantlog1_9'), hide_row('pot_a', item: 'kit_other')].each do |row|
+      assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([row, served_psk], data: data)), row.inspect
+    end
+  end
+
+  test 'plant hiding: an untagged hide row (no item or spot) turns the shortcut off before the served row' do
+    data = hideable_scenario
+    [{ 'action' => 'hide', 'itemId' => nil, 'usedOn' => nil }, { 'action' => 'hide', 'itemId' => 'kit_rogue_ap', 'usedOn' => nil }].each do |inv|
+      assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([inv_row(inv: inv), served_psk], data: data, game: ProofGame.new(true))), inv.inspect
+    end
   end
 end

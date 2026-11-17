@@ -130,6 +130,18 @@ test('who shows: the session on a sign-in PC, never desktopUser; desktopUser onl
     assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'password' }, lockSupported: false }).actions, ['switch', 'signout']);
 });
 
+test('K-lock R1 m1: with no canLock from the caller, Lock follows the shared sessionLockable for each session shape', () => {
+    const cred = { username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection' };
+    const lockOffered = (session) => pcTaskbarModel({ pcData: { lockType: 'login' }, session, lockSupported: true }).actions.includes('lock');
+    assert.equal(lockOffered({ ...cred, remote: true, footholdId: 'jack_comms_port' }), true, 'foothold');
+    assert.equal(lockOffered({ ...cred, remote: true, fromPcId: 'sam_pc' }), true, 'from');
+    assert.equal(lockOffered({ ...cred, kind: 'token', remote: true, footholdId: 'jack_comms_port', expiresAt: Date.now() + 60000 }), true, 'live token');
+    assert.equal(lockOffered({ ...cred, kind: 'token', remote: true, footholdId: 'jack_comms_port', expiresAt: Date.now() - 1 }), false, 'expired token');
+    assert.equal(lockOffered({ ...cred, kind: 'assist_invite', relay: true }), false, 'relay');
+    assert.equal(lockOffered({ ...cred }), false, 'routeless credential');
+    assert.equal(lockOffered({ ...cred, remote: true, footholdId: '' }), false, 'empty foothold id');
+});
+
 test('the computer name: a remote session\'s host, else host, else the PC name; desktopUser must be well formed', () => {
     assert.equal(pcHostName({ host: 'HB-FIN-02', name: 'Finance PC' }, { remote: true, host: 'HB-FIN-02r' }), 'HB-FIN-02r');
     assert.equal(pcHostName({ host: 'KEVIN-WS', name: "Kevin's" }), 'KEVIN-WS');
@@ -432,6 +444,25 @@ test('R1 m2: Lock from a reader closes it only once the server agrees', async ()
     await settle();
     assert.deepEqual(asked, ['hot_desk']);
     assert.equal(ended.length, 1, 'closed after a successful lock');
+});
+
+test('K-lock R2 n2: a lock refused for an expired token adds no refusal line, and the reader closes like a success', async () => {
+    base();
+    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    sessions.lockingSupported = () => true;
+    sessions.lockSession = async () => ({ ok: false, reason: 'token_expired', status: 422, message: 'HB-FIN-02 sign-in token expired. Your session on HB-FIN-02 ended.' });
+    sessions.takeEndedMessage = () => null;
+    const alerts = [];
+    window.gameAlert = (...a) => alerts.push(a);
+    rememberDesktop('hot_desk', { containerItem: loginPc(), places: [] });
+    const mg = new TextFileMinigame(document.getElementById('mg'), { title: 'notes.txt', fileName: 'notes.txt', fileContent: 'hello', pcScreen: FILE });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init(); mg.start(); await mg.taskbarReady;
+    panelItem('pc-start-lock').click();
+    await settle();
+    assert.equal(document.querySelector('.pc-file-message-error'), null, 'no refusal line over the expiry line');
+    assert.equal(alerts.length, 0, 'and no alert');
+    assert.equal(ended.length, 1, 'the reader closes as after a successful lock');
 });
 
 test('R1 m3: a reader with no remembered desktop does not offer Switch user; with one, it opens the sign-in screen', async () => {

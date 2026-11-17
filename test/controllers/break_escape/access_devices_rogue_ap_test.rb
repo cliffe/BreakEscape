@@ -5,7 +5,8 @@ module BreakEscape
   # Physical pentest devices, slice A1 (docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md,
   # sections 4.1 to 4.3 and 7): the pocket rogue AP over HTTP, on an inline fixture in the
   # shape of test_access_devices. The console writes only globals, so every secret it leads
-  # to is gated on the server by the plant proof (kit_rogue_ap on rogue_ap_spot):
+  # to is gated on the server by the plant proof (kit_rogue_ap on rogue_ap_spot in this legacy-shaped fixture; the real scenarios
+  # now use a hide with no spot, covered by AccessDevicesRogueApScenarioTest below):
   # - the staff Wi-Fi key, a holderless addCapture.secret on a phone NPC (the key page);
   # - Kieran's account password, served by the account pass under his captureProof (the
   #   sign-in page).
@@ -377,10 +378,17 @@ module BreakEscape
       response.parsed_body['secrets'] || {}
     end
 
+    # The real scenario hides the kit in a reception plant (plant-hiding plan); a decor plant id.
+    PLANT_SPOT = 'reception_plant-large12-top-ani1_77'.freeze
+
     def plant_ap
-      post game_path('inventory'), params: { action_type: 'remove', item: { id: 'kit_rogue_ap' }, used_on: 'rogue_ap_spot' },
-                                   as: :json
+      post game_path('inventory'), params: { action_type: 'hide', item: { id: 'kit_rogue_ap' }, hidden_in: PLANT_SPOT }, as: :json
       assert_response :success, response.body
+    end
+
+    def hide_in(spot)
+      post game_path('inventory'), params: { action_type: 'hide', item: { id: 'kit_rogue_ap' }, hidden_in: spot }, as: :json
+      response.parsed_body
     end
 
     def join(ap_id, key)
@@ -438,6 +446,29 @@ module BreakEscape
       plant_ap
       assert_equal kieran_password, secrets['kieran']
       assert sign_in('hot_desk_pc', 'k.doyle', kieran_password)['success'], response.body
+    end
+
+    # This runs on test_access_devices (the same code path as the lab; the lab's own old-copy case is
+    # LabPlantHidingTest). A save made before the plant-hiding migration carries {kit_rogue_ap, on: rogue_ap_spot} in
+    # plantedItems while the scenario copy now has no rogue_ap_spot. The record still proves the
+    # plant, the client is told which room to draw the device in, and the secrets are served.
+    test 'hybrid: a plantedItems record on the removed rogue_ap_spot still serves both captures and shows the device' do
+      @game.player_state['plantedItems'] = [{ 'item' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot' }]
+      @game.save!
+      assert_equal [{ 'item' => 'kit_rogue_ap', 'on' => 'rogue_ap_spot', 'room' => 'reception' }], @game.reload.hidden_devices_for_client
+      record_capture('staff_wifi_key', 'Ledgerwell-Staff')
+      record_capture('kieran', 'k.doyle')
+      assert_equal psk, secrets['staff_wifi_key']
+      assert_equal kieran_password, secrets['kieran']
+      assert join('lw_staff_ap', psk)['success']
+      bootstrap_scenario
+      assert_response :success
+      assert_equal 'rogue_ap_spot', response.parsed_body['hiddenDevices'].first['on']
+      refute_includes response.body, psk
+      body = hide_in(PLANT_SPOT)
+      assert_response :unprocessable_entity
+      assert_equal 'already_hidden', body['reason'], 'hiding it again answers already_hidden with the old entry'
+      assert_equal 'rogue_ap_spot', body['hidden']['on']
     end
 
     test 'the bootstrap carries neither the PSK nor the password' do

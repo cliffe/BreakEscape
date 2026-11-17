@@ -1293,7 +1293,7 @@ module BreakEscape
       return false if obj['contents'].is_a?(Array) && obj['contents'].any?
       # A reveal slot (a copier output and the like: npc-needs.js isSlot) keeps its
       # own client-only place-then-file flow, so it is not a server-tracked carry.
-      return false if obj['outputOf'].present? || obj.key?('revealOnGlobal') || obj.key?('leftBehindChance')
+      return false if obj['outputOf'].present? || obj.key?('revealOnGlobal') || obj.key?('hiddenWith') || obj.key?('leftBehindChance')
 
       true
     end
@@ -3668,6 +3668,20 @@ module BreakEscape
       end
     end
 
+    # Whether a held session may be locked. A password sign-in (UI slice 6) unlocks with the
+    # password. Keyring K-lock (plan 8.6): a `via: "credential"` session the player opened as
+    # the account over a foothold or `from` route (a token session carries its proof foothold)
+    # unlocks with the account's password or a fresh sign-in with the same credential, which
+    # start_login_session! rebuilds without `locked`. A claim or guest session has no way back
+    # in, and a relay is the holder's own screen (Disconnect only): neither is lockable.
+    def session_lockable?(session)
+      return false unless session.is_a?(Hash)
+      return true if session['via'] == 'password'
+      return false unless session['via'] == 'credential' && !relay_session?(session)
+
+      session['foothold'].present? || session['from'].present?
+    end
+
     # Lock the held session at a sign-in PC (UI slice 6). Only the session's holder can lock
     # it: a PC with no held session is refused (:unprocessable_entity), which also covers a
     # forged request for a PC the player does not hold. The session stays held and signedInPcs
@@ -3679,11 +3693,14 @@ module BreakEscape
       unless session.is_a?(Hash)
         return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
       end
-      # Only a password sign-in can be locked (owner decision, UI slice 6): a claim or guest
-      # session was entered without a password, so the password re-auth that is the only way
-      # back in could never clear it and the player would be stranded. Refused with the same
-      # 422 as an unheld PC.
-      unless session['via'] == 'password'
+      # An expired token session is not held (keyring K5): refused as an unheld PC. This does not
+      # prune or save: the record is cleared by the next write's prune, not by the lock route.
+      if credential_session_expired?(session)
+        return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
+      end
+      # Only a session with a way back in can be locked (owner decision, UI slice 6; widened by
+      # keyring K-lock, plan 8.6): see session_lockable?. Refused with the same 422 as before.
+      unless session_lockable?(session)
         return { status: :unprocessable_entity, body: { success: false, message: 'Only a signed-in session can be locked' } }
       end
 

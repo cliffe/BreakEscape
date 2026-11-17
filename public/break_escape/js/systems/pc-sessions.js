@@ -159,6 +159,23 @@ function apiClient() {
     return (typeof window !== 'undefined' && (window.ApiClient || window.APIClient)) || null;
 }
 
+/**
+ * Whether a held session has a way back in once locked, so Lock may be offered (UI slice 6,
+ * widened by keyring K-lock, plan 8.6): a password sign-in, or a credential session opened as
+ * the account over a foothold or from another desktop (a token session carries its foothold),
+ * which unlocks with the password or a fresh sign-in with the same credential. Never a claim,
+ * a guest or a relay. The server's session_lockable? is the authority; this mirrors it.
+ */
+export function sessionLockable(s) {
+    if (!s || s.guest === true || s.relay === true) return false;
+    // A token past its expiry is not held (the server answers 422 for it): no Lock offered
+    if (isToken(s) && typeof s.expiresAt === 'number' && s.expiresAt <= Date.now()) return false;
+    if (s.via === 'password') return true;
+    if (s.via !== 'credential' || s.remote !== true) return false;
+    return (typeof s.footholdId === 'string' && s.footholdId !== '')
+        || (typeof s.fromPcId === 'string' && s.fromPcId !== '');
+}
+
 function publicSession(pcId, s) {
     const out = { pcId, npcId: s.npcId ?? null, username: s.username ?? null, displayName: s.displayName ?? null, via: s.via ?? null };
     // Only a remote session carries remote, footholdId and host, as on the server (4.4)
@@ -412,16 +429,16 @@ export class PcSessions {
     isLocked(pcId) { return this.sessions.get(pcId)?.locked === true; }
 
     /**
-     * Whether the start panel may offer Lock for pcId (UI slice 6): the server supports
-     * locking, a session is held here, it was entered with a password (not a claim or guest,
-     * which no password could unlock), and it is not already locked. The server enforces the
-     * same rule (lock_session! refuses a non-password session with 422); this keeps the
-     * affordance from ever being shown or attempted for those.
+     * Whether the start panel may offer Lock for pcId (UI slice 6, K-lock): the server
+     * supports locking, a session is held here, it has a way back in (sessionLockable: a
+     * password sign-in or a foothold or `from` credential session; never a claim, guest or
+     * relay), and it is not already locked. The server enforces the same rule (lock_session!
+     * refuses the others with 422); this keeps the affordance from being shown or attempted.
      */
     canLock(pcId) {
         if (!this.lockingSupported()) return false;
         const s = this.sessions.get(pcId);
-        return !!s && s.via === 'password' && s.locked !== true;
+        return !!s && sessionLockable(s) && s.locked !== true;
     }
 
     _endRestoredClaim(pcId, s) {
@@ -797,9 +814,9 @@ export class PcSessions {
         const s = this.sessions.get(pcId);
         if (!s) return { ok: false, reason: 'no_session' };
         if (s.locked === true) return { ok: true, alreadyLocked: true };
-        // Only a password sign-in can be locked (UI slice 6): a claim or guest session has no
-        // password to unlock it. The server also refuses this with 422; never attempt it.
-        if (s.via !== 'password') return { ok: false, reason: 'refused', message: 'Only a signed-in session can be locked' };
+        // Only a session with a way back in can be locked (UI slice 6, K-lock): a claim, guest or
+        // relay has none. The server also refuses these with 422; never attempt it.
+        if (!sessionLockable(s)) return { ok: false, reason: 'refused', message: 'Only a signed-in session can be locked' };
         const api = apiClient();
         if (!api?.lockSession) return { ok: false, reason: 'error', message: 'Locking is not available' };
         try {
@@ -809,6 +826,12 @@ export class PcSessions {
             }
         } catch (err) {
             const b = err?.body || {};
+            // A 422 for a token past its expiry: the server no longer holds it, so drop the copy
+            // as an expired token (the usual end) rather than show a refusal over an open desktop
+            if (err?.status === 422 && isToken(s) && typeof s.expiresAt === 'number' && s.expiresAt <= Date.now() && this.sessions.get(pcId) === s) {
+                this.linkDropped([pcId], 'token_expired');
+                return { ok: false, reason: 'token_expired', status: 422, message: tokenExpiredEndedMessage(s.label, s.host || 'a remote PC') };
+            }
             return { ok: false, reason: err?.status === 422 ? 'refused' : 'error', status: err?.status ?? null, message: b.message || b.error || 'Could not lock the session' };
         }
         s.locked = true;

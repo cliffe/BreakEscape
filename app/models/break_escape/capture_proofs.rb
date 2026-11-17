@@ -15,6 +15,8 @@ module BreakEscape
 
     # At most this many capture entries are taken from one sync body (sync deltas R2, 6a).
     MAX_CAPTURES_PER_SYNC = 64
+    # The console fields of a hidden device, as plant-hiding.js reads them (client and server lists match).
+    DEVICE_DATA_FIELDS = %w[id type name observations wifiTwin apScan apPortal apCaptureLog].freeze
 
     # Records a plant when the inventory remove names the object it was used on. Appends
     # { item, on } to plantedItems only if the item is held, the object (a room object with that
@@ -25,6 +27,9 @@ module BreakEscape
       item_id = item_id.to_s
       used_on = used_on.to_s
       return false if item_id.empty? || used_on.empty?
+      # A hideable item is planted only through hide_device! (plant-hiding plan, section 7), so
+      # an authored object outside hideable.rooms that takes it can never mint a plant proof.
+      return false if HidingSpots.item_defs(scenario_data).key?(item_id)
 
       held = (player_state['inventory'] || []).find do |inv|
         # An object added to a room with no server-known source is a bare client hash
@@ -53,6 +58,109 @@ module BreakEscape
       save!
       true
     end
+
+    # ------------------------------------------------------------------
+    # Hiding a device in a plant (docs/achitechture/PLANT_HIDING_PLAN.md, section 7)
+    # ------------------------------------------------------------------
+
+    HIDE_MESSAGES = {
+      'not_a_spot' => 'That is not a hiding spot for it.',
+      'not_hideable' => 'That cannot be hidden here.',
+      'already_hidden' => 'It is already hidden.',
+      'not_held' => 'You are not carrying that.',
+      'room_locked' => 'You cannot reach that room.',
+      'occupied' => 'Something is already hidden in this plant.'
+    }.freeze
+
+    # POST /inventory action_type 'hide'. Returns { ok: true, hidden: { item, on, room } } (also
+    # for an idempotent repeat), or { ok: false, reason:, message: } with a `hidden` entry when
+    # the item is already hidden elsewhere. One save!: the plantedItems append and the removal
+    # of the one held entry the check found.
+    def hide_device!(item_id, spot_id)
+      item_id = item_id.to_s
+      spot_id = spot_id.to_s
+      return hide_refusal('not_a_spot') unless HidingSpots.valid_spot_id?(spot_id)
+
+      defn = HidingSpots.item_defs(scenario_data)[item_id]
+      return hide_refusal('not_hideable') unless defn
+
+      existing = Array(player_state['plantedItems']).find { |e| e.is_a?(Hash) && e['item'] == item_id }
+      if existing
+        entry = hidden_entry_for(existing, defn)
+        return { ok: true, hidden: entry } if existing['on'] == spot_id
+
+        return hide_refusal('already_hidden').merge(hidden: entry)
+      end
+
+      held = (player_state['inventory'] || []).find do |inv|
+        next false unless inv.is_a?(Hash)
+        # A forged clone ahead of the real kit is skipped, as record_planted_item! skips it
+        next false if BreakEscape::ItemIdentity.client_forged?(inv)
+
+        data = inv['scenarioData'].is_a?(Hash) ? inv['scenarioData'] : inv
+        data['id'].to_s == item_id
+      end
+      return hide_refusal('not_held') if held.nil?
+
+      spot = HidingSpots.resolve_spot(defn, spot_id, method(:planted_target_object))
+      return hide_refusal('not_a_spot') unless spot
+      return hide_refusal('room_locked') unless room_unlocked?(spot[:room])
+
+      other_ids = HidingSpots.item_defs(scenario_data).keys - [item_id]
+      taken = Array(player_state['plantedItems']).any? do |e|
+        e.is_a?(Hash) && other_ids.include?(e['item']) && e['on'] == spot_id
+      end
+      return hide_refusal('occupied') if taken
+
+      (player_state['plantedItems'] ||= []) << { 'item' => item_id, 'on' => spot_id }
+      player_state['inventory'].reject! { |e| e.equal?(held) }
+      release_worn_unless_held!
+      save!
+      { ok: true, hidden: { 'item' => item_id, 'on' => spot_id, 'room' => spot[:room] } }
+    end
+
+    # [{ item, on, room }] for each plantedItems entry whose item is hideable. Bounded by the
+    # number of hideable items in the scenario.
+    def hidden_devices_for_client
+      defs = HidingSpots.item_defs(scenario_data)
+      Array(player_state['plantedItems']).filter_map do |e|
+        defn = e.is_a?(Hash) && defs[e['item']]
+        hidden_entry_for(e, defn) if defn
+      end
+    end
+
+    # itemId -> static definition for the bootstrap (no onHidden: it runs from the held item at
+    # hide time). deviceData is the console object's behaviour fields, sent unless the hideable's
+    # rooms are exactly [the device's authored room]. In that one case the hide room is always the
+    # authored room, so the client takes the fields from that room's own answer (GET /room/:id,
+    # filtered like every room object), where core/rooms.js hands the hiddenWith object to
+    # plant-hiding.js, and the same 3 KB is not sent twice (plan review R1 m2). With more rooms the
+    # device can be hidden in one whose load never notes the authored room, so the bootstrap
+    # carries the fields (plan review R2 M1).
+    def hideables_for_client
+      HidingSpots.item_defs(scenario_data).transform_values do |defn|
+        dev = defn['device'] && planted_target_object(defn['device'])
+        out = defn.slice('rooms', 'spots', 'exclude', 'device', 'overlay', 'spotAt', 'confirm')
+        if dev && Array(defn['rooms']) != [dev[:room_id]]
+          out['deviceData'] = dev[:object].slice(*DEVICE_DATA_FIELDS)
+        end
+        out
+      end
+    end
+
+    private
+
+    def hide_refusal(reason)
+      { ok: false, reason: reason, message: HIDE_MESSAGES.fetch(reason) }
+    end
+
+    # A record whose `on` no longer resolves takes the first room in hideable.rooms.
+    def hidden_entry_for(entry, defn)
+      spot = HidingSpots.resolve_spot(defn, entry['on'].to_s, method(:planted_target_object))
+      { 'item' => entry['item'], 'on' => entry['on'], 'room' => spot ? spot[:room] : defn['rooms'].first }
+    end
+
+    public
 
     # Whether one authored proof holds, from server state only.
     def capture_proof_holds?(proof)

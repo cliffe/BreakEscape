@@ -1483,3 +1483,94 @@ Review: `tmp/handover/ac0/K5_REVIEW_R4.md` (m1). Main (19f6f3073) merged in; the
 - **pc_signed_out reason.** The listeners are capture-log (any reason), keyring (any reason, re-checks the relay), screen-states (any reason), workstation-state (acts on any reason; its signing-out set holds only sign_out, claim_ended, owner_returned and auto_locked) and one scenario condition on `link_dropped` (test_access_networks n4_signout, pc `sv_fs02`, a password session ended by an unplug, not a token). So an expired token now emits `reason: 'token_expired'`, the same word as the desktop's close reason. An unplug still emits `link_dropped`. A token ended inside an unplug batch whose `tokenExpiredPcIds` names it also reads `token_expired`. Tests in pc-sessions: the expiry test asserts `token_expired`, and the signed-out-meanwhile test asserts neither reason fires. No server access check changed.
 
 **Run 10 results (R4).** `signin-fit.mjs` on a keyless server from this worktree (port 3080, stopped): ALL PASS over 63 checks. `bin/test-js` 736 files, 0 failed (`access-relay-desktop` 21 and `access-from-desktop` 16 also alone under `ulimit -v 2000000`, 300 MB heap). Rails: the 11 credential and keyring files 181 runs, 1043 assertions, 0 failures; the 19 network and session files 274 runs, 4318 assertions, 0 failures. Full `bin/rails test` not run this round (no Ruby changed beyond the merge).
+
+## Slice K-lock (plan 8.6), build/keyring-klock from K5 head 2ee568d59
+
+Server: `Game#session_lockable?` (game.rb, next to `lock_session!`): a password sign-in, or a
+`via: "credential"` session that is not a relay and has `foothold` or `from` (a token session
+carries its proof foothold). `lock_session!` refuses an expired token session as unheld (422)
+and any other session with the existing 422. `credential_session_held?` (credential_keyring.rb)
+answers false for a locked session, so GET /keyring's `sessionHeld` is false while locked and
+Connect takes step 8. Unlock needs no new code: the password (counted) or a fresh credential
+sign-in (`start_login_session!` rebuilds the record without `locked`; not counted; a lockout
+still refuses a saved connection; an expired token answers 422 `expired` and stays locked).
+Client: exported `sessionLockable(s)` in pc-sessions.js backs `canLock` and the `lockSession`
+guard; pc-taskbar.js's fallback (no canLock passed) follows the same rule. Sync: no new field;
+the lock answer stays the `{ success, pcId, locked }` delta.
+
+Tests: new `test/controllers/break_escape/credential_lock_test.rb` (11 runs: foothold, from and
+token locks; relay and routeless 422; another player's game refused; every read path signed out
+while locked: remote desktop 403 `no_session`, desktop folder, a take, an unlock, the pivot's
+reach and open share, the view's host row Locked, sessionHeld false, a `from` route from the
+locked PC; password unlock counted; .rdp re-sign-in with no `locked`, nothing counted; lockout
+refuses the .rdp; token unlock before expiry, none after, expired lock 422). policy_test.rb: the
+lock and unlock routes follow show? for owner, other, nil, admin and account manager. JS:
+pc-sessions.test.mjs (+1, 73 pass), keyring-client.test.mjs (+1, 82 pass).
+
+Mutation proofs (file copied to the scratchpad, edited, run, copied back): password-only rule
+(6 fail), relay lockable (2 fail), sessionHeld ignoring the lock (4 fail), expired token
+lockable (1 fail).
+
+Client mutation proof: `sessionLockable` cut back to `via === 'password'` (file copied aside, run,
+copied back): the new pc-sessions test fails (72 pass, 1 fail); restored, 73 pass.
+
+Results (head 9179d84d9 plus the follow-up commit that carries this section):
+- `bin/test-js` 736 files passed, 0 failed. `access-relay-desktop` 21 tests and `access-from-desktop`
+  16 tests pass under `ulimit -v 2000000` and a 300 MB heap.
+- `bin/rails test` 3229 runs, 51059 assertions, 0 failures, 0 errors, 4 skips.
+- rubocop on game.rb, credential_keyring.rb, credential_lock_test.rb and policy_test.rb: no offences.
+
+Live proof (keyless server on :3082, headless, fixed steps on at 20 FPS, game 6717 of
+test_access_keyring; driver `tmp/handover/ac0/klock-live/klock-drive.mjs` and `relay-drive.mjs`;
+screenshots in the main checkout's `tmp/handover/ac0/klock-live/`):
+1. Take HB-FIN-02.rdp, plant the drop box, Connect from the tray: signed in (PASS, 01).
+2. Start panel offers Lock for the foothold session; Lock keeps the session as `locked: true` and
+   closes the desktop (PASS, 02, 03). The driver's first check expected the session to leave the
+   client list; it stays there flagged locked, which is the intended model.
+3. GET /keyring: `sessionHeld` false for `lena_rdp` while locked (PASS).
+4. Network view row reads "Locked" with a Sign in button (PASS, 04).
+4b. Sign in from that row: a password-only screen, "Locked: Lena Fox. Enter the password to
+   unlock", username `lfox` prefilled, no "Connect with" .rdp button and no Change button
+   (`04b-signin-screen-from-network-view.png`). Review R1 M1 expects this; not changed here.
+5. Connect from the tray again: the desktop reopens unlocked, `sessionHeld` true (PASS, 05, 06).
+6. Relay: Jake's helpdesk line gives the assist code; Connect opens HB-FIN-03 and the start panel
+   offers only Disconnect, no Lock (PASS, 07, 08).
+No page errors.
+main checkout.
+
+### K-lock R1 fixes (head 147abbb2c)
+
+Fixes: M1 (a locked credential screen now offers the .rdp: `setRemoteAccounts` picks the
+preselected tile, `lockedSlabText` in `utils/remote-host-text.js`, and the stale "Checking..." line
+is cleared); m1 (pc-taskbar imports `sessionLockable`, test added); m2 (`sessionLockable` is false
+past `expiresAt`, and `lockSession` answers 422 for an expired token, dropped as `token_expired`;
+two tests); m3, m4, n1 and n2 as tests and a comment. `credential_lock_test.rb` is now 14 runs and
+`policy_test.rb` 36 runs, all green. Demo-host note: `account_manager` `show?` is true with no
+org_id, asserted in policy_test.
+
+Mutation proofs: M1 and both m2 branches are caught by the new tests (files restored afterwards).
+Signin-fit fixture `locked-credential-ways`: ALL PASS, 68 checks.
+
+Live proof (keyless server on :3082, game 6734): steps 2b, 3, 4, 4b, 4c, 4d, 4e, 5 and 5b PASS,
+no page errors. Screenshots in `tmp/handover/ac0/klock-live/r1fix/` (main checkout); 04b checked
+by eye and correct.
+
+Results (head 147abbb2c):
+- `bin/test-js` 736 files passed, 0 failed. `access-from-desktop` 16 tests and
+  `access-relay-desktop` 21 tests pass alone under `ulimit -v 2000000` and a 300 MB heap.
+- `bin/rails test` 3233 runs, 51101 assertions, 0 failures, 0 errors, 4 skips.
+- rubocop on game.rb, credential_lock_test.rb and policy_test.rb: no offences.
+
+### K-lock R2 fixes
+
+Fixes: m1 (the locked profile-copy assertion now copies a second profile file, `lena_profile_doc_b`,
+that is not yet held, so `refute_includes held_ids` can fail, and it asserts the refusal says "Not
+signed in"); n1 (the signed-out lock request asserts `:forbidden`); n2 (`lockPcSession` adds no
+refusal line or alert for a `token_expired` result, and the text reader closes as after a
+successful lock, so the expiry line shows once; new test in `pc-taskbar.test.mjs`).
+
+n3 left as judged acceptable in review.
+
+Mutation proofs: n2 is caught with either half reverted (the line in `pc-taskbar.js`, the close in
+`text-file-minigame.js`). m1 is caught when the copy path alone skips the session and scope checks
+in `validate_login_item_collectible`. Files restored afterwards.
