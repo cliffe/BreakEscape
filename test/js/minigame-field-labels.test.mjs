@@ -69,7 +69,8 @@ test('retargeted CSS selectors match the classes the markup emits', () => {
 
   const bio = js('biometrics/biometrics-minigame.js'), bcss = css('biometrics-minigame.css');
   assert.match(bcss, /\.field-note \.mg-section-label\s*\{/);
-  assert.match(bcss, /\.field-note \.mg-section-label\s*\{/);
+  const bioHeading = /--mg-heading-colour:\s*(#[0-9a-f]{3,6})/i.exec(bcss)?.[1] ?? '';
+  assert.ok(bioHeading && bioHeading.toLowerCase() !== '#e0e0e0', 'biometrics headings must differ from the #e0e0e0 body text');
   assert.match(bio, /className = 'sample-header'/);
   assert.match(bio, /className = 'field-note'/);
   assert.equal((bio.match(/className = 'mg-section-label'/g) || []).length, 2);
