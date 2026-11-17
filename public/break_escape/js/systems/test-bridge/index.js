@@ -88,7 +88,10 @@ function interactableNear(x, y) {
     for (const room of Object.values(rooms)) {
         for (const obj of Object.values(room.objects || {})) {
             if (!obj || !obj.active || !obj.visible || !obj.interactable) continue;
-            if (inBounds(obj) || (inReach(obj) && near(obj))) {
+            // Swivel props and plant-hiding spots and hosts take a tap on their own bounds only,
+            // as core/game.js gatherInteractablesNearClick does
+            const boundsOnly = obj.isSwivelChair || obj._hidingSpot || obj._hpOrig;
+            if (inBounds(obj) || (!boundsOnly && inReach(obj) && near(obj))) {
                 const d = obj.scenarioData || {};
                 return { id: d.id || obj.objectId || null, name: d.name || obj.name || null, x: obj.x, y: obj.y };
             }
@@ -1338,6 +1341,8 @@ const bridge = {
         const blocked = blockedByMinigame();
         if (blocked) return blocked;
 
+        // A hidden device has no tap target of its own: its host plant takes the tap
+        id = window.plantHiding?.spotForDevice?.(id) || id;
         let entity = findEntity(id);
         if (!entity) return fail(`unknown-entity:${id}`);
         ensureTargetRecorder();

@@ -65,7 +65,7 @@ function feedPostNpcId(request, url = null) {
 
 // Request fields the controller's POST /inventory reads (games_controller.rb, inventory):
 // a URL query naming any of them may override the body, so the tagger declines.
-const INVENTORY_QUERY_RE = /(^|[?&;])(action_type|actionType|item|used_on|usedOn)(\[|=|&|;|$)/;
+const INVENTORY_QUERY_RE = /(^|[?&;])(action_type|actionType|item|used_on|usedOn|hidden_in|hiddenIn)(\[|=|&|;|$)/;
 
 /**
  * The `inv` tag of a POST /inventory row: { action, itemId, usedOn }, or null when the request
@@ -88,7 +88,8 @@ function inventoryTag(request, url = null) {
   const item = parsed.item && typeof parsed.item === 'object' ? parsed.item : null;
   const itemId = item ? (str(item.id) || null) : null;
   const usedOn = str(rails(parsed.used_on, parsed.usedOn));
-  return { action, itemId, usedOn };
+  const hiddenIn = str(rails(parsed.hidden_in, parsed.hiddenIn));
+  return hiddenIn ? { action, itemId, usedOn, hiddenIn } : { action, itemId, usedOn };
 }
 
 function isJsonContentType(headers) {

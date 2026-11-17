@@ -5632,6 +5632,31 @@
         "leftBehindChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Left-behind item (NPC needs, OFFICE_LIFE_PLAN 2.10, slice 11): its presence marks this a left-behind item owned by its owner (an NPC with needsHome). The chance (0-1) that the owner leaves this item at its post on each real leave. On each real leave a seeded roll under this shows it at its declared spot (object_revealed:<id> with owner; npc_left_post gains leftBehind); on return the owner picks it up again (hidden, global false, no server call). Taken by the player, it is gone for good (npc_left_item_gone:<npcId> on the owner's return). Needs its own revealOnGlobal, which the engine owns; a reload files it away. A non-takeable readable notes* item must use readDisplay gameDisplay. Rolled with the needs seed, so a day replays the same. Default 0 (never)." },
         "outputOf": { "type": "string", "minLength": 1, "description": "Reveal slot (NPC needs, OFFICE_LIFE_PLAN 2.2 Part A): the object id of the producer (a copier) whose onUse revealOutput shows this object. Needs its own revealOnGlobal, which the engine owns (true on reveal, false when filed away; a reload files every revealed slot). A delivered slot is placed or stowed, never consumed. A non-takeable readable notes* slot must use readDisplay gameDisplay." },
         "revealOnGlobal": { "type": "string", "description": "This object stays hidden and non-interactive until the named global turns true, then appears (and persists across reload, since globals are restored before the room reveals). Models a planted device appearing in place — e.g. a keylogger that shows on the PC once planted." },
+        "hideable": {
+          "type": "object",
+          "description": "Plant hiding (PLANT_HIDING_PLAN.md section 3): this item can be hidden in a plant (or other spot) in the listed rooms. The player taps a spot while holding it; the server records the hide, the item leaves the tray and the overlay is drawn on the spot. Small plants (plant-flat-pot*, plant-large1 to 10, office-misc-smallplant*) are not default spots.",
+          "required": ["rooms", "overlay"],
+          "additionalProperties": false,
+          "properties": {
+            "rooms": { "type": "array", "minItems": 1, "items": { "type": "string", "x-ref": "room" }, "description": "Room ids where it may be hidden." },
+            "spots": { "description": "\"plants\" (default): every eligible plant in those rooms. An array of object ids (scenario or decor ids) limits it to those.", "oneOf": [ { "type": "string", "enum": ["plants"] }, { "type": "array", "items": { "type": "string", "minLength": 1 } } ] },
+            "exclude": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "Plant ids (scenario or decor) in those rooms that are not hiding spots." },
+            "device": { "type": "string", "x-ref": "object", "description": "The console object the overlay stands for. It carries hiddenWith equal to this item's id and is never placed from room data." },
+            "overlay": {
+              "type": "object", "required": ["sprite"], "additionalProperties": false,
+              "properties": {
+                "sprite": { "type": "string", "minLength": 1, "description": "The overlay texture." },
+                "at": { "type": "object", "additionalProperties": false, "properties": { "x": { "type": "number", "minimum": 0, "maximum": 100 }, "y": { "type": "number", "minimum": 0, "maximum": 100 } }, "description": "Default anchor, in per cent of the host's display box." }
+              }
+            },
+            "spotAt": { "type": "object", "description": "Per-spot anchors, keyed by spot id (the way to anchor a decor plant, which cannot carry fields).", "additionalProperties": { "type": "object", "additionalProperties": false, "properties": { "x": { "type": "number", "minimum": 0, "maximum": 100 }, "y": { "type": "number", "minimum": 0, "maximum": 100 } } } },
+            "confirm": { "type": "string", "description": "The confirm text (default \"Hide the <item name> in this plant?\")." },
+            "onHidden": { "type": "array", "items": { "x-free-data": true, "type": "object" }, "description": "Actions run once the server accepts the hide, through applyActions. Read from the held item, so the bootstrap's hideables map leaves it out." }
+          }
+        },
+        "hidingSpot": { "type": "boolean", "description": "Plant hiding: true makes this object a hiding spot even if its sprite is not a plant (a bin, a cable tray); false opts a plant out. A spot must not be takeable or carry needsTag." },
+        "hideAt": { "type": "object", "additionalProperties": false, "properties": { "x": { "type": "number", "minimum": 0, "maximum": 100 }, "y": { "type": "number", "minimum": 0, "maximum": 100 } }, "description": "Plant hiding: overrides the overlay anchor for this spot, in per cent of its display box." },
+        "hiddenWith": { "type": "string", "x-ref": "item", "description": "Plant hiding: this object is the console of the named hideable item. It is never placed from room data (only drawn as the overlay on the plant) and must not carry position or revealOnGlobal." },
         "puzzle_graph_role": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). The client also reads it to tell a prop with a role from a plain one (consumables.js)."},
         "puzzle_graph_unlocks": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). The client also reads it to tell a prop with a role from a plain one (consumables.js)."},
         "puzzle_graph_reveals": {"x-id-map": false, "description": "Author metadata for the dungeon graph (the validator's graph generator). Not read by the game."},
