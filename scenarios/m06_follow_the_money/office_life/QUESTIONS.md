@@ -13,7 +13,11 @@ From the awareness course cast (D53). The Office Life Tour cast (Chidi Okeke, Ju
 
 Options: (a) both, as planned; (b) swap one for another awareness-cast character you name; (c) one extra only (drops exchanges 2 and 3 and lever L2).
 
-Recommendation: (a). Both atlases are complete, neither voice is used in m06, and two extras are what a capacity-2 coffee point and the phone lever need. Plan sections 2.3, 2.4.
+Who they are in the course (`planning_notes/phishing_and_social_engineering/awareness/VOICE_CAST.md:92`, `:119`): Lerato is a Black South African woman in her 30s, the Tarrowby health and safety adviser; Tomasz is a Polish man in his 50s, the Carrholme data protection officer. m06 gives both a new employer and job at a crypto exchange, as m03 did for its extras. Neither voice is used in m06 (it uses Algenib, Aoede, Charon, Enceladus, Alnilam, Kore, Puck, Leda, Iapetus, Umbriel).
+
+Spread on the late floor: Dani (Nigerian man) and Lerato would be two Black Africans; Irina and Tomasz two Eastern Europeans. Ages vary (30s to 50s). If you would rather widen the spread, option (b) with an East or South East Asian or Latin American course character is the change.
+
+Recommendation: (a). Both atlases are complete and two extras are what a capacity-2 coffee point and the phone lever need; the spread is acceptable for a four-person floor in a London exchange. Plan sections 2.3, 2.4.
 
 ## Q1. Readable screens
 
@@ -49,4 +53,4 @@ Recommendation: (a). `cover_strained` feeds Irina's badge trust (`ink/m06_npc_ir
 
 Options: (a) a short conversation each (about six lines: greeting, one question about the night, goodbye; no task, no item); (b) no conversation, chatter and exchanges only.
 
-Recommendation: (a). An NPC who ignores the player reads as a prop, and six lines each is a small voicing cost (included in the about 50 clips). Plan 6.
+Recommendation: (a). An NPC who ignores the player reads as a prop, and six lines each is a small voicing cost (included in the about 60 clips). Plan 6.

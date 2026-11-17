@@ -64,19 +64,19 @@ Neither has a story duty, a key, a task or an `itemsHeld`. Both are attackable; 
 
 | NPC | class | post (`needsHome`) | leash | needs | groups, avoids | habits | beats protected by | gate | if attacked mid-walk |
 |---|---|---|---|---|---|---|---|---|---|
-| trader_npc (Dani) | optional flavour / free | tile {trading_floor, 5, 7} | `needsRooms: [trading_floor]` | coffee (coffee_station) only | none | none | no beat needs him at post (open-conversation rule); found at post first by a first-talk break (2.5) | none | carries nothing (coffee is used at the machine); stays where he fell while out, walks home once available (`npc-needs.js:1235` to `:1239`); existing HaX loop sets `cover_strained` |
-| lerato_dlamini (new) | ambient | object `lerato_desk` (pc6 at (7.0, 3.5)), seated | `needsRooms: [trading_floor]` | coffee (coffee_station), hunger (mini_fridge, pizza magnet) | none | `habits.print` (fetch, never forgotten); owns desk phone `lerato_phone` | n/a | none | carries nothing; stays where she fell, walks home once available; sets `lerato_ko`, then `floor_staff_ko` |
-| tomasz_wisniewski (new) | ambient | object `tomasz_laptop` (laptop1 at (2.8, 3.6)), seated | `needsRooms: [trading_floor]` | coffee, hunger (as Lerato) | none | owner of `tomasz_laptop`, `habits.screen`, readable lore; `habits.print` with one forgotten page (2.9); `answersPhones: true` | n/a | none | as Lerato, with `tomasz_ko` |
+| trader_npc (Dani) | optional flavour / free | tile {trading_floor, 5, 7} | `needsRooms: [trading_floor]` | `caffeine` (coffee_station) only | none | none | no beat needs him at post (open-conversation rule); found at post first by a first-talk break (2.5) | none | carries nothing (coffee is drunk at the machine); stays down for the rest of the game once knocked out (KO is permanent: `npc-hostile.js` has no path that clears `isKO`, and `resetHostilesForRespawn`, `:124` to `:140`, skips knocked-out NPCs); attacked but still conscious, it turns hostile, and walks home once it calms after the player respawns; on a knock-out the existing HaX loop sets `cover_strained` |
+| lerato_dlamini (new) | ambient | object `lerato_desk` (pc6 at (7.0, 3.5)), seated | `needsRooms: [trading_floor]` | `caffeine` (coffee_station), `hunger` (mini_fridge, pizza magnet) | none | none; owns desk phone `lerato_phone` | n/a | none | carries nothing; stays down for the rest of the game once knocked out (KO is permanent: `npc-hostile.js` has no path that clears `isKO`, and `resetHostilesForRespawn`, `:124` to `:140`, skips knocked-out NPCs); attacked but still conscious, it turns hostile, and walks home once it calms after the player respawns; a knock-out sets `lerato_ko`, then `floor_staff_ko` |
+| tomasz_wisniewski (new) | ambient | object `tomasz_laptop` (laptop1 at (2.8, 3.6)), seated | `needsRooms: [trading_floor]` | `caffeine`, `hunger` (as Lerato) | none | owner of `tomasz_laptop`, `habits.screen { lockChance: 0.2, lockIfAwayOverSeconds: 30 }` (threshold set from the measured expected away time at build), readable lore; one forgotten page by print command (2.9); `answersPhones: true` | n/a | none | as Lerato, with `tomasz_ko` |
 
-Dani has no hunger need, no `interests`, no `workarounds`, no `habits` and no need a magnet satisfies, so the pizza lever (4) cannot lure him.
+Need names match the presets' `affordance.satisfies`: the coffee preset satisfies `caffeine` (`public/break_escape/js/data/office-presets.json`; schema `:4844`), as in `scenarios/test_needs_sims/scenario.json.erb:570`. `coffee` is only the chatter pool name. Dani has no hunger need, no `interests`, no `workarounds`, no `habits` and no need a magnet satisfies, so the pizza lever (4) cannot lure him.
 
-No machine needs a beat gate: no beat needs Dani at a spot. The only `offWhen` on the floor machines is the trouble global `floor_staff_ko` (2.8). While it holds, the coffee point, copier and fridge are off for all three; pairs stop talking; Tomasz's print habit stops (the copier is off); the pizza magnet still works (it is an item, not a machine), so a dropped box can still draw an extra off post.
+No machine needs a beat gate: no beat needs Dani at a spot. The only `offWhen` on the floor machines is the trouble global `floor_staff_ko` (2.8). While it holds, the coffee point, copier and fridge are off for all three; pairs stop talking; Tomasz's forgotten print, if not yet made, waits (the copier is off); the pizza magnet still works (it is an item, not a machine), so a dropped box can still draw an extra off post.
 
 ### 2.5 Found at post first, and Dani's rhythm
 
-- Natural decay of coffee is very slow and `initial` is 100, so Dani does not leave on his own for longer than any normal first visit to the trading floor (the build sets the rate from the needs-clock measurement in `references/measurement-recipes.md` section 10 so the first natural trip comes no sooner than 20 real minutes after the floor loads).
-- **First-talk break**, on Dani's record, appended: `conversation_closed:trader_npc`, `onceOnly: true`, `delayMs: 2000`, `needs: { set: { coffee: <below urgentAt> } }`. He stays at post until first talked to, then goes for coffee.
-- **Rhythm after that** from a mapped break on Dani's record: `room_entered:trading_floor`, `condition: "globalVars.trader_spoken"`, `delayMs: 2000`, `cooldown: 240`, `needs: { set: { coffee: <below urgentAt> } }`. So once met, he takes a coffee at most every four minutes, timed to when the player walks onto the floor and can see it.
+- Natural decay of `caffeine` is very slow and `initial` is 100, so Dani does not leave on his own for longer than any normal first visit to the trading floor (the build sets the rate from the needs-clock measurement in `references/measurement-recipes.md` section 10 so the first natural trip comes no sooner than 20 real minutes after the floor loads).
+- **First-talk break**, on Dani's record, appended: `conversation_closed:trader_npc`, `onceOnly: true`, `delayMs: 2000`, `condition: "!globalVars.floor_staff_ko"`, `needs: { set: { caffeine: <below urgentAt> } }`. He stays at post until first talked to, then goes for coffee.
+- **Rhythm after that** from a mapped break on Dani's record: `room_entered:trading_floor`, `condition: "globalVars.trader_spoken && !globalVars.floor_staff_ko"`, `delayMs: 2000`, `cooldown: 240000` (milliseconds, `npc-manager.js:1279` to `:1282`), `needs: { set: { caffeine: <below urgentAt> } }`. So once met, he takes a coffee at most every four minutes, timed to when the player walks onto the floor and can see it.
 - The trading floor loads when the player first opens its door (`doors.js:883`; `npc-lazy-loader.js:99` to `:105`), so the first-meeting line at `ink/m06_npc_trader.ink:36` is true.
 - After a reload Dani is registered again at `initial` 100 (schema `:4850`) and stays at post until the next mapped break; `trader_spoken` survives as a scalar, so the rhythm resumes.
 - The extras use natural rhythm only (`decayPerMin`, `urgentAt`, `initial` 60 to 80, `jitterPct` 20) so the floor is not static on first entry. Target: a coffee or a snack every three to four real minutes each. Numbers set at build from the same measurement.
@@ -112,7 +112,9 @@ All appended, none edits an existing mapping:
 
 - HaX: four `npc_ko:*` mappings setting `floor_staff_ko`. HaX's list ends with an ERB `pairs` loop whose trailing comma is computed (`erb:1664` to `:1680`); the new mappings go after the loop and the loop's comma logic changes so that a comma always follows its last entry. The rendered JSON is checked with the validator.
 - Dani: the first-talk break and the `room_entered` mapped break (2.5).
-- Tomasz: one `conversation_closed:irina_volkova` mapping, `onceOnly`, `needs: { print: { forget: true } }`, so after the player first speaks to Irina his settlement page is left on the copier tray. It lives on Tomasz because his room (the trading floor) is loaded whenever Irina is talked to.
+- Tomasz: one `conversation_closed:irina_volkova` mapping, `onceOnly`, `condition: "!globalVars.floor_staff_ko"`, `needs: { print: { producer: "floor_copier", forget: true } }` (`producer` is required, schema `:5107`; `npc-needs.js:1119` to `:1122`), so after the player first speaks to Irina his settlement page is left on the copier tray. It lives on Tomasz because his room (the trading floor) is loaded whenever Irina is talked to.
+- Printing is by this command only. Neither extra has `habits.print` or a `work` need, and no `onUse` hook prints to the copier, so the copier's one reveal slot (3.1) can only ever hold Tomasz's page; no routine print can recycle it (`npc-needs.js:3884` to `:3891`). The build checks whether `forget` needs a `habits.print` entry to take effect and, if so, adds `habits.print { forget: false }` with no hook, which prints nothing on its own.
+- Exchange 1 (6) is declared on Tomasz (`with: "trader_npc"`), its knot in Tomasz's new ink file, so `ink/m06_npc_trader.ink` is untouched.
 - The spare phone `floor_spare_phone` has `triggerOnInteract: [{ "type": "emit_event", "event_name": "desk_phone_ring:lerato_phone" }]` (shape as `scenarios/test_needs_sims/scenario.json.erb:238` to `:262`).
 
 No `npc_arrived:<id>` mapping on any needs NPC. No `patrolOverride` on any needs NPC.
@@ -126,24 +128,23 @@ Scenario `officePresets: true`.
 | Tiled item | at | declared as | notes |
 |---|---|---|---|
 | coffee_station1 | (2.3, 7.6) | `coffee_station` | `offWhen: "floor_staff_ko"`; capacity 2; chatter pool; `affordance.overhearRadius` 360 |
-| photocopier1 | (1.1, 7.6) | `photocopier` | `offWhen: "floor_staff_ko"`; print target for both extras |
-| mini_fridge1 | (3.1, 7.5) | `mini_fridge` (with `officeType: "fridge"` if the preset does not take the name) | `offWhen: "floor_staff_ko"`; hunger |
+| photocopier1 | (1.1, 7.6) | id `floor_copier`, type `photocopier` | `offWhen: "floor_staff_ko"`; the preset takes this name. One reveal slot: a `notes` object `tomasz_settlement_page` with `outputOf: "floor_copier"` and its own `revealOnGlobal` (schema `:5650`) |
+| mini_fridge1 | (3.1, 7.5) | type `mini_fridge`, `officeType: "fridge"` (the fridge preset's types are only `qdc_fridge1`) | `offWhen: "floor_staff_ko"`; hunger |
 | pc10 | (5.9, 3.5) | existing `trading_workstation` (`erb:1977`) | unchanged |
-| pc6 | (7.0, 3.5) | new `lerato_desk` | Lerato's home, seat; no screen, no `workstation` |
-| pc6 twins | (1.3, 5.2), (6.6, 5.2) | declared, `decor: true` | so claiming one does not hide the others |
-| laptop1 | (2.8, 3.6) | new `tomasz_laptop` | Tomasz's home, seat; `workstation: true`, `owner: "tomasz_wisniewski"`; readable lore (`readable`, `readDisplay`, `addToNotes: false`, `text` / `textVariants`) in the readable-laptop shape (`references/mapping-patterns.md` section 2) |
-| phone1 | (7.6, 3.6) | new `lerato_phone` | `deskPhone: true`, `officeType: "desk_phone"`, `owner: "lerato_dlamini"`, within 1.5 tiles of her post |
+| pc6 | (7.0, 3.5) | new `lerato_desk`, type `pc` | Lerato's home, seat; no screen, no `workstation`. Every pc sprite shares the base type `pc` and Tiled order on the floor is pc10, pc6, pc8, pc11, laptop1, pc6, pc8, pc11, pc6, so `lerato_desk` goes directly after `trading_workstation` (`erb:1977`) in the objects array to claim pc6 at (7.0, 3.5). It gains the desk preset (`satisfies: work`), harmless since no NPC here has a `work` need. Unclaimed pc sprites are still drawn (`core/rooms.js:2519` onward), so no twins are declared |
+| laptop1 | (2.8, 3.6) | new `tomasz_laptop`, `type: "laptop1"`, `sprite: "laptop"` | claims the drawn Tiled laptop through the sprite search (`core/rooms.js:2449` to `:2455`) while the exact type keeps it free of the desk preset; a bare `laptop1` match would land at random (`references/mapping-patterns.md:15`). Tomasz's home, seat (hand-written affordance); `workstation: true`, `owner: "tomasz_wisniewski"`; readable lore (`readable`, `readDisplay`, `addToNotes: false`, `text` / `textVariants`) in the readable-laptop shape (`references/mapping-patterns.md` section 2) |
+| phone1 | (7.6, 3.6) | new `lerato_phone` | `deskPhone: true`, `officeType: "desk_phone"`, `owner: "lerato_dlamini"`, within 1.5 tiles of her post; standing affordance with `useFrom` to the side of her chair (schema `:5484`; `scenarios/test_needs_sims/scenario.json.erb:238` to `:248`) |
 | phone3 | (7.6, 5.2) | new `floor_spare_phone` | the L2 lever (2.9) |
 | hce_trading_station1 | (6.1, 7.7) | not declared | in the `tables` layer, cannot be claimed (`core/rooms.js:2139`) |
 
-Machines are declared by base type name with no `position`. The build checks one of each lands on its Tiled sprite after two loads. Hand-written `useFrom` or `queue.cells` where a preset's cells hit a wall or a neighbour.
+Machines are declared by base type name with no `position`. The build checks one of each lands on its Tiled sprite after two loads, and that only one laptop is drawn, in the same place both times. Hand-written `useFrom` or `queue.cells` where a preset's cells hit a wall or a neighbour.
 
 `trading_workstation` and `blockchain_workstation` (`erb:2316`) stay as they are: plain `pc`s with no `lockType`, no owner and no contents; `host` is a taskbar label only (schema `:5495`); m06 declares no networks or sign-in PCs. Nothing here touches them.
 
 ### 3.2 Blockchain lab (`room_hce_lab.json`)
 
 - No change to Priya, her PC or the lab's objects except the pizza.
-- pizza_boxes1 (2.8, 9.2), in the items layer: declared as a takeable `pizza_boxes` item and a droppable magnet (4, L1). If the claimed Tiled sprite cannot become a takeable item, the build declares a takeable pizza box at that spot and leaves the Tiled sprite as decor. Priya has no needs, so the box does not move her.
+- pizza_boxes1 (2.8, 9.2), in the items layer: declared with id `pizza`, `type: "pizza_boxes"`, `takeable: true`, `droppable: true` (a drop is refused without it, `item-drop.js:122`) and an `affordance` with a magnet (4, L1). The Tiled sprite in the items layer can be claimed by that type, and `takeable` skips presets (`office-presets.js:52`). Priya has no needs, so the box does not move her.
 
 ### 3.3 Secrets that office-life text must never carry
 
@@ -164,9 +165,8 @@ The plan gives no PC to an NPC whose home is a floor tile. If the user picks Q1 
 
 ## 4. Levers
 
-**L1 leftover pizza.** The pizza box in the lab is takeable. Dropped on the trading floor where Lerato or Tomasz can see it, it draws them off post (`magnet { tempt, servings: 3, perPerson: 1 }`, `affordance.satisfies: ["hunger"]`, no `announce`, so seen only; shape as `scenarios/test_needs_sims/scenario.json.erb:93` to `:104`); `pizza_servings` declared. When Tomasz eats, his laptop is unattended: a short window onto his lore screen. Dani has no hunger need and ignores it. When the servings run out the box stays as decor and a `grumble_gone` line plays on a turn-back. The build confirms a magnet with `satisfies: ["hunger"]` tempts only NPCs that have a hunger need.
-
-**L2 the spare phone.** The spare phone rings Lerato's desk phone. If Lerato is at her desk she answers. If she is away (coffee, pizza), Tomasz answers from the second ring (`answersPhones: true`, schema `:4941`), crossing the floor, and his laptop is unattended for the call.
+**L1 leftover pizza.** The pizza box in the lab is takeable. Dropped on the trading floor where Lerato or Tomasz can see it, it draws them off post (`affordance { satisfies: ["hunger"], restores: 60, useSeconds: 12, magnet { tempt: 60, servings: 3, perPerson: 1 } }`, no `announce`, so seen only; shape as `scenarios/test_needs_sims/scenario.json.erb:93` to `:104`); `pizza_servings` declared (the key is `<id>_servings`, `npc-needs.js:887`). A dropped takeable with a magnet is a magnet (`onItemDropped`, `npc-needs.js:850` to `:870`) and only NPCs with a need in `satisfies` are tempted (`:861`, `:932`). An NPC is tempted only while urgentAt < level <= urgentAt + tempt, capped at 95 (`:1678` to `:1694`); the wide `tempt` keeps the band open most of the time, but straight after a snack an extra may ignore the box for a minute or two. When Tomasz eats, his laptop is unattended: a short window onto his lore screen. Dani has no hunger need and ignores it. When the servings run out the box stays as decor and a `grumble_gone` line plays on a turn-back. 
+**L2 the spare phone.** The spare phone rings Lerato's desk phone. If Lerato is at her desk she answers. If she is away (coffee, pizza), Tomasz answers from the second ring (`answersPhones: true`, schema `:4941`): the nearest `answersPhones` NPC idle at post in the same room walks over (`npc-needs.js:4625` to `:4700`), and his laptop is unattended for the call. If both extras are away the phone rings out.
 
 Both levers are optional, open lore only, and need no item a lock reads.
 
@@ -178,17 +178,21 @@ The printout (Tomasz's settlement summary, left after the player first talks to 
 
 ## 6. Spoken lines
 
-All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variables, no speaker prefix, nothing that repeats an ink opener or bark (V7).
+All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variables, no speaker prefix, nothing that repeats an ink opener or bark (V7). Pool lines are voiced in the speaking NPC's voice (schema `:227`, `:4935`), so each pool sits on one NPC and holds only that NPC's lines.
 
-- Coffee point chatter pool (`{ lines, overhearRadius: 360 }`): about 12 lines of late-shift small talk.
-- `grumble_gone` pool: 3 lines (pizza gone).
-- Fridge `grumble` (off): 2 lines.
-- Exchanges, heard once (`heard_<knot>`), first line stands alone:
-  1. `ex_dani_tomasz_late_shift`: Dani and Tomasz at the coffee point, `requireGlobal: { floor_staff_ko: false }`. About 6 lines on the Asia open and the settlement run; nothing about wallets.
-  2. `ex_floor_after_irina`: Lerato and Tomasz, `requireGlobal: { irina_arrested: true, floor_staff_ko: false }` (`irina_arrested` declared at `erb:752`). About 5 lines.
-  3. `ex_floor_after_seizure`: Lerato and Tomasz, `requireGlobal: { assets_seized: true, floor_staff_ko: false }` (`assets_seized` declared at `erb:748`). About 5 lines.
-- Short conversations for the extras: `ink/m06_npc_lerato.ink` and `ink/m06_npc_tomasz.ink`, about 6 lines each (greeting, one question about the night, goodbye). No hub, task or item.
-- Existing lines changed: none.
+| Pool or knot | Speaker | Lines (clips) |
+|---|---|---|
+| `coffee` chatter (`{ lines, overhearRadius: 360 }`) | Dani, Lerato, Tomasz, 5 each | 15 |
+| `grumble` (machine off) | Dani, Lerato, Tomasz, 2 each | 6 |
+| `grumble_gone` (pizza gone) | Lerato, Tomasz, 2 each | 4 |
+| `phone` (answering her own phone) | Lerato | 3 |
+| `phone_message` (taking a message for her) | Tomasz | 3 |
+| exchange 1 `ex_dani_tomasz_late_shift`, on Tomasz, `with: "trader_npc"`, `requireGlobal: { floor_staff_ko: false }` | Dani, Tomasz | about 6 |
+| exchange 2 `ex_floor_after_irina`, on Lerato, `requireGlobal: { irina_arrested: true, floor_staff_ko: false }` (`irina_arrested` declared at `erb:752`) | Lerato, Tomasz | about 5 |
+| exchange 3 `ex_floor_after_seizure`, on Lerato, `requireGlobal: { assets_seized: true, floor_staff_ko: false }` (`assets_seized` declared at `erb:748`) | Lerato, Tomasz | about 5 |
+| short conversations, `ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink` (greeting, one question about the night, goodbye; no hub, task or item) | Lerato, Tomasz | about 12 |
+
+Total about 60 clips. Exchanges are heard once (`heard_<knot>`), their first line stands alone, and none touches wallets, the coin cap or anything in 3.3. Exchange 1's Dani lines sit in Tomasz's ink, prefixed with Dani's id. Existing lines changed: none.
 
 `DIALOGUE_SAMPLE.md` (a few pool lines and exchange 1) goes to the user before slice 5 writes any line.
 
@@ -196,27 +200,27 @@ All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variabl
 
 | Item | Count | Notes |
 |---|---|---|
-| Workstation globals | 3 | one owned PC (Tomasz's laptop); the build reads the exact count from V8 |
+| Workstation globals | 2 | `tomasz_laptop_owner_away`, `tomasz_laptop_screen_locked` (`workstation-state.js:50` to `:51`), both declared |
 | `heard_` keys | 3 | one per exchange |
 | Servings | 1 | `pizza_servings`, non-monotonic; last write wins because it only falls and only the client eating writes it |
 | Dropped magnet position | 1 | where the box was dropped |
 | Office-life items | 2 | pizza box, settlement printout |
-| Reveal globals | 1 | the printout on the tray; reset on reload, treated as non-monotonic |
-| `onceOnly` mappings | 2 | Dani's first-talk break, the printout |
+| Reveal globals | 1 | the one copier slot; a reload files every revealed slot (schema `:5650`) and the `onceOnly` mapping does not fire again, so an untaken page is gone after a reload. Accepted: it is lore only. Treated as non-monotonic |
+| `onceOnly` mappings | 2 | Dani's first-talk break, the print command |
 | Trouble and KO globals | 3 | `floor_staff_ko`, `lerato_ko`, `tomasz_ko`, all monotonic |
 
 Each is a bounded scalar sent as a per-key delta. V8 confirms at build.
 
 ## 8. Field names to write
 
-Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstation`, `readable`, `readDisplay`, `addToNotes`, `text`, `textVariants`, `deskPhone`, `affordance { satisfies, seat, overhearRadius, useFrom, queue }`, `magnet { tempt, servings, perPerson }`, `decor`, `takeable`, `triggerOnInteract`. NPCs: `needs { coffee | hunger: { decayPerMin, urgentAt, initial, jitterPct } }`, `needsHome`, `needsRooms`, `habits { screen, print }`, `answersPhones`, `chatter`, `exchanges`, `globalVarOnKO`, `eventMappings` (`eventPattern` values `conversation_closed:*`, `room_entered:*`, `npc_ko:*`; `condition`, `needs: { set | print }`, `onceOnly`, `delayMs`, `cooldown`, `setGlobal`). All checked against `scripts/scenario-schema.json` and `FormatUpgrade.current` at build; none inside an ERB loop or tag except the comma change in 2.9.
+Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstation`, `readable`, `readDisplay`, `addToNotes`, `text`, `textVariants`, `deskPhone`, `sprite`, `outputOf`, `revealOnGlobal`, `affordance { satisfies, restores, useSeconds, seat, overhearRadius, useFrom, queue, magnet { tempt, servings, perPerson } }`, `takeable`, `droppable`, `triggerOnInteract`. NPCs: `needs { caffeine | hunger: { decayPerMin, urgentAt, initial, jitterPct } }`, `needsHome`, `needsRooms`, `habits { screen { lockChance, lockIfAwayOverSeconds } }`, `answersPhones`, `chatter`, `exchanges`, `globalVarOnKO`, `eventMappings` (`eventPattern` values `conversation_closed:*`, `room_entered:*`, `npc_ko:*`; `condition`, `needs: { set | print { producer, forget } }`, `onceOnly`, `delayMs`, `cooldown` in ms, `setGlobal`). All checked against `scripts/scenario-schema.json` and `FormatUpgrade.current` at build; none inside an ERB loop or tag except the comma change in 2.9.
 
 ## 9. Costs and decisions
 
 ### Approval items
 
 - Two new NPCs from the awareness cast (Q0), no new art.
-- Voicing: about 50 clips (pools, grumbles, three exchanges, two short extras' files). V6 gives the exact count at build; no barks.
+- Voicing: about 60 clips (section 6 table). V6 gives the exact count at build; no barks.
 - Two credits lines (text only).
 - Changed existing lines: none.
 - Engine changes: none.
@@ -230,10 +234,11 @@ Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstati
 
 - Only Dani moves. Priya's repeat-visit lines place her in the lab and the lab has no machine.
 - Dani owns no PC: an owner is holding under D78 and could not move. Q1 offers ownership as an exception.
-- Dani has coffee only, no hunger, so no magnet can lure a moved existing NPC.
+- Dani has `caffeine` only, no hunger, so no magnet can lure a moved existing NPC.
 - Dani's post is his first-meeting tile; slow natural decay plus a conditioned `room_entered` break gives him a rhythm without leaving before he is met.
 - The trouble gate is a new global, not `cover_strained`.
-- The printout mapping sits on Tomasz, not Irina, so Irina gains no key.
+- The printout mapping sits on Tomasz, not Irina, so Irina gains no key. Printing is by that one command, so the page cannot be recycled by a routine print.
+- Tomasz's laptop is `type: "laptop1"` with `sprite: "laptop"`, so it claims the drawn laptop and takes no preset.
 
 ## 10. Test plan
 
@@ -245,12 +250,12 @@ Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstati
 
 1. Found at post first: open the trading floor for the first time and wait three real minutes without talking to Dani; he stays at post. Again after a reload.
 2. First-talk break: Dani leaves for coffee about two seconds after the first chat closes, once.
-3. Mapped break: with `trader_spoken` set, walking onto the floor sends him for coffee, at most once per 240 s.
+3. Mapped break: with `trader_spoken` set, walking onto the floor sends him for coffee, at most once per 240000 ms (four minutes); never while `floor_staff_ko` is true.
 4. Away-talk: talk to Dani mid-walk, queued and at the coffee point; background is the trading floor, no line contradicts where he is, the trip resumes after.
 5. Pairs: both users reach `using` at the coffee point; chatter heard within 360.
-6. L1: drop the pizza on the floor; Lerato or Tomasz goes to it, Dani does not; Tomasz's laptop text is readable while he is away and not while he is at it.
+6. L1: drop the pizza on the floor; Lerato or Tomasz goes to it within two minutes, Dani does not; Tomasz's laptop text is readable while he is away and not while he is at it.
 7. Irina: the badge-clone conversation and `meet_irina` behave as on main while Dani and the extras walk.
-8. L2: ring Lerato's phone with her away; Tomasz answers from the second ring.
+8. L2: ring Lerato's phone with her away; Tomasz answers from the second ring and a `phone_message` line plays; with both away it rings out.
 9. The printout lands on the copier tray after the first talk with Irina, once.
 10. Exchanges fire only under their gates.
 
@@ -260,7 +265,7 @@ Reload with Dani away: he reappears at post. Reload after `floor_staff_ko`: mach
 
 ### 10.4 Attack probe (fresh game per step)
 
-Attack a walking extra, a seated extra, an extra leaving the coffee point, and Dani at the coffee point. Each stays where it fell and walks home once available; `floor_staff_ko` becomes true and the three machines go off. `cover_strained` becomes true for Dani through the existing HaX loop (as on main) and stays unchanged for Lerato and Tomasz. `lerato_ko` and `tomasz_ko` show their credits lines.
+Attack a walking extra, a seated extra, an extra leaving the coffee point, and Dani at the coffee point. A knocked-out NPC stays down where it fell for the rest of the game, and any carried item lands there; an attacked NPC that turns hostile without a knock-out walks home after the player respawns. On each knock-out `floor_staff_ko` becomes true and the three machines go off. `cover_strained` becomes true for Dani through the existing HaX loop (as on main) and stays unchanged for Lerato and Tomasz. `lerato_ko` and `tomasz_ko` show their credits lines.
 
 ### 10.5 Open numbers
 
