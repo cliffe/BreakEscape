@@ -16,6 +16,39 @@ async function toChoices(max = 25) { const seen = []; for (let i = 0; i < max; i
 const pick = async re => { const r = await ev(h, p => window.__test.minigame.chooseMatching(p), re); await h.t(900); return r?.ok; };
 async function followMaya(maxMs = 20000) { const t0 = Date.now(); while (Date.now() - t0 < maxMs) { const m = await mst(); if (m.job || m.mode !== 'idle') return m; await h.t(300); } return await mst(); }
 
+const go = async (...rooms) => { for (const r of rooms) { const x = await ev(h, async r => await window.__test.enterRoom(r), r); if (!x.ok) log('enterRoom failed', { r, reason: x.reason }); await h.t(1200); } };
+// Games start in main_office_area (so the cooler's room is loaded); walk to her office the real way
+if (route !== 'post') await go('hallway_east', 'maya_office'); else await go('hallway_east', 'maya_office');
+async function tripAndAway() {
+  const sample = async (label) => log(label, await mst());
+  let m = await mst(); const t0 = Date.now(); while (Date.now() - t0 < 6000 && !m.job) { await h.t(300); m = await mst(); }
+  await sample('trip state');
+  await go('hallway_east');
+  await h.t(1500); await sample('player in hallway_east');
+  // talk to her while she walks / waits / is at the cooler
+  for (let k = 1; k <= 3; k++) {
+    const r = await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+    const d = await dlg(h);
+    log(`away talk ${k}`, { ok: r?.ok, reason: r?.reason, m: await mst(), g: await G(), text: d.text, controls: d.controls });
+    if (d.active) { const c = await toChoices(); log(`away talk ${k} choices`, c); await esc(); }
+    await h.t(2500);
+    if (k === 1) { await go('main_office_area'); await h.t(2000); }
+  }
+  await h.page.screenshot({ path: 'tmp/m01-maya-away.png' });
+  // reload while away, talk again
+  await load(h); await h.t(3000);
+  const r2 = await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+  const d2 = await dlg(h);
+  log('after reload, away talk', { ok: r2?.ok, m: await mst(), g: await G(), text: d2.text, controls: d2.controls });
+  if (d2.active) await esc();
+  // back to her office: wait for her home, then full hub
+  await go('hallway_east', 'maya_office');
+  const w = await waitAtPost(h, 'maya_chen', 60000);
+  log('back at post', { w, g: await G() });
+  const r3 = await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+  const c3 = await toChoices(); log('at office talk', { g: await G(), c3 });
+  await esc();
+}
 log('start', { m: await mst(), g: await G() });
 if (route === 'post') {
   log('fresh at post', await waitAtPost(h, 'maya_chen', 20000));
@@ -58,6 +91,8 @@ if (route === 'tipoff' || route === 'tellall' || route === 'topicchoices' || rou
     await pick('keep investigating'); await h.t(500); await esc();
     const t0 = Date.now(); let m = await mst(); while (Date.now() - t0 < 9000 && !m.job) { await h.t(300); m = await mst(); }
     log('trip started after close at hub', { m, g: await G(), ms: Date.now() - t0 });
+    if (route === 'tipoff') await tripAndAway();
+    log('diag', await ev(h, () => ({ lv: window.__test.needs.state('maya_chen')?.levels, nlog: window.__test.needs.log(0).slice(-8) })));
   }
 }
 log('errors', h.errs.filter(e => !/503/.test(e)));
