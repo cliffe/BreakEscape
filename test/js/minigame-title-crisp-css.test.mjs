@@ -1,6 +1,6 @@
 // Minigame titles in pixel fonts must render without colour fringes (review finding B3.1 R1 m7).
-// `font-smooth: never` and `-webkit-font-smoothing: none` do nothing on Chrome for Linux and Windows,
-// so the fix is a compositing hint on the title elements (greyscale antialiasing instead of LCD).
+// `font-smooth: never` is supported by no browser and `-webkit-font-smoothing: none` only works on
+// macOS, so on Chrome for Linux and Windows the fix is a compositing hint on the title elements (greyscale antialiasing instead of LCD).
 // The rule uses an explicit class list: a `[class*="-title"]` match also caught wrapper bars that hold
 // the close button (.console-titlebar), icons and non-pixel-font titles (crisp-titles review R1 M1).
 import { test } from 'node:test';
@@ -21,6 +21,62 @@ const inner = rule && /^\.minigame-container\s+:is\(([\s\S]*)\)$/.exec(rule.sel)
 const parts = inner ? inner[1].split(',').map((x) => x.trim()).filter(Boolean) : [];
 // A part matches an element when it is a single class (the leaf title); a compound part such as
 // `.minigame-header h3` matches by tag within a header.
+// Exact pin: any removal or addition fails here. A change needs a fringe measurement on Chrome for
+// Linux (leaf pixel-font titles only, never a wrapper bar).
+const EXPECTED = [
+    '.patch-panel-title',
+    '.rogue-ap-title-text',
+    '.rogue-ap-heading',
+    '.console-title',
+    '.pin-minigame-title',
+    '.pin-minigame-attempts-title',
+    '.notes-minigame-title',
+    '.signin-title',
+    '.password-prompt-title',
+    '.desktop-window-title',
+    '.window-title',
+    '.share-folder-path',
+    '.dusting-title',
+    '.dusting-panel h3',
+    '.da-title',
+    '.er-title',
+    '.ib-title',
+    '.ib-h',
+    '.lpb-title',
+    '.lpb-inspect-title',
+    '.lpb-pretext-title',
+    '.tri-title',
+    '.mail-contacts-title',
+    '.mail-compose-title',
+    '.mail-redflag-title',
+    '.mail-create-title',
+    '.cms-content-title',
+    '.cb-section-title',
+    '.bce-mx-tip-title',
+    '.bce-mx-mid-title',
+    '.bce-mx-heading',
+    '.fpr-result-title',
+    '.fpr-heading',
+    '.nad-detail-paths-title',
+    '.nsm-panel-title',
+    '.nsm-cons-rule-title',
+    '.nsm-modal-title',
+    '.ob-title',
+    '.siem-pane-title',
+    '.siem-queue-section-title',
+    '.pretext-title',
+    '.pretext-card-title',
+    '.pretext-held-title',
+    '.wcc-letterhead-title',
+    '.wcc-row-title',
+    '.wcc-doc-title',
+    '.minigame-header h3',
+    '.combination-header h2',
+    '.cryptex-header h2',
+    '.esd-confirm-card h3',
+    '.ob-site-title',
+    '.ob-page-title',
+];
 const matchesClass = (cls) => parts.some((p) => p === `.${cls}`);
 const matchesHeaderH3 = () => parts.includes('.minigame-header h3');
 const matchesHeading = (sel) => parts.includes(sel);
@@ -28,7 +84,7 @@ const matchesHeading = (sel) => parts.includes(sel);
 test('a title rule promotes minigame titles to their own layer (greyscale antialiasing)', () => {
     assert.ok(rule, 'a will-change: transform rule on minigame titles exists');
     assert.ok(inner, 'scoped to the minigame container with :is(list)');
-    assert.ok(parts.length >= 10, 'the list names the titles');
+    assert.deepEqual([...parts].sort(), [...EXPECTED].sort(), 'the list is exactly the pinned list');
     assert.ok(matchesHeaderH3(), 'covers the framework header title too');
 });
 
@@ -47,7 +103,7 @@ test('the pixel-font leaf titles are covered', () => {
 });
 
 test('the measured headings are covered (fringes without the rule, clean with it)', () => {
-    for (const cls of ['rogue-ap-heading', 'fpr-heading', 'ib-h', 'bce-mx-heading', 'wcc-row-title']) {
+    for (const cls of ['rogue-ap-heading', 'fpr-heading', 'ib-h', 'bce-mx-heading', 'wcc-row-title', 'ob-site-title', 'ob-page-title']) {
         assert.ok(matchesClass(cls), `${cls} is listed`);
     }
     for (const sel of ['.combination-header h2', '.cryptex-header h2', '.dusting-panel h3', '.esd-confirm-card h3']) {
@@ -55,10 +111,9 @@ test('the measured headings are covered (fringes without the rule, clean with it
     }
 });
 
-test('wrapper bars, icons and non-pixel titles are not covered', () => {
+test('wrapper bars and icons are not covered', () => {
     for (const cls of ['console-titlebar', 'console-titles', 'console-title-org', 'desktop-window-titlebar',
-        'share-folder-titlebar', 'network-view-title-icon', 'bv-title-block', 'ob-page-title',
-        'ob-site-title', 'ac-title', 'ncsc-brief-title', 'minigame-container', 'device-frame',
+        'share-folder-titlebar', 'network-view-title-icon', 'bv-title-block', 'ac-title', 'ncsc-brief-title', 'minigame-container', 'device-frame',
         'device-frame-title', 'console-window', 'share-folder-window', 'desktop-transfer-dialog']) {
         assert.ok(!matchesClass(cls), `${cls} is not listed`);
         assert.ok(!parts.some((p) => p.startsWith(`.${cls} `)), `${cls} is not listed with a heading tag`);
@@ -77,10 +132,23 @@ const sources = [...walk(join(root, 'public/break_escape/js')), ...walk(join(roo
     .map((f) => readFileSync(f, 'utf8'))
     .join('\n');
 
+
+// Class tokens only: the contents of class="...", className = '...', classList.add('...') and
+// el('tag', 'cls ...') style string arguments. Ids, comments and plain prose do not count.
+const classTokens = new Set();
+{
+    const add = (str) => str.split(/\s+/).forEach((t) => t && classTokens.add(t));
+    for (const m of sources.matchAll(/class(?:Name)?\s*[=:]\s*(["'`])([^"'`]*)\1/g)) add(m[2]);
+    for (const m of sources.matchAll(/classList\.(?:add|toggle|remove)\(([^)]*)\)/g)) for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) add(q[2]);
+    for (const m of sources.matchAll(/\b(?:el|h|mk|make|div|span)\(\s*(["'`])[\w-]+\1\s*,\s*(["'`])([^"'`]*)\2/g)) add(m[3]);
+    for (const m of sources.matchAll(/\btagText\(\s*(?:"[^"]*"|'[^']*')\s*,\s*("|')([^"']*)\1/g)) add(m[2]);
+}
+
 test('every listed class is emitted by the engine JS or a view', () => {
     for (const p of parts) {
-        const cls = /^\.([\w-]+)/.exec(p)[1];
-        assert.ok(new RegExp(`(^|[^\\w-])${cls}([^\\w-]|$)`).test(sources), `${cls} appears in public/break_escape/js or app/views`);
+        for (const cls of [...p.matchAll(/\.([\w-]+)/g)].map((m) => m[1])) {
+            assert.ok(classTokens.has(cls), `${cls} is used as a class token in public/break_escape/js or app/views`);
+        }
     }
 });
 

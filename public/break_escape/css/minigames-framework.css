@@ -32,8 +32,9 @@
     font-weight: 400;
 }
 
-/* Crisp pixel-font titles. `font-smooth: never` and `-webkit-font-smoothing: none` (main.css,
-   player_preferences.css) are ignored by Chrome and Firefox on Windows and Linux, so a pixel-font
+/* Crisp pixel-font titles. `font-smooth: never` (no browser supports it) is gone from main.css and
+   player_preferences.css; `-webkit-font-smoothing: none` (player_preferences.css) only works on
+   macOS Safari and Chrome. Chrome and Firefox on Windows and Linux ignore it, so a pixel-font
    title on an opaque panel (the device frame's face, a paper note, the corkboard) gets LCD subpixel
    antialiasing: red and blue fringes on every glyph edge. `will-change: transform` turns LCD text
    off for the element's layer, so Chrome draws it with greyscale antialiasing. Measured on Chrome
@@ -104,7 +105,9 @@
     .minigame-header h3,
     .combination-header h2,
     .cryptex-header h2,
-    .esd-confirm-card h3
+    .esd-confirm-card h3,
+    .ob-site-title,
+    .ob-page-title
 ) {
     will-change: transform;
 }
@@ -118,19 +121,12 @@
    .tri-panel, .device-frame: a stacking context and fixed-position containing block for everything
    inside), never a skin-image button or tab (the residual there is the skin, not LCD), never a
    row of a list (hint a text-only list container once if one measures clean). Each entry is one
-   class, or one class plus a tag; test/js/minigame-text-crisp-css.test.mjs checks the form and
-   that every class is emitted by the engine, not that every body text is listed. */
+   class, or one class plus a tag, or a parent class plus a child class (`.mail-read-pane
+   .ib-infl-label`: the one influence bar in the mail reader, not the per-card bars on the board).
+   test/js/minigame-text-crisp-css.test.mjs pins the exact list and checks that every class is emitted by the engine, not that every body text is listed. */
 .minigame-container :is(
     .note-md-text,
     .rogue-ap-note,
-    .rogue-ap-ssid,
-    .rogue-ap-known-label,
-    .rogue-ap-signal-word,
-    .rogue-ap-security,
-    .rogue-ap-clients,
-    .rogue-ap-ssid-pick-name,
-    .rogue-ap-template-label,
-    .rogue-ap-chosen,
     .lpb-copy,
     .lpb-address-text,
     .lpb-not-secure,
@@ -155,13 +151,10 @@
     .siem-queue-count,
     .ib-progress,
     .ib-empty,
-    .ib-name,
-    .ib-infl-label,
+    .mail-read-pane .ib-infl-label,
     .pin-minigame-attempt-empty,
     .person-chat-dialogue-text,
-    .person-chat-speaker-name,
-    .ob-site-title,
-    .ob-page-title
+    .person-chat-speaker-name
 ) {
     will-change: transform;
 }

@@ -16,13 +16,47 @@ const rules = [...strip(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ se
 const rule = rules.find((r) => /will-change:\s*transform/.test(r.body) && /\.note-md-text\b/.test(r.sel));
 const inner = rule && /^\.minigame-container\s+:is\(([\s\S]*)\)$/.exec(rule.sel);
 const parts = inner ? inner[1].split(',').map((x) => x.trim()).filter(Boolean) : [];
+// Exact pin: any removal or addition fails here. A change needs a fringe measurement on Chrome for
+// Linux at 1280x720 and 390x844 (leaf text only, never a row of a list or a wrapper with controls).
+const EXPECTED = [
+    '.note-md-text',
+    '.rogue-ap-note',
+    '.lpb-copy',
+    '.lpb-address-text',
+    '.lpb-not-secure',
+    '.combination-help',
+    '.combination-status-message',
+    '.combination-direction-indicator',
+    '.combination-dial-label',
+    '.combination-dial-display',
+    '.cryptex-subtitle',
+    '.cryptex-wheel-label',
+    '.password-info-name',
+    '.password-info-text',
+    '.password-field-label',
+    '.attempts-counter',
+    '.tri-brief-title',
+    '.tri-brief-text',
+    '.tri-brief-kind',
+    '.tri-brief-score',
+    '.tri-brief-when',
+    '.tri-brief-restart',
+    '.tri-brief-note',
+    '.siem-queue-count',
+    '.ib-progress',
+    '.ib-empty',
+    '.mail-read-pane .ib-infl-label',
+    '.pin-minigame-attempt-empty',
+    '.person-chat-dialogue-text',
+    '.person-chat-speaker-name',
+];
 const listed = (cls) => parts.includes(`.${cls}`);
 const listedWithTag = (cls) => parts.some((p) => p.startsWith(`.${cls} `));
 
 test('a body-text rule promotes leaf text to its own layer, scoped to the minigame container', () => {
     assert.ok(rule, 'a will-change: transform rule on body text exists');
     assert.ok(inner, 'scoped to .minigame-container with :is(list)');
-    assert.ok(parts.length >= 20, 'the list names the measured text classes');
+    assert.deepEqual([...parts].sort(), [...EXPECTED].sort(), 'the list is exactly the pinned list');
     assert.match(rule.body, /will-change:\s*transform/);
 });
 
@@ -34,7 +68,7 @@ test('it is a separate rule from the titles rule', () => {
 
 test('every entry is a plain class, or one class plus a heading tag', () => {
     for (const p of parts) {
-        assert.ok(/^\.[\w-]+$/.test(p) || /^\.[\w-]+ (h[1-6]|p|label|span)$/.test(p), `entry ${p} is a plain class, or one class followed by a tag`);
+        assert.ok(/^\.[\w-]+$/.test(p) || /^\.[\w-]+ (h[1-6]|p|label|span)$/.test(p) || /^\.[\w-]+ \.[\w-]+$/.test(p), `entry ${p} is a plain class, one class plus a tag, or a parent class plus a child class`);
     }
     assert.doesNotMatch(rule.sel, /\[class|\*/);
     assert.equal(new Set(parts).size, parts.length, 'no duplicate entries');
@@ -43,7 +77,7 @@ test('every entry is a plain class, or one class plus a heading tag', () => {
 test('the measured body text is covered', () => {
     for (const cls of ['note-md-text', 'rogue-ap-note', 'lpb-copy', 'combination-help', 'combination-status-message',
         'tri-brief-score', 'tri-brief-when', 'tri-brief-note', 'tri-brief-restart', 'siem-queue-count', 'ib-progress',
-        'pin-minigame-attempt-empty', 'person-chat-dialogue-text', 'rogue-ap-ssid', 'cryptex-subtitle',
+        'pin-minigame-attempt-empty', 'person-chat-dialogue-text', 'cryptex-subtitle',
         'password-info-name', 'password-info-text', 'password-field-label']) {
         assert.ok(listed(cls), `${cls} is listed`);
     }
@@ -53,7 +87,7 @@ test('wrappers with controls, skin buttons, sr-only text and repeated rows are n
     for (const cls of ['siem-alert-row', 'combination-header', 'tri-panel', 'device-frame', 'rogue-ap-pane',
         'password-minigame-area', 'minigame-container', 'ob-sr', 'signin-prompt', 'mail-sr-only',
         'siem-time', 'siem-source', 'siem-description', 'siem-btn', 'patch-panel-label', 'pin-minigame-key',
-        'cryptex-wheel-arrow', 'combination-dial-arrow', 'mail-compose-btn', 'mail-contacts-btn', 'ob-case',
+        'cryptex-wheel-arrow', 'rogue-ap-scan-row', 'rogue-ap-ssid', 'ib-name', 'ib-card', 'combination-dial-arrow', 'mail-compose-btn', 'mail-contacts-btn', 'ob-case',
         'tri-start', 'notes-minigame-nav-button', 'person-chat-continue-button', 'rogue-ap-tab', 'lpb-purpose']) {
         assert.ok(!listed(cls), `${cls} is not listed`);
         assert.ok(!listedWithTag(cls), `${cls} is not listed with a tag`);
@@ -76,10 +110,23 @@ const sources = [...walk(join(root, 'public/break_escape/js')), ...walk(join(roo
     .map((f) => readFileSync(f, 'utf8'))
     .join('\n');
 
+
+// Class tokens only: the contents of class="...", className = '...', classList.add('...') and
+// el('tag', 'cls ...') style string arguments. Ids, comments and plain prose do not count.
+const classTokens = new Set();
+{
+    const add = (str) => str.split(/\s+/).forEach((t) => t && classTokens.add(t));
+    for (const m of sources.matchAll(/class(?:Name)?\s*[=:]\s*(["'`])([^"'`]*)\1/g)) add(m[2]);
+    for (const m of sources.matchAll(/classList\.(?:add|toggle|remove)\(([^)]*)\)/g)) for (const q of m[1].matchAll(/(["'`])([^"'`]*)\1/g)) add(q[2]);
+    for (const m of sources.matchAll(/\b(?:el|h|mk|make|div|span)\(\s*(["'`])[\w-]+\1\s*,\s*(["'`])([^"'`]*)\2/g)) add(m[3]);
+    for (const m of sources.matchAll(/\btagText\(\s*(?:"[^"]*"|'[^']*')\s*,\s*("|')([^"']*)\1/g)) add(m[2]);
+}
+
 test('every listed class is emitted by the engine JS or a view', () => {
     for (const p of parts) {
-        const cls = /^\.([\w-]+)/.exec(p)[1];
-        assert.ok(new RegExp(`(^|[^\\w-])${cls}([^\\w-]|$)`).test(sources), `${cls} appears in public/break_escape/js or app/views`);
+        for (const cls of [...p.matchAll(/\.([\w-]+)/g)].map((m) => m[1])) {
+            assert.ok(classTokens.has(cls), `${cls} is used as a class token in public/break_escape/js or app/views`);
+        }
     }
 });
 
@@ -92,13 +139,14 @@ test('the classes added in JS for bare tags are set with classList, not innerHTM
     assert.match(cx, /#cryptex-subtitle'\)\?\.classList\.add\('cryptex-subtitle'\)/);
 });
 
-test('the dead font-smooth declarations are gone from main.css and player_preferences.css', () => {
+test('font-smooth is gone; -webkit-font-smoothing: none is kept for macOS in player_preferences.css', () => {
     for (const f of ['main.css', 'player_preferences.css']) {
         const c = strip(readFileSync(join(cssDir, f), 'utf8'));
-        assert.doesNotMatch(c, /font-smooth\s*:/, `${f} has no font-smooth`);
-        assert.doesNotMatch(c, /-webkit-font-smoothing\s*:\s*none/, `${f} has no -webkit-font-smoothing: none`);
-        assert.match(readFileSync(join(cssDir, f), 'utf8'), /minigames-framework\.css/, `${f} points to the framework rules`);
+        assert.doesNotMatch(c, /(^|[^-\w])font-smooth\s*:/, `${f} has no font-smooth`);
     }
+    const pref = readFileSync(join(cssDir, 'player_preferences.css'), 'utf8');
+    assert.match(strip(pref), /-webkit-font-smoothing\s*:\s*none/, 'player_preferences.css keeps -webkit-font-smoothing: none');
+    assert.match(pref, /macOS only/, 'the line says it applies on macOS only');
     const ransom = readFileSync(join(cssDir, 'ransomware-display-minigame.css'), 'utf8');
     assert.match(ransom, /-webkit-font-smoothing:\s*antialiased/, 'the ransomware antialiased lines stay');
 });

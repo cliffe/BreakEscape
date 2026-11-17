@@ -7,7 +7,7 @@ body {
   background: #1a1a1a;
   color: #00ff00;
   margin: 0;
-  /* Crisp pixel text: see the will-change rules in minigames-framework.css. */
+  -webkit-font-smoothing: none; /* macOS only; Windows and Linux use the will-change rules in minigames-framework.css */
 }
 
 /* Only the configuration page is padded. This stylesheet is also loaded by the game page
