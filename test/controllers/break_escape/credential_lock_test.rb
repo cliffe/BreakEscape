@@ -198,8 +198,9 @@ module BreakEscape
       refute_includes @game.player_reach(OFFICE), 'server_net', 'a locked session bridges nothing for access'
       container('server_public', foothold: OFFICE)
       assert_response :not_found
-      row = network_view(OFFICE)['hosts'].to_a.find { |h| h['pcId'] == 'lena_pc' || h['id'] == 'lena_pc' }
-      assert_equal true, row&.dig('session', 'locked'), "the view's host row says Locked: #{row.inspect}"
+      row = network_view['footholds'][0]['hosts'].find { |h| h['id'] == 'lena_pc' }
+      assert_equal({ 'username' => 'lfox', 'displayName' => 'Lena Fox', 'via' => 'credential', 'remote' => true, 'locked' => true },
+                   row['session'], "the view's host row says Locked")
       assert_equal false, keyring_row('lena_rdp')['sessionHeld']
       # A desktop route from the locked PC is refused (slice 6's locked-source rule)
       login(pc_id: 'sv_fs02', username: 'ishaw', password: NS::IAN_PASSWORD, from: 'lena_pc')
