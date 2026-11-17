@@ -89,3 +89,28 @@ test('a loop already playing keeps its true current volume as the start of the n
     sm.fadeAmbientTo('A', 0.5, 400);
     assert.equal(tweens[tweens.length - 1].cfg.from, at);
 });
+
+test('a room-tone-off fade-out in the same task as a fresh start begins at 0, not the stale base', () => {
+    const { sm, tweens } = rig();
+    sm.fadeAmbientTo('A', 1, 400);
+    sm.fadeAmbientTo('A', 0, 400);
+    assert.equal(tweens[tweens.length - 1].cfg.to, 0);
+    assert.equal(tweens[tweens.length - 1].cfg.from, 0);
+});
+
+test('a crossfade in the same task as a fresh start fades the outgoing loop from 0, not the stale base', () => {
+    const { sm, tweens } = rig();
+    sm.fadeAmbientTo('A', 1, 400);
+    sm.fadeAmbientTo('B', 1, 400, { crossfade: true });
+    const outgoing = tweens.find((t, i) => i > 0 && t.cfg.to === 0);
+    assert.ok(outgoing, 'an outgoing fade-out tween exists');
+    assert.equal(outgoing.cfg.from, 0);
+});
+
+test('play() with an option volume is remembered, so a fade starts from it rather than the stale gain', () => {
+    const { sm, tweens } = rig();
+    sm.play('A', { volume: 0.4 });
+    assert.equal(sm.sounds.A.volume, 1, 'the fake really lags');
+    sm.fadeAmbientTo('A', 1, 400);
+    assert.equal(tweens[tweens.length - 1].cfg.from, 0.4);
+});
