@@ -9,11 +9,17 @@ module BreakEscape
   # that get requested.
   #
   # Covers person-chat ink stories (lines read by InkLineWalker, speaker
-  # resolved as person-chat-minigame.js does) and room objects with a fixed
-  # `voice` text and a `ttsVoice`. Barks and phone conversations are not voiced
-  # by the batch, except a phone contact with a voiced call (`voiced: true` on a
-  # phone-chat eventMapping or on its timedConversation, F17): its story is a
-  # host like a person-chat one, read as phone-call-voice.js voices it (no
+  # resolved as person-chat-minigame.js does), room objects with a fixed
+  # `voice` text and a `ttsVoice`, and the event barks of voiced person NPCs
+  # (eventMappings `bark`, `sendTimedMessage.message`, `timedMessages`, read by
+  # ScenarioBarkValidator.event_bark_texts; npc-manager.js sets useTTS only for
+  # `npcType: "person"` with a `voice`). Barks are always listed, unlike
+  # chatter: there are few of them and each is heard every time its event
+  # fires. A bark is listed as the client voices it, with the NPC's own
+  # "Name:" prefix stripped (ScenarioBarkValidator.spoken_bark_text). Phone
+  # conversations are not voiced by the batch, except a phone contact with a
+  # voiced call (`voiced: true` on a phone-chat eventMapping or on its
+  # timedConversation, F17): its story is a host like a person-chat one, read as phone-call-voice.js voices it (no
   # narration), but only the lines in the call's own knots (call_knots, F20).
   # A video call (`conversationMode: "video-call"` on an eventMapping, or a
   # timedConversation with `videoCall: true` or that mode) opens person-chat
@@ -105,6 +111,19 @@ module BreakEscape
         set << @tts_service.cache_key_for(text, voice['name'], voice['style'], voice['language']) if voice
       end
       set
+    end
+
+    # Event barks of each voiced person NPC (the client's useTTS rule). Yields
+    # [npc_id, text, path], text as the client voices it (spoken_bark_text:
+    # own speaker prefix and You:/Narrator: lines dropped, JS-trimmed).
+    def each_bark_line
+      each_room_npc do |npc|
+        next unless npc['npcType'] == 'person' && npc['voice'].is_a?(Hash) && npc['id']
+
+        ScenarioBarkValidator.event_bark_texts(npc).each do |t|
+          yield npc['id'], t, 'npc.bark' if t.is_a?(String) && !t.empty?
+        end
+      end
     end
 
     # Chatter lines each voiced NPC can speak: its own `chatter` pools, then the
@@ -550,6 +569,8 @@ module BreakEscape
         next unless obj['ttsVoice'].is_a?(Hash) && obj['voice'].is_a?(String)
         add_entry(seen, obj['id'], obj['voice'], obj['id'], 'object.voice')
       end
+
+      each_bark_line { |npc_id, text, path| add_entry(seen, npc_id, text, npc_id, path) }
 
       return unless @chatter
 
