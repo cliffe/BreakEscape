@@ -317,12 +317,15 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
+/** Break opportunities inside a file name: after each of _ . - / (the separator stays). */
+export const LABEL_BREAK_AFTER = /(?<=[_.\-\/])/;
+
 /**
  * A word wider than its box is the only reason a label overflows sideways (labels wrap at
  * spaces only, never inside a word). Fit one label: reset it, and when a word still sticks
  * out, cut that word short with an ellipsis and keep the whole name in the title. The font
  * stays at its 16px base: GNF is crisp only at whole multiples of its 8px grid, so there are
- * no in-between sizes. Never a break inside a word. Returns 'fits' or 'ellipsis'.
+ * no in-between sizes. Never a break inside a fragment. Returns 'fits' or 'ellipsis'.
  */
 export function fitIconLabel(label) {
     if (!label?.style) return 'fits';
@@ -342,11 +345,19 @@ export function fitIconLabel(label) {
     full.split(/(\s+)/).forEach(part => {
         if (!part) return;
         if (/^\s+$/.test(part)) { label.appendChild(label.ownerDocument.createTextNode(' ')); return; }
-        const word = label.ownerDocument.createElement('span');
-        word.className = 'desktop-icon-word';
-        word.textContent = part;
-        label.appendChild(word);
+        // A file name is one "word" to the spaces rule, so it may also break after _ . - or /
+        // (kept on the line it ends): "ENGAGEMENT_" / "NOTE.txt". Only a fragment still wider
+        // than the box ends in an ellipsis. Text nodes and createElement only, no HTML parsing of the name.
+        part.split(LABEL_BREAK_AFTER).forEach((frag, i) => {
+            if (!frag) return;
+            if (i > 0) label.appendChild(label.ownerDocument.createElement('wbr'));
+            const word = label.ownerDocument.createElement('span');
+            word.className = 'desktop-icon-word';
+            word.textContent = frag;
+            label.appendChild(word);
+        });
     });
+    // At most three lines (the CSS clamps the height); the whole name stays in the title
     return 'ellipsis';
 }
 

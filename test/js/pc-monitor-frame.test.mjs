@@ -913,6 +913,49 @@ test('UI PC polish 2: a word too wide for the label ends in an ellipsis; the who
     assert.equal(label.getAttribute('title'), null);
 });
 
+test('Icon labels: a file name breaks after _ . - / and keeps the separator; a long fragment still ends in an ellipsis', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const label = document.createElement('div');
+    label.textContent = 'ENGAGEMENT_NOTE.txt';
+    stubWidths(label, 20);
+    assert.equal(fitIconLabel(label), 'ellipsis');
+    const frags = [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
+    assert.deepEqual(frags, ['ENGAGEMENT_', 'NOTE.', 'txt']);
+    assert.equal(label.querySelectorAll('wbr').length, 2, 'a break opportunity between fragments');
+    assert.equal(label.textContent, 'ENGAGEMENT_NOTE.txt', 'the text reads the same');
+    assert.equal(label.getAttribute('title'), 'ENGAGEMENT_NOTE.txt');
+    const path = document.createElement('div');
+    path.textContent = 'a-b/c_d e';
+    stubWidths(path, 30);
+    fitIconLabel(path);
+    assert.deepEqual([...path.querySelectorAll('.desktop-icon-word')].map(w => w.textContent), ['a-', 'b/', 'c_', 'd', 'e']);
+    // no separator: one fragment, ellipsis and title as before
+    const long = document.createElement('div');
+    long.textContent = 'ELECTROENCEPHALOGRAPHY';
+    stubWidths(long, 30);
+    assert.equal(fitIconLabel(long), 'ellipsis');
+    assert.deepEqual([...long.querySelectorAll('.desktop-icon-word')].map(w => w.textContent), ['ELECTROENCEPHALOGRAPHY']);
+    assert.equal(long.querySelector('wbr'), null);
+    assert.equal(long.getAttribute('title'), 'ELECTROENCEPHALOGRAPHY');
+    // a name with markup characters stays text
+    const hostile = document.createElement('div');
+    hostile.textContent = '<img src=x onerror=1>_a.b';
+    stubWidths(hostile, 30);
+    fitIconLabel(hostile);
+    assert.equal(hostile.querySelector('img'), null);
+    assert.equal(hostile.textContent, '<img src=x onerror=1>_a.b');
+});
+
+test('Icon labels: no innerHTML for the name; the cut label is clamped to three lines', () => {
+    const src = readFileSync(new URL('../../public/break_escape/js/minigames/container/container-minigame.js', import.meta.url), 'utf8');
+    const fn = src.slice(src.indexOf('export function fitIconLabel('), src.indexOf('export function fitIconLabels('));
+    assert.doesNotMatch(fn, /innerHTML|insertAdjacentHTML/);
+    const box = css('container-minigame.css');
+    const cut = box.slice(box.indexOf('.desktop-icon-label.desktop-icon-label-cut {'), box.indexOf('}', box.indexOf('.desktop-icon-label.desktop-icon-label-cut {')));
+    assert.match(cut, /max-height: calc\(1\.1em \* 3\);/);
+    assert.match(cut, /overflow: hidden;/);
+});
+
 test('UI PC polish 2: the label CSS breaks only at spaces and cuts a word with an ellipsis', () => {
     const box = css('container-minigame.css');
     const rule = box.slice(box.indexOf('.desktop-icon-label {'), box.indexOf('}', box.indexOf('.desktop-icon-label {')));

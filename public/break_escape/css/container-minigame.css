@@ -277,6 +277,17 @@
     max-width: 112px;
 }
 
+/* A cut label (fitIconLabel) runs to three lines at most: the rest is clipped, the full
+   name is in the title. The row grows with the label, so icons never overlap. */
+.desktop-icon-label.desktop-icon-label-cut {
+    max-height: calc(1.1em * 3);
+    overflow: hidden;
+}
+
+.pc-monitor .pc-desktop .desktop-icon-label.desktop-icon-label-cut {
+    max-height: 62px; /* 3 lines of 18px plus the 2px borders */
+}
+
 .desktop-icon-label .desktop-icon-word {
     display: inline-block;
     max-width: 100%;
