@@ -501,3 +501,20 @@ demo_access_tour (commit ee909e396, read from its raw JSON, not rerun here):
 - 7719 and 7643 (case 2): after the reload only reception was loaded, so the read never looked in open_plan. 7643 dropped at the usual (40,23) and failed the same way, so the (40,-33) drop is not what lost the cake. The drop is clamped into `currentPlayerRoom`'s rect (`item-drop.js` about line 297) and was recorded in open_plan; a different stand point after `enterRoom` explains the different spot. Probe fault: the old `whereAll` ignored `enterRoom` failures. The new one reports them. Why `enterRoom` failed there was not measured.
 - 7706 (case 3): a staff member took the last slice in the post-reload settle: the same calm fault as here.
 - 7730: the accepted limit, with `second.npc` misnamed (fixed: `eaters`).
+
+## BC1 continuous hold
+
+Checks the probe change in 7ebdae49e: after a reload, the staff are held by an in-page interval (every 5 ms) until the eat step releases it. Run from this worktree on a keyless server on :3094, command `node tools/playtest/showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake --port 3094 --cases 1,2,3`, run twice on fresh games. All six cases passed on the first attempt, so no retry was needed.
+
+| Run | Case | Game | Result | Eaters (from `magnet_serving`) | Servings before reload, after reload | `calmedAt` |
+|---|---|---|---|---|---|---|
+| 1 | 1 | 7851 | PASS | none (cake held, no eat step) | 2, 2 | `{tick: 2}` |
+| 1 | 2 | 7858 | PASS | Chidi Okeke (left 1) | 2, 2 | `{tick: 1}` |
+| 1 | 3 | 7866 | PASS | Chidi Okeke (left 1), then Jun Watanabe (left 0); `magnet_finished`, task completed | 1, 1 | `{tick: 2}` |
+| 2 | 1 | 7875 | PASS | none | 2, 2 | `{tick: 0}` |
+| 2 | 2 | 7881 | PASS | Chidi Okeke (left 1) | 2, 2 | `{tick: 2}` |
+| 2 | 3 | 7884 | PASS | Chidi Okeke (left 1), then Jun Watanabe (left 0); `magnet_finished`, task completed | 1, 1 | `{tick: 2}` |
+
+Every `calmedAt` was a tick number, so all staff had a needs state before the hold was checked. None came back as `{partial, missing}`. Servings were the same before and after each reload, and each case's own checks (placement, the kept cake, the eat, the finish) passed. `player_state` moved by -248, +73 and -158 bytes in cases 1 to 3, the same in both runs, which is within the 2048-byte limit. The console errors recorded in each result were `net::ERR_FAILED`, which is consistent with the probe aborting `POST /tts` on purpose; no page errors were recorded.
+
+Results are in `tmp/bc1/office_life_showcase-case<n>-game<id>.json` in the worktree. Server: keyless puma on :3094, PID file `tmp/bc1-hold/server.pid`. Logs: `tmp/bc1-hold/run1.log`, `tmp/bc1-hold/run2.log`.
