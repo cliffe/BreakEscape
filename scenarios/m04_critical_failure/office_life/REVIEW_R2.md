@@ -1,6 +1,6 @@
 # m04 office-life plan review, round 2
 
-Reviewer tier: Opus (opus55 agent type), read-only. Stopped at its context guard; unchecked items are carried to round 3.
+Reviewer tier: planning tier, read-only. Stopped at its context guard; unchecked items are carried to round 3.
 
 Counts: B 0 / M 3 / m 9
 

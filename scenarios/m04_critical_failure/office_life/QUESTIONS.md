@@ -47,7 +47,8 @@ The cooler's second standing cell is blocked by the coffee table and the planter
 
 ## Q7. A newcomer struck at the kettle
 
-The chase leash is tied to the newcomer's spawn room (reception) and their last stop. Struck at the ops-office kettle, a newcomer stands there hostile and does not hit back while the player stays in the ops office; if the player then walks into reception close to them (within 160 px), they may follow into reception. They never snap back to the sofa.
+The chase leash is tied to the newcomer's spawn room (reception) and their last stop. Struck at the ops-office kettle, a newcomer stands there hostile and does not hit back while the player stays in the ops office; if the player then walks into reception close to them (within 160 px), they may follow into reception. They do not go back to the sofa until a reload, which brings them back standing at their sofa place, still hostile. On the plan's estimated cells the kettle is about 180 to 200 px from the doorway, so with the default 160 px the follow may only fire with the player right at the door.
 
 - (a) Accept it and record what happens in the attack probe. It only happens after the player has attacked a bystander, the newcomer hits for 4, and the debrief already scolds the attack. **Recommended**.
-- (b) Lower the pair's `aggroDistance` (data only, no engine change) so a follow is less likely. It also makes a newcomer struck in reception slower to react.
+- (b) Lower the pair's `behavior.hostile.aggroDistance` (px, default 160; 1 or more, because 0 falls back to 160; m04's own operative uses 96). Data only, no engine change. The follow then needs the player closer; in reception too, a struck newcomer only turns on the player within that radius. At 1 they never fight back anywhere (the m08 precedent).
+- (c) Lower the pair's `behavior.hostile.chaseRange` (default 400, measured from their last stop) below the kettle-to-doorway distance. That stops the follow, but also shrinks the chase around the sofa and cooler.

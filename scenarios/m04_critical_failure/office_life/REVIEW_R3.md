@@ -1,6 +1,6 @@
 # m04 office-life plan review, round 3
 
-Reviewer tier: Opus (opus55 agent type), read-only, at commit acb2e682a.
+Reviewer tier: planning tier, read-only, at commit acb2e682a.
 
 Counts: B 1 / M 2 / m 7
 

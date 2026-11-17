@@ -1,6 +1,6 @@
 # m04 office-life plan review, round 1
 
-Reviewer tier: Opus (opus55 agent type), read-only. Partial: the reviewer stopped at its context guard. The items it did not reach are carried to round 2 as full scope.
+Reviewer tier: planning tier, read-only. Partial: the reviewer stopped at its context guard. The items it did not reach are carried to round 2 as full scope.
 
 Counts: B 0 / M 3 / m 3
 
