@@ -246,3 +246,43 @@ Open points:
 - The pause menu trigger is unproved (see item 4). Verifying it needs a probe log of clearMenu's branch.
 
 Handover: all four runs are finished. Server PID 1121378 is stopped by PID once this section is committed.
+
+## R4 tests, part 4 (typing)
+
+Server: keyless, :3094, puma PID 1334858, started from this worktree with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec rails server -b 127.0.0.1 -p 3094`. Boot log tmp/server-3094-r8.log line 4: "[BreakEscape] Warning: GEMINI_API_KEY environment variable is not set. TTS (text-to-speech) features will be disabled." Stopped by PID 1334858 after the runs. Port 3094 is free.
+
+Probe: the part 3 dwell logic from tools/playtest/m01-ol-tone.mjs (same routing, same 60 s needs-clock wait per room), run from a scratch copy outside the repo. It adds a sample every 10 s in each room (typistsNow, and in the main office each NPC's needs mode, atPost, job and sprite position). The repo probe was not changed. Headless, setFPS(20), fixed steps on.
+
+Games: 7361 and 7365, one fresh game per run from `new-game.rb m01_first_contact --start-room main_office_area --unlock main_office_area --unlock reception_area --unlock break_room`. No game rows edited. Flags XML files moved to tmp/delete/. The probe never requested /tts. The server log is tmp/server-3094-r8.log (not committed).
+
+| Game | Main office typing (60 s) | Typists seated | Grade |
+|---|---|---|---|
+| 7361 | Counts 1 (level 0.4), then 2 (0.6), then 0. Changes logged in the first 22 s | Fatima and Graham, both at desk cells, from 0 to 22 s (typistsNow lists both) | PASS |
+| 7365 | No change. Count stayed 0 for all 60 s | None. typistsNow empty at every sample | No typist seated |
+
+Positions in the main office (tiles, from the 10 s samples):
+
+Game 7361:
+- 0 to 22 s: Fatima at her desk cell (1.37, 5.10), mode job, job use, seated. Graham at his desk cell (7.37, 5.04), same state.
+- 32 s: Fatima walking (2.72, 5.87), Graham idle at his desk cell (7.44, 5.07).
+- 42 to 52 s: both at the cooler, Fatima (5.65, 7.82) and Graham (6.87, 7.71), mode job, job use, not at post.
+- Maya: not in the needs snapshot. She was not registered in this run because her room was not entered.
+
+Game 7365:
+- 0 to 12 s: both at the cooler, Fatima (5.65, 7.82), Graham (6.87, 7.69), job use, not at post. Neither at a desk.
+- 22 s: both returning, Fatima (5.23, 7.47), Graham (6.81, 7.16), mode returning.
+- 32 to 52 s: both at their desk cells, mode idle, atPost true, job null. Standing, not seated. Fatima (1.37, 5.10), Graham (7.37, 5.04).
+- Maya: not in the needs snapshot, as in 7361. Her position is not recorded.
+
+Other rooms (not graded):
+- Clock advanced 60 or 61 s and lastSlot advanced 3 in every room in both games. Tone levels: main office 0.8, reception 0.35, break room 0.35. Spot entries none. Errors none.
+- 7361 reception: no typing. typistsNow listed Fatima and Graham from 32 s. 7361 break room: one typing entry, count 0.
+- 7365 reception: no typing and typistsNow empty. 7365 break room: no typing, typistsNow lists both from 42 s.
+
+Reading:
+- The 7361 pass is a real typing change with two typists seated for the first 22 s. The 7365 result is "no typist seated" for the whole window, as the brief asks. It is not a FAIL.
+- In 7365 both NPCs were at the cooler at the start and returned to their desk cells in idle mode from 32 s. The cause of the missing seat claim is not diagnosed here.
+- typistsNow is not scoped to a room. Its entries carry room null, and the map keeps Fatima and Graham after they stop typing (7361 reception, from 32 s). A room check on typistsNow alone cannot say "seated in this room". The seated test needs the job and atPost fields with it.
+- Maya's position is missing from both samples. The dwell does not enter maya_office, so her needs state is never registered. A fix needs a visit to her room or a sample from another source.
+
+Logs: scenarios/m01_first_contact/office_life/tone-logs-r4p2/dwell-typing-7361.txt and dwell-typing-7365.txt.
