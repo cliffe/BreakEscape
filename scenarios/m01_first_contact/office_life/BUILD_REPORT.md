@@ -64,3 +64,41 @@ Day: both seated at their chairs before and after reload. During a break (Graham
 ### Observations, not fixed
 - During the break, Graham's `_seat` was truthy while he was `using` the cooler (game 7109 sample, before reload). Fatima's was false at the cooler. Not checked whether this is a leftover desk seat or the cooler's use pose.
 - The unrelated `dungeon_graph.html/.md` modifications in the worktree are the validator's output and were left alone.
+
+## Step 5 routes and clip count
+
+Probe: tools/playtest/m01-ol-maya.mjs (routes topicchoices, getstarted, inout, attack). Headless, setFPS(20), fixed steps on, keyless server on :3094, games started with new-game.rb --start-room main_office_area --unlock hallway_east --unlock maya_office (7142, 7144, 7180, 7183 carry the passing runs; 7143, 7145, 7165, 7167, 7171, 7176 were earlier or harness-debug runs). No game rows edited, no /tts requests.
+
+### Route a: Esc at a topic's choices, reopen at her desk (game 7142): PASS
+- After "SAFETYNET sent me" and "Tell me everything" the first operation line showed, then the choices ("And they're okay with that?" / "When does it launch?") with `maya_away` false, `maya_settled` false, `discussed_operation` true.
+- Esc closed the chat. Five seconds later she was still at post, mode idle, no job, globals unchanged (settled false), so no trip.
+- Reopened at her desk: the chat resumed at the topic's remaining lines and choices, then went on to the hub choices with `maya_settled` true. "I need to keep investigating" closed it and the trip started 1.2 s later (job goto_target, `thirst` level 20). No stuck state, no console errors.
+
+### Route b: "I'll get started" with discussed_operation true (games 7143, 7144): PASS
+- Hub, "What should I do first?", "I'll get started": her reply "Good luck. And... thank you. For coming." played and the chat closed. Five seconds later she was at post, idle, `maya_settled` false, `discussed_operation` true.
+- Next desk talk opened on "I was starting to think no one cared about stopping this.", then the hub choices, and `maya_settled` became true.
+- Closing at the hub armed the trip (`thirst` set to 20, urgent). In 7144 she then parked at her desk with reason "avoid" because Graham was using the cooler (`needsCompany.avoids` working as designed); in 7142 she walked. Not a defect.
+
+### Route c: quick in and out of her office (game 7180): PASS
+Arrow-key movement through the real door (see harness note). `maya_away` after each move:
+- hall: true; office: false; desk talk, baseline: first-meeting opener, no Not here choice.
+- A, out and back (1.7 s): true, then false. Desk talk afterwards: normal opener choices, no Not here, no not_here line.
+- B, hall, office, hall (2.3 s): true, false, true. Back into the office: false. Desk talk: normal choices, no Not here.
+- C, hall, main office, hall, office (enterRoom): true, true, true, false. Desk talk: normal choices.
+- Console errors: none.
+- Harness note: `window.__test.enterRoom` fails with "did-not-cross" from inside her office (pointer pathing stalls near the spawn, feet at x 208, y -142), though arrow keys leave the room at once. The player is not boxed in. The probe uses keys for the office door and enterRoom elsewhere.
+
+### Route d: attack at the cooler routine (game 7183): PASS, with a note on timing
+- Trip armed by the real talk; extras' thirst set to 100 so they stayed at their desks. Maya was punched in the main office on her way back (mode returning, 8.2, 2.6), not at the cooler itself.
+- First punch made her hostile (`isNPCHostile` true); `m01_staff_alarmed` stayed false (only the extras' attacks and Derek's fight raise it, as planned). KO followed with further punches: `maya_ko` true, `maya_away` true (she lies in the main office), `maya_settled` true, `discussed_operation` true, her needs mode idle.
+- Talking to her afterwards correctly refuses ("different-room" while the player is in the main office). Navigation to hallway_east and main_office_area still works, no blocking UI, no console errors.
+- Critical path: Maya's talk is optional (`talk_to_maya`), and `discussed_operation` was already set before the attack, so the HaX phone choice that reads it is unaffected. Not tested here: KO before the first talk (the base behaviour for her, unchanged by this step), and a full critical-path regression.
+- Not seen: an attack exactly while she is using the cooler. She finished her use before the player reached her. The same hostile and KO handling applies in any room, so this is low risk.
+
+### V6 clip count: 18 is right, the earlier 22 counted something else
+`app:break_escape:tts:office_lines` (lib/tasks/break_escape_tasks.rake, app/services/break_escape/tts_office_lines.rb) lists office-life clips only: event barks (kind bark), chatter pool lines, and the lines of exchange and phone-call knots. Line by line against SPOKEN_LINES.md:
+- Barks #1, #2: counted (2).
+- Talk #3 to #6 (the start-knot brush-off lines in the Fatima and Graham ink): not counted. They are ordinary person-chat lines, not in an `exchanges` or `phoneCalls` knot, and the service excludes the person-chat batch by design. They are voiced by the normal mission batch.
+- Pool #7 to #14: counted (8).
+- Exchanges #15 to #22: counted (8).
+Total 2 + 8 + 8 = 18 (Graham 9, Fatima 9, 621 characters, all uncached keyless). The 22 is the whole mission's new clip count (18 plus the 4 talk lines). SPOKEN_LINES.md now says so, with a V6 column. The rake does not miss any line that would be voiced: the 4 talk lines get voiced by the per-mission batch. PLAN.md section 8 still says V6 should read 22 and should read 18 (6 clips total at tier 1, of which 2 are in V6).

@@ -95,6 +95,71 @@ if (route === 'post') {
   log('after reload at post', { w: await waitAtPost(h, 'maya_chen', 20000), m: await mst() });
 }
 if (route === 'cooler') await coolerRoute();
+
+// Route inout: quick room changes around her office; maya_away must track and no not_here line plays at her desk.
+async function inoutRoute() {
+  await waitAtPost(h, 'maya_chen', 20000);
+  // enterRoom's pointer pathing gets stuck inside her office (feet at the spawn, "did-not-cross"); real arrow keys cross the door fine, so use them.
+  const hold = async (key, ms) => { await h.page.keyboard.down(key); await h.t(ms); await h.page.keyboard.up(key); await h.t(150); };
+  const holdUntil = async (key, room, limit = 1800, retried = false) => { await h.page.keyboard.down(key); const t = Date.now(); while (Date.now() - t < limit && (await ev(h, () => window.currentPlayerRoom)) !== room) await h.t(60); await h.page.keyboard.up(key); await h.t(150); if ((await ev(h, () => window.currentPlayerRoom)) !== room && !retried) { await dismiss(h); await hold('ArrowLeft', 150); await holdUntil(key, room, limit, true); } };
+  const step = async (label, room) => { const t = Date.now(); await dismiss(h); if (room === 'hallway_east') { const px = await ev(h, () => window.player.body.center.x); if (px > 205) await hold('ArrowLeft', Math.min(600, Math.round((px - 203) / 0.14))); else if (px < 200) await hold('ArrowRight', Math.round((203 - px) / 0.14)); await holdUntil('ArrowDown', 'hallway_east'); } else { await holdUntil('ArrowUp', 'maya_office'); await hold('ArrowUp', 450); } log(label, { ms: Date.now() - t, pos: await ev(h, () => [Math.round(window.player.body.center.x), Math.round(window.player.body.center.y)]), g: await G(), room_p: await ev(h, () => window.currentPlayerRoom) }); };
+  const deskTalk = async label => { const r = await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500); const c = await toChoices(); log(label, { ok: r?.ok, reason: r?.reason, g: await G(), seen: c.seen, choices: c.choices, notHere: /not here/i.test(JSON.stringify(c.choices || [])) }); await esc(); };
+  await step('hall', 'hallway_east');
+  await step('office (away flag should clear)', 'maya_office');
+  await deskTalk('desk talk 1 (baseline)');
+  const t0 = Date.now();
+  await step('A1 out to hall', 'hallway_east');
+  await step('A2 back to office', 'maya_office');
+  log('A total ms', Date.now() - t0);
+  await deskTalk('desk talk after A (expect no Not here)');
+  const t1 = Date.now();
+  await step('B1 hall', 'hallway_east');
+  await step('B2 office', 'maya_office');
+  await step('B3 hall', 'hallway_east');
+  log('B total ms (expect under 5000)', Date.now() - t1);
+  log('after B ends in hall (expect away true)', await G());
+  await step('B4 office again', 'maya_office');
+  await deskTalk('desk talk after B (expect no Not here)');
+  // also main office and back through
+  await step('C1 hall', 'hallway_east');
+  for (const r of ['main_office_area', 'hallway_east', 'maya_office']) { const x = await ev(h, async r => await window.__test.enterRoom(r), r); await h.t(300); log('C enterRoom ' + r, { ok: x.ok, g: await G(), room_p: await ev(h, () => window.currentPlayerRoom) }); }
+  await deskTalk('desk talk after C (expect no Not here)');
+}
+// Route attack: arm the trip with the real talk, then punch her while she is on it.
+async function attackRoute() {
+  await waitAtPost(h, 'maya_chen', 20000);
+  await ev(h, () => { window.__test.needs.set('fatima_begum', 'thirst', 100); window.__test.needs.set('graham_whitfield', 'thirst', 100); });
+  await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+  let r = await toChoices(); await pick("That's right"); r = await toChoices(); await pick('SAFETYNET sent me'); r = await toChoices(); await pick('Tell me everything'); r = await toChoices(); await pick("okay with that"); r = await toChoices();
+  await pick('keep investigating'); await h.t(500); await esc();
+  await go('hallway_east', 'main_office_area');
+  const t0 = Date.now(); let m = await mst();
+  while (Date.now() - t0 < 40000) { m = await mst(); if (m.room_p === 'main_office_area' && m.room === 'main_office_area' && m.job) break; await h.t(400); }
+  log('Maya on trip in main office?', m);
+  const punch = async () => { await ev(h, () => { const s = window.npcBehaviorManager.getBehavior('maya_chen').sprite; window.playerCombat.attack({ x: s.x, y: s.y }); }); await h.t(500); };
+  let hostile = null;
+  for (let i = 0; i < 14; i++) {
+    await ev(h, () => window.__test.moveToNear('maya_chen', { timeoutMs: 8000 })).catch(() => {});
+    await punch();
+    const c = await ev(h, () => ({ h: window.npcHostileSystem.isNPCHostile('maya_chen'), ko: window.npcHostileSystem.isNPCKO('maya_chen'), alarmed: window.gameState.globalVariables.m01_staff_alarmed }));
+    if (c.h || c.ko) { hostile = { punches: i + 1, c, m: await mst() }; break; }
+  }
+  log('hostile after punches', hostile);
+  let ko = false;
+  for (let i = 0; i < 30 && !ko; i++) { await ev(h, () => window.__test.moveToNear('maya_chen', { timeoutMs: 8000 })).catch(() => {}); await punch(); ko = await ev(h, () => window.npcHostileSystem.isNPCKO('maya_chen')); }
+  await h.t(1500);
+  log('after KO', { ko, g: await G(), m: await mst(), alarmed: await ev(h, () => window.gameState.globalVariables.m01_staff_alarmed), cooler_off: await ev(h, () => window.__test.needs.state('maya_chen')?.mode) });
+  await h.page.screenshot({ path: 'tmp/m01-maya-attack.png' });
+  // after KO: can she still be talked to, and does the critical path stay open (door to her office, hall, main office)?
+  const tk = await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+  log('talk to KO Maya', { tk, d: await dlg(h) });
+  await dismiss(h);
+  const nav = []; for (const r of ['hallway_east', 'main_office_area']) { const x = await ev(h, async r => await window.__test.enterRoom(r), r); nav.push([r, x.ok]); await h.t(600); }
+  log('navigation after attack', nav);
+  const st = await ev(h, () => window.__test.getState()); log('game state blocking?', { busy: !!(st.activeMinigame || st.blockingUi) });
+}
+if (route === 'inout') await inoutRoute();
+if (route === 'attack') await attackRoute();
 if (route === 'tipoff' || route === 'tellall' || route === 'topicchoices' || route === 'getstarted') {
   await waitAtPost(h, 'maya_chen', 20000);
   log('talk1', (await talk())?.ok);
@@ -126,6 +191,8 @@ if (route === 'tipoff' || route === 'tellall' || route === 'topicchoices' || rou
     await pick('keep investigating'); await h.t(500); await esc(); 
     const t0 = Date.now(); let m = await mst(); while (Date.now() - t0 < 9000 && !m.job) { await h.t(300); m = await mst(); }
     log('trip armed after close at hub', m);
+    if (!m.job) { const t1 = Date.now(); while (Date.now() - t1 < 15000 && !m.job) { await h.t(300); m = await mst(); } log('trip after a further 15 s', m); }
+    log('diag', await ev(h, () => ({ lv: window.__test.needs.state('maya_chen')?.levels, nlog: window.__test.needs.log(0).filter(e => e.npc === 'maya_chen').slice(-8), dlg: window.__test.minigame.isActive() })));
   } else {
     await pick("okay with that"); r = await toChoices(); log('back at hub choices', { seen: r.seen, choices: r.choices, g: await G() });
     await pick('keep investigating'); await h.t(500); await esc();
