@@ -24,6 +24,9 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
   "npcNeedsSeed": "demo_access_tour",
   "npcWindupMs": 0,
 
+  <%# Lights on everywhere (the default look), so the planted rogue AP can show its status LED. %>
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
   "startItemsInInventory": [
     { "type": "phone", "name": "Your phone", "takeable": true, "phoneId": "player_phone",
       "npcIds": ["ama_phone"], "observations": "Your work phone, with Ama a message away." },
@@ -292,6 +295,13 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
 
     "reception": {
       "type": "room_aw_merrin_lobby",
+      <%# The planted AP's status LED, drawn on its overlay once it is tucked in a plant. Offsets measured
+          against rogue_ap_tucked, as in lab_physical_pentest. %>
+      "lighting": {
+        "emitters": {
+          "planted_rogue_ap": { "color": "#3fa8ff", "radius": 5, "intensity": 0.7, "effect": "blink", "above": true, "offsetX": -4, "offsetY": 3 }
+        }
+      },
       "door_sign": "Reception",
       "connections": { "north": "open_plan", "west": "partner_office", "east": "meeting_room" },
       "objects": [
@@ -344,7 +354,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "id": "visitor_card",
           "name": "Visitor card 07",
           "card_id": "VISITOR-07",
-          "position": { "x": 6.4, "y": 4.3 },
+          "position": { "x": 5.2, "y": 4.3 },
           "takeable": true,
           "observations": "A visitor card from the front desk, numbered 07."
         },
@@ -990,7 +1000,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "type": "usb",
           "id": "kit_injector",
           "name": "Keystroke injector",
-          "sprite": "usb_bowl1",
+          "sprite": "icon_deviceB",
           "position": { "x": 3.55, "y": 4.25, "elevation": 30 },
           "takeable": true,
           "interactable": true,
