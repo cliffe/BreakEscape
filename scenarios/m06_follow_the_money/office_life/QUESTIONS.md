@@ -15,11 +15,11 @@ Options: (a) both, as planned; (b) swap one for another awareness-cast character
 
 Recommendation: (a). Both atlases are complete, neither voice is used in m06, and two extras are what a capacity-2 coffee point and the phone lever need. Plan sections 2.3, 2.4.
 
-## Q1. Readable screens: existing workstations or new screens
+## Q1. Readable screens
 
-Options: (a) make Dani's `trading_workstation` and Priya's `blockchain_workstation` (plain `pc`s, no lock, no contents today) owned, with `habits.screen` and lore `textVariants`, plus Tomasz's laptop; (b) leave those two PCs alone and add new screens beside them; (c) only Tomasz's laptop.
+Options: (a) one readable screen, on Tomasz's laptop (an extra, so he may own it); Dani and Priya own nothing; (b) also make Dani the owner of `trading_workstation` with a screen habit, as an exception to D78 (an owner counts as holding), with a build-time check that the PC follows him when his home is a floor tile (plan 3.4), falling back to (a); (c) no readable screen.
 
-Recommendation: (a). The two PCs are in no lock, clue or walkthrough step, so owning them changes nothing the lock and key diff sees, and a new screen next to an existing one adds clutter. Depends on the build check that a tile-home owner's PC follows `atPost` (plan 3.4); if it fails, the fallback is (c) for that NPC. Plan 2.4, 3.1, 3.2, 3.4.
+Recommendation: (a). It keeps D78 without an exception, and the two levers both have something to open. Plan 2.4, 3.1, 3.4, 4.
 
 ## Q2. The pizza lever
 
@@ -35,18 +35,18 @@ Recommendation: (a). It is the one lever that works through a system the player 
 
 ## Q4. Which existing NPCs move
 
-Options: (a) Dani and Priya, coffee only, Priya may cross to the trading floor; (b) Dani only; (c) Priya stays in the lab (no coffee) and Dani moves; (d) none.
+Options: (a) Dani only, coffee only, on his own floor; Priya stays in the lab with no needs; (b) Dani and Priya, with Priya's repeat-visit lines changed so they no longer place her in the lab; (c) none.
 
-Recommendation: (a). Both are free under D78 and D84: optional tasks, no items, no background, mappings held by HaX, V2 clear. Each is found at post first by a once-only first-talk break. If the build finds a repeat-visit line in Priya's ink that places her in the lab, she falls back to (c). Plan 2.2, 2.5, 2.7.
+Recommendation: (a). Dani is free under D78 and D84 (optional task, no items, no background, mappings held by HaX, V2 clear) and is found at post first by a once-only first-talk break. Priya's hub re-entry lines (`ink/m06_npc_analyst.ink:124`, `:127`) and her repeatable knot (`:323`, `:347`) place her at her lab desk, and the lab has no machine, so (b) means changing existing lines for little gain. Plan 2.2, 2.5, 2.7.
 
 ## Q5. Knock-outs on the floor
 
-Options: (a) a new global `floor_staff_ko`, set by HaX mappings on the KO of Dani, Priya, Irina and the two extras, switches off the floor coffee, copier and fridge for the rest of the mission; office life never touches `cover_strained`; (b) reuse `cover_strained`; (c) no trouble gate.
+Options: (a) a new global `floor_staff_ko`, set by appended HaX mappings on the KO of Dani, Irina and the two extras, switches off the floor coffee, copier and fridge for the rest of the mission; office life never touches `cover_strained`; (b) reuse `cover_strained`; (c) no trouble gate.
 
-Recommendation: (a). `cover_strained` feeds Irina's badge trust (`ink/m06_npc_irina_volkova.ink:336`, `:351`), Kemal and Satoshi, so (b) would change the critical path. (c) leaves staff queuing for coffee beside a body. Plan 2.8.
+Recommendation: (a). `cover_strained` feeds Irina's badge trust (`ink/m06_npc_irina_volkova.ink:336`, `:351`), Kemal and Satoshi, so (b) would change the critical path; the existing loop (`erb:1459` to `:1470`) already sets it for Dani and Irina and stays as it is. (c) leaves staff queuing for coffee beside a body. Either way the extras get a credits line each on `lerato_ko` and `tomasz_ko`. Plan 2.8.
 
 ## Q6. Do the extras talk to the player
 
 Options: (a) a short conversation each (about six lines: greeting, one question about the night, goodbye; no task, no item); (b) no conversation, chatter and exchanges only.
 
-Recommendation: (a). An NPC who ignores the player reads as a prop, and six lines each is a small voicing cost (included in the about 54 clips). Plan 6.
+Recommendation: (a). An NPC who ignores the player reads as a prop, and six lines each is a small voicing cost (included in the about 50 clips). Plan 6.
