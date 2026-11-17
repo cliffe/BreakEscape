@@ -29,9 +29,9 @@
 }
 
 /* Fixed layout with set value and status columns: the header and body cells share one column
-   grid whatever the row text; long parameter names break at underscores (and anywhere as a
-   backstop) inside column 1 rather than spilling into the value column (auto layout let the long parameter row shrink "Current Value"
-   and "Status" to their narrowest and wrap the header) */
+   grid whatever the row text. Auto layout let a long parameter row shrink "Current Value" and
+   "Status" to their narrowest and wrap the header. Long parameter names break at underscores
+   (and anywhere as a backstop) inside column 1 rather than spilling into the value column. */
 .sis-threshold-table {
     width: 100%;
     table-layout: fixed;

@@ -365,7 +365,7 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
 
 /* Display modal (gameDisplay) — extends confirm dialog styles */
 .game-display-dialog {
-    max-width: 600px;
+    max-width: 700px; /* keep in step with --be-dialog-max in hud.css: 700 less padding and frame leaves a 586-600px text column */
     max-height: 80vh;
     display: flex;
     flex-direction: column;

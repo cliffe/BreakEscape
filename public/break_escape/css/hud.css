@@ -41,15 +41,15 @@ html .game-confirm-dialog {
 
 .tutorial-prompt-modal { --be-dialog-max: 500px; }
 .game-confirm-dialog { --be-dialog-max: 460px; }
-.game-confirm-dialog.game-display-dialog { --be-dialog-max: 600px; }
+.game-confirm-dialog.game-display-dialog { --be-dialog-max: 700px; }
 
 html .tutorial-panel {
   max-height: calc((100vh - 120px) / var(--hud-zoom, 1));
 }
 
 html .game-display-dialog {
-  /* border-box: centred, so 116px each side clears the top HUD rows and the inventory bar (measured 390x844 and 1280x720) */
-  max-height: min(calc(80vh / var(--hud-zoom, 1)), calc((100vh - 232px) / var(--hud-zoom, 1)));
+  /* border-box: centred, so 116px (HUD px, scaled by the zoom) each side clears the top HUD rows and the inventory bar (measured 390x844 and 1280x720) */
+  max-height: min(calc(80vh / var(--hud-zoom, 1)), calc(100vh / var(--hud-zoom, 1) - 232px));
 }
 
 /* ===== PLAYER HUD BUTTONS (inside inventory) ===== */

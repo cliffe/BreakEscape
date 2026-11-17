@@ -134,6 +134,7 @@ export class SisConfigThresholdMinigame extends MinigameScene {
             this.addEventListener(rowEl, 'click', () => {
                 const index = Number(rowEl.getAttribute('data-row-index'));
                 const row = this.rows[index];
+                this._detailOpener = rowEl;
                 this.showDetail(row);
             });
             // Keyboard: Enter or Space opens the same detail pop-up as a click
@@ -190,6 +191,8 @@ export class SisConfigThresholdMinigame extends MinigameScene {
 
         const closeBtn = this.overlayEl.querySelector('#sis-detail-close');
         this.addEventListener(closeBtn, 'click', () => this.closeOverlay());
+        // Keyboard focus moves into the pop-up so Tab does not walk the rows underneath
+        closeBtn.focus({ preventScroll: true });
     }
 
     showCompare() {
@@ -275,6 +278,10 @@ export class SisConfigThresholdMinigame extends MinigameScene {
         this.overlayEl.classList.remove('show');
         this.overlayEl.innerHTML = '';
         this._hideSceneX(false);
+        // Hand focus back to the row that opened the detail
+        const opener = this._detailOpener;
+        this._detailOpener = null;
+        if (opener && opener.isConnected) opener.focus({ preventScroll: true });
     }
 
     // One X on screen at a time: the pop-ups carry their own X and the confirm has two named

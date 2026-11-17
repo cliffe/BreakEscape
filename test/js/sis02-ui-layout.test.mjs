@@ -1,7 +1,7 @@
 // sis02 UI fixes: (1) the SIS config table keeps its header and body on one fixed column
 // grid, long parameter names breaking inside column 1 instead of spilling into the value
-// column; (3) rows reachable from the keyboard; (2) the gameDisplay modal
-// (the NIS form) scrolls its body inside the frame with the shared pixel scrollbar and a 16px
+// column; (2) rows reachable from the keyboard, focus moving into and back out of the detail;
+// (3) the gameDisplay modal (the NIS form) scrolls its body inside the frame with the shared pixel scrollbar and a 16px
 // bottom pad, the frame adding no band of its own under it.
 // Run with: node --max-old-space-size=2048 test/js/sis02-ui-layout.test.mjs
 import test from 'node:test';
@@ -76,6 +76,29 @@ test('SIS rows: amber and red rows are keyboard reachable and Enter or Space ope
     assert.match(ruleBody(css, '.sis-row-clickable:focus-visible'), /outline:\s*2px solid/);
 });
 
+test('SIS detail: focus moves to the close button, and back to the row on close', async () => {
+    const { SisConfigThresholdMinigame: S } = await import(pathToFileURL(join(root, 'js/minigames/sis-config-threshold/sis-config-threshold-minigame.js')).href);
+    const { gc, fake } = await renderSis([{ parameter: 'A_B', currentValue: '1', status: 'AMBER', detailText: 'x' }]);
+    document.body.appendChild(gc);
+    fake.overlayEl = document.createElement('div');
+    gc.appendChild(fake.overlayEl);
+    fake.showDetail = S.prototype.showDetail;
+    fake.closeOverlay = S.prototype.closeOverlay;
+    // rebind so the row's click handler reaches the real showDetail
+    const tr = gc.querySelector('tbody tr');
+    const fresh = tr.cloneNode(true);
+    tr.replaceWith(fresh);
+    S.prototype.bindEvents.call(fake);
+    fresh.focus();
+    fresh.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    const closeBtn = fake.overlayEl.querySelector('#sis-detail-close');
+    assert.ok(closeBtn, 'detail open');
+    assert.equal(document.activeElement, closeBtn, 'focus is on the detail close button');
+    closeBtn.click();
+    assert.equal(document.activeElement, fresh, 'focus returns to the row');
+    gc.remove();
+});
+
 test('SIS table: the phone card layout drops the fixed layout and min-width', () => {
     const css = readFileSync(join(root, 'css/sis-config-threshold-minigame.css'), 'utf8');
     const media = css.slice(css.indexOf('@media (max-width: 600px)'));
@@ -97,7 +120,9 @@ test('gameDisplay: the body is a pixel-scroll pane with a 16px bottom pad inside
     assert.match(dlg, /box-sizing:\s*border-box/);
     assert.match(ruleBody(css, '.game-display-title'), /line-height:\s*20px/);
     const hud = readFileSync(join(root, 'css/hud.css'), 'utf8');
-    assert.match(hud, /html \.game-display-dialog\s*\{[^}]*min\([^}]*100vh - 232px/);
+    assert.match(hud, /html \.game-display-dialog\s*\{[^}]*min\([^}]*100vh \/ var\(--hud-zoom, 1\) - 232px/);
+    assert.match(css, /\.game-display-dialog\s*\{\s*max-width:\s*700px/);
+    assert.match(hud, /\.game-confirm-dialog\.game-display-dialog\s*\{\s*--be-dialog-max:\s*700px/);
     const b = ruleBody(css, '.game-display-body');
     assert.match(b, /padding-bottom:\s*16px/);
     assert.match(b, /overflow-y:\s*auto/);
