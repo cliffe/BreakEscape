@@ -31,8 +31,15 @@ A lore-only tablet left on the sofa while the pair are at the kettle, showing th
 
 ## Q5. Voicing spend
 
-About 28 new clips (16 pool lines, about 11 exchange lines, 1 bark) plus 4 re-voiced head-count lines on Q2 (a).
+About 24 new clips (8 pool lines at the kettle, 4 talk lines, about 11 exchange lines, 1 bark) plus 4 re-voiced head-count lines on Q2 (a). Q6 (b) adds 8 cooler pool lines.
 
 - (a) Approve the sample first (`DIALOGUE_SAMPLE.md`), then the spend, with the four re-voices as a separate yes. **Recommended.**
 - (b) As (a), and add one voiced debrief line scolding a KO of the night staff (as the guard has at `ink/m04_closing_debrief.ink:158`): one more clip.
 - (c) Build unvoiced and hold the release until voiced.
+
+## Q6. A pair at the reception cooler
+
+The cooler's second standing cell is blocked by the coffee table and the planter, so the plan gives it one user: Joanne drinks alone and the pair only talk at the ops-office kettle, which opens once the player has Vance's card. Reception has no chatter before then.
+
+- (a) Keep the cooler at one user. No dressing change. **Recommended**: reception stays quiet at four in the morning, and the talk waits for the kettle.
+- (b) Move the planter one tile (a room-dressing change, checked through mission-room-dressing and the object position diff) so the cooler takes a pair, with a `cooler` pool of four lines each (8 more clips) and early chat in reception.

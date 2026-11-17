@@ -14,4 +14,4 @@ Branch `plan/ol-m04`, base main `3e00651a8`. Campaign mission (m04), so the skil
 | `disableAttacks` | not set: every NPC can be attacked |
 | Start room | `main_entrance` (`:564`) |
 | `patrolOverride` | none in the scenario |
-| Walkthrough | `scenarios/m04_critical_failure/WALKTHROUGH.md` (the mission's QA walkthrough; check the name at build time) |
+| Walkthrough | No current file in the mission folder. Player walkthrough: the HacktivityLabSheets page at `mission.json:7`. Regression routes: `scripts/ink_runtime_check/m04_routes/`. `stale_TESTING_WALKTHROUGH.md` (last updated 2026-10-01) is reference only |

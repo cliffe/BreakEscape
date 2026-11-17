@@ -17,16 +17,19 @@ Branch `plan/ol-m04`, base main `3e00651a8`. Inputs: `BASELINE.md`, the mission-
 
 ## 1. Aim and tier
 
-**Aim.** Albion Energy Storage at five past four in the morning is a skeleton site. Reception gets two people who have come in early or are working through: they sit on the sofa, get a drink at the cooler, and, once Vance's first meeting is over, make a brew at the ops-office kettle. They talk about the six o'clock contractor swap, the night shift being cut, and being told to stay out of the halls. When the site is evacuated they are gone. Nothing else changes: the security office stays empty and dark, the SCADA room stays empty, Vance stays at his desk, and the halls belong to the operatives.
+**Aim.** Albion Energy Storage at five past four in the morning is a skeleton site. Reception gets two people who have come in early or are working through: they sit on the sofa, get a drink at the cooler, and, once the player has met Vance and has his card, make a brew at the ops-office kettle. At the kettle they talk about the six o'clock contractor swap, the night shift being cut, and being told to stay out of the halls. When the site is evacuated they are gone. Nothing else changes: the security office stays empty and dark, the SCADA room stays empty, Vance stays at his desk, and the halls belong to the operatives.
 
-**Tier 2, small.** Two ambient extras with needs, two capacity-2 chat points (the reception cooler and the ops-office kettle), three exchanges, two mapped breaks with one-way couplings, one trouble global, one evacuation exit, one evacuation bark. No new room, no levers, no openings, no engine change, no new art.
+**Tier 2, small.** Two ambient extras with needs and a one-line talk each, one capacity-1 drink point (the reception cooler), one capacity-2 chat point (the ops-office kettle), three exchanges, two mapped breaks and one one-way coupling, one trouble global, one evacuation exit, one evacuation bark. No new room, no levers, no openings, no engine change, no new art.
+
+The cooler takes one user because its second cell is blocked: the coffee table's legacy desk box closes the cell to its west, the east wall and the planter close the others, and the engine's beside-cell search then lands inside the cooler sprite (`npc-needs.js:5663` to `:5673`; `npc-pathfinding.js:376` to `:390`). Moving the planter one tile would let the cooler take a pair; that is a dressing change and is offered as `QUESTIONS.md` Q6.
 
 The missions plan set m04 at Tier 1 (`docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN.md:339`: ops-office kettle, desk presets for Vance confined to his room, a little shift chatter). That tier cannot be built as written: Vance is the only person in the ops office and is not free (section 2A), and chatter needs a pair at one capacity-2 object, so Tier 1 would add machines nobody uses and no talk. Tier 2 small is the smallest version that talks; Tier 0 is the alternative (`QUESTIONS.md` Q1).
 
 What the player meets, by beat:
 - **Arrival (04:05).** The briefing plays over reception as now. Behind it, two people sit on the sofa by the cooler. The guard challenges the player as before; the pair take no part.
-- **Back into reception from the ops office.** One of them gets up for water about 2 s after the player walks in and the other follows: a short chat at the cooler.
-- **After Vance's first meeting.** The kettle comes on. Coming back into the ops office from deeper in the site, the player may find the pair at the kettle, a few tiles from Vance, talking about the six o'clock swap.
+- **Back into reception from the ops office.** Joanne gets up for water about 2 s after the player walks in, drinks, and sits down again.
+- **Talking to them.** Either newcomer answers with one line and goes back to what they were doing; after trouble, a curt one.
+- **Once the player has met Vance and holds his card** (cloned or picked up). The kettle comes on. Coming back into the ops office from deeper in the site, the player may find the pair at the kettle, a few tiles from Vance, talking about the six o'clock swap.
 - **Evacuation** (Vance sounds it, the hydrogen alarm, or a bank vents). Joanne calls it, both stop what they are doing, and on the player's next room entry they are gone for the rest of the night.
 - **Trouble.** If the player strikes either of them, Vance or the guard, the cooler and kettle switch off and the pair go back to the sofa and stay there.
 
@@ -66,13 +69,13 @@ Both atlases have 288 frames: 8 seated, and 8 each of `pose_drink`, `pose_use` a
 
 | NPC | Class | Post | Leash | Needs | Groups and avoids | Habits | Beats protected by | Gate global, set by, lead time | If attacked mid-walk |
 |---|---|---|---|---|---|---|---|---|---|
-| `ibrahim_diallo` | ambient | reception sofa, west place (**estimate** (6.7,7.4)), seated | `needsRooms: [main_entrance, operations_office]` | `thirst` (cooler), `caffeine` (kettle) | `needsCompany.groups: [aes_night]` | none | no story beat reads him | kettle: `ops_kettle_off` (2.7); no lead time needed, the kettle starts off | carries nothing; stays where he fell, hostile on the leash; `aes_staff_off` set |
-| `joanne_pell` | ambient | reception sofa, east place (**estimate** (7.5,7.4)), seated | as Ibrahim | as Ibrahim | as Ibrahim | none | as Ibrahim | as Ibrahim | as Ibrahim |
+| `ibrahim_diallo` | ambient | reception sofa, west place (**estimate** (6.7,7.47)), seated | `needsRooms: [main_entrance, operations_office]` | `thirst` (cooler), `caffeine` (kettle) | `needsCompany.groups: [aes_night]` | none | no story beat reads him | kettle: `ops_kettle_off` (2.7); no lead time needed, the kettle starts off and opens only after the clone or pickup | carries nothing; stays where he fell, hostile on the leash; `aes_staff_off` set |
+| `joanne_pell` | ambient | reception sofa, east place (**estimate** (7.47,7.47)), seated | as Ibrahim | as Ibrahim | as Ibrahim | none | as Ibrahim | as Ibrahim | as Ibrahim |
 | `robert_vance` | story-critical / holding, pinned | unchanged | n/a | none | n/a | none | protection 1 (no needs) | n/a | unchanged; his attack and KO now also set `aes_staff_off` |
 | `security_guard` | story-critical / witness | unchanged | n/a | none | n/a | none | protection 1 | n/a | unchanged; his attack, hostility and KO also set `aes_staff_off` |
 | all others | phone, cutscene, hostile | unchanged | n/a | none | n/a | none | protection 1 | n/a | unchanged |
 
-Gated machine: the kettle. Its only users are the two newcomers; while it is off they have only the cooler (thirst) and their `caffeine` waits. No lever or security window shares it.
+Gated machine: the kettle. Its only users are the two newcomers; while it is off they have only the cooler (thirst, one at a time) and their `caffeine` waits. No lever or security window shares it. While it is off the pair say nothing to each other: the exchanges and pools wait for the kettle.
 
 ### 2.4 Posts and seats
 
@@ -93,12 +96,13 @@ Slow decay keeps them seated most of the night; the mapped breaks give the timin
 
 ### 2.7 Machines, the kettle gate and the trouble global
 
-- **Cooler** (`water_cooler`, reception): preset cooler (thirst and social, capacity 2, chatter `cooler`). Hand-written `useFrom` and beside cell so both users stand clear of the guard (body centre (234,128)) and of the speed-gate lane: **estimate** first cell (8,6), second (7,6), at least 64 px from the guard. `affordance.overhearRadius: 360`, `useSeconds: 25` so an exchange of four lines can finish. `offWhen: "aes_staff_off"`.
-- **Kettle** (`kettle`, ops office): preset kettle, with `affordance` overrides `capacity: 2`, `chatter: "coffee"`, `useSeconds: 25`, `useFrom: { dx: 0, dy: 2 }` (the counter's collision runs to y 92, so the cell below the kettle's own is blocked), `queue: false`, `overhearRadius: 360`. **Estimate** first cell (6,3), second (7,3), clear of the north door lane and about 3.5 tiles from Vance at (5,7). `offWhen: "ops_kettle_off"`.
-- **`ops_kettle_off`**, declared `true`. Two causes keep it on: Vance not yet met, and trouble or evacuation. Mappings on `agent_0x99`, appended last:
-  - `global_variable_changed:vance_met`, `value === true && !globalVars.aes_staff_off`, `onceOnly`, sets `ops_kettle_off: false`;
+- **Cooler** (`water_cooler`, reception): preset cooler with `affordance` overrides `capacity: 1`, `chatter: false` (no pair can form), `useSeconds: 12`, `queue: false`, and a hand-written `useFrom` at the cell below the cooler, **estimate** (8,6), body centre (272,208): open, at least 64 px from the guard (body centre (234,128)) and clear of the speed-gate lane. A second user who finds it busy turns back and tries later. `offWhen: "aes_staff_off"`.
+- **Kettle** (`kettle`, ops office): preset kettle, with `affordance` overrides `capacity: 2`, `chatter: "coffee"`, `useSeconds: 25`, `useFrom: { dx: 0, dy: 2 }` (the counter's collision runs to y 92, so the cell below the kettle's own is blocked), `queue: false`, `overhearRadius: 360`. **Estimate** first user at (210,117), the beside cell to its east at (242,117), both open and about 118 px from Vance's body centre (160,224). The north door lane is clear if the door sits at the room's west corner (x 48), as `doors.js:196` to `:206` gives with reception at (0,0); the build confirms the door position before writing the cells. `offWhen: "ops_kettle_off"`.
+- **`ops_kettle_off`**, declared `true`. Three causes keep it on: Vance not yet met, his card not yet in the player's hands, and trouble or evacuation. Mappings on `agent_0x99`, appended last:
+  - `global_variable_changed:vance_met`, `value === true && globalVars.vance_provided_keycard === true && !globalVars.aes_staff_off`, `onceOnly`, sets `ops_kettle_off: false`;
+  - `global_variable_changed:vance_provided_keycard`, `value === true && globalVars.vance_met === true && !globalVars.aes_staff_off`, `onceOnly`, sets `ops_kettle_off: false`;
   - `global_variable_changed:aes_staff_off`, `value === true`, `onceOnly`, sets `ops_kettle_off: true`.
-  Neither cause is ever cleared (`vance_met` and `aes_staff_off` are monotonic), so no other clearing mapping is needed. Why the gate: the player's first meeting with Vance is where the card clone happens (`vance_met` is set only after it, `ink/m04_npc_robert_vance.ink:616`), and the office should be just Vance and the player then. A KO route that never sets `vance_met` keeps the kettle off all night, which is fine.
+  All three causes are monotonic, so whichever of `vance_met` and `vance_provided_keycard` turns true second opens the kettle, and nothing closes it except trouble. Why both: the player's meeting with Vance is where the card clone happens, and the office should be just Vance and the player then. `vance_met` alone is not enough, because the cover route (`ink/m04_npc_robert_vance.ink:230` to `:240`, `:329` to `:334`) and the ally route (`:631` to `:634`) set it before any clone, and the clone can follow in a later talk through the hub's safety net (`:308` to `:317`, `:380` to `:384`). `vance_provided_keycard` is set only when the card is cloned (`card_cloned`, 1279 to 1285) or picked up (`item_picked_up:keycard`, 1272 to 1277), and is declared `false` (3025). A KO route that never sets `vance_met` keeps the kettle off all night, which is fine.
 - **`aes_staff_off`**, declared `false`, never cleared. Set by `onceOnly` mappings on `agent_0x99`, appended last:
   - `npc_attacked:ibrahim_diallo`, `npc_attacked:joanne_pell`, `npc_attacked:robert_vance`, `npc_attacked:security_guard` (emitted at `systems/player-combat.js:461`);
   - `global_variable_changed:guard_hostile`, `value === true` (the guard turns on the player without being struck);
@@ -110,23 +114,24 @@ With the machines off, a walker or queued user turns back (`_turnBack(s, 'off')`
 
 ### 2.8 What starts a break
 
-- **Cooler (B1).** On `joanne_pell`: `room_entered:main_entrance`, condition `data.previousRoom === 'operations_office' && !globalVars.aes_staff_off`, `delayMs: 2000`, `cooldown: 150000`, `needs: { set: { thirst: 20 } }`. The player sees her get up.
+- **Cooler (B1).** On `joanne_pell`: `room_entered:main_entrance`, condition `data.previousRoom === 'operations_office' && !globalVars.aes_staff_off`, `delayMs: 2000`, `cooldown: 150000`, `needs: { set: { thirst: 20 } }`. The player sees her get up, drink and sit down again. `data.previousRoom` is in the `room_entered` payload (`core/rooms.js:3231` to `:3240`).
 - **Kettle (B2).** On `ibrahim_diallo`: `room_entered:operations_office`, condition `data.previousRoom !== 'main_entrance' && !globalVars.ops_kettle_off`, `delayMs: 2000`, `cooldown: 150000`, `needs: { set: { caffeine: 20 } }`. The player is coming back from the SCADA room or security office; Ibrahim walks in through the north door and the kettle boils.
 
-### 2.9 Coupled breaks (one way each)
+### 2.9 Coupled break (one way)
 
-- On `ibrahim_diallo`: `npc_use_started:water_cooler`, condition `data.npcId === 'joanne_pell' && !globalVars.aes_staff_off`, `cooldown: 150000`, `needs: { set: { thirst: 20 } }`.
 - On `joanne_pell`: `npc_use_started:kettle`, condition `data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off`, `cooldown: 150000`, `needs: { set: { caffeine: 20 } }`.
 
-Each machine is coupled one way only, so neither holds a machine for minutes.
+The kettle is coupled one way only, so it is never held for minutes. The cooler has no coupling: it takes one user.
 
 ### 2.10 Long enough to talk; hearing
 
-`useSeconds: 25` on both machines; the partner arrives a few seconds after the first, so the overlap is about 18 to 20 s (**estimate**; the build times five pair uses). Exchanges are three or four short lines. Reception and the ops office share a door, so chatter carries faintly through it when open and not at all when shut; the pair is placed so the player walks in on them.
+`useSeconds: 25` on the kettle; the partner arrives a few seconds after the first, so the overlap is about 18 to 20 s (**estimate**; the build times five pair uses). Exchanges are three or four short lines. Reception and the ops office share a door, so kettle chatter carries faintly into reception when it is open and not at all when shut; the player walks in on the pair from the north door or from reception.
 
 ### 2.11 Evacuation exit
 
-Each newcomer gets, appended last, one mapping: `room_entered:*` (the dispatcher's prefix wildcard, `systems/npc-events.js:54` to `:56`), condition `globalVars.aes_staff_evacuated === true`, `onceOnly`, `setVisible: false`. They vanish at the player's next room change after the alarm, wherever the player is, including re-entering reception. Saved visibility restores the hide on reload (`restoreNpcVisibility`). If the validator does not accept the wildcard pattern, the fallback is one `onceOnly` mapping per room (nine per newcomer), written out, never in an ERB loop.
+Each newcomer gets, appended last, one mapping: `room_entered:*` (the dispatcher's prefix wildcard, `systems/npc-events.js:52` to `:57`), condition `globalVars.aes_staff_evacuated === true`, `onceOnly`, `setVisible: false`. They vanish at the player's next room change after the alarm, wherever the player is, including re-entering reception. The `onceOnly` key is per handler (`npc-manager.js:1264`) and a failed condition does not count as a fire, so the hide fires once, after evacuation. `setVisible: false` hides the NPC, unseats a sitter at once and is saved (`npc-manager.js:1665` to `:1668`, `npc-behavior.js:384` to `:430`); `game.js:1830` restores it on reload. The validators accept the pattern (start-room NPCs are skipped by the `room_entered` checks, `scripts/validate_scenario.rb:4659`, `:4729`; the schema's `eventPattern` is a plain string). If a validator run at build shows otherwise, the fallback is one `onceOnly` mapping per room (nine per newcomer), written out, never in an ERB loop.
+
+A newcomer hidden mid-use has no update to release its machine (`npc-behavior.js:384` to `:430`). Both machines are off by then (`aes_staff_off` is set with `aes_staff_evacuated`), so nobody waits on them; L6 checks it.
 
 If the player stays in reception through the alarm, the pair sit on the sofa until the player leaves the room. This is accepted: the alarm usually goes off in the ops office or by phone elsewhere.
 
@@ -161,14 +166,15 @@ Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. 
 ```json
 { "id": "joanne_pell", "displayName": "Joanne Pell", "npcType": "person", "gender": "female",
   "spriteSheet": "joanne_pell", "voice": { "name": "Zephyr", "style": "<section 2.2>", "language": "en-GB" },
-  "position": { "x": 7.5, "y": 7.4 }, "seated": true,
-  "needsHome": { "x": 7.5, "y": 7.4 }, "needsRooms": ["main_entrance", "operations_office"],
+  "storyPath": "scenarios/m04_critical_failure/ink/m04_npc_joanne_pell.json",
+  "position": { "x": 7.47, "y": 7.47 }, "seated": true,
+  "needsHome": { "x": 7.47, "y": 7.47 }, "needsRooms": ["main_entrance", "operations_office"],
   "needsCompany": { "groups": ["aes_night"] }, "chatterCooldownMin": 2,
   "globalVarOnKO": "joanne_ko",
   "behavior": { "hostile": { "leash": true } },
   "needs": { "thirst":   { "initial": 90, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 },
              "caffeine": { "initial": 85, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 } },
-  "chatter": { "coffee": ["..."], "cooler": ["..."] },
+  "chatter": { "coffee": ["..."] },
   "eventMappings": [
     { "eventPattern": "room_entered:main_entrance",
       "condition": "data.previousRoom === 'operations_office' && !globalVars.aes_staff_off",
@@ -182,7 +188,7 @@ Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. 
       "onceOnly": true, "setVisible": false } ] }
 ```
 
-`ibrahim_diallo` mirrors this with his own voice and post (6.7,7.4), `globalVarOnKO: "ibrahim_ko"`, the kettle break B2 and the cooler coupling instead of B1 and the kettle coupling, no bark, and the same evacuation hide. He owns the exchanges (the lower id, `_findExchange` tries both in id order):
+`ibrahim_diallo` mirrors this with his own voice and post (6.7,7.47), `storyPath` `scenarios/m04_critical_failure/ink/m04_night_staff.json`, `globalVarOnKO: "ibrahim_ko"`, the kettle break B2 instead of B1 and the kettle coupling, no bark, and the same evacuation hide. He owns the exchanges (the lower id, `_findExchange` tries both in id order). The exchange text is read from the owner's story JSON (`systems/npc-needs-chatter.js:183` to `:187`); an owner with no `storyPath` returns no lines and the exchange stays pending for ever (`npc-needs.js:3001` to `:3002`), so his `storyPath` is required:
 
 ```json
 "exchanges": [
@@ -194,7 +200,7 @@ Comments at 238, `:429` and `ink/m04_npc_voltage.ink:432` are updated to match. 
     "requireGlobal": { "vance_met": true, "aes_staff_off": false, "ibrahim_ko": false, "joanne_ko": false } } ]
 ```
 
-The knots live in a new ink file, `ink/m04_night_staff.ink` (compiled JSON beside it), each ending `-> DONE`. Neither newcomer is talkable: no `storyPath` conversation hub, so no "upset" or re-entry lines are needed. If the engine needs a `storyPath` to find exchange knots, the file is the `storyPath` of `ibrahim_diallo` with a `start` knot that exits at once (`#exit_conversation`), and the build checks interaction does nothing visible.
+The exchange knots live in a new ink file, `ink/m04_night_staff.ink` (compiled JSON beside it), each ending `-> DONE`. The same file is Ibrahim's conversation: a `start` knot with one line, or a curt line when `aes_staff_off` is true, then `#exit_conversation`. Joanne's conversation is `ink/m04_npc_joanne_pell.ink`, the same shape. No choices, no hub, no re-entry knot: every talk plays the one line again. Neither line places its speaker ("at my desk", "on the sofa"), so it holds wherever the chat opens; neither NPC has a `chatBackground`, so the chat shows the room they stand in (`minigames/person-chat/person-chat-background.js:6` to `:15`). A chat freezes a needs NPC where it stands and the trip resumes when it closes (`npc-needs.js:1434` to `:1457`). Each file declares `VAR aes_staff_off = false` so the global syncs into the story.
 
 ## 2A. Story-safe movement (D78, D84 b)
 
@@ -205,7 +211,7 @@ The newcomers' presence in the ops office after `vance_met` meets two existing m
 ## 3. Rooms and objects
 
 - Scenario `officePresets: true`.
-- `main_entrance`: declare `{ "type": "water_cooler", "id": "reception_cooler", "name": "Water cooler" }` with no `position` (claimed from the map), plus the affordance and `offWhen` of section 2.7. One `water_cooler1` in the map, so no twin.
+- `main_entrance`: declare `{ "type": "water_cooler", "id": "reception_cooler", "name": "Water cooler" }` with no `position` (claimed from the map), plus the capacity-1 affordance and `offWhen` of section 2.7. One `water_cooler1` in the map, so no twin. The coffee table and planter stay where they are.
 - `operations_office`: declare `{ "type": "kettle", "id": "ops_kettle", "name": "Kettle" }`, no `position`, with the overrides of section 2.7. One `kettle1`, no twin. The microwave, fridge and `uni_sofa2` stay decor.
 - Nothing in the security office, SCADA room, halls, workshop, plant room or dock.
 - V1 must show presets on these two objects only. Vance's BMS pc has no id, so it gains none; the build confirms.
@@ -223,7 +229,8 @@ None built. An optional lore item (a work-permit tablet left on the sofa while t
 ## 6. Spoken lines
 
 All in scenario data or ink, voiceable, listed in `SPOKEN_LINES.md` at slice 5:
-- Pools: `cooler` and `coffee`, four lines each per newcomer: 16 lines, each at most 40 characters, no variables, no speaker prefix, no repeat of a bark.
+- Pools: `coffee`, four lines per newcomer: 8 lines, each at most 40 characters, no variables, no speaker prefix, no repeat of a bark or of the newcomer's talk line. The cooler has no pool (capacity 1, no pair).
+- Talk lines: one per newcomer, plus a curt variant after trouble: 4 lines, in `ink/m04_night_staff.ink` and `ink/m04_npc_joanne_pell.ink`. Neither places its speaker.
 - Exchanges, three knots of three or four lines each, about 11 lines:
   - `ex_six_oclock`: the contractors arrive at six for the module swap; Joanne has eleven inductions to run; Ibrahim has the reception PCs to finish first.
   - `ex_four_on_nights`: there used to be four on nights; now it is the crew, Vance and the gate.
@@ -231,7 +238,7 @@ All in scenario data or ink, voiceable, listed in `SPOKEN_LINES.md` at slice 5:
 - One bark (Joanne, evacuation).
 - Changed existing lines: the four head-count lines of section 2.13, only on Q2 option (a).
 
-No line names a credential, a card, the attack, the telemetry or the operatives. `DIALOGUE_SAMPLE.md` (four pool lines and `ex_six_oclock`) goes to the user before any line is written; built text matches it word for word.
+No line names a credential, a card, the attack, the telemetry or the operatives. `DIALOGUE_SAMPLE.md` (four pool lines, the two talk lines and `ex_six_oclock`) goes to the user before any line is written; built text matches it word for word.
 
 ## 7. Sync budget
 
@@ -244,15 +251,15 @@ No line names a credential, a card, the attack, the telemetry or the operatives.
 | Saved NPC visibility keys | 2 | one per newcomer, set by the evacuation hide |
 | Saved NPC hostility keys | up to 2 | one per struck newcomer |
 | Reveal globals | 0 | |
-| Mappings with `cooldown`, no `onceOnly` | 4 | B1, B2, two couplings |
-| `onceOnly` mappings | 15 | trouble 7 (four attacks, `guard_hostile`, two KO safety nets); evacuation 3; kettle switch 2; bark 1; evacuation hides 2 |
+| Mappings with `cooldown`, no `onceOnly` | 3 | B1, B2, the kettle coupling |
+| `onceOnly` mappings | 16 | trouble 7 (four attacks, `guard_hostile`, two KO safety nets); evacuation 3; kettle switch 3 (two openers, one closer); bark 1; evacuation hides 2 |
 | Servings, office-life items | 0 | |
 
 All bounded booleans sent as per-key deltas; needs state is not saved. None is read by a task, objective or lock, so a forged value buys nothing. The per-room hide fallback (2.11) would add 16 `onceOnly` mappings; re-counted here if used.
 
 ## 8. Field names to write
 
-`officePresets`, `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`; on objects, object-level `offWhen` and `affordance` (`capacity`, `chatter`, `overhearRadius`, `useSeconds`, `useFrom`, `queue`). On event mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, `bark`, and the `needs` action `{ "set": { "<need>": <level> } }`. Machines by base type name (`water_cooler`, `kettle`). Append new mappings at the end of `agent_0x99`'s list so existing `onceOnly` keys keep their index. No `||` in mapping conditions or `requireGlobal`. `scenario.json.erb` holds ERB comments with `%>`: edit with string replacement. Field names at `FormatUpgrade.current`; no office-life key inside an ERB loop.
+`officePresets`, `storyPath`, `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`; on objects, object-level `offWhen` and `affordance` (`capacity`, `chatter` (a pool name, or `false` on the cooler), `overhearRadius`, `useSeconds`, `useFrom`, `queue`). On event mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, `bark`, and the `needs` action `{ "set": { "<need>": <level> } }`. Machines by base type name (`water_cooler`, `kettle`). Append new mappings at the end of `agent_0x99`'s list so existing `onceOnly` keys keep their index. No `||` in mapping conditions or `requireGlobal`. `scenario.json.erb` holds ERB comments with `%>`: edit with string replacement. Field names at `FormatUpgrade.current`; no office-life key inside an ERB loop.
 
 ## 9. Costs and decisions
 
@@ -262,43 +269,45 @@ All bounded booleans sent as per-key deltas; needs state is not saved. None is r
 | Head count | four re-voiced lines and one credit | Q2: recommend thirteen |
 | Two extras from the course cast | no art | Q3: recommend Ibrahim Diallo and Joanne Pell |
 | Permit tablet opening | one object, lore text | Q4: recommend no |
-| Voicing | about 28 new clips (16 pool lines, about 11 exchange lines, 1 bark) plus 4 re-voiced | Q5: yes on `DIALOGUE_SAMPLE.md`, then a separate yes on the spend and on the four re-voices |
+| Voicing | about 24 new clips (8 pool lines, 4 talk lines, about 11 exchange lines, 1 bark) plus 4 re-voiced | Q5: yes on `DIALOGUE_SAMPLE.md`, then a separate yes on the spend and on the four re-voices |
+| Planter move so the cooler takes a pair | one dressing change, 8 more pool lines | Q6: recommend no |
 | Engine changes | none | |
 | Changed existing lines | four (Q2 a); credits and debrief conditions change logic only | |
 
-Decided here, with reasons: nobody in the existing cast moves (2A); the security office and SCADA room stay empty (their design); the kettle waits for `vance_met` so the clone meeting is private; evacuation hides on the next room change instead of a scripted walk-out (reception has no exit the pair could use, and `patrolOverride` on a needs NPC is ruled out).
+Decided here, with reasons: nobody in the existing cast moves (2A); the security office and SCADA room stay empty (their design); the kettle waits for both `vance_met` and `vance_provided_keycard` so every meeting before the card is in hand, the clone included, is private; the cooler takes one user because its second cell is blocked; both newcomers are talkable with one line because the exchange owner needs a `storyPath`; evacuation hides on the next room change instead of a scripted walk-out (reception has no exit the pair could use, and `patrolOverride` on a needs NPC is ruled out).
 
 ## 10. Test plan
 
 ### 10.1 Walkthrough
 
-The critical path end to end, unchanged, on both the clone route and the KO-Vance route. VM flags stay required (seeded through `new-game.rb` flags).
+The critical path end to end, unchanged, on the clone route and the KO-Vance route, plus `scripts/ink_runtime_check/m04_routes/` and the steps of the lab sheet at `mission.json:7`. VM flags stay required (seeded through `new-game.rb` flags).
 
 ### 10.2 Live office-life checks (walking pace, five tries each)
 
 - **L1** Fresh game: both newcomers seated on the sofa at load, behind the briefing; the guard's sight check fires as before with the pair present.
-- **L2** Enter reception from the ops office: Joanne leaves for the cooler about 2 s later, Ibrahim follows, both reach `using`; their cells are at least 64 px from the guard and the speed-gate lane stays clear.
-- **L3** Before `vance_met`, neither newcomer enters the ops office in ten needs-minutes (kettle off). Clone Vance's card with both newcomers' needs forced low by B1 beforehand: no newcomer in the ops office.
-- **L4** After `vance_met`, return to the ops office from the SCADA room: Ibrahim enters by the north door within about 4 s, Joanne follows, both reach `using` at the kettle cells, neither blocks the north door lane or touches Vance's tile.
+- **L2** Enter reception from the ops office: Joanne leaves for the cooler about 2 s later, reaches `using` at (272,208) (**estimate**), at least 64 px from the guard, with the speed-gate lane clear, and walks back to the sofa. If Ibrahim's thirst comes due while she uses it, he turns back or waits and goes later; nobody stands inside the cooler sprite.
+- **L3** Before the kettle opens, neither newcomer enters the ops office in ten needs-minutes. Three routes: the clone in the first meeting; the cover route ("I'll start on the staff records") then the clone in a later talk through the hub; the ally route ("I'm going.") then the clone later. On each, `ops_kettle_off` stays `true` until the card is in hand and no newcomer is in the ops office during any Vance conversation before then.
+- **L4** After `vance_met` and `vance_provided_keycard`, confirm the north door's position, then return to the ops office from the SCADA room: Ibrahim enters by the north door within about 4 s, Joanne follows, both reach `using` at the kettle cells, neither blocks the north door lane or touches Vance's tile.
 - **L5** Each exchange plays once; `ex_stay_out_of_the_halls` never before `vance_met`.
-- **L6** Evacuation on each cause in turn (`crew_warned` in person, `crew_warned` by phone, `hydrogen_alarm` from the timer): bark heard where in range; machines off; on the next room entry both are hidden, including on re-entering reception; a seated newcomer leaves no sprite on the sofa (rendered).
+- **L6** Evacuation on each cause in turn (`crew_warned` in person, `crew_warned` by phone, `hydrogen_alarm` from the timer): bark heard where in range; machines off; on the next room entry both are hidden, including on re-entering reception; a seated newcomer leaves no sprite on the sofa (rendered); a newcomer hidden mid-use at the kettle leaves it free (`__test.needs` shows no user).
 - **L7** The guard's challenge and `checkpoint_passed` unchanged with the pair present.
+- **L8** Talk to each newcomer seated, walking to the cooler and at the kettle: one line, the background is the room they stand in, and the trip resumes after the chat closes. After trouble, the curt line.
 
 ### 10.3 Reload
 
-Reload before `vance_met` (kettle still off), after it (kettle on, posts reset, needs at `initial`), and after evacuation (both stay hidden). Mapped breaks do not double-fire.
+Reload before the kettle opens (still off), after `vance_met` but before the card (still off), after both (kettle on, posts reset, needs at `initial`), and after evacuation (both stay hidden). Mapped breaks do not double-fire.
 
 ### 10.4 Attack probe (fresh game per step)
 
-Attack Ibrahim seated; attack Joanne walking to the cooler; KO Joanne at the kettle; attack Vance with the pair at the kettle; strike the guard with the pair at the cooler. Each time: `aes_staff_off` set, machines off, the other newcomer walks home, no `patrolOverride`, credits and debrief branch correct (a newcomer KO gives "not all of them on their own feet" and the night-staff warning). Vance's and the guard's own KO outcomes unchanged.
+Attack Ibrahim seated; attack Joanne walking to the cooler; KO Joanne at the kettle; attack Vance with the pair at the kettle; strike the guard with Joanne at the cooler. Each time: `aes_staff_off` set, machines off, the other newcomer walks home, no `patrolOverride`, credits and debrief branch correct (a newcomer KO gives "not all of them on their own feet" and the night-staff warning). Vance's and the guard's own KO outcomes unchanged.
 
 ### 10.5 Open numbers
 
-Post body centres, cooler and kettle cells, needs-clock ratio, pair overlap at each machine, whether the validator accepts `room_entered:*`.
+Post body centres, cooler and kettle cells, needs-clock ratio, pair overlap at the kettle, the north door position, whether the validator accepts `room_entered:*`.
 
 ### 10.6 Static checks
 
-Validator 0 errors; V1 shows presets on the cooler and kettle only; V2 clear (no story NPC has needs); V3 none; V4 expected for the two newcomers until the attack probe passes; V5 none; V6 clip count matches section 9; V7 no repeats; V10 every pool and exchange reachable; V11 no credential in a pool; ink compiles (`m04_night_staff.ink`, the debrief, and on Q2 (a) the briefing and Voltage files); `tagdiff.mjs` on every existing ink file touched shows only the planned changes.
+Validator 0 errors; V1 shows presets on the cooler and kettle only; V2 clear (no story NPC has needs); V3 none; V4 expected for the two newcomers until the attack probe passes; V5 none; V6 clip count matches section 9; V7 no repeats; V10 every pool and exchange reachable (no `cooler` pool exists); V11 no credential in a pool; ink compiles (`m04_night_staff.ink`, `m04_npc_joanne_pell.ink`, the debrief, and on Q2 (a) the briefing and Voltage files); `tagdiff.mjs` on every existing ink file touched shows only the planned changes.
 
 ### 10.7 Lock and key diff
 
@@ -306,4 +315,4 @@ Expected empty against `baseline_locks.json`. `positions_base.txt` diff: only th
 
 ### 10.8 Documents
 
-Walkthrough: one note that two night staff sit in reception and may be at the cooler or the ops-office kettle. Lab sheet: no impact (flagged at close).
+Walkthrough: the mission has no current walkthrough file in its folder (`stale_TESTING_WALKTHROUGH.md` is kept for reference only); the player-facing walkthrough is the HacktivityLabSheets page linked at `mission.json:7`, and the regression route is the suite in `scripts/ink_runtime_check/m04_routes/`. The lab sheet gets one note at close, written last through the mission-lab-sheet skill: two night staff sit in reception and may be at the cooler or the ops-office kettle. No new route or opening.
