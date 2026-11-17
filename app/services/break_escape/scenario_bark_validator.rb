@@ -94,7 +94,8 @@ module BreakEscape
     # BMP could fold differently there; no scenario has one. The Unicode
     # version also differs: Ruby 2.7.8 uses Unicode 12.1 tables, current JS
     # engines newer ones, so a few letters added since fold differently
-    # (U+019B, U+0264, U+1C89, U+A7CB to U+A7DC); no scenario name uses them.
+    # (16 inputs, among them U+019B, U+0264, U+1C8A, U+2C5F, U+A7C1 and most of
+    # U+A7C8 to U+A7F6); no scenario name uses them.
     # @param npc [Hash]
     # @param text [String]
     # @return [String] '' when nothing in it is the NPC's
