@@ -6342,6 +6342,24 @@ def unsupported_condition_syntax(condition, allow_includes:)
   problems.empty? ? nil : problems.join(' and ')
 end
 
+# requiresItemCondition and its hint variants are evaluated by evaluateGlobalCondition
+# (utils/conditional-text.js): '&&'-joined terms, each globalVars.x, !globalVars.x, or
+# globalVars.x with ===, !==, >, <, >= or <= and a true/false/null/number/quoted literal.
+# With '||' or parentheses it quietly reads the first globalVars name, so a bad condition
+# can refuse the use for good. Returns a description of the problem, or nil.
+ITEM_CONDITION_TERM = /\A(!\s*globalVars\.\w+|globalVars\.\w+(\s*(===|!==|>=|<=|>|<)\s*(true|false|null|-?\d+(\.\d+)?|'[^'"]*'|"[^'"]*"))?)\z/
+def item_condition_problem(condition)
+  return 'is not a string' unless condition.is_a?(String)
+  return 'is empty' if condition.strip.empty?
+  if (bad = unsupported_condition_syntax(condition, allow_includes: false))
+    return "uses #{bad}"
+  end
+  condition.split('&&').each do |term|
+    return "has the term \"#{term.strip}\", which is not globalVars.x, !globalVars.x or globalVars.x with === !== > < >= <= and a literal" unless term.strip.match?(ITEM_CONDITION_TERM)
+  end
+  nil
+end
+
 # R29 (VM integration review): every VM flag a mission's stations accept must be
 # load-bearing for the ending. A flag counts when the server can't conclude
 # without it: a submit_flags task matching it is in the conclusion aim's
@@ -6542,7 +6560,32 @@ def check_engine_limits(json_data)
                   "textVariants for text that does not depend on a carried item."
       end
 
-      %w[observationVariants spriteVariants textVariants requiresItemHintVariants].each do |vk|
+      # requiresItemCondition (interactions.js, through requires-item-hint.js) gates the use of a
+      # held item on a globals condition. Only the requiresItem + triggerOnInteract branch reads it.
+      cond_hint_fields = %w[requiresItemConditionHint requiresItemConditionHintVariants]
+      if node.key?('requiresItemCondition')
+        if (problem = item_condition_problem(node['requiresItemCondition']))
+          issues << "❌ ERROR: '#{path}/requiresItemCondition' #{problem}. conditional-text.js evaluateGlobalCondition " \
+                    "supports only '&&'-joined terms; anything else is mis-read, so the use could be refused for good."
+        else
+          node['requiresItemCondition'].scan(/globalVars\.(\w+)/).flatten.uniq.each do |gv|
+            next if globals.include?(gv) || gv.match?(/\A(\w+)_(screen_locked|owner_away|accessed)\z/)
+            issues << "⚠️ WARNING: '#{path}/requiresItemCondition' uses globalVars.#{gv}, which is not in globalVariables " \
+                      "and is not a workstation global (<id>_screen_locked, _owner_away, _accessed). Declare it, or the " \
+                      "condition reads a name nothing is known to set."
+          end
+        end
+        if node['requiresItem'].nil? || node['requiresItem'] == '' || node['requiresItem'] == []
+          issues << "⚠️ WARNING: '#{path}' has requiresItemCondition but no requiresItem, so the condition is never read."
+        elsif !node['triggerOnInteract'].is_a?(Array) || node['triggerOnInteract'].empty?
+          issues << "⚠️ WARNING: '#{path}' has requiresItemCondition but no triggerOnInteract. Only the triggerOnInteract " \
+                    "branch of interactions.js reads it (a networkJack or other interaction ignores it), so it is never applied."
+        end
+      elsif cond_hint_fields.any? { |f| node.key?(f) && !(node[f].respond_to?(:empty?) && node[f].empty?) }
+        issues << "⚠️ WARNING: '#{path}' has requiresItemConditionHint(Variants) but no requiresItemCondition, so those hints are never shown."
+      end
+
+      %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
@@ -6657,7 +6700,7 @@ end
 # Any other condition with '||' gets a softer warning naming its path.
 def check_or_in_global_conditions(json_data)
   issues = []
-  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants)(\[|\/|\z)/
+  checked_elsewhere = /(\A|\/)(eventMappings|timers|observationVariants|spriteVariants|textVariants|requiresItemHintVariants|requiresItemConditionHintVariants)(\[|\/|\z)/
   walk = nil
   walk = lambda do |node, path, ctx|
     case node
