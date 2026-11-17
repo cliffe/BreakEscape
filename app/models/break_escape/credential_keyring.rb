@@ -464,12 +464,16 @@ module BreakEscape
       end
     end
 
+    # sessionHeld: the PC's held session was opened with this credential and is not locked.
+    # K-lock (plan 8.6): a locked session reads as signed out, as session_identity answers nil
+    # for it, so Connect signs in again with the credential (which replaces the record and
+    # drops `locked`) instead of opening a desktop the server refuses.
     def credential_session_held?(pc_id, cred_id)
       sessions = player_state['sessions']
       return false unless sessions.is_a?(Hash)
 
       session = sessions[pc_id.to_s]
-      session.is_a?(Hash) && session['credential'].to_s == cred_id.to_s
+      session.is_a?(Hash) && session['credential'].to_s == cred_id.to_s && !session_locked?(session)
     end
 
     # forThisPc and accepted for a named screen (section 6.2). A pc_id the player cannot open a
