@@ -1913,6 +1913,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             { "eventPattern": "room_entered:server_room", "condition": "globalVars.bernadette_ko !== true", "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
             { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
             { "eventPattern": "room_entered:main_corridor", "fireOnlyWhenLoaded": true, "condition": "globalVars.server_room_entered === true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
+            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'break_room' && globalVars.server_room_entered === true && globalVars.bernadette_ko !== true", "onceOnly": true, "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true },
             { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
           ]
         }
