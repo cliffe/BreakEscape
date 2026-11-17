@@ -1,4 +1,4 @@
-# Slice 5 handover (Ama, objectives, ending): built and committed, tests and corpus NOT run
+# Slice 5 handover (Ama, objectives, ending): built, tested, corpus run (see Results at the end)
 
 ## Done (commit 4b882dc59, scenarios/demo_access_tour only)
 - scenario.json.erb: globalVariables (tour_full, front_desk_signed_out, saw_in_use, julian_ended_by_unplug, tour_debriefed, done_<17 tasks>); objectives: aim_office, aim_network (required), aim_around, aim_deeper (optional aims and tasks), aim_wrap (missionConclusion, unlockCondition aimsCompleted office+network, conclusionScreen bond_visualiser; t_debrief starts "active" like the lab, the aim is the gate, not "locked"). Every task has onComplete.setGlobal done_<id>.
@@ -18,3 +18,12 @@
 Ama person: A1 to A3b, A4, route choice A5 with replies "Quick it is. Doors, a desk, the box, and back to me." / "The full walk-round, then. Every room, every gadget."; M1 "Not done yet. Your phone's got the list. I'll be here."; "Good luck."; M2 reply; written_up "It's all written up. Thanks again."; debrief greeting variant "Anything else, or shall we talk it through?"; D1 to D6 per plan 2.13.
 Ama phone: start "Your phone will list what to try next. I'll text if I think of anything."; "Any time."; W1 to W19 (W6b split in two messages); follow-ups: hint_sign_out "Do that first and the connection goes through the box instead."; hint_open_session "The cake works too, if you want it done your way. The rota board is the sure way."; hint_network_view "The box sits on the office network now. The view lists what it can see from there."; hint_injector "The injector in your kit presents as a keyboard. The socket by the desk takes it."; hint_patch_panel "The panel has a spare port. Plug in and see where it lands."; debrief_ready "I'll be at reception."; hint_ports "There's a managed port and a patch panel on the cupboard wall. Try both."; hint_cake (unchanged). Timed texts P0 to P5b per plan 2.10.
 Closing card: "Merrin & Sallow: access tour complete." plus credits lines in scenario music event.
+
+
+## Results (tests run, items 1 to 4 of Open done)
+- New file test/controllers/break_escape/demo_access_tour_tasks_test.rb (commits 28590b56a, 16bb88ea5): 17 tests, 132 assertions, 0 failures. Covers t_meet_ama, t_debrief, t_kit, t_front_desk, t_drop_box, t_guest_port, t_julian_pc, t_door_controller, t_comms, t_server_room, t_open_session, t_yasmin_pc, t_staff_wifi: refused before the trigger, accepted after; plus idempotent re-post and unknown id.
+- All three demo_access_tour*_test.rb together: 77 runs, 1112 assertions, 0 failures.
+- test/js/validator-network-model.test.mjs: new 'full validator reports no unknown errors on demo_access_tour' (commit 8c3a88a0d); file 87 of 87 pass.
+- Scoped corpus (tmp/handover/demo_access_build/slice5_corpus.txt): fresh scan 0 findings (2 runs pass); opened scan 0 findings for demo_access_tour; the only failure is the known m09_digital_archaeology stale exceptions (3). 23 runs, 1 failure.
+- Condition forms checked against safeEvaluateCondition (npc-manager.js:25, supports && , !, ===, !==, .includes on strings and arrays, dotted data./globalVars. paths; no ||, no parentheses) and the music/credits evaluator (new Function, full JS). All ama_phone and needs conditions use supported forms. Event payloads confirmed: card_cloned.cardName, network_foothold_gained.via 'implant', network_device_refused.reason 'port_security', network_device_unplugged.endedPcIds (array), pc_signed_out.reason/fromPcId. Card name "Lorna Easton FAC card" matches the scenario.
+- No scenario edits needed. Item 5 (onceOnly overlap warning on unplug) left as intended.
