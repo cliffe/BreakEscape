@@ -14,7 +14,9 @@ The figure is not the sprite. It is the breathing image, a second display object
 - `npc-poses.js`: new `NpcPoses.stopBreath(id, sprite)` does the same for pose and idle breathing.
 - `npc-behavior.js` `setNPCVisible`: on hide, calls both before hiding the sprite. A later show needs nothing special: `updateSeatedNPC` (or the poses loop) creates the image again when it next breathes.
 
-General: any NPC hidden while seated, posing or idling with breath loses every drawn object. Nothing is specific to m03.
+General: any NPC hidden while seated loses every drawn object. Nothing is specific to m03.
+
+Correction (R6 review nit): pose and idle breathing images do not outlive a hide. `NpcPoses.update` runs on every postupdate whatever the body state (`npc-poses.js:431`), and `updateBreath` hides the image when the sprite is invisible (`sprite-breath.js:69-72`). The `NpcPoses.stopBreath` call in `setNPCVisible` is defensive only. The seated case was the real one, because `updateSeatedNPC` runs inside `NPCBehavior.update`, which a disabled body skips.
 
 Commit: "Hide a seated or posing NPC's breathing image when setNPCVisible hides it".
 
@@ -42,3 +44,21 @@ The turn itself hid her in a lucky phase this time, so DUMP3 forces the failing 
 ## Handover
 
 Complete; nothing outstanding.
+
+## Follow-up: a hidden sitter releases its chair (R6 minor and nit 1)
+
+Finding: `setNPCVisible(false)` left `behavior._seat`, the chair's place (`chair._places`, `seatedBy`) and the `window.officeTypists` entry in place. The chair looked empty but `trySit` refused it (`seating.js` "taken: nothing happens"), and a roomTone room would keep its typing loop for nobody.
+
+Fix: on hide, `setNPCVisible` calls `seating.unseatNPC(behavior, { instant: true })` (`npc-behavior.js`, hide branch). `unseatNPC` takes `opts.instant`: the NPC lands on its stand spot at once (no step, no chair push, because a hidden body cannot walk). Everything the normal stand-up clears goes with it: breath image and crop, place, officeTypists, saved collider. A plain seated NPC is marked `_seatTried`, so it reappears standing and stays standing. A needs-seat NPC has `_seatTried` cleared (as `updateNeedsSeat` does after any unseat), so its normal routine can walk it back to the chair. The needs system already treats a hidden NPC as absent (`st.hidden`), so nothing there thinks it is mid-use; a use that was under way is taken up again by the seat routine on show. `endNpcBreath` stays exported, no longer called by `setNPCVisible`.
+
+Tests (`test/js/npc-hide-seated-breath.test.mjs`, now 6): a real `seatNPC` on a stub sofa. Hide frees the place, nulls `_seat`, drops the typist; another NPC can then sit; show leaves the NPC standing with the collider restored. Test 2 of the earlier version (null holder after a show) is replaced by this post-show state, because a shown NPC is no longer seated and has no breath to rebuild. Before the fix 3 of the new tests fail, after 6 of 6 pass.
+
+Other missions: `test_seating` and `lab_physical_pentest` have seated NPCs and hide none; m02's hidden NPC is not seated. Left alone: the `sprite.once('destroy')` listener pile-up (`sprite-breath.js:81`), not a one-line safe fix.
+
+Live proof (keyless server :3091, fresh game 6709 from new-game.rb, the night turn script from the sofa fix). Scratchpad `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/seatrelease/` (`night.mjs`, `night.log`):
+
+- After the turn Zainab is hidden and unseated (`seat` false, sofa `_places` empty, officeTypists empty). `night-reception.png`, `night-sofa-before-sit.png`: sofa empty.
+- The player walked to the sofa and sat (`PLAYER-SIT`: seated, place 0 taken by "player"). `player-on-sofa.png`. Before the fix that click did nothing for a full chair; Zainab's sofa has two places, so the unit test with another NPC is the sharper proof for a single seat.
+- Stood up and showed Zainab: she is a needs NPC, so her routine sat her back down on the sofa (`ZAINAB-SHOWN`, `zainab-shown.png`, `zainab-shown-later.png`), at her usual seat, not floating, breath image built again by the normal update.
+
+Suites: `bin/test-js` 736 passed, 0 failed. `bin/rails test` 3186 runs, 50670 assertions, 0 failures, 0 errors, 4 skips. `seating.test.mjs` and the other seat tests are in the JS run. Server :3091 (PID 3682193) killed by PID.

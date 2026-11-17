@@ -1625,8 +1625,10 @@ export function seatNPC(behavior, chair, opts = {}) {
  * to its stand spot (the work spot for a needs seat, else a box- and line-checked spot by the
  * chair) while a swivel chair rolls back (or tucks in to the desk, for a needs seat). A hostile
  * or knocked-out NPC doesn't step. A seat move under way (walking on) is dropped.
+ * opts.instant: no step and no chair push; the NPC lands on its stand spot at once (setNPCVisible
+ * hides a sitter this way: a hidden body can't walk, and the chair must be free for others).
  */
-export function unseatNPC(behavior) {
+export function unseatNPC(behavior, opts = {}) {
     const st = behavior?._seat;
     if (!st) {
         if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior, 'unseated');
@@ -1638,7 +1640,8 @@ export function unseatNPC(behavior) {
     endBreath(st, sprite);
     if (typeof window !== 'undefined') window.officeTypists?.delete(behavior.npcId);
     behavior._seat = null;
-    behavior._seatTried = true; // don't sit straight back down
+    // don't sit straight back down; a needs seat is let to sit again (updateNeedsSeat does the same)
+    behavior._seatTried = !(opts.instant && needsStop);
     releasePlace(chair, seat, placeIdx);
     if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
     const halt = behavior.hostile || window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
@@ -1659,11 +1662,15 @@ export function unseatNPC(behavior) {
             }
         }
         if (spot && Math.hypot(spot.x - at.x, spot.y - at.y) > ARRIVE_PX) {
-            behavior._seatMove = { stage: 'step', target: { x: spot.x, y: spot.y }, chair: null,
-                                   savedImm: b.immovable, savedBody: null, ticks: 0, still: 0, last: Infinity };
-            b.immovable = false;
+            if (opts.instant) {
+                moveFeetTo(sprite, spot.x, spot.y);
+            } else {
+                behavior._seatMove = { stage: 'step', target: { x: spot.x, y: spot.y }, chair: null,
+                                       savedImm: b.immovable, savedBody: null, ticks: 0, still: 0, last: Infinity };
+                b.immovable = false;
+            }
         }
-        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop) {
+        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop && !opts.instant) {
             // Push the chair back, away from where the NPC steps
             const d = spot ? Math.hypot(spot.x - at.x, spot.y - at.y) : 0;
             let ux, uy;
