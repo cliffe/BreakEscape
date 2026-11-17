@@ -51,7 +51,7 @@ Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. A
 { not hub_quiet:
     {
     - mole_identified:
-        Agent 0x23 'Vector': You again. I hear it's over. I'm still doing the maths on how I feel about that.
+        Agent 0x23 'Vector': You again. Word is you've named him. I'm still doing the maths on how I feel about that.
     - accused_vector and not apologised:
         Agent 0x23 'Vector': You again. Sorry, or cuffs?
     - else:
@@ -92,14 +92,13 @@ Agent 0x23 'Vector': I've run the inference on myself and it's not flattering. A
     -> back
 + { not asked_others } [Who do you think it is?]
     ~ asked_others = true
-    Narrator: He lowers his voice.
-    Agent 0x23 'Vector': Phantom reads logs he isn't cleared for. I've watched him do it over people's shoulders.
+    Agent 0x23 'Vector': Phantom reads logs he isn't cleared for. I've watched him do it over people's shoulders. #delivery: low, glancing round
     Agent 0x23 'Vector': But I'm frightened and pattern-matching in the dark, so weight that accordingly.
     -> back
-+ { not asked_handle } [Vector. Same handle as the ENTROPY operative in Battery Hall 1.]
++ { not asked_handle } [Vector. Odd handle for a man who hates attention.]
     ~ asked_handle = true
     Narrator: His jaw sets.
-    Agent 0x23 'Vector': I had it first. Eleven years first. Then one of theirs turned up wearing it, and I'd love to know who told them it was mine.
+    Agent 0x23 'Vector': I picked it at nineteen because it sounded like maths. Eleven years on, it sounds like a suspect.
     -> back
 // PASS 5 (M3): the apology is open before the evidence too, because the
 // accusation now costs his row.
@@ -162,7 +161,7 @@ Agent 0x23 'Vector': I left it out because I knew exactly how it would sound. #s
 - else:
     Narrator: He goes very still.
     Agent 0x23 'Vector': On what? You haven't even pulled the auth logs. You've decided on my face.
-    Agent 0x23 'Vector': That's -- that's exactly how the wrong person walks free. You spend your suspicion on the easy target, and the careful one just... waits.
+    Agent 0x23 'Vector': That's... that's exactly how the wrong person walks free. You spend your suspicion on the easy target, and the careful one just waits.
     ~ vector_influence -= 2
     # influence_decreased
 }

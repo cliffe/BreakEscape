@@ -105,7 +105,7 @@ Agent 0x47 'Nightshade': The name they stripped off that intercept in the cable 
     Agent 0x47 'Nightshade': You hit me in my own lab and walked away. I've been deciding ever since whether that was nerves or a message.
 }
 { named_on_evidence:
-    Agent 0x47 'Nightshade': The door log. I walked past that reader every morning for fifteen years and never once thought of it as a witness.
+    Agent 0x47 'Nightshade': The door log. I walked past that reader every morning since I joined and never once thought of it as a witness.
 }
 // PASS 4 (fix 10): its own block, so it plays alongside the door-log line.
 // The accusation is only on offer before he is named, so this is always early.
