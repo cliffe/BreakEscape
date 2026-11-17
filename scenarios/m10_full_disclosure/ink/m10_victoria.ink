@@ -61,7 +61,7 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
     ~ victoria_gallery = "confronted"
     // Alignment R12-m3: the unlock rides the reply's first line, so a close or reload can't keep the outcome without the door.
     #unlock_door:core
-    Victoria Sterling: Then you know I'm hedging. So is everyone. Open.
+    Victoria Sterling: Then you know I'm hedging. So is everyone. There. It's open.
     // Regression fix pass m-4: the order may already be dead at the console.
     {share_zero_day == "stopped":
         Victoria Sterling: And you've killed their order already, so this one's free. Remember that.
@@ -93,6 +93,8 @@ Victoria Sterling: I can open that lock for you. I can also open it for them. No
 #unlock_door:core
 Victoria Sterling: There's your door. I'm sorry. Zero Day still pays, and you don't.
 Victoria Sterling: I'll see myself down the stair. Don't follow me. You've somewhere better to be.
+~ victoria_sold = true
+#set_global:victoria_sold:true
 ~ vic_quiet = true
 #exit_conversation
 -> gallery_rest
@@ -172,6 +174,7 @@ Victoria Sterling: You. St. Catherine's was a proof of concept. This is the rest
     -> threat_menu
 }
 ~ vic_seen = true
+Narrator: Victoria Sterling waits on the walkway, a pistol held low against her coat.
 Victoria Sterling: My associates offered to deal with you. I said I'd do it myself. I still might.
 Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you.
 -> threat_menu
@@ -221,8 +224,10 @@ Victoria Sterling: If I walk out of here, I walk out owing nobody. Including you
     {
     - victoria_gallery == "confronted":
         Victoria Sterling: You've seen what I'd have done. Go in before I think about it again.
+    - victoria_gallery == "trusted" and victoria_sold:
+        Victoria Sterling: I told you not to follow me.
     - victoria_gallery == "trusted" and share_zero_day != "stopped":
-        Victoria Sterling: We're square. Don't ask me for anything else.
+        Victoria Sterling: I told you not to follow me.
     - victoria_gallery == "trusted":
         Victoria Sterling: Go on. It's open, and I'm still on your side.
     - victoria_gallery == "arrested_here":

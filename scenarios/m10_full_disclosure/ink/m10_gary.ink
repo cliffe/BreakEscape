@@ -24,7 +24,7 @@ VAR gary_t_costs = false     // tech: HaX's cost line before the menu has been s
     -> consultant_rest
 }
 Gary Whitlock: You saved my career. Director of Cyber Security now. Consultant for SAFETYNET tonight, apparently.
-Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's, in a case nobody ever inventoried.
+Gary Whitlock: That casing on the rack. I had one of those behind my server cabinet at St. Catherine's, Nobody ever inventoried it.
 + [Same supplier, then.]
     Gary Whitlock: Same bench, by the look of it. Small world, and most of it on fire.
     -> consultant_imran
@@ -125,7 +125,7 @@ Gary Whitlock: Three weeks I've been here. I've not shipped a thing. Call it a w
 
 === tech_dismissed ===
 ~ gary_t_dismissed = true
-Gary Whitlock: Then you're the board. Card's on my belt.
+Gary Whitlock: Then you're the board. Three weeks here and I've not shipped a thing, not that you'd care. Card's on my belt.
 -> tech_decide
 
 // The decision. Talking him round needs the talk; the dismissive pick removes it.
@@ -142,7 +142,7 @@ Gary Whitlock: Then you're the board. Card's on my belt.
     -> tech_menu
 }
 ~ gary_t_costs = true
-agent_0x99: A man on their bench who ships nothing is worth something. Later.
+agent_0x99: A man on their bench who ships nothing is worth something to us. Think about that.
 -> tech_menu
 
 === tech_menu ===
@@ -196,7 +196,7 @@ agent_0x99: A man on their bench who ships nothing is worth something. Later.
     - gary_outcome == "left_in_place":
         Gary Whitlock: Still not shipping. Tell your Director.
     - else:
-        Gary Whitlock: I'm not going anywhere. You've seen to that.
+        Gary Whitlock: I'll wait for your escort. I'm not going to run.
     }
 }
 + [See you on the other side.]

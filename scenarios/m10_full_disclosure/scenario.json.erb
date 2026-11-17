@@ -3889,8 +3889,8 @@ not_tethered = '!globalVars.nightshade_tethered'
           "behavior": { "initiallyHidden": true, "hostile": { "chaseSpeed": 120, "attackDamage": 8, "pauseToAttack": true } },
           "eventMappings": [
             <%= after_end_json.('gallery') %>
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery !== 'walked' && !globalVars.closing_done", "setVisible": true },
-            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'escaped' && !globalVars.m03_sterling_on_call_seen && globalVars.victoria_gallery !== 'walked' && !globalVars.closing_done", "setVisible": true },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'recruited' && globalVars.victoria_gallery !== 'walked' && !globalVars.victoria_sold && !globalVars.closing_done", "setVisible": true },
+            { "eventPattern": "room_entered:gallery", "condition": "globalVars.m03_victoria_fate === 'escaped' && !globalVars.m03_sterling_on_call_seen && globalVars.victoria_gallery !== 'walked' && !globalVars.victoria_sold && !globalVars.closing_done", "setVisible": true },
             <%# She leaves back down the gallery stair, past the player: after selling the raid (trusted on a live or traced share), or on "[Go.]". %>
             { "eventPattern": "conversation_closed:victoria_gallery", "condition": "globalVars.victoria_gallery === 'trusted' && globalVars.share_zero_day !== 'stopped'", "setVisible": false },
             { "eventPattern": "conversation_closed:victoria_gallery", "condition": "globalVars.victoria_gallery === 'walked'", "setVisible": false }
@@ -4595,6 +4595,7 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "victoria_line_done": false,
     "vos_secret_used": false,
     "victoria_gallery": "",
+    "victoria_sold": false,
     "vos_outcome": "",
     "head_start_killed": "",
     "share_zero_day": "live",
