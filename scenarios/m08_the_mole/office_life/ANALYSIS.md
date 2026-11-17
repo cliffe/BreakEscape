@@ -33,13 +33,19 @@ None of these gains needs.
 
 ## Why more people would hurt the mole hunt
 
-- The puzzle is a closed list of three suspects. A new face reads as a fourth.
 - "Facilities" is already a name in the evidence: the badge audit (:2027), fingerprintCandidates (:2554) and ATHENA's kettle hint pointing at the post-it (:2426 to :2434). A cleaner or facilities NPC would look like a suspect.
 - The break room's only coffee point holds the post-it, beside the three lockers and inside the witness's line of sight. Staff using it would crowd a clue.
+- The puzzle is a closed list of three suspects. A new face may read as a fourth, though this is the weakest reason: m08 already has two non-suspect people (the analyst and the off-duty agent) and players handle them.
+
+The room-local needs of the existing people are rejected too (PLAN.md section 3): a suspect's movement reads as a tell, Phantom's line-of-sight challenge is position-dependent, and nightshade_desk is a clue surface.
+
+## Barks today
+
+No m08 NPC has any bark: no `eventMappings[].bark` exists in scenario.json.erb. Outside conversations the building makes no human sound at all. PLAN.md Q5 offers one once-only analyst bark as the smallest human touch.
 
 ## Machines in the maps
 
-Break room: qdc_espresso1, kettle1, drinks_vending1. Ops floor: water_cooler1, photocopier1. Crypto lab: shredder1. None is declared as an affordance. All nine room types are bespoke room_hq_* types.
+Break room: qdc_espresso1, kettle1, drinks_vending1 (no fridge is placed in room_hq_break.json, so the kitchen hum is the vending machine's). Ops floor: water_cooler1, photocopier1. Crypto lab: shredder1. None is declared as an affordance. All nine room types are bespoke room_hq_* types.
 
 ## officePresets trap
 
