@@ -1,26 +1,30 @@
 # m04 office life: regression suites
 
-Build: branch `build/ol-m04`, HEAD `11e562a0f` when run. Base for comparison: `6988a0d12` (the merge the branch was built on).
+Build: branch `build/ol-m04`, HEAD `fa76d47f9` when re-run (the earlier run was at `11e562a0f`). Base for comparison: `6988a0d12` (the merge the branch was built on).
 
 ## 1. Ink route suite (`scripts/ink_runtime_check/m04_routes/`)
 
-Command, once per route file (40 files, `r1` to `r40`):
+Command, once per route file (42 files on the build, `r1` to `r42`; 40 on the base, `r1` to `r40`):
 
     node scripts/ink_runtime_check/m04_routes/route.js scripts/ink_runtime_check/m04_routes/<route>.json
 
 A route passes when it exits 0 and prints `all expectations met`.
 
-| Run | Pass | Fail |
-|---|---|---|
-| Build | 27 | 13 |
-| Base `6988a0d12` | 27 | 13 |
+| Run | Files | Pass | Fail |
+|---|---|---|---|
+| Build `fa76d47f9` | 42 | 29 | 13 |
+| Base `6988a0d12` | 40 | 27 | 13 |
+
+The build's extra two files are r41 and r42 (newcomer KO to debrief and credits). Both pass. They do not exist on the base, so the base column has no result for them.
 
 Failing routes (same set on build and base): r1, r2, r3, r4, r5, r6, r9, r10, r12, r17, r23, r28, r32.
 
 Comparison of the `[FAIL]` lines, build against base:
 
-- Every failure line matches the base except one. r5 on the build also fails `said: "ALL ELEVEN"`. This is the credits line, which office life changed on purpose to `ALL THIRTEEN ON SITE WALKED OUT` (`scenario.json.erb:243`, recorded in `office_life/DIALOGUE_SAMPLE.md`). The route expected the old wording; commit 23f5c1e53 changed r5 to expect `ALL THIRTEEN` (and r6 to a `notSaid` on it), so that assertion is no longer stale. The suite ran at 11e562a0f, before the kettle `useFrom` change (data only); a re-run is optional.
-- No route fails on the build that passes on the base, apart from that stale assertion.
+- No difference. For all 13 failing routes the `[FAIL]` lines are identical on build and base.
+- r5 passes its credits line on the build (`said: "ALL THIRTEEN"`, expected by the route), and passes `said: "ALL ELEVEN"` on the base. Neither run prints a `[FAIL]` line for it, so the intended wording change is not a difference in the failure set.
+- r6 passes its `notSaid` on `ALL THIRTEEN` on the build, and its `notSaid` on `ALL ELEVEN` on the base.
+- r9 fails on both with `[result] 1 FAIL(s)` and no `[FAIL]` line. The line comparison cannot see it, and it is identical on both. It was not investigated.
 - The 13 failing routes were not investigated further. They fail identically on the base commit, so they are not caused by office life.
 
 ## 2. Phone reopen check
