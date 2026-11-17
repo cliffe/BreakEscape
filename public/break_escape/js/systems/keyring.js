@@ -121,6 +121,11 @@ export class Keyring {
         // source, account? } }), and when this page first got each entry id (ms), for row order
         this.latestCaptures = null;
         this.firstSeen = new Map();
+        // K5 (plan 10): each live token's end on this page's clock (credId => ms), from the
+        // server's expiresInS, and each expired token's proof foothold (credId => footholdId) as
+        // the server names it, so the greyed button shows on that foothold's screen only
+        this.tokenEndsAt = new Map();
+        this.tokenProofs = new Map();
         // The tray item a Connect is running for, or null (the in-flight guard)
         this.connecting = null;
         this._listening = null;
@@ -177,6 +182,40 @@ export class Keyring {
     revFor(key) { return this.cache.get(key)?.rev || null; }
 
     /**
+     * K5: note each token's time left from an answer. `live` is an `unchanged` answer's
+     * { credId: seconds } map (the full answer carries expiresInS on each entry). A held token
+     * session's timer in pc-sessions is told the same figure, so the bar and the close follow
+     * the server's clock. Only numbers from 0 to a day count.
+     */
+    noteTokenTimes(entries, live = null) {
+        const okSecs = (n) => (typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 86400 ? n : null);
+        const liveMap = live && typeof live === 'object' && !Array.isArray(live) ? live : null;
+        const now = Date.now();
+        for (const e of Array.isArray(entries) ? entries : []) {
+            if (!e || e.kind !== 'token' || typeof e.id !== 'string') continue;
+            if (e.expired === true) {
+                this.tokenEndsAt.set(e.id, 0);
+                if (typeof e.proofFoothold === 'string' && e.proofFoothold) this.tokenProofs.set(e.id, e.proofFoothold);
+                continue;
+            }
+            const secs = okSecs(liveMap ? liveMap[e.id] : e.expiresInS);
+            if (secs === null) continue;
+            this.tokenEndsAt.set(e.id, now + secs * 1000);
+            const proof = Array.isArray(e.routes) ? e.routes.find(r => r && typeof r.foothold === 'string')?.foothold : null;
+            if (proof) this.tokenProofs.set(e.id, proof);
+            if (e.sessionHeld === true && typeof e.connectsTo === 'string') {
+                try { window.pcSessions?.noteTokenExpiry?.(e.connectsTo, secs); } catch (err) { /* the session's own timer stands */ }
+            }
+        }
+    }
+
+    /** Whole seconds a token has left by the last answer (0 once over), or null when unknown. */
+    tokenSecondsLeft(credId) {
+        if (!this.tokenEndsAt.has(credId)) return null;
+        return Math.max(0, Math.ceil((this.tokenEndsAt.get(credId) - Date.now()) / 1000));
+    }
+
+    /**
      * Take one GET /keyring answer for a cache key; answers the entries to draw (the cached
      * ones on { unchanged: true }), or null when the answer is not usable.
      */
@@ -187,6 +226,7 @@ export class Keyring {
             if (!hit || hit.rev !== answer.rev) return null;
             this.latest = hit.entries;
             if (hit.captures) this.latestCaptures = hit.captures;
+            this.noteTokenTimes(hit.entries, answer.expiresInS);
             return hit.entries;
         }
         if (!Array.isArray(answer.entries)) return null;
@@ -197,6 +237,7 @@ export class Keyring {
         this.cache.set(key, { rev, entries, captures });
         this.latest = entries;
         this.latestCaptures = captures;
+        this.noteTokenTimes(entries);
         const now = Date.now();
         for (const e of entries) if (!this.firstSeen.has(e.id)) this.firstSeen.set(e.id, now);
         // K3d: the capture log redraws and re-badges from the no-screen answer when it changes
@@ -687,12 +728,14 @@ export class Keyring {
     /**
      * The entries a sign-in screen may show (plan 8.1, "only usable kinds show"):
      *   keyboard: passwords only;
-     *   foothold: passwords, plus a saved_connection for this PC (forThisPc).
+     *   foothold: passwords, plus a saved_connection for this PC (forThisPc), plus (K5) a token
+     *   for this PC whose proof is this screen's foothold: live, its route is that foothold;
+     *   expired, the server names that foothold as proofFoothold (greyed by the screen).
      * An assist_invite never shows on a sign-in screen (Connect uses it). An entry with no
      * account username is dropped (tiles match by username). A refused saved connection stays
      * (accepted false): the screen greys it.
      */
-    screenEntries(entries, { pcId = null, screen = SCREEN_KEYBOARD } = {}) {
+    screenEntries(entries, { pcId = null, screen = SCREEN_KEYBOARD, foothold = null } = {}) {
         return (Array.isArray(entries) ? entries : []).filter(e => {
             if (!e || typeof e !== 'object') return false;
             if (!e.account || typeof e.account.username !== 'string' || !e.account.username) return false;
@@ -702,13 +745,18 @@ export class Keyring {
                 if (e.ended === true) return false;
                 return e.forThisPc === true;
             }
+            if (e.kind === 'token') {
+                if (e.forThisPc !== true || typeof foothold !== 'string' || !foothold) return false;
+                if (e.expired === true) return (e.proofFoothold || this.tokenProofs.get(e.id)) === foothold;
+                return Array.isArray(e.routes) && e.routes.some(r => r && r.foothold === foothold);
+            }
             return false;
         });
     }
 }
 
 /** The kinds with a find toast; a capture is always silent. */
-export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite'];
+export const FIND_KINDS = ['saved_connection', 'password', 'assist_invite', 'token'];
 // The capture filter below is paired with findLine's in remote-host-text.js (a double guard).
 function findKindToasts(entry) {
     return entry.source !== 'capture' && FIND_KINDS.includes(entry.kind);

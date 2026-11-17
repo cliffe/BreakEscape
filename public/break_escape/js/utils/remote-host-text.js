@@ -130,12 +130,19 @@ export const CONNECT_WITH_TEXT = 'Connect with';
 export const WRONG_PC_TEXT = 'This connection is for another PC.';
 export const kindRefusedMessage = (kind, host) => {
     if (kind === 'assist_invite') return `${named(host)} does not allow remote assistance.`;
+    if (kind === 'token') return `${named(host)} does not accept session tokens.`;
     return `${named(host)} always asks for the password, so a saved one is ignored.`;
 };
 /** The one-line short form under a greyed button (fits 306px of GNF 16px with the longest host). */
-export const kindRefusedShort = (host) => `${named(host)}: type the password.`;
+export const kindRefusedShort = (host, kind) => (kind === 'token'
+    ? `${named(host)}: no session tokens.` : `${named(host)}: type the password.`);
 export const endedAssistMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
 export const noLongerWorksMessage = (label) => `${label || 'That sign-in'} no longer works.`;
+// Keyring K5 (8.5): a session token that has run out. pc-sessions.js keeps copies (it imports
+// nothing); test/js/token-client.test.mjs keeps them equal.
+export const tokenExpiredMessage = (label) => `${label || 'That session token'} has expired.`;
+export const tokenExpiredEndedMessage = (label, host) =>
+    `${label || 'That session token'} expired. Your session on ${host || 'that host'} ended.`;
 // Connect from the tray (K3b, plan 8.2 and 8.5)
 export const CONNECT_FAILED_TEXT = 'Connect could not reach the game server. Try again.';
 export const trayUnreachableMessage = (host) => `${named(host)} can't be reached from here. You need a way onto its network.`;
@@ -150,6 +157,9 @@ export const passwordInFileFoundMessage = ({ label, displayName } = {}) =>
 export const assistInviteFoundMessage = ({ label, displayName } = {}) =>
     `${label || 'An invite'}: Connect it from your inventory to join ${displayName || 'an account'}'s session.`;
 export const findMoreLine = (n) => `and ${n} more`;
+// K5 (8.5): a token recorded by a foothold
+export const tokenFoundMessage = ({ label, displayName, host } = {}) =>
+    `Session token captured: ${label || 'a session token'} for ${displayName || 'an account'} on ${named(host, 'another PC')}.`;
 
 // K3d (plan 8.2, D4 (d)): when the player holds a capture log, the toast points at it.
 export const CAPTURE_LOG_FIND_LEAD = 'New in your capture log:';
@@ -168,9 +178,10 @@ export function findLine(entry, { captureLog = false } = {}) {
     const fields = { label: entry.label, displayName: whoOf(entry), host: entry.host || entry.connectsTo, kind: entry.kind };
     if (captureLog) {
         if (entry.kind === 'password') return captureLogPasswordFoundMessage(fields);
-        if (entry.kind === 'saved_connection' || entry.kind === 'assist_invite') return captureLogFindMessage(fields);
+        if (entry.kind === 'saved_connection' || entry.kind === 'assist_invite' || entry.kind === 'token') return captureLogFindMessage(fields);
         return null;
     }
+    if (entry.kind === 'token') return tokenFoundMessage(fields);
     if (entry.kind === 'saved_connection') return savedConnectionFoundMessage(fields);
     if (entry.kind === 'password') return passwordInFileFoundMessage(fields);
     if (entry.kind === 'assist_invite') return assistInviteFoundMessage(fields);
@@ -195,6 +206,7 @@ export function teachLine(kind, { displayName } = {}) {
     if (kind === 'in_file') return 'People save passwords in files. Anyone who reaches the file has the account. Keep passwords in a password manager, not a file.';
     if (kind === 'saved_connection') return `The password is saved inside this file, so opening it signs you in as ${who}. A policy that always asks for the password stops it.`;
     if (kind === 'assist_invite') return `${who} let you into the session. Check who is asking before you share access.`;
+    if (kind === 'token') return 'A stolen session token signs in without the password until it expires. Short session lifetimes limit it.';
     return null;
 }
 
@@ -211,6 +223,7 @@ export function credentialRefusalLine(reason, { host, label, displayName, kind }
     case 'remote_blocked': return remoteOffMessage(host);
     case 'ended': return endedAssistMessage(displayName);
     case 'no_longer_works': return noLongerWorksMessage(label);
+    case 'expired': return tokenExpiredMessage(label);
     default: return null;
     }
 }
