@@ -760,3 +760,44 @@ test('K5 R1 m1/m2: the row steps on the token\'s own minute boundary, redraws on
         globalThis.clearInterval = realClear;
     }
 });
+
+test('a capture made just before the tablet opens reads Loading... then the value, never bullets', async () => {
+    reset({ globals: { se_captures: structuredClone(CAPTURES) } });
+    let release;
+    api.get = () => new Promise((res) => { release = () => res({ secrets: { hampshire: 'Recruit-2026' } }); });
+    await add(HOLDER);
+    await openDevice();
+    await settle();
+    const text = () => device().root.querySelector('.lpb-captures-secret')?.textContent;
+    assert.equal(text(), 'Loading...', 'while the fetch is outstanding');
+    release();
+    await settle(5);
+    assert.equal(text(), 'Recruit-2026');
+});
+
+test('a capture the first answer lacks is asked for again and shows once served', async () => {
+    reset({ globals: { se_captures: structuredClone(CAPTURES) } });
+    log.CaptureLogMinigame.secretRetryMs = 5;
+    let n = 0;
+    api.get = async () => (++n < 3 ? { secrets: {} } : { secrets: { hampshire: 'Recruit-2026' } });
+    await add(HOLDER);
+    await openDevice();
+    await settle(2);
+    assert.equal(device().root.querySelector('.lpb-captures-secret').textContent, 'Loading...');
+    await settle(40);
+    assert.equal(device().root.querySelector('.lpb-captures-secret').textContent, 'Recruit-2026');
+    log.CaptureLogMinigame.secretRetryMs = 1500;
+});
+
+test('when /capture_secrets keeps failing the row says Could not load, not bullets', async () => {
+    reset({ globals: { se_captures: structuredClone(CAPTURES) } });
+    log.CaptureLogMinigame.secretRetryMs = 3;
+    api.get = async () => { throw new Error('boom'); };
+    const warn = console.warn; console.warn = () => {};
+    await add(HOLDER);
+    await openDevice();
+    await settle(60);
+    console.warn = warn;
+    assert.equal(device().root.querySelector('.lpb-captures-secret').textContent, 'Could not load');
+    log.CaptureLogMinigame.secretRetryMs = 1500;
+});
