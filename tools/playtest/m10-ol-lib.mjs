@@ -49,6 +49,7 @@ export async function start(gid, { reload = false } = {}) {
     now: () => page.evaluate(() => Date.now()),
     wall: () => page.evaluate(() => (window.__ev.length ? window.__ev[window.__ev.length - 1].w : 0)),
     probe: () => probe({ page }),
+    settle: () => settle(page, t),
     shot: (p, clip) => page.screenshot({ path: p, ...(clip ? { clip } : {}) }),
     close: async () => { try { await page.goto('about:blank'); } catch (e) {} await browser.close(); },
   };
@@ -77,4 +78,33 @@ export async function probe(g) {
     out.player = window.player ? [Math.round(window.player.x), Math.round(window.player.y), window.currentPlayerRoom] : null;
     return out;
   }, EXTRAS);
+}
+
+// m10 opens a Netherton person-chat a few seconds after load (and the Mission Brief first). A delayed
+// event mapping (Sofia's coupling) waits while any minigame is open, and closing the chat early only
+// re-queues the opening conversation, so play it through: first choice each time, Continue otherwise,
+// then close it once it has ended. Closing the Netherton chat emits conversation_closed:director_netherton,
+// which starts Darren's first mapped brew (PLAN 2.3, L3): a measurement that needs a quiet kettle waits
+// for that brew to finish. Returns a trace of what was done.
+export async function settle(page, t, maxMs = 90000) {
+  const end = Date.now() + maxMs; let quiet = 0; const tr = [];
+  while (Date.now() < end && quiet < 8) {
+    const info = await page.evaluate(() => {
+      try {
+        const st = window.__test.getState();
+        if (st.blockingUi) return { kind: 'blocking' };
+        if (!st.activeMinigame) return null;
+        const d = window.MinigameFramework.currentMinigame && st.dialogue;
+        return { kind: st.activeMinigame.type, d: d || null };
+      } catch (e) { return null; }
+    });
+    if (!info) { quiet++; await t(500); continue; }
+    quiet = 0;
+    if (info.kind === 'blocking') { await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {}); tr.push('dismiss'); }
+    else if (info.d && info.d.choices && info.d.choices.length) { tr.push('choose1'); await page.evaluate(() => window.__test.minigame.chooseIndex(1)).catch(() => {}); }
+    else if (info.d && info.d.canContinue) { tr.push('cont'); await page.evaluate(() => window.__test.minigame.continue()).catch(() => {}); }
+    else { tr.push('close:' + info.kind); await page.evaluate(() => window.__test.minigame.close && window.__test.minigame.close()).catch(() => {}); }
+    await t(250);
+  }
+  return tr;
 }
