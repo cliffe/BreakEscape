@@ -382,6 +382,7 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W19 | otherwise | "That's the lot. Come and find me at reception." |
 
 - The phone has no `call` entry, so no line says "call me" (README:2361).
+- Hub order as built (slice 5 review): W9 and W10 (Lorna, comms cupboard) now sit ahead of W7 and W8, because required steps must not wait behind optional ones; W17 stays where it is but every optional line ahead of it (W7, W8, W11 to W16) adds "Skip any of that you like, and pull the box out when you're ready.". W4 also needs `not done_t_julian_pc`. W7 needs `not julian_lost_with_desk or julian_back`; W8 needs `done_t_door_controller`; W6b, W7 and W14 to W16 are hidden once `done_t_unplug`. W14 splits on a new global `ap_planted` (mapping on `device_hidden:kit_rogue_ap`) so it changes once the access point is in the plant.
 
 ### 2.10 Globals, mappings and timed texts
 
@@ -439,6 +440,7 @@ P0's `skipIfGlobal` keeps it from telling a player who has already connected (fr
 3. Once it is true, Ama opens with D1, a plain line, then the choice D2. "I'm done, let's talk." carries `#ending_check` inside its brackets, so the engine's "Before the mission ends" panel lists the open optional tasks before anything closes (ending-check.js:1-30). On the short route that list shows what the full walk-round adds.
 4. D3 and D4 follow. D5 branches three ways, first match wins: D5a on `julian_ended_by_unplug`; D5c on `julian_lost_with_desk` and not `julian_back`; D5b otherwise. Ama's last line carries `#complete_task:t_debrief` and sets `tour_debriefed`.
 5. The short route ends at the debrief. After the unplug there is no mid-tour switch and no hub line for the network stops, because most of them need the box back in the jack and Julian reconnected.
+6. The credits end the mission: the visualiser opens with `missionOver` (scenario-music-events.js:309-313), so after "I'm done, let's talk." the player cannot go back to the optional stops. This is intended. The run sheet (slice 6) says so. The mid-tour switch to the full route is also hidden once `done_t_unplug`, and Ama has no `taskOnKO`.
 6. The closing card is a `music` event entry, as in the lab (lab_physical_pentest:773, 780-800): `trigger: "conversation_closed:ama"`, `condition: globalVars.tour_debriefed === true`, `closingCard`, `credits`.
 
 ### 2.13 Host and sign lines (text only)

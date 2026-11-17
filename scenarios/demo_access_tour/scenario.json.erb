@@ -135,6 +135,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
     "seen_julian_rdp": false,
     "has_julian_rdp": false,
     "staff_twin_up": false,
+    "ap_planted": false,
     "julian_lost_with_desk": false,
     "julian_back": false,
     "tour_full": false,
@@ -273,7 +274,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
             { "text": "Drop box: a live wall port put the box on the office network", "condition": "globalVars.done_t_drop_box === true" },
             { "text": "Saved connection: the partner's PC opened from a file on the front desk", "condition": "globalVars.done_t_julian_pc === true" },
             { "text": "Badge cloning: the facilities card copied and used on the comms cupboard", "condition": "globalVars.done_t_copy_badge === true && globalVars.done_t_comms === true" },
-            { "text": "Door controller: its login read off the network from the box", "condition": "globalVars.done_t_door_controller === true" },
+            { "text": "Door controller: reached through the partner's PC, signed in with the password from facilities.txt", "condition": "globalVars.done_t_door_controller === true" },
             { "text": "Open session: a laptop left signed in while its owner was away", "condition": "globalVars.done_t_open_session === true" },
             { "text": "Locked screen: a note on the desk got past it", "condition": "globalVars.done_t_yasmin_pc === true" },
             { "text": "Implant: a keystroke injector gave a foothold through the front desk PC", "condition": "globalVars.done_t_implant === true" },
@@ -523,7 +524,6 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "storyPath": "scenarios/demo_access_tour/ink/ama.json",
           "currentKnot": "start",
           "reopenRefreshesHub": true,
-          "taskOnKO": "t_debrief",
           "timedConversation": { "delay": 0, "targetKnot": "start", "waitForEvent": "game_loaded", "skipIfGlobal": "done_t_meet_ama" }
         },
         {
@@ -570,11 +570,12 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
                 A skipIfGlobal goes inside sendTimedMessage. %>
             { "eventPattern": "pc_signed_out:reception_pc", "condition": "data.reason === 'sign_out'", "setGlobal": { "front_desk_signed_out": true } },
             { "eventPattern": "network_device_unplugged:meeting_jack", "condition": "data.endedPcIds.includes('julian_pc')", "setGlobal": { "julian_ended_by_unplug": true } },
+            { "eventPattern": "device_hidden:kit_rogue_ap", "setGlobal": { "ap_planted": true } },
             { "eventPattern": "card_cloned", "condition": "data.cardName === \"Lorna Easton FAC card\"", "completeTask": "t_copy_badge" },
             { "eventPattern": "network_device_unplugged:meeting_jack", "completeTask": "t_unplug" },
             { "eventPattern": "network_foothold_gained", "condition": "data.via === 'implant'", "completeTask": "t_implant" },
             { "eventPattern": "global_variable_changed:has_julian_rdp", "condition": "value === true", "onceOnly": true,
-              "sendTimedMessage": { "delay": 4000, "message": "Before you use that: sign out of Delphine's PC. Leave no trace.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" } },
+              "sendTimedMessage": { "delay": 4000, "message": "Before you use that, sign out of Delphine's PC.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" } },
             { "eventPattern": "pc_in_use:thandiwe_laptop", "onceOnly": true, "setGlobal": { "saw_in_use": true },
               "sendTimedMessage": { "delay": 4000, "message": "She's signed in and sitting right there. Give it a minute, or read the coffee rota on the wall and watch her go.", "targetKnot": "hint_open_session" } },
             { "eventPattern": "network_foothold_gained:meeting_jack", "onceOnly": true,
@@ -582,9 +583,9 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
             { "eventPattern": "usb_refused:usb_hub", "onceOnly": true,
               "sendTimedMessage": { "delay": 4000, "message": "Storage is blocked on that hub. A keyboard isn't storage.", "targetKnot": "hint_injector" } },
             { "eventPattern": "network_device_refused:managed_port", "condition": "data.reason === 'port_security'", "onceOnly": true,
-              "sendTimedMessage": { "delay": 4000, "message": "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes.", "targetKnot": "hint_patch_panel" } },
+              "sendTimedMessage": { "delay": 4000, "message": "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." } },
             { "eventPattern": "network_device_unplugged:meeting_jack", "condition": "globalVars.tour_full !== true", "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Box is out. Have a last look if you like, then come back to reception.", "targetKnot": "debrief_ready" } },
+              "sendTimedMessage": { "delay": 6000, "message": "Box is out. Have a last look if you like, then come back to reception." } },
             { "eventPattern": "network_device_unplugged:meeting_jack", "condition": "globalVars.tour_full === true", "onceOnly": true,
               "sendTimedMessage": { "delay": 6000, "message": "Box is out. Take it to the comms cupboard and see what the ports in there make of it. Then come back to reception.", "targetKnot": "hint_ports" } }
           ]

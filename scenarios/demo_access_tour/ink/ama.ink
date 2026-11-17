@@ -1,4 +1,4 @@
-// Ama Owusu, Merrin & Sallow's practice manager. Three jobs, chosen in ink:
+// Ama Owusu, Fenlow Managed IT's security lead, looking after Merrin & Sallow. Three jobs, chosen in ink:
 //   start    the briefing on load (timedConversation), then the mid-tour hub
 //   hub      mid-tour while wrap_open() is false
 //   debrief  once the eight required tasks are done (wrap_open() true)
@@ -20,6 +20,9 @@ VAR done_t_comms = false
 VAR done_t_drop_box = false
 VAR done_t_julian_pc = false
 VAR done_t_unplug = false
+VAR done_t_implant = false
+VAR done_t_staff_wifi = false
+VAR done_t_yasmin_pc = false
 VAR julian_ended_by_unplug = false
 VAR julian_lost_with_desk = false
 VAR julian_back = false
@@ -35,13 +38,13 @@ VAR done_t_debrief = false
 Ama Owusu: Morning. You found us. This is Merrin & Sallow, and for the next little while you're my tester.
 Ama Owusu: The partners want to know how far someone gets with a visitor badge and a bag of kit. So do I.
 Ama Owusu: Your kit's in the meeting room. The visitor card opens that door and nothing else, in theory.
-Ama Owusu: And there's a cake in your bag. Put it down in the open plan when you want people away from their desks.
+Ama Owusu: And there's a cake in your bag. Put it down in the open plan and see if it gets anyone away from their desk.
 Ama Owusu: I'll stay here. If you're stuck, check your phone. I'll text if I think of anything.
 # complete_task:t_meet_ama
 -> route_choice
 
 === route_choice ===
-Ama Owusu: The quick version, or the full walk-round?
+Ama Owusu: The quick version's about fifteen minutes. The full walk-round is nearer thirty-five, every room and every gadget. Which?
 + [Quick version.]
     Ama Owusu: Quick it is. Doors, a desk, the box, and back to me.
     ~ hub_quiet = true
@@ -49,7 +52,7 @@ Ama Owusu: The quick version, or the full walk-round?
     -> hub
 + [The full walk-round.]
     ~ tour_full = true
-    Ama Owusu: The full walk-round, then. Every room, every gadget.
+    Ama Owusu: The full walk-round, then. Your phone will tell you where next.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -60,11 +63,11 @@ Ama Owusu: The quick version, or the full walk-round?
 { hub_quiet:
     ~ hub_quiet = false
 - else:
-    Ama Owusu: Not done yet. Your phone's got the list. I'll be here.
+    Ama Owusu: Still going? Your phone's got the list if you need it.
 }
-+ { not tour_full } [Actually, show me the full walk-round.]
++ { not tour_full and not done_t_unplug } [Actually, show me the full walk-round.]
     ~ tour_full = true
-    Ama Owusu: Go on then. Your phone will keep you right.
+    Ama Owusu: Go on then. Ask your phone where next.
     ~ hub_quiet = true
     #exit_conversation
     -> hub
@@ -88,9 +91,9 @@ Ama Owusu: It's all written up. Thanks again.
 + [I'll have another look round.]
     ~ asked_round = true
     { tour_full:
-        Ama Owusu: Go on. I'll be here.
+        Ama Owusu: Take your time. I'm not going anywhere.
     - else:
-        Ama Owusu: The box is out, so the network stops are done for today. The doors and desks are all still there if you want them.
+        Ama Owusu: Go on. The box is out, so anything that needed it in the wall is done for today. The rest is still there.
     }
     #exit_conversation
     -> debrief
@@ -98,18 +101,20 @@ Ama Owusu: It's all written up. Thanks again.
     -> recap
 
 === recap ===
-Ama Owusu: The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's held because nobody copied his.
-Ama Owusu: The box got you onto the network, and Julian's saved connection did the rest. His door never came into it.
+Ama Owusu: The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's door held only because nobody copied his card.
+Ama Owusu: A saved connection on the front desk got you into Julian's PC. His door never came into it.
 {
 - julian_ended_by_unplug:
     Ama Owusu: And when the box came out, everything you'd opened through it went with it.
-    { tour_full:
-        Ama Owusu: The desks you'd sat at stayed signed in.
+    { done_t_implant or done_t_staff_wifi or done_t_yasmin_pc:
+        Ama Owusu: Anything you'd reached another way stayed up.
     }
 - julian_lost_with_desk and not julian_back:
     Ama Owusu: You connected to Julian's from Delphine's desk, so when you signed out there, his went too.
+- done_t_julian_pc:
+    Ama Owusu: Julian's session didn't go with the box. Connect from a desk you're signed in at and it never needs the box. That's the bit people miss.
 - else:
-    Ama Owusu: Julian's session stayed up when the box came out. You'd connected from a desk you were signed in at, so it never needed the box. That's the bit people miss.
+    Ama Owusu: Pulling the box ends what ran through it. Anything you reached another way stays up. That's the bit people miss.
 }
 Ama Owusu: Thanks. I'll write it up for the partners.
 # set_global:tour_debriefed:true
