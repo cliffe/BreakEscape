@@ -1077,7 +1077,7 @@ test('Icon labels: no innerHTML for the name; the label is clamped to three line
     assert.match(plainRule, /overflow: hidden;/);
     assert.match(plainRule, /padding: 2px 2px 0;/, 'room for the text outline inside the clamp');
     assert.match(rule('.pc-monitor .pc-desktop .desktop-icon-label {'), /max-height: 58px;/, '3 x 18 plus the 2px borders');
-    assert.match(rule('.desktop-icon-label.desktop-icon-label-open {'), /max-height: none;[\s\S]*overflow: visible;[\s\S]*z-index: 3;/);
+    assert.match(rule('.pc-monitor .pc-desktop .desktop-icon-label.desktop-icon-label-open {'), /max-height: none;[\s\S]*overflow: visible;[\s\S]*z-index: 3;/, 'beats the monitor 58px rule');
     assert.match(rule('.desktop-icon:focus-visible .desktop-icon-image') + box.slice(box.indexOf('.pc-monitor .pc-desktop .desktop-icon:focus-visible .desktop-icon-image')), /border-color/);
 });
 

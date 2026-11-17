@@ -295,7 +295,8 @@
 /* A clipped label while its icon is hovered or focused: the whole name, over the icons
    below (fitIconLabel / expandIconLabel add the class and a negative bottom margin, so the
    row does not move). Same border and backing as the closed label. */
-.desktop-icon-label.desktop-icon-label-open {
+.desktop-icon-label.desktop-icon-label-open,
+.pc-monitor .pc-desktop .desktop-icon-label.desktop-icon-label-open {
     max-height: none;
     overflow: visible;
     position: relative;
