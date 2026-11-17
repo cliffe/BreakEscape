@@ -844,7 +844,7 @@ export class PasswordMinigame extends MinigameScene {
     showScreenMessage(text, { kind = 'error', closeAfterMs = 0 } = {}) {
         const line = this.passwordMessageEl;
         if (!line || line.isConnected === false) {
-            if (text) this.showFailure(text, closeAfterMs > 0, closeAfterMs > 0 ? closeAfterMs : 1500);
+            if (text) this.showFailure(text, closeAfterMs > 0, closeAfterMs > 0 ? closeAfterMs : 1500, { plainText: true });
             return;
         }
         line.textContent = text || '';

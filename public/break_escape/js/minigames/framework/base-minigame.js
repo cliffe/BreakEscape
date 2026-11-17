@@ -391,10 +391,13 @@ export class MinigameScene {
         }
     }
     
-    showFailure(message, autoClose = true, duration = 2000) {
+    // plainText: the message is shown as text, never markup (use it for any line that carries
+    // authored or server text, such as a lock-scope refusal naming a scenario label)
+    showFailure(message, autoClose = true, duration = 2000, { plainText = false } = {}) {
         const messageElement = document.createElement('div');
         messageElement.className = 'minigame-failure-message';
-        messageElement.innerHTML = message;
+        if (plainText) messageElement.textContent = message;
+        else messageElement.innerHTML = message;
         
         this.messageContainer.appendChild(messageElement);
         

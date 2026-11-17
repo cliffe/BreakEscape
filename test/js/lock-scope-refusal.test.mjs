@@ -25,6 +25,9 @@ put('utils/computer-keywords.js', read('utils/computer-keywords.js'));
 put('utils/pc-monitor.js', read('utils/pc-monitor.js'));
 put('utils/npc-headshot.js', read('utils/npc-headshot.js'));
 put('minigames/framework/base-minigame.js', 'export class MinigameScene { constructor() {} cleanup() {} }\n');
+// The real base class, for the hostile-label test of showFailure's plain-text path (K5 R1 m3)
+put('minigames/framework/base-real.js', read('minigames/framework/base-minigame.js'));
+put('minigames/pin/pin-minigame.js', read('minigames/pin/pin-minigame.js'));
 for (const rel of ['utils/remote-host-text.js', 'minigames/password/password-minigame.js', 'minigames/combination/combination-minigame.js',
     'minigames/cryptex/cryptex-minigame.js']) put(rel, read(rel));
 
@@ -259,4 +262,33 @@ test('startPasswordMinigame shows no toast for a refused result or a player clos
     params.onComplete(false, { success: false, reason: 'max_attempts_exceeded', attempts: 3 });
     assert.equal(alerts.length, 1, 'running out of tries still shows the rejection');
     assert.equal(alerts[0][1], 'error');
+});
+
+// K5 R1 m3: the expired line carries a scenario label; the password and PIN fallbacks (no message
+// line on the screen) must show it as text, not markup
+test('a hostile label in the expired line never becomes markup on the showFailure fallback', async () => {
+    const { JSDOM } = await import('jsdom');
+    const dom = new JSDOM('<!doctype html><body></body>');
+    globalThis.document = dom.window.document;
+    const { MinigameScene } = await load('minigames/framework/base-real.js');
+    const { PinMinigame } = await load('minigames/pin/pin-minigame.js');
+    const hostile = '<img src=x onerror=alert(1)> has expired.';
+    const line = lockScopeRefusalLine({ status: 403, body: { reason: 'expired', message: hostile } });
+    assert.equal(line, hostile, 'the helper hands the text over unchanged');
+    for (const [name, Cls, call] of [
+        ['password', PasswordMinigame, (m) => m.showScreenMessage(line, { closeAfterMs: 0 })],
+        ['pin', PinMinigame, (m) => m.showPinMessage(line, 'wrong', 0)]
+    ]) {
+        const m = Object.create(Cls.prototype);
+        m.messageContainer = document.createElement('div');
+        m.showFailure = MinigameScene.prototype.showFailure;
+        m.passwordMessageEl = null;
+        m.messageLineElement = null;
+        call(m);
+        const box = m.messageContainer.querySelector('.minigame-failure-message');
+        assert.ok(box, `${name}: the fallback box shows`);
+        assert.equal(box.querySelector('img'), null, `${name}: no element came from the label`);
+        assert.equal(box.textContent, hostile, `${name}: the label is text`);
+    }
+    delete globalThis.document;
 });

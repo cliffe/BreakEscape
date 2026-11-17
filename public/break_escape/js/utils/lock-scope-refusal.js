@@ -26,7 +26,7 @@ export function lockScopeRefusal(error) {
 /**
  * The line a lock screen says for a scope refusal in an unlock error, or null when the error
  * is not one. Every lock minigame uses this one helper. For `expired` it is the server's own
- * "{label} has expired." (shown with textContent by every caller); the rest come from the table.
+ * "{label} has expired." (callers show it as text: textContent, or showFailure with plainText); the rest come from the table.
  */
 export function lockScopeRefusalLine(error) {
     const reason = lockScopeRefusal(error);

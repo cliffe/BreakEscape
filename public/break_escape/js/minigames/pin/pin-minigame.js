@@ -644,7 +644,7 @@ export class PinMinigame extends MinigameScene {
             line.textContent = text || '';
             line.className = `pin-minigame-message${kind ? ` ${kind}` : ''}`;
         } else if (text) {
-            this.showFailure(text, closeAfterMs > 0, closeAfterMs || 2000);
+            this.showFailure(text, closeAfterMs > 0, closeAfterMs || 2000, { plainText: true });
             return;
         }
         if (closeAfterMs > 0) setTimeout(() => this.complete(false), closeAfterMs);
