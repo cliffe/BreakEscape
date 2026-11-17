@@ -1523,3 +1523,34 @@ Review: `tmp/handover/ac0/K5_REVIEW_R4.md` (m1). Main (19f6f3073) merged in; the
 - **pc_signed_out reason.** The listeners are capture-log (any reason), keyring (any reason, re-checks the relay), screen-states (any reason), workstation-state (acts on any reason; its signing-out set holds only sign_out, claim_ended, owner_returned and auto_locked) and one scenario condition on `link_dropped` (test_access_networks n4_signout, pc `sv_fs02`, a password session ended by an unplug, not a token). So an expired token now emits `reason: 'token_expired'`, the same word as the desktop's close reason. An unplug still emits `link_dropped`. A token ended inside an unplug batch whose `tokenExpiredPcIds` names it also reads `token_expired`. Tests in pc-sessions: the expiry test asserts `token_expired`, and the signed-out-meanwhile test asserts neither reason fires. No server access check changed.
 
 **Run 10 results (R4).** `signin-fit.mjs` on a keyless server from this worktree (port 3080, stopped): ALL PASS over 63 checks. `bin/test-js` 736 files, 0 failed (`access-relay-desktop` 21 and `access-from-desktop` 16 also alone under `ulimit -v 2000000`, 300 MB heap). Rails: the 11 credential and keyring files 181 runs, 1043 assertions, 0 failures; the 19 network and session files 274 runs, 4318 assertions, 0 failures. Full `bin/rails test` not run this round (no Ruby changed beyond the merge).
+
+## Slice K-lock (plan 8.6), build/keyring-klock from K5 head 2ee568d59
+
+Server: `Game#session_lockable?` (game.rb, next to `lock_session!`): a password sign-in, or a
+`via: "credential"` session that is not a relay and has `foothold` or `from` (a token session
+carries its proof foothold). `lock_session!` refuses an expired token session as unheld (422)
+and any other session with the existing 422. `credential_session_held?` (credential_keyring.rb)
+answers false for a locked session, so GET /keyring's `sessionHeld` is false while locked and
+Connect takes step 8. Unlock needs no new code: the password (counted) or a fresh credential
+sign-in (`start_login_session!` rebuilds the record without `locked`; not counted; a lockout
+still refuses a saved connection; an expired token answers 422 `expired` and stays locked).
+Client: exported `sessionLockable(s)` in pc-sessions.js backs `canLock` and the `lockSession`
+guard; pc-taskbar.js's fallback (no canLock passed) follows the same rule. Sync: no new field;
+the lock answer stays the `{ success, pcId, locked }` delta.
+
+Tests: new `test/controllers/break_escape/credential_lock_test.rb` (11 runs: foothold, from and
+token locks; relay and routeless 422; another player's game refused; every read path signed out
+while locked: remote desktop 403 `no_session`, desktop folder, a take, an unlock, the pivot's
+reach and open share, the view's host row Locked, sessionHeld false, a `from` route from the
+locked PC; password unlock counted; .rdp re-sign-in with no `locked`, nothing counted; lockout
+refuses the .rdp; token unlock before expiry, none after, expired lock 422). policy_test.rb: the
+lock and unlock routes follow show? for owner, other, nil, admin and account manager. JS:
+pc-sessions.test.mjs (+1, 73 pass), keyring-client.test.mjs (+1, 82 pass).
+
+Mutation proofs (file copied to the scratchpad, edited, run, copied back): password-only rule
+(6 fail), relay lockable (2 fail), sessionHeld ignoring the lock (4 fail), expired token
+lockable (1 fail).
+
+Not yet run: bin/test-js in full, the access-relay-desktop and access-from-desktop runners, full
+`bin/rails test`, rubocop, the live proof on :3082. See tmp/handover/ac0/klock-HANDOVER.md in the
+main checkout.
