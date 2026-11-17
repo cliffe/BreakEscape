@@ -575,6 +575,23 @@ export default class PhoneChatConversation {
     }
 
     /**
+     * The path to re-run a reopened thread from: the stitch holding the first saved choice
+     * ("knot.stitch" from "knot.stitch.0.c-0"), or null when the choice sits in the knot
+     * itself (or in a labelled gather, which is not a place to start from).
+     */
+    _reopenEntryPath(story, sourcePath) {
+        const parts = String(sourcePath || '').split('.');
+        if (parts.length < 2 || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(parts[1])) return null;
+        try {
+            const knotContainer = story.mainContentContainer.namedContent.get(parts[0]);
+            const stitchOnly = knotContainer?.namedOnlyContent;
+            return stitchOnly && stitchOnly.has(parts[1]) ? `${parts[0]}.${parts[1]}` : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /**
      * Reopening a thread whose story was restored (E10/E13).
      *
      * A restored story's choices were evaluated with the globals of the time it was
@@ -626,30 +643,71 @@ export default class PhoneChatConversation {
         if (!knot) return { renavigated: false };
 
         const syncedState = story.state.ToJson();          // today's globals, not yet re-run
+        const savedChoiceTexts = story.currentChoices.map(c => c.text);
 
-        // Baseline: the same knot from the saved state with the old globals
-        let baseline = null;
-        const observer = story.variablesState.variableChangedEvent;
-        story.variablesState.variableChangedEvent = null;
-        try {
-            story.state.LoadJson(savedState);
-            story.ChoosePathString(knot);
-            baseline = PhoneChatConversation.collectSteps(story);
-        } catch (e) {
-            console.warn(`⚠️ Baseline run of "${knot}" failed; showing the whole re-run:`, e.message);
-            baseline = [];
-        } finally {
-            story.state.LoadJson(syncedState);
-            story.variablesState.variableChangedEvent = observer;
+        // Dry run of one path: the leading output the player has seen under the OLD globals
+        // (baseline) against what today's globals print (steps). The observer is detached so
+        // neither run writes anything; the state is put back to syncedState afterwards.
+        const dryRun = path => {
+            const observer = story.variablesState.variableChangedEvent;
+            story.variablesState.variableChangedEvent = null;
+            try {
+                let baseline;
+                try {
+                    story.state.LoadJson(savedState);
+                    story.ChoosePathString(path);
+                    baseline = PhoneChatConversation.collectSteps(story);
+                } catch (e) {
+                    console.warn(`⚠️ Baseline run of "${path}" failed; showing the whole re-run:`, e.message);
+                    baseline = [];
+                }
+                story.state.LoadJson(syncedState);
+                story.ChoosePathString(path);
+                const steps = PhoneChatConversation.collectSteps(story);
+                const choices = (story.currentChoices || []).map(c => c.text);
+                let common = 0;
+                while (common < steps.length && common < baseline.length &&
+                       PhoneChatConversation.sameStep(steps[common], baseline[common])) common++;
+                return { path, steps, baseline, choices, replayed: common, fresh: steps.length - common };
+            } catch (e) {
+                console.warn(`⚠️ Could not re-navigate to "${path}":`, e.message);
+                return null;
+            } finally {
+                story.state.LoadJson(syncedState);
+                story.variablesState.variableChangedEvent = observer;
+            }
+        };
+
+        // Re-run from the stitch that owns the saved choices when there is one: a knot top
+        // can print and offer something else (m09: the identity scene's knot top does not
+        // lead to its albion stitch's choices).
+        const entry = this._reopenEntryPath(story, sourcePath) || knot;
+        let chosen = dryRun(entry);
+        if (!chosen && entry !== knot) chosen = dryRun(knot);
+        if (!chosen) return { renavigated: false };
+
+        // Nothing new and the same choices as before: the thread's own start may now divert
+        // (the hub's read-outs are reached from `start`, and a stitch or hub re-run never
+        // passes through it). Use it only when it prints something new.
+        const sameChoices = JSON.stringify(chosen.choices) === JSON.stringify(savedChoiceTexts);
+        let path = chosen.path;
+        if (chosen.fresh === 0 && sameChoices && knot !== 'start') {
+            const viaStart = dryRun('start');
+            if (viaStart && viaStart.fresh > 0) {
+                chosen = viaStart;
+                path = 'start';
+            }
         }
+        const baseline = chosen.baseline;
 
         // The real re-run, with the observer attached as for any continue
         let steps;
         try {
-            story.ChoosePathString(knot);
+            story.state.LoadJson(syncedState);
+            story.ChoosePathString(path);
             steps = PhoneChatConversation.collectSteps(story);
         } catch (e) {
-            console.warn(`⚠️ Could not re-navigate to "${knot}":`, e.message);
+            console.warn(`⚠️ Could not re-navigate to "${path}":`, e.message);
             try { story.state.LoadJson(syncedState); } catch (e2) { /* keep what we have */ }
             return { renavigated: false };
         }
@@ -687,10 +745,10 @@ export default class PhoneChatConversation {
         const choices = (story.currentChoices || []).map((c, i) => ({ text: c.text, index: i }));
         const hasEnded = !story.canContinue && choices.length === 0;
         if (hasEnded) this.storyEnded = true;
-        console.log(`🔄 Re-navigated to "${knot}" with updated globals: ${replayed} step(s) already seen, ${fresh.length} new`);
+        console.log(`🔄 Re-navigated to "${path}" with updated globals: ${replayed} step(s) already seen, ${fresh.length} new`);
         return {
             renavigated: true,
-            knot,
+            knot: path,
             messages,
             messageTags,
             tags,
