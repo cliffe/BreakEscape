@@ -97,6 +97,28 @@ module BreakEscape
       @other.update!(role: 'user')
     end
 
+    # Keyring K-lock (plan 8.6): the session lock and the routes that unlock it (a sign-in, the
+    # keyring a Connect reads) follow show? for every role.
+    test "session lock and its unlock routes follow show? per role" do
+      actions = %i[lock_session? login? logout? keyring?]
+      actions.each do |action|
+        assert GamePolicy.new(@owner, @game).public_send(action), "owner: #{action}"
+        assert_not GamePolicy.new(@other, @game).public_send(action), "other user: #{action}"
+        assert_not GamePolicy.new(nil, @game).public_send(action), "nil user: #{action}"
+      end
+      # show? itself, per role (owner? || admin? || managing_account_manager?): an admin passes;
+      # an account manager passes when the host has no orgs (DemoUser has no org_id), which is the
+      # rule in managing_account_manager?; with orgs it would need the same org
+      @other.update!(role: 'admin')
+      assert GamePolicy.new(@other, @game).show?, 'admin: show?'
+      actions.each { |action| assert GamePolicy.new(@other, @game).public_send(action), "admin: #{action}" }
+      @other.update!(role: 'account_manager')
+      assert GamePolicy.new(@other, @game).show?, 'account manager, host without orgs: show?'
+      actions.each { |action| assert GamePolicy.new(@other, @game).public_send(action), "account manager: #{action}" }
+    ensure
+      @other.update!(role: 'user')
+    end
+
     # ─── Scope ────────────────────────────────────────────────────────────────
 
     test "scope returns only the owner's games for regular users" do

@@ -3377,7 +3377,7 @@ export class NPCNeedsSystem {
         this._emit(`npc_caught_at_post:${s.npcId}`, { npcId: s.npcId, objectId: home.objectId, playerDistance, inMinigame: !!p.inMinigame });
     }
 
-    _moveForPhase(s, { reroute = false, nudge = false } = {}) {
+    _moveForPhase(s, { reroute = false, nudge = false, noSwap = false } = {}) {
         const id = s.npcId;
         const job = s.job;
         const destId = job.phase === 'goto_item' ? job.itemId : job.targetId;
@@ -3391,6 +3391,7 @@ export class NPCNeedsSystem {
             job.qCell = `${Math.round(cell.x)},${Math.round(cell.y)}`;
             job.qArrived = false;
         }
+        let swapWith = null;
         // A shared object (capacity 2+) someone else is already headed for: stand beside them, so
         // the two can face each other (slice 8). Only a world with besideCell (the live adapter).
         if (job.phase === 'goto_target' && typeof this.world.besideCell === 'function' && obj
@@ -3406,7 +3407,13 @@ export class NPCNeedsSystem {
                 // deadline. _startJob has already run _leavePost (npc_left_post) by this point.
                 const alt = this.world.besideCell(cell, taken, { from: this.world.npcPos(id), avoidRooms: this._avoidRooms(s) });
                 if (!alt) { this._failJob(s, 'no_beside_cell'); return; }
-                cell = alt;
+                // A pair arriving from the same side: the side cell lies on the first user's way to
+                // the main cell, so whoever stands there first blocks the other (coffee pair, m03
+                // reception: the later claimant is often nearer, stops at the side cell, and the
+                // first waits behind it until its job times out). The nearer NPC takes the main
+                // cell and the first is re-routed to the side cell, so neither passes the other.
+                if (!noSwap) swapWith = this._sideBlocker(s, cell, alt);
+                if (!swapWith) cell = alt;
             }
         }
         const pos = this.world.npcPos(id) || cell;
@@ -3414,6 +3421,12 @@ export class NPCNeedsSystem {
         const dist = Math.hypot(cell.x - pos.x, cell.y - pos.y);
         job.deadline = this.clockMs + Math.max(20000, 3 * dist / speed * 1000);
         job.dest = { x: cell.x, y: cell.y };
+        if (swapWith) {
+            // The first user, still walking, gives up the main cell for the side cell (it is
+            // routed again with this NPC's dest now in `taken`)
+            this._log(swapWith.npcId, 'pair_side_swap', { target: job.targetId, with: id });
+            this._moveForPhase(swapWith, { noSwap: true });
+        }
         // Own-desk work never moves the NPC: seated, its body sits ~30 px off the home cell, and a
         // move would stand it up (goToAndStay unseats)
         if (dist <= HOME_EPS || (s.atPost && this._atOwnPost(s))) { job.moveId = null; this._arrivals.set(id, { synthetic: true, moveId: null }); return; }
@@ -3422,6 +3435,37 @@ export class NPCNeedsSystem {
         job.moveId = moveId;
         // arriveWithin: walk on to the cell itself (the behaviour layer's default stops a tile short)
         return this.world.moveTo(id, cell.x, cell.y, speed, { yieldToPlayer: false, avoidRooms: this._avoidRooms(s), arriveWithin: 6, moveId, ...(reroute ? { reroute: true } : {}), ...(nudge ? { nudge: true } : {}) });
+    }
+
+    /**
+     * The other user of a shared object (capacity 2+), still walking to `cell`, who would have to
+     * pass the side cell `alt` to get there while `s` is nearer to `cell` than it is. null: no such
+     * user (it has arrived, is using, does not pass `alt`, or is not further away than `s`).
+     */
+    _sideBlocker(s, cell, alt) {
+        const me = this.world.npcPos(s.npcId);
+        if (!me) return null;
+        const dMe = Math.hypot(me.x - cell.x, me.y - cell.y);
+        for (const o of this.states.values()) {
+            if (o === s || o.job?.phase !== 'goto_target' || o.job.targetId !== s.job.targetId || o.job.visit || !o.job.dest) continue;
+            // R7 M1: one frozen in a conversation cannot be re-routed (it holds still; unfreezing re-issues its move)
+            if (o.mode === 'frozen') continue;
+            if (Math.hypot(o.job.dest.x - cell.x, o.job.dest.y - cell.y) > HOME_EPS) continue;
+            const p = this.world.npcPos(o.npcId);
+            if (!p) continue;
+            const dO = Math.hypot(p.x - cell.x, p.y - cell.y);
+            const onWay = Math.hypot(p.x - alt.x, p.y - alt.y) + Math.hypot(alt.x - cell.x, alt.y - cell.y) <= dO + 16;
+            if (!(dO > dMe && onWay)) continue;
+            // R7 M2: the re-routed user must be able to get a side cell by its own besideCell call
+            // (its leash, avoided rooms, other users' cells), or the swap would fail its job
+            const taken = [{ x: cell.x, y: cell.y }];
+            for (const u of this.states.values()) {
+                if (u !== s && u !== o && u.job?.targetId === s.job.targetId && u.job.dest) taken.push(u.job.dest);
+            }
+            if (!this.world.besideCell(cell, taken, { from: p, avoidRooms: this._avoidRooms(o) })) continue;
+            return o;
+        }
+        return null;
     }
 
     _advanceJob(s, arrived) {

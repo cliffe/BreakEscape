@@ -127,6 +127,11 @@ export const KEYRING_FAILED_TEXT = 'Your found sign-ins could not be loaded.';
 export const KEYBOARD_BOTH_FAILED_TEXT = "This PC's sign-in details could not be loaded.";
 export const FOUND_PASSWORD_LEAD_TEXT = 'Type the password from';
 export const CONNECT_WITH_TEXT = 'Connect with';
+// The slab on a locked session's sign-in screen (K-lock, plan 8.6). A credential session can come
+// back with its saved connection as well as the password; any other kind only has the password.
+export const lockedSlabText = (name, viaCredential) => viaCredential
+    ? `Locked: ${name}. Enter the password or connect again`
+    : `Locked: ${name}. Enter the password to unlock`;
 export const WRONG_PC_TEXT = 'This connection is for another PC.';
 export const kindRefusedMessage = (kind, host) => {
     if (kind === 'assist_invite') return `${named(host)} does not allow remote assistance.`;

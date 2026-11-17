@@ -1278,3 +1278,16 @@ test('K4 desktop file Connect: the source desktop passes its own host, so the he
     await window.keyring.connect(ITEM, { from: 'a_pc', fromHost: 'HB-FIN-02' });
     assert.equal(signIns[0].fromHost, 'HB-FIN-02');
 });
+
+// ── K-lock (plan 8.6) ───────────────────────────────────────────────────────────────────────
+
+test('K-lock: a locked credential session (sessionHeld false) signs in again by the route and the new copy is unlocked', async () => {
+    setup();
+    pcSessions._replace('lena_pc', { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02', locked: true });
+    keyringAnswer = () => ({ entries: [{ ...RDP, sessionHeld: false }], rev: 'r1' });
+    const r = await window.keyring.connect(ITEM);
+    assert.equal(r.outcome, 'signed_in');
+    assert.deepEqual(posts(), [['post', 'lena_pc', 'k_rdp', { foothold: 'jack_comms_port' }]]);
+    assert.deepEqual(opened, [['lena_pc', 'jack_comms_port']]);
+    assert.equal(pcSessions.isLocked('lena_pc'), false, 'the fresh sign-in replaces the locked copy');
+});

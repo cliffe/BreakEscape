@@ -18,7 +18,7 @@ const js = join(dirname(fileURLToPath(import.meta.url)), '../../public/break_esc
 const dataUrl = (src) => 'data:text/javascript;base64,' + Buffer.from(src).toString('base64');
 
 globalThis.window = {};
-const { PcSessions, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE, unplugEndedMessage, relayEndedMessage } =
+const { PcSessions, sessionLockable, pcSessions: singleton, SIGNED_OUT_MESSAGE, SCREEN_LOCKED_MESSAGE, unplugEndedMessage, relayEndedMessage } =
     await import(dataUrl(readFileSync(join(js, 'systems/pc-sessions.js'), 'utf8')));
 
 const ACCOUNTS = {
@@ -749,6 +749,81 @@ test('canLock offers Lock only for a held password session while locking is supp
     assert.equal(s.canLock('jake_pc'), false, 'a claim has no password to unlock it');
     assert.equal(s.canLock('ian_pc'), false, 'an already-locked session is not offered Lock again');
     assert.equal(s.canLock('missing_pc'), false);
+});
+
+test('K-lock: canLock and lockSession take foothold, from and token credential sessions; never a relay or a routeless one', async () => {
+    const s = setup();
+    s.load({}, [], { lockingSupported: true });
+    const cred = { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection' };
+    s.sessions.set('fh_pc', { ...cred, remote: true, footholdId: 'jack_comms_port' });
+    s.sessions.set('from_pc', { ...cred, remote: true, fromPcId: 'sam_pc' });
+    s.sessions.set('tok_pc', { ...cred, kind: 'token', remote: true, footholdId: 'jack_comms_port' });
+    s.sessions.set('relay_pc', { ...cred, kind: 'assist_invite', relay: true });
+    s.sessions.set('bare_pc', { ...cred });
+    assert.equal(s.canLock('fh_pc'), true);
+    assert.equal(s.canLock('from_pc'), true);
+    assert.equal(s.canLock('tok_pc'), true);
+    assert.equal(s.canLock('relay_pc'), false, 'a relay is the holder\'s screen');
+    assert.equal(s.canLock('bare_pc'), false, 'no route back in');
+    const posted = [];
+    window.ApiClient.lockSession = async (pcId) => { posted.push(pcId); return { success: true, pcId, locked: true }; };
+    assert.equal((await s.lockSession('fh_pc')).ok, true);
+    assert.equal(s.isLocked('fh_pc'), true);
+    assert.equal((await s.lockSession('relay_pc')).reason, 'refused');
+    assert.deepEqual(posted, ['fh_pc'], 'only the lockable session is posted');
+});
+
+test('K-lock R1 n1: canLock is true for foothold and from sessions loaded in the server\'s own field names', () => {
+    const s = setup();
+    // The shape login_session_answer gives: remote true exactly when from or foothold is present
+    s.load({
+        fh_pc: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection', remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02' },
+        from_pc: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection', remote: true, fromPcId: 'sam_pc', fromHost: 'HB-SAM-01', host: 'HB-FIN-02' },
+        bare_pc: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection' }
+    }, [], { lockingSupported: true });
+    assert.equal(s.canLock('fh_pc'), true);
+    assert.equal(s.canLock('from_pc'), true);
+    assert.equal(s.canLock('bare_pc'), false);
+});
+
+test('K-lock R1 m2: a token session past its expiry is not offered Lock and is never posted', async () => {
+    const s = setup();
+    s.load({}, [], { lockingSupported: true });
+    const tok = { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'token', label: 'HB-FIN-02 sign-in token', remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02' };
+    s.sessions.set('live_pc', { ...tok, expiresAt: Date.now() + 60000 });
+    s.sessions.set('old_pc', { ...tok, expiresAt: Date.now() - 1 });
+    assert.equal(sessionLockable(s.sessions.get('live_pc')), true);
+    assert.equal(sessionLockable(s.sessions.get('old_pc')), false);
+    assert.equal(s.canLock('live_pc'), true);
+    assert.equal(s.canLock('old_pc'), false);
+    const posted = [];
+    window.ApiClient.lockSession = async (pcId) => { posted.push(pcId); return { success: true, pcId, locked: true }; };
+    assert.equal((await s.lockSession('old_pc')).ok, false);
+    assert.deepEqual(posted, []);
+});
+
+test('K-lock R1 m2: a lock 422 for a token that expired in flight drops the session as token_expired', async () => {
+    const s = setup();
+    s.load({}, [], { lockingSupported: true });
+    const closed = [];
+    s.sessions.set('tok_pc', { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'token', label: 'HB-FIN-02 sign-in token', remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02', expiresAt: Date.now() + 5000 });
+    s.registerDesktop('tok_pc', (m, r) => closed.push([m, r]));
+    window.ApiClient.lockSession = async () => {
+        s.sessions.get('tok_pc').expiresAt = Date.now() - 1;
+        throw Object.assign(new Error('refused'), { status: 422, body: { message: 'No session is held at this PC' } });
+    };
+    const r = await s.lockSession('tok_pc');
+    assert.equal(r.ok, false);
+    assert.equal(r.reason, 'token_expired');
+    assert.equal(s.has('tok_pc'), false, 'the copy the server no longer holds is dropped');
+    assert.deepEqual(closed, [['HB-FIN-02 sign-in token expired. Your session on HB-FIN-02 ended.', 'token_expired']]);
+    assert.equal(named('pc_signed_out').at(-1).reason, 'token_expired');
+    // A 422 for a live session stays a refusal with the server's words, and keeps the session
+    s.sessions.set('fh_pc', { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection', remote: true, footholdId: 'jack_comms_port' });
+    window.ApiClient.lockSession = async () => { throw Object.assign(new Error('refused'), { status: 422, body: { message: 'No session is held at this PC' } }); };
+    const r2 = await s.lockSession('fh_pc');
+    assert.deepEqual([r2.reason, r2.message], ['refused', 'No session is held at this PC']);
+    assert.equal(s.has('fh_pc'), true);
 });
 
 test('canLock is false when the server does not support locking', () => {

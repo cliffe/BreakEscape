@@ -7,6 +7,8 @@ require_relative 'author_notes' unless defined?(BreakEscape::AuthorNotes)
 # client reads. The guarded form the other lib files use; the engine autoloads lib/ inside Rails,
 # and NpcHabits uses AccessIdentities only inside methods, so this require order stays safe.
 require_relative 'npc_habits' unless defined?(BreakEscape::NpcHabits)
+# Plant hiding: HidingSpots.spot_object? / decor_room_and_image for hideable planted proofs.
+require_relative 'hiding_spots' unless defined?(BreakEscape::HidingSpots)
 
 module BreakEscape
   # Capture routes and capture proofs (docs/achitechture/PHYSICAL_PENTEST_FEEDBACK_PLAN_ENGINE.md,
@@ -446,7 +448,7 @@ module BreakEscape
     # id lists, defaulting to what objects holds: jack_ids (reachable_jack_ids, a jack plant is
     # a foothold on a jack found in nested contents) and sign_in_pc_ids (sign_in_pc_ids, the
     # server's login_scope_of rule).
-    def proof_satisfiable?(proof, item_defs, objects, _holder = nil, jack_ids: nil, sign_in_pc_ids: nil)
+    def proof_satisfiable?(proof, item_defs, objects, _holder = nil, jack_ids: nil, sign_in_pc_ids: nil, scenario: nil)
       kind = proof_kind(proof)
       return false unless kind
 
@@ -459,6 +461,27 @@ module BreakEscape
         return false unless item
 
         on = proof['on']
+        # A hideable device is planted through the hide flow (HidingSpots): a proof with no `on`
+        # is met when the item has at least one room; with `on`, when that is a spot.
+        if item['hideable'].is_a?(Hash)
+          rooms = Array(item['hideable']['rooms'])
+          return false if rooms.empty?
+          return true if on.nil?
+
+          # Decided as the server decides it (HidingSpots.resolve_spot: allowed rooms, exclude and
+          # spots lists). With the scenario the object's room is known; without it the room check
+          # is skipped (the caller only has a flat object list).
+          defn = HidingSpots.normalise(proof['planted'].to_s, item)
+          finder = if scenario
+                     ->(id) { HidingSpots.find_object(scenario, id) }
+          else
+                     lambda do |id|
+                       o = objects.find { |x| x['id'].to_s == id.to_s }
+                       o && { object: o, room_id: defn['rooms'].first }
+                     end
+          end
+          return !HidingSpots.resolve_spot(defn, on.to_s, finder).nil?
+        end
         return false if on && objects.none? { |o| o['id'].to_s == on.to_s } && !jack_ids.include?(on.to_s)
         # A jack plant is recorded only against the jack it names: with no `on` the server reads
         # plantedItems alone (capture_proof_holds?), and only a non-jack plant writes that.

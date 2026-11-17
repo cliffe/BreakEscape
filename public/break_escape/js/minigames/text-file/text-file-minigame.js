@@ -241,7 +241,8 @@ export class TextFileMinigame extends MinigameScene {
                     // Ask the server first: the reader stays open and says a refusal inside the
                     // monitor; it closes only once the lock succeeded (R1 m2)
                     m.lockPcSession(pcId, { onRefuse: (msg) => this.notify(msg, false, 3000) }).then((result) => {
-                        if (!result?.ok) return;
+                        // An expired token is gone and its expiry line parked: close like a success (R2 n2)
+                        if (!result?.ok && result?.reason !== 'token_expired') return;
                         // No desktop is open behind a reader, so the lock's message was parked:
                         // take it and say it, so the reader never closes silently (R2 m2)
                         const parked = window.pcSessions?.takeEndedMessage?.(pcId);

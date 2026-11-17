@@ -1449,3 +1449,33 @@ test('R2 N3: the "More below" cue sits on a dark slab, as the message line does'
         assert.equal(more.borderTopWidth, '2px');
     } finally { style.remove(); }
 });
+
+// ── K-lock R1 M1: a locked credential session opened from the network view ───────────────────
+
+const RDP_ENTRY = { id: 'k_rdp', kind: 'saved_connection', label: "HB-FIN-02.rdp", host: 'HB-FIN-02', accepted: true, forThisPc: true, connectsTo: 'lena_pc',
+    account: { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox' } };
+
+test('K-lock R1 M1: a locked credential session offers its .rdp once the keyring answers late, and says so', () => {
+    const mg = openRemote({ current: { username: 'lfox', displayName: 'Lena Fox', via: 'credential', locked: true }, preselect: 'lfox' });
+    assert.equal(mg.signInState.other, true, 'before any answer the account is typed (no tile yet)');
+    assert.equal(document.querySelector('.signin-current-locked').textContent, 'Locked: Lena Fox. Enter the password or connect again');
+    answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [], keyring: [RDP_ENTRY] });
+    assert.equal(mg.signInState.selected, 'lfox', 'the account tile is chosen');
+    assert.equal(mg.signInState.other, false);
+    assert.equal(messageText(), '', 'the Checking... line does not stay under the chosen account');
+    const b = document.querySelector('#signin-ways .signin-cred[data-cred-id="k_rdp"]');
+    assert.ok(b, 'the Connect with button is drawn');
+    assert.equal(b.textContent, "Connect with HB-FIN-02.rdp");
+    assert.equal(document.querySelector('.signin-change, #signin-change')?.offsetParent ?? null, null, 'still no Change on a locked screen');
+});
+
+test('K-lock R1 M1: a locked password session keeps the password-only slab and an Other user choice is kept', () => {
+    let mg = openRemote({ current: { username: 'lfox', displayName: 'Lena Fox', via: 'password', locked: true }, preselect: 'lfox' });
+    assert.equal(document.querySelector('.signin-current-locked').textContent, 'Locked: Lena Fox. Enter the password to unlock');
+    answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [] });
+    assert.equal(document.querySelector('#signin-ways').hidden, true, 'no credential, no button');
+    mg = openRemote({ current: { username: 'lfox', displayName: 'Lena Fox', via: 'credential', locked: true }, preselect: 'lfox' });
+    mg.signInState.otherPicked = true;
+    answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [], keyring: [RDP_ENTRY] });
+    assert.equal(mg.signInState.other, true, 'a typed choice by the player is not overridden');
+});
