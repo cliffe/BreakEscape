@@ -382,4 +382,23 @@ A32 (m7) changed only its gate, not its text, so it needs no re-voicing.
 
 ### Live check (port 3094)
 
-Pending in `tmp/handover/showcase-r2fix.md`: m1 (Zainab's kitchen-coffee fallback ticks `see_who_stays` when the office coffee is switched off in the evening), A32's new gate, the board fits without scrolling, and A31's new confirm text with "Not yet." returning to the menu with no blank bubble.
+Run on 2026-11-17. Results and evidence are in `## R2 fixes: live check` below.
+
+## R2 fixes: live check
+
+Probe: `tools/playtest/showcase-r2fix-proof.mjs` (modes `g1` and `g2`). Headless, setFPS(20) with fixed steps on, keyless server on :3094 (`env -u GEMINI_API_KEY`, PID 2105230 in `tmp/r2fix/server.pid`, boot log shows the GEMINI_API_KEY warning). Raw evidence: `tmp/r2fix/proof-g1-7675.json`, `tmp/r2fix/proof-g2-7665.json`. Games were created with `tools/playtest/new-game.rb` in this run.
+
+| # | Check | Game | Result | Evidence |
+|---|---|---|---|---|
+| 1 | Evening: office coffee switched off while Zainab walks to it; she falls back to the kitchen coffee; `see_who_stays` ticks | 7675 | PASS | At the switch her job was `caffeine:office_coffee:goto_target` and the task was active. Afterwards `office_coffee_off` was true and her job became `caffeine:kitchen_coffee:goto_target`. She reached `kitchen_coffee:using` 7.7 s later. The task went to completed. |
+| 2a | Morning, kitchen seen, cooler not heard: "What should I try next?" gives A7, not A32 | 7675 | PASS | `kitchen_seen` true, `heard_exchange_cooler_chat` false. Reply: "Then open the kitchen door and hang about by the water cooler." No "You've seen the kitchen." line. Screenshot `r2fix-trynext-morning-heard-false.png`. |
+| 2b | Same morning with the cooler exchange heard: gives A32 | 7665 | PASS | Game made with `--set heard_exchange_cooler_chat=true`, so the exchange was not heard in play. `kitchen_seen` and the flag both true. Reply: "You've seen the kitchen. Ask me about lunch when you're ready." Screenshot `r2fix-trynext-morning-heard-true.png`. |
+| 3 | `tour_notice` board fits the modal without scrolling | 7675 | FAIL | `.game-display-body` scrollHeight 511, clientHeight 444. The dialog itself (532 and 532) sits inside the 800 px viewport. The screenshot `r2fix-board-modal.png` shows the Evening lines cut off at the bottom. The observation sentence "A notice board with a short list of things to try on the tour." sits above the list and probably takes the extra height. That is not verified. |
+| 4 | A31 confirm text; "Not yet." returns to the hub with no blank bubble | 7675 | PASS | Confirm text exact: "They won't be back once they've gone home. Any tasks still unticked first?" Choices "1. Yes, call it a day." and "2. Not yet.". After "Not yet." the hub shows its choice list, with no blank step and `act_evening` still false. "Yes" then sets `act_evening` true. |
+
+Findings for the user:
+- Check 1 ticks on `npc_left_post`, not on the kitchen use. The existing `npc_left_post` mapping (kept in R1) fires when Zainab leaves her post for the machine. Here that happened after the switch, and it completed the task. Her kitchen use came 7.7 s later. The task therefore ticks on the walk, so the tick does not depend on the fallback. Decide whether that is wanted.
+- Check 3 fails. Fix is in the board text or its modal, which this probe does not change (no engine or scenario edits here).
+- After "Not yet." the ink returns to the choice point, so the hub shows its choice list without the "What can I help with?" greeting. That is the existing behaviour, not a blank bubble.
+
+Probe history: the first run on game 7656 had two probe faults (the hub criterion wanted the greeting line, and the tick was not attributed to an event). Both were fixed. Games 7673 (first rerun) and 7675 (final) show the same results for checks 2a, 3 and 4. Check 1 needed the kitchen-use wait added before the final run on 7675.
