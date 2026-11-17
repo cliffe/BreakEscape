@@ -307,7 +307,9 @@ module BreakEscape
       if device.is_a?(Hash) && device.any? && !ItemIdentity.held_in?(device, player_state['inventory'])
         player_state['inventory'] << device
       end
-      ended = end_sessions_through!(foothold_id)
+      # Keyring K5 R2 t2: a token that had already run out ends as expired, so the answer names it
+      # in tokenExpiredPcIds (the client says the token line, not the unplug line)
+      ended = drop_expired_token_sessions! + end_sessions_through!(foothold_id)
       # Keyring K4 (plan 9): a `from` session carries no foothold, so the prune ends one whose
       # source (or the source's own route) went with the foothold, and the answer names it too
       ended += prune_unreachable_sessions!
