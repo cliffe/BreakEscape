@@ -2,7 +2,7 @@
 
 B 1 / M 3 / m 7
 
-Reviewer tier: planning and review (opus55). Plan reviewed at commit 8d2039d37.
+Reviewer tier: planning and review. Plan reviewed at commit 8d2039d37.
 
 Clean: lock and key diff expected empty; aim chain untouched; V5 and V2 clear; `npc_attacked:<id>` real (`player-combat.js:461`, data `{ npcId, wasFriendly }`); `door_opened` carries `connectedRoom` (`doors.js:951` to `:956`); `affordance: false` honoured (`office-presets.js:52`, `:67`); requireGlobal keys declared; credits placement after `:283` outside ERB; hide shape matches m05; the VM launcher is in `server_room` (`:2002`), so the pair are gone before the cascade can arm; voices unused in m07; all cited lines check out.
 

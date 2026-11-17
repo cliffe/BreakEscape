@@ -2,7 +2,7 @@
 
 B 0 / M 3 / m 5
 
-Reviewer tier: planning and review (opus55). Plan reviewed at commit f342c2e1b. All R1 fixes verified as landed (M3's ink shape completed by M2 below).
+Reviewer tier: planning and review. Plan reviewed at commit f342c2e1b. All R1 fixes verified as landed (M3's ink shape completed by M2 below).
 
 Verified answers: a one-need NPC pairs at a capacity-2 cooler (`_maybePair`, `npc-needs.js:4405` to `:4428`); an off cooler parks the need (`npc-needs.js:1749`); preset plus partial affordance override is shallow per field (`office-presets.js:66` to `:76`); ink VAR sync works (`npc-conversation-state.js:498` to `:513`); `seated: true` at position takes the nearest free chair (`seating.js:1974` to `:1986`), no chair declaration needed; `onceOnly` hide plus saved visibility covers reload (`npc-manager.js:254`, `:353` to `:355`, `:1517`); hands-down rows outside the loop collide with no once key (`npc-manager.js:1264`).
 
