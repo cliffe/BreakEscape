@@ -225,6 +225,19 @@ exact commands and expected evidence, and the final report for the results).
 Harness: `tools/playtest/showcase-s3-lib.mjs` now aborts only POST /tts via a URL predicate
 (`u => /\/tts$/.test(u.pathname)`), never the `**/tts**` glob (which also blocked tts-manager.js).
 
+## S3 fixes: live proof
+
+Server: keyless on :3094 (boot log shows the GEMINI_API_KEY warning), killed by recorded PID. Every game came from `new-game.rb` in the same run. Browser headless, setFPS(20) with fixed steps on, POST /tts aborted by pathname only. The server log has no errors or 500s.
+
+| Check | Result | Game | Evidence |
+|---|---|---|---|
+| Cooler exchange does not play at the cake | PASS | 7584 | Graham and Agnieszka both `hunger:cake:using` at 46.3 s; they say cake pool lines ("Whose birthday is it?", "Go on, just a small slice."); no `npc_exchange_heard` event; `heard_exchange_cooler_chat` false. Probe `showcase-s3-cake2.mjs` (Chidi and Jun set to hunger 5 so the pair shares the cake; this check uses a needs nudge by design) |
+| Cooler exchange plays at the cooler | PASS | 7586 | Natural run, no nudges. Chat record `graham_whitfield+agnieszka_duda`, topic `cooler`, object `water_cooler`, from 170.3 s. Five exchange lines (174.3 to 193.8 s), then `npc_exchange_heard:exchange_cooler_chat` complete and `heard_exchange_cooler_chat` true at 198.3 s. Probe `showcase-s3-cooler.mjs` |
+| Natural cake drop, three tempted, one "Missed it." | PASS | 7579 | Mode A, no nudges, drop at 127.5 s. Hunger at the drop: Chidi 77.92, Jun 98.33, Graham 59.67, Agnieszka 59.67. Left post for the cake: Agnieszka (hunger), Chidi (hunger), Graham (social need, `social:cake`). Jun saw it but was not tempted (98.33 is above the 85 band edge). Servings: Chidi at 131.8 s, Graham at 132.0 s. Agnieszka `npc_turned_back` reason `gone` at 132.3 s, bubble shown on her; `cake_servings` 2, 1, 0; `see_cake_eaten` completed. Band 40 < level <= 85 holds: no tempt change needed |
+| news_cake removed | PASS with a note | 7579, 7580 | No `news_cake` in the scenario. Natural office drop (7579): no `npc_announced` or `npc_told` events, no announce or news lines, console errors only the expected aborted /tts. Kitchen drop (7580, `showcase-s3-news.mjs`): the engine's default topic still fires `npc_announced` (topic `news`, `line: null`, picture only) and `npc_told` for Graham, Jun and Chidi at 130.3 s, with no spoken or barked line; Chidi then says "Missed it." at 134 s. So no news lines, but picture-only word of mouth remains for a drop in the other room. The 7580 probe does not capture browser console errors; the server log is clean |
+
+Notes: Graham went to the cake on his social need, not hunger, in the natural run. "Missed it." on Agnieszka in 7579 showed as a speech bubble at the turn-back with no `speak` record; the same line was recorded as a speak for Chidi in 7580 and 7583. Games used: 7578 (cake probe, no pair chat), 7583 and 7584 (cake pair runs; 7583 pair did not overlap), 7579, 7580, 7586.
+
 ## S4 build and proof (evening and lighting)
 
 Build commit 5b4f4caf8 (data only: `act_evening` global, office and kitchen lighting variants, four `setVisible:false` mappings, Zainab's B10 bark and delayed caffeine, Ama's evening branch and "Call it a day" hub choice). Validator 0 errors, 17 warnings (baseline). No scenario or ink edits in the proof pass.
