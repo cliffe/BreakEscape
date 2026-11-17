@@ -63,6 +63,8 @@ VAR patricia_ko = false
 VAR owen_ko = false
 VAR lisa_ko = false
 VAR halloran_ko = false
+VAR thandiwe_ko = false
+VAR niamh_ko = false
 
 // Whodunnit (PASS 4)
 VAR found_door_log = false
@@ -92,6 +94,12 @@ VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the
     ~ n = n + 1
 }
 {halloran_ko:
+    ~ n = n + 1
+}
+{thandiwe_ko:
+    ~ n = n + 1
+}
+{niamh_ko:
     ~ n = n + 1
 }
 ~ return n
@@ -164,6 +172,12 @@ VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the
     ~ handler_trust = handler_trust - 10
 }
 {halloran_ko:
+    ~ handler_trust = handler_trust - 10
+}
+{thandiwe_ko:
+    ~ handler_trust = handler_trust - 10
+}
+{niamh_ko:
     ~ handler_trust = handler_trust - 10
 }
 {final_choice == "combat_lethal":

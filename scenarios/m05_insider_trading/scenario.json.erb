@@ -282,11 +282,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           { "text": "WHO TOLD SECURITY TO STOP — never asked",            "style": "warning", "condition": "!globalVars.found_stand_down_email && !globalVars.found_vetting_file" },
           { "text": "" },
           { "text": "── QUANTUM DYNAMICS STAFF ──",                        "style": "section-header" },
-          { "text": "Nobody on staff hurt",                                "style": "entry", "_comment": "Engine regression 2026-10-16 (E4): not after a fight with Torres (torres_fought), KO or not.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.torres_fought && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
-          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && (globalVars.torres_fought || globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
+          { "text": "Nobody on staff hurt",                                "style": "entry", "_comment": "Engine regression 2026-10-16 (E4): not after a fight with Torres (torres_fought), KO or not.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && !globalVars.torres_fought && globalVars.final_choice !== 'combat_lethal' && globalVars.final_choice !== 'combat_nonlethal'" },
+          { "text": "Nobody else on staff hurt",                           "style": "entry", "_comment": "Struggling run A (M2): Torres is staff, and a knockout put him on the floor; 'Nobody on staff hurt' after DAVID TORRES — DEAD contradicted itself.", "condition": "!globalVars.patricia_ko && !globalVars.owen_ko && !globalVars.lisa_ko && !globalVars.halloran_ko && !globalVars.thandiwe_ko && !globalVars.niamh_ko && (globalVars.torres_fought || globalVars.final_choice === 'combat_lethal' || globalVars.final_choice === 'combat_nonlethal')" },
           { "text": "PATRICIA MORGAN: A&E, on your account",               "style": "warning", "condition": "globalVars.patricia_ko" },
           { "text": "OWEN GALLAGHER: concussion, on your account",          "style": "warning", "condition": "globalVars.owen_ko" },
           { "text": "LISA PARK: off work with a head injury",              "style": "warning", "condition": "globalVars.lisa_ko" },
+          { "text": "A MEMBER OF STAFF: HURT, ON YOUR ACCOUNT",            "style": "warning", "condition": "globalVars.thandiwe_ko || globalVars.niamh_ko" },
           { "text": "DR RUTH HALLORAN: off work, her division one short",   "style": "warning", "condition": "globalVars.halloran_ko && globalVars.final_choice === 'turn_double_agent'" },
           { "text": "DR RUTH HALLORAN: off work, her division two short",   "style": "warning", "condition": "globalVars.halloran_ko && globalVars.final_choice !== 'turn_double_agent'" },
           { "text": "" },
@@ -816,7 +817,12 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "torres_hostile": false,
     "torres_fought": false,
     "torres_called_in": false,
-    "heard_tin_story": false
+    "heard_tin_story": false,
+    "qdc_staff_upset": false,
+    "qdc_cooler_off": false,
+    "thandiwe_ko": false,
+    "niamh_ko": false,
+    "lisa_met": false
   },
 
   "endGoal": "Identify the insider with both halves of the case (motive and proof of exfiltration), stop the final upload, and decide David Torres' fate: turn him, hand him to the police, expose the programme, or fight.",
@@ -829,6 +835,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     is lit. The upload terminal: amber while it runs, red once it is stopped.
     && only, no ||. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#c6c4c8" },
+<%# Office life (office_life/PLAN.md): break room and corridor only. %>
+  "officePresets": true,
   "rooms": {
     "reception_lobby": {
       "type": "room_qdc_lobby",
@@ -1538,7 +1546,14 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "condition": "globalVars.debrief_played === true",
               "onceOnly": true,
               "completeTask": "hear_debrief"
-            }<% end %>
+            }<% end %>,
+<%# Office life (PLAN.md 2.11): trouble. An attack on any of the break-room staff upsets the room; machines go off
+    (offWhen) and needs walk the newcomers home. Appended last so no saved once index moves. %>
+<% %w[npc_attacked:thandiwe_moyo npc_attacked:niamh_doherty npc_attacked:lisa_park npc_ko:lisa_park].each do |ev| %>
+            { "eventPattern": "<%= ev %>", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
+<% end %>
+            { "eventPattern": "global_variable_changed:qdc_staff_upset", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
+            { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } }
           ]
         },
         {
@@ -1704,6 +1719,15 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
       "npcs": [],
       "objects": [
         {
+          "type": "water_cooler",
+          "id": "corridor_cooler",
+          "name": "Water Cooler",
+          "takeable": false,
+          "offWhen": "qdc_cooler_off",
+          "observations": "A water cooler by the break-room door, a stack of paper cones on top.",
+          "affordance": { "overhearRadius": 200, "useFrom": { "dx": 1, "dy": 1 }, "queue": false }
+        },
+        {
           "type": "notes",
           "id": "collection_flyer",
           "name": "Noticeboard Flyer",
@@ -1746,10 +1770,103 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "storyPath": "scenarios/m05_insider_trading/ink/m05_npc_lisa_park.json",
           "currentKnot": "start",
           "globalVarOnKO": "lisa_ko",
-          "taskOnKO": "talk_to_lisa"
+          "taskOnKO": "talk_to_lisa",
+<%# Office life (PLAN.md 2A, D84 b): one kettle trip. Her single need is tea (decay 0.01, so it never
+    falls by itself); two mappings set it low when the player is two rooms away, and only once she
+    has been met (lisa_met), so a first meeting always finds her at her post. %>
+          "needsHome": { "room": "break_room", "x": 4, "y": 4 },
+          "needsRooms": ["break_room"],
+          "needs": { "tea": { "initial": 100, "decayPerMin": 0.01, "urgentAt": 30 } },
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:lisa_park", "onceOnly": true, "setGlobal": { "lisa_met": true } },
+            { "eventPattern": "room_entered:open_office_area", "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } },
+            { "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 900000, "needs": { "set": { "tea": 20 } } }
+          ]
+        },
+<%# Office life (PLAN.md 2.2 to 2.10, 2.12): two day extras at the east end of table 2. No storyPath and no
+    pool or exchange lines yet: those are slice 5 (see BUILD_REPORT.md). Thandiwe goes home at the evening
+    turn (server_room_entered); Niamh stays. %>
+        {
+          "id": "thandiwe_moyo",
+          "displayName": "Thandiwe Moyo",
+          "npcType": "person",
+          "gender": "female",
+          "voice": { "name": "Pulcherrima", "style": "Quantum Dynamics' office manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout, with no shift to any other accent.", "language": "en-GB" },
+          "position": { "x": 6, "y": 6 },
+          "seated": true,
+          "spriteSheet": "thandiwe_moyo",
+          "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
+          "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
+          "avatar": "assets/characters/thandiwe_moyo_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "globalVarOnKO": "thandiwe_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "needsHome": { "room": "break_room", "x": 6, "y": 6 },
+          "needsRooms": ["break_room", "main_corridor"],
+          "needsCompany": { "groups": ["qdc_staff"] },
+          "chatterCooldownMin": 2,
+          "needs": {
+            "caffeine": { "initial": 55, "decayPerMin": 4, "urgentAt": 30, "jitterPct": 10 },
+            "thirst": { "initial": 75, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 }
+          },
+          "eventMappings": [
+            { "eventPattern": "conversation_closed:lisa_park", "condition": "!globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "npc_use_started:corridor_cooler", "condition": "data.npcId === 'niamh_doherty' && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:server_room", "condition": "globalVars.thandiwe_ko !== true", "setVisible": false },
+            { "eventPattern": "room_entered:break_room", "condition": "globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "room_entered:main_corridor", "condition": "globalVars.server_room_entered === true && globalVars.thandiwe_ko !== true", "onceOnly": true, "setVisible": false }
+          ]
+        },
+        {
+          "id": "niamh_doherty",
+          "displayName": "Niamh Doherty",
+          "npcType": "person",
+          "gender": "female",
+          "voice": { "name": "Leda", "style": "Quantum Dynamics' internal communications officer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout, with no shift to any other accent.", "language": "en-GB" },
+          "position": { "x": 6, "y": 4 },
+          "seated": true,
+          "spriteSheet": "niamh_doherty",
+          "spriteTalk": "assets/characters/niamh_doherty_talk.png",
+          "spriteVisemes": "assets/characters/niamh_doherty_visemes.png",
+          "avatar": "assets/characters/niamh_doherty_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "globalVarOnKO": "niamh_ko",
+          "behavior": { "hostile": { "leash": true } },
+          "needsHome": { "room": "break_room", "x": 6, "y": 4 },
+          "needsRooms": ["break_room", "main_corridor"],
+          "needsCompany": { "groups": ["qdc_staff"] },
+          "chatterCooldownMin": 2,
+          "needs": {
+            "caffeine": { "initial": 45, "decayPerMin": 4, "urgentAt": 30, "jitterPct": 10 },
+            "thirst": { "initial": 75, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 }
+          },
+          "eventMappings": [
+            { "eventPattern": "room_entered:main_corridor", "condition": "data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:break_espresso", "condition": "data.npcId === 'thandiwe_moyo' && !globalVars.qdc_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "global_variable_changed:server_badge_obtained", "condition": "value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } }
+          ]
         }
       ],
       "objects": [
+        {
+          "type": "qdc_espresso",
+          "id": "break_espresso",
+          "name": "Espresso Machine",
+          "takeable": false,
+          "officeType": "coffee",
+          "offWhen": "qdc_staff_upset",
+          "observations": "A free-standing espresso machine, a pamphlet lying at its foot.",
+          "affordance": { "capacity": 2, "chatter": "coffee", "overhearRadius": 360, "useSeconds": 22, "useFrom": { "dx": -1, "dy": 1 }, "queue": false }
+        },
+        {
+          "type": "kettle",
+          "id": "kettle1",
+          "name": "Kettle",
+          "takeable": false,
+          "offWhen": "qdc_staff_upset",
+          "observations": "An electric kettle on the kitchenette counter.",
+          "affordance": { "satisfies": "tea", "queue": false }
+        },
         {
           "type": "notes",
           "id": "entropy_pamphlet",
