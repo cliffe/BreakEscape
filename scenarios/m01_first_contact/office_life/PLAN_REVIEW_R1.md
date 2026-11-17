@@ -71,3 +71,26 @@ Fix: name the route: seed the VM flags through `new-game.rb` FLAGS_XML with `ses
 - Whether the Fatima bark at 2 s and HaX's ring at 6 s leave a 4 s gap (GO 66), and whether a bark on screen during the ring is acceptable.
 - The tier 2 cooler at (8.5, 2) against the north-east hallway door gap (door geometry from `systems/doors.js:328`), and the `useFrom` cell (8.5, 3).
 - The awareness-cast art (seated and pose frames) and the voice register against VOICE_CAST.md.
+
+## Outcomes
+
+Fixes applied in PLAN.md (and one line in DIALOGUE_SAMPLE.md). Open items checked against the files. No server, db task or SecGen file was touched.
+
+Findings
+
+- B1 fixed: both desk PCs are now `"type": "pc"` with no `position`, `graham_pc` declared first (claims pc8, east) and `fatima_pc` second (claims pc6, west). Section 4.2 explains the claim order, the ERB comment carries it, and the MR 2 double-load check now asserts one sprite per PC position and no `pc` elsewhere.
+- M1 fixed: `leash: true` and `chaseRange: 160` moved inside `behavior.hostile` for both extras; the stray `behavior.leash` is gone. Test 10 now checks a hostile extra does not follow the player out of the main office.
+- M2 fixed: the cooler's `offWhen` is at object level, `m01_staff_alarmed` is noted as needing a false declaration, and `"useSound": "drink_gulp"` is written by hand.
+- m1 fixed: section 4.1 lists what each unmapped room plays under the stock table. IT room `it` (bed 0.8, no spots), conference `meeting` (no bed), server room's own `ambientSound` wins, closet, halls and small offices have no tone. Only `office` and `reception` carry spots and both are mapped, so no phone-clue room needed re-mapping; the IT room stays on stock `it`, with test 5 covering it.
+- m2 fixed: section 6 now lists `npcVisibility` (2 keys) and `npcHostility` (up to 2), and says the evening hide survives a reload through `npcVisibility`. Test 9's reload step checks both are hidden before any re-hide fires.
+- m3 fixed: each PC has a `useFrom` toward its chair (Graham dy 1.3, Fatima dx -1.4, dy -0.2, tile offsets, tuned in the build to 12 px), with a render check in 4.2 and test 7 and a spare-`pc` fallback if Fatima's chair belongs to pc11.
+- m4 fixed: test 7 now opens the recycling bin with Graham seated and mid-`work` and repeats for the filing cabinet against the cooler queue.
+- m5 fixed: test 9 names the route: seed VM flags through `tools/playtest/new-game.rb` FLAGS_XML and `session-start.sh --flags`, play the real path on port 3094 keyless, reload on the same game.
+
+Open items
+
+- Credits condition form: confirmed. The block uses `{ "text", "style": "entry", "condition": "globalVars.<name>" }`; the two new lines are written in exactly that form in 4.7. The existing lines put a long dash in their text; the new ones use a comma.
+- One-knot brush-off ink: the validator accepts it. It only compiles the ink and runs the advisory dialogue lint, and has no knot-count, hub or choices check for a person NPC's storyPath. Evidence: m03 validated read-only (0 errors, 12 warnings, no ink complaint, the working tree stayed clean); a scratch one-knot ink with one `+` choice and `#exit_conversation` compiled and linted clean. The m03 extras are three-knot hubs, so there is no one-knot precedent: whether the engine copes stays a step 0 live proof, and step 0 now has the ink shape written out with the `-> start` root divert.
+- Gap between Fatima's bark and HaX's ring: 4 s start to start. The toast stays up 5.1 s (7 words), so it is still showing at the ring, which is fine because the ring hold only defers barks that arrive during the call. A voiced clip of about 2.5 s ends about 1.5 s before the ring; if the build measures over 3.5 s, `delayMs` drops to 1000. Recorded in 4.4.
+- Cooler position: failed, plan fixed. The doors layer and `placeNorthDoorsMultiple` put the north-east door in column 8 (x 8.5, y 1), so (8.5, 2) sat directly in front of it and crowded the east door at (9.5, 2.5). Moved to (5.4, 8.2), against the south wall, `useFrom` dy -1, free on the occupancy map of tables, chairs and items. The render must still confirm it and the aisle width, and the south door's x (expected 1.5 or 8.5 by the snapping rule, not read from the layout).
+- Cast atlases and voices: pass. `fatima_begum.json` and `graham_whitfield.json` each have `sit`, `pose_use`, `pose_drink` and `pose_phone` frames in all eight directions. VOICE_CAST.md has Fatima on Vindemiatrix (friendly, organised, Yorkshire) and Graham on Umbriel (unhurried, kind, Halifax), which fit a brisk brush-off and a dry one. The cast files name other employers (Tarrowby, Brightwell); the m01 lines name no company, so no clash.

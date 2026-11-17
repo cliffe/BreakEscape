@@ -32,7 +32,7 @@ Fatima's version:
 
 ## 3. At the cooler (tier 2)
 
-[Thirty seconds after the player comes back from the hallway, Fatima gets up, walks to the north-east corner and fills a paper cup.]
+[Thirty seconds after the player comes back from the hallway, Fatima gets up, walks to the cooler against the south wall and fills a paper cup.]
 
 **Fatima:** Every CV says 'passionate' now.
 

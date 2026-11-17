@@ -17,7 +17,7 @@ Settled rulings this plan follows: D84 b (a few story NPCs with an always-open c
 
 ## 2. Build order
 
-0. Step one, before anything else: prove that a person NPC with only a short brush-off conversation (or none) works in the engine. Add Fatima alone, seated, with a one-knot ink file that has a single exit and nothing else, boot a keyless server, talk to her, leave, talk again, reload. Check no console error, no stuck conversation state, no stuck "talk" prompt, and the validator's `npcType: person` rules. Fallback if it fails: give each extra a two-knot ink with a hub that always returns to a single exit choice (the m03 extras pattern); if that also fails, drop to tier 0 (room tone only, as m08) and report. Nothing else is built until this passes.
+0. Step one, before anything else: prove that a person NPC with only a short brush-off conversation (or none) works in the engine. Add Fatima alone, seated, with a one-knot ink file that has a single exit and nothing else, boot a keyless server, talk to her, leave, talk again, reload. Check no console error, no stuck conversation state, no stuck "talk" prompt, and the validator's `npcType: person` rules. The proof ink is `=== start ===`, the greeting line, one `+ [Let her get on]` choice, the reply, `#exit_conversation`, `-> DONE`, with `-> start` as the root divert above it as the m03 extras have. Checked in round 1: `bin/inklecate` compiles that shape and `dialoguelint.mjs` reports no findings. The validator never inspects knot or choice counts (see PLAN_REVIEW_R1.md, Outcomes), so only the live proof can show whether the engine copes with it. Fallback if it fails: give each extra a two-knot ink with a hub that always returns to a single exit choice (the m03 extras pattern); if that also fails, drop to tier 0 (room tone only, as m08) and report. Nothing else is built until this passes.
 1. Room tone (section 4.1) and validator.
 2. Desk PCs and the two extras (4.2 to 4.4).
 3. Attack handling, thinning, credits, HaX texts (4.5 to 4.7).
@@ -49,36 +49,41 @@ Settled rulings this plan follows: D84 b (a few story NPCs with an always-open c
 - Reception gets `quiet_office`. The stock `reception` profile has `distant_phone` spots, and m01 has two phone clues (the reception voicemail phone and Patricia's desk phone). `distant_phone` is suppressed only by a declared object with `deskPhone: true` (office-room-tone.js:107-113) and reception_desk_phone has none, so a ring in the distance would send players looking for a phone to answer.
 - The main office gets `it`: typing, no spots, so no copier or phone noise. Typing plays only for a needs NPC in the `using` phase of a `work` job (seating.js:1192-1196), so the bed is silent until an extra works.
 - Break room (Q5): the stock `kitchen` profile hums a fridge that is not placed. Default `quiet_office`.
-- Other rooms stay unmapped. The server room's authored `ambientSound` (:2123-2124) wins anyway.
+- Other rooms stay unmapped, and `profileIdFor` then falls back to the stock type table (office-room-tone.js:42-47, data/room-tones.json). What each unmapped m01 room plays: `it_room` (room_it) takes the stock `it` profile, an `office_ambient` bed at 0.8 with typing allowed (silent, because Kevin has no `work` need) and no spots; `conference_room` (room_meeting) takes `meeting`, no bed, no spots; `server_room` (room_servers) takes `server`, but its authored `ambientSound` (:2123-2124) wins; `storage_closet`, the two halls and the four small offices have types the table does not know, so they get no tone. Only the stock `office` and `reception` profiles carry spots (copier, phone), and both of those rooms are mapped above, so no unmapped room can ring a phone. No room with a phone clue needs re-mapping. Kevin's IT room keeps the stock `it` bed on purpose (an office murmur in a working IT room); the build checks it in test 5, and if it sounds wrong there, `"room_it": "quiet_office"` is a one-line change.
 - `npcThoughts: false` is listed because D77 settles it, but the key arrives from the npcThoughts branch; if this plan lands first, the build leaves it out and says so.
 - The music `npc_hostile_state_changed` handler (:89-95) is unchanged.
 
 ### 4.2 Desk PCs
 
-Typing needs a `work` need at a desk PC, and the PC is declared by its exact Tiled sprite type so it claims one existing sprite. room_office.json holds `pc6` at (2.2, 5.6) west, `pc8` at (6.6, 4.1) east and `pc11` at (2.4, 4.1), each once. No map edit: room_office.json is the map for 85 scenarios, including the Hacktivity fixtures `test_objectives` and `test_simple_success`.
+Typing needs a `work` need at a desk PC. The Tiled item pool is keyed by base type with trailing digits stripped (`core/rooms.js:186-192`, indexed `:229-241`), and `findMatchFor` looks up the scenario object's exact `type` (`:261-279`). room_office.json holds one `pc` sprite type three times (they are named pc6, pc8 and pc11 in the map); a scenario type of `pc6` or `pc8` finds nothing, falls to `createSpriteAtRandomPosition` and draws a second PC at a random spot. So the two desk PCs are declared as `"type": "pc"` with no `position`, and each claims the first unreserved `pc` in the map's table_items layer order. That order is pc8 at (6.62, 4.08), then pc6 at (2.25, 5.62), then pc11 at (2.41, 4.14). So `graham_pc` is declared first (claims pc8, east) and `fatima_pc` second (claims pc6, west); swapping them would put each extra at the wrong desk. The ERB carries a comment saying the declaration order decides the claim. No map edit: room_office.json is the map for 85 scenarios, including the Hacktivity fixtures `test_objectives` and `test_simple_success`.
 
 ```json
 "objects": [
   {
-    "type": "pc6",
-    "id": "fatima_pc",
-    "name": "Recruitment PC",
-    "takeable": false,
-    "observations": "A recruitment tracker, half full of candidate names.",
-    "affordance": { "satisfies": "work", "restores": 40, "useSeconds": 40 }
-  },
-  {
-    "type": "pc8",
+    "_comment": "Declaration order decides which Tiled pc each claims (layer order: pc8 east, then pc6 west). Graham first.",
+    "type": "pc",
     "id": "graham_pc",
     "name": "Finance PC",
     "takeable": false,
     "observations": "A spreadsheet with more tabs than anyone could need.",
-    "affordance": { "satisfies": "work", "restores": 40, "useSeconds": 40 }
+    "affordance": { "satisfies": "work", "restores": 40, "useSeconds": 40, "useFrom": { "dx": 0, "dy": 1.3 } }
+  },
+  {
+    "type": "pc",
+    "id": "fatima_pc",
+    "name": "Recruitment PC",
+    "takeable": false,
+    "observations": "A recruitment tracker, half full of candidate names.",
+    "affordance": { "satisfies": "work", "restores": 40, "useSeconds": 40, "useFrom": { "dx": -1.4, "dy": -0.2 } }
   }
 ]
 ```
 
-`officePresets` stays off, so each affordance is written by hand. With presets on, every declared object of a preset type would gain an affordance (office-presets.js:48-60) and spill onto story PCs; with them off an object's own affordance is used as written (office-presets.js:66-69). The build renders the room and does the MR 2 double-load check, so the declaration claims one sprite and not two. The observation text carries no clue, name or code. If the exact sprite types turn out to differ, the build uses what the render shows and records it.
+`officePresets` stays off, so each affordance is written by hand. With presets on, every declared object of a preset type would gain an affordance (office-presets.js:48-60) and spill onto story PCs; with them off an object's own affordance is used as written (office-presets.js:66-69), and a `pc` takes no preset. The observation text carries no clue, name or code.
+
+Chair pairing (review m3). A `work` use defaults to the `fetch` seat (seating.js:2103-2115), so an extra may pull whichever swivel chair is nearest the use cell. `useFrom` is a tile offset from the PC's position to the cell the NPC stands at (npc-needs.js:5426, seating.js:2118-2123), and the NPC faces back along it. The starting values above come from the map: Graham's chair (6.81, 5.39) sits 1.3 tiles south of pc8; Fatima's chair (0.87, 5.41) sits 1.4 tiles west and 0.2 north of pc6. The build measures each seated body-centre against its chair (HOME_EPS 12 px) and records the final `useFrom` values. If the render shows Fatima's chair belongs to the north desk (pc11), the claim order changes: a position-less spare `pc` object with no affordance is declared between the two to absorb pc6, and the build records it.
+
+Render check (build step 2 and test 7): render the room with both extras seated and assert (a) exactly one `pc` sprite at each of pc8's and pc6's map positions and no `pc` anywhere else (the MR 2 double-load check); (b) each extra's feet are within 12 px of the intended chair's body-centre and the NPC faces its screen; (c) no extra sits at a chair that belongs to the other desk.
 
 ### 4.3 The people (npcs array on `main_office_area`)
 
@@ -99,8 +104,7 @@ Both extras are `npcType: "person"`, spriteSheet and talk and visemes from the a
   "behavior": {
     "facePlayer": true,
     "facePlayerDistance": 96,
-    "hostile": { "fightStyle": "cower", "fleeSpeed": 120, "attackDamage": 5, "attackCooldown": 1200, "pauseToAttack": true },
-    "leash": true
+    "hostile": { "fightStyle": "cower", "fleeSpeed": 120, "attackDamage": 5, "attackCooldown": 1200, "pauseToAttack": true, "leash": true, "chaseRange": 160 }
   },
   "globalVarOnKO": "fatima_ko",
   "needsHome": "fatima_pc",
@@ -115,7 +119,7 @@ Both extras are `npcType: "person"`, spriteSheet and talk and visemes from the a
 }
 ```
 
-Graham is the same shape: `graham_whitfield`, position (6.8, 5.4) east at `graham_pc`, voice Vindemiatrix swapped for Umbriel ("Finance training lead in his early sixties, Halifax accent, dry and unhurried"), `globalVarOnKO` `graham_ko`. The seated chairs are `chair-white-2-rotate6` (Fatima) and `chair-white-2-rotate3` (Graham); both families are seatable (seating.js:135-145). Numbers (decay, `urgentAt`, `restores`, `useSeconds`) are estimates tuned in the build. The `leash` and `chaseRange` values are set by the build against the room; the field forms follow the test_needs scenarios.
+Graham is the same shape: `graham_whitfield`, position (6.8, 5.4) east at `graham_pc`, voice Vindemiatrix swapped for Umbriel ("Finance training lead in his early sixties, Halifax accent, dry and unhurried"), `globalVarOnKO` `graham_ko`. The seated chairs are `chair-white-2-rotate6` (Fatima) and `chair-white-2-rotate3` (Graham); both families are seatable (seating.js:135-145). Numbers (decay, `urgentAt`, `restores`, `useSeconds`) are estimates tuned in the build. `leash` and `chaseRange` sit inside `behavior.hostile`, where the engine reads them (npc-behavior.js:667-668, as m01's Sarah has them at :601-607); a `leash` placed directly under `behavior` is read by nothing. `chaseRange` starts at 160 px (five tiles) and is tuned in the build so a hostile extra does not follow the player out of the main office (test 10).
 
 ### 4.4 Barks (tier 1)
 
@@ -126,6 +130,8 @@ Graham is the same shape: `graham_whitfield`, position (6.8, 5.4) east at `graha
 ```
 
 Graham's bark uses `condition: "data.previousRoom !== 'reception_area' && !globalVars.graham_ko && !globalVars.entropy_reveal_read"` so it fires on the first return to the office from elsewhere, not on the first entry, when HaX's call rings (6 s delay, :763-769) and Fatima has just spoken. Both are scenario data only; text in SPOKEN_LINES.md.
+
+Gap to HaX's ring (GO 66), checked in round 1: Fatima's bark fires 2 s after entry and the ring 6 s after, so the two start 4 s apart. A 7-word toast stays up `3000 + 7 x 300 = 5.1 s` (bark-lifetime.js), so the bark is still on screen when the ring starts, and that is acceptable: the ring hold (npc-barks.js, `phoneRinger.callActive`) only defers barks that arrive during the call, and the bark toast is a corner notice, not a call. A voiced bark of about 2.5 s ends about 1.5 s before the ring. If the build measures the clip over 3.5 s, lower Fatima's `delayMs` to 1000 so the voice always ends before the ring starts.
 
 ### 4.5 Evening thinning (Q2, default hide)
 
@@ -161,7 +167,14 @@ FATIMA BEGUM: Bystander knocked out, no ENTROPY connection
 GRAHAM WHITFIELD: Bystander knocked out, no ENTROPY connection
 ```
 
-Each is shown only when that NPC's KO global is true, using the block's existing condition form.
+Each is shown only when that NPC's KO global is true. The block's existing form (:133-145) is an object `{ "text": "...", "style": "entry", "condition": "globalVars.<name>" }` with a bare `globalVars.` expression, as the Sarah line has it for `sarah_ko`; the new lines are exactly that:
+
+```json
+{ "text": "FATIMA BEGUM: Bystander knocked out, no ENTROPY connection",   "style": "entry", "condition": "globalVars.fatima_ko" },
+{ "text": "GRAHAM WHITFIELD: Bystander knocked out, no ENTROPY connection", "style": "entry", "condition": "globalVars.graham_ko" }
+```
+
+They go after the Kevin lines and before the empty spacer line. The existing lines use a long dash inside their text; the new lines use a comma, per the house style.
 
 ### 4.8 Tier 2: water cooler, breaks, exchanges
 
@@ -172,17 +185,20 @@ The cooler is a scenario object with its own position and never goes in room_off
   "type": "water_cooler1",
   "id": "office_cooler",
   "name": "Water Cooler",
-  "position": { "x": 8.5, "y": 2 },
+  "position": { "x": 5.4, "y": 8.2 },
   "takeable": false,
   "observations": "A water cooler with a stack of paper cups beside it.",
   "affordance": {
     "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2,
-    "useFrom": { "dx": 0, "dy": 1 }, "chatter": "cooler", "offWhen": "m01_staff_alarmed"
-  }
+    "useFrom": { "dx": 0, "dy": -1 }, "chatter": "cooler", "useSound": "drink_gulp"
+  },
+  "offWhen": "m01_staff_alarmed"
 }
 ```
 
-The spot (8.5, 2) is a candidate in the north-east area, clear of the five door gaps, the north-wall filing cabinet at (5.49, 0.72), the chalkboards, the bookcase and the three bins. The dressing render confirms it before commit; placing is a scenery change and needs the user's yes (Q1). `offWhen` must be written the way the build's schema check accepts; the field form follows the preset values the cooler preset uses.
+`offWhen` sits at object level, not inside `affordance`: format 1 moved it (format_upgrade.rb:42, :247; schema `offWhen` at scenario-schema.json:5480), the validator reports `affordance.offWhen` as retired (validate_scenario.rb:260-301), and the needs world reads the object-level key (npc-needs.js:830-837). `m01_staff_alarmed` must be declared false in globalVariables or `validate_npc_needs.rb:445-462` errors. With presets off the cooler's affordance is used as written and no preset adds a sound, so `"useSound": "drink_gulp"` is written by hand.
+
+The spot moved in round 1. The earlier candidate (8.5, 2) is wrong: room_office.json's doors layer puts the north-east door in column 8 (`placeNorthDoorsMultiple` snaps a two-door wall to x 1.5 and 8.5, y 1), so (8.5, 2) sits on the tile directly in front of it, and it also crowds the east door at (9.5, 2.5). The new candidate is (5.4, 8.2), against the south wall in the middle of the room: the occupancy of the map's tables, chairs and items leaves x 4.3 to 6.5, y 6.0 to 9.0 free, the north wall is full from x 2.0 to 7.8 (chalkboards, bookcase, filing cabinet at (5.49, 0.72)), and the one-door south wall uses the same corner snapping as the north (doors.js:98-115 and the south counterpart), so a south door is expected at x 1.5 or 8.5, not mid-wall; the build confirms it from the rendered door. `useFrom` is `dy -1`, so the NPC stands at (5.4, 7.2) facing the wall, with the queue cells in the open floor behind. The aisle between the two desk clusters (about x 3.4 to 6.6) is left clear of the cooler's body, which the render must confirm. The dressing render confirms the spot and the walk path before commit (check: nothing on the route from the south door to either north door is narrowed below one tile); placing is a scenery change and needs the user's yes (Q1).
 
 Per NPC additions:
 
@@ -230,7 +246,10 @@ All additions are bounded scalars sent as deltas, never a growing structure re-s
 
 - Globals: `fatima_ko`, `graham_ko` (both tiers). Tier 2: `m01_staff_alarmed`, `heard_ex_interns`, `heard_ex_biscuits`. Five at most, all declared false at start, all booleans.
 - onceOnly keys in `triggeredEvents` (each fires once and is then fixed): 2 barks, 4 re-hides, 2 HaX attacked texts (tier 2 adds the alarmed setGlobal mappings, 2 keys). At most 10 keys.
-- No `player_state` growth. NPC need values and positions are local to the client sim, as for other needs NPCs.
+- `npcVisibility`: `setVisible` writes `npcManager._npcVisibility`, saved as `npcVisibility` and restored on register (state-sync.js:548-550; npc-manager.js:2205-2237). Two keys at most, one per extra, booleans, sent as a delta when the hide fires.
+- `npcHostility`: a KO or an attack goes into `npcHostility` (state-sync.js:552-554). Up to two keys, one per extra, bounded.
+- No other `player_state` growth. NPC need values and positions are local to the client sim, as for other needs NPCs.
+- The evening hide survives a reload through `npcVisibility`, so the room-entry re-hides in 4.5 are a second guard, not the main one.
 
 ## 7. Expected results
 
@@ -247,12 +266,12 @@ Live work uses a free port other than 3000, 3001, 3002, 3085, 3086 and 3091; the
 2. Validator and `--office-summary`, diff against `v1_summary_base.txt` (only the two new NPCs and their needs appear).
 3. Lock and key diff, expected empty.
 4. V6: `env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]"`, expecting 6 or 22 clips.
-5. Headless audio: launch Chromium with `--autoplay-policy=no-user-gesture-required`, wait for `__test.waitUntilReady`, `setFPS(20)` with fixed steps on, never `fixedStep=false`. Confirm `soundManager.sounds` holds the beds first. Check `currentAmbient` and the `started` log entries per room against section 4.1 (quiet_office and it share `office_ambient`, so assert level not key).
+5. Headless audio: launch Chromium with `--autoplay-policy=no-user-gesture-required`, wait for `__test.waitUntilReady`, `setFPS(20)` with fixed steps on, never `fixedStep=false`. Confirm `soundManager.sounds` holds the beds first. Check `currentAmbient` and the `started` log entries per room against section 4.1 (quiet_office and it share `office_ambient`, so assert level not key). Include the unmapped rooms: `it_room` plays the stock `it` bed at 0.8 and no spot, `conference_room` has no bed, and no unmapped room logs a `spot`.
 6. Typing: dwell 60 s in the main office; assert a `typing` log entry with `count > 0` while an extra is in `using`, and no `spot` entries in any of the three mapped rooms (positive control: `lastSlot` advances).
-7. Seats and PCs: both extras seated at their chairs on load; each PC claimed once (MR 2 double-load check).
+7. Seats, PCs and approach: both extras seated at their intended chairs on load (feet within 12 px of the chair body-centre, per 4.2); each PC claimed once and no `pc` sprite anywhere else (MR 2 double-load check, one sprite per PC position). Then, with Graham seated and mid-`work`, walk to the Office Recycling Bin (the IT-room clue, a Tiled `bin` that claims bin11 at about (8.42, 4.77), 1.6 tiles from Graham's chair), open it and read the checklist; confirm his use cell and any fetched chair stay off the bin's approach cells. Repeat for the filing cabinet at (5.49, 0.72) against the tier 2 cooler queue.
 8. Barks fire once, in the right order on first entry and first return, and not after KO or after `entropy_reveal_read`.
-9. Evening: set `entropy_reveal_read` via the real onPickup path (server-room archive safe), walk back, confirm both hidden with no reserved seat; reload and repeat.
-10. Attack: KO each extra; globals set, HaX text once, credits line, music switches to threat then back to noir on `all_hostiles_ko`.
+9. Evening: reach `entropy_reveal_read` by the real path only (no page-side global writes). Route: seed the VM flags through `tools/playtest/new-game.rb` FLAGS_XML and `session-start.sh --flags` (the method used for VM playtests here), then play the real path (RFID door, decrypt step, archive safe `onPickup`, scenario.json.erb:2205) on port 3094, keyless. Walk back and confirm both extras are hidden with no reserved seat. Run the reload half on the same game: after the reload and before any re-hide fires, confirm both are hidden (restored from `npcVisibility`); then enter the rooms and confirm the re-hides add nothing.
+10. Attack: KO each extra; a hostile extra does not follow the player out of the main office (leash and `chaseRange`); globals set, HaX text once, credits line, music switches to threat then back to noir on `all_hostiles_ko`.
 11. Tier 2: cooler lands where intended and blocks no door; break sequence, queue and capacity 2; each exchange once; `m01_staff_alarmed` turns the cooler off.
 12. Gate playtests: m01, sis01, sis02 critical-path runs (scripted runs wait until any moved NPC is back at post; none moves in the critical path here). Reload check for Mission Brief and start-room spawn is intentional behaviour, not a finding.
 13. Regressions the Haiku playtest checks: the main office key lock, the filing cabinet PIN, the recycling bin, HaX's first call at 6 s, the entire Derek confrontation.
