@@ -556,27 +556,28 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   rc_desk_yasmin_21{"Yasmin's desk"}
   rc_yasmin_pc_22{"Yasmin's PC"}
   rc_chair_yasmin_23{"Yasmin's chair"}
-  rc_rota_board_24{"Coffee rota"}
-  rc_npc_thandiwe_moyo_25("Thandiwe Moyo")
-  rc_npc_yasmin_chaudhry_26("Yasmin Chaudhry")
-  rc_npc_lorna_easton_27("Lorna Easton")
-  rc_door_controller_28[["Door controller"]]
-  rc_door_codes_29{"Door codes"}
-  rc_coffee_station_30{"Coffee station"}
-  rc_sign_kitchen_31{"Sign: coffee"}
-  rc_npc_julian_sallow_32("Julian Sallow")
-  rc_julian_pc_33[["Julian's PC"]]
-  rc_partner_note_34{"partners_notes.txt"}
-  rc_rfid_cloner_35{"RFID cloner"}
-  rc_kit_dropbox_36{"Network drop box"}
-  rc_meeting_jack_37{"Live wall network port"}
-  rc_kit_injector_38{"Keystroke injector"}
-  rc_demo_stick_39{"USB stick"}
-  rc_kit_rogue_ap_40{"Pocket rogue AP"}
-  rc_capture_tablet_41{"Harvested Credentials"}
-  rc_patch_panel_42{"Patch panel and comms cabinet"}
-  rc_managed_port_43{"Managed wall network port"}
-  rc_guest_vlan_port_44{"Guest VLAN port"}
+  rc_coffee_station_open_plan_24{"Coffee station"}
+  rc_rota_board_25{"Coffee rota"}
+  rc_npc_thandiwe_moyo_26("Thandiwe Moyo")
+  rc_npc_yasmin_chaudhry_27("Yasmin Chaudhry")
+  rc_npc_lorna_easton_28("Lorna Easton")
+  rc_door_controller_29[["Door controller"]]
+  rc_door_codes_30{"Door codes"}
+  rc_coffee_station_31{"Coffee station"}
+  rc_sign_kitchen_32{"Sign: coffee"}
+  rc_npc_julian_sallow_33("Julian Sallow")
+  rc_julian_pc_34[["Julian's PC"]]
+  rc_partner_note_35{"partners_notes.txt"}
+  rc_rfid_cloner_36{"RFID cloner"}
+  rc_kit_dropbox_37{"Network drop box"}
+  rc_meeting_jack_38{"Live wall network port"}
+  rc_kit_injector_39{"Keystroke injector"}
+  rc_demo_stick_40{"USB stick"}
+  rc_kit_rogue_ap_41{"Pocket rogue AP"}
+  rc_capture_tablet_42{"Harvested Credentials"}
+  rc_patch_panel_43{"Patch panel and comms cabinet"}
+  rc_managed_port_44{"Managed wall network port"}
+  rc_guest_vlan_port_45{"Guest VLAN port"}
 
   reception --> open_plan
   reception --> partner_office
@@ -607,33 +608,34 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
   open_plan --> rc_desk_yasmin_21
   open_plan --> rc_yasmin_pc_22
   open_plan --> rc_chair_yasmin_23
-  open_plan --> rc_rota_board_24
-  open_plan --> rc_npc_thandiwe_moyo_25
-  open_plan --> rc_npc_yasmin_chaudhry_26
-  open_plan --> rc_npc_lorna_easton_27
-  server_room --> rc_door_controller_28
-  rc_door_controller_28 --> rc_door_codes_29
-  kitchen --> rc_coffee_station_30
-  kitchen --> rc_sign_kitchen_31
-  kitchen --> rc_npc_julian_sallow_32
-  partner_office --> rc_julian_pc_33
-  rc_julian_pc_33 --> rc_partner_note_34
-  meeting_room --> rc_rfid_cloner_35
-  meeting_room --> rc_kit_dropbox_36
-  meeting_room --> rc_meeting_jack_37
-  meeting_room --> rc_kit_injector_38
-  meeting_room --> rc_demo_stick_39
-  meeting_room --> rc_kit_rogue_ap_40
-  meeting_room --> rc_capture_tablet_41
-  comms_cupboard --> rc_patch_panel_42
-  comms_cupboard --> rc_managed_port_43
-  comms_cupboard --> rc_guest_vlan_port_44
+  open_plan --> rc_coffee_station_open_plan_24
+  open_plan --> rc_rota_board_25
+  open_plan --> rc_npc_thandiwe_moyo_26
+  open_plan --> rc_npc_yasmin_chaudhry_27
+  open_plan --> rc_npc_lorna_easton_28
+  server_room --> rc_door_controller_29
+  rc_door_controller_29 --> rc_door_codes_30
+  kitchen --> rc_coffee_station_31
+  kitchen --> rc_sign_kitchen_32
+  kitchen --> rc_npc_julian_sallow_33
+  partner_office --> rc_julian_pc_34
+  rc_julian_pc_34 --> rc_partner_note_35
+  meeting_room --> rc_rfid_cloner_36
+  meeting_room --> rc_kit_dropbox_37
+  meeting_room --> rc_meeting_jack_38
+  meeting_room --> rc_kit_injector_39
+  meeting_room --> rc_demo_stick_40
+  meeting_room --> rc_kit_rogue_ap_41
+  meeting_room --> rc_capture_tablet_42
+  comms_cupboard --> rc_patch_panel_43
+  comms_cupboard --> rc_managed_port_44
+  comms_cupboard --> rc_guest_vlan_port_45
 
   class reception,open_plan,kitchen room
   class server_room,partner_office,meeting_room,comms_cupboard lock
-  class rc_reception_pc_1,rc_door_controller_28,rc_julian_pc_33 container
-  class rc_facilities_txt_2,rc_julian_rdp_file_3,rc_visitor_card_4,rc_staff_ap_5,rc_guest_ap_6,rc_guest_wifi_card_7,rc_reception_plant_west_8,rc_reception_plant_east_9,rc_sign_meeting_room_10,rc_usb_hub_11,rc_implant_socket_12,rc_planted_rogue_ap_13,rc_plan_chest_17,rc_desk_thandiwe_18,rc_thandiwe_laptop_19,rc_chair_thandiwe_20,rc_desk_yasmin_21,rc_yasmin_pc_22,rc_chair_yasmin_23,rc_rota_board_24,rc_door_codes_29,rc_coffee_station_30,rc_sign_kitchen_31,rc_partner_note_34,rc_rfid_cloner_35,rc_kit_dropbox_36,rc_meeting_jack_37,rc_kit_injector_38,rc_demo_stick_39,rc_kit_rogue_ap_40,rc_capture_tablet_41,rc_patch_panel_42,rc_managed_port_43,rc_guest_vlan_port_44 item
-  class rc_npc_ama_owusu_14,rc_npc_ama_owusu_15,rc_npc_delphine_arvanitis_16,rc_npc_thandiwe_moyo_25,rc_npc_yasmin_chaudhry_26,rc_npc_lorna_easton_27,rc_npc_julian_sallow_32 npc
+  class rc_reception_pc_1,rc_door_controller_29,rc_julian_pc_34 container
+  class rc_facilities_txt_2,rc_julian_rdp_file_3,rc_visitor_card_4,rc_staff_ap_5,rc_guest_ap_6,rc_guest_wifi_card_7,rc_reception_plant_west_8,rc_reception_plant_east_9,rc_sign_meeting_room_10,rc_usb_hub_11,rc_implant_socket_12,rc_planted_rogue_ap_13,rc_plan_chest_17,rc_desk_thandiwe_18,rc_thandiwe_laptop_19,rc_chair_thandiwe_20,rc_desk_yasmin_21,rc_yasmin_pc_22,rc_chair_yasmin_23,rc_coffee_station_open_plan_24,rc_rota_board_25,rc_door_codes_30,rc_coffee_station_31,rc_sign_kitchen_32,rc_partner_note_35,rc_rfid_cloner_36,rc_kit_dropbox_37,rc_meeting_jack_38,rc_kit_injector_39,rc_demo_stick_40,rc_kit_rogue_ap_41,rc_capture_tablet_42,rc_patch_panel_43,rc_managed_port_44,rc_guest_vlan_port_45 item
+  class rc_npc_ama_owusu_14,rc_npc_ama_owusu_15,rc_npc_delphine_arvanitis_16,rc_npc_thandiwe_moyo_26,rc_npc_yasmin_chaudhry_27,rc_npc_lorna_easton_28,rc_npc_julian_sallow_33 npc
   class node_start start`
     };
     const rendered = {};

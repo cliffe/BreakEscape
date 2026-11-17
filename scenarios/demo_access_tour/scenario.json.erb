@@ -267,7 +267,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "A leafy plant in a planter at the other end of the front desk, thick enough to hide a small box behind the leaves."
+          "observations": "A big leafy plant at the other end of the front desk, thick enough to hide a small box behind the leaves."
         },
         {
           "type": "notes",
@@ -536,6 +536,20 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "takeable": false,
           "observations": "Yasmin's chair."
         },
+        <%# A second coffee machine on the north wall, east of Yasmin's desk. The engine simulates
+            only rooms that have loaded, so a kitchen nobody has opened is no coffee source and the
+            rota board would park both staff. The kitchen's machine stays for when it is visited. %>
+        {
+          "type": "coffee_station1",
+          "id": "coffee_station_open_plan",
+          "name": "Coffee station",
+          "position": { "x": 7.0, "y": 1.4 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "The studio's coffee machine, on a stand against the north wall.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 30, "useFrom": { "dx": 0, "dy": 1 }, "queue": { "cells": [{ "dx": -1, "dy": 1 }, { "dx": -2, "dy": 1 }], "maxWaitSeconds": 90 }, "chatter": "coffee" }
+        },
         {
           "type": "notes",
           "id": "rota_board",
@@ -707,12 +721,9 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "storyPath": "scenarios/demo_access_tour/ink/julian.json",
           "currentKnot": "start",
           "role": "partner",
-          "creds": { "username": "jsallow", "password": "<%= julian_pw %>" },
-          <%# Julian's post is where he stands, in the kitchen, so he never sits at julian_pc and a
-              remote session there lasts. Hunger starts above the tempt band and decays far too
-              slowly to bring him to the cake or the coffee within the tour. %>
-          "needsHome": { "room": "kitchen", "x": 1.7, "y": 6.5 },
-          "needs": { "hunger": { "decayPerMin": 0.1, "urgentAt": 5, "initial": 95 } }
+          <%# Julian has no needs and no routine, so he is never tracked and julian_pc is never
+              claimed as in use. He stands in the kitchen, so a remote session there lasts. %>
+          "creds": { "username": "jsallow", "password": "<%= julian_pw %>" }
         }
       ]
     },

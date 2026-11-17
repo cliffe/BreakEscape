@@ -207,7 +207,7 @@ Where the tour departs from the spec's minimal variant, and why:
 
 ### 2.5 Items and where they are
 
-Start inventory (`startItemsInInventory`): `player_phone`, and the `cake` exactly as the spec's snippet (type `cake1`, takeable, droppable; affordance `satisfies ["hunger", "social"]`, `restores` 40, `useSeconds` 12, `capacity` 3, `chatter "cake"`, `useSound "eat_snack"`; magnet `tempt` 30, `servings` 2, `perPerson` 1, `announce "news_cake"`, `newsRadius` 5). The scenario-level `chatter` declares the spec's `cake`, `news_cake` and `grumble_gone` pools.
+Start inventory (`startItemsInInventory`): `player_phone`, and the `cake` exactly as the spec's snippet (type `cake1`, takeable, droppable; affordance `satisfies ["hunger"]` (the spec has `"social"` too; it is dropped because no NPC in the tour has a social need, so it does nothing), `restores` 40, `useSeconds` 12, `capacity` 3, `chatter "cake"`, `useSound "eat_snack"`; magnet `tempt` 30, `servings` 2, `perPerson` 1, `announce "news_cake"`, `newsRadius` 5). The scenario-level `chatter` declares the spec's `cake`, `news_cake` and `grumble_gone` pools.
 
 Reception:
 - `visitor_card`: RFID card, opens the meeting room only.
@@ -249,6 +249,8 @@ Open plan:
 Partner's office: `julian_pc` (owner julian, `policy: partner`).
 
 Kitchen: `coffee_station` (lab pattern: `affordance.satisfies: "caffeine"`, capacity 1, a `useFrom` cell and a `queue` line); Julian; the kitchen sign.
+
+Open plan also has `coffee_station_open_plan`, a second machine on the north wall with the same affordance. The engine simulates only loaded rooms, so a kitchen nobody has opened is no coffee source and the rota board would park both staff (slice 4 review M1, confirmed live). The kitchen machine stays for when the kitchen is visited.
 
 `globalVariables`: `cake_servings: 2`, and every boolean the tour sets (2.10), all false at start.
 
