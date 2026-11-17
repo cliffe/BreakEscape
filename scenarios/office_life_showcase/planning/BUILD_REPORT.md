@@ -447,3 +447,23 @@ Answers to the questions for case 3:
 Reading: with the perPerson fix in, case 3 still fails the reload check, but the cake was finished before or during the reload, not lost across it. Case 2 shows a serving between the two readings that the probe treats as "untouched". Servings still went during the 22 s settle, even with the five staff calmed. The probe does not record a slice count taken just before the reload, so it cannot say which side of the reload each serving fell.
 
 Not changed: no engine, scenario or probe edits in this pass.
+
+## Voicing review fixes: live check
+
+Checks the three text changes in commit 222be1abe (A31 subject, A35 cooler hint, A36 "Take your time." after "Not yet.") with the probe in g1 mode. Headless, setFPS(20) with fixed steps on, keyless server on :3092 (`env -u GEMINI_API_KEY`). The server ran from the worktree and was stopped by its recorded PID (2297120, `tmp/notyet/server.pid`) after the run. Game 7741 was made with `tools/playtest/new-game.rb` in this run. Raw evidence: `tmp/r2fix/proof-g1-7741.json`. Screenshots: `planning/screens/notyet-*.png`.
+
+Probe change: the m2 check now also requires exactly one "Take your time." bubble after "Not yet." (`takeYourTimeCount === 1`). It counts plain dialogue steps only, because the choice list is appended to the same bubble.
+
+| # | Check | Game | Result | Exact lines seen |
+|---|---|---|---|---|
+| 2a | Morning, kitchen seen, cooler not heard: "What should I try next?" gives A35 | 7741 | PASS | "Hang about by the water cooler." Not the old "Then open the kitchen door and hang about by the water cooler." Screenshot `notyet-trynext-morning-heard-false.png`. |
+| m2 | Call it a day confirm text (A31) | 7741 | PASS | "The staff won't be back once they've gone home. Seen everything you wanted?" with choices "1. Yes, call it a day." and "2. Not yet." Screenshot `notyet-m2-confirm.png`. |
+| m2 | After "Not yet.": one "Take your time.", then hub choices, no blank bubble, act_evening false | 7741 | PASS | Bubbles in order: "Take your time." then the hub list "1. What am I looking at? 2. What should I try next? 3. ...". Blank bubbles 0, `takeYourTimeCount` 1, act_evening false. Screenshot `notyet-m2-after-not-yet.png`. |
+| m2 | "Yes, call it a day." still sets act_evening | 7741 | PASS | act_evening true after the Yes pick. |
+| board | `tour_notice` board fits the modal (carried over from R2) | 7741 | PASS | Screenshot `notyet-board-modal.png`. |
+
+Probe history: the first run on game 7736 returned m2 FAIL. The cause was the new assertion, which matched the bubble text with its speaker name line still attached, so it counted zero. It was fixed to count plain dialogue steps. Game 7736 had moved past the midday state, so the final run used a fresh game (7741). The other checks on 7736 gave the same results.
+
+Probe usage: the header still says `PORT=3094`. The shared lib defaults to 3092, and this run used `PORT=3092`. The header was not changed.
+
+Not changed: no engine or scenario edits in this pass.

@@ -169,6 +169,11 @@ async function checkCallItADay(h) {
   C.stepsAfterNotYet = after.map(s => (s.pick ? `[pick ${s.pick}]` : (s.text || '<blank>').slice(0, 80)));
   const hub = after.find(s => !s.pick);
   C.blankAfterNotYet = after.filter(s => !s.pick && s.blank).length;
+  // A36: "Not yet." gives exactly one "Take your time." bubble before the hub choices. The bubble text
+  // carries the speaker name on its own line, and the choice list is appended to the same bubble,
+  // so count only the plain (non-choice) dialogue steps that have the line.
+  C.takeYourTimeCount = after.filter(s => !s.pick && !s.choice &&
+    (s.text || '').split('\n').some(l => l.trim() === 'Take your time.')).length;
   // The hub after a return from the confirm shows the choice list again (ink jumps to the choice
   // point, so the "What can I help with?" greeting is not reprinted). Judge it on the choices.
   const hubChoices = after.find(s => !s.pick && s.choice && /Call it a day\./.test(s.text || '') && /I'll have a look round/.test(s.text || ''));
@@ -176,7 +181,7 @@ async function checkCallItADay(h) {
   C.hubStep = hub ? hub.text.slice(-120) : null;
   await shot(h, 'm2-after-not-yet');
   await closeChat(h);
-  C.verdict = C.confirmText && C.confirmChoices && C.hubAfterNotYet && C.blankAfterNotYet === 0 && C.actEveningAfterNotYet === false
+  C.verdict = C.confirmText && C.confirmChoices && C.hubAfterNotYet && C.blankAfterNotYet === 0 && C.takeYourTimeCount === 1 && C.actEveningAfterNotYet === false
     ? 'PASS' : 'FAIL';
   // Now the real "Yes" so the evening turn happens for check 1.
   C.yes = await talk(h, 'ama_owusu', ['Call it a day', 'Yes, call it a day']);
