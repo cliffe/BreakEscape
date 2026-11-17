@@ -5,7 +5,14 @@
 //   node tools/playtest/showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake \
 //        [--port 3094] [--cases 1,2,3,4] [--games 1=7523,2=7524,3=7525,4=7526] \
 //        [--eaters chidi_okeke,jun_watanabe] [--rooms office,kitchen] [--task see_cake_eaten] \
-//        [--at 164,192] [--near <objectId>] [--wait 22] [--timeout 150]
+//        [--at 164,192] [--near <objectId>] [--wait 22] [--timeout 150] \
+//        [--staff id,id,...] [--calm 0] [--grow 2048]
+//
+// --staff: NPCs held at hunger and social 100 during waits (default: the showcase office cast).
+// --calm 0: don't hold them. --grow: the most player_state may grow in bytes across a reload
+// (default 2048); measured server-side with tools/playtest/player-state-size.rb (read-only).
+// The cake is dropped in --room: the probe enters that room first, so it works when --room is
+// not the start room.
 //
 // Cases (PLAN section 10, BC1):
 //   1 cake held: reload leaves it in the inventory and in no room.
@@ -56,7 +63,7 @@ function newGame() {
 // strips skip_resume from the url, so page.reload() cannot keep it); the scene build
 // does not wait on it. A real player clicks Resume, which loads the saved state (the dropped
 // cake). So, if the overlay is up, click Resume, then wait for the full build.
-async function reload(h) {
+let reload = async function (h) {
   await h.page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
   await h.page.waitForFunction(() => {
     const ov = document.getElementById('session-resume-overlay');
@@ -132,6 +139,9 @@ async function calm(h) {
 
 async function drop(h) {
   await calm(h);
+  // Drop in --room, not wherever the player happens to stand (the start room, if --room isn't it).
+  await ev(h, id => window.__test.enterRoom(id), ROOM).catch(() => {});
+  await h.t(1200);
   if (AT) await ev(h, ([x, y]) => window.__test.moveTo(x, y), AT).catch(() => {});
   if (NEAR) await ev(h, id => window.__test.moveToNear(id, { timeoutMs: 30000 }), NEAR).catch(() => {});
   await h.t(500);
@@ -140,6 +150,29 @@ async function drop(h) {
   await h.t(3000);
   return r;
 }
+
+// Persisted player_state size (server-side, read-only), to check it doesn't grow across a reload.
+const GROW = Number(arg('grow', '2048'));
+function psSize(gid) {
+  try {
+    const out = execFileSync('bin/rails', ['runner', 'tools/playtest/player-state-size.rb', String(gid)], { encoding: 'utf8', env: { ...process.env, BREAK_ESCAPE_STANDALONE: 'true' } });
+    const line = out.trim().split('\n').filter(l => l.startsWith('{')).pop();
+    return JSON.parse(line);
+  } catch (e) { return { bytes: null, err: String(e).slice(0, 160) }; }
+}
+// Wrap reload: size before (after the settle wait, so the last sync has landed) and after.
+const _reload = reload;
+reload = async function (h) {
+  const a = psSize(h.gid);
+  await _reload(h);
+  await h.t(WAIT);
+  const b = psSize(h.gid);
+  const grew = a.bytes != null && b.bytes != null ? b.bytes - a.bytes : null;
+  const growKeys = {};
+  if (a.keys && b.keys) for (const k of Object.keys(b.keys)) { const d = b.keys[k] - (a.keys[k] || 0); if (d) growKeys[k] = d; }
+  h.ps = { before: a.bytes, after: b.bytes, grew, growKeys, ok: grew != null && grew <= GROW };
+  say(`  player_state ${a.bytes} -> ${b.bytes} bytes (${grew >= 0 ? '+' : ''}${grew})`, JSON.stringify(growKeys));
+};
 
 const sameSpot = (a, b) => a && b && a.room === b.room && Math.abs(a.x - b.x) <= 0.5 && Math.abs(a.y - b.y) <= 0.5 && Math.abs((a.elevation || 0) - (b.elevation || 0)) <= 0.5;
 const task = h => TASK ? ev(h, t => window.objectivesManager?.getTask?.(t)?.status ?? null, TASK) : null;
@@ -228,8 +261,10 @@ for (const c of CASES) {
     gid = h.gid;
     const res = await cases[c](h);
     res.errs = h.errs.filter(e => !/503/.test(e));
+    res.playerState = h.ps || null;
+    if (h.ps && !h.ps.ok) res.pass = false;
     fs.writeFileSync(`tmp/bc1/${SCEN}-case${c}-game${gid}.json`, JSON.stringify(res, null, 1));
-    rows.push({ c, gid, pass: res.pass });
+    rows.push({ c, gid, pass: res.pass, ps: h.ps ? `${h.ps.before} -> ${h.ps.after}` : '' });
     say(`  case ${c}: ${res.pass ? 'PASS' : 'FAIL'}`, JSON.stringify(res).slice(0, 700));
   } catch (e) {
     rows.push({ c, gid, pass: false, err: String(e).slice(0, 200) });
@@ -237,6 +272,6 @@ for (const c of CASES) {
   } finally { if (h) await h.browser.close().catch(() => {}); }
 }
 say('\nBC1 ' + SCEN);
-say('| Case | Game | Result |\n|---|---|---|');
-for (const r of rows) say(`| ${r.c} | ${r.gid} | ${r.pass ? 'PASS' : 'FAIL'}${r.err ? ' ' + r.err : ''} |`);
+say('| Case | Game | Result | player_state bytes |\n|---|---|---|---|');
+for (const r of rows) say(`| ${r.c} | ${r.gid} | ${r.pass ? 'PASS' : 'FAIL'}${r.err ? ' ' + r.err : ''} | ${r.ps || ''} |`);
 process.exit(rows.every(r => r.pass) ? 0 : 1);
