@@ -1428,4 +1428,4 @@ Game 6585: Sign-ins order (Lena .rdp, Ian password, ops cookie, Jake password, S
 - t2: not done. It needs a race with the client timer (a full answer says `expired` before the client timer fires), the server already refuses, and the client closes seconds later.
 - signin-fit.mjs: the capture-log-signins check used the module-scope `LABEL_32` inside `page.evaluate`; it now uses the `label` argument already passed in. Node syntax check only; the live rerun covers it. t4 (the browser run and live R12) is still to do.
 
-Results: bin/test-js 734 files passed, 0 failed; access-relay-desktop (21) and access-from-desktop (16) pass under `ulimit -v 2000000` and a 300 MB heap. No Ruby changed, so no rubocop run.
+Results: bin/rails test 3198 runs, 0 failures, 0 errors, 4 skips; bin/test-js 734 files passed, 0 failed; access-relay-desktop (21) and access-from-desktop (16) pass under `ulimit -v 2000000` and a 300 MB heap. No Ruby changed, so no rubocop run.
