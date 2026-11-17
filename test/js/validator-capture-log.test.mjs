@@ -480,3 +480,39 @@ test('R1 M2 parity: check_proof and proof_satisfiable? agree on every shorthand 
     assert.equal(rows.length, proofs.length * 2);
     for (const [proof, noError, sat] of rows) assert.equal(noError, sat, `disagree on ${JSON.stringify(proof)}`);
 });
+
+// ---- Plant hiding (docs/achitechture/PLANT_HIDING_PLAN.md, sections 7 and 9) ----
+
+function hideable(rooms = ['office']) {
+    const sc = clean();
+    obj(sc, 'kit_logger').hideable = { rooms, spots: 'plants', device: 'dev', overlay: { sprite: 'rogue_ap_tucked' } };
+    sc.rooms.office.objects.push({ id: 'pot_a', type: 'plant', sprite: 'planter_fig1', name: 'Pot A' });
+    npc(sc, 'chris').captureProof = [{ dropped: 'kit_qr' }]; // the desk proof names a non-plant now
+    return sc;
+}
+const hideProof = proof => { const sc = hideable(); keyWriter(sc).proof = proof; return sc; };
+
+test('hide: a planted proof for a hideable item with no `on` is clean', { skip }, () => {
+    const sc = withKeyWriter(hideable());
+    keyWriter(sc).proof = { planted: 'kit_logger' };
+    assert.deepEqual(errors(issues(sc)), []);
+});
+
+test('hide: a planted proof for a hideable item on a plant object or a decor plant id is clean, on a non-plant is an error', { skip }, () => {
+    for (const on of ['pot_a', 'office_plant-large12-top-ani1_77']) {
+        const sc = withKeyWriter(hideable());
+        keyWriter(sc).proof = { planted: 'kit_logger', on };
+        assert.deepEqual(errors(issues(sc)), [], on);
+    }
+    for (const on of ['chris_pc', 'office_notes_plantlog1_9', 'nowhere']) {
+        const sc = withKeyWriter(hideable());
+        keyWriter(sc).proof = { planted: 'kit_logger', on };
+        assertHas(errors(issues(sc)), 'needs hideable.rooms and, with `on`, a plant spot');
+    }
+});
+
+test('hide: a hideable item with no rooms cannot satisfy a planted proof', { skip }, () => {
+    const sc = withKeyWriter(hideable([]));
+    keyWriter(sc).proof = { planted: 'kit_logger' };
+    assertHas(errors(issues(sc)), 'needs hideable.rooms');
+});

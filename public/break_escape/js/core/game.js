@@ -66,6 +66,7 @@ import { watchReadinessGlobals } from '../systems/social-intel.js';  // needsGlo
 import { chosenPlayerSprite, playerTalkPath } from '../utils/player-avatar.js';  // aw9: the chosen avatar wins, the portrait follows
 import { pcSessions } from '../systems/pc-sessions.js';  // Sign-in PC sessions (access model 5.3; sets window.pcSessions)
 import { networkLinks } from '../systems/network-links.js';  // Footholds and the jack (slice 9.3a; sets window.networkLinks)
+import { plantHiding } from '../systems/plant-hiding.js';  // Hide a device in any plant (plant-hiding plan; sets window.plantHiding)
 import { installPostitMarks } from '../systems/postit-marks.js';  // Sticky note picture on sign-in PCs (slice 9.1, 5.3)
 
 // Global variables that will be set by main.js
@@ -482,6 +483,7 @@ export function preload() {
     this.load.image('network_dropbox', 'objects/network_dropbox.png');
     this.load.image('network_port_cabinet', 'objects/network_port_cabinet.png');
     this.load.image('network_dropbox_planted_cabinet', 'objects/network_dropbox_planted_cabinet.png');
+    this.load.image('rogue_ap_tucked', 'objects/rogue_ap_tucked.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -1776,6 +1778,8 @@ export async function create() {
     // Footholds and the jacks they were gained at (slice 9.3a, 4.1): publishes
     // <jackId>_planted before any room loads; no request.
     networkLinks.load(gameScenario.footholds || [], gameScenario.gainedFootholds || []);
+    // Hideable devices and where each hidden one sits (plant-hiding plan, section 7): no request
+    plantHiding.load(gameScenario.hideables || {}, gameScenario.hiddenDevices || []);
     // A save never overrides an imported value.
     importedNames.forEach(name => {
         window.gameState.globalVariables[name] = gameScenario.globalVariables?.[name];
@@ -2240,6 +2244,7 @@ export async function create() {
         // installPostitMarks ran before any room existed).
         window.screenStates?.syncRoom?.(startRoomId);
         window.networkLinks?.syncRoom?.(startRoomId);
+        window.plantHiding?.syncRoom?.(startRoomId);
         window.postitMarks?.syncRoom?.(startRoomId);
         // A propped door in the start room (slice 9.2 B); restore() covers it when the runner comes later
         window.npcWorkarounds?.syncRoom?.(startRoomId);
@@ -2877,7 +2882,9 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                 // Swivel props (rolling chairs, trolleys) count only when the tap is on their own
                 // sprite: the radial slop round their top-left put a chair into the menu for
                 // the PC on the desk in front of it (user review 2026-10-16, more chairs swivel).
-                if (obj.isSwivelChair ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
+                // Plants that are hiding spots or host a hidden device are the same: wide, in walking
+                // space, origin at the top-left (plant hiding R2 m1).
+                if (obj.isSwivelChair || obj._hidingSpot || obj._hpOrig ? !tapHits(Infinity, Infinity, obj) : !tapHits(obj.x, obj.y, obj)) return;
                 const data = obj.scenarioData || {};
                 const name = data.name || obj.name || 'Item';
                 const detail = worldObservations(data, resolveObjectField(data, 'observations', obj.observations || null), window.pcSessions);
