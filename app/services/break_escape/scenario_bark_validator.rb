@@ -78,6 +78,13 @@ module BreakEscape
     # and a leading `<displayName>:`, `<id>:` or `<id with spaces>:` naming the
     # NPC itself is dropped (case-insensitive, any space around the colon; kept
     # when nothing would remain). Remaining lines are rejoined with a newline.
+    #
+    # Whitespace is JS's `\s` and `trim()`: the Unicode spaces including NBSP
+    # and U+FEFF. Ruby's [[:space:]] is nearly that set but also takes U+0085
+    # and lacks U+FEFF, so JS_SPACE lists the JS set outright. Case folding
+    # follows JS `/i` without the `u` flag (see fold_char). One difference
+    # remains: JS works in UTF-16 units, so a name with characters outside the
+    # BMP could fold differently there; no scenario has one.
     # @param npc [Hash]
     # @param text [String]
     # @return [String] '' when nothing in it is the NPC's
@@ -85,11 +92,33 @@ module BreakEscape
       return "" unless text.is_a?(String)
 
       names = own_names(npc)
-      text.split("\n").map(&:strip).reject(&:empty?).filter_map do |line|
-        next if line.match?(/\A(?:you|player)\s*:\s*\S/i) || line.match?(/\Anarrator(?:\s*\[[^\]]*\])?\s*:\s*\S/i)
+      text.split("\n").map { |l| js_strip(l) }.reject(&:empty?).filter_map do |line|
+        next if line.match?(PLAYER_LINE) || line.match?(NARRATOR_LINE)
 
         strip_own_prefix(line, names)
       end.join("\n")
+    end
+
+    # JS \s (and String#trim) as a regexp class body.
+    JS_SPACE = '\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff'
+    PLAYER_LINE = /\A(?:you|player)[#{JS_SPACE}]*:[#{JS_SPACE}]*[^#{JS_SPACE}]/i
+    NARRATOR_LINE = /\Anarrator(?:[#{JS_SPACE}]*\[[^\]]*\])?[#{JS_SPACE}]*:[#{JS_SPACE}]*[^#{JS_SPACE}]/i
+    PREFIX_TAIL = /\A[#{JS_SPACE}]*:[#{JS_SPACE}]*/
+
+    # String#strip for JS whitespace.
+    def self.js_strip(str)
+      str.gsub(/\A[#{JS_SPACE}]+|[#{JS_SPACE}]+\z/, "")
+    end
+
+    # JS's regexp /i (no `u` flag) canonicalisation of one character: its
+    # single-character uppercase, unless that is several characters or maps a
+    # non-ASCII character to ASCII. Ruby's own /i uses full case folding
+    # (ß matches "ss"), which JS does not.
+    def self.fold_char(char)
+      up = char.upcase
+      return char if up.length != 1 || (char.ord >= 128 && up.ord < 128)
+
+      up
     end
 
     # The names an NPC's own lines may be prefixed with, longest first, as
@@ -97,16 +126,22 @@ module BreakEscape
     private_class_method def self.own_names(npc)
       id = npc["id"]
       [npc["displayName"], id, id.is_a?(String) ? id.tr("_", " ") : nil]
-        .select { |n| n.is_a?(String) && !n.strip.empty? }
-        .map { |n| n.strip.downcase }.uniq.sort_by { |n| -n.length }
+        .select { |n| n.is_a?(String) && !js_strip(n).empty? }
+        .map { |n| js_strip(n).downcase }.uniq.sort_by { |n| -n.length }
     end
 
     private_class_method def self.strip_own_prefix(line, names)
+      line_chars = line.chars
       names.each do |name|
-        m = line.match(/\A#{Regexp.escape(name)}\s*:\s*/i)
+        name_chars = name.chars
+        next if line_chars.length < name_chars.length
+        next unless name_chars.each_with_index.all? { |c, i| fold_char(c) == fold_char(line_chars[i]) }
+
+        tail = line_chars[name_chars.length..].join
+        m = tail.match(PREFIX_TAIL)
         next unless m
 
-        rest = line[m[0].length..].strip
+        rest = js_strip(tail[m[0].length..])
         return rest.empty? ? line : rest
       end
       line

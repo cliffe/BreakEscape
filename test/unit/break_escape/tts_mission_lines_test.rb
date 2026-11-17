@@ -265,27 +265,37 @@ module BreakEscape
     test "every event bark the endpoint accepts is a key the batch lists" do
       checked = Hash.new(0)
       failures = []
-      Dir.glob(Engine.root.join('scenarios', '*', 'scenario.json.erb').to_s).sort.each do |erb|
-        name = File.basename(File.dirname(erb))
+      # The eleven missions are already built; only sis03 is built here
+      sis03 = 'sis03_cyber_insurance'
+      sis03_raw = JSON.parse(ERB.new(File.read(Engine.root.join('scenarios', sis03, 'scenario.json.erb')))
+                                .result(Mission::ScenarioBinding.new({}).get_binding))
+      rows = self.class.missions_data + [[sis03, sis03_raw, self.class.game_scenario_data(sis03)]]
+      rows.each do |name, raw, game_data|
         next unless name.match?(BARK_MISSIONS)
 
-        raw = JSON.parse(ERB.new(File.read(erb)).result(Mission::ScenarioBinding.new({}).get_binding))
-        game_data = self.class.game_scenario_data(name)
         ex = TtsLineExtractor.new(name, raw)
         resolver = self.class.resolver(name, game_data)
-        each_bark(game_data) do |npc_id, text|
+        # The authored text (raw_event_bark_texts), so the hand strip below is
+        # the only thing that removes a prefix: independent of spoken_bark_text
+        each_bark(game_data, raw: true) do |npc_id, text|
           npc = TtsLineResolver.find_npc(game_data, npc_id)
           next unless npc && npc['npcType'] == 'person' && npc['voice'].is_a?(Hash)
 
-          # What npc-barks.js sends: the line with the NPC's own "Name:" prefix dropped
+          # What npc-barks.js sends: the line with the NPC's own "Name:" prefix
+          # dropped. A plain strip, enough for the barks of these missions (none
+          # needs the id-with-spaces form or the You:/Narrator: line rules, which
+          # tts_line_extractor_barks_test covers).
           sent = text.sub(/\A(?:#{Regexp.union(npc['displayName'].to_s, npc_id).source})\s*:\s*/i, '')
           result = resolver.resolve(npc_id, npc, sent)
           next failures << "#{name} #{npc_id} refused: #{sent[0, 60]}" unless result.line
 
           voice = ex.voices[npc_id] || npc['voice']
           key = @svc.cache_key_for(result.line, voice['name'], voice['style'], voice['language'])
+          sent_key = @svc.cache_key_for(sent, voice['name'], voice['style'], voice['language'])
           checked[name] += 1
           failures << "#{name} #{npc_id}: batch does not list #{result.line[0, 60]}" unless ex.keys.include?(key)
+          # The key of the text the client sends, not of what the validator returns
+          failures << "#{name} #{npc_id}: batch lacks the sent text #{sent[0, 60]}" unless ex.keys.include?(sent_key)
         end
       end
       assert_empty failures, failures.first(40).join("\n")
@@ -293,7 +303,7 @@ module BreakEscape
       assert_operator checked.size, :>=, 2
     end
 
-    def each_bark(data)
+    def each_bark(data, raw: false)
       seen = Set.new
       npcs = []
       npcs << data['narrator'] if data['narrator']
@@ -304,7 +314,8 @@ module BreakEscape
 
         # Chatter pools are their own rows
         own_chatter = ScenarioBarkValidator.chatter_texts(npc['chatter'])
-        (ScenarioBarkValidator.bark_texts(npc) - own_chatter).each do |text|
+        texts = raw ? ScenarioBarkValidator.raw_event_bark_texts(npc) : ScenarioBarkValidator.bark_texts(npc) - own_chatter
+        texts.each do |text|
           next if TtsService.match_form(text).blank? || !seen.add?([npc['id'], text])
 
           yield npc['id'], text

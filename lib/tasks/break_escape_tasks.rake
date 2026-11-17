@@ -101,11 +101,11 @@ namespace :break_escape do
       keys (voice and text) and grouped by voice. Each clip is marked cached or
       uncached under the current cache key, and "shared" when a person-chat
       line holds the same key; totals give characters and clips. Event barks
-      (eventMappings and timedMessages of voiced person NPCs) are not office
-      clips, so they are not listed here; tts:generate and tts:wasted cover
-      them. Generates nothing and writes nothing. STRICT=1 exits
-      1 when any clip is uncached (the merge gate's "0 uncached office-life
-      clips"). TTS_CACHE_DIR reads another cache directory (tests).
+      (eventMappings and timedMessages of voiced person NPCs, as the client
+      voices them) are listed too, as kind "bark", and they count in the totals
+      and in STRICT. Generates nothing and writes nothing. STRICT=1 exits
+      1 when any clip, bark included, is uncached (the merge gate's "0
+      uncached office-life clips"). TTS_CACHE_DIR reads another cache directory (tests).
         bin/rails "app:break_escape:tts:office_lines[m02_ransomed_trust]"
     DESC
     task :office_lines, [:scenario] => :environment do |_task, args|

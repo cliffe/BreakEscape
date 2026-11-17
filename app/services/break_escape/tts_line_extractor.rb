@@ -19,8 +19,7 @@ module BreakEscape
   # "Name:" prefix stripped (ScenarioBarkValidator.spoken_bark_text). Phone
   # conversations are not voiced by the batch, except a phone contact with a
   # voiced call (`voiced: true` on a phone-chat eventMapping or on its
-  # timedConversation, F17): its story is a
-  # host like a person-chat one, read as phone-call-voice.js voices it (no
+  # timedConversation, F17): its story is a host like a person-chat one, read as phone-call-voice.js voices it (no
   # narration), but only the lines in the call's own knots (call_knots, F20).
   # A video call (`conversationMode: "video-call"` on an eventMapping, or a
   # timedConversation with `videoCall: true` or that mode) opens person-chat

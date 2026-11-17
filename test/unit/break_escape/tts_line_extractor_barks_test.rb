@@ -120,6 +120,29 @@ module BreakEscape
                    ScenarioBarkValidator.event_bark_texts(npc)
     end
 
+    # Expected values checked against the real phoneBarkText in node
+    # (contact { id, displayName }), so the Ruby port matches JS on Unicode.
+    test 'Unicode whitespace is trimmed as JS does' do
+      npc = { 'id' => 'nia', 'displayName' => 'Nia' }
+      spoken = ->(text) { ScenarioBarkValidator.spoken_bark_text(npc, text) }
+      assert_equal 'x', spoken.("\u00a0Nia: x")
+      assert_equal 'hello', spoken.("Nia:\u00a0hello")
+      assert_equal 'x', spoken.("Nia\u3000: x")
+      assert_equal 'x', spoken.("\u2028Nia: x")
+      assert_equal 'x', spoken.("\ufeffNia: x")
+      # U+0085 is not JS whitespace, so the prefix is not at the start
+      assert_equal "Nia: x", spoken.("\u0085Nia: x")
+      # "You:" followed only by NBSP is not a player line, it stays (trimmed)
+      assert_equal 'You:', spoken.("You:\u00a0")
+      assert_equal "x\nYou:", spoken.("Nia: x\nYou:\u00a0\nNarrator:\u00a0y")
+    end
+
+    test 'prefix case folding follows JS /i, not full Unicode folding' do
+      assert_equal 'STRASSE: x', ScenarioBarkValidator.spoken_bark_text({ 'id' => 's', 'displayName' => 'Straße' }, 'STRASSE: x')
+      assert_equal 'İPEK: x', ScenarioBarkValidator.spoken_bark_text({ 'id' => 's', 'displayName' => 'İpek' }, 'İPEK: x')
+      assert_equal 'x', ScenarioBarkValidator.spoken_bark_text({ 'id' => 's', 'displayName' => 'Straße' }, 'STRAßE: x')
+    end
+
     test 'a String voice and an NPC with no npcType list no bark' do
       assert_empty extractor(person('obj', 'voice' => 'A fixed line.')).entries
       p = person('plain')
