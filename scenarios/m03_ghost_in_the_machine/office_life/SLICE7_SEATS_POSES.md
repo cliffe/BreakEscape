@@ -1,6 +1,6 @@
 # m03 office life slice 7: seats and pose frames (done)
 
-Branch fix/ol-m03-night-sofa (main with the pose art is already merged in). Game 6752, keyless server on :3091 (puma PID 412712, killed by PID at the end). No scenario, engine or art file was changed. Scratchpad (not in the repo): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/slice7/` holds lib.mjs, p1.mjs, p2.mjs (seat dump and zoomed crops), cyc.mjs (stand/walk/re-sit cycles with a 200 ms sampler), s4.mjs (player beside Zainab; written, NOT run), an.py and away.py (analysis), the sample JSON files and the PNGs.
+Branch fix/ol-m03-night-sofa (main with the pose art is already merged in). First pass: game 6752. Fix and remaining items: games 6757, 6765 and 6766. Keyless server on :3091, each puma stopped by its recorded PID. The fix changes seating.js (startMount and seatNPC) and adds test/js/seating-post-side-place.test.mjs; no scenario or art file changed. Scratchpad (not in the repo): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/b8fb6615-769e-4015-b3ae-9cb0a729b510/scratchpad/slice7/` holds lib.mjs, p1.mjs, p2.mjs (seat dump and zoomed crops), cyc.mjs (stand/walk/re-sit cycles with a 200 ms sampler), s4.mjs (player beside Zainab; written, NOT run), an.py and away.py (analysis), the sample JSON files and the PNGs.
 
 ## Done
 
