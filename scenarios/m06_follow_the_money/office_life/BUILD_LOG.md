@@ -18,3 +18,6 @@ All four pass, see LIVE_S3.md. Fix: extras' spawn positions (Lerato 7.4,3.1; Tom
 
 ## Slice 4 (static built, fe9a73feb; live checks partly done, see HANDOVER.md)
 Built: Tomasz laptop text and screen habit, handover sheet print command, lerato_phone and floor_spare_phone, lab pizza magnet, workstation/servings/reveal globals. Checks: validator 0 errors, 45 warnings (new: pizza magnet-not-held validator note, justified); summary diff only lerato, tomasz, trader; lock diff empty; positions diff only planned additions (pizza, tomasz_handover_sheet, lerato_phone, floor_spare_phone, earlier slice-3 rows). Live: Tomasz coffee trip expected 14.5 s, real 14.7 s, 4 of 4 open.
+
+## Slice 4 live (part 2, 8d59ba7cb)
+Trips timed (LIVE_S4.md): fridge 17.5 s expected, 17.5 to 17.8 s real, 5 of 5 open; phone answer 14.4 to 15.6 expected, 22.5 to 25.8 real, 5 of 5 open; pizza 13.4 to 15.9 expected. `lockIfAwayOverSeconds` 30 to 22. Phone lever home and away 5 of 5 each. Pizza servings 3 to 2 (two eligible eaters and perPerson 1 could never empty the box). Static checks after the change: validator 0 errors, 45 warnings; summary diff empty vs slice 4; lock diff empty; positions identical to slice 4. Not done: servings to 0 and grumble_gone, pizza reload, handover sheet, useFrom wall check, workstation parity.
