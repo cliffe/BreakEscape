@@ -47,7 +47,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { ContainerMinigame, transferChoices, claimLineText } = await imp('minigames/container/container-minigame.js');
+const { ContainerMinigame, transferChoices, claimLineText, peekIconFocus } = await imp('minigames/container/container-minigame.js');
 const { adds } = await imp('systems/inventory.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 
@@ -496,4 +496,86 @@ test('K5: the taskbar token line rounds as remote-host-text.js tokenMinutesLeft 
     assert.match(strip.textContent, /under a minute left/);
     refreshTokenLines(document.body, { ...t, tokenSecondsLeft: 600 });
     assert.equal(strip.classList.contains('desktop-token-line-low'), false, 'a longer figure goes neutral again');
+});
+
+// Icon labels R2 m2: keyboard focus through the Copy / Move dialog, a taken icon and the reader's return
+const pressKey = (target, key) => target.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+test('Icon labels R2 m2: Enter on an icon focuses the dialog\'s first button; closing it returns focus to that icon; a mouse click steals nothing', async () => {
+    await openDesktop();
+    const rota = icon('Server rota.txt');
+    rota.focus();
+    pressKey(rota, 'Enter');
+    const first = document.querySelector('.desktop-transfer-dialog .desktop-transfer-btn');
+    assert.equal(first.textContent, 'Open');
+    assert.equal(document.activeElement, first, 'the first button has the focus');
+    choose('Cancel');
+    assert.equal(document.querySelector('.desktop-transfer-dialog'), null);
+    assert.equal(document.activeElement, rota, 'focus is back on the icon that opened it');
+    // a click (mouse) opens the dialog without moving focus into it
+    document.activeElement.blur();
+    icon('VPN notes.txt').click();
+    assert.equal(document.activeElement.closest('.desktop-transfer-dialog'), null, 'a click does not focus a button');
+    choose('Cancel');
+});
+
+test('Icon labels R2 m2: a moved icon passes focus to the next icon, the previous one, then the desktop', async () => {
+    await openDesktop();
+    const names = () => [...document.querySelectorAll('.desktop-icon-label')].map(l => l.textContent);
+    const moveByKey = async (name) => {
+        const el = icon(name);
+        el.focus();
+        pressKey(el, 'Enter');
+        choose('Move to inventory');
+        await settle();
+    };
+    await moveByKey('Server rota.txt'); // not the last: the next icon
+    assert.equal(document.activeElement.querySelector('.desktop-icon-label').textContent, 'VPN notes.txt');
+    await moveByKey('VPN notes.txt');
+    assert.equal(document.activeElement.querySelector('.desktop-icon-label').textContent, 'Licence keys.csv', 'the next one again');
+    assert.deepEqual(names().includes('VPN notes.txt'), false);
+    // a Copy leaves the icon on the desktop
+    const lic = icon('Licence keys.csv');
+    lic.focus();
+    pressKey(lic, 'Enter');
+    choose('Copy to inventory');
+    await settle();
+    assert.equal(document.activeElement, lic, 'a copy leaves the icon, and focus stays on it');
+});
+
+test('Icon labels R2 m2: taking the last icon focuses the previous one; taking the only icon focuses the desktop', async () => {
+    const two = [{ id: 'a', type: 'text_file', name: 'A.txt', takeable: true, text: 'a' }, { id: 'b', type: 'text_file', name: 'B.txt', takeable: true, text: 'b' }];
+    await openDesktop({ contents: two });
+    const b = icon('B.txt');
+    b.focus();
+    pressKey(b, 'Enter');
+    choose('Move to inventory');
+    await settle();
+    assert.equal(document.activeElement, icon('A.txt'), 'the previous icon');
+    const a = icon('A.txt');
+    pressKey(a, 'Enter');
+    choose('Move to inventory');
+    await settle();
+    assert.ok(document.activeElement.classList.contains('desktop-background'), 'the desktop');
+});
+
+test('Icon labels R2 m2: after a file reader closes, the reopened desktop focuses the icon that was opened, if it is still there', async () => {
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
+    await openDesktop({ item });
+    window.handleObjectInteraction = () => {};
+    const rota = icon('Server rota.txt');
+    rota.focus();
+    pressKey(rota, 'Enter');
+    choose('Open');
+    assert.equal(peekIconFocus().key, 'ian_rota', 'the opened file is remembered');
+    await openDesktop({ item });
+    assert.equal(document.activeElement, icon('Server rota.txt'), 'focus is back on that icon');
+    assert.equal(peekIconFocus(), null, 'used once');
+    // the icon is gone (taken meanwhile): nothing is focused, nothing throws
+    await openDesktop({ item });
+    icon('Server rota.txt').focus();
+    pressKey(icon('Server rota.txt'), 'Enter');
+    choose('Open');
+    await openDesktop({ item, contents: FILES.filter(f => f.id !== 'ian_rota') });
+    assert.equal(document.activeElement, document.body);
 });

@@ -322,6 +322,16 @@ const LABEL_TRAIL = /[_.\-\/\s]+$/;
 const LABEL_LINES = 3;
 const LABEL_ELLIPSIS = '…';
 
+// The icon whose file was opened in a reader: when the reader closes and this desktop
+// reopens, that icon takes the focus again (if it is still there)
+const FOCUS_RETURN_MS = 10 * 60 * 1000;
+let iconFocusReturn = null; // { container, key, at }
+const iconKeyOf = (item) => String(item?.id ?? item?.name ?? '');
+export function rememberIconFocus(container, item, now = Date.now()) {
+    iconFocusReturn = container && item ? { container, key: iconKeyOf(item), at: now } : null;
+}
+export function peekIconFocus() { return iconFocusReturn; }
+
 /**
  * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
  * line it ends), except a leading run of separators (".config") and the first of two in a
@@ -375,7 +385,12 @@ function labelMetrics(label) {
 /** Which text line (0-based) a fragment sits on, from its box against the label's content top. */
 function lineOf(label, el, m) {
     const top = el.getBoundingClientRect().top - label.getBoundingClientRect().top;
-    const rel = top / m.z - (label.clientTop || 0) - m.padTop;
+    // A fragment's border box starts above its text by its own padding-top (2px on the plain
+    // desktop, where a matching negative margin keeps the margin box on the line, 0 on the
+    // monitor); add it back so the result is the line box top, not one pixel pair short
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(el) : null;
+    const fragPad = parseFloat(cs?.paddingTop) || 0;
+    const rel = top / m.z - (label.clientTop || 0) - m.padTop + fragPad;
     return Math.floor((rel + 1) / m.lineHeight);
 }
 
@@ -394,6 +409,7 @@ export function fitIconLabel(label) {
     label.style.fontSize = '';
     label.style.width = '';
     label.style.marginBottom = '';
+    label.style.top = '';
     label.removeAttribute?.('title');
     label.classList?.remove('desktop-icon-label-cut', 'desktop-icon-label-open');
     if (label.firstElementChild) label.textContent = full;
@@ -411,21 +427,31 @@ export function fitIconLabel(label) {
         clipped = true;
         for (let n = all[past - 1].nextSibling; n;) { const next = n.nextSibling; n.remove(); n = next; }
         let cur = all[past - 1];
-        let base = cur.textContent.replace(LABEL_TRAIL, '');
-        let guard = 400;
-        const put = () => { cur.textContent = base + LABEL_ELLIPSIS; };
-        put();
-        while (guard-- > 0 && (lineOf(label, cur, m) >= LABEL_LINES || cur.scrollWidth > cur.clientWidth)) {
-            base = Array.from(base).slice(0, -1).join('').replace(LABEL_TRAIL, '');
-            if (!base) {
-                const prev = spans().filter(el => el !== cur).pop();
-                for (let n = cur.previousSibling; n && n !== prev; n = cur.previousSibling) n.remove();
-                cur.remove();
-                if (!prev) break;
-                cur = prev;
-                base = cur.textContent.replace(LABEL_TRAIL, '');
+        // The longest start of the fragment that, with the ellipsis, stays inside three lines
+        // and its box: a binary search on the kept length (a fragment of any size is about
+        // nine layouts, not one per character)
+        for (let removals = 0; cur && removals <= all.length; removals++) {
+            const chars = Array.from(cur.textContent);
+            const baseOf = n => chars.slice(0, n).join('').replace(LABEL_TRAIL, '');
+            const fitsAt = n => {
+                const base = baseOf(n);
+                if (!base) return false;
+                cur.textContent = base + LABEL_ELLIPSIS;
+                return lineOf(label, cur, m) < LABEL_LINES && cur.scrollWidth <= cur.clientWidth;
+            };
+            let lo = 0;
+            let hi = chars.length;
+            while (lo < hi) {
+                const mid = Math.ceil((lo + hi) / 2);
+                if (fitsAt(mid)) lo = mid; else hi = mid - 1;
             }
-            put();
+            if (lo > 0) { fitsAt(lo); break; }
+            // Not even one character and the ellipsis fit on line 3: drop this fragment and
+            // end the one before it instead
+            const prev = spans().filter(el => el !== cur).pop();
+            for (let n = cur.previousSibling; n && n !== prev; n = cur.previousSibling) n.remove();
+            cur.remove();
+            cur = prev || null;
         }
     }
     if (!clipped && spans().some(el => el.scrollWidth > el.clientWidth)) clipped = true;
@@ -444,6 +470,7 @@ export function expandIconLabel(label) {
     if (!label?.classList?.contains('desktop-icon-label-cut')) return false;
     const full = label.dataset?.fullName;
     if (!full) return false;
+    if (label.classList.contains('desktop-icon-label-open')) return true;
     const z = cssZoomOf(label) || 1;
     const h0 = label.getBoundingClientRect().height / z;
     label.classList.add('desktop-icon-label-open');
@@ -451,6 +478,26 @@ export function expandIconLabel(label) {
     const h1 = label.getBoundingClientRect().height / z;
     if (h1 > h0) label.style.marginBottom = `${h0 - h1}px`;
     return true;
+}
+
+/**
+ * After a label has opened: if it runs past the bottom of the area it sits in, keep it
+ * whole. A scrolling area (the monitor) scrolls the label into view ('nearest', so it moves
+ * only as far as needed); the plain desktop clips, so the label is raised instead, by the
+ * overshoot, and grows over its own picture. Returns 'scrolled', 'raised' or null.
+ */
+export function keepLabelInView(label, area) {
+    if (!label?.isConnected || !area?.getBoundingClientRect) return null;
+    const z = cssZoomOf(label) || 1;
+    const over = (label.getBoundingClientRect().bottom - area.getBoundingClientRect().bottom) / z;
+    if (!(over > 0)) return null;
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(area) : null;
+    if (cs && /^(auto|scroll)$/.test(cs.overflowY) && typeof label.scrollIntoView === 'function') {
+        label.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        return 'scrolled';
+    }
+    label.style.top = `${-Math.ceil(over)}px`;
+    return 'raised';
 }
 
 /** Put a label back to its fitted (clipped) form. */
@@ -1678,21 +1725,37 @@ export class ContainerMinigame extends MinigameScene {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 e.preventDefault();
                 e.stopPropagation();
-                if (!e.repeat) icon.click();
+                if (e.repeat) return;
+                // A key opened it: the Copy / Move dialog takes the focus and hands it back
+                this.openedByKey = true;
+                try { icon.click(); } finally { this.openedByKey = false; }
             });
-            icon.addEventListener('mouseenter', () => expandIconLabel(iconLabel));
-            icon.addEventListener('mouseleave', () => collapseIconLabel(iconLabel));
+            // Hover and keyboard focus both open a clipped name; it closes only when neither holds
+            const matches = (q) => { try { return icon.matches(q); } catch (_) { return false; } };
+            const open = () => {
+                if (!expandIconLabel(iconLabel)) return;
+                keepLabelInView(iconLabel, icon.closest?.('.desktop-background'));
+                this.updateDesktopScrollCue();
+            };
+            const close = () => {
+                if (matches(':hover') || matches(':focus-visible')) return;
+                if (collapseIconLabel(iconLabel)) this.updateDesktopScrollCue();
+            };
+            icon.addEventListener('mouseenter', open);
+            icon.addEventListener('mouseleave', close);
             icon.addEventListener('focus', () => {
                 let visible = true;
                 try { visible = icon.matches(':focus-visible'); } catch (_) { /* older engines */ }
-                if (visible) expandIconLabel(iconLabel);
+                if (visible) open();
             });
-            icon.addEventListener('blur', () => collapseIconLabel(iconLabel));
+            icon.addEventListener('blur', close);
+            icon.itemKey = iconKeyOf(item);
 
             icon.appendChild(iconImg);
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
         });
+        this.focusReturnedIcon(desktopIcons);
         // On the monitor a label is a backed box as wide as its text (R2 m3): an even width,
         // so centring it under the icon lands on a whole pixel
         fitIconLabels(desktopIcons);
@@ -1703,6 +1766,28 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
+    /** After the reader a file was opened in closes: focus that file's icon again if it is still here. */
+    focusReturnedIcon(grid) {
+        const mark = iconFocusReturn;
+        if (!mark) return;
+        iconFocusReturn = null;
+        const same = mark.container === this.containerItem
+            || (!!mark.container?.scenarioData?.id && mark.container.scenarioData.id === this.containerItem?.scenarioData?.id);
+        if (!same || Date.now() - mark.at > FOCUS_RETURN_MS) return;
+        const icon = Array.from(grid.children).find(el => el.itemKey === mark.key);
+        icon?.focus?.({ preventScroll: true });
+    }
+
+    /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
+    focusAfterIconRemoved(slot) {
+        if (!slot?.classList?.contains('desktop-icon')) return;
+        const active = document.activeElement;
+        if (active && active !== document.body && !slot.contains(active) && active !== slot) return;
+        const next = slot.nextElementSibling || slot.previousElementSibling;
+        const target = next?.classList?.contains('desktop-icon') ? next : slot.closest?.('.desktop-background');
+        return target;
+    }
+
     setupEventListeners() {
         // Take container button
         const takeContainerBtn = document.getElementById('take-container-btn');
@@ -1812,7 +1897,7 @@ export class ContainerMinigame extends MinigameScene {
                 </div>
             </div>`;
         host.appendChild(dialog);
-        this.transferDialog = { item, element, choices, el: dialog };
+        this.transferDialog = { item, element, choices, el: dialog, opener: element?.parentElement || null };
         if (this.pcMonitor) {
             // Centred on whole pixels on both axes (R4 m3): margin: auto split an odd spare
             // width or height into half pixels. Again when the pixel font arrives and on resize.
@@ -1829,6 +1914,8 @@ export class ContainerMinigame extends MinigameScene {
                 this.chooseTransfer(btn.dataset.choice);
             });
         });
+        // Opened with Enter or Space on an icon: the first button takes the focus
+        if (this.openedByKey) dialog.querySelector('.desktop-transfer-btn')?.focus?.({ preventScroll: true });
     }
 
     /** Put the open Copy / Move dialog in the middle of its window, on whole pixels (R4 m3). */
@@ -1838,8 +1925,12 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     closeTransferDialog() {
-        if (this.transferDialog?.el?.parentElement) this.transferDialog.el.parentElement.removeChild(this.transferDialog.el);
+        const open = this.transferDialog;
+        // Focus that was inside the dialog goes back to the icon that opened it
+        const hadFocus = !!open?.el && typeof document !== 'undefined' && open.el.contains(document.activeElement);
+        if (open?.el?.parentElement) open.el.parentElement.removeChild(open.el);
         this.transferDialog = null;
+        if (hadFocus && open.opener?.isConnected) open.opener.focus?.({ preventScroll: true });
     }
 
     chooseTransfer(choice) {
@@ -1927,6 +2018,7 @@ export class ContainerMinigame extends MinigameScene {
         // note read in the world (review R2 n3)
         const opensReader = item.type === 'text_file' || (/^notes\d*$/.test(item.type) && !!item.readable);
         if (opensReader) {
+            rememberIconFocus(this.containerItem, item);
             window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
         }
         this.exitReason = 'item';
@@ -2248,8 +2340,14 @@ export class ContainerMinigame extends MinigameScene {
             this.showMessage(`Copied ${displayDashes(item.name)} to inventory`, 'success');
         } else if (addResult && addResult.ok) {
             if (window.playUISound) window.playUISound('item');
-            // Remove from container display
-            itemElement.parentElement.remove();
+            // Remove from container display; the focus moves on to the next icon (or the desktop)
+            const slot = itemElement.parentElement;
+            const focusNext = this.focusAfterIconRemoved(slot);
+            slot.remove();
+            if (focusNext) {
+                if (!focusNext.classList.contains('desktop-icon')) focusNext.setAttribute('tabindex', '-1');
+                focusNext.focus?.({ preventScroll: true });
+            }
             
             // Remove from contents array
             const itemIndex = this.contents.findIndex(content => content === item);

@@ -891,8 +891,10 @@ function simLines(label, box) {
     return { lines, count: lines.length ? line + 1 : 0 };
 }
 const sims = new WeakMap();
-function stubWidths(label, _chars, _perChar, box = 104) {
+const plainLabels = new WeakSet();
+function stubWidths(label, _chars, _perChar, box = 104, plainDesktop = false) {
     sims.set(label, box);
+    if (plainDesktop) plainLabels.add(label);
     const define = (k, get) => Object.defineProperty(label, k, { configurable: true, get });
     const sim = () => simLines(label, box);
     define('clientWidth', () => box);
@@ -927,6 +929,21 @@ function stubWidths(label, _chars, _perChar, box = 104) {
             return { top: row[1] * LINE, left: 0, width: row[3], height: LINE };
         }, { __sim: true });
     }
+}
+/**
+ * The plain desktop's box model for the simulator: the label has 2px of padding-top and each
+ * fragment 2px (a matching -2px margin puts its border box 2px above the line, so its rect top
+ * is the line top as the simulator reports it, while the label's content starts 2px lower).
+ * jsdom has no layout, so this stands in for those two computed values.
+ */
+function plainDesktopStyles() {
+    const had = Object.getOwnPropertyDescriptor(globalThis, 'getComputedStyle');
+    globalThis.getComputedStyle = (el) => {
+        if (plainLabels.has(el)) return { lineHeight: '18px', paddingTop: '2px', zoom: '1' };
+        if (el?.classList?.contains('desktop-icon-word') && plainLabels.has(el.parentNode)) return { paddingTop: '2px', zoom: '1' };
+        return { paddingTop: '0px', zoom: '1' };
+    };
+    return () => { if (had) Object.defineProperty(globalThis, 'getComputedStyle', had); else delete globalThis.getComputedStyle; };
 }
 const wordsOf = (label) => [...label.querySelectorAll('.desktop-icon-word')].map(w => w.textContent);
 
@@ -1012,6 +1029,135 @@ test('Icon labels: a name that needs a fourth line ends line 3 in an ellipsis; t
     // refit is idempotent, starting from the full name
     fitIconLabel(label);
     assert.deepEqual(wordsOf(label), words);
+});
+
+test('Icon labels R2 M1: on the plain desktop (2px padding on the label and on each fragment) a fourth-line fragment still ends line 3 in an ellipsis', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const restore = plainDesktopStyles();
+    try {
+        const name = 'Client_Records_2009-2024_Archive_Final_Signed.docx';
+        const label = document.createElement('div');
+        label.textContent = name;
+        stubWidths(label, 0, 0, 104, true);
+        assert.equal(fitIconLabel(label), 'ellipsis');
+        const words = wordsOf(label);
+        assert.ok(words.at(-1).endsWith('…'), `line 3 ends in an ellipsis, not a bare cut: ${words}`);
+        assert.ok(!words.join('').includes('docx'), 'the tail is gone');
+        assert.equal(label.getAttribute('title'), name);
+        const rows = [...label.querySelectorAll('.desktop-icon-word')].map(w => Math.round(w.getBoundingClientRect().top / LINE));
+        assert.ok(Math.max(...rows) <= 2, `kept fragments on lines 1-3: ${rows}`);
+    } finally {
+        restore();
+    }
+});
+
+test('Icon labels R2 m1: an empty name, a separator-only name and a single huge fragment all settle without throwing', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    for (const plainDesktop of [false, true]) {
+        const restore = plainDesktop ? plainDesktopStyles() : () => {};
+        try {
+            for (const name of ['', '___', '-._/-', ' ']) {
+                const label = document.createElement('div');
+                label.textContent = name;
+                stubWidths(label, 0, 0, 104, plainDesktop);
+                assert.doesNotThrow(() => fitIconLabel(label), JSON.stringify(name));
+                assert.equal(label.querySelector('*') === null || wordsOf(label).join('').length <= name.length + 1, true);
+                assert.equal(label.children.length === 0 || [...label.children].every(c => c.tagName === 'SPAN' || c.tagName === 'WBR'), true, 'text and spans only');
+            }
+            // a long fragment alone in a four-line name: it is cut by bisection, never by 300 trims
+            const huge = 'X'.repeat(300);
+            const label = document.createElement('div');
+            label.textContent = `bbbbbbbbbbbb_cccccccccccc_${huge} end`;
+            stubWidths(label, 0, 0, 104, plainDesktop);
+            const H = dom.window.HTMLElement.prototype;
+            const keep = H.getBoundingClientRect;
+            let rects = 0;
+            H.getBoundingClientRect = Object.assign(function () { rects++; return keep.call(this); }, { __sim: true });
+            try { assert.equal(fitIconLabel(label), 'ellipsis'); } finally { H.getBoundingClientRect = keep; }
+            assert.ok(rects < 80, `a bisected trim, not one layout per character: ${rects} rects`);
+            const words = wordsOf(label);
+            assert.ok(words.at(-1).endsWith('…'));
+            assert.ok(words.at(-1).length <= 14, 'the huge fragment is cut to what fits');
+            assert.equal(label.getAttribute('title'), `bbbbbbbbbbbb_cccccccccccc_${huge} end`);
+        } finally {
+            restore();
+        }
+    }
+});
+
+test('Icon labels R2 m1: when not even one character and the ellipsis fit on line 3 the fragment goes and the one before it ends the line', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const label = document.createElement('div');
+    // line 3 holds "eeeeeeeeeee_" (96px) and "x" (8px): "x…" would need 16px and wraps to line 4
+    label.textContent = 'bbbbbbbbbbbb_cccccccccccc_eeeeeeeeeee_x tail more';
+    stubWidths(label);
+    assert.equal(fitIconLabel(label), 'ellipsis');
+    assert.deepEqual(wordsOf(label), ['bbbbbbbbbbbb_', 'cccccccccccc_', 'eeeeeeeeeee…']);
+});
+
+test('Icon labels R2 m3: an open label that runs past a scrolling area is scrolled into view; on a clipping area it is raised', async () => {
+    const { keepLabelInView } = await imp('minigames/container/container-minigame.js');
+    const mk = (overflowY) => {
+        const area = document.createElement('div');
+        const label = document.createElement('div');
+        area.appendChild(label);
+        document.body.appendChild(area);
+        area.getBoundingClientRect = () => ({ top: 0, bottom: 300, height: 300 });
+        label.getBoundingClientRect = () => ({ top: 250, bottom: 350, height: 100 });
+        const calls = [];
+        label.scrollIntoView = (o) => calls.push(o);
+        globalThis.getComputedStyle = () => ({ overflowY, zoom: '1' });
+        return { area, label, calls };
+    };
+    try {
+        let t = mk('auto');
+        assert.equal(keepLabelInView(t.label, t.area), 'scrolled');
+        assert.deepEqual(t.calls, [{ block: 'nearest', inline: 'nearest' }]);
+        t = mk('hidden');
+        assert.equal(keepLabelInView(t.label, t.area), 'raised');
+        assert.equal(t.label.style.top, '-50px', 'up by the 50px it ran past');
+        assert.equal(t.calls.length, 0);
+        // inside the area: left alone
+        t.label.getBoundingClientRect = () => ({ top: 100, bottom: 160, height: 60 });
+        t.label.style.top = '';
+        assert.equal(keepLabelInView(t.label, t.area), null);
+    } finally {
+        delete globalThis.getComputedStyle;
+        document.body.innerHTML = '';
+    }
+});
+
+test('Icon labels R2 n2: hover and focus share the open label; it closes only when neither holds', async () => {
+    const mg = Object.create(ContainerMinigame.prototype);
+    mg.contents = [{ name: 'Client_Records_2009-2024_Archive_Final_Signed.docx', type: 'notes', takeable: true }];
+    document.body.innerHTML = '<div id="desktop-icons"></div>';
+    mg.takeItem = () => {};
+    mg.isInteractiveItem = () => false;
+    mg.offersTransfer = () => false;
+    mg.updateDesktopScrollCue = () => {};
+    mg.populateDesktopIcons();
+    const icon = document.querySelector('.desktop-icon');
+    const label = icon.querySelector('.desktop-icon-label');
+    stubWidths(label);
+    label.textContent = mg.contents[0].name;
+    label.dataset.fullName = mg.contents[0].name;
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    fitIconLabel(label);
+    const states = { ':hover': false, ':focus-visible': false };
+    icon.matches = (q) => !!states[q];
+    const fire = (t) => icon.dispatchEvent(new dom.window.Event(t));
+    const open = () => label.classList.contains('desktop-icon-label-open');
+    states[':focus-visible'] = true; fire('focus');
+    assert.equal(open(), true, 'focus opens it');
+    states[':hover'] = true; fire('mouseenter');
+    states[':hover'] = false; fire('mouseleave');
+    assert.equal(open(), true, 'the pointer leaves, focus holds it open');
+    states[':hover'] = true; fire('mouseenter');
+    states[':focus-visible'] = false; fire('blur');
+    assert.equal(open(), true, 'focus leaves, the pointer holds it open');
+    states[':hover'] = false; fire('mouseleave');
+    assert.equal(open(), false, 'neither: it closes');
+    document.body.innerHTML = '';
 });
 
 test('Icon labels: multi-word and hyphenated names that run past three lines are clamped and titled too', async () => {
