@@ -1,6 +1,12 @@
-# m06 office life: handover (plan phase; plan review rounds 1 to 3 done, round 4 next)
+# m06 office life: handover (plan phase; plan review rounds 1 to 6 done, plan ready for the user's answers)
 
-## Status at ccf78348e (supersedes the older notes below)
+## Status after round 6 (supersedes the older notes below)
+
+- Rounds 4 to 6 were delta reviews on the planning tier (the deltas touched the secrets list): R4 B0 M2 m5, R5 B0 M2 m9, R6 B0 M0 m3. Every finding fixed; outcomes in REVIEW_R4.md to REVIEW_R6.md. Plan review loop closed; no B or M open.
+- Changes since round 3: the six other trading-floor pc sprites are declared as `decor: true` twins after `lerato_desk` (a claim hides same-image twins), with a tile-home fallback for Lerato; Lerato is a night floor coordinator, Tomasz an evening app-support lead (app tickets only); 3.3 widened (VM, backend and password surface, deposits and withdrawals, hold or held, client escrow, "ops", the FCA and the player's cover, routines and tells, dates, prices, on-call names); `tomasz_handover_sheet` declared after `daily_trading_report`; 10.2 item 6 and 10.6 corrected.
+- Next: the user answers QUESTIONS.md Q0 to Q6, then build.
+
+## Status at ccf78348e (older)
 
 - PLAN.md and QUESTIONS.md written and rewritten standalone after each round. No separate ANALYSIS.md: the cast audit is plan section 2.1.
 - Rounds (all full reads on the planning tier): R1 B0 M6 m3 (REVIEW_R1.md, reviewer stopped at its context guard), R2 B0 M5 m10, R3 B0 M3 m8. Every finding fixed; outcomes in each REVIEW file.
