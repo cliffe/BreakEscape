@@ -1,0 +1,13 @@
+{
+  "key": "0673f3e718a3a22a76fb31126cad1e3c",
+  "npc": "agnieszka_duda",
+  "text": "Go on, just a small slice.",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:46:14Z"
+}
