@@ -60,6 +60,7 @@ test('wrapper bars, icons and non-pixel titles are not covered', () => {
         'ob-site-title', 'ac-title', 'ncsc-brief-title', 'minigame-container', 'device-frame',
         'device-frame-title', 'console-window', 'share-folder-window', 'desktop-transfer-dialog']) {
         assert.ok(!matchesClass(cls), `${cls} is not listed`);
+        assert.ok(!parts.some((p) => p.startsWith(`.${cls} `)), `${cls} is not listed with a heading tag`);
     }
 });
 

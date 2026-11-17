@@ -50,9 +50,10 @@
    Nothing enforces completeness: test/js/minigame-title-crisp-css.test.mjs checks the list's form
    and that every class in it is emitted by the engine, not that every title is listed. Add a new
    pixel-font title over an opaque panel by hand, after checking that it shows fringes without the
-   rule and is clean with it. .da-title (9px with 1px letter-spacing) and .nsm-cons-rule-title (0.5px
-   letter-spacing) sit off the pixel grid, so greyscale gives them grey edge columns, not exact
-   pixels. */
+   rule and is clean with it. Any listed title whose letter-spacing is not a whole number of pixels
+   at its size sits off the pixel grid, so greyscale gives it grey edge columns, not exact pixels:
+   today .da-title (9px with 1px), .nsm-cons-rule-title (0.5px), .bce-mx-heading (1px),
+   .combination-header h2 and .cryptex-header h2 (0.05em). */
 .minigame-container :is(
     .patch-panel-title,
     .rogue-ap-title-text,
