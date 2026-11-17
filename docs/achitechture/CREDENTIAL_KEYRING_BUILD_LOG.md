@@ -1429,3 +1429,14 @@ Game 6585: Sign-ins order (Lena .rdp, Ian password, ops cookie, Jake password, S
 - signin-fit.mjs: the capture-log-signins check used the module-scope `LABEL_32` inside `page.evaluate`; it now uses the `label` argument already passed in. Node syntax check only; the live rerun covers it. t4 (the browser run and live R12) is still to do.
 
 Results: bin/rails test 3198 runs, 0 failures, 0 errors, 4 skips; bin/test-js 734 files passed, 0 failed; access-relay-desktop (21) and access-from-desktop (16) pass under `ulimit -v 2000000` and a 300 MB heap. No Ruby changed, so no rubocop run.
+
+### K5 R2 fixes
+
+Review: `tmp/handover/ac0/K5_REVIEW_R2.md` (m 2, t 4).
+
+- **m1.** PLAYTEST R12 no longer asks for a lock on Lena's PC after expiry: `lena_pc` has only its login lock. The sentence now points to `credential_token_test.rb` (the unlock refusal after expiry, no try counted). The R12 list above is in step.
+- **m2.** `tools/playtest/signin-fit.mjs` no longer measures a bare div. It makes a second game of `test_access_keyring`, takes the drop box, plants it, signs in with the token through the game's own routes, reloads, and opens the real remote desktop with `openRemoteDesktop`. Per size it checks the bezel inside the viewport, the compact rule at 390x844 (`data-compact` must be set), the account bar the desktop's own `accountBarHtml()` draws into the real top bar (token line one box wide, at most two lines, Switch user and Sign out on one row) and the start panel's `.pc-start-credential` after Start is opened, each for the live figure, the sub-minute line and a 240-hour figure. Lines are counted in layout px (`offsetHeight`): the monitor is drawn at x2 by a transform, so a bounding rect read double at 1400x1000 (first run, fixed). Finding: in the monitor desktop the token line shows only in the start panel; the account bar variant is drawn into the top bar by the check, as the monitor's own path does not use it.
+- **t1.** Both K5 refusal tests in container-transfer-dialog now wait for the 50 ms timer before asserting `signInScreens` is empty. Bite: with the 403 `expired` branch switched off, the keyboard test fails on the `signInScreens` assertion itself (alert assertion neutralised for the proof, file restored).
+- **t2.** New Rails test: unplugging after expiry names `tokenExpiredPcIds`. It failed first (`nil`): `unplug_device!` ended the session through the foothold before any expiry prune, so the answer said only `endedPcIds`. `unplug_device!` now calls `drop_expired_token_sessions!` first, so an already-expired token is named as expired. Bite: with that call removed the test fails (`Expected ["lena_pc"], Actual nil`).
+- **t3.** The scenario has one foothold (`jack_comms_port`), so "never from another foothold" is reachable only as a tampered request. R12 now says so.
+
