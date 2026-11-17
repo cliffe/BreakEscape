@@ -1537,3 +1537,26 @@ screenshots in the main checkout's `tmp/handover/ac0/klock-live/`):
    offers only Disconnect, no Lock (PASS, 07, 08).
 No page errors.
 main checkout.
+
+### K-lock R1 fixes (head 147abbb2c)
+
+Fixes: M1 (a locked credential screen now offers the .rdp: `setRemoteAccounts` picks the
+preselected tile, `lockedSlabText` in `utils/remote-host-text.js`, and the stale "Checking..." line
+is cleared); m1 (pc-taskbar imports `sessionLockable`, test added); m2 (`sessionLockable` is false
+past `expiresAt`, and `lockSession` answers 422 for an expired token, dropped as `token_expired`;
+two tests); m3, m4, n1 and n2 as tests and a comment. `credential_lock_test.rb` is now 14 runs and
+`policy_test.rb` 36 runs, all green. Demo-host note: `account_manager` `show?` is true with no
+org_id, asserted in policy_test.
+
+Mutation proofs: M1 and both m2 branches are caught by the new tests (files restored afterwards).
+Signin-fit fixture `locked-credential-ways`: ALL PASS, 68 checks.
+
+Live proof (keyless server on :3082, game 6734): steps 2b, 3, 4, 4b, 4c, 4d, 4e, 5 and 5b PASS,
+no page errors. Screenshots in `tmp/handover/ac0/klock-live/r1fix/` (main checkout); 04b checked
+by eye and correct.
+
+Results (head 147abbb2c):
+- `bin/test-js` 736 files passed, 0 failed. `access-from-desktop` 16 tests and
+  `access-relay-desktop` 21 tests pass alone under `ulimit -v 2000000` and a 300 MB heap.
+- `bin/rails test` 3233 runs, 51101 assertions, 0 failures, 0 errors, 4 skips.
+- rubocop on game.rb, credential_lock_test.rb and policy_test.rb: no offences.
