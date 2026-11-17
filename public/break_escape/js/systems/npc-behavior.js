@@ -424,6 +424,15 @@ export class NPCBehaviorManager {
             }
             return;
         }
+        if (!visible) {
+            // A hidden NPC's update never runs, so nothing else would let go of what it holds.
+            // Stand a sitter up where it is (no walk): that ends its breathing image and crop,
+            // frees the chair's place and drops it from officeTypists. It shows standing.
+            window.seating?.unseatNPC?.(behavior, { instant: true });
+            // Pose and idle breathing end by themselves (NpcPoses.update hides the image on an
+            // invisible sprite); this is defensive
+            window.npcPoses?.stopBreath?.(npcId, sprite);
+        }
         sprite.setVisible(visible);
         sprite.setAlpha(visible ? 1 : 0);
         if (sprite.body) {

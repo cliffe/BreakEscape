@@ -90,6 +90,16 @@ export { breathRows, breathDown };
 // Tests (test/js/sprite-breath.test.mjs pins the seated output against a recorded trace)
 export { updateBreath as updateSeatedBreath, endBreath as endSeatedBreath };
 
+/**
+ * Drop a seated NPC's breathing image and crop (setNPCVisible hides it). A hidden NPC's body is
+ * off, so NPCBehavior.update never runs for it and nothing else would hide the image: it would
+ * stay drawn on the chair, a head and shoulders with no body, until a reload. updateSeatedNPC
+ * starts it again when the NPC is shown.
+ */
+export function endNpcBreath(behavior) {
+    if (behavior?._seat) endBreath(behavior._seat, behavior.sprite);
+}
+
 /** Seated breathing: the moving image sits a tenth of a seat depth step above the sitter. */
 function updateBreath(holder, sprite, on) {
     spriteUpdateBreath(holder, sprite, on, SEAT_DEPTH_STEP / 10);
@@ -1615,11 +1625,20 @@ export function seatNPC(behavior, chair, opts = {}) {
  * to its stand spot (the work spot for a needs seat, else a box- and line-checked spot by the
  * chair) while a swivel chair rolls back (or tucks in to the desk, for a needs seat). A hostile
  * or knocked-out NPC doesn't step. A seat move under way (walking on) is dropped.
+ * opts.instant: no step and no chair push; the NPC lands on its stand spot at once (setNPCVisible
+ * hides a sitter this way: a hidden body can't walk, and the chair must be free for others).
  */
-export function unseatNPC(behavior) {
+export function unseatNPC(behavior, opts = {}) {
     const st = behavior?._seat;
     if (!st) {
-        if (behavior?._seatMove && behavior._seatMove.stage !== 'step') endSeatMove(behavior, 'unseated');
+        // A hidden NPC's update never runs, so an instant unseat ends what it was part-way through:
+        // a seat move in any stage (the step too, which would hold its savedImm) and a chair fetch
+        // (releases the chair's reservation)
+        if (behavior?._seatMove && (behavior._seatMove.stage !== 'step' || opts.instant)) endSeatMove(behavior, 'unseated');
+        if (opts.instant && behavior?._fetch) {
+            if (behavior._goToStayDest) behavior.cancelMove?.();
+            cancelFetch(behavior, 'hidden');
+        }
         return false;
     }
     const sprite = behavior.sprite;
@@ -1628,7 +1647,17 @@ export function unseatNPC(behavior) {
     endBreath(st, sprite);
     if (typeof window !== 'undefined') window.officeTypists?.delete(behavior.npcId);
     behavior._seat = null;
-    behavior._seatTried = true; // don't sit straight back down
+    // don't sit straight back down; a needs seat is let to sit again (updateNeedsSeat does the same)
+    behavior._seatTried = !(opts.instant && needsStop);
+    if (opts.instant && needsStop) {
+        // The needs gate (updateNeedsSeat) is _seatStopKey and the retry counts, not _seatTried: clear them
+        // so the shown NPC takes the new-stop path and sits at once, spending no retry
+        behavior._seatStopKey = null;
+        behavior._seatTriedAt = undefined;
+        behavior._seatRetries = 0;
+        behavior._seatGaveUp = false;
+        behavior._seatGaveUpAt = undefined;
+    }
     releasePlace(chair, seat, placeIdx);
     if (chair.body && saved.chairImmovable !== null) chair.body.immovable = saved.chairImmovable;
     const halt = behavior.hostile || window.npcHostileSystem?.isNPCKO?.(behavior.npcId);
@@ -1649,11 +1678,15 @@ export function unseatNPC(behavior) {
             }
         }
         if (spot && Math.hypot(spot.x - at.x, spot.y - at.y) > ARRIVE_PX) {
-            behavior._seatMove = { stage: 'step', target: { x: spot.x, y: spot.y }, chair: null,
-                                   savedImm: b.immovable, savedBody: null, ticks: 0, still: 0, last: Infinity };
-            b.immovable = false;
+            if (opts.instant) {
+                moveFeetTo(sprite, spot.x, spot.y);
+            } else {
+                behavior._seatMove = { stage: 'step', target: { x: spot.x, y: spot.y }, chair: null,
+                                       savedImm: b.immovable, savedBody: null, ticks: 0, still: 0, last: Infinity };
+                b.immovable = false;
+            }
         }
-        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop) {
+        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop && !opts.instant) {
             // Push the chair back, away from where the NPC steps
             const d = spot ? Math.hypot(spot.x - at.x, spot.y - at.y) : 0;
             let ux, uy;
@@ -2484,7 +2517,7 @@ export function installSeating(scene) {
 const seating = {
     seatSpec, isSeat, isStaticSeatTexture, hasSitFrames, canPlayerSit, trySit, standUp, onJumpKey, queueSit,
     isSeated, isMounting, currentSeat, currentPose, canRoll, afterPlayerMovement, onMoveIntent, place, installSeating,
-    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, updateSeatedNPC, cancelFetch
+    chairFacing, setChairFacing, snapFacing, seatNPC, unseatNPC, endNpcBreath, updateSeatedNPC, cancelFetch
 };
 window.seating = seating;
 export default seating;
