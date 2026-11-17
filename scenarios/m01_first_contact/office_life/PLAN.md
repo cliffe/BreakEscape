@@ -368,7 +368,7 @@ All additions are bounded scalars sent as deltas, never a growing structure re-s
 
 - Lock and key diff against baseline_locks.json: empty in both tiers.
 - Validator: 0 errors, the baseline's 19 warnings (none office-life), possible new info lines only for room-tone sounds not loaded (none expected).
-- V1 summary: 9 NPCs, three with needs (Fatima, Graham, Maya); V6: 22 clips (6 if the build stops at tier 1), all uncached, with the keyless boot warning. Maya adds no clip (the `not_here` choice is player text, which is not voiced).
+- V1 summary: 9 NPCs, three with needs (Fatima, Graham, Maya); V6: 18 office-life clips (2 if the build stops at tier 1), all uncached; 22 clips in all with the 4 talk lines, which the per-mission batch voices, with the keyless boot warning. Maya adds no clip (the `not_here` choice is player text, which is not voiced).
 - Walkthrough: unchanged. The critical path touches no new object.
 
 ## 8. Tests
@@ -378,7 +378,7 @@ Live work uses a free port other than 3000, 3001, 3002, 3085, 3086 and 3091; the
 1. **Person-NPC proof (build step 0)**: see section 2. Pass: Fatima talks, exits, re-talks, survives a reload, no console error.
 2. Validator and `--office-summary`, diff against `v1_summary_base.txt` (only the two new NPCs and their needs appear).
 3. Lock and key diff, expected empty.
-4. V6: `env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]"`, expecting 22 clips (6 if the build stops at tier 1).
+4. V6: `env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]"`, expecting 18 clips (2 if the build stops at tier 1); V6 counts barks, pools and exchange lines, not the 4 talk lines.
 5. Headless audio: launch Chromium with `--autoplay-policy=no-user-gesture-required`, wait for `__test.waitUntilReady`, `setFPS(20)` with fixed steps on, never `fixedStep=false`. Confirm `soundManager.sounds` holds the beds first. Check `currentAmbient` and the `started` log entries per room against section 4.1 (quiet_office and it share `office_ambient`, so assert level not key). Include the unmapped rooms: `it_room` plays the stock `it` bed at 0.8 and no spot, `conference_room` has no bed, and no unmapped room logs a `spot`.
 6. Typing: dwell 60 s in the main office; assert a `typing` log entry with `count > 0` while an extra is in `using`, and no `spot` entries in any of the three mapped rooms (positive control: `lastSlot` advances).
 7. Seats, PCs and approach: both extras seated at their intended chairs on load (body-centre within 12 px of the chair seat position, per 4.2); each PC claimed once and no `pc` sprite anywhere else (MR 2 double-load check, one sprite per PC position). Then, with Graham seated and mid-`work`, walk to the Office Recycling Bin (the IT-room clue, a Tiled `bin` that claims bin11 at about (8.42, 4.77), 1.6 tiles from Graham's chair), open it and read the checklist; confirm his use cell and any fetched chair stay off the bin's approach cells. Repeat for the filing cabinet at (5.49, 0.72) against anyone using the cooler.
