@@ -30,6 +30,8 @@ Graham speaks on the first return from another room, not the first entry, so he 
 
 Player choices (not voiced): Fatima, "Don't let me keep you." Graham, "I'll leave you to it."
 
+Delivery tags exist only on #3, #5 and #6. The barks, pool lines and exchange lines carry no delivery tag.
+
 ### Not voiced (text only)
 
 HaX attacked texts, credits lines and observations are text on screen, not clips:
@@ -92,6 +94,6 @@ Counts: new spoken lines 22 (6 at tier 1), unchanged; new player choice text 1, 
 | 1 | 2 | 4 | 0 | 0 | 6 | 2 |
 | 2 | 2 | 4 | 8 | 8 | 22 | 18 |
 
-V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) counts office-life clips only: event barks, chatter pool lines and the lines of exchange and phone-call knots (app/services/break_escape/tts_office_lines.rb). It does not count the four brush-off talk lines (#3 to #6), which are ordinary person-chat ink lines voiced by the normal per-mission batch. Expected V6 total at tier 2: **18** (2 barks, 8 pool, 8 exchange; Graham 9, Fatima 9), all uncached keyless; at tier 1: 2 (the two barks). Voicing the whole mission adds the 4 talk lines, giving 22 clips (6 at tier 1). Maya's routine and her `not_here` choice add no clip.
+V6 (`app:break_escape:tts:office_lines[m01_first_contact]`) counts office-life clips only: event barks, chatter pool lines and the lines of exchange and phone-call knots (app/services/break_escape/tts_office_lines.rb). It does not count the four brush-off talk lines (#3 to #6), which are ordinary person-chat ink lines voiced by the normal per-mission batch. Expected V6 total at tier 2: **18** (2 barks, 8 pool, 8 exchange; Graham 9, Fatima 9), all uncached keyless (expected before voicing; since a0c4535b6 the rake reports 0 uncached); at tier 1: 2 (the two barks). Voicing the whole mission adds the 4 talk lines, giving 22 clips (6 at tier 1). Maya's routine and her `not_here` choice add no clip.
 
 P1 context: away from her office, `not_here` first replays her existing opener "Is it safe to talk?" (m01_npc_maya.ink:26, same delivery, cached clip reused, no new clip), then offers this choice.

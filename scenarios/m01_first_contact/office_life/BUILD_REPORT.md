@@ -33,7 +33,7 @@ Probes: tools/playtest/m01-ol-evening-reload.mjs, m01-ol-attack.mjs, m01-ol-appr
 | 5 biscuits exchange, once and after reload | 7080 (earlier run) | PASS |
 | 6 reloads, day and during a break | 7109 | PASS |
 | 6 reload after the reveal | 7089 | PASS (see 9) |
-| V6 keyless | n/a | 18 clips, 18 uncached, 621 characters |
+| V6 keyless | n/a | 18 clips, 18 uncached (before voicing), 621 characters |
 
 ### Test 9 (game 7089)
 - Route: new-game.rb with --start-room main_office_area and --unlock hallway_east, it_room, server_room, FLAGS_XML seeded through `session-start.sh --flags`. In game: walked main office, IT room, server room (door route via `enter`), opened the archive, typed the flag token `<flag:1>` at the flag station (UNLOCK), got "Access granted", took "ENTROPY Network Architecture" from the container. No global written from the page and no game row edited. The earlier stall was the missing flag step: the harness substitutes the real value.
@@ -59,7 +59,7 @@ tmp/exchanges-run1.txt on game 7080 is complete: ex_biscuits started and heard o
 Day: both seated at their chairs before and after reload. During a break (Graham using the cooler, Fatima walking to it): after reload both are back seated and working, no stuck state, `m01_staff_alarmed` false. After the reveal: see test 9.
 
 ### V6
-`env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]"`: Graham 9 clips (312 characters), Fatima 9 clips (309), total 18, all uncached (621 characters). SPOKEN_LINES.md expects 22; the difference of 4 is its four "talk" lines, which live in the ink and are not counted by this task (assumed, not checked in the rake source).
+`env -u GEMINI_API_KEY RBENV_VERSION=2.7.8 bundle exec rake "app:break_escape:tts:office_lines[m01_first_contact]"`: Graham 9 clips (312 characters), Fatima 9 clips (309), total 18, all uncached (before voicing; 621 characters). SPOKEN_LINES.md expects 22; the difference of 4 is its four "talk" lines, which live in the ink and are not counted by this task (assumed, not checked in the rake source).
 
 ### Observations, not fixed
 - During the break, Graham's `_seat` was truthy while he was `using` the cooler (game 7109 sample, before reload). Fatima's was false at the cooler. Not checked whether this is a leftover desk seat or the cooler's use pose.
@@ -101,7 +101,7 @@ Arrow-key movement through the real door (see harness note). `maya_away` after e
 - Talk #3 to #6 (the start-knot brush-off lines in the Fatima and Graham ink): not counted. They are ordinary person-chat lines, not in an `exchanges` or `phoneCalls` knot, and the service excludes the person-chat batch by design. They are voiced by the normal mission batch.
 - Pool #7 to #14: counted (8).
 - Exchanges #15 to #22: counted (8).
-Total 2 + 8 + 8 = 18 (Graham 9, Fatima 9, 621 characters, all uncached keyless). The 22 is the whole mission's new clip count (18 plus the 4 talk lines). SPOKEN_LINES.md now says so, with a V6 column. The rake does not miss any line that would be voiced: the 4 talk lines get voiced by the per-mission batch. PLAN.md section 8 still says V6 should read 22 and should read 18 (6 clips total at tier 1, of which 2 are in V6).
+Total 2 + 8 + 8 = 18 (Graham 9, Fatima 9, 621 characters, all uncached keyless before voicing). The 22 is the whole mission's new clip count (18 plus the 4 talk lines). SPOKEN_LINES.md now says so, with a V6 column. The rake does not miss any line that would be voiced: the 4 talk lines get voiced by the per-mission batch. PLAN.md section 8 still says V6 should read 22 and should read 18 (6 clips total at tier 1, of which 2 are in V6).
 
 ## Critical-path regression (game 7140, HEAD 44961bb1a)
 
@@ -131,7 +131,7 @@ Applied: M1, M2, m2, m3 (and R1 n7), m4, n1, n3. Not applied: m1 (new Maya reply
 
 ### Checks after the fixes
 - Validator: 0 errors, 26 warnings (unchanged). Lock and key diff against baseline_locks.json: empty.
-- V6 keyless: 18 office-life clips, 18 uncached, 589 characters (was 621).
+- V6 keyless: 18 office-life clips, 18 uncached (before voicing), 589 characters (was 621).
 - scripts/ink_runtime_check/maya_routes.js: all route checks passed.
 - bin/test-js: 748 files passed, 0 failed before the main merge; 751 passed, 0 failed after it (R2 run, read to the last line).
 
@@ -159,3 +159,23 @@ Review: BUILD_REVIEW_R2.md. Keyless server on :3094 (puma 2279413, left running)
 - V6 on the merged tip (d82f010cb): 18 office-life clips, 0 uncached.
 - Build review R3 (ea513dbc2): 0B/0M/2m/3n. Minors were documentation (this section, SPOKEN_LINES voicing status and delivery column). Notes accepted: the drink pose keeps facing where the player stood until the use ends (shared pose behaviour, cosmetic); Fatima's side swap at the cooler is the intended pair swap.
 - bin/test-js on d82f010cb: 751 passed, 0 failed.
+
+## R4 tests (m2 items; keyless server :3094, headless, setFPS 20 fixed steps; no scenario or ink edits)
+Probes: tools/playtest/m01-ol-barks.mjs, m01-ol-aisle.mjs, m01-ol-tone.mjs. Games from new-game.rb in this run: 7270 to 7312. R4 doc minors m1, n1, n2, n3 are fixed in SPOKEN_LINES.md, BUILD_REPORT.md and PLAN.md.
+
+| m2 item | Result | Evidence |
+|---|---|---|
+| 3 / Test 8 order and once-only | PASS | game 7272: reception to main office gives Fatima "Morning. Busy week." only (Graham none, previousRoom reception_area); hallway_east then main office gives Graham "Lost? This floor took me a month." once; five further entries (hallway, reception) give nothing |
+| 3 / Test 8 KO suppression | PASS (Graham real KO, Fatima seeded) | game 7273: 9 real punches KO Graham (graham_ko true), later arrivals from elsewhere give no Graham bark; game 7274 seeded with fatima_ko and graham_ko true at creation: no bark in any entry |
+| 3 / Test 8 after entropy_reveal_read | PASS (seeded) | game 7279 created with entropy_reveal_read true: no barks on entry from reception or from elsewhere. Seeded at creation, not reached by the real path (that path is test 9, PASS) |
+| 5 / Test 11 aisle | PASS | game 7283: both users at the cooler (Fatima 5.62,7.87; Graham 6.88,7.68), BFS on the nav grid with their footprints blocked: south door (1.5,9) to north doors (1.5,1) 38 cells and (8.5,1) 50 cells. Player walked through both and back. Side doors (it_room, break_room) not part of the claim. Screenshot screenshots/cooler-aisle.png |
+| 5 / Test 11 third user | PARTIAL | Maya as third (set thirsty with both extras using): claims never above 2 and she did not share, but she also never went for her drink in 80 s after they left (idle at post, game 7312). Capacity and the avoids list cannot be told apart, because Maya avoids both. Possible engine point: a need blocked by avoidance seems to be dropped, not retried. Maya alone at the cooler (game 7310): claims 1, the extras began their own trip only after she had left (t=77 s) |
+| 7 / Test 14 Maya never shares the cooler | PASS | games 7282, 7310, 7312: never more than one extra beside her; extras waited while she used it |
+| 1 / Test 5 room tone per room | NOT RUN | handover: probe m01-ol-tone.mjs written (mode tour), never executed; rooms and graph in the file header |
+| 2 / Test 6 60 s dwell | NOT RUN | same probe, mode dwell (needs-clock based, positive control lastSlot) |
+| 4 / Test 10 music threat to noir on all_hostiles_ko | NOT RUN | no probe written |
+| 7 / Test 14 Maya away three ways, after reload; hallway_east motion light | NOT RUN | earlier runs (step 5, R2 n5) cover mid-walk, at the cooler, hub exit; fresh-session, after-reload and motion light remain |
+| 6 / Test 12 sis01 and sis02 gates | DEFERRED | PLAN.md:411 puts them before release |
+
+## Handover (fresh agent)
+Done: Test 8, Test 11 aisle, Maya sharing, doc minors (uncommitted until the commit below). Open: tests 5, 6, 10, the Test 14 remainder. Server: puma PID 141485 on :3094, log tmp/server-3094-r5.log, killed by `kill 141485` only. Gotchas: enterRoom sometimes fails with did-not-cross, so retry on a fresh game; a "using" phase can be a PC, match on office_cooler; create games with --unlock for each room visited. Generated tools/playtest/*-flags-game*.xml files are untracked noise.

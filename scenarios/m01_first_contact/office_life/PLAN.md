@@ -367,8 +367,8 @@ All additions are bounded scalars sent as deltas, never a growing structure re-s
 ## 7. Expected results
 
 - Lock and key diff against baseline_locks.json: empty in both tiers.
-- Validator: 0 errors, the baseline's 19 warnings (none office-life), possible new info lines only for room-tone sounds not loaded (none expected).
-- V1 summary: 9 NPCs, three with needs (Fatima, Graham, Maya); V6: 18 office-life clips (2 if the build stops at tier 1), all uncached; 22 clips in all with the 4 talk lines, which the per-mission batch voices, with the keyless boot warning. Maya adds no clip (the `not_here` choice is player text, which is not voiced).
+- Validator: 0 errors, the baseline's 19 warnings (none office-life; the validator now gives 26, see BUILD_REPORT.md), possible new info lines only for room-tone sounds not loaded (none expected).
+- V1 summary: 9 NPCs, three with needs (Fatima, Graham, Maya); V6: 18 office-life clips (2 if the build stops at tier 1), all uncached before voicing (the clips were voiced later, in a0c4535b6); 22 clips in all with the 4 talk lines, which the per-mission batch voices, with the keyless boot warning. Maya adds no clip (the `not_here` choice is player text, which is not voiced).
 - Walkthrough: unchanged. The critical path touches no new object.
 
 ## 8. Tests
@@ -393,7 +393,7 @@ Live work uses a free port other than 3000, 3001, 3002, 3085, 3086 and 3091; the
 
 ## 9. Build size
 
-Tier 1: about 120 lines of scenario JSON, two small ink files, two credits lines, three or four hours with the live checks. Tier 2 adds about 50 lines, a cooler placement render, two exchange knots and one more hour. Maya's routine adds about 15 lines of scenario JSON, three more mappings, and an ink change in her file (two VARs, one six-line knot, five guard lines, five `maya_settled` writes, no voiced line changed), and a needs-clock measurement. No new art (cast art exists), no engine change. The 22 clips wait for the user's yes.
+Tier 1: about 120 lines of scenario JSON, two small ink files, two credits lines, three or four hours with the live checks. Tier 2 adds about 50 lines, a cooler placement render, two exchange knots and one more hour. Maya's routine adds about 15 lines of scenario JSON, three more mappings, and an ink change in her file (two VARs, one six-line knot, five guard lines, five `maya_settled` writes, no voiced line changed), and a needs-clock measurement. No new art (cast art exists), no engine change. The 22 clips were voiced with the user's yes (D97a).
 
 ## 10. Settled (D88, 2026-11-17)
 
