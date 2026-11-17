@@ -615,10 +615,10 @@ test('hint 1 is gated on ap_twin_staff, read when the delay is up (R3 m1)', () =
     const m = erb.match(/"eventPattern": "global_variable_changed:ap_twin_staff", "condition": "([^"]+)"/);
     assert.ok(m, 'the ap_twin_staff hint mapping exists');
     const holds = (globalVars, value = true) => new Function('value', 'globalVars', `return (${m[1]});`)(value, globalVars);
-    assert.equal(holds({ ap_twin_staff: true }), true, 'staff copy still running');
-    assert.equal(holds({ ap_twin_staff: false }), false, 'a guest clone made within the minute cancels it');
-    assert.equal(holds({ ap_twin_staff: true, kp_twin_captured: true }), false);
-    assert.equal(holds({ ap_twin_staff: true, kp_twin_account_captured: true }), false);
+    assert.equal(holds({ ap_planted: true, ap_twin_staff: true }), true, 'staff copy still running');
+    assert.equal(holds({ ap_planted: true, ap_twin_staff: false }), false, 'a guest clone made within the minute cancels it');
+    assert.equal(holds({ ap_planted: true, ap_twin_staff: true, kp_twin_captured: true }), false);
+    assert.equal(holds({ ap_planted: true, ap_twin_staff: true, kp_twin_account_captured: true }), false);
 });
 
 test('hint 2 is cancelled by switching back to the key page inside the minute (A2 R2 t4)', () => {
