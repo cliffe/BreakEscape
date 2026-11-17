@@ -157,6 +157,7 @@ module BreakEscape
     # The player takes the box, plants it, and holds the foothold it gives.
     def plant_box
       hold('kit_dropbox')
+      open_rooms('meeting_room')
       body = plant('meeting_jack')
       assert body['success'], body.inspect
       @foothold = @game.reload.foothold_id_for('meeting_jack')
@@ -265,7 +266,10 @@ module BreakEscape
       refute_secrets 'bootstrap'
       refute_pin 'bootstrap'
       keys = keys_of(response.parsed_body)
-      %w[psk requires creds password postitNote].each { |key| refute_includes keys, key, "bootstrap has a #{key} key" }
+      %w[psk creds password postitNote].each { |key| refute_includes keys, key, "bootstrap has a #{key} key" }
+      refute response.parsed_body['rooms']['server_room'].key?('requires'), 'the keypad door carries its code'
+      requires = leaves(response.parsed_body).select { |path, _| path.end_with?('.requires') || path.include?('.requires[') }
+      assert_equal [VISITOR_CARD], requires.map { |_, value| value }, 'only the visitor card id is a requires value'
       refute_includes response.body, lorna_card_id
       refute_includes response.body, 'door-codes', 'the door-codes file is named in the bootstrap'
       refute_includes response.body, 'facilities_txt'
@@ -406,7 +410,7 @@ module BreakEscape
       assert_refused rfid('partner_office', [VISITOR_CARD, lorna_card_id]), 'both together'
       assert_refused rfid('partner_office'), 'no card ids'
       refute unlocked?('partner_office')
-      assert_equal false, clone_card('JULIAN-CARD-01', 'julian')['recorded'], 'nothing to record for Julian'
+      refute clone_card('JULIAN-CARD-01', 'julian')['recorded'], 'nothing to record for Julian'
       refute unlocked?('partner_office')
     end
 
@@ -416,7 +420,7 @@ module BreakEscape
       assert_refused rfid('comms_cupboard', [lorna_card_id]), 'her card id with no clone and no cloner'
       hold_cloner
       assert_refused rfid('comms_cupboard', [lorna_card_id]), 'cloner held, no clone recorded'
-      assert_equal false, clone_card(lorna_card_id, 'delphine')['recorded'], 'a card id that is not Delphine\'s'
+      refute clone_card(lorna_card_id, 'delphine')['recorded'], 'a card id that is not Delphine\'s'
       assert_refused rfid('comms_cupboard', [lorna_card_id]), 'a clone recorded against the wrong person'
       assert_equal true, clone_card(lorna_card_id, 'lorna')['recorded']
       refute unlocked?('comms_cupboard')
@@ -438,7 +442,7 @@ module BreakEscape
       @game.player_state['encounteredNPCs'] = PEOPLE - ['lorna']
       @game.save!
       hold_cloner
-      assert_equal false, clone_card(lorna_card_id, 'lorna')['recorded']
+      refute clone_card(lorna_card_id, 'lorna')['recorded']
       assert_refused rfid('comms_cupboard', [lorna_card_id])
     end
 
@@ -599,6 +603,7 @@ module BreakEscape
 
     test 'meeting_jack resolves through find_jack and the plant answers something other than 404' do
       hold('kit_dropbox')
+      open_rooms('meeting_room')
       body = plant('meeting_jack')
       refute_equal 404, response.status, body.inspect
       assert body['success'], body.inspect
@@ -701,6 +706,7 @@ module BreakEscape
     test 'player_state does not grow when the short route is repeated' do
       hold('kit_dropbox', 'julian_rdp_file', 'visitor_card')
       hold_cloner
+      open_rooms('meeting_room')
       short_route_cycle
       first = state.deep_dup
       assert_includes Array(first['unlockedRooms']), 'server_room'
