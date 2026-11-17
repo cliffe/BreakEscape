@@ -596,3 +596,39 @@ test('Icon labels R3 n1: a text field outside the icon grid keeps the focus', as
     assert.equal(document.activeElement, field, 'the input still has the focus');
     field.remove();
 });
+
+test('Icon labels R4 m1: a returned icon keeps its clipped label open past the deferred refit, and blur closes it', async () => {
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
+    const LONG = 'Server_rota_2009-2024_Archive_Final_Signed_Off.txt';
+    const files = FILES.map(f => f.id === 'ian_rota' ? { ...f, name: LONG } : f);
+    // Widths are stubbed on every label as it is built, so the name clips; jsdom has no layout
+    const proto = dom.window.HTMLElement.prototype;
+    const hold = (k) => Object.getOwnPropertyDescriptor(proto, k);
+    const saved = { sw: hold('scrollWidth'), cw: hold('clientWidth'), sh: hold('scrollHeight'), ch: hold('clientHeight') };
+    const isLabel = (el) => el.classList?.contains('desktop-icon-label');
+    const over = (k, clipped, whole) => Object.defineProperty(proto, k, { configurable: true, get() { return isLabel(this) ? (this.classList.contains('desktop-icon-label-open') ? whole : clipped) : 0; } });
+    over('scrollWidth', 400, 80); over('clientWidth', 80, 80); over('scrollHeight', 120, 40); over('clientHeight', 40, 40);
+    // jsdom matches :focus-visible for any focused element, which would hold the label open on
+    // its own; a browser does not after a mouse-opened reader, so only the returned-focus flag may
+    const origMatches = proto.matches;
+    proto.matches = function (q) { return q === ':focus-visible' ? false : origMatches.call(this, q); };
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
+    try {
+        await openDesktop({ item, contents: files, focusReturn: { key: 'ian_rota', byKey: true } });
+        const rota = icon(LONG);
+        const label = rota.querySelector('.desktop-icon-label');
+        assert.equal(document.activeElement, rota, 'the returned icon has the focus');
+        assert.ok(label.classList.contains('desktop-icon-label-open'), 'open at once');
+        await new Promise(r => dom.window.requestAnimationFrame(() => setTimeout(r, 0)));
+        assert.ok(label.classList.contains('desktop-icon-label-open'), 'still open after the deferred refit');
+        rota.blur();
+        assert.equal(label.classList.contains('desktop-icon-label-open'), false, 'blur closes it');
+    } finally {
+        globalThis.requestAnimationFrame = raf;
+        delete proto.matches;
+        for (const [k, d] of [['scrollWidth', saved.sw], ['clientWidth', saved.cw], ['scrollHeight', saved.sh], ['clientHeight', saved.ch]]) {
+            if (d) Object.defineProperty(proto, k, d); else delete proto[k];
+        }
+    }
+});

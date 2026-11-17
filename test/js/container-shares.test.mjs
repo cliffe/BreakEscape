@@ -52,7 +52,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
 const { ContainerMinigame, isNetworkScreenContainer, networkScreenKind, networkReturnArmed, disarmNetworkReturn,
-    returnToContainerAfterNotes } = await imp('minigames/container/container-minigame.js');
+    returnToContainerAfterNotes, startContainerMinigame } = await imp('minigames/container/container-minigame.js');
 const { adds } = await imp('systems/inventory.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 let TextFileMinigame = null;
@@ -1037,4 +1037,42 @@ test('icon focus return: a key-opened interactive file returns focus to its icon
     await settle();
     await desk();
     assert.notEqual(document.activeElement, icon('Strongbox'), 'a fresh open focuses no old icon');
+});
+
+// Icon labels R4 n1: the real startContainerMinigame and the text-file network-screen reopen
+// carry the focus mark; the shares setup's window.startContainerMinigame is a copy of the mapping
+test('icon focus return: the real startContainerMinigame maps extra.focusReturn to params.focusReturn (null when absent)', async () => {
+    setup();
+    const mark = { key: 'strongbox', byKey: true };
+    startContainerMinigame({ scenarioData: { id: 'memo_pc', name: 'Strongbox PC', type: 'pc', locked: false } }, null, false, true, null, { focusReturn: mark });
+    await settle();
+    assert.deepEqual(started.at(-1)[1].focusReturn, mark, 'the mark reaches the minigame params');
+    startContainerMinigame({ scenarioData: { id: 'memo_pc', name: 'Strongbox PC', type: 'pc', locked: false } }, null, false, true, null, { fromReturn: true });
+    await settle();
+    assert.equal(started.at(-1)[1].focusReturn, null, 'no mark, none passed');
+    // and the reopen after a notes viewer closes goes through the same mapping
+    window.pendingContainerReturn = { containerItem: { scenarioData: { id: 'memo_pc', name: 'Strongbox PC', type: 'pc', locked: false } },
+        isTakeable: false, focusReturn: mark };
+    returnToContainerAfterNotes();
+    await settle();
+    assert.deepEqual(started.at(-1)[1].focusReturn, mark, 'returnToContainerAfterNotes hands the mark on');
+});
+
+test('icon focus return: a text file closed over a network screen reopens it carrying the focus mark', async (t) => {
+    if (!TextFileMinigame) { t.skip('text-file minigame did not load here'); return; }
+    setup();
+    await openRemote();
+    const desktop = current().containerItem;
+    assert.ok(isNetworkScreenContainer(desktop), 'a remote desktop is a network screen');
+    const mark = { key: 'ledger_archive', byKey: true };
+    window.pendingContainerReturn = { containerItem: desktop, isTakeable: false, focusReturn: mark };
+    const calls = [];
+    window.startContainerMinigame = (...a) => calls.push(a);
+    window.MinigameFramework.startMinigame('text-file', null, { fileName: 'IT handover.txt', fileContent: 'A note.' });
+    current().closeByPlayer();
+    await new Promise(r => setTimeout(r, 120));
+    await settle();
+    assert.equal(calls.length, 1, 'the network screen is reopened once');
+    assert.equal(calls[0][0], desktop);
+    assert.deepEqual(calls[0][5], { focusReturn: mark }, 'the 6th argument carries the mark');
 });
