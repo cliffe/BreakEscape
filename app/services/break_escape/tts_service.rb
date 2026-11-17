@@ -99,8 +99,10 @@ module BreakEscape
     # ("payroll hyphen notices", lab_social_engineering's Dev), so it becomes a
     # space; the key is still made from the line as written, which normalising
     # already strips the hyphen from. Digits keep theirs (dates, ranges).
+    # "802.1X" is respelt because the voice says "eight oh two point one X".
     def self.spoken_text(text)
       text.to_s.gsub(/(?<=\p{L})-(?=\p{L})/, " ")
+          .gsub(/\b802\.1X\b/i, "eight oh two dot one X")
     end
 
     # A per-line performance note in ink: `#delivery: quietly, almost to herself`.

@@ -921,6 +921,11 @@ export class NPCBehavior {
                 return;
             }
 
+            // The once-per-chat turn flag resets whenever no chat is open, even on a frame the seat
+            // code takes over (a seat move, a step off, seated)
+            const needsChat = !!(window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId));
+            if (!needsChat) this._chatFaced = false;
+
             // A seated NPC (scenario "seated", seating.js) holds its chair until a move,
             // hostility or a KO gets it up
             if (window.seating?.updateSeatedNPC?.(this, playerPos)) {
@@ -931,9 +936,10 @@ export class NPCBehavior {
             // Needs NPCs (npc-needs.js) hold still while the player talks to them,
             // even mid-walk: a goToAndStay move never pauses on its own. Scoped to
             // needs NPCs so every other NPC behaves as before.
-            if (window.npcNeedsSystem?.has?.(this.npcId) && window.npcNeedsSystem.world?.inChatWith?.(this.npcId)) {
+            if (needsChat) {
                 this._avoid = null;
                 this.sprite.body.setVelocity(0, 0);
+                if (!this._chatFaced) { this._chatFaced = true; this.faceForChat(playerPos); }   // once per chat
                 if (this.isMoving) {
                     this.isMoving = false;
                     this.playAnimation('idle', this.direction);
@@ -1214,8 +1220,22 @@ export class NPCBehavior {
         return clear;
     }
 
+    /**
+     * A conversation starts: release any pose hold (npc-poses.js) and turn to the player, which
+     * always wins over a pose's machine or phone. Needs NPCs return early during a chat, so
+     * face_player never runs for them; this is the one turn at chat start.
+     */
+    faceForChat(playerPos) {
+        this._poseHoldFacing = false;
+        if (!this.config?.facePlayer || !playerPos) return;
+        const { x: nx, y: ny } = this.npcBodyPos();
+        this.direction = this.calculateDirection(playerPos.x - nx, playerPos.y - ny);
+        this.playAnimation('idle', this.direction);
+    }
+
     facePlayer(playerPos) {
         if (!this.config.facePlayer || !playerPos) return;
+        if (this._poseHoldFacing) return; // turned to its machine or phone for a pose (npc-poses.js)
         if (!this.canSeePlayerToFace(playerPos)) return; // wall between
 
         const { x: nx, y: ny } = this.npcBodyPos();
