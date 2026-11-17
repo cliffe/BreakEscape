@@ -1305,3 +1305,16 @@ Branch `build/keyring-k4` (worktree p-k4), client and server together.
 - Server t2: a claim cannot reach Switch user with onward children, because a claim is refused while any session is held at the keyboard (`session_held_at_keyboard?`) and a relay is never a `from` source. The test pins that refusal and the untouched `from` child. Switch user by password and credential stays covered by the existing tests.
 - Server t3 (client guard): the workaround runner snapshots the held PC ids when a job's first request leaves (`heldPcIds`), and an answer's `endedPcIds` closes only those, so a resent answer cannot close a desktop opened since. Test added.
 - m4 done (server only): `desktop_refusal`'s `from` branch answers `no_session` when no session is held at the PC by that route, and the controller sends reason `no_session`; the client already drops its copy on that reason. Test: no session, then another route, then the held route opens.
+
+## K4 live proof
+
+Game 6588 on `test_access_keyring`, worktree p-k4. The route proven is the one this scenario builds: plant the drop box, read Ian's card in the comms room, sign in at Lena's PC with the sticky note, take "SV-OPS-01 admin.rdp", Connect from her desktop, type Ian's password on "Remote sign-in from ...".
+
+Five PASSes: (1) Connect from Lena's desktop opens the remote sign-in screen for SV-OPS-01; (2) Ian's typed password signs in and the SV-OPS-01 desktop opens as a `from` session; (3) X returns once to Lena's desktop; (4) Sign out ends both sessions with "Your session on SV-OPS-01 ended: the session it went through was closed."; (5) a reload reopens nothing.
+
+Small items the proof found, fixed after it:
+
+- The screen header read "from lena_pc" while the desktop read "HB-FIN-02". A local session carries no host, so `fromLockable` fell to the raw id. `keyring.js` now passes `fromHost` (the source's session host, else the scenario PC's host or name; no new secret) through `openCredentialSignIn` to `fromLockable`. Test in `keyring-client.test.mjs`.
+- The Connect refusal path left the password empty although R5a says it is filled. `takeConnectRefusalTile` now fills the password the chosen tile already carries, as the tile click does. Test in `keyring-signin.test.mjs` (kind_refused and locked_out).
+- The minigame state helper (`base-minigame.js`) reported `disabled` from `.disabled` only; greyed Connect buttons use `aria-disabled="true"`, so it now reports both.
+- Docs: R10 and 9.1 re-scoped to this route (Sam's keyboard route waits for a scenario that builds Sam's office); Lena's file is "SV-OPS-01 admin.rdp" (`ops_rdp`) in the plan and PLAYTEST.md, matching the scenario ("SV-OPS-01.rdp" is `ops_cookie`).

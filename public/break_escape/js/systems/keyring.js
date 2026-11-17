@@ -439,6 +439,18 @@ export class Keyring {
         return this.showFinds(entries);
     }
 
+    /** The host name the client already shows for a desktop (its session, else the scenario PC), or null. */
+    hostOfPc(pcId) {
+        const w = typeof window !== 'undefined' ? window : {};
+        const fromSession = w.pcSessions?.get?.(pcId)?.host;
+        if (typeof fromSession === 'string' && fromSession) return fromSession;
+        for (const room of Object.values(w.gameScenario?.rooms || {})) {
+            const pc = (Array.isArray(room?.objects) ? room.objects : []).find(o => o?.id === pcId);
+            if (pc) return (typeof pc.host === 'string' && pc.host) ? pc.host : (typeof pc.name === 'string' && pc.name ? pc.name : null);
+        }
+        return null;
+    }
+
     /** The conversation closed: the held finds as one toast. */
     releaseHeld() {
         if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
@@ -586,7 +598,7 @@ export class Keyring {
             // The target's remote sign-in screen, the account and the credential chosen, the refusal shown
             w.openCredentialSignIn?.({
                 pcId, host, footholdId: route.foothold,
-                ...(route.from ? { fromPcId: route.from } : {}),
+                ...(route.from ? { fromPcId: route.from, fromHost: this.hostOfPc(route.from) } : {}),
                 username: entry.account?.username || null,
                 refusal: {
                     credentialId: entry.id, reason, kind: result.kind || entry.kind,

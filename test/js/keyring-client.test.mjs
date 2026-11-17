@@ -1252,3 +1252,18 @@ test('D49: the plug group draws its own badge; an unknown group falls back to th
     assert.equal(text.badgeSrc('key'), '/break_escape/assets/icons/badge-key.png');
     assert.equal(text.badgeSrc('nope'), '/break_escape/assets/icons/badge-key.png');
 });
+
+test('K4 step 8 refusal: the sign-in screen is given the host of the desktop it came from, not its id', async () => {
+    setup();
+    // a local session carries no host, so the name comes from the scenario PC the desktop shows
+    pcSessions._replace('a_pc', { npcId: 'lena', via: 'password' });
+    window.gameScenario = { credentialsDeclared: true, rooms: { r: { objects: [{ id: 'a_pc', name: "Lena's PC", host: 'HB-FIN-02' }] } } };
+    keyringAnswer = () => ({ entries: [FROM_RDP], rev: 'r1' });
+    loginAnswer = () => { throw refusal(422, { lockedOut: true, attemptsLeft: 0 }); };
+    await window.keyring.connect(ITEM, { from: 'a_pc' });
+    assert.equal(signIns[0].fromHost, 'HB-FIN-02');
+    // and the lockable it builds reads that host in its header
+    const { fromLockable } = await imp('systems/unlock-system.js');
+    assert.equal(fromLockable('lena_pc', 'a_pc', { fromHost: 'HB-FIN-02' }).scenarioData.remote.fromHost, 'HB-FIN-02');
+    assert.equal(fromLockable('lena_pc', 'zz_pc').scenarioData.remote.fromHost, 'zz_pc', 'the raw id is only the last fallback');
+});

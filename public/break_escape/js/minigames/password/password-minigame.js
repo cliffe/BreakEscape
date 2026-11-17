@@ -1973,6 +1973,10 @@ export class PasswordMinigame extends MinigameScene {
         st.other = false;
         st.otherPicked = false;
         if (this.usernameField) this.usernameField.value = '';
+        // The password the keyring already shows on this tile fills the field, as the tile click does (R5a)
+        const pw = tile.password || '';
+        if (this.passwordField) this.passwordField.value = pw;
+        this.gameData.password = pw;
         return tile;
     }
 
