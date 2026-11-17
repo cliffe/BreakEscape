@@ -46,3 +46,23 @@ Check 1: 7992, 8003, 8005, 8008, 8011 (7984 was used for the first script run an
 ## Bugs
 
 None in the kettle cells. F1 above (second talk to a one-line newcomer plays only the End line).
+
+## F1. Re-talk to a one-line newcomer. FIXED AND PROVEN
+
+Cause (confirmed from code and a live console trace on game 8039, before the fix): `start` ended `#exit_conversation` then `-> DONE`. The chat closes as soon as the tagged line has been shown, and `saveNPCState` runs at that moment, so the saved story still has the `-> DONE` unread: `canContinue` is true, the saved state is a full story state (`restoreNPCState` returns `true`, not `'variables-only'`), and `person-chat-minigame.js` (about lines 530 to 556) takes the "Continuing previous conversation" branch instead of `restartAfterEnd`. The next `Continue()` runs into DONE, the engine logs "Story has ended" and shows "(End of conversation - press ESC to exit)". So the lead was right: the restart never fires because the saved state looks mid-knot. No engine change; the engine path is fine for stories that really end.
+
+Fix: in `ink/m04_npc_ibrahim_diallo.ink` and `ink/m04_npc_joanne_pell.ink` the `start` knot now ends `#exit_conversation` then `-> start` (loop to itself) instead of `-> DONE`, with a comment. This is the house pattern (m03 exits divert back to the hub with `-> hub` after `#exit_conversation`). The unread divert is now a loop, so a re-talk continues into `start` and re-evaluates `aes_staff_off` with the freshly synced globals. The spoken words are unchanged. Ibrahim's three exchange knots are untouched (still `-> DONE`, played by the needs system, not through `start`), so no kettle re-check was needed. Recompiled by `validate_scenario.rb` (0 errors); `dialoguelint.mjs` reports no new finding on either file (its 1 line-len and 2 blank-reentry are in other files, unchanged). Commit `abcb3f683`.
+
+Live proof, keyless server :3097, headless, loop at 20 fps with Phaser TimeStep `smoothStep=false`, `minFps=1` and the physics world `setFPS(20)` (fixed steps left on, `fixedStep` never touched), `/tts` aborted. Games created for this run: 8039 (cause trace, pre-fix), 8041 (case a), 8042 (cases b and c).
+
+| Case | Game | Talk | Ibrahim | Joanne |
+|---|---|---|---|---|
+| a, no trouble | 8041 | 1st | "Morning. I'm swapping the office desktops while nobody needs them. It was booked late, so I won't be on tonight's list." | "Hiya, duck. I've a dozen inductions at six, so I came in early to set the room up. Don't mind me." |
+| a, no trouble | 8041 | 2nd | same normal line | same normal line |
+| b, talk, then one punch at the guard (`aes_staff_off` true, newcomers not hostile) | 8042 | 1st (before trouble) | normal line | normal line |
+| b | 8042 | 2nd (after trouble) | "I'll keep to my work, if it's all the same to you." | "I'd rather you kept your distance, love." |
+| c, reload (new page, same game, Resume chosen on the resume overlay), `aes_staff_off` still true | 8042 | 3rd | "I'll keep to my work, if it's all the same to you." | "I'd rather you kept your distance, love." |
+
+Before the fix the 2nd talk in a and the 2nd talk in b showed only the End line (games 8027, 8019, 8022, 8039). No page errors in any run. Screenshots (each is the last talk of its case, so a is the 2nd talk, b the curt talk, c the post-reload curt talk): `screenshots/f1_a_ibrahim_diallo.png`, `f1_a_joanne_pell.png`, `f1_b_ibrahim_diallo.png`, `f1_b_joanne_pell.png`, `f1_c_ibrahim_diallo.png`, `f1_c_joanne_pell.png`.
+
+Note on case c: a reload via the page needs the "Resume" button on the session overlay (the first attempt without it showed the title screen and no chat; that was the harness, not the game).
