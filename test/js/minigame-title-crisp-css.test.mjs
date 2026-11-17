@@ -5,7 +5,7 @@
 // the close button (.console-titlebar), icons and non-pixel-font titles (crisp-titles review R1 M1).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -22,6 +22,7 @@ const parts = inner ? inner[1].split(',').map((x) => x.trim()).filter(Boolean) :
 // `.minigame-header h3` matches by tag within a header.
 const matchesClass = (cls) => parts.some((p) => p === `.${cls}`);
 const matchesHeaderH3 = () => parts.includes('.minigame-header h3');
+const matchesHeading = (sel) => parts.includes(sel);
 
 test('a title rule promotes minigame titles to their own layer (greyscale antialiasing)', () => {
     assert.ok(rule, 'a will-change: transform rule on minigame titles exists');
@@ -32,23 +33,52 @@ test('a title rule promotes minigame titles to their own layer (greyscale antial
 
 test('every entry is an exact class (no substring or attribute match)', () => {
     for (const p of parts) {
-        assert.ok(/^\.[\w-]+$/.test(p) || p === '.minigame-header h3', `entry ${p} is a plain class`);
+        assert.ok(/^\.[\w-]+$/.test(p) || /^\.[\w-]+ h[1-6]$/.test(p), `entry ${p} is a plain class, or one class followed by a heading tag`);
     }
     assert.doesNotMatch(rule.sel, /\[class/);
 });
 
 test('the pixel-font leaf titles are covered', () => {
-    for (const cls of ['device-frame-title', 'console-title', 'pin-minigame-title', 'notes-minigame-title',
+    for (const cls of ['console-title', 'pin-minigame-title', 'notes-minigame-title',
         'patch-panel-title', 'rogue-ap-title-text', 'signin-title', 'desktop-window-title', 'share-folder-path']) {
         assert.ok(matchesClass(cls), `${cls} is listed`);
+    }
+});
+
+test('the measured headings are covered (fringes without the rule, clean with it)', () => {
+    for (const cls of ['rogue-ap-heading', 'fpr-heading', 'ib-h', 'bce-mx-heading', 'wcc-row-title']) {
+        assert.ok(matchesClass(cls), `${cls} is listed`);
+    }
+    for (const sel of ['.combination-header h2', '.cryptex-header h2', '.dusting-panel h3', '.esd-confirm-card h3']) {
+        assert.ok(matchesHeading(sel), `${sel} is listed`);
     }
 });
 
 test('wrapper bars, icons and non-pixel titles are not covered', () => {
     for (const cls of ['console-titlebar', 'console-titles', 'console-title-org', 'desktop-window-titlebar',
         'share-folder-titlebar', 'network-view-title-icon', 'bv-title-block', 'ob-page-title',
-        'ob-site-title', 'ac-title', 'ncsc-brief-title', 'minigame-container']) {
+        'ob-site-title', 'ac-title', 'ncsc-brief-title', 'minigame-container', 'device-frame',
+        'device-frame-title', 'console-window', 'share-folder-window', 'desktop-transfer-dialog']) {
         assert.ok(!matchesClass(cls), `${cls} is not listed`);
+    }
+});
+
+// A listed class that nothing emits is a dead entry that reads as coverage (crisp-titles review R2 m1).
+// Looks the class up as a token in the engine JS and the views. This does not look for titles that are
+// missing from the list: a new pixel-font title is added by hand after a fringe check.
+const walk = (dir) => readdirSync(dir).flatMap((f) => {
+    const p = join(dir, f);
+    return statSync(p).isDirectory() ? walk(p) : [p];
+});
+const sources = [...walk(join(root, 'public/break_escape/js')), ...walk(join(root, 'app/views'))]
+    .filter((f) => /\.(js|mjs|erb)$/.test(f))
+    .map((f) => readFileSync(f, 'utf8'))
+    .join('\n');
+
+test('every listed class is emitted by the engine JS or a view', () => {
+    for (const p of parts) {
+        const cls = /^\.([\w-]+)/.exec(p)[1];
+        assert.ok(new RegExp(`(^|[^\\w-])${cls}([^\\w-]|$)`).test(sources), `${cls} appears in public/break_escape/js or app/views`);
     }
 });
 
