@@ -49,12 +49,52 @@ async function tripAndAway() {
   const c3 = await toChoices(); log('at office talk', { g: await G(), c3 });
   await esc();
 }
+async function coolerRoute() {
+  // quick trip: tell her everything via set, then start the trip through the real mapping path is covered in tipoff;
+  // here use the needs control path (same as the mapping's needs.set) with the ink flags set by a real talk.
+  await waitAtPost(h, 'maya_chen', 20000);
+  await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+  let r = await toChoices(); await pick("That's right"); r = await toChoices(); await pick('SAFETYNET sent me'); r = await toChoices(); await pick('Tell me everything'); r = await toChoices(); await pick("okay with that"); r = await toChoices();
+  await pick('keep investigating'); await h.t(500); await esc();
+  await go('hallway_east', 'main_office_area');
+  const t0 = Date.now(); let m = await mst();
+  while (Date.now() - t0 < 60000) { m = await mst(); if (m.job?.phase === 'using' || m.mode === 'using' || (m.job && /use/.test(m.job.phase) && m.job.phase !== 'goto_target')) break; await h.t(500); }
+  log('at cooler?', m);
+  // meanwhile make both extras thirsty to test sharing
+  await ev(h, () => { window.__test.needs.set('fatima_begum', 'thirst', 20); window.__test.needs.set('graham_whitfield', 'thirst', 20); });
+  await h.t(800);
+  const rr = await ev(h, () => window.__test.interact('maya_chen')); await h.t(1500);
+  const d = await dlg(h);
+  log('cooler talk', { ok: rr?.ok, reason: rr?.reason, text: d.text, controls: d.controls, g: await G() });
+  if (d.active) await esc();
+  await h.page.screenshot({ path: 'tmp/m01-maya-cooler.png' });
+  const share = [];
+  for (let i = 0; i < 40; i++) {
+    const o = await ev(h, () => ['maya_chen', 'fatima_begum', 'graham_whitfield'].map(id => { const s = window.__test.needs.state(id); return [id, s?.mode, s?.job?.objectId || null, s?.job?.phase || null, s?.avoiding || null]; }));
+    share.push(o);
+    await h.t(1000);
+  }
+  const both = share.filter(o => { const mj = o[0][2] === 'office_cooler' && /us/.test(o[0][3] || ''); const ex = o.slice(1).some(x => x[2] === 'office_cooler' && /us/.test(x[3] || '')); return mj && ex; }).length;
+  log('samples with Maya and an extra both using', both);
+  log('sample first/mid/last', [share[0], share[20], share[39]]);
+  // attack her at the cooler (or wherever she is)
+  await go('main_office_area');
+  const st = await mst(); log('before attack', st);
+  await ev(h, () => window.__test.moveToNear('maya_chen', { timeoutMs: 15000 })).catch(() => {});
+  let hostile = null;
+  for (let i = 0; i < 12; i++) { await ev(h, () => { const s = window.npcBehaviorManager.getBehavior('maya_chen').sprite; window.playerCombat.attack({ x: s.x, y: s.y }); }); await h.t(500); const c = await ev(h, () => ({ h: window.npcHostileSystem.isNPCHostile('maya_chen'), ko: window.npcHostileSystem.isNPCKO('maya_chen'), g: window.gameState.globalVariables.maya_ko, al: window.gameState.globalVariables.m01_staff_alarmed })); if (c.h || c.ko) { hostile = { i: i + 1, c }; break; } await ev(h, () => window.__test.moveToNear('maya_chen', { timeoutMs: 8000 })).catch(() => {}); }
+  log('hostile', hostile);
+  for (let i = 0; i < 25; i++) { await ev(h, () => { const s = window.npcBehaviorManager.getBehavior('maya_chen').sprite; window.playerCombat.attack({ x: s.x, y: s.y }); }); await h.t(500); const k = await ev(h, () => window.npcHostileSystem.isNPCKO('maya_chen')); if (k) break; await ev(h, () => window.__test.moveToNear('maya_chen', { timeoutMs: 8000 })).catch(() => {}); }
+  log('after punches', { ko: await ev(h, () => window.npcHostileSystem.isNPCKO('maya_chen')), g: await G(), m: await mst() });
+  await h.page.screenshot({ path: 'tmp/m01-maya-attacked.png' });
+}
 log('start', { m: await mst(), g: await G() });
 if (route === 'post') {
   log('fresh at post', await waitAtPost(h, 'maya_chen', 20000));
   await load(h); await h.t(3000);
   log('after reload at post', { w: await waitAtPost(h, 'maya_chen', 20000), m: await mst() });
 }
+if (route === 'cooler') await coolerRoute();
 if (route === 'tipoff' || route === 'tellall' || route === 'topicchoices' || route === 'getstarted') {
   await waitAtPost(h, 'maya_chen', 20000);
   log('talk1', (await talk())?.ok);
