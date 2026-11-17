@@ -349,6 +349,20 @@ test('K5: the token line steps down each minute from the client timer, with no r
     } finally { mock.timers.reset(); }
 });
 
+test('K5 R1 m1: the line steps on the token\'s own minute boundary, not a mount-relative minute', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 125 } });
+        assert.equal(startLine(), 'with a session token, about 3 min left');
+        mock.timers.tick(60 * 1000);
+        assert.equal(startLine(), 'with a session token, about 2 min left');
+        // 49 s left: a mount-relative minute tick would still read "about 2 min"
+        mock.timers.tick(6 * 1000 + 10 * 1000);
+        assert.equal(startLine(), 'with a session token, under a minute left');
+        mg.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
 test('K5: under a minute the line reads "under a minute left"; a password session has no timer', async () => {
     mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
     try {

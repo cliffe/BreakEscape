@@ -171,7 +171,10 @@ export function buildSignInRows({ captures, secrets = null, keyring = null, soci
         if (e.kind === 'token') {
             // K5 (plan 10): where to use it, through the link that recorded it, and the minutes left
             pushOnce(row.sources, SOURCE_TAG_TEXT.recorded);
-            if (e.expired === true) { row.greyed = true; row.use = expiredLine(e.label); }
+            const left = typeof keyring?.tokenSecondsLeft === 'function' ? keyring.tokenSecondsLeft(e.id) : null;
+            // Run out by the page's own clock (K5 R1 m2): grey it now, without waiting for a GET;
+            // the server refuses it either way
+            if (e.expired === true || left === 0) { row.greyed = true; row.use = expiredLine(e.label); }
             else {
                 const proof = Array.isArray(e.routes) ? e.routes.find((r) => isObj(r) && isStr(r.foothold))?.foothold : null;
                 const secs = typeof keyring?.tokenSecondsLeft === 'function' ? keyring.tokenSecondsLeft(e.id) : null;

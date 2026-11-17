@@ -274,8 +274,12 @@ export function armNetworkReturn(state, { playerCloseOnly = false } = {}) {
     }
 }
 
-/** How often a session token's bar line is rewritten from pc-sessions.js's own timer (keyring K5, plan 10). */
-export const TOKEN_LINE_REFRESH_MS = 60 * 1000;
+/**
+ * How often a session token's bar line is looked at against pc-sessions.js's own timer (keyring K5,
+ * plan 10). refreshTokenLines rewrites only when the text changed, so a step shows within this many
+ * ms of its real minute (K5 R1 m1), not a mount-relative minute later.
+ */
+export const TOKEN_LINE_REFRESH_MS = 10 * 1000;
 
 const TRANSFER_LABELS = {
     open: 'Open',

@@ -226,7 +226,10 @@ test('K5: a live token row reads "Use it on {host}\'s sign-in screen, through {l
     left = 59;
     assert.equal(row().use, "Use it on HB-FIN-02's sign-in screen, through Drop box: comms room. Under a minute left.");
     left = 0;
-    assert.match(row().use, /Under a minute left\.$/, 'run out, before the server says expired');
+    assert.equal(row().use, 'HB-FIN-02 sign-in token has expired.', 'run out by the page clock: greyed without a GET (K5 R1 m2)');
+    assert.equal(row().greyed, true);
+    assert.ok(!row().timed, 'a greyed row is no longer timed');
+    left = 600;
     // An object of names works as well as a Map
     assert.match(build({ captures: [], keyring, linkNames: { jack_comms_port: 'Drop box: comms room' } }).signins[0].use, /through Drop box: comms room\./);
     // No time known (no keyring timer): the line has no minutes and the row is not timed
