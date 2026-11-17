@@ -208,3 +208,29 @@ left" / "under a minute left") + container-minigame 60 s refresh and 403 expired
 row; PLAYTEST R12 text; full bin/test-js (heap rules in the brief) and full bin/rails test (not run in run 5;
 the related 8 JS files pass).
 Gotcha: a mutation run that hangs node leaves the mutated file in place; restore it before anything else.
+
+## Run 6 (2026-11-17): pc-sessions timer, tokenExpiredPcIds, taskbar line. START HERE (Run 7)
+Commits (this run, on build/keyring-k5): pc-sessions timer; "an unplug answer and a workaround answer pass
+tokenExpiredPcIds"; "the desktop bar shows a token's minutes left ... a 403 expired closes with the token line".
+Done: pc-sessions.js (`tokenFields`/`isToken`, `expiresAt` from login answer and load(), `_armToken`/`_disarmToken`
+(timer unref'd, identity-checked), `noteTokenExpiry`, `tokenSecondsLeft(pcId)`, publicSession `tokenSecondsLeft`,
+`tokenExpiredEndedMessage` copy + equality test, token sessions off `signedIn` and firstAtPc false, `linkDropped(ids,
+reason, { tokenExpired })`, `_dropEnded`/signOut/displaced pass `tokenExpiredPcIds`, reason 'token_expired' closes with
+the token line, toast when no desktop open); network-links unplug result/event carry `tokenExpiredPcIds`;
+pc-sessions unplug listener and npc-workarounds (`deps.linkDropped(ids, tokenExpired)`) pass them; pc-taskbar
+`tokenSessionLine`, `refreshTokenLines`, token branch of `credentialSessionLine`/`credentialLineHtml`;
+container-minigame `TOKEN_LINE_REFRESH_MS` interval (`startTokenLineTimer`, stopped in cleanup) and the
+403 `expired` branch (remote or from route: dropLocal, exitReason 'expired', toast tokenExpiredMessage(label)).
+Tests added in pc-sessions, npc-workarounds, network-links, container-transfer-dialog (21 pass each file green).
+Mutations caught: taskbar rounding (ceil->floor), 403 expired branch. Not caught: removing the timer's identity
+check (redundant with _disarmToken on delete/replace; left as defence in depth).
+Open, in order: (1) tools/playtest/signin-fit.mjs token bar line + a token row in the Sign-ins fixture (K3d section
+~line 316-415 has `acct(...)` rows; add `{ id:'tok', kind:'token', ... expiresInS }` and a bar-line fixture);
+(2) R12 text in scenarios/test_access_keyring PLAYTEST.md from the build log "What live check R12 must see" list
+(build log line ~1399); (3) objectives-manager.js:~332 ignores pc_signed_in with relay: true; consider also ignoring
+a token session (event has via 'credential' but no kind; _remoteOf could carry token: true) since the server never
+records a token in signedInPcs (not done, not required by the brief); (4) build log "Slice K5 run 6" entry;
+(5) full bin/test-js (node --max-old-space-size=2048; access-relay-desktop and access-from-desktop only as
+`(ulimit -v 2000000; node --max-old-space-size=300 ...)`) and full bin/rails test (test DB only): NOT run yet.
+Run the two heavy files for the 403 change in container-minigame (access-relay-desktop, access-from-desktop).
+Gotchas: no new static imports this run (pc-taskbar deliberately has its own rounding copy, test keeps equal).

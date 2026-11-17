@@ -1068,6 +1068,7 @@ test('a token sign-in is no lasting sign-in: not in signedIn, firstAtPc false, a
     assert.equal(s.wasSignedIn('fin_pc'), false);
     assert.deepEqual(s.signedInPcs(), []);
     assert.equal(named('pc_signed_in')[0].firstAtPc, false);
+    assert.equal(named('pc_signed_in')[0].token, true, 'the event says token so objectives ignore it');
     assert.equal('expiresAt' in s.get('fin_pc'), false);
     assert.equal(s.tokenSecondsLeft('fin_pc'), 600);
     // A password session at a PC the token session replaced still records the sign-in

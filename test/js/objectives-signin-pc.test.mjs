@@ -68,6 +68,16 @@ test('K3c (8.3): a relay pc_signed_in meets no unlock_object task; the same even
     assert.equal(status(m, 'ian_pc_task'), 'completed');
 });
 
+test('K5: a token pc_signed_in meets no unlock_object task; the same event without token does', async () => {
+    const m = manager();
+    m.dispatcher.fire('pc_signed_in', { pcId: 'ian_pc', npcId: 'ian', username: 'ishaw', via: 'credential', token: true, firstAtPc: false });
+    await settle();
+    assert.equal(status(m, 'ian_pc_task'), 'active', 'a session token is not a lasting sign-in');
+    m.dispatcher.fire('pc_signed_in', { pcId: 'ian_pc', npcId: 'ian', username: 'ishaw', via: 'credential' });
+    await settle();
+    assert.equal(status(m, 'ian_pc_task'), 'completed');
+});
+
 test('on load, a PC in the restored signedInPcs completes its task', async () => {
     const m = manager({ signedIn: ['ian_pc'] });
     await settle();

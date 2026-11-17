@@ -347,7 +347,10 @@ async function measureCaptureLog(page, size) {
                 entries: [
                     { id: 'pw_lord', kind: 'password', source: 'registry', label, foundIn: 'f1', how: 'found', account: acct('lord', 'Samantha Lord-Whitfield', 's.lord') },
                     { id: 'rdp', kind: 'saved_connection', source: 'registry', label, heldItem: 'rdp_item', how: 'given', host: 'HB-FIN-03', account: acct('okafor', 'Sam Okafor', 'sokafor') },
-                    { id: 'assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist from Lena', how: 'given', ended: true, account: acct('lena', 'Lena Fox', 'lfox') }
+                    { id: 'assist', kind: 'assist_invite', source: 'registry', label: 'Remote assist from Lena', how: 'given', ended: true, account: acct('lena', 'Lena Fox', 'lfox') },
+                    // K5: a live token (minutes left, the link that recorded it) and an expired one
+                    { id: 'tok', kind: 'token', source: 'registry', label: 'HB-FIN-02 sign-in token', host: 'HB-FIN-02', connectsTo: 'lena_pc', routes: [{ foothold: 'drop_box' }], account: acct('lena', 'Lena Fox', 'lfox') },
+                    { id: 'tok_old', kind: 'token', source: 'registry', label: LABEL_32, host: 'HB-FIN-02', connectsTo: 'lena_pc', expired: true, account: acct('okafor', 'Sam Okafor', 'sokafor') }
                 ],
                 captures: {
                     lord_qr: { tag: 'password', source: 'phished', account: 'lord' },
@@ -356,13 +359,17 @@ async function measureCaptureLog(page, size) {
                     harp_box: { tag: 'password', source: 'recorded', account: 'harper' },
                     pin: { tag: 'pin', source: 'recorded' }, fh: { tag: 'foothold', source: 'recorded' }, post: { tag: 'finding', source: 'recorded' }
                 },
-                firstSeen: new Map([['pw_lord', 0], ['rdp', 10], ['assist', 11]]),
+                firstSeen: new Map([['pw_lord', 0], ['rdp', 10], ['assist', 11], ['tok', 12], ['tok_old', 13]]),
+                tokenSecondsLeft: (id) => (id === 'tok' ? 187 : null),
                 foundVisible: () => true
             };
             const sections = sr.buildSignInRows({ captures, keyring, secrets: { lord_qr: 'Facilities!2026', harp_qr: 'Recruit-2026', pin: '4471' },
                 social: { captures: { revealSecret: true } } });
             const four = sections.signins.find(r => r.key === 'account:lord');
             if (!four || (four.kinds.length + four.sources.length) !== 4) { out.ok = false; out.notes.push('fixture: no four-tag row'); }
+            for (const id of ['tok', 'tok_old']) {
+                if (!sections.signins.some(r => r.key === `cred:${id}`)) { out.ok = false; out.notes.push(`fixture: no ${id} row`); }
+            }
             MF.startMinigame('capture-log', null, { title: 'Capture log', holderId: '__signin_fit_none__' });
             const scene = MF.currentMinigame;
             // The device's background GET /keyring and secrets answers redraw it from the game's
@@ -415,6 +422,40 @@ async function measureCaptureLog(page, size) {
         } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
         return out;
     }, { label: LABEL_32, size });
+}
+
+// ---- K5: the desktop account bar's token line ----------------------------------------------
+// The real credentialLineHtml and the account bar's own classes, drawn in a box the width of the
+// bar at each size (the monitor's inner width, less its gutter). Checks the line does not run past
+// the bar and takes at most two lines, for a live token, the sub-minute line and the long label.
+async function measureTokenBar(page, size) {
+    return page.evaluate(async ({ size }) => {
+        const out = { ok: true, notes: [], lines: [] };
+        try {
+            const tb = await import('/break_escape/js/utils/pc-taskbar.js');
+            const host = document.createElement('div');
+            host.style.cssText = `position:fixed;left:0;top:0;z-index:99999;background:#111;padding:8px;box-sizing:border-box;width:${Math.min(size[0], 720)}px`;
+            document.body.appendChild(host);
+            const cases = [['live', 187], ['sub-minute', 41], ['unknown', null], ['long', 4 * 60 * 60 * 60]];
+            for (const [name, secs] of cases) {
+                const session = { via: 'credential', kind: 'token', tokenSecondsLeft: secs };
+                const bar = document.createElement('div');
+                bar.className = 'desktop-account-bar';
+                bar.innerHTML = `<span class="desktop-account-name">Signed in as <strong>Lena Fox</strong> (lfox)<span class="desktop-account-credential">${tb.credentialLineHtml(session)}</span></span>`
+                    + '<span class="desktop-account-actions"><button type="button" class="minigame-button desktop-account-btn">Switch user</button><button type="button" class="minigame-button desktop-account-btn">Sign out</button></span>';
+                host.appendChild(bar);
+                const line = bar.querySelector('.desktop-account-credential');
+                const lr = line.getBoundingClientRect(), br = bar.getBoundingClientRect();
+                const lh = parseFloat(getComputedStyle(line).lineHeight) || (parseFloat(getComputedStyle(line).fontSize) * 1.2);
+                const n = Math.round(lr.height / lh);
+                out.lines.push(`${name}:${n}`);
+                if (lr.right > br.right + 1 || bar.scrollWidth > bar.clientWidth + 1) { out.ok = false; out.notes.push(`${name}: token line runs past the bar`); }
+                if (n > 2) { out.ok = false; out.notes.push(`${name}: token line takes ${n} lines`); }
+            }
+            host.remove();
+        } catch (e) { out.ok = false; out.notes.push('throw: ' + String(e).slice(0, 160)); }
+        return out;
+    }, { size });
 }
 
 (async () => {
@@ -479,6 +520,16 @@ async function measureCaptureLog(page, size) {
             } catch {}
         }
         await page.evaluate(() => { const MF = window.MinigameFramework; while (MF?.currentMinigame) MF.endMinigame(false, null); });
+    }
+    // K5: the token line on the desktop account bar
+    for (const [w, h] of K3D_SIZES) {
+        await page.setViewportSize({ width: w, height: h });
+        await sleep(80);
+        const m = await measureTokenBar(page, [w, h]);
+        const tag = `token-bar @ ${w}x${h}`;
+        if (!m.ok) failed++;
+        rows.push({ tag, verdict: m.ok ? 'PASS' : 'FAIL', notes: m.notes });
+        console.log(`${m.ok ? 'PASS' : 'FAIL'}  ${tag.padEnd(34)} lines=${(m.lines || []).join(' ')}${m.notes?.length ? '  ' + m.notes.join('; ') : ''}`);
     }
     console.log(`\n${failed === 0 ? 'ALL PASS' : failed + ' FAILURE(S)'} over ${rows.length} checks (game ${id})`);
     await browser.close();

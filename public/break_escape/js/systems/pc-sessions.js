@@ -38,7 +38,7 @@
  * Events for a relay carry relay: true and kind.
  *
  * Events (each also as `<name>:<pcId>`):
- *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId }
+ *   pc_signed_in       { pcId, npcId, username, via, previousNpcId, firstAtPc, remote, footholdId, token? (K5: true for a session token) }
  *                      a sign-in (or the second half of a switch). previousNpcId is the account
  *                      signed in at this PC just before (a switch), else null; firstAtPc is true
  *                      when the player had never signed in at this PC before (signedIn).
@@ -750,7 +750,7 @@ export class PcSessions {
         if (!relay) this.signedIn.add(pcId);
         this._emit('pc_signed_in', {
             pcId, npcId: session.npcId, username: session.username, via: session.via,
-            previousNpcId: previous?.npcId ?? null, firstAtPc, ...this._remoteOf(session)
+            previousNpcId: previous?.npcId ?? null, firstAtPc, ...(isToken(session) ? { token: true } : {}), ...this._remoteOf(session)
         });
     }
 
