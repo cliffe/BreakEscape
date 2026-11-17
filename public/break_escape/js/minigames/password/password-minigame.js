@@ -579,7 +579,8 @@ export class PasswordMinigame extends MinigameScene {
                     // A remote screen: its foothold, the server picker/headless/screen it read, the
                     // captured sign-ins merged into the row, and the state line keyed off the host
                     ...(this.signIn.remote ? {
-                        remote: { footholdId: this.signIn.remote.footholdId ?? null },
+                        remote: { footholdId: this.signIn.remote.footholdId ?? null,
+                            ...(this.signIn.remote.fromPcId ? { fromPcId: this.signIn.remote.fromPcId } : {}) },
                         remotePicker: this.signIn.remotePicker ?? null,
                         headless: !!this.signIn.headless,
                         remoteScreen: this.signIn.remoteScreen ?? null,
@@ -1560,8 +1561,8 @@ export class PasswordMinigame extends MinigameScene {
         // two at 390x844. It wins back a line's height so the form fits .pc-monitor-area.
         const remoteHeld = s.remote && s.current && s.current.locked !== true;
         const headerSlabs = remoteHeld
-            ? `<div class="signin-current signin-current-remote">${escapeHtml(s.current.displayName || s.current.username)} signed in${s.remote.linkName ? `, through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>`
-            : `${s.remote ? `<div class="signin-remote">Remote sign-in${s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : ''}</div>` : ''}${s.current
+            ? `<div class="signin-current signin-current-remote">${escapeHtml(s.current.displayName || s.current.username)} signed in${s.remote.fromHost ? `, from ${escapeHtml(displayDashes(s.remote.fromHost))}` : (s.remote.linkName ? `, through ${escapeHtml(displayDashes(s.remote.linkName))}` : '')}</div>`
+            : `${s.remote ? `<div class="signin-remote">Remote sign-in${s.remote.fromHost ? ` from ${escapeHtml(displayDashes(s.remote.fromHost))}` : (s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : '')}</div>` : ''}${s.current
                 ? (s.current.locked === true
                     // A locked session (UI slice 6): it is held, but needs its password again
                     ? `<div class="signin-current signin-current-locked">Locked: ${escapeHtml(s.current.displayName || s.current.username)}. Enter the password to unlock</div>`
@@ -2258,10 +2259,12 @@ export class PasswordMinigame extends MinigameScene {
         }
         this.setSignInMessage('Signing in...');
         const foothold = this.signIn.remote?.footholdId || null;
+        // K4: a screen reached from another desktop signs in by that desktop
+        const from = !foothold ? (this.signIn.remote?.fromPcId || null) : null;
         this._signingIn = true;
         let result;
         try {
-            result = await sessions.signInWithCredential(this.signIn.pcId, cred.id, foothold ? { foothold } : {});
+            result = await sessions.signInWithCredential(this.signIn.pcId, cred.id, foothold ? { foothold } : (from ? { from } : {}));
         } finally {
             this._signingIn = false;
         }
@@ -2382,9 +2385,11 @@ export class PasswordMinigame extends MinigameScene {
         this._signingIn = true;
         let result;
         try {
+            const from = !foothold ? (this.signIn.remote?.fromPcId || null) : null;
             result = foothold
                 ? await sessions.signIn(this.signIn.pcId, username, password, { foothold })
-                : await sessions.signIn(this.signIn.pcId, username, password);
+                : (from ? await sessions.signIn(this.signIn.pcId, username, password, { from })
+                    : await sessions.signIn(this.signIn.pcId, username, password));
         } finally {
             this._signingIn = false;
         }

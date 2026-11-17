@@ -301,6 +301,9 @@ export class NpcWorkarounds {
         job.dropped = dropped;
         job.attempts++;
         this.requests++;
+        // Sessions held when the first request left: a resent answer's endedPcIds may only close
+        // those, never a desktop the player opened since (K4 R2 t3)
+        if (!job.heldAtSend && typeof this.deps.heldPcIds === 'function') job.heldAtSend = new Set(this.deps.heldPcIds() || []);
         let answer;
         try {
             const body = { npc_id: job.npcId, index: job.run.index, hand: job.run.hand, dropped: !!dropped };
@@ -351,6 +354,11 @@ export class NpcWorkarounds {
         if (job.dropped || body.dropped === true) {
             this._emit(`npc_workaround:${npcId}`, { npcId, index: run.index, do: run.do, phase: 'dropped' });
             return;
+        }
+        // K4: a borrow or hand that ended routes server-side reports them; drop their sessions
+        if (Array.isArray(body.endedPcIds) && body.endedPcIds.length) {
+            const ids = job.heldAtSend ? body.endedPcIds.filter(id => job.heldAtSend.has(id)) : body.endedPcIds;
+            if (ids.length) this.deps.linkDropped?.(ids);
         }
         if (typeof body.pcId === 'string' && body.hasPostit === true) this.deps.markPostit?.(body.pcId, true);
         if (typeof body.roomId === 'string') {
@@ -476,6 +484,8 @@ export function installNpcWorkarounds(api) {
             gs.globalVariables[name] = value;
             w.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value, oldValue: old });
         },
+        linkDropped: ids => w.pcSessions?.linkDropped?.(ids, 'route_ended'),
+        heldPcIds: () => [...(w.pcSessions?.sessions?.keys?.() || [])],
         markPostit: (pcId, on) => w.postitMarks?.mark?.(pcId, on),
         openDoor: (roomId, roomData) => openProppedDoor(roomId, roomData, w),
         loadedRooms: () => Object.keys(w.rooms || {}),

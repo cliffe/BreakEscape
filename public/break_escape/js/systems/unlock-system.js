@@ -356,7 +356,11 @@ export function openRemoteSignIn(hostRow, footholdId) {
  * over the foothold Connect used, with the account and the credential chosen and the refusal
  * (a saved connection's kindRefused or lockout) shown as on the screen itself (8.1).
  */
-export function openCredentialSignIn({ pcId, host = null, footholdId, username = null, refusal = null } = {}) {
+export function openCredentialSignIn({ pcId, host = null, footholdId, fromPcId = null, username = null, refusal = null } = {}) {
+    // K4: a refusal by a desktop route opens the screen reached from that desktop
+    if (pcId && !footholdId && fromPcId) {
+        return openLoginSignIn(fromLockable(pcId, fromPcId, { host }), { connect: { username, refusal } });
+    }
     if (!pcId || !footholdId) return undefined;
     const row = remoteRowFor(pcId, footholdId);
     return openLoginSignIn(remoteLockable({ ...row, host: row?.host || host, name: row?.name || host || pcId }, footholdId),
@@ -381,6 +385,40 @@ export function relayLockable(pcId) {
         texture: { key: typeof sprite === 'string' ? sprite : 'pc_desktop' },
         objectId: `relay_${pcId}`
     };
+}
+
+/**
+ * The lockable of a desktop reached from another PC's desktop (keyring K4, plan 3.7): the
+ * PC's own sprite shape with remote: { fromPcId, fromHost }. fromHost is the session's own
+ * (the server sends it), else the source session's host, else the source PC's name.
+ */
+export function fromLockable(pcId, fromPcId, { host: hostHint = null } = {}) {
+    const sessions = window.pcSessions;
+    const s = sessions?.get?.(pcId);
+    const pc = findPcObject(pcId);
+    const src = findPcObject(fromPcId);
+    const sprite = pc?.sprite || pc?.texture || 'pc_desktop';
+    const host = s?.host || pc?.host || hostHint || null;
+    const fromHost = s?.fromHost || sessions?.get?.(fromPcId)?.host || src?.host || src?.name || fromPcId;
+    return {
+        scenarioData: {
+            id: pcId, name: pc?.name || host || pcId, host, type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
+            remote: { fromPcId, fromHost }
+        },
+        name: sprite,
+        texture: { key: typeof sprite === 'string' ? sprite : 'pc_desktop' },
+        objectId: `from_${fromPcId}_${pcId}`
+    };
+}
+
+/**
+ * A held session's desktop reached from fromPcId's desktop (K4): Connect, the network view and
+ * a folder's close open it. Returns false with no pc or source.
+ */
+export function openFromDesktop(pcId, fromPcId) {
+    if (!pcId || !fromPcId) return false;
+    openLoginDesktop(fromLockable(pcId, fromPcId));
+    return true;
 }
 
 /** The scenario's own object for pcId, from the loaded scenario's rooms, or null. */
@@ -408,6 +446,12 @@ export function openRelayDesktop(pcId) {
  * the view and from openSession; it starts no trip of its own).
  */
 export function openRemoteDesktop(pcId, footholdId) {
+    // K4: a session held by a desktop route has no foothold; it opens from its source
+    const held = window.pcSessions?.get?.(pcId);
+    if (held?.remote === true && !held.footholdId && held.fromPcId) {
+        openFromDesktop(pcId, held.fromPcId);
+        return;
+    }
     openLoginDesktop(remoteLockable(remoteRowFor(pcId, footholdId), footholdId));
 }
 
@@ -445,16 +489,18 @@ async function remoteCapturedSignIns() {
  * dynamic import, as captures.js does, so no harness copy list grows. Resolves to
  * { declared, list, failed }; never throws.
  */
-export async function keyringForScreen(pcId, { foothold = null } = {}) {
+export async function keyringForScreen(pcId, { foothold = null, from = null } = {}) {
     if (window.gameScenario?.credentialsDeclared !== true) return { declared: false, list: [], failed: false };
     try {
         const { getKeyring, SCREEN_FOOTHOLD, SCREEN_KEYBOARD } = await import('./keyring.js');
         const keyring = getKeyring();
         try { await window.stateSync?.syncConfirmed?.(); } catch (e) { /* ask anyway */ }
-        const entries = await keyring.fetch(pcId, foothold ? { foothold } : {});
+        // K4: a screen reached from another desktop asks with from and shows as a remote screen
+        const route = foothold ? { foothold } : (from ? { from } : {});
+        const entries = await keyring.fetch(pcId, route);
         return {
             declared: true,
-            list: keyring.screenEntries(entries, { pcId, screen: foothold ? SCREEN_FOOTHOLD : SCREEN_KEYBOARD }),
+            list: keyring.screenEntries(entries, { pcId, screen: (foothold || from) ? SCREEN_FOOTHOLD : SCREEN_KEYBOARD }),
             failed: false
         };
     } catch (e) {
@@ -667,10 +713,13 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
     const pcId = data.id;
     if (!pcId) return;
     const sessions = window.pcSessions;
-    const remote = data.remote && data.remote.footholdId ? data.remote
-        : (remoteOpt && remoteOpt.footholdId ? remoteOpt : null);
+    // K4: a desktop route ({ fromPcId }) is remote too
+    const isRemote = (r) => !!r && (!!r.footholdId || !!r.fromPcId);
+    const remote = isRemote(data.remote) ? data.remote : (isRemote(remoteOpt) ? remoteOpt : null);
     if (remote) {
-        const remoteLockableFor = data.remote ? lockable : { ...lockable, scenarioData: { ...data, remote: { footholdId: remote.footholdId } } };
+        const route = remote.footholdId ? { footholdId: remote.footholdId }
+            : { fromPcId: remote.fromPcId, fromHost: remote.fromHost || null };
+        const remoteLockableFor = isRemote(data.remote) ? lockable : { ...lockable, scenarioData: { ...data, remote: route } };
         return openRemoteSignInScreen(remoteLockableFor, { switching, reason, connect });
     }
     let tiles = Array.isArray(data.loginAccounts) ? data.loginAccounts : [];
@@ -766,7 +815,10 @@ export async function openLoginSignIn(lockable, { switching = false, reason = un
 async function openRemoteSignInScreen(lockable, { switching = false, reason = undefined, connect = null } = {}) {
     const data = lockable.scenarioData;
     const pcId = data.id;
-    const footholdId = data.remote.footholdId;
+    const footholdId = data.remote.footholdId || null;
+    // K4: a screen reached from another desktop names its source instead of a foothold
+    const fromPcId = !footholdId && data.remote.fromPcId ? data.remote.fromPcId : null;
+    const fromHost = fromPcId ? (data.remote.fromHost || null) : null;
     const sessions = window.pcSessions;
 
     // The screen starts at once, replacing the view or desktop that opened it, and its
@@ -779,7 +831,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     }
     if (!framework.mainGameScene && window.game) framework.init(window.game);
 
-    const linkName = window.networkLinks?.get?.(footholdId)?.name || null;
+    const linkName = footholdId ? (window.networkLinks?.get?.(footholdId)?.name || null) : null;
     const hostLabel = data.host || data.name || pcId;
     // The PC tiles shown go to sessions.screenShown once the server answers (plan item 5), with
     // the server-fetched tiles, never [] as the opener did.
@@ -800,7 +852,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
             // refused Connect (K3b) pre-chooses the credential's account and shows the refusal
             preselect: connect?.username || (held && held.via !== 'claim' && held.locked ? held.username : null),
             ...(connect?.refusal ? { connectRefusal: { ...connect.refusal } } : {}),
-            remote: { footholdId, linkName },
+            remote: fromPcId ? { footholdId: null, fromPcId, fromHost, linkName: null } : { footholdId, linkName },
             host: hostLabel,
             captured: [],
             capturedLoading: true
@@ -830,7 +882,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
     const stillOpen = () => !!scene && framework.currentMinigame === scene && typeof scene.setRemoteAccounts === 'function';
     const fetchRemoteAccounts = async () => {
         try {
-            const answer = api?.loginAccounts ? await api.loginAccounts(pcId, { foothold: footholdId }) : null;
+            const answer = api?.loginAccounts ? await api.loginAccounts(pcId, fromPcId ? { from: fromPcId } : { foothold: footholdId }) : null;
             return {
                 ok: true,
                 picker: answer?.loginPicker ?? 'accounts',
@@ -907,7 +959,7 @@ async function openRemoteSignInScreen(lockable, { switching = false, reason = un
         if (loginDone && captureDone && keyringDone) clearTimeout(cap);
         paint();
     });
-    const keyringP = keyringWanted ? keyringForScreen(pcId, { foothold: footholdId }).then((k) => {
+    const keyringP = keyringWanted ? keyringForScreen(pcId, fromPcId ? { from: fromPcId } : { foothold: footholdId }).then((k) => {
         keyringAns = { list: Array.isArray(k?.list) ? k.list : [], failed: !!k?.failed };
         keyringDone = true;
         if (loginDone && captureDone && keyringDone) clearTimeout(cap);
@@ -1742,6 +1794,8 @@ window.openRemoteSignIn = openRemoteSignIn;
 window.openRemoteDesktop = openRemoteDesktop;
 // Keyring K3c (8.3): keyring.js's Connect and a relay folder's close look this up on window
 window.openRelayDesktop = openRelayDesktop;
+// Keyring K4: keyring.js, network-links.js and a from desktop's folders look this up on window
+window.openFromDesktop = openFromDesktop;
 // Connect from the tray (keyring K3b): keyring.js looks this up on window, so it needs no import
 window.openCredentialSignIn = openCredentialSignIn;
 

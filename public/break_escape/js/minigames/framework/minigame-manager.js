@@ -323,6 +323,11 @@ export const MinigameFramework = {
                 }
                 // Toasts placed over the panel go back to the lane; waiting ones show (toast plan 2.8)
                 try { window.hudLanesRelayout?.(); } catch (e) { /* the lanes re-place on their own frame */ }
+                // Keyring Connect's returnTo listens for this (K3b R3 t1); a parent paused for a
+                // child has not ended, so it sends nothing
+                if (ending._suspendedForChild !== true) {
+                    try { window.eventDispatcher?.emit?.('minigame_ended', { success: !!success }); } catch (e) { console.warn('minigame_ended listeners threw', e); }
+                }
             }
         } else {
             console.log('No current minigame to end');
