@@ -1,6 +1,6 @@
 # demo_access_tour: build plan
 
-Status: v4. Sections 0 and 1 are checked against the tree at 9f415ef21 (main 7ca03520e plus plan commits). Sections 2 to 5 give the design, server enforcement and sync budget, tests and proof, and the build slices.
+Status: v5. Sections 0 and 1 are checked against the tree at 9f415ef21 (main 7ca03520e plus plan commits). Sections 2 to 5 give the design, server enforcement and sync budget, tests and proof, and the build slices.
 
 User decisions: D100 (one two-act scenario, 35 min with a 15-min short route; Merrin & Sallow with Ama Owusu; office life light, 2 needs NPCs and a cake lever, overlay off, no task depends on an absence; no new engine work) and D101 (audience colleagues who know Break Escape; host lines text-only first, then dialogue review, then a voicing ask; reuse existing sprites; collection test_scenarios). Q1: Lorna Easton's card is the one the player copies. Q2: a presenter lever that sets a need level (the rota board) backs up the cake.
 
@@ -189,7 +189,7 @@ No policy sets `autoLockMin`. Screens lock only when Yasmin leaves (`locksScreen
 
 Literal passwords are safe: NPC creds never reach the client, and the notes come from GET /login_accounts. Only Lorna carries role `facilities` or `it`, and Julian has no card, so no card the player can get opens the partner door.
 
-Needs. The cake numbers are the minimal variant in CAKE_ITEM.md at d7bc4cf95 (branch plan/ol-showcase): hunger decay 0.5 per minute, urgent at 30, start 50, so both are tempted all tour and never urgently hungry before 40 minutes.
+Needs. The cake numbers are the minimal variant in CAKE_ITEM.md at 08646ad8b (branch plan/ol-showcase): hunger decay 0.5 per minute, urgent at 30, start 50, so both are tempted all tour and never urgently hungry before 40 minutes.
 
 | NPC | Need | Decay per min | urgentAt | Start | Effect |
 |---|---|---|---|---|---|
@@ -254,11 +254,13 @@ Kitchen: `coffee_station` (lab pattern: `affordance.satisfies: "caffeine"`, capa
 
 ### 2.6 The cake and the rota board
 
-The cake is the spec's minimal variant (CAKE_ITEM.md at d7bc4cf95). The tour designs nothing of its own:
+The cake is the spec's minimal variant (CAKE_ITEM.md at 08646ad8b). The tour designs nothing of its own:
 
 - It starts in the player's inventory, so nobody knows of it until it is dropped. Ama mentions it in the briefing (A3b). The player drops it in the open plan ("Drop here"); beside a table it goes on the table top. Thandiwe and Yasmin are in that room, so they learn of it by sight at once.
 - Hunger starts at 50 inside the tempt band (60 or below), so a seen cake tempts both. 2 servings, 1 each; the last serving removes it and both walk back to their desks.
 - No task, no overlay. The guard text (2.10, P6) asks the player to take it through if it goes down anywhere else.
+
+Reload. A dropped cake is saved on the server as a room object and leaves the inventory (`persistDrop`, item-drop.js), and the room places it again on reload with its servings from `cake_servings`. The office_life_showcase proves this live as build check BC1, which covers four reload cases: cake held, cake down and untouched, one slice gone, and cake finished. The tour relies on the showcase's BC1 result; if the tour is built first, it runs BC1 itself (C6).
 
 The cake is a best-effort cue, above all for Thandiwe. An NPC that is mid-job, or that picks its next action after the servings are gone, never walks over, and Thandiwe's caffeine and work needs can pull her away first. The tour keeps those needs and says plainly that the cake may or may not move her.
 
@@ -309,7 +311,8 @@ Stop 15 detail (README 1125-1131 pattern): the console sets the global `staff_tw
 No `captureProof` goes on Thandiwe: the address is an SSID, not her username, so the mapping's own `proof` is the one that counts.
 
 Presenter notes:
-- Stop 5: choose Copy, not Connect. Connect on the desktop is the `from` route: Julian's session then rides Delphine's desk, and signing out there takes it down. If that happens, it is a talking point, not a dead end: the hub says so (W6b) and Ama's debrief names it (D5c). Connect again from the keyring and it goes through the box.
+- Only the front desk route to Julian is scripted. Connecting from another held desktop (a thandiwe_laptop claim or yasmin_pc) and losing that desk, or a reception_pc session that is itself remote through the box, are off the presented route; the presenter does not rely on them.
+- Stop 5: choose Copy, not Connect. Connect on the desktop is the `from` route: Julian's session then rides Delphine's desk, and signing out there takes it down. If that happens, it is a talking point, not a dead end: the full-route hub says so (W6b, with a way to carry on) and Ama's debrief names it (D5c on both routes). Connect again from the keyring and it goes through the box.
 - Stop 5's sign-out is what makes stop 17 end Julian's session. If the player still holds a keyboard session on any office_lan PC when they Connect from the keyring, the keyring offers the `from` route first (keyring.js:75-88) and Julian's session rides that desk. The unplug then leaves it up, because a `from` session ends only when its source session goes (network_access.rb:1378-1395, 1460-1462). Good talking point: the box is not the only way in, and pulling it does not undo what was done from a desk. The debrief says which one happened (2.12).
 - After pressing Lock on Julian's session, unlock it at its own sign-in screen, which keeps its route. Connecting again from the keyring may take a different route (a desk, the implant or Staff Wi-Fi), and that session might survive the unplug.
 - Stop 7: the foothold the network view was opened from decides whether the door controller session survives the unplug. Open it at the box. Opened from the implant's or Staff Wi-Fi's link item, the session survives while another office_lan session is held (the reception_pc keyboard session the implant needs counts); with none held, the prune ends it too. Any held office_lan session puts server_lan in reach; Julian's is the one the story uses.
@@ -361,7 +364,7 @@ Stop 4, the Finance half of stop 6 and the managed port at stop 18 have no task:
 | W4 | not `has_julian_rdp` | If `seen_julian_rdp`: "You've read Julian's connection file. Now take a copy of it." Otherwise: "Delphine's desktop had a saved connection on it. Copy it, don't connect from there." |
 | W5 | not `front_desk_signed_out` and not `done_t_julian_pc` | "Sign out of Delphine's PC before you use that file. Leave no trace." |
 | W6 | not `done_t_julian_pc` | "Open your keyring and use Julian's saved connection." |
-| W6b | `julian_lost_with_desk` and not `julian_back` | "Julian's session went when you signed out at the front desk. Connect again from your keyring; it'll go through the box this time." |
+| W6b F | `julian_lost_with_desk` and not `julian_back` and not `done_t_door_controller` | "Julian's session went when you signed out at the front desk. Connect again from your keyring and it'll go through the box this time, or carry on to Lorna." |
 | W7 F | not `done_t_door_controller` | "With Julian's session up, the box can see further. Open the network view at the box and try the door controller, with Lorna's password." |
 | W8 F | not `done_t_server_room` | "You've got the codes. Server room's at the back of the open plan." |
 | W9 | not `done_t_copy_badge` | "Have a word with Lorna by the comms door. Bring the cloner." |
@@ -390,7 +393,7 @@ Booleans, all false at start:
 | `has_julian_rdp` | `onPickup` on julian.rdp |
 | `front_desk_signed_out` | mapping on `pc_signed_out:reception_pc`, `condition: data.reason === "sign_out"`. No onceOnly: a later sign-out (stop 14) writes the same value, and sync sends only changes. |
 | `julian_lost_with_desk` | mapping on `pc_signed_out:julian_pc`, `condition: data.reason === 'link_dropped' && data.fromPcId === 'reception_pc'`, `setGlobal: { julian_lost_with_desk: true, julian_back: false }`. The engine emits exactly this when a session opened from the front desk is dropped because the desk was signed out (pc-sessions.js:887-888, with `fromPcId` from `_remoteOf`, 958-964; the server's answer carries `fromPcId`, game.rb:4344-4367). A box-route session has no `fromPcId`, so an unplug never matches; signing out of julian_pc itself has reason `sign_out`, so that never matches either. |
-| `julian_back` | mapping on `pc_signed_in:julian_pc`, `condition: globalVars.julian_lost_with_desk === true`. A second loss resets it to false (above), so W6b and D5c follow the latest loss. |
+| `julian_back` | mapping on `pc_signed_in:julian_pc`, `condition: globalVars.julian_lost_with_desk === true`. A second loss resets it to false (above), so D5c follows the latest loss. W6b is a full-route line that sits with W7 and stops once the door controller is done, because the door controller is the first stop that needs Julian's session. The short route never meets it, and a second loss at stop 14 does not put it ahead of W14 to W17. |
 | `saw_in_use` | mapping on `pc_in_use:thandiwe_laptop` |
 | `staff_twin_up` | the rogue AP console |
 | `julian_ended_by_unplug` | mapping on `network_device_unplugged:meeting_jack`, `condition: data.endedPcIds.includes('julian_pc')` |
@@ -588,7 +591,7 @@ Network and devices:
 
 Unplug and routes:
 - Foothold route: sign in to reception_pc, sign out, Connect julian_pc on the foothold, sign in to door_controller through meeting_jack, unplug. `endedPcIds` lists julian_pc and door_controller, not reception_pc or thandiwe_laptop; an implant foothold on reception_pc survives.
-- Door controller through the implant's foothold: not in `endedPcIds` after the unplug, provided the reception_pc keyboard session is still held. With that session signed out first, POST /logout on reception_pc lists door_controller in the ended list.
+- Door controller through the implant's foothold: not in `endedPcIds` after the unplug, provided the reception_pc keyboard session is still held. After the unplug, with no other office_lan session held (no Julian, thandiwe_laptop or yasmin_pc session), POST /logout on reception_pc lists door_controller in its ended list.
 - Every jack resolves through `find_jack`: a plant at each of meeting_jack, managed_port and guest_vlan_port answers something other than 404.
 - `from` route: hold a reception_pc session, Connect julian_pc (`from: reception_pc`), unplug. `endedPcIds` lacks julian_pc, and the session is still held.
 - Desk sign-out: hold a reception_pc session, Connect julian_pc `from: reception_pc`, POST /logout on reception_pc. Julian's session is in the answer's ended list.
@@ -608,7 +611,7 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 - Short route: stops 1, 2, 3, 5, 6, 9, 10, 11, 12, 17, 19. Pass when every required task completes, the debrief gives D5a, and the closing card shows.
 - Full route: all 19 stops in order. Pass when every task completes; each refusal (partner door, Finance share from the foothold, managed port, USB hub) shows its line; reading the rota board sends Thandiwe and Yasmin to the kitchen within 30 seconds; the work nudge makes `npc_used:thandiwe_laptop` fire within 30 seconds; stop 17 ends exactly julian_pc and door_controller; stop 18's managed port fires P4 and the guest port completes t_guest_port.
 - No sign-out: skip stop 5's sign-out and Connect from the keyring. The unplug leaves Julian's session up and the debrief gives D5b.
-- Desktop Connect: choose Connect on julian.rdp at stop 5, then sign out. Check P0 does not arrive in the phone thread, W6b shows, Julian's session is gone, and with no reconnect the debrief gives D5c. A reconnect through the box then sets `julian_back` and the debrief gives D5a or D5b instead. Variant: sign out of julian_pc first, then the front desk. Julian's sign-out has reason `sign_out`, so `julian_lost_with_desk` stays false and W6b does not show.
+- Desktop Connect: choose Connect on julian.rdp at stop 5, then sign out. Check P0 does not arrive in the phone thread, Julian's session is gone, W6b shows on the full route and not on the short one, and with no reconnect the debrief gives D5c. A reconnect through the box then sets `julian_back` and the debrief gives D5a or D5b instead. Variant: sign out of julian_pc first, then the front desk. Julian's sign-out has reason `sign_out`, so `julian_lost_with_desk` stays false and W6b does not show. Second loss: Connect from the desk, sign out (loss, W6b), Connect again from the desk (`julian_back` true), then sign out at the front desk at stop 14 (loss again, `julian_back` false): D5c returns unless the player reconnects, and W6b stays off because the door controller is done. This is the only case where `julian_back: false` in the mapping's `setGlobal` matters.
 - The hub: at each stop, "Where next?" names the line 2.9 expects for that route; on the full route W17 does not appear before W16, and W18 follows the unplug.
 - The cake: dropped in the open plan, it is checked as a cue, not a pass condition; dropped in reception, P6 arrives.
 - Headless physics: setFPS(20) with fixed steps on.
@@ -619,16 +622,16 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 - A keyless server from the worktree on :3002. Never :3000 or :3001. `db:seed` only; no other db task.
 - New game via tools/playtest/new-game.rb (finds the mission by id or name, lines 111-116).
 - On the real path, not a helper: the remote sign-in completes t_julian_pc; the door controller signed in from the network view opened at the box; the unplug answer's `endedPcIds` lists julian_pc and door_controller and not reception_pc; the implant survives the unplug; the captured key joins Staff Wi-Fi.
-- The surviving cases: a door controller session opened from the implant's link survives the unplug while the reception_pc keyboard session is held (and is in the ended list once that session signs out); a Julian session Connected from the keyring while holding a reception_pc keyboard session survives it.
+- The surviving cases: a door controller session opened from the implant's link survives the unplug while the reception_pc keyboard session is held (and, after the unplug with no other office_lan session held, is in the ended list once that session signs out); a Julian session Connected from the keyring while holding a reception_pc keyboard session survives it.
 - Leak proof: tools/playtest/demo-access-tour-leak-proof.mjs, written in slice 6 on the pattern of tools/playtest/secret-leak-withholding-live-proof.mjs. Read-only: it never writes a game row, and edits no game's scenario copy or state.
-  - Setup. It creates the game through new-game.rb with no state-changing flags (no `--set`, `--give`, `--unlock` or `--complete-task`). It then reads the secrets from the game row with `Game.find(id).scenario_data` through `rails runner`, a read and nothing else, at these paths: the Staff key at `networks.office_lan.wifi.psk`; the keypad PIN at the server_room lock's `requires`; each of the five passwords at that NPC's `creds.password`.
-  - Corpus. It scans the whole raw bootstrap, every GET /room, GET /keyring, GET /capture_secrets, GET /container, GET /login_accounts and GET /network answer, and the response body of every POST the walk sends (/login, /network/plant, /unplug, /join, /implant, /logout).
-  - Matching. The PIN is `rand(1000..9999)` (scenario_binding.rb:24), and four digits occur in coordinates, sizes, timestamps and ids, so a substring scan gives false hits (test/support/payload_scan.rb:19-25 declines it for the same reason). The script parses each JSON answer and walks its leaves. A PIN hit is a leaf that equals the PIN as a string or number, or a string leaf that contains it as a whole token (`(?<![0-9])PIN(?![0-9])`). It prints the JSON path of every hit. The Staff key (8 characters) and the passwords use a plain case-insensitive substring match on the leaf strings. Before the five passwords are written, check that none is an ordinary word that appears elsewhere in the scenario text.
+  - Setup. It creates the game through new-game.rb with the mission id and no other argument. It then reads the secrets from the game row with `Game.find(id).scenario_data` through `rails runner`, a read and nothing else, at these paths: the Staff key at `networks.office_lan.wifi.psk`; the keypad PIN at the server_room lock's `requires`; each of the five passwords at that NPC's `creds.password`.
+  - Corpus. It records the body of every response the walk receives under `/break_escape/games/:id/`, whatever the route and method (the bootstrap, GET /room, /keyring, /capture_secrets, /container, /login_accounts, /network, /objectives and /scenario_map, and the answers to POST /login, /network/plant, /unplug, /join, /implant, /logout, /unlock, /update_room, /inventory, /clone_card and /lock_session), not a hand list. It also fetches GET /ink once at the start for every NPC with a `storyPath`: the compiled file is served as it is, and the five passwords are authored literals, so a line that names one would reach every client. Request bodies are not scanned: a body carries only what an earlier scanned response gave the client or what the player typed after earning it (Delphine's password on POST /login, the PIN on POST /unlock), so scanning them would flag legitimate cases and catch nothing the response scan misses.
+  - Matching. The PIN is `rand(1000..9999)` (scenario_binding.rb:24), and four digits occur in coordinates, sizes, timestamps and ids, so a substring scan gives false hits (test/support/payload_scan.rb:19-25 declines it for the same reason). The script parses each JSON answer and walks its leaves. A PIN hit is a leaf that equals the PIN as a string or number, or a string leaf that contains it as a whole token (`(?<![0-9])PIN(?![0-9])`). It prints the route and JSON path of every hit. Before failing on a PIN hit made before the door_controller session, it classifies the hit. A numeric leaf under a layout or timing key (`x`, `y`, `width`, `height`, `delay`, `cooldown`, or any key ending in `Ms`; the tour's own timed texts use delays of 4000 to 6000) and a string leaf whose whole value is an ISO date or time are reported as collisions, not leaks. Every other hit fails. If any collision is reported, the script creates a second game and fails only if the same JSON path carries that game's own PIN; a real leak follows the PIN to its path and a collision does not. The Staff key (8 characters) and the passwords use a plain case-insensitive substring match on the leaf strings. Before the five passwords are written, check that none is an ordinary word that appears elsewhere in the scenario text.
   - Pass when:
     - Julian's and Thandiwe's passwords never appear.
     - Delphine's and Yasmin's appear only in GET /login_accounts for their own PCs.
     - Lorna's appears only after a reception_pc session (in facilities.txt).
-    - The PIN has no hit before a door_controller session, and at least one hit, in the door-codes file, after it.
+    - The PIN has no leak before a door_controller session (collisions reported and cleared by the second game), and at least one hit, in the door-codes file, after it.
     - The Staff key appears only after the plant and the laptop's use, in the capture answer.
 
 ### 4.8 Build-time checks
@@ -636,7 +639,8 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 - C1: room_qdc_break carries no prop or sign that names another mission's firm. If it does, use room_lw_kitchen with catalogue props (fridge, kettle) beside the coffee station.
 - C2: room_aw_merrin_sallow has clear floor for two desks square to the walls, away from the four doorways and their approach cells. If it does not, seat Thandiwe and Yasmin at opposite ends of the conference table (laptop and PC on the table) and say so in the run sheet. Both static NPCs stand clear of every door approach cell: Lorna near, not on, the comms door's approach; Julian clear of the coffee station's `useFrom` cell and its queue line.
 - C3: the reception spots chosen for reception_pc and the two plants sit clear of the map's own pc8 and planters.
-- C4: CAKE_ITEM.md is at d7bc4cf95. Before slice 4 builds the cake, diff the spec against d7bc4cf95 and take any changed numbers or fields; the rota board covers both NPCs either way.
+- C4: CAKE_ITEM.md is at 08646ad8b. Before slice 4 builds the cake, diff the spec against 08646ad8b and take any changed numbers or fields; the rota board covers both NPCs either way.
+- C6: the cake's reload behaviour is the showcase's BC1 result (cake held, cake down and untouched, one slice gone, cake finished, each reloaded on a fresh game). If the showcase has not landed BC1 when slice 4 is built, slice 4 runs BC1 on the tour's cake before it is marked done.
 - C5: a policy with no `autoLockMin` never auto-locks a password or credential session (npc_frustration.rb:281-306 reads it only for guest and claim sessions).
 
 ## 5. Build slices
