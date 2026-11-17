@@ -506,3 +506,61 @@ Notes:
 - The growth by key is the one-time Mission Brief note (notes +335) plus syncWrites (+76 to +152) and globalVariables (+1 to +68) on each reload. syncWrites growth is not explained here and should be checked against the delta rule. All growth is under the 2048 limit.
 - Warnings: none. No unknown or unregistered id warning appeared in the final runs.
 - Staff held after reload: the probe holds staff with calm() after the reload wait, yet an NPC ate during the post-reload wait in game 7644, and thandiwe ate after the reload in 7648. Consistent with the probe comment about needs resetting on reload. Not diagnosed.
+
+## Cake reload run 5 (main 69d8bf05a)
+
+Run on keyless server 127.0.0.1:3090 from this worktree (build/demo-access-tour, head f99f9b5fd, main 69d8bf05a with the magnet perPerson fix), stopped by PID 2235970 afterwards (port free; the :3001 server was not touched). Started with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true BUNDLE_PATH=<main>/vendor/bundle RBENV_VERSION=2.7.8 bundle exec rails server -b 127.0.0.1 -p 3090`. Headless, setFPS(20), fixed steps on. Probe: `showcase-bc1-cake-reload.mjs` at 8e264d2e4 with m01-ol-lib.mjs (identical on HEAD), run from a scratch copy in tmp/delete/cake5/ (gitignored, not committed). `player-state-size.rb` is on this branch, so no copy was needed.
+
+Command (both runs): `node <scratch>/probe.mjs --scenario demo_access_tour --room open_plan --cake cake --port 3090 --eaters thandiwe,yasmin --staff thandiwe,yasmin --rooms open_plan,reception --task ""`, with `--cases 1,2,3,4` (run A) and `--cases 2,3` (run B, fresh games). Each case made its own game through new-game.rb.
+
+Scratch copy changes (no repo file changed): (a) case 3 keeps the event list read just before the reload, because reload resets the recorder; (b) `STOP_AFTER_DROP` stops case 2 after the drop and settle, used only to make the growth game; (c) the growth script prints every player_state key per load, not only notes.
+
+Eaters are read from `magnet_serving:cake` (npcId, left). Case 3 has one slice before the reload, so only one eater is possible there.
+
+| Run | Case | Game | Result | Servings before / after reload | Eaters (magnet_serving) | player_state bytes before -> after (growth by key) |
+|---|---|---|---|---|---|---|
+| A | 1 cake held | 7694 | PASS | 2 / 2 | none (held) | 4493 -> 4829 (+336: notes +335, syncWrites +1) |
+| A | 2 cake down | 7700 | PASS | 2 / 2 | thandiwe, after reload (left 1) | 4687 -> 5165 (+478: notes +335, syncWrites +76, globalVariables +67) |
+| A | 3 one slice | 7706 | FAIL (kept check, see below) | 2 -> 1 before; 0 after | before: thandiwe (left 1); after: yasmin (left 0), inside the post-reload settle | 4978 -> 5391 (+413: notes +335, syncWrites +77, globalVariables +1) |
+| A | 4 finished | 7715 | PASS | 0 / 0 | not recorded (probe returns no event list) | 4471 -> 5077 (+606: notes +335, syncWrites +201, globalVariables +70) |
+| B | 2 cake down | 7719 | FAIL (placed, kept, walk) | 2 / 2 by count; cake not found after reload | none (no walk) | 4688 -> 5024 (+336: notes +335, syncWrites +1) |
+| B | 3 one slice | 7730 | PASS | 2 -> 1 / 1 | before: thandiwe (left 1); after: thandiwe (left 0), yasmin turned back (reason gone) | 4977 -> 5390 (+413: notes +335, syncWrites +77, globalVariables +1) |
+
+Notes on each row:
+- 7706 (case 3, run A): the probe's `kept` check reads servings after the reload's 22 s settle, and yasmin took the last slice inside that settle. The 0 is therefore not the state right after the reload. The reload did not lose the cake. Not counted as a persistence failure, but the case does not prove the post-reload count.
+- 7730 (case 3, run B): the probe's `second.npc` says yasmin, but the event shows thandiwe ate the second slice after the reload. This is the known accepted limit (per-person `ate` resets on reload). The probe's `ate` check only sees the count, so it passes.
+- 7719 (case 2, run B): the drop landed at (40,-33), not (40,23) as in every other game in this run. After the reload the after-read loaded only reception and found no cake. This is the same read-before-load race seen in run 4 (7643). The probe's `whereAll` enters open_plan with 1.2 s waits and ignores errors. Not diagnosed further.
+- 7700 (case 2): the cake was untouched until the probe's own walk test, so thandiwe's slice is the first after the reload, not a second.
+
+Eater summary against the expectation:
+- Before any reload, only thandiwe ate (one slice, in both case 3 games). Yasmin did not eat before a reload in either game. Case 3 takes one slice before the reload by design, so "one each before any reload" cannot be seen in case 3 as written.
+- After a reload, the second slice went to thandiwe in 7730 (accepted limit) and to yasmin in 7706 (during the settle).
+
+Stability:
+- Case 2: 1 pass, 1 fail (room-load race in 7719).
+- Case 3: 1 pass (7730), 1 fail (7706, settle eat).
+
+Growth check (game 7733, case 2 stopped after the drop and settle, cake down, untouched; `brief-note-reload-growth.mjs`, 5 reloads, output per key via the scratch copy):
+
+| Load | notes | syncWrites | scenarioClock | globalVariables | total bytes |
+|---|---|---|---|---|---|
+| 0 | 599 | 221 | 19 | 721 | 4208 |
+| 1 | 598 | 277 | 19 | 721 | 4263 |
+| 2 | 598 | 277 | 19 | 721 | 4263 |
+| 3 | 598 | 277 | 19 | 721 | 4263 |
+| 4 | 598 | 277 | 20 | 721 | 4264 |
+| 5 | 598 | 277 | 20 | 721 | 4264 |
+
+- Script result: PASS (notes flat after the first load; 0 page errors; client shows 1 Mission Brief note of 2 notes, mode on_resume).
+- 47 keys in total. Only notes, syncWrites and scenarioClock changed. globalVariables is flat at 721 bytes in all six loads.
+- notes: -1 byte on the first reload, then flat.
+- syncWrites: +56 on the first reload, then flat. It does not grow per reload.
+- scenarioClock: +1 at load 4 only. A clock value, not growth.
+- Steady state from load 1: total 4263 to 4264 bytes. Nothing keeps growing in this check. The per-reload growth in the probe (+336 to +606) is the one-off Mission Brief note (+335) plus a one-time syncWrites step and, in some cases, a globalVariables step.
+
+Odd things:
+- The first attempt (run chain with no bundler env) made no games. `new-game.rb` failed under the probe because the child `bin/rails` needs `BUNDLE_PATH` and `RBENV_VERSION` exported. Re-run with them exported.
+- The probe's `second.npc` in case 3 is the assumed eater (EATERS[1]), not the real one. Use the magnet_serving events.
+- The probe does not record case 4 eaters.
+- Console `ERR_FAILED` entries are the aborted /tts requests (expected). Server log holds only Ruby gem warnings.
+- The primary working directory changed to the main checkout during the run. The worktree was used through absolute paths only.
