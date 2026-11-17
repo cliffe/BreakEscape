@@ -228,5 +228,40 @@ module BreakEscape
       DeclaredGrants.for(scenario).each { |grant| visit.call(grant['item']) }
       found
     end
+
+    # Whether a held item reaches the player as a gift (K3d's "Given" source tag): it sits, at any
+    # depth, in the start inventory, a declared grant's item, or an `itemsHeld` list (an NPC's or
+    # a flag station's). Any other placement (a room, a container, a desktop, a share) is found.
+    def held_item_given?(scenario, item_id)
+      return false unless present_string?(item_id) && scenario.is_a?(Hash)
+
+      target = item_id.to_s
+      has_item = lambda do |node|
+        case node
+        when Hash then (present_string?(node['type']) && node['id'].to_s == target) || node.each_value.any? { |v| has_item.call(v) }
+        when Array then node.any? { |v| has_item.call(v) }
+        else false
+        end
+      end
+      return true if has_item.call(scenario['startItemsInInventory'])
+      return true if DeclaredGrants.for(scenario).any? { |grant| has_item.call(grant['item']) }
+
+      in_held = false
+      walk = lambda do |node|
+        return if in_held
+
+        case node
+        when Hash
+          if node['itemsHeld'].is_a?(Array) && has_item.call(node['itemsHeld'])
+            in_held = true
+            return
+          end
+          node.each_value { |v| walk.call(v) }
+        when Array then node.each { |v| walk.call(v) }
+        end
+      end
+      walk.call(scenario)
+      in_held
+    end
   end
 end

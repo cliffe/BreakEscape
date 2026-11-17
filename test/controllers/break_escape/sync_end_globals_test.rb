@@ -132,14 +132,17 @@ module BreakEscape
       bootstrap_scenario
       put game_path('sync_state'),
           params: { endedCredentials: [], credentialEndGlobals: { 'x' => ['jake_assist'] },
+                    keyringGained: { 'forged_id' => 1 },
                     globalVariables: { KS::END_GLOBAL => true } }, as: :json
       assert_response :success
       assert_equal ['jake_assist'], state['endedCredentials']
+      assert_empty state['keyringGained'].to_h, 'a sync body cannot set the server-stamped gained times'
       assert_equal({ KS::END_GLOBAL => ['jake_assist'] }, state['credentialEndGlobals'])
 
       body = bootstrap_scenario.to_json
       refute_includes body, 'endedCredentials'
       refute_includes body, 'credentialEndGlobals'
+      refute_includes body, 'keyringGained'
     end
   end
 end

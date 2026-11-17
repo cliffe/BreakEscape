@@ -1484,8 +1484,9 @@ module BreakEscape
         if params.key?(:claim)
           # The model refuses a claim that carries a foothold (an unlocked screen is
           # physical), so it is passed on rather than checked here: one place of truth.
-          if params.key?(:credential)
-            # Keyring K2 (plan 7): claim stays first; claim with credential is the claim refusal
+          if params.key?(:credential) || from_param_given?
+            # Keyring K2 (plan 7): claim stays first; claim with credential is the claim refusal.
+            # K4: a claim is physical, so a claim that names a `from` source is refused too.
             { status: :unprocessable_entity, body: { success: false, message: BreakEscape::Game::LOGIN_CLAIM_REFUSED } }
           elsif params[:claim].to_s == 'owner'
             @game.claim_login_session!(pc_id, claim_globals, foothold: foothold)
@@ -1508,7 +1509,9 @@ module BreakEscape
           # A relay is never a typed sign-in (plan 3.8): the generic refusal, uncounted
           @game.credential_login_refusal
         else
-          @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold)
+          # K4: a typed password on the `from` sign-in screen is judged by the route (plan 9)
+          @game.attempt_login!(pc_id, params[:username], params[:password], foothold: foothold,
+                               from: params[:from], from_given: from_param_given?)
         end
       render json: result[:body], status: result[:status]
     end
@@ -1560,6 +1563,18 @@ module BreakEscape
       # scalar such as foothold=%09 is not present? but still a foothold request, so it must not
       # win the keyboard answer), or a structured value (array or hash/Parameters). Only a
       # missing or truly empty foothold= stays on the keyboard path below.
+      # Keyring K4 (plan 9): a request that names a `from` source is the remote sign-in screen
+      # reached from a held desktop. Malformed (with a foothold too, or in a scenario that
+      # declares no credentials) is 400; every source failure is 403 in the model.
+      if from_param_given?
+        if params.key?(:foothold) || !@game.credentials_declared?
+          return render json: { error: 'Invalid from' }, status: :bad_request
+        end
+
+        result = @game.from_login_accounts(info, params[:from])
+        return render json: result[:body], status: result[:status]
+      end
+
       foothold = params[:foothold]
       foothold_request =
         case foothold
@@ -1784,19 +1799,27 @@ module BreakEscape
 
     # GET /games/:id/keyring?pc_id=&foothold=&from=&relay=&rev=
     # Credential keyring (CREDENTIAL_KEYRING_PLAN.md section 6.2): the player's earned credentials,
-    # computed server-side from state the game already keeps. A read with no side effects, off the
-    # with_game_lock list. The registry never reaches the browser; a password value is served only
-    # where GET /capture_secrets already serves it. foothold/from/relay name the screen the client
+    # computed server-side from state the game already keeps. A read apart from stamping a gained
+    # time on each newly listed registry entry (keyringGained), which takes the game lock only when
+    # an entry is missing one. The registry never reaches the browser; a password value is served
+    # only where GET /capture_secrets already serves it. foothold/from/relay name the screen the client
     # is drawing; they never assert reach.
     def keyring
       authorize @game if defined?(Pundit)
 
+      # K4: a `from` param is answered only in a scenario that declares credentials, and only
+      # as a short PC id (plan 9 "Scope"); anything else is 400.
+      if from_param_given? && !(@game.credentials_declared? && @game.valid_from_param?(params[:from]))
+        return render json: { error: 'Invalid from' }, status: :bad_request
+      end
+
       route =
         if params[:relay].present? then { relay: true }
-        elsif params[:from].present? then { from: params[:from].to_s }
+        elsif from_param_given? then { from: params[:from] }
         elsif params[:foothold].present? then { foothold: params[:foothold].to_s }
         end
-      answer = @game.keyring_for_client(pc_id: params[:pc_id].presence, route: route)
+      # The one write: stamp newly listed registry entries (under the lock, only when there are any)
+      answer = @game.keyring_for_client(pc_id: params[:pc_id].presence, route: route, stamp: true)
 
       response.headers['Cache-Control'] = 'no-store'
       if params[:rev].present? && params[:rev].to_s == answer[:rev]
@@ -2989,6 +3012,9 @@ module BreakEscape
     # host only on a remote one), so the client learns at once that a keyboard fetch made
     # a remote session local (review R1, m3).
     def render_login_desktop(container_id)
+      # Keyring K4 R1 m3: a bare ?from (Rack reads it as nil) is malformed, never the keyboard rule
+      return render json: { error: 'Malformed from', reason: 'malformed' }, status: :bad_request if params.key?(:from) && params[:from].nil?
+
       info = @game.find_login_pc(container_id)
       return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden unless info
 
@@ -3004,6 +3030,8 @@ module BreakEscape
         return render json: { error: BreakEscape::NetworkAccess::PC_OFF_MESSAGE, reason: 'off' }, status: :forbidden
       elsif refusal == 'not_responding'
         return render json: { error: BreakEscape::NetworkAccess::PC_NOT_RESPONDING_MESSAGE, reason: 'not_responding' }, status: :forbidden
+      elsif refusal == 'no_session'
+        return render json: { error: "PC not reachable: #{container_id}", reason: 'no_session' }, status: :forbidden
       elsif refusal
         return render json: { error: "PC not reachable: #{container_id}", reason: 'unreachable' }, status: :forbidden
       end
@@ -3019,7 +3047,8 @@ module BreakEscape
     def login_route_params
       {
         foothold: params[:foothold].presence&.to_s,
-        from: params[:from].presence&.to_s,
+        # K4: the raw value, so an array or hash fails valid_from_param? (the generic refusal)
+        from: from_param_given? ? params[:from] : nil,
         relay: ActiveModel::Type::Boolean.new.cast(params[:relay]) == true ? true : nil
       }.compact
     end
@@ -3046,15 +3075,26 @@ module BreakEscape
     # :conflict when more than one is named.
     def desktop_route_params
       relay = params[:relay].present? && ActiveModel::Type::Boolean.new.cast(params[:relay]) == true
-      from = params[:from].presence&.to_s
+      # K4: any non-empty from= is a `from` request (a whitespace one is refused by the model,
+      # never the keyboard); a structured value is refused outright
+      from = from_param_given? ? params[:from] : nil
+      return :conflict if from_param_given? && !from.is_a?(String)
+
       foothold = params[:foothold].presence&.to_s
-      named = [relay, from, foothold].count(&:present?)
+      named = [relay, !from.nil?, foothold.present?].count(&:itself)
       return :conflict if named > 1 || (params[:relay].present? && !relay)
       return { relay: true } if relay
       return { from: from } if from
       return { foothold: foothold } if foothold
 
       nil
+    end
+
+    # Keyring K4 (plan 9): the request names a `from` source. Any value counts except a missing
+    # or truly empty from=, so a whitespace or structured value is judged (and refused), never
+    # treated as the keyboard.
+    def from_param_given?
+      params.key?(:from) && !(params[:from].is_a?(String) && params[:from].empty?)
     end
 
     # The workstation globals a claim carries (<id>_screen_locked, <id>_owner_away),

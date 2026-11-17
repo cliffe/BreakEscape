@@ -32,17 +32,19 @@ After each beat:
 | # | Do | Expect |
 |---|---|---|
 | 0 | Wait 2 s after the start | "Added to Capture log: Finding: scope note"; the finding's tray slot is hidden; the holder's badge reads 1 |
-| 1 | Interact with Chris's desk (keylogger in hand) | Task 1 ticks; `plantedItems` holds `kit_logger` on `chris_desk`; the device lists the capture with Chris's password, marked New |
-| 2 | Stand near Sofia's desk; inventory menu on the QR card, "Drop here" | Sofia collects and scans it; task 2 ticks; `droppedItems` holds `kit_qr`; the device shows Sofia's password |
+| 1 | Interact with Chris's desk (keylogger in hand) | Task 1 ticks; `plantedItems` holds `kit_logger` on `chris_desk`; the device's Sign-ins list holds Chris's password (Captured password, Recorded), marked New |
+| 2 | Stand near Sofia's desk; inventory menu on the QR card, "Drop here" | Sofia collects and scans it; task 2 ticks; `droppedItems` holds `kit_qr`; the Sign-ins list shows Sofia's password (Captured password, Phished, from `rowSource`) |
 | 3 | Before Mel leaves, write a forged `pierce` entry into `se_captures` and sync; then `window.__test.needs.set('mel','caffeine',5)` and, once she is away, use her PC | The forged entry gets no secret from `/capture_secrets`; the claim opens her desktop, task 3 ticks, `signedInPcs` holds `mel_pc` and her password is served (the shorthand proof) |
 | 4 | Interact with the wall port (drop box in hand) and confirm | Task 4 ticks; `plantedItems` holds `kit_box` on `wall_port`; a finding and "Remote session: drop box" arrive in the device |
 | 4b | From the device, open the remote session; open "Desk note", close it; close the desktop | The device stays open until the desktop answers; the note closes to the desktop, the desktop to the device |
 | 4c | From the device, open the remote session, then "readme.txt", and close it | It closes to the device |
 | 4d | From the device, open a finding and close it | It closes to the device; the finding is not added to the Notepad |
-| 5 | Interact with Ned's desk note | Task 5 ticks; Ned's password shows at once (it opens no PC, so it needs no proof) |
+| 5 | Interact with Ned's desk note | Task 5 ticks; Ned's password shows at once in Sign-ins (it opens no PC, so it needs no proof) |
 | 6 | Fail the next inventory POST at the network (Playwright `route.abort`), then set `pair_grant` true and emit `global_variable_changed:pair_grant` | The timer's first give is skipped by its condition; the second is lost, retried after 1 s and accepted: "Finding: pair B" arrives, "pair A" never does, and the timer is marked fired only then |
-| R | Reload | The tray still files the three items, the badge is clear, and the device shows the same rows with the secrets after a fresh `/capture_secrets` |
+| R | Reload | The tray still files the three items, the badge is clear, and the device shows the same Sign-ins rows with the secrets after a fresh `/capture_secrets` |
 
 Mel's capture is mapped on `pc_signed_in:mel_pc`, so a refused claim (Mel back at her desk) records
 nothing; the forged entry of beat 3 stands in for a capture recorded before its proof, and stays
 masked until the claim succeeds.
+
+All four captures are passwords of accounts, so the device shows a "Sign-ins" section only; the "Captures" section (PINs, footholds, findings) stays hidden until a capture of that kind exists (`test_access_keyring` proves it).
