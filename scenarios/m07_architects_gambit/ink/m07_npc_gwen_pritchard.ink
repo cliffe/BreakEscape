@@ -24,22 +24,22 @@ VAR hub_quiet = false
     ~ hub_quiet = false
 - else:
     {ops_staff_upset:
-        Gwen Pritchard: That's enough now. We're going, all right?
+        Gwen Pritchard: That's enough. We're leaving, okay?
         ~ hub_quiet = true
         #exit_conversation
         -> hub
     - else:
         {met:
-            Gwen Pritchard: Oh, you're still about. I'll be off in a minute.
+            Gwen Pritchard: Oh, you're still here. I'll be off in a minute.
         - else:
-            Gwen Pritchard: Hello, love. I look after the systems on this floor, if something's playing up.
+            Gwen Pritchard: Hi there. I look after the systems on this floor, if something's playing up.
             Gwen Pritchard: Not that I'd be much use tonight. I'm just tidying up before I go.
             ~ met = true
         }
     }
 }
 + [Carry on, I'll stay out of your way.]
-    Gwen Pritchard: Ta. Mind how you go.
+    Gwen Pritchard: Thanks. Take care.
     ~ hub_quiet = true
     #exit_conversation
     -> hub

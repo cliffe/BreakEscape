@@ -9,11 +9,11 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. Nothing is voiced yet; n
 | Adaeze Okafor | hub, repeat | Still here? I'm nearly done, I promise. | 39 |
 | Adaeze Okafor | hub, upset | Please keep your distance. We're leaving. | 41 |
 | Adaeze Okafor | hub, goodbye | Thank you. I'll shut this down and go. | 38 |
-| Gwen Pritchard | hub, opener 1 | Hello, love. I look after the systems on this floor, if something's playing up. | 79 |
+| Gwen Pritchard | hub, opener 1 | Hi there. I look after the systems on this floor, if something's playing up. | 76 |
 | Gwen Pritchard | hub, opener 2 | Not that I'd be much use tonight. I'm just tidying up before I go. | 66 |
-| Gwen Pritchard | hub, repeat | Oh, you're still about. I'll be off in a minute. | 48 |
-| Gwen Pritchard | hub, upset | That's enough now. We're going, all right? | 42 |
-| Gwen Pritchard | hub, goodbye | Ta. Mind how you go. | 20 |
+| Gwen Pritchard | hub, repeat | Oh, you're still here. I'll be off in a minute. | 47 |
+| Gwen Pritchard | hub, upset | That's enough. We're leaving, okay? | 35 |
+| Gwen Pritchard | hub, goodbye | Thanks. Take care. | 18 |
 | Adaeze Okafor | ex_last_two 1 | The muster board still has us missing. | 38 |
 | Gwen Pritchard | ex_last_two 2 | Somebody ought to cross us off. | 31 |
 | Adaeze Okafor | ex_last_two 3 | And the coffee machine is still broken. | 39 |
@@ -24,20 +24,20 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. Nothing is voiced yet; n
 | Gwen Pritchard | ex_going_now 3 | The fire marshal won't thank us for it. | 39 |
 | Adaeze Okafor | ex_going_now 4 | Then let's not give him the chance. | 35 |
 | Gwen Pritchard | ex_going_now 5 | Come on, I'll walk down with you. | 33 |
-| Adaeze Okafor | pool cooler 1 | Cold water again. Lovely. | 25 |
+| Adaeze Okafor | pool cooler 1 | Cold water again. Great. | 24 |
 | Adaeze Okafor | pool cooler 2 | The load is holding. Don't jinx it. | 35 |
 | Adaeze Okafor | pool cooler 3 | Somebody fix that coffee machine. | 33 |
 | Adaeze Okafor | pool cooler 4 | Nearly done. Nearly. | 20 |
-| Gwen Pritchard | pool cooler 1 | Cooler's the only thing working, mind. | 38 |
+| Gwen Pritchard | pool cooler 1 | Cooler's the only thing working. | 32 |
 | Gwen Pritchard | pool cooler 2 | Tidy up and out, that's the plan. | 33 |
-| Gwen Pritchard | pool cooler 3 | I'd give a lot for a proper brew. | 33 |
+| Gwen Pritchard | pool cooler 3 | I'd give a lot for real coffee. | 31 |
 | Gwen Pritchard | pool cooler 4 | Last glass, then I'm off. | 25 |
 
 Clip count: 28 (10 conversation, 10 exchange, 8 pool).
 
 Existing lines changed: none.
 
-Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md).
+Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md). D113 (17 Nov 2026): in m07 both use en-US voice styles (General American; Adaeze keeps a light Nigerian inflection, Gwen Pacific Northwest), since they work in a US facility. Style quotes: DIALOGUE_SAMPLE.md. Lines reworded from British idiom under D113 (all unvoiced).
 
 ## Pool lines, JSON-ready (`chatter.cooler`)
 
@@ -46,7 +46,7 @@ Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md
   "adaeze_okafor": {
     "chatter": {
       "cooler": [
-        "Cold water again. Lovely.",
+        "Cold water again. Great.",
         "The load is holding. Don't jinx it.",
         "Somebody fix that coffee machine.",
         "Nearly done. Nearly."
@@ -56,9 +56,9 @@ Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md
   "gwen_pritchard": {
     "chatter": {
       "cooler": [
-        "Cooler's the only thing working, mind.",
+        "Cooler's the only thing working.",
         "Tidy up and out, that's the plan.",
-        "I'd give a lot for a proper brew.",
+        "I'd give a lot for real coffee.",
         "Last glass, then I'm off."
       ]
     }

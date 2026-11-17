@@ -1876,7 +1876,7 @@ scada_password = "CascadeWindow19"
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_adaeze_okafor.json",
           "currentKnot": "start",
-          "voice": { "name": "Gacrux", "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent British accent with a light Nigerian inflection throughout, do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Gacrux", "style": "The facility's grid scheduler, in her 40s, who balances the load against the contracts, warm and direct. Speak with a consistent General American accent with a light Nigerian inflection throughout, do not shift to any other accent.", "language": "en-US" },
           "position": { "x": 4, "y": 5 },
           "seated": true,
           "needsHome": { "room": "operations_floor", "x": 4, "y": 5 },
@@ -1886,7 +1886,7 @@ scada_password = "CascadeWindow19"
           "globalVarOnKO": "adaeze_ko",
           "behavior": { "hostile": { "leash": true } },
           "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "cooler": ["Cold water again. Lovely.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Nearly done. Nearly."] },
+          "chatter": { "cooler": ["Cold water again. Great.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Nearly done. Nearly."] },
           "exchanges": [
             { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false } },
             { "with": "gwen_pritchard", "knot": "ex_going_now", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false, "heard_ex_last_two": true } }
@@ -1912,7 +1912,7 @@ scada_password = "CascadeWindow19"
           "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
           "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_gwen_pritchard.json",
           "currentKnot": "start",
-          "voice": { "name": "Sulafat", "style": "The facility's operations floor systems support lead, in her late 30s, friendly and practical. Speak with a consistent South Wales accent throughout, do not shift to any other accent.", "language": "en-GB" },
+          "voice": { "name": "Sulafat", "style": "The facility's operations floor systems support lead, in her late 30s, friendly and practical. Speak with a consistent General American accent, Pacific Northwest, throughout, do not shift to any other accent.", "language": "en-US" },
           "position": { "x": 2, "y": 5 },
           "seated": true,
           "needsHome": { "room": "operations_floor", "x": 2, "y": 5 },
@@ -1922,7 +1922,7 @@ scada_password = "CascadeWindow19"
           "globalVarOnKO": "gwen_ko",
           "behavior": { "hostile": { "leash": true } },
           "needs": { "thirst": { "initial": 55, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "cooler": ["Cooler's the only thing working, mind.", "Tidy up and out, that's the plan.", "I'd give a lot for a proper brew.", "Last glass, then I'm off."] },
+          "chatter": { "cooler": ["Cooler's the only thing working.", "Tidy up and out, that's the plan.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
           "eventMappings": [
             { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } },
             { "eventPattern": "room_entered:server_room", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },
