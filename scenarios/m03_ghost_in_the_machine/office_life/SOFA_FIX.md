@@ -72,3 +72,8 @@ R8-m3. A needs NPC hidden mid-fetch kept `chair.seatedBy`, and a hidden NPC's up
 R8-m2. `test/js/npc-hide-seated-breath.test.mjs` is now 12 tests. The stub has an open stand grid (`pathfindingManager.buildWorldGrid`), so the instant landing is asserted: feet off the seat, on a grid cell centre, no step move, collider restored. New: a needs sitter's gate state after hide and show (stop key null, no retry spent, not given up); a needs sitter lands on its work spot; a mid-fetch hide frees the reservation (and leaves another NPC's reservation alone); a hide during a step-off ends the step move. The re-sit itself is asserted as gate state, not by driving `updateNeedsSeat`, which needs the whole needs system; the live check covers the re-sit. Each fix was reverted locally to check: without m1 the gate test fails; without m3 the mid-fetch and step-move tests fail.
 
 Live check (keyless server :3091, fresh game 6718 from new-game.rb, `night.mjs` rerun, scratchpad `seatrelease2/`): the night turn leaves Zainab hidden and unseated, sofa places empty, no typists. After the player sat and stood, showing Zainab seated her again within one second of wall time (first seated reading at 503 ms; needs clock 83250), at her usual seat, and she stayed there.
+
+## R9 follow-up (R9-m1, n1)
+
+R9-m1. An instant unseat that finds no seat now also resets the needs re-sit gate when it ends a needs seat move or a fetch (`resetNeedsSeatGate` in `seating.js`, shared with the seated branch), so a needs NPC hidden mid walk, roll-in or fetch sits at once on show.
+R9-n1. `npc-hide-seated-breath.test.mjs` is now 13 tests; the new one hides a needs NPC mid walk and asserts the move ended, the chair freed and the gate reset (it fails with the reset removed).
