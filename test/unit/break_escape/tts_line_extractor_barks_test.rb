@@ -74,12 +74,6 @@ module BreakEscape
 
     # M1: the client strips the NPC's own "Name:" prefix (phoneBarkText) before /tts,
     # so the batch and the endpoint use the stripped text
-    SIS03_BARKS = [
-      'The policy binder and FDP terminal on the desk both unlock the Evidence Archive.',
-      'Warranty assessment recorded.',
-      'The decision is logged. Come and talk to me before you leave'
-    ].freeze
-
     def sis03_data
       raw = JSON.parse(ERB.new(File.read(Engine.root.join('scenarios', 'sis03_cyber_insurance', 'scenario.json.erb')))
                           .result(Mission::ScenarioBinding.new({}).get_binding))
@@ -98,7 +92,8 @@ module BreakEscape
     test 'sis03 Eleanor prefixed sendTimedMessage barks key on the text the client sends' do
       data = sis03_data
       npc = eleanor(data)
-      authored = ScenarioBarkValidator.raw_event_bark_texts(npc).select { |t| t.start_with?('Eleanor Vance:') }
+      authored = npc['eventMappings'].filter_map { |m| m.dig('sendTimedMessage', 'message') }
+                    .select { |t| t.start_with?('Eleanor Vance:') }
       assert_equal 3, authored.size
       ex = TtsLineExtractor.new('sis03_cyber_insurance', data, chatter: false)
       barks = ex.entries.select { |e| e.path == 'npc.bark' && e.npc_id == 'eleanor_vance' }

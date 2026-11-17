@@ -277,8 +277,10 @@ module BreakEscape
           npc = TtsLineResolver.find_npc(game_data, npc_id)
           next unless npc && npc['npcType'] == 'person' && npc['voice'].is_a?(Hash)
 
-          result = resolver.resolve(npc_id, npc, text)
-          next failures << "#{name} #{npc_id} refused: #{text[0, 60]}" unless result.line
+          # What npc-barks.js sends: the line with the NPC's own "Name:" prefix dropped
+          sent = text.sub(/\A(?:#{Regexp.union(npc['displayName'].to_s, npc_id).source})\s*:\s*/i, '')
+          result = resolver.resolve(npc_id, npc, sent)
+          next failures << "#{name} #{npc_id} refused: #{sent[0, 60]}" unless result.line
 
           voice = ex.voices[npc_id] || npc['voice']
           key = @svc.cache_key_for(result.line, voice['name'], voice['style'], voice['language'])
