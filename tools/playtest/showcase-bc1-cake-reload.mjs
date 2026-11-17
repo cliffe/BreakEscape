@@ -77,6 +77,9 @@ let reload = async function (h) {
   });
   if (resumed) await h.t(1000);
   await h.page.waitForFunction(() => window.gameScenario && window.rooms && window.__test && window.player && window.player.body && window.npcNeedsSystem, null, { timeout: 90000 });
+  // What the needs system holds before the probe touches anything after the reload
+  h.atReload = await ev(h, () => ({ ids: window.__test.needs.ids(), servings: window.gameState?.globalVariables?.cake_servings, clock: window.npcNeedsSystem.clockMs, tick: window.npcNeedsSystem.tickCount })).catch(e => ({ err: String(e) }));
+  h.atReload.staff = await staff(h).catch(() => null);
   // Hold the staff the moment the needs system exists: needs reset on reload (R6) and the cake's
   // tempt band can send someone to it within the settle below, before any measurement.
   await calm(h);
@@ -129,11 +132,37 @@ async function begin(c) {
   await recorder(h);
   return h;
 }
-const recorder = h => ev(h, () => {
-  if (window.__bc1) return;
-  const L = window.__bc1 = [], sys = window.npcNeedsSystem, w = sys.world, oe = w.emit;
-  w.emit = function (n, d) { if (/^(magnet_|npc_saw_magnet|npc_told|npc_turned_back)/.test(n)) { let dd; try { dd = JSON.stringify(d).slice(0, 160); } catch (e) { dd = '?'; } L.push({ c: +(sys.clockMs / 1000).toFixed(1), n, d: dd }); } return oe.call(this, n, d); };
-});
+// Installed as an init script: it hooks the needs system's emit the moment the system exists, so a
+// serving taken in the first seconds after a reload (before the probe's own calm) is still logged.
+// The emit hook and the needs decision log both start at page load; events() reads this page's list.
+function hookEmits() {
+  const tryHook = () => {
+    const sys = window.npcNeedsSystem;
+    if (!sys || !sys.world || sys.world.__bc1Hooked) return false;
+    const L = window.__bc1 = window.__bc1 || [], w = sys.world, oe = w.emit;
+    w.__bc1Hooked = true;
+    w.emit = function (n, d) {
+      if (/^(magnet_|npc_saw_magnet|npc_told|npc_turned_back|npc_announced)/.test(n)) {
+        let dd; try { dd = JSON.stringify(d).slice(0, 160); } catch (e) { dd = '?'; }
+        L.push({ c: +(sys.clockMs / 1000).toFixed(1), tick: sys.tickCount, wall: Date.now(), n, d: dd });
+      }
+      return oe.call(this, n, d);
+    };
+    return true;
+  };
+  if (!tryHook()) { const iv = setInterval(() => { if (tryHook()) clearInterval(iv); }, 5); }
+}
+const recorder = async h => {
+  if (!h.hooked) { await h.page.addInitScript(hookEmits); h.hooked = true; }
+  await h.page.evaluate(hookEmits);
+};
+// Magnet and need-level lines of the needs decision log, and each staff member's hunger, social and job.
+const needsLog = h => ev(h, () => (window.__test.needs.log() || []).filter(e =>
+  /serving|magnet|turned_back|level_set|aborted|using|job_|tempt/.test(e.ev) || e.target === 'cake'));
+const staff = h => ev(h, ids => Object.fromEntries(ids.map(i => {
+  const st = window.__test.needs.state(i);
+  return [i, st ? { mode: st.mode, hunger: st.levels.hunger, social: st.levels.social, job: st.job ? `${st.job.kind}:${st.job.phase}:${st.job.targetId}` : null } : null];
+})), STAFF);
 const events = h => ev(h, () => window.__bc1 || []);
 
 let warnedIds = false;
@@ -176,11 +205,15 @@ function psSize(gid) {
 const _reload = reload;
 reload = async function (h) {
   const a = psSize(h.gid);
+  // The last reading before the reload, after the server-side size check (which takes a few seconds)
+  h.preReload = { where: await where(h), staff: await staff(h), events: await events(h), log: await needsLog(h), at: Date.now() };
   await _reload(h);
   // Needs reset to their initial levels on reload (R6), which can sit inside the cake's tempt band:
   // hold the staff before the sync wait, or someone eats during it and the case measures that.
   await calm(h);
+  h.afterCalm = await staff(h).catch(() => null);
   await h.t(WAIT);
+  h.postWait = { where: await where(h), staff: await staff(h), events: await events(h), log: await needsLog(h) };
   const b = psSize(h.gid);
   const grew = a.bytes != null && b.bytes != null ? b.bytes - a.bytes : null;
   const growKeys = {};
@@ -250,7 +283,7 @@ const cases = {
     const ev3 = await events(h);
     const fin = ev3.some(e => e.n === 'magnet_finished:' + CAKE);
     const ts = await task(h);
-    return { pass: first.ate && kept && second.ate && gone && fin && (TASK ? ts === 'completed' : true), first, kept, second, gone, finishedEvent: fin, task: ts, before: a, mid, after: b, events: ev3 };
+    return { pass: first.ate && kept && second.ate && gone && fin && (TASK ? ts === 'completed' : true), first, kept, second, gone, finishedEvent: fin, task: ts, before: a, mid, pre, after: b, events: ev3 };
   },
   async 4(h) {
     await drop(h);
@@ -277,6 +310,7 @@ for (const c of CASES) {
     const res = await cases[c](h);
     res.errs = h.errs.filter(e => !/503/.test(e));
     res.playerState = h.ps || null;
+    res.diag = { preReload: h.preReload || null, atReload: h.atReload || null, afterCalm: h.afterCalm || null, postWait: h.postWait || null };
     if (h.ps && !h.ps.ok) res.pass = false;
     fs.writeFileSync(`tmp/bc1/${SCEN}-case${c}-game${gid}.json`, JSON.stringify(res, null, 1));
     rows.push({ c, gid, pass: res.pass, ps: h.ps ? `${h.ps.before} -> ${h.ps.after}` : '' });
