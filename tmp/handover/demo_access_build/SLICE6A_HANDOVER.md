@@ -75,3 +75,7 @@ Earlier, from the first session: 01_reception to 06_julian_desktop.
 - `mg close` closes the top minigame (notes, phone). `clickControl` on × did nothing for the notes overlay.
 - The state command is `brief`; there is no `getState` in the bridge command set.
 - A 4-digit PIN auto-submits on the fourth digit.
+
+### Cake reload result (update)
+
+INCOMPLETE. The run exited 0 after "case 2: game 7555 / wait 22s (before reload)" and printed nothing further. No tmp/bc1 result file was written, so no cake case was measured. Not diagnosed: the call budget ran out first. Next step: rerun the script in the foreground with stderr captured, or check whether the wait loop failed silently. Do not record it as blocked on the shared reload rebuild issue until the reload step has actually run. Log: /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/cake/run.log (scratchpad).
