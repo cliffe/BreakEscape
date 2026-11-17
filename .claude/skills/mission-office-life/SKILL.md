@@ -36,7 +36,7 @@ References, read when the step needs them (this file is the procedure, they hold
 
 ## Outputs
 
-All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_summary_base.txt`, `validator_info_lines.txt`, `ANALYSIS.md`, `PLAN.md`, `REVIEW_R<n>.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`, `BUILD_LOG.md`, `LIVE_*.md` (the live-proof write-ups; m02 named its two `STAGE4_LIVE*.md` and `STAGE5_LIVE*.md`), `LOG.md`, `HANDOVER.md`. The plan's sections follow m02's: aim and tier, people, rooms and objects, levers, openings, spoken lines, sync budget, field names, costs and approvals, test plan.
+All in `scenarios/<m>/office_life/`: `BASELINE.md`, `baseline_locks.json`, `v1_summary_base.txt`, `validator_info_lines.txt`, `ANALYSIS.md`, `PLAN.md`, `REVIEW_R<n>.md`, `SPOKEN_LINES.md`, `DIALOGUE_SAMPLE.md`, `BUILD_LOG.md`, `LIVE_*.md` (the live-proof write-ups; m02 named its two `STAGE4_LIVE*.md` and `STAGE5_LIVE*.md`), `LOG.md`, `HANDOVER.md`. The plan's sections follow m02's: aim and tier, people, story-safe movement (when any existing NPC is free), rooms and objects, levers, openings, spoken lines, sync budget, field names, costs and approvals, test plan.
 
 ## Stage 0: baseline
 
@@ -64,6 +64,13 @@ One row per NPC record, with file:line. Classify each:
 | several records of one character, non-human, phone or cutscene only | never |
 
 - [ ] **Story NPCs stay where the plot needs them.** In most missions every existing person is story-critical (m02 and m03 both), so talk needs new ambient people or nothing.
+- [ ] **Existing NPCs: story-safe movement (D78).** Give every existing NPC one of five classes, with the line that decides it. Only a **free** NPC may move.
+  - *Pinned by the text*: its own lines fix it in place (m08's analyst: "If I leave this desk, somebody writes down that I left this desk", `m08_background_analyst.ink:26`).
+  - *Witness or line of sight*: a mapping depends on where it stands or what it can see.
+  - *Holding or guarding* an item or clue.
+  - *Plot-located*: a beat or cutscene needs it at a spot.
+  - *Free*: none of the above.
+  A suspect in a whodunnit is not free unless the plan argues it: movement can read as a behavioural tell. Record the class per NPC in the people table (Stage 2, "Story-safe movement").
 - [ ] For each NPC who might sit or pose: does the atlas have seated frames (`--sit-from`) and pose frames (`pose_drink_*`, `pose_use_*`, `pose_phone_*`)? List what is missing; it is an art item, not a blocker.
 - [ ] Mark every NPC "can be attacked" unless the scenario sets `disableAttacks`, and list each one's `globalVarOnKO`, `taskOnKO` and KO drops.
 - [ ] List beats keyed on NPC position or presence: `npc_arrived`, `room_entered` mappings, conversation-reachable knots, LOS and `challengeOnSight`, KO tasks, `initiallyHidden` reveals, cutscene triggers.
@@ -103,6 +110,16 @@ Recommend one tier in a paragraph: **0** none (say why), **1** presets and chatt
 - [ ] Coupled breaks: a mapping on `npc_use_started:<object>` with a condition on the partner's id sets the other's need low through `needs: { set: ... }`. Coupling both ways can hold a cooler for minutes and shut out NPCs that avoid `*` (`SIMS_TIDY_LOG.md:600` to 612); couple one way, or cap with a cooldown.
 - [ ] An NPC whose every need is met by its own post object never moves but stays registered, so it can print by command (`needs: { print: ... }`, `forget: true` leaves the page on the tray).
 - [ ] Reload resets needs to the posts. Only scalar globals survive; design for that.
+
+### Story-safe movement (existing NPCs)
+
+Write this section when the audit found a free existing NPC; otherwise write "none free" and the reason. A free NPC may get a short routine (a coffee, the printer, stretching at a window) at non-plot times only.
+
+- [ ] **Gated.** The routine switches off before and during the NPC's beats. Put `offWhen` (object level, a global name or `{ name: value }`, `scripts/scenario-schema.json:5480`) on the machine it uses, keyed on a global that holds from before the beat until after it: NPCs walking there turn back and park. For a mapped break, add a `condition` on the mapping (`scripts/scenario-schema.json:4973`). Where a global cannot cover it, a mapping with `"needs": "suspend"` at the event that opens the window and `"resume"` after (`scripts/scenario-schema.json:5099` to `5102`, `public/break_escape/js/systems/npc-needs.js:1096` to `1111`). `suspend` does not walk the NPC home: an NPC suspended mid-trip stands where it is, so pair it with a leash that keeps the whole trip short.
+- [ ] **Leashed** to its own room or to the nearest machine: `needsHome` (`scripts/scenario-schema.json:4881`), `needsRooms` (`:4894`) or `needsAvoidRooms` (`:4895`), and `needsPrivateTo` on rooms it must not use (`:4247`). The rhythm uses `needs` with `decayPerMin`, `urgentAt` and `initial` (`:4841` to `4850`) and, for timing, a mapped break (`cooldown` `:4983`, `delayMs` `:4984`). A seat on the machine is `affordance.seat` (`:3983`).
+- [ ] **At its post before any conversation can start.** Prove it: no conversation or `conversation_closed`-keyed beat can begin while the NPC is away (the machine is `offWhen` by then, the trip is short, and the NPC is home before the player can reach it). Do not rely on the NPC walking home once a conversation has started.
+- [ ] Name, per moved NPC, the beats it must be at post for and which gate covers each. A beat with no named gate means the NPC is not free.
+- [ ] The plan states the expected result of every check below under "Test plan".
 
 ### Rooms, affordances and machine presets
 
@@ -157,7 +174,7 @@ Prefer **levers over schedules**: the player causes the event through existing s
 
 ### Test plan
 
-- [ ] Walkthrough steps that must still pass; office-life checks to make live (five tries each at walking pace); reload checks; the attack probe (attack a moving NPC, a seated one and one leaving through a door, fresh game per step); the expected lock and key diff (empty, or exactly the approved items).
+- [ ] Walkthrough steps that must still pass; office-life checks to make live (five tries each at walking pace); reload checks; the attack probe (attack a moving NPC, a seated one and one leaving through a door, fresh game per step); the expected lock and key diff (empty, or exactly the approved items); for each moved NPC, the story-safe movement checks in Stage 4.
 
 ## Stage 3: the loop
 
@@ -201,6 +218,7 @@ After each slice:
 - [ ] Ink compiles; `dialoguelint.mjs` on changed ink; `tagdiff.mjs` against the last commit for any existing ink touched; inkcheck and loopcheck; `scripts/ink_runtime_check/reopencheck.mjs` and the mission's route suite (`scripts/ink_runtime_check/<m>_routes/`) where it has one.
 - [ ] `ruby scripts/validate_scenario.rb scenarios/<m>/scenario.json.erb`: 0 errors, every new warning cleared or justified. The office-life checks (`scripts/validate_office_life.rb`, called by `validate_scenario.rb`) cover V1, V2 (story NPC whose needs can leave its room), V3 (`npc_arrived` on a needs NPC), V4 (attackable needs NPC; an info line once the E1 attack probe has passed), V7 (repeated lines), V8 (sync budget, info until a cap is passed), V10 (a pool or exchange nothing can trigger) and V11 (a chatter pool line that names a credential), all warnings, and V5 (required content keyed on an office-life global or event), an error. V6 is the rake task and V9 the lock and key diff. The older needs, access and habits validators run too.
 - [ ] `--office-summary` diffed against `v1_summary_base.txt`: only the planned NPCs changed.
+- [ ] **Story-safe movement**, before and after: the lock and key diff is empty; item and clue positions are unchanged (compare the objects' room and position against the baseline); line-of-sight mappings and `challengeOnSight` are unchanged; no pinned, witness, holding, plot-located or suspect NPC gained `needs`.
 - [ ] `ruby scripts/lock_key_diff.rb scenarios/<m>/scenario.json.erb scenarios/<m>/office_life/baseline_locks.json`: empty, or exactly the approved items. It regenerates the dungeon graph itself.
 - [ ] `python3 scripts/check_door_alignment.py` and the room depth check for new or changed rooms.
 - [ ] Field names at `FormatUpgrade.current`; office-life keys never inside an ERB loop or tag.
@@ -212,6 +230,7 @@ After each slice:
 - [ ] **A fresh game per check** from `new-game.rb`, run from the same worktree with the same env as the server (section 1 of the recipes). Set `PLAYTEST_PORT` to the branch server's port so its printed URL is right. Use the id it prints; never infer or reuse an id. It synthesises stand-in VM flags and prints FLAGS_XML: pass that to `tools/playtest/session-start.sh --url <URL> --flags <path>`.
 - [ ] **Never edit a game row's scenario copy or state, and never set globals in the page** to reach a state. If a check needs a head start, add it to a test scenario on the branch or ask. Type flags in play where a reward matters: seeding m02's flag 4 by `--submit-flag` did not open its cache.
 - [ ] Headless only: `game.loop.setFPS(20)` with **fixed steps on**. Never `fixedStep = false` (bodies tunnel 8 px walls).
+- [ ] **Story-safe movement live proof**: every story beat finds each moved NPC at post, five tries each at walking pace, including after a reload (needs reset to the posts on reload). A beat that finds one away fails the check and the NPC goes back to a class that does not move.
 - [ ] Check through `window.__test.needs` that posts, leashes and privacy hold, both partners reach `using` at each chatter object, and nothing mapped to NPC position fires early or twice.
 - [ ] A run counts only when `tools/playtest/verify-run.rb` shows progress. A scripted run's "stuck" is checked by a persona run before it counts.
 - [ ] Stage 5 playtests: a scripted regression of the walkthrough with office life on; a persona run of 10 to 15 minutes that pulls each lever, tries each opening, attacks one moving NPC and reloads once; a frame-time reading; with `roomTone`, a listen through a north or south door and an east or west one. At most three rounds, then a short confirmation run.
@@ -236,3 +255,7 @@ After each slice:
 ## Gotchas
 
 Full list with fixes in `references/gotchas.md`. The ones that cost most: declare machines by base type name; `lockIfAwayOverSeconds` reads expected, not real, away time; send staff home with `offWhen`, not `patrolOverride`; hiding a seated NPC needs a rendered check at the night turn; only loaded rooms simulate; stop servers by PID; one fresh game per scenario edit.
+
+## Decisions
+
+- D78, 2026-11-17: existing NPCs move only when free ("Yes, story-safe only"). Pinned, witness, holding, plot-located and, in a whodunnit, suspect NPCs stay put.
