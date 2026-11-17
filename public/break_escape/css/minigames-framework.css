@@ -32,8 +32,9 @@
     font-weight: 400;
 }
 
-/* Crisp pixel-font titles. `font-smooth: never` and `-webkit-font-smoothing: none` (main.css,
-   player_preferences.css) are ignored by Chrome and Firefox on Windows and Linux, so a pixel-font
+/* Crisp pixel-font titles. `font-smooth: never` (no browser supports it) is gone from main.css and
+   player_preferences.css; `-webkit-font-smoothing: none` (player_preferences.css) only works on
+   macOS Safari and Chrome. Chrome and Firefox on Windows and Linux ignore it, so a pixel-font
    title on an opaque panel (the device frame's face, a paper note, the corkboard) gets LCD subpixel
    antialiasing: red and blue fringes on every glyph edge. `will-change: transform` turns LCD text
    off for the element's layer, so Chrome draws it with greyscale antialiasing. Measured on Chrome
@@ -104,7 +105,59 @@
     .minigame-header h3,
     .combination-header h2,
     .cryptex-header h2,
-    .esd-confirm-card h3
+    .esd-confirm-card h3,
+    .ob-site-title,
+    .ob-page-title
+) {
+    will-change: transform;
+}
+
+/* Crisp pixel-font body text, labels and status lines: the same fix as the titles above, a second
+   explicit list. Measured on Chrome for Linux at 1280x720 and 390x844 (crisp-text-2): each class
+   shows LCD fringes on its opaque panel without the hint and none with it; several only fringe at
+   390 wide (the brief and person-chat text), so check both sizes. Only leaf text elements belong
+   here: a paragraph, a label, a status line, or a short run of such leaves (never more than about
+   twelve on screen). Never a wrapper that holds controls (.siem-alert-row, .combination-header,
+   .tri-panel, .device-frame: a stacking context and fixed-position containing block for everything
+   inside), never a skin-image button or tab (the residual there is the skin, not LCD), never a
+   row of a list (hint a text-only list container once if one measures clean: .rogue-ap-scan
+   holds only spans, headshots and the signal icon, no controls, and clears every row for one
+   layer). Each entry is one class, or one class plus a tag, or a parent class plus a child class
+   (`.mail-read-pane .ib-infl-label`: the one influence bar in the mail reader, not the per-card
+   bars on the board). test/js/minigame-text-crisp-css.test.mjs pins the exact list and checks
+   that every class is emitted by the engine, not that every body text is listed. */
+.minigame-container :is(
+    .note-md-text,
+    .rogue-ap-note,
+    .rogue-ap-scan,
+    .lpb-copy,
+    .lpb-address-text,
+    .lpb-not-secure,
+    .combination-help,
+    .combination-status-message,
+    .combination-direction-indicator,
+    .combination-dial-label,
+    .combination-dial-display,
+    .cryptex-subtitle,
+    .cryptex-wheel-label,
+    .password-info-name,
+    .password-info-text,
+    .password-field-label,
+    .attempts-counter,
+    .tri-brief-title,
+    .tri-brief-text,
+    .tri-brief-kind,
+    .tri-brief-score,
+    .tri-brief-when,
+    .tri-brief-restart,
+    .tri-brief-note,
+    .siem-queue-count,
+    .ib-progress,
+    .ib-empty,
+    .mail-read-pane .ib-infl-label,
+    .pin-minigame-attempt-empty,
+    .person-chat-dialogue-text,
+    .person-chat-speaker-name
 ) {
     will-change: transform;
 }

@@ -1038,7 +1038,14 @@ export class PasswordMinigame extends MinigameScene {
                 `}
             </div>
         `;
-        
+
+        // Name the bare tags so the crisp-text rule in minigames-framework.css can list them
+        // (classList only, the markup above is unchanged).
+        const tagText = (selector, cls) => this.gameContainer.querySelector(selector)?.classList.add(cls);
+        tagText('.password-info h4', 'password-info-name');
+        tagText('.password-info p', 'password-info-text');
+        tagText('.password-input-container label', 'password-field-label');
+
         // Get references to important elements
         this.passwordField = document.getElementById('password-field');
         this.togglePasswordBtn = document.getElementById('toggle-password');
