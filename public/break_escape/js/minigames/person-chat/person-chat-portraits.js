@@ -650,7 +650,8 @@ export default class PersonChatPortraits {
         // Scene shots and the PiP ignore it and keep the side-aligned framing.
         const view = this._cameraView() || { pan: this.flipped ? 1 : 0, zoom: 1 };
         let { x, y, w: scaledWidth, h: scaledHeight } =
-            backgroundRect(view, spriteScale, imgWidth, imgHeight, canvasWidth, canvasHeight, sceneShot);
+            backgroundRect(view, spriteScale, imgWidth, imgHeight, canvasWidth, canvasHeight, sceneShot,
+                sceneShot ? 0 : (this.fixedHeight || 0));
 
         // Calculate subtle parallax effect - move background towards sprite once and stop
         const elapsed = (Date.now() - this.parallaxStartTime) / 1000; // Time in seconds

@@ -8,6 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -26,7 +27,7 @@ globalThis.window = globalThis;
 globalThis.document = { getElementById: () => null, querySelector: () => null };
 console.log = () => {}; console.warn = () => {};
 const Portraits = (await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-portraits.js')))).default;
-const { portraitRect } = await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-camera.js')));
+const { portraitRect, phonePortraitSize, PHONE_FRAME_PX } = await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-camera.js')));
 
 function fakeCtx(draws) {
     return {
@@ -225,4 +226,156 @@ test('on a phone the viseme frame stands on the canvas bottom at the height-led 
         assert.equal(a[5] + a[7], ch, `${cw}x${ch} bottom edge`);
         assert.equal(a[6] / a[2], Math.floor(ch / 128));
     }
+});
+
+// --- Phone layout: the viewport, not the canvas height, decides the drawn scale ---------------
+// The phone canvas grows and shrinks with the dialogue band. These drive the renderer itself
+// (setFixedHeight -> _fixedFit -> every draw path) so a return to the canvas-height fit fails.
+
+function phoneMake(canvasH, fixed = 256) {
+    const { p, draws } = make(390, canvasH);
+    p._holdingForContent = true; p.setFixedHeight(fixed); p._holdingForContent = false;
+    p.backgroundImage = { width: 400, height: 400 };
+    return { p, draws };
+}
+const CANVAS_HEIGHTS = [256, 300, 372, 408];
+
+test('on a phone the viewport fit holds the drawn scale while the canvas height changes', () => {
+    const seen = new Set(), bgSeen = new Set();
+    for (const h of CANVAS_HEIGHTS) {
+        const { p, draws } = phoneMake(h);
+        p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
+        p.drawBackground(p.calculateSpriteTalkScale());
+        p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 128, 128);
+        bgSeen.add(draws[0].a[2] / 400); seen.add(draws[1].a[6] / draws[1].a[2]);
+    }
+    assert.deepEqual([...seen], [2]);
+    assert.deepEqual([...bgSeen], [2]);
+});
+
+test('on a phone the talk sheet, a 120 px sheet and a 64 px bust each hold one scale across canvas heights', () => {
+    const cases = [
+        ['talk sheet', 128, 2, (p) => { p.spriteTalkImage = { width: 256, height: 256 }; p.drawSpriteTalkImage(p.spriteTalkImage, 1); }],
+        ['120 px sheet', 120, 2, (p) => { p.visemeSheet = { image: { width: 840, height: 120 }, frameSize: 120, columnFor: { rest: 0 } }; p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 120, 120); }],
+        ['64 px bust', 64, 4, (p) => { p.visemeSheet = { image: { width: 448, height: 64 }, frameSize: 64, columnFor: { rest: 0 } }; p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 64, 64); }]
+    ];
+    for (const [name, , expected, draw] of cases) {
+        const seen = new Set();
+        for (const h of CANVAS_HEIGHTS) {
+            const { p, draws } = phoneMake(h);
+            draw(p);
+            const d = draws.find(x => x.a.length === 8);
+            assert.ok(d, name);
+            seen.add(d.a[6] / d.a[2]);
+            assert.equal(d.a[5] + d.a[7], h, `${name} stands on the canvas bottom at ${h}`);
+        }
+        assert.deepEqual([...seen], [expected], name);
+    }
+});
+
+test('a phone at 844 pins the 128 px frame at 3x and a 64 px bust at 6x', () => {
+    const { p, draws } = phoneMake(549, 384);
+    p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
+    p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 128, 128);
+    assert.equal(draws[0].a[6] / draws[0].a[2], 3);
+    const { p: q, draws: d2 } = phoneMake(549, 384);
+    q.visemeSheet = { image: { width: 448, height: 64 }, frameSize: 64, columnFor: { rest: 0 } };
+    q.drawPortraitFrame(q.visemeSheet.image, 0, 0, 64, 64);
+    assert.equal(d2[0].a[6] / d2[0].a[2], 6);
+});
+
+test('clearing the fixed height returns to the canvas-height fit', () => {
+    const { p, draws } = phoneMake(408);
+    p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
+    p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 128, 128);
+    assert.equal(draws[0].a[6] / draws[0].a[2], 2);
+    p._holdingForContent = true; p.setFixedHeight(null); p._holdingForContent = false;
+    assert.equal(p.fixedHeight, null);
+    draws.length = 0;
+    p.drawPortraitFrame(p.visemeSheet.image, 0, 0, 128, 128);
+    assert.equal(draws[0].a[6] / draws[0].a[2], 3, '408 / 128 = 3.19, floored to 3');
+});
+
+test('a walk sprite on a phone holds its scale across canvas heights', () => {
+    const seen = new Set(), bgSeen = new Set();
+    for (const h of CANVAS_HEIGHTS) {
+        const { p, draws } = phoneMake(h, 240);
+        const image = { width: 640, height: 80 };
+        const frame = { cutX: 0, cutY: 0, cutWidth: 80, cutHeight: 80, source: { image } };
+        p.game = { textures: { get: () => ({ key: 'walk', get: () => frame }) } };
+        p.spriteSheet = 'walk'; p.frameIndex = 0;
+        p.render();
+        const sprite = draws.find(d => d.a.length === 8).a;
+        seen.add(sprite[6] / sprite[2]);
+        bgSeen.add(draws.find(d => d.a.length === 4).a[2] / 400);
+    }
+    assert.deepEqual([...seen], [3]);
+    assert.deepEqual([...bgSeen], [3]);
+});
+
+test('on a phone the room moves down with the speaker as the canvas grows', () => {
+    // Sprite bottom minus background top is the same at every canvas height (as long as the
+    // image still covers), so the speaker does not slide against the wall between lines.
+    for (const [fixed, heights] of [[256, [256, 300, 372, 408]], [384, [384, 450, 549]], [128, [128, 200, 260]]]) {
+        const gaps = new Set();
+        for (const h of heights) {
+            const { p, draws } = phoneMake(h, fixed);
+            p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
+            p._getCurrentVisemeColumn = () => 0;
+            p.render();
+            const bg = draws.find(d => d.a.length === 4).a;
+            const sprite = draws.find(d => d.a.length === 8).a;
+            assert.ok(bg[1] <= 0 && bg[1] + bg[3] >= h, `background covers at ${fixed}/${h}`);
+            gaps.add(sprite[5] + sprite[7] - bg[1]);
+        }
+        assert.equal(gaps.size, 1, `fixed ${fixed}: ${[...gaps]}`);
+    }
+});
+
+test('a phone background still covers when the canvas outgrows the room slack', () => {
+    for (const [fixed, scaleH] of [[256, 2], [384, 3], [512, 4]]) {
+        for (const h of [fixed, fixed + 100, fixed + 400]) {
+            const { p, draws } = phoneMake(h, fixed);
+            p.drawBackground(fixed / 128);
+            const bg = draws[0].a;
+            assert.ok(bg[1] <= 0 && bg[1] + bg[3] >= h, `${fixed}/${h}: y ${bg[1]} h ${bg[3]}`);
+            assert.ok(bg[2] / 400 >= scaleH);
+        }
+    }
+});
+
+test('desktop (no fixed height) and scene shots keep the centred background', () => {
+    const { p, draws } = make(1280, 680);
+    p.backgroundImage = { width: 400, height: 400 };
+    p.drawBackground(5);
+    assert.equal(draws[0].a[1], Math.round((680 - 2000) / 2));
+    const { p: q, draws: d2 } = phoneMake(408);
+    q.drawBackground(2, true);
+    const h = d2[0].a[3];
+    assert.equal(d2[0].a[1], h > 408 ? Math.round((408 - h) / 2) : 0);
+});
+
+test('the UI hands the renderer the viewport portrait height on phones and clears it above', () => {
+    const src = readFileSync(new URL('../../public/break_escape/js/minigames/person-chat/person-chat-ui.js', import.meta.url), 'utf8');
+    const grab = (sig) => {
+        const i = src.indexOf(sig);
+        assert.ok(i > 0, sig);
+        const end = src.indexOf('\n    }\n', i);
+        return src.slice(i + sig.length, end);
+    };
+    const upd = new Function('phonePortraitSize', 'PHONE_FRAME_PX', 'window', grab('updatePortraitHeight() {'));
+    const app = new Function(grab('applyPhoneScale() {'));
+    for (const [innerW, boxH, dpr, expect] of [[390, 647, 1, 256], [390, 824, 1, 384], [390, 895, 2, phonePortraitSize(895, 2).scale * PHONE_FRAME_PX], [1280, 680, 1, null], [390, 0, 1, null]]) {
+        const got = [];
+        const ctx = {
+            elements: { mainContent: { getBoundingClientRect: () => ({ height: boxH }), style: { setProperty() {}, removeProperty() {} } }, portraitSection: {} },
+            portraitRenderer: { setFixedHeight: (v) => got.push(v) },
+            applyPhoneScale: app
+        };
+        upd.call(ctx, phonePortraitSize, PHONE_FRAME_PX, { innerWidth: innerW, devicePixelRatio: dpr });
+        assert.deepEqual(got, [expect], `${innerW}x${boxH}@${dpr}`);
+    }
+    // initializePortrait sets the height before init(), for the path with no ResizeObserver
+    const init = src.slice(src.indexOf('this.portraitRenderer._holdingForContent = true;'));
+    assert.ok(init.indexOf('this.applyPhoneScale()') < init.indexOf('this.portraitRenderer.init()'));
 });

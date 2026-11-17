@@ -327,8 +327,9 @@
     width: 0;
 }
 
-/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top at its own 4:3 shape
-   and the caption follows it in flow, so the speaker's name and line never cover the face;
+/* Phone width (UX slice 16 R1 m11, m12): the portrait sits at the top and grows to fill the
+   height above the caption (never below --pc-portrait-h), and the caption follows it in flow,
+   so the speaker's name and line never cover the face;
    the line and the choices stack in one column and the choices take the full width. The
    caption scrolls if a long line and many choices outgrow the space below the portrait. */
 @media (max-width: 600px) {

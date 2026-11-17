@@ -122,8 +122,12 @@ export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = s
  * On a wide, short canvas at devicePixelRatio 1 the cover step can be one whole number above
  * the sprite's scale (844x390: sprite 2x, background 3x), so the background's pixels are
  * coarser than the sprite's there. Both stay whole-pixel, so nothing shimmers.
+ * With `anchorH` (phones: the fixed portrait height, canvas px) the room is placed as if the
+ * canvas were that tall and then moved down by the extra height, so it keeps one distance
+ * from the speaker, who stands on the canvas bottom, however tall the canvas grows. The
+ * result is clamped so the image still covers the canvas.
  */
-export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH, fractionalCover = false) {
+export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH, fractionalCover = false, anchorH = 0) {
     // A scene shot has no animated sprite to match, so it may use the exact cover scale
     // (a whole-number one would crop much more of the room)
     const cover = fractionalCover
@@ -134,7 +138,11 @@ export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH, fracti
     const h = imgH * s;
     const pan = Math.min(1, Math.max(0, view?.pan ?? 1));
     const x = Math.round(0 - pan * Math.max(0, w - canvasW));
-    const y = h > canvasH ? Math.round((canvasH - h) / 2) : 0;
+    let y = h > canvasH ? Math.round((canvasH - h) / 2) : 0;
+    if (anchorH > 0 && !fractionalCover && h > canvasH) {
+        y = Math.round((anchorH - h) / 2) + (canvasH - anchorH);
+        y = Math.min(0, Math.max(canvasH - h, y));
+    }
     return { x, y, w, h };
 }
 

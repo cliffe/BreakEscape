@@ -24,6 +24,14 @@ test('C-PC2: at narrow width the portrait grows to fill (no black gap) but never
     assert.doesNotMatch(portrait[1], /flex:\s*0 0 var\(--pc-portrait-h/, 'not a fixed-height section that leaves black under the dialogue');
 });
 
+test('C-PC2: the canvas fills the grown section, so spare height is room and not black', () => {
+    const canvasRule = css.match(/\.person-chat-portrait-canvas-container canvas \{([^}]*)\}/);
+    assert.ok(canvasRule, 'the canvas rule exists');
+    assert.match(canvasRule[1], /width:\s*100%/);
+    assert.match(canvasRule[1], /height:\s*100%/);
+    assert.doesNotMatch(narrow, /canvas\s*\{[^}]*(width|height):\s*\d+px/, 'the narrow block does not pin the canvas to a pixel size');
+});
+
 test('C-PC2: the dialogue band hugs its content at the foot, scrolls, and leaves the portrait its height', () => {
     const caption = narrow.match(/\.person-chat-caption-area \{([^}]*)\}/);
     assert.ok(caption, 'the narrow caption rule exists');
