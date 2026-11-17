@@ -1,6 +1,6 @@
 // R1 m1/M1 live proof of the npcThoughts flag. Usage:
 //   node tools/playtest/npc-thoughts-proof.mjs <gameId> <label> <needs-csv npc:need,...> <phases> [port]
-// phases: comma list of "far" / "near" / "room:<id>"; each phase runs PHASE_S seconds with the listed needs forced low at its start.
+// phases: comma list of "far" / "near" / "room:<id>[+<id>...]"; each phase runs PHASE_S seconds with the listed needs forced low at its start.
 import { createRequire } from 'node:module';
 import fs from 'node:fs';
 const require = createRequire('/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/node_modules/');
@@ -21,8 +21,12 @@ await t(2000);
 for (let i = 0; i < 6; i++) {
     const busy = await page.evaluate(() => { const st = window.__test.getState(); return !!(st.activeMinigame || st.blockingUi); });
     if (!busy) break;
-    await page.keyboard.press('Enter'); await t(400); await page.keyboard.press('Escape'); await t(400);
-    await page.evaluate(() => window.__test.dismissBlockingUi && window.__test.dismissBlockingUi()).catch(() => {});
+    // Never press Escape here: it opens the pause menu, which then blocks enterRoom. Resume closes it if it is up.
+    await page.evaluate(() => { if (window.__test.getState().activeMinigame) window.__test.minigame.close(); }).catch(() => {});   // a person-chat or title minigame
+    let d = await page.evaluate(() => window.__test.dismissBlockingUi('Resume')).catch(() => null);
+    if (!d || d.ok === false) d = await page.evaluate(() => window.__test.dismissBlockingUi()).catch(() => null);
+    if (!d || d.ok === false) await page.evaluate(() => window.__test.dismissBlockingUi('No')).catch(() => {});
+    await t(500);
 }
 if (process.env.FLIP) await page.evaluate(() => { window.gameScenario.npcThoughts = true; });   // in-page only, nothing saved
 // setFPS(20), fixed steps left ON
@@ -36,10 +40,13 @@ const info = await page.evaluate(() => ({
 console.log(JSON.stringify(info));
 await page.evaluate(() => {
     window.__S = { n: 0, maxIcons: 0, maxIconVisible: 0, maxThoughtVisible: 0, maxWorldVisible: 0, maxPictureWorld: 0, maxSpokenWorld: 0, maxDom: 0, maxSceneBubbleObjs: 0,
-        iconsCreated: 0, thoughtsCreated: 0, spoken: new Set(), pictures: new Set(), turns: new Set() };
+        iconsCreated: 0, thoughtsCreated: 0, pictureTurnTicks: 0, picDebug: null, spoken: new Set(), pictures: new Set(), turns: new Set() };
     setInterval(() => {
         const S = window.__S, ai = window.npcActionIcons, wb = window.npcWorldBubbles; S.n++;
-        for (const id of window.npcNeedsSystem.states.keys()) { const tk = window.npcNeedsSystem.getState(id)?.talking; if (tk) S.turns.add(id + ' ' + (tk.line ? 'line' : tk.picture ? 'picture:' + tk.picture : 'silent')); }
+        for (const id of window.npcNeedsSystem.states.keys()) { const tk = window.npcNeedsSystem.getState(id)?.talking; if (tk) S.turns.add(id + ' ' + (tk.line ? 'line' : tk.picture ? 'picture:' + tk.picture : 'silent'));
+            // Deterministic picture chat: walk the player to any NPC that is saying a picture so its bubble is in view
+            if (tk && tk.picture && !tk.line) { S.pictureTurnTicks = (S.pictureTurnTicks || 0) + 1; { const bb = window.npcWorldBubbles?.bubbles.get(id); S.picDebug = JSON.stringify({ id, hasBb: !!bb, box: bb?.box?.visible, img: bb?.img?.visible, tex: bb?.img?.texture?.key, txt: bb?.text?.text, pic: tk.picture }); }
+                const sp = window.npcBehaviorManager.getBehavior(id)?.sprite; if (sp && window.player) window.player.setPosition(sp.x + 40, sp.y + 30); } }
         if (ai) {
             S.iconsCreated = Math.max(S.iconsCreated, ai.icons.size); S.thoughtsCreated = Math.max(S.thoughtsCreated, ai.bubbles.size);
             let iv = 0, tv = 0;
@@ -71,12 +78,14 @@ const park = async (where) => page.evaluate((where) => {
 }, where);
 let k = 0;
 for (const ph of phases.split(',')) {
-    if (ph.startsWith('room:')) { const r = await page.evaluate((r) => window.__test.enterRoom(r, { timeoutMs: 25000 }), ph.slice(5)).catch(() => null); console.log('enterRoom', ph, JSON.stringify(r)); }
+    // room:a+b+c walks through each room in turn (enterRoom only crosses one door), then the phase runs in the last
+    if (ph.startsWith('room:')) { for (const hop of ph.slice(5).split('+')) { const r = await page.evaluate((r) => window.__test.enterRoom(r, { timeoutMs: 25000 }), hop).catch(() => null); console.log('enterRoom', hop, JSON.stringify(r)); } }
     else console.log('park', ph, JSON.stringify(await park(ph)));
     await force();
-    const start = Date.now(); let shots = 0, lastPic = 0, lastSpoken = 0;
+    const start = Date.now(); let shots = 0, lastPic = 0, lastSpoken = 0, lastForce = Date.now();
     while (Date.now() - start < PHASE_S * 1000) {
         await t(1500);
+        if (Date.now() - lastForce > 10000) { await force(); lastForce = Date.now(); }   // keep the needs low: one push at phase start left some runs with NPCs that never acted
         const s = await page.evaluate(() => ({ pic: window.__S.pictures.size, sp: window.__S.spoken.size, ic: window.__S.maxIconVisible, th: window.__S.maxThoughtVisible }));
         const interesting = s.pic > lastPic || s.sp > lastSpoken;
         if ((interesting && shots < 4) || (shots === 0 && Date.now() - start > 20000)) { await page.screenshot({ path: `${out}${label}-${k}-${ph.replace(':', '_')}-${shots}.png` }); shots++; }
