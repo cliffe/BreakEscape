@@ -665,8 +665,8 @@ export class ContainerMinigame extends MinigameScene {
             if (response.status === 403) {
                 try { refusal = await response.json(); } catch (e) { /* no body */ }
             }
-            if (response.status === 403 && refusal?.reason === 'expired' && (this.remote || this.fromRoute)) {
-                // Keyring K5: the session token ran out. The copy goes with no request, the view
+            if (response.status === 403 && refusal?.reason === 'expired') {
+                // Keyring K5: the session token ran out (at a foothold, a `from` route or the keyboard). The copy goes with no request, the screen
                 // closes, and the player reads which token it was (never a sign-in screen).
                 const label = window.pcSessions?.get?.(pcId)?.label;
                 window.pcSessions?.dropLocal?.(pcId);

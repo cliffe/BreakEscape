@@ -127,7 +127,7 @@ export const displacedMessage = (name) => `${name || 'Someone'} has signed in at
 /**
  * The line a token session's desktop closes with when the token runs out (keyring K5, plan 8.5;
  * on-screen text, never voiced). A copy of remote-host-text.js tokenExpiredEndedMessage, as this
- * module imports nothing; test/js/token-client.test.mjs keeps the two equal.
+ * module imports nothing; the equality test in test/js/pc-sessions.test.mjs keeps the two equal.
  */
 export const tokenExpiredEndedMessage = (label, host) =>
     `${label || 'That session token'} expired. Your session on ${host || 'that host'} ended.`;

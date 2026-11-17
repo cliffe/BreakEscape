@@ -139,7 +139,7 @@ export const kindRefusedShort = (host, kind) => (kind === 'token'
 export const endedAssistMessage = (displayName) => `${displayName || 'The account holder'} ended the remote assist.`;
 export const noLongerWorksMessage = (label) => `${label || 'That sign-in'} no longer works.`;
 // Keyring K5 (8.5): a session token that has run out. pc-sessions.js keeps copies (it imports
-// nothing); test/js/token-client.test.mjs keeps them equal.
+// nothing); the equality test in test/js/pc-sessions.test.mjs keeps them equal.
 export const tokenExpiredMessage = (label) => `${label || 'That session token'} has expired.`;
 export const tokenExpiredEndedMessage = (label, host) =>
     `${label || 'That session token'} expired. Your session on ${host || 'that host'} ended.`;

@@ -397,6 +397,25 @@ test('K5: a remote desktop request refused 403 expired drops the local copy and 
     assert.deepEqual(signInScreens, [], 'never the keyboard sign-in screen');
 });
 
+test('K5 R1 t3: a keyboard desktop refused 403 expired says the token line, never the sign-in screen', async () => {
+    const mg = await openDesktop({ held: TOKEN_SESSION });
+    mg.cleanup?.();
+    document.body.innerHTML = '<div id="mg3"></div>';
+    window.fetch = globalThis.fetch = async (url) => {
+        apiCalls.push(['fetch', url]);
+        return { ok: false, status: 403, statusText: '403', json: async () => ({ error: 'Token expired', reason: 'expired' }) };
+    };
+    alerts.length = 0;
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'x' } };
+    const mg3 = new ContainerMinigame(document.getElementById('mg3'), { title: 'Hot desk PC', containerItem: item, contents: null });
+    window.MinigameFramework.currentMinigame = mg3;
+    signInScreens.length = 0;
+    await mg3.init();
+    assert.equal(sessions.has('hot_desk'), false, 'the copy is dropped');
+    assert.deepEqual(alerts.at(-1).slice(0, 2), ['HB-FIN-02 sign-in token has expired.', 'info']);
+    assert.deepEqual(signInScreens, [], 'never the keyboard sign-in screen');
+});
+
 test('K5: the taskbar token line rounds as remote-host-text.js tokenMinutesLeft does, and an unknown time reads plainly', async () => {
     const { tokenSessionLine, credentialSessionLine, credentialLineHtml, refreshTokenLines } = await imp('utils/pc-taskbar.js');
     const text = await imp('utils/remote-host-text.js');
