@@ -1,0 +1,13 @@
+{
+  "key": "4bb44d551cd70aa4c039e15ff9861a75",
+  "npc": "ama",
+  "text": "Pulling the box ends what ran through it. Anything you reached another way stays up. That's the bit people miss.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:47:08Z"
+}

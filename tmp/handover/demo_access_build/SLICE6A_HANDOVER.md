@@ -385,3 +385,101 @@ Line 4 played this time, where the earlier run on 7537 did not. The harness chos
 
 - Check A: the debrief panel and debrief screenshot (screen 40) are missing. Replaying needs a new game run to the debrief, which I did not do.
 - The demo_access_tour test files and the validator were not run in this pass.
+
+## Cake reload (fixed probe)
+
+Run by a Haiku agent on keyless server 127.0.0.1:3099 (worktree p-build-access, puma PID 245962 at time of run, pid file in scratch; started with `-P` because test/dummy/tmp/pids/server.pid belongs to another live server on 3098). BUNDLE_PATH=<main>/vendor/bundle, RBENV_VERSION=2.7.8. Probe: copy of tools/playtest/showcase-bc1-cake-reload.mjs at p-ol-showcase commit 5b5381664 (scratch copy, not committed). Command:
+`node <scratch>/cake/showcase-bc1-cake-reload.mjs --scenario demo_access_tour --room open_plan --cake cake --port 3099 --cases 1,2,3,4 --eaters thandiwe,yasmin --staff thandiwe,yasmin --rooms open_plan,kitchen --task t_open_session --calm 1`
+Note: `--staff` and `--calm` are read in the probe source (lines 39 to 40) but not in its header comment.
+
+Results: case 1 PASS (game 7575). Cases 2, 3 and 4 FAIL (games 7576, 7582, 7592). The first run was killed by an outer 590 s timeout during case 3 (exit 124); cases 3 and 4 were rerun separately (output scratch cake34.txt).
+
+Cake persistence across reload: case 1 (held) kept in inventory; case 2 (down, untouched) kept at the same place in reception (160,247) and servings 2; case 3 (one slice gone) was not measured because the cake had never been eaten (see below); case 4 not measured for the same reason.
+
+Staff eating after reload: no NPC ever walked to the cake in any case (walked:false, ate:false for thandiwe and yasmin). Cause in the probe: `drop()` runs before `whereAll()` enters the target room, so the cake is dropped in the start room (reception), which open-plan staff never see. Every failing case has it in reception.
+
+player_state growth: NOT measured. The probe does not record it, and no GET endpoint returns player_state (routes.rb has no state route; show renders HTML). Needs a before and after snapshot added to the probe or a read-only rails runner query.
+
+22 s wait: did not hang in this run. Each case printed "wait 22s (before reload)" and continued. Not reproduced.
+
+Key output (verbatim):
+```
+case 1: game 7575
+  wait 22s (before reload)
+  case 1: PASS {"pass":true,"before":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"after":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"]}
+case 2: game 7576
+  wait 22s (before reload)
+  case 2: FAIL {"pass":false,"placed":true,"kept":true,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake"],"before":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"]}
+case 3: game 7582
+  wait 22s (before reload)
+  case 3: FAIL {"pass":false,"first":{"npc":"thandiwe","walked":false,"ate":false},"kept":false,"second":{"npc":"yasmin","walked":false,"ate":false},"gone":false,"finishedEvent":false,"task":"active","before":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"mid":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception"],"servings":2,"magnet":true,"magnetServings":2},"after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2}
+case 4: game 7592
+  wait 22s (before reload)
+  case 4: FAIL {"pass":false,"gone":false,"finishedEvent":false,"taskBefore":"active","taskAfter":"active","after":{"found":[{"room":"reception","x":160,"y":247,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2}}
+
+BC1 demo_access_tour
+| Case | Game | Result |
+|---|---|---|
+| 3 | 7582 | FAIL |
+| 4 | 7592 | FAIL |
+```
+
+
+## Cake reload (probe a8d7caae8)
+
+Probe: `tools/playtest/showcase-bc1-cake-reload.mjs` at a8d7caae8 (scratch copy). Re-run at d3fadda9d (staff held again right after reload; the only diff). Size reader: `player-state-size.rb` at a8d7caae8, read-only (`Game.find`, `to_json`); copied into this worktree for the run, moved to `tmp/delete/`, not committed. Server: keyless, :3099, started with `BUNDLE_PATH=<main>/vendor/bundle RBENV_VERSION=2.7.8`, stopped by PID 506349 afterwards. Args: `--scenario demo_access_tour --room open_plan --cake cake --port 3099 --eaters thandiwe,yasmin --staff thandiwe,yasmin --rooms open_plan,kitchen --task t_open_session --calm 1` (wait 22 s, grow 2048 by default). Result files: `tmp/bc1/demo_access_tour-case<N>-game<id>.json`.
+
+| Probe | Case | Game | Result | Servings before / after reload | Cake before / after reload | Staff ate it | player_state bytes | Growth per key |
+|---|---|---|---|---|---|---|---|---|
+| a8d7caae8 | 1 | 7597 | PASS | 2 / 2 | in inventory / in inventory | no | 4493 -> 4829 (+336) | notes +335, syncWrites +1 |
+| a8d7caae8 | 2 | 7600 | FAIL | 0 / 0 | dropped in open_plan, then none (no room object, no magnet) / none | not recorded; both staff walked to the magnet and left their posts; servings fell 2 -> 0 during the drop and settle wait | 4471 -> 4935 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+| a8d7caae8 | 3 | 7606 | FAIL | 2 / 0 (one visit took it from 2 to 0) | open_plan, then none | Thandiwe (walked and ate); Yasmin did not walk | 4471 -> 4935 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+| d3fadda9d | 2 | 7612 | FAIL | 0 / 0 | dropped in open_plan, then none | not recorded; both staff saw the magnet and left their posts before the reload | 4471 -> 4935 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+| d3fadda9d | 3 | 7617 | FAIL | 2 / 0 (Thandiwe ate it in one visit, 2 -> 0; magnet kept at 0 servings until the reload) | open_plan, then none | Thandiwe (walked and ate); Yasmin did not walk | 4593 -> 5057 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+
+Findings:
+- Case 1 passes on a8d7caae8. The cake stays in the inventory across the reload and no one eats it.
+- Cases 2 and 3 fail before the reload and do not test what they were written to test. In both probe commits the cake's servings are already 0 at the reload point. The loss happens between the drop and the reload (the 22 s settle), so the d3fadda9d hold after reload does not change the result. Its effect on the reload is not measured here.
+- The probe assumes one slice per visit. In this build a visit takes the whole cake (2 -> 0), so case 3's "kept, one fewer serving" check cannot pass as written.
+- `calm()` sets hunger and social to 100 for the listed staff before the drop. Both staff still walked to the cake, so the cause is not explained here.
+- player_state growth: each reload adds 335 bytes to `notes` (one Mission Brief entry). Case 2 and 3 runs also add 126 bytes to `syncWrites` and 3 to `globalVariables`. Every run stays under the 2048-byte limit. Growth in `syncWrites` is not reload-specific and was not checked further.
+
+Key output (verbatim, from `<scratch>/cake3.txt`; the d3fadda9d case 3 run is in the same file):
+```
+=== CASE 1 19:24:57
+case 1: game 7597
+  wait 22s (before reload)
+  player_state 4493 -> 4829 bytes (+336) {"notes":335,"syncWrites":1}
+  case 1: PASS {"pass":true,"before":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"after":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"],"playerState":{"before":4493,"after":4829,"grew":336,"growKeys":{"notes":335,"syncWrites":1},"ok":true}}
+| Case | Game | Result | player_state bytes |
+| 1 | 7597 | PASS | 4493 -> 4829 |
+=== CASE 2 19:26:26
+case 2: game 7600
+  wait 22s (before reload)
+  player_state 4471 -> 4935 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 2: FAIL {"pass":false,"placed":false,"kept":false,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake"],"before":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"after":{"found":[],"inv":false,"loaded":["reception"],"servings":0,"magnet":false},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"],"playerState":{"before":4471,"after":4935,"grew":464,"growKeys":{"notes":335,"syncWrites":126,"globalVariables":3},"ok":true}}
+| Case | Game | Result | player_state bytes |
+| 2 | 7600 | FAIL | 4471 -> 4935 |
+=== CASE 3 19:33:31
+case 3: game 7606
+  wait 22s (before reload)
+  player_state 4471 -> 4935 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 3: FAIL {"pass":false,"first":{"npc":"thandiwe","walked":true,"ate":true},"kept":false,"second":{"npc":"yasmin","walked":false,"ate":false},"gone":true,"finishedEvent":false,"task":"active","before":{"found":[{"room":"open_plan","x":32,"y":23,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"mid":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"after":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"],
+| Case | Game | Result | player_state bytes |
+| 3 | 7606 | FAIL | 4471 -> 4935 |
+=== d3fadda9d CASE 2 19:40:35
+case 2: game 7612
+  wait 22s (before reload)
+  player_state 4471 -> 4935 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 2: FAIL {"pass":false,"placed":false,"kept":false,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake","npc_saw_magnet:thandiwe","npc_left_post:thandiwe","global_variable_changed:thandiwe_laptop_screen_locked","global_variable_changed:thandiwe_laptop_owner_away","workstation_owner_left:thandiwe_laptop","npc_stood","npc_saw_magnet:yasmin","npc_left_post:yasmin","global_variable_changed:yasmin_pc_screen_locked","global_variable_changed:yasmin_pc_owner_away","workstation_owner_left:yasmin_pc","workstation_screen_changed:yasmin_pc","workstation_lock_heard:yasmin_pc","npc_stood"],"before":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":fal
+| Case | Game | Result | player_state bytes |
+| 2 | 7612 | FAIL | 4471 -> 4935 |
+=== d3fadda9d CASE 3 19:47:38
+case 3: game 7617
+  wait 22s (before reload)
+  player_state 4593 -> 5057 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 3: FAIL {"pass":false,"first":{"npc":"thandiwe","walked":true,"ate":true},"kept":false,"second":{"npc":"yasmin","walked":false,"ate":false},"gone":true,"finishedEvent":false,"task":"active","before":{"found":[{"room":"open_plan","x":40,"y":23,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"mid":{"found":[{"room":"open_plan","x":40,"y":23,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":true,"magnetServings":0},"after":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"events":[],"errs":["console: Failed to load resource: net::ERR_FAILED","console: Failed to load re
+| Case | Game | Result | player_state bytes |
+| 3 | 7617 | FAIL | 4593 -> 5057 |
+exit=1
+```
