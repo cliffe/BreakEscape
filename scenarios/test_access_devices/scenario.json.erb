@@ -9,6 +9,9 @@
 
   "social": { "captures": { "revealSecret": true } },
 
+  <%# H4: lighting on so the planted rogue AP's LED emitter (room lighting.emitters) can be seen and measured. %>
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
   "networks": {
     <%# B1 (drop box, patch panel). office_lan is the data VLAN behind network_port and
         secured_port; lw_voice and lw_guest are the wrong VLANs behind voice_port and guest_port. %>
