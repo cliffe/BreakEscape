@@ -52,3 +52,19 @@ The user answered D117: all seven plan recommendations accepted. The build alrea
 | m3 four pair uses, not five | Fifth use measured in the next live proof |
 | m4 bark shows as a toast anywhere, plan said "heard where in range" | Accepted: engine behaviour for barks; the plan's wording was loose. A toast anywhere is right for a site-wide alarm |
 | m5 cooler and kettle had no `observations` | Fixed: one plain line each (text only, not spoken) |
+
+## Kettle fixes (commit after f929c6a42)
+
+### Problem 1: second user wedges on the way to the kettle
+
+Cause. The kettle `useFrom` `{ dx: 0, dy: 2 }` put the first user at (208, 372), and `besideCell` tries the east side first, so the second user was sent to (240, 372). She comes from the reception doorway in the west, so she had to walk past the first user along the one free strip (y 352 to 408 between the counter and the desks). Ibrahim's held body plus the avoid margin closes that strip, so she stalled at about (188, 373), `walk_stuck`, `job_failed` (timeout), walked home. Forced trips paired because both left together and the `_sideBlocker` swap applies while both are still walking; the natural break sends Ibrahim first, so he has already arrived and no swap runs.
+
+Change (data only, `scenario.json.erb`, `ops_kettle` affordance): `useFrom` `{ dx: 0, dy: 2 }` becomes `{ dx: 1.5, dy: 2 }`. The first user now stands at about (256, 372), whose east neighbour at x 288 is the room's east wall (not walkable). `besideCell` skips east and takes the west side, about (221, 372), on the doorway side, so neither user passes the other. Cells stay in the open strip: clear of the north door lane (x 32 to 64), 150 px from Vance's tile (160, 480), 17 and 53 px east of the kettle sprite (203, 300).
+
+Evidence (fresh game each, natural room-return break, no `needs.set`, 20 fps fixed steps, port 3097). Nine of nine first trips paired, no `walk_stuck`, `walk_rerouted`, `job_failed` or `pair_side_swap`. Using cells: Ibrahim x 255.9 to 257.0, Joanne x 219.3 to 225.3, both y 372. Overlap (`npc_use_started` of the later user to the first `npc_used`): 23.75 s (7898), 19.5 s (7899), 23.75 s (7900), 23.75 s (7904), 23.75 s (7905), 19.25 s (7906); games 7891, 7892, 7893 paired too (first batch, overlap not recorded). Each pair played its first exchange. Earlier failures were 4 of 6 first trips.
+
+### Problem 2: newcomers walk to the kettle while Vance's chat is open
+
+Cause: not a scenario or engine fault. Fresh game 7919 (no `needs.set`): caffeine 76.6 and 79.6 at the start, 76.0 and 79.0 at the clone (clock 30 s); `ops_kettle_off` went false at the clone and both newcomers stayed `idle` with no job for the following 14 s of sampling, chat still open. The immediate walks seen in LIVE_PROOF_2 routes (b) and (c) came from that probe's own `needs.set` forcing caffeine to 5 before the card, so the kettle opening made them due at once. No change made. The B2 break (`room_entered:operations_office` from elsewhere) is what brings the pair on a natural run.
+
+Checks after the edit: validator 0 errors, 33 warnings; `lock_key_diff.rb` vs `baseline_locks.json` empty (`dungeon_graph.html` and `.md` reverted); `--office-summary` section identical to `v1_summary_build.txt`; object positions identical before and after (only the kettle `useFrom` line differs; a render diff of every room object's name, type and position, HEAD~1 against now). Games: 7886 (grid dump), 7891 to 7893, 7898 to 7900, 7904 to 7906, 7919 (problem 2; an earlier probe game with a stalled script is not reported). Scripts (scratchpad, not committed): `fx_trip.mjs`, `fx_p2.mjs`, `fx_grid.mjs`.
