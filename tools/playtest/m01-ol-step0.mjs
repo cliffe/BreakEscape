@@ -13,7 +13,7 @@ for (const round of [1, 2]) {
   const r = await ev(h, () => window.__test.interact('fatima_begum'));
   log(`interact #${round}`, { ok: r?.ok, reason: r?.reason });
   await h.t(1500);
-  log(`conversation #${round}`, await converse(h, 'Let her get on'));
+  log(`conversation #${round}`, await converse(h, "Don't let me keep you"));
   await h.t(800);
   log(`after #${round}`, await ev(h, () => { const s = window.__test.getState(); return { activeMinigame: s.activeMinigame || null, blockingUi: s.blockingUi || null, prompt: !!document.querySelector('.interaction-prompt') }; }));
   await h.page.screenshot({ path: `tmp/m01-step0-after${round}.png` });

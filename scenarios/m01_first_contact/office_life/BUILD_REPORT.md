@@ -133,4 +133,22 @@ Applied: M1, M2, m2, m3 (and R1 n7), m4, n1, n3. Not applied: m1 (new Maya reply
 - Validator: 0 errors, 26 warnings (unchanged). Lock and key diff against baseline_locks.json: empty.
 - V6 keyless: 18 office-life clips, 18 uncached, 589 characters (was 621).
 - scripts/ink_runtime_check/maya_routes.js: all route checks passed.
-- bin/test-js: 748 files passed, 0 failed.
+- bin/test-js: 748 files passed, 0 failed before the main merge; 751 passed, 0 failed after it (R2 run, read to the last line).
+
+## R2 fixes
+
+Review: BUILD_REVIEW_R2.md. Keyless server on :3094 (puma 2279413, left running), headless, setFPS(20) with fixed steps on, no /tts requests, no game row edited. Games made by new-game.rb in this run: 7238 (cooler faces), 7239 and 7240 (talk facing), 7244, 7251 to 7254 (Maya reopen; 7254 carries the passing run; earlier ones were harness corrections).
+
+- **m1 Graham facePlayerDistance 96 to 48** (`scenario.json.erb:1354`). Proof: `tools/playtest/m01-ol-cooler-face.mjs` on game 7238, now printing the distance to the player. Graham used the cooler from the beside cell with the player 2.5 tiles away and held `pose_drink_west` (towards the cooler) for the whole use, no turn to the player. Fatima used `pose_use_south` at the cooler, 1.96 tiles from the player. One thing noted, not changed: Fatima's last sampled frames showed `pose_drink_south` then `pose_drink_east` while the player did not move, which looks like her side-swap with Graham, not a turn to the player.
+- **n1 talk turns them** (`tools/playtest/m01-ol-talk-face.mjs`, games 7239 and 7240). Seated Fatima (chair faces east): player placed south, chat open, frame `breathing-idle_south`. Seated Graham (chair faces north): player south-west, `idle-down-left`; player south, `idle-down`. At the cooler, mid-use: Fatima `pose_use_south` to `idle-up-left` with the player north-west; Graham `pose_use_south` to `idle-up-right` with the player north-east (and `pose_drink_south-west` to `idle-up-left` in the first run). Walking up from the east, Fatima already faced east, so that case proves nothing and the placed-south case is the proof. After the chat closes, the drink pose keeps the direction of the player (`pose_drink_north-east`), so for a moment the person drinks facing where the player stood; it clears when the use ends.
+- **n2 PLAN.md**: :20 choice text now `[Don't let me keep you.]` with the old text noted as reworded; :54 says the key landed with the main merge; :151 says no render is needed because the plain hide fires first.
+- **n3 baselines**: `v1_summary_base.txt` is now the summary block only (9 lines, 7 NPCs) and `positions_base.txt` has 75 rows, both rendered from base commit 9baab9c32 by the skill recipe.
+- **n4**: `m01-ol-step0.mjs:16` picks `Don't let me keep you`.
+- **n5 Maya reopen at the hub exit line** (`tools/playtest/m01-ol-maya-reopen.mjs`, game 7254). Chat run to the hub, "I need to keep investigating" picked, closed while the "Be careful" line was showing. Maya left her desk (`goto_target`); the player then went to the main office (maya_away true) while she was at the cooler route (5.9, 7.6). Reopen: first box "Is it safe to talk?" with one choice, "Not here. I'll come to your office.", no "Be careful" line above it, console shows the saved state restored, maya_away synced true and the hub re-entered. Harness note: `__test.interact` walks the player to the NPC, so talking while she is still in her office puts the player in her room and clears maya_away; the earlier runs (7251, 7252, 7253) did that and showed the hub, which was the probe's fault, not the ink's. The probe now waits until she is well outside her office and the player is in another room.
+- **n6**: line 136 above updated.
+
+### Checks, R2 fixes
+- Validator: 0 errors, 26 warnings. Dungeon graph files unchanged.
+- Lock and key diff against baseline_locks.json: empty.
+- V6 keyless: 18 office-life clips (589 characters); the rake printed all 18 as cached this time, the R2 review saw them uncached.
+- bin/test-js (output in `tmp/testjs-r2.txt` in the worktree, read to the last line): 751 passed, 0 failed.
