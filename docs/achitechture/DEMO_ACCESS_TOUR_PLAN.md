@@ -218,7 +218,7 @@ Open plan: two desks (2.2); `thandiwe_laptop` (owner thandiwe, `lockChance: 0`);
 
 Partner's office: `julian_pc` (owner julian, `policy: partner`).
 
-Kitchen: `coffee_station` (lab pattern, capacity 1), `cake` (magnet, takeable, droppable; to CAKE_ITEM.md), Julian, the kitchen sign.
+Kitchen: `coffee_station` (lab pattern, capacity 1); `kitchen_fridge`, a container whose `contents` hold the `cake` (magnet, takeable, droppable; to CAKE_ITEM.md); Julian; the kitchen sign on the fridge.
 
 `globalVariables`: `cake_servings: 2`, and every boolean the tour sets (2.10), all false at start.
 
@@ -226,11 +226,13 @@ Kitchen: `coffee_station` (lab pattern, capacity 1), `cake` (magnet, takeable, d
 
 The cake matches CAKE_ITEM.md at b1f3a4396 (scenarios/office_life_showcase/planning/CAKE_ITEM.md on branch plan/ol-showcase). The tour designs nothing of its own:
 
-- The cake starts in the kitchen. The player carries it to the open plan and drops it; the drop is the cue (`affordance.magnet`).
-- It satisfies hunger. Hunger starts at 50 and counts at 60 or below, so it tempts Thandiwe and Yasmin at once; neither gets hungry unprompted.
+- A cake lying in a room at load is live at once, so the cake does not start on the floor or a counter: it sits in the kitchen fridge's `contents`. The player takes it out, carries it to the open plan and drops it there. The drop is the visible beat that makes it live (`affordance.magnet`).
+- It satisfies hunger. The tempt band is 30 to 60 and hunger starts at 50, so it tempts Thandiwe and Yasmin as soon as it is down; neither is urgently hungry until about 40 minutes in.
 - 2 servings, 1 each. No task, no onceOnly mapping, no overlay.
 
-The cake is a one-shot: once both have had a slice it is gone. The rota board is the lever that repeats, and it is the only lever for Yasmin after the cake:
+The cake is a best-effort cue, above all for Thandiwe. An NPC that is mid-job, or that picks its next action after the servings are gone, never walks over, and Thandiwe's caffeine and work needs can pull her away first. The tour keeps those needs (it needs her coffee run and her laptop use) and says plainly that the cake may or may not move her.
+
+The guaranteed lever for any stop that must empty a desk on cue is the presenter's needs-set mapping on the rota board. It repeats, and it is the only lever for Yasmin once the cake is gone:
 
 - Two mappings, one on Thandiwe and one on Yasmin: `"eventPattern": "object_interacted"`, `"condition": "data.objectName === 'Coffee rota'"`, `needs: { set: { caffeine: 10 } }`, `cooldown: 30000` (precedent test_needs_sims:590).
 - Reading the board sends both of them to the kitchen's coffee station. Capacity 1 means one queues behind the other, which gives the presenter time at both desks.
@@ -252,8 +254,8 @@ The cake is a one-shot: once both have had a slice it is gone. The rota board is
 | 9 | Lorna's badge | Talk to Lorna; copy her card with the cloner from the conversation. The clone choice is sticky (`+`), so it is still there if the player first talks to her without the cloner. | S |
 | 10 | Comms cupboard | The copy opens it (role facilities). Full route: the managed port refuses the box; the patch panel's spare port gives only guest. | S (door only) |
 | 11 | Thandiwe at her desk | Click her laptop while she sits: `pc_in_use`. | S |
-| 12 | The open session | Drop the cake in the open plan, read the rota board, or wait. She leaves; her laptop is still signed in. She returns, sits, and the player's session ends. Optional task. | S |
-| 13 | Yasmin | While both are away (cake or rota board), click Yasmin's PC: she padlocked it, but her note gets the player back in. | |
+| 12 | The open session | Read the rota board (the sure way), drop the cake in the open plan (best-effort), or wait. She leaves; her laptop is still signed in. She returns, sits, and the player's session ends. Optional task. | S |
+| 13 | Yasmin | While both are away (rota board, or the cake if it worked), click Yasmin's PC: she padlocked it, but her note gets the player back in. | |
 | 14 | Front desk USB | Sign in at reception_pc's keyboard again. The stick is refused at the hub (policy line). The injector at the implant socket gives a foothold through reception_pc. | |
 | 15 | Rogue AP | Hide the rogue AP in the plant; clone Staff Wi-Fi from its console. The tour then nudges Thandiwe to check her email; her laptop joins the twin and the key is captured. | |
 | 16 | Staff Wi-Fi | Read the key on the capture tablet; join Staff Wi-Fi; compare with the open guest network. | |
@@ -356,7 +358,7 @@ Timed texts, on `ama_phone`, each an eventMapping with `sendTimedMessage: { dela
 ### 2.11 Signs and hints
 
 - S1 meeting room door: "Booked: Fenlow Managed IT, all day."
-- S2 kitchen, by the cake: "Cake! Take it through and share it round. (Or just wait. Someone always comes in for coffee.)"
+- S2 kitchen, on the fridge: "Cake inside! Take it through and share it round. (Or just wait. Someone always comes in for coffee.)"
 - S3 rota board: "Coffee rota. Whoever's name is up makes the next round."
 - S4 guest card: "Guest Wi-Fi: MerrinSallow-Guest. No password, just agree to the terms."
 - S5 partner door `lockedHint`: "Julian's office. His card only."
@@ -433,7 +435,7 @@ Hard-enforced (the client cannot fake these):
 Best-effort (client side, by design):
 
 - The USB stick refusal at the hub: plantRefusal grants nothing (interactions.js:1015-1043).
-- Office-life timing: Thandiwe and Yasmin leaving their desks, the cake draw, the rota board's and the rogue AP nudge's `needs.set`, `pc_in_use`. No required task depends on any of it.
+- Office-life timing: Thandiwe and Yasmin leaving their desks, the cake draw (a best-effort cue: an NPC mid-job or choosing after the servings are gone never walks over), the rota board's and the rogue AP nudge's `needs.set`, `pc_in_use`. No required task depends on any of it.
 - Task completion from client eventMappings (t_copy_badge, t_implant, t_capture_key, t_unplug): custom tasks pass on the server (game.rb:5203-5204). The events behind them are server answers (a recorded clone, a granted implant, a served capture, an unplug), so a forged completion gains the player nothing a server check guards. Two of them are required (t_copy_badge, t_unplug); they stay best-effort and the demo says so.
 - Phone texts, "Where next?" and the route choice.
 - There is no tailgating in the tour.
@@ -550,6 +552,7 @@ A scripted playtest (playtest-scenario skill, window.__test bridge) of each rout
 - C2: room_aw_merrin_sallow has clear floor for two desks square to the walls, away from the four doorways and their approach cells. If it does not, seat Thandiwe and Yasmin at opposite ends of the conference table (laptop and PC on the table) and say so in the run sheet.
 - C3: the reception spots chosen for reception_pc and the two plants sit clear of the map's own pc8 and planters.
 - C4: CAKE_ITEM.md is at b1f3a4396. Before slice 4 builds the cake, diff the spec against b1f3a4396 and take any changed numbers or fields; the rota board covers both NPCs either way.
+- C6: a magnet item inside a container's `contents` is not live until the player drops it. If it is, the cake starts in the player's hands from Julian (a `give_item` in his ink) instead, still dropped in the open plan.
 - C5: a policy with no `autoLockMin` never auto-locks on the client or the server (npc_frustration.rb:281-300 reads it).
 
 ## 5. Build slices
@@ -559,7 +562,7 @@ Each slice is one builder's work. Each ends with the validator clean, the corpus
 1. **Skeleton and rooms.** Seven rooms, doors, locks (keypad, three RFID), sign-in PCs as plain objects, the cast placed static with art fields, `player_phone`, signs. Room dressing with the mission-room-dressing skill: the two open-plan desks, the kitchen's coffee station, the kit table, the rota board and the signs, all square to the walls; reception objects on clear spots. Checks C1, C2, C3. Proves: grid, door corners, lock types, art keys; corpus tests pick the scenario up.
 2. **Access, kit and networks.** Accounts and creds for every NPC (2.4); visitor card, `rfid_cloner`, `kit_dropbox`, `meeting_jack`; office_lan, server_lan, guest; the APs; the shares; the policies (C5); reception_pc, yasmin_pc, julian_pc, door_controller with owners, `habits.writesDown` and contents; the credentials (facilities.txt, julian.rdp with its `onPickup`); Lorna's card and a minimal ink knot with the sticky `#clone_keycard` choice. Write demo_access_tour_test.rb with the secrets, access, Finance share and both unplug cases. Proves on the server: stops 2 to 10 and 17.
 3. **Devices and the capture.** `kit_injector`, `demo_stick`, `kit_rogue_ap`, `capture_tablet`; the USB hub and implant socket; the managed port and patch panel; the rogue AP console and plant; `revealSecret`; a bare `ama_phone` in reception's `npcs` (no ink yet) carrying only the capture mapping. Extend the Rails test with the implant, port, capture, Staff and guest join cases. Proves on the server: stops 10 (full), 14, 15 and 16, with the capture driven as access_devices_rogue_ap_test.rb drives it.
-4. **Office life.** Thandiwe's and Yasmin's needs (2.4), the coffee station, both rota board mappings, the cake to CAKE_ITEM.md (C4), `cake_servings`, the rogue AP work nudge. Add the scenario to validator-office-life.test.mjs:442. Proves, in a scripted browser walk of those stops: 11, 12, 13 and the stop 15 trigger (`npc_used:thandiwe_laptop` after the nudge); V2, V4, V5, V8 clean.
+4. **Office life.** Thandiwe's and Yasmin's needs (2.4), the coffee station, both rota board mappings, the cake to CAKE_ITEM.md (C4), `cake_servings`, the rogue AP work nudge. Add the scenario to validator-office-life.test.mjs:442. Check C6. Proves, in a scripted browser walk of those stops: 11, 12 and 13 on the rota board (the cake is checked as a cue, not a pass condition), and the stop 15 trigger (`npc_used:thandiwe_laptop` after the nudge); V2, V4, V5, V8 clean.
 5. **Ama, objectives and ending.** Ama's three knots and the route choice; the phone's hub (2.9); P0 to P5; the global mappings (2.10); aims and tasks with `onComplete.setGlobal`; aim_wrap's `unlockCondition` and `conclusionScreen`; the debrief with its branches; the closing card music entry. Add the scenario to the validator no-unknown-errors list. Proves: every task completes in a scripted short-route walk; the hub order; the ending order. Then npc-dialog-review on all new lines.
 6. **Proof.** Scripted walks of both routes and the no-sign-out walk (4.6); the Rails test green; the live proof and the secret-leak live proof on :3002 (4.7); optional sync payload base. Then a one-page presenter run sheet next to this plan: stop order, the one sentence to say at each stop, the expected result on screen, and the presenter notes in 2.7. After this, and only after the dialogue review, the voicing ask goes to the user.
 
