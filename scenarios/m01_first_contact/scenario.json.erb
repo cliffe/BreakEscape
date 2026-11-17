@@ -1161,7 +1161,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "m01_staff_alarmed": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "That's an accountant, Agent. Not a target. Stand down."
+                "message": "He's in finance, Agent. Nothing to do with this. Stand down."
               }
             },
             {
@@ -1320,7 +1320,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             "thirst": { "decayPerMin": 3, "urgentAt": 30, "initial": 70 }
           },
           "needsCompany": { "groups": ["vd_office_staff"] },
-          "chatter": { "cooler": ["Three interviews this afternoon. Three!", "Every CV says 'passionate' now.", "Locked my screen before I came over.", "Is it me, or is the heating on full?"] },
+          "chatter": { "cooler": ["Three interviews today. Three!", "Every CV says 'passionate' now.", "Locked my screen before I came over.", "Is it me, or is the heating on full?"] },
           "exchanges": [
             { "with": "graham_whitfield", "knot": "ex_interns",   "requireGlobal": { "fatima_ko": false, "graham_ko": false } },
             { "with": "graham_whitfield", "knot": "ex_biscuits", "requireGlobal": { "fatima_ko": false, "graham_ko": false } }
@@ -1328,7 +1328,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "eventMappings": [
             { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
               "condition": "!globalVars.fatima_ko && !globalVars.entropy_reveal_read",
-              "bark": "Morning. Mind the cables by the door." },
+              "bark": "Morning. Busy week." },
             { "eventPattern": "global_variable_changed:entropy_reveal_read", "condition": "value === true", "setVisible": false },
             { "eventPattern": "room_entered:server_room", "onceOnly": true, "condition": "globalVars.entropy_reveal_read === true", "setVisible": false },
             { "eventPattern": "room_entered:it_room", "onceOnly": true, "condition": "globalVars.entropy_reveal_read === true", "setVisible": false },
@@ -1362,7 +1362,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
             "thirst": { "decayPerMin": 3, "urgentAt": 30, "initial": 60 }
           },
           "needsCompany": { "groups": ["vd_office_staff"] },
-          "chatter": { "cooler": ["Quarter close. I dream in spreadsheets.", "Nobody reads the expenses policy.", "Thirty years and still no decent mug.", "My grandson set up my phone again."] },
+          "chatter": { "cooler": ["Quarter close. Nobody speak to me.", "Nobody reads the expenses policy.", "Thirty years and still no decent mug.", "My grandson set up my phone again."] },
           "eventMappings": [
             { "eventPattern": "room_entered:main_office_area", "onceOnly": true, "delayMs": 2000,
               "condition": "data.previousRoom !== 'reception_area' && !globalVars.graham_ko && !globalVars.entropy_reveal_read",
@@ -1386,7 +1386,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "observations": "A water cooler with a stack of paper cups beside it.",
           "affordance": {
             "satisfies": ["thirst", "social"], "restores": 70, "useSeconds": 15, "capacity": 2,
-            "useFrom": { "dx": 0, "dy": -1 }, "chatter": "cooler", "useSound": "drink_gulp"
+            "seat": "stand", "useFrom": { "dx": 0, "dy": -1 }, "chatter": "cooler", "useSound": "drink_gulp"
           },
           "offWhen": "m01_staff_alarmed"
         },

@@ -6,8 +6,8 @@ VAR heard_ex_biscuits = false
 -> start
 
 === start ===
-Fatima Begum: Sorry, I've a candidate on a video call in five minutes.
-+ [Let her get on]
+Fatima Begum: Sorry, I'm halfway through a candidate's file. #delivery: brisk, apologetic
++ [Don't let me keep you.]
     Fatima Begum: If it's the network, I only press the buttons. Nice to meet you.
     #exit_conversation
     -> DONE

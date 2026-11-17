@@ -3,8 +3,8 @@
 -> start
 
 === start ===
-Graham Whitfield: Graham, finance. If it's about expenses, I'm not in.
-+ [Leave him to his figures]
-    Graham Whitfield: Only joking. Not that I know much about computers, mind.
+Graham Whitfield: Graham, finance. If it's about expenses, I'm not in. #delivery: dry, deadpan
++ [I'll leave you to it.]
+    Graham Whitfield: Only joking. Not that I know much about computers, mind. #delivery: dry, deadpan
     #exit_conversation
     -> DONE
