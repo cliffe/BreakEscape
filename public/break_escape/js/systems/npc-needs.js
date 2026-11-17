@@ -174,6 +174,9 @@ export const TURN_BACK = Object.freeze({
     gone: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
     answered: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
     rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+    // Slice 18b-i review R1 m4: a take refused because this NPC has had its perPerson share; the
+    // cake is still there, so no "Missed it." line, and the NPC goes home
+    had_share: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
     // Access slice 9.2 A (plan 5.2): a judged use that ended with a failed verdict; parks itself
     failed: Object.freeze({ mindChanged: false, grumble: true, fallback: false, parks: true })
 });
@@ -530,7 +533,8 @@ export class NPCNeedsSystem {
             // Slice 17: need uses per object (salts a print hook's chance) and owned prints (salts the habit)
             useCounts: {},
             printCount: 0,
-            // Slice 18b-i: magnets this NPC knows of, servings it has had from each, and needs whose
+            // Slice 18b-i: magnets this NPC knows of, servings it has had from each (client-only: it
+            // resets on a reload, accepted like the needs reset to initial, review R1 m3), and needs whose
             // tempted job already turned back once for avoidance (mindChanged is cleared above urgentAt)
             knows: new Set(),
             ate: {},
@@ -3564,7 +3568,11 @@ export class NPCNeedsSystem {
             // Slice 19: a colleague at a ringing desk phone picks up (the call chosen at the claim)
             if (job.phone) { this._colleagueAnswers(s, obj); return; }
             // Slice 18b-i: a serving is taken as eating starts, so nobody eats one that is not there
-            if (job.magnet && !this._takeServing(s, job.targetId)) { this._turnBack(s, 'gone'); return; }
+            if (job.magnet && !this._takeServing(s, job.targetId)) {
+                // Selection keeps a fed NPC off the cake, so the share case is a guard; it goes home quietly
+                this._turnBack(s, (s.ate[job.targetId] || 0) >= (this._magnets.get(job.targetId)?.cfg.perPerson ?? Infinity) && this._servingsLeft(job.targetId) > 0 ? 'had_share' : 'gone');
+                return;
+            }
             job.phase = 'using';
             if (job.kind === 'visit') {
                 // Access 9.2 A (5.3): a visit's dwell; it claims nothing and pairs with nobody

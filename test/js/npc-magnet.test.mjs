@@ -171,16 +171,33 @@ test('perPerson 1 stops a second helping on every path: tempted, urgent, and a t
     assert.equal(o.globals.cake_servings, 4);
 });
 
-test('one serving taken, then held at hunger 100 and ticked on: no second take (the repeat-take report)', () => {
-    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 0.5, urgentAt: 30, initial: 50 } } } } }, { objects: [cake()], arrive: true });
+test('one serving taken, then hunger decays to urgent with no other source: still one serving, parked no_source (the repeat-take report)', () => {
+    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 30, urgentAt: 30, initial: 50 } } } } }, { objects: [cake()], arrive: true });
     o.sys.scanMagnets();
     o.know('tom');
     o.ticks(1 + useTicks(12));
     assert.equal(o.evs('serving_taken').length, 1);
-    o.sys.control('tom', { set: { hunger: 100 } });
-    o.ticks(400);
-    assert.equal(o.evs('serving_taken').length, 1);
+    o.ticks(5 * 60000 / NEEDS_TICK_MS);
+    assert.ok(o.level('tom') <= 31, `decayed to urgent (${o.level('tom')})`);
+    assert.equal(o.evs('serving_taken').length, 1, 'one slice each, even when urgent');
+    assert.ok(o.evs('parked').some(e => e.reason === 'no_source'), 'no other source: parked');
     assert.equal(o.globals.cake_servings, 1);
+});
+
+test('an urgent NPC that has had its slice falls back to another source (the fridge), with no second serving', () => {
+    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 30, urgentAt: 30, initial: 50 } } } } }, { objects: [fridge(), cake()], arrive: true });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1 + useTicks(12));
+    assert.equal(o.evs('serving_taken').length, 1);
+    const before = o.evs('using').length;
+    o.sys.control('tom', { set: { hunger: 20 } });
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'fridge', 'urgent and fed: the fridge');
+    o.ticks(useTicks(10));
+    assert.ok(o.evs('using').length > before);
+    assert.ok(o.evs('using').slice(before).every(e => e.target === 'fridge'));
+    assert.equal(o.evs('serving_taken').length, 1);
 });
 
 test('setting a need above the tempt band cancels a tempted walk already in progress; a full need is never tempted', () => {
@@ -195,6 +212,51 @@ test('setting a need above the tempt band cancels a tempted walk already in prog
     assert.equal(o.evs('serving_taken').length, 0);
     assert.equal(o.evs('using').filter(e => e.npc === 'tom').length, 0);
     assert.equal(o.sys.states.get('tom').job?.targetId === 'cake', false, 'never tempted at 100');
+});
+
+test('a set that leaves the need urgent does not cancel the walk to the magnet; a set below urgentAt still stands for an urgent walk', () => {
+    const o = office({ tom: { rec: { needs: hunger(30) } } }, { objects: [cake()], arrive: false });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    const j = o.sys.states.get('tom').job;
+    assert.equal(j?.targetId, 'cake');
+    assert.equal(j.tempted, undefined, 'an urgent walk');
+    o.sys.control('tom', { set: { hunger: 100 } });
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake', 'an urgent walk is not aborted by a set');
+    o.arriveNow('tom');
+    o.ticks(1);
+    assert.deepEqual(o.evs('serving_taken').map(e => e.npc), ['tom']);
+});
+
+test('a set inside the tempt band keeps a tempted walk going; it eats', () => {
+    const o = office({ tom: { rec: { needs: hunger(65) } } }, { objects: [cake()], arrive: false });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.tempted, true);
+    o.sys.control('tom', { set: { hunger: 62 } });
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake', 'still tempted at 62 (band 70)');
+    o.arriveNow('tom');
+    o.ticks(1);
+    assert.deepEqual(o.evs('serving_taken').map(e => e.npc), ['tom']);
+});
+
+test('a take refused for perPerson turns back quietly (had_share): no "Missed it.", no park, the cake keeps its servings', () => {
+    const chatter = { grumble_gone: ['Missed it.'] };
+    const o = office({ tom: { rec: { needs: hunger(65) } } }, { objects: [cake()], chatter, hears: () => ({ overheard: true, distance: 60 }) });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake');
+    o.sys.states.get('tom').ate.cake = 1;   // a guard case: selection never starts this job
+    o.arriveNow('tom');
+    o.ticks(1);
+    assert.deepEqual(o.evs('turned_back').map(e => [e.reason, e.grumble]), [['had_share', undefined]]);
+    assert.equal(o.sys.getState('tom').talking, null);
+    assert.equal(o.evs('parked').length, 0);
+    assert.equal(o.evs('serving_taken').length, 0);
+    assert.equal(o.globals.cake_servings, undefined);
 });
 
 test('an urgent need prefers a known magnet over a nearer usual source; an unknown one is ignored', () => {
