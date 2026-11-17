@@ -121,7 +121,7 @@ Maya Chen: The plan is to send fake emergency messages—hospital closures, bank
 Maya Chen: The panic will swamp real emergency capacity and cause deaths—delayed response, overcrowding, accidents. They've calculated it: 42 to 85 people will die in the first 24 hours.
 
 + [And they're okay with that?]
-    Maya Chen: Derek—he's the one running it—I've overhead him call it "education."
+    Maya Chen: Derek—he's the one running it—I've overheard him call it "education."
     Maya Chen: Says the deaths will teach people not to trust digital communications. He's insane. But he believes every word.
     -> hub
 + [When does it launch?]
