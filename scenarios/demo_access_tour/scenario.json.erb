@@ -2,7 +2,9 @@
 # demo_access_tour, slice 1 (DEMO_ACCESS_TOUR_PLAN.md section 5, item 1): the seven rooms, their
 # doors and locks, the cast placed static, the player's phone and the signs. Slice 2 (item 2)
 # adds accounts, the kit, the networks, the sign-in PCs' owners and contents and Lorna's card.
-# Devices, office life and the real ink come in later slices.
+# Slice 3 (item 3) adds the devices (injector, USB stick, rogue AP, capture tablet, the USB hub and
+# implant socket, the comms cupboard's ports) and the Staff Wi-Fi capture. Office life and the real
+# ink come in later slices.
 # The keypad PIN is rendered per game; it is not written anywhere else in this slice.
 server_room_pin = @random_pin
 # Staff passwords. Each is one literal, written once here and interpolated where it is shown
@@ -36,8 +38,8 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
     "infra": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" }
   },
 
-  <%# The Staff psk is @random_password, used for this psk only. Slice 3's capture mapping must
-      render @random_password again through ERB, never a pasted copy of the value. Guest has an SSID and no psk: an open network. %>
+  <%# The Staff psk is @random_password. The capture mapping on ama_phone renders @random_password
+      again in the same binding (never a pasted copy of the value). Guest has an SSID and no psk: an open network. %>
   "networks": {
     "office_lan": { "name": "Merrin & Sallow office LAN", "wifi": { "ssid": "MerrinSallow-Staff", "psk": "<%= @random_password %>" } },
     "server_lan": { "name": "Server network" },
@@ -112,7 +114,8 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
   "globalVariables": {
     "cloner_held": false,
     "seen_julian_rdp": false,
-    "has_julian_rdp": false
+    "has_julian_rdp": false,
+    "staff_twin_up": false
   },
 
   "objectives": [
@@ -228,19 +231,23 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "type": "plant",
           "id": "reception_plant_west",
           "name": "Plant by the front desk",
-          "sprite": "plant-large1",
+          "sprite": "planter_fig1",
           "position": { "x": 2.1, "y": 3.3 },
           "takeable": false,
-          "observations": "A tall plant at the end of the front desk."
+          "interactable": true,
+          "active": true,
+          "observations": "A leafy plant in a planter at the end of the front desk, thick enough to hide a small box behind the leaves."
         },
         {
           "type": "plant",
           "id": "reception_plant_east",
           "name": "Plant beside the front desk",
-          "sprite": "plant-large1",
+          "sprite": "planter_fig1",
           "position": { "x": 7.8, "y": 3.95 },
           "takeable": false,
-          "observations": "A tall plant at the other end of the front desk."
+          "interactable": true,
+          "active": true,
+          "observations": "A leafy plant in a planter at the other end of the front desk, thick enough to hide a small box behind the leaves."
         },
         {
           "type": "notes",
@@ -254,6 +261,97 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "addToNotes": false,
           "observations": "A card holder beside the meeting room door.",
           "text": "Booked: Fenlow Managed IT, all day."
+        },
+        <%# Two USB sockets beside the front-desk PC (an item plant cannot sit on the PC itself). The
+            hub takes the stick only: the desk policy blocks storage, so the engine's own refusal line
+            shows. The socket takes the injector, which presents as a keyboard and gets past. %>
+        {
+          "type": "usb_bowl1",
+          "id": "usb_hub",
+          "name": "USB hub",
+          "position": { "x": 4.85, "y": 4.05 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "policy": "desk",
+          "requiresItem": "demo_stick",
+          "requiresItemHint": "You need a USB stick to plug in here.",
+          "observations": "A USB hub on the front desk, wired to Delphine's PC."
+        },
+        {
+          "type": "pc",
+          "id": "implant_socket",
+          "name": "USB socket by the front desk PC",
+          "sprite": "usb_bowl1",
+          "position": { "x": 5.35, "y": 4.05 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "requiresItem": "kit_injector",
+          "requiresItemHint": "You would need a device to plug in here.",
+          "observations": "A spare USB socket on the front desk. Useful only while you are signed in at the front desk PC.",
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "text": "Plug the keystroke injector into the front desk PC? It only types into a PC you are signed in at, and it is used up once it runs.",
+              "confirmLabel": "Plug it in",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "grant_foothold", "pc": "reception_pc", "needsSession": true, "needsHeld": "kit_injector" }
+              ]
+            }
+          ]
+        },
+        <%# The rogue AP's console. Not placed from room data: hiddenWith ties it to kit_rogue_ap's
+            hideable, and the engine draws it only as the overlay on whichever reception plant the
+            player hid the kit in. No secret in it: the Staff key is the capture on ama_phone. %>
+        {
+          "type": "pc",
+          "id": "planted_rogue_ap",
+          "name": "Planted rogue AP",
+          "sprite": "rogue_ap_planted",
+          "hiddenWith": "kit_rogue_ap",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "wifiTwin": true,
+          "observations": "Your pocket rogue AP, tucked into the plant. Click the plant to open its console.",
+          "apScan": [
+            {
+              "ssid": "MerrinSallow-Staff", "security": "WPA2", "signal": 4, "clients": 3, "inScope": true,
+              "cloneGlobals": { "staff_twin_up": true },
+              "cloneLog": "Copy of MerrinSallow-Staff up (open), showing the key page. Waiting for someone to pick the copy.",
+              "knownClients": [ { "npcId": "thandiwe", "label": "Thandiwe's laptop" } ]
+            },
+            {
+              "ssid": "MerrinSallow-Guest", "security": "WPA2", "signal": 3, "clients": 1, "inScope": true,
+              "cloneGlobals": { "staff_twin_up": false },
+              "cloneLog": "Copy of MerrinSallow-Guest up (open). It harvests nothing worth having: the guest network has no key, and staff laptops hold the staff network, not this one."
+            },
+            {
+              "ssid": "BT-Hub-4F2A", "security": "WPA2", "signal": 2, "clients": 2, "inScope": false,
+              "refusal": "Out of scope. BT-Hub-4F2A belongs to a neighbour, not Merrin & Sallow."
+            },
+            {
+              "ssid": "Corrigan-Dental", "security": "WPA2", "signal": 1, "clients": 1, "inScope": false,
+              "refusal": "Out of scope. Corrigan Dental is next door, not the client."
+            }
+          ],
+          "apPortal": {
+            "templates": [
+              {
+                "id": "wifi_key", "label": "Key page",
+                "page": {
+                  "brands": [ { "id": "merrin", "name": "Merrin & Sallow", "look": "generic", "realDomain": "merrinsallow.example", "domains": [ { "id": "d_wifi", "domain": "wifi-login.example", "trick": "unrelated", "tier": 0 } ] } ],
+                  "purposes": [ { "id": "wifi", "label": "Reconnect", "button": "Reconnect" } ],
+                  "wordings": [ { "id": "w_key", "match": true, "text": "MerrinSallow-Staff: the router has been updated. Enter the Wi-Fi key to reconnect." } ],
+                  "fields": ["password"],
+                  "fieldLabels": { "password": "Wi-Fi key" },
+                  "choices": { "brand": "merrin", "purpose": "wifi", "domainId": "d_wifi", "wording": "w_key", "fields": ["password"], "logo": true, "padlock": false }
+                }
+              }
+            ]
+          }
         }
       ],
       "npcs": [
@@ -282,7 +380,19 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "livePreview": true,
           "eventMappings": [
             <%# The event carries the item's type; the cloner is the tour's only rfid_cloner. %>
-            { "eventPattern": "item_picked_up:rfid_cloner", "onceOnly": true, "setGlobal": { "cloner_held": true } }
+            { "eventPattern": "item_picked_up:rfid_cloner", "onceOnly": true, "setGlobal": { "cloner_held": true } },
+            <%# Stop 15: Thandiwe's laptop picks the copy and the key page takes the Staff key. The
+                secret is the psk's own render (@random_password, same binding as networks.office_lan),
+                never a pasted copy. No captureProof on Thandiwe: the address is an SSID, so this
+                mapping's own proof counts. Slice 5 adds completeTask t_capture_key. %>
+            { "eventPattern": "npc_used:thandiwe_laptop", "condition": "globalVars.staff_twin_up === true", "onceOnly": true,
+              "addCapture": {
+                "targetId": "staff_wifi_key", "kind": "credential", "roleLabel": "Merrin & Sallow, reception",
+                "host": "MerrinSallow-Staff, rogue access point", "address": "MerrinSallow-Staff",
+                "secret": "<%= @random_password %>",
+                "note": "Thandiwe's laptop picked the copy and the key page took the Staff key (proof: planted).",
+                "proof": { "planted": "kit_rogue_ap" }
+              } }
           ]
         },
         {
@@ -347,6 +457,7 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "lockType": "login",
           "lockChance": 0,
           "access": { "people": ["thandiwe"] },
+          "affordance": { "satisfies": "work", "restores": 60, "useSeconds": 3, "useFrom": { "dx": 0, "dy": 1 } },
           "observations": "Thandiwe's laptop on her desk."
         },
         {
@@ -638,6 +749,59 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
           "jackConfirm": "Plug the network drop box into this live port? It joins the office network.",
           "requiresItemHint": "You need the network drop box in hand to plant it on the port.",
           "observations": "A grey wall port box low on the meeting room wall. It is live."
+        },
+        <%# The rest of the kit, along the same table row (slice 3). %>
+        {
+          "type": "usb",
+          "id": "kit_injector",
+          "name": "Keystroke injector",
+          "sprite": "usb_bowl1",
+          "position": { "x": 3.85, "y": 3.9375, "elevation": 30 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "usbClass": "hid",
+          "observations": "Looks like a memory stick, but it presents itself to a PC as a keyboard and types on its own. It needs a desk you are already signed in at."
+        },
+        {
+          "type": "usb",
+          "id": "demo_stick",
+          "name": "USB stick",
+          "sprite": "usb_bowl1",
+          "position": { "x": 4.85, "y": 3.9375, "elevation": 30 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "usbClass": "storage",
+          "observations": "A plain USB memory stick (storage)."
+        },
+        {
+          "type": "rogue_ap",
+          "id": "kit_rogue_ap",
+          "name": "Pocket rogue AP",
+          "sprite": "rogue_ap",
+          "position": { "x": 5.85, "y": 3.9375, "elevation": 30 },
+          "takeable": true,
+          "droppable": false,
+          "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Hide it in one of the plants in reception, then set it up from its console.",
+          "hideable": {
+            "rooms": ["reception"],
+            "spots": "plants",
+            "exclude": [],
+            "device": "planted_rogue_ap",
+            "overlay": { "sprite": "rogue_ap_tucked" },
+            "confirm": "Hide the pocket rogue AP in this plant?"
+          }
+        },
+        {
+          "type": "page-builder",
+          "id": "capture_tablet",
+          "name": "Harvested Credentials",
+          "sprite": "tablet",
+          "position": { "x": 6.7, "y": 3.9375, "elevation": 30 },
+          "takeable": true,
+          "observations": "Your capture tablet: the keys and passwords the test has recorded, each shown in full.",
+          "minigameData": { "view": "captures", "landingPageId": "cm_captures" }
         }
       ]
     },
@@ -649,7 +813,59 @@ julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
       "locked": true,
       "lockType": "rfid",
       "access": { "roles": ["facilities", "it"] },
-      "objects": []
+      "objects": [
+        <%# Fixture layout (test_access_devices comms): the panel on the back wall, the managed port
+            beside it. guest_vlan_port is reached only through the panel (panelOf: no sprite). %>
+        {
+          "type": "notes",
+          "id": "patch_panel",
+          "name": "Patch panel and comms cabinet",
+          "sprite": "comms_cabinet1",
+          "position": { "x": 2, "y": 1 },
+          "takeable": false,
+          "readable": false,
+          "interactable": true,
+          "active": true,
+          "observations": "A wall patch panel, the ports labelled by desk.",
+          "panelPorts": [
+            { "port": 1, "label": "M01", "desk": "Managed uplink", "jack": "managed_port" },
+            { "port": 2, "label": "G02", "desk": "Guest meeting room", "jack": "guest_vlan_port" },
+            { "port": 3, "label": "D03", "desk": "Spare desk" }
+          ]
+        },
+        {
+          "type": "pc",
+          "id": "managed_port",
+          "name": "Managed wall network port",
+          "sprite": "hce_comms_cabinet1",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "networkJack": true,
+          "network": "office_lan",
+          "portSecurity": true,
+          "portSecurityMessage": "Port security: this device is not the one registered to this port.",
+          "jackConfirm": "Try the network drop box in this managed switch port?",
+          "requiresItemHint": "You would need the network drop box to try this port.",
+          "observations": "A wall port running to a managed switch with port security on."
+        },
+        {
+          "type": "pc",
+          "id": "guest_vlan_port",
+          "name": "Guest VLAN port",
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "networkJack": true,
+          "network": "guest",
+          "panelOf": "patch_panel",
+          "linkName": "Drop box: guest VLAN port",
+          "jackConfirm": "Plug the network drop box into the patch panel's guest port?",
+          "requiresItemHint": "You need the network drop box in hand to plant it on the port.",
+          "observations": "A patch panel port patched through to the guest network."
+        }
+      ]
     }
   }
 }

@@ -13,10 +13,10 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
 | Story aims | 1 |
 | Total tasks | 1 (0 optional) |
 | VM flag challenges | 0 |
-| Physical locks | 4 |
+| Physical locks | 15 |
 | AND-gate convergences | 0 |
-| Rooms | 7 |
-| Puzzle graph nodes / edges | 11 / 6 |
+| Rooms | 10 |
+| Puzzle graph nodes / edges | 44 / 71 |
 | Story graph nodes / edges | 1 / 0 |
 
 ## Critical Path
@@ -43,6 +43,9 @@ Merrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT.
 | Rounded rectangle | Amber | NPC in room (Rooms & Contents only) |
 
 Edges: `-->` solid = hard dependency; `-.->` dashed = soft / narrative dependency or optional path.
+  Network edges: `-.-` link: two networks joined; crossed by a pivot, or by a signed-in desktop mapping an access-listed share.
+  Network edges: + then `pivot`: the network reached and a session at that host open the linked network.
+  Network edges: `held` / `dropped` / `session at PC`: what an implant needs.
 
 The `▶` node marks the player's starting room.
 
@@ -79,19 +82,121 @@ flowchart TD
   meeting_room("Meeting room")
   door_comms_cupboard["Comms cupboard<br/>RFID lock"]
   comms_cupboard("Comms cupboard")
-  reception("Reception")
+  lock_reception_pc["Front desk PC<br/>Sign-in"]
+  lock_thandiwe_laptop["Thandiwe's laptop<br/>Sign-in"]
+  lock_yasmin_pc["Yasmin's PC<br/>Sign-in"]
+  lock_door_controller["Door controller<br/>Sign-in"]
+  lock_julian_pc["Julian's PC<br/>Sign-in"]
+  card_fac_lorna_01{"Lorna Easton FAC card<br/>(Lorna Easton)"}
   open_plan("Open plan")
+  signin_delphine{"Delphine Arvanitis sign-in<br/>(darvanitis)"}
+  reception("Reception")
+  signin_thandiwe{"Thandiwe Moyo sign-in<br/>(tmoyo)"}
+  signin_yasmin{"Yasmin Chaudhry sign-in<br/>(ychaudhry)"}
+  signin_lorna{"Lorna Easton sign-in<br/>(leaston)"}
+  signin_julian{"Julian Sallow sign-in<br/>(jsallow)"}
   kitchen("Kitchen")
+  device_kit_dropbox{"Network drop box<br/>(rogue device)"}
+  jack_meeting_jack["Live wall network port<br/>Network jack"]
+  net_office_lan("Merrin & Sallow office LAN<br/>Network")
+  jack_managed_port["Managed wall network port<br/>Network jack<br/>(port security: refuses the device)"]
+  jack_guest_vlan_port["Guest VLAN port<br/>Network jack"]
+  net_guest("Merrin & Sallow guest network<br/>Network")
+  resource_client_letters[["Client-Letters<br/>(file share)"]]
+  resource_finance_share[["Finance<br/>(file share)"]]
+  net_server_lan("Server network<br/>Network")
+  wifiap_staff_ap["MerrinSallow-Staff access point<br/>Wi-Fi access point"]
+  wifikey_office_lan{"Wi-Fi key<br/>(MerrinSallow-Staff)"}
+  wifiap_guest_ap["MerrinSallow-Guest access point<br/>Wi-Fi access point"]
+  implant_reception_pc["Implant: reception_pc<br/>(implant)"]
+  device_kit_injector{"Keystroke injector<br/>(implant device)"}
+  pivot_julian_pc((" + "))
+  pivot_reception_pc((" + "))
+  pivot_thandiwe_laptop((" + "))
+  pivot_yasmin_pc((" + "))
+  pivot_door_controller((" + "))
+  cred_julian_rdp{"Julian Sallow saved connection<br/>(jsallow)"}
+  cred_src_julian_rdp_file{"julian.rdp"}
+  cred_lorna_door_pw{"Lorna Easton password<br/>(leaston)"}
 
   door_server_room --> server_room
   door_partner_office --> partner_office
   door_meeting_room --> meeting_room
   door_comms_cupboard --> comms_cupboard
+  reception --> lock_reception_pc
+  open_plan --> lock_thandiwe_laptop
+  open_plan --> lock_yasmin_pc
+  partner_office --> lock_julian_pc
+  open_plan --> card_fac_lorna_01
+  card_fac_lorna_01 --> door_comms_cupboard
+  reception --> signin_delphine
+  signin_delphine --> lock_reception_pc
+  open_plan --> signin_thandiwe
+  signin_thandiwe --> lock_thandiwe_laptop
+  open_plan --> signin_yasmin
+  signin_yasmin --> lock_yasmin_pc
+  open_plan --> signin_lorna
+  signin_lorna --> lock_door_controller
+  kitchen --> signin_julian
+  signin_julian --> lock_julian_pc
+  reception -->|sticky note at reception_pc| signin_delphine
+  open_plan -->|sticky note at yasmin_pc| signin_yasmin
+  meeting_room --> device_kit_dropbox
+  meeting_room --> jack_meeting_jack
+  device_kit_dropbox --> jack_meeting_jack
+  jack_meeting_jack --> net_office_lan
+  comms_cupboard --> jack_managed_port
+  device_kit_dropbox --> jack_managed_port
+  comms_cupboard --> jack_guest_vlan_port
+  device_kit_dropbox --> jack_guest_vlan_port
+  jack_guest_vlan_port --> net_guest
+  net_office_lan -->|exposes| lock_julian_pc
+  net_office_lan -->|exposes| lock_reception_pc
+  net_office_lan -->|exposes| lock_thandiwe_laptop
+  net_office_lan -->|exposes| lock_yasmin_pc
+  net_office_lan -->|exposes| resource_client_letters
+  signin_yasmin --> resource_finance_share
+  signin_julian --> resource_finance_share
+  net_server_lan -->|exposes| lock_door_controller
+  net_office_lan -.-|link| net_server_lan
+  reception --> wifiap_staff_ap
+  wifiap_staff_ap --> net_office_lan
+  wifikey_office_lan --> wifiap_staff_ap
+  reception --> wifiap_guest_ap
+  wifiap_guest_ap --> net_guest
+  reception -->|at USB socket by the front desk PC| implant_reception_pc
+  meeting_room --> device_kit_injector
+  device_kit_injector -->|held| implant_reception_pc
+  lock_reception_pc -->|session at PC| implant_reception_pc
+  implant_reception_pc --> net_office_lan
+  net_office_lan --> pivot_julian_pc
+  lock_julian_pc --> pivot_julian_pc
+  pivot_julian_pc -->|pivot| net_server_lan
+  net_office_lan --> pivot_reception_pc
+  lock_reception_pc --> pivot_reception_pc
+  pivot_reception_pc -->|pivot| net_server_lan
+  net_office_lan --> pivot_thandiwe_laptop
+  lock_thandiwe_laptop --> pivot_thandiwe_laptop
+  pivot_thandiwe_laptop -->|pivot| net_server_lan
+  net_office_lan --> pivot_yasmin_pc
+  lock_yasmin_pc --> pivot_yasmin_pc
+  pivot_yasmin_pc -->|pivot| net_server_lan
+  net_server_lan --> pivot_door_controller
+  lock_door_controller --> pivot_door_controller
+  pivot_door_controller -->|pivot| net_office_lan
   reception --> open_plan
   open_plan --> kitchen
+  cred_src_julian_rdp_file --> cred_julian_rdp
+  cred_julian_rdp --> lock_julian_pc
+  lock_reception_pc --> cred_lorna_door_pw
+  cred_lorna_door_pw --> lock_door_controller
 
-  class door_server_room,door_partner_office,door_meeting_room,door_comms_cupboard lock
-  class server_room,partner_office,meeting_room,comms_cupboard,reception,open_plan,kitchen room
+  class door_server_room,door_partner_office,door_meeting_room,door_comms_cupboard,lock_reception_pc,lock_thandiwe_laptop,lock_yasmin_pc,lock_door_controller,lock_julian_pc,jack_meeting_jack,jack_managed_port,jack_guest_vlan_port,wifiap_staff_ap,wifiap_guest_ap,implant_reception_pc lock
+  class server_room,partner_office,meeting_room,comms_cupboard,open_plan,reception,kitchen,net_office_lan,net_guest,net_server_lan room
+  class card_fac_lorna_01,signin_delphine,signin_thandiwe,signin_yasmin,signin_lorna,signin_julian,device_kit_dropbox,wifikey_office_lan,device_kit_injector,cred_julian_rdp,cred_lorna_door_pw key
+  class resource_client_letters,resource_finance_share container
+  class pivot_julian_pc,pivot_reception_pc,pivot_thandiwe_laptop,pivot_yasmin_pc,pivot_door_controller gate
+  class cred_src_julian_rdp_file item
   class node_start start
 ```
 
@@ -156,21 +261,123 @@ flowchart TD
   meeting_room("Meeting room")
   door_comms_cupboard["Comms cupboard<br/>RFID lock"]
   comms_cupboard("Comms cupboard")
-  reception("Reception")
+  lock_reception_pc["Front desk PC<br/>Sign-in"]
+  lock_thandiwe_laptop["Thandiwe's laptop<br/>Sign-in"]
+  lock_yasmin_pc["Yasmin's PC<br/>Sign-in"]
+  lock_door_controller["Door controller<br/>Sign-in"]
+  lock_julian_pc["Julian's PC<br/>Sign-in"]
+  card_fac_lorna_01{"Lorna Easton FAC card<br/>(Lorna Easton)"}
   open_plan("Open plan")
+  signin_delphine{"Delphine Arvanitis sign-in<br/>(darvanitis)"}
+  reception("Reception")
+  signin_thandiwe{"Thandiwe Moyo sign-in<br/>(tmoyo)"}
+  signin_yasmin{"Yasmin Chaudhry sign-in<br/>(ychaudhry)"}
+  signin_lorna{"Lorna Easton sign-in<br/>(leaston)"}
+  signin_julian{"Julian Sallow sign-in<br/>(jsallow)"}
   kitchen("Kitchen")
+  device_kit_dropbox{"Network drop box<br/>(rogue device)"}
+  jack_meeting_jack["Live wall network port<br/>Network jack"]
+  net_office_lan("Merrin & Sallow office LAN<br/>Network")
+  jack_managed_port["Managed wall network port<br/>Network jack<br/>(port security: refuses the device)"]
+  jack_guest_vlan_port["Guest VLAN port<br/>Network jack"]
+  net_guest("Merrin & Sallow guest network<br/>Network")
+  resource_client_letters[["Client-Letters<br/>(file share)"]]
+  resource_finance_share[["Finance<br/>(file share)"]]
+  net_server_lan("Server network<br/>Network")
+  wifiap_staff_ap["MerrinSallow-Staff access point<br/>Wi-Fi access point"]
+  wifikey_office_lan{"Wi-Fi key<br/>(MerrinSallow-Staff)"}
+  wifiap_guest_ap["MerrinSallow-Guest access point<br/>Wi-Fi access point"]
+  implant_reception_pc["Implant: reception_pc<br/>(implant)"]
+  device_kit_injector{"Keystroke injector<br/>(implant device)"}
+  pivot_julian_pc((" + "))
+  pivot_reception_pc((" + "))
+  pivot_thandiwe_laptop((" + "))
+  pivot_yasmin_pc((" + "))
+  pivot_door_controller((" + "))
+  cred_julian_rdp{"Julian Sallow saved connection<br/>(jsallow)"}
+  cred_src_julian_rdp_file{"julian.rdp"}
+  cred_lorna_door_pw{"Lorna Easton password<br/>(leaston)"}
   aim_aim_office{{"Test the office"}}
 
   door_server_room --> server_room
   door_partner_office --> partner_office
   door_meeting_room --> meeting_room
   door_comms_cupboard --> comms_cupboard
+  reception --> lock_reception_pc
+  open_plan --> lock_thandiwe_laptop
+  open_plan --> lock_yasmin_pc
+  partner_office --> lock_julian_pc
+  open_plan --> card_fac_lorna_01
+  card_fac_lorna_01 --> door_comms_cupboard
+  reception --> signin_delphine
+  signin_delphine --> lock_reception_pc
+  open_plan --> signin_thandiwe
+  signin_thandiwe --> lock_thandiwe_laptop
+  open_plan --> signin_yasmin
+  signin_yasmin --> lock_yasmin_pc
+  open_plan --> signin_lorna
+  signin_lorna --> lock_door_controller
+  kitchen --> signin_julian
+  signin_julian --> lock_julian_pc
+  reception -->|sticky note at reception_pc| signin_delphine
+  open_plan -->|sticky note at yasmin_pc| signin_yasmin
+  meeting_room --> device_kit_dropbox
+  meeting_room --> jack_meeting_jack
+  device_kit_dropbox --> jack_meeting_jack
+  jack_meeting_jack --> net_office_lan
+  comms_cupboard --> jack_managed_port
+  device_kit_dropbox --> jack_managed_port
+  comms_cupboard --> jack_guest_vlan_port
+  device_kit_dropbox --> jack_guest_vlan_port
+  jack_guest_vlan_port --> net_guest
+  net_office_lan -->|exposes| lock_julian_pc
+  net_office_lan -->|exposes| lock_reception_pc
+  net_office_lan -->|exposes| lock_thandiwe_laptop
+  net_office_lan -->|exposes| lock_yasmin_pc
+  net_office_lan -->|exposes| resource_client_letters
+  signin_yasmin --> resource_finance_share
+  signin_julian --> resource_finance_share
+  net_server_lan -->|exposes| lock_door_controller
+  net_office_lan -.-|link| net_server_lan
+  reception --> wifiap_staff_ap
+  wifiap_staff_ap --> net_office_lan
+  wifikey_office_lan --> wifiap_staff_ap
+  reception --> wifiap_guest_ap
+  wifiap_guest_ap --> net_guest
+  reception -->|at USB socket by the front desk PC| implant_reception_pc
+  meeting_room --> device_kit_injector
+  device_kit_injector -->|held| implant_reception_pc
+  lock_reception_pc -->|session at PC| implant_reception_pc
+  implant_reception_pc --> net_office_lan
+  net_office_lan --> pivot_julian_pc
+  lock_julian_pc --> pivot_julian_pc
+  pivot_julian_pc -->|pivot| net_server_lan
+  net_office_lan --> pivot_reception_pc
+  lock_reception_pc --> pivot_reception_pc
+  pivot_reception_pc -->|pivot| net_server_lan
+  net_office_lan --> pivot_thandiwe_laptop
+  lock_thandiwe_laptop --> pivot_thandiwe_laptop
+  pivot_thandiwe_laptop -->|pivot| net_server_lan
+  net_office_lan --> pivot_yasmin_pc
+  lock_yasmin_pc --> pivot_yasmin_pc
+  pivot_yasmin_pc -->|pivot| net_server_lan
+  net_server_lan --> pivot_door_controller
+  lock_door_controller --> pivot_door_controller
+  pivot_door_controller -->|pivot| net_office_lan
   reception --> open_plan
   open_plan --> kitchen
+  cred_src_julian_rdp_file --> cred_julian_rdp
+  cred_julian_rdp --> lock_julian_pc
+  lock_reception_pc --> cred_lorna_door_pw
+  cred_lorna_door_pw --> lock_door_controller
   door_meeting_room -.-> aim_aim_office
 
-  class door_server_room,door_partner_office,door_meeting_room,door_comms_cupboard lock
-  class server_room,partner_office,meeting_room,comms_cupboard,reception,open_plan,kitchen room
+  class door_server_room,door_partner_office,door_meeting_room,door_comms_cupboard,lock_reception_pc,lock_thandiwe_laptop,lock_yasmin_pc,lock_door_controller,lock_julian_pc,jack_meeting_jack,jack_managed_port,jack_guest_vlan_port,wifiap_staff_ap,wifiap_guest_ap,implant_reception_pc lock
+  class server_room,partner_office,meeting_room,comms_cupboard,open_plan,reception,kitchen,net_office_lan,net_guest,net_server_lan room
+  class card_fac_lorna_01,signin_delphine,signin_thandiwe,signin_yasmin,signin_lorna,signin_julian,device_kit_dropbox,wifikey_office_lan,device_kit_injector,cred_julian_rdp,cred_lorna_door_pw key
+  class resource_client_letters,resource_finance_share container
+  class pivot_julian_pc,pivot_reception_pc,pivot_thandiwe_laptop,pivot_yasmin_pc,pivot_door_controller gate
+  class cred_src_julian_rdp_file item
   class aim_aim_office aim
   class node_start start
 ```
@@ -252,27 +459,50 @@ flowchart TD
   partner_office["Partner's office<br/>(locked)"]
   meeting_room["Meeting room<br/>(locked)"]
   comms_cupboard["Comms cupboard<br/>(locked)"]
-  rc_reception_pc_1{"Front desk PC"}
-  rc_visitor_card_2{"Visitor card 07"}
-  rc_reception_plant_west_3{"Plant by the front desk"}
-  rc_reception_plant_east_4{"Plant beside the front desk"}
-  rc_sign_meeting_room_5{"Sign: meeting room"}
-  rc_npc_ama_owusu_6("Ama Owusu")
-  rc_npc_ama_owusu_7("Ama Owusu")
-  rc_npc_delphine_arvanitis_8("Delphine Arvanitis")
-  rc_plan_chest_9{"Plan chest"}
-  rc_desk_thandiwe_10{"Thandiwe's desk"}
-  rc_chair_thandiwe_11{"Thandiwe's chair"}
-  rc_desk_yasmin_12{"Yasmin's desk"}
-  rc_chair_yasmin_13{"Yasmin's chair"}
-  rc_rota_board_14{"Coffee rota"}
-  rc_npc_thandiwe_moyo_15("Thandiwe Moyo")
-  rc_npc_yasmin_chaudhry_16("Yasmin Chaudhry")
-  rc_npc_lorna_easton_17("Lorna Easton")
-  rc_coffee_station_18{"Coffee station"}
-  rc_sign_kitchen_19{"Sign: coffee"}
-  rc_npc_julian_sallow_20("Julian Sallow")
-  rc_julian_pc_21{"Julian's PC"}
+  rc_reception_pc_1[["Front desk PC"]]
+  rc_facilities_txt_2{"facilities.txt"}
+  rc_julian_rdp_file_3{"julian.rdp"}
+  rc_visitor_card_4{"Visitor card 07"}
+  rc_staff_ap_5{"MerrinSallow-Staff access point"}
+  rc_guest_ap_6{"MerrinSallow-Guest access point"}
+  rc_guest_wifi_card_7{"Reception Wi-Fi card"}
+  rc_reception_plant_west_8{"Plant by the front desk"}
+  rc_reception_plant_east_9{"Plant beside the front desk"}
+  rc_sign_meeting_room_10{"Sign: meeting room"}
+  rc_usb_hub_11{"USB hub"}
+  rc_implant_socket_12{"USB socket by the front desk PC"}
+  rc_planted_rogue_ap_13{"Planted rogue AP"}
+  rc_npc_ama_owusu_14("Ama Owusu")
+  rc_npc_ama_owusu_15("Ama Owusu")
+  rc_npc_delphine_arvanitis_16("Delphine Arvanitis")
+  rc_plan_chest_17{"Plan chest"}
+  rc_desk_thandiwe_18{"Thandiwe's desk"}
+  rc_thandiwe_laptop_19{"Thandiwe's laptop"}
+  rc_chair_thandiwe_20{"Thandiwe's chair"}
+  rc_desk_yasmin_21{"Yasmin's desk"}
+  rc_yasmin_pc_22{"Yasmin's PC"}
+  rc_chair_yasmin_23{"Yasmin's chair"}
+  rc_rota_board_24{"Coffee rota"}
+  rc_npc_thandiwe_moyo_25("Thandiwe Moyo")
+  rc_npc_yasmin_chaudhry_26("Yasmin Chaudhry")
+  rc_npc_lorna_easton_27("Lorna Easton")
+  rc_door_controller_28[["Door controller"]]
+  rc_door_codes_29{"Door codes"}
+  rc_coffee_station_30{"Coffee station"}
+  rc_sign_kitchen_31{"Sign: coffee"}
+  rc_npc_julian_sallow_32("Julian Sallow")
+  rc_julian_pc_33[["Julian's PC"]]
+  rc_partner_note_34{"partners_notes.txt"}
+  rc_rfid_cloner_35{"RFID cloner"}
+  rc_kit_dropbox_36{"Network drop box"}
+  rc_meeting_jack_37{"Live wall network port"}
+  rc_kit_injector_38{"Keystroke injector"}
+  rc_demo_stick_39{"USB stick"}
+  rc_kit_rogue_ap_40{"Pocket rogue AP"}
+  rc_capture_tablet_41{"Harvested Credentials"}
+  rc_patch_panel_42{"Patch panel and comms cabinet"}
+  rc_managed_port_43{"Managed wall network port"}
+  rc_guest_vlan_port_44{"Guest VLAN port"}
 
   reception --> open_plan
   reception --> partner_office
@@ -281,30 +511,54 @@ flowchart TD
   open_plan --> kitchen
   open_plan --> comms_cupboard
   reception --> rc_reception_pc_1
-  reception --> rc_visitor_card_2
-  reception --> rc_reception_plant_west_3
-  reception --> rc_reception_plant_east_4
-  reception --> rc_sign_meeting_room_5
-  reception --> rc_npc_ama_owusu_6
-  reception --> rc_npc_ama_owusu_7
-  reception --> rc_npc_delphine_arvanitis_8
-  open_plan --> rc_plan_chest_9
-  open_plan --> rc_desk_thandiwe_10
-  open_plan --> rc_chair_thandiwe_11
-  open_plan --> rc_desk_yasmin_12
-  open_plan --> rc_chair_yasmin_13
-  open_plan --> rc_rota_board_14
-  open_plan --> rc_npc_thandiwe_moyo_15
-  open_plan --> rc_npc_yasmin_chaudhry_16
-  open_plan --> rc_npc_lorna_easton_17
-  kitchen --> rc_coffee_station_18
-  kitchen --> rc_sign_kitchen_19
-  kitchen --> rc_npc_julian_sallow_20
-  partner_office --> rc_julian_pc_21
+  rc_reception_pc_1 --> rc_facilities_txt_2
+  rc_reception_pc_1 --> rc_julian_rdp_file_3
+  reception --> rc_visitor_card_4
+  reception --> rc_staff_ap_5
+  reception --> rc_guest_ap_6
+  reception --> rc_guest_wifi_card_7
+  reception --> rc_reception_plant_west_8
+  reception --> rc_reception_plant_east_9
+  reception --> rc_sign_meeting_room_10
+  reception --> rc_usb_hub_11
+  reception --> rc_implant_socket_12
+  reception --> rc_planted_rogue_ap_13
+  reception --> rc_npc_ama_owusu_14
+  reception --> rc_npc_ama_owusu_15
+  reception --> rc_npc_delphine_arvanitis_16
+  open_plan --> rc_plan_chest_17
+  open_plan --> rc_desk_thandiwe_18
+  open_plan --> rc_thandiwe_laptop_19
+  open_plan --> rc_chair_thandiwe_20
+  open_plan --> rc_desk_yasmin_21
+  open_plan --> rc_yasmin_pc_22
+  open_plan --> rc_chair_yasmin_23
+  open_plan --> rc_rota_board_24
+  open_plan --> rc_npc_thandiwe_moyo_25
+  open_plan --> rc_npc_yasmin_chaudhry_26
+  open_plan --> rc_npc_lorna_easton_27
+  server_room --> rc_door_controller_28
+  rc_door_controller_28 --> rc_door_codes_29
+  kitchen --> rc_coffee_station_30
+  kitchen --> rc_sign_kitchen_31
+  kitchen --> rc_npc_julian_sallow_32
+  partner_office --> rc_julian_pc_33
+  rc_julian_pc_33 --> rc_partner_note_34
+  meeting_room --> rc_rfid_cloner_35
+  meeting_room --> rc_kit_dropbox_36
+  meeting_room --> rc_meeting_jack_37
+  meeting_room --> rc_kit_injector_38
+  meeting_room --> rc_demo_stick_39
+  meeting_room --> rc_kit_rogue_ap_40
+  meeting_room --> rc_capture_tablet_41
+  comms_cupboard --> rc_patch_panel_42
+  comms_cupboard --> rc_managed_port_43
+  comms_cupboard --> rc_guest_vlan_port_44
 
   class reception,open_plan,kitchen room
   class server_room,partner_office,meeting_room,comms_cupboard lock
-  class rc_reception_pc_1,rc_visitor_card_2,rc_reception_plant_west_3,rc_reception_plant_east_4,rc_sign_meeting_room_5,rc_plan_chest_9,rc_desk_thandiwe_10,rc_chair_thandiwe_11,rc_desk_yasmin_12,rc_chair_yasmin_13,rc_rota_board_14,rc_coffee_station_18,rc_sign_kitchen_19,rc_julian_pc_21 item
-  class rc_npc_ama_owusu_6,rc_npc_ama_owusu_7,rc_npc_delphine_arvanitis_8,rc_npc_thandiwe_moyo_15,rc_npc_yasmin_chaudhry_16,rc_npc_lorna_easton_17,rc_npc_julian_sallow_20 npc
+  class rc_reception_pc_1,rc_door_controller_28,rc_julian_pc_33 container
+  class rc_facilities_txt_2,rc_julian_rdp_file_3,rc_visitor_card_4,rc_staff_ap_5,rc_guest_ap_6,rc_guest_wifi_card_7,rc_reception_plant_west_8,rc_reception_plant_east_9,rc_sign_meeting_room_10,rc_usb_hub_11,rc_implant_socket_12,rc_planted_rogue_ap_13,rc_plan_chest_17,rc_desk_thandiwe_18,rc_thandiwe_laptop_19,rc_chair_thandiwe_20,rc_desk_yasmin_21,rc_yasmin_pc_22,rc_chair_yasmin_23,rc_rota_board_24,rc_door_codes_29,rc_coffee_station_30,rc_sign_kitchen_31,rc_partner_note_34,rc_rfid_cloner_35,rc_kit_dropbox_36,rc_meeting_jack_37,rc_kit_injector_38,rc_demo_stick_39,rc_kit_rogue_ap_40,rc_capture_tablet_41,rc_patch_panel_42,rc_managed_port_43,rc_guest_vlan_port_44 item
+  class rc_npc_ama_owusu_14,rc_npc_ama_owusu_15,rc_npc_delphine_arvanitis_16,rc_npc_thandiwe_moyo_25,rc_npc_yasmin_chaudhry_26,rc_npc_lorna_easton_27,rc_npc_julian_sallow_32 npc
   class node_start start
 ```
