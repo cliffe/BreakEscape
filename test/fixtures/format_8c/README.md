@@ -72,3 +72,8 @@ habit keys are untouched, and a diff of the fold of this fixture against a fresh
 non-note difference.
 
 Note (plant hiding R1 t1, 2026-11-17): the lab's `ap_planted` global and the kit's `hideable.onHidden` were removed (nothing read the global). The loader fixture was edited by hand to match: both lines dropped from the frozen output.
+
+Note (devices R, 2026-11-17): the lab loader fixture was refreshed again for the branch's lab changes
+(game_loaded briefing mappings, hall lighting, kit and hint text). The method: the current lab render
+after `NpcHabits.expand!`, with each NPC's `screenHabit`/`printHabit`/`usbHabit`/`habits` and the
+`formatVersion` kept verbatim from the previous fixture, so the fold-related keys are untouched.
