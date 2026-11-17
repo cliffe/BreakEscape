@@ -6,7 +6,7 @@
 // one pc_signed_out and no request, and reopens the sign-in screen.
 // The real container-minigame.js, base-minigame.js and pc-sessions.js run against jsdom.
 // Run with: node test/js/container-transfer-dialog.test.mjs
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -59,7 +59,7 @@ const FILES = [
 ];
 
 let events, apiCalls, ended, alerts, signInScreens, sessions, status;
-async function openDesktop({ answer = 200, contents = FILES, item } = {}) {
+async function openDesktop({ answer = 200, contents = FILES, item, held } = {}) {
     events = []; apiCalls = []; ended = []; alerts = []; signInScreens = []; adds.length = 0;
     status = answer;
     document.body.innerHTML = '<div id="mg"></div>';
@@ -79,7 +79,8 @@ async function openDesktop({ answer = 200, contents = FILES, item } = {}) {
     };
     sessions = new PcSessions();
     window.pcSessions = sessions;
-    await sessions.signIn('hot_desk', 'ishaw', 'x');
+    if (held) sessions.load({ hot_desk: held }, []);
+    else await sessions.signIn('hot_desk', 'ishaw', 'x');
     events.length = 0; apiCalls.length = 0;
     window.MinigameFramework = { currentMinigame: null, endMinigame: (s, r) => ended.push([s, r]) };
     const containerItem = item || { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
@@ -310,3 +311,189 @@ test('a container 403 drops the session locally (one pc_signed_out, no request) 
 
 // The inventory add's source_pc_id and transfer are checked by running inventory.js in
 // access-signin-requests.test.mjs (code review R1, m9).
+
+// ---- keyring K5: the session token's bar line, its minute refresh and the expired 403 ----
+
+const TOKEN_SESSION = {
+    npcId: 'ian', username: 'ishaw', displayName: 'Ian Shaw', via: 'credential', kind: 'token', label: 'HB-FIN-02 sign-in token',
+    remote: true, footholdId: 'drop_box', host: 'HB-FIN-02', expiresInS: 600
+};
+const barLine = () => document.querySelector('.pc-taskbar .pc-taskbar-credential, .pc-start-credential')?.textContent;
+const startLine = () => document.querySelector('.pc-start-credential')?.textContent;
+
+test('K5: the account bar and start panel of a token session name no label and say the minutes left', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: TOKEN_SESSION });
+        assert.equal(startLine(), 'with a session token, about 10 min left');
+        assert.equal(mg.accountBarHtml().includes('credential-label-nowrap'), false, 'no label span on a token line');
+        assert.match(mg.accountBarHtml(), /<span class="desktop-account-credential">with a session token, about 10 min left<\/span>/);
+        mg.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+test('K5: the token line steps down each minute from the client timer, with no request, and the interval stops on cleanup', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: TOKEN_SESSION });
+        apiCalls.length = 0;
+        mock.timers.tick(60 * 1000);
+        assert.equal(startLine(), 'with a session token, about 9 min left');
+        mock.timers.tick(60 * 1000 * 8);
+        assert.equal(startLine(), 'with a session token, about 1 min left');
+        mock.timers.tick(60 * 1000);
+        // 600 s are gone: the session's own timer closed the desktop with the token line
+        assert.deepEqual(alerts.at(-1).slice(0, 2), ['HB-FIN-02 sign-in token expired. Your session on HB-FIN-02 ended.', 'info']);
+        assert.equal(apiCalls.filter(c => c[0] === 'fetch').length, 0, 'no request for a refresh');
+        assert.equal(mg._tokenLineTimer, null, 'the interval is cleared on close');
+    } finally { mock.timers.reset(); }
+});
+
+test('K5 R1 m1: the line steps on the token\'s own minute boundary, not a mount-relative minute', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 125 } });
+        assert.equal(startLine(), 'with a session token, about 3 min left');
+        mock.timers.tick(60 * 1000);
+        assert.equal(startLine(), 'with a session token, about 2 min left');
+        // 49 s left: a mount-relative minute tick would still read "about 2 min"
+        mock.timers.tick(6 * 1000 + 10 * 1000);
+        assert.equal(startLine(), 'with a session token, under a minute left');
+        mg.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+test('K5: under a minute the line reads "under a minute left"; a password session has no timer', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 100 } });
+        assert.equal(startLine(), 'with a session token, about 2 min left');
+        mock.timers.tick(60 * 1000);
+        assert.equal(startLine(), 'with a session token, under a minute left');
+        mg.cleanup?.();
+        const pw = await openDesktop();
+        assert.equal(pw._tokenLineTimer ?? null, null);
+        pw.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+const stripToken = () => document.querySelector('.pc-desktop-topbar .desktop-token-line')?.textContent;
+
+test('K5 R3: the top strip says the minutes left for a token session, steps each minute, and a password session has no such line', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const mg = await openDesktop({ held: TOKEN_SESSION });
+        assert.equal(stripToken(), 'with a session token, about 10 min left');
+        assert.equal(document.querySelectorAll('.pc-desktop-topbar .desktop-token-line').length, 1);
+        mock.timers.tick(60 * 1000);
+        assert.equal(stripToken(), 'with a session token, about 9 min left');
+        mock.timers.tick(60 * 1000 * 8 + 20 * 1000);
+        assert.equal(stripToken(), 'with a session token, under a minute left');
+        mg.cleanup?.();
+        const pw = await openDesktop();
+        assert.equal(document.querySelector('.desktop-token-line'), null, 'none for a password session');
+        pw.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+test('K5 R3: the strip line is plain text; a hostile label or link name makes no element', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const hostile = '<img src=x onerror=alert(1)>';
+        const mg = await openDesktop({ held: { ...TOKEN_SESSION, label: hostile } });
+        const html = mg.sessionNoticesHtml();
+        assert.doesNotMatch(html, /<img/);
+        assert.equal(document.querySelector('.pc-desktop-topbar img'), null);
+        assert.equal(stripToken(), 'with a session token, about 10 min left');
+        assert.equal(stripToken().includes('onerror'), false);
+        mg.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+test('K5 R5 m3: sessionNoticesHtml draws the amber token line only when under 60 s are left at first draw', async () => {
+    mock.timers.enable({ apis: ['setTimeout', 'setInterval', 'Date'] });
+    try {
+        const low = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 45 } });
+        const lowHtml = low.sessionNoticesHtml();
+        assert.match(lowHtml, /class="desktop-claim-line desktop-token-line desktop-token-line-low"/, '45 s left is amber');
+        assert.match(lowHtml, /under a minute left/);
+        low.cleanup?.();
+        const calm = await openDesktop({ held: { ...TOKEN_SESSION, expiresInS: 600 } });
+        const calmHtml = calm.sessionNoticesHtml();
+        assert.match(calmHtml, /desktop-token-line/);
+        assert.doesNotMatch(calmHtml, /desktop-token-line-low/, '10 min left is neutral');
+        calm.cleanup?.();
+    } finally { mock.timers.reset(); }
+});
+
+test('K5: a remote desktop request refused 403 expired drops the local copy and says the token expired', async () => {
+    const mg = await openDesktop({ held: TOKEN_SESSION });
+    mg.cleanup?.();
+    // A second desktop opened over the same session meets the server's refusal
+    document.body.innerHTML = '<div id="mg2"></div>';
+    window.fetch = globalThis.fetch = async (url) => {
+        apiCalls.push(['fetch', url]);
+        return { ok: false, status: 403, statusText: '403', json: async () => ({ error: 'Token expired', reason: 'expired' }) };
+    };
+    alerts.length = 0;
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'x', remote: { footholdId: 'drop_box' } } };
+    const mg2 = new ContainerMinigame(document.getElementById('mg2'), { title: 'Hot desk PC', containerItem: item, contents: null });
+    window.MinigameFramework.currentMinigame = mg2;
+    await mg2.init();
+    assert.equal(sessions.has('hot_desk'), false, 'the copy is dropped');
+    assert.equal(mg2.exitReason, 'expired');
+    await settle(80);
+    assert.deepEqual(alerts.at(-1).slice(0, 2), ['HB-FIN-02 sign-in token has expired.', 'info']);
+    assert.deepEqual(signInScreens, [], 'never the keyboard sign-in screen');
+});
+
+test('K5 R1 t3: a keyboard desktop refused 403 expired says the token line, never the sign-in screen', async () => {
+    const mg = await openDesktop({ held: TOKEN_SESSION });
+    mg.cleanup?.();
+    document.body.innerHTML = '<div id="mg3"></div>';
+    window.fetch = globalThis.fetch = async (url) => {
+        apiCalls.push(['fetch', url]);
+        return { ok: false, status: 403, statusText: '403', json: async () => ({ error: 'Token expired', reason: 'expired' }) };
+    };
+    alerts.length = 0;
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'x' } };
+    const mg3 = new ContainerMinigame(document.getElementById('mg3'), { title: 'Hot desk PC', containerItem: item, contents: null });
+    window.MinigameFramework.currentMinigame = mg3;
+    signInScreens.length = 0;
+    await mg3.init();
+    assert.equal(sessions.has('hot_desk'), false, 'the copy is dropped');
+    await settle(80); // the 50 ms timer that would open the sign-in screen has run
+    assert.deepEqual(alerts.at(-1).slice(0, 2), ['HB-FIN-02 sign-in token has expired.', 'info']);
+    assert.deepEqual(signInScreens, [], 'never the keyboard sign-in screen');
+});
+
+test('K5: the taskbar token line rounds as remote-host-text.js tokenMinutesLeft does, and an unknown time reads plainly', async () => {
+    const { tokenSessionLine, credentialSessionLine, credentialLineHtml, refreshTokenLines } = await imp('utils/pc-taskbar.js');
+    const text = await imp('utils/remote-host-text.js');
+    for (const secs of [0, 1, 59, 60, 61, 119, 120, 600, 3599, 3600]) {
+        const line = tokenSessionLine(secs);
+        if (secs < 60) assert.equal(line, 'with a session token, under a minute left');
+        else assert.equal(line, `with a session token, about ${text.tokenMinutesLeft(secs)} min left`);
+    }
+    for (const bad of [undefined, null, NaN, -1, '5']) assert.equal(tokenSessionLine(bad), 'with a session token');
+    const t = { via: 'credential', kind: 'token', label: '<b>x</b>', tokenSecondsLeft: 300 };
+    assert.equal(credentialSessionLine(t), 'with a session token, about 5 min left');
+    assert.equal(credentialLineHtml(t), 'with a session token, about 5 min left', 'the label never appears');
+    assert.equal(credentialSessionLine({ ...t, via: 'password' }), null);
+    // refreshTokenLines rewrites text, never markup
+    document.body.innerHTML = '<span class="desktop-account-credential">old</span><span class="pc-start-credential">old</span>';
+    assert.equal(refreshTokenLines(document.body, t), true);
+    assert.equal(refreshTokenLines(document.body, t), false, 'nothing to change the second time');
+    assert.deepEqual([...document.querySelectorAll('span')].map(e => e.textContent), ['with a session token, about 5 min left', 'with a session token, about 5 min left']);
+    assert.equal(refreshTokenLines(document.body, { ...t, kind: 'saved_connection' }), false);
+    // R4 m1: the top-strip line is neutral, and amber (the -low class) only under a minute left
+    document.body.innerHTML = '<div class="desktop-claim-line desktop-token-line">x</div>';
+    const strip = document.querySelector('.desktop-token-line');
+    refreshTokenLines(document.body, t);
+    assert.equal(strip.classList.contains('desktop-token-line-low'), false, '5 min left is neutral');
+    refreshTokenLines(document.body, { ...t, tokenSecondsLeft: 59 });
+    assert.equal(strip.classList.contains('desktop-token-line-low'), true, 'under a minute is amber');
+    assert.match(strip.textContent, /under a minute left/);
+    refreshTokenLines(document.body, { ...t, tokenSecondsLeft: 600 });
+    assert.equal(strip.classList.contains('desktop-token-line-low'), false, 'a longer figure goes neutral again');
+});

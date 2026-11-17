@@ -136,7 +136,11 @@ const LANDINGS = {
         unreachable: (self, d) => ({ resume: true, message: unreachableMessage(self._hostOf(d)) }),
         not_responding: (self, d) => ({ resume: true, message: notRespondingMessage(self._hostOf(d)) }),
         displaced: () => ({ resume: true }),
-        link_dropped: () => ({ leave: 'link_dropped' })
+        link_dropped: () => ({ leave: 'link_dropped' }),
+        // K5: a session token ran out (the client timer, or the 403 `expired` refusal). The desktop
+        // already said which token; the view reopens without it (R12: the box no longer reaches the host)
+        token_expired: () => ({ resume: true }),
+        expired: () => ({ resume: true })
     },
     share: {
         close: () => ({ resume: true }),
@@ -586,8 +590,10 @@ export class NetworkLinks {
         if (sprite) this.applyJackLook(sprite);
         this._publishPlanted(jackId, false);
         const endedPcIds = Array.isArray(body.endedPcIds) ? body.endedPcIds : [];
-        this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds }, jackId);
-        return { action: 'unplugged', footholdId: id, endedPcIds };
+        // Keyring K5: the expired token sessions among them (a subset), sent only when there are some
+        const tokenExpiredPcIds = Array.isArray(body.tokenExpiredPcIds) ? body.tokenExpiredPcIds.filter(id => endedPcIds.includes(id)) : [];
+        this._emit('network_device_unplugged', { jackId, footholdId: id, endedPcIds, ...(tokenExpiredPcIds.length ? { tokenExpiredPcIds } : {}) }, jackId);
+        return { action: 'unplugged', footholdId: id, endedPcIds, ...(tokenExpiredPcIds.length ? { tokenExpiredPcIds } : {}) };
     }
 
     // ------------------------------------------------------------------ Wi-Fi (slice 9.3b W, 5.3)

@@ -703,6 +703,19 @@
     font-size: 16px;
 }
 
+/* A session token's minutes left (K5): neutral until the last minute, then the claim amber */
+.desktop-claim-line.desktop-token-line {
+    background: #2c3e50;
+    border: 2px solid #4a5560;
+    color: #dfe6ea;
+}
+
+.desktop-claim-line.desktop-token-line.desktop-token-line-low {
+    background: #3a2a10;
+    border-color: #c08a2a;
+    color: #ffe0a0;
+}
+
 /* Short screens (a 412px-high landscape phone): a tighter window, so the frame wraps the
    heading and the contents; what is still taller scrolls inside the frame
    (minigames-framework.css), never past it (slice 7 R1) */
