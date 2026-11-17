@@ -508,6 +508,18 @@ export class Keyring {
         return this.showFinds(entries);
     }
 
+    /** The host name the client already shows for a desktop (its session, else the scenario PC), or null. */
+    hostOfPc(pcId) {
+        const w = typeof window !== 'undefined' ? window : {};
+        const fromSession = w.pcSessions?.get?.(pcId)?.host;
+        if (typeof fromSession === 'string' && fromSession) return fromSession;
+        for (const room of Object.values(w.gameScenario?.rooms || {})) {
+            const pc = (Array.isArray(room?.objects) ? room.objects : []).find(o => o?.id === pcId);
+            if (pc) return (typeof pc.host === 'string' && pc.host) ? pc.host : (typeof pc.name === 'string' && pc.name ? pc.name : null);
+        }
+        return null;
+    }
+
     /** The conversation closed: the held finds as one toast. */
     releaseHeld() {
         if (this._holdTimer) { clearInterval(this._holdTimer); this._holdTimer = null; }
@@ -554,7 +566,7 @@ export class Keyring {
      * No network-view trip starts. `returnTo({ reason })` runs once the screens it opened have
      * all closed. A second call while one runs does nothing. Resolves to { outcome } for tests.
      */
-    async connect(el, { returnTo = null, text = null, from = null } = {}) {
+    async connect(el, { returnTo = null, text = null, from = null, fromHost = null } = {}) {
         const data = el?.scenarioData;
         const itemId = data?.id;
         if (!itemId) return { outcome: 'none' };
@@ -563,13 +575,14 @@ export class Keyring {
         try {
             const t = text || await import('../utils/remote-host-text.js');
             return await this._connect(data, t, typeof returnTo === 'function' ? returnTo : null,
-                typeof from === 'string' && from ? from : null);
+                typeof from === 'string' && from ? from : null,
+                typeof fromHost === 'string' && fromHost ? fromHost : null);
         } finally {
             this.connecting = null;
         }
     }
 
-    async _connect(data, t, returnTo, from = null) {
+    async _connect(data, t, returnTo, from = null, fromHostHint = null) {
         const w = window;
         const title = data.name || 'Connect';
         const toast = (msg, outcome, type = 'error') => {
@@ -626,7 +639,7 @@ export class Keyring {
                 this.armRelaySync();
                 w.openRelayDesktop?.(pcId);
             } else if (route.from) {
-                w.openFromDesktop?.(pcId, route.from);
+                w.openFromDesktop?.(pcId, route.from, fromHostHint);
             } else {
                 w.openRemoteDesktop?.(pcId, route.foothold);
             }
@@ -656,7 +669,7 @@ export class Keyring {
             // The target's remote sign-in screen, the account and the credential chosen, the refusal shown
             w.openCredentialSignIn?.({
                 pcId, host, footholdId: route.foothold,
-                ...(route.from ? { fromPcId: route.from } : {}),
+                ...(route.from ? { fromPcId: route.from, fromHost: fromHostHint || this.hostOfPc(route.from) } : {}),
                 username: entry.account?.username || null,
                 refusal: {
                     credentialId: entry.id, reason, kind: result.kind || entry.kind,

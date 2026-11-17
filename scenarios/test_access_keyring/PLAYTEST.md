@@ -17,7 +17,7 @@ the world (take an item, sign in, read a card, plant the box) and read the answe
 - **Comms room (north).** The spare wall port `comms_port` (jack, `office_lan`); `SV-OPS-01`
   (`ops_pc`, `server_lan`, policy `pw_only`, IT only); Ian Shaw (IT, `ishaw`); Ian's capture card.
 - **Finance (east).** Lena's PC `lena_pc` (`HB-FIN-02`, `office_lan`, policy `finance_desk`, admits
-  Lena and Jake, sticky note `lfox / Ledger-Lena-9`); `passwords.txt` on her desktop; Jake Brooks
+  Lena and Jake, sticky note `lfox / Ledger-Lena-9`); `passwords.txt` and `SV-OPS-01 admin.rdp` (`ops_rdp_file`) on her desktop; Jake Brooks
   (finance, `jbrooks`).
 
 ## Registry (K1)
@@ -108,7 +108,7 @@ These extend this scenario and are **not built in K1**:
   connection; a saved-connection lockout refusal; unplugging the drop box ends its sessions.
 - **K3a to K3d (the sign-in UI and the capture log).** The Saved / In file / Captured tags, the
   greyed Connect for `ops_cookie`, Switch user to Jake from `passwords.txt`, the Sign-ins list.
-- **K4 (sign in from a desktop; `from` route).** Connect on the `.rdp` from Sam's keyboard session.
+- **K4 (sign in from a desktop; `from` route).** Connect on `SV-OPS-01 admin.rdp` (`ops_rdp`, on Lena's desktop; `SV-OPS-01.rdp` is the drop box cookie `ops_cookie`) from Lena's desktop. Sam's keyboard route waits for a scenario that builds Sam's office.
 - **K5 (tokens).** A session token for Lena recorded by the drop box, with `expiresMin`.
 - **assist_invite / relay (K2 and K3c).** Jake's remote assist code (`jake_assist`), Jake's office
   door, the invite timer and the relay desktop with `vendor_contract.txt`. Add a Jake's office room

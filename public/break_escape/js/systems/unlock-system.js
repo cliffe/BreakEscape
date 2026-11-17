@@ -356,10 +356,10 @@ export function openRemoteSignIn(hostRow, footholdId) {
  * over the foothold Connect used, with the account and the credential chosen and the refusal
  * (a saved connection's kindRefused or lockout) shown as on the screen itself (8.1).
  */
-export function openCredentialSignIn({ pcId, host = null, footholdId, fromPcId = null, username = null, refusal = null } = {}) {
+export function openCredentialSignIn({ pcId, host = null, footholdId, fromPcId = null, fromHost = null, username = null, refusal = null } = {}) {
     // K4: a refusal by a desktop route opens the screen reached from that desktop
     if (pcId && !footholdId && fromPcId) {
-        return openLoginSignIn(fromLockable(pcId, fromPcId, { host }), { connect: { username, refusal } });
+        return openLoginSignIn(fromLockable(pcId, fromPcId, { host, fromHost }), { connect: { username, refusal } });
     }
     if (!pcId || !footholdId) return undefined;
     const row = remoteRowFor(pcId, footholdId);
@@ -392,14 +392,14 @@ export function relayLockable(pcId) {
  * PC's own sprite shape with remote: { fromPcId, fromHost }. fromHost is the session's own
  * (the server sends it), else the source session's host, else the source PC's name.
  */
-export function fromLockable(pcId, fromPcId, { host: hostHint = null } = {}) {
+export function fromLockable(pcId, fromPcId, { host: hostHint = null, fromHost: fromHostHint = null } = {}) {
     const sessions = window.pcSessions;
     const s = sessions?.get?.(pcId);
     const pc = findPcObject(pcId);
     const src = findPcObject(fromPcId);
     const sprite = pc?.sprite || pc?.texture || 'pc_desktop';
     const host = s?.host || pc?.host || hostHint || null;
-    const fromHost = s?.fromHost || sessions?.get?.(fromPcId)?.host || src?.host || src?.name || fromPcId;
+    const fromHost = fromHostHint || s?.fromHost || sessions?.get?.(fromPcId)?.host || src?.host || src?.name || fromPcId;
     return {
         scenarioData: {
             id: pcId, name: pc?.name || host || pcId, host, type: 'pc', sprite, lockType: 'login', locked: true, loginPicker: false,
@@ -415,9 +415,9 @@ export function fromLockable(pcId, fromPcId, { host: hostHint = null } = {}) {
  * A held session's desktop reached from fromPcId's desktop (K4): Connect, the network view and
  * a folder's close open it. Returns false with no pc or source.
  */
-export function openFromDesktop(pcId, fromPcId) {
+export function openFromDesktop(pcId, fromPcId, fromHost = null) {
     if (!pcId || !fromPcId) return false;
-    openLoginDesktop(fromLockable(pcId, fromPcId));
+    openLoginDesktop(fromLockable(pcId, fromPcId, { fromHost }));
     return true;
 }
 
