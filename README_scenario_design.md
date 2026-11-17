@@ -940,6 +940,52 @@ Things to know:
 - **An item plant cannot sit on a sign-in PC.** A `lockType: "login"` object answers a click with its own flow (owner present, session, sign-in screen) and returns before `triggerOnInteract` and `requiresItem` are read. So a scenario that chains a captured password into a sign-in puts the plant on a separate object beside the sign-in PC (the cable behind it, a dock, a desk hub), and keeps the capture on the PC's own event, for example `workstation_owner_returned:<pc>` with `data.wasLocked === true`. `lab_physical_pentest` plants on the PC object itself only because, by that lab's own rules of engagement, nothing ever signs in at Chris's PC.
 - **The validator** warns when `requiresItemHintVariants` is authored without `requiresItem` (none of those hints would ever show), and checks its conditions like the other variant lists.
 
+#### Hiding a device in a plant: `hideable`
+
+A kit item with a `hideable` block is hidden by the player in a plant (or another prop you opt in) in the rooms you list, instead of being planted on one authored object. This replaces the spot-and-reveal pattern (a planter with `requiresItem` plus a `revealOnGlobal` twin) for any kit that should go in "any plant in this room". `requiresItem` plants, above, stay the route for kit that goes on one fixed object. Full design: `docs/achitechture/PLANT_HIDING_PLAN.md` and its build log section in `docs/achitechture/PHYSICAL_PENTEST_DEVICES_BUILD_LOG.md`. Worked example: `kit_rogue_ap` and `planted_rogue_ap` in `scenarios/test_access_devices` (the lab, `lab_physical_pentest`, uses the same shape in its two reception plants).
+
+While the player holds the item, every eligible plant in the listed rooms is tappable; the confirm asks, the server records the hide, the item leaves the tray and the engine draws `overlay.sprite` on that plant. If `device` is set, tapping the plant afterwards opens the console object it names.
+
+| Where | Field | Meaning |
+|-------|-------|---------|
+| Item | `hideable.rooms` | Required. Room ids where the item can be hidden. The server refuses a hide in any other room, and in a room the player has not unlocked |
+| Item | `hideable.overlay.sprite` | Required. The texture drawn on the plant once the item is hidden. It must be a picture in `assets/objects/` |
+| Item | `hideable.overlay.at` | The default anchor `{ x, y }` in per cent of the plant's display box (0 to 100). Used for a plant whose texture has no built-in anchor |
+| Item | `hideable.spots` | `"plants"` (the default): every eligible plant in those rooms. Or a list of spot ids to limit it to those |
+| Item | `hideable.exclude` | Spot ids in those rooms that are not spots |
+| Item | `hideable.spotAt` | Per-spot anchors, keyed by spot id. This is the only way to anchor a decor plant, which cannot carry fields |
+| Item | `hideable.device` | The id of the console object the overlay stands for (below) |
+| Item | `hideable.confirm` | The confirm text. Default: "Hide the <item name> in this plant?" |
+| Item | `hideable.onHidden` | Actions the client runs, through the same runner as `triggerOnInteract`, once the server has accepted the hide (`set_global` and the like). They are read from the held item at hide time and are not sent in the bootstrap |
+| Object | `hiddenWith` | Marks the console object: the id of the hideable item it belongs to. It is never placed from room data, only drawn as the overlay, and carries no `position` and no `revealOnGlobal` |
+| Object | `hidingSpot` | `true` makes this object a spot even if it is not a plant (a bin, a cable tray); `false` takes a plant out. A spot must not be `takeable` and must not carry `needsTag` |
+| Object | `hideAt` | `{ x, y }` in per cent: this spot's own anchor, which beats every other source |
+
+```json
+{ "type": "rogue_ap", "sprite": "rogue_ap", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
+  "hideable": {
+    "rooms": ["reception"],
+    "spots": "plants",
+    "exclude": ["reception_plant-large11-top-ani3_76"],
+    "device": "planted_rogue_ap",
+    "overlay": { "sprite": "rogue_ap_tucked" },
+    "confirm": "Hide the pocket rogue AP in this plant?",
+    "onHidden": [ { "type": "set_global", "key": "ap_planted", "value": true } ]
+  } }
+```
+
+Things to know:
+
+- **What counts as a plant.** An object or Tiled decor item is a default spot when its texture name starts with `plant-large`, `plant-flat-pot`, `planter_`, `planter-`, `fig_plant`, `office-misc-smallplant` or `wilted_plant`. Three names are never spots (`plant-large-displacement`, `notes_plantlog`, `m10_sign_plant`). The small plants (`plant-flat-pot*`, `plant-large1` to `plant-large10`, `office-misc-smallplant*`) are left out of the default rule, because the tucked device is as wide as their pots; opt one in with `hidingSpot: true`. The rule is written twice (`lib/break_escape/hiding_spots.rb` and `systems/plant-hiding.js`) and a test keeps the two lists equal. It reads the authored `sprite` (or `type` when there is no `sprite`), never a `spriteVariants` swap.
+- **Scenario plants and decor plants.** A plant you author as a room object has its object id as the spot id and can carry `hidingSpot` and `hideAt`. A plant that is only Tiled decor has the generated id `<roomId>_<imageName>_<tiledObjectId>` (`reception_plant-large11-top-ani3_76`); name it in `spots`, `exclude` or `spotAt` by that id.
+- **Where the overlay lands**, first match wins: the spot's `hideAt`, then `hideable.spotAt[<spot id>]`, then the built-in anchor for the plant's texture, then `overlay.at`, then 50, 60. The validator warns where a spot would fall through to that last default.
+- **One item, one hide; one device per plant.** The server refuses a second hide of the same item elsewhere and a second hideable device in a plant that already holds one. A hide appends `{ item, on: <spot id> }` to the server's `plantedItems`, so a reload redraws the overlay.
+- **No `requiresItem` on the old path.** An object whose `requiresItem` names a hideable item is a validator error: the server refuses that path for a hideable item, so a plant proof can only come from a hide.
+- **The console object.** `hideable.device` names a room object with `hiddenWith` equal to this item's id, declared in a room listed in `hideable.rooms`. Give it the behaviour of the thing in the plant (for the rogue AP: `wifiTwin`, `apScan`, `apPortal`, `apCaptureLog`; see **The pocket rogue AP**).
+- **Console fields of a multi-room hideable are sent in the bootstrap, so they must never carry a secret.** When `hideable.rooms` lists any room other than the console object's own, the server cannot know which room's load the player will see first, so the bootstrap carries the console object's behaviour fields (`id`, `type`, `name`, `observations`, `wifiTwin`, `apScan`, `apPortal`, `apCaptureLog`) in the item's `deviceData`. When `rooms` is exactly the console's own room, the client takes them from that room's own answer instead. Either way the browser holds them, so the Wi-Fi key, a password or a PIN never goes in them. Put the secret in a capture descriptor (an `addCapture` with a `secret`, served by the capture proof), as the rogue AP's key is.
+- **A proof on a hideable device** uses `{ "planted": "<item>" }` with no `on`; see **Capture proof**.
+- **The validator** (`scripts/validate_plant_hiding.rb`) errors on: `hiddenWith` naming an item with no `hideable`, `hiddenWith` with `position` or `revealOnGlobal`, an empty or unknown `rooms` entry, a room with no eligible spot left after `spots`, `exclude` and `hidingSpot`, a `spots`, `exclude` or `spotAt` id that is not a plant, `hidingSpot` object or hideable decor plant in a listed room, a `device` that is missing, has the wrong `hiddenWith` or sits outside `rooms`, an `overlay.sprite` with no texture, and a spot that is `takeable` or has `needsTag`. It warns on a spot with authored `actions`, because that action menu opens before the hide.
+
 #### Networks: jacks, footholds, hosts and shares
 
 A scenario can put sign-in PCs and resources on networks. The player gets onto a network by planting a rogue device (a drop box) in a jack; that gives a **foothold**, and the foothold shows what the network exposes: sign-in hosts the player can try remotely, and resources such as file shares. A foothold can also come from joining Wi-Fi at an access point or from an implant in a PC, and links let a session on one network reach another (slice 9.3b, below). Full design: `docs/achitechture/ACCESS_MODEL_SLICE_9_3_PLAN.md` (slice 9.3a) and `docs/achitechture/ACCESS_MODEL_SLICE_9_3B_PLAN.md` (slice 9.3b); `scenarios/test_access_networks` uses every field. The server, the validator (`scripts/validate_network.rb`) and the dungeon graph read one set of rules, `BreakEscape::NetworkModel` (`lib/break_escape/network_model.rb`), so they agree.
@@ -957,17 +1003,50 @@ A scenario can put sign-in PCs and resources on networks. The player gets onto a
 | Object | `network` | The object's own network; it wins over the room's. An object with neither is on no network |
 | Sign-in object | `host` | Its label on the network ("HB-FIN-02"). Default: its `name`. Not secret |
 | Sign-in object | `headless` | No screen or keyboard: signed in to only over the network |
-| Object | `networkJack` | This object is a jack. Optional `jackConfirm`, `plantedSprite`, `linkName`, `linkStoreIn`, `requiresItemHint` and `requiresItemHintVariants` |
+| Object | `networkJack` | This object is a jack. Optional `jackConfirm`, `plantedSprite`, `linkName`, `linkStoreIn`, `requiresItemHint`, `requiresItemHintVariants` and `panelOf` |
+| Jack | `panelOf` | The id of a patch panel in the same room. The jack is one of that panel's ports: it has no sprite and no position and is reached only through the panel. See **Patch panels** |
+| Object | `panelPorts` | This object is a patch panel. A list of `{ port, label, desk, jack }`, one per port. See **Patch panels** |
 | Jack | `portSecurity` | `true`: the jack refuses every device and gives no foothold. Optional `portSecurityMessage`. See **Port security** |
 | Object | `wifiAp` | `true`: this object is a Wi-Fi access point for its network (its own or its room's), which must have a `wifi` block. Optional `linkName` |
+| Object | `wifiTwin` | `true`: this object is a planted rogue access point; its click opens the rogue AP console, driven by `apScan`, `apPortal` and `apCaptureLog`. See **The pocket rogue AP** |
 | Item | `rogueDevice` | A takeable item with an `id` that can be planted in a jack |
+| Item | `type: "rogue_ap"` | The pocket rogue AP kit item. The type is a label and an inventory picture (`sprite: "rogue_ap"`); the engine reads no behaviour from it. The item is hidden through `hideable`, and its console is the `wifiTwin` object it names as `hideable.device` |
 | Action | `grant_foothold` | An implant: a foothold on a sign-in PC's network. `pc`, an optional `name` (default "Implant: <host>"), and `needsDropped` or `needsSession` with `needsHeld`. See **Implants** |
 | Policy | `remote` | `"allowed"` (the default) or `"blocked"`: whether a PC under the policy takes a remote sign-in |
 | Policy | `remoteScreen` | `"tiles"` (the default) or `"typed"`: the remote sign-in screen over a foothold. See **The remote sign-in screen** |
 
 `networks` (so every `offWhen`, SSID and Wi-Fi key), `networkLinks`, `resources`, every `network` field and an object's `linkName` never reach the browser. `wifiAp`, `portSecurity` and `portSecurityMessage` do, on the object, so the client can run the join and draw the refusal. The server sends a network's name, and the names, hosts and contents of what it exposes, only from `GET /network` and `GET /container`, and only for a foothold or session the server holds.
 
-**The jack and the device.** A jack is any room object with `"networkJack": true` and a network (its own or its room's): a wall port, a patch panel, the back of a router. It takes no `triggerOnInteract`, no `requiresItem`, no lock and no `lockType`, because its click is the plant flow: the player confirms, the server takes the device out of the inventory, and a link item ("Drop box: comms room") arrives in its place. Clicking the link item opens the network view. Clicking the jack again offers to unplug, which gives the device back and ends every remote session that went through it; a toast names the hosts whose sessions ended ("Unplugged. Your session on LW-DOOR01 ended."), and an open remote desktop closes with "The link dropped". A rogue device may be defined anywhere an item can come from (a room object, a container, `startItemsInInventory`, an NPC's `itemsHeld`, a declared grant). It must have an `id`, be takeable and not be `droppable`, and nothing may require and consume it. A foothold reaches its own network; it reaches a linked network only through a pivot (below).
+**The jack and the device.** A jack is any room object with `"networkJack": true` and a network (its own or its room's): a wall port, the back of a router, or a port on a patch panel (see **Patch panels**). It takes no `triggerOnInteract`, no `requiresItem`, no lock and no `lockType`, because its click is the plant flow: the player confirms, the server takes the device out of the inventory, and a link item ("Drop box: comms room") arrives in its place. Clicking the link item opens the network view. Clicking the jack again offers to unplug, which gives the device back and ends every remote session that went through it; a toast names the hosts whose sessions ended ("Unplugged. Your session on LW-DOOR01 ended."), and an open remote desktop closes with "The link dropped". A rogue device may be defined anywhere an item can come from (a room object, a container, `startItemsInInventory`, an NPC's `itemsHeld`, a declared grant). It must have an `id`, be takeable and not be `droppable`, and nothing may require and consume it. A foothold reaches its own network; it reaches a linked network only through a pivot (below).
+
+**Patch panels.** A patch panel is a room object with a `panelPorts` list. Its click opens the patch panel minigame, a 24-port strip, instead of an observation; a panel with `locked: true` goes through the normal unlock flow first and opens on the next click. Each `panelPorts` entry is one port:
+
+| Field | Meaning |
+|-------|---------|
+| `port` | The port number, 1 to 24. A number the panel does not list shows as an empty socket |
+| `label` | Up to three characters shown on the socket ("D01", "V02"). Its first letter picks a colour class (D, V, G or M) as a second cue; default: the two-digit number |
+| `desk` | Where the cable goes ("Reception phone"). It appears in the footer and the accessible name, and is not secret |
+| `jack` | The id of a top-level `networkJack` in the same room. A port with no `jack` is **unpatched**: a click shows "Nothing at the other end." and plants nothing |
+
+A listed jack can be one of two kinds. A jack with `panelOf` naming the panel (`voice_port`, `guest_port` below) is reached only through the panel, so it takes no `sprite` and no `position`, and is never drawn in the room. A jack with its own sprite and position (`network_port`, `secured_port`) can be listed as well, and is then reachable both on the wall and through its port. A listed jack with `portSecurity` shows as a managed port and refuses the device as usual. A port the player's box is plugged into shows as held. Planting through a port is the ordinary jack flow (confirm, then the link item), so `jackConfirm`, `linkName`, `requiresItemHint` and the events are the jack's own. Unlocking is enforced by the server: a `panelOf` port plants only when its panel is present and its whole path (room and containers) is unlocked.
+
+```json
+{ "type": "notes", "id": "p3_patch_panel", "name": "Patch panel and comms cabinet",
+  "sprite": "comms_cabinet1", "position": { "x": 2, "y": 1 }, "interactable": true,
+  "panelPorts": [
+    { "port": 1, "label": "D01", "desk": "Desk 1, data", "jack": "network_port" },
+    { "port": 2, "label": "V02", "desk": "Reception phone", "jack": "voice_port" },
+    { "port": 3, "label": "G03", "desk": "Guest meeting room", "jack": "guest_port" },
+    { "port": 4, "label": "M04", "desk": "Managed uplink", "jack": "secured_port" },
+    { "port": 5, "label": "D05", "desk": "Spare desk" }
+  ] },
+{ "type": "pc", "id": "voice_port", "name": "Voice VLAN port", "interactable": true,
+  "networkJack": true, "network": "lw_voice", "panelOf": "p3_patch_panel",
+  "linkName": "Drop box: voice VLAN port",
+  "jackConfirm": "Plug the network drop box into the patch panel's voice port?" }
+```
+
+The validator errors on a `panelOf` that names no object in the room or one that does not list the jack, a `panelOf` jack with a `sprite` or a position, `panelOf` on an object that is not a `networkJack`, a port number or a jack listed twice, and a `jack` that is missing, not a `networkJack`, or whose `panelOf` names another panel. Use a voice VLAN or guest port to teach the wrong-VLAN lesson: the box in the wrong port reaches only the network that port is patched to (`scenarios/test_access_devices` comms cupboard; `lab_physical_pentest` P3).
 
 **What a foothold shows.** The view lists every `lockType: "login"` object on the network, whatever room it is in and whether or not the player has opened that room, then every resource on the network, each group sorted by id. A host row offers **Sign in** (username and password typed; no account tiles), **Open** when a password session is held there, or "remote sign-in off" under a `remote: "blocked"` policy. An open share (no `access`) offers **Open**; a share with an access list shows a padlock. Any other resource shows its `observations`. The view never shows account names, access lists, policies or share contents.
 
@@ -999,6 +1078,47 @@ The validator also refuses an account password in a network's or resource's `nam
 ```
 
 A click on an access point is the join flow: an open network (`psk` absent or `""`) joins at once; a keyed one opens the password minigame in a join mode, a key field with no attempt limit ("That key was not accepted"; a wrong key is never counted). The access point must be reachable (its room and every container above it open), as a jack must. A join gives the foothold `wifi_<networkId>`, one per network, which reaches that network and pivots like any foothold, and a link item named by the access point's `linkName` (default "Wi-Fi: <network name>") with the access point's sprite. A second access point of a joined network adds no foothold but still fires `network_joined`. A Wi-Fi foothold has no unplug and lasts the game. The key is a lock secret like a door PIN, not an account password, so a note, a document or ink may show it, and something the player can read must. Errors: a `wifi` that is not an object, one with no `ssid`, a `psk` that is not a string or is only whitespace, and a `wifiAp` with no network, on a network with no `wifi` block, on a sign-in object, on a jack, or with a lock (`locked` or a `lockType`). Warnings: a `psk` under eight characters, and a `psk` that appears in nothing the player can read.
+
+**The pocket rogue AP.** A hideable kit item (`type: "rogue_ap"`, see **Hiding a device in a plant**) plus a console object. The console is the room object named by `hideable.device`: it carries `hiddenWith` and `wifiTwin: true`, and its click opens the rogue AP console (Recon, Clone, Log). The console is data only: every string it shows is authored, and its only output is globals. It holds no secret and serves none.
+
+| Field | Meaning |
+|-------|---------|
+| `wifiTwin` | `true`: the click opens the console. The object is not a jack, an access point to join or a lock |
+| `apScan` | The Recon list, one row per network: `ssid` (required), `security` and `signal` (0 to 4 bars) and `clients` as shown, `inScope`, `cloneGlobals`, `cloneLog`, `knownClients` (a list of `{ npcId, label }` shown against the row), `refusal`. Every row is shown as text |
+| `apScan[].inScope` | `true`: Start may clone this network; it needs `cloneLog`. `false`: a neighbour, not the client; Start shows `refusal` and writes nothing; it needs `refusal` |
+| `apScan[].cloneGlobals` | Globals written when this row is cloned, name to value. A running clone is the in-scope row whose `cloneGlobals` all hold now |
+| `apScan[].cloneLog` | The Log line while that clone runs: one string, or an object keyed by `apPortal` template id |
+| `apPortal.templates` | The sign-in pages the clone can serve: `id`, `label`, `setGlobals` (written after the row's `cloneGlobals`; the running template is the one whose `setGlobals` all hold) and `page`, the landing page builder's page data (`brands`, `purposes`, `wordings`, `fields`, `fieldLabels`, `choices`), drawn without form controls |
+| `apCaptureLog` | Extra Log lines, in order: `{ global, text, npcId }`. A line shows once its `global` is `true`; with `npcId` it carries that NPC's headshot |
+
+The Log keeps no state of its own. It is read from the globals each Start writes, so a reload shows the same clone, template and lines.
+
+```json
+{ "id": "planted_rogue_ap", "name": "Planted rogue AP", "sprite": "rogue_ap_planted",
+  "hiddenWith": "kit_rogue_ap", "takeable": false, "interactable": true, "active": true, "wifiTwin": true,
+  "apScan": [
+    { "ssid": "Ledgerwell-Staff", "security": "WPA2", "signal": 4, "clients": 3, "inScope": true,
+      "cloneGlobals": { "ap_twin_staff": true },
+      "cloneLog": { "wifi_key": "Copy of Ledgerwell-Staff up (open), showing the Wi-Fi key page.",
+                    "staff_signin": "Copy of Ledgerwell-Staff up (open), showing the staff sign-in page." },
+      "knownClients": [ { "npcId": "kieran", "label": "Kieran's laptop" } ] },
+    { "ssid": "Corrigan-Dental", "security": "WPA2", "signal": 1, "clients": 1, "inScope": false,
+      "refusal": "Out of scope. Corrigan Dental is not the client." }
+  ],
+  "apPortal": { "templates": [
+    { "id": "wifi_key", "label": "Key page", "setGlobals": { "ap_portal_account": false }, "page": { "fields": ["password"] } },
+    { "id": "staff_signin", "label": "Sign-in page", "setGlobals": { "ap_portal_account": true }, "page": { "fields": ["email", "password"] } }
+  ] },
+  "apCaptureLog": [
+    { "global": "kp_twin_captured", "text": "Kieran's laptop joined the copy; Wi-Fi key page submitted.", "npcId": "kieran" }
+  ] }
+```
+
+(The `page` objects are cut down here; `scenarios/test_access_devices` gives the full pages.)
+
+- **The harvest is a capture, not a console output.** The console writes `cloneGlobals` and `setGlobals`. What the player harvests comes from an NPC event mapping gated on those globals: here a mapping on a phone NPC with no `creds` (Ruth) on `npc_used:kieran_laptop`, with condition `globalVars.ap_twin_staff === true && globalVars.ap_portal_account !== true`, `onceOnly`, an `addCapture` whose `secret` is the Wi-Fi key and whose `proof` is `{ "planted": "kit_rogue_ap" }`, and a `setGlobal` that the log line and the objective read. A capture of one person's sign-in (Kieran's page) goes on that NPC, whose account carries the `captureProof`. The key capture must stay on the holderless phone NPC: on an account holder the server skips a capture that is not that person's own.
+- **The key is a lock secret, not a console string.** Put the Wi-Fi key in the `addCapture` secret and in `networks.<id>.wifi.psk` (the same `<%= @random_password %>` render, so the two agree). Never in `apScan`, `apPortal` or `apCaptureLog`: those reach the browser.
+- **Declare every global** the console writes or reads in `globalVariables`. A global read nowhere is a validator suggestion.
 
 **Port security.** `"portSecurity": true` on a jack makes the switch refuse every device: the plant gives no foothold, the device stays in the inventory, and the player sees `portSecurityMessage`, or by default "This switch port only takes known machines. Unused ports like this one should be disabled." `network_device_refused` fires with `reason: "port_security"`. The refusal says nothing about the network behind the port, and there is no bypass. Errors: `portSecurity` on an object that is not a `networkJack`, `portSecurityMessage` without `portSecurity: true`, and `portSecurity` with `wifiAp`. Warning: a blank `portSecurityMessage` (the default is shown).
 
@@ -1054,9 +1174,11 @@ The holder draws its `sprite`, which must be a picture in `assets/objects/` (the
   "captureProof": [ { "planted": "kit_deviceA", "on": "staff_pc" } ] }
 ```
 
+For a hideable device the proof carries no `on`: `"captureProof": [ { "planted": "kit_rogue_ap" } ]`.
+
 | Proof | Holds when |
 |-------|------------|
-| `{ "planted": "<item>", "on": "<object>" }` (`on` optional) | The server saw the item leave the inventory at that object: a room object with an `id` and a `triggerOnInteract` list (the game consumes an item only there), whose `requiresItem` names the item and which consumes it (`consumesItem`, or a `remove_item` naming it in that list), in the start room or a room the player had unlocked. Or `on` names a network jack a foothold was gained from |
+| `{ "planted": "<item>", "on": "<object>" }` (`on` optional) | The server saw the item leave the inventory at that object (or, for a `hideable` item, hidden anywhere in its rooms): a room object with an `id` and a `triggerOnInteract` list (the game consumes an item only there), whose `requiresItem` names the item and which consumes it (`consumesItem`, or a `remove_item` naming it in that list), in the start room or a room the player had unlocked. Or `on` names a network jack a foothold was gained from. **A `hideable` device** (see **Hiding a device in a plant**) uses `{ "planted": "<item>" }` with no `on`: it holds once the server recorded a hide of that item. The player chooses the plant, so name no spot; `on` is a plant id and would hold only for that one plant. A hideable item has no `requiresItem` object to name |
 | `{ "dropped": "<item>" }` | The server accepted a player drop of that item (it must be `droppable`) |
 | `{ "session": "<pc>" }` | Someone signed in at that sign-in PC, by password or by claiming the owner's open screen. It records the PC, not the account, so it is sound only where the PC admits just the proof's holder; the validator warns otherwise |
 

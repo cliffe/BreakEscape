@@ -255,6 +255,7 @@ module BreakEscape
       assert out['wifiTwin']
       assert_equal 'Ledgerwell-Staff', out['apScan'][0]['ssid']
       refute out.key?('hiddenWith'), 'only the console fields'
+      assert_empty out.keys - CaptureProofs::DEVICE_DATA_FIELDS, 'no key outside the whitelist'
     end
 
     test 'a forged clone ahead of the real kit is skipped and the real kit is hidden' do
