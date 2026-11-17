@@ -28,3 +28,9 @@ Evidence in tmp/handover/demo_access_build/screens4/ (JSON dumps, session logs, 
 - Stop 15 nudge: both paths fire. Loaded (player in open_plan when staff_twin_up set): level_set work 10, job_start/using thandiwe_laptop (nudge_direct_loaded.json). Fallback (set in reception, then enter open_plan): same (nudge_fallback_room_entered.json). Global set via window.stateSync.writeGlobal, not the real rogue AP route.
 - Validator test: demo_access_tour added to the V2/V4/V5 corpus list (test/js/validator-office-life.test.mjs line 442); 33/33 pass.
 - Corpus: scoped payload_scan fresh + opened run was started under flock in the background (output /tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/tasks/bkk62kdfr.output); result not yet read when this note was written. Re-run if the file is gone.
+
+## Review-fix pass (cd32aa2de, 623b8f10f and the commit after)
+- M1: second coffee machine `coffee_station_open_plan` (coffee_station1, north wall x 7.0, y 1.4, queue running south) in open_plan; kitchen machine kept. Live, kitchen never visited (game 7521): rota board, both leave at once, drink, return to post; their desks are empty meanwhile. Yasmin's PC opens to its sign-in while she is away (PasswordMinigame). Thandiwe's laptop click returned "acted" but opened nothing in the last run (a confirm dialog from the rota board was in the way earlier); the slice 4 run showed it opening straight to the desktop. Evidence: screens4b/.
+- m1: Julian has no needs or needsHome. m2: plan 2.5 notes the dropped "social". n5: plant wording.
+- Chatter: pools are per-NPC shuffle bags with no order or first-line option, so "Who's the cake from?" cannot be guaranteed from data. Left as is.
+- Validator 0 errors; validator-office-life.test.mjs 33/33; scoped corpus 23 runs, 1 failure (the known m09 stale exception only). Server on :3099 stopped.
