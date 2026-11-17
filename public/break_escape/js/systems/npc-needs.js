@@ -451,7 +451,7 @@ export class NPCNeedsSystem {
         // Queues (slice 10): claim order across the whole system, so queue order is deterministic
         this._queueSeq = 0;
         // Switched-off sources (slice 18a): objectId -> { cond, off } for every object with an
-        // affordance.offWhen seen so far, with the off state last seen. A global change wakes parked
+        // object-level offWhen seen so far, with the off state last seen. A global change wakes parked
         // needs only when one of them really turns back on.
         this._offSeen = new Map();
         // Print and forget (slice 17, OFFICE_LIFE_PLAN 12.3): slotId -> the owned print on it
@@ -826,7 +826,7 @@ export class NPCNeedsSystem {
         }
     }
 
-    /** affordance.offWhen holds: not a source (slice 18a). Records the state for onGlobalChanged. */
+    /** object-level offWhen holds: not a source (slice 18a). Records the state for onGlobalChanged. */
     _isOff(o) {
         const cond = o?.offWhen;
         if (cond === undefined || cond === null || cond === false || cond === '') return false;
@@ -1731,7 +1731,7 @@ export class NPCNeedsSystem {
         // Access 9.2 H (plan 6.4): a borrowed PC is this need's candidate ahead of the home object.
         // One in use, unreachable, off, hidden or not loaded is waited for: no other source, no park
         if (!quiet && s.borrow && s.borrow.need === name) return this._borrowCandidate(s, excludeId);
-        // A switched-off source (affordance.offWhen, slice 18a) is no candidate at all; nor (18b-i) a
+        // A switched-off source (object-level offWhen, slice 18a) is no candidate at all; nor (18b-i) a
         // hidden object (revealOnGlobal not true), nor a magnet this NPC does not know of or that is
         // gone or empty. quiet: a magnet look that found nothing notes nothing and parks nothing.
         const sat = objects.filter(o => o.affordance && asList(o.affordance.satisfies).includes(name) && o.id !== excludeId && !this._isOff(o)
@@ -3893,7 +3893,7 @@ export class NPCNeedsSystem {
 
     /**
      * Slice 22 (OFFICE_LIFE_PLAN 12.12): where a print goes. The first listed producer that is on
-     * (affordance.offWhen does not hold) and has a free or recyclable slot; else the first that is
+     * (offWhen does not hold) and has a free or recyclable slot; else the first that is
      * on (today's full-pool path); else none. A producer the world does not know (its room not
      * loaded) is off in a list of two or more; a list of one keeps the old behaviour.
      * Returns { producerId, slot, skipped }: skipped lists the producers passed over before it.
@@ -6120,7 +6120,7 @@ export function installNpcNeeds(opts = {}) {
             const id = typeof name === 'string' && name.startsWith('desk_phone_ring:') ? name.slice('desk_phone_ring:'.length) : data?.phoneId;
             if (typeof id === 'string' && id) w.npcNeedsSystem?.onPhoneRing(id);
         });
-        // Slice 18a: a source switched back on (affordance.offWhen) retries parked needs
+        // Slice 18a: a source switched back on (offWhen) retries parked needs
         w.eventDispatcher?.on('global_variable_changed:*', (data, name) => {
             const g = data?.name || (typeof name === 'string' ? name.slice('global_variable_changed:'.length) : null);
             w.npcNeedsSystem?.onGlobalChanged(g);
