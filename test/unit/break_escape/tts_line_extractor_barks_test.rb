@@ -143,6 +143,17 @@ module BreakEscape
       assert_equal 'x', ScenarioBarkValidator.spoken_bark_text({ 'id' => 's', 'displayName' => 'Straße' }, 'STRAßE: x')
     end
 
+    # JS never lets a non-ASCII letter match an ASCII one under /i (ſ upcases to
+    # S, ı to I), though Ruby's own case folding would. Checked against the real
+    # phoneBarkText in node.
+    test 'a non-ASCII letter that uppercases to ASCII does not match the ASCII name' do
+      sam = { 'id' => 'sam', 'displayName' => 'Sam' }
+      assert_equal "\u017fam: x", ScenarioBarkValidator.spoken_bark_text(sam, "\u017fam: x")
+      assert_equal 'x', ScenarioBarkValidator.spoken_bark_text(sam, 'SAM: x')
+      ismail = { 'id' => 'ismail', 'displayName' => 'Ismail' }
+      assert_equal "\u0131smail: x", ScenarioBarkValidator.spoken_bark_text(ismail, "\u0131smail: x")
+    end
+
     test 'a String voice and an NPC with no npcType list no bark' do
       assert_empty extractor(person('obj', 'voice' => 'A fixed line.')).entries
       p = person('plain')

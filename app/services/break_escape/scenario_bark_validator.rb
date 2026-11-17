@@ -71,6 +71,13 @@ module BreakEscape
       texts
     end
 
+    # JS \s (and String#trim) as a regexp class body. Single-quoted on purpose:
+    # the regexp engine reads the \u escapes, Ruby must not.
+    JS_SPACE = '\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff'
+    PLAYER_LINE = /\A(?:you|player)[#{JS_SPACE}]*:[#{JS_SPACE}]*[^#{JS_SPACE}]/i
+    NARRATOR_LINE = /\Anarrator(?:[#{JS_SPACE}]*\[[^\]]*\])?[#{JS_SPACE}]*:[#{JS_SPACE}]*[^#{JS_SPACE}]/i
+    PREFIX_TAIL = /\A[#{JS_SPACE}]*:[#{JS_SPACE}]*/
+
     # What the client voices for a bark: a port of phoneBarkText
     # (phone-chat-speaker.js), which npc-barks.js runs every bark through before
     # it sends the text to /tts. Per line (split on newlines, trimmed, blanks
@@ -84,7 +91,10 @@ module BreakEscape
     # and lacks U+FEFF, so JS_SPACE lists the JS set outright. Case folding
     # follows JS `/i` without the `u` flag (see fold_char). One difference
     # remains: JS works in UTF-16 units, so a name with characters outside the
-    # BMP could fold differently there; no scenario has one.
+    # BMP could fold differently there; no scenario has one. The Unicode
+    # version also differs: Ruby 2.7.8 uses Unicode 12.1 tables, current JS
+    # engines newer ones, so a few letters added since fold differently
+    # (U+019B, U+0264, U+1C89, U+A7CB to U+A7DC); no scenario name uses them.
     # @param npc [Hash]
     # @param text [String]
     # @return [String] '' when nothing in it is the NPC's
@@ -99,14 +109,8 @@ module BreakEscape
       end.join("\n")
     end
 
-    # JS \s (and String#trim) as a regexp class body.
-    JS_SPACE = '\t\n\v\f\r \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff'
-    PLAYER_LINE = /\A(?:you|player)[#{JS_SPACE}]*:[#{JS_SPACE}]*[^#{JS_SPACE}]/i
-    NARRATOR_LINE = /\Anarrator(?:[#{JS_SPACE}]*\[[^\]]*\])?[#{JS_SPACE}]*:[#{JS_SPACE}]*[^#{JS_SPACE}]/i
-    PREFIX_TAIL = /\A[#{JS_SPACE}]*:[#{JS_SPACE}]*/
-
     # String#strip for JS whitespace.
-    def self.js_strip(str)
+    private_class_method def self.js_strip(str)
       str.gsub(/\A[#{JS_SPACE}]+|[#{JS_SPACE}]+\z/, "")
     end
 
@@ -114,7 +118,7 @@ module BreakEscape
     # single-character uppercase, unless that is several characters or maps a
     # non-ASCII character to ASCII. Ruby's own /i uses full case folding
     # (ß matches "ss"), which JS does not.
-    def self.fold_char(char)
+    private_class_method def self.fold_char(char)
       up = char.upcase
       return char if up.length != 1 || (char.ord >= 128 && up.ord < 128)
 

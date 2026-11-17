@@ -114,14 +114,14 @@ module BreakEscape
     end
 
     # Event barks of each voiced person NPC (the client's useTTS rule). Yields
-    # [npc_id, text, path], text as the scenario has it (stripped, as the
-    # endpoint's canonical form).
+    # [npc_id, text, path], text as the client voices it (spoken_bark_text:
+    # own speaker prefix and You:/Narrator: lines dropped, JS-trimmed).
     def each_bark_line
       each_room_npc do |npc|
         next unless npc['npcType'] == 'person' && npc['voice'].is_a?(Hash) && npc['id']
 
         ScenarioBarkValidator.event_bark_texts(npc).each do |t|
-          yield npc['id'], t.strip, 'npc.bark' if t.is_a?(String) && !t.strip.empty?
+          yield npc['id'], t, 'npc.bark' if t.is_a?(String) && !t.empty?
         end
       end
     end
