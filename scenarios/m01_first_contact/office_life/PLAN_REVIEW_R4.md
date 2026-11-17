@@ -84,3 +84,14 @@ There is no m01 critical-path script in tools/playtest: past m01 regressions wer
 - Whether hallway_east's motion lighting reacts to Maya (carried in PLAN.md:396).
 - The validator info line for `avoids` (validate_npc_needs.rb:1010-1033); taken from R3.
 - Whether doorway room detection actually flickers between hallway_east and maya_office (M2 stands on the quick in-and-out case alone).
+
+## Outcomes
+
+- M1: Fixed in PLAN.md 4.9 step 3 and the break condition. A `maya_settled` global (hub sets true, the four topics set false, the "I'll get started" exit sets true) is added to her break condition. Reopen behaviour verified at person-chat-minigame.js:544-547 and :562-583 and ink-engine.js:30-62. The tip-off route through `reveal_check` is covered, and never leaving is noted as the safe failure. Declared in the globals table and section 6 (seven at most), with a test step added to test 14.
+- M2: Fixed. `"cooldown": 0` on all three `maya_away` mappings, reason noted in 4.9 (default 5000 ms at npc-manager.js:1281, reads 0 as 0), and the quick in-and-out case added to test 14.
+- m1: Fixed. The `operation_details` guard now sits above the set lines so a guard hit leaves the topic in the hub; the settled flag also makes it a second line of defence.
+- m2: Fixed. The "both in one room" sentence now states the open-doorway case; accepted in section 11.
+- m3: Accepted and recorded in section 11. The `not_here` reuse of the existing opener is left as an open choice for the user, not taken.
+- m4: Fixed. The ink build step now names the compile, the `inkcheck.js` runs, `loopcheck.js`, `dialoguelint.mjs`, the validator and lock diff, the live probe and `verify-run.rb`. All paths checked to exist.
+- m5: Fixed. The citation is now person-chat-minigame.js:562-583, and section 6 notes `maya_away` is per-player state in a team-shared section.
+- SPOKEN_LINES.md: no change, no spoken line added or altered.
