@@ -99,7 +99,8 @@ module BreakEscape
       row = token_row
       assert_equal 240, row['expiresInS']
       refute row['expired']
-      assert_equal before, state, 'a GET writes nothing'
+      # K3d's GET /keyring stamps keyringGained (the Sign-ins order); nothing else, and no clock
+      assert_equal before.except('keyringGained'), state.except('keyringGained'), 'a GET writes no clock'
 
       cred_login('lena_pc', 'lena_token', foothold: OFFICE)
       assert_response :success, response.body
@@ -366,7 +367,8 @@ module BreakEscape
       network_view(OFFICE)
       container('lena_pc', foothold: OFFICE)
       bootstrap_scenario
-      assert_equal before, state
+      # K3d's GET /keyring stamps keyringGained (the Sign-ins order); nothing else is written
+      assert_equal before.except('keyringGained'), state.except('keyringGained')
       assert state['sessions'].key?('lena_pc'), 'the record stays until the next write'
     end
 
