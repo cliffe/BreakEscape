@@ -15,6 +15,8 @@ module BreakEscape
 
     # At most this many capture entries are taken from one sync body (sync deltas R2, 6a).
     MAX_CAPTURES_PER_SYNC = 64
+    # The console fields of a hidden device, as plant-hiding.js reads them (client and server lists match).
+    DEVICE_DATA_FIELDS = %w[id type name observations wifiTwin apScan apPortal apCaptureLog].freeze
 
     # Records a plant when the inventory remove names the object it was used on. Appends
     # { item, on } to plantedItems only if the item is held, the object (a room object with that
@@ -128,15 +130,19 @@ module BreakEscape
     end
 
     # itemId -> static definition for the bootstrap (no onHidden: it runs from the held item at
-    # hide time). deviceData is the console object's behaviour fields.
+    # hide time). deviceData is the console object's behaviour fields, sent only when the
+    # device's authored room is not one of the hideable's rooms: otherwise the client takes them
+    # from that room's own answer (GET /room/:id, filtered like every room object), where
+    # core/rooms.js hands the hiddenWith object to plant-hiding.js. Plan review R1 m2: the same
+    # 3 KB was in both.
     def hideables_for_client
       HidingSpots.item_defs(scenario_data).transform_values do |defn|
         dev = defn['device'] && planted_target_object(defn['device'])
-        device_data = {}
-        if dev
-          device_data = dev[:object].slice('id', 'type', 'name', 'observations', 'wifiTwin', 'apScan', 'apPortal', 'apCaptureLog')
+        out = defn.slice('rooms', 'spots', 'exclude', 'device', 'overlay', 'spotAt', 'confirm')
+        if dev && !Array(defn['rooms']).include?(dev[:room_id])
+          out['deviceData'] = dev[:object].slice(*DEVICE_DATA_FIELDS)
         end
-        defn.slice('rooms', 'spots', 'exclude', 'device', 'overlay', 'spotAt', 'confirm').merge('deviceData' => device_data)
+        out
       end
     end
 

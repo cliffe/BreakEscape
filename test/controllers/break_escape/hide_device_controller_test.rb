@@ -92,7 +92,7 @@ module BreakEscape
       before = bootstrap
       defn = before['hideables']['kit_rogue_ap']
       assert_equal ['reception'], defn['rooms']
-      assert_equal 'planted_rogue_ap', defn['deviceData']['id']
+      refute defn.key?('deviceData'), 'the console fields ride on the room answer, not the bootstrap'
       refute defn.key?('onHidden')
       assert_equal [], before['hiddenDevices']
       refute before.key?('plantedItems')

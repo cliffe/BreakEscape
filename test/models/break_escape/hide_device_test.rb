@@ -238,9 +238,21 @@ module BreakEscape
       defn = @game.hideables_for_client['kit_rogue_ap']
       assert_equal ['reception'], defn['rooms']
       assert_equal 'planted_rogue_ap', defn['device']
-      assert_equal 'planted_rogue_ap', defn['deviceData']['id']
-      assert defn['deviceData']['wifiTwin']
       refute defn.key?('onHidden')
+      # The device is authored in reception, a hideable room: its console fields come from the
+      # room answer, so the bootstrap does not repeat them (R1 m2).
+      refute defn.key?('deviceData')
+    end
+
+    test 'deviceData is sent when the device is authored outside the hideable rooms' do
+      scn = hiding_scenario
+      scn['startItemsInInventory'][0]['hideable']['rooms'] = ['comms']
+      build_game(scn, unlocked: %w[reception comms])
+      out = @game.hideables_for_client['kit_rogue_ap']['deviceData']
+      assert_equal 'planted_rogue_ap', out['id']
+      assert out['wifiTwin']
+      assert_equal 'Ledgerwell-Staff', out['apScan'][0]['ssid']
+      refute out.key?('hiddenWith'), 'only the console fields'
     end
 
     test 'a forged clone ahead of the real kit is skipped and the real kit is hidden' do

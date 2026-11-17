@@ -67,6 +67,8 @@ export const MSG_RETRY = 'Could not hide it. Try again.';
 export const HIDE_LABEL = 'Hide it';
 export const LEAVE_LABEL = 'Leave it';
 export const OVERLAY_DEPTH_STEP = 0.005;
+/** Console fields kept from a hiddenWith room object (server: CaptureProofs::DEVICE_DATA_FIELDS). */
+const DEVICE_DATA_FIELDS = ['id', 'type', 'name', 'observations', 'wifiTwin', 'apScan', 'apPortal', 'apCaptureLog'];
 
 const win = () => (typeof window !== 'undefined' ? window : {});
 
@@ -124,6 +126,19 @@ export class PlantHiding {
         this._heldKey = '';
         this._warned = new Set();
         this._subscribed = null;
+        this._roomDevices = new Map();
+    }
+
+    /**
+     * core/rooms.js saw a hiddenWith object in a room answer: keep its console fields (the
+     * bootstrap omits them for a device authored in the hideable's own room). Whitelist as the
+     * server's DEVICE_DATA_FIELDS. Called before syncRoom draws the overlay.
+     */
+    noteHiddenWith(roomId, obj) {
+        if (!obj || typeof obj.id !== 'string' || !obj.id) return;
+        const data = {};
+        for (const k of DEVICE_DATA_FIELDS) if (obj[k] !== undefined) data[k] = obj[k];
+        this._roomDevices.set(obj.id, data);
     }
 
     /** Fill both maps from the scenario response (core/game.js). No request. */
@@ -365,7 +380,7 @@ export class PlantHiding {
             sp._plantOverlay = true;
             sp.objectId = deviceId;
             sp.roomId = entry.room;
-            sp.scenarioData = { ...def.deviceData };
+            sp.scenarioData = { ...(this._roomDevices.get(deviceId) || {}), ...def.deviceData };
             if (host.visible === false) sp.setVisible?.(false);
             room.objects = room.objects || {};
             room.objects[deviceId] = sp;

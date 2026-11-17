@@ -2251,7 +2251,11 @@ export function createRoom(roomId, roomData, position) {
                 }
                 // A device that hides in a plant (hiddenWith) is never placed from room data;
                 // plant-hiding.js draws it as an overlay on its host once hidden.
-                if (scenarioObj.hiddenWith) return;
+                // The room answer carries its console fields (the bootstrap does not), so hand them over.
+                if (scenarioObj.hiddenWith) {
+                    window.plantHiding?.noteHiddenWith?.(roomId, scenarioObj);
+                    return;
+                }
                 const objType = scenarioObj.type;
 
                 // Handle table objects with explicit tableItems list.

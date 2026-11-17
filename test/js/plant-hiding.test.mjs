@@ -414,6 +414,21 @@ test('syncRoom draws the overlay once however often it runs', () => {
     assert.equal(w.scene.made.length, 1);
 });
 
+test('R1 m2: console fields come from the room answer when the bootstrap omits deviceData', () => {
+    const w = world({ hiddenDevices: [{ item: KIT, on: SPOT, room: 'reception' }] });
+    w.ph.hideables.get(KIT).deviceData = {};
+    w.ph.noteHiddenWith('reception', {
+        id: 'planted_rogue_ap', type: 'rogue_ap', name: 'pocket rogue AP', wifiTwin: true,
+        apScan: [{ ssid: 'x' }], hiddenWith: 'kit_rogue_ap', x: 5, observations: 'n'
+    });
+    w.ph.syncRoom('reception');
+    const dev = w.scene.made[0];
+    assert.equal(dev.scenarioData.wifiTwin, true);
+    assert.deepEqual(dev.scenarioData.apScan, [{ ssid: 'x' }]);
+    assert.equal('hiddenWith' in dev.scenarioData, false, 'only the whitelisted console fields');
+    assert.equal('x' in dev.scenarioData, false);
+});
+
 test('a missing host logs one warning and the overlay goes on the first eligible plant', () => {
     const w = world({ hiddenDevices: [{ item: KIT, on: 'reception_plant-large12-top-ani1_999', room: 'reception' }] });
     const warns = [];
@@ -525,7 +540,7 @@ test('interactions.js has the branch after the login PC and before the jack, plu
 
 test('rooms.js skips hiddenWith objects and calls syncRoom; game.js loads and syncs the start room', () => {
     const r = src('core/rooms.js');
-    assert.match(r, /if \(scenarioObj\.hiddenWith\) return;/);
+    assert.match(r, /if \(scenarioObj\.hiddenWith\) \{\s+window\.plantHiding\?\.noteHiddenWith\?\.\(roomId, scenarioObj\);\s+return;/);
     assert.match(r, /window\.plantHiding\?\.syncRoom\?\.\(roomId\)/);
     assert.equal(r.includes("from '../systems/plant-hiding.js'"), false);
     const g = src('core/game.js');
