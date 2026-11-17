@@ -1,0 +1,13 @@
+{
+  "key": "e5c55d9a03a0a35d648d900710090888",
+  "npc": "ama",
+  "text": "A saved connection on the front desk got you into Julian's PC. His door never came into it.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:46:44Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "d9f5ae05114b1a89c4a69db2fb42d4d3",
+  "npc": "yasmin",
+  "text": "Missed it.",
+  "voice": "Laomedeia",
+  "style": "Merrin & Sallow's finance controller, in her 40s, measured and precise; the person a PA should ring about money. Speak with a consistent southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:51:14Z"
+}
