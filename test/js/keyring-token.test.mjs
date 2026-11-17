@@ -299,3 +299,93 @@ test('find toasts: a token turning expired is not a new find', async () => {
     await kr.refresh(); await settle();
     assert.equal(alerts.length, 0);
 });
+
+// ── The sign-in screen's token button (8.1) ─────────────────────────────────────────────────
+
+function tokenScreen(entry) {
+    document.body.innerHTML = '<div id="mg"></div>';
+    window.MinigameFramework = { currentMinigame: null, endMinigame: () => {} };
+    window.playUISound = () => {};
+    const mg = new PasswordMinigame(document.getElementById('mg'), {
+        title: "Lena's PC", type: 'item',
+        signIn: {
+            pcId: 'lena_pc', pcName: "Lena's PC (HB-FIN-02)", picker: false, tiles: [], current: null,
+            remote: { footholdId: 'jack_comms_port', linkName: 'Drop box: comms room' },
+            host: 'HB-FIN-02', captured: [], capturedLoading: true, preselect: 'lfox'
+        },
+        postitNote: '', showPostit: false
+    });
+    window.MinigameFramework.currentMinigame = mg;
+    mg.init();
+    mg.start();
+    mg.setRemoteAccounts({ picker: 'accounts', host: 'HB-FIN-02', captured: [],
+        tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], keyring: [entry] });
+    document.querySelector('.signin-tile[data-username="lfox"]')?.click();
+    return mg;
+}
+const credButton = () => document.querySelector('#signin-ways .signin-cred[data-cred-id="k_tok"]');
+const refusedLine = () => document.querySelector('#signin-ways .signin-cred-refused')?.textContent ?? null;
+const screenMessage = () => document.querySelector('#signin-message').textContent;
+
+test('8.1 a live token: Lena\'s line has "Connect with {label}", tagged Token, and it posts by the proof foothold', async () => {
+    setup();
+    const posts = [];
+    window.ApiClient.loginWithCredential = async (pcId, id, route) => { posts.push([pcId, id, route]); return {
+        success: true, npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'token', label: LABEL,
+        remote: true, footholdId: 'jack_comms_port', host: 'HB-FIN-02', expiresInS: 240, endedPcIds: [] }; };
+    const mg = tokenScreen(TOKEN);
+    const b = credButton();
+    assert.ok(b, 'the token button is drawn');
+    assert.equal(b.textContent, `Connect with ${LABEL}`);
+    assert.equal(b.getAttribute('aria-disabled'), null);
+    assert.equal(refusedLine(), null);
+    assert.deepEqual([...document.querySelectorAll('.signin-tile[data-username="lfox"] .signin-tag')].map(t => t.textContent), ['Token']);
+    assert.deepEqual(mg.getTestState().signIn.tiles[0].credentials, [{ id: 'k_tok', kind: 'token', label: LABEL, accepted: true, expired: false }]);
+    b.click();
+    await settle();
+    assert.deepEqual(posts, [['lena_pc', 'k_tok', { foothold: 'jack_comms_port' }]]);
+});
+
+test('8.1 an expired token is greyed with "{label} has expired." and posts nothing', async () => {
+    setup();
+    let posted = 0;
+    window.ApiClient.loginWithCredential = async () => { posted++; return {}; };
+    const mg = tokenScreen(EXPIRED);
+    const b = credButton();
+    assert.equal(b.getAttribute('aria-disabled'), 'true');
+    assert.equal(refusedLine(), 'HB-FIN-02 sign-in token has expired.');
+    assert.equal(mg.getTestState().signIn.tiles[0].credentials[0].expired, true);
+    b.click();
+    await settle();
+    assert.equal(posted, 0, 'no POST');
+    assert.equal(screenMessage(), 'HB-FIN-02 sign-in token has expired.');
+});
+
+test('8.1 a token the policy refuses is greyed with the token short line and posts nothing', async () => {
+    setup();
+    let posted = 0;
+    window.ApiClient.loginWithCredential = async () => { posted++; return {}; };
+    tokenScreen({ ...TOKEN, accepted: false });
+    assert.equal(credButton().getAttribute('aria-disabled'), 'true');
+    assert.equal(refusedLine(), 'HB-FIN-02: no session tokens.');
+    credButton().click();
+    await settle();
+    assert.equal(posted, 0);
+    assert.equal(screenMessage(), 'HB-FIN-02 does not accept session tokens.');
+});
+
+test('8.1 a token that ran out between the answer and the click: 422 expired greys it with the line', async () => {
+    setup();
+    let posted = 0;
+    window.ApiClient.loginWithCredential = async () => { posted++; throw Object.assign(new Error('x'), { status: 422, body: { expired: true, message: `${LABEL} has expired.` } }); };
+    tokenScreen(TOKEN);
+    credButton().click();
+    await settle();
+    assert.equal(posted, 1);
+    assert.equal(screenMessage(), 'HB-FIN-02 sign-in token has expired.');
+    assert.equal(credButton().getAttribute('aria-disabled'), 'true', 'greyed from now on');
+    assert.equal(refusedLine(), 'HB-FIN-02 sign-in token has expired.');
+    credButton().click();
+    await settle();
+    assert.equal(posted, 1, 'a second click posts nothing');
+});

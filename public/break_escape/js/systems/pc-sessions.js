@@ -142,6 +142,8 @@ export function credentialRefusalReason(b = {}) {
     if (b.notPermitted) return 'not_permitted';
     if (b.lockedOut) return 'locked_out';
     if (b.ended) return 'ended';
+    // Keyring K5: a session token that has run out (POST /login's 422 { expired: true })
+    if (b.expired) return 'expired';
     return 'no_longer_works';
 }
 

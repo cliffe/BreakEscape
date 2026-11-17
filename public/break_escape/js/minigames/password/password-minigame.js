@@ -19,7 +19,7 @@ import {
     remoteTypedLine, remoteHeadlessLine, remoteAccountsFailedLine, remoteBothFailedLine,
     notRespondingMessage, unreachableMessage, remoteOffMessage, remoteNotPermittedMessage, remoteLockedOutMessage,
     KEYRING_FAILED_TEXT, KEYBOARD_BOTH_FAILED_TEXT, FOUND_PASSWORD_LEAD_TEXT, CONNECT_WITH_TEXT,
-    kindRefusedMessage, kindRefusedShort, credentialRefusalLine, teachLine, chosenAccountLine
+    kindRefusedMessage, kindRefusedShort, credentialRefusalLine, teachLine, chosenAccountLine, tokenExpiredMessage
 } from '../../utils/remote-host-text.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
 // falls back the same way as a tile); exported here too for the tests and callers that
@@ -416,7 +416,7 @@ export function mergeRemoteTiles({ picker, headless = false, remoteScreen, tiles
             if (!tile.found.some(f => f.id === e.id)) tile.found.push({ id: e.id, label: String(e.label || e.foundIn || '') });
         } else if (!tile.credentials.some(c => c.id === e.id)) {
             tile.credentials.push({ id: e.id, kind, label: credentialLabel(e, kind), accepted: e.accepted === true,
-                host: typeof e.host === 'string' ? e.host : null });
+                expired: e.expired === true, host: typeof e.host === 'string' ? e.host : null });
         }
     }
     return out;
@@ -569,7 +569,7 @@ export class PasswordMinigame extends MinigameScene {
                     picker: this.signIn.picker,
                     tiles: st.tiles.map(t => ({ username: t.username, displayName: t.displayName, kinds: Array.isArray(t.kinds) ? t.kinds : [], fillsPassword: !!t.password,
                         // Keyring K3a: the chosen line's ways in for this account
-                        credentials: (t.credentials || []).map(c => ({ id: c.id, kind: c.kind, label: c.label, accepted: c.accepted })),
+                        credentials: (t.credentials || []).map(c => ({ id: c.id, kind: c.kind, label: c.label, accepted: c.accepted, expired: c.expired === true })),
                         found: (t.found || []).map(f => f.label) })),
                     keyring: { entries: Array.isArray(this.signIn.keyring) ? this.signIn.keyring.length : 0, failed: !!this.signIn.keyringFailed },
                     selected: st.selected,
@@ -2161,11 +2161,13 @@ export class PasswordMinigame extends MinigameScene {
             b.title = credentialButtonTitle(cred, { displayName: tile.displayName });
             b.setAttribute('aria-label', `${CONNECT_WITH_TEXT} ${cred.label}, ${tileFullNames([cred.kind])[0]}`);
             way.appendChild(b);
-            if (!cred.accepted) {
+            // A refused kind, or (K5) an expired session token: greyed, with its short line
+            if (!cred.accepted || cred.expired === true) {
                 b.setAttribute('aria-disabled', 'true');
                 const why = doc.createElement('div');
                 why.className = 'signin-cred-refused';
-                why.textContent = kindRefusedShort(cred.host || this.signInHost());
+                why.textContent = cred.expired === true ? tokenExpiredMessage(cred.label)
+                    : kindRefusedShort(cred.host || this.signInHost(), cred.kind);
                 way.appendChild(why);
             }
             this.addEventListener(b, 'click', () => this.useCredential(cred, tile));
@@ -2247,6 +2249,11 @@ export class PasswordMinigame extends MinigameScene {
     async useCredential(cred, tile) {
         if (!this.gameState.isActive || this._signingIn) return;
         const host = cred.host || this.signInHost();
+        if (cred.expired === true) {
+            if (window.playUISound) window.playUISound('reject');
+            this.setSignInMessage(tokenExpiredMessage(cred.label), 'error');
+            return;
+        }
         if (!cred.accepted) {
             if (window.playUISound) window.playUISound('reject');
             this.setSignInMessage(kindRefusedMessage(cred.kind, host), 'error');
@@ -2282,9 +2289,11 @@ export class PasswordMinigame extends MinigameScene {
             return;
         }
         if (window.playUISound) window.playUISound('reject');
-        if (result.reason === 'kind_refused') {
-            // The PC's policy refused it: grey the button now, with its short reason under it
-            cred.accepted = false;
+        if (result.reason === 'kind_refused' || result.reason === 'expired') {
+            // The PC's policy refused it, or (K5) the token ran out: grey the button now, with
+            // its short reason under it
+            if (result.reason === 'expired') cred.expired = true;
+            else cred.accepted = false;
             const box = this.gameContainer?.querySelector?.('#signin-ways');
             if (box) delete box.dataset.for;
             this.renderSignInWays(tile);
