@@ -598,3 +598,30 @@ Other observations:
 - player_state: every reload adds the one-off Mission Brief note (notes +335) plus a syncWrites step (+1 to +152) and, in some games, globalVariables (+1 to +68). Every run is under the 2048 byte limit (`ok` true). The syncWrites growth in 7798 (+152) and 7821 (+77) is larger than in run 5 and was not checked against the delta rule.
 - Console: 400 and ERR_FAILED entries from the aborted /tts route, the same as earlier runs.
 - No game record was edited. Scenario and engine files were not changed. The uncommitted dungeon_graph changes were left alone.
+
+## Cake reload run 7 (probe 7ebdae49e)
+
+Probe: `tools/playtest/showcase-bc1-cake-reload.mjs` at 7ebdae49e (commit "hold present staff continuously after a reload until the eat step"), copied unchanged to tmp/delete/cake7/ with its helper `m01-ol-lib.mjs` from the same commit (not committed). Run from the worktree root. Keyless server on 127.0.0.1:3093 (puma PID 2906649, pid file tmp/delete/cake7/server.pid), stopped by PID afterwards; port 3093 free. Port 3001 was not touched. BUNDLE_PATH=<main>/vendor/bundle and RBENV_VERSION=2.7.8 exported; BREAK_ESCAPE_STANDALONE=true. Same args as run 6B.
+
+Commands (each invocation makes one game per case, so each gives two games):
+- Run 7A: `node <scratch>/showcase-bc1-cake-reload.mjs --scenario demo_access_tour --room open_plan --cake cake --port 3093 --cases 2,3 --eaters thandiwe,yasmin --staff thandiwe,yasmin --rooms open_plan,reception --task ""` (log tmp/delete/cake7/run7a.txt, exit 0)
+- Run 7B: same command, fresh games (log tmp/delete/cake7/run7b.txt, exit 0)
+
+Full records: tmp/bc1/demo_access_tour-case{2,3}-game{7854,7861,7873,7879}.json.
+
+| Run | Case | Game | Result | Servings before / after reload | Eaters (magnet_serving) | diag.calmedAt | player_state bytes before -> after (growth by key) |
+|---|---|---|---|---|---|---|---|
+| 7A | 2 cake down | 7854 | PASS | 2 / 2 | thandiwe (left 1) during the test step | {partial: true, missing: [thandiwe, yasmin]} | 4830 -> 5166 (+336: notes +335, syncWrites +1) |
+| 7A | 3 one slice | 7861 | PASS | 2 -> 1 before reload / 1 | thandiwe (left 1) before reload; yasmin (left 0) after reload, first slice after the reload by a different NPC | {partial: true, missing: [thandiwe, yasmin]} | 4857 -> 5074 (+217: notes +335, syncWrites -119, globalVariables +1) |
+| 7B | 2 cake down | 7873 | PASS | 2 / 2 | thandiwe (left 1) during the test step | {partial: true, missing: [thandiwe, yasmin]} | 4829 -> 5165 (+336: notes +335, syncWrites +1) |
+| 7B | 3 one slice | 7879 | PASS | 2 -> 1 before reload / 1 | thandiwe (left 1) before reload; yasmin (left 0) after reload, same as 7A | {partial: true, missing: [thandiwe, yasmin]} | 4975 -> 5137 (+162: notes +335, syncWrites -174, globalVariables +1) |
+
+Check results: placed, kept, eat (walked and ate) true in every game. enterRoom: no refusal and no unloaded room (`unloaded` empty in the reads). Every reload is under the 2048 byte limit (`ok` true). No second slice by the same NPC after a reload occurred, so the accepted limit did not arise in this run.
+
+Compared with run 6: the case 2 and case 3 failures on `kept` (count dropping during the post-reload settle) did not recur in any of the four games. Staff were not held before the settle, though, so the failure is not explained by the hold. The probe's post-reload settle appears to have been free of eating in these games.
+
+Odd:
+- The post-reload hold still does not take. In all four games `window.__test.needs.ids()` is empty right after the reload (`diag.atReload.ids` = []), the staff read as null, and `diag.calmedAt` is `{partial: true, missing: [thandiwe, yasmin]}`. This is the same as run 6, so the fix in 7ebdae49e did not change this symptom. Root cause not diagnosed.
+- Each game's cake read after reload is at the same tile as before the reload. The drop coordinate and the found coordinate differ by a constant offset (for example drop 53,-19 reads back as 40,-33 in 7854), which looks like a coordinate convention, not a move.
+- Console: the same 400 and ERR_FAILED entries from the aborted /tts route as earlier runs.
+- No game record was edited. Scenario and engine files were not changed. The uncommitted dungeon_graph changes were left alone.
