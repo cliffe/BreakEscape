@@ -101,3 +101,15 @@ All live probes at the tip (finding 1), the send-home screenshot, music with a h
 ## Verdict
 
 Not ready to merge. No blocker, but two majors: run the tip live (paired coffee with an exchange, cooler pair, reload), and fix the send-home tiles and prove them on screen. The minors are quick; finding 4 needs the user's pick.
+
+## R2 fix log (partial; see R2_FIX_HANDOVER.md)
+
+- Finding 2 (send-home): fixed in scenario, live-measured. The "20 px north" was the seated sprite offset: sprite y is about 20 px above where the seated sprite draws. Feet (body centre) after the old targets were already the post (148,252) and (106,280), both before and after goToAndStay (game 6606). Targets are now exactly those feet points (4.625,7.875 and 3.3125,8.75); `stopOnArrival` removed (patrolOverride ignores it). No engine change. Screenshot crop and an after-KO measurement from a mid-break start are still to do (p3.mjs).
+- Finding 3 (HaX texts): fixed, verbatim from DIALOGUE_SAMPLE.md, appended after the existing last agent_0x99 mapping. Live delivery proof still to do (p2.mjs, p3.mjs).
+- Finding 4 (laptop text): fixed, base text, variant order and wording as the approved sample; night variant replaces the dark-screen text.
+- Finding 5 (stale comment): fixed (five hide mappings).
+- Finding 6 (redundant hides): fixed by dropping the `previousRoom === null` mapping on both staff; saved visibility still applies on register.
+- Finding 7 (witnessed): fixed. The existing KO mapping now sets only `wh_staff_upset`; two exclusive mappings set `wh_staff_witnessed` and send HaX's text (`!zainab_ko`, or `zainab_ko && !yusuf_ko`; the validator grammar has no `||`). The hallway-cooler case is not covered (deferred, low stakes).
+- Finding 8 (lone commas): fixed.
+- Finding 9 (validator warnings 13, 14): deferred, validator artefact as the review says.
+- Finding 1 (live proof): game 6610, first pass. Coffee break from closing Ffion's chat: Yusuf used the machine at 4.8 s, Zainab at 10.3 s, laptop open at the leave, away 29.6 s, ex_open_door heard (PASS in substance; the script's own A1 check had a bug matching the event name). Cooler: Zainab used it, laptop locked; Yusuf's use fell outside the capture window (rerun with 22 s wait). Reload: heard_ex_* kept; later breaks played ex_tailgate then ex_client_sites (after an emitted `card_cloned` event, cloner minigame not played); no knot repeated. Music with a hostile staffer and the HaX/witness texts: not yet run.
