@@ -54,7 +54,7 @@ Irina, the guard, Kemal and Satoshi stay put and gain no needs-layer key. HaX ga
 From the awareness course cast (D53), not the Office Life Tour cast:
 
 - **Lerato Dlamini** (`lerato_dlamini`, voice Gacrux): late-desk market operations. Watches the overnight books and takes the desk phone.
-- **Tomasz Wisniewski** (`tomasz_wisniewski`, voice Algieba): evening settlements clerk. Prints the end-of-day settlement run, covers the phones when Lerato is away.
+- **Tomasz Wisniewski** (`tomasz_wisniewski`, voice Algieba): evening client-support lead. Works the overnight customer support queue on his laptop, writes the shift handover sheet, covers the phones when Lerato is away. His job is kept away from settlements and custody on purpose, because the fund puzzle works from a settlements-to-custody file (3.3).
 
 Both atlases have 8-direction sit, use, phone and drink frames, so no art. Neither voice is used elsewhere in m06. The build checks their looks and ages against the m06 cast in the awareness cast files and records the spread. Final picks are QUESTIONS.md Q0.
 
@@ -70,7 +70,7 @@ Neither has a story duty, a key, a task or an `itemsHeld`. Both are attackable; 
 
 Need names match the presets' `affordance.satisfies`: the coffee preset satisfies `caffeine` (`public/break_escape/js/data/office-presets.json`; schema `:4844`), as in `scenarios/test_needs_sims/scenario.json.erb:570`. `coffee` is only the chatter pool name. Dani has no hunger need, no `interests`, no `workarounds`, no `habits` and no need a magnet satisfies, so the pizza lever (4) cannot lure him.
 
-No machine needs a beat gate: no beat needs Dani at a spot. The only `offWhen` on the floor machines is the trouble global `floor_staff_ko` (2.8). While it holds, the coffee point, copier and fridge are off for all three; pairs stop talking; Tomasz's forgotten print, if not yet made, waits (the copier is off); the pizza magnet still works (it is an item, not a machine), so a dropped box can still draw an extra off post.
+No machine needs a beat gate: no beat needs Dani at a spot. The only `offWhen` on the floor machines is the trouble global `floor_staff_ko` (2.8). While it holds, the coffee point, copier and fridge are off for all three; pairs stop talking; if `floor_staff_ko` is set before the player first talks to Irina, Tomasz's handover sheet is never printed (the mapping's condition fails and a blocked print is not retried, `npc-needs.js:1131`, `:3935` to `:3943`); the pizza magnet still works (it is an item, not a machine), so a dropped box can still draw an extra off post.
 
 ### 2.5 Found at post first, and Dani's rhythm
 
@@ -112,8 +112,8 @@ All appended, none edits an existing mapping:
 
 - HaX: four `npc_ko:*` mappings setting `floor_staff_ko`. HaX's list ends with an ERB `pairs` loop whose trailing comma is computed (`erb:1664` to `:1680`); the new mappings go after the loop and the loop's comma logic changes so that a comma always follows its last entry. The rendered JSON is checked with the validator.
 - Dani: the first-talk break and the `room_entered` mapped break (2.5).
-- Tomasz: one `conversation_closed:irina_volkova` mapping, `onceOnly`, `condition: "!globalVars.floor_staff_ko"`, `needs: { print: { producer: "floor_copier", forget: true } }` (`producer` is required, schema `:5107`; `npc-needs.js:1119` to `:1122`), so after the player first speaks to Irina his settlement page is left on the copier tray. It lives on Tomasz because his room (the trading floor) is loaded whenever Irina is talked to.
-- Printing is by this command only. Neither extra has `habits.print` or a `work` need, and no `onUse` hook prints to the copier, so the copier's one reveal slot (3.1) can only ever hold Tomasz's page; no routine print can recycle it (`npc-needs.js:3884` to `:3891`). The build checks whether `forget` needs a `habits.print` entry to take effect and, if so, adds `habits.print { forget: false }` with no hook, which prints nothing on its own.
+- Tomasz: one `conversation_closed:irina_volkova` mapping, `onceOnly`, `condition: "!globalVars.floor_staff_ko"`, `needs: { print: { producer: "floor_copier", forget: true } }` (`producer` is required, schema `:5107`; `npc-needs.js:1119` to `:1122`), so after the player first speaks to Irina his shift handover sheet is left on the copier tray. It lives on Tomasz because his room (the trading floor) is loaded whenever Irina is talked to.
+- Printing is by this command only. Neither extra has `habits.print` or a `work` need, and no `onUse` hook prints to the copier, so the copier's one reveal slot (3.1) can only ever hold Tomasz's page; no routine print can recycle it (`npc-needs.js:3884` to `:3891`). The command needs no `habits.print`: the habit falls back to `{}` and `forget: true` comes from the command (`npc-needs.js:1124` to `:1126`, `:3990` to `:3991`).
 - Exchange 1 (6) is declared on Tomasz (`with: "trader_npc"`), its knot in Tomasz's new ink file, so `ink/m06_npc_trader.ink` is untouched.
 - The spare phone `floor_spare_phone` has `triggerOnInteract: [{ "type": "emit_event", "event_name": "desk_phone_ring:lerato_phone" }]` (shape as `scenarios/test_needs_sims/scenario.json.erb:238` to `:262`).
 
@@ -127,14 +127,14 @@ Scenario `officePresets: true`.
 
 | Tiled item | at | declared as | notes |
 |---|---|---|---|
-| coffee_station1 | (2.3, 7.6) | `coffee_station` | `offWhen: "floor_staff_ko"`; capacity 2; chatter pool; `affordance.overhearRadius` 360 |
-| photocopier1 | (1.1, 7.6) | id `floor_copier`, type `photocopier` | `offWhen: "floor_staff_ko"`; the preset takes this name. One reveal slot: a `notes` object `tomasz_settlement_page` with `outputOf: "floor_copier"` and its own `revealOnGlobal` (schema `:5650`) |
+| coffee_station1 | (2.3, 7.6) | `coffee_station` | `offWhen: "floor_staff_ko"`; `affordance: { capacity: 2, chatter: "coffee", overhearRadius: 360 }` (pairing needs both, `npc-needs.js:4411` to `:4413`; the preset has neither; `overhearRadius` in `affordance` is valid, schema `:3980`); the build checks the preset's queue cells (dx -1, -2) do not run into the copier's `useFrom` |
+| photocopier1 | (1.1, 7.6) | id `floor_copier`, type `photocopier` | `offWhen: "floor_staff_ko"`; the preset takes this name. One reveal slot: a `notes` object `tomasz_handover_sheet`, `outputOf: "floor_copier"`, `revealOnGlobal: "tomasz_handover_sheet_shown"` (declared `false`), an explicit `position` on the tray just in front of photocopier1, `takeable: true`, `readable: true`, `addToNotes: false` (shape as `scenarios/m02_ransomed_trust/scenario.json.erb:2363` to `:2367` and `scenarios/test_needs_sims/scenario.json.erb:436` to `:470`; schema `:5650`). It needs the explicit position because the floor's only Tiled notes sprite is already claimed by `daily_trading_report` (`erb:1984`) |
 | mini_fridge1 | (3.1, 7.5) | type `mini_fridge`, `officeType: "fridge"` (the fridge preset's types are only `qdc_fridge1`) | `offWhen: "floor_staff_ko"`; hunger |
 | pc10 | (5.9, 3.5) | existing `trading_workstation` (`erb:1977`) | unchanged |
 | pc6 | (7.0, 3.5) | new `lerato_desk`, type `pc` | Lerato's home, seat; no screen, no `workstation`. Every pc sprite shares the base type `pc` and Tiled order on the floor is pc10, pc6, pc8, pc11, laptop1, pc6, pc8, pc11, pc6, so `lerato_desk` goes directly after `trading_workstation` (`erb:1977`) in the objects array to claim pc6 at (7.0, 3.5). It gains the desk preset (`satisfies: work`), harmless since no NPC here has a `work` need. Unclaimed pc sprites are still drawn (`core/rooms.js:2519` onward), so no twins are declared |
-| laptop1 | (2.8, 3.6) | new `tomasz_laptop`, `type: "laptop1"`, `sprite: "laptop"` | claims the drawn Tiled laptop through the sprite search (`core/rooms.js:2449` to `:2455`) while the exact type keeps it free of the desk preset; a bare `laptop1` match would land at random (`references/mapping-patterns.md:15`). Tomasz's home, seat (hand-written affordance); `workstation: true`, `owner: "tomasz_wisniewski"`; readable lore (`readable`, `readDisplay`, `addToNotes: false`, `text` / `textVariants`) in the readable-laptop shape (`references/mapping-patterns.md` section 2) |
-| phone1 | (7.6, 3.6) | new `lerato_phone` | `deskPhone: true`, `officeType: "desk_phone"`, `owner: "lerato_dlamini"`, within 1.5 tiles of her post; standing affordance with `useFrom` to the side of her chair (schema `:5484`; `scenarios/test_needs_sims/scenario.json.erb:238` to `:248`) |
-| phone3 | (7.6, 5.2) | new `floor_spare_phone` | the L2 lever (2.9) |
+| laptop1 | (2.8, 3.6) | new `tomasz_laptop`, `type: "laptop1"`, `position: "as-type:laptop"`, no `sprite` | the `as-type` position claims the drawn Tiled laptop (`core/rooms.js:2443` to `:2450`) and the texture stays the Tiled image `laptop1`; the exact type keeps it free of the desk preset (`office-presets.js:55`). A `sprite: "laptop"` would draw a missing texture (`core/rooms.js:533` to `:542`; only laptop1 to laptop7 are loaded, `game.js:1447` to `:1453`). Tomasz's home, seat (hand-written affordance); `workstation: true`, `owner: "tomasz_wisniewski"`; readable lore (`readable`, `readDisplay`, `addToNotes: false`, `text` / `textVariants`) in the readable-laptop shape (`references/mapping-patterns.md` section 2) |
+| phone1 | (7.6, 3.6) | new `lerato_phone`, `type: "phone"`, no position, declared before `floor_spare_phone` (both index as base type `phone`, phone1 first in Tiled order) | `deskPhone: true`, `officeType: "desk_phone"`, `owner: "lerato_dlamini"`, within 1.5 tiles of her post; standing affordance with `useFrom` to the side of her chair (schema `:5484`; `scenarios/test_needs_sims/scenario.json.erb:238` to `:248`) |
+| phone3 | (7.6, 5.2) | new `floor_spare_phone`, `type: "phone"`, no position | the L2 lever (2.9) |
 | hce_trading_station1 | (6.1, 7.7) | not declared | in the `tables` layer, cannot be claimed (`core/rooms.js:2139`) |
 
 Machines are declared by base type name with no `position`. The build checks one of each lands on its Tiled sprite after two loads, and that only one laptop is drawn, in the same place both times. Hand-written `useFrom` or `queue.cells` where a preset's cells hit a wall or a neighbour.
@@ -144,7 +144,7 @@ Machines are declared by base type name with no `position`. The build checks one
 ### 3.2 Blockchain lab (`room_hce_lab.json`)
 
 - No change to Priya, her PC or the lab's objects except the pizza.
-- pizza_boxes1 (2.8, 9.2), in the items layer: declared with id `pizza`, `type: "pizza_boxes"`, `takeable: true`, `droppable: true` (a drop is refused without it, `item-drop.js:122`) and an `affordance` with a magnet (4, L1). The Tiled sprite in the items layer can be claimed by that type, and `takeable` skips presets (`office-presets.js:52`). Priya has no needs, so the box does not move her.
+- pizza_boxes1 (2.8, 9.2), in the items layer: declared with id `pizza`, `type: "pizza_boxes"`, `sprite: "pizza_boxes1"` (the dropped texture is `sprite`, else `type`, `item-drop.js:75` to `:79`, and only `pizza_boxes1.png` exists; the room claim falls back to the type, `core/rooms.js:2452` to `:2453`), `takeable: true`, `droppable: true` (a drop is refused without it, `item-drop.js:122`) and an `affordance` with a magnet (4, L1). The Tiled sprite in the items layer can be claimed by that type, and `takeable` skips presets (`office-presets.js:52`). Priya has no needs, so the box does not move her.
 
 ### 3.3 Secrets that office-life text must never carry
 
@@ -153,7 +153,12 @@ Machines are declared by base type name with no `position`. The build checks one
 - Irina's badge, the CTO and executive badges, the password dictionary, the cold-storage slot numbers, server room and data centre access: none is mentioned.
 - No office-life item has an item type a lock or ink check reads (`keycard`, `key`, a `text_file` a lock reads, `notes` whose `onRead` global a task uses).
 
-Safe lore: the late desk's routine, the coffee, the overnight Asia open, settlement cut-off, a photocopier memo, Tomasz's totals for ordinary customer trades, a food order list.
+- The fund puzzle: the file headed "hc-mixer-01 :: SETTLEMENTS TO CUSTODY" (`erb:71`), the pool config `fee_percent: 1.5` and `min_dwell_hours: 6` (`erb:73`), custody slots with opened dates (`erb:75`) and deposit amounts and times in UTC (`erb:69`). No office-life text mentions settlements, custody, cold slots or escrow, fees or percentages, hold, dwell or minimum times, UTC timestamps or dollar amounts.
+- The server-room passphrase convention, a lowercase crypto term plus the current year, with "Rev. January 2025" (`erb:53`; lock at `erb:2020`): no office-life text mentions passphrase or IT conventions, the year 2025 or "this year" as a number.
+- The data centre PIN (`erb:2160`), which matches the Bitcoin white paper's date: no mention of the white paper, 31 October or any date of that kind.
+- No four-digit number of any kind appears in office-life text.
+
+Safe lore: the late desk's routine, the coffee, the overnight Asia open, the support queue in words (busy, quiet, one angry caller), who is on call, a photocopier memo, a food order list, lost property.
 
 ### 3.4 Owner away when the home is a floor tile (build-time live check, only if Q1 option b is chosen)
 
@@ -174,7 +179,7 @@ Both levers are optional, open lore only, and need no item a lock reads.
 
 One screen window (Tomasz's laptop, on his own trips or through L1 or L2) and one forgotten printout. All lore. No social-engineering text beyond a plain phone ring.
 
-The printout (Tomasz's settlement summary, left after the player first talks to Irina) is a `notes` item with no `onRead` global a task reads, and names no wallet.
+The printout (Tomasz's shift handover sheet: who is on call, the queue was quiet, the coffee machine needs descaling; left after the player first talks to Irina) is a `notes` item with no `onRead` global a task reads, and names no wallet.
 
 ## 6. Spoken lines
 
@@ -188,8 +193,8 @@ All listed in `SPOKEN_LINES.md` at build, each 40 characters at most, no variabl
 | `phone` (answering her own phone) | Lerato | 3 |
 | `phone_message` (taking a message for her) | Tomasz | 3 |
 | exchange 1 `ex_dani_tomasz_late_shift`, on Tomasz, `with: "trader_npc"`, `requireGlobal: { floor_staff_ko: false }` | Dani, Tomasz | about 6 |
-| exchange 2 `ex_floor_after_irina`, on Lerato, `requireGlobal: { irina_arrested: true, floor_staff_ko: false }` (`irina_arrested` declared at `erb:752`) | Lerato, Tomasz | about 5 |
-| exchange 3 `ex_floor_after_seizure`, on Lerato, `requireGlobal: { assets_seized: true, floor_staff_ko: false }` (`assets_seized` declared at `erb:748`) | Lerato, Tomasz | about 5 |
+| exchange 2 `ex_floor_after_irina`, on Lerato, `with: "tomasz_wisniewski"`, `requireGlobal: { irina_arrested: true, floor_staff_ko: false }` (`irina_arrested` declared at `erb:752`, set in `ink/m06_npc_irina_volkova.ink:594`) | Lerato, Tomasz | about 5 |
+| exchange 3 `ex_floor_after_seizure`, on Lerato, `with: "tomasz_wisniewski"`, `requireGlobal: { assets_seized: true, floor_staff_ko: false }` (`assets_seized` declared at `erb:748`, set late in `ink/m06_phone_agent_0x99.ink:575` and `ink/m06_satoshi_confrontation.ink:378`, so heard only if the player passes back through the floor) | Lerato, Tomasz | about 5 |
 | short conversations, `ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink` (greeting, one question about the night, goodbye; no hub, task or item) | Lerato, Tomasz | about 12 |
 
 Total about 60 clips. Exchanges are heard once (`heard_<knot>`), their first line stands alone, and none touches wallets, the coin cap or anything in 3.3. Exchange 1's Dani lines sit in Tomasz's ink, prefixed with Dani's id. Existing lines changed: none.
@@ -200,20 +205,20 @@ Total about 60 clips. Exchanges are heard once (`heard_<knot>`), their first lin
 
 | Item | Count | Notes |
 |---|---|---|
-| Workstation globals | 2 | `tomasz_laptop_owner_away`, `tomasz_laptop_screen_locked` (`workstation-state.js:50` to `:51`), both declared |
+| Workstation globals | 3 | `tomasz_laptop_owner_away`, `tomasz_laptop_screen_locked`, `tomasz_laptop_accessed` (`workstation-state.js:50` to `:57`, `:622`) |
 | `heard_` keys | 3 | one per exchange |
 | Servings | 1 | `pizza_servings`, non-monotonic; last write wins because it only falls and only the client eating writes it |
 | Dropped magnet position | 1 | where the box was dropped |
-| Office-life items | 2 | pizza box, settlement printout |
+| Office-life items | 2 | pizza box, handover sheet (both takeable) |
 | Reveal globals | 1 | the one copier slot; a reload files every revealed slot (schema `:5650`) and the `onceOnly` mapping does not fire again, so an untaken page is gone after a reload. Accepted: it is lore only. Treated as non-monotonic |
 | `onceOnly` mappings | 2 | Dani's first-talk break, the print command |
 | Trouble and KO globals | 3 | `floor_staff_ko`, `lerato_ko`, `tomasz_ko`, all monotonic |
 
-Each is a bounded scalar sent as a per-key delta. V8 confirms at build.
+Every global above is declared in `globalVariables` (`false`, except `pizza_servings` at 3). Each is a bounded scalar sent as a per-key delta. Within the V8 caps (`scripts/validate_office_life.rb:766` to `:770`): workstation 3 of 24, `heard_` 3 of 8, servings 1 of 2, reveal 1 of 6, `onceOnly` 2 of 10, items 2 of 4, dropped magnets 1 of 2.
 
 ## 8. Field names to write
 
-Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstation`, `readable`, `readDisplay`, `addToNotes`, `text`, `textVariants`, `deskPhone`, `sprite`, `outputOf`, `revealOnGlobal`, `affordance { satisfies, restores, useSeconds, seat, overhearRadius, useFrom, queue, magnet { tempt, servings, perPerson } }`, `takeable`, `droppable`, `triggerOnInteract`. NPCs: `needs { caffeine | hunger: { decayPerMin, urgentAt, initial, jitterPct } }`, `needsHome`, `needsRooms`, `habits { screen { lockChance, lockIfAwayOverSeconds } }`, `answersPhones`, `chatter`, `exchanges`, `globalVarOnKO`, `eventMappings` (`eventPattern` values `conversation_closed:*`, `room_entered:*`, `npc_ko:*`; `condition`, `needs: { set | print { producer, forget } }`, `onceOnly`, `delayMs`, `cooldown` in ms, `setGlobal`). All checked against `scripts/scenario-schema.json` and `FormatUpgrade.current` at build; none inside an ERB loop or tag except the comma change in 2.9.
+Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstation`, `readable`, `readDisplay`, `addToNotes`, `text`, `textVariants`, `deskPhone`, `sprite`, `position` (`as-type:`), `outputOf`, `revealOnGlobal`, `affordance { satisfies, restores, useSeconds, seat, capacity, chatter, overhearRadius, useFrom, queue, magnet { tempt, servings, perPerson } }`, `takeable`, `droppable`, `triggerOnInteract`. NPCs: `needs { caffeine | hunger: { decayPerMin, urgentAt, initial, jitterPct } }`, `needsHome`, `needsRooms`, `habits { screen { lockChance, lockIfAwayOverSeconds } }`, `answersPhones`, `chatter`, `exchanges`, `globalVarOnKO`, `eventMappings` (`eventPattern` values `conversation_closed:*`, `room_entered:*`, `npc_ko:*`; `condition`, `needs: { set | print { producer, forget } }`, `onceOnly`, `delayMs`, `cooldown` in ms, `setGlobal`). All checked against `scripts/scenario-schema.json` and `FormatUpgrade.current` at build; none inside an ERB loop or tag except the comma change in 2.9.
 
 ## 9. Costs and decisions
 
@@ -238,7 +243,8 @@ Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstati
 - Dani's post is his first-meeting tile; slow natural decay plus a conditioned `room_entered` break gives him a rhythm without leaving before he is met.
 - The trouble gate is a new global, not `cover_strained`.
 - The printout mapping sits on Tomasz, not Irina, so Irina gains no key. Printing is by that one command, so the page cannot be recycled by a routine print.
-- Tomasz's laptop is `type: "laptop1"` with `sprite: "laptop"`, so it claims the drawn laptop and takes no preset.
+- Tomasz's laptop is `type: "laptop1"` with `position: "as-type:laptop"`, so it claims the drawn laptop, keeps its texture and takes no preset.
+- Tomasz works the support queue, not settlements, so nothing he prints or shows can be read as a clue for the fund puzzle.
 
 ## 10. Test plan
 
@@ -269,7 +275,7 @@ Attack a walking extra, a seated extra, an extra leaving the coffee point, and D
 
 ### 10.5 Open numbers
 
-Decay rates and use times (2.5), from the needs-clock measurement. No `lockIfAwayOverSeconds` is used.
+Decay rates and use times (2.5), from the needs-clock measurement; Tomasz's `lockIfAwayOverSeconds` from his measured expected away time (2.4).
 
 ### 10.6 Static checks
 

@@ -9,7 +9,7 @@ From the awareness course cast (D53). The Office Life Tour cast (Chidi Okeke, Ju
 | Pick | Character | Sprite key | Voice | m06 job | Art needed |
 |---|---|---|---|---|---|
 | A | Lerato Dlamini | `lerato_dlamini` | Gacrux | late-desk market operations: watches the overnight books, owns the desk phone | none (sit, use, phone, drink frames present) |
-| B | Tomasz Wisniewski | `tomasz_wisniewski` | Algieba | evening settlements clerk: prints the settlement run, covers the phones, owns a laptop | none |
+| B | Tomasz Wisniewski | `tomasz_wisniewski` | Algieba | evening client-support lead: works the overnight support queue, leaves a shift handover sheet, covers the phones, owns a laptop | none |
 
 Options: (a) both, as planned; (b) swap one for another awareness-cast character you name; (c) one extra only (drops exchanges 2 and 3 and lever L2).
 
@@ -17,7 +17,7 @@ Who they are in the course (`planning_notes/phishing_and_social_engineering/awar
 
 Spread on the late floor: Dani (Nigerian man) and Lerato would be two Black Africans; Irina and Tomasz two Eastern Europeans. Ages vary (30s to 50s). If you would rather widen the spread, option (b) with an East or South East Asian or Latin American course character is the change.
 
-Recommendation: (a). Both atlases are complete and two extras are what a capacity-2 coffee point and the phone lever need; the spread is acceptable for a four-person floor in a London exchange. Plan sections 2.3, 2.4.
+Recommendation: (a). Both atlases are complete and two extras are what a capacity-2 coffee point and the phone lever need; the spread is acceptable for a four-person late floor at a UK exchange. Plan sections 2.3, 2.4.
 
 ## Q1. Readable screens
 
