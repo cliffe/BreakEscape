@@ -1,6 +1,6 @@
 # Hiding a planted device in any plant: plan
 
-Status: plan, not built. Source: decision D68 ("Maybe the item could also be hidden in any plant? Rather then just this one? Just overlay the device at a % offset?"). Builds on the physical pentest rogue AP (devices plan A1 to A3, `docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md`, build log A1 and A3 sections). Start the build only after `build/pentest-a3` is on main: the reception dressing, the `rogue_ap_pot` swap and the LED emitters this plan replaces live on that branch.
+Status: built (H1 to H5 and two review rounds are on main; update 2026-11-17). The build log is the "Plant hiding build" section of `PHYSICAL_PENTEST_DEVICES_BUILD_LOG.md`. The text below is the original plan. Source: decision D68 ("Maybe the item could also be hidden in any plant? Rather then just this one? Just overlay the device at a % offset?"). Builds on the physical pentest rogue AP (devices plan A1 to A3, `docs/achitechture/PHYSICAL_PENTEST_DEVICES_PLAN.md`, build log A1 and A3 sections). Start the build only after `build/pentest-a3` is on main: the reception dressing, the `rogue_ap_pot` swap and the LED emitters this plan replaces live on that branch.
 
 Paths: JS under `public/break_escape/js/`, Ruby models under `app/models/break_escape/`, `lab:` is `scenarios/lab_physical_pentest/scenario.json.erb`, `dev:` is `scenarios/test_access_devices/scenario.json.erb`.
 
@@ -288,7 +288,7 @@ Commit the code before running suites (shared tree). Every new engine feature ge
 6. Requests from the console's fetch (the page's own CSRF token, the same session): `hide` on plant 77 again answers 200 with the same entry and no state change; `hide` on plant 76 refuses `already_hidden` with the plant 77 entry. In a fresh game: `hide` on `reception_plant-large4_34`, `comms_plant-large6_1`, `reception_notes_plantlog1_9`, and a 200-character id, each `not_a_spot`.
 7. Lab: a new `lab_physical_pentest` game. Walk through reception before taking the kit from the briefing table, then come back with it: the reception plants become spots without a reload. Hide in the second reception plant; repeat steps 3 to 5 there; confirm Kieran's account harvest still works on the sign-in template. If the user approved the re-voice, ask Ruth about the rogue AP and finish the debrief: both lines show the new text and play the new clips; if not, both lines are unchanged and play their existing clips.
 
-Record screenshots and the network log under `tmp/handover/` in the build worktree, and a build log section in this plan's companion `PLANT_HIDING_BUILD_LOG.md`.
+Record screenshots and the network log under `tmp/handover/` in the build worktree, and a build log section. (Update 2026-11-17: no separate `PLANT_HIDING_BUILD_LOG.md` was made; the log went into `PHYSICAL_PENTEST_DEVICES_BUILD_LOG.md`, "Plant hiding build".)
 
 ## 13. Build order and open question
 
