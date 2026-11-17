@@ -16,12 +16,12 @@ Branch `plan/ol-m10`, worktree `.claude/worktrees/p-ol-m10`, base main `3e00651a
 
 ## Open (resume here)
 
-Review loop state: R1 to R8 done, each saved as `REVIEW_R<n>.md` with its fixes applied to PLAN.md. Counts: R1 1 B 3 M 5 m; R2 1 B 3 M 6 m; R3 0 B 2 M 4 m; R4 (delta) 1 B 0 M 3 m; R5 0 B 2 M 2 m; R6 (delta) 0 B 1 M 4 m; R7 (delta) 0 B 1 M 4 m; R8 (delta) 0 B 1 M 1 m. R8's major (exchange speaker prefixes) is fixed in section 6 but not yet re-reviewed.
+Review loop state: R1 to R8 done, each saved as `REVIEW_R<n>.md` with its fixes applied to PLAN.md. Counts: R1 1 B 3 M 5 m; R2 1 B 3 M 6 m; R3 0 B 2 M 4 m; R4 (delta) 1 B 0 M 3 m; R5 0 B 2 M 2 m; R6 (delta) 0 B 1 M 4 m; R7 (delta) 0 B 1 M 4 m; R8 (delta) 0 B 1 M 1 m; R9 (delta) 0 B 0 M 0 m. The review loop is closed.
 
-1. R9: a Sonnet delta review of the R8 diff against `REVIEW_R8.md`. Stop there if it finds no B or M; back to the Opus planning tier if it finds a major or adds a design decision.
+1. Review loop closed at R9 (0 B, 0 M). Next: the user answers Q1 to Q5, then build per the skill. At build, check each new NPC's `displayName` matches its exchange prefixes exactly.
 2. User questions open in `QUESTIONS.md`: Q1 tier, Q2 casting (now with Victoria's in-person overlap and option e, re-voice Sofia in m10 only), Q3 voicing, Q4 kettle spot, Q5 hearing radius (320 recommended).
 3. Reviewers never open SecGen XML or scenario files, Vagrantfiles or exploit-detail field guides. Commit each round with explicit paths after `git diff --cached --stat`; never stage `node_modules` or `dungeon_graph.*`. If a tool refuses to write a file, do not work around it: put the text in the report.
 
 ## Commits
 
-`1ae7106d2` stage 0 start; `595dea9e4` baseline, plan and questions. Recast `3f8768edc`; R1 `795e13bf4`. R2 outcomes `591243091`; R3 `e4d5cc615`; R4 `cb9954611`; R5 `ca3351f71`; R6 `66a1805db`; R7 `d560ac9bf`; R8 in the commit that adds `REVIEW_R8.md`.
+`1ae7106d2` stage 0 start; `595dea9e4` baseline, plan and questions. Recast `3f8768edc`; R1 `795e13bf4`. R2 outcomes `591243091`; R3 `e4d5cc615`; R4 `cb9954611`; R5 `ca3351f71`; R6 `66a1805db`; R7 `d560ac9bf`; R8 `fd588c8e8`; R9 in the commit that adds `REVIEW_R9.md`.
