@@ -59,7 +59,7 @@ const FILES = [
 ];
 
 let events, apiCalls, ended, alerts, signInScreens, sessions, status;
-async function openDesktop({ answer = 200, contents = FILES, item, held } = {}) {
+async function openDesktop({ answer = 200, contents = FILES, item, held, focusReturn = null } = {}) {
     events = []; apiCalls = []; ended = []; alerts = []; signInScreens = []; adds.length = 0;
     status = answer;
     document.body.innerHTML = '<div id="mg"></div>';
@@ -84,7 +84,7 @@ async function openDesktop({ answer = 200, contents = FILES, item, held } = {}) 
     events.length = 0; apiCalls.length = 0;
     window.MinigameFramework = { currentMinigame: null, endMinigame: (s, r) => ended.push([s, r]) };
     const containerItem = item || { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
-    const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents: null });
+    const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents: null, focusReturn });
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();
     return mg;
@@ -496,4 +496,139 @@ test('K5: the taskbar token line rounds as remote-host-text.js tokenMinutesLeft 
     assert.match(strip.textContent, /under a minute left/);
     refreshTokenLines(document.body, { ...t, tokenSecondsLeft: 600 });
     assert.equal(strip.classList.contains('desktop-token-line-low'), false, 'a longer figure goes neutral again');
+});
+
+// Icon labels R2 m2: keyboard focus through the Copy / Move dialog, a taken icon and the reader's return
+const pressKey = (target, key) => target.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+test('Icon labels R2 m2: Enter on an icon focuses the dialog\'s first button; closing it returns focus to that icon; a mouse click steals nothing', async () => {
+    await openDesktop();
+    const rota = icon('Server rota.txt');
+    rota.focus();
+    pressKey(rota, 'Enter');
+    const first = document.querySelector('.desktop-transfer-dialog .desktop-transfer-btn');
+    assert.equal(first.textContent, 'Open');
+    assert.equal(document.activeElement, first, 'the first button has the focus');
+    choose('Cancel');
+    assert.equal(document.querySelector('.desktop-transfer-dialog'), null);
+    assert.equal(document.activeElement, rota, 'focus is back on the icon that opened it');
+    // a click (mouse) opens the dialog without moving focus into it
+    document.activeElement.blur();
+    icon('VPN notes.txt').click();
+    assert.equal(document.activeElement.closest('.desktop-transfer-dialog'), null, 'a click does not focus a button');
+    choose('Cancel');
+});
+
+test('Icon labels R2 m2: a moved icon passes focus to the next icon, the previous one, then the desktop', async () => {
+    await openDesktop();
+    const names = () => [...document.querySelectorAll('.desktop-icon-label')].map(l => l.textContent);
+    const moveByKey = async (name) => {
+        const el = icon(name);
+        el.focus();
+        pressKey(el, 'Enter');
+        choose('Move to inventory');
+        await settle();
+    };
+    await moveByKey('Server rota.txt'); // not the last: the next icon
+    assert.equal(document.activeElement.querySelector('.desktop-icon-label').textContent, 'VPN notes.txt');
+    await moveByKey('VPN notes.txt');
+    assert.equal(document.activeElement.querySelector('.desktop-icon-label').textContent, 'Licence keys.csv', 'the next one again');
+    assert.deepEqual(names().includes('VPN notes.txt'), false);
+    // a Copy leaves the icon on the desktop
+    const lic = icon('Licence keys.csv');
+    lic.focus();
+    pressKey(lic, 'Enter');
+    choose('Copy to inventory');
+    await settle();
+    assert.equal(document.activeElement, lic, 'a copy leaves the icon, and focus stays on it');
+});
+
+test('Icon labels R2 m2: taking the last icon focuses the previous one; taking the only icon focuses the desktop', async () => {
+    const two = [{ id: 'a', type: 'text_file', name: 'A.txt', takeable: true, text: 'a' }, { id: 'b', type: 'text_file', name: 'B.txt', takeable: true, text: 'b' }];
+    await openDesktop({ contents: two });
+    const b = icon('B.txt');
+    b.focus();
+    pressKey(b, 'Enter');
+    choose('Move to inventory');
+    await settle();
+    assert.equal(document.activeElement, icon('A.txt'), 'the previous icon');
+    const a = icon('A.txt');
+    pressKey(a, 'Enter');
+    choose('Move to inventory');
+    await settle();
+    assert.ok(document.activeElement.classList.contains('desktop-background'), 'the desktop');
+});
+
+test('Icon labels R3 m1/m2: the opened icon takes the focus again, from the hand-over, only after a key open; used once', async () => {
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
+    await openDesktop({ item });
+    window.handleObjectInteraction = () => {};
+    const rota = icon('Server rota.txt');
+    rota.focus();
+    pressKey(rota, 'Enter');
+    choose('Open'); // a keyboard-activated button: click detail 0
+    const mark = window.pendingContainerReturn.focusReturn;
+    assert.deepEqual(mark, { key: 'ian_rota', byKey: true }, 'the opened file rides on the hand-over');
+    const mg = await openDesktop({ item, focusReturn: mark });
+    assert.equal(document.activeElement, icon('Server rota.txt'), 'focus is back on that icon');
+    assert.equal(mg.params.focusReturn, null, 'used once');
+    // a plain reopen (nothing handed over) focuses nothing, however long ago a file was opened
+    await openDesktop({ item });
+    assert.equal(document.activeElement, document.body);
+    // a mouse open: the icon is not focused
+    await openDesktop({ item, focusReturn: { key: 'ian_rota', byKey: false } });
+    assert.equal(document.activeElement, document.body, 'no focus after a mouse open');
+    // the icon is gone (taken meanwhile): nothing is focused, nothing throws
+    await openDesktop({ item, contents: FILES.filter(f => f.id !== 'ian_rota'), focusReturn: mark });
+    assert.equal(document.activeElement, document.body);
+    // a text field elsewhere keeps the focus (n1)
+    window.pendingContainerReturn = null;
+});
+
+test('Icon labels R3 n1: a text field outside the icon grid keeps the focus', async () => {
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
+    const mg = await openDesktop({ item });
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    mg.params = { ...mg.params, focusReturn: { key: 'ian_rota', byKey: true } };
+    mg.focusReturnedIcon(document.getElementById('desktop-icons'));
+    assert.equal(document.activeElement, field, 'the input still has the focus');
+    field.remove();
+});
+
+test('Icon labels R4 m1: a returned icon keeps its clipped label open past the deferred refit, and blur closes it', async () => {
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
+    const LONG = 'Server_rota_2009-2024_Archive_Final_Signed_Off.txt';
+    const files = FILES.map(f => f.id === 'ian_rota' ? { ...f, name: LONG } : f);
+    // Widths are stubbed on every label as it is built, so the name clips; jsdom has no layout
+    const proto = dom.window.HTMLElement.prototype;
+    const hold = (k) => Object.getOwnPropertyDescriptor(proto, k);
+    const saved = { sw: hold('scrollWidth'), cw: hold('clientWidth'), sh: hold('scrollHeight'), ch: hold('clientHeight') };
+    const isLabel = (el) => el.classList?.contains('desktop-icon-label');
+    const over = (k, clipped, whole) => Object.defineProperty(proto, k, { configurable: true, get() { return isLabel(this) ? (this.classList.contains('desktop-icon-label-open') ? whole : clipped) : 0; } });
+    over('scrollWidth', 400, 80); over('clientWidth', 80, 80); over('scrollHeight', 120, 40); over('clientHeight', 40, 40);
+    // jsdom matches :focus-visible for any focused element, which would hold the label open on
+    // its own; a browser does not after a mouse-opened reader, so only the returned-focus flag may
+    const origMatches = proto.matches;
+    proto.matches = function (q) { return q === ':focus-visible' ? false : origMatches.call(this, q); };
+    const raf = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
+    try {
+        await openDesktop({ item, contents: files, focusReturn: { key: 'ian_rota', byKey: true } });
+        const rota = icon(LONG);
+        const label = rota.querySelector('.desktop-icon-label');
+        assert.equal(document.activeElement, rota, 'the returned icon has the focus');
+        assert.ok(label.classList.contains('desktop-icon-label-open'), 'open at once');
+        await new Promise(r => dom.window.requestAnimationFrame(() => setTimeout(r, 0)));
+        assert.ok(label.classList.contains('desktop-icon-label-open'), 'still open after the deferred refit');
+        rota.blur();
+        assert.equal(label.classList.contains('desktop-icon-label-open'), false, 'blur closes it');
+    } finally {
+        globalThis.requestAnimationFrame = raf;
+        delete proto.matches;
+        for (const [k, d] of [['scrollWidth', saved.sw], ['clientWidth', saved.cw], ['scrollHeight', saved.sh], ['clientHeight', saved.ch]]) {
+            if (d) Object.defineProperty(proto, k, d); else delete proto[k];
+        }
+    }
 });

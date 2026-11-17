@@ -199,6 +199,11 @@
     min-height: 250px;
 }
 
+/* The desktop takes the focus (programmatically) when the icon that had it is taken */
+.desktop-background:focus {
+    outline: none;
+}
+
 .desktop-wallpaper {
     position: absolute;
     top: 0;
@@ -254,7 +259,13 @@
     border: 2px solid transparent;
 }
 
-.desktop-icon:hover .desktop-icon-image {
+/* The icon is a keyboard stop: the 2px frame on its picture marks it, not a browser ring */
+.desktop-icon:focus-visible {
+    outline: none;
+}
+
+.desktop-icon:hover .desktop-icon-image,
+.desktop-icon:focus-visible .desktop-icon-image {
     border-color: #00ff00;
     background: rgba(0, 255, 0, 0.1);
 }
@@ -264,26 +275,62 @@
     font-size: 16px;
     color: white;
     text-align: center;
-    margin-top: 4px;
-    line-height: 1.1;
+    /* The 2px of padding above and at the sides leaves room for the text outline (the label
+       clips, and an outline is 2px outside the glyph); the margin keeps the old 4px gap */
+    margin-top: 2px;
+    padding: 2px 2px 0;
+    box-sizing: border-box;
+    /* A whole-pixel line box: three lines are 54px */
+    line-height: 18px;
     /* A 2px square outline, one GNF pixel at this size (pixel-art UI rule) */
     text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
         2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000;
-    /* Words wrap at spaces only, never inside a word ("CONTINGENCY" broke as "CONTINGENC / Y").
-       A word wider than the box ends in an ellipsis at the same 16px size, the full
-       name in the title (fitIconLabel, container-minigame.js). */
+    /* A name wraps at spaces and after _ . - / (fitIconLabel splits it into one box per
+       fragment), never inside a fragment ("CONTINGENCY" broke as "CONTINGENC / Y"). It runs
+       to three lines: a longer name ends line 3 in an ellipsis character (fitIconLabel), a
+       fragment wider than the box ends in the CSS ellipsis, and the full name is in the title.
+       The clamp below is the backstop for a pass that runs before the font loads. */
     overflow-wrap: normal;
     word-break: normal;
     max-width: 112px;
+    max-height: 56px; /* 2px padding plus 3 lines of 18px */
+    overflow: hidden;
+}
+
+/* A clipped label while its icon is hovered or focused: the whole name, over the icons
+   below (fitIconLabel / expandIconLabel add the class and a negative bottom margin, so the
+   row does not move). Same border and backing as the closed label. */
+.desktop-icon-label.desktop-icon-label-open,
+.pc-monitor .pc-desktop .desktop-icon-label.desktop-icon-label-open {
+    max-height: none;
+    overflow: visible;
+    position: relative;
+    z-index: 3;
 }
 
 .desktop-icon-label .desktop-icon-word {
     display: inline-block;
     max-width: 100%;
+    box-sizing: content-box;
+    /* Padding and a matching negative margin: the box is as large as the text, but the
+       outline of the glyphs at its edge is inside the box that clips (no cut at a joint) */
+    padding: 2px;
+    margin: -2px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: top;
+}
+
+.pc-monitor .pc-desktop .desktop-icon-label .desktop-icon-word {
+    padding: 0;
+    margin: 0;
+}
+
+.desktop-icon-label-open .desktop-icon-word {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
 }
 
 .desktop-taskbar {
@@ -923,7 +970,9 @@
     box-sizing: border-box;
     max-width: 112px;
     line-height: 18px;
+    margin-top: 4px;
     padding: 0 2px;
+    max-height: 58px; /* 3 lines of 18px plus the 2px borders at top and bottom */
     background: #101820;
     border: 2px solid #2a3a48;
     color: #dde6ee;
@@ -942,7 +991,8 @@
     background: transparent;
 }
 
-.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-label {
+.pc-monitor .pc-desktop .desktop-icon:hover .desktop-icon-label,
+.pc-monitor .pc-desktop .desktop-icon:focus-visible .desktop-icon-label {
     border-color: #9ee6ff;
 }
 

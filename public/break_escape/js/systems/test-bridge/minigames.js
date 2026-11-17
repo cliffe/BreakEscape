@@ -250,6 +250,7 @@ export const minigameBridge = {
         if (!nodes.length) return fail('no-takeable-items', { active: activeMinigameSummary() });
 
         const labelOf = (el) => (el.title || el.alt ||
+            el.querySelector('.desktop-icon-label')?.dataset?.fullName ||
             el.querySelector('.desktop-icon-label')?.textContent || '').trim();
 
         let el;

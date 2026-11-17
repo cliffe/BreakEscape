@@ -317,12 +317,89 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
+const LABEL_SEP = /[_.\-\/]/;
+const LABEL_TRAIL = /[_.\-\/\s]+$/;
+const LABEL_LINES = 3;
+const LABEL_ELLIPSIS = '…';
+
+// The icon whose file was opened in a reader: when the reader closes and this desktop
+// reopens, that icon takes the focus again (if it is still there). The mark travels on the
+// hand-over (window.pendingContainerReturn.focusReturn, then the reopen's params), so a
+// return that never happens leaves nothing behind. byKey: a key opened the file.
+const iconKeyOf = (item) => String(item?.id ?? item?.name ?? '');
+export function iconFocusMark(item, byKey) {
+    return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
+}
+
 /**
- * A word wider than its box is the only reason a label overflows sideways (labels wrap at
- * spaces only, never inside a word). Fit one label: reset it, and when a word still sticks
- * out, cut that word short with an ellipsis and keep the whole name in the title. The font
- * stays at its 16px base: GNF is crisp only at whole multiples of its 8px grid, so there are
- * no in-between sizes. Never a break inside a word. Returns 'fits' or 'ellipsis'.
+ * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
+ * line it ends), except a leading run of separators (".config") and the first of two in a
+ * row ("a__b"). The break before an extension ("REVENUE." / "xlsx") is kept.
+ */
+export function splitLabelName(part) {
+    const chars = Array.from(String(part ?? ''));
+    const out = [];
+    let cur = '';
+    let onlySeps = true;
+    chars.forEach((ch, i) => {
+        cur += ch;
+        const sep = LABEL_SEP.test(ch);
+        if (!sep) onlySeps = false;
+        if (sep && !onlySeps && i < chars.length - 1 && !LABEL_SEP.test(chars[i + 1])) {
+            out.push(cur);
+            cur = '';
+        }
+    });
+    if (cur) out.push(cur);
+    return out;
+}
+
+/** Fill a label with one span per fragment (text nodes and createElement only, no HTML parsing of the name). */
+function buildLabelFragments(label, full) {
+    const doc = label.ownerDocument;
+    label.textContent = '';
+    full.split(/(\s+)/).forEach(part => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { label.appendChild(doc.createTextNode(' ')); return; }
+        splitLabelName(part).forEach((frag, i) => {
+            if (i > 0) label.appendChild(doc.createElement('wbr'));
+            const word = doc.createElement('span');
+            word.className = 'desktop-icon-word';
+            word.textContent = frag;
+            label.appendChild(word);
+        });
+    });
+}
+
+function labelMetrics(label) {
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(label) : null;
+    const num = v => { const n = parseFloat(v); return Number.isFinite(n) ? n : 0; };
+    return {
+        lineHeight: num(cs?.lineHeight) || 18,
+        padTop: num(cs?.paddingTop),
+        z: cssZoomOf(label) || 1
+    };
+}
+
+/** Which text line (0-based) a fragment sits on, from its box against the label's content top. */
+function lineOf(label, el, m) {
+    const top = el.getBoundingClientRect().top - label.getBoundingClientRect().top;
+    // A fragment's border box starts above its text by its own padding-top (2px on the plain
+    // desktop, where a matching negative margin keeps the margin box on the line, 0 on the
+    // monitor); add it back so the result is the line box top, not one pixel pair short
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(el) : null;
+    const fragPad = parseFloat(cs?.paddingTop) || 0;
+    const rel = top / m.z - (label.clientTop || 0) - m.padTop + fragPad;
+    return Math.floor((rel + 1) / m.lineHeight);
+}
+
+/**
+ * Fit one desktop icon label. A name wraps at spaces and after _ . - / (fragments in spans),
+ * to three lines at most. A name that would run past three lines ends its third line in an
+ * ellipsis character, and a fragment still wider than the box ends in the CSS ellipsis; in
+ * either case the whole name goes in the title and the label's data-full-name. The font stays
+ * at its 16px base: GNF is crisp only at whole multiples of its 8px grid. Returns 'fits' (as
+ * plain text), 'wraps' (split, and every character is visible) or 'ellipsis' (something is hidden).
  */
 export function fitIconLabel(label) {
     if (!label?.style) return 'fits';
@@ -330,30 +407,123 @@ export function fitIconLabel(label) {
     if (label.dataset) label.dataset.fullName = full;
     label.style.fontSize = '';
     label.style.width = '';
+    label.style.marginBottom = '';
+    label.style.top = '';
     label.removeAttribute?.('title');
-    label.classList?.remove('desktop-icon-label-cut');
+    label.classList?.remove('desktop-icon-label-cut', 'desktop-icon-label-open');
     if (label.firstElementChild) label.textContent = full;
-    const over = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
-    if (!over()) return 'fits';
-    label.style.fontSize = '';
+    const sideways = () => (label.scrollWidth || 0) - (label.clientWidth || 0) > 0;
+    const tooTall = () => (label.scrollHeight || 0) - (label.clientHeight || 0) > 1;
+    if (!sideways() && !tooTall()) return 'fits';
+    buildLabelFragments(label, full);
+    const m = labelMetrics(label);
+    const spans = () => Array.from(label.querySelectorAll('.desktop-icon-word'));
+    let clipped = false;
+    // First fragment on a line past the third: drop it and everything after it
+    const all = spans();
+    const past = all.findIndex(el => lineOf(label, el, m) >= LABEL_LINES);
+    if (past > 0) {
+        clipped = true;
+        for (let n = all[past - 1].nextSibling; n;) { const next = n.nextSibling; n.remove(); n = next; }
+        let cur = all[past - 1];
+        // The longest start of the fragment that, with the ellipsis, stays inside three lines
+        // and its box: a binary search on the kept length (a fragment of any size is about
+        // nine layouts, not one per character)
+        for (let removals = 0; cur && removals <= all.length; removals++) {
+            const chars = Array.from(cur.textContent);
+            const baseOf = n => chars.slice(0, n).join('').replace(LABEL_TRAIL, '');
+            const fitsAt = n => {
+                const base = baseOf(n);
+                if (!base) return false;
+                cur.textContent = base + LABEL_ELLIPSIS;
+                return lineOf(label, cur, m) < LABEL_LINES && cur.scrollWidth <= cur.clientWidth;
+            };
+            let lo = 0;
+            let hi = chars.length;
+            while (lo < hi) {
+                const mid = Math.ceil((lo + hi) / 2);
+                if (fitsAt(mid)) lo = mid; else hi = mid - 1;
+            }
+            if (lo > 0) { fitsAt(lo); break; }
+            // Not even one character and the ellipsis fit on line 3: drop this fragment and
+            // end the one before it instead
+            const prev = spans().filter(el => el !== cur).pop();
+            for (let n = cur.previousSibling; n && n !== prev; n = cur.previousSibling) n.remove();
+            cur.remove();
+            cur = prev || null;
+        }
+    }
+    if (!clipped && spans().some(el => el.scrollWidth > el.clientWidth)) clipped = true;
+    if (!clipped && tooTall()) clipped = true; // backstop: the CSS clamp hides something
+    if (!clipped) return 'wraps';
     label.setAttribute?.('title', full);
     label.classList?.add('desktop-icon-label-cut');
-    label.textContent = '';
-    full.split(/(\s+)/).forEach(part => {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { label.appendChild(label.ownerDocument.createTextNode(' ')); return; }
-        const word = label.ownerDocument.createElement('span');
-        word.className = 'desktop-icon-word';
-        word.textContent = part;
-        label.appendChild(word);
-    });
     return 'ellipsis';
+}
+
+/**
+ * Show a clipped label's whole name (hover or focus): it grows over the icons below with a
+ * negative bottom margin, so the row does not move. Returns false when nothing is clipped.
+ */
+export function expandIconLabel(label) {
+    if (!label?.classList?.contains('desktop-icon-label-cut')) return false;
+    const full = label.dataset?.fullName;
+    if (!full) return false;
+    if (label.classList.contains('desktop-icon-label-open')) return true;
+    const z = cssZoomOf(label) || 1;
+    const h0 = label.getBoundingClientRect().height / z;
+    label.classList.add('desktop-icon-label-open');
+    buildLabelFragments(label, full);
+    const h1 = label.getBoundingClientRect().height / z;
+    if (h1 > h0) label.style.marginBottom = `${h0 - h1}px`;
+    return true;
+}
+
+/**
+ * After a label has opened: if it runs past the bottom of the area it sits in, keep it
+ * whole. A scrolling area (the monitor) scrolls by the overshoot, itself only (so it moves
+ * only as far as needed); the plain desktop clips, so the label is raised instead, by the
+ * overshoot, and grows over its own picture. Returns 'scrolled', 'raised' or null.
+ */
+export function keepLabelInView(label, area) {
+    if (!label?.isConnected || !area?.getBoundingClientRect) return null;
+    const z = cssZoomOf(label) || 1;
+    const over = (label.getBoundingClientRect().bottom - area.getBoundingClientRect().bottom) / z;
+    if (!(over > 0)) return null;
+    const cs = typeof getComputedStyle === 'function' ? getComputedStyle(area) : null;
+    if (cs && /^(auto|scroll)$/.test(cs.overflowY)) {
+        // Only the area scrolls: scrollIntoView would move the page and the host frame too
+        area.scrollTop += Math.ceil(over);
+        return 'scrolled';
+    }
+    label.style.top = `${-Math.ceil(over)}px`;
+    return 'raised';
+}
+
+/** Put a label back to its fitted (clipped) form. */
+export function collapseIconLabel(label) {
+    if (!label?.classList?.contains('desktop-icon-label-open')) return false;
+    const width = label.style.width;
+    fitIconLabel(label);
+    label.style.width = width;
+    return true;
 }
 
 /** fitIconLabel for every label in a grid, again once laid out and once the pixel font arrives. */
 export function fitIconLabels(grid, selector = '.desktop-icon-label') {
     if (!grid?.querySelectorAll) return;
-    const fit = () => { for (const label of grid.querySelectorAll(selector)) fitIconLabel(label); };
+    // A label that was open (hovered, or the focus the reader returned to) stays open through
+    // a refit while its icon still holds it open; a label whose pointer left is not reopened
+    const fit = () => {
+        for (const label of grid.querySelectorAll(selector)) {
+            const wasOpen = !!label.classList?.contains('desktop-icon-label-open');
+            fitIconLabel(label);
+            if (wasOpen) {
+                const icon = label.closest?.('.desktop-icon');
+                if (icon?.labelWanted?.()) icon.openLabel?.();
+            }
+        }
+    };
     fit();
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(fit);
@@ -512,8 +682,9 @@ export class ContainerMinigame extends MinigameScene {
 
         const items = nodes.map((el, i) => {
             const isDesktop = el.classList.contains('desktop-icon');
+            const iconLabel = el.querySelector('.desktop-icon-label');
             const name = (el.title || el.alt ||
-                          el.querySelector('.desktop-icon-label')?.textContent || '').trim();
+                          iconLabel?.dataset?.fullName || iconLabel?.textContent || '').trim();
             // scenarioData for this entry, matched by name — tells us whether
             // clicking opens a viewer or just pockets the item.
             const data = (this.contents || []).find(c => displayDashes(c?.name || '') === name) || {};
@@ -1514,10 +1685,11 @@ export class ContainerMinigame extends MinigameScene {
             const iconImg = document.createElement('img');
             iconImg.className = 'desktop-icon-image';
             iconImg.src = item.iconImage || (item.type === 'folder' ? SHARE_ICON : `/break_escape/assets/objects/${item.type}.png`);
-            iconImg.alt = item.name;
+            iconImg.alt = ''; // the icon's aria-label carries the name once
             
             const iconLabel = document.createElement('div');
             iconLabel.className = 'desktop-icon-label';
+            iconLabel.dir = 'auto';
             iconLabel.textContent = displayDashes(item.name);
             
             // Add item data
@@ -1555,6 +1727,47 @@ export class ContainerMinigame extends MinigameScene {
             // R2 m2). The padding takes up what the picture leaves, so the box keeps its size.
             fitWholeScale(iconImg, 56, { pad: true, onlyIfFits: true });
 
+            // Keyboard: the icon is a button named by the whole file name; Enter or Space opens
+            // it as a click does, and a clipped name shows in full while it is hovered or focused
+            icon.tabIndex = 0;
+            icon.setAttribute('role', 'button');
+            icon.setAttribute('aria-label', iconLabel.textContent);
+            icon.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                if (e.repeat) return;
+                // A key opened it: the Copy / Move dialog takes the focus and hands it back
+                this.openedByKey = true;
+                try { icon.click(); } finally { this.openedByKey = false; }
+            });
+            // Hover and keyboard focus both open a clipped name; it closes only when neither holds
+            const matches = (q) => { try { return icon.matches(q); } catch (_) { return false; } };
+            const wanted = () => matches(':hover') || matches(':focus-visible')
+                || (icon._keyReturn === true && document.activeElement === icon);
+            icon.labelWanted = wanted;
+            const open = () => {
+                if (!expandIconLabel(iconLabel)) return;
+                keepLabelInView(iconLabel, icon.closest?.('.desktop-background'));
+                this.updateDesktopScrollCue();
+            };
+            icon.openLabel = open;
+            const close = () => {
+                if (wanted()) return;
+                if (collapseIconLabel(iconLabel)) this.updateDesktopScrollCue();
+            };
+            // A mouse only: a tap fires pointerenter too, and its :hover sticks, so a touch
+            // would leave the label open after the reader closed
+            icon.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') open(); });
+            icon.addEventListener('pointerleave', close);
+            icon.addEventListener('focus', () => {
+                let visible = true;
+                try { visible = icon.matches(':focus-visible'); } catch (_) { /* older engines */ }
+                if (visible) open();
+            });
+            icon.addEventListener('blur', () => { icon._keyReturn = false; close(); });
+            icon.itemKey = iconKeyOf(item);
+
             icon.appendChild(iconImg);
             icon.appendChild(iconLabel);
             desktopIcons.appendChild(icon);
@@ -1563,12 +1776,44 @@ export class ContainerMinigame extends MinigameScene {
         // so centring it under the icon lands on a whole pixel
         fitIconLabels(desktopIcons);
         if (this.pcMonitor) evenShareLabels(desktopIcons, '.desktop-icon-label');
+        // After the labels are fitted, so a focus-visible icon opens its clipped label
+        this.focusReturnedIcon(desktopIcons);
         this.updateDesktopScrollCue();
         if (this.desktopMoreElement && typeof requestAnimationFrame === 'function') {
             requestAnimationFrame(() => this.updateDesktopScrollCue());
         }
     }
     
+    /**
+     * After the reader a file was opened in closes: focus that file's icon again if it is
+     * still here. Only when a key opened the file does the icon show its frame and its full
+     * name; after a mouse open the focus is not taken at all, because Chrome would show the
+     * keyboard frame after the Esc that closed the reader. Never from a text field.
+     */
+    focusReturnedIcon(grid) {
+        const mark = this.params?.focusReturn;
+        if (mark) this.params = { ...this.params, focusReturn: null }; // once
+        if (!mark || mark.byKey !== true) return;
+        const icon = Array.from(grid.children).find(el => el.itemKey === mark.key);
+        if (!icon) return;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (active && !grid.contains(active)
+            && active.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+        icon._keyReturn = true;
+        icon.focus?.({ preventScroll: true });
+        icon.openLabel?.();
+    }
+
+    /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
+    focusAfterIconRemoved(slot) {
+        if (!slot?.classList?.contains('desktop-icon')) return;
+        const active = document.activeElement;
+        if (active && active !== document.body && !slot.contains(active) && active !== slot) return;
+        const next = slot.nextElementSibling || slot.previousElementSibling;
+        const target = next?.classList?.contains('desktop-icon') ? next : slot.closest?.('.desktop-background');
+        return target;
+    }
+
     setupEventListeners() {
         // Take container button
         const takeContainerBtn = document.getElementById('take-container-btn');
@@ -1678,7 +1923,7 @@ export class ContainerMinigame extends MinigameScene {
                 </div>
             </div>`;
         host.appendChild(dialog);
-        this.transferDialog = { item, element, choices, el: dialog };
+        this.transferDialog = { item, element, choices, el: dialog, opener: element?.parentElement || null };
         if (this.pcMonitor) {
             // Centred on whole pixels on both axes (R4 m3): margin: auto split an odd spare
             // width or height into half pixels. Again when the pixel font arrives and on resize.
@@ -1692,9 +1937,11 @@ export class ContainerMinigame extends MinigameScene {
         dialog.querySelectorAll('[data-choice]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
                 e.stopPropagation();
-                this.chooseTransfer(btn.dataset.choice);
+                this.chooseTransfer(btn.dataset.choice, e.detail === 0);
             });
         });
+        // Opened with Enter or Space on an icon: the first button takes the focus
+        if (this.openedByKey) dialog.querySelector('.desktop-transfer-btn')?.focus?.({ preventScroll: true });
     }
 
     /** Put the open Copy / Move dialog in the middle of its window, on whole pixels (R4 m3). */
@@ -1704,17 +1951,21 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     closeTransferDialog() {
-        if (this.transferDialog?.el?.parentElement) this.transferDialog.el.parentElement.removeChild(this.transferDialog.el);
+        const open = this.transferDialog;
+        // Focus that was inside the dialog goes back to the icon that opened it
+        const hadFocus = !!open?.el && typeof document !== 'undefined' && open.el.contains(document.activeElement);
+        if (open?.el?.parentElement) open.el.parentElement.removeChild(open.el);
         this.transferDialog = null;
+        if (hadFocus && open.opener?.isConnected) open.opener.focus?.({ preventScroll: true });
     }
 
-    chooseTransfer(choice) {
+    chooseTransfer(choice, byKey = false) {
         const dialog = this.transferDialog;
         if (!dialog || !dialog.choices.includes(choice)) return;
         const { item, element } = dialog;
         this.closeTransferDialog();
         if (choice === 'cancel') return;
-        if (choice === 'open') { this.openFileInPlace(item); return; }
+        if (choice === 'open') { this.openFileInPlace(item, byKey); return; }
         if (choice === 'connect') { this.connectFromDesktop(item, element); return; }
         this.takeItem(item, element, choice);
     }
@@ -1777,7 +2028,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     /** Open a file without taking it: the viewer (or notes) for something with text. */
-    openFileInPlace(item) {
+    openFileInPlace(item, byKey = false) {
         // Keyring K3a: an "In file" tag waits until its file is opened in this page (no import)
         try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
         const text = resolveObjectField(item, 'text', null);
@@ -1793,7 +2044,7 @@ export class ContainerMinigame extends MinigameScene {
         // note read in the world (review R2 n3)
         const opensReader = item.type === 'text_file' || (/^notes\d*$/.test(item.type) && !!item.readable);
         if (opensReader) {
-            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
+            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null, focusReturn: iconFocusMark(item, byKey) };
         }
         this.exitReason = 'item';
         this.complete(false);
@@ -1959,6 +2210,7 @@ export class ContainerMinigame extends MinigameScene {
         
         // Store the container state globally so we can return to it
         this.exitReason = 'item';
+        containerState.focusReturn = iconFocusMark(item, this.openedByKey === true);
         window.pendingContainerReturn = containerState;
         
         // Close the container minigame first
@@ -2114,8 +2366,14 @@ export class ContainerMinigame extends MinigameScene {
             this.showMessage(`Copied ${displayDashes(item.name)} to inventory`, 'success');
         } else if (addResult && addResult.ok) {
             if (window.playUISound) window.playUISound('item');
-            // Remove from container display
-            itemElement.parentElement.remove();
+            // Remove from container display; the focus moves on to the next icon (or the desktop)
+            const slot = itemElement.parentElement;
+            const focusNext = this.focusAfterIconRemoved(slot);
+            slot.remove();
+            if (focusNext) {
+                if (!focusNext.classList.contains('desktop-icon')) focusNext.setAttribute('tabindex', '-1');
+                focusNext.focus?.({ preventScroll: true });
+            }
             
             // Remove from contents array
             const itemIndex = this.contents.findIndex(content => content === item);
@@ -2276,6 +2534,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // A reopen after a reader closed: a sign-in desktop never falls through to the
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
+        focusReturn: extra?.focusReturn || null,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -2387,7 +2646,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true }
+            { fromReturn: true, focusReturn: containerState.focusReturn || null }
         );
     } else {
         console.log('No pending container return found');

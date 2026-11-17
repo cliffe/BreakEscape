@@ -636,7 +636,7 @@ export class TextFileMinigame extends MinigameScene {
                 if (!ownClose) return;
                 setTimeout(() => {
                     if (blocked(arm)) return;
-                    window.startContainerMinigame?.(back.containerItem, null, !!back.isTakeable, true);
+                    window.startContainerMinigame?.(back.containerItem, null, !!back.isTakeable, true, null, { focusReturn: back.focusReturn || null });
                 }, 50);
                 return;
             }
