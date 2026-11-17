@@ -174,6 +174,9 @@ export const TURN_BACK = Object.freeze({
     gone: Object.freeze({ mindChanged: false, grumble: true, fallback: true, parks: true }),
     answered: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
     rang_out: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
+    // Slice 18b-i review R1 m4: a take refused because this NPC has had its perPerson share; the
+    // cake is still there, so no "Missed it." line, and the NPC goes home
+    had_share: Object.freeze({ mindChanged: false, grumble: false, fallback: false, parks: false }),
     // Access slice 9.2 A (plan 5.2): a judged use that ended with a failed verdict; parks itself
     failed: Object.freeze({ mindChanged: false, grumble: true, fallback: false, parks: true })
 });
@@ -530,7 +533,8 @@ export class NPCNeedsSystem {
             // Slice 17: need uses per object (salts a print hook's chance) and owned prints (salts the habit)
             useCounts: {},
             printCount: 0,
-            // Slice 18b-i: magnets this NPC knows of, servings it has had from each, and needs whose
+            // Slice 18b-i: magnets this NPC knows of, servings it has had from each (client-only: it
+            // resets on a reload, accepted like the needs reset to initial, review R1 m3), and needs whose
             // tempted job already turned back once for avoidance (mindChanged is cleared above urgentAt)
             knows: new Set(),
             ate: {},
@@ -919,18 +923,19 @@ export class NPCNeedsSystem {
     /** A magnet is a source only for an NPC that knows of it, while it shows and has servings left. */
     _magnetBarred(s, o) {
         if (!this._magnets.has(o.id)) return !!magnetOf(o.affordance);   // not yet seen by the registry
-        return !s.knows.has(o.id) || !this._shownMagnets()?.has(o.id) || this._servingsLeft(o.id) <= 0;
+        return !s.knows.has(o.id) || !this._shownMagnets()?.has(o.id) || this._servingsLeft(o.id) <= 0
+            || (s.ate[o.id] || 0) >= this._magnets.get(o.id).cfg.perPerson;   // one slice each, urgent or not
     }
 
-    /** Known, live magnets for a need; a tempted look skips those whose perPerson this NPC has had. */
-    _magnetsFor(s, name, tempted) {
+    /** Known, live magnets for a need; every look (tempted or urgent) skips those whose perPerson this NPC has had. */
+    _magnetsFor(s, name) {
         if (!s.knows.size) return null;
         const shown = this._shownMagnets();
         const out = [];
         for (const id of [...s.knows].sort()) {
             const m = this._magnets.get(id), o = shown?.get(id);
             if (!m || !o || m.servings <= 0 || !m.satisfies.includes(name)) continue;
-            if (tempted && (s.ate[id] || 0) >= m.cfg.perPerson) continue;
+            if ((s.ate[id] || 0) >= m.cfg.perPerson) continue;
             out.push(o);
         }
         return out;
@@ -940,7 +945,7 @@ export class NPCNeedsSystem {
     _temptBand(s, name) {
         if (!s.knows.size || s.parked[name]) return 0;   // a parked need is not tempted (OQ35)
         let band = 0;
-        for (const o of this._magnetsFor(s, name, true) || []) band = Math.max(band, this._magnets.get(o.id).cfg.tempt);
+        for (const o of this._magnetsFor(s, name) || []) band = Math.max(band, this._magnets.get(o.id).cfg.tempt);
         return band;
     }
 
@@ -1048,7 +1053,7 @@ export class NPCNeedsSystem {
     /** A serving is taken as eating starts; the count is written to <id>_servings. */
     _takeServing(s, id) {
         const m = this._magnets.get(id);
-        if (!m || m.servings <= 0) return false;
+        if (!m || m.servings <= 0 || (s.ate[id] || 0) >= m.cfg.perPerson) return false;
         m.servings--;
         s.ate[id] = (s.ate[id] || 0) + 1;
         this.world.setGlobal(m.key, m.servings);
@@ -1145,6 +1150,16 @@ export class NPCNeedsSystem {
                     if (s.parked[name]) this._unpark(s, name, 'set');
                     s.levels[name] = clamp(Number(v), 0, 100);
                     this._log(npcId, 'level_set', { need: name, level: round2(s.levels[name]) });
+                    // A tempted walk to a magnet ends quietly when the level is set above its tempt band
+                    // (a held NPC does not finish a walk it would no longer start); an urgent walk stands
+                    const j = s.job;
+                    if (j?.magnet && j.tempted && j.need === name && (j.phase === 'goto_target' || j.phase === 'queued')) {
+                        const n = s.needs[name], mc = this._magnets.get(j.targetId)?.cfg;
+                        if (!mc || s.levels[name] > Math.min(95, n.urgentAt + mc.tempt)) {
+                            this._abortJob(s, 'level_set', { cancel: true });
+                            this._goHome(s);
+                        }
+                    }
                 }
             }
             return true;
@@ -1691,7 +1706,7 @@ export class NPCNeedsSystem {
             const excludeId = exclude?.need === name ? exclude.targetId : null;
             let cand = null;
             // A known magnet first (an urgent need prefers it, OQ36), then the usual sources
-            const mags = this._magnets.size ? this._magnetsFor(s, name, tempted) : null;
+            const mags = this._magnets.size ? this._magnetsFor(s, name) : null;
             if (mags?.length) cand = this._useCandidate(s, name, mags, pos, excludeId, true);
             s.giveUp = null;
             if (tempted) {
@@ -3559,7 +3574,11 @@ export class NPCNeedsSystem {
             // Slice 19: a colleague at a ringing desk phone picks up (the call chosen at the claim)
             if (job.phone) { this._colleagueAnswers(s, obj); return; }
             // Slice 18b-i: a serving is taken as eating starts, so nobody eats one that is not there
-            if (job.magnet && !this._takeServing(s, job.targetId)) { this._turnBack(s, 'gone'); return; }
+            if (job.magnet && !this._takeServing(s, job.targetId)) {
+                // Selection keeps a fed NPC off the cake, so the share case is a guard; it goes home quietly
+                this._turnBack(s, (s.ate[job.targetId] || 0) >= (this._magnets.get(job.targetId)?.cfg.perPerson ?? Infinity) && this._servingsLeft(job.targetId) > 0 ? 'had_share' : 'gone');
+                return;
+            }
             job.phase = 'using';
             if (job.kind === 'visit') {
                 // Access 9.2 A (5.3): a visit's dwell; it claims nothing and pairs with nobody

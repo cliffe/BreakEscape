@@ -208,9 +208,9 @@ test('the off picture is the need\'s icon (avoid for a need with none); overhear
 // ── the turn-back table ────────────────────────────────────────────────────
 
 test('the turn-back table: answered and rang_out go straight home with no grumble, no fallback and no park', () => {
-    assert.deepEqual(Object.keys(TURN_BACK), ['avoid', 'off', 'gone', 'answered', 'rang_out', 'failed']);   // failed: access slice 9.2
+    assert.deepEqual(Object.keys(TURN_BACK), ['avoid', 'off', 'gone', 'answered', 'rang_out', 'had_share', 'failed']);   // had_share: magnet review R1 m4; failed: access slice 9.2
     assert.deepEqual(Object.entries(TURN_BACK).filter(([, r]) => r.mindChanged).map(([k]) => k), ['avoid']);
-    for (const reason of ['answered', 'rang_out']) {
+    for (const reason of ['answered', 'rang_out', 'had_share']) {
         const o = office({ tom: { rec: { needs: coffee() } } }, { objects: [officeMachine(), kitchenMachine()] });
         o.want('tom');
         o.ticks(1);

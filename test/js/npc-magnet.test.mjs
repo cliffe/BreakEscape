@@ -153,7 +153,7 @@ test('one serving: an NPC arriving after the last is taken never starts eating',
     assert.equal(o.evs('using').filter(e => e.npc === 'bob').length, 0);
 });
 
-test('perPerson 1 stops a second helping by temptation; a plain urgent need may still use it', () => {
+test('perPerson 1 stops a second helping on every path: tempted, urgent, and a take at the serving itself', () => {
     const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 1, urgentAt: 40, initial: 30 } } } } },
         { objects: [cake({ affordance: { satisfies: 'hunger', restores: 20, useSeconds: 5, capacity: 3, magnet: { tempt: 30, servings: 5, perPerson: 1 } } })], arrive: true });
     o.sys.scanMagnets();
@@ -164,8 +164,99 @@ test('perPerson 1 stops a second helping by temptation; a plain urgent need may 
     o.ticks(40);
     assert.equal(o.evs('serving_taken').length, 1, 'no second helping by temptation');
     o.sys.control('tom', { set: { hunger: 20 } });
-    o.ticks(2);
-    assert.equal(o.evs('serving_taken').length, 2, 'urgent: it is still food');
+    o.ticks(20);
+    assert.equal(o.evs('serving_taken').length, 1, 'urgent: one slice each, so no second serving');
+    assert.equal(o.sys.states.get('tom').job?.targetId === 'cake', false, 'urgent look does not aim at the cake');
+    assert.equal(o.sys._takeServing(o.sys.states.get('tom'), 'cake'), false, 'the take itself refuses a second');
+    assert.equal(o.globals.cake_servings, 4);
+});
+
+test('one serving taken, then hunger decays to urgent with no other source: still one serving, parked no_source (the repeat-take report)', () => {
+    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 30, urgentAt: 30, initial: 50 } } } } }, { objects: [cake()], arrive: true });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1 + useTicks(12));
+    assert.equal(o.evs('serving_taken').length, 1);
+    o.ticks(5 * 60000 / NEEDS_TICK_MS);
+    assert.ok(o.level('tom') <= 31, `decayed to urgent (${o.level('tom')})`);
+    assert.equal(o.evs('serving_taken').length, 1, 'one slice each, even when urgent');
+    assert.ok(o.evs('parked').some(e => e.reason === 'no_source'), 'no other source: parked');
+    assert.equal(o.globals.cake_servings, 1);
+});
+
+test('an urgent NPC that has had its slice falls back to another source (the fridge), with no second serving', () => {
+    const o = office({ tom: { rec: { needs: { hunger: { decayPerMin: 30, urgentAt: 30, initial: 50 } } } } }, { objects: [fridge(), cake()], arrive: true });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1 + useTicks(12));
+    assert.equal(o.evs('serving_taken').length, 1);
+    const before = o.evs('using').length;
+    o.sys.control('tom', { set: { hunger: 20 } });
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'fridge', 'urgent and fed: the fridge');
+    o.ticks(useTicks(10));
+    assert.ok(o.evs('using').length > before);
+    assert.ok(o.evs('using').slice(before).every(e => e.target === 'fridge'));
+    assert.equal(o.evs('serving_taken').length, 1);
+});
+
+test('setting a need above the tempt band cancels a tempted walk already in progress; a full need is never tempted', () => {
+    const o = office({ tom: { rec: { needs: hunger(65) } } }, { objects: [cake()], arrive: false });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake', 'tempted and walking');
+    o.sys.control('tom', { set: { hunger: 100 } });
+    assert.notEqual(o.sys.states.get('tom').job?.targetId, 'cake', 'walk cancelled');
+    o.ticks(200);
+    assert.equal(o.evs('serving_taken').length, 0);
+    assert.equal(o.evs('using').filter(e => e.npc === 'tom').length, 0);
+    assert.equal(o.sys.states.get('tom').job?.targetId === 'cake', false, 'never tempted at 100');
+});
+
+test('a set above the band does not cancel an urgent walk to the magnet', () => {
+    const o = office({ tom: { rec: { needs: hunger(30) } } }, { objects: [cake()], arrive: false });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    const j = o.sys.states.get('tom').job;
+    assert.equal(j?.targetId, 'cake');
+    assert.equal(j.tempted, undefined, 'an urgent walk');
+    o.sys.control('tom', { set: { hunger: 100 } });
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake', 'an urgent walk is not aborted by a set');
+    o.arriveNow('tom');
+    o.ticks(1);
+    assert.deepEqual(o.evs('serving_taken').map(e => e.npc), ['tom']);
+});
+
+test('a set inside the tempt band keeps a tempted walk going; it eats', () => {
+    const o = office({ tom: { rec: { needs: hunger(65) } } }, { objects: [cake()], arrive: false });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.tempted, true);
+    o.sys.control('tom', { set: { hunger: 62 } });
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake', 'still tempted at 62 (band 70)');
+    o.arriveNow('tom');
+    o.ticks(1);
+    assert.deepEqual(o.evs('serving_taken').map(e => e.npc), ['tom']);
+});
+
+test('a take refused for perPerson turns back quietly (had_share): no "Missed it.", no park, the cake keeps its servings', () => {
+    const chatter = { grumble_gone: ['Missed it.'] };
+    const o = office({ tom: { rec: { needs: hunger(65) } } }, { objects: [cake()], chatter, hears: () => ({ overheard: true, distance: 60 }) });
+    o.sys.scanMagnets();
+    o.know('tom');
+    o.ticks(1);
+    assert.equal(o.sys.states.get('tom').job?.targetId, 'cake');
+    o.sys.states.get('tom').ate.cake = 1;   // a guard case: selection never starts this job
+    o.arriveNow('tom');
+    o.ticks(1);
+    assert.deepEqual(o.evs('turned_back').map(e => [e.reason, e.grumble]), [['had_share', undefined]]);
+    assert.equal(o.sys.getState('tom').talking, null);
+    assert.equal(o.evs('parked').length, 0);
+    assert.equal(o.evs('serving_taken').length, 0);
+    assert.equal(o.globals.cake_servings, undefined);
 });
 
 test('an urgent need prefers a known magnet over a nearer usual source; an unknown one is ignored', () => {
