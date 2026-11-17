@@ -1266,3 +1266,7 @@ Outcomes for the round 2 review (`tmp/handover/ac0/K3D_REVIEW_R2.md`).
 - **Trivial 5 and 6:** controller comment rewrapped and now says the lock is taken only to stamp; `gainedAt` read notes the map is server-written only. **Trivial 8** (`#exit_conversation` placement): left, it works.
 - **Trivial 7, for the live check:** Pat at (7, 7) overlaps the lobby's large plant's lower-left corner (feet clear its base) and her card at (8, 6) sits inside the plant's footprint. Check both in the R13 lobby screenshot; move Pat to (6, 7) if it reads badly. No change made without a render.
 - **Accepted imprecision (Q1):** entries gained between two asks are ordered by registry order, 1 ms apart, and a registry entry and a capture gained in the same window can sort either way. Both clocks are server ms, so the order is stable across reloads. Stamping stays in GET /keyring.
+
+### K3d R13 live recheck (2026-11-17)
+
+Game 6585: Sign-ins order (Lena .rdp, Ian password, ops cookie, Jake password, SV-OPS-01 admin.rdp) holds across a plain resume; the assist row reads Given; the cupboard PIN sits under Captures. The player spawns at (7, 7), Pat's tile, so Pat moves to (6, 7). Ian's card is in the comms room, not the lobby: the capture note and the comms port text now say so (the R1 note said lobby).

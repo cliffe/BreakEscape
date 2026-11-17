@@ -181,7 +181,7 @@
           "id": "pat",
           "displayName": "Pat Doyle",
           "npcType": "person",
-          "position": { "x": 7, "y": 7 },
+          "position": { "x": 6, "y": 7 },
           "spriteSheet": "female_office_worker_v2",
           "spriteTalk": "assets/characters/female_office_worker_talk.png",
           "storyPath": "scenarios/test_access_keyring/ink/pat.json",
@@ -284,7 +284,7 @@
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "text": "K1c: read Ian's capture card in the lobby; his account is captured and his password shows on the keyring.\nK1d: plant the drop box in this wall port. A saved connection for Ian (SV-OPS-01) then appears on the keyring, proved by the foothold.",
+          "text": "K1c: read Ian's capture card in this room; his account is captured and his password shows on the keyring.\nK1d: plant the drop box in this wall port. A saved connection for Ian (SV-OPS-01) then appears on the keyring, proved by the foothold.",
           "observations": "A sign by the wall port."
         }
       ],
@@ -304,7 +304,7 @@
           "creds": { "username": "ishaw", "password": "Patchday!2026" },
           "captureProof": [ { "planted": "kit_dropbox", "on": "comms_port" } ],
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:capture_card_ian", "condition": "value === true", "onceOnly": true, "completeTask": "k1_capture", "addCapture": { "targetId": "ian", "roleLabel": "Harbour office, IT", "kind": "credential", "address": "ishaw", "note": "Read off Ian's card in the lobby." } }
+            { "eventPattern": "global_variable_changed:capture_card_ian", "condition": "value === true", "onceOnly": true, "completeTask": "k1_capture", "addCapture": { "targetId": "ian", "roleLabel": "Harbour office, IT", "kind": "credential", "address": "ishaw", "note": "Read off Ian's card in the comms room." } }
           ]
         }
       ]
