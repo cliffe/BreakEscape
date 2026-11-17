@@ -336,28 +336,29 @@
         justify-content: flex-start;
     }
 
-    /* The portrait gets a fixed share of the height, so its box (and the whole-number pixel
-       scale the speaker is drawn at) stays the same from line to line. It used to take whatever
-       the caption left, which made the scale step between 4x, 3x and 2x as lines and choices
-       changed length. The caption below scrolls inside its own area instead. The canvas backing
-       is the same size as the box, so it needs no object-fit. --pc-portrait-h is set from the box height by the UI (phonePortraitSize): the largest whole
-       scale that leaves about 330px for the caption, and exactly the height that scale needs.
-       64% only applies before the script has measured. */
+    /* The portrait grows to fill the spare height, so the room background runs down to the
+       dialogue band and no black area is left under a short line. It never gets less than
+       --pc-portrait-h, which the UI sets from the box height (phonePortraitSize): the height of
+       the largest whole pixel scale that leaves about 330px for the caption. The sprite is drawn
+       at that viewport scale (PersonChatPortraits.setFixedHeight), not at a scale taken from the
+       canvas height, so it stays one size from line to line while the canvas grows and shrinks
+       with the band. 64% only applies before the script has measured. */
     .person-chat-portrait-section {
         position: relative;
-        flex: 0 0 var(--pc-portrait-h, 64%);
+        flex: 1 1 auto;
         height: auto;
-        min-height: 0;
+        min-height: var(--pc-portrait-h, 64%);
         max-height: none;
     }
 
     /* The dialogue band hugs its content and sits at the foot of the screen (the portrait above
-       takes the rest). A long line is capped and scrolls rather than pushing the portrait away. */
+       takes the rest). A long line scrolls inside the band, which can grow only as far as
+       leaves the portrait its --pc-portrait-h, so the head is never cropped. */
     .person-chat-caption-area {
         position: relative;
-        flex: 1 1 0;
+        flex: 0 1 auto;
         min-height: 0;
-        max-height: none;
+        max-height: calc(100% - var(--pc-portrait-h, 64%));
         overflow-y: auto;
         align-items: flex-start;
         padding: 16px;

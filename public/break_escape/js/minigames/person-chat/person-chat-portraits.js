@@ -93,6 +93,7 @@ export default class PersonChatPortraits {
         this.backgroundPath = background; // Optional background image path
         this.noShift = !!options.noShift;             // PiP self-view: keep the face centred
         this.sizeToContainer = !!options.sizeToContainer; // PiP self-view: size to its own box
+        this.fixedHeight = null;                      // phone: portrait height in canvas px (setFixedHeight)
         this._resizeHandler = null;                   // Stored so destroy() can remove it (no leak)
         
         // Portrait settings
@@ -772,7 +773,7 @@ export default class PersonChatPortraits {
             const canvasWidth = this.canvas.width;
             const canvasHeight = this.canvas.height;
             
-            const scale = containFit(canvasWidth, canvasHeight, spriteWidth, spriteHeight); // contain fit; both the sprite and background snap it to one integer scale
+            const scale = this._fixedFit(spriteHeight) || containFit(canvasWidth, canvasHeight, spriteWidth, spriteHeight); // contain fit; both the sprite and background snap it to one integer scale
             
             // Draw background with sprite scale if loaded
             if (this.backgroundImage) {
@@ -783,7 +784,8 @@ export default class PersonChatPortraits {
             // away from the way it faces. Shifting left works for both flipped and
             // non-flipped due to coordinate transform: NPCs (flipped) appear on the right.
             const { x, y, w: scaledWidth, h: scaledHeight } = portraitRect(this._cameraView(),
-                spriteWidth, spriteHeight, canvasWidth, canvasHeight, this._lookAwayShift());
+                spriteWidth, spriteHeight, canvasWidth, canvasHeight, this._lookAwayShift(),
+                spriteWidth, spriteHeight, this._fixedFit(spriteHeight));
             
             // Draw the sprite frame scaled to fill canvas with optional flip
             this.ctx.imageSmoothingEnabled = false;
@@ -923,6 +925,26 @@ export default class PersonChatPortraits {
     }
 
     /**
+     * Pin the portrait's size (phone layout) to a height in canvas pixels, or pass 0/null to
+     * work it out from the canvas again. The phone canvas grows and shrinks with the dialogue
+     * band, so its height cannot decide the scale; the viewport does (phonePortraitSize). The
+     * scale is that height over the speaker's frame height, so a smaller bust still gets a
+     * whole number and a constant one.
+     * @param {number|null} heightPx - device pixels
+     */
+    setFixedHeight(heightPx) {
+        const next = heightPx > 0 ? heightPx : null;
+        if (next === this.fixedHeight) return;
+        this.fixedHeight = next;
+        if (this.canvas) this.render();
+    }
+
+    /** The viewport-decided contain fit for a frame of height refH, or null on wider screens. @private */
+    _fixedFit(refH) {
+        return this.fixedHeight > 0 && refH > 0 ? this.fixedHeight / refH : null;
+    }
+
+    /**
      * Calculate contain-fit scale for the active talk frame against the canvas.
      * For a 2×2 spritesheet the scale is based on the per-frame size (half width/height),
      * keeping the rendered character the same size regardless of sheet dimensions.
@@ -931,7 +953,7 @@ export default class PersonChatPortraits {
     calculateSpriteTalkScale() {
         const frameSize = this._speakerRefSize();
         if (!frameSize || !this.canvas) return null;
-        return containFit(this.canvas.width, this.canvas.height, frameSize, frameSize);
+        return this._fixedFit(frameSize) || containFit(this.canvas.width, this.canvas.height, frameSize, frameSize);
     }
 
     /**
@@ -1001,7 +1023,7 @@ export default class PersonChatPortraits {
             const ref = this._speakerRefSize() || srcW;
             const { x, y, w: scaledWidth, h: scaledHeight } = portraitRect(this._cameraView(),
                 srcW, srcH, canvasWidth, canvasHeight, this._lookAwayShift(),
-                Math.max(ref, srcW), Math.max(ref, srcH));
+                Math.max(ref, srcW), Math.max(ref, srcH), this._fixedFit(Math.max(ref, srcH)));
 
             this.ctx.imageSmoothingEnabled = false;
             this._setBandFilter();

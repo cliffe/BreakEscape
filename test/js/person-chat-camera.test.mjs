@@ -189,7 +189,8 @@ test('the drawn scale equals the section scale and ignores caption content', () 
     const src = readFileSync(new URL('../../public/break_escape/js/minigames/person-chat/person-chat-ui.js', import.meta.url), 'utf8');
     const body = src.slice(src.indexOf('updatePortraitHeight() {'), src.indexOf('updateScrollCue() {'));
     assert.match(body, /main\.getBoundingClientRect\(\)\.height/);
-    assert.match(body, /phonePortraitSize\(h, window\.devicePixelRatio/);
+    assert.match(body, /phonePortraitSize\(h, dpr\)/);
+    assert.match(body, /const dpr = window\.devicePixelRatio/);
     assert.doesNotMatch(body, /captionArea|captionContent|scrollHeight|dialogueBox|textContent/);
 });
 
@@ -198,4 +199,32 @@ test('the portrait scale changes only when the viewport does', () => {
     assert.equal(phonePortraitSize(824).scale, 3);
     assert.equal(phonePortraitSize(895).scale, 4);
     assert.equal(phonePortraitSize(474).scale, 1);
+});
+
+test('phone sprite scale and position hold while the canvas height changes (fixed viewport fit)', () => {
+    // The canvas grows and shrinks with the dialogue band; the viewport decides the scale.
+    for (const [boxH, dpr] of [[647, 1], [824, 1], [620, 1], [895, 2], [647, 2.625]]) {
+        const { scale } = phonePortraitSize(boxH, dpr);
+        const fit = (scale * PHONE_FRAME_PX) / 128;
+        const seen = new Set();
+        for (const canvasH of [scale * PHONE_FRAME_PX, scale * PHONE_FRAME_PX + 37, scale * PHONE_FRAME_PX + 180, scale * PHONE_FRAME_PX + 400]) {
+            const p = portraitRect(FIRST_NPC_VIEW, 128, 128, 390 * dpr, canvasH, 0.2, 128, 128, fit);
+            seen.add(p.scale);
+            assert.equal(p.w, scale * 128, 'sprite width is the viewport scale');
+            assert.equal(p.y + p.h, canvasH, 'still bottom-anchored');
+            assert.ok(p.y >= 0, 'head never cropped while the canvas is at least the portrait height');
+            // the old behaviour (no fit) would have stepped with the canvas height
+        }
+        assert.deepEqual([...seen], [scale]);
+    }
+    // without a fixed fit the same canvases do step, which is what this guards against
+    const stepped = new Set([128, 128 * 2, 128 * 3].map(h => portraitRect(FIRST_NPC_VIEW, 128, 128, 390, h, 0).scale));
+    assert.ok(stepped.size > 1);
+});
+
+test('a bust smaller than the frame still gets a constant whole scale from the viewport', () => {
+    const fit = (3 * PHONE_FRAME_PX) / 64;
+    for (const canvasH of [384, 450, 600]) {
+        assert.equal(portraitRect(FIRST_NPC_VIEW, 64, 64, 390, canvasH, 0, 64, 64, fit).scale, 6);
+    }
 });

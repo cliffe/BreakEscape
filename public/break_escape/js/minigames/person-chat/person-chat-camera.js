@@ -88,11 +88,13 @@ export function containFit(canvasW, canvasH, refW, refH) {
  * @param {number} shift - share of the canvas width
  * @param {number} [refW] - defaults to srcW
  * @param {number} [refH] - defaults to srcH
+ * @param {number|null} [fit] - a fixed contain fit that replaces the one worked out from the canvas
+ *   (the phone layout passes the viewport's whole scale, so the canvas height never changes it)
  * @returns {{x:number, y:number, w:number, h:number, scale:number}}
  */
-export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = srcW, refH = srcH) {
+export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = srcW, refH = srcH, fit = null) {
     const zoom = view?.zoom || 1;
-    const scale = shotScale(containFit(canvasW, canvasH, refW, refH), zoom);
+    const scale = shotScale(fit > 0 ? fit : containFit(canvasW, canvasH, refW, refH), zoom);
     const w = srcW * scale;
     const h = srcH * scale;
     const boxW = refW * scale;

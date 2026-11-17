@@ -14,7 +14,7 @@
 import PersonChatPortraits from './person-chat-portraits.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { portraitFor } from '../../utils/portrait-variants.js';
-import { cameraViewFor, phonePortraitSize } from './person-chat-camera.js';
+import { cameraViewFor, phonePortraitSize, PHONE_FRAME_PX } from './person-chat-camera.js';
 import { ChatInfluence } from '../../ui/pretext-chrome.js';
 
 export const MORE_BELOW_TEXT = 'More below';
@@ -270,6 +270,7 @@ export default class PersonChatUI {
             // background before the view zooms to the NPC.
             this.portraitRenderer._characterHidden = true;
             this.portraitRenderer._holdingForContent = true;
+            this.applyPhoneScale();
             this.portraitRenderer.init();
             
             console.log('✅ Portrait initialized');
@@ -722,9 +723,26 @@ export default class PersonChatUI {
         if (!main || !sec) return;
         const phone = typeof window !== 'undefined' && window.innerWidth <= 600;
         const h = main.getBoundingClientRect().height;
-        if (!phone || !(h > 0)) { sec.style.removeProperty('--pc-portrait-h'); return; }
-        const { cssHeight } = phonePortraitSize(h, window.devicePixelRatio || 1);
-        sec.style.setProperty('--pc-portrait-h', cssHeight + 'px');
+        if (!phone || !(h > 0)) {
+            main.style.removeProperty('--pc-portrait-h');
+            this._phoneFrameCanvasPx = null;
+            this.applyPhoneScale();
+            return;
+        }
+        const dpr = window.devicePixelRatio || 1;
+        const { scale, cssHeight } = phonePortraitSize(h, dpr);
+        // On the main box so the portrait section (its min-height) and the caption (its
+        // max-height) both read it
+        main.style.setProperty('--pc-portrait-h', cssHeight + 'px');
+        this._phoneFrameCanvasPx = scale * PHONE_FRAME_PX;
+        this.applyPhoneScale();
+    }
+
+    /** Hand the viewport's portrait height (canvas px) to the portrait renderer, or clear it off phones. */
+    applyPhoneScale() {
+        if (this.portraitRenderer && typeof this.portraitRenderer.setFixedHeight === 'function') {
+            this.portraitRenderer.setFixedHeight(this._phoneFrameCanvasPx || null);
+        }
     }
 
     updateScrollCue() {
