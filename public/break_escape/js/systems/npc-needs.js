@@ -4109,7 +4109,14 @@ export class NPCNeedsSystem {
     _updateHome(s, pos) {
         const h = this._resolveHome(s, pos);
         if (!h.provisional) {
-            if (s.home?.provisional) this._log(s.npcId, 'home_resolved', { target: h.objectId || undefined });
+            if (s.home?.provisional) {
+                this._log(s.npcId, 'home_resolved', { target: h.objectId || undefined });
+                // A start-room NPC's needs can go urgent before the room's objects register, and
+                // park `no_source` for the full defer. Its sources exist now, so those parks retry
+                // (once: a genuine no_source parks again for the full timer).
+                const woken = Object.keys(s.parked).sort().filter(n => s.parked[n].reason === 'no_source');
+                this._wakeParkedFor(s, woken);
+            }
             s.home = h;
             return;
         }
