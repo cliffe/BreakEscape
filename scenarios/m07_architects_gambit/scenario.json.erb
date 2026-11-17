@@ -1885,7 +1885,7 @@ scada_password = "CascadeWindow19"
           "chatterCooldownMin": 2,
           "globalVarOnKO": "adaeze_ko",
           "behavior": { "hostile": { "leash": true } },
-          "needs": { "thirst": { "initial": 45, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
+          "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
           "chatter": { "cooler": ["Cold water again. Lovely.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Nearly done. Nearly."] },
           "exchanges": [
             { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false } },
@@ -1921,7 +1921,7 @@ scada_password = "CascadeWindow19"
           "chatterCooldownMin": 2,
           "globalVarOnKO": "gwen_ko",
           "behavior": { "hostile": { "leash": true } },
-          "needs": { "thirst": { "initial": 60, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
+          "needs": { "thirst": { "initial": 55, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
           "chatter": { "cooler": ["Cooler's the only thing working, mind.", "Tidy up and out, that's the plan.", "I'd give a lot for a proper brew.", "Last glass, then I'm off."] },
           "eventMappings": [
             { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } },
