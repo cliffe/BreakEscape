@@ -16,4 +16,7 @@ VAR aes_staff_off = false
     Joanne Pell: Hiya, duck. I've a dozen inductions at six, so I came in early to set the room up. Don't mind me.
 }
 #exit_conversation
--> DONE
+// Loop to the knot, not DONE: the chat closes on the tag with the divert still unread, so the
+// saved story is mid-knot and a plain DONE here made every later talk show only "(End of
+// conversation)". Looping replays the line each talk (the house pattern, as m03 hub exits).
+-> start

@@ -25,7 +25,10 @@ VAR heard_ex_stay_out_of_the_halls = false
     Ibrahim Diallo: Morning. I'm swapping the office desktops while nobody needs them. It was booked late, so I won't be on tonight's list.
 }
 #exit_conversation
--> DONE
+// Loop to the knot, not DONE: the chat closes on the tag with the divert still unread, so the
+// saved story is mid-knot and a plain DONE here made every later talk show only "(End of
+// conversation)". Looping replays the line each talk (the house pattern, as m03 hub exits).
+-> start
 
 === ex_six_oclock ===
 Joanne Pell: Twelve contractors at six, all new.
