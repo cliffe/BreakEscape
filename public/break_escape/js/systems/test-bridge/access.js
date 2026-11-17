@@ -11,7 +11,8 @@
  *                       `[{ objectId, locked, sound, at }]`; every sound it plays is in there
  *   savedCards()        the card copier's saved_cards ids (client-written; never decides identity)
  *   footholds()         the footholds systems/network-links.js holds (slice 9.3a)
- *   hiddenDevices()     itemId -> { item, on, room }: devices hidden in plants (plant-hiding.js)
+ *   hiddenDevices()     itemId -> { item, on, room, hostId? }: devices hidden in plants (plant-hiding.js);
+ *                       hostId (the plant drawn on, set once drawn) is client-only, never sent
  *   networkView(id)     the last network view network-links.js fetched for that foothold
  *   work(npcId)         slice 9.2: the NPC's work plan (read only), frustration level and tell;
  *                       sub-slice L adds lockedOut (stations a check found it locked out at) and

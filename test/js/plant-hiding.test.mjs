@@ -437,6 +437,7 @@ test('R2 M1: a device recorded on a spot that is no longer a plant is drawn on t
     assert.equal(w.ph.claims(host), true, 'the fallback host is claimed');
     assert.equal(host.interactable, true, 'and interactable');
     assert.equal(w.ph.hidden.get(KIT).on, 'rogue_ap_spot', 'the record keeps its own spot');
+    assert.equal(w.ph.spotForDevice('planted_rogue_ap'), w.ph._spotInfo(host).id, 'the bridge maps the device to the fallback host');
     const other = Object.values(w.room.objects).find(s => s !== host && w.ph.spotsFor(s).length);
     assert.equal(w.ph.hostedEntry(other), null, 'no second host');
     const opened = [];
@@ -449,6 +450,25 @@ test('R2 M1: a device recorded on a spot that is no longer a plant is drawn on t
     // a second sync keeps the same host
     w.ph.syncRoom('reception');
     assert.equal(w.ph.hostedEntry(host)?.item, KIT);
+});
+
+test('R3 t1: a recorded spot that still exists but is no longer a spot falls back to an eligible plant', () => {
+    const w = world({ hiddenDevices: [{ item: KIT, on: 'lobby_fern', room: 'reception' }] });
+    w.sp.scenarioData.hidingSpot = false;
+    w.ph.syncRoom('reception');
+    assert.equal(w.scene.made.length, 1, 'drawn once');
+    assert.equal(w.sp._fadeCompanions, undefined, 'not drawn on the opted-out plant');
+    const host = Object.values(w.room.objects).find(s => s._fadeCompanions?.size);
+    assert.ok(host && host !== w.sp && w.ph.spotsFor(host).includes(KIT), 'drawn on an eligible plant');
+    assert.equal(w.ph.claims(host), true);
+    assert.equal(w.ph.spotForDevice('planted_rogue_ap'), w.ph._spotInfo(host).id);
+    // an excluded decor plant is treated the same way
+    const w2 = world({ hiddenDevices: [{ item: KIT, on: 'reception_plant-large12-top-ani1_77', room: 'reception' }] });
+    w2.ph.hideables.get(KIT).exclude.push('reception_plant-large12-top-ani1_77');
+    w2.ph.syncRoom('reception');
+    assert.equal(w2.p77._fadeCompanions, undefined);
+    assert.notEqual(w2.ph.spotForDevice('planted_rogue_ap'), 'reception_plant-large12-top-ani1_77');
+    w2.ph.hideables.get(KIT).exclude.pop();
 });
 
 test('load keeps only well-formed definitions and entries', () => {

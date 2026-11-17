@@ -179,10 +179,10 @@ export class PlantHiding {
 
     hiddenMap() { return Object.fromEntries(this.hidden); }
 
-    /** The spot a hidden device's overlay stands on, for the test bridge. */
+    /** The plant a hidden device's overlay stands on (the fallback host when `on` is gone), for the test bridge. */
     spotForDevice(deviceId) {
         for (const [itemId, entry] of this.hidden) {
-            if (this.hideables.get(itemId)?.device === deviceId) return entry.on;
+            if (this.hideables.get(itemId)?.device === deviceId) return entry.hostId ?? entry.on;
         }
         return null;
     }
@@ -305,11 +305,13 @@ export class PlantHiding {
         this.applySpots(roomId);
     }
 
-    _findHost(room, spotId) {
+    /** The recorded spot's sprite, if it is still a spot for this item; else null (the caller falls back). */
+    _findHost(room, spotId, itemId) {
         if (!room?.objects) return null;
+        const ok = s => s && !s._plantOverlay && this.spotsFor(s).includes(itemId);
         const direct = room.objects[spotId];
-        if (direct && !direct._plantOverlay) return direct;
-        return Object.values(room.objects).find(s => s && !s._plantOverlay && s.scenarioData?.id === spotId) || null;
+        if (direct && !direct._plantOverlay) return ok(direct) ? direct : null;
+        return Object.values(room.objects).find(s => ok(s) && s.scenarioData?.id === spotId) || null;
     }
 
     _fallbackHost(room, itemId) {
@@ -333,7 +335,7 @@ export class PlantHiding {
             return existing;
         }
 
-        let host = this._findHost(room, entry.on);
+        let host = this._findHost(room, entry.on, entry.item);
         let spotId = entry.on;
         if (!host) {
             const key = `${entry.item}:${entry.on}`;
