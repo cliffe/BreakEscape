@@ -12,6 +12,9 @@ import { playUISound, playGameSound } from './ui-sounds.js';
 import { applyActions } from './apply-actions.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { requiresItemHint } from './requires-item-hint.js';
+// Namespace import: test harnesses stub this module with requiresItemHint only, and a
+// namespace import tolerates the missing requiresItemConditionRefusal there.
+import * as requiresItemModule from './requires-item-hint.js';
 import { hintToastMs } from '../utils/locked-hint.js';
 import { plantRefusal } from './pc-policy.js';
 import { isRemoteFlagLock, remoteFlagLockMessage } from '../utils/flag-lock.js';
@@ -1043,6 +1046,13 @@ export function handleObjectInteraction(sprite) {
                 // requiresItemHintVariants gives one hint per state (first match wins).
                 const hint = requiresItemHint(sprite.scenarioData);
                 window.gameAlert?.(hint, 'info', '', hintToastMs(hint));
+                return;
+            }
+            // requiresItemCondition: the item is held, but this is not the moment to use it
+            // (the keylogger while Chris is still at her desk). Nothing fires or is consumed.
+            const notNow = requiresItemModule.requiresItemConditionRefusal?.(sprite.scenarioData);
+            if (notNow) {
+                window.gameAlert?.(notNow, 'info', '', hintToastMs(notNow));
                 return;
             }
             console.log('[Interaction] triggerOnInteract (requiresItem ok) firing for:', sprite.scenarioData.name || sprite.objectId);

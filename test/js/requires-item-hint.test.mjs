@@ -76,3 +76,43 @@ test('interactions.js shows the resolved hint for its own duration', () => {
     assert.match(src, /import \{ hintToastMs \} from '\.\.\/utils\/locked-hint\.js'/);
     assert.doesNotMatch(src, /scenarioData\.requiresItemHint\b/);
 });
+
+// requiresItemCondition (lab blind playtest finding 6): the keylogger is planted only while
+// Chris is away from her desk, as the hint says.
+test('requiresItemCondition: no condition, or a condition that holds, lets the use go ahead', async () => {
+    const { requiresItemConditionRefusal } = await import(join(js, 'systems/requires-item-hint.js'));
+    assert.equal(requiresItemConditionRefusal(pc, {}), null);
+    const gated = { ...pc, requiresItemCondition: 'globalVars.staff_pc_owner_away',
+                    requiresItemConditionHint: 'Wait until she is away.' };
+    assert.equal(requiresItemConditionRefusal(gated, { staff_pc_owner_away: true }), null);
+});
+
+test('requiresItemCondition: a condition that fails gives the hint, its variants, or the default', async () => {
+    const { requiresItemConditionRefusal, DEFAULT_REQUIRES_ITEM_CONDITION_HINT } =
+        await import(join(js, 'systems/requires-item-hint.js'));
+    const gated = { ...pc, requiresItemCondition: 'globalVars.staff_pc_owner_away',
+                    requiresItemConditionHint: 'Wait until she is away.',
+                    requiresItemConditionHintVariants: [{ condition: 'globalVars.warned', value: 'Still at her desk.' }] };
+    assert.equal(requiresItemConditionRefusal(gated, { staff_pc_owner_away: false }), 'Wait until she is away.');
+    assert.equal(requiresItemConditionRefusal(gated, { warned: true }), 'Still at her desk.');
+    assert.equal(requiresItemConditionRefusal({ requiresItemCondition: 'globalVars.x' }, {}), DEFAULT_REQUIRES_ITEM_CONDITION_HINT);
+});
+
+test('interactions.js checks the condition after the item is found and before the actions fire or the item is consumed', () => {
+    const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    const held = src.indexOf('if (!held) {');
+    const gate = src.indexOf('requiresItemModule.requiresItemConditionRefusal?.(sprite.scenarioData)');
+    const fire = src.indexOf("applyActions(sprite.scenarioData.triggerOnInteract, { source: 'object_interact'", gate);
+    const consume = src.indexOf('window.removeFromInventory?.(held)', gate);
+    assert.ok(held > 0 && gate > held, 'gate after the held check');
+    assert.ok(fire > gate && consume > fire, 'gate before firing and consuming');
+    assert.match(src.slice(gate, fire), /return;/);
+});
+
+test('the lab keylogger plant is gated on Chris being away from her desk', () => {
+    const erb = readFileSync(join(js, '../../../scenarios/lab_physical_pentest/scenario.json.erb'), 'utf8');
+    const at = erb.indexOf('"id": "staff_pc"');
+    const block = erb.slice(at, erb.indexOf('"triggerOnInteract"', at));
+    assert.match(block, /"requiresItemCondition": "globalVars\.staff_pc_owner_away"/);
+    assert.match(block, /"requiresItemConditionHint": "[^"]+"/);
+});
