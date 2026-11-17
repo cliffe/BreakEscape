@@ -31,3 +31,47 @@ Coordinator note: reuse tools/playtest/showcase-bc1-cake-reload.mjs from /home/c
 
 ## Ink or line issues seen
 None so far. Briefing text appeared once per click (adv sampling showed a repeated "The full walk-round, then." line; probably my polling, unverified).
+
+## Continuation (live walk, server :3096, game 7537)
+
+Run by the slice 6A continuation agent. Headless, setFPS(20), fixed steps on. Server: keyless Rails from this worktree on 127.0.0.1:3096 (log in /tmp/claude-1000/server-3096.log). Session log: tmp/handover/demo_access_build/s6a_7537.jsonl. The session was resumed on game 7537 and reloaded to reception (expected after a reload).
+
+### Full route, steps 7 to 19
+
+| Step | Result | Notes |
+|---|---|---|
+| 7 Pivot: door controller from the box | PASS | Network view at meeting_jack lists MS-DOOR-01 under Server network. Lorna Easton (in file), password Faclab-Tarn-905 typed. `t_door_controller` done. Door codes file opened: server room keypad 3822. |
+| 8 Server room keypad | PASS | One mis-entry first (4933, a 4-digit auto-submit: "Incorrect PIN. 4 attempts remaining"). Then 3822 opened the door. `t_server_room` done. |
+| 9 Lorna's card, cloner | PASS | Lorna's chat, "Chat with Lorna ... cloner" then "Stand close ... cloner reads her card". RFID read saved on the second try (the first Save was a mis-click on "Abandon read", so the read was redone). `t_copy_badge` done. |
+| 10 Comms cupboard | NOT RUN | |
+| 11 to 19 | NOT RUN | Stops after 9 were not reached within the call budget. |
+| Quick route | NOT RUN | |
+| Walk behind open_plan back wall | NOT RUN | |
+
+STUCK: none. Nothing was stuck; the route stopped at the budget.
+
+### Where next? answers seen
+
+- Opening Ama's thread at stop 7 (after `t_door_controller`): "Where next?" gave "Have a word with Lorna by the comms door. Bring the cloner." That is W9 (plan 2.9). W9 sits ahead of W7 and W8 in the built order, so it is the expected line.
+- Preloaded and timed texts seen in the same thread: "Ask me where next whenever you're stuck." / "Box is talking. Have a look at the network view before you sign in anywhere." / "Before you use that, sign out of Delphine's PC."
+
+### Cake reload
+
+Script: a copy of tools/playtest/showcase-bc1-cake-reload.mjs and m01-ol-lib.mjs in the scratchpad (cake/ folder), run with `--scenario demo_access_tour --room open_plan --cake cake --port 3096 --cases 2,4 --eaters thandiwe,yasmin --rooms open_plan,kitchen --task t_open_session`. Log: <scratchpad>/cake/run.log. Its case 2 made game 7555, then it waited 22 s before the reload. Result: see the update below if the run finished.
+
+### Screenshots (tmp/handover/demo_access_build/screens6/)
+
+- 07_door_controller_desktop.png (Door controller remote desktop, after sign-in)
+- 08_open_plan.png (first entry, open plan)
+- 09_server_room.png (first entry, server room)
+- 10_lorna_clone_saved.png (after the card read was saved)
+
+Earlier, from the first session: 01_reception to 06_julian_desktop.
+
+### Harness notes for the next run
+
+- `mg clickControl` index is 0-based over the non-close controls. In the phone it sent "2. Thanks" for index 3 and on the keypad index 3 gave "4". Use `clickText` with an exact label, or count from 0 without the × control.
+- `mg clickText` takes plain text; regex anchors (`^Save$`) do not match.
+- `mg close` closes the top minigame (notes, phone). `clickControl` on × did nothing for the notes overlay.
+- The state command is `brief`; there is no `getState` in the bridge command set.
+- A 4-digit PIN auto-submits on the fourth digit.
