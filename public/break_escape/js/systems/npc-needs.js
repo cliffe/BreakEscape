@@ -281,9 +281,11 @@ export function normalisePool(p) {
 /**
  * Pure: the topic's spoken pool for one speaker: the scenario's pool of that name plus the NPC's
  * own. There are no built-in lines (slice 15): with neither, the topic is picture chat only.
- * `pictures` is false when the scenario sets `"chatter": false` (no picture chat either).
+ * `pictures` is false when the scenario sets `"chatter": false` (no picture chat either) or
+ * `"npcThoughts": false` (`thoughtsOn` false, D77): an icon-only bubble shows what an NPC wants, so it
+ * is a thought, not speech. Spoken lines are unaffected.
  */
-export function chatterPool(topic, scenarioChatter, npcChatter) {
+export function chatterPool(topic, scenarioChatter, npcChatter, thoughtsOn = true) {
     let base = null;
     if (scenarioChatter && typeof scenarioChatter === 'object' && scenarioChatter[topic] !== undefined) base = normalisePool(scenarioChatter[topic]);
     const own = npcChatter && typeof npcChatter === 'object' ? normalisePool(npcChatter[topic]) : null;
@@ -291,7 +293,7 @@ export function chatterPool(topic, scenarioChatter, npcChatter) {
         lines: [...(base?.lines || []), ...(own?.lines || [])],
         hush: !!(base?.hush || own?.hush),
         overhearRadius: base?.overhearRadius || own?.overhearRadius || null,
-        pictures: scenarioChatter !== false
+        pictures: scenarioChatter !== false && thoughtsOn !== false
     };
 }
 
@@ -996,7 +998,7 @@ export class NPCNeedsSystem {
             const first = m.satisfies.find(n => NEED_ICONS.includes(n));
             // SIMS-5 design R2 m7 (E7 for announces): with the player out of earshot of the teller the
             // telling still happens, as a picture; no line is taken from the bag, so none is voiced unheard
-            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
             const unheard = typeof this.world.playerHears === 'function' && !(this.world.playerHears(s.npcId, radius) || {}).overheard;
             const pick = this._pickBark(s, topic, { waitForLock: waited < NEWS_WAIT_MS, ignoreCooldown: true, unheard, icons: [first || 'social'] });
             if (pick?.wait) {
@@ -2118,7 +2120,7 @@ export class NPCNeedsSystem {
         // falloff range is a faint line too, on the faint throttle; it never counts as heard
         let faint = false;
         if (unheard && typeof this.world.faintVolume === 'function') {
-            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+            const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
             try { faint = this.world.faintVolume(s.npcId, radius) > 0; } catch (e) { faint = false; }
             if (faint) unheard = false;
         }
@@ -2130,7 +2132,7 @@ export class NPCNeedsSystem {
     /** Is the player out of earshot of this speaker for this topic (its pool's overhearRadius)? */
     _unheard(s, topic) {
         if (typeof this.world.playerHears !== 'function') return false;
-        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).overhearRadius || OVERHEAR_RADIUS;
+        const radius = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).overhearRadius || OVERHEAR_RADIUS;
         return !(this.world.playerHears(s.npcId, radius) || {}).overheard;
     }
 
@@ -2178,7 +2180,7 @@ export class NPCNeedsSystem {
         // the same rule as one waiting for the lock
         // A priority topic (PRIORITY_MUTTERS) waits only for the lock and for other priority
         // lines, and is queued ahead of every other mutter
-        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
+        const lines = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
         const priority = PRIORITY_MUTTERS.has(topic);
         const ahead = priority ? this._mutterWaits.some(w => w.priority) : this._mutterWaits.length > 0;
         // R1 M3: a mutter the player hears in full takes the lock from a faint ambient line (the
@@ -2276,7 +2278,7 @@ export class NPCNeedsSystem {
     /** The grumble topic for a turn-back reason (slice 18a): chosen by which pools have lines. */
     _grumbleTopic(s, reason) {
         const own = `grumble_${reason}`;
-        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
+        const lines = t => chatterPool(t, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
         if (reason !== 'avoid' && lines(own)) return own;
         if (lines('grumble')) return 'grumble';
         return PICTURE_CHATTER[own] ? own : 'grumble';
@@ -2375,7 +2377,7 @@ export class NPCNeedsSystem {
     }
 
     _hasLines(s, topic) {
-        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter).lines.length > 0;
+        return chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn()).lines.length > 0;
     }
 
     /**
@@ -2909,7 +2911,7 @@ export class NPCNeedsSystem {
      * line would outlast it, so a line taken is always a line said.
      */
     _pickBark(s, topic, { waitForLock = false, ignoreCooldown = false, unheard = false, faint = false, maxMs = Infinity, icons: iconsFor = null } = {}) {
-        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter);
+        const pool = chatterPool(topic, this._scenarioChatter(), this._rec(s).chatter, this._thoughtsOn());
         // M4: the next line passes over one said lately nearby (an echo), for the fit check and the draw
         const ready = !unheard && pool.lines.length && (ignoreCooldown || !(s.chatterQuietUntil > this.clockMs))
             && !(faint && s.faintQuietUntil > this.clockMs)
@@ -3000,7 +3002,7 @@ export class NPCNeedsSystem {
     _chatRadius(c, speakerId) {
         if (c.overhearRadius) return c.overhearRadius;
         const st = this.states.get(speakerId);
-        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null);
+        const pool = chatterPool(c.topic, this._scenarioChatter(), st ? this._rec(st).chatter : null, this._thoughtsOn());
         return pool.overhearRadius || OVERHEAR_RADIUS;
     }
 
@@ -4404,6 +4406,11 @@ export class NPCNeedsSystem {
         }
     }
 
+    /** False when the scenario sets `"npcThoughts": false` (D77): no picture chat either. */
+    _thoughtsOn() {
+        return typeof this.world.npcThoughtsOn === 'function' ? this.world.npcThoughtsOn() !== false : true;
+    }
+
     _scenarioChatter() {
         return typeof this.world.chatterConfig === 'function' ? this.world.chatterConfig() : undefined;
     }
@@ -4732,7 +4739,7 @@ export class NPCNeedsSystem {
             texts = lines.map(l => l.text);
             break;
         }
-        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter);
+        const pool = chatterPool(topic, this._scenarioChatter(), rec.chatter, this._thoughtsOn());
         if (!texts && pool.lines.length) {
             texts = [];
             for (let k = 0; k < Math.min(CALL_POOL_LINES, pool.lines.length); k++) texts.push(pool.lines[this._bagNext(s.npcId, topic, pool.lines)]);
@@ -5551,6 +5558,8 @@ export function createEngineWorld() {
         },
         // Scenario chatter pools (object, false, or undefined for the built-ins)
         chatterConfig: () => W().gameScenario?.chatter,
+        // `"npcThoughts": false` (D77): picture chat is off too (same flag as npcThoughtsOn in npc-action-icons.js)
+        npcThoughtsOn: () => W().gameScenario?.npcThoughts !== false,
         // Voiced chatter (slice 15): npc-needs-chatter.js speaks lines and runs exchange knots on
         // a separate ink story instance; until it has loaded, lines are bubbles only. The voice
         // waits for the bubble layer to place the line, and a line with no room is not voiced
