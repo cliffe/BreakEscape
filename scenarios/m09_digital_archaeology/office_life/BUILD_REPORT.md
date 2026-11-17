@@ -37,7 +37,7 @@ Sound volume is `0.5 x level x duck` in every row. Level is the unducked normali
 | L7 reload in cage | dock spawn 0.01, open_stacks 0.15, dock 0.125 after shutter, cage back to step 1 at 0.5. `_ambientDuck` reads undefined after a reload until the first duck | pass |
 | L8 late scenes in salvage_cage | identity scene, Tesseract's call, debrief: level 0.6, duck 0.5, volume 0.15 each (0.3 undimmed) | pass |
 | Alpha recording, tape_room | level 0.35, duck 0.5, volume 0.0875 (0.175 undimmed) | pass |
-| Frame time, salvage_cage | 237 frames in 4 s, mean 17.0 ms, p95 16.8, one 66.6 ms spike | pass |
+| Frame time, salvage_cage | 237 frames in 4 s, mean 17.0 ms, p95 16.8, one 66.6 ms spike | recorded, no baseline comparison |
 | Frame time, open_stacks | not measured (mission had ended) | unmeasured |
 
 ### Doorway deviation (L3)
