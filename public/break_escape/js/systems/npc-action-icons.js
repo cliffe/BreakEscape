@@ -22,6 +22,9 @@
  *                          "C"                      a short text glyph
  *                        Textures draw at native size (never scaled) on the dark backing; each
  *                        loads on first use and the text glyph shows until it arrives.
+ *   npcThoughts          true (default). false: no action icon, no pressing, avoid or parked thought
+ *                          bubble for any NPC, whatever showPressingNeeds says (the campaign missions,
+ *                          D77). Barks, speech bubbles, chatter and held items are not affected.
  *   npcWindupMs          pre-action tell length before an NPC leaves its post (npc-needs.js). Default 700, 0 = off.
  *   showPressingNeeds    false (default). true: a thought bubble beside the head shows the NPC's
  *                          most pressing need it is not acting on (getState().pressing), the
@@ -349,6 +352,11 @@ export function speechCovers(st, bubbles, npcId) {
     } catch (e) { return false; }
 }
 
+/** Are NPC thoughts and action icons on? On unless the scenario says `"npcThoughts": false` (D77). */
+export function npcThoughtsOn(scenario = win().gameScenario) {
+    return scenario?.npcThoughts !== false;
+}
+
 export class NpcActionIcons {
     /** m8: hide this NPC's action icon and thought bubble now (the bubble pass calls it as it shows a bubble). */
     hideFor(npcId) {
@@ -572,6 +580,12 @@ export class NpcActionIcons {
         const actionIcons = scenario?.actionIcons;
         const optIn = scenario?.showPressingNeeds === true;
         const playerRoom = win().currentPlayerRoom;
+        // D77: "npcThoughts": false draws no action icon, no avoid/parked/pressing bubble, whatever showPressingNeeds says
+        if (!npcThoughtsOn(scenario)) {
+            for (const ic of this.icons.values()) if (ic?.box) ic.box.setVisible(false);
+            for (const bb of this.bubbles.values()) if (bb?.box) bb.box.setVisible(false);
+            return;
+        }
         for (const id of sys.states.keys()) {
             const st = sys.getState(id);
             const b = mgr.getBehavior?.(id);

@@ -1079,6 +1079,9 @@ module ValidateNpcNeeds
     if json.key?('showNpcIntentBubbles')
       issues << "⚠️ WARNING: showNpcIntentBubbles was renamed to showPressingNeeds (OFFICE_LIFE_PLAN 9.2); the old name is ignored."
     end
+    if json.key?('npcThoughts') && ![true, false].include?(json['npcThoughts'])
+      issues << "❌ ERROR: npcThoughts must be true or false (default true)."
+    end
     if json.key?('showPressingNeeds') && ![true, false].include?(json['showPressingNeeds'])
       issues << "❌ ERROR: showPressingNeeds must be true or false."
     end
