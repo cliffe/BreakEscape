@@ -423,3 +423,63 @@ BC1 demo_access_tour
 | 3 | 7582 | FAIL |
 | 4 | 7592 | FAIL |
 ```
+
+
+## Cake reload (probe a8d7caae8)
+
+Probe: `tools/playtest/showcase-bc1-cake-reload.mjs` at a8d7caae8 (scratch copy). Re-run at d3fadda9d (staff held again right after reload; the only diff). Size reader: `player-state-size.rb` at a8d7caae8, read-only (`Game.find`, `to_json`); copied into this worktree for the run, moved to `tmp/delete/`, not committed. Server: keyless, :3099, started with `BUNDLE_PATH=<main>/vendor/bundle RBENV_VERSION=2.7.8`, stopped by PID 506349 afterwards. Args: `--scenario demo_access_tour --room open_plan --cake cake --port 3099 --eaters thandiwe,yasmin --staff thandiwe,yasmin --rooms open_plan,kitchen --task t_open_session --calm 1` (wait 22 s, grow 2048 by default). Result files: `tmp/bc1/demo_access_tour-case<N>-game<id>.json`.
+
+| Probe | Case | Game | Result | Servings before / after reload | Cake before / after reload | Staff ate it | player_state bytes | Growth per key |
+|---|---|---|---|---|---|---|---|---|
+| a8d7caae8 | 1 | 7597 | PASS | 2 / 2 | in inventory / in inventory | no | 4493 -> 4829 (+336) | notes +335, syncWrites +1 |
+| a8d7caae8 | 2 | 7600 | FAIL | 0 / 0 | dropped in open_plan, then none (no room object, no magnet) / none | not recorded; both staff walked to the magnet and left their posts; servings fell 2 -> 0 during the drop and settle wait | 4471 -> 4935 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+| a8d7caae8 | 3 | 7606 | FAIL | 2 / 0 (one visit took it from 2 to 0) | open_plan, then none | Thandiwe (walked and ate); Yasmin did not walk | 4471 -> 4935 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+| d3fadda9d | 2 | 7612 | FAIL | 0 / 0 | dropped in open_plan, then none | not recorded; both staff saw the magnet and left their posts before the reload | 4471 -> 4935 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+| d3fadda9d | 3 | 7617 | FAIL | 2 / 0 (Thandiwe ate it in one visit, 2 -> 0; magnet kept at 0 servings until the reload) | open_plan, then none | Thandiwe (walked and ate); Yasmin did not walk | 4593 -> 5057 (+464) | notes +335, syncWrites +126, globalVariables +3 |
+
+Findings:
+- Case 1 passes on a8d7caae8. The cake stays in the inventory across the reload and no one eats it.
+- Cases 2 and 3 fail before the reload and do not test what they were written to test. In both probe commits the cake's servings are already 0 at the reload point. The loss happens between the drop and the reload (the 22 s settle), so the d3fadda9d hold after reload does not change the result. Its effect on the reload is not measured here.
+- The probe assumes one slice per visit. In this build a visit takes the whole cake (2 -> 0), so case 3's "kept, one fewer serving" check cannot pass as written.
+- `calm()` sets hunger and social to 100 for the listed staff before the drop. Both staff still walked to the cake, so the cause is not explained here.
+- player_state growth: each reload adds 335 bytes to `notes` (one Mission Brief entry). Case 2 and 3 runs also add 126 bytes to `syncWrites` and 3 to `globalVariables`. Every run stays under the 2048-byte limit. Growth in `syncWrites` is not reload-specific and was not checked further.
+
+Key output (verbatim, from `<scratch>/cake3.txt`; the d3fadda9d case 3 run is in the same file):
+```
+=== CASE 1 19:24:57
+case 1: game 7597
+  wait 22s (before reload)
+  player_state 4493 -> 4829 bytes (+336) {"notes":335,"syncWrites":1}
+  case 1: PASS {"pass":true,"before":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"after":{"found":[],"inv":true,"loaded":["reception","open_plan"],"servings":2,"magnet":false},"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"],"playerState":{"before":4493,"after":4829,"grew":336,"growKeys":{"notes":335,"syncWrites":1},"ok":true}}
+| Case | Game | Result | player_state bytes |
+| 1 | 7597 | PASS | 4493 -> 4829 |
+=== CASE 2 19:26:26
+case 2: game 7600
+  wait 22s (before reload)
+  player_state 4471 -> 4935 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 2: FAIL {"pass":false,"placed":false,"kept":false,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake"],"before":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"after":{"found":[],"inv":false,"loaded":["reception"],"servings":0,"magnet":false},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"],"playerState":{"before":4471,"after":4935,"grew":464,"growKeys":{"notes":335,"syncWrites":126,"globalVariables":3},"ok":true}}
+| Case | Game | Result | player_state bytes |
+| 2 | 7600 | FAIL | 4471 -> 4935 |
+=== CASE 3 19:33:31
+case 3: game 7606
+  wait 22s (before reload)
+  player_state 4471 -> 4935 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 3: FAIL {"pass":false,"first":{"npc":"thandiwe","walked":true,"ate":true},"kept":false,"second":{"npc":"yasmin","walked":false,"ate":false},"gone":true,"finishedEvent":false,"task":"active","before":{"found":[{"room":"open_plan","x":32,"y":23,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"mid":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"after":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"events":[],"errs":["console: Failed to load resource: the server responded with a status of 400 (Bad Request)","console: Failed to load resource: net::ERR_FAILED"],
+| Case | Game | Result | player_state bytes |
+| 3 | 7606 | FAIL | 4471 -> 4935 |
+=== d3fadda9d CASE 2 19:40:35
+case 2: game 7612
+  wait 22s (before reload)
+  player_state 4471 -> 4935 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 2: FAIL {"pass":false,"placed":false,"kept":false,"eat":{"npc":"thandiwe","walked":false,"ate":false},"dropEvents":["item_dropped:cake","npc_saw_magnet:thandiwe","npc_left_post:thandiwe","global_variable_changed:thandiwe_laptop_screen_locked","global_variable_changed:thandiwe_laptop_owner_away","workstation_owner_left:thandiwe_laptop","npc_stood","npc_saw_magnet:yasmin","npc_left_post:yasmin","global_variable_changed:yasmin_pc_screen_locked","global_variable_changed:yasmin_pc_owner_away","workstation_owner_left:yasmin_pc","workstation_screen_changed:yasmin_pc","workstation_lock_heard:yasmin_pc","npc_stood"],"before":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":fal
+| Case | Game | Result | player_state bytes |
+| 2 | 7612 | FAIL | 4471 -> 4935 |
+=== d3fadda9d CASE 3 19:47:38
+case 3: game 7617
+  wait 22s (before reload)
+  player_state 4593 -> 5057 bytes (+464) {"notes":335,"syncWrites":126,"globalVariables":3}
+  case 3: FAIL {"pass":false,"first":{"npc":"thandiwe","walked":true,"ate":true},"kept":false,"second":{"npc":"yasmin","walked":false,"ate":false},"gone":true,"finishedEvent":false,"task":"active","before":{"found":[{"room":"open_plan","x":40,"y":23,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":2,"magnet":true,"magnetServings":2},"mid":{"found":[{"room":"open_plan","x":40,"y":23,"elevation":0}],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":true,"magnetServings":0},"after":{"found":[],"inv":false,"loaded":["reception","open_plan"],"servings":0,"magnet":false},"events":[],"errs":["console: Failed to load resource: net::ERR_FAILED","console: Failed to load re
+| Case | Game | Result | player_state bytes |
+| 3 | 7617 | FAIL | 4593 -> 5057 |
+exit=1
+```
