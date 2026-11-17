@@ -411,7 +411,7 @@ Timed texts, on `ama_phone`, each an eventMapping with `sendTimedMessage: { dela
 | Id | Event | Delay | Text (target knot) |
 |---|---|---|---|
 | P0 | `global_variable_changed:has_julian_rdp`, `value === true` | 4000 | `sendTimedMessage: { "delay": 4000, "message": "Before you use that, sign out of Delphine's PC.", "targetKnot": "hint_sign_out", "skipIfGlobal": "done_t_julian_pc" }` |
-| P1 | `pc_in_use:thandiwe_laptop` | 4000 | "She's signed in and sitting right there. Give it a minute, or read the coffee rota on the wall and watch her go." (hint_open_session) |
+| P1 | `pc_in_use:thandiwe_laptop` | 4000 | "She's signed in and sitting right there. Read the coffee rota on the wall, then try her laptop while she's away." (hint_open_session) |
 | P2 | `network_foothold_gained:meeting_jack` | 5000 | "Box is talking. Have a look at the network view before you sign in anywhere." (hint_network_view) |
 | P3 | `usb_refused:usb_hub` | 4000 | "Storage is blocked on that hub. A keyboard isn't storage." (hint_injector) |
 | P4 | `network_device_refused:managed_port`, `condition: data.reason === "port_security"` | 4000 | "That port knows what's meant to be plugged into it. Try the patch panel, see where its spare port goes." (no targetKnot) |

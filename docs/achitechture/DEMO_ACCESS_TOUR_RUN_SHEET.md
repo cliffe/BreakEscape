@@ -2,7 +2,7 @@
 
 For the lecturer running the tour live. Companion to DEMO_ACCESS_TOUR_PLAN.md (design) and written from the built scenario and ink on branch build/demo-access-tour. The mission is "Demo: Access tour" (scenario `demo_access_tour`): Merrin & Sallow, a small firm, with Ama Owusu of Fenlow Managed IT at reception.
 
-Status of stop 12 (Thandiwe leaving her desk): BEING FIXED. In live walks she stayed at her desk after the rota board and the cake. Until the fix lands, treat stops 12 and 13 as unreliable and use the skip in "If stop 12 does not move" below. Nothing required depends on them.
+Stop 12 (Thandiwe leaving her desk): after the coffee rota she is away for about a minute (walk, brew, walk back). Go straight to her laptop once she gets up.
 
 ## 1. Setup
 
@@ -42,8 +42,8 @@ How to read them. "Say" is the security point, in plain words. "Ama/phone" is wh
 | 6 | Open the keyring, use Julian's saved connection. Julian's PC opens as "Remote session through Drop box". Show Start, Lock. | "That connection file skipped the partner's office door. The door never came into it." | Toast: "Saved connection found: julian.rdp for Julian Sallow on MS-PARTNER-01." | If you stayed signed in at the front desk, the connection rides that desk and dies with the sign-out. Sign out first. |
 | 9 | Talk to Lorna by the comms door. Choose the option that holds the cloner near her card. When the read hits 100 percent click Save (not "Abandon read"). | "Her card was copied while she stood there. The reader only checks the card number." | Toast: "Card copied: Lorna Easton FAC card is saved on your RFID cloner." Then "Just passing through, thanks." | The Save and Abandon buttons sit close. A mis-click means redo the read. The clone choice stays available if you first talk to her without the cloner. |
 | 10 | Click the comms cupboard door. Choose "Emulate Lorna Easton FAC card". Walk in. Look round. | "Copy Lorna's card and you are Lorna, as far as the reader is concerned." | "Access Granted: Opened with your copy of Lorna Easton FAC card." | First click on the door opens the reader; the emulate button is its only control. |
-| 11 | Open plan. Click Thandiwe's laptop while she sits. | "Her session is up on screen and she is two feet away." | Toast: "Thandiwe Moyo is using this PC." Phone: "She's signed in and sitting right there. Give it a minute, or read the coffee rota on the wall and watch her go." | The first click can say "Someone's in the way." The laptop overlaps the desk and her chair. Click again in range. Engine quirk, not a fault. |
-| 12 | Read the coffee rota on the wall (the reliable nudge). Watch her leave and the laptop stay signed in. Optional. | "She left a signed-in laptop. A walk to the kettle is all it took." | Phone after the first laptop click: see stop 11. | BEING FIXED: Thandiwe did not leave her desk in live walks. See "If stop 12 does not move". |
+| 11 | Open plan. Click Thandiwe's laptop while she sits. | "Her session is up on screen and she is two feet away." | Toast: "Thandiwe Moyo is using this PC." Phone: "She's signed in and sitting right there. Read the coffee rota on the wall, then try her laptop while she's away." | The first click can say "Someone's in the way." The laptop overlaps the desk and her chair. Click again in range. Engine quirk, not a fault. |
+| 12 | Read the coffee rota on the wall (the reliable nudge). Watch her leave and the laptop stay signed in. Optional. | "She left a signed-in laptop. A walk to the kettle is all it took." | Phone after the first laptop click: see stop 11. | She is back in about a minute; if you miss it, read the rota again later or use the skip below. |
 | 17 | Back to the meeting room. Click the drop box in the wall port and pull it. | "Pulling the box ends what ran through it. Anything reached another way stays up." | Phone, 6 s later: "Box is out. Have a last look if you like, then come back to reception." | The box returns to your bag. Required task. |
 | 19 | Reception, talk to Ama. If she only asks "Still going?", a required step is open: ask the phone. Then "I'm done, let's talk." | See Ama's recap below. | Debrief, then the credits. | Credits end the mission. Read section 5 first. |
 
@@ -57,7 +57,7 @@ Stops 1, 2, 3, 5, 6, 9, 10, 11, 12, 17, 19 are as in 3a (choose "The full walk-r
 | 6 (extra) | Full route only: from Julian's desktop open the Finance share (`q3_accounts.txt`). | "Now we are a partner, so the Finance share opens." | Start panel shows Lock. | Show the Lock button again if the class missed it. |
 | 7 | With Julian's session held, open the network view at the box. A server network now lists MS-DOOR-01. Sign in with Lorna's password from `facilities.txt` (read it from the file). Open the door codes file. | "One foothold got us to a second network. The door controller trusts anyone already inside." | Phone (full route): "With Julian's session up, his PC can reach the server network." | Open the network view at the box, not from another link: the session then ends cleanly at the unplug. |
 | 8 | Server room keypad (north of the open plan). Enter the code from the codes file. | "The code was in a file on a box nobody guards." | `t_server_room` completes. | Four digits auto-submit on the fourth. A mis-type costs an attempt; the keypad counts them down. Codes are random per game: read yours. |
-| 13 | While both staff are away, click Yasmin's PC. It is locked but her sticky note gets you back in. | "Yasmin does the right thing and locks her screen. Her note undoes it." | Phone: "Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving." | BEING FIXED with stop 12: same cause. Her absence is the story, not a lock. |
+| 13 | While both staff are away, click Yasmin's PC. It is locked but her sticky note gets you back in. | "Yasmin does the right thing and locks her screen. Her note undoes it." | Phone: "Next time Yasmin's away from her desk, have a look at her screen. The coffee rota gets people moving." | Same coffee run as stop 12; Yasmin queues behind Thandiwe. Her absence is the story, not a lock. |
 | 14 | Back to reception. Sign in at the front desk keyboard again. Try the USB stick at the hub: refused. Use the injector at the implant socket. | "Storage is blocked. A keyboard is not storage, so the injector gets through." | Hub refusal is the engine's own storage line. Phone: "Storage is blocked on that hub. A keyboard isn't storage." | Sign in at the keyboard FIRST. See "Silent implant not_ready". |
 | 15 | Hide the rogue AP in a reception plant, open its console, copy the Staff Wi-Fi. | "A copy of the Staff network name. Phones and laptops pick the strongest one they know." | Phone: "Hide the access point in one of the reception plants..." then "Give it a moment. Thandiwe's about to check her email, and her laptop should join your copy." | The open-plan entry can nudge Thandiwe again later. Harmless. If she does not join, carry on. |
 | 16 | Open the capture tablet. Read the Staff key. Join Staff Wi-Fi. Compare with open Guest Wi-Fi. | "Staff has a key and Guest has none. The twin picked up the real key anyway." | Phone: "You've got the Staff key. Join the Staff Wi-Fi and compare it with the guest one." | The Wi-Fi stops still work after the box is out. |
@@ -76,7 +76,7 @@ No required task depends on either staff member leaving. Both stops are optional
 - Waiting also works. Caffeine alone sends Thandiwe about 15 minutes in and Yasmin about 20.
 - Yasmin's screen locks when she leaves; Thandiwe's does not. That contrast is the point.
 - When Thandiwe returns and sits, your session on her laptop ends. Take what you need first.
-- If stop 12 does not move (live walks showed her standing at her desk after the rota and the cake; being fixed): say "she has stayed put, which is also a result", then go on. Skip stops 12 and 13. Nothing required is lost. The phone will keep naming the unplug as the next step.
+- If stop 12 does not move (for example you missed the minute she was away): say "she has stayed put, which is also a result", then go on. Skip stops 12 and 13. Nothing required is lost. The phone will keep naming the unplug as the next step.
 
 ### Silent implant `not_ready` (stop 14)
 
@@ -124,4 +124,4 @@ The "Where next?" line picks the next open required step first, then optional on
 - The new game opens at reception with Ama talking.
 - The phone has "Ask me where next when you need it." and answers "Where next?".
 - You know which route you are on and where your spare game is.
-- Stop 12 status: BEING FIXED. Decide now whether you will use the skip.
+- Stop 12: practise the rota-then-laptop timing once before the class.
