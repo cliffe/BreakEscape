@@ -327,6 +327,10 @@
     margin: 0;
 }
 
+.desktop-icon-label .desktop-icon-tail {
+    white-space: nowrap;
+}
+
 .desktop-icon-label-open .desktop-icon-word {
     white-space: normal;
     overflow-wrap: anywhere;

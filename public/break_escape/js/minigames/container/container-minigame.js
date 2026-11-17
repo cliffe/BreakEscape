@@ -365,7 +365,19 @@ function buildLabelFragments(label, full) {
             if (i > 0) label.appendChild(doc.createElement('wbr'));
             const word = doc.createElement('span');
             word.className = 'desktop-icon-word';
-            word.textContent = frag;
+            // A fragment wider than the label breaks anywhere when the label is open: the
+            // last letter and the separator after it go in a nowrap span so the separator
+            // never lands alone on a line (the text reads the same)
+            const m = /^([\s\S]*?)(\S)([_.\-/]+)$/.exec(frag);
+            if (m && !LABEL_SEP.test(m[2])) {
+                if (m[1]) word.appendChild(doc.createTextNode(m[1]));
+                const tail = doc.createElement('span');
+                tail.className = 'desktop-icon-tail';
+                tail.textContent = m[2] + m[3];
+                word.appendChild(tail);
+            } else {
+                word.textContent = frag;
+            }
             label.appendChild(word);
         });
     });

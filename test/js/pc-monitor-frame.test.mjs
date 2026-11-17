@@ -2078,3 +2078,29 @@ test('R1 m6: a long tag is cut with an ellipsis (computed from the sheet), the h
     const shared = readFileSync(join(here, '../../public/break_escape/js/utils/more-below.js'), 'utf8').match(/MORE_BELOW_TEXT = '([^']+)'/)[1];
     assert.equal(readFileSync(join(here, '../../public/break_escape/js/utils/remote-host-text.js'), 'utf8').match(/REMOTE_MORE_BELOW_TEXT = '([^']+)'/)[1], shared);
 });
+
+test('Icon labels: a trailing separator travels with the letter before it in a nowrap tail, text unchanged', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const name = 'Budget_Recon_FINAL_v3_approved.xlsx';
+    const label = document.createElement('div');
+    label.textContent = name;
+    stubWidths(label);
+    fitIconLabel(label);
+    const words = [...label.querySelectorAll('.desktop-icon-word')];
+    assert.ok(words.length >= 2, label.innerHTML);
+    for (const w of words) {
+        const frag = w.textContent;
+        const tail = w.querySelector('.desktop-icon-tail');
+        if (/[^_.\-\/][_.\-\/]+$/.test(frag)) {
+            assert.ok(tail, `tail span on ${frag}`);
+            assert.ok(tail.textContent.length >= 2, 'separator never alone');
+            assert.ok(/[^_.\-\/]/.test(tail.textContent[0]), 'tail starts with a letter');
+            assert.ok(frag.endsWith(tail.textContent));
+        } else {
+            assert.equal(tail, null);
+        }
+    }
+    assert.equal(label.dataset.fullName, name, 'full name kept');
+    assert.equal(label.querySelector('img'), null);
+    if (label.getAttribute('title') !== null) assert.equal(label.getAttribute('title'), name);
+});
