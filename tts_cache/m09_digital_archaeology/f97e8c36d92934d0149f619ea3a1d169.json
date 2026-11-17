@@ -1,0 +1,13 @@
+{
+  "key": "f97e8c36d92934d0149f619ea3a1d169",
+  "npc": "sorensen_hatch",
+  "text": "You offered Mr. Lawson a job. It's in your file, you know. \"A recruiter's instinct.\"",
+  "voice": "Vindemiatrix",
+  "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:31:01Z"
+}

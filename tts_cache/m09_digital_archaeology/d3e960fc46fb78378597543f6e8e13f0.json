@@ -1,0 +1,13 @@
+{
+  "key": "d3e960fc46fb78378597543f6e8e13f0",
+  "npc": "narrator",
+  "text": "The hangar again, under the floodlights. Netherton is waiting.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A records archive burning its own past at night, and the people who were filed in it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:20:10Z"
+}
