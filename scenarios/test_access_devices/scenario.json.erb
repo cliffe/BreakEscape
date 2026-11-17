@@ -80,7 +80,7 @@
   },
 
   "startItemsInInventory": [
-    { "type": "rogue_ap", "sprite": "drop_box1", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
+    { "type": "rogue_ap", "sprite": "rogue_ap", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false,
       "observations": "A pocket box that broadcasts a copy of a Wi-Fi network's name. The copy is open, because it cannot know the real key, so nobody's laptop joins it on its own: a person has to pick it. Plant it in reception, then set it up from its console." },
     { "type": "page-builder", "id": "captures_terminal", "name": "Harvested Credentials",
       "sprite": "tablet", "takeable": true,
@@ -115,12 +115,22 @@
       "type": "room_reception",
       "door_sign": "Reception",
       "connections": { "north": "comms" },
+      "lighting": {
+        "emitters": {
+          "lw_staff_ap": { "color": "#2a8cff", "radius": 6, "intensity": 0.6, "effect": "blink", "above": true, "offsetX": 0, "offsetY": -1 },
+          "lw_guest_ap": { "color": "#2a8cff", "radius": 6, "intensity": 0.6, "effect": "blink", "above": true, "offsetX": 0, "offsetY": -1 },
+          "planted_rogue_ap": { "color": "#3fa8ff", "radius": 5, "intensity": 0.7, "effect": "blink", "above": true, "offsetX": -4, "offsetY": 3 }
+        }
+      },
       "objects": [
         {
           "type": "pc",
           "id": "rogue_ap_spot",
           "name": "Waiting-area planter",
-          "sprite": "planter_fig1",
+          "sprite": "rogue_ap_pot",
+          "spriteVariants": [
+            { "condition": "globalVars.ap_planted", "value": "rogue_ap_planted" }
+          ],
           "position": { "x": 8.5, "y": 3 },
           "takeable": false,
           "interactable": true,
@@ -140,8 +150,8 @@
           "type": "pc",
           "id": "planted_rogue_ap",
           "name": "Planted rogue AP",
-          "sprite": "drop_box1",
-          "position": { "x": 9.6, "y": 3 },
+          "sprite": "rogue_ap_planted",
+          "position": { "x": 8.5, "y": 3, "elevation": 3 },
           "takeable": false,
           "interactable": true,
           "active": true,
@@ -195,7 +205,7 @@
           "type": "pc",
           "id": "lw_staff_ap",
           "name": "Ledgerwell-Staff access point",
-          "sprite": "network_rack1",
+          "sprite": "lw_staff_ap",
           "position": { "x": 5, "y": 2.2 },
           "takeable": false,
           "wifiAp": true,
@@ -206,7 +216,7 @@
           "type": "pc",
           "id": "lw_guest_ap",
           "name": "Ledgerwell-Guest access point",
-          "sprite": "network_rack1",
+          "sprite": "lw_guest_ap",
           "position": { "x": 2, "y": 2.2 },
           "takeable": false,
           "wifiAp": true,
@@ -217,13 +227,14 @@
           "type": "notes1",
           "id": "lw_guest_card",
           "name": "Reception Wi-Fi card",
-          "position": { "x": 6.5, "y": 6 },
+          "sprite": "lw_guest_card",
+          "position": { "x": 0.4375, "y": 3.25 },
           "takeable": false,
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): Ledgerwell-Guest\nKey: Visitor-Pebble-2026",
-          "observations": "A printed card on the reception desk with the guest Wi-Fi details."
+          "observations": "A printed flyer pinned to the wall with the guest Wi-Fi details."
         },
         {
           "type": "pc",
