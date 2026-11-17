@@ -1,4 +1,13 @@
-# m06 office life: handover (plan phase; Stage 0 complete, design drafted, ANALYSIS/PLAN not yet written)
+# m06 office life: handover (plan phase; plan review rounds 1 to 3 done, round 4 next)
+
+## Status at ccf78348e (supersedes the older notes below)
+
+- PLAN.md and QUESTIONS.md written and rewritten standalone after each round. No separate ANALYSIS.md: the cast audit is plan section 2.1.
+- Rounds (all full reads on the planning tier): R1 B0 M6 m3 (REVIEW_R1.md, reviewer stopped at its context guard), R2 B0 M5 m10, R3 B0 M3 m8. Every finding fixed; outcomes in each REVIEW file.
+- Design now: only Dani moves (caffeine only, found at post first by a first-talk break plus a `room_entered` mapped break, cooldown 240000 ms, both gated `!globalVars.floor_staff_ko`). Priya pinned by her ink (`ink/m06_npc_analyst.ink:124`, `:127`, `:323`, `:347`). Dani owns no PC (owner is holding under D78); Q1 option (b) is the exception, with plan 3.4 as its build check. Extras Lerato (desk, desk phone) and Tomasz (client-support lead, readable laptop `type: "laptop1"`, `position: "as-type:laptop"`, answersPhones, one handover sheet printed by command into a single copier slot). Pizza magnet tempts only the extras. `floor_staff_ko` trouble global; existing HaX loop still sets `cover_strained` for Dani and Irina KOs. About 60 clips.
+- Next: R4. R3 changed what text may carry (secrets list 3.3, Tomasz's job and printout), so R4 is a delta review sent to the opus55 agent type (secret handling), given `git diff 54bb60169 ccf78348e -- scenarios/m06_follow_the_money/office_life/PLAN.md` plus REVIEW_R3.md. If R4 has no B/M, R5 is a Sonnet delta. Stop at R5 unless a blocker is open; leftover M/m go in the plan as open with reasons.
+- Reviewer brief must say: read-only, never open SecGen XML, Vagrantfiles, SecGen scenario files or the m06_*_field_guide items; Irina, the guard, Kemal, Satoshi stay put; office life never sets cover_strained; VM flags stay required.
+
 
 Branch `plan/ol-m06`, worktree `.claude/worktrees/p-ol-m06`, base main `3e00651a8`. Plan phase only: no build, no servers. Env for rake/validator: `RBENV_VERSION=2.7.8 BUNDLE_PATH=/home/cliffe/Files/Projects/Code/BreakEscape/BreakEscape/vendor/bundle`. Never stage `dungeon_graph.*`.
 
