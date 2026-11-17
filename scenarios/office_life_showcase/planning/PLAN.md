@@ -160,7 +160,7 @@ All three aims visible from the start (no `unlockAim`, so an early event never c
     - Evening (`act_evening`): A12, A15.
   - "What was that at the cooler?" (only when `heard_exchange_cooler_chat`): A13, A14.
   - "Let's do lunch." (`not act_midday`): if `not kitchen_seen`, A26 and back to the hub; else if `chidi_pc_owner_away or jun_pc_owner_away`, A29 and back to the hub; else A16, A30, `#set_global:act_midday:true`, exit. Globals sync into the story when the conversation starts, so a viewer who keeps the conversation open while Chidi and Jun walk back hears A29 again until the conversation is closed and reopened. A29 already tells them to give it a minute, which in practice closes the conversation; S3 checks the reopen.
-  - "Call it a day." (`act_midday and not act_evening`): the A31 confirm ("They won't be back once they've gone home. Seen everything you wanted?") with two sticky sub-choices. "Yes, call it a day." plays A17, A18, `#set_global:act_evening:true`, exit. "Not yet." returns to the hub choices with nothing set.
+  - "Call it a day." (`act_midday and not act_evening`): the A31 confirm ("The staff won't be back once they've gone home. Seen everything you wanted?") with two sticky sub-choices. "Yes, call it a day." plays A17, A18, `#set_global:act_evening:true`, exit. "Not yet." returns to the hub choices with nothing set.
   - "Give me the short version." (`act_evening`): A19 to A25, A28, back to the hub.
   - "I'll have a look round.": A27, exit.
 - Each staff NPC: a minimal five-line chat in its own ink file (start line; a hub reopen line; one flavour choice answered in two lines; a plain exit choice answered with one short reply). Graham's file also holds `exchange_cooler_chat` (Graham and Agnieszka, five lines). The exchange is declared on Graham: `"exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat" }]`, and `heard_exchange_cooler_chat: false` is declared in `globalVariables`.
@@ -195,7 +195,7 @@ Character counts are the full text in the table, punctuation and spaces included
 | A4 | What am I looking at? | When one runs low, they go to whatever fills it. That's an affordance. | 70 | 13 |
 | A5 | try next, morning | Wait for the coffee run. One person at a time; the rest queue. | 62 | 13 |
 | A6 | try next, morning | They come back every few minutes. Switch the machine off at the wall socket while they queue. | 93 | 17 |
-| A7 | try next, morning | Then open the kitchen door and hang about by the water cooler. | 62 | 12 |
+| A7 | try next, morning (kitchen unseen, after A8) | Then open the kitchen door and hang about by the water cooler. | 62 | 12 |
 | A8 | try next, morning (said before A7) | Before you open the kitchen, note the mugs on the floor. Someone dislikes them. | 79 | 14 |
 | A9 | try next, midday | Lunch takes people away from their desks. Some lock their screens; some don't. | 78 | 13 |
 | A10 | try next, midday | Use an open one, then close it and wait by the desk for its owner. | 66 | 15 |
@@ -219,10 +219,12 @@ Character counts are the full text in the table, punctuation and spaces included
 | A28 | short version, close | That's the tour. Stay and look round as long as you like. | 57 | 12 |
 | A29 | Let's do lunch, Chidi or Jun away | Hang on, Chidi or Jun is still out. Give it a minute. | 53 | 12 |
 | A30 | Let's do lunch, after A16 | Anyone in the middle of something finishes it first. | 52 | 9 |
-| A31 | Call it a day (confirm) | They won't be back once they've gone home. Seen everything you wanted? | 70 | 12 |
+| A31 | Call it a day (confirm) | The staff won't be back once they've gone home. Seen everything you wanted? | 75 | 13 |
 | A32 | try next, morning (kitchen_seen and cooler heard) | You've seen the kitchen. Ask me about lunch when you're ready. | 62 | 11 |
 | A33 | try next, midday (after A11, cake still out) | Once the cake is gone, tell me to call it a day. | 48 | 12 |
 | A34 | try next, midday (cake already gone) | The cake's gone already. Tell me when to call it a day. | 55 | 12 |
+| A35 | try next, morning (kitchen_seen, cooler not heard) | Hang about by the water cooler. | 31 | 6 |
+| A36 | Call it a day, after Not yet | Take your time. | 15 | 3 |
 
 Player choice text (not voiced): "What am I looking at?", "What should I try next?", "What was that at the cooler?", "Let's do lunch.", "Call it a day.", "Yes, call it a day.", "Not yet.", "Give me the short version.", "I'll have a look round."
 

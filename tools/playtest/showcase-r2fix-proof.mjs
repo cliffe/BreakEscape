@@ -148,7 +148,7 @@ async function checkGate(h, key, expectA32) {
   await closeChat(h);
   const says = re => C.talk.lines.some(l => re.test(l));
   C.gotA32 = says(/You've seen the kitchen\. Ask me about lunch/);
-  C.gotA7 = says(/Then open the kitchen door and hang about by the water cooler/);
+  C.gotA7 = says(/^Hang about by the water cooler/); // A35 since the voicing dialogue review
   C.verdict = expectA32
     ? (C.kitchenSeen === true && C.heardCooler === true && C.gotA32 && !C.gotA7 ? 'PASS' : 'FAIL')
     : (C.kitchenSeen === true && C.heardCooler === false && C.gotA7 && !C.gotA32 ? 'PASS' : 'FAIL');
@@ -161,8 +161,8 @@ async function checkCallItADay(h) {
   C.midday = await gv(h, 'act_midday');
   C.notYet = await talk(h, 'ama_owusu', ['Call it a day', 'Not yet'], { snap: { 1: 'm2-confirm' } });
   C.actEveningAfterNotYet = await gv(h, 'act_evening');
-  const confirmStep = C.notYet.steps.find(s => s.choice && /They won't be back once they've gone home\. Seen everything you wanted\?/.test(s.text || ''));
-  C.confirmText = confirmStep ? 'They won\'t be back once they\'ve gone home. Seen everything you wanted?' : null;
+  const confirmStep = C.notYet.steps.find(s => s.choice && /The staff won't be back once they've gone home\. Seen everything you wanted\?/.test(s.text || ''));
+  C.confirmText = confirmStep ? 'The staff won\'t be back once they\'ve gone home. Seen everything you wanted?' : null;
   C.confirmChoices = C.notYet.choicesSeen.find(c => c.some(x => /Yes, call it a day/.test(x)) && c.some(x => /Not yet/.test(x))) || null;
   const mark = C.notYet.steps.findIndex(s => s.pick === 'Not yet');
   const after = mark >= 0 ? C.notYet.steps.slice(mark + 1) : [];

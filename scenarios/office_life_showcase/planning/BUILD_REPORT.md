@@ -422,3 +422,7 @@ Checks: validator 0 errors, 17 warnings (known baseline); `showcase-lines-check.
 ## R4 fixes
 
 From BUILD_REVIEW_R4.md: m1 board mugs line is now "- Note the mugs, then go to the cooler." (restores the order); m2 the R2 probe asserts the new A31 text; m3 the R2 check 1 title and report row say the tick comes from `npc_left_post`, not the kitchen use. The new board line is shorter than the one it replaces, so the R3 fit holds.
+
+## Voicing dialogue review fixes
+
+From DIALOGUE_REVIEW_VOICING.md: A31 now names its subject ("The staff won't be back once they've gone home. Seen everything you wanted?"); "Not yet." gets a reply, new line A36 "Take your time.", before returning to the hub; the kitchen_seen, cooler-not-heard hint is new line A35 "Hang about by the water cooler." (the door is already open by then; A7 stays for the kitchen-unseen path). X4 kept: in context "You never do" agrees with "I'll not keep you long", and "Five minutes at most" supports it. Ink recompiled; validator 0 errors, 17 warnings; lines check PASS; dialoguelint no hits. The R2 probe asserts the new A31 text and A35.

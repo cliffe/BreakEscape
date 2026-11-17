@@ -80,7 +80,7 @@ What can I help with?
                     You've seen the kitchen. Ask me about lunch when you're ready.
                 - kitchen_seen:
                     # speaker:npc
-                    Then open the kitchen door and hang about by the water cooler.
+                    Hang about by the water cooler.
                 - else:
                     # speaker:npc
                     Before you open the kitchen, note the mugs on the floor. Someone dislikes them.
@@ -117,7 +117,7 @@ What can I help with?
     }
 + { act_midday and not act_evening } [Call it a day.]
     # speaker:npc
-    They won't be back once they've gone home. Seen everything you wanted?
+    The staff won't be back once they've gone home. Seen everything you wanted?
     + + [Yes, call it a day.]
         # speaker:npc
         Right. Home time for nearly all of them.
@@ -128,6 +128,8 @@ What can I help with?
         # exit_conversation
         -> END
     + + [Not yet.]
+        # speaker:npc
+        Take your time.
         -> choices
 + { act_evening } [Give me the short version.]
     # speaker:npc
