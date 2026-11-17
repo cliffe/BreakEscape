@@ -520,7 +520,7 @@ export const PC_OFF_TEXT = 'This PC is off.';
 export const PC_OFF_SYNC_WAIT_MS = 3000;
 
 /**
- * Is this sign-in PC switched off: its office-life `affordance.offWhen` (a global name, or
+ * Is this sign-in PC switched off: its office-life object-level `offWhen` (a global name, or
  * { name: value }, all to match) holds on the client's globals? The server judges the same
  * field on its own copy (Game#host_service_off?). Exported for tests.
  */
@@ -586,7 +586,7 @@ export async function showPcInUse(lockable, userAt = pcInUseBy(lockable)) {
 /**
  * A click on a sign-in PC (access model 5.4, "The interaction at a sign-in PC"):
  *   0. a headless host (slice 9.3a): its observations, and stop;
- *   0b. switched off (affordance.offWhen holds, q72): "This PC is off.", and stop. A session
+ *   0b. switched off (offWhen holds, q72): "This PC is off.", and stop. A session
  *      held there is kept. A PC that has an offWhen but is on first sends the globals (at
  *      most PC_OFF_SYNC_WAIT_MS), so a switch flipped back on a moment ago is known;
  *   1. owned and the owner present: "<owner> is using this PC", then the PC's resolved

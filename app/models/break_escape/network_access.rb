@@ -967,7 +967,7 @@ module BreakEscape
     end
 
     # A sign-in host whose own office-life service is off (9.3b plan 5.2): its
-    # `affordance.offWhen` (9.2's field) holds on the server's copy of the globals, read the way
+    # object-level `offWhen` (9.2's field) holds on the server's copy of the globals, read the way
     # the NPC frustration path reads them. Its row answers "not responding", and a remote
     # sign-in, a remote desktop and a scoped request under a remote session there are refused
     # 403 not_responding. Off is off at its own keyboard too (user decision q72): a walk-up
