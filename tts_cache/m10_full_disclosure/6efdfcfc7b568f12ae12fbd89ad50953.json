@@ -1,0 +1,13 @@
+{
+  "key": "6efdfcfc7b568f12ae12fbd89ad50953",
+  "npc": "vector_post",
+  "text": "Write this down. I'd only worry otherwise.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Tonight he is at the raid table, cleared and still sore about it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:00:56Z"
+}

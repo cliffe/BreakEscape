@@ -1,0 +1,13 @@
+{
+  "key": "920be76f782bb5e0783ec22e9b89e4d2",
+  "npc": "victoria_gallery",
+  "text": "You've opened that lock without me. All I can sell you now is my absence.",
+  "voice": "Despina",
+  "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:34:09Z"
+}

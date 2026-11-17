@@ -1,0 +1,13 @@
+{
+  "key": "0f785b5daf498c0710cdc30053356d18",
+  "npc": "malhotra_post",
+  "text": "Relay's down. We're done for the night.",
+  "voice": "Zubenelgenubi",
+  "style": "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:00:44Z"
+}

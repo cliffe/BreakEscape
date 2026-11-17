@@ -1,0 +1,13 @@
+{
+  "key": "0fdcbd93e67a2b86f0fbcaf3a383c62f",
+  "npc": "vector_post",
+  "text": "I've read the map three times. It hasn't changed. I keep checking anyway.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Tonight he is at the raid table, cleared and still sore about it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:00:48Z"
+}

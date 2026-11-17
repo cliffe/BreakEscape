@@ -1,0 +1,13 @@
+{
+  "key": "7a7c3b516c9f4f54b0ff1437e8823a47",
+  "npc": "tunnel_guard",
+  "text": "That's the one off the wall.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:22:48Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "cb62acc54041af8bd2056e56d98096eb",
+  "npc": "six_oclock",
+  "text": "You kept a man breathing by hand at St. Catherine's. Tonight was the same work, longer.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:20:59Z"
+}
