@@ -97,7 +97,11 @@ export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = s
     const h = srcH * scale;
     const boxW = refW * scale;
     const boxH = refH * scale;
-    const x = Math.round((canvasW - boxW) / 2 - canvasW * shift + (boxW - w) / 2);
+    // When the box is wider than the canvas (a tall tablet, where the scale is led by the
+    // height) the full look-away shift would push the figure off the edge, so it shrinks in
+    // proportion to how much of the box the canvas shows.
+    const shiftPx = canvasW * shift * Math.min(1, canvasW / boxW);
+    const x = Math.round((canvasW - boxW) / 2 - shiftPx + (boxW - w) / 2);
     // The box stands on the canvas bottom (never centred, which left a gap under her feet).
     // A close-up crops a little off the top to keep the head in shot, but its bottom still
     // reaches the canvas bottom.
@@ -113,6 +117,9 @@ export function portraitRect(view, srcW, srcH, canvasW, canvasH, shift, refW = s
  * unrounded contain fit as `scale`), raised to the next whole number only when that would
  * leave the canvas uncovered. Positions are whole canvas pixels. With `fractionalCover`
  * (scene shots) the scale is the exact cover scale (or `scale`, if larger) instead.
+ * On a wide, short canvas at devicePixelRatio 1 the cover step can be one whole number above
+ * the sprite's scale (844x390: sprite 2x, background 3x), so the background's pixels are
+ * coarser than the sprite's there. Both stay whole-pixel, so nothing shimmers.
  */
 export function backgroundRect(view, scale, imgW, imgH, canvasW, canvasH, fractionalCover = false) {
     // A scene shot has no animated sprite to match, so it may use the exact cover scale

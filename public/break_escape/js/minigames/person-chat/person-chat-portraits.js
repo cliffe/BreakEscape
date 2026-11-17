@@ -178,10 +178,14 @@ export default class PersonChatPortraits {
             
             // Set canvas size after it's in the DOM (container now has dimensions)
             // Use a small delay to ensure container is fully laid out
-            setTimeout(() => {
-                this.updateCanvasSize();
-                this.render();
-            }, 0);
+            // (skipped when a ResizeObserver is set up below: its first callback sizes the
+            // canvas from the exact device-pixel box, and this call would overwrite that)
+            if (typeof ResizeObserver === 'undefined') {
+                setTimeout(() => {
+                    this.updateCanvasSize();
+                    this.render();
+                }, 0);
+            }
             
             // Also set initial size immediately (in case container is already sized)
             this.updateCanvasSize();

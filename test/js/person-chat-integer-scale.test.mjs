@@ -26,6 +26,7 @@ globalThis.window = globalThis;
 globalThis.document = { getElementById: () => null, querySelector: () => null };
 console.log = () => {}; console.warn = () => {};
 const Portraits = (await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-portraits.js')))).default;
+const { portraitRect } = await import(pathToFileURL(join(dir, 'minigames/person-chat/person-chat-camera.js')));
 
 function fakeCtx(draws) {
     return {
@@ -74,17 +75,104 @@ test('a talk image of another size is drawn at the viseme sheet scale', () => {
     assert.equal(b, a);
 });
 
+// Canvas sizes where the background's cover step and the speaker's contain fit could disagree
+const SHARED_SIZES = [...SIZES, [390, 474], [390, 549], [768, 1024]];
+
 test('the background shares the speaker scale and stays on whole pixels', () => {
-    const { p, draws } = make(1280, 720);
-    p.backgroundImage = { width: 400, height: 400 };
-    p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
-    p._getCurrentVisemeColumn = () => 2;
-    p.parallaxStartTime = Date.now() - 300; // mid-parallax: a fractional offset
-    p.render();
-    const bg = draws.find(d => d.a.length === 4);
-    const sprite = draws.find(d => d.a.length === 8);
-    assert.equal(bg.a[2] / 400, sprite.a[6] / sprite.a[2]);
-    assert.ok(Number.isInteger(bg.a[0]) && Number.isInteger(bg.a[1]));
+    for (const [cw, ch] of SHARED_SIZES) {
+        const { p, draws } = make(cw, ch);
+        p.backgroundImage = { width: 400, height: 400 };
+        p.visemeSheet = { image: { width: 896, height: 128 }, frameSize: 128, columnFor: { rest: 0 } };
+        p._getCurrentVisemeColumn = () => 2;
+        p.parallaxStartTime = Date.now() - 300; // mid-parallax: a fractional offset
+        p.render();
+        const bg = draws.find(d => d.a.length === 4);
+        const sprite = draws.find(d => d.a.length === 8);
+        assert.equal(bg.a[2] / 400, sprite.a[6] / sprite.a[2], `${cw}x${ch}`);
+        assert.ok(Number.isInteger(bg.a[0]) && Number.isInteger(bg.a[1]), `${cw}x${ch}`);
+    }
+});
+
+test('a Phaser walk sprite is drawn at one whole scale, standing on the canvas bottom', () => {
+    for (const [cw, ch] of SHARED_SIZES) {
+        const { p, draws } = make(cw, ch);
+        const image = { width: 640, height: 80 };
+        const frame = { cutX: 0, cutY: 0, cutWidth: 80, cutHeight: 80, source: { image } };
+        p.game = { textures: { get: () => ({ key: 'walk', get: () => frame }) } };
+        p.spriteSheet = 'walk';
+        p.frameIndex = 0;
+        p.backgroundImage = { width: 400, height: 400 };
+        p.render();
+        const sprite = draws.find(d => d.a.length === 8).a;
+        const bg = draws.find(d => d.a.length === 4).a;
+        const scale = sprite[6] / sprite[2];
+        assert.equal(scale, Math.floor(ch > cw ? ch / 80 : Math.min(cw / 80, ch / 80)), `${cw}x${ch}`);
+        assert.equal(sprite[5] + sprite[7], ch, `${cw}x${ch} bottom edge`);
+        assert.equal(bg[2] / 400, scale, `${cw}x${ch} background`);
+    }
+});
+
+test('the look-away shift shrinks when the speaker box is wider than the canvas', () => {
+    // 768x1024: scale 8 at 128 px, so the box is 1024 px wide on a 768 px canvas
+    const wide = portraitRect({ zoom: 1 }, 128, 128, 768, 1024, 0.2);
+    assert.equal(wide.w, 1024);
+    const full = Math.round((768 - 1024) / 2 - 768 * 0.2);
+    assert.ok(wide.x > full, `x ${wide.x} is nearer the centre than the unscaled ${full}`);
+    assert.equal(wide.x, Math.round((768 - 1024) / 2 - 768 * 0.2 * (768 / 1024)));
+    // A box that fits the canvas keeps the full shift
+    const fits = portraitRect({ zoom: 1 }, 128, 128, 1280, 720, 0.2);
+    assert.equal(fits.x, Math.round((1280 - 640) / 2 - 1280 * 0.2));
+});
+
+test('init watches the device-pixel box and falls back to a plain observe without a window listener', () => {
+    const saved = { RO: globalThis.ResizeObserver, createElement: document.createElement, add: globalThis.addEventListener };
+    const calls = []; const added = [];
+    globalThis.addEventListener = (n) => added.push(n);
+    document.createElement = () => ({ style: {}, getContext: () => fakeCtx([]), width: 300, height: 150 });
+    class FakeRO {
+        constructor(cb) { this.cb = cb; }
+        observe(el, opts) { calls.push(opts ? 'box' : 'plain'); if (opts) throw new TypeError('unknown box'); }
+        disconnect() {}
+    }
+    globalThis.ResizeObserver = FakeRO;
+    try {
+        const box = { innerHTML: '', appendChild() {}, clientWidth: 390, clientHeight: 549 };
+        const p = new Portraits({}, { id: 'sam' }, box, null);
+        p.setupSpriteInfo = () => {};
+        p.render = () => {};
+        assert.ok(p.init());
+        assert.deepEqual(calls, ['box', 'plain']);
+        assert.ok(!p._resizeHandler);
+        assert.ok(p._resizeObserver instanceof FakeRO);
+        assert.deepEqual(added, []);
+    } finally {
+        globalThis.ResizeObserver = saved.RO;
+        if (saved.RO === undefined) delete globalThis.ResizeObserver;
+        document.createElement = saved.createElement;
+        globalThis.addEventListener = saved.add;
+        if (saved.createElement === undefined) delete document.createElement;
+    }
+});
+
+test('without a ResizeObserver init falls back to the window resize listener', () => {
+    const saved = { createElement: document.createElement, add: globalThis.addEventListener };
+    const added = [];
+    globalThis.addEventListener = (n) => added.push(n);
+    document.createElement = () => ({ style: {}, getContext: () => fakeCtx([]), width: 300, height: 150 });
+    try {
+        const box = { innerHTML: '', appendChild() {}, clientWidth: 390, clientHeight: 549 };
+        const p = new Portraits({}, { id: 'sam' }, box, null);
+        p.setupSpriteInfo = () => {};
+        p.render = () => {};
+        assert.ok(p.init());
+        assert.deepEqual(added, ['resize']);
+        assert.ok(!p._resizeObserver);
+    } finally {
+        document.createElement = saved.createElement;
+        globalThis.addEventListener = saved.add;
+        if (saved.createElement === undefined) delete document.createElement;
+        if (saved.add === undefined) delete globalThis.addEventListener;
+    }
 });
 
 test('the backing store is the CSS box times devicePixelRatio', () => {
