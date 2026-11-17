@@ -130,6 +130,18 @@ test('who shows: the session on a sign-in PC, never desktopUser; desktopUser onl
     assert.deepEqual(pcTaskbarModel({ pcData: { lockType: 'login' }, session: { username: 'a', via: 'password' }, lockSupported: false }).actions, ['switch', 'signout']);
 });
 
+test('K-lock R1 m1: with no canLock from the caller, Lock follows the shared sessionLockable for each session shape', () => {
+    const cred = { username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection' };
+    const lockOffered = (session) => pcTaskbarModel({ pcData: { lockType: 'login' }, session, lockSupported: true }).actions.includes('lock');
+    assert.equal(lockOffered({ ...cred, remote: true, footholdId: 'jack_comms_port' }), true, 'foothold');
+    assert.equal(lockOffered({ ...cred, remote: true, fromPcId: 'sam_pc' }), true, 'from');
+    assert.equal(lockOffered({ ...cred, kind: 'token', remote: true, footholdId: 'jack_comms_port', expiresAt: Date.now() + 60000 }), true, 'live token');
+    assert.equal(lockOffered({ ...cred, kind: 'token', remote: true, footholdId: 'jack_comms_port', expiresAt: Date.now() - 1 }), false, 'expired token');
+    assert.equal(lockOffered({ ...cred, kind: 'assist_invite', relay: true }), false, 'relay');
+    assert.equal(lockOffered({ ...cred }), false, 'routeless credential');
+    assert.equal(lockOffered({ ...cred, remote: true, footholdId: '' }), false, 'empty foothold id');
+});
+
 test('the computer name: a remote session\'s host, else host, else the PC name; desktopUser must be well formed', () => {
     assert.equal(pcHostName({ host: 'HB-FIN-02', name: 'Finance PC' }, { remote: true, host: 'HB-FIN-02r' }), 'HB-FIN-02r');
     assert.equal(pcHostName({ host: 'KEVIN-WS', name: "Kevin's" }), 'KEVIN-WS');

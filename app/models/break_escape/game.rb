@@ -3693,7 +3693,8 @@ module BreakEscape
       unless session.is_a?(Hash)
         return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
       end
-      # An expired token session is not held (keyring K5): refused as an unheld PC.
+      # An expired token session is not held (keyring K5): refused as an unheld PC. This does not
+      # prune or save: the record is cleared by the next write's prune, not by the lock route.
       if credential_session_expired?(session)
         return { status: :unprocessable_entity, body: { success: false, message: 'No session is held at this PC' } }
       end

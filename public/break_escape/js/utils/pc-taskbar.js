@@ -25,6 +25,7 @@
 import { escapeHtml } from './escape-html.js';
 import { displayDashes } from './display-dashes.js';
 import { MORE_BELOW_TEXT } from './more-below.js';
+import { sessionLockable } from '../systems/pc-sessions.js';
 import { applyHeadshotBox, npcRecordFor, headshotSourceFor, SILHOUETTE_URL } from './npc-headshot.js';
 
 const ICONS = '/break_escape/assets/icons';
@@ -180,11 +181,10 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         if (du) account = { kind: 'desktopUser', name: du.name, character: du.character };
     }
     const isRemote = !isRelay && (!!remote || session?.remote === true);
-    // pcSessions.canLock is the one rule when the caller has it; without it the same test as
-    // pc-sessions.js sessionLockable is made here (a password sign-in, or a foothold or `from`
-    // credential session, K-lock)
+    // pcSessions.canLock decides when the caller has it; without it the shared sessionLockable
+    // (pc-sessions.js: a password sign-in, or a foothold or `from` credential session, K-lock)
     const lockable = lockSupported && session?.guest !== true
-        && (typeof canLock === 'boolean' ? canLock : fallbackLockable(session));
+        && (typeof canLock === 'boolean' ? canLock : sessionLockable(session));
     // Switch user needs the PC's desktop to come back to; a view with none (a reader reached
     // without the desktop this page load) does not offer it rather than do nothing (R1 m3)
     // A relay has one Disconnect in place of Lock, Switch user and Sign out (8.3)
@@ -204,12 +204,6 @@ export function pcTaskbarModel({ pcData = null, session = null, remote = false, 
         places: isRelay ? [] : (Array.isArray(places) ? places : []).filter(p => p && p.id),
         actions
     };
-}
-
-function fallbackLockable(s) {
-    if (!s || s.relay === true) return false;
-    if (s.via === 'password') return true;
-    return s.via === 'credential' && s.remote === true && (!!s.footholdId || !!s.fromPcId);
 }
 
 /** Lock is offered only when the server reports it and the client can ask for it. */

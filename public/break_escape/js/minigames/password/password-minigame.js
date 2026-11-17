@@ -18,7 +18,7 @@ import {
     tileFullNames, nowrapHostsHtml, REMOTE_MORE_BELOW_TEXT,
     remoteTypedLine, remoteHeadlessLine, remoteAccountsFailedLine, remoteBothFailedLine,
     notRespondingMessage, unreachableMessage, remoteOffMessage, remoteNotPermittedMessage, remoteLockedOutMessage,
-    KEYRING_FAILED_TEXT, KEYBOARD_BOTH_FAILED_TEXT, FOUND_PASSWORD_LEAD_TEXT, CONNECT_WITH_TEXT,
+    KEYRING_FAILED_TEXT, KEYBOARD_BOTH_FAILED_TEXT, FOUND_PASSWORD_LEAD_TEXT, CONNECT_WITH_TEXT, lockedSlabText,
     kindRefusedMessage, kindRefusedShort, credentialRefusalLine, teachLine, chosenAccountLine, tokenExpiredMessage
 } from '../../utils/remote-host-text.js';
 // The portrait crop helpers live with the headshots (UX slice 2c R1 m8: the desktop bar
@@ -1565,7 +1565,7 @@ export class PasswordMinigame extends MinigameScene {
             : `${s.remote ? `<div class="signin-remote">Remote sign-in${s.remote.fromHost ? ` from ${escapeHtml(displayDashes(s.remote.fromHost))}` : (s.remote.linkName ? ` through ${escapeHtml(displayDashes(s.remote.linkName))}` : '')}</div>` : ''}${s.current
                 ? (s.current.locked === true
                     // A locked session (UI slice 6): it is held, but needs its password again
-                    ? `<div class="signin-current signin-current-locked">Locked: ${escapeHtml(s.current.displayName || s.current.username)}. Enter the password to unlock</div>`
+                    ? `<div class="signin-current signin-current-locked">${escapeHtml(lockedSlabText(s.current.displayName || s.current.username, !!s.remote && s.current.via === 'credential'))}</div>`
                     : `<div class="signin-current">Signed in now: ${escapeHtml(s.current.displayName || s.current.username)} (${escapeHtml(s.current.username)})</div>`)
                 : ''}`;
 
@@ -1940,6 +1940,15 @@ export class PasswordMinigame extends MinigameScene {
         // so a late answer returns the row to view (the cap focused the empty form for them).
         // A locked session keeps its form: its account is chosen already.
         const st = this.signInState;
+        // A locked session opened before the keyring answered typed its username (no tile yet).
+        // Once the row holds that account, choose its tile, so the credential's Connect button
+        // shows (K-lock R1 M1). A player who picked Other user themselves keeps the form.
+        if (s.current?.locked === true && st.other && !st.otherPicked && st.presetUsername
+            && st.tiles.some(t => t.username === st.presetUsername)) {
+            st.selected = st.presetUsername;
+            st.other = false;
+            st.presetUsername = null;
+        }
         // Other user clicked by the player is a choice too (N1): only the cap's own form returns.
         const typing = !!st.other && (!!st.otherPicked
             || !!(this.usernameField?.value || this.passwordField?.value));

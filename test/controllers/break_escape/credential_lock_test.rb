@@ -30,8 +30,16 @@ module BreakEscape
         { 'id' => 'lena_docs', 'type' => 'folder', 'name' => 'Documents', 'locked' => false,
           'contents' => [{ 'id' => 'lena_doc', 'type' => 'text_file', 'name' => 'doc.txt', 'takeable' => false, 'text' => 'doc' }] },
         { 'id' => 'lena_safe', 'type' => 'safe', 'name' => 'Expenses safe', 'locked' => true,
-          'lockType' => 'pin', 'requires' => '2468', 'contents' => [] }
+          'lockType' => 'pin', 'requires' => '2468', 'contents' => [] },
+        { 'id' => 'lena_safe_b', 'type' => 'safe', 'name' => 'Petty cash safe', 'locked' => true,
+          'lockType' => 'pin', 'requires' => '1357', 'contents' => [] },
+        { 'id' => 'lena_local_b', 'type' => 'text_file', 'name' => 'budget2.txt', 'takeable' => true, 'text' => 'b2' }
       ]
+      data['accountProfiles'] = (data['accountProfiles'] || {}).merge(
+        'lena_files' => { 'for' => { 'people' => ['lena'] },
+                          'contents' => [{ 'id' => 'lena_profile_doc', 'type' => 'text_file', 'name' => 'Q3.xlsx',
+                                           'takeable' => true, 'transfer' => 'copy', 'text' => 'PROFILE-LENA-7711' }] }
+      )
       data['resources']['server_public'] = {
         'kind' => 'file_share', 'name' => 'Server-Public', 'host' => NS::SV_HOST, 'network' => 'server_net',
         'contents' => [{ 'id' => 'server_pub_note', 'type' => 'text_file', 'name' => 'public.txt',
@@ -157,6 +165,35 @@ module BreakEscape
       refute state['sessions']['lena_pc'].key?('locked')
     end
 
+    # Mounted in a host: current_user decides who is asking (the stub is removed after each case)
+    def as_host_user(user)
+      was = BreakEscape.configuration.standalone_mode
+      BreakEscape.configuration.standalone_mode = false
+      ApplicationController.send(:define_method, :current_user) { user }
+      yield
+    ensure
+      ApplicationController.send(:remove_method, :current_user)
+      BreakEscape.configuration.standalone_mode = was
+    end
+
+    test 'a signed-out request cannot lock a session' do
+      build
+      rdp_session
+      as_host_user(nil) { lock('lena_pc') }
+      refute response.successful?, 'no user, no lock'
+      refute state['sessions']['lena_pc'].key?('locked')
+    end
+
+    test 'an admin may lock a session in another player\'s game, as show? allows' do
+      build
+      rdp_session
+      admin = break_escape_demo_users(:other_user)
+      admin.define_singleton_method(:admin?) { true }
+      as_host_user(admin) { lock('lena_pc') }
+      assert_response :success, response.body
+      assert_equal true, state['sessions']['lena_pc']['locked']
+    end
+
     test "another player's game: the lock is refused and their session stays unlocked" do
       build
       rdp_session
@@ -181,6 +218,14 @@ module BreakEscape
       @game.reload
       assert_includes @game.player_reach(OFFICE), 'server_net', 'the session bridges server_net while unlocked'
       assert @game.session_identity('lena_pc')
+      # Controls: a take, a profile copy and a safe unlock all succeed unlocked, so the refusals
+      # below are the lock and not a scope, a route or a fixture detail
+      add_item('text_file', 'lena_local', 'budget.txt', source_pc_id: 'lena_pc')
+      assert_includes held_ids, 'lena_local', 'control: the take works while unlocked'
+      add_item('text_file', 'lena_profile_doc', 'Q3.xlsx', source_pc_id: 'lena_pc', transfer: 'copy')
+      assert_includes held_ids, 'lena_profile_doc', 'control: the profile copy works while unlocked'
+      body = unlock_object('lena_safe', 'pin', '2468')
+      assert_equal true, body['success'], 'control: the safe unlocks while unlocked'
 
       assert_lock_ok('lena_pc')
       @game.reload
@@ -191,10 +236,12 @@ module BreakEscape
       get_json('container/lena_docs', foothold: OFFICE)
       refute response.successful?, 'a desktop folder is refused'
       refute_includes response.body, 'doc.txt'
-      add_item('text_file', 'lena_local', 'budget.txt', source_pc_id: 'lena_pc')
-      refute_includes held_ids, 'lena_local', 'a take from the locked desktop is refused'
-      unlock_object('lena_safe', 'pin', '2468')
-      refute response.successful? && response.parsed_body['success'] == true, 'an unlock under the locked session is refused'
+      add_item('text_file', 'lena_local_b', 'budget2.txt', source_pc_id: 'lena_pc')
+      refute_includes held_ids, 'lena_local_b', 'a take from the locked desktop is refused'
+      add_item('text_file', 'lena_profile_doc', 'Q3.xlsx', source_pc_id: 'lena_pc', transfer: 'copy')
+      assert_equal 1, held_ids.count('lena_profile_doc'), 'a profile copy under the locked session is refused'
+      body = unlock_object('lena_safe_b', 'pin', '1357')
+      assert_equal false, body['success'], 'an unlock under the locked session is refused'
       refute_includes @game.player_reach(OFFICE), 'server_net', 'a locked session bridges nothing for access'
       container('server_public', foothold: OFFICE)
       assert_response :not_found
@@ -292,9 +339,24 @@ module BreakEscape
       with_foothold
       assert_equal true, cred_login('lena_pc', 'lena_token', foothold: OFFICE)['success'], response.body
       travel 4.minutes
-      lock('lena_pc')
+      body = lock('lena_pc')
       assert_response :unprocessable_entity
+      assert_equal 'No session is held at this PC', body['message']
       refute state['sessions'].dig('lena_pc', 'locked')
+    end
+
+    test 'a token still unlocks under a password lockout (honours_lockout false), and the lockout leaves the session locked' do
+      build
+      with_foothold
+      assert_equal true, cred_login('lena_pc', 'lena_token', foothold: OFFICE)['success'], response.body
+      assert_lock_ok('lena_pc')
+      5.times { sign_in('lena_pc', 'lfox', 'wrong', foothold: OFFICE) }
+      assert_equal true, response.parsed_body['lockedOut'], response.body
+      body = sign_in('lena_pc', 'lfox', NS::LENA_PASSWORD, foothold: OFFICE)
+      assert_equal true, body['lockedOut'], 'the password is refused under the lockout'
+      assert_equal true, state['sessions']['lena_pc']['locked'], 'a lockout leaves the session locked, not signed out'
+      assert_equal true, cred_login('lena_pc', 'lena_token', foothold: OFFICE)['success'], 'a token ignores lockouts (K5)'
+      refute state['sessions']['lena_pc'].key?('locked')
     end
   end
 end

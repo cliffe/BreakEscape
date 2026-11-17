@@ -106,12 +106,15 @@ module BreakEscape
         assert_not GamePolicy.new(@other, @game).public_send(action), "other user: #{action}"
         assert_not GamePolicy.new(nil, @game).public_send(action), "nil user: #{action}"
       end
-      %w[admin account_manager].each do |role|
-        @other.update!(role: role)
-        actions.each do |action|
-          assert_equal GamePolicy.new(@other, @game).show?, GamePolicy.new(@other, @game).public_send(action), "#{role}: #{action}"
-        end
-      end
+      # show? itself, per role (owner? || admin? || managing_account_manager?): an admin passes;
+      # an account manager passes when the host has no orgs (DemoUser has no org_id), which is the
+      # rule in managing_account_manager?; with orgs it would need the same org
+      @other.update!(role: 'admin')
+      assert GamePolicy.new(@other, @game).show?, 'admin: show?'
+      actions.each { |action| assert GamePolicy.new(@other, @game).public_send(action), "admin: #{action}" }
+      @other.update!(role: 'account_manager')
+      assert GamePolicy.new(@other, @game).show?, 'account manager, host without orgs: show?'
+      actions.each { |action| assert GamePolicy.new(@other, @game).public_send(action), "account manager: #{action}" }
     ensure
       @other.update!(role: 'user')
     end

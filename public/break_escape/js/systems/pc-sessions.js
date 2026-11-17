@@ -168,6 +168,8 @@ function apiClient() {
  */
 export function sessionLockable(s) {
     if (!s || s.guest === true || s.relay === true) return false;
+    // A token past its expiry is not held (the server answers 422 for it): no Lock offered
+    if (isToken(s) && typeof s.expiresAt === 'number' && s.expiresAt <= Date.now()) return false;
     if (s.via === 'password') return true;
     if (s.via !== 'credential' || s.remote !== true) return false;
     return (typeof s.footholdId === 'string' && s.footholdId !== '')
@@ -824,6 +826,12 @@ export class PcSessions {
             }
         } catch (err) {
             const b = err?.body || {};
+            // A 422 for a token past its expiry: the server no longer holds it, so drop the copy
+            // as an expired token (the usual end) rather than show a refusal over an open desktop
+            if (err?.status === 422 && isToken(s) && typeof s.expiresAt === 'number' && s.expiresAt <= Date.now() && this.sessions.get(pcId) === s) {
+                this.linkDropped([pcId], 'token_expired');
+                return { ok: false, reason: 'token_expired', status: 422, message: tokenExpiredEndedMessage(s.label, s.host || 'a remote PC') };
+            }
             return { ok: false, reason: err?.status === 422 ? 'refused' : 'error', status: err?.status ?? null, message: b.message || b.error || 'Could not lock the session' };
         }
         s.locked = true;
