@@ -63,8 +63,8 @@ The aim chain does not change. No task, objective, `concludeRequires` or lock re
 | NPC | Class | Post | Leash | Needs | Groups and avoids | Habits | Beats protected by | Gate global | If attacked mid-walk |
 |---|---|---|---|---|---|---|---|---|---|
 | every existing record | as section 1A | unchanged | n/a | none | n/a | none | protection 1 (no needs) | n/a | unchanged |
-| `darren_price` (field power and IT support) | ambient | kettle west use cell (8,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash | caffeine | groups `fp_support` | none | not near any beat: he does not walk (section 2.3) | n/a | he never walks; a strike sets `fp_staff_upset`, a KO sets `fp_staff_ko` |
-| `sofia_marchetti` (welfare and logistics) | ambient | kettle east use cell (9,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash | caffeine | groups `fp_support` | none | as above | n/a | as above |
+| `darren_price` (field power and IT support) | ambient | the kettle's approach cell, about (8,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash, `chaseRange` 112 | caffeine | groups `fp_support` | none | not near any beat: at most a one-tile shuffle at the kettle (section 2.2) | n/a | he never leaves the kettle; a strike sets `fp_staff_upset`, a KO sets `fp_darren_ko` |
+| `sofia_marchetti` (welfare and logistics) | ambient | the kettle's beside cell, about (9,8) **estimate** | `needsRooms: ["forward_post"]`; hostile leash, `chaseRange` 112 | caffeine | groups `fp_support` | none | as above | n/a | as above; a KO sets `fp_sofia_ko` |
 
 No gated machine: no story NPC has needs, so no beat gate exists.
 
@@ -77,13 +77,19 @@ Their looks and backgrounds differ from each other and from the yard's cast (Net
 
 Each is talkable: a three-line conversation that offers nothing and ends (section 6).
 
-Each carries `"behavior": { "hostile": { "leash": true } }`. A strike makes a non-hostile NPC hostile (`systems/player-combat.js:453` to `:462`); without the leash the extra would follow the player into the bunker. With it, the extra stops chasing past `chaseRange` from the post and, as measured on m05, stays hostile near the post for the rest of the game, chasing again on re-entry. That is the cost of the player's own attack.
+Each carries `"behavior": { "hostile": { "leash": true } }`. A strike makes a non-hostile NPC hostile (`systems/player-combat.js:453` to `:462`); without the leash the extra would follow the player into the bunker. With it, the extra stops chasing past `chaseRange` from the post and, as measured on m05, stays hostile near the post for the rest of the game, chasing again on re-entry. The default `chaseRange` is 400 px (`config/combat-config.js:74`), which from the kettle covers almost the whole 640 by 320 yard, Netherton's spot (about 140 px) and the gate terminal (about 280 px) included, so a struck extra would chase the player to the table and the flag station on every return. Each extra therefore sets `behavior.hostile.chaseRange` 112 (three and a half tiles): the extra still chases a player who stays at the kettle, and lets go before the table's north side. That is the cost of the player's own attack.
 
 ### 2.2 Posts and the kettle
 
 The kettle sits on a third kit crate in the south-centre of the yard, east of the incident-file crate and south of the folding table: crate about x 256 to 288, y 272 to 292 (**estimate**), the kettle on top. Q4 asks for the spot; section 3 has the object.
 
-Posts are the kettle's two use cells, (8,8) and (9,8) (**estimate**), so the pair stand at the kettle all night and never walk: the kettle is each one's post object and the only source of their one need. They take the drink pose while using it. This keeps them off every cutscene spot, every act show spot and the van tap areas:
+Posts are the kettle's two use cells, so the pair stand at the kettle all night and never cross the yard. How the engine picks those cells: the first NPC to claim the kettle goes to its approach cell, the walkable cell nearest the kettle centre plus `useFrom`, snapped to the grid (`systems/npc-needs.js:5454` to `:5459`); a second claimant of a capacity-2 machine takes the beside cell, tried right, left, below, above (`:5663` to `:5675`, used at `:3414` to `:3431`). With `useFrom` aimed at (8,8), the approach cell is (8,8) and the beside cell (9,8), if both are walkable (row 8 is the last walkable row; the walls layer fills rows 1 and 9). A home within `HOME_EPS` (12 px) of its cell gives an arrival with no move (`:3446`), and the two users are paired for talk (`:4410` to `:4428`).
+
+So each `needsHome` is `{ "room": "forward_post", "x": <px>, "y": <px> }` in world pixels, set to the snapped centre of that NPC's cell as measured live (the plan's (8,8) and (9,8) are **estimates**; `tileToWorld` gives a tile's top-left corner, `:5720` to `:5724`, so tile numbers alone would miss by 16 px). Without `room` the schema rejects the object form and the engine falls back to the spawn spot (`:4129` to `:4140`).
+
+The home is a coordinate, not an object, so the kettle is not their post object: each brew runs the leave-post path and emits `npc_left_post` (`:3264` to `:3275`). Nothing in m10 maps that event, and no workstation reads their presence, so it is harmless. Darren usually claims first (lower `initial`, and the mapped break and the coupling both start with him), so he takes (8,8) and Sofia (9,8), each at home. When Sofia claims first (decay, or after a reload), she takes the approach cell and Darren the beside cell, so both step one tile and step back after the use. That one-tile shuffle is accepted; L5 checks it stays within the kettle's two cells.
+
+They take the drink pose while using it. This keeps them off every cutscene spot, every act show spot and the van tap areas:
 
 | Spot | Who appears there | Distance from (8,8) to (9,8) |
 |---|---|---|
@@ -95,7 +101,7 @@ Posts are the kettle's two use cells, (8,8) and (9,8) (**estimate**), so the pai
 | (15,8), (18,7) | Arakawa, minder and Nightshade at the blast door | 6 tiles or more |
 | incident file reach (6,8), (5,8) | the player | the nearest user cell is 2 tiles east |
 
-**Fallback F1**, if the engine does not let two NPCs hold posts at one object's use cells, or a post on a use cell does not start the use in place: posts one tile out, Darren at (7,8) and Sofia at (10,8), each stepping one tile to brew. (7,8) stays clear of the incident file's reach cells. Re-run L2 and L5.
+**Fallback F1**, if the engine does not let two NPCs hold posts at one object's use cells, or a post on a use cell does not start the use in place: posts one tile out, Darren at (7,8) and Sofia at (10,8), each stepping one tile to brew. (7,8) stays clear of the incident file's reach cells, but it is one tile from the reach cell (6,8) in the only lane south of the table (the table's bottom edge is y 236, the bottom wall row 9), so L2 then checks the player's approach to (6,8) from the east. Re-run L2 and L5.
 
 ### 2.3 Needs and rhythm
 
@@ -108,7 +114,7 @@ Caffeine only, met by the kettle.
 
 Darren brews first, about ten needs-minutes in (**estimate**; the build measures how needs-minutes map to real seconds, `references/measurement-recipes.md` section 10).
 
-**Coupled break, one way.** On `sofia_marchetti`: `npc_use_started:fp_kettle`, condition `data.npcId === 'darren_price' && !globalVars.fp_staff_upset`, `delayMs` 1500, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. When Darren brews, Sofia joins her, so the pair use the kettle at once and talk. Coupling one way only, so the kettle is never held for minutes.
+**Coupled break, one way.** On `sofia_marchetti`: `npc_use_started:fp_kettle`, condition `data.npcId === 'darren_price' && !globalVars.fp_staff_upset`, `delayMs` 1500, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. When Darren brews, Sofia joins him, so the pair use the kettle at once and talk. Coupling one way only, so the kettle is never held for minutes.
 
 **Mapped break.** On `darren_price`: `conversation_closed:director_netherton`, condition `!globalVars.fp_staff_upset`, `delayMs` 2000, `cooldown` 150000, `needs: { set: { caffeine: 20 } }`. After the player's talk with Netherton, as the player turns from the table, the pair brew up within earshot. Netherton's existing mappings are untouched; this mapping is on Darren and only reads the event.
 
@@ -116,12 +122,12 @@ Darren brews first, about ten needs-minutes in (**estimate**; the build measures
 
 ### 2.4 When they exist
 
-From game start until `closing_done`. They are support staff, not the raid team, so they stay when the team goes into the bunker; the gate terminal and the gate console bring the player back to the yard after the breach, and without them the yard then holds only Malhotra and the minder. At `closing_done` they hide with every other yard NPC, by the same three mappings the yard NPCs use, each on the extra itself (both are in the start room, so they register at game start), appended at the end of their own lists:
-- `global_variable_changed:closing_done`, `value === true`, `setVisible: false`;
+From game start until `closing_done`. They are support staff, not the raid team, so they stay when the team goes into the bunker; the gate terminal and the gate console bring the player back to the yard after the breach, and without them the yard then holds only Malhotra and the minder. At `closing_done` they hide with every other yard NPC, through the helper the yard NPCs use, `<%= after_end_json.('forward_post') %>` (`scenario.json.erb:528` to `:536`), as the first entry of each extra's `eventMappings` (both are in the start room, so they register at game start). It emits three mappings:
+- `global_variable_changed:closing_done`, `value === true`, `setVisible: false`, `delayMs` 500;
 - `game_loaded`, `globalVars.closing_done === true`, `setVisible: false`;
 - `room_entered:forward_post`, `globalVars.closing_done === true`, `setVisible: false`.
 
-Plain, as the existing yard NPCs' hides are (repeating a hide is harmless). The hidden NPC is skipped by the needs layer; neither is seated, so no unseat is needed.
+The helper ends with a trailing comma, so it cannot be last: the office-life mapping (Darren's mapped break, Sofia's coupling) follows it. Both NPCs are new, so no saved once index exists to move. Repeating a hide is harmless. The hidden NPC is skipped by the needs layer; neither is seated, so no unseat is needed.
 
 ### 2.5 Hearing
 
@@ -133,15 +139,15 @@ One bounded global, `fp_staff_upset` (declared `false`), set by seven `onceOnly`
 - `npc_attacked:darren_price`, `npc_attacked:sofia_marchetti`;
 - `global_variable_changed:arakawa_ko`, `:vector_ko`, `:phantom_ko`, `:quintero_ko`, `:kowalczyk_ko`, each `value === true`: a team member knocked out by the player, in the yard or over the radio, stops the tea.
 
-The build confirms each of those five KO globals is declared `false` in `globalVariables`; any that is not, gets declared, or its mapping is dropped and the count here falls.
+All five are declared `false` in `globalVariables` (`:4609` to `:4613`) and each is written by the `globalVarOnKO` of that character's attackable records (`arakawa_ko` at `:2236`, `:2263`; `vector_ko` at `:2327`, `:2976`; `phantom_ko` at `:2351`; `quintero_ko` at `:4062`, `:4311`; `kowalczyk_ko` through the raid template at `:2782`). A KO write emits `global_variable_changed` (`systems/npc-hostile.js:443` to `:456`). The yard records `kowalczyk_post`, `quintero_post` and `arakawa_post` are `koImmune`; `arakawa_gate` is the yard record a player can knock out.
 
 The kettle carries `offWhen: "fp_staff_upset"`, so neither uses it again: the pair stand at their posts in silence, and every exchange is gated off. No `patrolOverride`. They are already at post, so nothing walks.
 
-**Knock-outs.** Both extras carry `globalVarOnKO: "fp_staff_ko"` (declared `false`); one global covers both.
+**Knock-outs.** Each extra has own KO global, so the credits can name who was hurt: Darren `globalVarOnKO: "fp_darren_ko"`, Sofia `globalVarOnKO: "fp_sofia_ko"`, both declared `false`.
 
-**Credits.** `credits_sections.json` lists the SafetyNet cast person by person (`"safetynet"` at `:3`), with a knocked-out variant for each team member. Add one entry per extra at the end of that section, each with a plain line and a knocked-out line conditioned on `globalVars.fp_staff_ko === true` (the plain one on `!globalVars.fp_staff_ko`). The four texts go in `DIALOGUE_SAMPLE.md` for the user's yes.
+**Credits.** `credits_sections.json` lists the SafetyNet cast person by person (`"safetynet"` at `:3`), with a knocked-out variant for each team member. Each entry is `{ "name", "clauses": [ { "text", "condition" }, ..., { "text" } ] }`, the last clause unconditional. Add one entry per extra at the end of that section, each with two clauses: a knocked-out line conditioned on that extra's own global (`globalVars.fp_darren_ko === true`, `globalVars.fp_sofia_ko === true`), then the plain line with no condition. The four texts go in `DIALOGUE_SAMPLE.md` for the user's yes.
 
-**Six o'clock.** `ink/m10_six_oclock.ink:334` (the clean-night check) and `:375` ("Someone in the second van has bruises ENTROPY did not give them") test the five team KOs. Add `or fp_staff_ko` to both conditions and `VAR fp_staff_ko = false` beside the ink's other KO VARs. No line is added or reworded; the existing line fits support staff at the vans. The scenario global of the same name syncs into the ink by name. `fp_staff_ko` stays out of `exportGlobals`: no later mission exists to read it.
+**Six o'clock.** `ink/m10_six_oclock.ink:334` (the clean-night check) and `:375` ("Someone in the second van has bruises ENTROPY did not give them") test the five team KOs. Add `or fp_darren_ko or fp_sofia_ko` to both conditions, and declare `VAR fp_darren_ko = false` and `VAR fp_sofia_ko = false` in `ink/m10_carryover_vars.ink` beside the five team KO VARs (`:296` to `:297`), which `m10_six_oclock.ink` INCLUDEs at line 1. No line is added or reworded; the existing line fits support staff at the vans. The scenario globals of the same names sync into the ink by name. Neither goes in `exportGlobals`: no later mission exists to read them.
 
 ### 2.7 Build skeleton
 
@@ -154,10 +160,10 @@ The kettle carries `offWhen: "fp_staff_upset"`, so neither uses it again: the pa
   "voice": { "name": "Orus", "style": "<SAFETYNET rewrite, below>", "language": "en-GB" },
   "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json", "currentKnot": "talk_darren",
   "position": { "x": 8, "y": 8 },
-  "needsHome": { "x": 8, "y": 8 }, "needsRooms": ["forward_post"],
+  "needsHome": { "room": "forward_post", "x": "<measured px>", "y": "<measured px>" }, "needsRooms": ["forward_post"],
   "needsCompany": { "groups": ["fp_support"] }, "chatterCooldownMin": 2,
-  "globalVarOnKO": "fp_staff_ko",
-  "behavior": { "hostile": { "leash": true } },
+  "globalVarOnKO": "fp_darren_ko",
+  "behavior": { "hostile": { "leash": true, "chaseRange": 112 } },
   "needs": { "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 } },
   "chatter": { "kettle_fp": ["..."] },
   "exchanges": [
@@ -167,10 +173,10 @@ The kettle carries `offWhen: "fp_staff_upset"`, so neither uses it again: the pa
       "requireGlobal": { "fp_staff_upset": false, "split_started": true, "breach_open": false } },
     { "with": "sofia_marchetti", "knot": "ex_fp_door_open",
       "requireGlobal": { "fp_staff_upset": false, "breach_open": true, "closing_done": false } } ],
-  "eventMappings": [ "<the mapped break, section 2.3>", "<the three hides, section 2.4>" ] }
+  "eventMappings": [ <%= after_end_json.('forward_post') %> "<the mapped break, section 2.3>" ] }
 ```
 
-The `needs` action takes `{ "set": { "<need>": <level> } }`. The exchanges live on `darren_price`, the lower id of the pair. Sofia mirrors this without `exchanges`, with `currentKnot: "talk_sofia"`, her post (9,8), `gender: "female"`, voice Despina, `initial` 90 and `decayPerMin` 2.5, and the coupling mapping of section 2.3 before her hides. Every key the exchanges test is declared (`split_started`, `breach_open`, `closing_done` already are, all `false`; `fp_staff_upset` is new, `false`). The sprite field names copy the course NPC shape used in `scenarios/demo_access_tour/scenario.json.erb:534` to `:549`.
+The `needs` action takes `{ "set": { "<need>": <level> } }`. The exchanges live on `darren_price`, the lower id of the pair. Sofia mirrors this without `exchanges`, with `currentKnot: "talk_sofia"`, her post (9,8), `gender: "female"`, voice Despina, `initial` 90 and `decayPerMin` 2.5, `globalVarOnKO: "fp_sofia_ko"`, and the coupling mapping of section 2.3 after the hide helper. Every key the exchanges test is declared (`split_started`, `breach_open`, `closing_done` already are, all `false`; `fp_staff_upset` is new, `false`). The sprite field names copy the course NPC shape used in `scenarios/demo_access_tour/scenario.json.erb:534` to `:549`.
 
 **Voice styles.** `VOICE_CAST.md` sets each in a course company. Rewrite for SAFETYNET, keeping voice and accent, and keep each accent clearly apart from the phone contact who shares the voice (Vance is Teesside, Victoria is RP): Darren, "SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent." Sofia, "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent." Calm and quiet, as at three in the morning; no urgent wording.
 
@@ -182,8 +188,8 @@ None free. Every existing forward-post record is story-critical, a suspect in th
 
 | Object | Room | Declared as | Affordance | Notes |
 |---|---|---|---|---|
-| `fp_kettle` | `forward_post` | new declared object, `type: "kettle"`, `officeType: "kettle"`, explicit `position` on the crate (**estimate**), `offWhen: "fp_staff_upset"` | full hand-written: `satisfies: "caffeine"`, `restores: 70`, `useSeconds: 22`, `capacity: 2`, `useFrom` aimed at (8,8), `queue: false`, `chatter: "kettle_fp"`, `overhearRadius: 200`, `useSound: "drink_gulp"`, `startSound: "kettle_boil"` | appended at the end of the room's objects; not takeable, no `lockType`, carries no text |
-| kit crate | `forward_post` | Tiled object in `room_m10_forward.json`, a third `m10_kit_crate1` | none | placed through mission-room-dressing; existing art; collision box like the other crates |
+| `fp_kettle` | `forward_post` | new declared object, `type: "kettle"`, `officeType: "kettle"`, `"sprite": "kettle1"`, explicit `position` on the crate (**estimate**), `offWhen: "fp_staff_upset"` | full hand-written: `satisfies: "caffeine"`, `restores: 70`, `useSeconds: 22`, `capacity: 2`, `useFrom` aimed at (8,8), `queue: false`, `chatter: "kettle_fp"`, `overhearRadius: 200`, `useSound: "drink_gulp"`, `startSound: "kettle_boil"` | appended at the end of the room's objects; not takeable, no `lockType`, carries no text |
+| kit crate | `forward_post` | Tiled object in `room_m10_forward.json`, a third `m10_kit_crate1` | none | placed through mission-room-dressing; existing art; collision box copied from the fence crate (Object Layer 1 id 15; the incident-file crate, id 17, has none). The crate sprite overlaps the south half of tile (8,8), so it draws over Darren's feet: slice 6 renders it to confirm it reads well |
 
 **No `officePresets`.** The scenario flag would give presets to every declared object whose type matches one, across all eight rooms (a `pc` with no `lockType` gains a desk preset); m10 wants exactly one machine. The kettle carries its whole affordance by hand. The build confirms in V1 that `fp_kettle` shows the affordance and no other object does; if an affordance needs the flag to take effect, the fallback is `officePresets: true` with every other matching object checked in V1 and given `"affordance": false` or left untouched where V1 shows nothing.
 
@@ -226,19 +232,19 @@ Existing lines changed: none. Existing ink logic changed: two conditions and one
 | Workstation globals | 0 | |
 | `heard_` keys | 3 | `heard_ex_fp_kettle_on`, `heard_ex_fp_radios`, `heard_ex_fp_door_open` |
 | Trouble globals | 1 | `fp_staff_upset` |
-| KO globals | 1 | `fp_staff_ko` |
+| KO globals | 2 | `fp_darren_ko`, `fp_sofia_ko` |
 | Saved NPC visibility keys | 2 | one per extra, set `false` at `closing_done` |
 | Saved NPC hostility keys | up to 2 | one per struck extra, set once |
 | Reveal globals, servings, office-life items | 0 | |
 | Mappings with `cooldown`, no `onceOnly` | 2 | the coupling and the mapped break |
-| Plain mappings | 6 | three hides per extra |
+| Plain mappings | 6 | three hides per extra, from the yard helper |
 | `onceOnly` mappings | 7 | trouble: two attacks and five team KO globals |
 
 All globals are booleans, set once and never cleared (monotonic), each sent as a per-key delta; nothing grows and nothing is re-sent whole. Needs state is not saved: a reload puts both at their posts with levels at `initial`. No task, objective or lock reads any of them, so a forged value buys nothing. Within the missions plan caps (`heard_` 8, `onceOnly` 10, office-life items 4).
 
 ## 8. Field names to write
 
-NPC: `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `globalVarOnKO`, `behavior.hostile.leash`, `spriteTalk`, `spriteVisemes`, `avatar`, `storyPath`, `currentKnot`, `voice`. Object: `officeType`, object-level `offWhen`, `affordance` (`satisfies`, `restores`, `capacity`, `chatter`, `overhearRadius`, `useSeconds`, `useFrom`, `queue`, `useSound`, `startSound`). Mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, and the `needs` action `{ "set": { ... } }`. Append new mappings at the end of each list. No `||` in mapping conditions or `requireGlobal`. `scenario.json.erb` holds ERB comments with `%>`: edit by string replacement, never a Python `%` format. Office-life keys never inside an ERB loop or tag.
+NPC: `needs`, `needsHome` (`room`, `x`, `y`, pixels), `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `globalVarOnKO`, `behavior.hostile.leash`, `behavior.hostile.chaseRange`, `spriteTalk`, `spriteVisemes`, `avatar`, `storyPath`, `currentKnot`, `voice`. Object: `sprite`, `officeType`, object-level `offWhen`, `affordance` (`satisfies`, `restores`, `capacity`, `chatter`, `overhearRadius`, `useSeconds`, `useFrom`, `queue`, `useSound`, `startSound`). Mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, and the `needs` action `{ "set": { ... } }`. Append new mappings at the end of each list. No `||` in mapping conditions or `requireGlobal`. `scenario.json.erb` holds ERB comments with `%>`: edit by string replacement, never a Python `%` format. Office-life keys never inside an ERB loop or tag.
 
 ## 9. Costs and decisions
 
@@ -270,10 +276,10 @@ NPC: `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chat
 ### 10.2 Live office-life checks (walking pace, five tries each)
 
 - **L1** Pair use: Darren brews, Sofia joins within about 2 s; both reach `using` at `fp_kettle` at once; a pool line or an exchange plays.
-- **L2** Lanes and reach: with the pair at the kettle, the player reaches every table item, the incident file, Netherton, the minder, Malhotra and both van steps; the pair never stand on a van tap area or a cutscene spot.
+- **L2** Lanes and reach: with the pair at the kettle, the player reaches every table item, the incident file, Netherton, the minder, Malhotra and both van steps; the pair never stand on a van tap area or a cutscene spot. Under F1, the player also reaches the incident file's reach cell (6,8) from the east past Darren at (7,8).
 - **L3** The mapped break: after closing Netherton's conversation, Darren brews within about 4 s and Sofia follows.
 - **L4** Exchange gates: `ex_fp_kettle_on` only before `split_started`; `ex_fp_radios` between `split_started` and `breach_open`; `ex_fp_door_open` after `breach_open` until `closing_done`. Each plays once.
-- **L5** Posts: over ten needs-minutes neither leaves the post cell (or, under F1, goes further than the kettle).
+- **L5** Posts: over ten needs-minutes neither goes beyond the kettle's two cells; a one-tile shuffle between them when Sofia claims first is expected (or, under F1, neither goes further than the kettle). Record each extra's measured home pixels and the two cells.
 - **E1** At `closing_done` both hide; after a reload with `closing_done` true they stay hidden.
 - **E2** Through every act show and hide (split, pair back, breach on both the tethered and untethered routes) and each Netherton cutscene, no NPC appears on or walks through a cell an extra stands on, and no extra blocks a scripted walk.
 - **E3** The tunnel guard's kettle beat is unchanged on the tethered route.
@@ -284,11 +290,11 @@ Reload in the briefing, after the split and after the breach: both at posts, lev
 
 ### 10.4 Attack probe (fresh game per step)
 
-Attack each extra; knock each out; knock out one team member in the yard (Arakawa at the gate). Each time: `fp_staff_upset` set, the kettle off, no further use or chatter, no `patrolOverride`. A struck extra stays hostile near her post and never leaves `forward_post`. After an extra's knock-out, `fp_staff_ko` is true, the credits show her knocked-out line, and the six o'clock "bruises" line plays.
+Attack each extra; knock each out; knock out one team member in the yard (Arakawa at the gate). Each time: `fp_staff_upset` set, the kettle off, no further use or chatter, no `patrolOverride`. A struck extra stays hostile near the kettle, chases no further than `chaseRange` 112 (the player at the table's north side and at the gate terminal is not chased) and never leaves `forward_post`. After an extra's knock-out, that extra's KO global is true and the other's is not, the credits show the knocked-out line for that extra only, and the six o'clock "bruises" line plays.
 
 ### 10.5 Open numbers
 
-The crate position, the kettle position and sprite, the two use cells, whether posts on use cells work (else F1), needs-minutes to real seconds, `useSeconds` against exchange length.
+The crate position, the kettle position, the two use cells and each extra's home pixels, whether posts on use cells work (else F1), needs-minutes to real seconds, `useSeconds` against exchange length.
 
 ### 10.6 Static checks
 
