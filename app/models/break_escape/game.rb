@@ -2708,6 +2708,15 @@ module BreakEscape
       # share one object index (review R1 M1).
       BreakEscape::AccessWork.with_index(scenario_data) { filter_requires_and_contents_recursive(room) }
 
+      # Phone-call config from the current scenario (Mission#current_call_configs):
+      # a game started before a contact gained its `call`/`callLabel` keeps the old
+      # snapshot, yet the ink is served live, so the matching #place_call has no entry
+      # to dial and an ending that dials to close soft-locks. Overlay the live config
+      # onto the NPC so an in-progress game can still place the call. Narrow — call
+      # config only, nothing the player has changed. Reads scenario_data on every
+      # request, so it works for games already in progress.
+      apply_current_call_config!(room)
+
       # Account tiles on each sign-in PC (access model 5.3).
       attach_login_accounts!(room['objects'])
 
@@ -2722,6 +2731,28 @@ module BreakEscape
       BreakEscape::AuthorNotes.strip_notes!(room, BreakEscape::ScenarioSchema.at('#/definitions/room'))
 
       room
+    end
+
+    # Overlay the current scenario's phone-call config onto a room's NPCs, so a game
+    # whose snapshot predates a contact's `call`/`callLabel` can still place the call
+    # the live ink's #place_call asks for (see the call site in filtered_room_data and
+    # Mission#current_call_configs). Only `call` and `callLabel` are touched, and only
+    # when the current scenario defines them; everything else in the snapshot stands.
+    def apply_current_call_config!(room)
+      return unless room['npcs'].is_a?(Array)
+
+      configs = mission&.current_call_configs
+      return if configs.blank?
+
+      room['npcs'].each do |npc|
+        next unless npc.is_a?(Hash)
+
+        cfg = configs[npc['id']]
+        next unless cfg
+
+        npc['call'] = cfg['call'] if cfg.key?('call')
+        npc['callLabel'] = cfg['callLabel'] if cfg.key?('callLabel')
+      end
     end
 
     # Place knocked-out NPCs where they fell (D5). Driven by the KO position stored on
