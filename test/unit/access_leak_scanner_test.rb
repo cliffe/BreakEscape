@@ -1229,4 +1229,38 @@ class AccessLeakScannerTest < ActiveSupport::TestCase
     assert_equal [[3, 'capture_secret', 'capture:staff_wifi_key']],
                  summary(plant_scan([other_inv_row, unreadable, served_psk], game: ProofGame.new(true)))
   end
+
+  # ---- Plant hiding (docs/achitechture/PLANT_HIDING_PLAN.md, section 7) ----
+
+  def hideable_scenario
+    data = no_on_scenario
+    data['startItemsInInventory'][0]['hideable'] = {
+      'rooms' => ['reception'], 'spots' => 'plants', 'exclude' => ['reception_plant-large4_34'],
+      'device' => 'planted_rogue_ap', 'overlay' => { 'sprite' => 'rogue_ap_tucked' }
+    }
+    data['rooms']['reception']['objects'] << { 'id' => 'pot_a', 'type' => 'plant', 'sprite' => 'plant-flat-pot1', 'name' => 'Pot A' }
+    data
+  end
+
+  def hide_row(spot, item: 'kit_rogue_ap', status: 200)
+    inv_row(inv: { 'action' => 'hide', 'itemId' => item, 'usedOn' => nil, 'hiddenIn' => spot }, status: status)
+  end
+
+  test 'plant hiding: a served secret after a hide row is not flagged, before it it is' do
+    data = hideable_scenario
+    [{ spot: 'pot_a' }, { spot: 'reception_plant-large12-top-ani1_77' }].each do |c|
+      assert_empty plant_scan([hide_row(c[:spot]), served_psk], data: data)
+      assert_equal [[1, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([served_psk, hide_row(c[:spot])], data: data))
+    end
+  end
+
+  test 'plant hiding: a hide row that fails, names an excluded or foreign spot, or another item is no plant' do
+    data = hideable_scenario
+    [hide_row('pot_a', status: 422), hide_row('reception_plant-large4_34'), hide_row('comms_plant-large6_1'),
+     hide_row('reception_notes_plantlog1_9'), hide_row('pot_a', item: 'kit_other')].each do |row|
+      assert_equal [[2, 'capture_secret', 'capture:staff_wifi_key']],
+                   summary(plant_scan([row, served_psk], data: data)), row.inspect
+    end
+  end
 end
