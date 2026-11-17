@@ -195,6 +195,11 @@ module BreakEscape
       list << task_id.to_s unless list.include?(task_id.to_s)
     end
 
+    # The task that concluded the mission during this request, if one did
+    def record_server_mission_concluded(task_id)
+      server_write_record[:concluded] ||= task_id.to_s
+    end
+
     # The rule the bootstrap uses for savedGlobalVariables (games_controller show): every stored
     # global goes to the client except a server-owned one (se_captures, shipped as `captures`).
     #
@@ -203,11 +208,6 @@ module BreakEscape
     # see this". Credit globals such as kp_badge_tailgated are server-written but the client must
     # read them, so tightening this filter to server_owned_global_name? silently breaks every
     # credit (the client never learns it, on a reload or on the sync answer).
-    # The task that concluded the mission during this request, if one did
-    def record_server_mission_concluded(task_id)
-      server_write_record[:concluded] ||= task_id.to_s
-    end
-
     def client_visible_global?(name)
       !self.class::SERVER_OWNED_GLOBAL_NAMES.include?(name.to_s)
     end

@@ -919,7 +919,16 @@ export class ObjectivesManager {
    */
   applyServerMissionConcluded(taskId) {
     const task = this.taskIndex[taskId];
-    if (task) this.handleMissionConcluded(this.aimIndex[task.aimId]);
+    if (!task) return;
+    // The credited task's own aim concluded the mission when it is the missionConclusion aim.
+    // Otherwise (the server's recheck_pending_mission_conclusions! path, where a credit met a
+    // concludeRequires gate held by another aim) fall back to the missionConclusion aim, as
+    // main.js does on reload and as the POST path's server answer implies.
+    const own = this.aimIndex[task.aimId];
+    const aim = own?.missionConclusion
+      ? own
+      : (Object.values(this.aimIndex).find(a => a?.missionConclusion) || own);
+    this.handleMissionConcluded(aim);
   }
 
   /** The local tail of a completion, after the server has recorded it. */

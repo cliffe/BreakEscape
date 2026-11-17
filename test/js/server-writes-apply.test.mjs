@@ -226,6 +226,15 @@ test('a credit that concluded the mission runs the ending on the client', () => 
   assert.equal(m.getTask('tailgate_in').status, 'completed');
 });
 
+test('a credit on a task outside the conclusion aim runs the missionConclusion aim ending', () => {
+  const { sync, m } = setup();
+  const concluded = [];
+  m.eventDispatcher.emit = (name, data) => { if (name === 'mission_concluded') concluded.push(data.aimId); };
+  m.aimIndex.finale = { aimId: 'finale', missionConclusion: true, status: 'active', tasks: [] };
+  sync.applyServerWrites({ serverCompletedTasks: ['tailgate_in'], serverMissionConcluded: 'tailgate_in' });
+  assert.deepEqual(concluded, ['finale'], 'the conclusion aim, not the credited task aim, concludes');
+});
+
 test('a task still completing locally that the server refuses stays completed when the server credited it', async () => {
   const { sync, m } = setup();
   window.gameState.globalVariables.x = 1;
