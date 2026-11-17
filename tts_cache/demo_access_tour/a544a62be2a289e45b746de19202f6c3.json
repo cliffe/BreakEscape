@@ -1,0 +1,13 @@
+{
+  "key": "a544a62be2a289e45b746de19202f6c3",
+  "npc": "thandiwe",
+  "text": "Cake! It's somebody's birthday.",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:50:28Z"
+}

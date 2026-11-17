@@ -1,0 +1,13 @@
+{
+  "key": "9f73396c94613eb67bee73100869cfd9",
+  "npc": "ama",
+  "text": "Thanks. I'll write it up for the partners.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:47:11Z"
+}
