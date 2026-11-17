@@ -21,15 +21,15 @@ All new lines for `adaeze_okafor` and `gwen_pritchard`. Nothing is voiced yet; n
 | Adaeze Okafor | ex_last_two 5 | At least the water is cold. | 27 |
 | Gwen Pritchard | ex_going_now 1 | Right, I'm logging this and going. | 34 |
 | Adaeze Okafor | ex_going_now 2 | Same. Two minutes and I'm out the door. | 39 |
-| Gwen Pritchard | ex_going_now 3 | The fire marshal won't thank us for it. | 39 |
+| Gwen Pritchard | ex_going_now 3 | The marshal won't thank us for staying. | 39 |
 | Adaeze Okafor | ex_going_now 4 | Then let's not give him the chance. | 35 |
 | Gwen Pritchard | ex_going_now 5 | Come on, I'll walk down with you. | 33 |
 | Adaeze Okafor | pool cooler 1 | Cold water again. Great. | 24 |
 | Adaeze Okafor | pool cooler 2 | The load is holding. Don't jinx it. | 35 |
 | Adaeze Okafor | pool cooler 3 | Somebody fix that coffee machine. | 33 |
-| Adaeze Okafor | pool cooler 4 | Nearly done. Nearly. | 20 |
+| Adaeze Okafor | pool cooler 4 | Almost there. Almost. | 21 |
 | Gwen Pritchard | pool cooler 1 | Cooler's the only thing working. | 32 |
-| Gwen Pritchard | pool cooler 2 | Tidy up and out, that's the plan. | 33 |
+| Gwen Pritchard | pool cooler 2 | Plan's simple: finish up, then out. | 35 |
 | Gwen Pritchard | pool cooler 3 | I'd give a lot for real coffee. | 31 |
 | Gwen Pritchard | pool cooler 4 | Last glass, then I'm off. | 25 |
 
@@ -49,7 +49,7 @@ Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md
         "Cold water again. Great.",
         "The load is holding. Don't jinx it.",
         "Somebody fix that coffee machine.",
-        "Nearly done. Nearly."
+        "Almost there. Almost."
       ]
     }
   },
@@ -57,7 +57,7 @@ Voices: Adaeze Okafor Gacrux, Gwen Pritchard Sulafat (course cast, VOICE_CAST.md
     "chatter": {
       "cooler": [
         "Cooler's the only thing working.",
-        "Tidy up and out, that's the plan.",
+        "Plan's simple: finish up, then out.",
         "I'd give a lot for real coffee.",
         "Last glass, then I'm off."
       ]

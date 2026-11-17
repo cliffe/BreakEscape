@@ -13,7 +13,7 @@ Status: awaiting the user's yes. Nothing is voiced until it is given.
 **Gwen Pritchard**
 
 - Cooler's the only thing working.
-- Tidy up and out, that's the plan.
+- Plan's simple: finish up, then out.
 - I'd give a lot for real coffee.
 
 ## Exchange: ex_last_two (at the cooler, both present)

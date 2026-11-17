@@ -1886,7 +1886,7 @@ scada_password = "CascadeWindow19"
           "globalVarOnKO": "adaeze_ko",
           "behavior": { "hostile": { "leash": true } },
           "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "cooler": ["Cold water again. Great.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Nearly done. Nearly."] },
+          "chatter": { "cooler": ["Cold water again. Great.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Almost there. Almost."] },
           "exchanges": [
             { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false } },
             { "with": "gwen_pritchard", "knot": "ex_going_now", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false, "heard_ex_last_two": true } }
@@ -1922,7 +1922,7 @@ scada_password = "CascadeWindow19"
           "globalVarOnKO": "gwen_ko",
           "behavior": { "hostile": { "leash": true } },
           "needs": { "thirst": { "initial": 55, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 } },
-          "chatter": { "cooler": ["Cooler's the only thing working.", "Tidy up and out, that's the plan.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
+          "chatter": { "cooler": ["Cooler's the only thing working.", "Plan's simple: finish up, then out.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
           "eventMappings": [
             { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } },
             { "eventPattern": "room_entered:server_room", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },

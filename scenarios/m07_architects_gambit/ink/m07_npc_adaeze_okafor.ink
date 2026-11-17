@@ -65,7 +65,7 @@ Adaeze Okafor: At least the water is cold.
 === ex_going_now ===
 Gwen Pritchard: Right, I'm logging this and going.
 Adaeze Okafor: Same. Two minutes and I'm out the door.
-Gwen Pritchard: The fire marshal won't thank us for it.
+Gwen Pritchard: The marshal won't thank us for staying.
 Adaeze Okafor: Then let's not give him the chance.
 Gwen Pritchard: Come on, I'll walk down with you.
 -> DONE
