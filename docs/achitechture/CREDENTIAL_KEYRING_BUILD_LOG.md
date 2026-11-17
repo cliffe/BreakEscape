@@ -1372,3 +1372,5 @@ Small items the proof found, fixed after it:
 - The Connect refusal path left the password empty although R5a says it is filled. `takeConnectRefusalTile` now fills the password the chosen tile already carries, as the tile click does. Test in `keyring-signin.test.mjs` (kind_refused and locked_out).
 - The minigame state helper (`base-minigame.js`) reported `disabled` from `.disabled` only; greyed Connect buttons use `aria-disabled="true"`, so it now reports both.
 - Docs: R10 and 9.1 re-scoped to this route (Sam's keyboard route waits for a scenario that builds Sam's office); Lena's file is "SV-OPS-01 admin.rdp" (`ops_rdp`) in the plan and PLAYTEST.md, matching the scenario ("SV-OPS-01.rdp" is `ops_cookie`).
+
+Re-proof after the header fix (commit 15acc7179, `container-minigame.js` `connectFromDesktop` passes the desktop's own host as `fromHost`; test in `keyring-client.test.mjs`): game 6618 on `test_access_keyring`, worktree p-k4, headless. Planted the drop box, read Ian's card, signed in at Lena's PC, clicked "SV-OPS-01 admin.rdp" and chose Connect; the remote sign-in header read "Remote sign-in from HB-FIN-02".
