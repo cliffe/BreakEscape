@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="677" columns="0">
+<tileset version="1.10" tiledversion="1.11.2" name="objects/hospital_extras" tilewidth="60" tileheight="60" tilecount="680" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../objects/iv_stand1.png" width="25" height="60"/>
@@ -2030,6 +2030,15 @@
   <image source="../objects/rogue_ap_pot.png" width="16" height="16"/>
  </tile>
  <tile id="686">
+  <image source="../objects/network_dropbox.png" width="27" height="25"/>
+ </tile>
+ <tile id="687">
+  <image source="../objects/network_port_cabinet.png" width="28" height="32"/>
+ </tile>
+ <tile id="688">
+  <image source="../objects/network_dropbox_planted_cabinet.png" width="28" height="32"/>
+ </tile>
+ <tile id="689">
   <image source="../objects/rogue_ap_tucked.png" width="12" height="10"/>
  </tile>
 </tileset>
