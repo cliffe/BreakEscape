@@ -1796,6 +1796,7 @@ scada_password = "CascadeWindow19"
           "position": "as-type:pnw_evac_board",
           "takeable": false,
           "readable": true,
+          "readDisplay": "gameDisplay",
           "observations": "The muster board. Somebody has been crossing names off it in marker, fast, and then stopped partway down.",
           "text": "SITE EVACUATION -- IN PROGRESS\nMUSTER POINT: NORTH PARKING LOT\n\nOPERATIONS\n31 / 34 CLEAR\n\nENGINEERING\n12 / 12 CLEAR\n\nFACILITIES\n6 / 6 CLEAR\n\nSECURITY\n5 / 6 CLEAR\n\nCONTRACTORS\nUNKNOWN\n\nDO NOT RE-ENTER THE BUILDING WITHOUT SITE CONTROLLER AUTHORISATION."
         }
@@ -1874,11 +1875,11 @@ scada_password = "CascadeWindow19"
             { "condition": "globalVars.countdown_expired && !globalVars.grid_saved", "value": "The wall-sized situation board the whole floor works from. One panel, top left, has gone red. The rest are still amber." }
           ],
           "observationDisplay": "gameDisplay",
-          "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION\n8,412,000  (WA / OR / N.CAL)\n\nSUBSTATIONS UNDER CONTROL\n147\n\nAUTOMATED REBALANCING\nDISABLED BY OPERATOR (unauthorised)\n\nBREAKER CONTROL\nREMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\n\nSITE BACKUP GENERATION\nONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- PENDING\n01 SEATTLE METRO\nopen critical breakers\n\n02 PORTLAND\nabsorb shed load\n\n03 OREGON\nsafety shutdown, sequential\n\n04 NORTHERN CAL\nload imbalance trip\n\nOUTSIDE TEMPERATURE: 28 F",
+          "text": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION\n8,412,000 (WA / OR / N.CAL)\n\nSUBSTATIONS UNDER CONTROL\n147\n\nAUTOMATED REBALANCING\nDISABLED BY OPERATOR (unauthorised)\n\nBREAKER CONTROL\nREMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\n\nSITE BACKUP GENERATION\nONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- PENDING\n01 SEATTLE METRO\nopen critical breakers\n\n02 PORTLAND\nabsorb shed load\n\n03 OREGON\nsafety shutdown, sequential\n\n04 NORTHERN CAL\nload imbalance trip\n\nOUTSIDE TEMPERATURE: 28 F",
           "textVariants": [
             {
               "condition": "globalVars.countdown_expired && !globalVars.grid_saved",
-              "value": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION .............. 8,412,000  (WA / OR / N.CAL)\nSUBSTATIONS UNDER CONTROL ......  124 / 147  (23 TRIPPED)\nAUTOMATED REBALANCING .......... DISABLED BY OPERATOR (unauthorised)\nBREAKER CONTROL ................ REMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\nSITE BACKUP GENERATION ......... ONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- RUNNING\n  01  SEATTLE METRO      open critical breakers     EXECUTED\n  02  PORTLAND          absorb shed load           PENDING\n  03  OREGON            safety shutdown, sequential PENDING\n  04  NORTHERN CAL      load imbalance trip        PENDING\n\nOUTSIDE TEMPERATURE: 28 F"
+              "value": "PACIFIC NORTHWEST REGIONAL GRID CONTROL -- LIVE STATUS\n\nSERVED POPULATION\n8,412,000 (WA / OR / N.CAL)\n\nSUBSTATIONS UNDER CONTROL\n124 / 147 (23 TRIPPED)\n\nAUTOMATED REBALANCING\nDISABLED BY OPERATOR (unauthorised)\n\nBREAKER CONTROL\nREMOTE SESSION ACTIVE -- SOURCE NOT RECOGNISED\n\nSITE BACKUP GENERATION\nONLINE, 72 HOUR RATING\n\nSCHEDULED SEQUENCE -- RUNNING\n01 SEATTLE METRO\nopen critical breakers\nEXECUTED\n\n02 PORTLAND\nabsorb shed load\nPENDING\n\n03 OREGON\nsafety shutdown, sequential\nPENDING\n\n04 NORTHERN CAL\nload imbalance trip\nPENDING\n\nOUTSIDE TEMPERATURE: 28 F"
             }
           ]
         },
@@ -2216,7 +2217,7 @@ scada_password = "CascadeWindow19"
               "textVariants": [
                 {
                   "condition": "globalVars.countdown_expired",
-                  "value": "PACIFIC NORTHWEST REGIONAL GRID CONTROL\nAUTOMATED SEQUENCE -- ABORT ACCEPTED\n\nSTEP 01  SEATTLE METRO ............... EXECUTED (breakers open)\nSTEP 02  PORTLAND .................... CANCELLED\nSTEP 03  OREGON ...................... CANCELLED\nSTEP 04  NORTHERN CAL ................ CANCELLED\n\nOriginating host no longer reachable on the control VLAN.\nAbort authorised at this console. Seattle restoration: manual,\nsubstation by substation. Crews dispatched."
+                  "value": "PACIFIC NORTHWEST REGIONAL GRID CONTROL\nAUTOMATED SEQUENCE -- ABORT ACCEPTED\n\nSTEP 01 SEATTLE METRO\nEXECUTED (breakers open)\n\nSTEP 02 PORTLAND\nCANCELLED\n\nSTEP 03 OREGON\nCANCELLED\n\nSTEP 04 NORTHERN CAL\nCANCELLED\n\nOriginating host no longer reachable on the control VLAN.\nAbort authorised at this console. Seattle restoration: manual,\nsubstation by substation. Crews dispatched."
                 }
               ]
             }

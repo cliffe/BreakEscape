@@ -278,6 +278,8 @@ TIME | WARD | EQUIPMENT / SYSTEM | FAULT | REPORTED BY
      |      |                    |       |
 ```
 
+(Since D95, 17 Nov 2026, the log is stacked entries, not a table; see the scenario.)
+
 Its rules: no PIN, password, key, card, flag, server address or account detail; a `notes` item; it sets only its own reveal global; it repeats no clue and contradicts none (no email, no reply, nothing on the drill, the doors or the override, no named system); nothing filled in, no date. The lesson: when the IT fails, staff fall back to paper, and paper ends up on trays and desks (CyBOK Human Factors; Security Operations). A reload files every revealed slot nobody holds, and the print mapping is `onceOnly` and saved, so a player who reloads before taking the page loses it; it is optional flavour, accepted.
 
 No left-behind items.
