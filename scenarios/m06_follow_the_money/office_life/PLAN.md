@@ -53,8 +53,8 @@ Irina, the guard, Kemal and Satoshi stay put and gain no needs-layer key. HaX ga
 
 From the awareness course cast (D53), not the Office Life Tour cast:
 
-- **Lerato Dlamini** (`lerato_dlamini`, voice Gacrux): late-desk market operations. Watches the overnight books and takes the desk phone.
-- **Tomasz Wisniewski** (`tomasz_wisniewski`, voice Algieba): evening client-support lead. Works the overnight customer support queue on his laptop, writes the shift handover sheet, covers the phones when Lerato is away. His job is kept away from settlements and custody on purpose, because the fund puzzle works from a settlements-to-custody file (3.3).
+- **Lerato Dlamini** (`lerato_dlamini`, voice Gacrux): late-desk operations assistant. Keeps the floor running overnight (the phones, the rota, the post, the kitchen) and takes the desk phone. Her job is worded away from trading books, desks such as OTC or market-making, and reserves, for the reason in 3.3.
+- **Tomasz Wisniewski** (`tomasz_wisniewski`, voice Algieba): evening client-support lead. Works the overnight customer support queue on his laptop (app and payments tickets, never account or login tickets, 3.3), writes the shift handover sheet, covers the phones when Lerato is away. His job is kept away from settlements and custody on purpose, because the fund puzzle works from a settlements-to-custody file (3.3).
 
 Both atlases have 8-direction sit, use, phone and drink frames, so no art. Neither voice is used elsewhere in m06. The build checks their looks and ages against the m06 cast in the awareness cast files and records the spread. Final picks are QUESTIONS.md Q0.
 
@@ -131,15 +131,16 @@ Scenario `officePresets: true`.
 | photocopier1 | (1.1, 7.6) | id `floor_copier`, type `photocopier` | `offWhen: "floor_staff_ko"`; the preset takes this name. One reveal slot: a `notes` object `tomasz_handover_sheet`, `outputOf: "floor_copier"`, `revealOnGlobal: "tomasz_handover_sheet_shown"` (declared `false`), an explicit `position` on the tray just in front of photocopier1, `takeable: true`, `readable: true`, `addToNotes: false` (shape as `scenarios/m02_ransomed_trust/scenario.json.erb:2363` to `:2367` and `scenarios/test_needs_sims/scenario.json.erb:436` to `:470`; schema `:5650`). It needs the explicit position because the floor's only Tiled notes sprite is already claimed by `daily_trading_report` (`erb:1984`) |
 | mini_fridge1 | (3.1, 7.5) | type `mini_fridge`, `officeType: "fridge"` (the fridge preset's types are only `qdc_fridge1`) | `offWhen: "floor_staff_ko"`; hunger |
 | pc10 | (5.9, 3.5) | existing `trading_workstation` (`erb:1977`) | unchanged |
-| pc6 | (7.0, 3.5) | new `lerato_desk`, type `pc` | Lerato's home, seat; no screen, no `workstation`. Every pc sprite shares the base type `pc` and Tiled order on the floor is pc10, pc6, pc8, pc11, laptop1, pc6, pc8, pc11, pc6, so `lerato_desk` goes directly after `trading_workstation` (`erb:1977`) in the objects array to claim pc6 at (7.0, 3.5). It gains the desk preset (`satisfies: work`), harmless since no NPC here has a `work` need. Unclaimed pc sprites are still drawn (`core/rooms.js:2519` onward), so no twins are declared |
+| pc6 | (7.0, 3.5) | new `lerato_desk`, type `pc` | Lerato's home, seat; no screen, no `workstation`. Every pc sprite shares the base type `pc` and Tiled order on the floor is pc10, pc6, pc8, pc11, laptop1, pc6, pc8, pc11, pc6, so `lerato_desk` goes directly after `trading_workstation` (`erb:1977`) in the objects array to claim pc6 at (7.0, 3.5). It gains the desk preset (`satisfies: work`), harmless since no NPC here has a `work` need. A claim hides every unclaimed Tiled item with the same image name (`core/rooms.js:2486` to `:2487`, `:2528` to `:2531`), so the other two pc6 would vanish; the twins row below fixes that |
+| pc8, pc11, pc6, pc8, pc11, pc6 | the rest of the floor's pc sprites | six new objects `floor_pc_decor_1` to `floor_pc_decor_6`, `type: "pc"`, `decor: true`, no position, declared directly after `lerato_desk` | the pool indexes by base type, so a twin cannot target one pc6 by `sprite`; declaring all six in Tiled order claims and draws every pc image. `decor: true` keeps them off the desk preset (`systems/office-presets.js:51`). Build checks: decor objects still claim their Tiled sprite, none opens as a desktop, all nine pc sprites draw in place after two loads. Fallback if decor objects do not claim: Lerato's home becomes a floor tile beside `lerato_phone` (standing post, no seat), no pc is claimed and the six twins are dropped |
 | laptop1 | (2.8, 3.6) | new `tomasz_laptop`, `type: "laptop1"`, `position: "as-type:laptop"`, no `sprite` | the `as-type` position claims the drawn Tiled laptop (`core/rooms.js:2443` to `:2450`) and the texture stays the Tiled image `laptop1`; the exact type keeps it free of the desk preset (`office-presets.js:55`). A `sprite: "laptop"` would draw a missing texture (`core/rooms.js:533` to `:542`; only laptop1 to laptop7 are loaded, `game.js:1447` to `:1453`). Tomasz's home, seat (hand-written affordance); `workstation: true`, `owner: "tomasz_wisniewski"`; readable lore (`readable`, `readDisplay`, `addToNotes: false`, `text` / `textVariants`) in the readable-laptop shape (`references/mapping-patterns.md` section 2) |
 | phone1 | (7.6, 3.6) | new `lerato_phone`, `type: "phone"`, no position, declared before `floor_spare_phone` (both index as base type `phone`, phone1 first in Tiled order) | `deskPhone: true`, `officeType: "desk_phone"`, `owner: "lerato_dlamini"`, within 1.5 tiles of her post; standing affordance with `useFrom` to the side of her chair (schema `:5484`; `scenarios/test_needs_sims/scenario.json.erb:238` to `:248`) |
 | phone3 | (7.6, 5.2) | new `floor_spare_phone`, `type: "phone"`, no position | the L2 lever (2.9) |
 | hce_trading_station1 | (6.1, 7.7) | not declared | in the `tables` layer, cannot be claimed (`core/rooms.js:2139`) |
 
-Machines are declared by base type name with no `position`. The build checks one of each lands on its Tiled sprite after two loads, and that only one laptop is drawn, in the same place both times. Hand-written `useFrom` or `queue.cells` where a preset's cells hit a wall or a neighbour.
+Machines are declared by base type name with no `position`, except `tomasz_laptop` (`as-type:laptop`) and the copier tray slot. The build checks one of each lands on its Tiled sprite after two loads, and that only one laptop is drawn, in the same place both times. Hand-written `useFrom` or `queue.cells` where a preset's cells hit a wall or a neighbour.
 
-`trading_workstation` and `blockchain_workstation` (`erb:2316`) stay as they are: plain `pc`s with no `lockType`, no owner and no contents; `host` is a taskbar label only (schema `:5495`); m06 declares no networks or sign-in PCs. Nothing here touches them.
+`trading_workstation` and `blockchain_workstation` (`erb:2316`) stay as they are: plain `pc`s with no `lockType`, no owner and no contents; `host` is a taskbar label only (schema `:5495`); m06 declares no networks or sign-in PCs. Their records are not edited, but with `officePresets: true` both gain the desk_pc preset (`satisfies: work`, `capacity: 1`, `public/break_escape/js/data/office-presets.json`). That is harmless, since no NPC here has a `work` need, and the V1 summary is expected to list them.
 
 ### 3.2 Blockchain lab (`room_hce_lab.json`)
 
@@ -148,17 +149,19 @@ Machines are declared by base type name with no `position`. The build checks one
 
 ### 3.3 Secrets that office-life text must never carry
 
-- Wallet names and addresses: `daily_trading_report` is a clue that sets `entropy_wallets_known`; `find_transaction_records` collects `blockchain_evidence` (Priya's write-up). No screen, printout, chatter line or exchange names a wallet, an address, an amount trail or a mixer, or paraphrases either document.
+- Wallet names and addresses: `daily_trading_report` is the clue (puzzle-graph reveal `entropy_wallets_known`, `erb:1993`; it sets no global) that names the ENTROPY wallets; `find_transaction_records` collects `blockchain_evidence` (Priya's write-up). No screen, printout, chatter line or exchange names a wallet, an address, an amount trail or a mixer, or paraphrases either document.
 - The executive safe's hint: `mixing_analysis` (lab) carries "21M cap. Last coin due around 2140." No office-life text mentions the bitcoin supply cap, 2140, "the last coin" or any year that could be read as a code.
 - Irina's badge, the CTO and executive badges, the password dictionary, the cold-storage slot numbers, server room and data centre access: none is mentioned.
 - No office-life item has an item type a lock or ink check reads (`keycard`, `key`, a `text_file` a lock reads, `notes` whose `onRead` global a task uses).
 
-- The fund puzzle: the file headed "hc-mixer-01 :: SETTLEMENTS TO CUSTODY" (`erb:71`), the pool config `fee_percent: 1.5` and `min_dwell_hours: 6` (`erb:73`), custody slots with opened dates (`erb:75`) and deposit amounts and times in UTC (`erb:69`). No office-life text mentions settlements, custody, cold slots or escrow, fees or percentages, hold, dwell or minimum times, UTC timestamps or dollar amounts.
+- The fund puzzle: the file headed "hc-mixer-01 :: SETTLEMENTS TO CUSTODY" (`erb:71`), the pool config `fee_percent: 1.5` and `min_dwell_hours: 6` (`erb:73`), custody slots with opened dates (`erb:75`) and deposit amounts and times in UTC (`erb:69`). The custody labels (`erb:76`): OTC desk settlement, customer reserve, market-maker float, dormant or legacy accounts. The privacy-coin conversion both clue documents carry (`erb:1990`, `:2342`). The 6-hour hold (`erb:74`) and the 72-hour release (`erb:110`). No office-life text mentions settlements, custody, cold slots or escrow, OTC, reserves, market makers, floats, dormant accounts, Monero, XMR, privacy coins or conversion, fees or percentages, hold, dwell or minimum times, any count of hours, UTC timestamps or dollar amounts.
 - The server-room passphrase convention, a lowercase crypto term plus the current year, with "Rev. January 2025" (`erb:53`; lock at `erb:2020`): no office-life text mentions passphrase or IT conventions, the year 2025 or "this year" as a number.
-- The data centre PIN (`erb:2160`), which matches the Bitcoin white paper's date: no mention of the white paper, 31 October or any date of that kind.
+- The data centre PIN (`erb:2160`), which matches the Bitcoin white paper's date: no mention of the white paper, 31 October, Halloween, the end of October or any date of that kind.
+- The VM, backend and password surface: Irina's wordlist names bare-word service accounts on the backend (`erb:1932`) and a VM flag concerns credential reuse (`erb:122`). No office-life text mentions passwords, password resets, logins or usernames, locked accounts, credential reuse, service accounts, the backend or transaction server, its database, hostnames, IP addresses or the audit's 61%, and no word from that wordlist appears in a login or password context.
+- Routines and tells that feed other puzzles: the guard's and Kemal's blind windows and rounds (`ink/m06_npc_checkpoint_guard.ink:6`, `ink/m06_npc_minder.ink:7`); Satoshi's press clipping and thumbprint (`erb:2650`), which feed the biometric lock; Irina's publications and temperament (her flattering opener, `ink/m06_npc_irina_volkova.ink:136`, moves `irina_trust` and so `cover_strained`). No office-life text describes any of them.
 - No four-digit number of any kind appears in office-life text.
 
-Safe lore: the late desk's routine, the coffee, the overnight Asia open, the support queue in words (busy, quiet, one angry caller), who is on call, a photocopier memo, a food order list, lost property.
+Safe lore: the late desk's routine, the coffee, the overnight Asia open, the support queue in words, non-account tickets only (busy, quiet, an app crash, a caller on hold, one angry caller), who is on call, a photocopier memo, a food order list, lost property.
 
 ### 3.4 Owner away when the home is a floor tile (build-time live check, only if Q1 option b is chosen)
 
@@ -259,7 +262,7 @@ Scenario: `officePresets`. Objects: `officeType`, `offWhen`, `owner`, `workstati
 3. Mapped break: with `trader_spoken` set, walking onto the floor sends him for coffee, at most once per 240000 ms (four minutes); never while `floor_staff_ko` is true.
 4. Away-talk: talk to Dani mid-walk, queued and at the coffee point; background is the trading floor, no line contradicts where he is, the trip resumes after.
 5. Pairs: both users reach `using` at the coffee point; chatter heard within 360.
-6. L1: drop the pizza on the floor; Lerato or Tomasz goes to it within two minutes, Dani does not; Tomasz's laptop text is readable while he is away and not while he is at it.
+6. L1: drop the pizza on the floor; Lerato or Tomasz goes to it within two minutes, Dani does not; while Tomasz is away his laptop text is readable on each trip whose screen stayed open and shows the locked look when the habit's lock roll locked it (`workstation-state.js:80` to `:83`), with `tomasz_laptop_screen_locked` recorded each try; while he is at it the text is not readable.
 7. Irina: the badge-clone conversation and `meet_irina` behave as on main while Dani and the extras walk.
 8. L2: ring Lerato's phone with her away; Tomasz answers from the second ring and a `phone_message` line plays; with both away it rings out.
 9. The printout lands on the copier tray after the first talk with Irina, once.
@@ -279,7 +282,7 @@ Decay rates and use times (2.5), from the needs-clock measurement; Tomasz's `loc
 
 ### 10.6 Static checks
 
-Validator 0 errors; V2 clear for Dani; V5 none; V11 none; `--office-summary` diff shows only Dani, Lerato and Tomasz (and HaX's added mappings, if the summary prints them); positions diff shows only the new declared objects.
+Validator 0 errors; V2 clear for Dani; V5 none; V11 none; `--office-summary` diff shows only Dani, Lerato and Tomasz (and HaX's added mappings, if the summary prints them); positions diff shows only the new declared objects (including the six pc twins, each on its Tiled pc sprite); all nine pc sprites on the trading floor draw.
 
 ### 10.7 Lock and key diff
 
