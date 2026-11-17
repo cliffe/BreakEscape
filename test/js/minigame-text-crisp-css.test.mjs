@@ -25,6 +25,9 @@ const EXPECTED = [
     '.lpb-copy',
     '.lpb-address-text',
     '.lpb-not-secure',
+    '.lpb-purpose',
+    '.lpb-submit',
+    '.lpb-field-label',
     '.combination-help',
     '.combination-status-message',
     '.combination-direction-indicator',
@@ -43,7 +46,14 @@ const EXPECTED = [
     '.tri-brief-when',
     '.tri-brief-restart',
     '.tri-brief-note',
+    '.tri-brief-buttons',
+    '.tri-steps',
     '.siem-queue-count',
+    '.siem-clock',
+    '.patch-panel-footer',
+    '.patch-panel-legend',
+    '.mail-subject',
+    '.mail-headers',
     '.ib-progress',
     '.ib-empty',
     '.mail-read-pane .ib-infl-label',
@@ -90,10 +100,24 @@ test('wrappers with controls, skin buttons, sr-only text and repeated rows are n
         'password-minigame-area', 'minigame-container', 'ob-sr', 'signin-prompt', 'mail-sr-only',
         'siem-time', 'siem-source', 'siem-description', 'siem-btn', 'patch-panel-label', 'pin-minigame-key',
         'cryptex-wheel-arrow', 'rogue-ap-scan-row', 'rogue-ap-scan-line', 'rogue-ap-ssid', 'ib-name', 'ib-card', 'combination-dial-arrow', 'mail-compose-btn', 'mail-contacts-btn', 'ob-case',
-        'tri-start', 'notes-minigame-nav-button', 'person-chat-continue-button', 'rogue-ap-tab', 'lpb-purpose']) {
+        'tri-start', 'notes-minigame-nav-button', 'person-chat-continue-button', 'rogue-ap-tab', 'patch-panel-row', 'ib-slot', 'ib-people', 'mail-body']) {
         assert.ok(!listed(cls), `${cls} is not listed`);
         assert.ok(!listedWithTag(cls), `${cls} is not listed with a tag`);
     }
+});
+
+// The list containers hold text only. Each one is checked against the JS that builds it: a button,
+// link, input or details inside would make it a wrapper with controls.
+test('the hinted list containers hold no controls', () => {
+    const js = (f) => readFileSync(join(root, 'public/break_escape/js/minigames', f), 'utf8');
+    const between = (src, from, to) => { const a = src.indexOf(from); const b = src.indexOf(to, a); assert.ok(a >= 0 && b > a, `${from} .. ${to} found`); return src.slice(a, b); };
+    const controls = /'(?:button|input|select|textarea|a|details|summary)'/;
+    const mail = js('mail-client/mail-reader.js');
+    assert.doesNotMatch(between(mail, "el('dl', 'mail-headers')", 'pane.appendChild(head)'), controls);
+    const tri = js('inbox-triage/inbox-triage-minigame.js');
+    assert.doesNotMatch(between(tri, "el('dl', 'tri-brief-buttons')", 'p.appendChild(dl)'), controls);
+    // The person cards stay out: their checklist can hold a details element.
+    assert.match(js('intel-board/intel-board-minigame.js'), /h\('details', \{ class: 'ib-slot-stuck' \}/);
 });
 
 test('the rule adds no transform, zoom, filter, radius or font to the text', () => {
