@@ -257,3 +257,46 @@ One stray `interactNearest` call (typed by mistake in a shell call that was mean
 - 16_front_desk_signin_delphine.png
 
 Not taken: rota board, USB hub, server and later stops, debrief, credits.
+
+## Quick route 12-end (game 7558, server :3098)
+
+Run by the quick-route 12-end agent. Keyless Rails from this worktree on 127.0.0.1:3098 (pid 243094, stopped and checked after the run; log in scratchpad server-3098.log). Session `tools/playtest/cmd.sh 7558`, headless, `game.physics.world.setFPS(20)` returned `[20, true]` (fixed steps on, not changed). Session log: tmp/handover/demo_access_build/s6r_7558.jsonl. No row, player state, need or unlock was edited by script. Game 7558 was resumed as is (reception, the Mission Brief notes after the reload, closed by `mg close`).
+
+### Step table
+
+| Step | Result | Notes |
+|---|---|---|
+| 12 Open session | PASS | Read the rota (`rota_board`), `dismiss` ×, then `moveToNear thandiwe_laptop` and `interact` in one shell call with no brief between. Laptop: "You're on Thandiwe Moyo's open screen. It ends when they come back or the screen locks." `done_t_open_session` set. No MISSED-WINDOW. Screenshot 07. |
+| 17 Unplug | PASS | `moveToNear meeting_jack`, `interact meeting_jack` (network view "Drop box: meeting room"), `mg clickText "Unplug"`. Toasts: "Unplugged. Your session on MS-PARTNER-01 ended.", "Task Complete: Unplug the drop box", and "Task Complete: Use a laptop its owner left signed in". Screenshot 08. |
+| Debrief | PASS, no debrief screenshot | "I'm done, let's talk." chosen twice (the first time the "Before the mission ends" overlay was kept, to ask the phone). Overlay listed seven optional full-route items. Ended with `endingOverlay end`. Screenshot 09 was not taken: I stepped through the lines by reading state, and the chat had closed before I went back for a shot. |
+| Credits | PASS | `brief` shows `missionEnd: credits, creditsShowing: true`. Screenshot 10. |
+
+Screenshot numbering: stop 12 took 07, so the unplug, debrief and credits are 08, 09 and 10 (no 09 debrief image exists).
+
+### Ama's debrief lines (verbatim, in order)
+
+1. "The doors only ever checked the card. Copy Lorna's and you're Lorna, as far as the reader's concerned. Julian's door held only because nobody copied his card."
+2. "A saved connection on the front desk got you into Julian's PC. His door never came into it."
+3. "And when the box came out, everything you'd opened through it went with it."
+4. "Thanks. I'll write it up for the partners."
+
+Line 3 is the `julian_ended_by_unplug` variant of the recap (ama.ink, `=== recap ===`). The optional "Anything you'd reached another way didn't need the box." line did not play because `done_t_implant`, `done_t_staff_wifi` and `done_t_yasmin_pc` were all unset. The labels D3, D4 and D5 do not exist in ama.ink, so the lines are not mapped to them.
+
+### "Where next?" answers (phone)
+
+- My one ask, after the unplug: "That's the lot. Come and find me at reception."
+- Earlier thread lines (from the previous run, not asked again by me): "When you've had enough, pull the box out and see what drops." (the stop 12 ask) and "Box is out. Have a last look if you like, then come back to reception." (timed, after the unplug).
+
+### Harness notes
+
+- `pressKey` Space clears the "Continue?" title screen. The Mission Brief notes then need `mg close`.
+- `enter` and `converse` are refused while a minigame is open ("minigame-active"). Close it first.
+- `mg choose ["^I.m done"]` works for Ama's choices. `endingOverlay` takes `action` "keep" or "end".
+- `mg clickText ["Skip"]` advances the debrief one line at a time. `mg getState` `dialogue.text` gives each line.
+
+### Screenshots (screens6/quick/)
+
+- 07_stop12_open_session.png
+- 08_unplug_meeting_room.png
+- 10_credits.png
+- (09 not taken, see above)
