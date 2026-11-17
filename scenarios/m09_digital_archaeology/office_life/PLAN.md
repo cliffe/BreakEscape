@@ -102,19 +102,19 @@ Add one top-level key, beside `npcThoughts` (:549):
 "roomTone": true,
 ```
 
-No `roomToneTypes`. Profile lookup is by exact room type, in the engine (`systems/office-room-tone.js:42` to `:47`) and the validator (`scripts/validate_npc_needs.rb:76` to `:82`). m09's eleven types are all bespoke (`room_m09_*`) and none is in the type table of `js/data/room-tones.json`, so no profile bed, typing loop or background spot can play anywhere in m09. The office, reception, IT and quiet-office profiles all use `office_ambient`, a working-office murmur (the missions plan's review makes the same point, `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN_REVIEW_R8.md:113`); the kitchen and server profiles have their own beds and the meeting profile has none. Mapping any m09 room to a profile would put an occupied office, a kitchen or a second machine hum into an archive the director has emptied, so none is mapped.
+No `roomToneTypes`. Profile lookup is by exact room type, in the engine (`systems/office-room-tone.js:42` to `:47`) and the validator (`scripts/validate_npc_needs.rb:76` to `:83`). m09's eleven types are all bespoke (`room_m09_*`) and none is in the type table of `js/data/room-tones.json`, so no profile bed, typing loop or background spot can play anywhere in m09. The office, reception, IT and quiet-office profiles all use `office_ambient`, a working-office murmur (the missions plan's review makes the same point, `docs/achitechture/OFFICE_LIFE_MISSIONS_PLAN_REVIEW_R8.md:113`); the kitchen and server profiles have their own beds and the meeting profile has none. Mapping any m09 room to a profile would put an occupied office, a kitchen or a second machine hum into an archive the director has emptied, so none is mapped.
 
 **Validator.** With `roomTone` true and no room resolving to a profile, the validator adds one warning (`scripts/validate_npc_needs.rb:115`): "roomTone is true but no room resolves to a room tone profile (by exact type or roomToneTypes); only authored ambientSound loops play." The count goes from 30 to 31. The warning states the aim, so it is accepted, not silenced: mapping rooms to the null-bed `meeting` profile only to clear it would put those rooms on step 2 with no bed, a change with no purpose.
 
-**How the bed is chosen** (`systems/ambient-choice.js`, `core/rooms.js:3277` to `:3308`). Doors never close in play (`systems/doors.js:947` is the only write to a door's open state), so "open" below means a door the player has already opened.
+**How the bed is chosen** (`systems/ambient-choice.js`, `core/rooms.js:3277` to `:3308`). Every door starts shut on each load (`systems/doors.js:524`) and, once opened, stays open for the rest of that session (`:947`; the only other write, `systems/door-gates.js:387`, needs a gate, and m09 has none). Nothing props a door in m09, since there is no needs NPC. So "open" below means a door the player has opened since the last load.
 
 - Step 1, own loop: a room with its own `ambientSound` plays it at its `ambientVolume`.
 - Step 2, profile bed: never in m09 (no mapped type).
 - Step 3, neighbour: in a room without a loop, the first adjacent room in rooms order with a loop and an open door gives its loop at 0.125 (`OPEN_BLEED`, `ambient-choice.js:15`); failing that, the first with a shut door at 0.01 (`SHUT_BLEED`, `:16`); open before shut (`:37` to `:47`).
 - Step 4: silence.
-- Doorway: in a north or south doorway the player's room is null and the current bed carries on (`ambient-choice.js:30`, `core/rooms.js:3305`). Today, with room tone off, a null room finds no neighbour and fades to silence, so the doorway hold is a real change.
-- Duck: the bed level halves (`DUCK` 0.5, `office-room-tone.js:22`) while a person-chat or phone-chat is open or a heard needs line plays (`:62` to `:65`, `:126` to `:130`).
-- Change of bed: a new key crossfades (`core/rooms.js:3306`); the same key at a new level tweens the level without stopping the loop (`systems/sound-manager.js:410` to `:425`). Every m09 loop is the same key, so every change in m09 is a level tween until a second key arrives.
+- Doorway: in a north or south doorway the player's room is null; `window.ambientChoice` becomes `{ room: null, keep: true }` (`core/rooms.js:3304`) and the playing sound carries on unchanged (`:3305`). East and west rooms meet edge to edge, so there is no null gap there and no hold. Today, with room tone off, a null room finds no neighbour and fades to silence, so the doorway hold is a real change.
+- Duck: while a person-chat or phone-chat is open or a heard needs line plays (`office-room-tone.js:62` to `:65`, `:126` to `:130`), room tone sets `soundManager._ambientDuck` to 0.5 (`DUCK`, `:22`; `systems/sound-manager.js:503` to `:509`). The duck multiplies only the playing sound's volume, which is `volumeSettings.music * masterVolume * level * duck` (`sound-manager.js:442`; music 0.5 and master 1.0 by default, `:14`, `:25`). `ambientChoice.level` and `soundManager._ambientLevel` keep the unducked level. Levels in this plan are these normalised levels (`ambientVolume` or bleed); "ducked to 0.3" means level 0.6 times duck 0.5, a sound volume of 0.15 at default settings.
+- Change of bed: a new key crossfades (`core/rooms.js:3306`); the same key at a new level tweens the level without stopping the loop (`systems/sound-manager.js:440` to `:466`). Every m09 loop is the same key, so every change in m09 is a level tween until a second key arrives.
 
 **What the player hears, before and after.** Today the first room in rooms order that is the player's room or adjacent to it, with a loop, wins (`ambient-choice.js:21` to `:28`), so a room with its own loop next to an earlier room with one plays the bleed level, not its own. On the critical path each of these doors is open on entry.
 
@@ -133,7 +133,17 @@ No `roomToneTypes`. Profile lookup is by exact room type, in the engine (`system
 
 So four rooms get three to five times louder: the closet, the cage, the tape room and the salvage cage play their authored levels, which no player has heard yet. Once the shredder loop replaces the placeholder in `restricted_stacks` and `restricted_cage`, the cage plays it at 0.5 and the hatch counter at 0.4; the reading room still plays the stacks' hum on the normal route, so the shredder is not heard there.
 
-**The debrief.** The hangar debrief is a hidden person-chat with the hangar background (:1170 to :1220), opened from HaX's "[Bring me in.]" (`ink/m09_phone_agent0x99.ink:766`, shown on `tesseract_call_done`) wherever the player stands, usually the salvage cage at the end of the route (`WALKTHROUGH_R1.md:65`, `:73`). Nothing suppresses ambience until the credits (`music/ending-audio.js:67`, `systems/sound-manager.js:551`). Today the hangar scene plays over the tape-room bleed at 0.125; with room tone it plays over the salvage cage's 0.6, ducked to 0.3. `QUESTIONS.md` Q3 puts this to the user; the plan keeps the authored levels and the listen (L8) supplies the numbers. Lowering an authored `ambientVolume` changes existing data and needs the user's yes.
+**The late scenes.** Three scenes near the end play over a louder hum (normalised levels; each is ducked while its chat is open):
+
+| Scene | Where | Today | With room tone |
+|---|---|---|---|
+| Identity scene, after flag 3 | `salvage_cage` (`WALKTHROUGH_R1.md:66`) | 0.125 | 0.6 ducked to 0.3 |
+| Tesseract's call, after flag 4; the music goes to its `silence` playlist for it (:596, :601) | `salvage_cage` (`WALKTHROUGH_R1.md:67`) | 0.125 | 0.6 ducked to 0.3, about 2.4 times today, and the only bed under the call |
+| Hangar debrief, a hidden person-chat with the hangar background (:1170 to :1220), opened from HaX's "[Bring me in.]" (`ink/m09_phone_agent0x99.ink:766`, shown on `tesseract_call_done`) wherever the player stands, usually the salvage cage (`WALKTHROUGH_R1.md:73`) | `salvage_cage` | 0.125 | 0.6 ducked to 0.3 |
+
+The alpha recording in `tape_room` moves from 0.125 to 0.35 ducked to 0.175, a small change. Nothing suppresses ambience until the ending (`music/ending-audio.js:67`, `systems/sound-manager.js:551`). When the debrief closes (it has `disableClose`, :1196, so it closes only at its end), the duck lifts within one poll (`office-room-tone.js:23`, `:126` to `:130`), and the hum plays at the full 0.6 while `debrief_closed` sets, the conclude request runs and the visualiser opens; only then does `silenceBackgroundForEnding` suppress it (`music/bond-visualiser.js:1863`). `QUESTIONS.md` Q3 puts all of this to the user; the plan keeps the authored levels and the listen (L8) supplies the numbers. Lowering an authored `ambientVolume` changes existing data and needs the user's yes.
+
+The opening briefing, a person-chat in the dock at spawn (:1163 to :1167), plays over `open_stacks` at 0.01 behind the shut shutter, ducked to 0.005 (today 0.01, never ducked). Both are effectively silent.
 
 **What does not change.** No lock, key, door, object, NPC, global, event mapping, task or objective. The `room_tone_started:<roomId>` event fires only on steps 1 and 2 (`office-room-tone.js:145` to `:149`) and no m09 mapping reads it. Room tone installs under `window.npcManager` with no needs check (`core/game.js:2060`, `:2109`), and `server_room_ventilation` is preloaded (`sound-manager.js:122`). The music system keeps running over it (m01, m02 and m08 run both), and the credits still suppress ambience. Affordance start and output sounds need an NPC using an object; m09 has no needs NPC, so none plays.
 
@@ -183,21 +193,27 @@ Lighting is finished (`LIGHTING_PLAN.md`, `LIGHTING_REVIEW_R2.md`) and does not 
 
 ### 10.2 Live checks
 
-Keyless server on a free port, headless at `setFPS(20)` with fixed steps on. The test bridge has no unlock or teleport, so rooms behind a lock are reached by real progress. Checks in the dock and the open stacks (L0 start, L1 closet, L2, L4, L6a) run in their own fresh game; the rest are read at the matching step of the scripted regression (10.3), with no game-row edits and no globals set in the page. Read `window.ambientChoice` (set only under room tone, `core/rooms.js:3304`) and the playing sound's volume at each step.
+Keyless server on a free port, headless at `setFPS(20)` with fixed steps on. The test bridge has no unlock or teleport, so rooms behind a lock are reached by real progress. Three kinds of run, each from a fresh game, with no game-row edits and no globals set in the page:
 
-- **L0, no profile bed ever**, held through the whole regression: `ambientChoice.step` is never 2; the room-tone log has no typing or spot entry; `office_ambient` never plays; `room_tone_started` fires only for the six rooms with their own loop.
-- **L1, own loop.** In each of `server_closet`, `restricted_cage`, `tape_room` and `salvage_cage`: `ambientChoice.room` is that room, `step` 1, level its `ambientVolume` (0.4, 0.5, 0.35, 0.6). The closet in a fresh game; the others at walkthrough steps 8 to 15. The listener records whether the cage at 0.5 and the salvage cage at 0.6 sound right (Q3).
-- **L2, east or west door.** Stand in `open_stacks` beside the east door to the closet, then step through: same key, the level tweens from 0.15 to 0.4, with no stop and restart.
-- **L3, north or south door.** At the regression step where the player walks from `reading_room` north into `restricted_stacks`, stop in the doorway: `ambientChoice` is unchanged while the player's room is null (the bed holds at `open_stacks` 0.125), then moves to `restricted_stacks` 0.4 on entry.
-- **L4, reading room.** Arrive from `open_stacks`: `open_stacks` at 0.125, step 3. After the north door opens: still `open_stacks` at 0.125.
-- **L5, quiet rooms.** `loading_dock`: step 3, `open_stacks`, 0.01 at spawn and 0.125 once the north door is open. `sorensen_office`: step 3, `restricted_stacks`, 0.125. `front_desk` and `staff_passage`: step 4, silence (read these where the regression passes through them, or note them as not reached on that route).
-- **L6, duck.** (a) In a fresh game, open a phone call to agent_0x99 in `open_stacks`: the level halves (0.15 to 0.075) while the call is open and returns when it closes. (b) At the regression's Sorensen conversation in the cage: 0.5 to 0.25 and back.
-- **L7, reload.** At a regression step in `restricted_cage`, reload: the player spawns in the dock (intended) and the bed is step 3, `open_stacks`, at the level the restored north door gives; walk back to the cage: step 1 at 0.5.
-- **L8, debrief.** At walkthrough step 19 in `salvage_cage`, open the debrief from HaX: read the ambient key and level while the hangar scene is open (expected `server_room_ventilation` at 0.3, ducked from 0.6) and after the credits (suppressed). The numbers go to the user with Q3.
+- **Fresh game F1 (route B start):** L1 for the closet, L2, L6a. Old Coyote challenges on sight when the player enters `open_stacks` (:1434 to :1441), and the chat ducks the bed; so F1 first answers him with a truth button (`old_coyote_told`, he leaves, `WALKTHROUGH_R1.md:36`) and takes every reading with `soundManager._ambientDuck` at 1 except where the check is the duck.
+- **Fresh game F2 (route A, `WALKTHROUGH_R1.md:82` to `:88`):** lockpick the dock west door, enter `front_desk`, clone Noor's card, enter `staff_passage`. Reads L5's two silence rows.
+- **The scripted regression (10.3):** every other reading, at the walkthrough step named.
+
+Each reading takes three values: `window.ambientChoice` (set only under room tone, `core/rooms.js:3304`), `soundManager.currentAmbient` with `soundManager._ambientLevel` (the unducked level), and the playing sound's volume (expected `0.5 * level * duck` at default settings, section 4).
+
+- **L0, no profile bed ever**, held through F1, F2 and the regression: `ambientChoice.step` is never 2; the room-tone log has no typing or spot entry; `office_ambient` never plays; `room_tone_started` fires for the five loop rooms the regression visits (`open_stacks`, `restricted_stacks`, `restricted_cage`, `tape_room`, `salvage_cage`) plus `server_closet` in F1, and for no other room.
+- **L1, own loop.** In each of `server_closet` (F1), `restricted_cage`, `tape_room` and `salvage_cage` (regression steps 8 to 15): `ambientChoice.room` is that room, `step` 1, level its `ambientVolume` (0.4, 0.5, 0.35, 0.6). The listener records whether the cage at 0.5 and the salvage cage at 0.6 sound right (Q3).
+- **L2, east or west door (F1).** Stand in `open_stacks` beside the east door to the closet, then step through: same key, `_ambientLevel` tweens from 0.15 to 0.4, with no stop and restart and no null-room hold.
+- **L3, north or south door (regression, after step 4).** Walk from `reading_room` north into `restricted_stacks` and stop in the doorway: `ambientChoice` is `{ room: null, keep: true }`, `currentAmbient` stays `server_room_ventilation` and `_ambientLevel` stays 0.125; on entry `ambientChoice.room` is `restricted_stacks`, level 0.4.
+- **L4, reading room (regression).** At step 3, arriving from `open_stacks`: step 3, `open_stacks`, 0.125. At step 4, after flag 1 opens the north door: still `open_stacks`, 0.125.
+- **L5, quiet rooms.** `loading_dock` (regression step 1): step 3, `open_stacks`, 0.01 at spawn and 0.125 once the shutter is open. `sorensen_office` (regression step 13): step 3, `restricted_stacks`, 0.125. `front_desk` and `staff_passage` (F2): step 4, silence.
+- **L6, duck.** (a) F1: open a phone call to agent_0x99 in `open_stacks`: `_ambientDuck` goes 1 to 0.5, `_ambientLevel` stays 0.15, the sound volume goes 0.075 to 0.0375, and all return when the call closes. (b) At the regression's Sorensen conversation in the cage: `_ambientLevel` 0.5, sound volume 0.25 to 0.125 and back.
+- **L7, reload (regression step 9, before flag 2).** Reload in `restricted_cage`: the player spawns in the dock (intended, with the Mission Brief), every door shut, and the bed is step 3, `open_stacks`, 0.01; through the shutter it rises to 0.125; walk back to the cage: step 1 at 0.5. Step 9 is chosen because a room entry outside the cage later in the route can force the Recruiter's call (`WALKTHROUGH_R1.md:54`), which would duck the readings and change the run.
+- **L8, late scenes (regression, `salvage_cage`).** Read `_ambientLevel`, `_ambientDuck` and the sound volume during the identity scene (step 16), Tesseract's call (step 17) and the debrief (step 19): expected level 0.6, duck 0.5, sound volume 0.15 each time. Then read in the gap between the debrief closing and the visualiser: duck back to 1, sound volume 0.3, until `silenceBackgroundForEnding` takes it to 0. The numbers go to the user with Q3.
 
 ### 10.3 Regression
 
-A scripted regression of `WALKTHROUGH_R1.md` with room tone on, on the cheap scripted tier, carrying the L0, L1, L3, L5, L6b, L7 and L8 readings. No moved NPC, so no poll-before-interact rule is needed. VM flags are seeded through `new-game.rb` FLAGS_XML and `session-start.sh --flags`, as for every m09 run here; flags stay required.
+A scripted regression of `WALKTHROUGH_R1.md` with room tone on, on the cheap scripted tier, carrying the L0, L1, L3, L4, L5, L6b, L7 and L8 readings; F1 and F2 (10.2) run beside it. No moved NPC, so no poll-before-interact rule is needed. VM flags are seeded through `new-game.rb` FLAGS_XML and `session-start.sh --flags`, as for every m09 run here; flags stay required.
 
 ### 10.4 Attack probe
 
@@ -209,7 +225,7 @@ Not needed: no NPC gains needs or walks for office life. The existing attack out
 |---|---|---|
 | Tier (people) | none | `QUESTIONS.md` Q1, recommendation (a) followed |
 | `roomTone: true` | one scenario key | `QUESTIONS.md` Q1 covers it |
-| Authored levels heard for the first time (four rooms, the debrief) | none unless the user asks for lower levels, which would change existing data | `QUESTIONS.md` Q3 |
+| Authored levels heard for the first time (four rooms, three late scenes) | none unless the user asks for lower levels, which would change existing data | `QUESTIONS.md` Q3 |
 | New art, characters, voicing, engine | none | n/a |
 | Changed existing lines | none | n/a |
 
