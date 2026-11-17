@@ -1,9 +1,17 @@
 <%
 # demo_access_tour, slice 1 (DEMO_ACCESS_TOUR_PLAN.md section 5, item 1): the seven rooms, their
-# doors and locks, the sign-in PCs as plain objects, the cast placed static, the player's phone and
-# the signs. Accounts, networks, devices, office life and the real ink come in later slices.
+# doors and locks, the cast placed static, the player's phone and the signs. Slice 2 (item 2)
+# adds accounts, the kit, the networks, the sign-in PCs' owners and contents and Lorna's card.
+# Devices, office life and the real ink come in later slices.
 # The keypad PIN is rendered per game; it is not written anywhere else in this slice.
 server_room_pin = @random_pin
+# Staff passwords. Each is one literal, written once here and interpolated where it is shown
+# (an NPC's creds are server-only; facilities.txt on reception_pc repeats Lorna's).
+delphine_pw = "Merrin-Desk-4417"
+thandiwe_pw = "Kestrel-Loom-82"
+yasmin_pw   = "Saffron-Ledger-31"
+lorna_pw    = "Faclab-Tarn-905"
+julian_pw   = "Quillon-Fathom-Harrow-6628-Brae"
 %>
 {
   "scenario_brief": "DEMO: Access tour\n\nMerrin & Sallow, a small firm whose IT is run by Ama Owusu of Fenlow Managed IT. The partners want a walk-round access test of the office. Ama stays at reception; you do the walking.",
@@ -18,7 +26,94 @@ server_room_pin = @random_pin
       "npcIds": ["ama_phone"], "observations": "Your work phone, with Ama a message away." }
   ],
 
-  "globalVariables": {},
+  "defaultPolicy": "desk",
+
+  "policies": {
+    <%# No autoLockMin anywhere: a policy without it never auto-locks a password or credential
+        session (plan C5). A screen locks only when Yasmin leaves or the presenter presses Lock. %>
+    "desk": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" },
+    "partner": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" },
+    "infra": { "maxAttempts": null, "usb": "storage_blocked", "remote": "allowed", "social": "allowed" }
+  },
+
+  <%# The Staff psk is @random_password, used for this psk only. The capture mapping in a later
+      slice repeats the same render. Guest has an SSID and no psk: an open network. %>
+  "networks": {
+    "office_lan": { "name": "Merrin & Sallow office LAN", "wifi": { "ssid": "MerrinSallow-Staff", "psk": "<%= @random_password %>" } },
+    "server_lan": { "name": "Server network" },
+    "guest": { "name": "Merrin & Sallow guest network", "wifi": { "ssid": "MerrinSallow-Guest" } }
+  },
+
+  "networkLinks": [
+    ["office_lan", "server_lan"]
+  ],
+
+  "social": { "captures": { "revealSecret": true } },
+
+  <%# Shares are resources. client_letters is open to anyone on office_lan. finance_share admits
+      the roles finance and partner: a session at yasmin_pc or julian_pc, not the bare foothold. %>
+  "resources": {
+    "client_letters": {
+      "kind": "file_share",
+      "name": "Client-Letters",
+      "host": "MS-FS01",
+      "network": "office_lan",
+      "observations": "The firm's outgoing client letters. Any device on the network can list the folder.",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "letter_template",
+          "name": "letter_template.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Merrin & Sallow\n\nDear [client],\n\nThank you for your instructions. We will be in touch shortly.\n\nYours sincerely,",
+          "observations": "The firm's standard client letter."
+        }
+      ]
+    },
+    "finance_share": {
+      "kind": "file_share",
+      "name": "Finance",
+      "host": "MS-FS01",
+      "network": "office_lan",
+      "access": { "roles": ["finance", "partner"] },
+      "observations": "The firm's finance folder. It lists only to finance and the partners.",
+      "contents": [
+        {
+          "type": "text_file",
+          "id": "q3_accounts",
+          "name": "q3_accounts.txt",
+          "takeable": true,
+          "readable": true,
+          "text": "Quarter 3 management accounts (draft).\n\nFees billed ahead of plan. Two clients late paying; Julian to chase.",
+          "observations": "A draft of the quarter's accounts."
+        }
+      ]
+    }
+  },
+
+  "credentials": {
+    "lorna_door_pw": {
+      "kind": "password",
+      "account": "lorna",
+      "label": "Lorna's door controller password",
+      "proof": { "session": "reception_pc" },
+      "foundIn": "facilities_txt"
+    },
+    "julian_rdp": {
+      "kind": "saved_connection",
+      "account": "julian",
+      "connectsTo": "julian_pc",
+      "label": "julian.rdp",
+      "proof": { "held": "julian_rdp_file" }
+    }
+  },
+
+  "globalVariables": {
+    "cloner_held": false,
+    "seen_julian_rdp": false,
+    "has_julian_rdp": false
+  },
 
   "objectives": [
     {
@@ -52,7 +147,37 @@ server_room_pin = @random_pin
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "Delphine's PC at the front desk."
+          "owner": "delphine",
+          "host": "MS-FRONT-01",
+          "network": "office_lan",
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["delphine"] },
+          "observations": "Delphine's PC at the front desk.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "facilities_txt",
+              "name": "facilities.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Facilities contacts and logins.\n\nLorna Easton (facilities): door controller, user leaston, password <%= lorna_pw %>\nCleaners: Tuesday and Friday evenings.",
+              "observations": "A plain-text file of facilities contacts, left on the front desk PC."
+            },
+            {
+              "type": "text_file",
+              "id": "julian_rdp_file",
+              "name": "julian.rdp",
+              "takeable": true,
+              "droppable": true,
+              "readable": true,
+              "credential": "julian_rdp",
+              "onRead": { "setVariable": { "seen_julian_rdp": true } },
+              "onPickup": { "setVariable": { "has_julian_rdp": true } },
+              "text": "Saved connection to Julian Sallow's PC. Copy it to keep the connection.",
+              "observations": "A saved remote-desktop connection to the partner's PC."
+            }
+          ]
         },
         {
           "type": "keycard",
@@ -62,6 +187,42 @@ server_room_pin = @random_pin
           "position": { "x": 6.0, "y": 4.0 },
           "takeable": true,
           "observations": "A visitor card from the front desk, numbered 07."
+        },
+        <%# Both access points sit on the back wall, well clear of the front desk and the doors. %>
+        {
+          "type": "pc",
+          "id": "staff_ap",
+          "name": "MerrinSallow-Staff access point",
+          "sprite": "lw_staff_ap",
+          "position": { "x": 5.0, "y": 1.6 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "office_lan",
+          "observations": "A wall access point. Its label reads MerrinSallow-Staff. It asks for a key."
+        },
+        {
+          "type": "pc",
+          "id": "guest_ap",
+          "name": "MerrinSallow-Guest access point",
+          "sprite": "lw_guest_ap",
+          "position": { "x": 7.0, "y": 1.6 },
+          "takeable": false,
+          "wifiAp": true,
+          "network": "guest",
+          "observations": "A second access point on the wall. Its label reads MerrinSallow-Guest."
+        },
+        {
+          "type": "notes1",
+          "id": "guest_wifi_card",
+          "name": "Reception Wi-Fi card",
+          "sprite": "lw_guest_card",
+          "position": { "x": 6.9, "y": 3.95 },
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "text": "Visitors: connect your laptop to the wireless.\nNetwork name (SSID): MerrinSallow-Guest",
+          "observations": "A printed card on the front desk with the guest Wi-Fi name."
         },
         {
           "type": "plant",
@@ -118,7 +279,11 @@ server_room_pin = @random_pin
           "phoneId": "player_phone",
           "storyPath": "scenarios/demo_access_tour/ink/ama_phone.json",
           "currentKnot": "start",
-          "livePreview": true
+          "livePreview": true,
+          "eventMappings": [
+            <%# The event carries the item's type; the cloner is the tour's only rfid_cloner. %>
+            { "eventPattern": "item_picked_up:rfid_cloner", "onceOnly": true, "setGlobal": { "cloner_held": true } }
+          ]
         },
         {
           "id": "delphine",
@@ -130,7 +295,10 @@ server_room_pin = @random_pin
           "spriteTalk": "assets/characters/delphine_arvanitis_talk.png",
           "spriteVisemes": "assets/characters/delphine_arvanitis_visemes.png",
           "storyPath": "scenarios/demo_access_tour/ink/delphine.json",
-          "currentKnot": "start"
+          "currentKnot": "start",
+          "role": "reception",
+          "creds": { "username": "darvanitis", "password": "<%= delphine_pw %>" },
+          "habits": { "writesDown": true }
         }
       ]
     },
@@ -173,6 +341,13 @@ server_room_pin = @random_pin
               "takeable": false,
               "interactable": true,
               "active": true,
+              "owner": "thandiwe",
+              "host": "MS-LAPTOP-TM",
+              "network": "office_lan",
+              "locked": true,
+              "lockType": "login",
+              "lockChance": 0,
+              "access": { "people": ["thandiwe"] },
               "observations": "Thandiwe's laptop on her desk."
             }
           ]
@@ -205,6 +380,13 @@ server_room_pin = @random_pin
               "takeable": false,
               "interactable": true,
               "active": true,
+              "owner": "yasmin",
+              "host": "MS-FIN-01",
+              "network": "office_lan",
+              "locked": true,
+              "lockType": "login",
+              "locksScreenOnLeave": true,
+              "access": { "people": ["yasmin"] },
               "observations": "Yasmin's desktop PC."
             }
           ]
@@ -243,7 +425,9 @@ server_room_pin = @random_pin
           "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
           "spriteVisemes": "assets/characters/thandiwe_moyo_visemes.png",
           "storyPath": "scenarios/demo_access_tour/ink/thandiwe.json",
-          "currentKnot": "start"
+          "currentKnot": "start",
+          "role": "design",
+          "creds": { "username": "tmoyo", "password": "<%= thandiwe_pw %>" }
         },
         {
           "id": "yasmin",
@@ -255,7 +439,10 @@ server_room_pin = @random_pin
           "spriteTalk": "assets/characters/yasmin_chaudhry_talk.png",
           "spriteVisemes": "assets/characters/yasmin_chaudhry_visemes.png",
           "storyPath": "scenarios/demo_access_tour/ink/yasmin.json",
-          "currentKnot": "start"
+          "currentKnot": "start",
+          "role": "finance",
+          "creds": { "username": "ychaudhry", "password": "<%= yasmin_pw %>" },
+          "habits": { "writesDown": true }
         },
         {
           "id": "lorna",
@@ -267,7 +454,13 @@ server_room_pin = @random_pin
           "spriteTalk": "assets/characters/lorna_easton_talk.png",
           "spriteVisemes": "assets/characters/lorna_easton_visemes.png",
           "storyPath": "scenarios/demo_access_tour/ink/lorna.json",
-          "currentKnot": "start"
+          "currentKnot": "start",
+          "role": "facilities",
+          "creds": {
+            "username": "leaston",
+            "password": "<%= lorna_pw %>",
+            "card": { "name": "Lorna Easton FAC card", "card_id": "FAC-LORNA-01", "rfid_protocol": "EM4100" }
+          }
         }
       ]
     },
@@ -279,7 +472,35 @@ server_room_pin = @random_pin
       "locked": true,
       "lockType": "pin",
       "requires": "<%= server_room_pin %>",
-      "objects": []
+      "objects": [
+        {
+          "type": "pc",
+          "id": "door_controller",
+          "name": "Door controller",
+          "host": "MS-DOOR-01",
+          "sprite": "network_rack1",
+          "network": "server_lan",
+          "policy": "infra",
+          "position": { "x": 5.0, "y": 3.0 },
+          "takeable": false,
+          "locked": true,
+          "lockType": "login",
+          "headless": true,
+          "access": { "roles": ["facilities"] },
+          "observations": "A door controller with no screen or keyboard. It is managed over the network.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "door_codes",
+              "name": "Door codes",
+              "takeable": false,
+              "readable": true,
+              "text": "Door controller: current codes.\n\nServer room keypad: <%= server_room_pin %>",
+              "observations": "The door controller's code list."
+            }
+          ]
+        }
+      ]
     },
 
     "kitchen": {
@@ -325,7 +546,9 @@ server_room_pin = @random_pin
           "spriteTalk": "assets/characters/julian_sallow_talk.png",
           "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
           "storyPath": "scenarios/demo_access_tour/ink/julian.json",
-          "currentKnot": "start"
+          "currentKnot": "start",
+          "role": "partner",
+          "creds": { "username": "jsallow", "password": "<%= julian_pw %>" }
         }
       ]
     },
@@ -348,7 +571,25 @@ server_room_pin = @random_pin
           "takeable": false,
           "interactable": true,
           "active": true,
-          "observations": "Julian's PC on the partner's desk."
+          "owner": "julian",
+          "host": "MS-PARTNER-01",
+          "network": "office_lan",
+          "policy": "partner",
+          "locked": true,
+          "lockType": "login",
+          "access": { "people": ["julian"] },
+          "observations": "Julian's PC on the partner's desk.",
+          "contents": [
+            {
+              "type": "text_file",
+              "id": "partner_note",
+              "name": "partners_notes.txt",
+              "takeable": false,
+              "readable": true,
+              "text": "Partners' notes.\n\nOffice move is off until spring. Ask Ama about the server room cabling.",
+              "observations": "A short notes file on the partner's desktop."
+            }
+          ]
         }
       ]
     },
@@ -360,7 +601,51 @@ server_room_pin = @random_pin
       "locked": true,
       "lockType": "rfid",
       "requires": ["VISITOR-07"],
-      "objects": []
+      "objects": [
+        <%# Kit table (the map has four tables along the wall, items at y about 3.9). The existing
+            table items sit at x about 2.65, 4.4, 6.25 and 7.1, so the kit takes the gaps. %>
+        {
+          "type": "rfid_cloner",
+          "id": "rfid_cloner",
+          "name": "RFID cloner",
+          "sprite": "rfid_cloner",
+          "position": { "x": 3.3, "y": 3.9375, "elevation": 30 },
+          "takeable": true,
+          "interactable": true,
+          "active": true,
+          "saved_cards": [],
+          "observations": "A handheld RFID cloner. Keep it in a pocket, chat to someone close up, and it reads the card on them."
+        },
+        {
+          "type": "pc",
+          "id": "kit_dropbox",
+          "name": "Network drop box",
+          "sprite": "network_dropbox",
+          "position": { "x": 5.3, "y": 3.9375, "elevation": 30 },
+          "takeable": true,
+          "rogueDevice": true,
+          "interactable": true,
+          "active": true,
+          "observations": "A palm-sized network drop box with an Ethernet socket and its own radio. Plug it into a live wall port to join that port's network."
+        },
+        {
+          "type": "pc",
+          "id": "meeting_jack",
+          "name": "Live wall network port",
+          "sprite": "network_port_cabinet",
+          "position": { "x": 8.2, "y": 0.78125 },
+          "takeable": false,
+          "interactable": true,
+          "active": true,
+          "networkJack": true,
+          "network": "office_lan",
+          "plantedSprite": "network_dropbox_planted_cabinet",
+          "linkName": "Drop box: meeting room",
+          "jackConfirm": "Plug the network drop box into this live port? It joins the office network.",
+          "requiresItemHint": "You need the network drop box in hand to plant it on the port.",
+          "observations": "A grey wall port box low on the meeting room wall. It is live."
+        }
+      ]
     },
 
     "comms_cupboard": {
