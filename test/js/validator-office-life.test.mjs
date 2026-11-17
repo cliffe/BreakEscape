@@ -438,8 +438,8 @@ test('corpus: m09 counts no office-life onceOnly mapping and m02 counts its pilo
     }
 });
 
-test('corpus: V2, V4 and V5 report nothing on the labs and test scenarios that use office life', { skip }, () => {
-    const ids = ['lab_physical_pentest', 'lab_social_engineering', 'test_needs_sims', 'test_access_work', 'test_access_social'];
+test('corpus: V2, V4 and V5 report nothing on the labs, test scenarios and demo tour that use office life', { skip }, () => {
+    const ids = ['lab_physical_pentest', 'lab_social_engineering', 'test_needs_sims', 'test_access_work', 'test_access_social', 'demo_access_tour'];
     const out = corpus(ids, 'scenario_id: id');
     for (const id of ids) assert.deepEqual(out[id].filter(l => /office life V[245]:/.test(l)), [], id);
 });
