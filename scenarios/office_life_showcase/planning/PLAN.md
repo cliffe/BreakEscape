@@ -15,7 +15,7 @@ A new test scenario: a guided tour of office life in three acts, hosted by Ama O
 
 Two rooms, both maps from test_needs_sims. No third room.
 
-- `office` (`room_office`, `public/break_escape/assets/rooms/room_office.json`, 10 x 10 tiles of 32 px), start room, `startPosition` (5, 6) = px (160, 192). Connection `west: kitchen` only.
+- `office` (`room_office`, `public/break_escape/assets/rooms/room_office.json`, 10 x 10 tiles of 32 px), start room, `startPosition` (5, 6) = px (160, 192). Connection `west: kitchen` only. A single west connection puts the door at local px (16, 80), tile (0.5, 2.5) (`systems/doors.js`, `placeWestDoorSingle`), so every trip to the kitchen leaves along the band between the bookcase and the desk tops (y 66 to 117 px).
 - `kitchen` (`room_break`, `room_break.json`, 10 x 10), connection `east: office`.
 
 How positions read. A scenario object's `position` is the top-left corner of its sprite in tiles (objects use origin (0, 0), `core/rooms.js:346`, `:694`; placed at `roomX + x * 32`, `core/rooms.js:598-599`); a value outside the room is ignored and the object lands at random (`:593-597`). An NPC's `position` is the centre of its sprite (`systems/npc-sprites.js:325`, Phaser's default origin 0.5). The desk machines (`pc`, `laptop`) have no `position`: they claim the Tiled desk items in declaration order, so they are declared in the same order and types as sims.
@@ -33,13 +33,15 @@ Office objects (positions copied from sims unless marked new):
 
 Kitchen objects (all copied from sims, `room_break`):
 - `fridge` (qdc_fridge1) at (1, 2) with `restores 40`; `microwave` (microwave1) at (5, 3) with `restores 40`.
-- `kitchen_coffee` (coffee_station1) at (3, 8), `useFrom (0,-1)`, queue (1,-1), (2,-1).
+- `kitchen_coffee` (coffee_station1) at (3, 8), `useFrom (0,-1)`, queue (1,-1), (2,-1), `"offWhen": { "office_coffee_off": false }`, observations "The kitchen coffee machine. It shares a fuse with the office one, so only one of them runs at a time." The object form of `offWhen` is read by `_isOff` through `requiredGlobalsHold` (`systems/npc-needs.js:312-318`, `:832-840`), which compares with `===`: the kitchen machine is off exactly while the office one is on. `office_coffee_off: false` is declared in `globalVariables` (an undeclared key would leave the kitchen machine on). No off look: `coffee_station1` has no off sprite, and the sockets carry the off look in sims too; the observation text says why it is off in both states. Why this matters is in section 3, "One coffee at a time".
 - `water_cooler` (water_cooler1) at (1, 7), `affordance: { "useSeconds": 40, "overhearRadius": 360 }`. The 40 s use gives a coupled pair time together for the exchange (the preset's 15 s leaves them 3 to 7 s); the radius covers the whole room, so the viewer need not stand anywhere special.
 - `washing_up_tray` (mugs_tray1) at (3, 3), accepts `dirty_mugs`, `useSeconds 5`.
 
 Dropped from sims: copiers and outputs, print queue, deadline memo, coffee notice, activity board, desk phones, kitchen rota, kitchen copier socket, parcel, player mugs, the east and north doors.
 
-NPC posts (sprite centres, tiles): Chidi (7, 3), Jun (3, 6), Graham (3, 4), Agnieszka (1, 5), Zainab (2.15, 6.65), all copied from the sims NPC each one replaces. Ama (new) at (4.75, 3.25) = px (152, 104): the top of the middle aisle, below the bookcase (its bottom edge is at y 66 px) and left of the chair (from x 182 px). The east side has no free spot: (8.5, 4.5) = px (272, 144), for example, sits inside the north-east desk's footprint (x 210 to 288 px, y 117 to 156 px) and on the bin. Chidi at (7, 3) reaches the coffee's approach tile (7, 8) round the east desks, by the aisle (passing about 40 px east of her) or by the gap along the east wall. S1 renders the room and watches the first coffee walk and the first lunch walk to the west door, and moves her if she blocks a lane.
+NPC posts (sprite centres, tiles): Chidi (7, 3), Jun (3, 6), Graham (3, 4), Agnieszka (1, 5), Zainab (2.15, 6.65), all copied from the sims NPC each one replaces.
+
+Ama (new) at (4.75, 4.5) = px (152, 144): the middle of the aisle, level with the north desk row, 48 px above the viewer's start. The aisle there runs from the west desks' east edge (x 108 px) to the east desks' west edge (x 210 px), so she leaves a lane of about 30 px on her west and about 45 px on her east. She stays off the band at the top of the room: the straight line from Chidi's post (224, 96) to the west door (16, 80) crosses it at y 80 to 96, and every lunch walk, every kitchen trip and the mug run use it. The coffee routes run below her (Jun and Zainab from the west desks to the approach tile (7, 8), y 192 to 272) or east of the east desks (Chidi). The east side has no free spot: (8.5, 4.5) = px (272, 144), for example, sits inside the north-east desk's footprint (x 210 to 288 px, y 117 to 156 px) and on the bin. Fallback, if the S1 render shows her crowding Graham's chair or the aisle lane: (5.5, 4.5) = px (176, 144), 34 px clear of the east desks and still off the door line. S1 watches the first coffee walk and the first walk to the west door either way.
 
 Lighting: office `on`; evening variant `{ "condition": "globalVars.act_evening === true", "ambient": "#8f96b0", "lights": [warm lamp over Zainab's tool roll] }`. Kitchen `on`; evening variant `{ "condition": "globalVars.act_evening === true", "mode": "motion", "offAfter": 10 }`. A variant applies as soon as its global changes and is re-read on load (`systems/lighting.js:37-42`, `:788-805`). In motion mode a visible NPC on the floor switches the lights on (`:1159-1168`), but only the player leaving starts the off timer (`:1031-1044`); so the evening must send nobody but the viewer into the kitchen (section 4, row 3.1).
 
@@ -50,7 +52,7 @@ All from the awareness course, with full atlases (`sit_` frames), talk, visemes 
 | Key | Who (VOICE_CAST) | Sims role copied | Needs (decayPerMin/urgentAt/initial) | Features carried |
 |---|---|---|---|---|
 | `ama_owusu` | Ama Owusu, 40s, Black British (Ghanaian heritage), London | none (host) | none | ink hub, act turns by `#set_global`, label barks, task mappings, `facePlayer` |
-| `chidi_okeke` | Chidi Okeke, 40s, Nigerian-British, West Yorkshire | Amara | caffeine 25/40/61 (urgent about 0:50), work 10/50/72, hunger 5/40/90 | leads every coffee run, `habits.screen.lockIfAwayOverSeconds 20` (locks on a long trip), lunch on cue |
+| `chidi_okeke` | Chidi Okeke, 40s, Nigerian-British, West Yorkshire | Amara | caffeine 25/40/61 (urgent about 0:50), work 10/50/72, hunger 5/40/90 | leads every coffee run, `habits.screen.lockIfAwayOverSeconds 20` (locks for any trip he expects to take over 20 s, `systems/workstation-state.js:148-152`; every trip he makes here, coffee or lunch, is longer, so in practice he always locks), lunch on cue |
 | `jun_watanabe` | Jun Watanabe, early 20s, Japanese-British, southern English | Tom | caffeine 10/40/70, work 8/50/80, hunger 5/40/90 | follows Chidi to the coffee and queues (queue chat), `habits.screen.lockChance 0` (leaves his PC open), left-behind badge, caught bark, lunch on cue |
 | `graham_whitfield` | Graham Whitfield, early 60s, white British, Halifax | Sanjay | work 15/50/65, social 12/40/72 (urgent about 2:40), hunger 4/40/90, caffeine 1/30/95 | `habits.screen.lockChance 0` (never locks by hand), so `graham_pc` locks itself 20 s after he leaves; cooler pair and the exchange |
 | `agnieszka_duda` | Agnieszka Duda, 30s, Polish, lightly accented | Grace | thirst 15/40/80 (urgent about 2:40), hunger 4/40/90 | `interests` dirty_mugs (carries the Abandoned Mugs to the washing-up tray), cooler pair partner |
@@ -64,11 +66,19 @@ Coupling mappings (the pattern sims uses for Sanjay after Marek and Marek after 
 - On Graham: `npc_left_post:agnieszka_duda`, `"condition": "data.targetId === 'water_cooler'"`, cooldown 30000, `needs.set.social 10` (one-way: her drink pulls him).
 - On Jun: `workstation_accessed:jun_pc`, `"condition": "globalVars.act_midday === true"`, cooldown 60000, `needs.set.work 5` (he heads straight back after eating).
 
+One coffee at a time. An NPC takes a free, reachable source first and queues only when there is none (`_useCandidate`, `systems/npc-needs.js:1733-1794`, queue fallback `:1778-1785`); off sources are left out of the candidates (`:1739`), and Chidi's walking claim counts as taking the office machine (`_free`, `:1580-1599`). With `kitchen_coffee` off while the office machine is on (section 2), the office machine is the only coffee in the building until the viewer switches it off. So:
+- Jun and Zainab always queue behind Chidi, whether the kitchen has loaded or not; opening the kitchen early changes nothing in the queue beats.
+- Switching the office coffee off brings the kitchen machine on in the same step (`onGlobalChanged` re-reads every `offWhen` naming the global and wakes parked needs, `:807-830`), so the turned-back NPCs go to the kitchen coffee. With the kitchen not yet loaded they park and go when it loads (`_wakeParked`, `:2016`).
+- While the office coffee is off, runs go to the kitchen and no queue forms: Chidi's target is then `kitchen_coffee`, which the Jun coupling does not match. Switching it back on at the socket brings the queue back on the next run.
+- The evening turn switches the office coffee on, which switches the kitchen machine off, so Zainab's evening coffee can only be in the office.
+
 Coffee timing. A use restores its need only when it ends, and decay pauses while using (`systems/npc-needs.js:3663-3665`, `:1552`); the coffee preset is `useSeconds 12`, capacity 1, `restores 70`. Chidi goes urgent at about 0:50, so the first queue forms after a typical opening chat (A1, A2 point the viewer at the machine). His cup ends near 1:08 at the cap of 100; at 25 a minute he is urgent again after 2:24, so the second run is at about 3:35, with Jun and Zainab coupled in again. Jun's own caffeine (77 after his cup, 10 a minute) would not bring him back before about 5:00; the coupling, not his clock, sets his runs.
 
 ## 4. Tour, act by act
 
 Times are from spawn for a viewer who follows Ama's hints; the viewer may be slower, and every beat waits or repeats (section 10 lists what is still to be measured). "Label" is the line that names the feature as it happens. Tasks are in section 5; all task mappings sit on Ama, who never hides.
+
+Mapping conditions are `&&` joins of single terms only (no `||`, no parentheses; `safeEvaluateCondition`, `systems/npc-manager.js:25-130`). In a `global_variable_changed` mapping, `value` is the event's value (`{ name, value }`), so `value === true` and `data.value === true` both work.
 
 Needs keep running for every NPC during a conversation except the one being talked to (`systems/npc-needs.js:1437-1446`). A bark raised while a conversation or minigame is open is held and shown after it closes, one every 2.5 s, re-checked before it shows (`systems/npc-barks.js:240-255`). A bark from Ama while the viewer is in the kitchen shows as a voiced toast (`systems/npc-barks.js:26-29`).
 
@@ -76,29 +86,35 @@ Needs keep running for every NPC during a conversation except the one being talk
 
 | # | Time | Viewer does | Viewer sees | Label | Task | Ticks on |
 |---|---|---|---|---|---|---|
-| 1.1 | 0:00 | Spawns in the office | Five staff at their posts; Ama at the top of the aisle | Ama bark B1 | none | `room_entered:office` (onceOnly, not office life) |
+| 1.1 | 0:00 | Spawns in the office | Five staff at their posts; Ama in the aisle just above the viewer | Ama bark B1 | none | `room_entered:office` (onceOnly, not office life) |
 | 1.2 | 0:05 | Talks to Ama | A1, A2 (watch the coffee); the hub; "What am I looking at?" gives A3, A4 | Ama A1 to A4 | none | none |
 | 1.3 | about 0:50 to 1:30 | Watches the coffee | Chidi walks to the office coffee; Jun follows and queues; Zainab queues third | Ama bark B2 | `see_queue` | `npc_queued:office_coffee` |
 | 1.4 | about 0:55 to 1:10 | Stands within about six tiles of the queue | Chidi and Jun swap lines from the `coffee` pool; Zainab says nothing (avoids everyone) | the bubbles | `hear_queue_chat` | `npc_chatted:office_coffee` with `data.overheard === true` |
-| 1.5 | about 1:30 | Opens the west door to the kitchen | Kitchen lit; Ama's "Let's do lunch." now works | none | none | `room_entered:kitchen` sets `kitchen_seen` |
-| 1.6 | any time | Watches the mugs | Agnieszka, on a trip out of the office, picks up the Abandoned Mugs and takes them to the washing-up tray | Ama A8 (hint, in advance), Ama bark B11 | none | `npc_picked_up:office_mugs` |
+| 1.5 | about 1:30 | Opens the west door to the kitchen | Kitchen lit; its coffee machine is off (its observation explains); Ama's "Let's do lunch." now works | none | none | `room_entered:kitchen` sets `kitchen_seen` |
+| 1.6 | about 1:30, as the kitchen first loads | Has noted the mugs by the desks (A8 comes before A7 in the hints) | Agnieszka gets up, picks up the Abandoned Mugs from the office floor and carries them into the kitchen behind the viewer, to the washing-up tray | Ama A8 (hint, in advance), Ama bark B11 | none | `npc_picked_up:office_mugs` |
 | 1.7 | about 2:40 | Waits in the kitchen | Graham and Agnieszka meet at the cooler (her drink pulls him); the five-line exchange plays once; back in the office, Graham's screen locks itself 20 s after he left | the exchange; Ama A13, A14 if asked | `hear_cooler_exchange` | `npc_exchange_heard:exchange_cooler_chat` |
 | 1.8 | about 3:35 | Back in the office, stands by the socket | Chidi's second coffee run; Jun and Zainab queue again | none | none | none |
-| 1.9 | while they walk or queue | Switches the coffee off at the socket (confirm) | Those walking to it or queued turn back with a `grumble_off` line and head for the kitchen coffee; one already pouring finishes | Ama bark B3 | `see_coffee_off` | `npc_turned_back:*` with `data.reason === 'off'` |
+| 1.9 | while they walk or queue | Switches the coffee off at the socket (confirm) | Those walking to it or queued turn back with a `grumble_off` line and head for the kitchen coffee, which has just come on; one already pouring finishes | Ama bark B3 | `see_coffee_off` | `npc_turned_back:*` with `data.reason === 'off'` |
 
-Late viewers: the coffee run repeats about every 2:25 for as long as the office coffee is on, so 1.3, 1.4 and 1.9 can happen on any run, in any act. If the kitchen is still unopened at 2:40, Graham and Agnieszka wait at their desks and go once it loads.
+Row 1.6: Agnieszka has `interests` and no work need, so she sits idle at her post and selects every tick (`systems/npc-needs.js:1524-1526`, `:1659`). The interest candidate needs the tagged item in her home room and a loaded object that `accepts` the tag (`_carryCandidate`, `:3105-3121`); the tray is in the kitchen, which loads when its door opens (`systems/doors.js:875-886`), and the load clears every back-off (`_onRoomsLoaded`, `:1270-1274`). Her flat interest weight beats any need that is not urgent (`:1717-1723`). So the mug run starts within a tick or two of the viewer opening the west door, whenever that is. A8 tells the viewer to look at the mugs before opening the kitchen, so the empty floor afterwards means something.
+
+Late viewers. The coffee run repeats about every 2:25 while the office coffee is on, with Jun and Zainab queuing every time, before or after the kitchen opens (section 3, "One coffee at a time"); so 1.3, 1.4 and 1.9 can happen on any run, in any act. A viewer who switched the coffee off early sees no queue until it is back on; A6 puts the switch-off after the queue. If the kitchen is still unopened at 2:40, Graham and Agnieszka wait at their desks and go once it loads (`_wakeParked`, `systems/npc-needs.js:2016`); the mug run then starts at the same moment.
 
 ### Act 2, Midday (about 4:00 to 6:00)
 
 | # | Time | Viewer does | Viewer sees | Label | Task | Ticks on |
 |---|---|---|---|---|---|---|
-| 2.1 | about 4:00 | Ama: "Let's do lunch." (only after `kitchen_seen`) | Conversation closes; Chidi and Jun hunger set to 20, Graham and Agnieszka to 62 | Ama A16 | none | `global_variable_changed:act_midday` |
-| 2.2 | about 4:05 | Stays in the office | Chidi leaves for the kitchen; his screen locks as he goes (a soft chime if sound is on) | Ama bark B4 | none | `workstation_screen_changed:chidi_pc` with `data.how === 'leave' && data.locked === true && globalVars.act_midday === true` |
-| 2.3 | about 4:05 | Stays in the office | Jun leaves too; his screen stays open (white breathing dot); his badge may stay on the desk (70%) | Ama bark B5 | none | `npc_left_post:jun_watanabe` with `globalVars.act_midday === true` |
+| 2.1 | about 4:00 | Ama: "Let's do lunch." (only after `kitchen_seen`, and only with Chidi and Jun at their desks) | Conversation closes; Chidi and Jun hunger set to 20, Graham and Agnieszka to 62 | Ama A16, A30 | none | `global_variable_changed:act_midday` |
+| 2.2 | about 4:00 to 4:10 | Stays in the office | Chidi leaves for the kitchen; his screen locks as he goes (a soft chime if sound is on) | Ama bark B4 | none | `workstation_screen_changed:chidi_pc` with `data.how === 'leave' && data.locked === true && globalVars.act_midday === true` |
+| 2.3 | about 4:00 to 4:10 | Stays in the office | Jun leaves too; his screen stays open (white breathing dot); his badge may stay on the desk (70%) | Ama bark B5 | none | `npc_left_post:jun_watanabe` with `globalVars.act_midday === true` |
 | 2.4 | about 4:15 | Uses Jun's PC | Jun's desktop | none | `use_open_screen` | `workstation_accessed:jun_pc` (the same event brings Jun back early, section 3) |
 | 2.5 | about 4:45 | Closes the PC and waits beside Jun's desk | Jun walks back into the office and finds the viewer at his desk | Jun bark B8, then Ama bark B6 (`delayMs 2500`) | `see_caught` | `npc_caught_at_post:jun_watanabe` |
 | 2.6 | optional | Picks up Jun's badge before he returns | On his return Jun misses it | Ama bark B9 | none | `npc_left_item_gone:jun_watanabe` |
 | 2.7 | about 5:00, once all four are back and sitting | Drops the cake from the inventory in the office | Those who see it and are tempted walk over; two eat with `cake` pool lines; anyone still walking when the second slice goes turns back with "Missed it." | Ama bark B7 | `see_cake_eaten` | `magnet_finished:cake` |
+
+Rows 2.1 to 2.3, the lunch gate. B4, B5 and the badge roll all hang on a fresh leave from the desk: `npc_left_post` is emitted only by an NPC at its post (`_leavePost`, `systems/npc-needs.js:3267-3281`, which also rolls the left-behind badge), and `workstation_screen_changed` fires only when that leave changes the lock (`systems/workstation-state.js:537-555`). An NPC finishing a coffee may pick its next job while still walking home (the selector runs for `returning` NPCs, `systems/npc-needs.js:1522-1525`), so if lunch were called while Chidi and Jun were out on a coffee run, both would go straight to the kitchen with no leave, no B4, no B5 and no badge. So "Let's do lunch." also waits until both are back: the workstation globals `chidi_pc_owner_away` and `jun_pc_owner_away` (published by `systems/workstation-state.js` `_publish`, cleared on return by `onReturned`, `:569-588`; sims reads the same kind in `observationVariants`) are declared in `globalVariables` so they sync into Ama's ink (`isGlobalVariable`, `systems/npc-conversation-state.js`), and while either is true she says A29 and returns to the hub. Their return also unlocks Chidi's screen, so his lunch leave locks it again and B4 fires.
+
+If Chidi or Jun is part way through a desk use when lunch is called, he finishes it before looking for a target (`systems/npc-needs.js:1509-1513`). The desk preset's use is 10 s (`desk_pc`, `data/office-presets.json:4`), so his leave, B4 or B5 and the badge roll slip by at most 10 s. What the viewer sees: one of the two gets up at once and the other types on for a few seconds, then goes. A30, said as lunch is called, covers it: "Anyone in the middle of something finishes it first." B4 and B5 are tied to the leaves, not to a clock, so their wording holds in either order.
 
 Row 2.5: `npc_caught_at_post` fires once per return while Jun walks back inside the office, if the viewer is within 1.5 tiles of his desk's approach cell or has his PC open (`systems/npc-needs.js:3371-3383`). A viewer who stays in the PC is caught too, but B8 and B6 then wait until the PC is closed (a delayed mapping that falls due while a minigame is open waits for it to close, `systems/npc-manager.js:921-925`). A10 therefore says to close the PC and wait by the desk, so both barks show as Jun walks up.
 
@@ -108,13 +124,13 @@ Row 2.7: Chidi and Jun eat at the fridge and microwave (restores 40, so 20 becom
 
 | # | Time | Viewer does | Viewer sees | Label | Task | Ticks on |
 |---|---|---|---|---|---|---|
-| 3.1 | about 6:00 | Ama: "Call it a day." | A17, A18 play; as A18 ends (the `#set_global` runs after it) Chidi, Jun, Graham and Agnieszka vanish, the office ambient dims, the lamp over Zainab's tool roll comes on, and the office coffee is switched back on | Ama A17, A18 | none | `global_variable_changed:act_evening` with `value === true` (one `setVisible false` mapping per hidden NPC; on Ama, `setGlobal { office_coffee_off: false }`) |
+| 3.1 | about 6:00 | Ama: "Call it a day." | A17, A18 play; as A18 ends (the `#set_global` runs after it) Chidi, Jun, Graham and Agnieszka vanish, the office ambient dims, the lamp over Zainab's tool roll comes on, and the office coffee is switched back on (the kitchen machine goes off with it) | Ama A17, A18 | none | `global_variable_changed:act_evening` with `value === true` (one `setVisible false` mapping per hidden NPC; on Ama, `setGlobal { office_coffee_off: false }`) |
 | 3.2 | 1.5 s after the conversation closes | Watches Zainab | Zainab speaks | Zainab bark B10 | none | same event, `delayMs 1500` |
 | 3.3 | 8 s after close | Watches Zainab | Her caffeine is set to 10 and she goes to the office coffee | none | `see_who_stays` | `npc_left_post:zainab_hussain` with `globalVars.act_evening === true` |
 | 3.4 | about 6:30 | Walks into the kitchen | The dark kitchen lights on entry, and goes dark 10 s after the viewer leaves | Ama A15 (hint) | none | none |
 | 3.5 | about 7:00 | Ama: "Give me the short version." | Recap of each feature in the order seen, then the close | Ama A19 to A25, A28 | none | none |
 
-Switching the office coffee back on at the evening turn keeps Zainab out of the kitchen, so nothing but the viewer switches the motion lights on there.
+Switching the office coffee back on at the evening turn also switches the kitchen machine off, so Zainab cannot take her coffee in the kitchen and nothing but the viewer switches the motion lights on there. A viewer who switches the office coffee off again in the evening sends her to the kitchen instead; her walk switches the kitchen lights on and, since only the player leaving arms the off timer, they stay on until the viewer has been in and out. That is the viewer's own lever and costs no task.
 
 ## 5. Objectives
 
@@ -127,20 +143,20 @@ All three aims visible from the start (no `unlockAim`, so an early event never c
 
 ## 6. Host and staff ink, and keeping the tour open
 
-`ama_owusu.ink`, the reopen pattern from `scenarios/test_needs_sims/ink/neil.ink` (`start` diverts to `hub.choices`; `hub` has a reopen line; `reopenRefreshesHub: true`). VARs mirrored from globals: `act_midday`, `act_evening`, `kitchen_seen`, `heard_exchange_cooler_chat`.
+`ama_owusu.ink`, the reopen pattern from `scenarios/test_needs_sims/ink/neil.ink` (`start` diverts to `hub.choices`; `hub` has a reopen line; `reopenRefreshesHub: true`). VARs mirrored from globals: `act_midday`, `act_evening`, `kitchen_seen`, `heard_exchange_cooler_chat`, `chidi_pc_owner_away`, `jun_pc_owner_away`.
 - `start`: A1, A2, then the hub choices.
 - `hub`: reopen line A0, then choices (seven at most, under dialoguelint's hub limit of 10):
   - "What am I looking at?" (once): A3, A4.
-  - "What should I try next?": by act. Morning (`not act_midday`) A5 to A8; midday (`act_midday and not act_evening`) A9 to A11; evening A12, A15. No progress globals.
+  - "What should I try next?": by act. Morning (`not act_midday`) A5, A6, A8, A7, in that order (the mugs hint comes before the kitchen hint, section 4 row 1.6); midday (`act_midday and not act_evening`) A9 to A11; evening A12, A15. No progress globals.
   - "What was that at the cooler?" (only when `heard_exchange_cooler_chat`): A13, A14.
-  - "Let's do lunch." (`not act_midday`): if `not kitchen_seen`, A26 and back to the hub; else A16, `#set_global:act_midday:true`, exit.
+  - "Let's do lunch." (`not act_midday`): if `not kitchen_seen`, A26 and back to the hub; else if `chidi_pc_owner_away or jun_pc_owner_away`, A29 and back to the hub; else A16, A30, `#set_global:act_midday:true`, exit. Globals sync into the story when the conversation starts, so a viewer who keeps the conversation open while Chidi and Jun walk back hears A29 again until the conversation is closed and reopened. A29 already tells them to give it a minute, which in practice closes the conversation; S3 checks the reopen.
   - "Call it a day." (`act_midday and not act_evening`): A17, A18, `#set_global:act_evening:true`, exit.
   - "Give me the short version." (`act_evening`): A19 to A25, A28, back to the hub.
   - "I'll have a look round.": A27, exit.
 - Each staff NPC: a minimal three-line chat in its own ink file (start line, one player choice answered in two lines, then a plain exit choice with no reply). Graham's file also holds `exchange_cooler_chat` (Graham and Agnieszka, five lines). The exchange is declared on Graham: `"exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat" }]`, and `heard_exchange_cooler_chat: false` is declared in `globalVariables`.
 - `kitchen_seen`: a plain mapping on Ama, `{ "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } }`, no condition and no onceOnly (setting true again is harmless). The event carries `{ roomId, previousRoom, firstVisit }` (`core/rooms.js:3231-3240`) and fires wherever Ama is, since she is always loaded; `setGlobal` is applied by `systems/npc-manager.js:1500-1506`. Sims uses the same shape for `staff_room_seen` (`scenarios/test_needs_sims/scenario.json.erb:633`).
 
-Keeping the tour open. A mission concludes in only two ways: the server sets `mission_concluded_at` when an aim with `missionConclusion` completes (`app/models/break_escape/game.rb:6792-6809`; it returns at once for any other aim), or a scenario `music` event that carries `credits` posts the conclusion and opens the credits (`music/scenario-music-events.js:300-378`; the 'victory' playlist that auto-opens the visualiser is only reached through scenario music). Ink tags cannot conclude: `#ending_check` and `#ending_confirmed` only ask or record (`minigames/helpers/chat-helpers.js:475-497`). So the scenario:
+Keeping the tour open. The server concludes a mission only through an aim with `missionConclusion`. Its two writers of `mission_concluded_at`, `status = 'completed'` and `completed_at` are `check_mission_conclusion`, which returns at once for any aim without the flag (`app/models/break_escape/game.rb:6791-6809`), and `conclude_mission!`, the target of the client's credits post, which returns `concluded: false` at once when no aim has `missionConclusion` (`:7626-7650`). With no such aim the server cannot conclude this scenario, whatever the client does. The only other ending the viewer could see is the credits screen, opened by a scenario `music` event that carries `credits` (`music/scenario-music-events.js:300-378`; the 'victory' playlist that auto-opens the visualiser is only reached through scenario music), so leaving out `music` keeps the credits away. Ink tags cannot conclude: `#ending_check` and `#ending_confirmed` only ask or record (`minigames/helpers/chat-helpers.js:475-497`). So the scenario:
 - gives no aim `missionConclusion` (completing all three aims shows three "Aim completed" notices and nothing else, `systems/objectives-manager.js:1223-1270`);
 - has no `music` block, so no credits entry and no victory playlist;
 - uses no `#ending_check` tag, and leaves `scoring` out of `mission.json` (tasks mode; the validator warns only for the other modes, `scripts/validate_scenario.rb:446-461`).
@@ -170,7 +186,7 @@ Character counts are the full text in the table, punctuation and spaces included
 | A5 | try next, morning | Watch the coffee machine. One person at a time; the rest queue. | 63 | 12 |
 | A6 | try next, morning | They come back every few minutes. Switch it off at the wall socket while they're queued. | 88 | 16 |
 | A7 | try next, morning | Then open the kitchen door and hang about by the water cooler. | 62 | 12 |
-| A8 | try next, morning | And keep an eye on those mugs by the desks. Someone can't stand them. | 69 | 14 |
+| A8 | try next, morning (said before A7) | Before you open the kitchen, note the mugs by the desks. Someone can't stand them. | 82 | 15 |
 | A9 | try next, midday | Lunch takes people away from their desks. Some lock their screens; some don't. | 78 | 13 |
 | A10 | try next, midday | Use an open one, then close it and wait by the desk for its owner. | 66 | 15 |
 | A11 | try next, midday | When they're all back and sitting, drop the cake from your inventory here in the office. | 88 | 16 |
@@ -182,7 +198,7 @@ Character counts are the full text in the table, punctuation and spaces included
 | A17 | Call it a day. | Right. Home time for most of them. | 34 | 7 |
 | A18 | Call it a day. | Have a wander once we're done here. | 35 | 7 |
 | A19 | short version | Needs run down, and people go to whatever fills them. | 53 | 10 |
-| A20 | short version | Machines take one at a time, so people queue and chat. | 54 | 11 |
+| A20 | short version | The coffee machine takes one at a time, so people queue and chat. | 65 | 13 |
 | A21 | short version | Switch something off and they turn back. That's a lever. | 56 | 10 |
 | A22 | short version | Two at the cooler might have a conversation, once. | 50 | 9 |
 | A23 | short version | A screen left open is a chance. Owners come back and notice. | 60 | 12 |
@@ -191,6 +207,8 @@ Character counts are the full text in the table, punctuation and spaces included
 | A26 | Let's do lunch, kitchen unseen | Have a look in the kitchen first. That's where lunch happens. | 61 | 11 |
 | A27 | I'll have a look round. | Go on. I'll be here. | 20 | 5 |
 | A28 | short version, close | That's the tour. Stay and look round as long as you like. | 57 | 12 |
+| A29 | Let's do lunch, Chidi or Jun away | Hang on, they're not all back at their desks. Give it a minute. | 63 | 13 |
+| A30 | Let's do lunch, after A16 | Anyone in the middle of something finishes it first. | 52 | 9 |
 
 Player choice text (not voiced): "What am I looking at?", "What should I try next?", "What was that at the cooler?", "Let's do lunch.", "Call it a day.", "Give me the short version.", "I'll have a look round."
 
@@ -199,15 +217,15 @@ Player choice text (not voiced): "What am I looking at?", "What should I try nex
 | Id | Speaker | Place | Text | Chars | Words |
 |---|---|---|---|---|---|
 | C1 | Chidi | start | Hiya. Can't stop long, I've a report due. | 41 | 8 |
-| C2 | Chidi | "Do you always lock your screen?" | Every time I get up. Habit from my last job. | 44 | 10 |
-| C3 | Chidi | same | Twenty seconds is long enough for someone to have a nose. | 57 | 11 |
+| C2 | Chidi | "Do you always lock your screen?" | If I'll be gone more than twenty seconds, yes. | 46 | 9 |
+| C3 | Chidi | same | That's long enough for someone to have a nose. | 46 | 9 |
 | J1 | Jun | start | Oh, hi. Sorry, I'm a bit swamped. | 33 | 7 |
 | J2 | Jun | "Do you lock your screen when you go?" | Lock it? I'm only ever gone a minute. | 37 | 8 |
 | J3 | Jun | same | Nobody here would touch it anyway. | 34 | 6 |
 | G1 | Graham | start | Now then. You'll be the visitor Ama mentioned. | 46 | 8 |
 | G2 | Graham | "Do you get away from your desk much?" | Only for the cooler. It's where you hear things. | 48 | 9 |
 | G3 | Graham | same | My screen locks itself, mind. IT set it to twenty seconds. | 58 | 11 |
-| N1 | Agnieszka | start | Hi. Mind the mugs, they've been there since Monday. | 51 | 9 |
+| N1 | Agnieszka | start | Hi. Somebody has to keep this place tidy. | 41 | 8 |
 | N2 | Agnieszka | "Why do you clear the mugs?" | Because nobody else will. | 25 | 4 |
 | N3 | Agnieszka | same | If I see dirty mugs, I can't leave them. It's a sickness. | 57 | 12 |
 | Z1 | Zainab | start | Alright. I'm only in to service the kit. | 40 | 8 |
@@ -239,7 +257,7 @@ Exit choice for each: "I'll let you get on." (no reply).
 | B7 | Ama | `magnet_finished:cake` | Two slices, first come, first served. | 37 | yes |
 | B8 | Jun | `npc_caught_at_post:jun_watanabe`, cooldown 30000 | Er, that's my desk. Can I help you? (copied from sims Tom) | 35 | no |
 | B9 | Ama | `npc_left_item_gone:jun_watanabe` | Jun's noticed his badge is missing. | 35 | yes |
-| B10 | Zainab | `global_variable_changed:act_evening`, `value === true`, `delayMs 1500` | Quiet now. Just me and the coffee. | 34 | no (a global changes to true once) |
+| B10 | Zainab | `global_variable_changed:act_evening`, `value === true`, `delayMs 1500` | Quiet now. Time for a coffee in peace. | 38 | no (a global changes to true once) |
 | B11 | Ama | `npc_picked_up:office_mugs` | There go the mugs. Agnieszka can't leave them. | 46 | yes |
 
 B4 uses `workstation_screen_changed`, which is emitted on every screen change whether or not sound plays (`systems/workstation-state.js:204-205`); the chime event (`workstation_lock_heard`) needs the chime to be audible and so would miss a muted viewer. The midday condition keeps a long morning trip from spending it. B11 is the interest pickup's own event, `{ npcId, itemId, tag }` (`systems/npc-needs.js:3520`); with the viewer elsewhere it shows as a toast, so the mug run is named wherever the viewer is.
@@ -248,7 +266,7 @@ B4 uses `workstation_screen_changed`, which is emitted on every screen change wh
 
 Scenario-level pools copied from sims `scenario.json.erb:14-23` (all 40 or fewer; copied, newly voiced):
 - `coffee` (6): "Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"
-- `cooler` (8): "Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "That printer jammed again."
+- `cooler` (8): "Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Not bad, you?", "Have you tried the new sandwich place?" (new, in place of the sims printer line, since the tour has no printer)
 - `grumble_off` (3): "Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."
 - `grumble_gone` (1): "Missed it."
 - `cake` (4) and `news_cake` (3): as `CAKE_ITEM.md`.
@@ -270,7 +288,7 @@ Per-NPC pool extras (new):
 
 Zainab has no pool lines: she chats with nobody.
 
-Totals: Ama 29 ink lines and 9 barks; staff 15 ink lines, 5 exchange lines, 2 barks, 8 pool extras; 25 copied pool lines. V6 gives the clip count per voice before any voicing is asked for.
+Totals: Ama 31 ink lines and 9 barks; staff 15 ink lines, 5 exchange lines, 2 barks, 8 pool extras; 24 copied pool lines and 1 new scenario pool line. V7 runs again on the pools at S5. V6 gives the clip count per voice before any voicing is asked for.
 
 ## 8. Sync budget
 
@@ -293,64 +311,74 @@ Other saved state, all bounded and sent as deltas through the keyed sections (`s
 
 | Section | Keys | Bound |
 |---|---|---|
-| `globalVariables` | `act_midday`, `act_evening`, `kitchen_seen`, `office_coffee_off` (booleans); `cake_servings` (0 to 2); the rows above | fixed set, declared up front |
+| `globalVariables` | `act_midday`, `act_evening`, `kitchen_seen`, `office_coffee_off` (booleans, all declared `false`); `cake_servings` (0 to 2); the rows above, of which `chidi_pc_owner_away` and `jun_pc_owner_away` are also declared (`false`) so they reach Ama's ink | fixed set, declared up front |
 | `npcVisibility` | `chidi_okeke`, `jun_watanabe`, `graham_whitfield`, `agnieszka_duda`, each `false` after the evening turn (`systems/npc-manager.js:2207-2226`, sent at `state-sync.js:549-550`) | 4 entries, one boolean each, written once |
 | `triggeredEvents` | fired onceOnly mappings: B1 to B7, B9, B11 | 9 entries |
-| `npcInkVariables` | Ama's four mirrored VARs; staff inks declare none | 4 |
+| `npcInkVariables` | Ama's six mirrored VARs; staff inks declare none | 6 |
 
 Nothing grows `player_state`; every key is a boolean or a small bounded integer, written when it changes.
 
 ## 9. Ending and reload behaviour
 
 - No conclusion, no credits, no ending warning (section 6). The objectives panel shows all three aims complete; the viewer can keep walking round, talking to Ama and replaying the recap.
-- Reload keeps act globals, NPC visibility, lighting variants and fired onceOnly mappings; needs reset to each NPC's `initial` (accepted for a tour: Ama's hints still hold, and the coffee run restarts from spawn timing).
+- Reload keeps act globals, NPC visibility, lighting variants and fired onceOnly mappings; needs reset to each NPC's `initial` (accepted for a tour: Ama's hints still hold, and the coffee run restarts from spawn timing). A dropped cake is covered by build check BC1 (section 10).
 
 ## 10. Risks and points to measure
 
 | # | Risk or point | How it is settled |
 |---|---|---|
-| R1 | Ama's spot (4.75, 3.25) blocks a lane on the live walk | S1 render and first coffee walk; move her if so |
-| R2 | Parked needs wake when the kitchen loads (sims behaviour suggests yes) | S2: hold the kitchen shut past 2:40, then open it; Graham and Agnieszka must go |
+| R1 | Ama at (4.75, 4.5) crowds Graham's chair or an aisle lane | Placed off the door line from the door cell (section 2). S1 render and the first coffee and west-door walks; if she crowds anyone, the fallback (5.5, 4.5) |
+| R2 | Parked needs wake when the kitchen loads | Settled by code: `_wakeParked` (`systems/npc-needs.js:2016`) retries every parked need when a room loads or a door opens. S2 still holds the kitchen shut past 2:40, then opens it; Graham and Agnieszka must go |
 | R3 | Coffee timings (first queue near 0:50, second run near 3:35) are computed, not measured | S2 logs both runs' times; adjust Chidi's `initial` or decay if they drift by more than 20 s |
 | R4 | Zainab queuing with `avoids ["*"]` and `avoidRadius 0` | S2: she reaches queue cell two and does not turn back |
 | R5 | Hiding an NPC mid-use of a machine at the evening turn: a hidden NPC's job is aborted and a sitter unseated (`systems/npc-needs.js:1416-1424`, `systems/npc-behavior.js:427-435`) | S4: turn the evening during a cake or coffee use; no stuck image or held capacity |
 | R6 | Reload resets needs to `initial`: midday hunger levels are lost | Accepted; S4 reload test records it |
-| R7 | Whether a dropped cake's position survives a reload | S3 reload with the cake down |
+| R7 | A dropped cake after a reload | Build check BC1 below |
 | R8 | Desk claiming depends on declaring the four desk machines in sims' order | S1: each NPC sits at its own desk |
-| R9 | Agnieszka's mug pickup comes from her interest on a trip; its timing is not controlled | Accepted; A8 primes it and B11 names it wherever the viewer is; S2 records when it happens |
-| R10 | The evening's `setGlobal office_coffee_off false` must leave the socket's confirm offering "switch off" again | S4: open the socket after the turn |
+| R9 | Agnieszka's mug run | Settled by code (section 4, row 1.6): it starts as the kitchen first loads. S2 logs the pickup time against the door opening |
+| R10 | The evening's `setGlobal office_coffee_off false` and the socket | Settled by code: the socket's two `confirm_action`s read the condition at click time from `window.gameState.globalVariables` (`systems/apply-actions.js:142-145`); a mapping's `setGlobal` writes that object and emits `global_variable_changed:<name>` (`systems/npc-manager.js:1500-1512`); sprite variants re-render on that event (`core/rooms.js:712-737`). S4 clicks the socket once after the turn: it offers "Switch off" and shows on |
 | R11 | B1 on `room_entered:office` at spawn, and not again after a reload | S1: spawn, kitchen and back, reload; one B1 |
+| R12 | The kitchen coffee's object-form `offWhen` | Read by `_isOff` through `requiredGlobalsHold` (section 2); the schema allows it (`scripts/scenario-schema.json:5481`) and `check_off_when` (`scripts/validate_npc_needs.rb:442-466`) passes with the key declared and set by the socket. S2 (T6b, T7) shows it off at load and on after the switch-off |
+| R13 | The lunch gate reads stale VARs while Ama's conversation stays open | Accepted (section 6); S3 closes and reopens to check A16 then plays |
+
+Build check BC1, the cake after a reload (run in S3, recorded in the S3 commit message). From code: a drop is saved as a room object with `sourceType 'player_drop'` and its room-relative position, then removed from the server inventory (`persistDrop`, `systems/item-drop.js:16-18`, `:355-393`); on reload the room places it from the saved position and `scanMagnets` registers it again when the room loads (`systems/npc-needs.js:872-881`), with servings read from `cake_servings`. Four reloads, each on a fresh game:
+1. Cake still held: it is in the inventory, nowhere in a room.
+2. Cake down, untouched: it is at the same tile (and on the same table top, if dropped on one), `cake_servings` is 2, and a tempted NPC still walks to it after the reload.
+3. Cake down, one slice taken: `cake_servings` is 1, one more NPC eats, then `magnet_finished:cake` fires and `see_cake_eaten` ticks.
+4. Cake finished: no cake in either room and none in the inventory; the task stays ticked.
+Pass: all four as written. If 2 or 3 places the cake elsewhere but it still works as a magnet, that is accepted and noted in section 9. If 4 shows a finished cake again, or 2 or 3 shows a cake nobody can eat, the failing case goes to the engine backlog (no engine edits in this plan) and is recorded in section 9 as a known reload limit; a reload mid-cake is rare on a guided tour, and the three midday tasks still tick on a fresh run.
 
 ## 11. Build slices
 
 Each slice ends with a commit on the branch and a live proof on a keyless server from the worktree on a free port (not 3000, 3001, 3002, 3085 or 3086), a fresh game per edit from `tools/playtest/new-game.rb office_life_showcase`, headless with `game.loop.setFPS(20)` and fixed steps on, driven through `window.__test`. Stop the server by PID only.
 
-- S1, skeleton. `mission.json` (display name "Office Life Tour", no `scoring`), `scenario.json.erb` (rooms, objects, cast with needs, globals, objectives with no `missionConclusion`, no `music` block, Ama's art and voice fields), Ama's ink with start, hub and exit only, three-line staff inks, base lighting. Proof: validator clean; render both rooms; each staff NPC reports `atPost` at its own desk; watch the first coffee walk past Ama's spot (R1, R8, R11).
-- S2, morning. Pools, per-NPC extras, coffee queue and both coffee couplings, socket lever, cooler coupling and exchange, mugs, B1 to B3, B11, `kitchen_seen`, Ama's hub hints. Proof: a timed run ticks all four morning tasks with no `__test.needs.set`; log the first and second queue times, the exchange time and the mug pickup; a second run holds the kitchen shut until 3:30 (R2 to R4, R9).
-- S3, midday and cake. Midday mappings, B4 to B9, Jun's work coupling, cake item and pools. Proof: take lunch, see B4 with sound off, use Jun's PC, close it, wait by the desk, get caught, wait for all four, drop the cake; three midday tasks tick; reload with the cake down (R7).
-- S4, evening and lighting. Hide mappings, the coffee switch-on, lighting variants, B10, Zainab's delayed caffeine. Proof: screenshots of both rooms before and after the turn; no hidden NPC leaves a drawn image; Zainab goes to the office coffee and the task ticks; kitchen dark, then lit on entry, then dark 12 s after leaving; turn the evening with the coffee switched off and during a use (R5, R10); reload after the turn keeps staff hidden and evening light (R6).
-- S5, checks and full run. Validator with V6, V8 and V10; a script that checks every line in section 7 against the scenario data and inks word for word, with the character and word caps; `dialoguelint.mjs`; then a full run from spawn to recap following Ama's hints, timed (target 5 to 10 minutes), with `tools/playtest/verify-run.rb` showing all eight tasks; `tools/playtest/train-check.sh` green on the hash.
+- S1, skeleton. `mission.json` (display name "Office Life Tour", no `scoring`), `scenario.json.erb` (rooms, objects, cast with needs, globals, objectives with no `missionConclusion`, no `music` block, Ama's art and voice fields), Ama's ink with start, hub and exit only, three-line staff inks, base lighting. Proof: validator clean; render both rooms; each staff NPC reports `atPost` at its own desk; watch the first coffee walk and the first walk to the west door past Ama's spot (R1, R8, R11).
+- S2, morning. Pools, per-NPC extras, coffee queue and both coffee couplings, the kitchen coffee's `offWhen`, socket lever, cooler coupling and exchange, mugs, B1 to B3, B11, `kitchen_seen`, Ama's hub hints. Proof: a timed run ticks all four morning tasks with no `__test.needs.set`; log the first and second queue times, the exchange time and the mug pickup against the door opening; a second run opens the kitchen at 0:30 (T6b); a third holds the kitchen shut until 3:30 (R2 to R4, R9, R12).
+- S3, midday and cake. Midday mappings, the lunch gate and its two declared globals, A29, A30, B4 to B9, Jun's work coupling, cake item and pools. Proof: call lunch during the second coffee run (A29), then after both return; see B4 with sound off, use Jun's PC, close it, wait by the desk, get caught, wait for all four, drop the cake; three midday tasks tick; build check BC1 (R7, R13).
+- S4, evening and lighting. Hide mappings, the coffee switch-on, lighting variants, B10, Zainab's delayed caffeine. Proof: screenshots of both rooms before and after the turn; no hidden NPC leaves a drawn image; Zainab goes to the office coffee and the task ticks; kitchen dark, then lit on entry, then dark 12 s after leaving; turn the evening with the coffee switched off and during a use, then click the socket once (R5, R10); reload after the turn keeps staff hidden and evening light (R6).
+- S5, checks and full run. Validator with V6, V7, V8 and V10; a script that checks every line in section 7 against the scenario data and inks word for word, with the character and word caps; `dialoguelint.mjs`; then a full run from spawn to recap following Ama's hints, timed (target 5 to 10 minutes), with `tools/playtest/verify-run.rb` showing all eight tasks; `tools/playtest/train-check.sh` green on the hash.
 
 ## 12. Tests
 
 | # | Test | Live proof |
 |---|---|---|
 | T1 | Scenario validates; V8 counts within caps and match section 8 | validator output saved in the S5 commit message |
-| T2 | Each staff NPC starts at its own post; Ama does not block a lane | S1: `__test.needs.state(id).atPost` for five NPCs; screenshot of the first coffee walk |
+| T2 | Each staff NPC starts at its own post; Ama does not block a lane | S1: `__test.needs.state(id).atPost` for five NPCs; screenshot of the first coffee walk and of the first walk to the west door past Ama |
 | T3 | Intro bark plays once, not on re-entry or reload | S1: enter, leave to the kitchen, return, reload; one B1 |
 | T4 | First coffee queue forms near 0:50 with Jun second and Zainab third | S2: `needs.log()` timestamps; `see_queue` ticks |
 | T5 | Queue chat plays from the coffee pools, never from Zainab; the task ticks only with the viewer in earshot | S2: one run with the viewer in the kitchen during the first queue (no tick), then near the queue (tick) |
-| T6 | Second run near 3:35 brings Jun and Zainab again | S2: `needs.log()`; two `npc_queued:office_coffee` on the second run |
-| T7 | Switching the socket off turns walkers and queuers back with `grumble_off`, and they go to the kitchen coffee | S2: `see_coffee_off` ticks; their next target is `kitchen_coffee` |
+| T6 | Second run near 3:35 brings Jun and Zainab again, with the kitchen already open | S2: `needs.log()`; two `npc_queued:office_coffee` on the second run; nobody targets `kitchen_coffee` |
+| T6b | Kitchen opened before the first run: the first queue still forms in the office | S2: a run that opens the west door at 0:30; at about 0:50 Jun and Zainab queue at `office_coffee`, `see_queue` and `hear_queue_chat` tick, and `kitchen_coffee` reports off |
+| T7 | Switching the socket off turns walkers and queuers back with `grumble_off`; the kitchen machine comes on and they go to it | S2: `see_coffee_off` ticks; `kitchen_coffee` reports on in the same step; their next target is `kitchen_coffee`; switching the socket back on turns the kitchen machine off again and the next run queues in the office |
 | T8 | Cooler pair meets and the exchange plays once | S2: `hear_cooler_exchange` ticks; a later cooler visit plays pool lines only |
 | T9 | Kitchen opened late: the cooler pair goes once it loads | S2 second run, kitchen held shut to 3:30 |
-| T10 | Agnieszka carries the mugs to the tray; B11 shows | S2: mugs object gone from the office, tray holds them, B11 in the bark log |
-| T11 | "Let's do lunch." refuses before the kitchen is seen and works after | S2/S3: choose it at spawn (A26, no global change), then after entering the kitchen |
-| T12 | Chidi locks on his lunch trip, Jun leaves his PC open | S3, sound off: `workstation_screen_changed:chidi_pc` with `locked: true`; `jun_pc` unlocked; B4 and B5 seen |
+| T10 | Agnieszka carries the mugs to the tray as the kitchen first loads; B11 shows | S2: her pickup within a few seconds of the west door opening; mugs object gone from the office, tray holds them, B11 in the bark log; the same on the run that holds the kitchen shut |
+| T11 | "Let's do lunch." refuses before the kitchen is seen, and while Chidi or Jun is away from the desk; it works once both are back | S2/S3: choose it at spawn (A26, no global change); during the second coffee run (A29, no global change); after both return (A16, A30, `act_midday` true) |
+| T12 | Chidi locks on his lunch trip, Jun leaves his PC open, both within 10 s of the call | S3, sound off: `workstation_screen_changed:chidi_pc` with `locked: true`; `jun_pc` unlocked; B4 and B5 seen; one forced run calls lunch while Jun is mid desk use and B5 still shows when he goes |
 | T13 | Using Jun's PC ticks the task and brings him back; he catches the viewer waiting by the desk | S3: `use_open_screen` and `see_caught` tick; B8 then B6 as he walks up; a second run staying in the PC shows both after closing it |
 | T14 | Badge bonus: taking Jun's badge draws B9 on his return | S3: forced by retrying until the 70% leave occurs |
 | T15 | Cake: two servings taken, the cake finishes, anyone still walking turns back | S3: two `magnet_serving:cake`; zero to two `npc_turned_back` with reason `gone`; `see_cake_eaten` ticks; B7 |
-| T16 | Cake position after reload | S3 reload with the cake down |
+| T16 | Cake after reload | Build check BC1 (section 10) |
 | T17 | Evening turn hides four NPCs as A18 ends and dims the office | S4 screenshots before and after; no leftover drawn image |
 | T18 | Zainab barks, then goes to the office coffee; task ticks | S4: B10 seen; target `office_coffee`; `see_who_stays` ticks |
 | T19 | Kitchen is dark in the evening until entered, then dark 10 s after leaving | S4 screenshots at entry and 12 s after leaving |
@@ -374,8 +402,12 @@ Text only for the first pass. After S5, run npc-dialog-review on the new lines; 
 
 Decided by the user (D102): display name "Office Life Tour"; Jun's left-behind badge stays as a bonus beat with no task and one Ama line (B9); the tour stays open after the last task, Ama's recap closes it, with no credits and no mission-complete ending.
 
-Decided without asking: staff get the three-line chats; the coffee lever relies on the repeating coffee run rather than a new "send someone for coffee" choice; "Let's do lunch." waits for the kitchen to be seen (one boolean); Graham's avoidance of Zainab is dropped because the two never share a machine in this tour, so it would never show; the mug run is named by Ama's hint and a bark (B11), not a task, because its timing is not controlled; the evening switches the office coffee back on, so the kitchen's motion lights answer only to the viewer.
-
-## Handover
-
-Plan text is complete. Not settled from code, and left to the build: the west door's exact cells on `room_office` (so Ama's lane check stays an S1 render, R1); whether the socket confirm follows `office_coffee_off` when a mapping sets it (R10); the coffee timings (R3). demo_access_tour should take the two drift notes at the end of `CAKE_ITEM.md`'s minimal variant.
+Decided without asking:
+- Staff get the three-line chats.
+- The coffee lever relies on the repeating coffee run rather than a new "send someone for coffee" choice.
+- Only one coffee machine runs at a time: the kitchen machine is off while the office one is on, so the queue forms in the office whenever the viewer opens the kitchen, and switching the office machine off is what sends people to the kitchen. The observation on the kitchen machine gives the in-world reason (a shared fuse).
+- "Let's do lunch." waits for the kitchen to be seen (one boolean) and for Chidi and Jun to be at their desks (two engine globals declared so ink can read them), so the lunch leaves, B4, B5 and the badge roll always happen.
+- Ama stands in the middle of the aisle, off the line every kitchen trip takes to the west door.
+- Graham's avoidance of Zainab is dropped because the two never share a machine in this tour, so it would never show.
+- The mug run is named by Ama's hint and a bark (B11), not a task: it starts the moment the kitchen loads, usually behind the viewer, so a task would tick on something they did not watch.
+- The evening switches the office coffee back on, so the kitchen machine is off and the kitchen's motion lights answer only to the viewer.
