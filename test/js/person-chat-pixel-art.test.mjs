@@ -39,9 +39,11 @@ test('the phone caption scrolls with the pixel-art scrollbar and a More below st
     assert.match(uiSrc, /export const MORE_BELOW_TEXT = 'More below';/);
     assert.match(uiSrc, /moreBelow\.className = 'person-chat-more'/);
     const more = css.slice(css.indexOf('\n.person-chat-more {'));
-    assert.match(more.slice(0, more.indexOf('}')), /display:\s*none/, 'hidden above 600 px');
+    assert.match(more.slice(0, more.indexOf('}')), /display:\s*none/, 'hidden until the script unhides it');
+    // Shown at any width while the caption scrolls (ui-backlog-2 R2); on phones it stays in flow
+    assert.match(css, /\n\.person-chat-more:not\(\[hidden\]\)\s*\{[^}]*display:\s*flex/);
     const phone = css.slice(css.indexOf('@media (max-width: 600px)'));
-    assert.match(phone, /\.person-chat-more:not\(\[hidden\]\)\s*\{\s*display:\s*flex/);
+    assert.match(phone, /\.person-chat-more:not\(\[hidden\]\)\s*\{[^}]*position:\s*static/);
 });
 
 test('updateScrollCue shows the strip only while the caption runs on', () => {

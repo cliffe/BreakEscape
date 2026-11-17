@@ -1,0 +1,13 @@
+{
+  "key": "2fc56b8519d853b7e45154dff61decf8",
+  "npc": "graham_whitfield",
+  "text": "I've brought biscuits for quarter close.",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T12:30:24Z"
+}
