@@ -1,0 +1,13 @@
+{
+  "key": "489cab0d6b14a4f3647747771eb01170",
+  "npc": "closing_debrief",
+  "text": "Sun River. A civil defence bunker Tesseract's people leased from the state in 2016. Mrs Sorensen's own file gave us the address. That is where the order sends us.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. Tonight he can finally prove what he has suspected for months, and he will not say the name until he can; under the control is grief for two agents he sent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:24:26Z"
+}

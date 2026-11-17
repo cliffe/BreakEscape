@@ -1,0 +1,13 @@
+{
+  "key": "7ffb5f2774cdf9ee129f3356ae1a9a8e",
+  "npc": "closing_debrief",
+  "text": "It is in the file now, and it will follow him longer than it follows you.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:19:14Z"
+}

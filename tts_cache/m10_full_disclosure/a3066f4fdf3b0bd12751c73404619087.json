@@ -1,0 +1,13 @@
+{
+  "key": "a3066f4fdf3b0bd12751c73404619087",
+  "npc": "narrator",
+  "text": "Netherton and HaX walk you to the van end. The team packs without her.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:44:56Z"
+}

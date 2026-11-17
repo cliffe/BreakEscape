@@ -1,0 +1,13 @@
+{
+  "key": "cc4be224ad09b58f6f5c26e6c6c1bb67",
+  "npc": "director_netherton",
+  "text": "Then nobody has it, and nobody fixes anything either. We both answer for it.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:55:14Z"
+}

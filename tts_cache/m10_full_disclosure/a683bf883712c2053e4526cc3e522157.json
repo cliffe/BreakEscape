@@ -1,0 +1,13 @@
+{
+  "key": "a683bf883712c2053e4526cc3e522157",
+  "npc": "malhotra_post",
+  "text": "Gladly.",
+  "voice": "Zubenelgenubi",
+  "style": "SAFETYNET comms officer in his thirties, British-Indian, from Hounslow. Consistent West London English accent throughout -- do not shift to any other accent. Precise, a little anxious about any gap in coverage; jokes only about kit.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:00:27Z"
+}

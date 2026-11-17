@@ -1,0 +1,13 @@
+{
+  "key": "f09bc69c920ba85cd58c41f55e13e8aa",
+  "npc": "noor_haddad",
+  "text": "Recruiting? I file deeds for dead ranchers. Nobody recruits a records clerk.",
+  "voice": "Despina",
+  "style": "Records clerk in her thirties from Dearborn, Michigan, on a night shift. Consistent Midwestern American accent throughout -- do not shift to any other accent. Mid pitch; quick, guarded, sardonic under pressure; answers a question with a question when scared.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:26:42Z"
+}

@@ -283,6 +283,7 @@ VAR vos_secret_known = false
 VAR victoria_line_done = false
 VAR vos_secret_used = false
 VAR victoria_gallery = ""
+VAR victoria_sold = false
 VAR vos_outcome = ""
 VAR head_start_killed = ""
 VAR share_zero_day = "live"

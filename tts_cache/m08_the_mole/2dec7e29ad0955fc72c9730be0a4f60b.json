@@ -1,0 +1,13 @@
+{
+  "key": "2dec7e29ad0955fc72c9730be0a4f60b",
+  "npc": "closing_debrief",
+  "text": "You picked a colleague's locker in front of a witness, who then told the whole floor he saw nothing.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:20:11Z"
+}

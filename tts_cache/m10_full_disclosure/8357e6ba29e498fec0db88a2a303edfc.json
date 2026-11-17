@@ -1,0 +1,13 @@
+{
+  "key": "8357e6ba29e498fec0db88a2a303edfc",
+  "npc": "tunnel_guard",
+  "text": "Shift's not over. Who let you up here?",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:23:36Z"
+}

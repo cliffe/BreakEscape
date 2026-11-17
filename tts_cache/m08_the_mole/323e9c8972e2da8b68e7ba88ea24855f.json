@@ -1,0 +1,13 @@
+{
+  "key": "323e9c8972e2da8b68e7ba88ea24855f",
+  "npc": "narrator",
+  "text": "He offers it without a flicker.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:37:44Z"
+}

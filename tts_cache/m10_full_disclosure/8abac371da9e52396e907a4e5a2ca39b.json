@@ -1,0 +1,13 @@
+{
+  "key": "8abac371da9e52396e907a4e5a2ca39b",
+  "npc": "duty_guard_b",
+  "text": "Coffee's on. If you're my relief, you're early.",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:25:14Z"
+}

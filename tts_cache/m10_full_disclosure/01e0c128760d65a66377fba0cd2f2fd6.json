@@ -1,0 +1,13 @@
+{
+  "key": "01e0c128760d65a66377fba0cd2f2fd6",
+  "npc": "vector_post",
+  "text": "Check it properly next time. I'll wait for the apology.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Tonight he is at the raid table, cleared and still sore about it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:12:07Z"
+}

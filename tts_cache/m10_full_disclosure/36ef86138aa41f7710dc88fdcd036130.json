@@ -1,0 +1,13 @@
+{
+  "key": "36ef86138aa41f7710dc88fdcd036130",
+  "npc": "six_oclock",
+  "text": "The Zero Day tap went dark at five. She will have sold that too.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:16:11Z"
+}

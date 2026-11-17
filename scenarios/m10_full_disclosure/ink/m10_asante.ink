@@ -66,7 +66,7 @@ Dr Abena Asante: You're the one off the office wall. Don't touch my console and 
 {asan_quiet:
     ~ asan_quiet = false
 - else:
-    Dr Abena Asante: Somebody rang the switchboard about a raid. I've nothing to say to you.
+    Dr Abena Asante: Somebody rang out through the switchboard and told the next shift to stay home. I've nothing to say to you.
 }
 + [Suit yourself.]
     Dr Abena Asante: I will.

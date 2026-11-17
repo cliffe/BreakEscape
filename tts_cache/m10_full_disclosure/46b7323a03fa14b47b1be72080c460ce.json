@@ -1,0 +1,13 @@
+{
+  "key": "46b7323a03fa14b47b1be72080c460ce",
+  "npc": "minder_blast",
+  "text": "Out. Follow the torches.",
+  "voice": "Sulafat",
+  "style": "SAFETYNET van-team minder. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, low, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:40Z"
+}

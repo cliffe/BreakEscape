@@ -37,7 +37,7 @@ VAR mal_line_asked = false
     Officer Dev Malhotra: It's my badge. It isn't my hand. I was talking to HaX at ten past. Ask her.
     ~ mal_quiet = true
     -> post
-+ {not mal_line_asked} [You asked for comms tonight?]
++ {not mal_line_asked and officer_out != "malhotra"} [You asked for comms tonight?]
     ~ mal_line_asked = true
     Officer Dev Malhotra: I did. After the mole, they re-vetted me for a week over a form.
     Officer Dev Malhotra: I'd like to be trusted with something. This is something.
@@ -45,8 +45,12 @@ VAR mal_line_asked = false
     -> post
 + {mal_can_accuse()} [You're WREN.]
     -> accuse_check
-+ [Keep the line clean.]
++ {officer_out != "malhotra"} [Keep the line clean.]
     Officer Dev Malhotra: Always do.
+    ~ mal_quiet = true
+    #exit_conversation
+    -> post
++ {officer_out == "malhotra"} [(Leave him be.)]
     ~ mal_quiet = true
     #exit_conversation
     -> post

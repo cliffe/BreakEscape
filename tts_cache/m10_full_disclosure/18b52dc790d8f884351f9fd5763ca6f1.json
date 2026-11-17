@@ -1,0 +1,13 @@
+{
+  "key": "18b52dc790d8f884351f9fd5763ca6f1",
+  "npc": "quintero_post",
+  "text": "One arm's plenty for a door. You've got work.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:57:13Z"
+}

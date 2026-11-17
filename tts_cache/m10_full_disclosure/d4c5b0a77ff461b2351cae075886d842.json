@@ -1,0 +1,13 @@
+{
+  "key": "d4c5b0a77ff461b2351cae075886d842",
+  "npc": "quintero_post",
+  "text": "Quiet door. I like it better that way.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:55:55Z"
+}

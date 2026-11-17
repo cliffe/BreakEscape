@@ -1,0 +1,13 @@
+{
+  "key": "4a68a6b0467dd010ecb1a27a434add53",
+  "npc": "six_oclock",
+  "text": "You caught one of ours at his own desk. Tonight you walked through his door and came back.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:21:18Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "eb1a9f6a06eb103d843e48d451f52e21",
+  "npc": "lock_guard",
+  "text": "I'm off shift, far as I'm concerned. Go on through.",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:37:01Z"
+}

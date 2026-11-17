@@ -1,0 +1,13 @@
+{
+  "key": "2f17b53380b61b423f541216baad081d",
+  "npc": "imran",
+  "text": "You've got your copy. Leave me to my bench.",
+  "voice": "Puck",
+  "style": "Hospital IT technician turned bench hand, twenty-six, British-Pakistani. Consistent Birmingham accent throughout -- do not shift to any other accent. Quick and bitter; clever, sacked, and sure the other side is no worse.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:28:32Z"
+}

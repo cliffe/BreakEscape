@@ -1,0 +1,13 @@
+{
+  "key": "e4ce4bfddf33fc897d69408052dd9d5b",
+  "npc": "director_netherton",
+  "text": "Enough. You've read me that log three ways. I shall take it from here, and that means asking questions on this floor.",
+  "voice": "Charon",
+  "style": "SAFETYNET's director. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. His own briefing was turned into a weapon; he does not raise his voice and he does not soften anything, and under the control is a cold fury that this came from inside his house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:29:40Z"
+}
