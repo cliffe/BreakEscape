@@ -751,6 +751,28 @@ test('canLock offers Lock only for a held password session while locking is supp
     assert.equal(s.canLock('missing_pc'), false);
 });
 
+test('K-lock: canLock and lockSession take foothold, from and token credential sessions; never a relay or a routeless one', async () => {
+    const s = setup();
+    s.load({}, [], { lockingSupported: true });
+    const cred = { npcId: 'lena', username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection' };
+    s.sessions.set('fh_pc', { ...cred, remote: true, footholdId: 'jack_comms_port' });
+    s.sessions.set('from_pc', { ...cred, remote: true, fromPcId: 'sam_pc' });
+    s.sessions.set('tok_pc', { ...cred, kind: 'token', remote: true, footholdId: 'jack_comms_port' });
+    s.sessions.set('relay_pc', { ...cred, kind: 'assist_invite', relay: true });
+    s.sessions.set('bare_pc', { ...cred });
+    assert.equal(s.canLock('fh_pc'), true);
+    assert.equal(s.canLock('from_pc'), true);
+    assert.equal(s.canLock('tok_pc'), true);
+    assert.equal(s.canLock('relay_pc'), false, 'a relay is the holder\'s screen');
+    assert.equal(s.canLock('bare_pc'), false, 'no route back in');
+    const posted = [];
+    window.ApiClient.lockSession = async (pcId) => { posted.push(pcId); return { success: true, pcId, locked: true }; };
+    assert.equal((await s.lockSession('fh_pc')).ok, true);
+    assert.equal(s.isLocked('fh_pc'), true);
+    assert.equal((await s.lockSession('relay_pc')).reason, 'refused');
+    assert.deepEqual(posted, ['fh_pc'], 'only the lockable session is posted');
+});
+
 test('canLock is false when the server does not support locking', () => {
     const s = setup();
     s.load({ sam_pc: { npcId: 'sam', username: 'sokafor', displayName: 'Sam Okafor', via: 'password' } }, ['sam_pc'], { lockingSupported: false });
