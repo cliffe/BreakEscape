@@ -241,3 +241,21 @@ Live check (n1, return leg): keyless server on :3092 (boot log shows the missing
 Result: FAIL on distance. The return leg runs 31 to 41 px from Lisa in nine of ten tries (one 58 in 7414 try 1), against the 47 px limit. In game 7416 the closest point is Bernadette at about (-156,1) and Lisa at (-192,0): on the way home she walks straight down x of about -156 past Lisa's row, on the east side, where the out leg sits at about 52 px. Try 5 in both games detoured (218 samples, to about (-75,84) and back) before settling, so its figure is from the first stretch. Minimum x is -165 to -154 world, which is local 155 to 166; the post itself is local 155, so the "159 or more" limit reads as unmeasurable in this frame and was not met on the post alone. Bodies are 18 by 10, so 31 px still leaves 13 px clear and no contact was seen. No fix applied: a post, `interests` or route change is a design decision for the plan.
 
 Validator: 0 errors, 29 warnings (unchanged). Lock/key diff: "lock and key diff: empty". `bin/test-js`: 752 passed, 0 failed. No ink changed, nothing recompiled.
+
+## R4 fixes (build review round 4)
+
+Edit: Bernadette's `position` and `needsHome` moved from (6,7) to (7,4), body centre (224,128) in the break room's frame (scenario.json.erb); the comment above her entry updated. Thandiwe's entries are unchanged. `tools/playtest/m05-ol-l1a-bernadette.mjs` now passes at 48 px on both legs (out leg on all samples). PLAN.md updated for the new post (table row, post paragraph, bins routine, skeleton, check L1a). No engine change.
+
+Planning probe (`tools/playtest/m05-ol-r4-route.mjs`, game 7438) for (7,4): out 56 px, back 56 px, bins out 68, bins back 100, no hits against NPC bodies.
+
+Live check (keyless server on :3092, boot log shows the missing-key warning, stopped by its recorded PID afterwards, headless, setFPS(20), fixed steps on, `/tts` aborted by the harness): game 7439 from `m05-ol-ng.sh`, five tries, local frame.
+
+| Post | Out leg min to Lisa | Return leg min to Lisa | Result |
+|---|---|---|---|
+| (5,7) before | 48 to 52 | 31 to 41 | return fails |
+| (6,7) before | 20, 20, 20, 20, 20 | 58, 54, 62, 54, 54 (min x 179 to 190) | out leg fails (bump into Niamh, detour past Lisa) |
+| (7,4) after | 58, 57, 57, 57, 57 | 58, 57, 57, 57, 57 | pass |
+
+(7,4) live detail: aisle samples 0 in all legs; rest points (193,114) then (193,121) four times, so the live hops run between the rest point and the machine at (182,110); try 5's return continued to the bins trip without a detour. No bump with Niamh or any other NPC was seen in the sampled paths.
+
+Validator: 0 errors, 29 warnings. Lock/key diff: "lock and key diff: empty". `bin/test-js`: 752 passed, 0 failed, 752 total.

@@ -1878,8 +1878,8 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
 <%# Office life (PLAN.md 2.13, D82b): the evening cleaner. Hidden by day; shown on the evening turn
     (server_room_entered) by four mappings; the three onceOnly ones also reset her needs, so her timing starts at the reveal.
     The bins are her tidy source; the espresso break is mapped so she and Niamh meet (ex_late_again).
-    Post (6,7), east of the aisle between the tables: her walk home from the espresso goes round table 2's east end,
-    not down the side of Lisa's seat and into the aisle, which a post at (5,7) caused (PLAN.md 2.13, check L1a). %>
+    Post (7,4), the open floor east of table 2's chairs and west of the vending machine: both walks to and from the
+    espresso stay at least 48 px from Lisa, and the plan from the post keeps clear of Niamh's seat (PLAN.md 2.13, check L1a). %>
         {
           "id": "bernadette_lyons",
           "displayName": "Bernadette Lyons",
@@ -1887,7 +1887,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "gender": "female",
           "voice": { "name": "Vindemiatrix", "style": "Quantum Dynamics' evening cleaner, in her late 50s, dry, unhurried and kind. Speak with a consistent Dublin accent throughout, with no shift to any other accent.", "language": "en-GB" },
           "_comment": "Provisional voice (PLAN.md 2.13): placeholder so V6 counts her lines; the name and style are confirmed with her own voicing yes. No clip is generated before that.",
-          "position": { "x": 6, "y": 7 },
+          "position": { "x": 7, "y": 4 },
           "seated": false,
           "spriteSheet": "bernadette_lyons",
           "spriteTalk": "assets/characters/bernadette_lyons_talk_init.png",
@@ -1898,7 +1898,7 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           "currentKnot": "start",
           "globalVarOnKO": "bernadette_ko",
           "behavior": { "initiallyHidden": true, "hostile": { "leash": true } },
-          "needsHome": { "room": "break_room", "x": 6, "y": 7 },
+          "needsHome": { "room": "break_room", "x": 7, "y": 4 },
           "needsRooms": ["break_room"],
           "needsCompany": { "groups": ["qdc_staff"] },
           "chatterCooldownMin": 2,

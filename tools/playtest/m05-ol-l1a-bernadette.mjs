@@ -1,7 +1,7 @@
 // L1a for Bernadette: five coffee trips from her post. Out leg: minimum distance to Lisa (all samples, and excluding the last tile). Return leg (end of 'using' until idle): minimum distance to Lisa.
 // Positions are body centres (npcPos) in the break room's local frame (world minus rooms.break_room.position), where a
 // tile (x,y) puts a body centre at (32x,32y): Lisa (128,128). The aisle between the tables is local x 136 to 160, y 176 to 208;
-// `aisle` counts samples inside it. Pass: every leg at least 47 px from Lisa and no aisle samples.
+// `aisle` counts samples inside it. Pass: every leg at least 48 px from Lisa and no aisle samples.
 import { start, log } from './m05-ol-lib.mjs';
 const g = await start(process.argv[2]);
 await g.page.evaluate(async () => { const m = await import('/break_escape/js/systems/global-writer.js'); m.writeGlobal('server_room_entered', true); });
@@ -30,5 +30,5 @@ for (let k = 1; k <= 5; k++) {
 }
 log('OUT', JSON.stringify(res.map(x => x.m.all)), 'OUT excl last tile', JSON.stringify(res.map(x => x.m.exLast)), 'aisle', JSON.stringify(res.map(x => x.m.aisle)));
 log('RETURN', JSON.stringify(res.map(x => x.ret.minD)), 'minX', JSON.stringify(res.map(x => x.ret.minX)), 'aisle', JSON.stringify(res.map(x => x.ret.aisle)), 'rest', JSON.stringify(res.map(x => x.home)));
-log('PASS', res.every(x => x.m.exLast >= 47 && x.ret.minD >= 47 && !x.m.aisle && !x.ret.aisle));
+log('PASS', res.every(x => x.m.all >= 48 && x.ret.minD >= 48 && !x.m.aisle && !x.ret.aisle));
 log('errs', JSON.stringify(g.errs)); await g.browser.close();
