@@ -323,14 +323,13 @@ const LABEL_LINES = 3;
 const LABEL_ELLIPSIS = '…';
 
 // The icon whose file was opened in a reader: when the reader closes and this desktop
-// reopens, that icon takes the focus again (if it is still there)
-const FOCUS_RETURN_MS = 10 * 60 * 1000;
-let iconFocusReturn = null; // { container, key, at }
+// reopens, that icon takes the focus again (if it is still there). The mark travels on the
+// hand-over (window.pendingContainerReturn.focusReturn, then the reopen's params), so a
+// return that never happens leaves nothing behind. byKey: a key opened the file.
 const iconKeyOf = (item) => String(item?.id ?? item?.name ?? '');
-export function rememberIconFocus(container, item, now = Date.now()) {
-    iconFocusReturn = container && item ? { container, key: iconKeyOf(item), at: now } : null;
+export function iconFocusMark(item, byKey) {
+    return item ? { key: iconKeyOf(item), byKey: byKey === true } : null;
 }
-export function peekIconFocus() { return iconFocusReturn; }
 
 /**
  * Break opportunities inside a file name: after each of _ . - / (the separator stays on the
@@ -482,7 +481,7 @@ export function expandIconLabel(label) {
 
 /**
  * After a label has opened: if it runs past the bottom of the area it sits in, keep it
- * whole. A scrolling area (the monitor) scrolls the label into view ('nearest', so it moves
+ * whole. A scrolling area (the monitor) scrolls by the overshoot, itself only (so it moves
  * only as far as needed); the plain desktop clips, so the label is raised instead, by the
  * overshoot, and grows over its own picture. Returns 'scrolled', 'raised' or null.
  */
@@ -492,8 +491,9 @@ export function keepLabelInView(label, area) {
     const over = (label.getBoundingClientRect().bottom - area.getBoundingClientRect().bottom) / z;
     if (!(over > 0)) return null;
     const cs = typeof getComputedStyle === 'function' ? getComputedStyle(area) : null;
-    if (cs && /^(auto|scroll)$/.test(cs.overflowY) && typeof label.scrollIntoView === 'function') {
-        label.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    if (cs && /^(auto|scroll)$/.test(cs.overflowY)) {
+        // Only the area scrolls: scrollIntoView would move the page and the host frame too
+        area.scrollTop += Math.ceil(over);
         return 'scrolled';
     }
     label.style.top = `${-Math.ceil(over)}px`;
@@ -512,7 +512,18 @@ export function collapseIconLabel(label) {
 /** fitIconLabel for every label in a grid, again once laid out and once the pixel font arrives. */
 export function fitIconLabels(grid, selector = '.desktop-icon-label') {
     if (!grid?.querySelectorAll) return;
-    const fit = () => { for (const label of grid.querySelectorAll(selector)) fitIconLabel(label); };
+    // A label that was open (hovered, or the focus the reader returned to) stays open through
+    // a refit while its icon still holds it open; a label whose pointer left is not reopened
+    const fit = () => {
+        for (const label of grid.querySelectorAll(selector)) {
+            const wasOpen = !!label.classList?.contains('desktop-icon-label-open');
+            fitIconLabel(label);
+            if (wasOpen) {
+                const icon = label.closest?.('.desktop-icon');
+                if (icon?.labelWanted?.()) icon.openLabel?.();
+            }
+        }
+    };
     fit();
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(fit);
@@ -1732,23 +1743,29 @@ export class ContainerMinigame extends MinigameScene {
             });
             // Hover and keyboard focus both open a clipped name; it closes only when neither holds
             const matches = (q) => { try { return icon.matches(q); } catch (_) { return false; } };
+            const wanted = () => matches(':hover') || matches(':focus-visible')
+                || (icon._keyReturn === true && document.activeElement === icon);
+            icon.labelWanted = wanted;
             const open = () => {
                 if (!expandIconLabel(iconLabel)) return;
                 keepLabelInView(iconLabel, icon.closest?.('.desktop-background'));
                 this.updateDesktopScrollCue();
             };
+            icon.openLabel = open;
             const close = () => {
-                if (matches(':hover') || matches(':focus-visible')) return;
+                if (wanted()) return;
                 if (collapseIconLabel(iconLabel)) this.updateDesktopScrollCue();
             };
-            icon.addEventListener('mouseenter', open);
-            icon.addEventListener('mouseleave', close);
+            // A mouse only: a tap fires pointerenter too, and its :hover sticks, so a touch
+            // would leave the label open after the reader closed
+            icon.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') open(); });
+            icon.addEventListener('pointerleave', close);
             icon.addEventListener('focus', () => {
                 let visible = true;
                 try { visible = icon.matches(':focus-visible'); } catch (_) { /* older engines */ }
                 if (visible) open();
             });
-            icon.addEventListener('blur', close);
+            icon.addEventListener('blur', () => { icon._keyReturn = false; close(); });
             icon.itemKey = iconKeyOf(item);
 
             icon.appendChild(iconImg);
@@ -1767,16 +1784,24 @@ export class ContainerMinigame extends MinigameScene {
         }
     }
     
-    /** After the reader a file was opened in closes: focus that file's icon again if it is still here. */
+    /**
+     * After the reader a file was opened in closes: focus that file's icon again if it is
+     * still here. Only when a key opened the file does the icon show its frame and its full
+     * name; after a mouse open the focus is not taken at all, because Chrome would show the
+     * keyboard frame after the Esc that closed the reader. Never from a text field.
+     */
     focusReturnedIcon(grid) {
-        const mark = iconFocusReturn;
-        if (!mark) return;
-        iconFocusReturn = null;
-        const same = mark.container === this.containerItem
-            || (!!mark.container?.scenarioData?.id && mark.container.scenarioData.id === this.containerItem?.scenarioData?.id);
-        if (!same || Date.now() - mark.at > FOCUS_RETURN_MS) return;
+        const mark = this.params?.focusReturn;
+        if (mark) this.params = { ...this.params, focusReturn: null }; // once
+        if (!mark || mark.byKey !== true) return;
         const icon = Array.from(grid.children).find(el => el.itemKey === mark.key);
-        icon?.focus?.({ preventScroll: true });
+        if (!icon) return;
+        const active = typeof document !== 'undefined' ? document.activeElement : null;
+        if (active && !grid.contains(active)
+            && active.matches?.('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+        icon._keyReturn = true;
+        icon.focus?.({ preventScroll: true });
+        icon.openLabel?.();
     }
 
     /** The icon (or the desktop) that takes the focus when `slot`, a desktop icon, has just been removed. */
@@ -1912,7 +1937,7 @@ export class ContainerMinigame extends MinigameScene {
         dialog.querySelectorAll('[data-choice]').forEach(btn => {
             this.addEventListener(btn, 'click', (e) => {
                 e.stopPropagation();
-                this.chooseTransfer(btn.dataset.choice);
+                this.chooseTransfer(btn.dataset.choice, e.detail === 0);
             });
         });
         // Opened with Enter or Space on an icon: the first button takes the focus
@@ -1934,13 +1959,13 @@ export class ContainerMinigame extends MinigameScene {
         if (hadFocus && open.opener?.isConnected) open.opener.focus?.({ preventScroll: true });
     }
 
-    chooseTransfer(choice) {
+    chooseTransfer(choice, byKey = false) {
         const dialog = this.transferDialog;
         if (!dialog || !dialog.choices.includes(choice)) return;
         const { item, element } = dialog;
         this.closeTransferDialog();
         if (choice === 'cancel') return;
-        if (choice === 'open') { this.openFileInPlace(item); return; }
+        if (choice === 'open') { this.openFileInPlace(item, byKey); return; }
         if (choice === 'connect') { this.connectFromDesktop(item, element); return; }
         this.takeItem(item, element, choice);
     }
@@ -2003,7 +2028,7 @@ export class ContainerMinigame extends MinigameScene {
     }
 
     /** Open a file without taking it: the viewer (or notes) for something with text. */
-    openFileInPlace(item) {
+    openFileInPlace(item, byKey = false) {
         // Keyring K3a: an "In file" tag waits until its file is opened in this page (no import)
         try { window.keyring?.noteOpened?.(item?.id); } catch (e) { /* no keyring */ }
         const text = resolveObjectField(item, 'text', null);
@@ -2019,8 +2044,7 @@ export class ContainerMinigame extends MinigameScene {
         // note read in the world (review R2 n3)
         const opensReader = item.type === 'text_file' || (/^notes\d*$/.test(item.type) && !!item.readable);
         if (opensReader) {
-            rememberIconFocus(this.containerItem, item);
-            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null };
+            window.pendingContainerReturn = { containerItem: this.containerItem, contents: this.contents, isTakeable: this.isTakeable, npcOptions: null, focusReturn: iconFocusMark(item, byKey) };
         }
         this.exitReason = 'item';
         this.complete(false);
@@ -2186,7 +2210,7 @@ export class ContainerMinigame extends MinigameScene {
         
         // Store the container state globally so we can return to it
         this.exitReason = 'item';
-        rememberIconFocus(this.containerItem, item);
+        containerState.focusReturn = iconFocusMark(item, this.openedByKey === true);
         window.pendingContainerReturn = containerState;
         
         // Close the container minigame first
@@ -2510,6 +2534,7 @@ export function startContainerMinigame(containerItem, contents, isTakeable = fal
         // A reopen after a reader closed: a sign-in desktop never falls through to the
         // sign-in screen (loadLoginDesktop)
         fromReturn: !!extra?.fromReturn,
+        focusReturn: extra?.focusReturn || null,
         ...(npcOptions && {
             mode: npcOptions.mode || 'container',
             npcId: npcOptions.npcId,
@@ -2621,7 +2646,7 @@ export function returnToContainerAfterNotes({ reopen = true } = {}) {
             // sprite to auto-detect it from); others auto-detect or use npcOptions
             isNetworkScreenContainer(containerState.containerItem) ? true : null,
             containerState.npcOptions, // Restore NPC context if it was saved
-            { fromReturn: true }
+            { fromReturn: true, focusReturn: containerState.focusReturn || null }
         );
     } else {
         console.log('No pending container return found');

@@ -71,6 +71,8 @@ const ANSWERS = {
     scanned_inbox: { contents: [LETTER] },
     ledger_yearend: { contents: [] },
     cabinet: { contents: [LETTER] },
+    memo_pc: { contents: [{ id: 'strongbox', type: 'safe', name: 'Strongbox', takeable: false, locked: true, lockType: 'pin' }] },
+    drawer: { contents: [LETTER] },
     dana_pc: { contents: [NOTE], session: { npcId: 'dana', username: 'dana', via: 'password' } }
 };
 
@@ -135,8 +137,8 @@ function setup() {
             m.container?.remove?.();
         }
     };
-    window.startContainerMinigame = (item, contents, takeable, desktop) =>
-        window.MinigameFramework.startMinigame('container', null, { title: item.scenarioData.name, containerItem: item, contents, isTakeable: takeable, desktopMode: desktop, cancelText: 'Close', showCancel: true });
+    window.startContainerMinigame = (item, contents, takeable, desktop, npcOptions, extra) =>
+        window.MinigameFramework.startMinigame('container', null, { title: item.scenarioData.name, containerItem: item, contents, isTakeable: takeable, desktopMode: desktop, cancelText: 'Close', showCancel: true, fromReturn: !!extra?.fromReturn, focusReturn: extra?.focusReturn || null });
 }
 
 const current = () => window.MinigameFramework.currentMinigame;
@@ -1002,4 +1004,37 @@ test('R6: containerImageUrl for a folder: SHARE_ICON, iconImage, or the object U
     assert.equal(containerImageUrl({ scenarioData: { type: 'folder' } }, tp), SHARE_ICON);
     assert.equal(containerImageUrl({ scenarioData: { type: 'folder', iconImage: '/x.png' } }, tp), '/x.png');
     assert.equal(containerImageUrl({ scenarioData: { type: 'folder' }, texture: { key: 'myfolder' } }, tp), '/break_escape/assets/objects/myfolder.png');
+});
+
+// Icon labels R3 m1/m2: the icon a reader was opened from takes the focus again, from the
+// hand-over (not from a clock or a module memory), and only after a key open
+test('icon focus return: a key-opened interactive file returns focus to its icon through returnToContainerAfterNotes; a mouse open and a dropped return do not', async () => {
+    setup();
+    window.addToInventory = (sprite) => adds.push(sprite);
+    window.expectPanelWithin = () => {};
+    const pc = { scenarioData: { id: 'memo_pc', name: 'Strongbox PC', type: 'pc', locked: false } };
+    const desk = () => { window.startContainerMinigame(pc, null, false, true); return settle(); };
+    const memo = { id: 'strongbox', type: 'safe', name: 'Strongbox', takeable: false, locked: true, lockType: 'pin' };
+    // opened by key
+    await desk();
+    { const mg = current(); mg.openedByKey = true; mg.handleInteractiveItem(memo, null); mg.openedByKey = false; }
+    assert.deepEqual(window.pendingContainerReturn.focusReturn, { key: 'strongbox', byKey: true });
+    returnToContainerAfterNotes();
+    await settle();
+    assert.equal(document.activeElement, icon('Strongbox'), 'the icon has the focus again');
+    // opened by mouse: the same trip, no focus
+    await desk();
+    current().handleInteractiveItem(memo, null);
+    assert.deepEqual(window.pendingContainerReturn.focusReturn, { key: 'strongbox', byKey: false });
+    returnToContainerAfterNotes();
+    await settle();
+    assert.notEqual(document.activeElement, icon('Strongbox'), 'no focus after a mouse open');
+    // key open whose return never happens (the reader closed by a hit): a fresh open later focuses nothing
+    await desk();
+    { const mg = current(); mg.openedByKey = true; mg.handleInteractiveItem(memo, null); mg.openedByKey = false; }
+    window.pendingContainerReturn = null;
+    window.startContainerMinigame({ scenarioData: { id: 'drawer', name: 'Drawer', type: 'safe', locked: false } }, null, false, false);
+    await settle();
+    await desk();
+    assert.notEqual(document.activeElement, icon('Strongbox'), 'a fresh open focuses no old icon');
 });

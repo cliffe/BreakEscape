@@ -47,7 +47,7 @@ const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true 
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 const imp = (rel) => import(pathToFileURL(join(dir, rel)));
-const { ContainerMinigame, transferChoices, claimLineText, peekIconFocus } = await imp('minigames/container/container-minigame.js');
+const { ContainerMinigame, transferChoices, claimLineText } = await imp('minigames/container/container-minigame.js');
 const { adds } = await imp('systems/inventory.js');
 const { PcSessions } = await imp('systems/pc-sessions.js');
 
@@ -59,7 +59,7 @@ const FILES = [
 ];
 
 let events, apiCalls, ended, alerts, signInScreens, sessions, status;
-async function openDesktop({ answer = 200, contents = FILES, item, held } = {}) {
+async function openDesktop({ answer = 200, contents = FILES, item, held, focusReturn = null } = {}) {
     events = []; apiCalls = []; ended = []; alerts = []; signInScreens = []; adds.length = 0;
     status = answer;
     document.body.innerHTML = '<div id="mg"></div>';
@@ -84,7 +84,7 @@ async function openDesktop({ answer = 200, contents = FILES, item, held } = {}) 
     events.length = 0; apiCalls.length = 0;
     window.MinigameFramework = { currentMinigame: null, endMinigame: (s, r) => ended.push([s, r]) };
     const containerItem = item || { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
-    const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents: null });
+    const mg = new ContainerMinigame(document.getElementById('mg'), { title: 'Hot desk PC', containerItem, contents: null, focusReturn });
     window.MinigameFramework.currentMinigame = mg;
     await mg.init();
     return mg;
@@ -559,23 +559,40 @@ test('Icon labels R2 m2: taking the last icon focuses the previous one; taking t
     assert.ok(document.activeElement.classList.contains('desktop-background'), 'the desktop');
 });
 
-test('Icon labels R2 m2: after a file reader closes, the reopened desktop focuses the icon that was opened, if it is still there', async () => {
+test('Icon labels R3 m1/m2: the opened icon takes the focus again, from the hand-over, only after a key open; used once', async () => {
     const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
     await openDesktop({ item });
     window.handleObjectInteraction = () => {};
     const rota = icon('Server rota.txt');
     rota.focus();
     pressKey(rota, 'Enter');
-    choose('Open');
-    assert.equal(peekIconFocus().key, 'ian_rota', 'the opened file is remembered');
-    await openDesktop({ item });
+    choose('Open'); // a keyboard-activated button: click detail 0
+    const mark = window.pendingContainerReturn.focusReturn;
+    assert.deepEqual(mark, { key: 'ian_rota', byKey: true }, 'the opened file rides on the hand-over');
+    const mg = await openDesktop({ item, focusReturn: mark });
     assert.equal(document.activeElement, icon('Server rota.txt'), 'focus is back on that icon');
-    assert.equal(peekIconFocus(), null, 'used once');
-    // the icon is gone (taken meanwhile): nothing is focused, nothing throws
+    assert.equal(mg.params.focusReturn, null, 'used once');
+    // a plain reopen (nothing handed over) focuses nothing, however long ago a file was opened
     await openDesktop({ item });
-    icon('Server rota.txt').focus();
-    pressKey(icon('Server rota.txt'), 'Enter');
-    choose('Open');
-    await openDesktop({ item, contents: FILES.filter(f => f.id !== 'ian_rota') });
     assert.equal(document.activeElement, document.body);
+    // a mouse open: the icon is not focused
+    await openDesktop({ item, focusReturn: { key: 'ian_rota', byKey: false } });
+    assert.equal(document.activeElement, document.body, 'no focus after a mouse open');
+    // the icon is gone (taken meanwhile): nothing is focused, nothing throws
+    await openDesktop({ item, contents: FILES.filter(f => f.id !== 'ian_rota'), focusReturn: mark });
+    assert.equal(document.activeElement, document.body);
+    // a text field elsewhere keeps the focus (n1)
+    window.pendingContainerReturn = null;
+});
+
+test('Icon labels R3 n1: a text field outside the icon grid keeps the focus', async () => {
+    const item = { scenarioData: { id: 'hot_desk', type: 'pc', name: 'Hot desk PC', locked: true, lockType: 'login', observations: 'A hot desk.' } };
+    const mg = await openDesktop({ item });
+    const field = document.createElement('input');
+    document.body.appendChild(field);
+    field.focus();
+    mg.params = { ...mg.params, focusReturn: { key: 'ian_rota', byKey: true } };
+    mg.focusReturnedIcon(document.getElementById('desktop-icons'));
+    assert.equal(document.activeElement, field, 'the input still has the focus');
+    field.remove();
 });

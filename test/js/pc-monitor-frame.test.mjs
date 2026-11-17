@@ -1095,7 +1095,7 @@ test('Icon labels R2 m1: when not even one character and the ellipsis fit on lin
     assert.deepEqual(wordsOf(label), ['bbbbbbbbbbbb_', 'cccccccccccc_', 'eeeeeeeeeee…']);
 });
 
-test('Icon labels R2 m3: an open label that runs past a scrolling area is scrolled into view; on a clipping area it is raised', async () => {
+test('Icon labels R2 m3 / R3 m4: an open label that runs past a scrolling area scrolls that area by the overshoot (never scrollIntoView); on a clipping area it is raised', async () => {
     const { keepLabelInView } = await imp('minigames/container/container-minigame.js');
     const mk = (overflowY) => {
         const area = document.createElement('div');
@@ -1111,8 +1111,10 @@ test('Icon labels R2 m3: an open label that runs past a scrolling area is scroll
     };
     try {
         let t = mk('auto');
+        t.area.scrollTop = 10;
         assert.equal(keepLabelInView(t.label, t.area), 'scrolled');
-        assert.deepEqual(t.calls, [{ block: 'nearest', inline: 'nearest' }]);
+        assert.equal(t.area.scrollTop, 60, 'the area scrolled by the 50px it ran past');
+        assert.equal(t.calls.length, 0, 'scrollIntoView is not used: it would scroll the page and the host frame');
         t = mk('hidden');
         assert.equal(keepLabelInView(t.label, t.area), 'raised');
         assert.equal(t.label.style.top, '-50px', 'up by the 50px it ran past');
@@ -1146,17 +1148,83 @@ test('Icon labels R2 n2: hover and focus share the open label; it closes only wh
     const states = { ':hover': false, ':focus-visible': false };
     icon.matches = (q) => !!states[q];
     const fire = (t) => icon.dispatchEvent(new dom.window.Event(t));
+    const firePointer = (t, pointerType) => { const e = new dom.window.Event(t); e.pointerType = pointerType; icon.dispatchEvent(e); };
     const open = () => label.classList.contains('desktop-icon-label-open');
     states[':focus-visible'] = true; fire('focus');
     assert.equal(open(), true, 'focus opens it');
-    states[':hover'] = true; fire('mouseenter');
-    states[':hover'] = false; fire('mouseleave');
+    states[':hover'] = true; firePointer('pointerenter', 'mouse');
+    states[':hover'] = false; fire('pointerleave');
     assert.equal(open(), true, 'the pointer leaves, focus holds it open');
-    states[':hover'] = true; fire('mouseenter');
+    states[':hover'] = true; firePointer('pointerenter', 'mouse');
     states[':focus-visible'] = false; fire('blur');
     assert.equal(open(), true, 'focus leaves, the pointer holds it open');
-    states[':hover'] = false; fire('mouseleave');
+    states[':hover'] = false; fire('pointerleave');
     assert.equal(open(), false, 'neither: it closes');
+    document.body.innerHTML = '';
+});
+
+test('Icon labels R3 m3: a touch pointer does not open the label; a mouse does', async () => {
+    const mg = Object.create(ContainerMinigame.prototype);
+    mg.contents = [{ name: 'Client_Records_2009-2024_Archive_Final_Signed.docx', type: 'notes', takeable: true }];
+    document.body.innerHTML = '<div id="desktop-icons"></div>';
+    mg.takeItem = () => {}; mg.isInteractiveItem = () => false; mg.offersTransfer = () => false; mg.updateDesktopScrollCue = () => {};
+    mg.populateDesktopIcons();
+    const icon = document.querySelector('.desktop-icon');
+    const label = icon.querySelector('.desktop-icon-label');
+    stubWidths(label);
+    label.textContent = mg.contents[0].name;
+    label.dataset.fullName = mg.contents[0].name;
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    fitIconLabel(label);
+    icon.matches = () => false;
+    const pointer = (t, pointerType) => { const e = new dom.window.Event(t); e.pointerType = pointerType; icon.dispatchEvent(e); };
+    pointer('pointerenter', 'touch');
+    assert.equal(label.classList.contains('desktop-icon-label-open'), false, 'a tap leaves the label shut');
+    pointer('pointerenter', 'mouse');
+    assert.equal(label.classList.contains('desktop-icon-label-open'), true, 'a mouse opens it');
+    document.body.innerHTML = '';
+});
+
+test('Icon labels R3 M1: the deferred refit (next frame, fonts ready) keeps a label open while its icon is hovered, focus-visible or the returned focus; one the pointer left stays shut', async () => {
+    const { fitIconLabel } = await imp('minigames/container/container-minigame.js');
+    const NAME = 'Client_Records_2009-2024_Archive_Final_Signed.docx';
+    const build = () => {
+        const mg = Object.create(ContainerMinigame.prototype);
+        mg.contents = [{ id: 'f1', name: NAME, type: 'notes', takeable: true }];
+        document.body.innerHTML = '<div id="desktop-icons"></div>';
+        mg.takeItem = () => {}; mg.isInteractiveItem = () => false; mg.offersTransfer = () => false; mg.updateDesktopScrollCue = () => {};
+        const raf = globalThis.requestAnimationFrame;
+        globalThis.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
+        try { mg.populateDesktopIcons(); } finally { globalThis.requestAnimationFrame = raf; }
+        const icon = document.querySelector('.desktop-icon');
+        const label = icon.querySelector('.desktop-icon-label');
+        stubWidths(label);
+        label.textContent = NAME;
+        label.dataset.fullName = NAME;
+        fitIconLabel(label);
+        return { mg, icon, label };
+    };
+    const frame = () => new Promise(r => dom.window.requestAnimationFrame(() => setTimeout(r, 0)));
+    // focus-visible: still open one frame later
+    let t = build();
+    t.icon.matches = (q) => q === ':focus-visible';
+    t.icon.dispatchEvent(new dom.window.Event('focus'));
+    assert.ok(t.label.classList.contains('desktop-icon-label-open'), 'open at once');
+    await frame();
+    assert.ok(t.label.classList.contains('desktop-icon-label-open'), 'still open after the next frame');
+    // hovered: the same
+    t = build();
+    t.icon.matches = (q) => q === ':hover';
+    const e = new dom.window.Event('pointerenter'); e.pointerType = 'mouse'; t.icon.dispatchEvent(e);
+    await frame();
+    assert.ok(t.label.classList.contains('desktop-icon-label-open'), 'hover holds it through the refit');
+    // opened, then nothing holds it: the refit does not reopen it
+    t = build();
+    t.icon.matches = () => false;
+    const { expandIconLabel } = await imp('minigames/container/container-minigame.js');
+    expandIconLabel(t.label);
+    await frame();
+    assert.equal(t.label.classList.contains('desktop-icon-label-open'), false, 'a label nothing holds open is not reopened');
     document.body.innerHTML = '';
 });
 
