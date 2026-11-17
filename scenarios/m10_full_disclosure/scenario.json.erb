@@ -2635,7 +2635,7 @@ end
             <%= after_end_json.('forward_post') %>
             { "eventPattern": "conversation_closed:director_netherton", "condition": "!globalVars.split_started && !globalVars.gate_console_used && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "conversation_closed:arakawa_gate", "condition": "globalVars.arakawa_call_done === true && !globalVars.breach_open && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "room_entered:forward_post", "condition": "globalVars.breach_open === true && !globalVars.closing_done && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
+            { "eventPattern": "room_entered:forward_post", "condition": "!!data.previousRoom && globalVars.breach_open === true && !globalVars.closing_done && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
           ]
         },
 <%# Office life (office_life/PLAN.md 2.7): forward post support staff, ambient only. Keys are literal JSON, outside any ERB loop; only the voice and the hide helper are expressions. %>
