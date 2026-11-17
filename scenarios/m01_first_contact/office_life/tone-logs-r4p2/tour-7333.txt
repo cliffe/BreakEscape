@@ -1,0 +1,31 @@
+sounds loaded {"office_ambient":true,"typing_loop":true,"count":63,"tone":true}
+room {"r":"it_room","ok":true,"room":"it_room","current":"office_ambient","choice":{"room":"it_room","key":"office_ambient","level":0.8,"step":2}}
+room {"r":"server_room","ok":true,"room":"server_room","current":"server_room_ventilation","choice":{"room":"server_room","key":"server_room_ventilation","level":0.4,"step":1}}
+enterRoom failed {"r":"it_room","attempt":0,"reason":"blocking-ui","blockingUi":{"id":"game-menu-overlay","buttons":["✕","Resume","Character","Audio","Display","Controls","▶▶ SKIP","▮▮ PAUSE","📺 VISUALISER","BACKGROUND VOICES"]},"hint":null}
+cleared pause menu {"ok":true}
+room {"r":"it_room","ok":true,"room":"it_room","current":"office_ambient","choice":{"room":"it_room","key":"office_ambient","level":0.8,"step":2}}
+room {"r":"main_office_area","ok":true,"room":"main_office_area","current":"office_ambient","choice":{"room":"main_office_area","key":"office_ambient","level":0.8,"step":2}}
+room {"r":"break_room","ok":true,"room":"break_room","current":"office_ambient","choice":{"room":"break_room","key":"office_ambient","level":0.35,"step":2}}
+room {"r":"conference_room","ok":true,"room":"conference_room","current":null,"choice":{"room":"conference_room","key":null,"step":4}}
+room {"r":"break_room","ok":true,"room":"break_room","current":"office_ambient","choice":{"room":"break_room","key":"office_ambient","level":0.35,"step":2}}
+room {"r":"main_office_area","ok":true,"room":"main_office_area","current":"office_ambient","choice":{"room":"main_office_area","key":"office_ambient","level":0.8,"step":2}}
+room {"r":"reception_area","ok":true,"room":"reception_area","current":"office_ambient","choice":{"room":"reception_area","key":"office_ambient","level":0.35,"step":2}}
+room {"r":"main_office_area","ok":true,"room":"main_office_area","current":"office_ambient","choice":{"room":"main_office_area","key":"office_ambient","level":0.8,"step":2}}
+room {"r":"hallway_east","ok":true,"room":"hallway_east","current":null,"choice":{"room":"hallway_east","key":null,"step":4}}
+room {"r":"storage_closet","ok":true,"room":"storage_closet","current":null,"choice":{"room":"storage_closet","key":null,"step":4}}
+room {"r":"hallway_east","ok":true,"room":"hallway_east","current":null,"choice":{"room":"hallway_east","key":null,"step":4}}
+room {"r":"maya_office","ok":true,"room":"maya_office","current":null,"choice":{"room":"maya_office","key":null,"step":4}}
+room {"r":"hallway_east","ok":true,"room":"hallway_east","current":null,"choice":{"room":"hallway_east","key":null,"step":4}}
+room {"r":"derek_office","ok":true,"room":"derek_office","current":null,"choice":{"room":"derek_office","key":null,"step":4}}
+enterRoom failed {"r":"hallway_east","attempt":0,"reason":"blocking-ui","blockingUi":{"id":"game-menu-overlay","buttons":["✕","Resume","Character","Audio","Display","Controls","▶▶ SKIP","▮▮ PAUSE","📺 VISUALISER","BACKGROUND VOICES"]},"hint":null}
+cleared pause menu {"ok":true}
+room {"r":"hallway_east","ok":true,"room":"hallway_east","current":null,"choice":{"room":"hallway_east","key":null,"step":4}}
+room {"r":"main_office_area","ok":true,"room":"main_office_area","current":"office_ambient","choice":{"room":"main_office_area","key":"office_ambient","level":0.8,"step":2}}
+room {"r":"hallway_west","ok":true,"room":"hallway_west","current":null,"choice":{"room":"hallway_west","key":null,"step":4}}
+room {"r":"kevin_office","ok":true,"room":"kevin_office","current":null,"choice":{"room":"kevin_office","key":null,"step":4}}
+room {"r":"hallway_west","ok":true,"room":"hallway_west","current":null,"choice":{"room":"hallway_west","key":null,"step":4}}
+room {"r":"manager_office","ok":true,"room":"manager_office","current":null,"choice":{"room":"manager_office","key":null,"step":4}}
+started entries [{"what":"started","room":"main_office_area","key":"office_ambient","level":0.8,"step":2},{"what":"started","room":"it_room","key":"office_ambient","level":0.8,"step":2},{"what":"started","room":"server_room","key":"server_room_ventilation","level":0.4,"step":1},{"what":"started","room":"break_room","key":"office_ambient","level":0.35,"step":2},{"what":"started","room":"reception_area","key":"office_ambient","level":0.35,"step":2}]
+spot entries []
+pause menu opens [{"t":35993,"room":"server_room","step":"go it_room attempt 0","msSinceEsc":110},{"t":36835,"room":"server_room","step":"go it_room attempt 0","msSinceEsc":35},{"t":37808,"room":"server_room","step":"go it_room attempt 0","msSinceEsc":136},{"t":38799,"room":"server_room","step":"go it_room attempt 0","msSinceEsc":152},{"t":39593,"room":"server_room","step":"go it_room attempt 0","msSinceEsc":62},{"t":40407,"room":"server_room","step":"go it_room attempt 0","msSinceEsc":31},{"t":132585,"room":"derek_office","step":"go hallway_east attempt 0","msSinceEsc":50},{"t":133386,"room":"derek_office","step":"go hallway_east attempt 0","msSinceEsc":17},{"t":134383,"room":"derek_office","step":"go hallway_east attempt 0","msSinceEsc":196},{"t":135185,"room":"derek_office","step":"go hallway_east attempt 0","msSinceEsc":165},{"t":135984,"room":"derek_office","step":"go hallway_east attempt 0","msSinceEsc":129},{"t":136782,"room":"derek_office","step":"go hallway_east attempt 0","msSinceEsc":83}]
+errors []

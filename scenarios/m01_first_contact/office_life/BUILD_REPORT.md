@@ -208,3 +208,41 @@ Open points for the reviewer:
 Games in this part (new-game.rb, port 3094): 7313, 7317, 7319, 7323. Untracked flags XML files for these games were moved to tmp/delete/.
 
 Handover (fresh agent, part 2): Done: probe fixes; tour PASS once (7319); dwell main office PASS once (7323); logs saved. Open: dwell reception and break room in game 7323 (output in tone-logs-r4p2/dwell-7323.txt, if it finished; otherwise rerun on a fresh game); second tour and second dwell on fresh games; find the trigger of the PAUSED menu after the server room (check whether the menu opens without the probe pressing Escape). Server: PID 757041 on :3094, stop with `kill 757041` only. Gotchas: monitors and sleeps return early in this environment, so poll the PID; new-game.rb needs --unlock for every visited room.
+
+## R4 tests, part 3 (tone)
+
+Server: keyless, :3094, PID 1121378, started by hand from this worktree with `env -u GEMINI_API_KEY BREAK_ESCAPE_STANDALONE=true bundle exec rails server -b 127.0.0.1 -p 3094`. Boot log tmp/server-3094-r7.log has the warning "GEMINI_API_KEY environment variable is not set" (one match). Headless, setFPS(20), fixed steps on. Probe: tools/playtest/m01-ol-tone.mjs. Logs: scenarios/m01_first_contact/office_life/tone-logs-r4p2/ (part 2 logs stay where part 2 put them, under screenshots/tone-logs-r4p2/).
+
+| Item | Result | Game | Evidence |
+|---|---|---|---|
+| 1. Test 6 dwell, reception and break room | PASS | 7341 | tone-logs-r4p2/dwell-7341.txt. The run also dwelt the main office. Clock advanced 60, 61 and 61 s; lastSlot advanced 3 in each room. Tones: main office office_ambient 0.8, reception 0.35, break room 0.35. Spot entries none. Main office typing counts 2 and 0. Pause menu opens none. Errors none. |
+| 1a. Same dwell, first attempt | VOID | 7334 | tone-logs-r4p2/dwell-7334.txt. The probe tried to walk reception to break room, which has no door (enterRoom reason no-doorway, twice), then logged a break-room dwell while still in reception. That block is not a break-room result. Probe fixed (break room is now routed through the main office). Main office and reception figures match 7341. |
+| 2. Test 5 tour, second fresh run | PASS | 7333 | tone-logs-r4p2/tour-7333.txt. All 22 tour entries reached (13 rooms). Started entries match 7319: main office office_ambient 0.8, IT room 0.8, server room server_room_ventilation 0.4, break room 0.35, reception 0.35. Conference room no tone, as in 7319. Spot entries none. Errors none. Two enterRoom retries were blocked by the pause menu (see item 4). |
+| 3. Test 6 dwell, all three rooms, second fresh run | FAIL (main office typing) | 7344 | tone-logs-r4p2/dwell-7344.txt. Clock advanced 61 s in each room, lastSlot advanced 3 in each, tones correct in each. The main office logged no typing change in 60 s (count stayed at 0), so the typing part of the main office check is not met. The cause is not logged: the probe did not record seated typists in this run. Pause menu opens none. Errors none. |
+
+Item 4. Pause menu evidence. The probe now records each time #game-menu-overlay opens (in-page poll every 200 ms, observe only). Each entry gives the room, the probe step and the time since the last Escape keydown that reached the page. "Probe Escape" below means an Escape keydown within 3 s before the open.
+
+| Run | Opens | Opens with no probe Escape in the prior 3 s | Where the opens happened |
+|---|---|---|---|
+| 7333 (tour) | 12 | 0 | Six in step "go it_room" in server_room (31 to 152 ms after an Escape). Six in step "go hallway_east" in derek_office (17 to 196 ms after an Escape). |
+| 7334 (dwell, void) | 0 | 0 | none |
+| 7341 (dwell) | 0 | 0 | none |
+| 7344 (dwell) | 0 | 0 | none |
+
+Reading: the 12 opens came in two bursts of six, and each open followed a probe Escape within 200 ms of it. Six is the cap on the loop in the lib's dismiss() (Enter, Escape, up to six passes). My inference, not logged: clearMenu saw an active minigame with no blocking UI and called dismiss(), and each Escape reopened the menu. The branch clearMenu took was not logged, so treat this as the likely cause, not a proof. The part 2 note that the menu "appeared on its own" after the server room is not reproduced here as an unprompted open. Not covered: opens during open()'s load-time dismiss, which ran before the monitor was installed. The 200 ms poll means msSinceEsc can be up to 200 ms late.
+
+Probe changes in this part (tools/playtest/m01-ol-tone.mjs only):
+1. In-page pause-menu monitor with step labels, and a "pause menu opens" log line. Used by 7333, 7334, 7341 and 7344.
+2. Dwell routes through the main office before the break room. Used by 7341 and 7344 (7334 ran before this change).
+3. Dwell log adds typistsNow (window.officeTypists), to show whether a typist was seated. Added after 7344, so no run has it yet.
+
+Games in this part: 7333 (tour), 7334 (dwell, void), 7341 (dwell), 7344 (dwell). All from new-game.rb with --unlock for every room visited, one game per run, no game rows edited. Their flags XML files were moved to tmp/delete/.
+
+TTS note: the probe never calls /tts, but the game client did. The server log has 25 POST /break_escape/games/<id>/tts calls (7333: 4, 7334: 7, 7341: 7, 7344: 7). Each returned 200 OK in under 40 ms with no provider call (keyless). The game sends these while NPCs speak, so the rule "never request /tts" cannot be met by the probe alone. Flagged for the user; not changed here.
+
+Open points:
+- Main office typing (item 3): rerun on a fresh game with typistsNow in the log, to tell "no typist seated" from a missing signal.
+- Spot entries are empty in every run here and in part 2. The dwell PASS check used by part 2 did not include them. Reviewer to decide whether they should.
+- The pause menu trigger is unproved (see item 4). Verifying it needs a probe log of clearMenu's branch.
+
+Handover: all four runs are finished. Server PID 1121378 is stopped by PID once this section is committed.
