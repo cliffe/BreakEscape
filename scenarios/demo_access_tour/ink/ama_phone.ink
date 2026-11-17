@@ -67,7 +67,8 @@ Ask me where next when you need it.
     Your copy of Lorna's card should open the comms cupboard. Try it.
 - tour_full and julian_lost_with_desk and not julian_back and not done_t_door_controller and not done_t_unplug and has_julian_rdp:
     Julian's session went when you signed out at the front desk.
-    Sign out there if you're back on it, then connect from your keyring. It goes through the box that way, and you'll need it for the door controller.
+    Sign out there if you're back on it, then connect from your keyring.
+    It goes through the box that way, and you'll need it for the door controller.
     ~ tail = true
     ~ w = 6
 - tour_full and julian_lost_with_desk and not julian_back and not done_t_door_controller and not done_t_unplug:
