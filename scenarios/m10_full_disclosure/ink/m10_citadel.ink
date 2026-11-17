@@ -19,9 +19,7 @@ VAR cit_quiet = false
 // opening is its own knot, as in six_oclock.
 === opening ===
 ~ citadel_open = true
-Narrator: The Citadel, an hour later. Netherton is on the wall screen from Montana. Beside him, HaX's channel is still open. Nobody has spoken on it.
-// Alignment A2: HaX's "0x00." inside the scene. R3-m9: placed where the player is, not at the Citadel.
-Narrator: Somewhere on a road out of Montana, your phone lights. One message from HaX. '0x00.' You don't answer.
+Narrator: The Citadel, an hour later. Netherton reports to the Council on the wall screen from Montana. HaX's channel is open beside his. Nobody has spoken on it.
 Director Magnus Netherton: He said it had to be one of ours. He was right, and I signed for that agent myself.
 // Alignment m5: one line on what the player betrayed, by a short fixed priority.
 {
@@ -32,9 +30,11 @@ Director Magnus Netherton: He said it had to be one of ours. He was right, and I
 - m08_nightshade_triple_agent and m09_nightshade_shown_file:
     Director Magnus Netherton: Nightshade asked me one question. Whether it was you. I said yes, and he stopped talking.
 }
+// Alignment A2: HaX's "0x00." inside the scene. R3-m9: placed where the player is, not at the Citadel.
+Narrator: Somewhere on a road out of Montana, your phone lights. One message from HaX. '0x00.' You don't answer.
 + [(Keep driving.)]
 -
-Narrator: At the Citadel, on the screen beside him, the casualty count climbs. Nobody turns it off.
+Narrator: At the Citadel, a second screen shows the casualty count. It climbs. Nobody turns it off.
 #set_global:closing_done:true
 Director Magnus Netherton: Find 0x00. Bring them in, and bring them to me.
 ~ cit_quiet = true
