@@ -229,9 +229,9 @@ class SoundManager {
 
         // Set volume if specified
         if (options.volume !== undefined) {
-            sound.setVolume(options.volume * this.masterVolume);
+            this._writeVol(sound, options.volume * this.masterVolume);
         } else {
-            sound.setVolume(this.getVolumeForSound(soundName));
+            this._writeVol(sound, this.getVolumeForSound(soundName));
         }
 
         // Set loop if specified
@@ -309,6 +309,23 @@ class SoundManager {
     }
 
     /**
+     * Every volume this module sets goes through here and is remembered per sound. Phaser's
+     * WebAudioSound reads `volume` back from gain.value, which only catches up with setVolume()
+     * once the audio thread has run, so a read in the same task as a write is stale. Fades start
+     * from the remembered value instead.
+     */
+    _writeVol(sound, v) {
+        this._lastVol = this._lastVol || new WeakMap();
+        this._lastVol.set(sound, v);
+        sound.setVolume(v);
+    }
+
+    _readVol(sound) {
+        const v = this._lastVol?.get(sound);
+        return v !== undefined ? v : sound.volume;
+    }
+
+    /**
      * Play an ambient looping sound with fade-in
      * @param {string} soundName - Key of the ambient sound
      * @param {number} fadeInDuration - Fade-in duration in milliseconds (default 2000)
@@ -325,7 +342,7 @@ class SoundManager {
         if (sound.isPlaying) return;
 
         const targetVolume = this.volumeSettings.music * this.masterVolume;
-        sound.setVolume(0);
+        this._writeVol(sound, 0);
         sound.setLoop(true);
         sound.play();
 
@@ -335,7 +352,7 @@ class SoundManager {
             duration: fadeInDuration,
             ease: 'Linear',
             onUpdate: (tween) => {
-                sound.setVolume(tween.getValue());
+                this._writeVol(sound, tween.getValue());
             }
         });
 
@@ -356,14 +373,14 @@ class SoundManager {
 
         if (!sound || !sound.isPlaying) return;
 
-        const startVolume = sound.volume;
+        const startVolume = this._readVol(sound); // last value written, not the lagging gain read-back
         this.scene.tweens.addCounter({
             from: startVolume,
             to: 0,
             duration: fadeOutDuration,
             ease: 'Linear',
             onUpdate: (tween) => {
-                sound.setVolume(tween.getValue());
+                this._writeVol(sound, tween.getValue());
             },
             onComplete: () => {
                 if (sound.isPlaying) sound.stop();
@@ -425,13 +442,13 @@ class SoundManager {
             this.currentAmbient = null;
             if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
             if (!sound?.isPlaying) return;
-            const startVol = sound.volume;
+            const startVol = this._readVol(sound);
             this._ambientTween = this.scene.tweens.addCounter({
                 from: startVol,
                 to: 0,
                 duration,
                 ease: 'Linear',
-                onUpdate: (tween) => sound.setVolume(tween.getValue()),
+                onUpdate: (tween) => this._writeVol(sound, tween.getValue()),
                 onComplete: () => { if (sound.isPlaying) sound.stop(); this._ambientTween = null; }
             });
             return;
@@ -442,14 +459,12 @@ class SoundManager {
         const targetVolume = this.volumeSettings.music * this.masterVolume * normalizedVolume * (this._ambientDuck ?? 1);
         const sound = this.sounds[soundName];
 
-        let startedNow = false;
         if (!sound.isPlaying) {
+            // Phaser merges this config into the sound's own, and setVolume(0) overwrites it too.
+            // The lag is on the read side: WebAudioSound.volume reads gain.value, which only
+            // catches up once the audio thread has run (see _readVol).
             sound.play({ loop: true, volume: 0 });
-            // play(config) puts back the configured base volume, so a new loop would start at full
-            // for a frame and then fade down. Zero it after play so every ambient fades in from
-            // silence (room tone and the shipped path alike).
-            sound.setVolume(0);
-            startedNow = true;
+            this._writeVol(sound, 0);
             console.log(`🎵 Ambient sound started: ${soundName}`);
         }
 
@@ -457,16 +472,14 @@ class SoundManager {
         this.currentAmbient = soundName;
 
         if (this._ambientTween) { this._ambientTween.stop(); this._ambientTween = null; }
-        // WebAudioSound reads its volume back from gain.value, which only catches up with
-        // setVolume() once the audio thread has run. Read straight after play + setVolume(0) it
-        // still says the base volume, so a fresh start fades in from silence by definition.
-        const startVol = startedNow ? 0 : sound.volume;
+        // A fresh start has just been written as 0 (_writeVol), so this is 0 for it too.
+        const startVol = this._readVol(sound);
         this._ambientTween = this.scene.tweens.addCounter({
             from: startVol,
             to: targetVolume,
             duration,
             ease: 'Linear',
-            onUpdate: (tween) => sound.setVolume(tween.getValue()),
+            onUpdate: (tween) => this._writeVol(sound, tween.getValue()),
             onComplete: () => { this._ambientTween = null; }
         });
     }
@@ -486,11 +499,11 @@ class SoundManager {
         if (!sound?.isPlaying) return;
         this._outgoing = key;
         const t = this.scene.tweens.addCounter({
-            from: sound.volume,
+            from: this._readVol(sound),
             to: 0,
             duration,
             ease: 'Linear',
-            onUpdate: (tween) => sound.setVolume(tween.getValue()),
+            onUpdate: (tween) => this._writeVol(sound, tween.getValue()),
             onComplete: () => {
                 if (this._outgoingTween !== t) return;
                 if (sound.isPlaying) sound.stop();
@@ -531,15 +544,15 @@ class SoundManager {
         this._sideTweens[key] = null;
         if (prev) prev.stop();
         if (normalizedVolume === 0 && !sound.isPlaying) return;
-        let startedNow = false;
-        if (!sound.isPlaying) { sound.play({ loop: true, volume: 0 }); sound.setVolume(0); startedNow = true; } // play(config) resets the volume
+        // Phaser merges the play config and setVolume(0) overwrites it; the gain read-back lags (see _readVol)
+        if (!sound.isPlaying) { sound.play({ loop: true, volume: 0 }); this._writeVol(sound, 0); }
         const target = this.volumeSettings.music * this.masterVolume * normalizedVolume * (this._ambientDuck ?? 1);
         const t = this.scene.tweens.addCounter({
-            from: startedNow ? 0 : sound.volume, // sound.volume lags setVolume(0) until the audio thread runs
+            from: this._readVol(sound),
             to: target,
             duration,
             ease: 'Linear',
-            onUpdate: (tween) => sound.setVolume(tween.getValue()),
+            onUpdate: (tween) => this._writeVol(sound, tween.getValue()),
             onComplete: () => {
                 if (this._sideTweens[key] !== t) return;
                 this._sideTweens[key] = null;
@@ -575,7 +588,7 @@ class SoundManager {
         // Update all active sounds
         for (const sound of Object.values(this.sounds)) {
             if (sound) {
-                sound.setVolume(this.getVolumeForSound(sound.key));
+                this._writeVol(sound, this.getVolumeForSound(sound.key));
             }
         }
     }
