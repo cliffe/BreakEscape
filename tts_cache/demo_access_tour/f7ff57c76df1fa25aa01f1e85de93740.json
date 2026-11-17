@@ -1,0 +1,13 @@
+{
+  "key": "f7ff57c76df1fa25aa01f1e85de93740",
+  "npc": "thandiwe",
+  "text": "Who's the cake from?",
+  "voice": "Pulcherrima",
+  "style": "Merrin & Sallow's studio manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "demo_access_tour",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T19:50:04Z"
+}
