@@ -38,3 +38,17 @@ All numbers below are measured unless marked otherwise. Method: fresh game per r
 Static checks after the posts edit: validator 0 errors, 33 warnings (unchanged from slice A); `lock_key_diff.rb` vs `baseline_locks.json` empty (regenerated `dungeon_graph.html` and `.md` reverted with `git checkout`); `--office-summary` diff vs `v1_summary_base.txt` is only the two added NPCs (identical to `v1_summary_build.txt`); positions diff vs `positions_base.txt` is only the added `reception_cooler` and `ops_kettle` rows.
 
 Probe script (reaches the kettle state and measures pairs): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/kettle.mjs <game id>` (needs `lib.mjs` beside it).
+
+## Build review R1 outcomes (0 B, 2 M, 5 m)
+
+The user answered D117: all seven plan recommendations accepted. The build already followed them; the dialogue sample still needs its own yes before any voicing (Q5 (a)).
+
+| Finding | Outcome |
+|---|---|
+| M1 Joanne's evacuation bark plays while she is knocked out | Fixed: condition gains `&& !globalVars.joanne_ko` (not gated on `aes_staff_off`, which the crew_warned mapping sets first) |
+| M2 most live checks unlogged | In progress: `LIVE_PROOF_1.md` covers L8 backgrounds, the Q7 kettle strike, KO-at-kettle reload and evacuation; the rest go to the next live proof |
+| m1 `officePresets` also gives `hall1_round_panel` the desk_pc preset | Accepted and recorded: no needs NPC may enter Hall 1 (`needsRooms` is reception and the ops office) and `npcThoughts` is false, so the preset does nothing |
+| m2 pair overlaps 16 px at the kettle | Accepted: the screenshot reads as two people side by side at a counter |
+| m3 four pair uses, not five | Fifth use measured in the next live proof |
+| m4 bark shows as a toast anywhere, plan said "heard where in range" | Accepted: engine behaviour for barks; the plan's wording was loose. A toast anywhere is right for a site-wide alarm |
+| m5 cooler and kettle had no `observations` | Fixed: one plain line each (text only, not spoken) |

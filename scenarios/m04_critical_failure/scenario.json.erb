@@ -1722,7 +1722,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "eventMappings": [
             { "eventPattern": "room_entered:main_entrance", "condition": "data.previousRoom === 'operations_office' && !globalVars.aes_staff_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:ops_kettle", "condition": "data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off", "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
-            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true", "onceOnly": true, "bark": "That's the evacuation. Coats, now." },
+            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.joanne_ko", "onceOnly": true, "bark": "That's the evacuation. Coats, now." },
             { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true", "onceOnly": true, "setVisible": false }
           ]
         }
@@ -1750,6 +1750,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "id": "reception_cooler",
           "name": "Water cooler",
           "takeable": false,
+          "observations": "A water cooler, down to its last few cups.",
           "offWhen": "aes_staff_off",
           "affordance": { "capacity": 1, "useSeconds": 12, "queue": false, "useFrom": { "dx": 0, "dy": 1 } }
         }
@@ -1864,6 +1865,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "id": "ops_kettle",
           "name": "Kettle",
           "takeable": false,
+          "observations": "An office kettle, thick with limescale.",
           "offWhen": "ops_kettle_off",
           "affordance": { "capacity": 2, "chatter": "coffee", "useSeconds": 25, "useFrom": { "dx": 0, "dy": 2 }, "queue": false, "overhearRadius": 360 }
         }
