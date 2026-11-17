@@ -109,9 +109,14 @@ const walk = (dir) => readdirSync(dir).flatMap((f) => {
 });
 const sources = [...walk(join(root, 'public/break_escape/js')), ...walk(join(root, 'app/views'))]
     .filter((f) => /\.(js|mjs|erb)$/.test(f))
+    // Comments do not count: block, whole-line and trailing JS comments (a trailing one needs a
+    // space before the //, so URLs keep theirs), HTML comments and ERB <%# %> comments.
     .map((f) => readFileSync(f, 'utf8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/^[ \t]*\/\/.*$/gm, ''))
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<%#[\s\S]*?%>/g, '')
+        .replace(/^[ \t]*\/\/.*$/gm, '')
+        .replace(/[ \t]\/\/ .*$/gm, ''))
     .join('\n');
 
 
