@@ -540,7 +540,7 @@ test('interactions.js has the branch after the login PC and before the jack, plu
 
 test('rooms.js skips hiddenWith objects and calls syncRoom; game.js loads and syncs the start room', () => {
     const r = src('core/rooms.js');
-    assert.match(r, /if \(scenarioObj\.hiddenWith\) \{\s+window\.plantHiding\?\.noteHiddenWith\?\.\(roomId, scenarioObj\);\s+return;/);
+    assert.match(r, /if \(scenarioObj\.hiddenWith\) return void window\.plantHiding\?\.noteHiddenWith\?\.\(roomId, scenarioObj\);/);
     assert.match(r, /window\.plantHiding\?\.syncRoom\?\.\(roomId\)/);
     assert.equal(r.includes("from '../systems/plant-hiding.js'"), false);
     const g = src('core/game.js');
