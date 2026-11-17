@@ -29,6 +29,7 @@
     "kitchen_seen": false,
     "heard_exchange_cooler_chat": false,
     "act_midday": false,
+    "act_evening": false,
     "chidi_pc_owner_away": false,
     "jun_pc_owner_away": false,
     "cake_servings": 2
@@ -91,6 +92,11 @@
     "office": {
       "type": "room_office",
       "door_sign": "Office",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "ambient": "#8f96b0", "lights": [{ "x": 2.3, "y": 5.5, "color": "#ffd9a0", "radius": 70, "intensity": 0.8 }] }
+        ]
+      },
       "connections": { "west": "kitchen" },
       "objects": [
         {
@@ -240,7 +246,9 @@
             { "eventPattern": "workstation_accessed:jun_pc", "cooldown": 0, "completeTask": "use_open_screen" },
             { "eventPattern": "npc_caught_at_post:jun_watanabe", "onceOnly": true, "cooldown": 0, "delayMs": 2500, "bark": "Caught! People notice who's at their desk." },
             { "eventPattern": "magnet_finished:cake", "onceOnly": true, "cooldown": 0, "completeTask": "see_cake_eaten", "bark": "Two slices, then it's gone. Late ones miss out." },
-            { "eventPattern": "npc_left_item_gone:jun_watanabe", "onceOnly": true, "cooldown": 0, "bark": "Jun's just found his badge gone. That was you." }
+            { "eventPattern": "npc_left_item_gone:jun_watanabe", "onceOnly": true, "cooldown": 0, "bark": "Jun's just found his badge gone. That was you." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
+            { "eventPattern": "npc_left_post:zainab_hussain", "condition": "globalVars.act_evening === true", "cooldown": 0, "completeTask": "see_who_stays" }
           ]
         },
         {
@@ -266,7 +274,8 @@
           },
           "chatter": { "coffee": ["Report's due at four. Wish me luck.", "Someone's finished the biscuits."] },
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } }
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
           ]
         },
         {
@@ -295,7 +304,8 @@
             { "eventPattern": "npc_left_post:chidi_okeke", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
             { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
             { "eventPattern": "workstation_accessed:jun_pc", "condition": "globalVars.act_midday === true", "cooldown": 60000, "needs": { "set": { "work": 5 } } },
-            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 30000, "completeTask": "see_caught", "bark": "Er, that's my desk. Can I help you?" }
+            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 30000, "completeTask": "see_caught", "bark": "Er, that's my desk. Can I help you?" },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
           ]
         },
         {
@@ -324,7 +334,8 @@
           "exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat", "topic": "cooler" }],
           "eventMappings": [
             { "eventPattern": "npc_left_post:agnieszka_duda", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
-            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } }
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
           ]
         },
         {
@@ -349,7 +360,8 @@
           "interests": { "dirty_mugs": { "weight": 3, "noticeRooms": ["office", "kitchen"] } },
           "chatter": { "cooler": ["Someone's left mugs everywhere again.", "Are you going to the quiz?"] },
           "eventMappings": [
-            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } }
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
           ]
         },
         {
@@ -373,7 +385,9 @@
             "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 }
           },
           "eventMappings": [
-            { "eventPattern": "npc_queued:office_coffee", "condition": "data.npcId !== 'zainab_hussain'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } }
+            { "eventPattern": "npc_queued:office_coffee", "condition": "data.npcId !== 'zainab_hussain'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 1500, "cooldown": 0, "bark": "Quiet now. Time for a coffee in peace." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 8000, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } }
           ]
         }
       ]
@@ -382,6 +396,11 @@
     "kitchen": {
       "type": "room_break",
       "door_sign": "Kitchen",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "mode": "motion", "offAfter": 10 }
+        ]
+      },
       "connections": { "east": "office" },
       "objects": [
         {

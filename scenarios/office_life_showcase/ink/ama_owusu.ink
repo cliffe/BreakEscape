@@ -1,7 +1,8 @@
 // Office Life Tour host: Ama Owusu (person, office aisle).
 // S2 adds the morning hub: the looking-at choice, the morning hints and the
-// cooler follow-up. S3 adds the lunch gate and the midday hints. The evening
-// turn and recap choices come in a later slice. Reopen pattern from test_needs_sims/neil.ink:
+// cooler follow-up. S3 adds the lunch gate and the midday hints. S4 adds the
+// evening turn ("Call it a day."), the evening hints and the recap ("Give me the
+// short version."). Reopen pattern from test_needs_sims/neil.ink:
 // start diverts to hub.choices; hub has a reopen line; exit uses
 // # exit_conversation then -> END. reopenRefreshesHub is set on her NPC block.
 
@@ -12,6 +13,8 @@ VAR heard_exchange_cooler_chat = false
 // kitchen_seen and the two owner_away flags are scenario globals synced in when the
 // conversation starts; a conversation held open while the staff walk back keeps stale values.
 VAR act_midday = false
+// act_evening is set by the "Call it a day." choice below (tag and local assignment).
+VAR act_evening = false
 VAR kitchen_seen = false
 VAR chidi_pc_owner_away = false
 VAR jun_pc_owner_away = false
@@ -35,6 +38,11 @@ What can I help with?
     -> choices
 + [What should I try next?]
     {
+        - act_evening:
+            # speaker:npc
+            Everyone's gone home but one. See where she goes.
+            # speaker:npc
+            Then walk into the kitchen. The lights there are on a motion sensor now.
         - act_midday:
             # speaker:npc
             Lunch takes people away from their desks. Some lock their screens; some don't.
@@ -79,6 +87,33 @@ What can I help with?
             # exit_conversation
             -> END
     }
++ { act_midday and not act_evening } [Call it a day.]
+    # speaker:npc
+    Right. Home time for most of them.
+    # speaker:npc
+    Have a wander if you like.
+    #set_global:act_evening:true
+    ~ act_evening = true
+    # exit_conversation
+    -> END
++ { act_evening } [Give me the short version.]
+    # speaker:npc
+    Needs run down, and people go to whatever fills them.
+    # speaker:npc
+    The coffee machine takes one at a time, so people queue and chat.
+    # speaker:npc
+    Two at the cooler share a proper conversation, once. Stand close.
+    # speaker:npc
+    Switch something off and they turn back. That's a lever.
+    # speaker:npc
+    Some lock, some don't. An open screen is an opening, but owners come back.
+    # speaker:npc
+    Cake tempts anyone peckish, until it runs out.
+    # speaker:npc
+    In the evening the office dims, and the kitchen lights follow you.
+    # speaker:npc
+    That's the tour. Stay and look round as long as you like.
+    -> choices
 + [I'll have a look round.]
     # speaker:npc
     Go on. I'll be here.
