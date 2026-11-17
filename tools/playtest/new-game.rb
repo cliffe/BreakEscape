@@ -73,6 +73,7 @@ if ARGV.include?('--help') || ARGV.include?('-h')
   puts File.read(__FILE__).lines.take_while { |l| l.start_with?('#') }.map { |l| l.sub(/\A# ?/, '') }.join
   exit
 end
+require_relative 'lib/reward_keys'
 
 imports_opt = 'none'
 seed_full_cloner = false
@@ -425,7 +426,7 @@ if complete_opts.any? || flag_opts.any?
           (ps['globalVariables'] ||= {})[r['key']] = r['value']
           applied << "set_global #{r['key']}=#{r['value'].inspect}"
         when 'unlock_object'
-          oid = r['object_id'] || r['target_object'] || r['id']
+          oid = RewardKeys.unlock_object_id(r)
           oid ? (g.unlock_object!(oid); applied << "unlock_object #{oid}") : applied << 'unlock_object: no id in reward'
         else
           applied << "#{r['type']} (client-only, not applied)"
