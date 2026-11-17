@@ -12,16 +12,32 @@ const rulesOf = (f) => [...strip(readFileSync(join(cssDir, f), 'utf8')).matchAll
 const rulesFor = (rules, needle) => rules.filter((r) => r.sel.split(',').map((x) => x.trim()).includes(needle));
 
 test('biometrics search row takes the header side margin so the toggle never overlaps it', () => {
-    const r = rulesFor(rulesOf('scanner-panel.css'), '.scanner-panel:has(.scan-toggle) .biometrics-search-room-container');
-    assert.equal(r.length, 1);
-    assert.match(r[0].body, /margin-left:\s*32px/);
-    const hdr = rulesFor(rulesOf('scanner-panel.css'), '.scanner-panel:has(.scan-toggle) .scan-header');
-    assert.match(hdr[0].body, /margin-left:\s*32px/);
+    // class selector (works without :has()) and the :has() twin in its own rule
+    for (const lead of ['.scanner-panel.has-scan-toggle', '.scanner-panel:has(.scan-toggle)']) {
+        for (const tail of ['.biometrics-search-room-container', '.scan-header']) {
+            const r = rulesFor(rulesOf('scanner-panel.css'), `${lead} ${tail}`);
+            assert.equal(r.length, 1, `${lead} ${tail}`);
+            assert.match(r[0].body, /margin-left:\s*32px/);
+            assert.equal(r[0].sel.includes(','), false, 'not in a list with an :has() selector');
+        }
+    }
+});
+
+test('the has-scan-toggle class is added where the toggle is made (biometrics, bluetooth)', () => {
+    const js = join(cssDir, '..', 'js', 'minigames');
+    for (const f of ['biometrics/biometrics-minigame.js', 'bluetooth/bluetooth-scanner-minigame.js']) {
+        const src = readFileSync(join(js, f), 'utf8');
+        const at = src.indexOf("classList.add('has-scan-toggle')");
+        assert.ok(at >= 0, f);
+        assert.ok(at < src.indexOf("className = '", src.indexOf('expandToggle = document.createElement')) + 200, `${f}: before/at toggle creation`);
+        assert.match(src, /expandToggle\.setAttribute\('tabindex', '0'\)/, `${f}: toggle is focusable`);
+    }
 });
 
 test('themed focus marker: 2px square outline on :focus-visible only, no radius or blur', () => {
     const rules = rulesOf('ui-themes.css');
-    for (const sel of ['[data-ui-theme] .person-chat-choice-button:focus-visible', '[data-ui-theme] .person-chat-continue-button:focus-visible', '[data-ui-theme] .minigame-button:focus-visible', '[data-ui-theme] .minigame-close-button:focus-visible']) {
+    const sels = ['.person-chat-choice-button', '.person-chat-continue-button', '.minigame-button', '.minigame-close-button', '.tutorial-btn', '.tutorial-next', '.tutorial-skip', '.game-menu-item', '.game-menu-close', '.game-menu-reset', '.modal-button', '.password-modal-button', '#password-modal-ok', '#password-modal-cancel', '.player-preferences-modal-content .btn', '#music-widget-panel .mw-btn', '#music-widget-panel .mw-takeover-btn', '.scanner-panel .scan-toggle', '.scanner-panel .scan-button'].map((x) => `[data-ui-theme] ${x}:focus-visible`);
+    for (const sel of sels) {
         const r = rulesFor(rules, sel);
         assert.ok(r.length, sel);
         const b = r.map((x) => x.body).join(';');
@@ -44,4 +60,10 @@ test('default (unthemed) person chat choices and continue get the same outline, 
         assert.ok(fv > css.indexOf(`.person-chat-${c}-button:focus {`), `${c} focus-visible follows :focus`);
         assert.match(css.slice(fv, fv + 120), /outline:\s*2px solid #ffffff/);
     }
+});
+
+test('tutorial buttons show their own ring on :focus-visible only (a mouse click shows none)', () => {
+    const css = strip(readFileSync(join(cssDir, 'tutorial.css'), 'utf8'));
+    assert.match(css, /\.tutorial-btn:focus-visible,\s*\.tutorial-next:focus-visible,\s*\.tutorial-skip:focus-visible\s*\{/);
+    assert.doesNotMatch(css, /\.tutorial-(btn|next|skip)(-secondary)?:focus\s*[,{]/);
 });

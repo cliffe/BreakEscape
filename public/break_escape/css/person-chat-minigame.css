@@ -109,6 +109,7 @@
     scrollbar-gutter: stable both-edges;
     /* A Tab-focused choice scrolls clear of the "More below" strip laid over the foot */
     scroll-padding-bottom: 36px;
+    scroll-padding-top: 4px;
     padding: 20px;
 }
 
@@ -531,10 +532,11 @@
     /* "More below" (R2 m4): in flow under the caption while its choices run past the bottom edge */
     .person-chat-more:not([hidden]) {
         position: static;
+        width: 100%;
     }
 
     .person-chat-caption-area {
-        scroll-padding-bottom: 0;
+        scroll-padding-bottom: 4px;
         scrollbar-gutter: stable;
     }
 }
@@ -765,4 +767,19 @@
 
 .se-chat-header .pretext-tells li {
     margin: 0 0 4px;
+}
+
+/* Overlay scrollbars (no ::-webkit-scrollbar, e.g. Firefox with thin/overlay bars) reserve no gutter,
+   so the "More below" strip goes back to the full edge instead of leaving a 14px notch */
+@supports not selector(::-webkit-scrollbar) {
+    .person-chat-more:not([hidden]) {
+        left: 0;
+        right: 0;
+    }
+    @media (min-width: 600.02px) and (max-height: 520px) {
+        .person-chat-more:not([hidden]) {
+            right: auto;
+            width: var(--pc-caption-col);
+        }
+    }
 }

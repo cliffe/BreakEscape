@@ -89,6 +89,14 @@ test('the More below cue: base rule lies over the foot at any width, ignores tap
     assert.doesNotMatch(l, /display:/);
     const phone = parse(mediaBlock('@media (max-width: 600px)').block);
     assert.match(bodyOf(phone, '.person-chat-more:not([hidden])'), /position:\s*static/);
+    // the base rule's width:auto would otherwise shrink the in-flow strip to a box in the centred column
+    assert.match(bodyOf(phone, '.person-chat-more:not([hidden])'), /width:\s*100%/);
+    assert.match(bodyOf(phone, '.person-chat-caption-area'), /scroll-padding-bottom:\s*4px/);
+    assert.match(B('.person-chat-caption-area'), /scroll-padding-top:\s*4px/);
+    // overlay scrollbars reserve no gutter: the strip insets go back to 0
+    const sup = css.slice(css.indexOf('@supports not selector(::-webkit-scrollbar)'));
+    assert.match(sup, /left:\s*0;\s*right:\s*0/);
+    assert.match(sup, /width:\s*var\(--pc-caption-col\)/);
     assert.match(ui, /updateScrollCue/);
 });
 test('desktop video call (heights 521-700) keeps the capped caption clear of the status bar and PiP', () => {

@@ -60,11 +60,15 @@ export class BluetoothScannerMinigame extends MinigameScene {
     }
     
     createScannerInterface() {
-        // Create expand/collapse toggle button
+        // Create expand/collapse toggle button. The class lets the CSS clear the toggle without :has()
+        this.container.classList.add('has-scan-toggle');
         const expandToggle = document.createElement('div');
         expandToggle.className = 'bluetooth-scanner-expand-toggle scan-toggle';
         expandToggle.innerHTML = '+';
         expandToggle.title = 'Expand/Collapse';
+        expandToggle.setAttribute('role', 'button');
+        expandToggle.setAttribute('tabindex', '0');
+        expandToggle.setAttribute('aria-label', 'Expand or collapse the scanner panel');
         
         // Create scanner header
         const scannerHeader = document.createElement('div');
@@ -158,6 +162,9 @@ export class BluetoothScannerMinigame extends MinigameScene {
     }
     
     setupExpandToggle(expandToggle) {
+        this.addEventListener(expandToggle, 'keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandToggle.click(); }
+        });
         this.addEventListener(expandToggle, 'click', () => {
             const isExpanded = this.container.classList.contains('expanded');
             

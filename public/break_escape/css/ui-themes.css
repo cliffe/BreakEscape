@@ -1340,7 +1340,20 @@
 [data-ui-theme] .minigame-button:focus-visible,
 [data-ui-theme] .minigame-close-button:focus-visible,
 [data-ui-theme] .tutorial-btn:focus-visible,
-[data-ui-theme] .game-menu-item:focus-visible {
+[data-ui-theme] .tutorial-next:focus-visible,
+[data-ui-theme] .tutorial-skip:focus-visible,
+[data-ui-theme] .game-menu-item:focus-visible,
+[data-ui-theme] .game-menu-close:focus-visible,
+[data-ui-theme] .game-menu-reset:focus-visible,
+[data-ui-theme] .modal-button:focus-visible,
+[data-ui-theme] .password-modal-button:focus-visible,
+[data-ui-theme] #password-modal-ok:focus-visible,
+[data-ui-theme] #password-modal-cancel:focus-visible,
+[data-ui-theme] .player-preferences-modal-content .btn:focus-visible,
+[data-ui-theme] #music-widget-panel .mw-btn:focus-visible,
+[data-ui-theme] #music-widget-panel .mw-takeover-btn:focus-visible,
+[data-ui-theme] .scanner-panel .scan-toggle:focus-visible,
+[data-ui-theme] .scanner-panel .scan-button:focus-visible {
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
   border-radius: 0;

@@ -54,7 +54,8 @@ export class BiometricsMinigame extends MinigameScene {
     }
     
     createScannerInterface() {
-        // Create expand/collapse toggle button
+        // Create expand/collapse toggle button. The class lets the CSS clear the toggle without :has()
+        this.container.classList.add('has-scan-toggle');
         const expandToggle = document.createElement('div');
         expandToggle.className = 'biometrics-expand-toggle scan-toggle';
         expandToggle.innerHTML = '+';

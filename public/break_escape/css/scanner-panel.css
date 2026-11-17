@@ -95,12 +95,19 @@
     box-shadow: none;
 }
 
+.scanner-panel.has-scan-toggle .scan-header {
+    margin-left: 32px;
+}
+/* :has() twin in its own rule: an engine without :has() drops a whole selector list */
 .scanner-panel:has(.scan-toggle) .scan-header {
     margin-left: 32px;
 }
 
 /* The biometrics "Search Room" row sits level with the toggle, so it takes the same side margin
    as the header: the toggle never lies across the button's corner */
+.scanner-panel.has-scan-toggle .biometrics-search-room-container {
+    margin-left: 32px;
+}
 .scanner-panel:has(.scan-toggle) .biometrics-search-room-container {
     margin-left: 32px;
 }
