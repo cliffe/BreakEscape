@@ -177,9 +177,16 @@ module BreakEscape
       assert_equal ['lena_pc'], body['endedPcIds']
       assert_equal ['lena_pc'], body['tokenExpiredPcIds']
       assert_empty state['sessions']
+
+      # K5 run 4: a resent "done" (its answer lost) replays both lists from lastSpent
+      post npc_workaround_game_url(@game), params: { npc_id: 'jake', index: 0, hand: 7, cut: true }, as: :json
+      assert_response :success, response.body
+      resent = response.parsed_body
+      assert_equal ['lena_pc'], resent['endedPcIds']
+      assert_equal ['lena_pc'], resent['tokenExpiredPcIds'], 'the resend names the token session again'
     end
 
-    test 'R1 m2: a later sign-in keeps the existing clock and never renews it' do
+    test 'R1 m2:a later sign-in keeps the existing clock and never renews it' do
       build
       with_foothold
       travel 2.minutes

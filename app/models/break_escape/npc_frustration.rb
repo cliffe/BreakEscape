@@ -175,6 +175,8 @@ module BreakEscape
         replay = workaround_body(npc, w, heard: last['heard'] == true)
         # K4 R1: a resent borrow "done" carries the ids the original ended (kept in lastSpent)
         replay[:body]['endedPcIds'] = last['endedPcIds'] if last['endedPcIds'].is_a?(Array) && last['endedPcIds'].any?
+        # K5: and the expired token sessions among them, so the client gives those the token line
+        replay[:body]['tokenExpiredPcIds'] = last['tokenExpiredPcIds'] if last['tokenExpiredPcIds'].is_a?(Array) && last['tokenExpiredPcIds'].any?
         return replay
       end
       # 3. handed over and not yet spent
@@ -217,6 +219,8 @@ module BreakEscape
       end
       # Kept so a resent "done" (a lost answer) names them again (K4 R1)
       entry['lastSpent'][key]['endedPcIds'] = borrow_ended if borrow_ended.any?
+      borrow_token_ids = borrow_ended.any? ? (Array(defined?(@token_expired_pc_ids) ? @token_expired_pc_ids : nil) & borrow_ended) : []
+      entry['lastSpent'][key]['tokenExpiredPcIds'] = borrow_token_ids if borrow_token_ids.any?
       save!
       result = workaround_body(npc, w, heard: heard_now)
       # Keyring K4 (plan 9): the sessions the borrow's end pruned (a `from` session whose source
