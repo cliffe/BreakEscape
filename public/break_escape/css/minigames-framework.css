@@ -32,10 +32,6 @@
     font-weight: 400;
 }
 
-/* Every pixel face in a minigame draws at its only weight. !important so the scene sheets'
-   old `font-weight: bold` and the browser's bold headings, <th>, <b> and <strong> all
-   resolve to 400 (the audit's faux-bold check reads the computed weight). Diegetic pages
-   (an email body, a web page) keep their own weights. */
 /* Crisp pixel-font titles. `font-smooth: never` and `-webkit-font-smoothing: none` (main.css,
    player_preferences.css) are ignored by Chrome and Firefox on Windows and Linux, so a title on an
    opaque panel (the device frame's face, a paper note) gets LCD subpixel antialiasing: red and blue
@@ -43,12 +39,67 @@
    promoting the title to its own layer gives greyscale antialiasing, and on the pixel grid (Press
    Start 2P at 8 or 16px, whole-pixel positions) greyscale leaves only the text and background
    colours. `will-change: transform` is used because `opacity` and `backface-visibility` do not
-   change the choice. Scoped to titles, not the whole container, because a transformed container
-   becomes the containing block of every position:fixed popup inside a minigame. */
-.minigame-container :is([class*="-title"], .minigame-header h3) {
+   change the choice.
+   The list is explicit, not a `[class*="-title"]` match: that also caught wrapper bars
+   (.console-titlebar, .desktop-window-titlebar) that hold the close button, which would become
+   stacking contexts and containing blocks for fixed descendants, and non-pixel-font titles.
+   Only leaf text elements in a pixel font (Press Start 2P, VT323, GNF) belong here. A NEW
+   minigame title in a pixel font must be added to this list (test/js/minigame-title-crisp-css.test.mjs
+   checks the list). Never add a wrapper bar. */
+.minigame-container :is(
+    .device-frame-title,
+    .patch-panel-title,
+    .rogue-ap-title-text,
+    .console-title,
+    .pin-minigame-title,
+    .pin-minigame-attempts-title,
+    .notes-minigame-title,
+    .signin-title,
+    .password-prompt-title,
+    .password-modal-title,
+    .desktop-window-title,
+    .window-title,
+    .share-folder-path,
+    .dusting-title,
+    .da-title,
+    .ehr-terminal-online-title,
+    .er-title,
+    .ib-title,
+    .ip-modal-title,
+    .lpb-title,
+    .lpb-inspect-title,
+    .lpb-pretext-title,
+    .tri-title,
+    .mail-contacts-title,
+    .mail-compose-title,
+    .mail-redflag-title,
+    .mail-create-title,
+    .cms-content-title,
+    .cb-section-title,
+    .bce-mx-tip-title,
+    .bce-mx-mid-title,
+    .fpr-result-title,
+    .nad-detail-paths-title,
+    .nsm-panel-title,
+    .nsm-cons-rule-title,
+    .nsm-modal-title,
+    .ob-title,
+    .siem-pane-title,
+    .siem-queue-section-title,
+    .pretext-title,
+    .pretext-card-title,
+    .pretext-held-title,
+    .wcc-letterhead-title,
+    .wcc-doc-title,
+    .minigame-header h3
+) {
     will-change: transform;
 }
 
+/* Every pixel face in a minigame draws at its only weight. !important so the scene sheets'
+   old `font-weight: bold` and the browser's bold headings, <th>, <b> and <strong> all
+   resolve to 400 (the audit's faux-bold check reads the computed weight). Diegetic pages
+   (an email body, a web page) keep their own weights. */
 .minigame-container *:not([data-diegetic], [data-diegetic] *) {
     font-weight: 400 !important;
 }

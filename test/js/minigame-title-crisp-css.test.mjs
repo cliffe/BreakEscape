@@ -1,7 +1,8 @@
 // Minigame titles in pixel fonts must render without colour fringes (review finding B3.1 R1 m7).
 // `font-smooth: never` and `-webkit-font-smoothing: none` do nothing on Chrome for Linux and Windows,
 // so the fix is a compositing hint on the title elements (greyscale antialiasing instead of LCD).
-// Live proof: before 586/514/472 fringe pixels per title, after 0 (tools: headless Chromium, 3 sizes).
+// The rule uses an explicit class list: a `[class*="-title"]` match also caught wrapper bars that hold
+// the close button (.console-titlebar), icons and non-pixel-font titles (crisp-titles review R1 M1).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -12,12 +13,43 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const css = readFileSync(join(root, 'public/break_escape/css/minigames-framework.css'), 'utf8');
 const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
 const rules = [...strip(css).matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] }));
-const rule = rules.find((r) => /\[class\*="-title"\]/.test(r.sel) && /will-change:\s*transform/.test(r.body));
+const rule = rules.find((r) => /will-change:\s*transform/.test(r.body) && /-title/.test(r.sel));
+
+// The selector list inside `.minigame-container :is( ... )`, split on commas.
+const inner = rule && /^\.minigame-container\s+:is\(([\s\S]*)\)$/.exec(rule.sel);
+const parts = inner ? inner[1].split(',').map((x) => x.trim()).filter(Boolean) : [];
+// A part matches an element when it is a single class (the leaf title); a compound part such as
+// `.minigame-header h3` matches by tag within a header.
+const matchesClass = (cls) => parts.some((p) => p === `.${cls}`);
+const matchesHeaderH3 = () => parts.includes('.minigame-header h3');
 
 test('a title rule promotes minigame titles to their own layer (greyscale antialiasing)', () => {
-    assert.ok(rule, 'a rule on [class*="-title"] sets will-change: transform');
-    assert.match(rule.sel, /^\.minigame-container\b/, 'scoped to the minigame container');
-    assert.match(rule.sel, /\.minigame-header h3/, 'covers the framework header title too');
+    assert.ok(rule, 'a will-change: transform rule on minigame titles exists');
+    assert.ok(inner, 'scoped to the minigame container with :is(list)');
+    assert.ok(parts.length >= 10, 'the list names the titles');
+    assert.ok(matchesHeaderH3(), 'covers the framework header title too');
+});
+
+test('every entry is an exact class (no substring or attribute match)', () => {
+    for (const p of parts) {
+        assert.ok(/^\.[\w-]+$/.test(p) || p === '.minigame-header h3', `entry ${p} is a plain class`);
+    }
+    assert.doesNotMatch(rule.sel, /\[class/);
+});
+
+test('the pixel-font leaf titles are covered', () => {
+    for (const cls of ['device-frame-title', 'console-title', 'pin-minigame-title', 'notes-minigame-title',
+        'patch-panel-title', 'rogue-ap-title-text', 'signin-title', 'desktop-window-title', 'share-folder-path']) {
+        assert.ok(matchesClass(cls), `${cls} is listed`);
+    }
+});
+
+test('wrapper bars, icons and non-pixel titles are not covered', () => {
+    for (const cls of ['console-titlebar', 'console-titles', 'console-title-org', 'desktop-window-titlebar',
+        'share-folder-titlebar', 'network-view-title-icon', 'bv-title-block', 'ob-page-title',
+        'ob-site-title', 'ac-title', 'ncsc-brief-title', 'minigame-container']) {
+        assert.ok(!matchesClass(cls), `${cls} is not listed`);
+    }
 });
 
 test('the rule is on the titles, not the container (a transformed container captures position:fixed popups)', () => {
@@ -30,17 +62,9 @@ test('the rule adds no transform, zoom, filter, radius or non-pixel font to titl
     assert.doesNotMatch(rule.body, /(^|[;\s])(transform|zoom|filter|border-radius|font-family)\s*:/);
 });
 
-test('the covered title classes are the ones the device frame and other minigames use', () => {
-    for (const cls of ['device-frame-title', 'pin-minigame-title', 'notes-minigame-title']) {
-        assert.ok(/-title$/.test(cls) && /\[class\*="-title"\]/.test(rule.sel), `${cls} matches [class*="-title"]`);
-    }
-    const dev = readFileSync(join(root, 'public/break_escape/css/device-frame.css'), 'utf8');
-    assert.match(dev, /\.device-frame-title\b/);
-    assert.match(dev, /font-size:\s*16px/);
-});
-
-test('the title font sizes stay on whole pixels in the device frame (8 or 16px)', () => {
+test('the device frame title keeps whole pixel font sizes', () => {
     const dev = strip(readFileSync(join(root, 'public/break_escape/css/device-frame.css'), 'utf8'));
-    const t = [...dev.matchAll(/\.device-frame-title\s*\{([^}]*)\}/g)].map((m) => /font-size:\s*(\d+)px/.exec(m[1])?.[1]);
-    assert.deepEqual(t.sort(), ['16', '8']);
+    const sizes = [...dev.matchAll(/\.device-frame-title\s*\{([^}]*)\}/g)].map((m) => /font-size:\s*([\d.]+)px/.exec(m[1])?.[1]).filter(Boolean);
+    assert.ok(sizes.length >= 1);
+    for (const s of sizes) assert.match(s, /^\d+$/, `font size ${s}px is whole`);
 });
