@@ -36,6 +36,19 @@
    old `font-weight: bold` and the browser's bold headings, <th>, <b> and <strong> all
    resolve to 400 (the audit's faux-bold check reads the computed weight). Diegetic pages
    (an email body, a web page) keep their own weights. */
+/* Crisp pixel-font titles. `font-smooth: never` and `-webkit-font-smoothing: none` (main.css,
+   player_preferences.css) are ignored by Chrome and Firefox on Windows and Linux, so a title on an
+   opaque panel (the device frame's face, a paper note) gets LCD subpixel antialiasing: red and blue
+   fringes on every glyph edge. Chrome only uses LCD text on a layer it can prove opaque, so
+   promoting the title to its own layer gives greyscale antialiasing, and on the pixel grid (Press
+   Start 2P at 8 or 16px, whole-pixel positions) greyscale leaves only the text and background
+   colours. `will-change: transform` is used because `opacity` and `backface-visibility` do not
+   change the choice. Scoped to titles, not the whole container, because a transformed container
+   becomes the containing block of every position:fixed popup inside a minigame. */
+.minigame-container :is([class*="-title"], .minigame-header h3) {
+    will-change: transform;
+}
+
 .minigame-container *:not([data-diegetic], [data-diegetic] *) {
     font-weight: 400 !important;
 }
