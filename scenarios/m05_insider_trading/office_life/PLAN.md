@@ -34,16 +34,16 @@ The aim chain does not change. No task, objective, `concludeRequires` or lock re
 
 ## 2. People
 
-| NPC | Class | Post | Leash | Needs | Groups and avoids | Habits | Beats protected by | If attacked mid-walk |
-|---|---|---|---|---|---|---|---|---|
-| `lisa_park` | free (D78 class; `ANALYSIS.md` section 1) | break room (4,4) | `needsRooms: [break_room]`; the kettle is one tile from her post | `tea` (section 2A) | none | none | her conversation (always open, talkable at the kettle, frozen in conversation), the tin, the pamphlet's neighbour: section 2A | unchanged; her attack and KO now also set `qdc_staff_upset` |
-| `owen_gallagher` | holding or guarding (D78 class) | open office | n/a | none | n/a | none | protection 1 (no needs) | unchanged |
-| `dr_halloran`, `patricia_morgan` | plot-located / holding (suspect, badges, files) | own rooms | n/a | none | n/a | none | protection 1 | unchanged |
-| `david_torres` | plot-located, hostile, `initiallyHidden` | data centre | n/a | none | n/a | none | protection 1 | unchanged |
-| phones and cutscene records | plot-located / never | lobby | n/a | none | n/a | none | n/a | n/a |
-| `thandiwe_moyo` (office manager) | ambient, day only | break room, table 2 east end, south seat (6,6) | `needsRooms: [break_room, main_corridor]`; hostile leash | caffeine, thirst | groups `qdc_staff` | none | not near any beat; see 2.1 | `thandiwe_ko`, `qdc_staff_upset`; machines off; gives up the chase at the leash and walks back to her post |
-| `niamh_doherty` (internal comms) | ambient, day to night | break room, table 2 east end, north seat (6,4) | `needsRooms: [break_room, main_corridor]`; hostile leash | caffeine, thirst | groups `qdc_staff` | none | as above | `niamh_ko`, `qdc_staff_upset`; as above |
-| `bernadette_lyons` (evening cleaner) | ambient, evening and night, `initiallyHidden` | break room, west of the recycling bins (5,7) | `needsRooms: [break_room]`; hostile leash | caffeine, tidy | groups `qdc_staff` | none (the bins are a need, section 2.13) | as above | `bernadette_ko`, `qdc_staff_upset`; as above |
+| NPC | Class | Post | Leash | Needs | Groups and avoids | Habits | Beats protected by | Gate global, set by, lead time | If attacked mid-walk |
+|---|---|---|---|---|---|---|---|---|---|
+| `lisa_park` | free (D78 class; `ANALYSIS.md` section 1) | break room (4,4) | `needsRooms: [break_room]`; the kettle is one tile from her post | `tea` (section 2A) | none | none | her conversation (always open, talkable at the kettle, frozen in conversation), the tin, the pamphlet's neighbour: section 2A | `lisa_met` gates her kettle trip, set by a `conversation_closed:lisa_park` onceOnly, so she is found at post first (no beat needs her at post; the conversation is not a beat); `tea` initial 100, decay 0.01, trips only by the two mapped breaks; kettle `offWhen: qdc_staff_upset`; two-room lead so the walk is unseen | unchanged; her attack and KO now also set `qdc_staff_upset` |
+| `owen_gallagher` | holding or guarding (D78 class) | open office | n/a | none | n/a | none | protection 1 (no needs) | n/a | unchanged |
+| `dr_halloran`, `patricia_morgan` | plot-located / holding (suspect, badges, files) | own rooms | n/a | none | n/a | none | protection 1 | n/a | unchanged |
+| `david_torres` | plot-located, hostile, `initiallyHidden` | data centre | n/a | none | n/a | none | protection 1 | n/a | unchanged |
+| phones and cutscene records | plot-located / never | lobby | n/a | none | n/a | none | n/a | n/a | n/a |
+| `thandiwe_moyo` (office manager) | ambient, day only | break room, table 2 east end, south seat (6,6) | `needsRooms: [break_room, main_corridor]`; hostile leash | caffeine, thirst | groups `qdc_staff` | none | not near any beat; see 2.1 | n/a | `thandiwe_ko`, `qdc_staff_upset`; machines off; gives up the chase at the leash and walks back to her post |
+| `niamh_doherty` (internal comms) | ambient, day to night | break room, table 2 east end, north seat (6,4) | `needsRooms: [break_room, main_corridor]`; hostile leash | caffeine, thirst | groups `qdc_staff` | none | as above | n/a | `niamh_ko`, `qdc_staff_upset`; as above |
+| `bernadette_lyons` (evening cleaner) | ambient, evening and night, `initiallyHidden` | break room, west of the recycling bins (5,7) | `needsRooms: [break_room]`; hostile leash | caffeine, tidy | groups `qdc_staff` | none (the bins are a need, section 2.13) | as above | n/a | `bernadette_ko`, `qdc_staff_upset`; as above |
 
 ### 2.1 Lisa keeps her post and her text
 
@@ -85,18 +85,18 @@ Niamh starts caffeine at 45 so the two do not move together by default. **Estima
 
 ### 2.6 What starts a break (day)
 
-1. `conversation_closed:lisa_park`, `delayMs` 2000, cooldown 150000, condition `!globalVars.qdc_staff_upset && globalVars.server_room_entered !== true`: Thandiwe `needs.set.caffeine 20`.
-2. `room_entered:main_corridor`, condition `data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true`, `delayMs` 2000, cooldown 150000: Niamh `needs.set.thirst 20`. The player walks out and sees Niamh follow to the cooler a few seconds later.
+1. `conversation_closed:lisa_park`, `delayMs` 2000, cooldown 150000, condition `!globalVars.qdc_staff_upset && globalVars.server_room_entered !== true`: Thandiwe `"needs": { "set": { "caffeine": 20 } }`.
+2. `room_entered:main_corridor`, condition `data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true`, `delayMs` 2000, cooldown 150000: Niamh `"needs": { "set": { "thirst": 20 } }`. The player walks out and sees Niamh follow to the cooler a few seconds later.
 
 Not used by day: `room_entered:break_room` (it would put a pair at the espresso just as the player walks up to Lisa for the first time), and any first-frame `previousRoom === null` mapping. The evening break in 2.13 does use `room_entered:break_room`, after the turn, when Lisa has usually been met and L1b holds anyway.
 
 ### 2.7 Coupled breaks
 
 One way each (MP 4):
-- On Niamh: `npc_use_started:break_espresso`, condition `data.npcId === 'thandiwe_moyo' && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 120000: Niamh caffeine 20.
-- On Thandiwe: `npc_use_started:corridor_cooler`, condition `data.npcId === 'niamh_doherty' && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 120000: Thandiwe thirst 20.
+- On Niamh: `npc_use_started:break_espresso`, condition `data.npcId === 'thandiwe_moyo' && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 120000: Niamh `"needs": { "set": { "caffeine": 20 } }`.
+- On Thandiwe: `npc_use_started:corridor_cooler`, condition `data.npcId === 'niamh_doherty' && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 120000: Thandiwe `"needs": { "set": { "thirst": 20 } }`.
 
-Seeding the goodbye (so `ex_heading_home` is likely to be heard): `global_variable_changed:server_badge_obtained` on Niamh, condition `value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true`, `delayMs` 2000, cooldown 150000: Niamh thirst 20. Niamh is the trigger, not Thandiwe, because the coupling above runs Niamh to Thandiwe: Niamh at the cooler pulls Thandiwe there, and the pair is together as the player crosses to `server_hallway`. (A mapping on Thandiwe would send her alone, with nothing pulling Niamh.) It is appended last on Niamh's list and uses no `onceOnly`.
+Seeding the goodbye (so `ex_heading_home` is likely to be heard): `global_variable_changed:server_badge_obtained` on Niamh, condition `value === true && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true`, `delayMs` 2000, cooldown 150000: Niamh `"needs": { "set": { "thirst": 20 } }`. Niamh is the trigger, not Thandiwe, because the coupling above runs Niamh to Thandiwe: Niamh at the cooler pulls Thandiwe there, and the pair is together as the player crosses to `server_hallway`. (A mapping on Thandiwe would send her alone, with nothing pulling Niamh.) It is appended last on Niamh's list and uses no `onceOnly`.
 
 The evening coupling (Bernadette to Niamh at the espresso) is in section 2.13.
 
@@ -113,7 +113,7 @@ The evening coupling (Bernadette to Niamh at the espresso) is in section 2.13.
 There is no clock event, so the turns key on globals (m03 pattern, MP 3).
 
 **Evening: Thandiwe goes home.** Three mappings on Thandiwe, in the MP 3 shape (the m03 build; MP 3 gives "three plain mappings at the turn and two `onceOnly` room re-hides" for a case with three turn events, and here the turn has one):
-- plain, no `onceOnly`: `{ "eventPattern": "room_entered:server_room", "setVisible": false }` (the event that sets `server_room_entered`, `:1184` to `:1186`; `room_entered:server_room` fires from `core/rooms.js:3236`);
+- plain, no `onceOnly`: `{ "eventPattern": "room_entered:server_room", "condition": "globalVars.thandiwe_ko !== true", "setVisible": false }`. The KO guard leaves a KO'd body as the attack probe left it rather than toggling its physics on a repeat (`systems/npc-behavior.js:438`, `:405` in `npc-hostile.js`); the event sets `server_room_entered`, `:1184` to `:1186`; `room_entered:server_room` fires from `core/rooms.js:3236`;
 - `onceOnly`: `room_entered:break_room`, condition `globalVars.server_room_entered === true`, `setVisible: false`;
 - `onceOnly`: `room_entered:main_corridor`, same condition, `setVisible: false`.
 That is two `onceOnly` keys for Thandiwe. The server room is reached only through `server_hallway` (`:1859` to `:1861`, whose west door joins `main_corridor`, `:1701`), so the plain hide happens with the player two rooms from the break room and is never seen.
@@ -132,7 +132,7 @@ That is two `onceOnly` keys for Thandiwe. The server room is reached only throug
 
 **Hearing the goodbye first.** The exchange `ex_heading_home` is gated on `server_badge_obtained === true` and `server_room_entered === false`: true only in the window just before the turn. Section 2.7 seeds the pair to the cooler on `server_badge_obtained`.
 
-Hidden NPCs are skipped by the needs tick and by exchanges, and the m03 fix unseats a seated NPC at once on hide. The build renders the turn and looks (check E2).
+A hidden NPC keeps decaying (the tick decays first at `systems/npc-needs.js:1404`, then returns for an unavailable NPC at `:1418` to `:1426`; `_decay` has no hidden check, `:1546` to `:1571`) but takes no trips while hidden, and it is skipped by exchanges; the m03 fix unseats a seated NPC at once on hide. Bernadette's needs are reset on each of her show mappings before `setVisible` runs, so her timing starts clean at the reveal (section 2.13, m1). The build renders the turn and looks (check E2).
 
 ### 2.11 Trouble
 
@@ -152,8 +152,9 @@ Machines switch off on it (`offWhen`) and needs walk the newcomers home. No `pat
 **Debrief.** `friendly_kos()` (`ink/m05_closing_debrief.ink:83` to `:97`) counts only patricia, owen, lisa and halloran, so after a newcomer's KO the diplomatic branch would print "You said you'd read the room. You did." (`:237` to `:244`), and the trust penalties (`:155` to `:168`) would ignore it. This plan changes that existing ink, with no new or changed line:
 - add `VAR thandiwe_ko = false`, `VAR niamh_ko = false`, `VAR bernadette_ko = false` beside the KO VARs at `:62` to `:65` (scenario globals of the same name sync into them);
 - count each in `friendly_kos()`, one block per VAR in the same shape as the existing four;
-- in `start`, after `halloran_ko`'s penalty (`:164` to `:166`), add `{thandiwe_ko: ~ handler_trust = handler_trust - 10}` and the same for `niamh_ko` and `bernadette_ko`, matching Lisa's -10, the other bystander.
-They do not go in `exportGlobals` (`:660` to `:663`); nothing downstream reads them. The debrief ink is recompiled and its JSON committed with the build.
+- in `start`, after `halloran_ko`'s penalty (`:166` to `:168`), add `{thandiwe_ko: ~ handler_trust = handler_trust - 10}` and the same for `niamh_ko` and `bernadette_ko`, matching Lisa's -10 (`:163` to `:165`), the other bystander.
+
+The three new KO globals sync into the debrief ink by name, as `lisa_ko` and `owen_ko` do: each is declared both as a scenario global (section 2.11) and as a debrief `VAR`, and the engine copies matching names into the story at runtime, so no list change is needed for the sync. They are deliberately left out of `exportGlobals` (which is in `scenario.json.erb:662` to `:663`, the cross-mission list m06 and later import from, not a function in the debrief ink): no later mission reads a newcomer's KO, unlike the four plot-character KOs (`lisa_ko`, `owen_ko`, `halloran_ko`, `patricia_ko`) that are exported there. The per-NPC consequence recital (`:319` to `:344`) names only the plot characters and is left unchanged, which keeps the "no new line" rule. The debrief ink is recompiled and its JSON committed with the build.
 
 ### 2.12 Build skeletons
 
@@ -174,8 +175,14 @@ They do not go in `exportGlobals` (`:660` to `:663`); nothing downstream reads t
     { "with": "thandiwe_moyo", "knot": "ex_collection",
       "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": false } },
     { "with": "thandiwe_moyo", "knot": "ex_heading_home",
-      "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": false, "server_badge_obtained": true } } ] }
+      "requireGlobal": { "qdc_staff_upset": false, "server_room_entered": false, "server_badge_obtained": true } } ],
+  "eventMappings": [
+    { "eventPattern": "room_entered:main_corridor",
+      "condition": "data.previousRoom === 'break_room' && !globalVars.qdc_staff_upset && globalVars.server_room_entered !== true",
+      "delayMs": 2000, "cooldown": 150000,
+      "needs": { "set": { "thirst": 20 } } } ] }
 ```
+The `needs` action takes `{ "set": { "<need>": <level> } }` (`systems/npc-manager.js:1637` to `:1640`; `systems/npc-needs.js:1131` to `:1146`); the prose in sections 2.6, 2.7, 2.13 and 2A names the same action in that form, so the build does not guess.
 The day exchanges live on `niamh_doherty`, the lower id of that pair. `_findExchange` (`systems/npc-needs.js:2975`) tries both owners in id order, so the lower id is a preference, not a requirement. Thandiwe mirrors this without `exchanges`, with `globalVarOnKO: "thandiwe_ko"` and the same `behavior`. Every key tested for `false` is declared `false` (`server_room_entered` at `:804` and `server_badge_obtained` at `:742` already are). Post positions are the estimates of section 2.3 (Thandiwe at (6,6)).
 
 **Voice style.** `VOICE_CAST.md:100` names "Quayholt" and an "IT trainer", which do not exist here. Rewrite for Quantum Dynamics, keeping the Belfast accent: "Quantum Dynamics' internal communications officer, in her mid 20s, bright, quick and a little wry. Speak with a consistent Northern Irish accent from Belfast throughout, with no shift to any other accent." Thandiwe (`VOICE_CAST.md:110`) changes "Merrin & Sallow's studio manager" to "Quantum Dynamics' office manager" and keeps the rest.
@@ -184,10 +191,10 @@ The day exchanges live on `niamh_doherty`, the lower id of that pair. `_findExch
 
 **Post.** The recycling bins (`qdc_recycling_bins1`, gid 1180) span x 190 to 248, y 226 to 258, with collision at (192,248), 54 by 10. Thandiwe's chair (`hospital_chair_north`, x 188 to 204, y 192 to 222) is directly north of the bins' west end, and the plant or shelf east of them (gid 354, x 248 to 286, y 222 to 298) covers the east side. **Estimate**: post (5,7), body centre about (176,236), facing east towards the bins: 16 px west of the bins' collision, 26 px below Thandiwe's chair foot, clear of the collision under gid 863 at (172,288). The build measures the body-centre cell, checks it is walkable on the 8 px grid, and checks that the player's walk from the west door to Lisa does not pass it. Fallback post: the nearest walkable cell west of the bins that is clear of both chairs at x 168 and x 188. `needsHome` is the post; standing, no `seated`.
 
-**Appearance, so that the sync count holds.** `behavior.initiallyHidden: true` and three show mappings on Bernadette, the mirror of Thandiwe's hide:
-- plain, no `onceOnly`: `{ "eventPattern": "room_entered:server_room", "setVisible": true }`;
-- `onceOnly`: `room_entered:break_room`, condition `globalVars.server_room_entered === true`, `setVisible: true`;
-- `onceOnly`: `room_entered:main_corridor`, same condition, `setVisible: true`.
+**Appearance, so that the sync count holds.** `behavior.initiallyHidden: true` and three show mappings on Bernadette, the mirror of Thandiwe's hide. Each also carries `"needs": { "set": { "caffeine": 60, "tidy": 50 } }`, which a mapping runs before `setVisible` (`systems/npc-manager.js:1639` then `:1656`), so her needs start clean at the reveal rather than at 0 from decaying while hidden (m1):
+- plain, no `onceOnly`: `{ "eventPattern": "room_entered:server_room", "condition": "globalVars.bernadette_ko !== true", "needs": { "set": { "caffeine": 60, "tidy": 50 } }, "setVisible": true }`. The KO guard stops a repeat on later server-room entries from re-enabling a KO'd body (a `setVisible: true` re-enables the physics body, `systems/npc-behavior.js:438`; a KO'd body otherwise keeps `checkCollision.none`, `systems/npc-hostile.js:405`);
+- `onceOnly`: `room_entered:break_room`, condition `globalVars.server_room_entered === true`, `"needs": { "set": { "caffeine": 60, "tidy": 50 } }`, `setVisible: true` (no KO guard needed: a `onceOnly` cannot repeat);
+- `onceOnly`: `room_entered:main_corridor`, same condition and `needs.set`, `setVisible: true`.
 Two `onceOnly` keys, and one saved visibility key (`npcVisibility.bernadette_lyons`, per key, `systems/npc-manager.js:254`, `:353`; `state-sync.js:43`), which also brings her back visible after a reload in the evening: saved visibility wins over `initiallyHidden` on register. A repeat of the plain show on later server-room entries sets the same value again and adds nothing.
 
 **The route that skips the break room.** Her mappings register only when the break room loads. A player who reaches the server room before ever opening the break room never runs the plain show; she is created hidden when the door opens and shown by the `onceOnly` on `room_entered:break_room`. Her post is in the far south-east corner, about seven tiles from the west door. Check E5 renders that route and records whether she appears in view. If a frame of her popping in shows, first add a show on `door_opened` (`systems/doors.js:951`; the build reads the payload for the room field) with the same condition, one more `onceOnly`, re-counted in section 7; if the mapping is not yet registered when that event fires, accept the pop: a cleaner arriving as the player first walks into the break room in the evening is plausible, and this route skips the room for the whole day.
@@ -199,13 +206,13 @@ Two `onceOnly` keys, and one saved visibility key (`npcVisibility.bernadette_lyo
   "tidy":     { "initial": 50, "decayPerMin": 8, "urgentAt": 30, "jitterPct": 10 }
 }
 ```
-A hidden NPC is skipped by the needs tick, so both needs start counting when she appears. **Estimate**: first bins trip about 2.5 needs-minutes after she appears, then about every 9; natural coffee after about 10.
+A hidden NPC keeps decaying but takes no trips while hidden (`systems/npc-needs.js:1404`, `:1418` to `:1426`; `_decay` has no hidden check, `:1546` to `:1571`). So her three show mappings each reset her needs (`caffeine` 60, `tidy` 50), which a mapping runs before `setVisible` (`needs` at `systems/npc-manager.js:1639`, then `setVisible` at `:1656`), and her timing starts clean at the reveal rather than at 0 from decaying unseen. **Estimate**: with `tidy` reset to 50 (decay 8, urgent at 30), first bins trip about 2.5 needs-minutes after she appears, then about every 9; natural coffee after about 10.
 
 **Bins routine.** Declare the bins: `{ "id": "break_bins", "type": "qdc_recycling_bins", "affordance": { "satisfies": "tidy", "restores": 100, "useSeconds": 10, "capacity": 1, "useFrom": { "dx": 1, "dy": -1 }, "queue": false }, "offWhen": "qdc_staff_upset" }`, base type name written literally, no `position` (SK 109, 110). There is no bins preset, so the object's own affordance is the whole of it (`systems/office-presets.js` `resolveAffordance`); no preset id applies and V1 must show none. Only Bernadette has a `tidy` need, so nobody else walks to them. The bins' centre (about (219,242)) is in cell (6,7); `useFrom { dx: 1, dy: -1 }` gives (7,6), centre about (240,208), north-east of the bins and south of the vending machine's collision (246,186, 38 by 10, ending at y 196). Her walk from (5,7) goes round the north of the bins: two or three tiles, a 10 s stand, and back. The build measures (7,6) against the vending collision; fallback use cell (6,6) with `useFrom { dx: 0, dy: -1 }`, Thandiwe's post, which is empty in the evening. One bins object exists in the break room (`bin1` is in the corridor and is another type), so MR 2 passes; the build loads twice and lists it.
 
 **Mapped evening break, so `ex_late_again` is heard.** Natural rhythm would leave Bernadette and Niamh rarely together at the espresso, so:
-- On Bernadette: `room_entered:break_room`, condition `globalVars.server_room_entered === true && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 150000: Bernadette caffeine 20.
-- On Niamh, coupled one way (MP 4), appended after her other mappings: `npc_use_started:break_espresso`, condition `data.npcId === 'bernadette_lyons' && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 120000: Niamh caffeine 20.
+- On Bernadette: `room_entered:break_room`, condition `globalVars.server_room_entered === true && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 150000: Bernadette `"needs": { "set": { "caffeine": 20 } }`.
+- On Niamh, coupled one way (MP 4), appended after her other mappings: `npc_use_started:break_espresso`, condition `data.npcId === 'bernadette_lyons' && !globalVars.qdc_staff_upset`, `delayMs` 2000, cooldown 120000: Niamh `"needs": { "set": { "caffeine": 20 } }`.
 The pair forms at the espresso a few seconds after the player walks in. Bernadette's use starts the 22 s window; Niamh arrives about 4 to 5 s later, which leaves time for the three-line exchange. Both are cooldown mappings with no `onceOnly`. Lisa stays talkable with the pair there (L1b).
 
 **Exchange.** `ex_late_again` lives on `bernadette_lyons` (the lower id of the pair), `with: "niamh_doherty"`, `requireGlobal: { "qdc_staff_upset": false, "server_room_entered": true }`. Both keys are declared booleans.
@@ -242,9 +249,10 @@ Built. D84 b: story NPCs whose conversation is always open may take short routin
 
 **Design: one kettle trip.**
 - Kettle: the Tiled item `kettle1.png` (gid 834, x 98 to 113, y 61 to 79). Declare `{ "id": "kettle1", "type": "kettle", "affordance": { "satisfies": "tea", "queue": false }, "offWhen": "qdc_staff_upset" }`, `type` written literally and no `position` (SK 109, 110). The kettle preset (`js/data/office-presets.json`) gives capacity 1, `useFrom { dx: 0, dy: 1 }`, 12 s and `satisfies: "caffeine"`; the own `satisfies: "tea"` overrides it field by field (`systems/office-presets.js:69` to `:70`). `queue: false` because the preset's queue cells fall at (2,3) and (1,3), the second against `qdc_fridge1`. The use cell is (3,3), centre (112,112), one diagonal step from Lisa's post.
-- Lisa gets one need: `"tea": { "initial": 100, "decayPerMin": 0.01, "urgentAt": 30 }`. `normaliseNeed` drops a need unless both `decayPerMin` and `urgentAt` are above zero (`systems/npc-needs.js:358` to `:363`); it clamps decay at 0.01, so the need never falls to 30 by itself in any real session and her trip is never natural. `needs.set tea 20` puts her below `urgentAt` and sends her. The design catch: the kettle must say `satisfies: "tea"` and Lisa must hold a single `tea` need, because a kettle that satisfied `caffeine` would draw the newcomers, and a `caffeine` need on Lisa would send her to the espresso at her own elbow.
+- Lisa gets one need: `"tea": { "initial": 100, "decayPerMin": 0.01, "urgentAt": 30 }`. `normaliseNeed` drops a need unless both `decayPerMin` and `urgentAt` are above zero (`systems/npc-needs.js:358` to `:363`); it clamps decay at 0.01, so the need never falls to 30 by itself in any real session and her trip is never natural. A `"needs": { "set": { "tea": 20 } }` action puts her below `urgentAt` and sends her. The design catch: the kettle must say `satisfies: "tea"` and Lisa must hold a single `tea` need, because a kettle that satisfied `caffeine` would draw the newcomers, and a `caffeine` need on Lisa would send her to the espresso at her own elbow.
 - `needsHome` is her post (4,4); `needsRooms: ["break_room"]`.
-- Two mappings appended to `lisa_park`, using `cooldown` of 900000 and no `onceOnly` (so no saved index moves): `room_entered:open_office_area` and `room_entered:reception_lobby`, each with condition `data.previousRoom === 'main_corridor' && !globalVars.qdc_staff_upset`, `delayMs` 2000, action `needs.set tea 20` (`control()`, `systems/npc-needs.js` about `:1130`). The player is then two rooms from the break room, so the walk (about 1 s) is not seen. Talking to her at the kettle is allowed (D84 b); the two-rooms gate is stricter than needed and stays.
+- A first-talk gate (m3): one `onceOnly` mapping on `lisa_park`, `conversation_closed:lisa_park`, `setGlobal: { "lisa_met": true }` (a mapping sets a global with `setGlobal`, `systems/npc-manager.js:1500` to `:1506`; `conversation_closed:<npcId>` is a real event, `:752`). `lisa_met` is declared `false`. It costs one saved global and one `onceOnly` key, re-counted in section 7.
+- Two mappings appended to `lisa_park`, using `cooldown` of 900000 and no `onceOnly` (so no saved index moves): `room_entered:open_office_area` and `room_entered:reception_lobby`, each with condition `data.previousRoom === 'main_corridor' && globalVars.lisa_met === true && !globalVars.qdc_staff_upset`, `delayMs` 2000, action `"needs": { "set": { "tea": 20 } }` (`control()`, `systems/npc-needs.js` about `:1130`). The `lisa_met` gate holds her trip until the player has met her and closed the conversation, so a first meeting always finds her at her post, even on the peek route (open the break-room door from the corridor without entering, then cross to the open office and back, which otherwise registers her trip mappings and fires one: E-L4). The player is then two rooms from the break room, so the walk (about 1 s) is not seen. Talking to her at the kettle is allowed (D84 b).
 - Conversation freeze: the needs system holds an NPC in conversation (`systems/npc-needs.js:1435` to `:1449`), so she never moves mid-talk.
 - Owen stays put: his RFID clone works by proximity in a critical-path room, and the open office has nothing to gain.
 
@@ -252,7 +260,7 @@ Built. D84 b: story NPCs whose conversation is always open may take short routin
 - E-L1: leave to the lobby, return after 3 s, 6 s and 10 s; Lisa is at her post or at the kettle cell, and talkable each time.
 - E-L2: reload mid-trip; Lisa is at her post, with no duplicate sprite.
 - E-L3: the lock and key diff is empty, and no item position changed (the tin and the pamphlet included).
-- E-L4: a first meeting (the first time the player enters the break room) finds her at her post.
+- E-L4: a first meeting (the first time the player enters the break room) finds her at her post, including the peek route (open the door from the corridor without entering, cross to the open office and back): the `lisa_met` gate holds her trip until the conversation has been closed once.
 - E-L5: attack Lisa without a KO; `qdc_staff_upset` is set (section 2.11), the kettle goes off, and she does not start a trip.
 
 **Fallback.** If any of E-L1 to E-L4 fails, first raise the gate (a longer delay, or a third room away); if it still fails, drop the two trip mappings and the `tea` need, leave the kettle undeclared, and record it.
@@ -308,18 +316,20 @@ Existing lines changed: none. Existing ink logic changed: `friendly_kos()` and t
 | Trouble and switch globals | 2 | `qdc_staff_upset`, `qdc_cooler_off` |
 | KO globals | 3 | `thandiwe_ko`, `niamh_ko`, `bernadette_ko` |
 | Saved NPC visibility keys | 2 | `thandiwe_moyo` (false), `bernadette_lyons` (true); one key per NPC, set by `setVisible` |
+| Saved NPC hostility keys | up to 4 | `npcHostility` is keyed per NPC (`state-sync.js:43`); a strike adds one bounded key for the struck NPC (the three newcomers or Lisa), set once and never cleared |
 | Reveal globals | 0 | |
+| First-talk gate globals | 1 | `lisa_met`, declared `false`, set by one `onceOnly` on `conversation_closed:lisa_park` (section 2A, m3) |
 | Mappings using `cooldown` and no `onceOnly` | 9 | day breaks 2 (2.6); couplings 2 and the goodbye seed 1 (2.7); Lisa's trip 2 (2A); the evening break and its coupling 2 (2.13). They move no saved index |
-| Plain mappings, neither | 2 | Thandiwe's hide and Bernadette's show on `room_entered:server_room` |
+| Plain mappings, neither | 2 | Thandiwe's hide and Bernadette's show on `room_entered:server_room`, each now guarded by `!== true` on its KO global (m2). Every `setVisible` also posts an idempotent `update_room` / `update_npc_state` to the server on each server-room entry (`systems/npc-behavior.js:455` to `:458`; `systems/room-state-sync.js:220`): bounded traffic, no saved key |
 | Servings | 0 | |
-| `onceOnly` mappings | 11 | Thandiwe: 2 re-hides; Bernadette: 2 re-shows; trouble: 5 (attack Thandiwe, Niamh, Bernadette and Lisa, KO Lisa); cooler switch: 2 |
+| `onceOnly` mappings | 12 | Thandiwe: 2 re-hides; Bernadette: 2 re-shows; trouble: 5 (attack Thandiwe, Niamh, Bernadette and Lisa, KO Lisa); cooler switch: 2; Lisa first-talk: 1 (`conversation_closed:lisa_park` sets `lisa_met`, m3) |
 | Office-life items | 0 | |
 
 All are booleans, set once and never cleared (monotonic), and each goes as a per-key delta, so nothing grows and nothing is re-sent whole. Needs state is not saved (a reload resets everyone to posts). Niamh has no night hide, so no `onceOnly` for her. T133 plays no part: these are client-written globals. None is read by a task, objective or lock, so a forged value buys nothing. The E4 and E5 fallbacks would each add one `onceOnly`, re-counted here if used.
 
 ## 8. Field names to write
 
-`officePresets`, `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`, `behavior.initiallyHidden`; on objects, `officeType`, object-level `offWhen`, and `affordance` (`satisfies`, `restores`, `capacity`, `chatter`, `overhearRadius`, `useSeconds`, `useFrom`, `queue`). Declare machines by base type name. `scenario.json.erb` holds ERB comments with `%>`: edit with string replacement, never a Python `%` format. Append new mappings at the end of a list so existing `onceOnly` keys keep their handler index. No `||` in mapping conditions or `requireGlobal` (two mappings instead); credits conditions may use it.
+`officePresets`, `needs`, `needsHome`, `needsRooms`, `needsCompany.groups`, `chatter`, `chatterCooldownMin`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`, `behavior.initiallyHidden`; on objects, `officeType`, object-level `offWhen`, and `affordance` (`satisfies`, `restores`, `capacity`, `chatter`, `overhearRadius`, `useSeconds`, `useFrom`, `queue`). On event mappings: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal` (`{ "var": value }`), and the `needs` action `{ "set": { "<need>": <level> } }`. Declare machines by base type name. `scenario.json.erb` holds ERB comments with `%>`: edit with string replacement, never a Python `%` format. Append new mappings at the end of a list so existing `onceOnly` keys keep their handler index. No `||` in mapping conditions or `requireGlobal` (two mappings instead); credits conditions may use it.
 
 ## 9. Costs and decisions
 
@@ -370,7 +380,7 @@ The mission's critical path end to end, unchanged: every step passes. The VM fla
 - **E4** The "skip the break room" route (server room first, break room after): render the entry to the break room and record what the player sees of Thandiwe. If a frame of her shows, apply the `initiallyHidden` fallback in section 2.10.
 - **E5** Bernadette appears on both routes: break room seen by day, then the server room, then the break room (she is at her post on return); and the skip route of E4 (record whether she pops in view, and apply the 2.13 fallback if so). She is never visible before `server_room_entered`.
 - **E6** `ex_late_again` is heard within two returns to the break room after the turn, with the pair at the espresso.
-- **E7** Bernadette's bins trip: within about 4 needs-minutes of appearing she walks to the bins' use cell, stands about 10 s and walks back; the route clears the vending machine and does not cross Lisa's tile.
+- **E7** Bernadette's bins trip: within about 4 needs-minutes of appearing (her `tidy` and `caffeine` are reset on each show mapping, so her timing starts at the reveal, not from decaying while hidden) she walks to the bins' use cell, stands about 10 s and walks back; the route clears the vending machine and does not cross Lisa's tile.
 - **E-L1 to E-L5** Section 2A.
 
 ### 10.3 Reload
