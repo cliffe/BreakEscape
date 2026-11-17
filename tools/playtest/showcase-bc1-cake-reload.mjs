@@ -165,6 +165,9 @@ const _reload = reload;
 reload = async function (h) {
   const a = psSize(h.gid);
   await _reload(h);
+  // Needs reset to their initial levels on reload (R6), which can sit inside the cake's tempt band:
+  // hold the staff before the sync wait, or someone eats during it and the case measures that.
+  await calm(h);
   await h.t(WAIT);
   const b = psSize(h.gid);
   const grew = a.bytes != null && b.bytes != null ? b.bytes - a.bytes : null;
