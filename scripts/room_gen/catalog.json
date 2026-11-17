@@ -6325,6 +6325,24 @@
       "w": 16,
       "h": 16,
       "gid": 1486
+    },
+    "network_dropbox": {
+      "id": 686,
+      "w": 27,
+      "h": 25,
+      "gid": 1487
+    },
+    "network_port_cabinet": {
+      "id": 687,
+      "w": 28,
+      "h": 32,
+      "gid": 1488
+    },
+    "network_dropbox_planted_cabinet": {
+      "id": 688,
+      "w": 28,
+      "h": 32,
+      "gid": 1489
     }
   }
 }
