@@ -14,12 +14,15 @@ Branch `plan/ol-m10`, worktree `.claude/worktrees/p-ol-m10`, base main `3e00651a
 - No free course character has a voice m10 leaves unused. Picks share voices with bunker-only phone contacts: Orus with `vance_phone`, Despina with `victoria_line`/`victoria_threat`. m10 already shares Iapetus three ways.
 - Taken elsewhere: Access Tour demo (Ama, Lorna, Delphine, Julian, Thandiwe, Yasmin), Office Life Tour (Chidi, Jun, Graham, Agnieszka, Zainab), m01 (Fatima, Graham), m03 (Yusuf, Zainab), m04 (Ibrahim, Joanne), m05 (Niamh, Thandiwe), m06 (Lerato, Tomasz), m07 plan (Adaeze, Gwen).
 
-## Open
+## Open (resume here)
 
-1. Plan review R1 on `opus55` (read-only; it returns findings as text; save as `REVIEW_R1.md`, or `R1_FINDINGS.md` if the harness refuses). Then rewrite PLAN.md standalone (no review references), R2, R3, then R4 and R5 as delta reviews on Sonnet (Opus again if a major or new design decision). Stop at R5.
-2. Points a reviewer should test: whether two NPCs can hold posts on one object's use cells (else fallback F1); whether an object affordance works without `officePresets`; that the five team KO globals are declared; the crate spot against the van tap areas and cutscene spots.
-3. Commit each round with explicit paths after `git diff --cached --stat`. Never stage `node_modules` or `dungeon_graph.*`.
+Review loop state: R1 done (1 B, 3 M, 5 m; all fixed in PLAN.md, commit 795e13bf4). R2 done (1 B, 3 M, 6 m), saved as `REVIEW_R2.md` with each outcome decided, **but the PLAN.md rewrite for R2 is not applied yet**.
+
+1. Apply every R2 outcome in `REVIEW_R2.md` to PLAN.md (standalone, no review references), and the Q2 change to QUESTIONS.md (Victoria's in-person gallery scenes; option to re-voice Sofia in m10 only to Vindemiatrix or Achernar). Commit with explicit paths.
+2. R3 on `opus55` (R2 had a blocker and majors): full read-only review, plus the R2 unchecked items (end of forward_post objects array near `:2740` against ERB; new crate collision against the row-8 lane; validator on `startSound`; needs timing against the briefing window).
+3. R4 and R5 as delta reviews on Sonnet (diff since last round plus previous findings); back to `opus55` if Sonnet finds a major or a delta adds a design decision. Stop at R5 unless a blocker is open.
+4. Reviewers never open SecGen XML or scenario files, Vagrantfiles or exploit-detail field guides. Commit each round with explicit paths after `git diff --cached --stat`; never stage `node_modules` or `dungeon_graph.*`. If a tool refuses to write a file, do not work around it: put the text in the report.
 
 ## Commits
 
-`1ae7106d2` stage 0 start; `595dea9e4` baseline, plan and questions.
+`1ae7106d2` stage 0 start; `595dea9e4` baseline, plan and questions. Recast `3f8768edc`; R1 `795e13bf4`.
