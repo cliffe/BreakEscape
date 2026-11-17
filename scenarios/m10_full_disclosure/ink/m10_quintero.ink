@@ -166,12 +166,12 @@ agent_0x99: If that's wrong, Quintero's off the raid till you can clear her. Sur
     - quintero_stance == "quintero":
         Agent 0x2D 'Anchor': You said I was right. Now we're both in.
     - quintero_stance == "netherton":
-        Agent 0x2D 'Anchor': You picked the clock. Fair. It's still his door, and he's holding it open for us.
+        Agent 0x2D 'Anchor': You picked the clock. Fair. It's still Tesseract's door, and he's holding it open for us.
     }
     {door_branch() == "arrested" and nightshade_deal == "refused":
         Agent 0x2D 'Anchor': You turned him down twice. I'd have taken the deal. I'm glad you didn't.
     }
-    Agent 0x2D 'Anchor': He wants you on your own. I'll be on this side of it.
+    Agent 0x2D 'Anchor': He wants you on your own. I'll be on this side of the door.
 - else:
     Agent 0x2D 'Anchor': Go on. I've got this side.
 }
@@ -217,7 +217,7 @@ agent_0x99: If that's wrong, Quintero's off the raid till you can clear her. Sur
 - ending == "executed":
     Narrator: Quintero won't look at you.
 - ending == "scorched":
-    Agent 0x2D 'Anchor': Out. Follow the torches.
+    Agent 0x2D 'Anchor': Out. Follow the lights.
 - else:
     Agent 0x2D 'Anchor': It's done. Get some air.
 }

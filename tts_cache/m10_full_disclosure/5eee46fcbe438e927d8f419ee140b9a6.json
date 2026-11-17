@@ -1,0 +1,13 @@
+{
+  "key": "5eee46fcbe438e927d8f419ee140b9a6",
+  "npc": "lock_guard",
+  "text": "Hey. That's the core door. Who said you could open it?",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:37:32Z"
+}

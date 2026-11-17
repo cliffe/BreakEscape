@@ -1,0 +1,13 @@
+{
+  "key": "02bb5965c6c3fc40b09d8cf3749109c4",
+  "npc": "nightshade_table",
+  "text": "And this is what I was keeping. The office's alarm board. Carry this and it doesn't talk to the floors below.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:49Z"
+}

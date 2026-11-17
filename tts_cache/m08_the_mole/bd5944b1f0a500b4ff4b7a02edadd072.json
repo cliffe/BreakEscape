@@ -1,0 +1,13 @@
+{
+  "key": "bd5944b1f0a500b4ff4b7a02edadd072",
+  "npc": "receptionist_ai",
+  "text": "Policy says personal safes use a self-chosen code. Practice says everyone uses their own service number, and nobody has ever been made to fix it.",
+  "voice": "Kore",
+  "style": "SAFETYNET's building AI at reception. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, corporate-calm, unnervingly helpful.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:17:29Z"
+}

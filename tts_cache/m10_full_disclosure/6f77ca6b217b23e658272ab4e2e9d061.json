@@ -1,0 +1,13 @@
+{
+  "key": "6f77ca6b217b23e658272ab4e2e9d061",
+  "npc": "duty_guard_b",
+  "text": "Hold it. Post's closed till the shift changes.",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:24:30Z"
+}

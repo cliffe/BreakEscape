@@ -1,0 +1,13 @@
+{
+  "key": "61c8fdef4dd6ee9ffefde59ed249046c",
+  "npc": "farah_guard",
+  "text": "Huh. It did say a name. Go on, then. Fast.",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:37:44Z"
+}

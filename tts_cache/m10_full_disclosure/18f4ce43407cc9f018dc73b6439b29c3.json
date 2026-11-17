@@ -1,0 +1,13 @@
+{
+  "key": "18f4ce43407cc9f018dc73b6439b29c3",
+  "npc": "minder_blast",
+  "text": "Quintero's not coming up. I've got the lock. Go on.",
+  "voice": "Sulafat",
+  "style": "SAFETYNET van-team minder. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, low, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:26Z"
+}

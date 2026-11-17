@@ -1,0 +1,13 @@
+{
+  "key": "67019deeebe2f23682a80bc3cb817383",
+  "npc": "minder_blast",
+  "text": "Van's warm. That's the only good news I've got.",
+  "voice": "Sulafat",
+  "style": "SAFETYNET van-team minder. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, low, practical.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:59:15Z"
+}

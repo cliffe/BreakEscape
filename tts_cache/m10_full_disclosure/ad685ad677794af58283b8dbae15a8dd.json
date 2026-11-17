@@ -1,0 +1,13 @@
+{
+  "key": "ad685ad677794af58283b8dbae15a8dd",
+  "npc": "tunnel_guard",
+  "text": "Then you can let yourself down.",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:23:42Z"
+}

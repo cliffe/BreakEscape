@@ -167,7 +167,7 @@ agent_0x99: Bin by the hatch is Derek Lawson's file, and it isn't Derek's handwr
 // clone runs on a narrator beat. Sticky so a failed read can be retried.
 + {not stacks_card_cloned} [Lean on the counter, close to her card reel. Ask what's in tonight's run.]
     {hatch_leaned:
-        Margaret Sorensen: Less than when you last asked. Careful of the ink, it doesn't come out of a cuff.
+        Margaret Sorensen: Less than when you last asked. Careful of the ink. It doesn't come out of a cuff.
     - else:
         Margaret Sorensen: Series R, to the last box.
         Margaret Sorensen: Take the print if you like. By the time it matters, the shredder will have caught up.

@@ -1,0 +1,13 @@
+{
+  "key": "93bff41bd8d1136362f8f27cb1f6b8f4",
+  "npc": "nightshade_table",
+  "text": "Take it. Read it twice.",
+  "voice": "Enceladus",
+  "style": "SAFETYNET's cryptographic-hardware analyst. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Calm, precise, technically fluent; a colleague you trust. Tonight he is caught, cooperating or not, watching the agent he once taught walk into his old master's house.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:51:43Z"
+}

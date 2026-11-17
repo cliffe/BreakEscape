@@ -1,0 +1,13 @@
+{
+  "key": "ddab51d1943fd959def8cb0e0e9201c2",
+  "npc": "duty_guard_b",
+  "text": "Still standing?",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:26:55Z"
+}

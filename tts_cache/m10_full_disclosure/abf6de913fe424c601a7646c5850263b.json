@@ -1,0 +1,13 @@
+{
+  "key": "abf6de913fe424c601a7646c5850263b",
+  "npc": "six_oclock",
+  "text": "I wanted to do the same. That is why you are suspended and I am not.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:19:44Z"
+}

@@ -1,0 +1,13 @@
+{
+  "key": "e0f14f8b8b2546d5793a417a05997101",
+  "npc": "vector_post",
+  "text": "Still here. Still useful, I hope.",
+  "voice": "Iapetus",
+  "style": "A brilliant, socially anxious cryptographer in his early thirties. Consistent educated Scottish (Glasgow) accent throughout -- do not shift to any other accent. Mid-to-high pitch; fast, over-explains, corrects your terminology. Tonight he is at the raid table, cleared and still sore about it.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:01:00Z"
+}

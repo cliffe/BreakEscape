@@ -1,0 +1,13 @@
+{
+  "key": "3c4de0e152a076538146666a7ba5cd08",
+  "npc": "agent_0x99",
+  "text": "Helena gave us the entries he built from. Not which door each one's on, or who stands where.",
+  "voice": "Aoede",
+  "style": "Intelligence handler speaking over a secure phone line. Speak with a consistent British Received Pronunciation accent throughout — do not shift to any other accent. Use a steady, mid-range pitch. A seasoned professional who has done this a hundred times. Quick, clipped and businesslike because time is short, yet completely unflustered; the urgency is in the pace, never in the voice.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:48:16Z"
+}

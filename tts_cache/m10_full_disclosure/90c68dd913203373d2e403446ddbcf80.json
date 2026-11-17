@@ -1,0 +1,13 @@
+{
+  "key": "90c68dd913203373d2e403446ddbcf80",
+  "npc": "director_netherton",
+  "text": "I am on the net. You do not need to come up here for me.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:45:42Z"
+}

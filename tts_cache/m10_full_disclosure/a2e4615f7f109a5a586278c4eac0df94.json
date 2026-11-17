@@ -1,0 +1,13 @@
+{
+  "key": "a2e4615f7f109a5a586278c4eac0df94",
+  "npc": "tunnel_guard",
+  "text": "You want to do this the hard way?",
+  "voice": "Sadachbia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:24:09Z"
+}

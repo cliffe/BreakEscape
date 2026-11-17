@@ -33,7 +33,7 @@ VAR elena_decided_said = false   // FA row 90: said on the first ring only
 {gallery_shutter_cut:
     -> cut_call
 }
-It's Elena Rodriguez. They patched me into your feed. I know switchgear older than this, barely.
+It's Elena Rodriguez. They patched me into your feed. I've worked on switchgear older than this. Not much of it.
 {not elena_decided_said:
     ~ elena_decided_said = true
     Your director decided what to do with me. This is it.

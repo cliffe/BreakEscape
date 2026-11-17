@@ -1,0 +1,13 @@
+{
+  "key": "9efa98c512fdf97700a6f119bb40411f",
+  "npc": "vance_phone",
+  "text": "Shutter's dead already. You don't need me for that.",
+  "voice": "Orus",
+  "style": "Operations manager and OT engineer at a grid battery site, mid-fifties. Speak with a consistent North-East English (Teesside) accent throughout -- do not shift to any other accent. Firm, low-to-mid pitch; brisk, clipped pace. Tonight he is on a phone line from Teesside, talking an agent through 1960s switchgear he has never seen.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:07:56Z"
+}

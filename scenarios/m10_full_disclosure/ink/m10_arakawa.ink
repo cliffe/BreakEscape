@@ -96,7 +96,7 @@ Officer Dev Malhotra: Arakawa, you're off the net.
 }
 + {not arak_daughter_asked} [Your daughter?]
     ~ arak_daughter_asked = true
-    Officer Kenji Arakawa: Nine on Saturday. I promised I'd be home for it.
+    Officer Kenji Arakawa: She turns nine on Saturday. I promised I'd be home for it.
     ~ arak_quiet = true
     -> gate_rest
 + {not arak_road_asked} [The road?]
@@ -112,7 +112,7 @@ Officer Dev Malhotra: Arakawa, you're off the net.
 // The tether: at the blast door with silent Nightshade all night.
 === blast ===
 {ending != "": -> end_rest}
-Officer Kenji Arakawa: I've got him. He hasn't said a third word.
+Officer Kenji Arakawa: I've got him. He's not said a word to me all night.
 ~ arak_quiet = true
 -> menu
 
@@ -195,7 +195,7 @@ agent_0x99: If that's wrong, Arakawa's off the raid till you can clear him. Sure
     ~ officer_out = "arakawa"
     ~ wrong_accusation = true
     Officer Kenji Arakawa: You were standing right next to me. Think.
-    Director Magnus Netherton: Officer Arakawa, back to the post. The county will have to manage without you.
+    Director Magnus Netherton: Officer Arakawa, back to the post. We'll manage down there without you.
     ~ arak_quiet = true
     #exit_conversation
     -> sent_back

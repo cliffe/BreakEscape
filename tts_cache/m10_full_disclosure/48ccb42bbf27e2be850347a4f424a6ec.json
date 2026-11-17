@@ -1,0 +1,13 @@
+{
+  "key": "48ccb42bbf27e2be850347a4f424a6ec",
+  "npc": "director_netherton",
+  "text": "That was your work in Helena. It held.",
+  "voice": "Charon",
+  "style": "Cinematic thriller. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, deliberate, unhurried. SAFETYNET's director, running a raid from a folding table in the Montana cold; he does not raise his voice and he does not soften anything, and under the control this one is personal.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:06:55Z"
+}

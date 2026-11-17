@@ -1,0 +1,13 @@
+{
+  "key": "d73ffd4a616761407d91a5a2b126d2ec",
+  "npc": "farah_guard",
+  "text": "Coffee's on. If you're my relief, you're early.",
+  "voice": "Zephyr",
+  "style": "Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:37:51Z"
+}

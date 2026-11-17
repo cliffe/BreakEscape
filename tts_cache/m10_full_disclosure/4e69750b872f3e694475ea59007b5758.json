@@ -1,0 +1,13 @@
+{
+  "key": "4e69750b872f3e694475ea59007b5758",
+  "npc": "duty_guard_b",
+  "text": "Shift's not over. Who let you up here?",
+  "voice": "Laomedeia",
+  "style": "Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:26:23Z"
+}

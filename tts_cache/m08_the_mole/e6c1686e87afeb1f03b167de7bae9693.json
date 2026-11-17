@@ -1,0 +1,13 @@
+{
+  "key": "e6c1686e87afeb1f03b167de7bae9693",
+  "npc": "narrator",
+  "text": "The case runs down the wall in order. The repository, open to anyone with no password. The break-in, and the credentials left in its history. Mail to the Architect.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, careful. A building full of people who have stopped trusting each other, and one of them is guilty.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:39:53Z"
+}

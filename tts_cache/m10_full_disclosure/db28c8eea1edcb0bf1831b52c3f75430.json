@@ -1,0 +1,13 @@
+{
+  "key": "db28c8eea1edcb0bf1831b52c3f75430",
+  "npc": "lock_guard",
+  "text": "Then I'm going to have to stop you. Sorry.",
+  "voice": "Rasalgethi",
+  "style": "Night-shift guard, thirty-four, Samoan-American from West Valley City, Utah. Consistent Utah American accent throughout -- do not shift to any other accent. Deep, slow, polite; big enough that he never needs to raise his voice.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:37:35Z"
+}

@@ -393,7 +393,7 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
     { named_by_director:
         Director Magnus Netherton: Enough. Give it to me. #set_global:audit_closed:true
         Narrator: He reads the audit against the box's minute himself. It takes him less than a minute. #set_global:named_by_director:true #set_global:mole_identified:true #complete_task:name_the_mole
-        Director Magnus Netherton: Nightshade. I should not have had to do that, Agent, and nor should you.
+        Director Magnus Netherton: Nightshade. I should not have had to read that for you, Agent.
         Director Magnus Netherton: The suite code is in my safe, with Dr Okafor's evaluation. Read hers before you face him.
     - else:
         Director Magnus Netherton: Enough. You've read me that log three ways. I shall take it from here, and that means asking questions on this floor. #set_global:audit_closed:true #set_global:nightshade_tipped_off:true

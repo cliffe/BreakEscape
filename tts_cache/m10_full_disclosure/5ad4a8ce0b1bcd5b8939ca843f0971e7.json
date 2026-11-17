@@ -1,0 +1,13 @@
+{
+  "key": "5ad4a8ce0b1bcd5b8939ca843f0971e7",
+  "npc": "quintero_post",
+  "text": "I'll be behind you. Keep it that way.",
+  "voice": "Kore",
+  "style": "SAFETYNET raid leader in her fifties, from El Paso, Texas. Consistent West Texas American accent with a light Mexican-American lilt throughout -- do not shift to any other accent. Low, steady, dry; few words, unsentimental and fierce about her people.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:55:41Z"
+}

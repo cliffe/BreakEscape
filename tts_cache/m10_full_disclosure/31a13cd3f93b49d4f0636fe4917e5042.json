@@ -1,0 +1,13 @@
+{
+  "key": "31a13cd3f93b49d4f0636fe4917e5042",
+  "npc": "arakawa_post",
+  "text": "Okay. I didn't hear it.",
+  "voice": "Achird",
+  "style": "US liaison, forty-one, Japanese-American, Sacramento then Billings. Consistent Northern California American accent throughout -- do not shift to any other accent. Soft, slow, kind; a father with his mind half on a phone call home.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T10:58:48Z"
+}

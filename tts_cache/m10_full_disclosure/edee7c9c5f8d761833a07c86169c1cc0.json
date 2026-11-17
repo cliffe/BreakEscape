@@ -1,0 +1,13 @@
+{
+  "key": "edee7c9c5f8d761833a07c86169c1cc0",
+  "npc": "narrator",
+  "text": "Quintero comes in from the lock and takes the weapon out of your hand. She doesn't say a word.",
+  "voice": "Algenib",
+  "style": "Cinematic thriller narrator. Consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Low, unhurried, grave. A Cold War bunker under Montana, and a man at a console who has been expecting you.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m10_full_disclosure",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T11:57:39Z"
+}
