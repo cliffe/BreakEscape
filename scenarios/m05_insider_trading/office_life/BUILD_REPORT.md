@@ -57,8 +57,8 @@ Games: 6975, 6989, 7093, 7099, 7100, 7101, 7102, 7121, 7122 (earlier runs, see h
 | Attack Niamh | 7100, rerun | pass; Haiku FAIL was a misread | `isNPCHostile` stays true by design. She gave up the chase (`_gaveUpChase` true, state idle) 2 s after the player left, stood at (202,127), 34 px from her post (192,160), and stayed in the room 16 s. On re-entry she chases again, as the leash allows |
 | Attack Lisa (no KO) | 7101 | expected | no leash is declared for Lisa in the baseline or the plan (leash only on newcomers), so a struck Lisa follows the player across rooms. Upset and cooler off set |
 | KO Thandiwe | 7099, 7188 run | pass; Haiku "no walk home" is expected | a KO'd NPC stays down (idle, KO, 30 s) and keeps `thandiwe_ko`. Walk home applies to the unstruck staff |
-| KO Lisa in front of pair | | not run | |
-| Live debrief trust check | | not reached | needs the mission end (`mission_complete`); static check passed: both KO VARs count in `friendly_kos()` and cost `handler_trust` 10 |
+| KO Lisa in front of pair | 7193, 7194 | pass | see section below |
+| Live debrief trust check | 7216, 7212 | pass | `handler_trust` 40 after a Lisa KO and after a Niamh KO, 50 with no trouble; see section below |
 | Cooler pair | 7121 | pass | two cooler uses; Niamh (445,61), Thandiwe (418,61) |
 | Sync budget | 7121 | pass | above |
 | Espresso pair screenshot | 7184 | pass | `screenshots/espresso-pair.png`, both at the machine, Lisa at post |
@@ -78,4 +78,38 @@ Note on `debugKO`: the test bridge KO does not emit `npc_attacked`, so it leaves
 
 Slice 5 (needs the user's yes on `DIALOGUE_SAMPLE.md`): `storyPath` for Thandiwe and Niamh, chatter pools, exchanges `ex_whispering`, `ex_collection`, `ex_heading_home`, `heard_` globals, TTS (about 42 clips), walkthrough note.
 Slice 6: Bernadette Lyons (NPC, art, bins, mappings, `bernadette_ko`, credits, debrief, trouble), Niamh's espresso coupling to her, `ex_late_again`, room tone, checks E5 to E7.
-Open checks: KO Lisa in front of the pair, live debrief trust, E3 ten-minute rerun on the final build.
+Open checks: E3 ten-minute rerun on the final build.
+
+## Live checks: KO Lisa and debrief (headless, setFPS 20, fixed steps on, keyless server :3092)
+
+Probes: `tmp/handover/m05live/kolisa.mjs`, `kolisa2.mjs`, `deb.mjs` (gitignored). Games 7193 and 7194 (KO Lisa), 7214, 7216 and 7212 (debrief). Every KO is by real punches (`f` key), so `npc_attacked` fires.
+
+### 1. KO Lisa Park with the break-room pair present: PASS
+
+| Measure | Result |
+|---|---|
+| Punches | hostile after 1, KO after 10 (both games) |
+| Events in order | `npc_hostile_state_changed`, `npc_attacked:lisa_park`, `qdc_staff_upset` true, `qdc_cooler_off` true, `npc_ko:lisa_park`, `lisa_ko` true |
+| Globals after | `lisa_ko` true, `qdc_staff_upset` true, `qdc_cooler_off` true, `niamh_ko` false, `thandiwe_ko` false, `lisa_met` false (struck before the first talk) |
+| Niamh and Thandiwe | stayed at their chairs, (196,136) and (196,195), not hostile, idle, for 12 s after the KO and again 8 s after leaving and re-entering. No flee, no barks, no walk to the espresso. This matches the plan: trouble is machines off and no `patrolOverride`; the plan adds no KO bark |
+| Needs drive (game 7194) | `thandiwe_moyo` caffeine and `niamh_doherty` thirst and caffeine set low, 40 s watched: no `npc_use_started`, both stayed idle at their chairs. The levels read 31 and 81, not the 2 requested, and did not fall, so the test is weak. The controls that show the same set does send them when calm are L3 and the E-L1 table above |
+| Lisa | KO body stays at (127,98), idle, hostile and KO flags both true |
+| Progress | left to the corridor and back; `entropy_pamphlet` still active and interactable, pickup `found_pamphlet` true, notes in inventory. No console errors (`errs` empty) in either game |
+
+Not checked: the objective `talk_to_lisa` completing is moot here (Lisa is KO'd; the `lisa_ko` path is the baseline's).
+
+### 2. Live debrief: PASS
+
+Setup: `new-game.rb --start-room break_room --carry-npc closing_debrief_trigger` with `final_choice`, `torres_identified`, found flags and `server_room_entered` set, `--complete-task submit_flag1` to `4` (the `concludeRequires` list). Without the four tasks the server answers "Not Yet" and no credits show. `mission_complete` was written with `writeGlobal` (the HaX call-in path sets it in the ink; its event is what opens the debrief). A game that has already shown the debrief will not replay it, so each run used a fresh game.
+
+| Run | Game | Debrief | Staff lines in the credits | `handler_trust` | Errors |
+|---|---|---|---|---|---|
+| No trouble | 7214 | played, 37 spoken lines | "Nobody on staff hurt" | 50 | none |
+| Lisa KO'd | 7216 | played, adds "Lisa Park ran the collection for Elena. She's off work with a head injury." | "LISA PARK: off work with a head injury" (no "Nobody on staff hurt") | 40 | none |
+| Niamh KO'd | 7212 | played | "A MEMBER OF STAFF: HURT, ON YOUR ACCOUNT" (no "Nobody on staff hurt") | 40 | none |
+
+- The credits text was read from `#bv-cr-label` line by line; the rest of the credits (case, Torres family, recruiter, QDC) is identical across the three runs.
+- Thandiwe's KO was not landed in the 7212 run (30 punches in the probe did not finish her), so only Niamh's KO is live-proved for the "member of staff" line and the -10. The two share the same ink and credits condition (`thandiwe_ko || niamh_ko`), so the Thandiwe path is covered by the static check and by game 7099's `thandiwe_ko` true.
+- When optional objectives are open, the engine shows the "Before the mission ends" overlay (Keep going / End the mission now) before the debrief; it appeared in the Lisa run and had to be answered with "End the mission now". It is the engine's ending check, not an office-life change.
+- Not exercised: the debrief's `player_approach == "diplomatic"` branch ("You said you'd read the room..."), because the probes did not play the briefing choice. The trust -10 does show live, and the static `friendly_kos()` check passed earlier.
+- The `bernadette_ko` credits term from PLAN 2.11 is not in the scenario (slice 6 not built).

@@ -62,3 +62,35 @@ OPEN FINDING (not fixed, needs a call): Lisa's kettle cell (110,110) is 25 px fr
 
 ### Session 4 note
 Retargeted Lisa's trip to the fridge (see rows above). The walk is now visible (about 55 px out and 55 px back at walking pace, 12 s dwell). The earlier open finding is half resolved: she no longer sits at a cell 25 px from her post, but the return still ends 27 to 32 px short of (128,128) because the walk-end guard stops within one tile; ending within 8 px needs an engine change (arriveWithin on the walk home, npc-needs.js:4139) or moving her post. Probe: tmp/handover/m05live/el3.mjs (trip, talk), el4.mjs (walktalk, reload). Server puma 1233537 left running on :3092.
+
+## Checks run 3 (build ebc45a5a0, server :3092 puma 1233537, headless, setFPS 20, fixed steps on)
+Games: 7099 (KO Thandiwe), 7100 (attack Niamh), 7101 (attack Lisa), 7102 (day and reload), 7121 (walk, sync, L3, screenshots), 7122 (E4). 7105 was an earlier E4 run (no screenshot). The census helper had a bug (args not passed) that crashed the first 7102 and 7121 runs; fixed before the reruns.
+
+| Check | Game | Result | Measured |
+|---|---|---|---|
+| Attack/KO Thandiwe (atk3) | 7099 | KO pass, partial | hostile after 1 punch; KO after 10 punches; thandiwe_ko true, niamh_ko false, upset true, cooler_off true; 8 s out and 15 s back: still KO at (203,181), no espresso use, no walk home seen; Lisa at (128,97) |
+| Attack Niamh (atk4) | 7100 | FAIL | hostile after 1 punch; still hostile 8 s after the player left the room (at 195,126) and at +15 s (270,58); plan 10.4 says she gives up the chase when the player leaves her room |
+| Attack Lisa, no KO (atk5) | 7101 | partial | hostile after 1 punch; upset and cooler_off set; not KO; no fridge trip in 15 s; still hostile 8 s out (314,49) and +15 s (281,49); no walk home measured |
+| KO Lisa in front of pair | not run | | not in this session |
+| E4 skip route | 7122 | FAIL | Thandiwe visible=true in break_room for 60 of 60 samples over 6 s, position (-124,195), constant. Screenshot e4-break-entry-300ms.png shows a seated figure at the table; identity not confirmed. Fallback 2.10 applies if she is on screen |
+| E5, E6 | | not run | Bernadette and ex_late_again are not built (census: none) |
+| E7 | | excluded | per instruction |
+| Debrief trust (static) | | pass (static only) | m05_closing_debrief.ink: thandiwe_ko and niamh_ko each add to friendly_kos() and cost handler_trust 10; diplomatic line for friendly_kos > 0. Live debrief not reached |
+| L3 (walk) | 7121 (and 7103 earlier, 2.8 s / 4.6 s) | pass, 2 tries | Thandiwe leaves 2.9 s after conversation close; espresso use starts 4.9 s |
+| Five-try table | | incomplete | only L3 and E-L2 (earlier) have more than one try; L2, L4, L5, E1 rerun, E2, E-L4, E-L5 not repeated |
+| Day reload | 7102 | pass | Lisa (128,97) seated false, Niamh and Thandiwe seated at chairs, one behaviour each, errors none |
+| Evening reload | 7102 | NOT REACHED | server_room_entered stayed false after my route (corridor, hallway, server room); cause not investigated; evening-reload.png is not an evening shot, not for the review |
+| Night reload | 7102 | partial | torres_identified (set in memory) and qdc_cooler_off survived reload; Thandiwe seated, not hidden (evening never ran, so not a valid check) |
+| Sync budget | 7121 | pass | 4 sync_state flushes in 5 min, 6,892 bytes total: 6,170 first (full seed: globalVariables, notes, phoneState, timedMessages), then 448 and 2 small deltas (triggeredEvents, currentRoom, clock) |
+| Lisa back from trip | 7121 | FAIL vs 8 px mark | 22.5 px from (128,128) at return + 1.5 s, at (109,116); one reading |
+| Espresso pair screenshot | 7121 | pair not at espresso | Niamh (218,80), Thandiwe (180,79) when shot; re-shoot needed |
+| Cooler pair | 7121 | pass | two corridor_cooler use starts; Niamh (445,61), Thandiwe (418,61) |
+
+Screenshots (scenarios/m05_insider_trading/office_life/screenshots/): day-break-both-seated.png, espresso-pair.png (caution: not at the espresso), corridor-cooler-pair.png, lisa-fridge.png, lisa-back-from-trip.png. Not copied: the evening break room with Thandiwe gone (no valid evening state yet).
+
+## Session 5 (checks run 4)
+Done: Haiku claims judged (see BUILD_REPORT.md); evening and night reloads pass; L3 five tries (try 5 output not read back); espresso pair re-shot; evening shot with Thandiwe gone; BUILD_REPORT.md written and committed. Harness copy: scratchpad h/ (lib.mjs, run/*.mjs; reach evening with ng.sh --start-room main_corridor --unlock server_hallway --unlock server_room --unlock break_room; night with extra --set found_door_log, torres_suspected, found_upload_schedule, found_torres_journal, door_log_reasoned, patricia_ko true, then phone Agent HaX naming route in rl.mjs).
+Open: KO Lisa in front of pair; live debrief trust (needs mission_complete); E4 skip-route 1 s pop decision; server puma 1233537 on :3092 STILL RUNNING and node_modules symlink still in the worktree: kill PID 1233537, confirm port clear, unlink node_modules at the very end.
+
+## Session 6 (KO Lisa and debrief checks)
+Both checks PASS, written up in BUILD_REPORT.md. Probes: m05live/kolisa.mjs, kolisa2.mjs, deb.mjs. Debrief needs --carry-npc closing_debrief_trigger, --complete-task submit_flag1..4, writeGlobal import for mission_complete, and "End the mission now" on the ending-check overlay. Remaining: kill puma 1233537, unlink node_modules.
