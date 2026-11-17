@@ -852,8 +852,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "_comment": "R1 mapped breaks (plan section 3). Cooler break: the player coming back from the hallway sends Zainab for water, so the long trip (laptop locks) happens while the player is around. Coffee coupling: Yusuf starting the pod machine brings her.",
               "eventPattern": "room_entered:reception_lobby", "condition": "data.previousRoom === 'main_hallway' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:reception_coffee", "condition": "data.npcId === 'yusuf_demir' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
-            { "_comment": "R1: Ffion knocked out by day. The staffer goes back to the post and is held there (a scripted walk suspends needs), so no fight and no walk to an alternative badge route. A staffer already attacked is left to the hostile behaviour. R2: targetTile is the feet point of the needs post (home feet 148,252 and 106,280 in px; tile = px / 32), not the seated sprite position. patrolOverride ignores stopOnArrival.",
-              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.zainab_attacked", "onceOnly": true, "patrolOverride": { "targetTile": { "x": 4.625, "y": 7.875 } } },
             { "eventPattern": "npc_caught_at_post:zainab_hussain", "cooldown": 30000, "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset && !globalVars.zainab_ko", "bark": "That's my laptop. Can I help you?" }
           ],
           "observations": "A WhiteHat field service engineer on the visitor-room sofa, her laptop open on the glass table in front of her."
@@ -894,8 +892,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             { "_comment": "R1 mapped breaks (plan section 3). Coffee break: closing the chat with Ffion sends Yusuf for a coffee (Zainab follows, mapping on her). Cooler coupling: Zainab starting the cooler brings him.",
               "eventPattern": "conversation_closed:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "npc_use_started:hallway_cooler", "condition": "data.npcId === 'zainab_hussain' && globalVars.mission_phase !== 'act2_infiltration' && !globalVars.wh_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "_comment": "R1: Ffion knocked out by day. The staffer goes back to the post and is held there (a scripted walk suspends needs), so no fight and no walk to an alternative badge route. A staffer already attacked is left to the hostile behaviour. R2: targetTile is the feet point of the needs post (home feet 148,252 and 106,280 in px; tile = px / 32), not the seated sprite position. patrolOverride ignores stopOnArrival.",
-              "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.yusuf_attacked", "onceOnly": true, "patrolOverride": { "targetTile": { "x": 3.3125, "y": 8.75 } } },
             { "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && globalVars.clone_call_done !== true && !globalVars.zainab_ko && !globalVars.yusuf_ko", "onceOnly": true, "bark": "Zainab, ring someone. Now." }
           ],
           "observations": "A WhiteHat senior consultant in the club chair, waiting for a client who is running late."
@@ -1372,10 +1368,10 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration'", "onceOnly": true, "setGlobal": { "wh_staff_upset": true } },
             { "_comment": "R2: witnessed only when a staffer is on their feet to see it (both KO'd means nobody saw). HaX's text (plan section 2) goes with the same test; wording as approved in DIALOGUE_SAMPLE.md.",
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && !globalVars.zainab_ko", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Reception had company. Get the badge and get out." } },
+              "sendTimedMessage": { "delay": 6000, "message": "Reception had company. Get the badge and get out." } },
             { "_comment": "R2: the other branch of the same test (the validator's condition grammar has no ||): Zainab down, Yusuf still up.",
               "eventPattern": "npc_ko:ffion_rees", "condition": "globalVars.mission_phase !== 'act2_infiltration' && globalVars.zainab_ko && !globalVars.yusuf_ko", "onceOnly": true, "setGlobal": { "wh_staff_witnessed": true },
-              "sendTimedMessage": { "delay": 2500, "message": "Reception had company. Get the badge and get out." } },
+              "sendTimedMessage": { "delay": 6000, "message": "Reception had company. Get the badge and get out." } },
             { "eventPattern": "global_variable_changed:wh_staff_attacked", "condition": "value === true", "onceOnly": true,
               "sendTimedMessage": { "delay": 2500, "message": "Leave the staff alone. You're here to clone cards, not start fights." } }
           ]
