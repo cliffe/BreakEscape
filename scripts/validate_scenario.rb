@@ -6588,6 +6588,14 @@ def check_engine_limits(json_data)
       %w[observationVariants spriteVariants textVariants requiresItemHintVariants requiresItemConditionHintVariants].each do |vk|
         Array(node[vk]).each_with_index do |v, i|
           next unless v.is_a?(Hash)
+          if vk == 'requiresItemConditionHintVariants' && v.key?('condition')
+            # Same grammar as requiresItemCondition itself (evaluateGlobalCondition).
+            if (problem = item_condition_problem(v['condition']))
+              issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" #{problem}. conditional-text.js " \
+                        "supports only '&&'-joined terms of the globalVars.x / !globalVars.x / comparison forms."
+            end
+            next
+          end
           if (bad = unsupported_condition_syntax(v['condition'], allow_includes: false))
             issues << "❌ ERROR: '#{path}/#{vk}[#{i}]' condition \"#{v['condition']}\" uses #{bad}. conditional-text.js " \
                       "supports only '&&'-joined terms; '||' and parentheses are mis-read."

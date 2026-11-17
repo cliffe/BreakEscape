@@ -948,7 +948,7 @@ Things to know:
 "requiresItemCondition": "globalVars.staff_pc_owner_away",
 "requiresItemConditionHint": "Chris is still at her desk. Wait until she has gone for coffee.",
 "requiresItemConditionHintVariants": [
-  { "condition": "globalVars.staff_pc_screen_locked", "value": "Her screen is locked, but she is still close. Wait until she has left." }
+  { "condition": "globalVars.desk_pc_busy", "value": "Someone is still working here. Wait until they have left." }
 ]
 ```
 

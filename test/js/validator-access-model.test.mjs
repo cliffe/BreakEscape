@@ -494,6 +494,17 @@ test('a requiresItemConditionHintVariants condition with || is an error, once', 
     assert.ok(!has(validatorIssues('check_or_in_global_conditions', withCondition({ requiresItemConditionHintVariants: [{ condition: 'globalVars.a || globalVars.b', value: 'x' }] })), 'requiresItemConditionHintVariants'));
 });
 
+test('a requiresItemConditionHintVariants condition outside the grammar is an error, a valid one is not', { skip }, () => {
+    for (const bad of ['globalVars.a == true', 'globalVars.a === true && nonsense', 'globalVars.a.includes("x")', '']) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: bad, value: 'x' }] }));
+        assertHas(errors(out), 'requiresItemConditionHintVariants[0]');
+    }
+    for (const good of ['globalVars.a', '!globalVars.a && globalVars.n >= 2', "globalVars.a === 'x'"]) {
+        const out = validatorIssues('check_engine_limits', withCondition({ requiresItemConditionHintVariants: [{ condition: good, value: 'x' }] }));
+        assert.ok(!has(errors(out), 'requiresItemConditionHintVariants[0]'), `${good}: ${out.join('\n')}`);
+    }
+});
+
 test('requiresItemCondition warns on an undeclared global, a missing requiresItem or triggerOnInteract, and orphan hints', { skip }, () => {
     let out = validatorIssues('check_engine_limits', withCondition({ requiresItemCondition: 'globalVars.nobody_sets_this' }));
     assertHas(out, 'globalVars.nobody_sets_this, which is not in globalVariables');
