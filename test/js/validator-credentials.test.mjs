@@ -76,9 +76,9 @@ test('E: unknown kind', { skip }, () => {
     "has an unknown kind 'wat'");
 });
 
-test('E: a kind that is not built yet (token)', { skip }, () => {
-  assertErr(issues(sc({ c1: { kind: 'token', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack_jack1' } }, _j: PW_OK },
-    { objects: [PC(), JACK] })), "kind 'token' is not supported until K5");
+test('E: a kind that is not built yet (hash)', { skip }, () => {
+  assertErr(issues(sc({ c1: { kind: 'hash', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack_jack1' } }, _j: PW_OK },
+    { objects: [PC(), JACK] })), "kind 'hash' is not supported until phase 3");
 });
 
 test('E: account is not an account holder', { skip }, () => {
@@ -301,4 +301,75 @@ test('W: a credential label over 32 characters', { skip }, () => {
   assertWarn(mk('x'.repeat(33)), 'label is 33 characters');
   assert.ok(!has(warnings(mk('x'.repeat(32))), 'characters; over 32'), 'exactly 32 is fine');
   assert.ok(!has(warnings(mk('HB-FIN-02.rdp')), 'characters; over 32'));
+});
+
+// ── tokens (K5, CREDENTIAL_KEYRING_PLAN.md section 10) ───────────────────────────────────────────
+
+const NET_PC = () => ({ ...PC(), network: 'lan' });
+const NET_JACK = { ...JACK, network: 'lan' };
+const TOKEN = { kind: 'token', account: 'lena', connectsTo: 'lena_pc', proof: { foothold: 'jack_jack1' }, label: 'HB-FIN-02 sign-in token', expiresMin: 4 };
+const tokenSc = (entry, { objects = [NET_PC(), NET_JACK], top = {} } = {}) =>
+  sc({ t1: entry }, { objects, top: { networks: { lan: {}, far: {} }, ...top } });
+
+test('token: a well-formed token raises no error and no warning, only the info line', { skip }, () => {
+  const l = issues(tokenSc(TOKEN));
+  assert.deepEqual(errors(l), []);
+  assert.deepEqual(warnings(l), []);
+  assertInfo(l, 'a token expires on a clock that starts when its foothold is first gained');
+});
+
+test('E: a token without a label', { skip }, () => {
+  const { label, ...rest } = TOKEN;
+  assertErr(issues(tokenSc(rest)), 'is a token and must set label');
+});
+
+test('E: a token expiresMin missing, zero, over 240 or not an integer', { skip }, () => {
+  const { expiresMin, ...rest } = TOKEN;
+  assertErr(issues(tokenSc(rest)), 'expiresMin must be a whole number of minutes from 1 to 240');
+  for (const bad of [0, 241, 2.5, '4', null]) {
+    assertErr(issues(tokenSc({ ...TOKEN, expiresMin: bad })), 'expiresMin must be a whole number of minutes from 1 to 240');
+  }
+  for (const ok of [1, 240]) assert.deepEqual(errors(issues(tokenSc({ ...TOKEN, expiresMin: ok }))), []);
+});
+
+test('E: a token proof other than a foothold', { skip }, () => {
+  for (const proof of [{ session: 'lena_pc' }, { held: 'x' }, { planted: 'x' }]) {
+    assertErr(issues(tokenSc({ ...TOKEN, proof })), 'is a token and its proof must be a foothold');
+  }
+});
+
+test('E: a token must set connectsTo and cannot set foundIn', { skip }, () => {
+  const { connectsTo, ...rest } = TOKEN;
+  assertErr(issues(tokenSc(rest)), 'is a connecting kind and must set connectsTo');
+  assertErr(issues(tokenSc({ ...TOKEN, foundIn: 'n' })), 'sets foundIn, which is only allowed on a password');
+});
+
+test('W: a token whose proof foothold cannot reach connectsTo', { skip }, () => {
+  const far = { ...NET_JACK, network: 'far' };
+  assertWarn(issues(tokenSc(TOKEN, { objects: [NET_PC(), far] })), 'proof foothold network cannot reach');
+  const linked = issues(tokenSc(TOKEN, { objects: [NET_PC(), far], top: { networkLinks: [['lan', 'far']] } }));
+  assert.ok(!has(warnings(linked), 'cannot reach'), linked.join('\n'));
+});
+
+test('W: a token whose connectsTo policy accepts a list without token', { skip }, () => {
+  const l = issues(tokenSc(TOKEN, {
+    objects: [{ ...NET_PC(), policy: 'p1' }, NET_JACK],
+    top: { policies: { p1: { accepts: ['password', 'saved_connection'] } } }
+  }));
+  assertWarn(l, "connectsTo 'lena_pc' whose policy 'p1' does not accept 'token'");
+  const ok = issues(tokenSc(TOKEN, {
+    objects: [{ ...NET_PC(), policy: 'p1' }, NET_JACK],
+    top: { policies: { p1: { accepts: ['password', 'token'] } } }
+  }));
+  assert.ok(!has(warnings(ok), 'does not accept'), ok.join('\n'));
+});
+
+test('W: a session proof on a token\'s connectsTo (the token sign-in never satisfies it)', { skip }, () => {
+  const l = issues(sc({ t1: TOKEN, pw: PW_OK }, { objects: [NET_PC(), NET_JACK], top: { networks: { lan: {} } } }));
+  assertWarn(l, "credential 'pw' proof is a session on 'lena_pc', a token's connectsTo");
+});
+
+test('W: an unlock_object task targets a token connectsTo', { skip }, () => {
+  const l = issues(tokenSc(TOKEN, { top: { objectives: [{ id: 'o', tasks: [{ type: 'unlock_object', targetObject: 'lena_pc' }] }] } }));
+  assertWarn(l, "an unlock_object task targets 'lena_pc', a token's connectsTo");
 });

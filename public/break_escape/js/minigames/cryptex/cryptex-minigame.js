@@ -1,5 +1,5 @@
 import { MinigameScene } from '../framework/base-minigame.js';
-import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
+import { LOCK_SCOPE_REFUSAL_TEXT, lockScopeRefusal, lockScopeRefusalLine, unlockWithRouteRoomRetry } from '../../utils/lock-scope-refusal.js';
 
 export class CryptexMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
@@ -325,6 +325,7 @@ export class CryptexMinigame extends MinigameScene {
             const refusal = lockScopeRefusal(error);
             if (refusal) {
                 this.scopeRefusal = refusal;
+                this.scopeRefusalLine = lockScopeRefusalLine(error);
                 return false;
             }
             // A 5xx is a server fault, not a wrong answer (code review R3 n3): it takes the
@@ -343,7 +344,7 @@ export class CryptexMinigame extends MinigameScene {
     // Says why and closes as cancelled, counting no attempt (as the PIN pad does)
     _handleScopeRefusal(reason) {
         this.isLocked = true;
-        this._setStatus(LOCK_SCOPE_REFUSAL_TEXT[reason], '');
+        this._setStatus(this.scopeRefusalLine || LOCK_SCOPE_REFUSAL_TEXT[reason], '');
         this.gameResult = { success: false, cancelled: true, refused: reason, attempts: this.attemptCount };
         setTimeout(() => this.complete(false), 2000);
     }
