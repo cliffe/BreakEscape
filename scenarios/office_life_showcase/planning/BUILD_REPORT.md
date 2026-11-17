@@ -149,22 +149,27 @@ The brief's "hunger 0.5/30/50" is the demo_access_tour minimal variant (CAKE_ITE
 - No cake-lying-in-a-room stale warning (validate_npc_needs.rb:275-277): the cake starts in the inventory, not a room.
 - V8 sync budget: workstation globals 9/24; heard_ 1/8; magnet servings 1/2; reveal and left-behind 1/6; dropped magnet items 1/2; office-life onceOnly 8/10; office-life items 2/4; small keys 20/64. All within budget.
 
-## BC1 (cake after reload) -- BLOCKED, not proven live this run
+## BC1 (cake after reload) -- PASS, all four cases proven live
 
 Probe: `tools/playtest/showcase-bc1-cake-reload.mjs`.
-Usage: `node tools/playtest/showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake --port 3094 [--cases 1,2,3,4] [--eaters chidi_okeke,jun_watanabe] [--rooms office,kitchen] [--task see_cake_eaten] [--at x,y] [--near objectId] [--wait 22] [--games 1=ID,...]`. Scenario, room and cake are arguments so another session can reuse it.
+Usage: `node tools/playtest/showcase-bc1-cake-reload.mjs --scenario office_life_showcase --room office --cake cake --port 3094 [--cases 1,2,3,4] [--eaters chidi_okeke,jun_watanabe] [--rooms office,kitchen] [--task see_cake_eaten] [--at x,y] [--near objectId] [--wait 22] [--staff a,b,c] [--calm 0] [--games 1=ID,...]`. Scenario, room and cake are arguments so another session can reuse it.
 
-| Case | Game ids | Result |
+| Case | Game | Result |
 |---|---|---|
-| 1 cake held | 7525, 7529 | BLOCKED |
-| 2 cake down, untouched | 7526 | BLOCKED |
-| 3 cake down, one slice | 7527 | BLOCKED |
-| 4 cake finished | 7528 | BLOCKED |
+| 1 cake held | 7570 | PASS: still in the inventory, in no room, servings 2 |
+| 2 cake down, untouched | 7567 | PASS: same place after reload, 2 servings, still a magnet, Chidi then walks to it and eats |
+| 3 cake down, one slice | 7569 | PASS: one slice kept across the reload, Jun eats the last, cake gone, `magnet_finished:cake` fires, `see_cake_eaten` completed |
+| 4 cake finished | 7571 | PASS: no cake in any room or the inventory, servings 0, task still completed |
 
-All four fail at the `page.reload()`, never reaching the cake logic. The first load of each fresh game builds the scene fine. After a reload the game has saved progress, so the session-resume overlay appears (confirmed on a diagnostic, games 7530 and 7531: `hasProgress` true, overlay `flex`, body text "RESUME SESSION?"). I added resume-overlay handling to the probe's `reload()` (wait for the overlay, click `#session-resume-btn`). That hides the overlay, but the Phaser scene still does not rebuild: `window.player` / `rooms` / `npcNeedsSystem` / `gameScenario` never return within 40 s, and the reloaded client does not re-fetch scenario/room/ink. The only 503 in the server log is `POST /tts` (expected under the keyless server and harmless: the first load succeeds with the same 503; the `ERR_FAILED` console lines are the probe's own `/tts` route abort). Root cause of the no-rebuild-on-reload is not yet isolated. Candidates: (a) a parallel session contending on :3094 -- during this run the harness working directory kept switching to the sibling worktree `.claude/worktrees/p-ol-m05`, which suggests another session was driving the same server; (b) a standalone-mode reload/resume path for this scenario that does not re-bootstrap (S1 R11 and an S2 reload were never actually proven live, so a reload of this scenario on :3094 has not been shown to work). Needs either an exclusively owned server or a root-cause fix before BC1 can be run. No engine edits were made.
+### Root cause of the earlier BLOCKED result (probe bug, not engine, not scenario)
+The probe aborted requests with `page.route('**/tts**', ...)`. That glob also matches `/break_escape/js/systems/tts-manager.js`. It was installed after the first load, so the first load was fine; on `page.reload()` the module request was aborted (`REQFAIL .../tts-manager.js`), the ES module graph never ran and no Phaser game was created (`window.game` absent, no page error, only a console `net::ERR_FAILED`). The resume overlay is plain DOM, so it still showed; clicking Resume only hides it and does not gate the scene build. The "parallel session on :3094" theory was wrong. Fix: abort only `POST /tts` (`route(u => /\/tts$/.test(u.pathname), ...)`). The cause is general to any scenario run through this probe, not specific to office_life_showcase. Engine reload/resume path needed no change.
+
+### Probe corrections made while getting to a real result (also probe-only)
+- A dropped cake tempts all five staff, and Graham's social need walks to it too, so servings dropped during the 22 s wait. The probe now sets hunger and social to 100 for the five staff before the drop and before each settle (`--staff`, `--calm 0` to disable), and compares servings against a reading taken just before the reload instead of a fixed 2.
+- Live drop sprites report their centre (origin 0.5) while a reloaded drop is placed by its top-left (origin 0, `table-drop.js` `savedPosition`), so raw x/y differed by half the 25x27 sprite. `where()` now reports top-left (`x - displayOriginX`). Same place on screen; not an engine bug.
 
 ### Scripts (this pass)
-`tools/playtest/showcase-bc1-cake-reload.mjs` (resume-overlay-aware reload added). Diagnostics were scratch-only (`/tmp/.../bc1-diag*.mjs`), not committed.
+`tools/playtest/showcase-bc1-cake-reload.mjs` (resume-overlay-aware reload, tts route fix, staff calming, top-left compare). Diagnostics were scratch-only (`/tmp/.../bc1-diag*.mjs`), not committed.
 
 ## S3 live proof
 

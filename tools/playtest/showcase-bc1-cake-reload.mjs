@@ -35,6 +35,9 @@ const AT = arg('at', '') ? arg('at').split(',').map(Number) : null;
 const NEAR = arg('near', '');
 const WAIT = Number(arg('wait', '22')) * 1000;
 const TMO = Number(arg('timeout', '150')) * 1000;
+// Keep uninvolved staff from eating during the waits (a dropped cake tempts everyone at hunger <= 70).
+const STAFF = arg('staff', 'chidi_okeke,jun_watanabe,graham_whitfield,agnieszka_duda,zainab_hussain').split(',');
+const CALM = arg('calm', '1') !== '0';
 const GAMES = Object.fromEntries((arg('games', '') || '').split(',').filter(Boolean).map(p => p.split('=')));
 fs.mkdirSync('tmp/bc1', { recursive: true });
 
@@ -83,7 +86,7 @@ const where = (h) => ev(h, ({ cake, rooms }) => {
   for (const [rid, room] of Object.entries(window.rooms || {})) {
     for (const [k, o] of Object.entries(room.objects || {})) {
       const id = o.objectId || o.scenarioData?.id || k;
-      if (id === cake && o.active !== false && o.visible !== false) found.push({ room: rid, x: Math.round(o.x * 10) / 10, y: Math.round(o.y * 10) / 10, elevation: o.elevation ?? 0 });
+      if (id === cake && o.active !== false && o.visible !== false) found.push({ room: rid, x: Math.round((o.x - (o.displayOriginX || 0)) * 10) / 10, y: Math.round((o.y - (o.displayOriginY || 0)) * 10) / 10, elevation: o.elevation ?? 0 });
     }
   }
   const sys = window.npcNeedsSystem;
@@ -123,7 +126,12 @@ const recorder = h => ev(h, () => {
 });
 const events = h => ev(h, () => window.__bc1 || []);
 
+async function calm(h) {
+  if (CALM) for (const id of STAFF) await ev(h, ([i]) => { window.__test.needs.set(i, 'hunger', 100); try { window.__test.needs.set(i, 'social', 100); } catch (e) {} }, [id]).catch(() => {});
+}
+
 async function drop(h) {
+  await calm(h);
   if (AT) await ev(h, ([x, y]) => window.__test.moveTo(x, y), AT).catch(() => {});
   if (NEAR) await ev(h, id => window.__test.moveToNear(id, { timeoutMs: 30000 }), NEAR).catch(() => {});
   await h.t(500);
@@ -142,7 +150,7 @@ async function until(h, fn, arg, ms = TMO, poll = 500) {
   return false;
 }
 
-async function settle(h, why) { say(`  wait ${WAIT / 1000}s (${why})`); await sleep(WAIT); }
+async function settle(h, why) { say(`  wait ${WAIT / 1000}s (${why})`); await calm(h); await sleep(WAIT); }
 
 async function eatBy(h, npc) {
   // set hunger to 60, then watch for the walk (job aimed at the cake) and the serving
@@ -169,12 +177,12 @@ const cases = {
   },
   async 2(h) {
     const dropEv = await drop(h);
-    const a = await where(h);
     await settle(h, 'before reload');
+    const a = await where(h);
     await reload(h); await recorder(h);
     const b = await whereAll(h);
     const placed = a.found.length === 1 && b.found.length === 1 && sameSpot(a.found[0], b.found[0]);
-    const kept = !b.inv && b.servings === 2 && b.magnet;
+    const kept = !b.inv && b.servings === a.servings && b.magnet;
     const eat = await eatBy(h, EATERS[0]);
     return { pass: placed && kept && eat.walked, placed, kept, eat, dropEvents: dropEv.events, before: a, after: b, events: await events(h) };
   },
@@ -185,9 +193,10 @@ const cases = {
     await waitDone(h, EATERS[0]);
     const mid = await where(h);
     await settle(h, 'before reload');
+    const pre = await where(h);
     await reload(h); await recorder(h);
     const b = await whereAll(h);
-    const kept = b.found.length === 1 && sameSpot(mid.found[0], b.found[0]) && b.servings === 1 && b.magnet;
+    const kept = b.found.length === 1 && sameSpot(pre.found[0], b.found[0]) && b.servings === pre.servings && pre.servings === 1 && b.magnet;
     const second = await eatBy(h, EATERS[1]);
     const gone = await until(h, c => !Object.values(window.rooms || {}).some(r => Object.entries(r.objects || {}).some(([k, o]) => (o.objectId || o.scenarioData?.id || k) === c && o.active !== false && o.visible !== false)), CAKE, 60000);
     const ev3 = await events(h);
