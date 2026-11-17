@@ -450,8 +450,9 @@ module ValidateOfficeLife
       next if away.empty?
 
       issues << "⚠️ WARNING: office life V2: NPC '#{n['id']}' #{why.join(' and ')}, and its needs can take it out of " \
-                "its own room (to #{away.join(', ')}). A story NPC must stay reachable: leash it (needsRooms), or add " \
-                'a patrolOverride.targetTile mapping that returns it to its post before the beat. deferrable: false does not exempt it.'
+                "its own room (to #{away.join(', ')}). A story NPC must stay reachable: leash it to its own room " \
+                '(needsRooms) with every need target there, gate the machines it may use away from its post with the beat gate ' \
+                '(mission-office-life, protection 3), or leave it without away needs. deferrable: false does not exempt it.'
     end
   end
 

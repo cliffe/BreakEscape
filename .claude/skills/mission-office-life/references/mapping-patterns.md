@@ -128,6 +128,17 @@ Machines switch off on a single bounded global, and the needs layer does the res
 
 - **No `patrolOverride` send-home for this.** m03 built one and R2 found the staff walking 20 px north of their posts; the "20 px" was the seated sprite offset, but R3 then proved the real defect: `goToAndStay` ends the walk once the body is within 32 px of the target, so a staffer sent home from mid-break stopped a tile short, Zainab standing in the sofa's east end and Yusuf on the coffee table's edge, needs suspended for the rest of the day (`M03_SLICES3_5_REVIEW_R3.md` finding 1). The scenario-only fix removed both mappings: with `offWhen` on every machine, a walker or queued user turns back through `_turnBack(s, 'off')` to `_goHome`, a user already using finishes, and the needs layer sits them at the post (`M03_SLICES3_5_REVIEW_R4.md`, Major 1). A scripted walk keeps needs suspended; the needs layer does not.
 - `wh_staff_upset` is never cleared, so the off state lasts the day. Say so in the plan.
+- **A beat gate that shares a machine** (D78 step). A beat global `<npc>_beat` is set by the event that opens the window. A machine with no other cause takes `offWhen: "<npc>_beat"` directly. A machine that already has an `offWhen`, or that two beats share, takes `offWhen: "<machine>_off"` instead, written by mappings appended at the end:
+
+```jsonc
+{ "eventPattern": "global_variable_changed:wh_staff_upset", "condition": "value === true", "setGlobal": { "coffee_off": true } },
+{ "eventPattern": "global_variable_changed:gary_beat",      "condition": "value === true", "setGlobal": { "coffee_off": true } },
+// one clearing mapping per cause, each checking every other cause (the validator rejects ||)
+{ "eventPattern": "global_variable_changed:gary_beat",      "condition": "value === false && !globalVars.wh_staff_upset", "setGlobal": { "coffee_off": false } },
+{ "eventPattern": "global_variable_changed:wh_staff_upset", "condition": "value === false && !globalVars.gary_beat",      "setGlobal": { "coffee_off": false } }
+```
+
+  Never edit an existing mapping's `setGlobal`. Mapped breaks always negate `<npc>_beat`, not the machine global. A naive "beat over: `coffee_off` false" would re-open a machine the trouble gate still holds off.
 - The cooler case counts as witnessed (both staff out at the cooler while the player knocks Ffion out). m03 accepted that (R3 finding 3, accepted in the R3 fix log); the cure is a "staff out" global set on `npc_left_post`, more wiring than the stakes justify. Put it in the user's decisions list.
 - Space timed toasts at least 4 s apart (the validator checks). "The receptionist's down" at 2500 ms and "Reception had company" at 2500 ms landed together; 6000 left 3.5 s, still warned; 6500 gave 4.0 s (R3 nit 4, R5 minor 1, R6).
 - Unread globals (`zainab_attacked`, `yusuf_attacked`) draw a validator suggestion. Keep them only if the plan names a use.
