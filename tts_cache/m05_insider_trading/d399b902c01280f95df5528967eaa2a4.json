@@ -1,0 +1,13 @@
+{
+  "key": "d399b902c01280f95df5528967eaa2a4",
+  "npc": "thandiwe_moyo",
+  "text": "Can I help? I'm only the office manager.",
+  "voice": "Pulcherrima",
+  "style": "Quantum Dynamics' office manager, in her 30s, calm and capable. Speak with a consistent southern English accent with a light Zimbabwean inflection throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m05_insider_trading",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T18:06:57Z"
+}
