@@ -90,9 +90,9 @@ test('real EasyStar: a failed search far from every seated chair is not run twic
 });
 
 test('real EasyStar: a seated NPC with no chair in window.chairs is still routed round (m05 break room)', () => {
-    // Open 3-row band (y 9..11); a seated NPC body in the middle row, window.chairs empty.
+    // Open 9-row band (y 6..14); a seated NPC body in the middle row, window.chairs empty.
     const open = [];
-    for (let x = 2; x <= 20; x++) for (let y = 9; y <= 11; y++) open.push([x, y]);
+    for (let x = 2; x <= 20; x++) for (let y = 6; y <= 14; y++) open.push([x, y]);
     const pm = realPm(open);
     window.chairs = [];
     const seatedBody = { ...rect(10, 10), immovable: true };
