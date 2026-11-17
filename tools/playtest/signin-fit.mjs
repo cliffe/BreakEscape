@@ -486,7 +486,9 @@ async function measureTokenDesktop(page, size) {
             const linesOf = (el) => {
                 const cs = getComputedStyle(el);
                 const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.2);
-                return Math.round(el.getBoundingClientRect().height / lh);
+                // offsetHeight is in layout px; the monitor is drawn at x2 by a transform, so a
+                // bounding rect would read twice the line count at 1400x1000
+                return Math.round(el.offsetHeight / lh);
             };
             const within = (name, el, box) => {
                 const a = el.getBoundingClientRect(), b = box.getBoundingClientRect();
