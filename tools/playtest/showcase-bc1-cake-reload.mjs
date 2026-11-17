@@ -136,8 +136,16 @@ const recorder = h => ev(h, () => {
 });
 const events = h => ev(h, () => window.__bc1 || []);
 
+let warnedIds = false;
 async function calm(h) {
-  if (CALM) for (const id of STAFF) await ev(h, ([i]) => { window.__test.needs.set(i, 'hunger', 100); try { window.__test.needs.set(i, 'social', 100); } catch (e) {} }, [id]).catch(() => {});
+  if (!CALM) return;
+  // An unknown --staff id would hold nobody; say so once instead of failing silently.
+  if (!warnedIds) {
+    const missing = await ev(h, ids => ids.filter(i => !window.npcNeedsSystem?.states?.has(i)), STAFF).catch(() => []);
+    if (missing.length) say(`  WARNING: --staff ids with no needs state (not held): ${missing.join(', ')}`);
+    warnedIds = true;
+  }
+  for (const id of STAFF) await ev(h, ([i]) => { window.__test.needs.set(i, 'hunger', 100); try { window.__test.needs.set(i, 'social', 100); } catch (e) {} }, [id]).catch(() => {});
 }
 
 async function drop(h) {
