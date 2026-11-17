@@ -3448,12 +3448,22 @@ export class NPCNeedsSystem {
         const dMe = Math.hypot(me.x - cell.x, me.y - cell.y);
         for (const o of this.states.values()) {
             if (o === s || o.job?.phase !== 'goto_target' || o.job.targetId !== s.job.targetId || o.job.visit || !o.job.dest) continue;
+            // R7 M1: one frozen in a conversation cannot be re-routed (it holds still; unfreezing re-issues its move)
+            if (o.mode === 'frozen') continue;
             if (Math.hypot(o.job.dest.x - cell.x, o.job.dest.y - cell.y) > HOME_EPS) continue;
             const p = this.world.npcPos(o.npcId);
             if (!p) continue;
             const dO = Math.hypot(p.x - cell.x, p.y - cell.y);
             const onWay = Math.hypot(p.x - alt.x, p.y - alt.y) + Math.hypot(alt.x - cell.x, alt.y - cell.y) <= dO + 16;
-            if (dO > dMe && onWay) return o;
+            if (!(dO > dMe && onWay)) continue;
+            // R7 M2: the re-routed user must be able to get a side cell by its own besideCell call
+            // (its leash, avoided rooms, other users' cells), or the swap would fail its job
+            const taken = [{ x: cell.x, y: cell.y }];
+            for (const u of this.states.values()) {
+                if (u !== s && u !== o && u.job?.targetId === s.job.targetId && u.job.dest) taken.push(u.job.dest);
+            }
+            if (!this.world.besideCell(cell, taken, { from: p, avoidRooms: this._avoidRooms(o) })) continue;
+            return o;
         }
         return null;
     }
