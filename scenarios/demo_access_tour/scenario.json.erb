@@ -77,7 +77,7 @@ server_room_pin = @random_pin
           "id": "reception_plant_east",
           "name": "Plant beside the front desk",
           "sprite": "plant-large1",
-          "position": { "x": 7.2, "y": 3.95 },
+          "position": { "x": 7.8, "y": 3.95 },
           "takeable": false,
           "observations": "A tall plant at the other end of the front desk."
         },
@@ -100,7 +100,7 @@ server_room_pin = @random_pin
           "id": "ama",
           "displayName": "Ama Owusu",
           "npcType": "person",
-          "position": { "x": 6.9, "y": 5.6 },
+          "position": { "x": 6.9, "y": 6.0 },
           "behavior": { "immovable": true },
           "spriteSheet": "ama_owusu",
           "spriteTalk": "assets/characters/ama_owusu_talk.png",
@@ -149,7 +149,21 @@ server_room_pin = @random_pin
           "sprite": "desk3",
           "position": { "x": 3.1, "y": 2.0 },
           "takeable": false,
-          "observations": "A tidy desk in the west half of the open plan."
+          "observations": "A tidy desk in the west half of the open plan.",
+          "tableItems": [
+            {
+              "type": "pc",
+              "id": "thandiwe_laptop",
+              "name": "Thandiwe's laptop",
+              "sprite": "laptop1",
+              "x": 14,
+              "y": 4,
+              "takeable": false,
+              "interactable": true,
+              "active": true,
+              "observations": "Thandiwe's laptop on her desk."
+            }
+          ]
         },
         {
           "type": "chair",
@@ -161,24 +175,27 @@ server_room_pin = @random_pin
           "observations": "Thandiwe's chair."
         },
         {
-          "type": "pc",
-          "id": "thandiwe_laptop",
-          "name": "Thandiwe's laptop",
-          "sprite": "laptop1",
-          "position": { "x": 3.7, "y": 2.2 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "Thandiwe's laptop on her desk."
-        },
-        {
           "type": "table",
           "id": "desk_yasmin",
           "name": "Yasmin's desk",
           "sprite": "desk3",
           "position": { "x": 5.3, "y": 2.0 },
           "takeable": false,
-          "observations": "A neat desk in the east half of the open plan."
+          "observations": "A neat desk in the east half of the open plan.",
+          "tableItems": [
+            {
+              "type": "pc",
+              "id": "yasmin_pc",
+              "name": "Yasmin's PC",
+              "sprite": "pc3",
+              "x": 12,
+              "y": 2,
+              "takeable": false,
+              "interactable": true,
+              "active": true,
+              "observations": "Yasmin's desktop PC."
+            }
+          ]
         },
         {
           "type": "chair",
@@ -188,17 +205,6 @@ server_room_pin = @random_pin
           "position": { "x": 5.5, "y": 3.3 },
           "takeable": false,
           "observations": "Yasmin's chair."
-        },
-        {
-          "type": "pc",
-          "id": "yasmin_pc",
-          "name": "Yasmin's PC",
-          "sprite": "pc3",
-          "position": { "x": 5.8, "y": 2.2 },
-          "takeable": false,
-          "interactable": true,
-          "active": true,
-          "observations": "Yasmin's desktop PC."
         },
         {
           "type": "notes",
@@ -219,7 +225,7 @@ server_room_pin = @random_pin
           "id": "thandiwe",
           "displayName": "Thandiwe Moyo",
           "npcType": "person",
-          "position": { "x": 3.6, "y": 4.4 },
+          "position": { "x": 3.6, "y": 5.0 },
           "behavior": { "immovable": true },
           "spriteSheet": "thandiwe_moyo",
           "spriteTalk": "assets/characters/thandiwe_moyo_talk.png",
@@ -231,7 +237,7 @@ server_room_pin = @random_pin
           "id": "yasmin",
           "displayName": "Yasmin Chaudhry",
           "npcType": "person",
-          "position": { "x": 5.8, "y": 4.4 },
+          "position": { "x": 5.8, "y": 5.0 },
           "behavior": { "immovable": true },
           "spriteSheet": "yasmin_chaudhry",
           "spriteTalk": "assets/characters/yasmin_chaudhry_talk.png",
@@ -243,7 +249,7 @@ server_room_pin = @random_pin
           "id": "lorna",
           "displayName": "Lorna Easton",
           "npcType": "person",
-          "position": { "x": 6.6, "y": 5.6 },
+          "position": { "x": 8.2, "y": 5.8 },
           "behavior": { "immovable": true },
           "spriteSheet": "lorna_easton",
           "spriteTalk": "assets/characters/lorna_easton_talk.png",
@@ -301,7 +307,7 @@ server_room_pin = @random_pin
           "id": "julian",
           "displayName": "Julian Sallow",
           "npcType": "person",
-          "position": { "x": 1.9, "y": 5.3 },
+          "position": { "x": 1.7, "y": 6.5 },
           "behavior": { "immovable": true },
           "spriteSheet": "julian_sallow",
           "spriteTalk": "assets/characters/julian_sallow_talk.png",
