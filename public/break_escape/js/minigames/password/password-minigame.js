@@ -1948,6 +1948,8 @@ export class PasswordMinigame extends MinigameScene {
             st.selected = st.presetUsername;
             st.other = false;
             st.presetUsername = null;
+            // The "Checking..." line from before the answer would stay under a chosen account
+            if (this.signInMessageEl?.dataset.kind !== 'error') this.setSignInMessage('', 'info');
         }
         // Other user clicked by the player is a choice too (N1): only the cap's own form returns.
         const typing = !!st.other && (!!st.otherPicked

@@ -122,6 +122,16 @@ const FIXTURES = [
                           { id: 'p2', kind: 'password', source: 'registry', foundIn: 'f2', label: 'a sticky note under the second keyboard on the left desk', account: { username: 'sokafor', displayName: 'Sam Okafor' } }
                       ] },
                action: 'chosen', expectWays: true } },
+    { name: 'locked-credential-ways', desc: 'K-lock R1 M1: a locked credential session on a remote screen: the longer slab, no tile row, the .rdp button and a refused one',
+      build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: 'known', linkName: 'Drop box: Comms room', preselect: 'lfox',
+               current: { username: 'lfox', displayName: 'Lena Fox', via: 'credential', kind: 'saved_connection', remote: true, locked: true },
+               remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
+               set: { picker: 'known', host: 'HB-FIN-02', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [],
+                      keyring: [
+                          { id: 'c1', kind: 'saved_connection', accepted: true, forThisPc: true, label: 'Finance remote desktop (long label for the cut)', host: 'HB-FIN-02', account: { username: 'lfox', displayName: 'Lena Fox' } },
+                          { id: 'c3', kind: 'saved_connection', accepted: false, forThisPc: true, label: 'Old audit connection', host: 'HB-FIN-02', account: { username: 'lfox', displayName: 'Lena Fox' } }
+                      ] },
+               action: 'locked', expectWays: true } },
     { name: 'ways-token-expired', desc: 'K5 R3: the account\'s expired session token: the greyed Connect button and its expired line wrap, nothing cut',
       build: { host: 'HB-FIN-02', pcName: 'Lena Fox PC (HB-FIN-02)', picker: 'known', linkName: 'Drop box: Comms room',
                remote: { footholdId: 'jack', linkName: 'Drop box: Comms room' },
@@ -165,6 +175,7 @@ async function measure(page, fx) {
                 signIn: {
                     pcId: 'fit_pc', pcName: b.pcName, picker: b.picker, tiles: [],
                     current: b.current || null,
+                    ...(b.preselect ? { preselect: b.preselect } : {}),
                     remote: b.remote, host: b.host, captured: [], capturedLoading: true
                 }
             });

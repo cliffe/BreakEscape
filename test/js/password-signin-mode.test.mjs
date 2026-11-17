@@ -1462,6 +1462,7 @@ test('K-lock R1 M1: a locked credential session offers its .rdp once the keyring
     answerRemote(mg, { picker: 'accounts', tiles: [{ username: 'lfox', displayName: 'Lena Fox' }], captured: [], keyring: [RDP_ENTRY] });
     assert.equal(mg.signInState.selected, 'lfox', 'the account tile is chosen');
     assert.equal(mg.signInState.other, false);
+    assert.equal(messageText(), '', 'the Checking... line does not stay under the chosen account');
     const b = document.querySelector('#signin-ways .signin-cred[data-cred-id="k_rdp"]');
     assert.ok(b, 'the Connect with button is drawn');
     assert.equal(b.textContent, "Connect with HB-FIN-02.rdp");
