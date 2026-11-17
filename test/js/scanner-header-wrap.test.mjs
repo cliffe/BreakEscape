@@ -47,3 +47,8 @@ test('count chip has a steady width', () => {
     assert.match(b, /min-width:\s*10ch/);
     assert.match(b, /text-align:\s*center/);
 });
+test('the count chip does not wrap inside itself or shrink', () => {
+    const b = body(panel, '.scanner-panel .scan-count');
+    assert.match(b, /white-space:\s*nowrap/);
+    assert.match(b, /flex:\s*0 0 auto/);
+});

@@ -103,14 +103,23 @@
        instead of growing upward off the top (heights up to ~700 px) */
     max-height: 100%;
     overflow-y: auto;
+    /* Reserve the scrollbar's width so it does not shift the text when the band starts to scroll */
+    scrollbar-gutter: stable;
+    /* A Tab-focused choice scrolls clear of the "More below" strip laid over the foot */
+    scroll-padding-bottom: 36px;
     padding: 20px;
 }
 
-/* Reserve the scrollbar's width where the band can scroll, so it does not shift the text */
-@media (max-height: 700px) {
-    .person-chat-caption-area {
-        scrollbar-gutter: stable;
-    }
+/* "More below" (R2 m4): whenever the caption scrolls (the script toggles [hidden]) a strip lies
+   over its foot. It ignores taps, so the choice beneath still takes them. The phone block puts
+   it back in flow under the caption. */
+.person-chat-more:not([hidden]) {
+    display: flex;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
 }
 
 /* Inner container for caption content - constrained to max-width */
@@ -340,16 +349,36 @@
     width: 0;
 }
 
+/* Desktop video call (heights 521-700): the status bar (z20) and the self-view PiP (top 44,
+   176 x 132, or 120 x 90 up to 768 wide) would cover a capped caption, so it stops short of them.
+   Phone landscape and phone width have their own rules below. */
+@media (min-width: 600.02px) {
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 180px);
+    }
+}
+
+@media (min-width: 600.02px) and (max-width: 768px) {
+    .video-call-mode .person-chat-caption-area {
+        max-height: calc(100% - 138px);
+    }
+}
+
 /* Phone landscape (844x390, 667x375, 915x412): wider than the phone layout's 600px but too short
    for a tall band. The caption becomes a left column (60% of the box) so the NPC, drawn about 70%
    across, and the X close at the top right stay clear of it; it is pinned to the foot, capped to
    the box by the base rule, and scrolls inside itself when the line and five choices still do not
    fit. Padding and gaps tighten so five choices usually fit. The portrait section and its scale
    are untouched. */
-@media (width > 600px) and (height <= 520px) {
+@media (min-width: 600.02px) and (max-height: 520px) {
+    /* The one 60% column: the caption and the strip under it share it */
+    .person-chat-root {
+        --pc-caption-col: 60%;
+    }
+
     .person-chat-caption-area {
         right: auto;
-        width: 60%;
+        width: var(--pc-caption-col);
         padding: 8px 16px;
     }
 
@@ -371,8 +400,15 @@
         min-width: 0;
     }
 
+    /* GNF is crisp at multiples of 8 from 16, so 24 stays; 30px is a whole line height that fits
+       a second choice (36px did not) */
     .person-chat-dialogue-text {
         font-size: 24px;
+        line-height: 30px;
+    }
+
+    .person-chat-speaker-name {
+        font-size: 16px;
     }
 
     .person-chat-choice-button {
@@ -387,11 +423,8 @@
 
     /* "More below": at the foot of the caption column while its choices run on */
     .person-chat-more:not([hidden]) {
-        display: flex;
-        position: absolute;
-        left: 0;
-        width: 60%;
-        bottom: 0;
+        right: auto;
+        width: var(--pc-caption-col);
     }
 
     /* Video call: the status bar (top 0) and the self-view PiP (top 44) would cover the top of
@@ -475,9 +508,13 @@
         min-width: 0;
     }
 
-    /* "More below" (R2 m4): under the caption while its choices run past the bottom edge */
+    /* "More below" (R2 m4): in flow under the caption while its choices run past the bottom edge */
     .person-chat-more:not([hidden]) {
-        display: flex;
+        position: static;
+    }
+
+    .person-chat-caption-area {
+        scroll-padding-bottom: 0;
     }
 }
 

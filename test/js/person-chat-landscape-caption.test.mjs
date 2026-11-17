@@ -25,7 +25,7 @@ function mediaBlock(query) {
 const parse = (text) => [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({ sel: m[1].trim(), body: m[2] }));
 const bodyOf = (rules, sel) => rules.filter((r) => r.sel === sel).map((r) => r.body).join(';');
 
-const QUERY = '@media (width > 600px) and (height <= 520px)';
+const QUERY = '@media (min-width: 600.02px) and (max-height: 520px)';
 const land = mediaBlock(QUERY);
 const lrules = parse(land.block);
 const L = (sel) => bodyOf(lrules, sel);
@@ -33,9 +33,10 @@ const L = (sel) => bodyOf(lrules, sel);
 const base = parse(css.slice(0, css.indexOf('@media')));
 const B = (sel) => bodyOf(base, sel);
 
-test('the query uses range syntax (covers fractional widths) and is landscape-only', () => {
+test('the query uses min-width 600.02px (fractional widths, older Safari) and is landscape-only', () => {
     assert.ok(land.start > css.indexOf('.person-chat-caption-area'), 'after the base rule');
     assert.doesNotMatch(css, /min-width:\s*601px/);
+    assert.doesNotMatch(css, /\(width\s*[<>]/, 'no range-syntax queries');
 });
 test('base caption is capped to the chat box, scrolls and packs from the start edge (heights 521-700)', () => {
     const b = B('.person-chat-caption-area');
@@ -43,29 +44,48 @@ test('base caption is capped to the chat box, scrolls and packs from the start e
     assert.match(b, /overflow-y:\s*auto/);
     assert.match(b, /align-items:\s*flex-start/);
 });
-test('scrollbar-gutter is stable where the band can scroll', () => {
-    assert.match(css, /@media \(max-height: 700px\)\s*\{\s*\.person-chat-caption-area\s*\{\s*scrollbar-gutter:\s*stable/);
+test('scrollbar-gutter is stable in the base caption rule, with scroll padding for the strip', () => {
+    assert.match(B('.person-chat-caption-area'), /scrollbar-gutter:\s*stable/);
+    assert.match(B('.person-chat-caption-area'), /scroll-padding-bottom:\s*36px/);
+    assert.doesNotMatch(css, /@media \(max-height: 700px\)/);
 });
 test('landscape caption is a left column, 60% wide, clear of the NPC and the X', () => {
     assert.match(L('.person-chat-caption-area'), /right:\s*auto/);
-    assert.match(L('.person-chat-caption-area'), /width:\s*60%/);
+    assert.match(L('.person-chat-caption-area'), /width:\s*var\(--pc-caption-col\)/);
+    assert.match(L('.person-chat-root'), /--pc-caption-col:\s*60%/);
+    assert.equal((land.block.match(/60%/g) || []).length, 1, 'the column width is written once');
     assert.match(L('.person-chat-caption-content'), /flex-direction:\s*column/);
     assert.match(L('.person-chat-caption-content'), /flex-wrap:\s*nowrap/);
     assert.match(L('.person-chat-controls-area'), /max-width:\s*100%/);
     assert.match(L('.person-chat-controls-area'), /min-width:\s*0/);
 });
-test('landscape dialogue text is the phone block size (24px)', () => {
+test('landscape dialogue text is the phone block size (24px, GNF crisp) on a 30px line; name is 16px', () => {
     assert.match(L('.person-chat-dialogue-text'), /font-size:\s*24px/);
+    assert.match(L('.person-chat-dialogue-text'), /line-height:\s*30px/);
+    assert.match(L('.person-chat-speaker-name'), /font-size:\s*16px/);
     const phone = mediaBlock('@media (max-width: 600px)');
     assert.match(bodyOf(parse(phone.block), '.person-chat-dialogue-text'), /font-size:\s*24px/);
 });
-test('the More below cue shows in landscape at the foot of the caption column', () => {
-    const b = L('.person-chat-more:not([hidden])');
+test('the More below cue: base rule lies over the foot at any width, ignores taps; landscape narrows it; phone keeps it in flow', () => {
+    const b = B('.person-chat-more:not([hidden])');
     assert.match(b, /display:\s*flex/);
     assert.match(b, /position:\s*absolute/);
     assert.match(b, /bottom:\s*0/);
-    assert.match(b, /width:\s*60%/);
-    assert.doesNotMatch(ui, /Hidden above 600/);
+    assert.match(b, /pointer-events:\s*none/);
+    const l = L('.person-chat-more:not([hidden])');
+    assert.match(l, /right:\s*auto/);
+    assert.match(l, /width:\s*var\(--pc-caption-col\)/);
+    assert.doesNotMatch(l, /display:/);
+    const phone = parse(mediaBlock('@media (max-width: 600px)').block);
+    assert.match(bodyOf(phone, '.person-chat-more:not([hidden])'), /position:\s*static/);
+    assert.match(ui, /updateScrollCue/);
+});
+test('desktop video call (heights 521-700) keeps the capped caption clear of the status bar and PiP', () => {
+    const wide = parse(mediaBlock('@media (min-width: 600.02px) {').block);
+    assert.match(bodyOf(wide, '.video-call-mode .person-chat-caption-area'), /max-height:\s*calc\(100% - 180px\)/);
+    const mid = parse(mediaBlock('@media (min-width: 600.02px) and (max-width: 768px)').block);
+    assert.match(bodyOf(mid, '.video-call-mode .person-chat-caption-area'), /max-height:\s*calc\(100% - 138px\)/);
+    assert.ok(css.indexOf('calc(100% - 180px)') < land.start, 'before the landscape block');
 });
 test('video call: the band starts below the status bar and the PiP is dropped', () => {
     assert.match(L('.video-call-mode .person-chat-caption-area'), /max-height:\s*calc\(100% - 40px\)/);
