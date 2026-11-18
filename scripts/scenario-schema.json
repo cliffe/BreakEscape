@@ -5323,7 +5323,24 @@
         },
         "fingerprintCandidates": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "description": "A reference card with its pattern class fixed (F26): a decoy in the lift's class forces ridge comparison",
+                "properties": {
+                  "name": { "type": "string" },
+                  "pattern": { "type": "string", "enum": ["loop", "whorl", "arch"] }
+                },
+                "required": ["name"]
+              }
+            ]
+          }
+        },
+        "fingerprintCandidateCount": {
+          "type": "integer", "minimum": 2, "maximum": 4,
+          "description": "How many reference cards the Compare step shows (the lift's owner plus decoys); default from fingerprintDifficulty (easy 2, medium and hard 3)"
         },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "mac": { "type": "string" },
