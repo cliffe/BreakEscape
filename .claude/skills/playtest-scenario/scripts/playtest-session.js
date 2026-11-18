@@ -45,7 +45,7 @@
  *   {"cmd":"mg","action":"clickText","args":["Continue"]}
  *   {"cmd":"mg","action":"clickCanvas","args":[420,300]}   (nested Phaser canvas)
  *   {"cmd":"mg","action":"type","args":[0,"Hospital1987",{"submit":true}]}
- *                                   (a flag station or flag{...} value is echoed as "[redacted N chars]";
+ *                                   (a flag station or flag{...} value is echoed as "[redacted N chars]" and masked in the log, drain and getState;
  *                                    add "showTyped":true to the command to see it)
  *   {"cmd":"select","field":"template","option":"urgent"}    (set a <select>; also mg action "select")
  *   {"cmd":"waitFor","kind":"global","name":"bernie_gave_key"}
@@ -75,8 +75,8 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 const { briefTasks } = require('./brief-tasks');
-const { lockOutcome, wrongCodeReply, padGone } = require('./lock-outcome');
-const { redactTyped } = require('./typed-redact');
+const { lockOutcome, padGone, attemptSnapshot, awaitAttempt } = require('./lock-outcome');
+const { redactTyped, isFlagTyped, stateSecrets, scrub } = require('./typed-redact');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
 const { nextBootstrapTarget, readBootstrapFacts, converseEnding, converseIdleAction } = require('./bootstrap-steps');
@@ -117,14 +117,20 @@ if (logPath) {
   logStream = fs.createWriteStream(logPath, { flags: 'a' });
 }
 let seq = 0;
+// Flag values the session has seen: configured with --flags, or typed at a flag target.
+// Every line written to the session log, and every reply except a "showTyped" one, has
+// them replaced by a length marker (typed-redact.js scrub), so a flag stays out of the
+// jsonl, `drain` (the bridge logs minigame.type with the text) and `mg getState` on a
+// flag station.
+const secrets = new Set();
 function logLine(dir, obj) {
   if (!logStream) return null;
-  logStream.write(JSON.stringify({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }) + '\n');
+  logStream.write(JSON.stringify(scrub({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }, secrets)) + '\n');
   return seq;
 }
 
-function emit(obj) {
-  process.stdout.write(JSON.stringify(obj) + '\n');
+function emit(obj, { raw = false } = {}) {
+  process.stdout.write(JSON.stringify(raw ? obj : scrub(obj, secrets)) + '\n');
   logLine('out', obj);
 }
 
@@ -144,6 +150,7 @@ function loadFlags(spec) {
   return [...xml.matchAll(/<flag>([^<]+)<\/flag>/g)].map(m => m[1].trim());
 }
 const FLAGS = loadFlags(argv.flags);
+for (const f of FLAGS) secrets.add(f);
 const flagUses = [];
 
 /** Replace <flag:N> anywhere in a command, recording every substitution. */
@@ -689,6 +696,8 @@ const vmSteps = createVmSteps({
         if (typeof m[action] !== 'function') return { ok: false, reason: `no-such-action:${action}` };
         return m[action](...(cargs || []));
       }, [c.action, c.args || []]);
+      if (c.action === 'getState') for (const v of stateSecrets(r)) secrets.add(v);
+      if (c.action === 'type' && isFlagTyped(typeState, (c.args || [])[1])) secrets.add((c.args || [])[1]);
       if (c.action === 'type') r = redactTyped(r, { state: typeState, text: (c.args || [])[1], show: c.showTyped === true });
       if (['choose', 'chooseIndex', 'chooseMatching', 'continue', 'continue_',
            'pressKey', 'clickText', 'clickControl'].includes(c.action)) {
@@ -958,17 +967,26 @@ const vmSteps = createVmSteps({
       // place its verdict (result.success) is visible once the screen moves on.
       let ownSt = st.id === startId ? st : null;
       const track = (s2) => { if (s2 && s2.available !== false && s2.id === startId) ownSt = s2; return s2; };
-      // One submitted code is one attempt: a wrong one stops the command instead of
-      // being re-tapped until the pad locks out.
-      const wrongCode = async () => {
-        let s3 = null;
-        for (let k = 0; k < 4; k++) {
-          s3 = track(await read());
-          if (!wrongCodeReply(s3, steps)) return null;
-          if (k < 3) await page.waitForTimeout(300);
-        }
-        return wrongCodeReply(s3, steps);
-      };
+      // The thing being unlocked (a door sprite or an object). Key locks record no success
+      // in their result, so its real locked state is the fallback verdict (lock-outcome.js).
+      // Read from the open minigame's `lockable`; null when it has none (PIN, password).
+      await page.evaluate(() => {
+        const l = window.MinigameFramework?.currentMinigame?.lockable;
+        window.__ptLockable = l && typeof l === 'object' ? l : null;
+      });
+      const lockableLocked = () => page.evaluate(() => {
+        const l = window.__ptLockable;
+        if (!l) return null;
+        if (l.doorProperties) return !!l.doorProperties.locked;
+        if (l.scenarioData) return !!l.scenarioData.locked;
+        return typeof l.locked === 'boolean' ? l.locked : null;
+      });
+      const startLocked = await lockableLocked();
+      // One submitted code is one attempt, decided by that attempt being answered (the
+      // history grows, or the wrong-code line appears), however slow the server is, up to
+      // ANSWER_TIMEOUT_MS. A wrong one stops the command instead of being re-tapped until
+      // the pad locks out. Returns null when the pad closed, completed or got a result.
+      const awaitAnswer = (base) => awaitAttempt({ base, steps, read: async () => track(await read()), wait: ms => page.waitForTimeout(ms) });
 
       // The lock renders its controls a beat after opening, so the first read
       // can show nothing to act on. Wait for it to become actionable rather
@@ -980,7 +998,9 @@ const vmSteps = createVmSteps({
         if (ready) break;
         await page.waitForTimeout(250);
         st = track(await read());
+        if (padGone(st)) break;
       }
+      if (padGone(st)) return { ok: false, reason: 'pad-closed', steps };
       if (st && !((st.keySelection && st.keySelection.length) || st.keyTarget
                   || ((st.fields || []).length && c.code)
                   || (st.pinLength !== undefined && c.code) || st.isComplete)) {
@@ -1009,7 +1029,7 @@ const vmSteps = createVmSteps({
           // Insertion plays an animation; the keyhole stays on screen while it
           // runs. Click it once and wait, rather than hammering it.
           const at = `${st.keyTarget.x},${st.keyTarget.y}`;
-          if (at === lastInsert) { await page.waitForTimeout(400); st = await read(); continue; }
+          if (at === lastInsert) { await page.waitForTimeout(400); st = track(await read()); continue; }
           lastInsert = at;
           steps.push(`insert key at ${at}`);
           await page.evaluate(([x, y]) => window.__test.minigame.clickCanvas(x, y),
@@ -1017,13 +1037,15 @@ const vmSteps = createVmSteps({
         // Password locks with a real text field: type it and submit.
         } else if ((st.fields || []).length && c.code) {
           steps.push('type code into field 0');
+          const base = attemptSnapshot(track(await read()));
           await page.evaluate(code => window.__test.minigame.type(0, code, { submit: true }), c.code);
-          const wc = await wrongCode();
+          const wc = await awaitAnswer(base);
           if (wc) return { ...wc, room: (await page.evaluate(() => window.__test.getState().room)) };
         // Keypad PIN locks have no field at all — they are tapped digit by
         // digit, exactly as a player does it.
         } else if (st.pinLength !== undefined && c.code) {
           steps.push(`tap ${c.code} on the keypad`);
+          const base = attemptSnapshot(track(await read()));
           for (const digit of String(c.code)) {
             await page.evaluate(d => window.__test.minigame.clickText(d, { exact: true }), digit);
             await page.waitForTimeout(120);
@@ -1034,7 +1056,7 @@ const vmSteps = createVmSteps({
             await page.evaluate(() => window.__test.minigame.clickControl('enter'))
               .catch(() => {});
           }
-          const wc = await wrongCode();
+          const wc = await awaitAnswer(base);
           if (wc) return { ...wc, room: (await page.evaluate(() => window.__test.getState().room)) };
         } else {
           break;
@@ -1055,8 +1077,16 @@ const vmSteps = createVmSteps({
         const s2 = window.__test.getState();
         return { activeMinigame: s2.activeMinigame, room: s2.room };
       });
+      // No own verdict (key locks): the unlock lands in a callback after the pad closes, so
+      // give the lockable's real state a few seconds to flip before reading it.
+      const noVerdict = !(ownSt && ownSt.result && ownSt.result.success !== undefined);
+      let nowLocked = await lockableLocked();
+      for (let i = 0; i < 12 && noVerdict && startLocked === true && nowLocked === true; i++) {
+        await page.waitForTimeout(400);
+        nowLocked = await lockableLocked();
+      }
       return {
-        ...lockOutcome({ startId, ownSt, after }),
+        ...lockOutcome({ startId, ownSt, after, lockState: { startLocked, nowLocked } }),
         steps,
         finalState: st && st.available !== false ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
         activeMinigame: after.activeMinigame,
@@ -1233,6 +1263,14 @@ const vmSteps = createVmSteps({
     try { cmd = JSON.parse(text); }
     catch (e) { emit({ ok: false, error: 'bad-json', line: text.slice(0, 200) }); continue; }
 
+    // A flag typed at a flag target is registered before anything is logged, so the `in`
+    // record keeps <flag:N> tokens or a length marker, never the value.
+    if (cmd.cmd === 'mg' && cmd.action === 'type' && typeof (cmd.args || [])[1] === 'string') {
+      const typedText = cmd.args[1];
+      let pre = null;
+      try { pre = await page.evaluate(() => window.__test.minigame.getState()); } catch (_) { /* no minigame */ }
+      if (isFlagTyped(pre, typedText) && !/^<flag:\d+>$/.test(typedText)) secrets.add(typedText);
+    }
     const inSeq = logLine('in', { cmd: vmSteps.redact(cmd) });
     if (cmd.cmd === 'quit') { logLine('out', { event: 'quit', commands: seq, flagsUsed: flagUses.length }); break; }
     if (responseCapture) responseCapture.startCommand(inSeq, typeof cmd.cmd === 'string' ? cmd.cmd : null);
@@ -1244,7 +1282,8 @@ const vmSteps = createVmSteps({
 
     try {
       const result = await handler(cmd);
-      emit({ ok: true, cmd: cmd.cmd, result });
+      // "showTyped": true (top level) shows a typed value in this reply only; the log still masks it.
+      emit({ ok: true, cmd: cmd.cmd, result }, { raw: cmd.cmd === 'mg' && cmd.showTyped === true });
     } catch (err) {
       emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.reason ? { reason: err.reason } : {}), ...(err && err.hint ? { hint: err.hint } : {}) });
     }

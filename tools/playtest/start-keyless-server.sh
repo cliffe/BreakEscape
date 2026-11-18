@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# Start the keyless Break Escape server on :3001 (no GEMINI_API_KEY, so no TTS
-# requests are generated or billed). Idempotent: exits 0 if :3001 is already up.
+# Start the keyless Break Escape server (no GEMINI_API_KEY, so no TTS requests are
+# generated or billed). Usage: start-keyless-server.sh [PORT]   (default 3001; never 3000).
+# Idempotent: exits 0 if the port is already up.
 # Agents may start and stop this server. Never touch the :3000 server.
 #
 # Note: ./start_server.sh runs `pkill -9 -f puma`, which kills this server too.
 # Re-run this script afterwards.
 set -euo pipefail
 
-PORT=3001
+PORT="${1:-3001}"
+case "$PORT" in
+  ''|*[!0-9]*) echo "FAIL: port must be a number, got '$PORT'" >&2; exit 2 ;;
+  3000) echo "FAIL: :3000 is the user's server; pick another port" >&2; exit 2 ;;
+esac
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-LOG="$ROOT/tmp/keyless-3001.log"
+LOG="$ROOT/tmp/keyless-${PORT}.log"
 PIDFILE="tmp/pids/server-${PORT}.pid"   # relative to the dummy app, as rails resolves it
 
 # Check with curl as well as ss: some containers have no ss, and without this

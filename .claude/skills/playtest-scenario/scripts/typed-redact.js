@@ -5,7 +5,9 @@
  * that puts the full flag in the transcript, so by default the echo is replaced with a
  * length marker. It applies when the open minigame looks like a flag station (its id,
  * title or text mention a flag) or the typed text itself matches flag{...}. Pass
- * "showTyped": true on the command to keep the value.
+ * "showTyped": true on the command (top level, not inside args) to keep the value in
+ * the reply. The session log never keeps it: scrub() removes every registered secret
+ * from the log, from `drain`, and from `mg getState` on a flag station.
  *
  * Kept apart from the session script so node tests can load it without Playwright
  * (test/js/playtest-typed-redact.test.mjs).
@@ -26,4 +28,53 @@ function redactTyped(result, { state, text, show }) {
   return { ...result, typed: `[redacted ${value.length} chars]`, typedRedacted: true };
 }
 
-module.exports = { redactTyped, looksLikeFlagTarget };
+const MIN_SECRET = 4;
+const marker = (n) => `[redacted ${n} chars]`;
+
+/** Whether typed text should be treated as a flag value to keep out of every output. */
+function isFlagTyped(state, text) {
+  return typeof text === 'string' && text.length > 0 && (looksLikeFlagTarget(state) || FLAG_SHAPE.test(text));
+}
+
+/**
+ * The flag values a flag-station state exposes: submittedFlags, and the text of any
+ * non-empty field (before a submit the field holds what was typed). Empty unless the
+ * state looks like a flag target.
+ */
+function stateSecrets(state) {
+  if (!looksLikeFlagTarget(state)) return [];
+  const out = [];
+  const add = (v) => { if (typeof v === 'string' && v.length >= MIN_SECRET) out.push(v); };
+  for (const f of Array.isArray(state.submittedFlags) ? state.submittedFlags : []) {
+    if (f && typeof f === 'object') Object.values(f).forEach(add); else add(f);
+  }
+  for (const f of Array.isArray(state.fields) ? state.fields : []) if (f) add(f.value);
+  return out;
+}
+
+/** Replace every secret (and any flag{...} shape when `shape`) in a string. */
+function scrubString(str, secrets, shape) {
+  let out = str;
+  for (const v of [...secrets].sort((a, b) => b.length - a.length)) {
+    if (v.length >= MIN_SECRET && out.includes(v)) out = out.split(v).join(marker(v.length));
+  }
+  if (shape) out = out.replace(/flag\{[^}]*\}/gi, (m) => marker(m.length));
+  return out;
+}
+
+/**
+ * A deep copy of `node` with the secrets replaced by length markers. `secrets` is a Set
+ * of strings the session has seen typed at a flag target or configured as flags.
+ */
+function scrub(node, secrets, shape = false) {
+  if ((!secrets || !secrets.size) && !shape) return node;
+  const walk = (n) => {
+    if (typeof n === 'string') return scrubString(n, secrets || new Set(), shape);
+    if (Array.isArray(n)) return n.map(walk);
+    if (n && typeof n === 'object') return Object.fromEntries(Object.entries(n).map(([k, v]) => [k, walk(v)]));
+    return n;
+  };
+  return walk(node);
+}
+
+module.exports = { redactTyped, looksLikeFlagTarget, isFlagTyped, stateSecrets, scrub, MIN_SECRET };
