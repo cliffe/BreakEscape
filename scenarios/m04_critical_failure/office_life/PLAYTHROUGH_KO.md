@@ -110,7 +110,7 @@ score           37
 VERDICT: progress recorded - 5 rooms beyond the first, 1 objects unlocked, 0 flags submitted.
 ```
 
-## Retry 3 (game 8133, INCOMPLETE: stopped at the call-in, before the debrief)
+## Retry 3 (game 8133: first session stopped at the call-in; resumed to the credits, see the last section)
 
 HEAD at start: 7c512b898 (build/ol-m04). Game 8133 on keyless :3097 (puma pid 2162290, left running, untouched). Headless, `--speed fast`. Host load about 172 at start, so headless was required. Session log `tools/playtest/m04_critical_failure-session-g8133c.jsonl` (213 commands; the earlier 8133 logs are `...g8133.jsonl` and `...g8133b.jsonl`). Session stopped with `session-stop.sh 8133` after a `sync`; no pid file or pipes left. Flags: `tools/playtest/m04_critical_failure-flags-game8133.xml`, four configured, referred to only as `<flag:N>`.
 
@@ -212,3 +212,85 @@ social scenario false (completed tasks do not count; pass --tasks to count them)
 VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
 Cross-check the specifics above against the report.
 ```
+
+### Retry 3, resumed (game 8133, session `m04_critical_failure-session-g8133d.jsonl`, 109 commands)
+
+The first session stopped at the call-in. This session resumed the same game from the plain URL (`http://127.0.0.1:3097/break_escape/games/8133`, headless, `--speed fast`, the same flags XML, keyless puma 2162290 left running). Flags were not used again here (`flagsUsed` 0). The earlier four flag rows stand as recorded above: handed over, not earned.
+
+| # | Step | Result |
+|---|---|---|
+| R1 | `bootstrap` `resume:"resume"` on the plain URL | PASS. "Continue?" closed. Spawned in `main_entrance` (160,144, HP 92), the intended start-room spawn after a reload |
+| R2 | `openInventoryItem` phone, `mg clickText "Agent HaX"` | PASS. Thread read. Four reply options offered, including "1. I'm done here. Bring me in." |
+| R3 | Reply "I'm done here. Bring me in." | PASS. Call started ("ON CALL") with "Agent HaX" |
+| R4 | Call choice "Bring me in.", then "On my way." | PASS. The call offered "Bring me in." / "Not yet. I'm still looking." first. "On my way." appeared only after "Bring me in." The "Not yet" branch was not run |
+| R5 | Ending-check overlay ("Before the mission ends"): `endingOverlay` `end` | PASS. Overlay closed and the debrief started. The overlay listed "Deal with the intruder in Battery Hall 1" (see finding 6). "Keep going" was not run |
+| R6 | Debrief picks, in order: "Shutdown engaged before the racks went.", "What did we get out of there?", "And the network?", "It goes in the report. Vance will want every line.", "The Architect. He's running all of it.", "What would Task Force Null do?", "Full public disclosure. People have a right to know.", "Just doing my job." | PASS. Each pick led to the next line. Unchosen branches: "Voltage is out through the dock.", "So what do they fix first?", "How far does this reach?", "I'm in. When do we start?", "Keep it classified.", "Say there was an incident.", "Make sure Vance gets the full credit." Disclosure pick: `disclosure_choice` set |
+| R7 | Credits | PASS. `missionEnd` kind "credits", `creditsShowing` true, `closable` false. The overlay is left open by design (terminal state). Read via `#bv-credits-overlay` and `#bv-cr-label` |
+| R8 | `sync` (twice), `verify-run.rb 8133` | PASS. `mission_complete` and `debrief_started` set. 18 of 18 tasks completed (`call_in_after_sweep` and `report_to_0x99` now complete), score 96 |
+
+Driving notes: after R3 `converse` with an `id` refused with `minigame-active` because the phone chat was already open, so the replies went through `mg clickText`. In the debrief, `converse` with `choices: []` stops at each new line, so each pick was made by `mg clickText` and the state read after it.
+
+### verify-run.rb 8133 (resumed session, after the debrief and credits, flag strings masked)
+
+```
+game            8133  (mission 109)
+created         2026-11-18 00:35:28 UTC
+last write      2026-11-18 01:17:21 UTC
+played for      2513s of wall clock
+current room    "main_entrance"
+unlocked rooms  7: main_entrance, operations_office, scada_control_room, battery_hall_1, battery_hall_2, engineering_workshop, plant_room
+unlocked objs   1: optigrid_tool_case
+inventory       10: Your Phone, RFID Cloner, Lock Pick Kit, Grid Regulator Credentials, CyberChef Workstation, Notepad, Maintenance Work Orders, Cup of coffee, Fingerprint Kit, OptiGrid Job Card #4782 (back page)
+NPCs met        14: opening_briefing_cutscene, director_netherton, agent_nightshade, security_guard, agent_0x99, robert_vance_phone, agent_0x99_debrief, ibrahim_diallo, joanne_pell, robert_vance, operative_cipher, operative_relay, voltage, operative_static
+flags submitted 4: flag{…}, flag{…}, flag{…}, flag{…}
+globals set     52: aes_staff_off, all_flags_in, anomaly_detected, asked_the_number, attack_mechanism_known, attack_prevented, blackout_named, briefing_played, checkpoint_passed, clock_started, debrief_started, disclosure_choice, ending_track_heard, engine_tutorial_declined, erlang_guide_offered, esd_authorized, evidence_maintenance_logs_found, fingerprint_kit_found, flag_erlang_rce_submitted, flag_ftp_intel_submitted, flag_network_scan_submitted, flag_privesc_submitted, guard_admitted, joanne_ko, lockpicking_guide_offered, m03_danny_fate, m03_victoria_fate, mission_complete, ops_kettle_off, plant_reader_seen, plant_room_entered, player_name, privesc_guide_offered, proftpd_guide_offered, recon_guide_offered, relay_card_cloned, rfid_guide_offered, robert_vance_ko, server_room_reached, static_left, static_stood_aside, vance_card_cloned, vance_is_ally, vance_met, vance_phone_available, vance_print_lifted, vance_provided_keycard, vance_spoken, voltage_escaped, voltage_neutralised, voltage_six_cities, vuln_guide_offered
+access model
+  sessions        0
+  signedInPcs     0
+  serverClones    2: server_room_keycard from npc operative_relay; facility_keycard_level1 from npc robert_vance
+  copiedItems     0
+  loginFailures   0
+  loginLockouts   0
+  footholds       0
+  gainedFootholds 0
+  npcFrustration  0
+  guestSessions   0
+  sharedLogins    0
+  feedRevealed    0
+tasks           18 in objectivesState, 18 completed
+  enter_facility                     "completed"  at 2026-11-18T00:38:16Z
+  report_to_0x99                     "completed"  at 2026-11-18T01:17:20Z
+  confront_voltage                   "completed"  at 2026-11-18T00:53:19Z
+  meet_robert_vance                  "completed"  at 2026-11-18T00:38:19Z
+  scan_scada_network                 "completed"  at 2026-11-18T00:48:37Z
+  call_in_after_sweep                "completed"  at 2026-11-18T01:14:37Z
+  submit_privesc_flag                "completed"  at 2026-11-18T00:48:57Z
+  get_past_plant_reader              "completed"  at 2026-11-18T00:51:52Z
+  submit_ftp_intel_flag              "completed"  at 2026-11-18T00:48:50Z
+  disable_attack_vectors             "completed"  at 2026-11-18T00:54:02Z
+  submit_erlang_rce_flag             "completed"  at 2026-11-18T00:49:09Z
+  identify_scada_anomalies           "completed"  at 2026-11-18T00:39:34Z
+  submit_network_scan_flag           "completed"  at 2026-11-18T00:48:36Z
+  find_infiltration_evidence         "completed"  at 2026-11-18T00:39:09Z
+  locate_compromised_systems         "completed"  at 2026-11-18T00:44:53Z
+  neutralize_operative_relay         "completed"  at 2026-11-18T00:41:59Z
+  exploit_erlang_ssh_vulnerability   "completed"  at 2026-11-18T00:49:10Z
+  investigate_compromised_services   "completed"  at 2026-11-18T00:48:50Z
+tasks_completed 18
+score           96
+social scenario false (completed tasks do not count; pass --tasks to count them)
+
+VERDICT: progress recorded — 6 rooms beyond the first, 1 objects unlocked, 4 flags submitted.
+Cross-check the specifics above against the report.
+```
+
+### Findings (resumed session)
+
+| # | Severity | Finding | Repro |
+|---|---|---|---|
+| 6 | minor, unconfirmed | The ending-check overlay lists "Deal with the intruder in Battery Hall 1", which is scenario task `neutralize_operative_cipher` (scenario.json.erb line 468). This run never set that task (not in the 18 in the record). The task is set by `taskOnKO` on the operative cipher (line 2259), and this run did not knock him out. It is not in `concludeRequires`, so the ending was not blocked. Check whether the overlay should list tasks that were never assigned | session log, `endingOverlay` `end` reply |
+| 7 | minor (harness) | After the call, `converse` with an `id` refused with `minigame-active` because the phone chat was open. Use `mg clickText` to answer the open chat | session log, `converse` after `Bring me in.` |
+
+Counts for the resumed session: 0 blockers, 0 majors, 1 minor (finding 6, unconfirmed), 1 harness note (finding 7).
+
+Not run in this retry: the "Not yet" branch of the call, the "Keep going" branch of the ending overlay, the debrief branches listed under R6, the Ibrahim curt-line check and the Joanne bark. The VM-earned flag chain is still unproven (see the earned-secrets table above). The run reached the debrief and credits in standalone with the four flags handed over, so the ending is reachable on this route with the flag stations skipped. The VM steps behind the flags are not proven.
