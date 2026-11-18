@@ -142,7 +142,7 @@
 #bond-vis-overlay .bv-status-block {
   text-align: right;
   font-family: 'GNF', monospace;
-  font-size: 14px;
+  font-size: 16px;
   /* a long operation name wraps; give the wrapped lines room of their own */
   line-height: 1.2;
   min-width: 0;
@@ -255,8 +255,8 @@
 #bond-vis-overlay .bv-stat-row {
   display: flex;
   justify-content: space-between;
-  font-family: 'GNF', monospace;
-  font-size: 13px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
   color: var(--bv-green);
   padding: 1px 0;
 }
@@ -284,8 +284,8 @@
 #bond-vis-overlay .bv-log-scroll {
   flex: 1;
   overflow: hidden;
-  font-family: 'GNF', monospace;
-  font-size: 11px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
   line-height: 1.5;
   color: rgba(0,255,65,0.6);
 }
@@ -381,14 +381,14 @@
 
 #bond-vis-overlay .bv-track-info {
   font-family: 'GNF', monospace;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--bv-gold);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-#bond-vis-overlay .bv-track-info span { color: var(--bv-green-dim); font-size: 11px; }
+#bond-vis-overlay .bv-track-info span { color: var(--bv-green-dim); font-size: 16px; }
 
 /* ── Mode selector in right panel ──────────────────────────────────────── */
 
@@ -416,8 +416,8 @@
 }
 
 #bond-vis-overlay .bv-ticker {
-  font-family: 'GNF', monospace;
-  font-size: 12px;
+  font-family: 'VT323', monospace;
+  font-size: 16px;
   overflow: hidden;
   flex: 1;
   margin: 0 20px;
@@ -483,21 +483,21 @@
 }
 
 .bv-cr-title {
-  font-size: 46px;
+  font-size: 48px;
   color: #FFD700;
   padding: 20px 0 10px;
   text-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000, 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 4px 4px 0 rgba(255,215,0,0.35);
 }
 
 .bv-cr-subtitle {
-  font-size: 20px;
+  font-size: 16px;
   color: #00FFFF;
   padding: 4px 0 20px;
   letter-spacing: 0.3em;
 }
 
 .bv-cr-section-header {
-  font-size: 14px;
+  font-size: 16px;
   color: #FFD700;
   padding: 14px 0 6px;
   letter-spacing: 0.3em;

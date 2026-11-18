@@ -76,5 +76,39 @@ check('no filter blur or drop-shadow', !/filter\s*:[^;}]*(blur|drop-shadow)/.tes
 const small = [...css.matchAll(/font-size\s*:\s*([\d.]+)px/g)].filter(x => parseFloat(x[1]) < 8).map(x => x[0]);
 check('no font-size under 8px', small.length === 0, small.join(', '));
 
+// 5. GNF font sizes: multiples of 8 from 16px. The family is resolved per rule: its own
+// font-family, else the nearest ancestor-prefix rule that sets one (e.g. ".bv-track-info span"
+// inherits ".bv-track-info"). The .bv-cr-* classes sit on elements that also carry .bv-cr-line
+// (GNF), which a stylesheet walk cannot see, so they are mapped to it by name.
+const flat = css.replace(/@media[^{]*\{/g, '').replace(/\}\s*\}/g, '}');
+const rules = [...flat.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(r => ({
+  sel: r[1].trim().split(',')[0].trim(),
+  family: (r[2].match(/font-family\s*:\s*([^;]+)/) || [])[1],
+  size: (r[2].match(/font-size\s*:\s*([\d.]+)px/) || [])[1],
+}));
+function familyOf(sel) {
+  const parts = sel.split(/\s+/);
+  for (let n = parts.length; n >= 1; n--) {
+    const prefix = parts.slice(0, n).join(' ');
+    const own = rules.find(r => r.sel === prefix && r.family);
+    if (own) return own.family;
+  }
+  if (/^\.bv-cr-(title|subtitle|section-header|entry|warning|gap)/.test(sel)) return "'GNF'";
+  if (sel.startsWith('#bond-vis-overlay')) return "'Press Start 2P'";
+  return null;
+}
+const badGnf = [], unresolved = [];
+for (const r of rules) {
+  if (!r.size) continue;
+  const fam = familyOf(r.sel);
+  if (!fam) { unresolved.push(r.sel); continue; }
+  if (/GNF/.test(fam)) {
+    const px = parseFloat(r.size);
+    if (px < 16 || px % 8 !== 0) badGnf.push(`${r.sel} ${px}px`);
+  }
+}
+check('every GNF font-size is a multiple of 8 from 16px', badGnf.length === 0, badGnf.join(', '));
+if (unresolved.length) console.log(`NOTE font-family not resolved from CSS for: ${unresolved.join(' | ')}`);
+
 console.log(failed ? `${failed} FAILED` : 'ALL PASSED');
 process.exit(failed ? 1 : 0);
