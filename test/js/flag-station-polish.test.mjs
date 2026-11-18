@@ -36,6 +36,29 @@ test('C6: only on-grid font sizes in the CSS file and the standard inline styles
     }
 });
 
+test('m3: launch-abort and lock modes share the FLAG header look, on-grid sizes, no emoji', () => {
+    const build = (name, next) => js.slice(js.indexOf(name + '() {'), js.indexOf(next));
+    const launch = build('buildLaunchAbortUI', 'buildLockUI() {');
+    const lock = build('buildLockUI', 'async submitFlag');
+    const armed = js.slice(js.indexOf('showLaunchAbortChoice() {'), js.indexOf('handleAbort'));
+    assert.match(launch, /class="flag-station-icon launch-abort-icon">LAUNCH</);
+    assert.match(lock, /class="flag-station-icon">LOCKED</);
+    for (const [name, text] of [['launch', launch], ['lock', lock], ['armed', armed]]) {
+        assert.doesNotMatch(text, /[\u{1F300}-\u{1FAFF}\u2600-\u27BF\uFE0F]/u, name + ' has emoji or symbol glyphs');
+        for (const px of sizesOf(text)) assert.ok([16, 20, 24].includes(px), `${name}: ${px}px is off the grid`);
+    }
+    assert.doesNotMatch(lock, /—/);
+});
+
+test('m1: reward icons are text tags, not emoji', () => {
+    assert.doesNotMatch(js, /[\u{1F300}-\u{1FAFF}\u2600-\u27BF]/u);
+    assert.match(js, /give_item: '\[ITEM\]'/);
+});
+
+test('n2: short screens trim the description margin', () => {
+    for (const text of [css, inline]) assert.match(text, /@media \(max-height: 450px\)[\s\S]*\.flag-station-description \{ ?margin: 4px 0/);
+});
+
 test('C14: submitted flag rows wrap long flags, the input stays single-line', () => {
     for (const text of [css, inline]) {
         assert.match(text, /\.flag-value \{[^}]*overflow-wrap:\s*anywhere/);
@@ -67,7 +90,7 @@ test('C15: showResult scrolls the result box into view (nearest)', async () => {
 
 test('C16: the key tag has a gap and the info glyph is plain pixel-font text', () => {
     for (const text of [css, inline]) {
-        assert.match(text, /\.flag-recognised-tag \{[^}]*margin-left:\s*12px/);
+        assert.doesNotMatch(text, /\.flag-recognised-tag \{[^}]*margin-left/);
         assert.match(text, /\.flag-history-item \{[^}]*gap:\s*12px/);
     }
     assert.doesNotMatch(js, /ℹ/);

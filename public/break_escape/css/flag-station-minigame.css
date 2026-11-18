@@ -211,7 +211,6 @@
 .flag-recognised-tag {
     color: #0088ff;
     font-size: 20px;
-    margin-left: 12px;
 }
 
 /* Short landscape screens: compact header and spacing so the input and the result
@@ -220,6 +219,7 @@
     .flag-station { padding: 8px 12px; }
     .flag-station-header { margin-bottom: 8px; }
     .flag-station-icon { font-size: 16px; padding: 4px 8px; margin-bottom: 4px; }
+    .flag-station-description { margin: 4px 0; }
     .flag-input-container { margin: 8px 0; }
     .flag-result { margin-top: 8px; padding: 8px; }
     .flag-history { margin-top: 12px; padding-top: 8px; }
