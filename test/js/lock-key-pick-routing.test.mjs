@@ -32,6 +32,7 @@ const catchUrl = pathToFileURL(join(dir, 'lockpick-catch.mjs')).href;
 
 globalThis.window = { gameState: { globalVariables: {} } };
 globalThis.__calls = [];
+globalThis.__unlocks = [];
 const unlockSrc = stubAll(read('systems/unlock-system.js'), {
     '../utils/constants.js': dataUrl('export const DOOR_ALIGN_OVERLAP = 64;'),
     '../core/rooms.js': dataUrl('export const rooms = {};'),
@@ -44,7 +45,7 @@ const unlockSrc = stubAll(read('systems/unlock-system.js'), {
     '../utils/locked-hint.js': dataUrl(read('utils/locked-hint.js')),
     '../utils/remote-host-text.js': dataUrl(read('utils/remote-host-text.js')),
     '../minigames/biometrics/fingerprint-reader-minigame.js': dataUrl('export function startFingerprintReader() {}'),
-    '../utils/lock-scope-refusal.js': dataUrl(read('utils/lock-scope-refusal.js')),
+    '../utils/lock-scope-refusal.js': dataUrl(`export async function unlockWithRouteRoomRetry(...a) { globalThis.__unlocks.push(a); return { ok: true }; }`),
     './lockpick-catch.js': catchUrl
 });
 const { handleUnlock } = await import(dataUrl(unlockSrc));
@@ -137,27 +138,52 @@ test('startLockpickingMinigame: switch both ways and key-ring keys', () => {
     assert.match(opts, /beforeSwitchToPickMode:\s*\(\) => !!catchLockpickInView\(lockable/, 'same watcher gate');
     assert.match(opts, /canSwitchToKeyMode:[\s\S]{0,300}key_ring/, 'key rings count for Switch to Key Mode');
 });
-test('startLockpickingMinigame: a key opening it reports method key', () => {
+test('startLockpickingMinigame: the method the minigame reports reaches the callback', () => {
     const { body, sm } = pickParams();
     const cbStart = body.indexOf('onComplete: (success, result) =>', sm);
     const cb = body.slice(cbStart + 'onComplete: '.length, body.indexOf('\n    });', cbStart));
-    const make = (km) => {
+    const make = (result) => {
         const toasts = []; const got = [];
-        const w = { MinigameFramework: { currentMinigame: { keyMode: km } }, gameAlert: (m, k) => toasts.push([m, k]) };
-        new Function('window', 'lockable', 'callback', `return (${cb});`)(w, {}, (...a) => got.push(a))(true, {});
+        const w = { gameAlert: (m, k) => toasts.push([m, k]) };
+        new Function('window', 'lockable', 'callback', `return (${cb});`)(w, {}, (...a) => got.push(a))(true, result);
         return { toasts, got };
     };
-    const key = make(true);
+    const key = make({ method: 'key' });
     assert.deepEqual(key.got[0], [true, { method: 'key' }]);
     assert.match(key.toasts[0][0], /correct key/);
-    const pick = make(false);
+    const pick = make({ method: 'lockpick' });
     assert.deepEqual(pick.got[0], [true, { method: 'lockpick' }]);
     assert.match(pick.toasts[0][0], /picked the lock/);
+    assert.deepEqual(make(undefined).got[0], [true, { method: 'lockpick' }], 'no result: a pick');
 });
-test('the caller tells the server the method the minigame reports', () => {
-    const src = read('systems/unlock-system.js');
-    assert.match(src, /outcome\?\.method === 'key' \? 'key' : 'lockpick'/);
-    assert.match(src, /notifyServerUnlock\(lockable, type, method\)/);
+test('the minigame puts the method in its result on success only', () => {
+    const src = read('minigames/lockpicking/lockpicking-game-phaser.js');
+    assert.match(src, /if \(success\) \{[\s\S]{0,200}method: this\.keyMode \? 'key' : 'lockpick'/);
+});
+test('the pick callback sends the reported method to the server', async () => {
+    const pickCall = (km) => {
+        globalThis.__calls.length = 0; globalThis.__unlocks.length = 0;
+        window.inventory = { items: [pickItem] };
+        window.gameAlert = () => {}; window.eventDispatcher = { emit() {} };
+        window.npcManager = null; window.lockRef = (d) => d?.name || null;
+        window.ApiClient = {}; window.breakEscapeConfig = { gameId: 7 };
+        handleUnlock(door(), 'door');
+        const call = globalThis.__calls.find((c) => c[0] === 'pick');
+        assert.ok(call, 'pick minigame started');
+        return call.find((a) => typeof a === 'function');
+    };
+    const realTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = () => 0; // skip the unlock animation after the notify
+    try {
+        for (const [method, expected] of [['key', 'key'], ['lockpick', 'lockpick']]) {
+            const cb = pickCall();
+            await cb(true, { method });
+            assert.equal(globalThis.__unlocks.length, 1);
+            assert.equal(globalThis.__unlocks[0][3], expected, `${method} reaches unlockWithRouteRoomRetry`);
+        }
+    } finally {
+        globalThis.setTimeout = realTimeout;
+    }
 });
 
 // ── the caption beside "Switch to Lockpicking" ──────────────────────────────────────
@@ -170,17 +196,68 @@ test('key mode with a lockpick shows "Or pick the lock:" with the button, via te
     assert.equal(c.className, 'lockpicking-or-caption');
     assert.equal(c.innerHTML, undefined, 'no innerHTML for text');
 });
-test('the game builds the caption only in key mode, next to the pick button; CSS stays pixel-art', () => {
+test('the game builds the mode rows through the tool manager; CSS stays pixel-art', () => {
     const game = read('minigames/lockpicking/lockpicking-game-phaser.js');
-    const keyBranch = game.slice(game.indexOf('if (this.canSwitchToPickMode && this.keyMode)'), game.indexOf('else if (this.canSwitchToKeyMode'));
-    assert.match(keyBranch, /appendChild\(createPickCaption\(\)\);\s*buttonContainer\.appendChild\(switchModeBtn\)/);
+    const keyBranch = game.slice(game.indexOf('if (this.canSwitchToPickMode && this.keyMode)'), game.indexOf('// Insert before the game container'));
+    assert.match(keyBranch, /buildPickButtonRow\(\)[\s\S]*buildKeyButtonRow\(\)/);
     const tm = read('minigames/lockpicking/tool-manager.js');
-    assert.match(tm, /buttonContainer\.appendChild\(createPickCaption\(\)\);\s*buttonContainer\.appendChild\(switchModeBtn\)/, 'also after switching back from pick mode');
-    assert.match(tm, /getElementById\('lockpicking-or-caption'\)/, 'hidden with the button when picking starts');
+    assert.match(tm, /row\.appendChild\(createPickCaption\(\)\);\s*row\.appendChild\(btn\)/, 'caption beside the pick button');
     const css = readFileSync(join(js, '../css/lockpicking.css'), 'utf8');
     const rule = css.slice(css.indexOf('.lockpicking-or-caption {'), css.indexOf('}', css.indexOf('.lockpicking-or-caption {')));
     assert.match(rule, /font-family: 'GNF'/);
     assert.match(rule, /font-size: 16px/);
     assert.doesNotMatch(rule, /radius|shadow|gradient/);
-    assert.match(css, /@media \(max-width: 768px\) \{\s*\.lockpicking-or-caption \{\s*flex: 0 0 100%/, 'own line on a phone');
+    assert.match(css, /\.lockpicking-mode-row \{\s*flex: 0 0 auto;\s*width: 100%/, 'own full-width line');
+    assert.match(css, /\.lockpicking-item-section \{\s*flex-wrap: wrap/);
+    assert.match(css, /@media \(max-width: 768px\) \{\s*\.lockpicking-or-caption \{\s*flex: 0 0 100%/, 'caption on its own line on a phone');
+});
+
+// ── pick -> key -> pick -> key round trip on the item strip ─────────────────────────
+function fakeDom() {
+    const el = (tag) => ({
+        tag, className: '', id: '', children: [], parent: null, innerHTML: '', textContent: '',
+        appendChild(c) { c.parent = this; this.children.push(c); return c; },
+        remove() { if (this.parent) this.parent.children = this.parent.children.filter((x) => x !== this); },
+        querySelectorAll(sel) { return this.children.filter((c) => c.className === sel.slice(1)); },
+    });
+    const strip = el('div'); strip.className = 'lockpicking-item-section';
+    return { strip, createElement: el, querySelector: (sel) => (sel === '.lockpicking-item-section' ? strip : null) };
+}
+test('mode rows round trip pick -> key -> pick -> key without losing a way back', async () => {
+    const { ToolManager } = await import(pathToFileURL(join(dir, 'tool-manager.mjs')).href);
+    const doc = fakeDom();
+    globalThis.document = doc;
+    try {
+        const selections = [];
+        const parent = {
+            params: {}, keyMode: true, keySelectionMode: true,
+            canSwitchToPickMode: true, canSwitchToKeyMode: true, availableKeys: [{ id: 'k' }],
+            lockConfig: { resetPinsToOriginalPositions() {} },
+            keyInsertion: { updateFeedback() {} },
+            createKeySelectionUI: () => selections.push('ui'),
+        };
+        const tm = new ToolManager(parent);
+        doc.strip.appendChild(tm.buildPickButtonRow());
+        const ids = () => doc.strip.children.map((r) => r.children.map((c) => c.id).filter(Boolean));
+        assert.deepEqual(ids(), [['lockpicking-or-caption', 'lockpicking-switch-mode-btn']]);
+        const press = (id) => doc.strip.children[0].children.find((c) => c.id === id).onclick();
+        press('lockpicking-switch-mode-btn');                 // key -> pick
+        assert.equal(parent.keyMode, false);
+        assert.deepEqual(ids(), [['lockpicking-switch-to-keys-btn']], 'one row: the way back to keys');
+        press('lockpicking-switch-to-keys-btn');              // pick -> key
+        assert.equal(parent.keyMode, true);
+        assert.deepEqual(ids(), [['lockpicking-or-caption', 'lockpicking-switch-mode-btn']]);
+        press('lockpicking-switch-mode-btn');                 // key -> pick again
+        assert.deepEqual(ids(), [['lockpicking-switch-to-keys-btn']]);
+        press('lockpicking-switch-to-keys-btn');              // and back to keys
+        assert.equal(parent.keyMode, true);
+        assert.equal(selections.length, 2);
+        assert.equal(doc.strip.children.length, 1, 'never an empty or duplicate row');
+        // No key held: picking leaves no key row
+        parent.canSwitchToKeyMode = false;
+        press('lockpicking-switch-mode-btn');
+        assert.equal(doc.strip.children.length, 0);
+    } finally {
+        delete globalThis.document;
+    }
 });

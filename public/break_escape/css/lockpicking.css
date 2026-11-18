@@ -204,11 +204,30 @@
     }
 }
 
-/* Key mode with a lockpick in the pack: "Or pick the lock:" sits beside the Switch to
-   Lockpicking button so the way across is obvious. GNF at 16px, no border or radius. On a
-   phone (390 wide: 370px of strip after 10px padding) it takes its own line above the
-   button (button about 290px) instead of squeezing it; on a wide strip the row wraps only
-   when caption (about 160px) + gap 10 + button no longer fit. */
+/* The mode-switch row (Switch to Lockpicking / Switch to Key Mode) is its own full-width line
+   under the image and name at every size: the strip wraps (flex-wrap) and the row is 100%
+   of the strip's content width, so it never competes with the image and name for width. In key mode with a lockpick in the pack the row also holds "Or pick the lock:".
+   Widths: caption about 160px (16px GNF, 18 characters at 9px) + gap 10 + button about 290px
+   = about 460px. The strip's content width is at most 844 - 2 x 16 padding = 812px at 844x390
+   (the short-landscape rule sets 16px padding) and 390 - 2 x 10 = 370px at 390x844 (the
+   portrait rule sets 10px padding). So caption and button share a line at 844x390
+   and wrap inside the row (caption above the button) at 390x844, where the row grows by one
+   caption line (24px) in a strip that already stacks image, name and button. */
+.lockpicking-item-section {
+    flex-wrap: wrap;
+}
+
+.lockpicking-mode-row {
+    flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
 .lockpicking-or-caption {
     font-family: 'GNF', monospace;
     font-size: 16px;

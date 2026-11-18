@@ -99,7 +99,14 @@ test('doors, empty locks and missing lockables expect no panel', () => {
 // "has been noted" toast and the manager's start all use it.
 test('callers set the expectation before the toast', () => {
     const starters = read('systems/minigame-starters.js');
-    for (const toast of ["'Lockpicking', 4000", "'Unlock Successful', 4000);\n                // Small delay", "'PIN Accepted', 4000);\n                callback(true, result)", "'Password Accepted', 4000);\n                callback(true, result)"]) {
+    // Lockpicking: the expectation call, then (in the same onComplete branch, before the
+    // next callback) the success toast
+    const exp = starters.indexOf('window.expectContainerAfterUnlock?.(lockable);');
+    assert.ok(exp > 0, 'lockpick success sets the expectation');
+    const branch = starters.slice(exp, starters.indexOf('callback(true, { method:', exp));
+    assert.match(branch, /'Lockpicking', 4000/, 'the pick toast follows the expectation');
+    assert.match(branch, /'Unlock Successful', 4000/, 'so does the key toast');
+    for (const toast of ["'Unlock Successful', 4000);\n                // Small delay", "'PIN Accepted', 4000);\n                callback(true, result)", "'Password Accepted', 4000);\n                callback(true, result)"]) {
         const at = starters.indexOf(toast);
         assert.ok(at > 0, toast);
         assert.match(starters.slice(Math.max(0, at - 260), at), /expectContainerAfterUnlock/, toast);

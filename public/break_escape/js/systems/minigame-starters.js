@@ -223,9 +223,9 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         })(),
         onComplete: (success, result) => {
             if (success) {
-                // The player may have switched to key mode and opened it with a key:
-                // keyMode is true then (read while currentMinigame is still live).
-                const usedKey = window.MinigameFramework?.currentMinigame?.keyMode === true;
+                // The player may have switched to key mode and opened it with a key: the
+                // minigame reports the method it succeeded with in its result.
+                const usedKey = result?.method === 'key';
                 console.log(`LOCKPICK SUCCESS (method=${usedKey ? 'key' : 'lockpick'})`);
                 window.expectContainerAfterUnlock?.(lockable);
                 if (usedKey) {

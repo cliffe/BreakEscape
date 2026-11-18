@@ -5,7 +5,7 @@ import { KeyDataGenerator } from './key-data-generator.js';
 import { KeySelection } from './key-selection.js';
 import { KeyOperations } from './key-operations.js';
 import { PinManagement } from './pin-management.js';
-import { ToolManager, createPickCaption } from './tool-manager.js';
+import { ToolManager } from './tool-manager.js';
 import { KeyAnimation } from './key-animation.js';
 import { HookMechanics } from './hook-mechanics.js';
 import { PinVisuals } from './pin-visuals.js';
@@ -346,44 +346,11 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         `;
         
         // Add mode switch button if applicable
+        // Mode switch row: its own full-width line under the image and name (see lockpicking.css)
         if (this.canSwitchToPickMode && this.keyMode) {
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.cssText = `
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 10px;
-                margin-top: 10px;
-                justify-content: center;
-            `;
-            
-            const switchModeBtn = document.createElement('button');
-            switchModeBtn.className = 'minigame-button';
-            switchModeBtn.id = 'lockpicking-switch-mode-btn';
-            switchModeBtn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
-            switchModeBtn.onclick = () => this.toolMgr.switchToPickMode();
-            
-            buttonContainer.appendChild(createPickCaption());
-            buttonContainer.appendChild(switchModeBtn);
-            itemDisplayDiv.appendChild(buttonContainer);
+            itemDisplayDiv.appendChild(this.toolMgr.buildPickButtonRow());
         } else if (this.canSwitchToKeyMode && !this.keyMode) {
-            // Show switch to key mode button when in lockpicking mode
-            const buttonContainer = document.createElement('div');
-            buttonContainer.style.cssText = `
-                display: flex;
-                gap: 10px;
-                margin-top: 10px;
-                justify-content: center;
-            `;
-            
-            const switchModeBtn = document.createElement('button');
-            switchModeBtn.className = 'minigame-button';
-            switchModeBtn.id = 'lockpicking-switch-to-keys-btn';
-            switchModeBtn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
-            switchModeBtn.onclick = () => this.toolMgr.switchToKeyMode();
-            
-            buttonContainer.appendChild(switchModeBtn);
-            itemDisplayDiv.appendChild(buttonContainer);
+            itemDisplayDiv.appendChild(this.toolMgr.buildKeyButtonRow());
         }
         
         // Insert before the game container
@@ -672,6 +639,10 @@ export class LockpickingMinigamePhaser extends MinigameScene {
             this._lockScrollEls?.forEach((el) => el.removeEventListener("scroll", this._lockScrollUpdate));
             this.game.destroy(true);
             this.game = null;
+        }
+        if (success) {
+            // Which way it opened: a key from key mode, or the pick (callers route on this)
+            this.gameResult = { ...(this.gameResult || {}), method: this.keyMode ? 'key' : 'lockpick' };
         }
         super.complete(success, this.gameResult);
     }

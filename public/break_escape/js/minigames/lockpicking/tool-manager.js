@@ -31,6 +31,43 @@ export class ToolManager {
         this.parent = parent;
     }
 
+    // The mode-switch rows sit on their own line under the item image and name
+    // (.lockpicking-mode-row in lockpicking.css). Built here so the first build and a
+    // rebuild after a switch are the same markup.
+    buildPickButtonRow() {
+        const row = document.createElement('div');
+        row.className = 'lockpicking-mode-row';
+        const btn = document.createElement('button');
+        btn.className = 'minigame-button';
+        btn.id = 'lockpicking-switch-mode-btn';
+        btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
+        btn.onclick = () => this.switchToPickMode();
+        row.appendChild(createPickCaption());
+        row.appendChild(btn);
+        return row;
+    }
+
+    buildKeyButtonRow() {
+        const row = document.createElement('div');
+        row.className = 'lockpicking-mode-row';
+        const btn = document.createElement('button');
+        btn.className = 'minigame-button';
+        btn.id = 'lockpicking-switch-to-keys-btn';
+        btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
+        btn.onclick = () => this.switchToKeyMode();
+        row.appendChild(btn);
+        return row;
+    }
+
+    // Replace whatever mode row the strip holds with the given one (or none)
+    replaceModeRow(build) {
+        if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+        const strip = document.querySelector('.lockpicking-item-section');
+        if (!strip) return;
+        strip.querySelectorAll('.lockpicking-mode-row').forEach((el) => el.remove());
+        if (build) strip.appendChild(build());
+    }
+
     hideLockpickingTools() {
         // Hide tension wrench and hook pick in key mode
         if (this.parent.tensionWrench) {
@@ -140,15 +177,9 @@ export class ToolManager {
             return;
         }
         
-        // Hide the mode switch button
-        const switchBtn = document.getElementById('lockpicking-switch-mode-btn');
-        if (switchBtn) {
-            switchBtn.style.display = 'none';
-        }
-        const orCaption = document.getElementById('lockpicking-or-caption');
-        if (orCaption) {
-            orCaption.style.display = 'none';
-        }
+        // Remove the pick button row (no empty flex gap left behind); offer the way back
+        // to key mode when the player holds a key
+        this.replaceModeRow(this.parent.canSwitchToKeyMode ? () => this.buildKeyButtonRow() : null);
         
         // Exit key mode
         this.parent.keyMode = false;
@@ -234,12 +265,6 @@ export class ToolManager {
         // Switch from lockpicking mode to key selection mode
         console.log('Switching from lockpicking mode to key mode');
         
-        // Hide the mode switch button
-        const switchBtn = document.getElementById('lockpicking-switch-to-keys-btn');
-        if (switchBtn) {
-            switchBtn.style.display = 'none';
-        }
-        
         // Enter key mode
         this.parent.keyMode = true;
         this.parent.keySelectionMode = true;
@@ -261,38 +286,8 @@ export class ToolManager {
         // Reset pins to original positions
         this.parent.lockConfig.resetPinsToOriginalPositions();
         
-        // Add mode switch back button (can switch back to lockpicking if available)
-        if (this.parent.canSwitchToPickMode) {
-            const itemDisplayDiv = document.querySelector('.lockpicking-item-section');
-            if (itemDisplayDiv) {
-                // Remove any existing button container
-                const existingButtonContainer = itemDisplayDiv.querySelector('div[style*="margin-top"]');
-                if (existingButtonContainer) {
-                    existingButtonContainer.remove();
-                }
-                
-                // Add new button container
-                const buttonContainer = document.createElement('div');
-                buttonContainer.style.cssText = `
-                    display: flex;
-                    flex-wrap: wrap;
-                    align-items: center;
-                    gap: 10px;
-                    margin-top: 10px;
-                    justify-content: center;
-                `;
-                
-                const switchModeBtn = document.createElement('button');
-                switchModeBtn.className = 'minigame-button';
-                switchModeBtn.id = 'lockpicking-switch-mode-btn';
-                switchModeBtn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
-                switchModeBtn.onclick = () => this.switchToPickMode();
-                
-                buttonContainer.appendChild(createPickCaption());
-                buttonContainer.appendChild(switchModeBtn);
-                itemDisplayDiv.appendChild(buttonContainer);
-            }
-        }
+        // Swap the key row for the pick row (can switch back to lockpicking if available)
+        this.replaceModeRow(this.parent.canSwitchToPickMode ? () => this.buildPickButtonRow() : null);
         
         // Show key selection UI with available keys
         if (this.parent.availableKeys && this.parent.availableKeys.length > 0) {
