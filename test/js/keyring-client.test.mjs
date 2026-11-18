@@ -325,6 +325,21 @@ test('step 8 races: 403 not_responding, 403 unreachable and 422 remoteBlocked an
     }
 });
 
+test('R2 n1: a 403 after a sync that ran out of time adds the note to the Connect toast', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    window.stateSync = { syncConfirmed: async () => {}, sync: () => new Promise(() => {}) };
+    loginAnswer = () => { throw refusal(403, { reason: 'not_responding' }); };
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const pending = window.keyring.connect(ITEM);
+        for (let i = 0; i < 6; i++) { await settle(2); mock.timers.tick(3000); }
+        const r = await pending;
+        assert.equal(r.outcome, 'target_off');
+        assert.deepEqual(toasts(), ['HB-FIN-02 is not responding. The link may be behind; try again in a moment.']);
+    } finally { mock.timers.reset(); }
+});
+
 test('step 8 refusals: LOGIN_NOT_PERMITTED is a toast, no screen', async () => {
     setup();
     loginAnswer = () => { throw refusal(422, { notPermitted: true, message: 'x' }); };

@@ -1170,6 +1170,8 @@ test('a remote sign-in error after a sync that ran out of time says the link may
         window.stateSync = { sync: () => new Promise(() => {}) };
         r = await sessions.signIn('lena_pc', 'u', 'x', { foothold: 'jack_comms_port' });
         assert.equal(r.message, `Not responding ${SYNC_LATE_NOTE}`);
+        assert.equal(r.syncLate, true, 'R2 n1: the flag the drawn lines read');
+        assert.equal(r.syncNote, SYNC_LATE_NOTE);
         r = await sessions.signIn('lena_pc', 'u', 'x');
         assert.equal(r.message, 'Not responding', 'a keyboard sign-in has no note');
     } finally { globalThis.setTimeout = realSetTimeout; }
@@ -1201,4 +1203,32 @@ test('a share closed while its contents load builds no UI and reports no share o
         assert.equal(events.filter(([n]) => n === 'network_share_opened').length, before, 'no share_opened');
         assert.equal(share.tokenLineTimer ?? null, null, 'no interval started');
     } finally { proto.createContainerUI = create; }
+});
+
+// Review R2 n5
+for (const mode of ['403', 'throw']) test(`a share closed while its contents load shows no error toast: ${mode} (R2 n5)`, async () => {
+    {
+        setup();
+        await openRemote();
+        let release;
+        const gate = new Promise(r => { release = r; });
+        const realFetch = window.fetch;
+        let answered = 0;
+        window.fetch = globalThis.fetch = async (url) => {
+            if (answered++) return realFetch(url);
+            await gate;
+            if (mode === 'throw') throw new Error('offline');
+            return { ok: false, status: 403, statusText: 'Forbidden', json: async () => ({}) };
+        };
+        const alerts = [];
+        try {
+            icon('Ledger-Archive').click();
+            await settle();
+            window.gameAlert = (...a) => alerts.push(a);
+            window.MinigameFramework.endMinigame(false, null);
+            release();
+            await settle(8);
+            assert.deepEqual(alerts.filter(a => a[1] === 'error'), [], `no error toast (${mode})`);
+        } finally { window.fetch = globalThis.fetch = realFetch; }
+    }
 });

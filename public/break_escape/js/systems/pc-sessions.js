@@ -544,7 +544,9 @@ export class PcSessions {
             return {
                 ok: false, reason: 'error', error: true, status: err?.status ?? null,
                 message: withSyncNote(b.message || b.error || 'Could not reach the sign-in service', syncLate),
-                serverReason: typeof b.reason === 'string' ? b.reason : null
+                serverReason: typeof b.reason === 'string' ? b.reason : null,
+                // The screens that draw their own error line append syncNote when syncLate (R2 n1)
+                ...(syncLate ? { syncLate: true, syncNote: SYNC_LATE_NOTE } : {})
             };
         }
         if (!body || body.success === false || !body.npcId) {
@@ -609,7 +611,9 @@ export class PcSessions {
             return {
                 ok: false, reason: 'error', error: true, status: err?.status ?? null,
                 message: withSyncNote(b.message || b.error || 'Could not reach the sign-in service', syncLate),
-                serverReason: typeof b.reason === 'string' ? b.reason : null
+                serverReason: typeof b.reason === 'string' ? b.reason : null,
+                // The screens that draw their own error line append syncNote when syncLate (R2 n1)
+                ...(syncLate ? { syncLate: true, syncNote: SYNC_LATE_NOTE } : {})
             };
         }
         if (!body || body.success === false || !body.npcId) {

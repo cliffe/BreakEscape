@@ -1395,7 +1395,7 @@ test('a redraw waits while a press is in progress in the list, and draws on the 
     await m.refetch();
     assert.equal(row('data-host-id', 'new_pc'), null, 'held');
     document.dispatchEvent(new window.Event('pointerup'));
-    await m.refetch();
+    await flush();
     assert.ok(row('data-host-id', 'new_pc'), 'drawn once the press is over');
     closeView();
 });
@@ -1415,3 +1415,93 @@ test('redraws add no listeners, and a click still reaches its row (R1 n2)', asyn
     closeView();
 });
 
+
+test('R2 m1: a press on Unplug holds the redraw, and an unchanged header keeps the same button', async () => {
+    setupUnplug();
+    await links.interactJack(plantedJackSprite());
+    await settle(6);
+    const m = view();
+    const btn = document.querySelector('.network-view-header [data-unplug]');
+    // Unchanged answer: the header is not rewritten, so the button element stays
+    await m.refetch();
+    assert.equal(document.querySelector('.network-view-header [data-unplug]'), btn, 'unchanged header keeps its button');
+    // A press on Unplug (outside the list) holds a changed redraw
+    btn.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+    answer = withNewPc();
+    await m.refetch();
+    assert.equal(row('data-host-id', 'new_pc'), null, 'held behind the Unplug press');
+    assert.equal(document.querySelector('.network-view-header [data-unplug]'), btn, 'same button under the press');
+    closeView();
+});
+
+test('R2 m2: failed refetches back off like idle ones', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        await openManual({ refetchMs: 5000 });
+        await flush();
+        window.ApiClient.network = async (id) => { requests.push(['network', id]); throw Object.assign(new Error('x'), { status: 500 }); };
+        for (let i = 0; i < 3; i++) { mock.timers.tick(5000); await flush(); }
+        assert.equal(fetches(), 4, 'three failed ticks at 5 s');
+        mock.timers.tick(5000); await flush();
+        assert.equal(fetches(), 4, 'the fourth waits longer');
+        mock.timers.tick(10000); await flush();
+        assert.equal(fetches(), 5, 'at 15 s');
+        closeView();
+    } finally { mock.timers.reset(); }
+});
+
+test('R2 n2: a change held behind a press draws on release, even in the idle gap', async () => {
+    setup();
+    await openManual();
+    const m = view();
+    m._unchanged = 5;
+    m.gameContainer.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+    answer = withNewPc();
+    await m.refetch();
+    assert.equal(m._unchanged, 0, 'back to the short gap');
+    assert.equal(row('data-host-id', 'new_pc'), null);
+    document.dispatchEvent(new window.Event('pointerup'));
+    await flush();
+    assert.ok(row('data-host-id', 'new_pc'), 'drawn on release');
+    closeView();
+});
+
+test('R2 n3: a press whose release never arrives stops holding after three seconds', async () => {
+    const { mock } = await import('node:test');
+    setup();
+    mock.timers.enable({ apis: ['Date'] });
+    try {
+        await openManual();
+        const m = view();
+        m.gameContainer.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+        answer = withNewPc();
+        await m.refetch();
+        assert.equal(row('data-host-id', 'new_pc'), null, 'held');
+        mock.timers.tick(3001);
+        await m.refetch();
+        assert.ok(row('data-host-id', 'new_pc'), 'the stuck flag no longer holds');
+        closeView();
+    } finally { mock.timers.reset(); }
+});
+
+test('R2 n4: coming back to a visible tab asks at once', async () => {
+    setup();
+    await openManual();
+    const before = fetches();
+    let hidden = true;
+    Object.defineProperty(document, 'hidden', { configurable: true, get: () => hidden });
+    try {
+        document.dispatchEvent(new window.Event('visibilitychange'));
+        await flush();
+        assert.equal(fetches(), before, 'still hidden: nothing asked');
+        hidden = false;
+        answer = withNewPc();
+        document.dispatchEvent(new window.Event('visibilitychange'));
+        await flush();
+        assert.equal(fetches(), before + 1);
+        assert.ok(row('data-host-id', 'new_pc'));
+    } finally { delete document.hidden; }
+    closeView();
+});

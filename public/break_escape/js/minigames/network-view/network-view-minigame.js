@@ -86,6 +86,7 @@ export function hostnameClass(name) {
 export const REFETCH_MS = 5000;
 /** After this many unchanged answers in a row the gap widens to REFETCH_IDLE_MS (review R1 m3). */
 export const REFETCH_IDLE_AFTER = 3;
+export const POINTER_HOLD_MAX_MS = 3000;
 export const REFETCH_IDLE_MS = 15000;
 export const REMOTE_OFF_TEXT = 'Remote sign-in off';
 export const NOT_RESPONDING_TEXT = 'Powered down';
@@ -276,7 +277,9 @@ export class NetworkViewMinigame extends MinigameScene {
         this._refetchTimer = null;
         this._refetching = false;
         this._unchanged = 0;
-        this._pointerDown = false;
+        this._pointerDown = null;
+        this._held = false;
+        this._headerHtml = null;
         this._viewedKeys = new Set();
         this.noticeRowId = null;
     }
@@ -329,8 +332,24 @@ export class NetworkViewMinigame extends MinigameScene {
             this.unplugBox();
         });
         this.addEventListener(game, 'load', () => this.updateScrollCue(), true);
-        this.addEventListener(game, 'pointerdown', () => { this._pointerDown = true; });
-        const up = () => { this._pointerDown = false; };
+        // Back to a visible tab: ask now rather than at the next tick (R2 n4)
+        if (typeof document !== 'undefined') {
+            this.addEventListener(document, 'visibilitychange', () => {
+                if (document.hidden) return;
+                this.noteActivity();
+                this.refetch().catch(() => {});
+            });
+        }
+        // On the frame, so a press on Unplug in the header holds the redraw too (R2 m1)
+        this.addEventListener(root, 'pointerdown', () => { this._pointerDown = Date.now(); });
+        const up = () => {
+            this._pointerDown = null;
+            // A change held behind the press draws now, not after the idle gap (R2 n2)
+            if (this._held) {
+                this._held = false;
+                this.refetch({ sync: false }).catch(() => {});
+            }
+        };
         if (typeof document !== 'undefined') {
             this.addEventListener(document, 'pointerup', up);
             this.addEventListener(document, 'pointercancel', up);
@@ -505,13 +524,18 @@ export class NetworkViewMinigame extends MinigameScene {
                 this.complete(false);
                 return answer;
             }
-            if (!answer.ok) return answer;
+            if (!answer.ok) {
+                // A failed answer counts as an idle one, so the gap widens while the link is
+                // down or erroring (R2 m2)
+                this._unchanged++;
+                return answer;
+            }
             const stale = !!answer.stale;
             if (JSON.stringify(answer.view) !== JSON.stringify(this.view) || stale !== this.stale) {
                 // A press is in progress in the list: keep the buttons under it. The view is
                 // left as it was, so the next tick sees the difference and draws it (R1 m1)
-                if (this._pointerDown) return answer;
                 this._unchanged = 0;
+                if (this.pressHeld()) { this._held = true; return answer; }
                 const top = this.gameContainer?.scrollTop ?? 0;
                 const focus = this.focusedControl();
                 this.view = answer.view;
@@ -533,6 +557,11 @@ export class NetworkViewMinigame extends MinigameScene {
         } finally {
             this._refetching = false;
         }
+    }
+
+    /** A press is in progress; a press that never reports its release counts for a few seconds (R2 n3). */
+    pressHeld() {
+        return this._pointerDown != null && Date.now() - this._pointerDown < POINTER_HOLD_MAX_MS;
     }
 
     /** Which row control has keyboard focus, as { id, action }, so a redraw can give it back. */
@@ -763,6 +792,9 @@ export class NetworkViewMinigame extends MinigameScene {
     showHeader(html) {
         if (!this.headerElement) return;
         const full = `${html}${this.unplugHtml()}`;
+        // An unchanged header keeps its button, so a press or focus on Unplug survives (R2 m1)
+        if (full === this._headerHtml) return;
+        this._headerHtml = full;
         this.headerElement.innerHTML = full;
         if (this.headerStrip) this.headerStrip.hidden = !full.trim();
     }

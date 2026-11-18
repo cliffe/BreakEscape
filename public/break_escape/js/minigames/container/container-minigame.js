@@ -832,7 +832,8 @@ export class ContainerMinigame extends MinigameScene {
                     return [];
                 }
                 if (response.status === 403) {
-                    if (window.gameAlert) {
+                    // No error toast for a screen the player already left (R2 n5)
+                    if (window.gameAlert && !this.screenGone()) {
                         window.gameAlert('Container is locked', 'error', 'Locked', 2000);
                     }
                     this.complete(false);
@@ -846,7 +847,7 @@ export class ContainerMinigame extends MinigameScene {
             return data.contents || [];
         } catch (error) {
             console.error('Failed to load container contents:', error);
-            if (window.gameAlert) {
+            if (window.gameAlert && !this.screenGone()) {
                 window.gameAlert('Could not load container contents', 'error', 'Error', 3000);
             }
             return [];

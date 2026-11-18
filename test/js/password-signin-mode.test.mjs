@@ -285,6 +285,15 @@ test('the error line names a switched-off PC: off at the keyboard, not respondin
     assert.equal(signInErrorMessage({ error: true, status: null }), 'Network error. Please try again.');
 });
 
+test('R2 n1: a remote error line adds the sync-late note when the result carries it, a local one does not', () => {
+    const note = 'The link may be behind; try again in a moment.';
+    const late = { error: true, status: 403, serverReason: 'not_responding', syncLate: true, syncNote: note };
+    assert.equal(signInErrorMessage(late, { remote: true, host: 'HB-FIN-02' }), `HB-FIN-02 is not responding. ${note}`);
+    assert.ok(signInErrorMessage({ ...late, serverReason: null }, { remote: true, host: 'HB-FIN-02' }).endsWith(note));
+    assert.ok(signInErrorMessage({ error: true, status: null, syncLate: true, syncNote: note }, { remote: true, host: 'H' }).endsWith(note));
+    assert.equal(signInErrorMessage({ ...late, syncLate: false }, { remote: true, host: 'HB-FIN-02' }), 'HB-FIN-02 is not responding.');
+});
+
 test('the refusal line', () => {
     assert.equal(signInRefusalMessage(wrong(1)), 'Incorrect username or password. 1 attempt left.');
     assert.equal(signInRefusalMessage(wrong(null)), 'Incorrect username or password.');
