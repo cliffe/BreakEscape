@@ -489,12 +489,14 @@ export class PinMinigame extends MinigameScene {
         // A request that never reached the server is not an attempt: it did not
         // cost the player one (attemptCount was refunded above), so it must not
         // appear in the history either.
+        let announceAttempt = false;
         if (this.lastAttemptWasNetworkError) {
             this.lastAttemptWasNetworkError = false;
         } else {
             this.attempts.push(attempt);
+            announceAttempt = true;
         }
-        this.updateAttemptsDisplay();
+        this.updateAttemptsDisplay({ announce: announceAttempt });
 
         if (isCorrect) {
             this.handleSuccess();
@@ -761,7 +763,9 @@ export class PinMinigame extends MinigameScene {
         }
     }
     
-    updateAttemptsDisplay() {
+    // Only a new guess is announced (announce: true). Re-renders from the lights toggle,
+    // a network error or reopening the pad leave the live region as it was.
+    updateAttemptsDisplay({ announce = false } = {}) {
         if (!this.attemptsLogElement) return;
         
         this.attemptsLogElement.innerHTML = '';
@@ -801,8 +805,7 @@ export class PinMinigame extends MinigameScene {
             
             // Add visual feedback lights if pin-cracker is enabled and feedback is available
             // OR if mastermind mode is enabled via parameter
-            if ((this.hasPinCracker && this.infoLeakToggleElement?.checked && attempt.feedback) || 
-                (this.infoLeakMode && attempt.feedback)) {
+            if (showLights) {
                 const feedbackContainer = document.createElement('div');
                 feedbackContainer.className = 'pin-minigame-feedback-lights';
                 feedbackContainer.setAttribute('aria-hidden', 'true');
@@ -829,7 +832,7 @@ export class PinMinigame extends MinigameScene {
             this.attemptsLogElement.appendChild(attemptElement);
         });
 
-        if (this.attemptsLiveElement) {
+        if (announce && this.attemptsLiveElement) {
             this.attemptsLiveElement.textContent = `Guess ${this.attempts.length}, ${this.attempts.at(-1).summary}`;
         }
 
