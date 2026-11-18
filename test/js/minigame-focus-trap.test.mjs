@@ -131,7 +131,7 @@ test('a higher modal (game-confirm overlay, aria-modal outside the minigame) kee
     close();
 });
 
-test('an inner aria-modal or listbox keeps its own Tab; an inner plain dialog is still trapped', () => {
+test('an inner aria-modal or listbox keeps its own Tab; an inner role=dialog becomes the trap root', () => {
     MF.startMinigame('demo', null, {});
     const host = MF.currentMinigame.gameContainer;
     host.insertAdjacentHTML('beforeend', '<div aria-modal="true"><button id="in-modal">M</button></div>'
@@ -142,7 +142,11 @@ test('an inner aria-modal or listbox keeps its own Tab; an inner plain dialog is
     assert.equal(tab().defaultPrevented, false);
     document.getElementById('in-dialog').focus();
     assert.equal(tab().defaultPrevented, true);
-    assert.ok(MF.currentMinigame.container.contains(document.activeElement));
+    assert.equal(active(), 'in-dialog', 'only one tabbable in the dialog: Tab stays on it');
+    // focus elsewhere in the minigame is pulled into the dialog, not onto its siblings
+    document.getElementById('a').focus();
+    tab();
+    assert.equal(active(), 'in-dialog');
     close();
 });
 
@@ -197,4 +201,150 @@ test('opener survives a chain (displacing start, returnTo reopen) and is not for
     MF.startMinigame('demo', null, { onComplete: () => outside.focus() });
     MF.endMinigame(false, null);
     assert.equal(document.activeElement, outside);
+});
+
+const GAME_MENU = '<div class="game-menu-overlay" style="display:none"><div class="game-menu-panel" role="dialog" aria-modal="true"><button id="gm-btn">Menu</button></div></div>';
+
+test('B1: a hidden aria-modal (the permanent game menu, restart confirm) does not stop the trap', () => {
+    document.body.insertAdjacentHTML('beforeend', GAME_MENU);
+    document.body.insertAdjacentHTML('beforeend', '<div id="restart" aria-modal="true" style="display:none"></div>');
+    MF.startMinigame('demo', null, {});
+    document.getElementById('minigame-close').focus();
+    const seen = [];
+    for (let i = 0; i < 4; i++) { const ev = tab(); assert.equal(ev.defaultPrevented, true); seen.push(active()); }
+    assert.deepEqual(seen, ['a', 'b', 't', 'minigame-close']);
+    // a visible one makes it step aside
+    document.querySelector('.game-menu-overlay').style.display = 'block';
+    assert.equal(tab().defaultPrevented, false);
+    document.querySelector('.game-menu-overlay').style.display = 'none';
+    assert.equal(tab().defaultPrevented, true);
+    close();
+    document.querySelector('.game-menu-overlay').remove();
+    document.getElementById('restart').remove();
+});
+
+test('B1: window.openModalCount above zero steps aside', () => {
+    MF.startMinigame('demo', null, {});
+    window.openModalCount = () => 1;
+    assert.equal(tab().defaultPrevented, false);
+    delete window.openModalCount;
+    assert.equal(tab().defaultPrevented, true);
+    close();
+});
+
+test('M2: [data-focus-trap-include] elements join the cycle after the minigame', () => {
+    document.body.insertAdjacentHTML('beforeend', '<div id="ring" data-focus-trap-include><button id="answer">A</button><button id="decline">D</button></div>');
+    MF.startMinigame('demo', null, {});
+    document.getElementById('t').focus();
+    const seen = [];
+    for (let i = 0; i < 4; i++) { tab(); seen.push(active()); }
+    assert.deepEqual(seen, ['answer', 'decline', 'minigame-close', 'a']);
+    document.getElementById('answer').focus();
+    tab(true);
+    assert.equal(active(), 't');
+    document.getElementById('answer').focus();
+    assert.equal(tab().defaultPrevented, true, 'focus inside the banner is not an escape');
+    assert.equal(active(), 'decline');
+    document.getElementById('ring').style.display = 'none';
+    document.getElementById('t').focus();
+    tab();
+    assert.equal(active(), 'minigame-close');
+    close();
+    document.getElementById('ring').remove();
+});
+
+test('M3: iframes and media with controls are reachable', () => {
+    MF.startMinigame('demo', null, {});
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend', '<iframe id="vm" title="vm"></iframe><video id="vid" controls></video><video id="novid"></video>');
+    // jsdom cannot focus an iframe or media element, so read the cycle list directly
+    const ids = MF._trapFocusables(MF.currentMinigame.container).map((el) => el.id);
+    assert.deepEqual(ids, ['minigame-close', 'a', 'b', 't', 'vm', 'vid']);
+    close();
+});
+
+test('m1: one radio per name group, the checked one', () => {
+    MF.startMinigame('demo', null, {});
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend',
+        '<input type="radio" name="g" id="r1"><input type="radio" name="g" id="r2" checked><input type="radio" name="g" id="r3">');
+    document.getElementById('t').focus();
+    tab();
+    assert.equal(active(), 'r2');
+    tab();
+    assert.equal(active(), 'minigame-close');
+    document.getElementById('r2').checked = false;
+    document.getElementById('t').focus();
+    tab();
+    assert.equal(active(), 'r1');
+    close();
+});
+
+test('m2: a visible inner aria-modal is the trap root when focus is outside it', () => {
+    MF.startMinigame('demo', null, {});
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend', '<div aria-modal="true" id="deb"><button id="d1">1</button><button id="d2">2</button></div>');
+    document.body.focus();
+    document.getElementById('minigame-close').focus();
+    assert.equal(tab().defaultPrevented, true);
+    assert.equal(active(), 'd1');
+    document.getElementById('d1').focus();
+    assert.equal(tab().defaultPrevented, false, 'inside the modal its own Tab cycle runs');
+    close();
+});
+
+test('n1: any negative tabindex is untabbable', () => {
+    MF.startMinigame('demo', null, {});
+    MF.currentMinigame.gameContainer.insertAdjacentHTML('beforeend', '<div tabindex="-2" id="n2"></div><div tabindex="0" id="z"></div>');
+    document.getElementById('t').focus();
+    tab();
+    assert.equal(active(), 'z');
+    close();
+});
+
+test('M1: a focused control is scrolled into view', () => {
+    MF.startMinigame('demo', null, {});
+    let called = null;
+    const b = document.getElementById('b');
+    b.scrollIntoView = (o) => { called = o; };
+    document.getElementById('a').focus();
+    tab();
+    assert.equal(active(), 'b');
+    assert.deepEqual(called, { block: 'nearest', inline: 'nearest' });
+    close();
+});
+
+test('m4: a mouse-focused button opener is not refocused; a non-button opener is', () => {
+    const btn = document.createElement('button');
+    btn.id = 'mouse-btn';
+    document.body.appendChild(btn);
+    btn.matches = (sel) => (sel === ':focus-visible' ? false : dom.window.Element.prototype.matches.call(btn, sel));
+    btn.focus();
+    MF.startMinigame('demo', null, {});
+    document.activeElement.blur();
+    MF.endMinigame(false, null);
+    assert.notEqual(document.activeElement, btn);
+    btn.matches = (sel) => (sel === ':focus-visible' ? true : dom.window.Element.prototype.matches.call(btn, sel));
+    btn.focus();
+    MF.startMinigame('demo', null, {});
+    document.activeElement.blur();
+    MF.endMinigame(false, null);
+    assert.equal(document.activeElement, btn);
+    btn.remove();
+    const div = document.createElement('div');
+    div.tabIndex = 0;
+    document.body.appendChild(div);
+    div.focus();
+    MF.startMinigame('demo', null, {});
+    document.activeElement.blur();
+    MF.endMinigame(false, null);
+    assert.equal(document.activeElement, div);
+    div.remove();
+    // opener hidden by then: not refocused
+    hud.focus();
+    hud.matches = (sel) => (sel === ':focus-visible' ? true : dom.window.Element.prototype.matches.call(hud, sel));
+    MF.startMinigame('demo', null, {});
+    hud.blur();
+    hud.style.display = 'none';
+    MF.endMinigame(false, null);
+    assert.notEqual(document.activeElement, hud);
+    hud.style.display = '';
+    delete hud.matches;
 });

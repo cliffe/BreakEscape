@@ -228,7 +228,7 @@ export const MinigameFramework = {
     // element inside a modal or listbox that runs its own Tab cycle, and for an embedded
     // container (data-external) or a scene that opts out with params.focusTrap === false.
 
-    FOCUSABLE_SELECTOR: 'a[href], button, input, select, textarea, summary, [tabindex], [contenteditable="true"]',
+    FOCUSABLE_SELECTOR: 'a[href], button, input, select, textarea, summary, iframe, object, embed, audio[controls], video[controls], [tabindex], [contenteditable="true"]',
 
     _installFocusTrap() {
         if (this._trapHandler || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
@@ -242,34 +242,86 @@ export const MinigameFramework = {
         this._trapHandler = null;
     },
 
-    /** True when the element can take focus by Tab: enabled, shown, not inert. */
-    _isTabbable(el, root) {
-        if (!el || el.disabled || el.hidden) return false;
-        if (el.getAttribute?.('tabindex') === '-1') return false;
-        if (el.tagName === 'INPUT' && el.type === 'hidden') return false;
-        if (el.getAttribute?.('aria-hidden') === 'true') return false;
+    /**
+     * True when the element is rendered: no display:none, hidden, inert or closed <details>
+     * on it or an ancestor. Uses checkVisibility where the browser has it; jsdom does not,
+     * so the ancestor walk (up to `root`'s parent, or the document) stands in.
+     */
+    _isRendered(el, root = null) {
+        if (!el) return false;
+        if (typeof el.checkVisibility === 'function') {
+            try { if (!el.checkVisibility({ checkVisibilityCSS: true })) return false; } catch (e) { /* older signature */ }
+            for (let n = el; n; n = n.parentElement) if (n.hasAttribute?.('inert')) return false;
+            return true;
+        }
         const gcs = typeof window !== 'undefined' ? window.getComputedStyle : null;
-        for (let n = el; n && n !== root.parentNode; n = n.parentElement) {
+        const stop = root ? root.parentNode : null;
+        for (let n = el; n && n !== stop; n = n.parentElement) {
             if (n.hidden || n.hasAttribute?.('inert')) return false;
+            if (n.tagName === 'DETAILS' && !n.open && n !== el && !(el.tagName === 'SUMMARY' && el.parentElement === n)) return false;
             const cs = gcs ? gcs.call(window, n) : null;
             if (cs && (cs.display === 'none' || (n === el && cs.visibility === 'hidden'))) return false;
         }
         return true;
     },
 
-    /** The open minigame's tabbable elements, in DOM order. */
-    _trapFocusables(root) {
-        return Array.from(root.querySelectorAll(this.FOCUSABLE_SELECTOR)).filter((el) => this._isTabbable(el, root));
+    /** True when the element can take focus by Tab: enabled, shown, not inert. */
+    _isTabbable(el, root) {
+        if (!el || el.disabled || el.hidden) return false;
+        const ti = el.getAttribute?.('tabindex');
+        if (ti !== null && ti !== undefined && Number.isFinite(parseInt(ti, 10)) && parseInt(ti, 10) < 0) return false;
+        if (el.tagName === 'INPUT' && el.type === 'hidden') return false;
+        if (el.getAttribute?.('aria-hidden') === 'true') return false;
+        return this._isRendered(el, root);
     },
 
-    /** A modal above the minigame, with its own keys: the trap leaves Tab to it. */
+    /** Keep one radio per name group (the checked one, else the first), as the browser's Tab does. */
+    _collapseRadios(items) {
+        const chosen = new Map();
+        for (const el of items) {
+            if (el.tagName !== 'INPUT' || el.type !== 'radio' || !el.name) continue;
+            const key = `${el.form ? 'f' : ''}|${el.name}`;
+            const cur = chosen.get(key);
+            if (!cur || (el.checked && !cur.checked)) chosen.set(key, el);
+        }
+        return items.filter((el) => !(el.tagName === 'INPUT' && el.type === 'radio' && el.name)
+            || chosen.get(`${el.form ? 'f' : ''}|${el.name}`) === el);
+    },
+
+    /**
+     * The tabbable elements, in DOM order, then those of any [data-focus-trap-include]
+     * element outside the root (the incoming-call banner rings over a minigame).
+     */
+    _trapFocusables(root, withIncluded = false) {
+        const own = Array.from(root.querySelectorAll(this.FOCUSABLE_SELECTOR)).filter((el) => this._isTabbable(el, root));
+        let all = own;
+        if (withIncluded && typeof document !== 'undefined') {
+            for (const host of document.querySelectorAll('[data-focus-trap-include]')) {
+                if (root.contains(host) || !this._isRendered(host)) continue;
+                const extra = Array.from(host.querySelectorAll(this.FOCUSABLE_SELECTOR)).filter((el) => this._isTabbable(el, host));
+                if (host.matches?.(this.FOCUSABLE_SELECTOR) && this._isTabbable(host, host)) extra.unshift(host);
+                all = all.concat(extra);
+            }
+        }
+        return this._collapseRadios(all);
+    },
+
+    /** A rendered modal above the minigame, with its own keys: the trap leaves Tab to it. */
     _higherModalOpen(root) {
         if (window.gameConfirmOpen?.()) return true;
+        if ((window.openModalCount?.() || 0) > 0) return true;
         const above = document.querySelectorAll('[aria-modal="true"], .game-confirm-overlay');
         for (const m of above) {
-            if (!root.contains(m)) return true;
+            if (!root.contains(m) && this._isRendered(m)) return true;
         }
         return false;
+    },
+
+    /** A rendered dialog inside the minigame (the last one), or null. */
+    _innerDialog(root) {
+        const found = Array.from(root.querySelectorAll('[aria-modal="true"], [role="dialog"]'))
+            .filter((el) => this._isRendered(el, root));
+        return found.length ? found[found.length - 1] : null;
     },
 
     _onTrapKeyDown(e) {
@@ -284,18 +336,25 @@ export const MinigameFramework = {
         // A modal or listbox inside the minigame that cycles Tab itself keeps it
         if (active && root.contains(active) && active.closest?.('[aria-modal="true"], [role="listbox"]')) return;
 
-        const items = this._trapFocusables(root);
+        // A visible inner dialog is the trap root even before focus has moved into it
+        const dialog = this._innerDialog(root);
+        const scope = dialog || root;
+        const items = this._trapFocusables(scope, !dialog);
         e.preventDefault();
         if (!items.length) {
-            if (root.getAttribute('tabindex') === null) root.setAttribute('tabindex', '-1');
-            try { root.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }
+            if (scope.getAttribute('tabindex') === null) scope.setAttribute('tabindex', '-1');
+            try { scope.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }
             return;
         }
         const i = active ? items.indexOf(active) : -1;
         let next;
         if (i === -1) next = e.shiftKey ? items[items.length - 1] : items[0];
         else next = items[(i + (e.shiftKey ? -1 : 1) + items.length) % items.length];
-        try { next.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }
+        try {
+            next.focus();
+            // Panels that scroll keep the focused control on screen
+            next.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+        } catch (err) { /* no focus in this environment */ }
     },
 
     /** Remember the element that had focus when the first minigame of a chain opened. */
@@ -305,13 +364,22 @@ export const MinigameFramework = {
         if (!a || a === document.body || a === document.documentElement) return;
         if (a.closest?.('.minigame-container')) return;
         this._focusOpener = a;
+        let kb = false;
+        try { kb = !!a.matches?.(':focus-visible'); } catch (err) { /* selector unsupported */ }
+        this._focusOpenerKeyboard = kb;
     },
 
     /** Give focus back once the whole chain has closed, if nothing else took it. */
     _restoreFocusOpener() {
         const el = this._focusOpener;
+        const viaKeyboard = this._focusOpenerKeyboard === true;
         this._focusOpener = null;
+        this._focusOpenerKeyboard = false;
         if (!el || typeof document === 'undefined' || el.isConnected === false) return;
+        if (!this._isRendered(el)) return;
+        // A button focused by mouse or E stays off: a focused button makes WASD/E/Space count as UI keys
+        const isControl = el.matches?.('button, input, select, textarea, a[href]');
+        if (isControl && !viaKeyboard) return;
         const now = document.activeElement;
         if (now && now !== document.body && now !== document.documentElement) return;
         try { el.focus({ preventScroll: true }); } catch (err) { /* no focus in this environment */ }

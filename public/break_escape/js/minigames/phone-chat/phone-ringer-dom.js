@@ -38,6 +38,7 @@ export function installPhoneRinger(win = window) {
         layer.setAttribute('role', 'region');
         layer.setAttribute('aria-live', 'assertive');
         layer.setAttribute('aria-label', 'Incoming calls');
+        layer.setAttribute('data-focus-trap-include', '');
         doc.body.appendChild(layer);
     }
 
