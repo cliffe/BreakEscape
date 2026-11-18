@@ -19,7 +19,7 @@ const js = join(here, '../../public/break_escape/js');
 const dir = mkdtempSync(join(tmpdir(), 'ending-check-'));
 writeFileSync(join(dir, 'package.json'), '{"type":"module"}\n');
 for (const rel of ['systems/ending-check.js', 'utils/display-dashes.js', 'systems/objectives-manager.js',
-    'ui/objectives-panel.js', 'utils/room-display-name.js', 'utils/global-condition.js', 'utils/portrait-variants.js',
+    'ui/objectives-panel.js', 'ui/modal-stack.js', 'utils/room-display-name.js', 'utils/global-condition.js', 'utils/portrait-variants.js',
     'systems/combat-input.js', 'minigames/helpers/chat-helpers.js']) {
     mkdirSync(dirname(join(dir, rel)), { recursive: true });
     writeFileSync(join(dir, rel), readFileSync(join(js, rel), 'utf8'));

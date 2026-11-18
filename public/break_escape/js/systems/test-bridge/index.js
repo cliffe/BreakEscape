@@ -1840,6 +1840,7 @@ const bridge = {
         if (toOverlay) {
             result.toOverlay = true;
             result.stillOpen = textOverlayOpen();
+            if (result.stillOpen) result.blockingUi = detectBlockingUi();
         }
         if (toMenu) {
             result.toMenu = true;
