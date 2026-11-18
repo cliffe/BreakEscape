@@ -1209,6 +1209,12 @@
         margin: 0 auto;
     }
 }
+/* Narrow and short (split screen): the short-window rule's 20px sides would undo the above */
+@media (max-width: 480px) and (max-height: 560px) {
+    .container-minigame:not(.desktop-mode) {
+        padding: 8px 10px;
+    }
+}
 
 @media (max-width: 768px) {
     .container-contents-grid:not(.share-folder-files) {
