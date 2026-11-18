@@ -305,7 +305,7 @@ hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", 
 hax_maps << { "eventPattern" => "global_variable_changed:nightshade_file_held", "condition" => "value === true && globalVars.flag3_submitted && !globalVars.hand_matched && !globalVars.identity_scene_started", "onceOnly" => true, "setGlobal" => { "hand_before_name" => true } }
 hax_maps << { "eventPattern" => "global_variable_changed:hand_matched", "condition" => "value === true", "onceOnly" => true, "setGlobal" => { "hand_before_name" => false } }
 hax_maps << text_map("global_variable_changed:nightshade_file_held", "value === true",
-                     "Hold his file next to the notebook scan in my case file. Then tell me what you see.")
+                     "Hold his file next to the notebook scan in my case file. Then tell me what you see: open our chat and pick \"The hand on Nightshade's file.\"")
 
 # Tran (S4 §3.2 brief-gated pair; S5 §3.4).
 hax_maps << { "eventPattern" => "npc_ko:jesse_tran", "condition" => "globalVars.tran_outcome !== 'talked'", "onceOnly" => true, "setGlobal" => { "tran_outcome" => "ko" } }
@@ -505,6 +505,11 @@ hax_maps << { "eventPattern" => "global_variable_changed:ledger_read_heard", "co
 # S4 §4 row 3 and §6.1. The two in_cage setters come first (one NPC's
 # mappings for an event run in list order, review N-R3-2).
 ring_c = "globalVars.ledger_read_heard && globalVars.cage_opened && !globalVars.in_cage && !globalVars.recruiter_call_started"
+# Player-driven compare, nudge two: the scan is read after the file is held (or the file was held first and the scan
+# was read later), so the choice in HaX's hub (topic 11) is live now and the player is told where it is.
+hax_maps << text_map("global_variable_changed:notebook_read", "value === true && globalVars.nightshade_file_held && !globalVars.hand_matched",
+                     "That's the scan. You've got both in front of you. Open our chat, pick \"The hand on Nightshade's file,\" and tell me what you see.", msg_delay: 2000)
+
 rec_maps = []
 rec_maps << { "eventPattern" => "room_entered:restricted_cage", "setGlobal" => { "in_cage" => true }, "cooldown" => 0 }
 rec_maps << { "eventPattern" => "room_exited", "condition" => "data.roomId === 'restricted_cage'", "setGlobal" => { "in_cage" => false }, "cooldown" => 0 }
@@ -840,7 +845,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         { "taskId": "talk_at_the_hatch", "title": "Talk to Sorensen at the cage hatch", "type": "custom", "status": "active" },
         { "taskId": "open_the_cage", "title": "Get through the cage gate", "type": "custom", "status": "active" },
         { "taskId": "open_plan_cabinet", "title": "Open the locked plan cabinet at the back of the cage", "type": "unlock_object", "targetObject": "plan_cabinet", "status": "active" },
-        { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file (Candidate Assessment, Intake 2011) with the notebook scan in HaX's case file", "type": "custom", "status": "locked" },
+        { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file (Candidate Assessment, Intake 2011) with the notebook scan in HaX's case file, then tell HaX what you see in the chat", "type": "custom", "status": "locked" },
         { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding (asking won't work)", "type": "custom", "status": "locked", "optional": true },
         { "taskId": "stop_the_tape_wipe", "title": "Stop the tape wipe in the server closet", "type": "custom", "status": "active", "optional": true }
       ]
