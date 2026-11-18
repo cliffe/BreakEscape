@@ -151,6 +151,16 @@ test('a needs re-route plans round held bodies; with no such path it takes the p
     assert.deepEqual(got2[0], [{ x: 100, y: 0 }]);
 });
 
+test('R1 m6: the tight search keeps the needs room leash', () => {
+    const n = walker({ reroute: true, detour: null });
+    n._moveAvoidRooms = ['x'];
+    n._planMovePath(n.pathfindingManager, 0, 0, 100, 0, () => {});
+    assert.deepEqual(n.calls[0].avoidRooms, ['x'], 'the ring search');
+    assert.equal(n.calls[1].avoidDynamic.tight, true);
+    assert.deepEqual(n.calls[1].avoidRooms, ['x'], 'the tight search');
+    assert.deepEqual(n.calls[2].avoidRooms, ['x'], 'the plain search');
+});
+
 test('without reroute, and for any non-needs move, the plan is unchanged', () => {
     for (const w of [walker({ reroute: false }), walker({ owner: 'script', reroute: true })]) {
         w._planMovePath(w.pathfindingManager, 0, 0, 100, 0, () => {});

@@ -101,10 +101,6 @@
           "observations": "A bin for taking the costume off.",
           "triggerOnInteract": [ { "type": "clear_costume" } ]
         },
-        { "type": "table", "name": "Stall test desk 1", "position": { "x": 3.375, "y": 2.69 }, "takeable": false, "sprite": "smalldesk2", "tableItems": [] },
-        { "type": "table", "name": "Stall test desk 2", "position": { "x": 3.375, "y": 3.0 }, "takeable": false, "sprite": "smalldesk2", "tableItems": [] },
-        { "type": "table", "name": "Stall test desk 3", "position": { "x": 3.375, "y": 3.31 }, "takeable": false, "sprite": "smalldesk2", "tableItems": [] },
-        { "type": "table", "name": "Stall test desk 4", "position": { "x": 3.375, "y": 3.63 }, "takeable": false, "sprite": "smalldesk2", "tableItems": [] },
         {
           "type": "coffee_station1",
           "id": "coffee_machine",
@@ -171,18 +167,6 @@
             { "eventPattern": "npc_used:finder_pc", "condition": "data.playerNearby === false", "setGlobal": { "finder_used_far_from_player": true }, "onceOnly": true },
             { "eventPattern": "item_dropped:sample_binder", "setGlobal": { "item_was_dropped": true }, "onceOnly": true }
           ]
-        },
-        {
-          "id": "aisle_guard",
-          "displayName": "Aisle Guard",
-          "npcType": "person",
-          "position": { "x": 3.75, "y": 2.625 },
-          "spriteSheet": "male_office_worker_v2",
-          "spriteTalk": "assets/characters/male_office_worker_talk.png",
-          "spriteVisemes": "assets/characters/male_office_worker_visemes.png",
-          "storyPath": "scenarios/test_npc_needs/ink/clerk.json",
-          "currentKnot": "start",
-          "voice": { "name": "Charon", "style": "Calm office worker.", "language": "en-GB" }
         },
         {
           "id": "bystander",

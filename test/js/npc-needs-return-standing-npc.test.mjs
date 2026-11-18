@@ -153,11 +153,9 @@ test('R1 M1: a pinch on the way and a home between two chairs: the tight path, n
     assert.ok(Math.hypot(r.pos.x - r.home.x, r.pos.y - r.home.y) <= 8, 'and reaches home');
 });
 
-test('R1 m1: starting pressed against the standing NPC, on either side, and other body sizes', { todo: 'open: one case clips the guard with the 8 px advance (tmp/rs/HANDOVER.md)' }, async () => {
-    // Touching: centres 20 px apart (the two half-widths), on the far side and on the home side
-    // (the home side walks away from it); then a larger walker and a larger guard in 48 px.
+test('R1 m1: starting 1 px off the standing NPC, and other body sizes', async () => {
+    // Centres 21 px apart (1 px clear), then a larger walker and a larger guard in 48 px.
     const cases = [
-        { h: 5, startX: 30 * STEP + 20 },
         { h: 5, startX: 30 * STEP + 21 },
         { h: 6, startX: 30 * STEP + 24, me: [24, 12] },
         { h: 6, startX: 45 * STEP, guard: [24, 12] },
@@ -168,6 +166,18 @@ test('R1 m1: starting pressed against the standing NPC, on either side, and othe
         assert.equal(r.stalled, false, `${JSON.stringify(c)}: no step into the standing body (stopped at ${Math.round(r.pos.x)},${Math.round(r.pos.y)}, ${r.tier})`);
         assert.ok(Math.hypot(r.pos.x - r.home.x, r.pos.y - r.home.y) <= 8, `${JSON.stringify(c)}: home`);
     }
+});
+
+// Open, by design: a walker exactly touching the guard (centres 20 px apart) in a 40 px aisle. The
+// path steps off to (268,188) then (260,196); the 8 px waypoint advance turns toward (252,196) at
+// about (262,189), where the box still overlaps the guard's corner by a pixel or two. Fixing it
+// means a smaller advance radius on rerouted walks (orbit risk at speed, touches every needs walk)
+// or a wider tight margin (loses the 40 px aisle). Physics slides off a graze; see
+// tmp/rs/REVIEW_R1_OUTCOMES.md.
+test('R1 m1: starting exactly touching the standing NPC', { todo: 'design decision: waypoint advance radius or tight margin (tmp/rs/REVIEW_R1_OUTCOMES.md)' }, async () => {
+    const r = await walkHome(5, { startX: 30 * STEP + 20 });
+    assert.ok(r.path && r.path.length > 0, 'a path');
+    assert.equal(r.stalled, false, `no step into the standing body (stopped at ${Math.round(r.pos.x)},${Math.round(r.pos.y)})`);
 });
 
 // m08, games 9336 and 9356 (DIAGNOSIS_M08.md): Agnieszka's walk home stopped at body (505.5,162.7),

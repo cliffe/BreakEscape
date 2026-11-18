@@ -387,3 +387,13 @@ Suites on `806037fef`: `bin/test-js` 676 files passed, 0 failed; `tts_office_lin
 | Tour overall | `806037fef` | 5485 | rooms kitchen, office, lounge, office all entered; 0 stuck; 0 page errors |
 
 Row 2 was run once, as asked (R3 ran it twice).
+
+## Return stall fix: the tight tier and standing NPCs (branch fix/needs-return-npc-stall)
+
+A rerouted needs walk (`_moveReroute`) plans in three tiers (`_planMovePath`, npc-behavior.js): round every other body with a one-cell clearance ring; else round each body's exact reach (the `tight` search, body half-extents plus 4 px, `_tightOpts`, which keeps the needs room leash); else the plain path. The local detour (`_requestDetour`) runs the same three in the order held, tight, plain. `_planTier` and `_detourTier` record which tier gave the path, for live checks.
+
+Where it applies. `_moveReroute` is set by the return stall watch, by an outbound `walk_rerouted`, and by the wedge recovery of any needs `goToAndStay`, and it stays set for collision re-plans of that move. So the tiers also run on outbound trips and wedge recoveries, not only the walk home.
+
+Soft bodies. The ring search opens ring cells within two cells of the start and goal so a home beside its own chair is reachable. Standing NPCs are not given that softening: it opened the ring beside a standing NPC at the start, so every re-plan gave a path 11.3 px from him, inside local avoidance's 13 px lane, and the walker stopped, re-planned the same path and reached `return_stuck` (m08, see tmp/rs/DIAGNOSIS_M08.md). The tight search has the same end rule for chairs and seated bodies only. The player keeps the full clearance ring in the tight tier, so a rerouted walker still meets the player through the pass rules rather than squeezing by. Seated colleagues' chair bodies are avoided too, as intended.
+
+Known limit. A walker starting exactly touching the guard in a 40 px aisle can clip the guard's corner by a pixel or two while turning at the 8 px waypoint advance (a todo test in `npc-needs-return-standing-npc.test.mjs`); 1 px clear is fine.

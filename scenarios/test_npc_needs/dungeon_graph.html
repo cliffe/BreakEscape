@@ -288,39 +288,29 @@ A throwaway engine test for the generic NPC needs system. Nothing here is a miss
   rc_costume_a_2{"Costume Rack A"}
   rc_costume_b_3{"Costume Rack B"}
   rc_costume_off_4{"Costume Bin"}
-  rc_obj5_5{"Stall test desk 1"}
-  rc_obj6_6{"Stall test desk 2"}
-  rc_obj7_7{"Stall test desk 3"}
-  rc_obj8_8{"Stall test desk 4"}
-  rc_coffee_machine_9{"Coffee Station"}
-  rc_finder_pc_10{"Records Desk PC"}
-  rc_npc_clerk_11("Clerk")
-  rc_npc_finder_12("Finder")
-  rc_npc_aisle_guard_13("Aisle Guard")
-  rc_npc_bystander_14("Bystander")
-  rc_store_coffee_15{"Store Coffee Station"}
+  rc_coffee_machine_5{"Coffee Station"}
+  rc_finder_pc_6{"Records Desk PC"}
+  rc_npc_clerk_7("Clerk")
+  rc_npc_finder_8("Finder")
+  rc_npc_bystander_9("Bystander")
+  rc_store_coffee_10{"Store Coffee Station"}
 
   test_room --> store_room
   test_room --> rc_clerk_pc_1
   test_room --> rc_costume_a_2
   test_room --> rc_costume_b_3
   test_room --> rc_costume_off_4
-  test_room --> rc_obj5_5
-  test_room --> rc_obj6_6
-  test_room --> rc_obj7_7
-  test_room --> rc_obj8_8
-  test_room --> rc_coffee_machine_9
-  test_room --> rc_finder_pc_10
-  test_room --> rc_npc_clerk_11
-  test_room --> rc_npc_finder_12
-  test_room --> rc_npc_aisle_guard_13
-  test_room --> rc_npc_bystander_14
-  store_room --> rc_store_coffee_15
+  test_room --> rc_coffee_machine_5
+  test_room --> rc_finder_pc_6
+  test_room --> rc_npc_clerk_7
+  test_room --> rc_npc_finder_8
+  test_room --> rc_npc_bystander_9
+  store_room --> rc_store_coffee_10
 
   class test_room room
   class store_room lock
-  class rc_clerk_pc_1,rc_costume_a_2,rc_costume_b_3,rc_costume_off_4,rc_obj5_5,rc_obj6_6,rc_obj7_7,rc_obj8_8,rc_coffee_machine_9,rc_finder_pc_10,rc_store_coffee_15 item
-  class rc_npc_clerk_11,rc_npc_finder_12,rc_npc_aisle_guard_13,rc_npc_bystander_14 npc
+  class rc_clerk_pc_1,rc_costume_a_2,rc_costume_b_3,rc_costume_off_4,rc_coffee_machine_5,rc_finder_pc_6,rc_store_coffee_10 item
+  class rc_npc_clerk_7,rc_npc_finder_8,rc_npc_bystander_9 npc
   class node_start start`
     };
     const rendered = {};
