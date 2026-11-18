@@ -78,7 +78,7 @@ export class KeyOperations {
         
         // Add click handler for key insertion
         clickZone.on('pointerdown', () => {
-            if (!this.parent.keyInserting) {
+            if (!this.parent.keyInserting && !this.parent.keyInsertTween?.isPlaying?.()) {
                 // Hide labels on first key click (similar to pin clicks)
                 if (!this.parent.pinClicked) {
                     this.parent.pinClicked = true;
@@ -121,7 +121,7 @@ export class KeyOperations {
             keyInserting: this.parent.keyInserting 
         });
         
-        if (!this.parent.keyGroup || !this.parent.keyConfig || this.parent.keyInserting) {
+        if (!this.parent.keyGroup || !this.parent.keyConfig || this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.()) {
             console.log('startKeyInsertion early return - missing requirements');
             return;
         }
@@ -147,7 +147,7 @@ export class KeyOperations {
         const fullyInsertedX = keywayLeftEdge - shoulderRightEdge; // 100 - 286 = -186px
         
         // Create smooth animation from left to right
-        this.parent.scene.tweens.add({
+        const insertTween = this.parent.scene.tweens.add({
             targets: this.parent.keyGroup,
             x: fullyInsertedX,
             duration: 4000, // 4 seconds for slower insertion
@@ -162,6 +162,9 @@ export class KeyOperations {
                 this.parent.keyInsertion.updatePinsWithKeyInsertion(this.parent.keyInsertionProgress);
             },
             onComplete: () => {
+                // A stale tween (restarted or killed) must not touch the current state
+                if (this.parent.keyInsertTween !== insertTween) return;
+                this.parent.keyInsertTween = null;
                 this.parent.keyInserting = false;
                 this.parent.keyInsertionProgress = 1.0; // Fully inserted
                 
@@ -173,6 +176,7 @@ export class KeyOperations {
                 if (!this.parent.keyUnlocked) this.parent.toolMgr?.setModeButtonsDisabled?.(false);
             }
         });
+        this.parent.keyInsertTween = insertTween;
     }
 
     checkKeyCorrectness() {

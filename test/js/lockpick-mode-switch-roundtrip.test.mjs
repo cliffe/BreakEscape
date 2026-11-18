@@ -431,16 +431,17 @@ function deferredBlock() {
     assert.ok(from > 0 && to > from, 'deferred block found');
     return src.slice(from + 'setTimeout('.length, to + 1);
 }
-function runDeferred(mg) {
+const LOCK = { id: 'derek_door' };
+function runDeferred(mg, lockable = LOCK) {
     const fn = new Function('window', 'playerKeys', 'lockable', 'requiredKeyId', 'KeyCutCalculator', 'generateKeyCutsForLock',
         `return (${deferredBlock()});`);
     const w = { MinigameFramework: { currentMinigame: mg }, lockRef: (d) => d.name };
     const keys = [{ scenarioData: { name: 'Derek', keyPins: [35, 55, 45, 25] } }];
-    fn(w, keys, {}, 'derek_key', KeyCutCalculator, () => [1, 1, 1, 1])();
+    fn(w, keys, lockable, 'derek_key', KeyCutCalculator, () => [1, 1, 1, 1])();
 }
 test('m1: a quick switch to picking inside 500 ms still stores the key list; no panel opens', () => {
     const opened = [];
-    const mg = { keyMode: false, startWithKeySelection: (k, id) => opened.push([k, id]) };
+    const mg = { params: { lockable: LOCK }, keyMode: false, startWithKeySelection: (k, id) => opened.push([k, id]) };
     runDeferred(mg);
     assert.equal(opened.length, 0, 'panel not opened in pick mode');
     assert.equal(mg.originalInventoryKeys.length, 1);
@@ -458,9 +459,80 @@ test('m1: a quick switch to picking inside 500 ms still stores the key list; no 
 });
 test('m1: still in key mode, the deferred block opens the panel as before', () => {
     const opened = [];
-    const mg = { keyMode: true, startWithKeySelection: (k, id) => opened.push([k, id]) };
+    const mg = { params: { lockable: LOCK }, keyMode: true, startWithKeySelection: (k, id) => opened.push([k, id]) };
     runDeferred(mg);
     assert.equal(opened.length, 1);
     assert.equal(opened[0][1], 'derek_key');
     assert.equal(mg.originalInventoryKeys, opened[0][0]);
+});
+
+test('m3: the deferred block leaves a different lock\'s minigame alone', () => {
+    const opened = [];
+    const mg = { params: { lockable: { id: 'other_door' } }, keyMode: true, startWithKeySelection: (k) => opened.push(k) };
+    runDeferred(mg);
+    assert.equal(opened.length, 0);
+    assert.equal(mg.originalInventoryKeys, undefined);
+});
+
+// ── R3 m1: insertion tracked by the tween, not the flag the pointerup handler clears ──
+function insertionRig() {
+    const strip = installDom();
+    const { parent } = pickFirstParent();
+    parent.keyMode = true; parent.keySelectionMode = true;
+    parent.keyGroup = { destroy() {} }; parent.keyConfig = { keywayStartX: 100, shoulderWidth: 20, circleRadius: 70 };
+    const tweens = [];
+    parent.scene = { time: { delayedCall() {} }, tweens: {
+        add: (cfg) => { const tw = { cfg, playing: true, isPlaying() { return this.playing; } }; tweens.push(tw); return tw; },
+        killTweensOf: () => tweens.forEach(t => { t.playing = false; }) } };
+    parent.keyInsertion.updatePinsWithKeyInsertion = () => {};
+    parent.keyAnim.snapPinsToExactPositions = () => {};
+    parent.keyOps.startKeyInsertion = KeyOperations.prototype.startKeyInsertion;
+    parent.selectedKeyData = { cuts: [1, 1, 1, 1] };
+    parent.keyData = { cuts: [40, 30, 50, 20] };
+    strip.appendChild(parent.toolMgr.buildPickButtonRow());
+    return { strip, parent, tweens, btn: rowButton(rowOf(strip)) };
+}
+test('R3 m1: pointerup clearing the flag mid-insertion, then a second keyway click, starts no second tween', () => {
+    const t = captureTimers();
+    try {
+        const { parent, tweens, btn } = insertionRig();
+        parent.keyOps.startKeyInsertion();
+        parent.keyInserting = false; // what the pointerup handler does
+        parent.keyOps.startKeyInsertion(); // second click
+        assert.equal(tweens.length, 1);
+        assert.equal(btn.disabled, true);
+        assert.equal(btn.title, 'Not while a key is going in');
+        // the pointerup handler itself skips the reset while the tween plays
+        const src = readFileSync(join(js, 'minigames/lockpicking/pin-management.js'), 'utf8');
+        assert.match(src, /this\.parent\.keyMode && !this\.parent\.keyInsertTween\?\.isPlaying\?\.\(\)/);
+        // switch is still refused-by-guard: it kills the live tween even with the flag cleared
+        parent.toolMgr.switchToPickMode();
+        assert.equal(tweens[0].playing, false);
+        assert.equal(parent.keyInsertTween, null);
+    } finally { t.restore(); }
+});
+test('R3 m1: a stale onComplete does nothing; the current one re-enables and clears the title', () => {
+    const t = captureTimers();
+    try {
+        const { parent, tweens, btn } = insertionRig();
+        parent.keyOps.startKeyInsertion();
+        tweens[0].playing = false; parent.keyInserting = false; // killed, e.g. by a switch
+        parent.keyInsertTween = null;
+        parent.keyOps.startKeyInsertion();
+        assert.equal(tweens.length, 2);
+        tweens[0].cfg.onComplete(); // stale
+        assert.equal(parent.keyInserting, true);
+        assert.equal(btn.disabled, true, 'still disabled');
+        tweens[1].playing = false;
+        tweens[1].cfg.onComplete();
+        assert.equal(parent.keyInserting, false);
+        assert.equal(btn.disabled, false);
+        assert.ok(!btn.title, 'title cleared');
+    } finally { t.restore(); }
+});
+test('R3 m2: the disabled CSS beats the themed button and avoids opacity', () => {
+    const css = readFileSync(join(js, '../css/lockpicking.css'), 'utf8');
+    const block = css.slice(css.indexOf('[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover'));
+    for (const want of ['border-image: none', 'border: 2px dashed #bdc3c7', 'background: #34495e', 'opacity: 1', 'filter: none', 'transform: none', 'cursor: not-allowed']) assert.ok(block.includes(want), want);
+    assert.ok(css.includes('\n.lockpicking-mode-row .minigame-button:disabled:hover'), 'unthemed hover rule too');
 });

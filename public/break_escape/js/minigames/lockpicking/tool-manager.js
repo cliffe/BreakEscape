@@ -42,7 +42,7 @@ export class ToolManager {
         btn.id = 'lockpicking-switch-mode-btn';
         btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
         btn.onclick = () => this.switchToPickMode();
-        btn.disabled = !!(this.parent.keyInserting || this.parent.keyUnlocked);
+        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.() || this.parent.keyUnlocked));
         row.appendChild(createPickCaption());
         row.appendChild(btn);
         return row;
@@ -56,7 +56,7 @@ export class ToolManager {
         btn.id = 'lockpicking-switch-to-keys-btn';
         btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
         btn.onclick = () => this.switchToKeyMode();
-        btn.disabled = !!(this.parent.keyInserting || this.parent.keyUnlocked);
+        this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.() || this.parent.keyUnlocked));
         row.appendChild(btn);
         return row;
     }
@@ -76,11 +76,33 @@ export class ToolManager {
         if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
         const strip = document.querySelector('.lockpicking-item-section');
         if (!strip) return;
-        for (const row of Array.from(strip.children || [])) {
-            if (row.className !== 'lockpicking-mode-row') continue;
-            for (const btn of Array.from(row.children || [])) {
-                if ((btn.tagName || btn.tag || '').toLowerCase() === 'button') btn.disabled = !!disabled;
+        let buttons;
+        if (typeof strip.querySelectorAll === 'function') {
+            const found = strip.querySelectorAll('.lockpicking-mode-row button');
+            // Real DOM returns a NodeList; the test mock returns something else
+            if (found && typeof found.length === 'number') buttons = Array.from(found);
+        }
+        if (!buttons) {
+            buttons = [];
+            for (const row of Array.from(strip.children || [])) {
+                if (row.className !== 'lockpicking-mode-row') continue;
+                for (const btn of Array.from(row.children || [])) {
+                    if ((btn.tagName || btn.tag || '').toLowerCase() === 'button') buttons.push(btn);
+                }
             }
+        }
+        buttons.forEach((btn) => this.applyDisabled(btn, disabled));
+    }
+
+    // The real disabled attribute plus a tooltip that says why (cleared again on re-enable)
+    applyDisabled(btn, disabled) {
+        btn.disabled = !!disabled;
+        if (disabled) {
+            btn.title = this.parent.keyUnlocked ? 'The lock is opening' : 'Not while a key is going in';
+        } else if (typeof btn.removeAttribute === 'function') {
+            btn.removeAttribute('title');
+        } else {
+            btn.title = '';
         }
     }
 
@@ -188,8 +210,9 @@ export class ToolManager {
 
         // A key is still going in (the buttons are disabled, this is the defensive guard):
         // stop the insertion so no wrong-key or unlock result lands in pick mode
-        if (this.parent.keyInserting) {
+        if (this.parent.keyInserting || this.parent.keyInsertTween?.isPlaying?.()) {
             this.parent.scene?.tweens?.killTweensOf(this.parent.keyGroup);
+            this.parent.keyInsertTween = null;
             this.parent.keyInserting = false;
         }
 

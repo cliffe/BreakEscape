@@ -504,7 +504,8 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         // The list is always prepared, even when the player has already switched to picking:
         // switching back to keys reads it from originalInventoryKeys.
         const mg = window.MinigameFramework.currentMinigame;
-        if (mg && mg.startWithKeySelection) {
+        // Only the minigame this call opened: another lock may be current by now
+        if (mg && mg.startWithKeySelection && mg.params?.lockable === lockable) {
             // DEFERRED KEY PREPARATION:
             // Regenerate keys after minigame initialization to ensure lock config is saved
             const updatedInventoryKeys = playerKeys.map(key => {

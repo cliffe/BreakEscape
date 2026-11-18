@@ -266,13 +266,20 @@
 }
 
 /* Mode-switch buttons while a key goes in or after a correct key: the real disabled attribute
-   blocks clicks; the label dims, the cursor changes and the border turns dashed so the state
+   blocks clicks; the fill goes flat, the border dashed and the cursor not-allowed, so the state
    is not only colour. */
-.lockpicking-mode-row .minigame-button:disabled {
-    opacity: 0.5;
+/* Disabled look that also beats the themed 9-slice button (ui-themes.css sets border-image,
+   filter and transform on [data-ui-theme] .minigame-button and its hover). Plain text on a flat
+   dark fill with a dashed 2px border: no opacity, so the pixel text stays readable. */
+.lockpicking-mode-row .minigame-button:disabled,
+.lockpicking-mode-row .minigame-button:disabled:hover,
+[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled,
+[data-ui-theme] .lockpicking-mode-row .minigame-button:disabled:hover {
+    border-image: none;
+    border: 2px dashed #bdc3c7;
+    background: #34495e;
+    opacity: 1;
+    filter: none;
+    transform: none;
     cursor: not-allowed;
-    border-style: dashed;
-}
-.lockpicking-mode-row .minigame-button:disabled:hover {
-    background: #3498db;
 }
