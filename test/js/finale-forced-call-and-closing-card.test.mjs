@@ -55,9 +55,13 @@ function withMinigames(fn) {
     const started = [];
     window.MinigameFramework = { currentMinigame: null, startMinigame: (...a) => started.push(a), endMinigame() {} };
     const realSetTimeout = globalThis.setTimeout;
+    // The hit test above stamps a hit, which holds scripted calls for a few seconds (combat wait)
+    const realCombat = window.playerInCombat;
+    window.playerInCombat = () => false;
     globalThis.setTimeout = (cb) => { cb(); return 0; };   // run the 500 ms scene delay now
     try { fn(started); } finally {
         globalThis.setTimeout = realSetTimeout;
+        window.playerInCombat = realCombat;
         delete window.MinigameFramework;
     }
 }
