@@ -61,6 +61,28 @@ for (const [knot, who] of [['julian_start', 'Julian Sallow'], ['agnieszka_start'
     });
 }
 
+// A met officer resumes in the hub: trouble must refuse there too (the start knot is skipped on a re-talk).
+for (const [knot, hub, met, line] of [
+    ['julian_start', 'julian_hub', 'julian_met', 'Not now, Agent.'],
+    ['agnieszka_start', 'agnieszka_hub', 'agnieszka_met', "I've nothing to say to you."],
+]) {
+    test(`${hub}: a met officer with trouble refuses, with the same line as ${knot}`, () => {
+        const s = open(WATCH, hub, { [met]: true, ops_watch_upset: true });
+        const { lines, tags } = run(s);
+        assert.equal(lines.length, 1);
+        assert.ok(lines[0].endsWith(line), lines[0]);
+        assert.ok(tags.includes('exit_conversation'));
+        assert.equal(s.currentChoices.length, 0, 'no choices offered');
+        const start = run(open(WATCH, knot, { ops_watch_upset: true })).lines;
+        assert.deepEqual(lines, start, 'same spoken line, so no new clip');
+    });
+    test(`${hub}: without trouble the hub still offers its choices`, () => {
+        const s = open(WATCH, hub, { [met]: true });
+        run(s);
+        assert.ok(labels(s).length >= 2);
+    });
+}
+
 test('Julian: the rules option only appears after the watch question', () => {
     const s = open(WATCH, 'julian_start');
     run(s);

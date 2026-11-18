@@ -52,6 +52,11 @@ Julian Sallow: Relief watch, Agent. We've the duty desk for the night: the doors
 -> julian_hub
 
 === julian_hub ===
+{ ops_watch_upset:
+    Julian Sallow: Not now, Agent.
+    #exit_conversation
+    -> DONE
+}
 { not hub_quiet:
     Julian Sallow: {&Still about, Agent?|Yes?|Something else?}
 }
@@ -94,6 +99,11 @@ Agnieszka Duda: Duda, watch log. If you need something entered, say it slowly. T
 -> agnieszka_hub
 
 === agnieszka_hub ===
+{ ops_watch_upset:
+    Agnieszka Duda: I've nothing to say to you.
+    #exit_conversation
+    -> DONE
+}
 { not hub_quiet:
     Agnieszka Duda: {&Yes?|Is it for the log?|Go on.}
 }

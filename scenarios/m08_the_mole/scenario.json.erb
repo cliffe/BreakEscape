@@ -1270,9 +1270,10 @@ CREDITS
 <%# Relief watch (slice 3): trouble on the ops floor, never cleared. The cooler carries offWhen on this global. %>
             { "eventPattern": "npc_attacked:julian_sallow", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
             { "eventPattern": "npc_attacked:agnieszka_duda", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
-<% %w[julian_ko agnieszka_ko analyst_ko vector_ko].each do |g| %>
-            { "eventPattern": "global_variable_changed:<%= g %>", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
-<% end %>
+            { "eventPattern": "global_variable_changed:julian_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:agnieszka_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:analyst_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:vector_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
 <%# Relief watch: a KO before the naming tips the mole off, as for every other bystander. One text per officer; the nightshade_tipped_off gate lets only the first through. %>
             {
               "eventPattern": "npc_ko:julian_sallow",
@@ -1662,7 +1663,8 @@ CREDITS
         "emitters": {
           "hq_ops_board": [ { "color": "#a8c0ff", "radius": 56, "intensity": 0.55, "effect": "screen", "offsetY": 24 } ],
           "hq_badge_reader": [ { "color": "#ff3030", "radius": 6, "intensity": 0.9, "effect": null, "offsetX": -1, "offsetY": 2, "above": true } ],
-          "fire_alarm_point": [ { "intensity": 0 } ]
+          "fire_alarm_point": [ { "intensity": 0 } ],
+          "julian_console": [ { "condition": "globalVars.julian_console_owner_away && !globalVars.julian_console_screen_locked", "color": "#ffd27a", "radius": 54, "intensity": 0.95, "effect": "breathe" } ]
         }
       },
       "door_sign": "Operations Floor",
@@ -1854,7 +1856,7 @@ CREDITS
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "The duty desk's console, a watch log open on it.",
+          "observations": "The duty desk's console.",
           "text": "The duty officer's console. He angles it away from you without looking up.",
           "textVariants": [
             { "condition": "globalVars.ops_watch_upset", "value": "The console has been snapped to the lock screen." },
