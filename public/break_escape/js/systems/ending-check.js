@@ -351,6 +351,7 @@ function openModal(open, done) {
     row.className = 'game-confirm-buttons ending-check-buttons';
     const w = win();
     const movementBefore = w?.player ? !!w.player.disableMovement : null;
+    const previousFocus = doc.activeElement;
     let finished = false;
     let keyHandler = null;
     const finish = (endNow) => {
@@ -358,6 +359,7 @@ function openModal(open, done) {
         finished = true;
         overlay.remove();
         if (keyHandler) w?.removeEventListener('keydown', keyHandler, true);
+        try { if (previousFocus && previousFocus.isConnected && previousFocus.focus) previousFocus.focus(); } catch (e) { /* best effort */ }
         if (w?.player && movementBefore !== null) w.player.disableMovement = movementBefore;
         done(endNow);
     };
@@ -373,7 +375,7 @@ function openModal(open, done) {
     };
     // Keep going is first and has the focus: Enter or Esc never ends the mission by accident.
     const keep = button('ending-check-keep', KEEP_LABEL, true, false);
-    button('ending-check-end', END_LABEL, false, true);
+    const endBtn = button('ending-check-end', END_LABEL, false, true);
     closeBtn.addEventListener('click', () => finish(false));
     dialog.appendChild(row);
     doc.body.appendChild(overlay);
@@ -381,9 +383,23 @@ function openModal(open, done) {
     if (w?.player) w.player.disableMovement = true;
     keyHandler = (e) => {
         if (finished) return;
-        if (e.key === 'Escape') {
+        const key = e.key;
+        if (key === 'Escape') {
             e.preventDefault();
             finish(false);
+        } else if (key === 'Tab' || key === 'ArrowLeft' || key === 'ArrowRight' ||
+                   key === 'ArrowUp' || key === 'ArrowDown') {
+            // Focus cycles over X, Keep going and End; Tab and the arrows never reach the page behind.
+            e.preventDefault();
+            const order = [closeBtn, keep, endBtn];
+            const at = order.indexOf(doc.activeElement);
+            const back = (key === 'Tab' && e.shiftKey) || key === 'ArrowLeft' || key === 'ArrowUp';
+            const next = at < 0 ? (back ? order.length - 1 : 0)
+                : (at + (back ? order.length - 1 : 1)) % order.length;
+            try { order[next].focus(); } catch (err) { /* jsdom without focus */ }
+        } else if ((key === 'Enter' || key === ' ') && !(e.target && overlay.contains(e.target))) {
+            // Focus has drifted outside the dialog: do not let Enter or Space press the page behind.
+            e.preventDefault();
         }
         e.stopPropagation();
     };

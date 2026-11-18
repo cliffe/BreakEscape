@@ -1436,7 +1436,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
             // A cosmetic "(Close.)" home stub closes the thread card, not the phone: the player
             // lands back on the contact list, so a timed-out incoming-call card needs no reopen.
-            if (this._stubExitStaysInPhone(silentChoice)) {
+            if (this._stubExitStaysInPhone(silentChoice, accumulatedTags)) {
                 this.closeConversation();
                 return;
             }
@@ -1948,9 +1948,13 @@ export class PhoneChatMinigame extends MinigameScene {
         this.complete(true);
     }
 
-    /** A silent "(Close.)" stub on a plain thread (not a ringer or forced call) leaves the phone open. */
-    _stubExitStaysInPhone(silentChoice) {
-        return !!silentChoice && !this.params?.ringerCall && !this.params?.disableClose;
+    /**
+     * A silent "(Close.)" stub on a plain thread (not a forced call) leaves the phone open. A stub
+     * whose label puts the phone away or hangs up carries `# close_phone` and closes the phone.
+     */
+    _stubExitStaysInPhone(silentChoice, tags = []) {
+        if (!silentChoice || phoneCloseLocked(this.params)) return false;
+        return !(tags || []).some(tag => String(tag).trim().split(/[\s:]/)[0] === 'close_phone');
     }
 
     closeConversation() {

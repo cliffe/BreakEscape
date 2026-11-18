@@ -419,7 +419,14 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
 [data-ui-theme] .game-confirm-dialog.ending-check-dialog {
     max-width: 640px;
     max-height: 100%;
-    background: #0a0a14;   /* opaque: the themed surface is 94% alpha and the phone shows through */
+    background-color: #0a0a14;   /* opaque: the themed surface is under 100% alpha and the phone shows through */
+    background-clip: padding-box;
+}
+
+/* Each theme's own tint at full opacity (--ui-surface-opaque, ui-themes.css). */
+[data-ui-theme] .game-confirm-dialog.ending-check-dialog {
+    background-color: var(--ui-surface-opaque, #0a0a14);
+    background-clip: padding-box;
 }
 
 .ending-check-dialog .ending-check-heading {
@@ -458,7 +465,7 @@ body.hud-compact .notification.error.placed-over-panel:not(.verbatim) .notificat
     margin-top: 8px;
 }
 
-@media (max-height: 450px) {
+@media (max-height: 450px), (max-width: 480px) {
     .ending-check-dialog .game-confirm-message,
     .ending-check-list,
     .ending-check-dialog .game-confirm-btn {
