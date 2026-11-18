@@ -15,7 +15,7 @@ async function run(w, h, tag) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.game?.loop && !!window.__test, null, { timeout: 90000 });
-  await page.evaluate(() => { const l = window.game.loop; l.fpsLimit = 20; l.hasFpsLimit = true; window.game.physics?.world?.setFPS?.(20); });
+  await page.evaluate(() => window.__test.throttleFps(20)); // fixed steps stay on
   await page.waitForTimeout(1500);
   // dismiss any Mission Brief / resume overlay so the phone can open
   for (const sel of ['#session-resume-btn', '.mission-brief-close', '.mission-brief-start']) {
@@ -44,6 +44,10 @@ async function run(w, h, tag) {
   // A11: open HaX's conversation, send the next HaX message, expect no toast
   await page.evaluate((id) => window.MinigameFramework.currentMinigame.openConversation(id), HAX);
   await page.waitForTimeout(1500);
+  const hud = () => page.evaluate(() => { const b = document.querySelector('.phone-badge'); return b ? (parseInt(b.textContent, 10) || 0) : 0; });
+  const hudBefore = await hud();
+  const haxBefore = await page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
+    .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
   const before = await barks();
   await send('Proof text one: eyes on the vault.');
   await page.waitForTimeout(1500);
@@ -52,7 +56,12 @@ async function run(w, h, tag) {
   const unread = () => page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
     .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
   check((await unread()) === 0, `${tag}: HaX has 0 unread after the fold`);
-  check(await page.evaluate(() => !document.querySelector('.phone-badge')), `${tag}: the phone HUD badge is gone after the fold`);
+  // Another contact may still have unread texts, so the badge need not vanish: its count
+  // must equal the phone's total, and have dropped by HaX's own unread count
+  const hudAfter = await hud();
+  const total = await page.evaluate(() => { const m = window.MinigameFramework.currentMinigame; return window.npcManager.getTotalUnreadCount(m.phoneId, m.npcIds || null); });
+  check(hudAfter === total, `${tag}: HUD badge (${hudAfter}) equals the phone's unread total (${total})`);
+  check(hudBefore - hudAfter === haxBefore, `${tag}: HUD badge dropped by HaX's unread count (${hudBefore} -> ${hudAfter}, HaX had ${haxBefore})`);
   await page.screenshot({ path: `${outdir}/${tag}-2-open-thread-no-toast.png` });
   check(await page.evaluate(() => !!document.activeElement?.closest?.('.phone-messages-container')), `${tag}: focus still in the phone after the text`);
 

@@ -284,7 +284,7 @@ export default class NPCBarkSystem {
       const m = window.MinigameFramework?.currentMinigame;
       if (m?.ui?.isCallMode || window.phoneRinger?.callActive?.() || dialogLayerOpen() || workstationPopupOpen()) return false;
       const raw = String(payload.text || payload.message || '');
-      const contact = this.npcManager?.getNPC?.(payload.npcId) || { id: payload.npcId, displayName: payload.npcName };
+      const contact = (this.npcManager || window.npcManager)?.getNPC?.(payload.npcId) || { id: payload.npcId, displayName: payload.npcName };
       let text = raw;
       try { text = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
       if (!text.trim()) return false;
@@ -294,7 +294,16 @@ export default class NPCBarkSystem {
       if (m?.ui?.historyDrawn !== false) {
         const key = threadTextKey(text);
         if (key && typeof m?.ui?.addMessage === 'function') {
-          Promise.resolve(m.ui.addMessage('npc', text)).catch(() => {});
+          // A terminal thread types its lines. One already typing (first-open lines, a live
+          // ink line) owns the skip handlers, so the folded text is drawn at once instead of
+          // typing alongside it and replacing them (round 3 m1). Its bubble lands after the
+          // one being typed, which is already in the thread.
+          const ui = m.ui;
+          const typing = ui.isTerminalTheme && typeof ui.isTypewriting === 'function' && ui.isTypewriting();
+          const saved = ui.isTerminalTheme;
+          if (typing) ui.isTerminalTheme = false;
+          try { Promise.resolve(ui.addMessage('npc', text)).catch(() => {}); }
+          finally { if (typing) ui.isTerminalTheme = saved; }
         }
         this._markThreadRead(payload.npcId);
       }
@@ -352,7 +361,7 @@ export default class NPCBarkSystem {
   _shownInOpenThread(payload, thread = openPhoneThread()) {
     if (!thread || thread.keys.size === 0) return false;
     const raw = String(payload?.text || payload?.message || '');
-    const contact = (payload?.npcId && this.npcManager?.getNPC?.(payload.npcId))
+    const contact = (payload?.npcId && (this.npcManager || window.npcManager)?.getNPC?.(payload.npcId))
       || { id: payload?.npcId, displayName: payload?.npcName };
     let stripped = raw;
     try { stripped = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }

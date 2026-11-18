@@ -18,7 +18,7 @@ writeFileSync(join(dir, 'npc-barks.mjs'), `
 import { phoneBarkText } from './phone-chat-speaker.mjs';
 import { workstationPopupOpen as realWs, phoneThreadOpenFor, openPhoneThread, threadTextKey } from './overlay-open.mjs';
 const workstationPopupOpen = () => !!globalThis.__ws || realWs();
-const ASSETS_PATH = '', displayDashes = (s) => s, releaseHeldBarks = () => {}, HELD_BARK_VOICE_CAP_MS = 30000;
+const ASSETS_PATH = '', displayDashes = (s) => s, releaseHeldBarks = (q) => { globalThis.__releasedWith = q.length; }, HELD_BARK_VOICE_CAP_MS = 30000;
 let dialogOpen = false;
 globalThis.__setDialogOpen = (v) => { dialogOpen = v; };
 globalThis.__setWorkstation = (v) => { globalThis.__ws = v; };
@@ -196,6 +196,44 @@ test('a same-contact text held behind a dialog folds when the dialog goes (n2)',
     assert.deepEqual(t.added, [['npc', 'New lead on the vault.'], ['npc', 'Held two.']]);
     assert.deepEqual(t.bark.deferredBarkQueue.map(p => p.npcId), ['bob']);
     assert.equal(t.rows[0].read, true);
+});
+
+test('a text folded while a terminal line is typing is drawn at once, not typed (m1)', async () => {
+    const t = setup({ open: 'hax' });
+    const ui = window.MinigameFramework.currentMinigame.ui;
+    const seen = [];
+    ui.isTerminalTheme = true;
+    ui.isTypewriting = () => true;
+    ui.addMessage = async (type, x) => { seen.push([type, x, ui.isTerminalTheme]); };
+    t.bark.showBark(t.payload);
+    assert.deepEqual(seen, [['npc', 'New lead on the vault.', false]]);
+    assert.equal(ui.isTerminalTheme, true, 'theme restored for the next line');
+    // Not typing: the terminal theme stays on, so the line types as normal
+    ui.isTypewriting = () => false;
+    seen.length = 0;
+    t.bark._foldIntoOpenThread({ npcId: 'hax', message: 'Second.' });
+    assert.deepEqual(seen, [['npc', 'Second.', true]]);
+});
+
+test('contact lookup falls back to window.npcManager when the system has none (n3)', () => {
+    const t = setup({ open: 'hax', noManager: true });
+    assert.equal(t.bark.npcManager, undefined);
+    t.bark.showBark(t.payload);
+    assert.deepEqual(t.added, [['npc', 'New lead on the vault.']]);
+    assert.equal(t.bark._shownInOpenThread(t.payload, { keys: new Set(['x']) }), false);
+});
+
+test('the real drainDeferredBarks folds before it releases (n1)', async () => {
+    const t = setup({ open: 'hax' });
+    globalThis.__setDialogOpen(true);
+    t.bark.showBark(t.payload);
+    t.bark.showBark({ npcId: 'bob', message: 'Other contact.' });
+    globalThis.__setDialogOpen(false);
+    Object.assign(t.bark, { _shouldDefer: () => false, _dropStaleVisibleBarks() {}, _watchDialogHold() {} });
+    globalThis.__releasedWith = -1;
+    await NPCBarkSystem.prototype.drainDeferredBarks.call(t.bark);
+    assert.deepEqual(t.added, [['npc', 'New lead on the vault.']]);
+    assert.equal(globalThis.__releasedWith, 1, 'only the other contact was left to release');
 });
 
 test('the dialog watch and the drain both fold before releasing (n2)', () => {
