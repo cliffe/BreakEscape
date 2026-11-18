@@ -33,7 +33,7 @@ VAR caught_lockpicking = false
 VAR lockpick_confrontations = 0
 VAR talked_about_reeves = false
 VAR asked_about_drill = false
-VAR val_notebook_given = false   // her notebook is offered on every route, but handed over once
+VAR val_notebook_given = false   // her notebook is offered once she trusts you (influence 10+, or she cleared you after the burn), and handed over once
 VAR val_reported_back = false    // the player came back and told her what they found (blind playtest fix)
 VAR talked_about_attack = false
 VAR cleared_after_burn = false
@@ -45,6 +45,15 @@ VAR hub_quiet = false
 VAR cover_burned = false
 VAR cover_restored = false // Synced scenario global: the player's cover is re-established (Val clears it here); also set by Bernie's vouch (m02_npc_receptionist)
 VAR staff_lanyard_obtained = false
+VAR lanyard_issued = false        // Synced: a person (Doyle or Gary) handed the player a pass
+VAR gary_lanyard_issued = false   // Synced: the pass came from Gary
+VAR holds_contractor_pass = false // Synced: the player has picked up a contractor pass
+VAR holds_agency_pass = false     // Synced: the player has picked up Doyle's agency pass
+VAR ward_nurse_ko = false         // Synced
+VAR gary_ko = false               // Synced
+VAR seen_wall_safe = false        // Synced: the player has been in the security office
+VAR agency_pass_refused = false   // local on purpose: after a reload the option returns and Val refuses once more
+VAR asked_wall_safe = false
 VAR bernie_vouched = false
 VAR dr_kim_met = false
 VAR insider_identified = false
@@ -188,7 +197,7 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 -> cover_challenge_options
 
 === cover_challenge_options ===
-+ {staff_lanyard_obtained} [Show her the lanyard.]
++ {staff_lanyard_obtained and (holds_contractor_pass or lanyard_issued or not agency_pass_refused)} [Show her the lanyard.]
     -> show_lanyard
 
 + {bernie_vouched} [Ring Bernie on reception. She's logged a correction under her own name.]
@@ -215,17 +224,38 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
     -> DONE
 
 === show_lanyard ===
+// Legacy saves: a pass was picked up or handed over before the pickup mappings
+// set holds_* or lanyard_issued. Treat them as before this change.
+{not lanyard_issued and not holds_contractor_pass and not holds_agency_pass:
+    Narrator: She turns the lanyard over, checks the back, and hands it back.
+    Val Okonkwo: Hospital pass. Blank, no photo. Could have come out of anybody's drawer.
+    -> show_lanyard_cleared
+}
+{not lanyard_issued and holds_contractor_pass:
+    -> found_pass_pretext
+}
+{not lanyard_issued:
+    -> found_agency_pass
+}
+{lanyard_issued:
+    Narrator: She turns the lanyard over and thumbs her radio.
+    Val Okonkwo: {gary_lanyard_issued: Whitlock, IT. You give a contractor pass out tonight?|Ward Three, Sister Doyle. You give out an agency lanyard tonight?}
+    Narrator: {(gary_lanyard_issued and gary_ko) or (not gary_lanyard_issued and ward_nurse_ko): Static. Nobody answers, and she lets it go.|A short answer crackles back.}
+}
+-> show_lanyard_cleared
+
+=== show_lanyard_cleared ===
 ~ cleared_after_burn = true
 ~ cover_restored = true
 #set_global:cover_restored:true
 
-Narrator: She turns the lanyard over, checks the back, and hands it back.
-
-Val Okonkwo: Hospital pass. Blank, no photo. Could have come out of anybody's drawer.
-
 Narrator: She looks at you for a long moment. Somewhere behind you a generator changes note. #lighting_dip
 
-Val Okonkwo: Here's where I've got to. Either you're a wrong 'un with a stolen pass, or somebody's had my control room told a lie about you.
+{lanyard_issued and not ((gary_lanyard_issued and gary_ko) or (not gary_lanyard_issued and ward_nurse_ko)):
+    Val Okonkwo: So somebody gave you that, and somebody else rang control to say you don't exist.
+- else:
+    Val Okonkwo: Here's where I've got to. Either you're a wrong 'un with a stolen pass, or somebody's had my control room told a lie about you.
+}
 
 Val Okonkwo: And this building's been lying to me about who's supposed to be stood where for six weeks now. So.
 
@@ -243,6 +273,36 @@ Val Okonkwo: Go on. But you come past me on the way out and tell me what you fou
 
 * [Six weeks. Tell me about that.]
     -> discuss_reeves
+
+=== found_pass_pretext ===
+Narrator: She turns the lanyard over. Contractor, issued by IT, no name.
+Val Okonkwo: Blank IT pass. So what are you here for, on an IT pass?
+
++ [IT sent me for the server room reader. It's on its own controller.]
+    Val Okonkwo: The one reader in the building that still works. Gary's baby.
+    Val Okonkwo: That's the first thing anyone's said tonight that matches what they're holding.
+    -> show_lanyard_cleared
++ [Agency nursing. They've sent me up from the ward.]
+    Val Okonkwo: Agency are on green. That's not green.
+    -> pretext_failed
++ [Estates. I'm checking the doors after the drill.]
+    Val Okonkwo: Estates don't come out at night. They didn't even come out on Wednesday.
+    -> pretext_failed
+
+=== pretext_failed ===
+Val Okonkwo: Go away and come back with a story that matches your pass.
+#exit_conversation
+-> DONE
+
+=== found_agency_pass ===
+Narrator: She turns it over, green ribbon, and thumbs her radio.
+Val Okonkwo: Ward Three. Sister Doyle. You give out an agency lanyard tonight?
+Narrator: {ward_nurse_ko: Static. Nobody answers.|A short answer crackles back. It isn't yes.}
+Val Okonkwo: That's Doyle's drawer, and Doyle didn't open it for you.
+Val Okonkwo: Away from my door.
+~ agency_pass_refused = true
+#exit_conversation
+-> DONE
 
 === bernie_backs_you ===
 ~ cleared_after_burn = true
@@ -329,7 +389,7 @@ Narrator: She unlocks the office door and stands aside.
     Val Okonkwo: "Who benefits?" is what people say when they've got none of those.
 }
 
-+ {staff_lanyard_obtained} [Fine. Here.]
++ {staff_lanyard_obtained and (holds_contractor_pass or lanyard_issued or not agency_pass_refused)} [Fine. Here.]
     -> show_lanyard
 
 + {bernie_vouched} [Then ring Bernie. She's already logged it.]
@@ -488,6 +548,14 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
 + {talked_about_reeves and not val_notebook_given} [About Reeves. Have you got any of that written down?]
     -> reeves_notebook
 
++ {seen_wall_safe and not asked_wall_safe} [The keypad safe in your office. Whose is it?]
+    ~ asked_wall_safe = true
+    Val Okonkwo: Estates put that up in July. Same week Reeves turned up, now I think about it.
+    Val Okonkwo: Says supervisor's post on the door. The only supervisor on nights is the one who isn't on my rota.
+    Val Okonkwo: Nobody's given me the code. Nobody's offered.
+    ~ hub_quiet = true
+    -> hub
+
 + {talked_about_reeves and insider_identified} [Graham Reeves is ENTROPY's man inside. You were right.]
     -> reeves_vindicated
 
@@ -587,6 +655,12 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
     -> hub
 
 === reeves_notebook ===
+{influence < 10 and not cleared_after_burn and not cover_restored and not bernie_vouched:
+    Val Okonkwo: I have. And it stays in my pocket for now.
+    Val Okonkwo: When I know what you are, you can have it.
+    ~ hub_quiet = true
+    -> hub
+}
 ~ val_notebook_given = true
 ~ influence += 5
 # influence_increased

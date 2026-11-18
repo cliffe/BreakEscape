@@ -8,6 +8,10 @@
 VAR hint_start_given = false
 VAR hint_lockpick_given = false
 VAR hint_password_given = false
+VAR hint_wall_safe_given = false
+VAR seen_wall_safe = false // Synced: the player has been in the security office
+VAR reeves_safe_opened = false // Synced: the wall safe's override form has been read
+VAR pin_cracker_found = false // Synced: the player has the PIN cracker
 VAR hint_vm_given = false
 VAR hint_encoding_given = false
 VAR hint_pin_given = false
@@ -184,6 +188,9 @@ Then Dr. Kim. Past the ward, up through the handover room. She called us in.
 
 + {ghost_contacted_player and not ghost_reaction_discussed} [Ghost just reached out to me]
     -> ghost_contact_reaction
+
++ {seen_wall_safe and not reeves_safe_opened and not hint_wall_safe_given} [There's a keypad safe in Val's office. No code anywhere.]
+    -> hint_wall_safe
 
 + {(lockpicking_guide_offered and not lockpicking_guide_hint_given) or (scanning_guide_offered and not scanning_guide_hint_given) or (ssh_guide_offered and not ssh_guide_hint_given) or (vulnerability_guide_offered and not vulnerability_guide_hint_given) or (scanning_exploitation_guide_offered and not scanning_exploitation_guide_hint_given) or (exploitation_guide_offered and not exploitation_guide_hint_given) or (privesc_guide_offered and not privesc_guide_hint_given) or (cyberchef_guide_offered and not cyberchef_guide_hint_given) or (infoleak_note_offered and not infoleak_note_hint_given)} [Send me a field guide.]
     -> field_guides
@@ -449,8 +456,8 @@ He does not want sympathy, he wants somebody to acknowledge he was right in writ
 And whatever you do, don't ask how he let this happen. He'll hand you the card and be no further use.
 
 + [What am I actually after from him?]
-    The server room card, and the credentials on the backup box. Shared admin login, never rotated -- Emma2018, Hospital1987, StCatherines.
-    He'll tell you if he trusts you. If not, it's on a sticky note on his monitor, which tells you everything about that department.
+    The server room card, and the credentials on the backup box. Shared admin login, never rotated. One of three.
+    He'll point you at it if he trusts you. It's on a sticky note on his monitor either way, which tells you everything about that department.
     -> support_hub
 
 + [Understood]
@@ -708,6 +715,13 @@ ENTROPY uses encoding for obfuscation and encryption for actual security. When y
 + [Understood]
     -> support_hub
 
+=== hint_wall_safe ===
+#speaker:agent_0x99
+~ hint_wall_safe_given = true
+No code for that one anywhere, and nobody to ask. That's what the sealed case behind the rack is for.
+Clamp it on, read the lights, close in.
+-> support_hub
+
 === hint_pin_safe ===
 #speaker:agent_0x99
 ~ hint_pin_given = true
@@ -889,7 +903,7 @@ That's the last decision of this mission.
 - tier == 3:
     {doors_asks > 1:Both carry badge numbers. Read them and find 4471.|SC-4471. Security keeps a rota, and every post keeps a log.}
 - tier == 4:
-    {doors_asks > 1:Every post keeps a log. The boardroom is a post too. Kim has the keypad code.|The rota accounts for Val and her number. It isn't 4471.}
+    {doors_asks > 1:Every post keeps a log. The boardroom is a post too. Kim's desk diary has the keypad code.|The rota accounts for Val and her number. It isn't 4471.}
 - else:
     {doors_asks > 1:Same badge. Who stands the boardroom post all night?|Put Ghost's badge number next to the boardroom post log.}
 }
@@ -963,7 +977,7 @@ That's the last decision of this mission.
 }
 {ransom_decision_made:
     Conference room. Press terminal. That's the last step.
-    {not found_boardroom_code: Keypad code's in Kim's desk diary, if you didn't ask her.}
+    {not found_boardroom_code: Keypad code's in Kim's desk diary.{pin_cracker_found: Or clamp the cracker on it.}}
     -> support_hub
 }
 You know what you're doing. Go.

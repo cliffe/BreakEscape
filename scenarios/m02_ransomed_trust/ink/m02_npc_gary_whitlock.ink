@@ -16,6 +16,10 @@
 //   FORCE     -- KO him; itemsHeld drops both card and lanyard. taskOnKO
 //                covers talk_to_gary, the handler covers the credentials.
 //
+// RAPPORT's best tier asks one question first (what did he cost the fix at). A wrong
+// answer gives the conditional tier without the cabinet permission; admitting you do
+// not know gives the conditional tier with it.
+//
 // So the "wrong" opening costs the player the lanyard, the credentials from
 // his mouth, and his good opinion. It never costs them the mission -- the
 // sticky note on his monitor carries the credentials regardless.
@@ -57,6 +61,8 @@ VAR insider_identified = false
 // Round 3 (best M4): retire the lanyard and sticky-note options once those are in hand.
 VAR staff_lanyard_obtained = false
 VAR password_hints_found = false
+VAR cost_checked = false             // the cost question has been answered (set inside each answer, so Esc re-asks)
+VAR cost_failed = false              // local: the player named a wrong figure this conversation
 
 // ===========================================
 // ENTRY
@@ -117,7 +123,7 @@ Gary Whitlock: You know.
 
 Narrator: He turns round properly for the first time.
 
-Gary Whitlock: Nobody's read them. Kim read the first one. Finance read the one with the number in it.
+Gary Whitlock: Nobody's read them. Kim read the first one. Finance read the one with the number in it. Eighty-five thousand.
 
 Gary Whitlock: After that it was "noted", and "noted", and "noted".
 
@@ -253,6 +259,9 @@ Gary Whitlock: Turns out being right about one thing buys you exactly one workin
 
 Gary Whitlock: So this is the only card in St Catherine's that opens anything tonight. And nobody can cut you your own. The issuing machine went with the rest.
 
+{gary_influence >= 25 and not cost_checked:
+    -> cost_check
+}
 {gary_influence >= 25:
     -> keycard_trusted
 }
@@ -267,24 +276,50 @@ Gary Whitlock: So this is the only card in St Catherine's that opens anything to
 ~ topic_passwords = true
 ~ cover_burned = true
 #complete_task:talk_to_gary
-#complete_task:obtain_password_hints
 #give_item:keycard:server_room_keycard
 
 Narrator: He takes it off over his head and puts it in your hand.
 
 Gary Whitlock: There. It's got my name on it, so don't make me look daft.
 
-Narrator: He peels a sticky note off the monitor bezel.
+Narrator: {password_hints_found: He glances at the bare patch on the bezel where the note was.|He taps the sticky note on the monitor bezel without peeling it off.}
 
-Gary Whitlock: And you'll want this.
-
-Gary Whitlock: Shared admin credential on the backup box. Never rotated. I know. I KNOW.
+Gary Whitlock: Shared admin credential on the backup box. Never rotated. It's on that note. Don't make me say them out loud.
 
 Gary Whitlock: It's on the list. The list is four years long, and the list is why we're here.
 
-Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you an SSH session.
-
 -> offer_cabinet
+
+=== cost_check ===
+Gary Whitlock: Before it goes round your neck. You talk like you've read them. #delivery: testing, not unkind
+Gary Whitlock: Go on then. What did I cost it at?
+
+* [Eighty-five thousand.]
+    ~ cost_checked = true
+    Gary Whitlock: Eighty-five. Yeah.
+    Gary Whitlock: You actually read them.
+    -> keycard_trusted
+* [I don't know the figure. I'd rather not guess.]
+    ~ cost_checked = true
+    -> cost_unknown
+* [A hundred and fifty thousand.]
+    ~ cost_checked = true
+    -> cost_wrong
+* [Three point two million.]
+    ~ cost_checked = true
+    -> cost_wrong
+
+=== cost_unknown ===
+Gary Whitlock: Eighty-five. It's in every one of them.
+Gary Whitlock: Read one before you quote me.
+-> keycard_conditional
+
+=== cost_wrong ===
+~ gary_influence = 20
+~ cost_failed = true
+# influence_decreased
+Gary Whitlock: That's the ransom. Or the scanner. Either way, you read the top of the pile.
+-> keycard_conditional
 
 === keycard_conditional ===
 ~ gave_keycard = true
@@ -301,6 +336,11 @@ Gary Whitlock: So if anybody asks, I gave it you. Don't get clever and say you f
 + [You have my word. It goes in my report exactly as it happened.]
     ~ gary_influence += 12
     # influence_increased
+    {cost_failed:
+        Gary Whitlock: We'll see.
+        ~ hub_quiet = true
+        -> hub
+    }
     Gary Whitlock: Then we're alright.
     -> offer_cabinet
 
@@ -379,7 +419,6 @@ Gary Whitlock: And now you've walked in with one of them in your hand.
 ~ topic_passwords = true
 ~ cover_burned = true
 #complete_task:talk_to_gary
-#complete_task:obtain_password_hints
 
 {not gave_keycard:
     ~ gave_keycard = true
@@ -388,11 +427,9 @@ Gary Whitlock: And now you've walked in with one of them in your hand.
     Gary Whitlock: Server room. Isolated reader. Only card in the building that still works.
 }
 
-Narrator: He peels the sticky note off the monitor bezel.
+Narrator: {password_hints_found: He glances at the bare patch on the bezel where the note was.|He nods at the sticky note on the monitor bezel.}
 
-Gary Whitlock: Shared admin credential on the backup box, never rotated. Emma2018, Hospital1987, StCatherines.
-
-Gary Whitlock: I know how that looks. Put it in the report. Put all of it in.
+Gary Whitlock: The backup box login's on that note. Never rotated. I know how that looks. Put it in the report. Put all of it in.
 
 -> offer_cabinet
 
@@ -567,13 +604,10 @@ Gary Whitlock: Fourteen years that hole's been there. Might as well get one usef
 
 === discuss_passwords ===
 ~ topic_passwords = true
-#complete_task:obtain_password_hints
 
-Narrator: He peels a curling sticky note off the monitor bezel and holds it up, embarrassed.
+Narrator: He jerks a thumb at a curling sticky note on the monitor bezel, embarrassed.
 
-Gary Whitlock: Shared admin credential on the backup box. Never rotated. Been on my list since 2021.
-
-Gary Whitlock: Emma2018. Hospital1987. StCatherines. One of those three gets you an SSH session.
+Gary Whitlock: Shared admin credential on the backup box. Never rotated. Been on my list since twenty twenty-one. It's all on there.
 
 Gary Whitlock: Go on, say it. It's a disgrace.
 
@@ -682,6 +716,8 @@ Gary Whitlock: Everything's down. So somebody picked up a phone and said words.
 ~ gave_lanyard = true
 #give_item:id_badge:gary_contractor_lanyard
 #set_global:staff_lanyard_obtained:true
+#set_global:lanyard_issued:true
+#set_global:gary_lanyard_issued:true
 
 Narrator: He digs a lanyard, still in its wrapper, out of the second drawer down.
 
@@ -749,7 +785,6 @@ Gary Whitlock: Whether she opens it for you is between you and her.
 
 + {not topic_passwords} [The backup server's on a shared credential. What is it?]
     ~ topic_passwords = true
-    #complete_task:obtain_password_hints
     Gary Whitlock: It's on the note on the monitor, where I've kept it for four years like the disgrace I am.
     Gary Whitlock: Help yourself. You've clearly got opinions about my housekeeping.
     ~ hub_quiet = true

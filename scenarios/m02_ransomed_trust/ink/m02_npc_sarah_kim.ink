@@ -8,7 +8,8 @@
 // system that grants authorisation is behind the ransom screen. That is the
 // line that makes the whole mission make sense, and it comes from her.
 //
-// She gives: the boardroom code, the pointer to Gary, a countersigned paper
+// She refuses the boardroom code (Security asked her to keep it shut) but it is in the
+// diary on her desk. She gives: the pointer to Gary, a countersigned paper
 // badge that opens nothing, and the fire-drill seed (she never approved it).
 //
 // Her big consequence choice is the board vote. advised_board_pay /
@@ -147,7 +148,7 @@ Dr. Sarah Kim: "Never once failed." That was the actual sentence. I said it out 
 
 === access_problem ===
 ~ access_explained = true
-#give_item:id_badge
+#give_item:id_badge:kim_countersigned_badge
 
 Dr. Sarah Kim: Now I disappoint you, and I'll be precise, because everyone I've told tonight assumes I'm being obstructive.
 
@@ -184,7 +185,7 @@ Dr. Sarah Kim: Gary has one. I don't.
     -> hub
 
 + [Then what have you actually got?]
-    Dr. Sarah Kim: A boardroom, a telephone and four hours.
+    Dr. Sarah Kim: A telephone, a dead terminal and four hours.
     ~ hub_quiet = true
     -> hub
 
@@ -240,7 +241,7 @@ Dr. Sarah Kim: Gary has one. I don't.
 + {not access_explained and not it_door_open} [I need to get into IT. What can you actually authorise?]
     -> access_problem
 
-+ {not found_boardroom_code} [{boardroom_code: The boardroom code again?|What's the code for the boardroom?}]
++ {not found_boardroom_code and not boardroom_code} [What's the code for the boardroom?]
     -> boardroom_code
 
 + [I need to get on.]
@@ -364,8 +365,9 @@ Dr. Sarah Kim: We put it down to a fault on the panel and moved on. We had a sca
     ~ hub_quiet = true
     -> hub
 
-// F3: the safe hint as an admission rather than assistance. Redundant with the estates
-// snag list, Sister Doyle and the lobby plaque -- so this is characterisation, not a gate.
+// F3: the safe hint as an admission rather than assistance. She gives the year's meaning,
+// not its location; the estates snag list, Sister Doyle and the lobby plaque carry the rest,
+// so this is characterisation, not a gate.
 === escrow_lead_in ===
 Dr. Sarah Kim: One thing. The offline key escrow. It's in a safe in the emergency equipment store, and the safe is the problem.
 -> escrow_safe
@@ -379,13 +381,13 @@ Dr. Sarah Kim: A four-digit keypad.
 Dr. Sarah Kim: Estates put it on the audit snag list. Three times. Item nineteen. I could give you the reference for most things by now.
 
 + [What's the code?]
-    Dr. Sarah Kim: The year we were founded. It's on the brass plaque in the lobby, at chest height.
+    Dr. Sarah Kim: The year we were founded. Never changed.
     Dr. Sarah Kim: Nobody ever quite got to item nineteen. Including me. Especially me.
     -> escrow_safe_out
 
 + [Three times, and it's still on the default.]
     Dr. Sarah Kim: Yes.
-    Dr. Sarah Kim: It's the founding year, on the plaque in the lobby. I'm saying it quickly because it doesn't sound better slowly.
+    Dr. Sarah Kim: The year we were founded. I'm saying it quickly because it doesn't sound better slowly.
     -> escrow_safe_out
 
 === escrow_safe_out ===
@@ -395,19 +397,9 @@ Dr. Sarah Kim: If those keys are still in there, they're the only thing in this 
 -> hub
 
 === boardroom_code ===
-// Round 1 (A3): a repeat ask gets the code and nothing else.
-{boardroom_code > 1:
-    Dr. Sarah Kim: Nought-four-one-seven.
-    ~ hub_quiet = true
-    -> hub
-}
-{topic_ransom_vote:
-    Dr. Sarah Kim: Nought-four-one-seven.
-    Dr. Sarah Kim: It's been the same since I arrived, and it's written in my desk diary. That tells you a lot about us.
-- else:
-    Dr. Sarah Kim: Nought-four-one-seven.
-    Dr. Sarah Kim: Ah. The board papers are in there, and you want to know what they knew. Go on. There's nothing in that room I'm proud of.
-}
+Dr. Sarah Kim: No. Security asked me to keep that room shut tonight. Crisis protocol.
+Dr. Sarah Kim: I said yes, because I've said yes to everything tonight.
+Narrator: Her eyes go to the diary open on her desk, and away again.
 ~ hub_quiet = true
 -> hub
 

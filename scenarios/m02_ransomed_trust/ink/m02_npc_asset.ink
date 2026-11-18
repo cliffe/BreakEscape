@@ -41,6 +41,8 @@ VAR asked_plainclothes = false
 VAR asked_badge = false
 VAR asked_drill_doors = false
 VAR read_handover_board = false
+VAR reeves_safe_opened = false // Synced: the player has read the drill override form from the wall safe
+VAR asked_override_form = false
 
 === start ===
 // Before the confronted check: the ambush sets insider_confronted as it starts, so
@@ -100,6 +102,12 @@ Graham Reeves: Anything you want to send from that terminal comes through me fir
     ~ asked_drill_doors = true
     Graham Reeves: Doors are Officer Okonkwo's department. Corridor, keys, the fire panel.
     Graham Reeves: I watch a telephone. I couldn't open a door in this building if I tried.
+    -> cover_hub
+
++ {reeves_safe_opened and not insider_identified and not asked_override_form} [Your name's on the drill overrides. Both of them. Nobody approved either.]
+    ~ asked_override_form = true
+    Graham Reeves: Somebody has to sign for these things when nobody else will. That's all a supervisor is, really.
+    Graham Reeves: You've been in Val's office. I'd put that back where you found it.
     -> cover_hub
 
 + {insider_badge_id_found and not inspected_asset_post and not asked_badge} [What badge number do you carry on this post?]
