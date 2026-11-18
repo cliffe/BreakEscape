@@ -29,9 +29,10 @@
  */
 
 import { walkBoxClear, pathClear, chairRect, localStandGrid, nearestCell, floodStandCells, sweepBlock } from './seat-box.js';
+import { COMPASS8, facingPointFrom } from './compass8.js';
 import { breathRows, breathDown, updateBreath as spriteUpdateBreath, endBreath, prefersReducedMotion } from './sprite-breath.js';
 
-export const COMPASS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
+export const COMPASS = COMPASS8;
 const REAR = new Set(['north', 'north-east', 'north-west']);
 
 const PLAYER_TO_COMPASS = {
@@ -321,7 +322,10 @@ export function isSeated() { return !!state; }
 export function isMounting() { return state?.phase === 'mount'; }
 export function currentSeat() { return state?.chair || null; }
 export function currentPose() { return state?.pose || null; }
-export function canRoll() { return state?.phase === 'seated' && state.seat.kind === 'swivel'; }
+/** A chair the map marked fixed (Tiled property `fixed`, rooms.js sets `fixedChair`): it never moves. */
+export function isFixed(chair) { return !!chair?.fixedChair; }
+
+export function canRoll() { return state?.phase === 'seated' && state.seat.kind === 'swivel' && !isFixed(state.chair); }
 
 /** Whether the player's avatar has seated frames (otherwise it stands on chairs). */
 export function canPlayerSit() {
@@ -623,7 +627,7 @@ export function standUp(spot = null, opts = {}) {
             let ux, uy;
             if (dist >= 1) { ux = (spot.x - from.x) / dist; uy = (spot.y - from.y) / dist; }
             else { const a = forwardRad(facing); ux = Math.cos(a); uy = Math.sin(a); }
-            chair.body.setVelocity(-ux * CHAIR_PUSH, -uy * CHAIR_PUSH);
+            if (!isFixed(chair)) chair.body.setVelocity(-ux * CHAIR_PUSH, -uy * CHAIR_PUSH);   // a fixed chair stays
         }
     }
 
@@ -926,6 +930,7 @@ function updateRollSound(moving) {
 /** Called right after the normal player movement each frame. */
 export function afterPlayerMovement() {
     updateGlides();
+    for (const c of window.chairs || []) if (c?.fixedChair && c.body) c.body.setVelocity(0, 0);   // safety net
     updateGhosts();
     if (!state) {
         updateRollSound(false);
@@ -935,7 +940,9 @@ export function afterPlayerMovement() {
     const player = window.player;
     if (window.playerHealth?.isKO?.()) { standUp(null, { step: false }); return; }
     if (state.phase === 'mount') { updateRollSound(false); advanceMount(); return; }
-    if (state.seat.kind === 'swivel') {
+    if (state.seat.kind === 'swivel' && isFixed(state.chair)) {
+        player.body.setVelocity(0, 0);   // nothing to roll
+    } else if (state.seat.kind === 'swivel') {
         player.body.velocity.x *= ROLL_SPEED;
         player.body.velocity.y *= ROLL_SPEED;
     }
@@ -951,7 +958,7 @@ export function afterPlayerMovement() {
 export function onMoveIntent() {
     pending = null;
     if (stepOff && !stepOff.proxy) endStep();
-    if (state && state.phase === 'seated' && state.seat.kind === 'static') standUp(null, { step: false });
+    if (state && state.phase === 'seated' && (state.seat.kind === 'static' || isFixed(state.chair))) standUp(null, { step: false });
 }
 
 // A chair tapped from out of reach: sit once the walk there ends in reach.
@@ -991,9 +998,14 @@ export function place() {
         }
         // Not rounded: the chair and the pose keep the driver's sub-pixel position, as the
         // walking player sprite does, so they don't shimmer a pixel against the camera.
-        const f = playerFeet(player);
-        chair.x = f.x - footOffset.x;
-        chair.y = f.y - footOffset.y;
+        if (isFixed(chair)) {
+            // A fixed chair stays put: the driver snaps to it instead
+            moveFeetTo(player, chair.x + footOffset.x, chair.y + footOffset.y);
+        } else {
+            const f = playerFeet(player);
+            chair.x = f.x - footOffset.x;
+            chair.y = f.y - footOffset.y;
+        }
         window.updateSpriteDepth?.(chair, chair.elevation || 0);
     } else if (player.direction !== COMPASS_TO_PLAYER[state.facing]) {
         // Static seats keep their facing (a conversation may have turned the driver).
@@ -1157,7 +1169,7 @@ export function fidgetStep(fd, now, { held = false, facing = 'south', rand = Mat
 /** Move a seated NPC's swivel chair along its current roll; `held` starts none and rolls back. */
 function fidgetChair(st, sprite, held) {
     const chair = st.chair;
-    if (st.seat.kind !== 'swivel' || !chair.body) return;
+    if (st.seat.kind !== 'swivel' || !chair.body || isFixed(chair)) return;
     const now = sprite.scene?.time?.now ?? performance.now();
     if (!st.fidget) st.fidget = { ...newFidget(now), home: { x: chair.x, y: chair.y } };
     const fd = st.fidget;
@@ -1268,6 +1280,7 @@ function physicsFps(obj) { return obj?.scene?.physics?.world?.fps || window.game
 /** Roll a swivel chair's foot to (x, y) with physics (it collides on the way); it stops where blocked. */
 export function glideChairFootTo(chair, x, y) {
     if (!chair?.body) return;
+    if (isFixed(chair)) { chair.body.setVelocity(0, 0); return; }   // a fixed chair never rolls; its sitter snaps to it
     chair.body.enable = true;
     glides.set(chair, { x, y, still: 0, last: Infinity, frames: 0 });
 }
@@ -1567,7 +1580,7 @@ function advanceSeatMove(behavior) {
             }
             const { chair, opts } = m;
             endSeatMove(behavior); // walking body back, reservation off: seatNPC takes the place
-            return seatNPC(behavior, chair, { toward: opts.toward, facePlayer: false, needsStop: opts.needsStop, standAt: opts.ref });
+            return seatNPC(behavior, chair, { toward: opts.toward, facing: opts.toward?.homeFacing, facePlayer: false, needsStop: opts.needsStop, standAt: opts.ref });
         }
         case 'step': {
             const r = npcWalkTick(behavior, m, m.target);
@@ -1592,7 +1605,7 @@ export function seatNPC(behavior, chair, opts = {}) {
     }
     let facing = seat.kind === 'static' ? seat.facing
         : snapFacing(opts.facing && COMPASS.includes(opts.facing) ? opts.facing : chairFacing(chair, seat), seat.valid);
-    if (seat.kind === 'swivel' && opts.toward) {
+    if (seat.kind === 'swivel' && opts.toward && !(opts.facing && COMPASS.includes(opts.facing))) {
         const f = bodyFeet(sprite);
         facing = snapFacing(compassToward(opts.toward.x - f.x, opts.toward.y - f.y), seat.valid);
     }
@@ -1697,7 +1710,7 @@ export function unseatNPC(behavior, opts = {}) {
                 b.immovable = false;
             }
         }
-        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop && !opts.instant) {
+        if (seat.kind === 'swivel' && chair.body?.enable && !needsStop && !opts.instant && !isFixed(chair)) {
             // Push the chair back, away from where the NPC steps
             const d = spot ? Math.hypot(spot.x - at.x, spot.y - at.y) : 0;
             let ux, uy;
@@ -2115,6 +2128,14 @@ function seatPreference(obj, npcRec, stop) {
     return stop?.post || sat.includes('work') ? 'fetch' : 'near';
 }
 
+/**
+ * A coordinate needsHome's `facing` (one of the 8 compass names) as a point 64 px off the feet, so it
+ * works wherever a facePointFor point does. null for a missing or unknown facing.
+ */
+export function homeFacingPoint(feet, facing) {
+    return facingPointFrom(feet, facing, 64);   // 0 = east, +y = south (compassToward's convention)
+}
+
 /** The point an NPC at this object faces: back along useFrom when given (square to the desk). */
 function facePointFor(obj, feet) {
     if (!obj) return null;
@@ -2183,7 +2204,7 @@ function contactTarget(chair, faceCompass) {
 
 /** Slide a swivel chair so its foot is at (x, y) (pulling it out to sit, tucking it in on leaving). */
 function slideChairFootTo(chair, x, y) {
-    if (!chair.body) return;
+    if (!chair.body || isFixed(chair)) return;
     const f = bodyFeet(chair);
     chair.x = Math.round(chair.x + (x - f.x));
     chair.y = Math.round(chair.y + (y - f.y));
@@ -2391,7 +2412,10 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const pref = seatPreference(obj, npcRec, stop);
     if (pref === 'stand') return false;
     const feet = needsSeatRef(bodyFeet(sprite), stop, ns.home);
-    const toward = facePointFor(obj, feet);
+    // No object to face (a coordinate home): the home's own `facing`, when it has one
+    const toward = facePointFor(obj, feet) || (stop.post ? homeFacingPoint(feet, ns?.home?.facing) : null);
+    // A coordinate home's own facing rides on the point, so the sitter takes it from the home, not from the chair-foot bearing
+    if (toward && !obj) toward.homeFacing = ns?.home?.facing;
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
     const free = c => !chairAtOtherPost({ x: c.obj.x + c.obj.width / 2, y: c.obj.y + c.obj.height }, feet, posts);
@@ -2416,7 +2440,7 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     // for good after his first fetch failed; OFFICE_LIFE_STUCK_RETURN.md round 5)
     if (pref !== 'fetch' || (retry && !postFetchRetryDue(stop, behavior._fetchTriedAt, now))) return false;
     const fetchable = chairsNear(behavior.roomId, feet.x, feet.y, FETCH_RANGE)
-        .filter(c => c.seat.kind === 'swivel' && c.obj.body && free(c)
+        .filter(c => c.seat.kind === 'swivel' && c.obj.body && !isFixed(c.obj) && free(c)
             && !chairClaimedByOther(c.obj, behavior.npcId, now))[0];
     if (!fetchable) return false; // work standing
     if (retry) {
@@ -2449,6 +2473,7 @@ export function tuckIn(chair, seat, facing, { glide = false } = {}) {
 
 /** Walk to a swivel chair, roll it back to `spot`, sit on it. */
 function startFetch(behavior, chair, spot, toward, stopKey) {
+    if (isFixed(chair)) return;   // a fixed chair is never fetched
     const foot = bodyFeet(chair);
     behavior._fetch = { chair, spot: { x: spot.x, y: spot.y }, toward, stopKey, phase: 'to_chair',
                         until: Date.now() + FETCH_TIMEOUT_MS, issued: false };

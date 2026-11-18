@@ -7,11 +7,11 @@
   "lab_sheet_url": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m08-the-mole/",
   "ui_theme": "spy",
   "id": "m08_the_mole",
-  "title": "Mission 8: The Mole",
+  "title": "The Mole",
   "subtitle": "Internal Investigation",
   "difficulty": 2,
   "tier": "Intermediate",
-  "estimatedDuration": "60-75 minutes",
+  "estimatedDuration": "70 minutes",
   "season": 1,
   "episodeNumber": 8,
   "requiredPrecedingMissions": [],
@@ -239,8 +239,7 @@
       "Nightshade tipped off before he was named"
     ]
   },
-  "developmentStatus": "Feature-complete Draft",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "estimated_duration_minutes": 70,
-  "lastUpdated": "2026-10-13"
+  "lastUpdated": "2026-11-18"
 }
