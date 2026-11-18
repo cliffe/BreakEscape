@@ -1,6 +1,6 @@
 # m04 office life: build-phase handover (after R3 and the dialogue review)
 
-Branch `build/ol-m04`, worktree `.claude/worktrees/p-ol-m04`, head 022235857 when written. Keyless server on :3097, puma PID 2162290, started from this worktree. Stop it by that PID when the live work is done.
+Branch `build/ol-m04`, worktree `.claude/worktrees/p-ol-m04`, head ff6d8e6b0 (main merged in, 18 November) when last updated. Keyless server on :3097, puma PID 2162290, started from this worktree. Stop it by that PID when the live work is done.
 
 ## Done this session
 
@@ -15,11 +15,19 @@ Branch `build/ol-m04`, worktree `.claude/worktrees/p-ol-m04`, head 022235857 whe
 
 ## Open (in order)
 
-1. **KO-route playthrough unfinished.** Game 8082 reached the workshop, with Joanne KO'd and Ibrahim untouched; Ibrahim gave the curt line twice. Resume steps are in `PLAYTHROUGH_KO.md` "Retry". Next: the reload check, flags, print lift, plant, Static, Voltage, ESD, "Bring me in", credits (expect "OFFICE STAFF: hurt, and that's on you", with no "ALL THIRTEEN"), then verify-run. Drive only 8082. My relaunch of it was refused at the concurrent-agent limit.
-2. **R4 delta review (Sonnet)** over `da3ece382..HEAD`. That covers the R3 fixes, the dialogue fixes and the playthrough docs. Then R5, unless clean. A major sends the next round back to opus55.
-3. Still-open minors: the L8 player-KO Restart case, run live; the five-try counts (R3 m3); the user's yes for the LIVE_PROOF_1 `--set` deviation (R2 m3); a cross-mission check of the `#exit_conversation` then `-> DONE` re-talk bug (R3 m5, for the integrator); Joanne's bark landing unread while a phone call is open in another room (clone run, minor, maybe intended); a hostile newcomer is close to the player's reload spawn (`PLAYTHROUGH_KO.md` first try, minor, needs a design view).
-4. **AC0's instruction (user, via AC0): "Implement these using your best judgement."** Once the review loop and the dialogue review are clean, treat the wording as signed off. Then voice every new line with tts-audio and re-voice the HaX head-count line (`ink/m04_closing_debrief.ink:438`), with 0 wasted clips and a listen-check by transcript. Then strip model names from the repo files, commit, and report the hash to AC0. Not started.
-5. Final static checks on the last commit: the validator, the `--office-summary` diff, the lock/key diff and the positions diff.
+Status on 18 November: main (dae6589ee) merged into the branch cleanly as ff6d8e6b0. On the merged head: route suite 29 pass / 13 fail, the same 13 as the base (`REGRESSION.md`); validator 0 errors, 32 warnings; dialoguelint unchanged (line-len 1, blank-reentry 2, none in the newcomer files). A scratch-path line in `BUILD_LOG.md` was reworded. No subagent could be started this session (concurrent-agent limit), so items 1 to 3 below were not run.
+
+1. **KO-route playthrough unfinished.** Start a fresh game rather than resuming 8082. Recipe: `PLAYTHROUGH_KO.md` "Retry (game 8082)" for the start to the workshop, then `PLAYTHROUGH_CLONE.md` "Continuation" for flags, print, plant door, Static, Voltage, ESD, call-in, debrief (picks from `r6_vance_ko.json`) and credits. Include a mid-mission reload after the workshop. Expect "OFFICE STAFF: hurt, and that's on you" and no "ALL THIRTEEN"; record the debrief head-count line. Write it up as "Retry 3" in `PLAYTHROUGH_KO.md`.
+2. **L8 player-KO Restart, live (R3 m3).** Fresh game, strike Ibrahim until hostile, let him knock the player out, Restart, then talk to Ibrahim twice: calm, seated, curt line once per talk. Write `LIVE_PROOF_8.md`.
+3. **R4 delta review** over `da3ece382..HEAD` (R3 fixes, dialogue fixes, playthrough docs; the main merge is not part of the build). Then R5, unless R4 finds nothing above minor.
+4. **Voicing**, after a clean R4: the 24 new clips (table below) plus the HaX head-count re-voice at `ink/m04_closing_debrief.ink:438`, with the tts-audio skill; move the old "Eleven" clip to `tmp/delete/`. The dialogue review of the new lines is done; re-run it only on lines changed after it.
+5. Final static checks on the last commit: `--office-summary` diff, lock/key diff and positions diff (validator and dialoguelint done on ff6d8e6b0, above).
+
+Still-open minors, with the outcome proposed for each:
+- R3 m3 five-try counts (L1, L2/L7, phone evacuation, seated attack at 2, 2, 2, 1): propose accepting them at that count. Each case passed every time it ran, the newcomer talk and KO paths are also covered by the deterministic route files r41 and r42, and the L8 Restart run (item 2) adds one more KO case.
+- R3 m6: R2 m3 (`--set` deviation) is closed, because AC0 accepted it as a proof aid on 18 November; R2 m5 (probe-library id guard) stays a tooling note for the integrator. R2 m2 and m4 were closed by `LIVE_PROOF_7.md`.
+- R3 m5, the cross-mission `#exit_conversation` then `-> DONE` re-talk question: with AC0, another agent is scanning other missions. Nothing to do here.
+- Joanne's bark unread while a phone call is open in another room, and a hostile newcomer near the reload spawn: minor, design view for AC0.
 
 ## Wording sign-off list (as built at 022235857; text in `DIALOGUE_SAMPLE.md`)
 

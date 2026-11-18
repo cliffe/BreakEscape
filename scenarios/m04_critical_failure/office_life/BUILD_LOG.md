@@ -37,7 +37,7 @@ All numbers below are measured unless marked otherwise. Method: fresh game per r
 
 Static checks after the posts edit: validator 0 errors, 33 warnings (unchanged from slice A); `lock_key_diff.rb` vs `baseline_locks.json` empty (regenerated `dungeon_graph.html` and `.md` reverted with `git checkout`); `--office-summary` diff vs `v1_summary_base.txt` is only the two added NPCs (identical to `v1_summary_build.txt`); positions diff vs `positions_base.txt` is only the added `reception_cooler` and `ops_kettle` rows.
 
-Probe script (reaches the kettle state and measures pairs): `/tmp/claude-1000/-home-cliffe-Files-Projects-Code-BreakEscape-BreakEscape/4ecd98f2-4e95-460a-a7ea-2031ffddfff5/scratchpad/kettle.mjs <game id>` (needs `lib.mjs` beside it).
+Probe script (reaches the kettle state and measures pairs): a session scratch script, `kettle.mjs <game id>` with `lib.mjs` beside it, not kept in the repo.
 
 ## Build review R1 outcomes (0 B, 2 M, 5 m)
 
