@@ -1224,7 +1224,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "condition": "value === true",
               "onceOnly": true,
               "setGlobal": { "cyberchef_guide_offered": true },
-              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is Base64. Paste it into the CyberChef workstation in your kit. Decoding guide on request." }
+              "sendTimedMessage": { "delay": 2000, "message": "That card in the go-bag is an encoding, not encryption. The CyberChef workstation in your kit will read it. Decoding guide on request." }
             },
             <%# operatives_defeated counter, keyed on npc_ko:<id>. History: in pass 2
                 globalVarOnKO wrote operative_*_defeated without emitting
@@ -1556,7 +1556,9 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             { "eventPattern": "global_variable_changed:robert_vance_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "global_variable_changed:security_guard_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } },
-            { "eventPattern": "global_variable_changed:racks_vented", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } }
+            { "eventPattern": "global_variable_changed:racks_vented", "condition": "value === true", "onceOnly": true, "setGlobal": { "aes_staff_off": true, "aes_staff_evacuated": true } },
+            <%# Blind m04: Static is a live threat all the way to the button once he turns hostile, and the one-off fight text above is spent on an earlier fight. Appended last so no saved onceOnly index moves. %>
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'operative_static' && data.isHostile === true && data.restored !== true", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Static's turned on you, and he'll follow you to the button. Put him down first, or stay on your feet and block: Q for fists, then E or click.", "skipIfGlobal": "operative_static_defeated" } }
           ]
         },
         {
