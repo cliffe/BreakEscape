@@ -966,9 +966,9 @@ export default class NPCManager {
     // Mid-fight a conversation does not take over the screen: it waits in the queue until the
     // fight is over (_combatHold). An auto-challenge is stale by then, so it is dropped (it
     // re-fires on the next sighting). The player's own phone never comes through here.
-    if (this._combatHold()) {
+    if (this._combatHold(conv)) {
       if (conv.dropIfBusy) {
-        console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the player is in combat (auto-challenge)`);
+        this._dropForCombat(conv);
         return;
       }
       this._deferForCombat(conv);
@@ -1006,13 +1006,15 @@ export default class NPCManager {
         // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
         // to the queue so it is not lost.
         // A fight started during the start delay: wait for it to end
-        if (this._combatHold()) {
+        if (this._combatHold(conv)) {
           this._scriptedCall = null;
           if (conv.dropIfBusy) {
+            this._dropForCombat(conv);
             if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
             return;
           }
-          this._deferForCombat(conv);
+          // It held the slot, so it keeps its place at the head of the line (R1 m2)
+          this._deferForCombat(conv, { front: true });
           return;
         }
         if (window.MinigameFramework?.currentMinigame) {
@@ -1125,30 +1127,109 @@ export default class NPCManager {
     this._openScriptedConversation({ ...conv, beforeOpen: null });
   }
 
-  /** True while the player is in a fight (player-damage-interrupt.js playerInCombat). */
-  _combatHold() {
+  /**
+   * True while the player is in a fight (player-damage-interrupt.js playerInCombat). A
+   * conversation marked combatExempt (an NPC's own knock-out scene: the fight it ended) is never
+   * held by it and keeps the cut-in it had before the hold existed.
+   */
+  _combatHold(conv = null) {
+    if (conv?.combatExempt) return false;
     try { return !!window.playerInCombat?.(); } catch (e) { return false; }
+  }
+
+  /** An auto-challenge met a fight: dropped, and its sighting is re-armed so it fires after the fight. */
+  _dropForCombat(conv) {
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the player is in combat (auto-challenge)`);
+    try { window.sightChallengeWatcher?.rearm?.(conv.npcId); } catch (e) { /* cosmetic */ }
+  }
+
+  /**
+   * "Name is calling", "Name sent a message" or "Name wants to talk to you", once per held
+   * contact. kind: 'call' | 'message' | 'talk'.
+   */
+  _toastHeld(npcId, kind) {
+    const name = this.getNPC(npcId)?.displayName || npcId;
+    const what = kind === 'call' ? 'is calling'
+      : kind === 'message' ? 'sent a message' : 'wants to talk to you';
+    try { window.showNotification?.(`${name} ${what}. It opens when the fight is over.`, 'info', 'Incoming', 4000); } catch (e) { /* cosmetic */ }
   }
 
   /**
    * Hold a scripted conversation until the fight is over. It joins the queue (the pump opens it
    * once no fight, minigame or other scripted scene is up) and the player is told once, by a
    * toast, that the contact is trying to reach them. A conversation carries its story in the
-   * minigame, so there is no thread row to badge before it opens.
+   * minigame, so there is no thread row to badge before it opens. A second identical one (same
+   * contact, scene and trigger) queued during the same fight is dropped. Before it opens, its
+   * recheck (conv.recheck, from the event mapping) runs again: the NPC may have been knocked out
+   * or hidden, or the mapping's condition may be false by now, in the long wait.
+   * @param {object} conv
+   * @param {{ front?: boolean }} [opts] front: it goes to the head (it held the slot already)
    */
-  _deferForCombat(conv) {
-    const first = !this._scriptedCallQueue.includes(conv);
+  _deferForCombat(conv, opts = {}) {
+    if (this._scriptedCallQueue.some(q => q !== conv && q.combatHeld && q.npcId === conv.npcId &&
+        q.sceneType === conv.sceneType && q.label === conv.label)) {
+      console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the same one is already waiting out the fight`);
+      return;
+    }
     console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) deferred: the player is in combat`);
-    if (first) {
-      this._scriptedCallQueue.push(conv);
-      if (!conv.combatNotified) {
-        conv.combatNotified = true;
-        const name = this.getNPC(conv.npcId)?.displayName || conv.npcId;
-        const what = conv.sceneType === 'phone-chat' ? 'is calling' : 'wants to talk to you';
-        try { window.showNotification?.(`${name} ${what}. It opens when the fight is over.`, 'info', 'Incoming', 4000); } catch (e) { /* cosmetic */ }
+    conv.combatHeld = true;
+    if (typeof conv.recheck === 'function' && !conv.recheckWrapped) {
+      const inner = conv.beforeOpen;
+      conv.recheckWrapped = true;
+      conv.beforeOpen = () => {
+        let valid = true;
+        try { valid = conv.recheck() !== false; } catch (e) { valid = true; }
+        if (!valid) {
+          console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped at open: no longer valid after the wait`);
+          return false;
+        }
+        return inner ? inner() : undefined;
+      };
+    }
+    if (opts.front) this._scriptedCallQueue.unshift(conv); else this._scriptedCallQueue.push(conv);
+    let voiced = false;
+    try { voiced = conv.sceneType === 'phone-chat' && conv.params?.()?.voiced === true; } catch (e) { /* cosmetic */ }
+    this._toastHeld(conv.npcId, voiced ? 'call' : (conv.sceneType === 'phone-chat' ? 'message' : 'talk'));
+    this._pumpScriptedCallQueue();
+  }
+
+  /**
+   * The re-check a combat-held mapping conversation runs when it finally opens. False when the
+   * NPC is gone, hidden by a mapping, knocked out (except for its own knock-out event), or
+   * newly hostile, or when the mapping's condition no longer holds. The condition is read with
+   * the mapping's own setGlobal writes put back for the moment (it has already written its
+   * latch, and a condition such as `!globalVars.x` or `x === true` would read its own writes).
+   */
+  _heldMappingStillValid(npcId, eventPattern, config, eventData, ctx = {}) {
+    const npc = this.getNPC(npcId);
+    if (!npc || this.npcs?.has?.(npcId) === false) return false;
+    if (this.isHiddenByMapping?.(npcId)) return false;
+    const hs = window.npcHostileSystem;
+    if (npc.npcType === 'person' && !ctx.ownKO) {
+      if (hs?.isNPCKO?.(npcId)) return false;
+      if (hs?.isNPCHostile?.(npcId) && !ctx.wasHostile) return false;
+    }
+    if (config.condition) {
+      const globals = window.gameState?.globalVariables;
+      const own = ctx.ownWrites || {};
+      const saved = [];
+      try {
+        if (globals) {
+          for (const [k, w] of Object.entries(own)) {
+            if (globals[k] === w.wrote) { saved.push([k, globals[k]]); globals[k] = w.prev; }
+          }
+        }
+        const ok = typeof config.condition === 'function'
+          ? !!config.condition(eventData, npc)
+          : !!safeEvaluateCondition(config.condition, eventData);
+        if (!ok) return false;
+      } catch (e) {
+        return true;
+      } finally {
+        if (globals) for (const [k, v] of saved) globals[k] = v;
       }
     }
-    this._pumpScriptedCallQueue();
+    return true;
   }
 
   // A queued conversation opens when none is starting or open, no minigame is open
@@ -1162,14 +1243,20 @@ export default class NPCManager {
       this._scriptedCallTimer = null;
       if (!this._scriptedCallQueue.length) return;
       const framework = window.MinigameFramework;
-      const head = this._scriptedCallQueue[0];
+      // A fight holds the line, but a conversation exempt from it (an NPC's own knock-out scene)
+      // goes ahead of the held ones; the held ones keep their order
+      let at = 0;
       if (this._combatHold()) {
-        this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
-        return;
+        at = this._scriptedCallQueue.findIndex(q => q.combatExempt);
+        if (at < 0) {
+          this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
+          return;
+        }
       }
+      const head = this._scriptedCallQueue[at];
       if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
           head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
-        this._scriptedCallQueue.shift();
+        this._scriptedCallQueue.splice(at, 1);
         this._interruptAndOpen(head, 'the open minigame (queued call)');
         return;
       }
@@ -1178,7 +1265,7 @@ export default class NPCManager {
         this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
         return;
       }
-      const conv = this._scriptedCallQueue.shift();
+      const conv = this._scriptedCallQueue.splice(at, 1)[0];
       this._scriptedCall = { npcId: conv.npcId, minigame: null };
       this._openScriptedConversation(conv);
     };
@@ -1535,8 +1622,17 @@ export default class NPCManager {
     const opensMinigame = !!config.openMinigame && !opensConversation;
     // A ring mapping's trigger is saved when the call is offered, not when it closes: from
     // then the beat lives in the ringer (plan 2.7). This is the one place a trigger is persisted.
-    const isRing = !!config.ring && config.conversationMode === 'phone-chat' && npc.npcType === 'phone'
+    const ringerOffers = config.conversationMode === 'phone-chat' && npc.npcType === 'phone'
       && typeof window.phoneRinger?.offer === 'function';
+    // This NPC's own knock-out event: its scene is the fight's result and is never held by it
+    const ownKOEvent = eventPattern.startsWith('npc_ko') &&
+      (eventPattern === `npc_ko:${npcId}` || eventData?.npcId === npcId);
+    // A voiced call that meets a fight goes to the ringer: it holds the offer while the fight
+    // lasts and saves it as a pending call, so a reload (a KO and Restart) still brings it back.
+    // The queue holds only what a reload may lose (text threads, person chats).
+    const heldAsCall = ringerOffers && !config.ring && config.voiced === true && !ownKOEvent &&
+      this._combatHold();
+    const isRing = (!!config.ring && ringerOffers) || heldAsCall;
     if ((config.once || config.maxTriggers) && ((!opensConversation && !opensMinigame) || isRing)) triggered.persist = true;
     this.triggeredEvents.set(eventKey, triggered);
     const persistOnClose = (config.once || config.maxTriggers) && opensConversation && !isRing
@@ -1548,12 +1644,15 @@ export default class NPCManager {
     // own latch does not block its twin (or the same trigger later) for a ring that never happened.
     // Keep what the mapping wrote too, so the restore can skip a key something else has since changed.
     let ringSetGlobalRestore = null;
+    const ownWrites = {};   // what this mapping wrote, for the held conversation's re-check
+    const wasHostile = !!window.npcHostileSystem?.isNPCHostile?.(npcId);
     if (config.setGlobal && window.gameState?.globalVariables) {
       if (isRing) ringSetGlobalRestore = {};
       let globalChanged = false;
       Object.entries(config.setGlobal).forEach(([varName, value]) => {
         const oldValue = window.gameState.globalVariables[varName];
         if (oldValue !== value) globalChanged = true;
+        ownWrites[varName] = { wrote: value, prev: oldValue };
         if (isRing) ringSetGlobalRestore[varName] = { wrote: value, prev: oldValue };
         window.gameState.globalVariables[varName] = value;
         console.log(`🌐 Event setGlobal: ${varName} = ${value}`);
@@ -1819,10 +1918,14 @@ export default class NPCManager {
     // the handler (setGlobal, completeTask, timed messages, ...) has already run
     // above, so missions that rely on KO handlers keep working. The NPC's own KO
     // event is exempt: m01 Derek and m05 Torres open their KO scene from it.
+    // What a conversation held by a fight carries (_deferForCombat): the re-check at open, and the
+    // exemption for the NPC's own knock-out scene
+    const heldCtx = {
+      combatExempt: ownKOEvent,
+      recheck: () => this._heldMappingStillValid(npcId, eventPattern, config, eventData, { ownKO: ownKOEvent, wasHostile, ownWrites })
+    };
     if ((config.conversationMode === 'person-chat' || config.conversationMode === 'video-call') &&
         npc.npcType === 'person') {
-      const ownKOEvent = eventPattern.startsWith('npc_ko') &&
-        (eventPattern === `npc_ko:${npcId}` || eventData?.npcId === npcId);
       if (!ownKOEvent && window.npcHostileSystem?.isNPCKO?.(npcId)) {
         console.log(`💤 ${npcId} is knocked out - skipping ${config.conversationMode} for ${eventPattern}`);
         return;
@@ -1897,12 +2000,13 @@ export default class NPCManager {
         // the walk back). They are dropped if the player is busy when they would open: the
         // NPC re-challenges on the next sighting. Scripted story conversations keep deferring
         // (queued, never lost — m10 R3 / F25).
-        const dropIfBusy = /_in_view/.test(eventPattern);
+        const dropIfBusy = /_in_view|^player_spotted/.test(eventPattern);
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
           dropIfBusy,
+          ...heldCtx,
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
           beforeOpen: () => {
             console.log(`✅ Starting person-chat minigame for ${npcId}`);
@@ -1988,6 +2092,7 @@ export default class NPCManager {
           label: eventPattern,
           sceneType: 'person-chat',
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          ...heldCtx,
           interrupt: config.interrupt === true,
           // skipIfGlobal: a call that waited (behind an open minigame or another call) is
           // dropped if the global became set meanwhile (m02 P9).
@@ -2030,7 +2135,7 @@ export default class NPCManager {
           const outcome = window.phoneRinger.offer({
             npcId: npc.id,
             knot: knotToUse,
-            ring: config.ring,
+            ring: config.ring || true,
             disableClose: config.disableClose || false,
             resume: config.resume === true,
             callLabel: config.callLabel || null,
@@ -2050,6 +2155,7 @@ export default class NPCManager {
         this._queueScriptedPhoneCall({
           npcId: npc.id,
           eventPattern,
+          ...heldCtx,
           params: () => ({
             npcId: npc.id,
             phoneId: npc.phoneId || 'player_phone',

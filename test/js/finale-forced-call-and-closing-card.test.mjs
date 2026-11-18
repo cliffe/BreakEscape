@@ -51,13 +51,14 @@ function makeDispatcher() {
     };
 }
 
-function withMinigames(fn) {
+function withMinigames(fn, { combat = false } = {}) {
     const started = [];
     window.MinigameFramework = { currentMinigame: null, startMinigame: (...a) => started.push(a), endMinigame() {} };
     const realSetTimeout = globalThis.setTimeout;
-    // The hit test above stamps a hit, which holds scripted calls for a few seconds (combat wait)
+    // The hit test above stamps a hit, which holds scripted calls for a few seconds (combat wait),
+    // so each case says whether a fight is on (off by default; the combat case below turns it on)
     const realCombat = window.playerInCombat;
-    window.playerInCombat = () => false;
+    window.playerInCombat = () => combat;
     globalThis.setTimeout = (cb) => { cb(); return 0; };   // run the 500 ms scene delay now
     try { fn(started); } finally {
         globalThis.setTimeout = realSetTimeout;
@@ -138,6 +139,38 @@ test('re-ring: conversation_closed reopens an unfinished call without a knot, fo
         m.eventDispatcher.emit('conversation_closed:hax', { npcId: 'hax' });
         assert.equal(started.length, 2);
     });
+});
+
+test('a forced call waits out a fight, then comes (combat on, real hold)', () => {
+    window.gameState = { globalVariables: { call_started: true, call_done: false } };
+    const m = new NPCManager(makeDispatcher(), null);
+    m.registerNPC({
+        id: 'hax', npcType: 'phone', phoneId: 'player_phone', currentKnot: 'hub',
+        eventMappings: [{ eventPattern: 'conversation_closed:hax', conversationMode: 'phone-chat',
+            targetKnot: 'forced_call', disableClose: true, cooldown: 0, resume: true }]
+    });
+    const started = [];
+    window.MinigameFramework = { currentMinigame: null, startMinigame: (...a) => started.push(a), endMinigame() {} };
+    const realSetTimeout = globalThis.setTimeout;
+    const realCombat = window.playerInCombat;
+    const timers = [];
+    globalThis.setTimeout = (cb) => { timers.push(cb); return timers.length; };
+    let fighting = true;
+    window.playerInCombat = () => fighting;
+    const runTimers = (n) => { for (let i = 0; i < n && timers.length; i++) timers.shift()(); };
+    try {
+        m.eventDispatcher.emit('conversation_closed:hax', { npcId: 'hax' });
+        runTimers(10);
+        assert.equal(started.length, 0, 'held while the fight is on');
+        fighting = false;
+        runTimers(10);
+        assert.equal(started.length, 1, 'opens once it is over');
+        assert.equal(started[0][2].disableClose, true);
+    } finally {
+        globalThis.setTimeout = realSetTimeout;
+        window.playerInCombat = realCombat;
+        delete window.MinigameFramework;
+    }
 });
 
 test('re-ring on leaving a room: the room_exited payload and globals gate it', () => {
