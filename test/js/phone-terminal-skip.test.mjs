@@ -508,3 +508,19 @@ test('handleChoice: the reply types out, a click skips it, and the skip state re
         assert.equal(r.mg._skipAll, false, 'reset at the end');
     } finally { c.restore(); }
 });
+
+test('call screen: a real Space and Enter keydown on the document, through setupEventListeners, skip the clip', () => {
+    const r = callRig();
+    for (const el of ['contactList', 'conversationHeader', 'backButton']) r.ui.elements[el] = document.createElement('div');
+    r.mg._eventListeners = [];
+    r.mg.handleKeyPress = () => {};
+    r.mg.setupEventListeners();
+    try {
+        for (const k of [' ', 'Enter']) {
+            r.again();
+            const before = r.skips();
+            document.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+            assert.equal(r.skips(), before + 1, `${JSON.stringify(k)} on the document skipped the clip`);
+        }
+    } finally { baseCleanup(r.mg); }
+});

@@ -213,7 +213,7 @@ export default class PhoneChatUI {
         }
         const messages = view.querySelector('#messages-container');
         messages?.setAttribute('aria-live', 'polite');
-        messages?.setAttribute('title', 'Click to skip the line');
+        messages?.setAttribute('title', 'Click, Space or Enter to skip the line');
     }
 
     /** Start the call's running time from zero. */
