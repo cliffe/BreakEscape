@@ -54,21 +54,25 @@ const sofaBox = out.before.sofaBox;
 out.walkToEdge = await page.evaluate(([x, y]) => window.__test.moveTo(x, y, { timeoutMs: 15000 }), [sofaBox[0] - 14, miniaTap[1] + 24]);
 await t(500);
 out.atEdge = await info(); await shot('1-at-sofa-edge');
+// Ade's club chair is also in reach from the sofa edge, so a tap can open the who-do-you-mean menu (R2 m1: the tap
+// reach matches E). Whenever a tap leaves that menu open, pick Mina from it and record the menu text.
+const pickMina = async (wait, tag) => {
+    if (wait.blocking?.id !== 'be-interaction-menu-overlay') return;
+    out[tag + 'Menu'] = wait.blocking.text;
+    out[tag + 'MinaPicked'] = await page.evaluate(() => { const b = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].find(e => /Mina/.test(e.textContent)); if (b) { b.click(); return true; } return false; });
+    out[tag + 'PickWait'] = await waitUi();
+};
 out.tap = await page.evaluate(([x, y]) => window.__test.clickAt(x, y), miniaTap);
 out.tapWait = await waitUi();                       // the first tap walks to her; chat opens only if it was already in reach
-// Ade's club chair is also in reach from this edge, so the tap can open the who-do-you-mean menu (R2 m1: the tap
-// reach matches E). Record it and pick Mina from it.
-if (out.tapWait.blocking?.id === 'be-interaction-menu-overlay') {
-    out.tapMenu = out.tapWait.blocking.text;
-    await page.evaluate(() => { const b = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].find(e => /Mina/.test(e.textContent)); if (b) b.click(); });
-    out.tapPickWait = await waitUi();
-}
+await pickMina(out.tapWait, 'tap');
 out.afterTap = await info(); out.logTap = await page.evaluate(() => window.__log.slice());
 await shot('2-after-tap');
 const closeChat = async () => { const u = (await info()).ui; if (u.minigame || u.blocking) { await page.evaluate(() => { try { window.MinigameFramework?.endMinigame?.(true); } catch (e) {} }); await t(600); } };
 if (out.tapWait.none) {
     out.tap2 = await page.evaluate(([x, y]) => window.__test.clickAt(x, y), miniaTap);   // arrived beside her: tap again
-    out.tap2Wait = await waitUi(); await shot('2b-second-tap');
+    out.tap2Wait = await waitUi();
+    await pickMina(out.tap2Wait, 'tap2');
+    await shot('2b-second-tap');
 }
 await closeChat();
 // Step off to the sofa edge again, then E (from her chair: sofa in reach, she maybe not)
