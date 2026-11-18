@@ -79,8 +79,11 @@ test('the lock frame wraps its content on phones (auto height, scoped to the loc
     // window the frame has to shrink and scroll by itself, or the shell scrolls too)
     const blocks = [...css.matchAll(/@media([^{]*)\{((?:[^{}]*\{[^}]*\})*)\s*\}/g)]
         .filter((b) => /\.minigame-game-container:has\(> #phaser-game-container\)\s*\{[^}]*height:\s*auto/.test(b[2]));
-    assert.ok(blocks.length >= 1, 'a lock-scoped game container rule exists');
+    assert.equal(blocks.length, 1, 'exactly one lock-scoped game container rule');
+    const anywhere = css.match(/\.minigame-game-container:has\(> #phaser-game-container\)\s*\{[^}]*(?:^|[\s;{])height:\s*auto/gm) || [];
+    assert.equal(anywhere.length, 1, 'no second, unscoped auto-height copy of the rule');
     for (const b of blocks) {
+        assert.doesNotMatch(b[1], /,/, 'no OR-list that re-enables it in short windows');
         assert.match(b[1], /max-width:\s*768px/);
         assert.match(b[1], /min-height:\s*561px/, 'not applied in short windows');
     }
