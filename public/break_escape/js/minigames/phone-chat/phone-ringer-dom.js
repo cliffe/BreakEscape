@@ -103,11 +103,15 @@ export function installPhoneRinger(win = window) {
         if (!a || a === doc.body || !layer.contains(a)) return null;
         // Same rule as the minigame manager's opener restore: only keyboard focus is carried over,
         // because a button focused by a mouse click makes Space and Enter count as a press on it.
-        let kb = false;
-        try { kb = !!a.matches?.(':focus-visible'); } catch (e) { /* selector unsupported */ }
+        // Where :focus-visible is not supported (old Safari) the selector throws: assume keyboard, so
+        // a keyboard user keeps focus. A mouse user on such a browser gets a harmless focus move.
+        let kb = true;
+        try { kb = !!a.matches?.(':focus-visible'); } catch (e) { /* selector unsupported: keep true */ }
         const box = a.closest?.('.incoming-call');
         return {
             kb,
+            // Hang up (the pill) shares the incoming-call-decline class with Decline, so moving from the
+            // pill to the banner for the same caller restores Decline. That is intended: Decline is the safe control.
             which: a.classList?.contains('incoming-call-decline') ? 'decline' : 'answer',
             npcId: box?.dataset?.npcId ?? null,
         };
@@ -131,6 +135,34 @@ export function installPhoneRinger(win = window) {
         btn.addEventListener('keydown', (e) => { if (e.repeat) e.preventDefault(); });
     }
 
+    /**
+     * After focus hops to a new control while Enter or Space is still held, the next auto-repeat keydown
+     * would activate that control over and over. Swallow repeats of those keys until the key is released
+     * (or about 1 s passes). One listener at a time; a fresh, non-repeat keydown is never touched.
+     */
+    let repeatSwallow = null;
+    function swallowHeldKeys() {
+        if (repeatSwallow) repeatSwallow();
+        const onKeydown = (e) => {
+            if (e.repeat && (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar')) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+        const onKeyup = (e) => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') done(); };
+        let timer = null;
+        function done() {
+            doc.removeEventListener('keydown', onKeydown, true);
+            doc.removeEventListener('keyup', onKeyup, true);
+            if (timer !== null) { try { win.clearTimeout(timer); } catch (e) { /* ignore */ } }
+            if (repeatSwallow === done) repeatSwallow = null;
+        }
+        doc.addEventListener('keydown', onKeydown, true);
+        doc.addEventListener('keyup', onKeyup, true);
+        try { timer = win.setTimeout(done, 1000); } catch (e) { /* no timers: the keyup removes it */ }
+        repeatSwallow = done;
+    }
+
     /** The layer lost its focused control with no pill to take over: hand focus to the open minigame, if any. */
     function focusOpenMinigame() {
         const m = openMinigame();
@@ -141,7 +173,8 @@ export function installPhoneRinger(win = window) {
                 || Array.from(root.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
                     .filter((n) => !n.disabled);
             // The X is the last thing to land on: Enter there would close the panel
-            (items.find((n) => n.id !== 'minigame-close') || items[0])?.focus?.();
+            const target = items.find((n) => n.id !== 'minigame-close') || items[0];
+            if (target) { target.focus?.(); swallowHeldKeys(); }
         } catch (e) { /* no focus in this environment */ }
     }
 
@@ -198,6 +231,10 @@ export function installPhoneRinger(win = window) {
         }
         hidePhonePanel();
         const lost = takeLostFocus();
+        // A mouse-focused button is dropped to the body before it is removed (blurring afterwards does nothing)
+        if (lost && !lost.kb && layer.contains(doc.activeElement)) {
+            try { doc.activeElement.blur?.(); } catch (e) { /* ignore */ }
+        }
         clearLayer();
         // Sweep item 9: when the banner rings while a tutorial step panel is up, drop it clear of
         // SKIP TUTORIAL and the step counter (CSS moves the top-centre layer to the bottom).
@@ -243,8 +280,6 @@ export function installPhoneRinger(win = window) {
             // The same control again for the same caller; a different caller gets the safe one, Decline
             const target = (lost.npcId === view.npcId && lost.which === 'answer') ? answer : (buttons.querySelector('.incoming-call-decline') || answer);
             try { target.focus(); } catch (e) { /* no focus in this environment */ }
-        } else if (lost) {
-            try { doc.activeElement?.blur?.(); } catch (e) { /* ignore */ }
         }
     }
 
@@ -269,7 +304,7 @@ export function installPhoneRinger(win = window) {
         // The focused Answer or Hang up button was just removed: keep keyboard focus in the ring
         if (lost?.kb) {
             const hang = box.querySelector('button');
-            if (hang) { try { hang.focus(); } catch (e) { /* no focus in this environment */ } }
+            if (hang) { try { hang.focus(); swallowHeldKeys(); } catch (e) { /* no focus in this environment */ } }
             else focusOpenMinigame();
         }
     }

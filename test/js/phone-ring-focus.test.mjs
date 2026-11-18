@@ -218,3 +218,105 @@ test('M1: held Enter (keydown repeat) on a ring button is ignored', async () => 
         assert.equal(first.defaultPrevented, false);
     } finally { w.restore(); }
 });
+
+// ---- R4: held Enter after a focus hop, and :focus-visible unsupported ----------------------
+const keyEv = (w, type, key, repeat) => new w.win.KeyboardEvent(type, { key, repeat, bubbles: true, cancelable: true });
+// The jsdom document outlives each world, and an earlier test's hop leaves a swallower on it (its timer
+// died with that world's fake clock): a keyup clears it, as a real release would.
+const releaseKeys = (w) => w.win.document.dispatchEvent(keyEv(w, 'keyup', 'Enter', false));
+
+test('R4 m1: a repeat Enter at the minigame control focused after Decline is prevented; a fresh one after keyup is not', async () => {
+    const w = await ringOverKeypad();
+    releaseKeys(w);
+    try {
+        const doc = w.win.document;
+        doc.querySelector('.incoming-call-decline').focus();
+        w.click('.incoming-call-decline');
+        await w.advance(100);
+        const kp = doc.getElementById('kp-1');
+        assert.equal(doc.activeElement, kp, 'focus hopped to the keypad');
+        const rep = keyEv(w, 'keydown', 'Enter', true);
+        kp.dispatchEvent(rep);
+        assert.equal(rep.defaultPrevented, true, 'held Enter does not press the key again');
+        const rep2 = keyEv(w, 'keydown', ' ', true);
+        kp.dispatchEvent(rep2);
+        assert.equal(rep2.defaultPrevented, true, 'held Space too');
+        doc.dispatchEvent(keyEv(w, 'keyup', 'Enter', false));
+        const fresh = keyEv(w, 'keydown', 'Enter', false);
+        kp.dispatchEvent(fresh);
+        assert.equal(fresh.defaultPrevented, false, 'a new press after the keyup goes through');
+        const rep3 = keyEv(w, 'keydown', 'Enter', true);
+        kp.dispatchEvent(rep3);
+        assert.equal(rep3.defaultPrevented, false, 'the listener removed itself on keyup');
+    } finally { w.restore(); }
+});
+
+test('R4 m1: a fresh (non-repeat) Enter is never prevented while the swallower is active', async () => {
+    const w = await ringOverKeypad();
+    releaseKeys(w);
+    try {
+        const doc = w.win.document;
+        doc.querySelector('.incoming-call-decline').focus();
+        w.click('.incoming-call-decline');
+        await w.advance(100);
+        const fresh = keyEv(w, 'keydown', 'Enter', false);
+        doc.getElementById('kp-1').dispatchEvent(fresh);
+        assert.equal(fresh.defaultPrevented, false);
+    } finally { w.restore(); }
+});
+
+test('R4 m1: the swallower removes itself after about a second with no keyup', async () => {
+    const w = await ringOverKeypad();
+    releaseKeys(w);
+    try {
+        const doc = w.win.document;
+        doc.querySelector('.incoming-call-decline').focus();
+        w.click('.incoming-call-decline');
+        await w.advance(100);
+        const kp = doc.getElementById('kp-1');
+        const early = keyEv(w, 'keydown', 'Enter', true);
+        kp.dispatchEvent(early);
+        assert.equal(early.defaultPrevented, true);
+        await w.advance(1200);
+        const late = keyEv(w, 'keydown', 'Enter', true);
+        kp.dispatchEvent(late);
+        assert.equal(late.defaultPrevented, false, 'fallback timer removed the listener');
+    } finally { w.restore(); }
+});
+
+test('R4 m1: the Answer to Hang up hop also swallows a held Enter', async () => {
+    const w = await ringOverKeypad();
+    releaseKeys(w);
+    try {
+        const doc = w.win.document;
+        doc.querySelector('.incoming-call-answer').focus();
+        w.click('.incoming-call-answer');
+        await w.advance(100);
+        const hang = hangOf(doc);
+        assert.equal(doc.activeElement, hang);
+        const rep = keyEv(w, 'keydown', 'Enter', true);
+        hang.dispatchEvent(rep);
+        assert.equal(rep.defaultPrevented, true);
+        doc.dispatchEvent(keyEv(w, 'keyup', 'Enter', false));
+        const rep2 = keyEv(w, 'keydown', 'Enter', true);
+        doc.getElementById('kp-1').dispatchEvent(rep2);
+        assert.equal(rep2.defaultPrevented, false, 'removed on keyup');
+    } finally { w.restore(); }
+});
+
+test('R4 n3: when :focus-visible throws, focus is treated as keyboard and carried on', async () => {
+    const w = await ringOverKeypad();
+    const doc = w.win.document;
+    const saved = Elem.matches;
+    try {
+        doc.querySelector('.incoming-call-answer').focus();
+        Elem.matches = function (sel) {
+            if (sel === ':focus-visible') throw new w.win.DOMException('unsupported', 'SyntaxError');
+            return realMatches.call(this, sel);
+        };
+        w.click('.incoming-call-answer');
+        await w.advance(100);
+        assert.ok(hangOf(doc), 'pill shown');
+        assert.equal(doc.activeElement, hangOf(doc), 'keyboard assumed: Hang up kept focus');
+    } finally { Elem.matches = saved; w.restore(); }
+});
