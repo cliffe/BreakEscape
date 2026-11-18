@@ -58,6 +58,13 @@ test('F1: the transfer log sets a declared global and a mapping ticks find_uploa
     const body = erb.slice(i, erb.indexOf('}', i));
     assert.match(body, /"completeTask": "find_upload_schedule"/);
     assert.match(body, /"onceOnly": true/);
+    const j = erb.indexOf('"eventPattern": "global_variable_changed:found_upload_schedule",\n              "condition": "value === true",\n              "onceOnly": true,\n              "completeTask"');
+    assert.ok(j > i, 'the schedule itself still ticks the task, appended after the log mapping');
+});
+
+test('F1: the task is custom, because the server refuses a collect_items tick without the item', () => {
+    const m = erb.match(/"taskId": "find_upload_schedule",[\s\S]*?"type": "(\w+)"/);
+    assert.equal(m[1], 'custom');
 });
 
 test('F1: found_upload_schedule is not set by the log (it gates the operator-named evidence)', () => {
