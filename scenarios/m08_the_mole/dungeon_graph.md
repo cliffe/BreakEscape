@@ -581,44 +581,50 @@ flowchart TD
   rc_phantom_standards_referral_20{"Sealed Standards Referral -- Agent 0x88"}
   rc_npc_director_magnus_netherton_21("Director Magnus Netherton")
   rc_netherton_keycard_22{"Director's Access Keycard -- All Zones"}
-  rc_nightshade_personnel_record_23{"Personnel Print Job -- Director's Investigation Request"}
-  rc_operations_board_24{"Operations Status Board"}
-  rc_npc_agent_0x23_vector_25("Agent 0x23 'Vector'")
-  rc_vector_locker_key_26{"Vector's Locker Key"}
-  rc_npc_junior_analyst_27("Junior Analyst")
-  rc_tactical_board_28{"Four-Site Night Tactical Board"}
-  rc_phantom_notes_29{"Phantom's Off-Book Notes"}
-  rc_npc_agent_0x88_phantom_30("Agent 0x88 'Phantom'")
-  rc_phantom_locker_key_31{"Phantom's Locker Key"}
-  rc_vm_launcher_gitlist_32{"Field Console (Kali)"}
-  rc_flag_station_evidence_relay_33{"Evidence Relay Terminal"}
-  rc_relay_printout_34{"Relay Printout"}
-  rc_server_access_logs_35{"Server Access Log (excerpt)"}
-  rc_database_catalog_36{"Global Threat Database Catalogue"}
-  rc_historical_leaks_37{"Past Leak Investigations"}
-  rc_badge_audit_printout_38{"Badge Audit Printout -- Leak Window"}
-  rc_cyberchef_workstation_39{"CyberChef Workstation"}
-  rc_nightshade_desk_40{"Nightshade's Workstation"}
-  rc_npc_agent_0x47_nightshade_41("Agent 0x47 'Nightshade'")
-  rc_nightshade_locker_key_42{"Nightshade's Locker Key"}
-  rc_recording_lamp_43{"RECORDING Lamp"}
-  rc_evidence_display_44{"Evidence Display"}
-  rc_disposition_terminal_45{"Detention Disposition Screen"}
-  rc_npc_agent_0x47_nightshade_46("Agent 0x47 'Nightshade'")
-  rc_password_sticky_note_47{"Post-It On The Coffee Machine"}
-  rc_timeline_reconstruction_48{"Leak Timeline (someone's working notes)"}
-  rc_vector_locker_49[["Staff Locker -- 0x23"]]
-  rc_vector_token_pouch_50{"Token Pouch -- Locker 0x23"}
-  rc_vector_project_sheet_51{"Project Sheet -- Locker 0x23"}
-  rc_nightshade_locker_52[["Staff Locker -- 0x47"]]
-  rc_encrypted_backup_53{"USB Stick -- PERSONAL_BACKUP.enc"}
-  rc_deep_state_manual_54{"Insider Threat Initiative -- 'Deep State' Brief"}
-  rc_nightshade_go_bag_55{"Holdall -- Locker 0x47"}
-  rc_phantom_locker_56[["Staff Locker -- 0x88"]]
-  rc_phantom_boarding_stub_57{"Boarding Pass Stub -- Locker 0x88"}
-  rc_phantom_suspect_wall_58{"Folded Suspect Sheet -- Locker 0x88"}
-  rc_npc_agent_hax_59("Agent HaX")
-  rc_npc_off_duty_agent_60("Off-Duty Agent")
+  rc_julian_console_23{"Duty Officer's Console"}
+  rc_ops_duty_pc_east_24{"Duty Desk Monitor"}
+  rc_ops_analyst_pc_25{"Analyst's Monitor"}
+  rc_nightshade_personnel_record_26{"Personnel Print Job -- Director's Investigation Request"}
+  rc_operations_board_27{"Operations Status Board"}
+  rc_ops_cooler_28{"Water Cooler"}
+  rc_npc_agent_0x23_vector_29("Agent 0x23 'Vector'")
+  rc_vector_locker_key_30{"Vector's Locker Key"}
+  rc_npc_junior_analyst_31("Junior Analyst")
+  rc_npc_julian_sallow_32("Julian Sallow")
+  rc_npc_agnieszka_duda_33("Agnieszka Duda")
+  rc_tactical_board_34{"Four-Site Night Tactical Board"}
+  rc_phantom_notes_35{"Phantom's Off-Book Notes"}
+  rc_npc_agent_0x88_phantom_36("Agent 0x88 'Phantom'")
+  rc_phantom_locker_key_37{"Phantom's Locker Key"}
+  rc_vm_launcher_gitlist_38{"Field Console (Kali)"}
+  rc_flag_station_evidence_relay_39{"Evidence Relay Terminal"}
+  rc_relay_printout_40{"Relay Printout"}
+  rc_server_access_logs_41{"Server Access Log (excerpt)"}
+  rc_database_catalog_42{"Global Threat Database Catalogue"}
+  rc_historical_leaks_43{"Past Leak Investigations"}
+  rc_badge_audit_printout_44{"Badge Audit Printout -- Leak Window"}
+  rc_cyberchef_workstation_45{"CyberChef Workstation"}
+  rc_nightshade_desk_46{"Nightshade's Workstation"}
+  rc_npc_agent_0x47_nightshade_47("Agent 0x47 'Nightshade'")
+  rc_nightshade_locker_key_48{"Nightshade's Locker Key"}
+  rc_recording_lamp_49{"RECORDING Lamp"}
+  rc_evidence_display_50{"Evidence Display"}
+  rc_disposition_terminal_51{"Detention Disposition Screen"}
+  rc_npc_agent_0x47_nightshade_52("Agent 0x47 'Nightshade'")
+  rc_password_sticky_note_53{"Post-It On The Coffee Machine"}
+  rc_timeline_reconstruction_54{"Leak Timeline (someone's working notes)"}
+  rc_vector_locker_55[["Staff Locker -- 0x23"]]
+  rc_vector_token_pouch_56{"Token Pouch -- Locker 0x23"}
+  rc_vector_project_sheet_57{"Project Sheet -- Locker 0x23"}
+  rc_nightshade_locker_58[["Staff Locker -- 0x47"]]
+  rc_encrypted_backup_59{"USB Stick -- PERSONAL_BACKUP.enc"}
+  rc_deep_state_manual_60{"Insider Threat Initiative -- 'Deep State' Brief"}
+  rc_nightshade_go_bag_61{"Holdall -- Locker 0x47"}
+  rc_phantom_locker_62[["Staff Locker -- 0x88"]]
+  rc_phantom_boarding_stub_63{"Boarding Pass Stub -- Locker 0x88"}
+  rc_phantom_suspect_wall_64{"Folded Suspect Sheet -- Locker 0x88"}
+  rc_npc_agent_hax_65("Agent HaX")
+  rc_npc_off_duty_agent_66("Off-Duty Agent")
 
   main_lobby --> director_office
   main_lobby --> operations_floor
@@ -650,49 +656,55 @@ flowchart TD
   rc_director_safe_15 --> rc_phantom_standards_referral_20
   director_office --> rc_npc_director_magnus_netherton_21
   rc_npc_director_magnus_netherton_21 --> rc_netherton_keycard_22
-  operations_floor --> rc_nightshade_personnel_record_23
-  operations_floor --> rc_operations_board_24
-  operations_floor --> rc_npc_agent_0x23_vector_25
-  rc_npc_agent_0x23_vector_25 --> rc_vector_locker_key_26
-  operations_floor --> rc_npc_junior_analyst_27
-  intel_analysis --> rc_tactical_board_28
-  intel_analysis --> rc_phantom_notes_29
-  intel_analysis --> rc_npc_agent_0x88_phantom_30
-  rc_npc_agent_0x88_phantom_30 --> rc_phantom_locker_key_31
-  server_room --> rc_vm_launcher_gitlist_32
-  server_room --> rc_flag_station_evidence_relay_33
-  server_room --> rc_relay_printout_34
-  server_room --> rc_server_access_logs_35
-  security_archives --> rc_database_catalog_36
-  security_archives --> rc_historical_leaks_37
-  security_archives --> rc_badge_audit_printout_38
-  cryptography_lab --> rc_cyberchef_workstation_39
-  cryptography_lab --> rc_nightshade_desk_40
-  cryptography_lab --> rc_npc_agent_0x47_nightshade_41
-  rc_npc_agent_0x47_nightshade_41 --> rc_nightshade_locker_key_42
-  interrogation_room --> rc_recording_lamp_43
-  interrogation_room --> rc_evidence_display_44
-  interrogation_room --> rc_disposition_terminal_45
-  interrogation_room --> rc_npc_agent_0x47_nightshade_46
-  break_room --> rc_password_sticky_note_47
-  break_room --> rc_timeline_reconstruction_48
-  break_room --> rc_vector_locker_49
-  rc_vector_locker_49 --> rc_vector_token_pouch_50
-  rc_vector_locker_49 --> rc_vector_project_sheet_51
-  break_room --> rc_nightshade_locker_52
-  rc_nightshade_locker_52 --> rc_encrypted_backup_53
-  rc_nightshade_locker_52 --> rc_deep_state_manual_54
-  rc_nightshade_locker_52 --> rc_nightshade_go_bag_55
-  break_room --> rc_phantom_locker_56
-  rc_phantom_locker_56 --> rc_phantom_boarding_stub_57
-  rc_phantom_locker_56 --> rc_phantom_suspect_wall_58
-  break_room --> rc_npc_agent_hax_59
-  break_room --> rc_npc_off_duty_agent_60
+  operations_floor --> rc_julian_console_23
+  operations_floor --> rc_ops_duty_pc_east_24
+  operations_floor --> rc_ops_analyst_pc_25
+  operations_floor --> rc_nightshade_personnel_record_26
+  operations_floor --> rc_operations_board_27
+  operations_floor --> rc_ops_cooler_28
+  operations_floor --> rc_npc_agent_0x23_vector_29
+  rc_npc_agent_0x23_vector_29 --> rc_vector_locker_key_30
+  operations_floor --> rc_npc_junior_analyst_31
+  operations_floor --> rc_npc_julian_sallow_32
+  operations_floor --> rc_npc_agnieszka_duda_33
+  intel_analysis --> rc_tactical_board_34
+  intel_analysis --> rc_phantom_notes_35
+  intel_analysis --> rc_npc_agent_0x88_phantom_36
+  rc_npc_agent_0x88_phantom_36 --> rc_phantom_locker_key_37
+  server_room --> rc_vm_launcher_gitlist_38
+  server_room --> rc_flag_station_evidence_relay_39
+  server_room --> rc_relay_printout_40
+  server_room --> rc_server_access_logs_41
+  security_archives --> rc_database_catalog_42
+  security_archives --> rc_historical_leaks_43
+  security_archives --> rc_badge_audit_printout_44
+  cryptography_lab --> rc_cyberchef_workstation_45
+  cryptography_lab --> rc_nightshade_desk_46
+  cryptography_lab --> rc_npc_agent_0x47_nightshade_47
+  rc_npc_agent_0x47_nightshade_47 --> rc_nightshade_locker_key_48
+  interrogation_room --> rc_recording_lamp_49
+  interrogation_room --> rc_evidence_display_50
+  interrogation_room --> rc_disposition_terminal_51
+  interrogation_room --> rc_npc_agent_0x47_nightshade_52
+  break_room --> rc_password_sticky_note_53
+  break_room --> rc_timeline_reconstruction_54
+  break_room --> rc_vector_locker_55
+  rc_vector_locker_55 --> rc_vector_token_pouch_56
+  rc_vector_locker_55 --> rc_vector_project_sheet_57
+  break_room --> rc_nightshade_locker_58
+  rc_nightshade_locker_58 --> rc_encrypted_backup_59
+  rc_nightshade_locker_58 --> rc_deep_state_manual_60
+  rc_nightshade_locker_58 --> rc_nightshade_go_bag_61
+  break_room --> rc_phantom_locker_62
+  rc_phantom_locker_62 --> rc_phantom_boarding_stub_63
+  rc_phantom_locker_62 --> rc_phantom_suspect_wall_64
+  break_room --> rc_npc_agent_hax_65
+  break_room --> rc_npc_off_duty_agent_66
 
   class main_lobby,director_office,operations_floor,intel_analysis,cryptography_lab,break_room room
   class server_room,security_archives,interrogation_room lock
-  class rc_badge_printer_1,rc_director_safe_15,rc_vector_locker_49,rc_nightshade_locker_52,rc_phantom_locker_56 container
-  class rc_printed_server_badge_2,rc_security_notice_3,rc_m08_recon_field_guide_7,rc_m08_scanning_field_guide_8,rc_m08_gitsecrets_field_guide_9,rc_m08_cyberchef_field_guide_10,rc_m08_vulnanalysis_field_guide_11,rc_m08_privesc_field_guide_12,rc_suspect_dossiers_14,rc_portland_intercept_full_16,rc_interrogation_suite_code_17,rc_nightshade_profile_18,rc_vector_vetting_query_19,rc_phantom_standards_referral_20,rc_netherton_keycard_22,rc_nightshade_personnel_record_23,rc_operations_board_24,rc_vector_locker_key_26,rc_tactical_board_28,rc_phantom_notes_29,rc_phantom_locker_key_31,rc_vm_launcher_gitlist_32,rc_flag_station_evidence_relay_33,rc_relay_printout_34,rc_server_access_logs_35,rc_database_catalog_36,rc_historical_leaks_37,rc_badge_audit_printout_38,rc_cyberchef_workstation_39,rc_nightshade_desk_40,rc_nightshade_locker_key_42,rc_recording_lamp_43,rc_evidence_display_44,rc_disposition_terminal_45,rc_password_sticky_note_47,rc_timeline_reconstruction_48,rc_vector_token_pouch_50,rc_vector_project_sheet_51,rc_encrypted_backup_53,rc_deep_state_manual_54,rc_nightshade_go_bag_55,rc_phantom_boarding_stub_57,rc_phantom_suspect_wall_58 item
-  class rc_npc_athena_4,rc_npc_athena_5,rc_npc_agent_hax_6,rc_npc_director_magnus_netherton_13,rc_npc_director_magnus_netherton_21,rc_npc_agent_0x23_vector_25,rc_npc_junior_analyst_27,rc_npc_agent_0x88_phantom_30,rc_npc_agent_0x47_nightshade_41,rc_npc_agent_0x47_nightshade_46,rc_npc_agent_hax_59,rc_npc_off_duty_agent_60 npc
+  class rc_badge_printer_1,rc_director_safe_15,rc_vector_locker_55,rc_nightshade_locker_58,rc_phantom_locker_62 container
+  class rc_printed_server_badge_2,rc_security_notice_3,rc_m08_recon_field_guide_7,rc_m08_scanning_field_guide_8,rc_m08_gitsecrets_field_guide_9,rc_m08_cyberchef_field_guide_10,rc_m08_vulnanalysis_field_guide_11,rc_m08_privesc_field_guide_12,rc_suspect_dossiers_14,rc_portland_intercept_full_16,rc_interrogation_suite_code_17,rc_nightshade_profile_18,rc_vector_vetting_query_19,rc_phantom_standards_referral_20,rc_netherton_keycard_22,rc_julian_console_23,rc_ops_duty_pc_east_24,rc_ops_analyst_pc_25,rc_nightshade_personnel_record_26,rc_operations_board_27,rc_ops_cooler_28,rc_vector_locker_key_30,rc_tactical_board_34,rc_phantom_notes_35,rc_phantom_locker_key_37,rc_vm_launcher_gitlist_38,rc_flag_station_evidence_relay_39,rc_relay_printout_40,rc_server_access_logs_41,rc_database_catalog_42,rc_historical_leaks_43,rc_badge_audit_printout_44,rc_cyberchef_workstation_45,rc_nightshade_desk_46,rc_nightshade_locker_key_48,rc_recording_lamp_49,rc_evidence_display_50,rc_disposition_terminal_51,rc_password_sticky_note_53,rc_timeline_reconstruction_54,rc_vector_token_pouch_56,rc_vector_project_sheet_57,rc_encrypted_backup_59,rc_deep_state_manual_60,rc_nightshade_go_bag_61,rc_phantom_boarding_stub_63,rc_phantom_suspect_wall_64 item
+  class rc_npc_athena_4,rc_npc_athena_5,rc_npc_agent_hax_6,rc_npc_director_magnus_netherton_13,rc_npc_director_magnus_netherton_21,rc_npc_agent_0x23_vector_29,rc_npc_junior_analyst_31,rc_npc_julian_sallow_32,rc_npc_agnieszka_duda_33,rc_npc_agent_0x88_phantom_36,rc_npc_agent_0x47_nightshade_47,rc_npc_agent_0x47_nightshade_52,rc_npc_agent_hax_65,rc_npc_off_duty_agent_66 npc
   class node_start start
 ```
