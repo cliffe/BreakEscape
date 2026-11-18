@@ -24,3 +24,11 @@ Scratch: server :3114 running from this worktree (PID in tmp/pids/server-3114.pi
 - Flag station: flags 1 and 3 now appear in the list as "key: use elsewhere"; the badge reads "ENTROPY attack server (172.16.0.2)".
 - "Find access to Derek's office" ticks when the door opens.
 - Date format MMDD hint for the safe and cabinet.
+
+
+## Update (second agent)
+- Tests fixed: engine-fixes-pass4b test 10 now checks flagHistoryHtml behaviour (hyphens kept, no en dash; mutation confirmed it fails); vm-weave-engine R7 fixture gets recognisedFlags and asserts the key row (mutations: info->success and dropped push both fail). Full bin/test-js: 770 passed, 0 failed.
+- Derek gate: ink gate is only entropy_reveal_read, set by taking (onPickup) the "ENTROPY Network Architecture" note from the unlocked archive in server_room. Reporting to HaX is not a gate. HaX text reworded (unvoiced) to say unlock the archive and take that file. conversation_closed:derek_lawson fires after the refusal (live: game 8388, text arrived in HaX thread).
+- #6 live: game 8427 task stays active at key pickup, at the lock screen, and shows completed once the key is turned (client lags while the picker is open; a fresh page shows completed).
+- Screenshots in scratchpad/shots/9-* and 10-*.
+- NOT done: Rails tests (game_test.rb, validator/scenario ones) under tests.lock.

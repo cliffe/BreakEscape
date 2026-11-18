@@ -53,7 +53,7 @@ function makeStation(extra = {}) {
     const s = Object.create(FlagStationMinigame.prototype);
     Object.assign(s, {
         gameContainer: { querySelector: (q) => els[q] || null },
-        gameId: 1, stationId: 'front_desk', mode: 'standard', submittedFlags: [], isSubmitting: false,
+        gameId: 1, stationId: 'front_desk', mode: 'standard', submittedFlags: [], recognisedFlags: [], isSubmitting: false,
         acceptsVms: [], acceptsVmLabels: {}, params: {},
     }, extra);
     s.updateFlagHistory = () => {};
@@ -138,6 +138,9 @@ test('R7: a hint-only response is neutral info with a soft sound, never the succ
     assert.deepEqual(sounds, ['notification']);
     assert.ok(!sounds.includes('confirm'));
     assert.deepEqual(s.submittedFlags, [], 'a hint does not consume the flag');
+    assert.deepEqual(s.recognisedFlags, [{ flag: 'flag{launch}', note: 'Launch code validated. Enter it into the launch device.' }], 'listed as a key for another device');
+    assert.match(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /key: use elsewhere/);
+    assert.doesNotMatch(wording.flagHistoryHtml(s.submittedFlags, s.recognisedFlags, esc), /✓/);
     assert.equal(els['#reward-notification'].innerHTML, '', 'no "Rewards Unlocked" box');
     assert.deepEqual(events.map(e => e.name), ['flag_rejected']);
     assert.deepEqual(events[0].data, { stationId: 'front_desk', reason: 'wrong_station', hint: true });
