@@ -268,6 +268,14 @@ module BreakEscape
       preserved_keys = %w[vm_set_id vm_ips flags_by_vm standalone_flags]
       initial_state = @game.player_state.is_a?(Hash) ? @game.player_state.slice(*preserved_keys) : {}
 
+      # D144: a released set is never carried forward. A VM mission with no live set has
+      # nothing to bind, so the player is sent back to start it again for fresh VMs. A VM-free
+      # mission and standalone mode (state :none) copy exactly as before.
+      if @game.vm_set_state == :released
+        return render json: { success: false, reason: 'vm_released', error: Game::VM_RELEASED_NEW_SESSION_MESSAGE },
+                      status: :unprocessable_entity
+      end
+
       # Abandon the current game before creating a new one.
       # The unique partial index allows only one in_progress game per player+mission.
       @game.update!(status: 'abandoned') if @game.status == 'in_progress'
@@ -1244,6 +1252,13 @@ module BreakEscape
         return render json: body, status: :unprocessable_entity
       end
 
+      # D144: a flag-lock on a game whose VM set was released opens only for a flag already
+      # solved on that set; otherwise it is refused here, before anything is unlocked.
+      if method == 'flag' && attempt.present?
+        released = @game.released_flag_refusal(attempt)
+        return render json: released, status: :unprocessable_entity if released
+      end
+
       # An access-list rfid unlock says which held card passed: the player's own keycard by
       # id, a copy only as viaCopy (UX devices R1)
       rfid_card_answer = method == 'rfid' && card_ids && !already_open ? @game.rfid_unlock_card_answer(target_type, target_id, card_ids) : nil
@@ -2213,8 +2228,10 @@ module BreakEscape
                                       : vm_set.vms.first
       return head :not_found unless vm
 
-      # Race guard: only unlock console if the game is still in_progress.
+      # Race guard: only unlock console if the game is still in_progress, and (D144) only
+      # while the set is still the player's.
       return head :not_found unless @game.reload.status == 'in_progress'
+      return head :not_found unless @game.vm_set_state == :live
 
       # Gate: verify the player has reached the room containing this terminal in-game.
       # Admins and account managers bypass this check.
@@ -2245,12 +2262,14 @@ module BreakEscape
     # Redirects to the Hacktivity VmSet#show page for this game's assigned VM set,
     # with ?embedded=1 so Hacktivity hides navigation and footer.
     def vm_set_panel
+      authorize @game if defined?(Pundit)
       return head :not_found unless BreakEscape::Mission.hacktivity_mode? && @game.vm_set_id
 
       vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
       return head :not_found unless vm_set&.sec_gen_batch&.event
 
       return head :not_found unless @game.reload.status == 'in_progress'
+      return head :not_found unless @game.vm_set_state == :live
 
       batch = vm_set.sec_gen_batch
       event = batch.event
@@ -2277,6 +2296,7 @@ module BreakEscape
       # Race guard: only act while the game is still in_progress (a finished game's set may be
       # relinquished and reverted; re-locking is the start/restart flow's job, not this one).
       return head :not_found unless @game.reload.status == 'in_progress'
+      return head :not_found unless @game.vm_set_state == :live
 
       vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
       return head :not_found unless vm_set&.sec_gen_batch&.event

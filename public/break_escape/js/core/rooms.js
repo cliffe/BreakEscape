@@ -79,7 +79,7 @@ import { NPCPathfindingManager } from '../systems/npc-pathfinding.js';
 import NPCSpriteManager from '../systems/npc-sprites.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
 import { drinkableCupName, isObjectConsumed } from '../systems/consumables.js';
-import { deskBoxModeFor, tableBodyBox } from '../systems/desk-footprints.js';
+import { deskBoxModeFor, tableBodyBox, isFixedChair, chairMotion } from '../systems/desk-footprints.js';
 import { blockFor, bodyOfBlock } from '../systems/seat-box.js';
 import { chooseAmbient } from '../systems/ambient-choice.js';
 
@@ -2698,6 +2698,7 @@ export function createRoom(roomId, roomData, position) {
                     const staticSwivel = type === 'table' ? null : STATIC_SWIVEL_PROPS[imageName];
                     if ((imageName.startsWith('chair-') && !imageName.startsWith('chair-waiting')) || rotateMatch || staticSwivel) {
                         sprite.hasWheels = true;
+                        sprite.fixedChair = isFixedChair(obj);   // Tiled property fixed = true: never shoved
 
                         // Check if this is a swivel prop (rotating chair, crash cart, wheelchair)
                         if (rotateMatch || staticSwivel) {
@@ -2836,8 +2837,9 @@ export function createRoom(roomId, roomData, position) {
                         gameRef.time.delayedCall(0, () => {
                             if (sprite.body) {
                                 // Set chair as movable
-                                sprite.body.immovable = false;
-                                sprite.body.setImmovable(false);
+                                const motion = chairMotion(sprite.fixedChair);
+                                sprite.body.immovable = motion.immovable;
+                                sprite.body.setImmovable(motion.immovable);
                                 
                                 // Set collision box at base of chair
                                 const chairWidth = sprite.width;
@@ -2857,8 +2859,8 @@ export function createRoom(roomId, roomData, position) {
                                 }
                                 
                                 // Set physics properties for bouncing
-                                sprite.body.setBounce(0.3, 0.3);
-                                sprite.body.setDrag(100, 100);
+                                sprite.body.setBounce(motion.bounce, motion.bounce);
+                                sprite.body.setDrag(motion.drag, motion.drag);
                                 sprite.body.setMaxVelocity(200, 200);
                                 
                                 

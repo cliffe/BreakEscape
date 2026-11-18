@@ -1,0 +1,13 @@
+{
+  "key": "26c42cd271bf88f1352c17e97686f706",
+  "npc": "roaming_ward_nurse",
+  "text": "Bed 4. I'm going. Out the way.",
+  "voice": "Erinome",
+  "style": "Staff nurse, late twenties, four hours into doing the work of a monitoring system by hand. Consistent West Yorkshire accent -- Bradford, flat and quick. Brisk to the point of curt, not unkind, genuinely has no time for you. Talks while walking.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:57:09Z"
+}

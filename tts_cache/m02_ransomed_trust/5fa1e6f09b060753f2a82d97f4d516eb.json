@@ -1,0 +1,13 @@
+{
+  "key": "5fa1e6f09b060753f2a82d97f4d516eb",
+  "npc": "security_guard_patrol",
+  "text": "Nobody's answering for that pass, so neither am I.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:56:27Z"
+}
