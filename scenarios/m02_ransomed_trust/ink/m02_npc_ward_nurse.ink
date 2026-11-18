@@ -186,7 +186,7 @@ Sister Doyle: Two of us, manual obs every fifteen minutes, and a biro.
 === manual_work ===
 ~ spoke_about_manual = true
 
-Sister Doyle: Obs every fifteen minutes. Cuff, probe, thermometer, biro.
+Sister Doyle: Cuff, probe, thermometer, biro. Every bed, every round.
 
 Sister Doyle: Drug rounds off a paper chart we printed at two, before the printers went as well.
 

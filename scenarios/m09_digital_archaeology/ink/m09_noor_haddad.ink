@@ -141,7 +141,7 @@ VAR staff_card_cloned = false
 Narrator: She has her phone out. Her thumb is already on her dad's number.
 {not noor_tell_signposted:
     ~ noor_tell_signposted = true
-    agent_0x99: She's a witness now. She goes tonight, and she doesn't ring her dad for a while.
+    agent_0x99: She's a witness now. She goes tonight.
 }
 agent_0x99: Don't let her ring from here.
 + [Not tonight. Not from here.]

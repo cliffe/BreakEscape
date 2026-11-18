@@ -717,6 +717,54 @@ export default class PhoneChatUI {
     }
     
     /**
+     * A text or call row arrived while the contact list is showing: bring each row's preview,
+     * time and unread badge up to date in place (the rows keep their place and focus). A
+     * contact the list has not shown yet rebuilds the whole list. Does nothing in a thread.
+     * @returns {boolean} whether the list was refreshed
+     */
+    refreshContactList() {
+        try {
+            const list = this.elements?.contactList;
+            if (this.currentView !== 'contact-list' || !list || !list.isConnected) return false;
+            const npcs = this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone', true);
+            const rows = Array.from(list.querySelectorAll('.contact-item'));
+            const rowFor = (id) => rows.find(r => r.dataset.npcId === id);
+            if (rows.length !== npcs.length || npcs.some(npc => !rowFor(npc.id))) {
+                // A contact came or went: rebuild, keeping the scroll position
+                const top = list.scrollTop;
+                this.populateContactList(this._listPhoneId);
+                list.scrollTop = top;
+                return true;
+            }
+            for (const npc of npcs) {
+                const row = rowFor(npc.id);
+                const fresh = this.createContactItem(npc);
+                const meta = row.querySelector('.contact-meta');
+                const freshMeta = fresh.querySelector('.contact-meta');
+                if (meta && freshMeta) meta.replaceWith(freshMeta);
+                const last = row.querySelector('.contact-last-message');
+                const freshLast = fresh.querySelector('.contact-last-message');
+                if (!last || !freshLast) continue;
+                if (npc.livePreview !== true) {
+                    last.className = freshLast.className;
+                    last.textContent = freshLast.textContent;
+                } else {
+                    // A livePreview row shows its own dry-run line; a new text in its thread
+                    // makes that stale, so show the history line and run the dry run again
+                    const length = String(this.npcManager.getConversationHistory(npc.id).length);
+                    if (row.dataset.historyLength !== length) {
+                        last.className = freshLast.className;
+                        last.textContent = freshLast.textContent;
+                        row.dataset.historyLength = length;
+                        this.refreshLivePreview(npc, row).catch(() => {});
+                    }
+                }
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    /**
      * Populate the contact list with NPCs
      * @param {string} phoneId - Optional phone ID to filter contacts
      */
@@ -740,7 +788,10 @@ export default class PhoneChatUI {
             contactList.appendChild(contactItem);
             // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
             // previews the line opening its thread would add now
-            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
+            if (npc.livePreview === true) {
+                contactItem.dataset.historyLength = String(this.npcManager.getConversationHistory(npc.id).length);
+                this.refreshLivePreview(npc, contactItem);
+            }
         });
 
         console.log(`📋 Populated ${npcs.length} contacts`);
@@ -772,6 +823,7 @@ export default class PhoneChatUI {
         const preview = this.previewText({ type: 'npc', text: raw }, npc);
         if (preview === null) return null;
         el.textContent = displayDashes(preview);
+        el.classList.remove('missed');
         return preview;
     }
 
