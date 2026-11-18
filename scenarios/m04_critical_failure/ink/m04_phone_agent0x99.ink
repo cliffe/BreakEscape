@@ -1087,12 +1087,12 @@ Last stretch. Anyone still standing with him goes down first.
 - else:
     The ESD is live. Press it.
 }
-// Gate minor 2: the head-count, whatever route got them out of the fight.
+// Gate minor 2: the head count, whatever route got them out of the fight.
 {not attack_prevented and down_count() >= 1:
     {down_count() >= 4:
-        Head-count: all four. {done_phrases()}.
+        All four. {done_phrases()}.
     - else:
-        Head-count: {down_count()} of four. {done_phrases()}. Still about: {remaining_names()}.
+        That's {down_count()} of four. {done_phrases()}. Still about: {remaining_names()}.
     }
 }
 // Struggling run A (F8): straight back to the hub (as the hint knots do), not a

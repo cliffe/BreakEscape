@@ -1379,24 +1379,13 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "eventPattern": "npc_ko:voltage",
               "condition": "globalVars.voltage_escaped !== true",
               "onceOnly": true,
-              "setGlobal": { "voltage_neutralised": true, "voltage_captured": true }
-            },
-            <%# Gate minor 1: a KO'd NPC is never talkable (interactions.js skips knocked-out
-                NPCs; m07 answers Park's KO with a HaX text, m05 opens a scripted chat).
-                Voltage has no post-KO talk knot, so HaX says what his state means and
-                what comes next. Two texts: the ESD already armed (its own text lands at
-                1.2 s, this follows) or still waiting on the dial and the attack. %>
-            {
-              "eventPattern": "npc_ko:voltage",
-              "condition": "globalVars.voltage_escaped !== true && globalVars.anomaly_detected === true && globalVars.attack_mechanism_known === true",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "Voltage is down and he isn't answering anyone tonight. Leave him on the floor. His laptop will do the talking later. Press the ESD." }
-            },
-            {
-              "eventPattern": "npc_ko:voltage",
-              "condition": "globalVars.voltage_escaped !== true && !(globalVars.anomaly_detected === true && globalVars.attack_mechanism_known === true)",
-              "onceOnly": true,
-              "sendTimedMessage": { "delay": 3000, "message": "Voltage is down and he isn't answering anyone tonight. Leave him on the floor. The ESD stays locked until the dial reading and the attack are both on record." }
+              "setGlobal": { "voltage_neutralised": true, "voltage_captured": true },
+              <%# Gate minor 1: a KO'd NPC is never talkable (interactions.js skips knocked-out
+                  NPCs; m07 answers Park's KO with a HaX text, m05 opens a scripted chat).
+                  Voltage has no post-KO talk knot, so HaX says what his state means. One
+                  text (it lands after the ESD-live text when that arms at 1.2 s) that
+                  sends the player to "Where do I stand?" for the next step. %>
+              "sendTimedMessage": { "delay": 6000, "message": "Voltage is down and he isn't answering anyone tonight. Leave him on the floor. Ask me where you stand for the next step." }
             },
             {
               "eventPattern": "global_variable_changed:voltage_captured",
