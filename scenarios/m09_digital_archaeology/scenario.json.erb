@@ -220,9 +220,9 @@ hax_maps << text_map("door_unlock_failed:restricted_stacks", nil, "That reader's
 # Before the deck choice these two speak on the first attempt instead; the
 # tape room's card refusal stays for after it (the office is open by then).
 hax_maps << text_map("door_unlock_attempt", "data.connectedRoom === 'sorensen_office' && !globalVars.deck_choice_made",
-                     "Her keypad's off the card system. There's no code to find for it. Leave it for now.")
+                     "Her keypad's off the card system, so there's no code to find. The Recruiter's offer is what opens it. Finish the ledger, keep moving, and take her call.")
 hax_maps << text_map("door_unlock_attempt", "data.connectedRoom === 'tape_room' && !globalVars.deck_choice_made",
-                     "That reader wants her own card, and she hasn't left it lying about. Leave it for now.")
+                     "That reader wants her own card, and she hasn't left it lying about. It will be in her office. Leave it for now.")
 hax_maps << text_map("door_unlock_failed:tape_room", "globalVars.deck_choice_made", "That reader wants a real card. Hers will be somewhere she trusts.")
 
 # Flag 1 (S4 §4 row 1): the stacks door opens on HaX's unlockDoor (F19),
@@ -490,6 +490,11 @@ hax_maps << text_map("global_variable_changed:ledger_read_heard", "value === tru
                      "Harwick & Lowe's boxes are in the open stacks, by their bay label. The lid takes that file number.", delay: 6000)
 hax_maps << text_map("global_variable_changed:case_file_read", "value === true && globalVars.m06_monitoring_enabled",
                      "Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one.")
+# Blind m09 stuck (appended, never inserted): once the ledger has been read out and the cage is open, the
+# Recruiter's task shows as open, and a player who has not been rung within 45 s gets a pointer.
+hax_maps << { "eventPattern" => "global_variable_changed:ledger_read_heard", "condition" => "value === true && globalVars.cage_opened", "onceOnly" => true, "unlockTask" => "answer_the_offer" }
+hax_maps << { "eventPattern" => "global_variable_changed:ledger_read_heard", "condition" => "value === true && globalVars.cage_opened && !globalVars.recruiter_call_started", "onceOnly" => true,
+              "sendTimedMessage" => { "delay" => 45000, "skipIfGlobal" => "recruiter_call_started", "message" => "Nothing more to pull here yet. Leave the cage and walk the building. The Recruiter will ring, and her offer is what opens the director's office." } }
 
 # --- The Recruiter's mappings (recruiter, loading_dock) -----------------------
 # S4 §4 row 3 and §6.1. The two in_cage setters come first (one NPC's
@@ -838,7 +843,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     {
       "aimId": "read_the_ledger",
       "title": "Read The Initiative's Ledger",
-      "description": "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and see who's still on their books.",
+      "description": "The catalogue server keeps the Insider Threat Initiative's ledger live: placements, candidates, and an older legacy section. Pull it, and see who's still on their books. When the Recruiter rings, answer: her offer opens the director's office, and the tape store with Tomb Beta's server is past that.",
       "status": "locked",
       "order": 2,
       "unlockCondition": { "aimCompleted": "get_in" },
@@ -939,33 +944,33 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "currentKnot": "start",
           "itemsHeld": [
             {
-              "_comment": "PLACEHOLDER labUrl, deliberately: the m09 lab sheet pages don't exist yet; lab sheets are written last (ASSET_LIST §7), and these four links are set then.",
+              "_comment": "Blind m09 stuck: the four field-guide pages were never written (404). The links point at the published m09 sheets instead: the VM companion's stage hints for the three server guides, the main sheet's Vigenere section for the archive codes.",
               "type": "lab-workstation",
               "id": "m09_catalogue_field_guide",
               "name": "SAFETYNET Field Guide: The Catalogue Server",
               "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-catalogue/"
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology-vm-technical-steps/#hints-vm-catalogue-foothold"
             },
             {
               "type": "lab-workstation",
               "id": "m09_ledger_field_guide",
               "name": "SAFETYNET Field Guide: The Ledger",
               "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-ledger/"
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology-vm-technical-steps/#hints-vm-ledger"
             },
             {
               "type": "lab-workstation",
               "id": "m09_tomb_beta_field_guide",
               "name": "SAFETYNET Field Guide: Tomb Beta's Server",
               "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-tomb-beta/"
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology-vm-technical-steps/#hints-vm-tomb-foothold"
             },
             {
               "type": "lab-workstation",
               "id": "m09_archive_code_guide",
               "name": "SAFETYNET Field Guide: Archive Codes",
               "takeable": true,
-              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/field-guide-archive-codes/"
+              "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/m09-digital-archaeology/#vigenere"
             },
             {
               "_comment": "The coded salvage line (S6 §1.10, §2.2). Given at the end of flag1_read (#give_item:notes:catalogue_salvage_line). Fixed text, no variants (C-07).",
@@ -2080,7 +2085,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "observationVariants": [
             { "condition": "globalVars.m05_found_pipeline_list && !globalVars.m05_recruiter_deal_accepted", "value": "The feed tray is empty. The last box never came up." },
             { "condition": "globalVars.legacy_files_saved", "value": "The last box, off the feed table." },
-            { "condition": "globalVars.legacy_clock_run", "value": "Strips in the bin. The last box is gone." }
+            { "condition": "globalVars.legacy_clock_run", "value": "Strips in the bin. The last box is gone." },
+            { "condition": "globalVars.legacy_clock_run && globalVars.sorensen_fate === 'talked'", "value": "Strips in the bin, and the sheaf she put back in the box. She has stopped feeding." }
           ],
           "text": "<%= series_l %>",
           "textVariants": [
@@ -2163,6 +2169,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "door_sign": "Director -- M. Sorensen",
       "locked": true,
       "lockType": "password",
+      "passwordHint": "No code to find. Finish the ledger and take the Recruiter's call; HaX opens this door after it.",
       "requires": "<%= office_code %>",
       "connections": {
         "east": "restricted_stacks"
@@ -2498,6 +2505,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "door_sign": "Salvage -- Bay 12",
       "locked": true,
       "lockType": "password",
+      "passwordHint": "The catalogue's coded line is a Vigenere cipher keyed to this bay's word. The shelf marks chart by the keypad has the word.",
       "requires": "<%= salvage_code %>",
       "ambientSound": "server_room_ventilation",
       "ambientVolume": 0.44,
