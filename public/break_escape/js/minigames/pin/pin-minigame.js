@@ -48,6 +48,24 @@ export function dustSummary(dustSet) {
 }
 
 // PIN Minigame Scene implementation
+/**
+ * Plain-text result of one guess, for screen readers and the test bridge.
+ * feedback is { rightPlace, rightNumber } or null when no lights are shown.
+ * "1 2 3 4: 1 right digit in the right place, 2 right digits in the wrong place".
+ */
+export function describeAttemptFeedback(input, feedback, isCorrect) {
+    const digits = String(input ?? '').split('').join(' ');
+    if (isCorrect) return `${digits}: correct`;
+    if (!feedback) return `${digits}: incorrect`;
+    const part = (n, where) => `${n} right ${n === 1 ? 'digit' : 'digits'} in the ${where} place`;
+    const { rightPlace = 0, rightNumber = 0 } = feedback;
+    if (!rightPlace && !rightNumber) return `${digits}: no right digits`;
+    const parts = [];
+    if (rightPlace) parts.push(part(rightPlace, 'right'));
+    if (rightNumber) parts.push(part(rightNumber, 'wrong'));
+    return `${digits}: ${parts.join(', ')}`;
+}
+
 export class PinMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -108,6 +126,7 @@ export class PinMinigame extends MinigameScene {
         this.displayElement = null;
         this.keypadElement = null;
         this.attemptsLogElement = null;
+        this.attemptsLiveElement = null;
         this.infoLeakToggleElement = null;
         this.pinCrackerIconElement = null;
     }
@@ -124,6 +143,9 @@ export class PinMinigame extends MinigameScene {
             maxAttempts: Number.isFinite(this.maxAttempts) ? this.maxAttempts : null,
             hasPinCracker: !!this.hasPinCracker,
             lastFeedback: (this.attempts || []).at(-1)?.feedback || null,
+            // Same text the screen-reader row labels and live region carry
+            attemptSummaries: (this.attempts || []).map(a => a.summary || describeAttemptFeedback(a.input, null, a.isCorrect)),
+            lastResultSummary: this.attemptsLiveElement ? this.attemptsLiveElement.textContent : '',
             isLocked: !!this.isLocked,
             // Dusting: whether the action is on offer, and the digits left lit (null: not dusted)
             dustAvailable: !!(this.hasFingerprintKit && this.dustable),
@@ -290,6 +312,13 @@ export class PinMinigame extends MinigameScene {
         this.attemptsLogElement = document.createElement('div');
         this.attemptsLogElement.className = 'pin-minigame-attempts-log';
         attemptsContainer.appendChild(this.attemptsLogElement);
+
+        // Announces the latest guess's result (the lights alone are visual only)
+        this.attemptsLiveElement = document.createElement('div');
+        this.attemptsLiveElement.className = 'pin-minigame-sr-only';
+        this.attemptsLiveElement.setAttribute('aria-live', 'polite');
+        this.attemptsLiveElement.setAttribute('role', 'status');
+        attemptsContainer.appendChild(this.attemptsLiveElement);
         
         interfaceContainer.appendChild(attemptsContainer);
         
@@ -736,6 +765,7 @@ export class PinMinigame extends MinigameScene {
         if (!this.attemptsLogElement) return;
         
         this.attemptsLogElement.innerHTML = '';
+        if (this.attempts.length === 0 && this.attemptsLiveElement) this.attemptsLiveElement.textContent = '';
         
         if (this.attempts.length === 0) {
             const emptyMessage = document.createElement('div');
@@ -759,6 +789,15 @@ export class PinMinigame extends MinigameScene {
             
             attemptElement.appendChild(attemptNumber);
             attemptElement.appendChild(attemptInput);
+
+            const showLights = (this.hasPinCracker && this.infoLeakToggleElement?.checked && attempt.feedback) ||
+                (this.infoLeakMode && attempt.feedback);
+            const summary = describeAttemptFeedback(attempt.input, showLights ? attempt.feedback : null, attempt.isCorrect);
+            attempt.summary = summary;
+            attemptElement.setAttribute('role', 'group');
+            attemptElement.setAttribute('aria-label', `Guess ${index + 1}, ${summary}`);
+            attemptNumber.setAttribute('aria-hidden', 'true');
+            attemptInput.setAttribute('aria-hidden', 'true');
             
             // Add visual feedback lights if pin-cracker is enabled and feedback is available
             // OR if mastermind mode is enabled via parameter
@@ -766,6 +805,7 @@ export class PinMinigame extends MinigameScene {
                 (this.infoLeakMode && attempt.feedback)) {
                 const feedbackContainer = document.createElement('div');
                 feedbackContainer.className = 'pin-minigame-feedback-lights';
+                feedbackContainer.setAttribute('aria-hidden', 'true');
                 
                 // Add green lights for right place
                 for (let i = 0; i < attempt.feedback.rightPlace; i++) {
@@ -788,6 +828,10 @@ export class PinMinigame extends MinigameScene {
             
             this.attemptsLogElement.appendChild(attemptElement);
         });
+
+        if (this.attemptsLiveElement) {
+            this.attemptsLiveElement.textContent = `Guess ${this.attempts.length}, ${this.attempts.at(-1).summary}`;
+        }
 
         // The log scrolls; keep the newest guess in view.
         this.attemptsLogElement.scrollTop = this.attemptsLogElement.scrollHeight;
