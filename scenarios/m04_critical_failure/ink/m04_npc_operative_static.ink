@@ -45,21 +45,21 @@ ENTROPY Operative 'Static': He doesn't need long. I just need you to be slow.
 // Engine robustness audit (m01-m08): set here, after his opening lines, so an Esc and a
 // reload during them replay the challenge instead of opening on bare choices.
 ~ static_challenged = true
-* [You're standing in a room that's about to catch fire.]
+* [(Press him.) You're standing in a room that's about to catch fire.]
     ENTROPY Operative 'Static': Then we'd better be quick.
     -> static_refuses
 
-* [He's not going to wait for you. Look at him.]
+* [(Needle him.) He's not going to wait for you. Look at him.]
     Narrator: For a fraction of a second, Static's eyes flick to the laptop, and to the man who has still not looked up.
     ENTROPY Operative 'Static': He doesn't have to wait for me. That's the job.
     -> static_refuses
 
-+ [Out of my way.]
++ [(Shove past.) Out of my way.]
     -> static_refuses
 
 // Pass 5 A3: the quiet way past. He doesn't move far, and a fight with Voltage
 // brings him in (#hostile:operative_static in Voltage's ink).
-+ [I'm not here for you. I'm here to talk to him.]
++ [(Stand down.) I'm not here for you. I'm here to talk to him.]
     -> static_steps_aside
 
 === static_steps_aside ===

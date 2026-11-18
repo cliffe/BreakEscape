@@ -409,7 +409,7 @@ test('P5-14: every giveaway the count names has a row; the two every fake carrie
     assert.ok(tells.includes('formOrigin') || tells.includes('hoverMismatch'), tells.join(','));
 });
 
-test('C-X7 golden: the step strip outerHTML is unchanged (current step, others plain)', () => {
+test('C-X7 golden: the step strip outerHTML (earlier steps done, current marked)', () => {
     const s = open();
     s._inspecting = false;
     s.scored = true;
@@ -417,9 +417,9 @@ test('C-X7 golden: the step strip outerHTML is unchanged (current step, others p
     s._renderSteps();
     assert.equal(s.stepStrip.outerHTML,
         '<ol class="lpb-steps" aria-label="Steps">'
-        + '<li class="lpb-step" data-step="pretext"><span class="lpb-step-label">Pretext</span></li>'
-        + '<li class="lpb-step" data-step="build"><span class="lpb-step-label">Build</span></li>'
-        + '<li class="lpb-step" data-step="score"><span class="lpb-step-label">Score</span></li>'
+        + '<li class="lpb-step is-done" data-step="pretext"><span class="lpb-step-label">Pretext</span><span class="lpb-step-sr"> (done)</span></li>'
+        + '<li class="lpb-step is-done" data-step="build"><span class="lpb-step-label">Build</span><span class="lpb-step-sr"> (done)</span></li>'
+        + '<li class="lpb-step is-done" data-step="score"><span class="lpb-step-label">Score</span><span class="lpb-step-sr"> (done)</span></li>'
         + '<li class="lpb-step is-current" data-step="send" aria-current="step"><span class="lpb-step-label">Send</span></li>'
         + '<li class="lpb-step" data-step="inspect"><span class="lpb-step-label">Inspect</span></li></ol>');
 });
