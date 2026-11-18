@@ -245,6 +245,9 @@
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
 .dusting-short[data-step="dust"] .dusting-keys, .dusting-short[data-step="lift"] .dusting-keys { display: none; }
+/* The status line grows with each announcement and would take the panel's room (the strip then rose over the powder line at
+   667x375 after a long message); two lines at most, the rest scrolls inside it */
+.dusting-short[data-step="dust"] .dusting-status, .dusting-short[data-step="lift"] .dusting-status { max-height: 32px; overflow-y: auto; }
 .dusting-short .dusting-tools { flex-wrap: nowrap; gap: 4px; margin-bottom: 4px; }
 .dusting-short .dusting-tools .dusting-tool { flex: 1 1 auto; min-width: 0; min-height: 28px; padding: 2px 4px; line-height: 16px; font-size: 16px; white-space: nowrap; text-align: center; justify-content: center; overflow: hidden; text-overflow: clip; }
 .dusting-short .dusting-tools .dusting-tool [data-slot], .dusting-short .dusting-actions .dusting-btn [data-slot] { display: none; }

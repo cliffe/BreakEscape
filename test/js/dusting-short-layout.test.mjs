@@ -304,6 +304,8 @@ test('short dust and lift: the panel keeps room above the 80 px strip (no headin
     assert.match(hide, /clip: rect\(0 0 0 0\)/);   // still in the accessibility tree
     assert.doesNotMatch(hide, /display: none/);
     assert.match(css, /\.dusting-keys \{ display: none; \}/);
+    for (const step of ['dust', 'lift']) assert.match(css, new RegExp(`\\.dusting-short\\[data-step="${step}"\\] \\.dusting-status`));
+    assert.match(css, /\.dusting-status \{ max-height: 32px; overflow-y: auto; \}/);
     // the other steps keep their heading and note
     assert.doesNotMatch(css, /dusting-short\[data-step="compare"\] \.dusting-forensic/);
 });
