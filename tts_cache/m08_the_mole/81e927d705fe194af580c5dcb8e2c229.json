@@ -1,0 +1,13 @@
+{
+  "key": "81e927d705fe194af580c5dcb8e2c229",
+  "npc": "julian_sallow",
+  "text": "Most people read a notice once, at the door. Tonight it's worth a second look.",
+  "voice": "Rasalgethi",
+  "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m08_the_mole",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T18:48:13Z"
+}
