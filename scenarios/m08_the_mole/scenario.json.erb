@@ -1275,8 +1275,8 @@ CREDITS
 <%# Relief watch (slice 3): trouble on the ops floor, never cleared. The cooler carries offWhen on this global. %>
             { "eventPattern": "npc_attacked:julian_sallow", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
             { "eventPattern": "npc_attacked:agnieszka_duda", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
-            { "eventPattern": "global_variable_changed:julian_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
-            { "eventPattern": "global_variable_changed:agnieszka_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "global_variable_changed:julian_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true, "ops_watch_ko": true } },
+            { "eventPattern": "global_variable_changed:agnieszka_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true, "ops_watch_ko": true } },
             { "eventPattern": "global_variable_changed:analyst_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
             { "eventPattern": "global_variable_changed:vector_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
 <%# Relief watch: a KO before the naming tips the mole off, as for every other bystander. One text per officer; the nightshade_tipped_off gate lets only the first through. %>
@@ -1789,7 +1789,7 @@ CREDITS
           "needsRooms": ["operations_floor"],
           "needsCompany": { "groups": ["ops_watch"] },
           "chatterCooldownMin": 2,
-          "chatter": {"cooler": ["Still on Level Red. Still quiet.", "Long night. They're all long on Red.", "Nobody talks above a whisper tonight.", "Water. Coffee's in the wrong room."]},
+          "chatter": {"cooler": {"lines": ["Still on Level Red. Still quiet.", "Long night. They're all long on Red.", "Nobody talks above a whisper tonight.", "Water. Coffee's in the wrong room."], "requireGlobal": {"ops_watch_upset": false}}},
           "exchanges": [
             {"with": "agnieszka_duda", "knot": "ex_relief_handover", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false}},
             {"with": "agnieszka_duda", "knot": "ex_lock_it", "topic": "cooler", "requireGlobal": {"ops_watch_upset": false, "julian_ko": false, "agnieszka_ko": false, "flag4_submitted": true}},
@@ -1800,9 +1800,9 @@ CREDITS
           "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "julian_ko",
           "eventMappings": [
-            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'main_lobby' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'intel_analysis' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'server_room' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'main_lobby' && globalVars.found_badge_audit === true && !globalVars.ops_watch_ko && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'intel_analysis' && globalVars.found_badge_audit === true && !globalVars.ops_watch_ko && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'server_room' && globalVars.found_badge_audit === true && !globalVars.ops_watch_ko && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 100 } } },
             { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "onceOnly": true, "delayMs": 3000, "bark": "Relief watch is on, Agent. Don't mind us." }
           ],
@@ -1832,12 +1832,12 @@ CREDITS
           "needsRooms": ["operations_floor"],
           "needsCompany": { "groups": ["ops_watch"] },
           "chatterCooldownMin": 2,
-          "chatter": {"cooler": ["Everything goes in the log. Everything.", "Nine days. Nobody here has slept.", "I wrote the time I came for water.", "Back to the desk in a minute."]},
+          "chatter": {"cooler": {"lines": ["Everything goes in the log. Everything.", "Nine days. Nobody here has slept.", "I wrote the time I came for water.", "Back to the desk in a minute."], "requireGlobal": {"ops_watch_upset": false}}},
           "needs": { "thirst": { "initial": 85, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
           "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "agnieszka_ko",
           "eventMappings": [
-            { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'julian_sallow' && !globalVars.ops_watch_upset && !globalVars.agnieszka_ko", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'julian_sallow' && !globalVars.ops_watch_ko && !globalVars.agnieszka_ko", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 85 } } }
           ],
           "observations": "The night-watch log-keeper, seated beside the senior duty officer with the watch log open in front of her."
@@ -1864,7 +1864,7 @@ CREDITS
           "observations": "The duty desk's console.",
           "text": "The duty officer's console. He angles it away from you without looking up.",
           "textVariants": [
-            { "condition": "globalVars.ops_watch_upset", "value": "The console has been snapped to the lock screen." },
+            { "condition": "globalVars.ops_watch_upset && !globalVars.julian_console_owner_away", "value": "The console has been snapped to the lock screen." },
             { "condition": "globalVars.julian_console_screen_locked", "value": "J. SALLOW -- SESSION LOCKED.\nRe-authentication required (Level Red)." },
             { "condition": "globalVars.julian_console_owner_away", "value": "NIGHT WATCH CONSOLE. Signed in: J. SALLOW, duty officer.\n\nOPERATIONS: all teams stood down.\nINTERNAL INVESTIGATION: active.\n\nWATCH LOG, this watch\nRelief watch on. Duty desk handed over.\nLevel Red notice: all classified systems require re-authentication.\n\nAnything typed here now goes in the log as J. SALLOW." }
           ]
@@ -1899,13 +1899,13 @@ CREDITS
           "observationDisplay": "gameDisplay",
           "text": "SAFETYNET GLOBAL OPERATIONS -- LIVE\n\nTeam Alpha ....... STAND DOWN (debrief)\nTeam Bravo ....... STAND DOWN (debrief)\nTeam Charlie ..... STAND DOWN (debrief)\nPortland response . AFTERMATH -- CASUALTY ASSESSMENT ONGOING\n\nINTERNAL INVESTIGATION: ACTIVE\nAll non-essential operations suspended until the leak is closed.\n\nFooter: 'We are not running operations. We are running a search of ourselves.'"
         },
-<%# Relief watch (slice 3): the ops-floor water cooler. Base type name, no position (claims the Tiled water_cooler1). offWhen switches it off for good once the watch is upset. Use and queue cells are hand-written north of the cooler, off the archives walkway and the door mouths. %>
+<%# Relief watch (slice 3): the ops-floor water cooler. Base type name, no position (claims the Tiled water_cooler1). offWhen switches it off for good once an officer is knocked out (ops_watch_ko); upset alone leaves the trips running, silently (the pools carry requireGlobal ops_watch_upset false). Use and queue cells are hand-written north of the cooler, off the archives walkway and the door mouths. %>
         {
           "type": "water_cooler",
           "id": "ops_cooler",
           "name": "Water Cooler",
           "takeable": false,
-          "offWhen": "ops_watch_upset",
+          "offWhen": "ops_watch_ko",
           "observations": "The floor's water cooler, a stack of paper cups beside it.",
           "affordance": { "capacity": 2, "useSeconds": 18, "chatter": "cooler", "overhearRadius": 360, "seat": "stand",
                           "useFrom": { "dx": -0.375, "dy": -1.02 },
@@ -2972,6 +2972,7 @@ CREDITS
     "julian_ko": false,
     "agnieszka_ko": false,
     "ops_watch_upset": false,
+    "ops_watch_ko": false,
     "julian_console_owner_away": false,
     "julian_console_screen_locked": false,
     "heard_ex_relief_handover": false,
