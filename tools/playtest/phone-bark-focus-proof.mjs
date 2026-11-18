@@ -46,8 +46,8 @@ async function openPhone(page, tag) {
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('figure it out')); // tutorial offer
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('ready'));
     if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi());
-    // An intro chat whose choices name neither Resume nor ready: take the first choice.
-    if (d?.reason === 'ambiguous-blocking-ui' && last?.activeMinigame?.id === 'person-chat') d = await page.evaluate(() => window.__test.minigame.chooseIndex(0));
+    // An intro chat whose choices name neither Resume nor ready: take the last choice (1-based).
+    if (d?.reason === 'ambiguous-blocking-ui' && last?.activeMinigame?.id === 'person-chat') d = await page.evaluate(() => window.__test.minigame.chooseIndex(2));
     // The title screen has no buttons: it continues on Space.
     if (d?.reason === 'blocking-ui-has-no-buttons') await page.keyboard.press('Space');
     trail.push(`${last?.activeMinigame?.id || last?.reason}>${d?.clicked || d?.reason || (d?.ok ? 'ok' : '?')}`);
