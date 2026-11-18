@@ -42,7 +42,7 @@ Darren Price: Shout if the lights go.
 {sofia_quiet:
     ~ sofia_quiet = false
 - else:
-    Sofia Marchetti: Cold out here, and we're out of sugar.
+    Sofia Marchetti: Bitter out here, and we're out of sugar.
 }
 + [How's the post holding up?]
     Sofia Marchetti: Cold and tired, but fed. One out of three's not bad.
@@ -51,7 +51,7 @@ Darren Price: Shout if the lights go.
     -> sofia_bye
 
 === sofia_bye ===
-Sofia Marchetti: I'll keep one warm for you.
+Sofia Marchetti: I'll keep a cup warm for you.
 ~ sofia_quiet = true
 #exit_conversation
 -> talk_sofia

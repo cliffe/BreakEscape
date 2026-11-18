@@ -9,7 +9,7 @@ Build: branch build/ol-m10, head 862860a6c (includes 93cc9ca10). Server keyless 
 | A. Reload after the breach (93cc9ca10) | PASS: no kettle use or job for either extra for 116 s after the load; a kettle use started 2.7 s after a real walk-in |
 | B. E1 after reload | PASS: both hidden at `closing_done`, and still hidden straight after a sync and reload |
 | C. Credits order | PASS (game 8071): MALHOTRA, DARREN PRICE, SOFIA MARCHETTI, plain lines |
-| D. Punch on Sofia, credit wording | PUNCH PASS, CREDITS NOT CAPTURED: the browser closed right after "End the mission now" in game 8090 (same failure as the previous run's credits replay) |
+| D. Punch on Sofia, credit wording | PUNCH PASS; credit clause PASS via the engine replay builder on live globals (game 8125, see "Check D rerun"), not seen on screen |
 
 ## A. Reload after the breach (game 8071)
 

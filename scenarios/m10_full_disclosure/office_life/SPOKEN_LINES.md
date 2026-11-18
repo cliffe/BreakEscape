@@ -7,9 +7,9 @@ Length is the spoken text without the speaker prefix. Pool and exchange lines ar
 | Darren Price | conversation | ink/m10_fp_support.ink:27 (talk_darren) | 48 | Watch the leads. The generator's touchy tonight. |
 | Darren Price | conversation | ink/m10_fp_support.ink:30 (talk_darren) | 49 | Lamps, heaters, the van chargers. Nothing clever. |
 | Darren Price | conversation | ink/m10_fp_support.ink:36 (darren_bye) | 23 | Shout if the lights go. |
-| Sofia Marchetti | conversation | ink/m10_fp_support.ink:45 (talk_sofia) | 38 | Cold out here, and we're out of sugar. |
+| Sofia Marchetti | conversation | ink/m10_fp_support.ink:45 (talk_sofia) | 40 | Bitter out here, and we're out of sugar. |
 | Sofia Marchetti | conversation | ink/m10_fp_support.ink:48 (talk_sofia) | 52 | Cold and tired, but fed. One out of three's not bad. |
-| Sofia Marchetti | conversation | ink/m10_fp_support.ink:54 (sofia_bye) | 27 | I'll keep one warm for you. |
+| Sofia Marchetti | conversation | ink/m10_fp_support.ink:54 (sofia_bye) | 29 | I'll keep a cup warm for you. |
 | Darren Price | exchange | ink/m10_fp_support.ink:61 (ex_fp_kettle_on) | 36 | Kettle's on. They'll be a while yet. |
 | Sofia Marchetti | exchange | ink/m10_fp_support.ink:62 (ex_fp_kettle_on) | 39 | Then it'll be stewed when they want it. |
 | Darren Price | exchange | ink/m10_fp_support.ink:63 (ex_fp_kettle_on) | 37 | Stewed tea at this hour is still tea. |

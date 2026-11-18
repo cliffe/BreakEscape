@@ -21,9 +21,9 @@ The user picked all five recommendations on the office-life questions (D118). Th
 
 ### Conversation
 
-- Cold out here, and we're out of sugar.
+- Bitter out here, and we're out of sugar.
 - Cold and tired, but fed. One out of three's not bad.
-- I'll keep one warm for you.
+- I'll keep a cup warm for you.
 
 ### Kettle chatter pool (kettle_fp)
 
