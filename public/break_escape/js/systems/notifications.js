@@ -298,19 +298,37 @@ export function updateHoverFromPointer(x, y, doc = (typeof document === 'undefin
     });
 }
 let pointerWatched = false;
+// Where the pointer last was. A toast above closing slides the rest up while the pointer
+// stays still, so holds are worked out again from here after every layout change (R2 M1).
+let lastPointerX = -1;
+let lastPointerY = -1;
+function refreshHover() {
+    try { updateHoverFromPointer(lastPointerX, lastPointerY); } catch (e) { /* a hold must never break a toast */ }
+}
 function watchPointer() {
     if (pointerWatched || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
     pointerWatched = true;
-    document.addEventListener('mousemove', (e) => updateHoverFromPointer(e.clientX, e.clientY), true);
-    document.addEventListener('mouseleave', () => updateHoverFromPointer(-1, -1), true);
+    document.addEventListener('mousemove', (e) => {
+        lastPointerX = e.clientX;
+        lastPointerY = e.clientY;
+        updateHoverFromPointer(lastPointerX, lastPointerY);
+    }, true);
+    // mouseleave does not bubble: on the root element it fires only when the pointer leaves the page
+    document.documentElement?.addEventListener?.('mouseleave', () => {
+        lastPointerX = -1;
+        lastPointerY = -1;
+        updateHoverFromPointer(-1, -1);
+    });
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('resize', refreshHover);
+        window.addEventListener('scroll', refreshHover, true);
+    }
 }
 
 function wireHoldHandlers(notification) {
     if (typeof notification.addEventListener !== 'function') return;   // a test stub
     watchPointer();
     const hold = (flag, on) => setHold(notification, flag, on);
-    notification.addEventListener('mouseenter', () => hold('_hoverHeld', true));
-    notification.addEventListener('mouseleave', () => hold('_hoverHeld', false));
     notification.addEventListener('focusin', () => hold('_focusHeld', true));
     notification.addEventListener('focusout', (e) => {
         // focus moving between the toast's own controls is not leaving it
@@ -356,6 +374,7 @@ function hudLanesActive() {
 
 function relayoutLanes() {
     try { if (hudLanesActive()) window.hudLanesRelayout(); } catch (e) { /* the hard release stands behind it */ }
+    refreshHover();
 }
 
 // Errors first: with hud-lanes present an error goes before the first toast in the container
@@ -499,9 +518,35 @@ function dropWaitingWarnings(container, keep) {
 
 // Screen readers hear every toast once (plan 2.7): errors in an alert region, the rest in a
 // polite one. The regions sit on body (never in the toast container, which the lanes measure)
-// and are looked up by id on each use. Emptied first and filled a tick later, so the same text
-// twice is read twice. Nothing here may break a toast.
-function announceToast(type, text) {
+// and are looked up by id on each use. Nothing here may break a toast.
+//
+// Toasts raised in one tick (the held queue after a panel, a burst of drops) used to overwrite
+// each other in the region, so a screen reader heard only the last (R2 B1). Texts are now
+// collected per region and written once, a tick later, joined: important ones first in the
+// order raised, then low-priority ones, then dropped asides folded into one "Also: ..." line.
+// The region is emptied first, so the same text twice is read twice.
+const pendingAnnouncements = { 'toast-live-alert': [], 'toast-live-polite': [] };
+const sentencePunct = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
+
+export function composeAnnouncement(items) {
+    const main = items.filter((i) => !i.dropped);
+    const ordered = [...main.filter((i) => !i.low), ...main.filter((i) => i.low)];
+    const parts = ordered.map((i) => sentencePunct(i.text));
+    const dropped = items.filter((i) => i.dropped).map((i) => i.text.replace(/[.!?]$/, ''));
+    if (dropped.length) parts.push(`Also: ${dropped.join('; ')}.`);
+    return parts.join(' ');
+}
+
+function flushAnnouncements(id) {
+    const items = pendingAnnouncements[id].splice(0);
+    if (!items.length) return;
+    try {
+        const r = document.getElementById(id);
+        if (r) r.textContent = composeAnnouncement(items);
+    } catch (e) { /* not announced */ }
+}
+
+function announceToast(type, text, flags = {}) {
     try {
         if (typeof document === 'undefined') return;
         const body = document.body;
@@ -520,13 +565,12 @@ function announceToast(type, text) {
             }
             body.appendChild(region);
         }
-        region.textContent = '';
-        setTimeout(() => {
-            try {
-                const r = document.getElementById(id);
-                if (r) r.textContent = text;
-            } catch (e) { /* not announced */ }
-        }, 0);
+        const queue = pendingAnnouncements[id];
+        queue.push({ text: String(text ?? ''), low: flags.low === true, dropped: flags.dropped === true });
+        if (queue.length === 1) {
+            region.textContent = '';
+            setTimeout(() => flushAnnouncements(id), 0);
+        }
     } catch (e) { /* not announced */ }
 }
 
@@ -672,7 +716,7 @@ function dropLowPriorityWaiting() {
         clearTimeout(gone.waitTimer);
         console.debug('[toasts] dropped, low priority and the line is long:', gone[0]);
         // Never shown, so it is announced here instead (once): a screen reader still hears it
-        announceToast(gone[1], spokenText(null, gone[2], gone[0], gone[5]?.html !== true, gone[5]?.verbatim === true));
+        announceToast(gone[1], spokenText(null, gone[2], gone[0], gone[5]?.html !== true, gone[5]?.verbatim === true), { dropped: true });
     }
 }
 
@@ -895,7 +939,8 @@ function renderNotification(message, type, title, duration, seen = false, option
         if (duration > 0) startCountdown(notification, duration);
         armErrorFloor(notification);
     }
-    announceToast(type, spokenText(notification, title, message, plainText, verbatim));
+    announceToast(type, spokenText(notification, title, message, plainText, verbatim), { low: options?.low === true });
+    refreshHover();
 
     // The X is a real button. Enter and Space stop at it: the PIN pad's document handler
     // would cancel the click on Enter and submit the PIN. Click is added last (some test
@@ -936,6 +981,7 @@ export function removeNotification(notification) {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
         }
+        refreshHover();
         showNextWaiting();
     }, 300);
 }

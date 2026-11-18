@@ -23,6 +23,7 @@ const els = () => [...container().querySelectorAll('.notification')];
 const messages = () => els().map((e) => e._toast.message);
 const reset = () => { container().innerHTML = ''; T.clearWaitingToasts(); };
 const old = (el, ms) => { el._toast.shownAt = Date.now() - ms; };
+const mouseAt = (x, y) => document.dispatchEvent(new dom.window.MouseEvent('mousemove', { clientX: x, clientY: y, bubbles: true }));
 const live = () => document.getElementById('toast-live-polite')?.textContent;
 
 test('dwellForBacklog: shortens only low-priority timed toasts with a backlog', () => {
@@ -124,20 +125,87 @@ test('B1: a long line of hints and teach lines loses none and shortens none', as
     reset();
 });
 
-test('B1: a long line of low asides drops the oldest low ones and announces each once', async () => {
+test('B1: a long line of low asides drops the oldest low ones and the region ends with every message, important first', async () => {
     reset();
-    const heard = [];
-    const mo = new dom.window.MutationObserver(() => { const t = live(); if (t) heard.push(t); });
-    mo.observe(document.body, { subtree: true, childList: true, characterData: true });
+    await wait(20);
     T.showNotification('s1', 'info', 'One', 60000);
     T.showNotification('s2', 'info', 'Two', 60000);
     ['aside one', 'aside two', 'aside three', 'aside four', 'aside five'].forEach((m) => T.showNotification(m, 'info', '', 5000, { low: true }));
     T.showNotification('Flag accepted', 'success', 'Flag', 5000);
     assert.equal(T.waitingToastCount(), 4);
     await wait(50);
-    mo.disconnect();
-    assert.ok(heard.includes('aside one') && heard.includes('aside two'), `M3: every dropped line reached the live region (${heard})`);
-    assert.equal(heard.filter((h) => h === 'aside one').length, 1, 'once');
+    const text = live();
+    assert.ok(text.includes('s1') && text.includes('s2'), `R2 B1: the shown toasts are in the settled region: ${text}`);
+    assert.ok(text.includes('Also: aside one; aside two.'), `the dropped asides are folded in after them: ${text}`);
+    assert.ok(text.indexOf('s2') < text.indexOf('Also:'), 'shown first, dropped after');
+    assert.equal(text.split('aside one').length - 1, 1, 'once');
+    // the waiting toasts are announced as they are shown, together when they render together
+    els().forEach((el) => T.removeNotification(el));
+    await wait(450);
+    const later = live();
+    assert.ok(later.includes('aside three'), `the next ones are announced as they show: ${later}`);
+    reset();
+});
+
+test('R2 B1: two titled toasts rendered in one tick are both in the region after one frame', async () => {
+    reset();
+    await wait(20);
+    T.showNotification('first body', 'success', 'Task Complete', 5000);
+    T.showNotification('second body', 'info', 'Intel', 5000);
+    await wait(30);
+    const text = live();
+    assert.ok(text.includes('first body') && text.includes('second body'), text);
+    assert.ok(text.indexOf('first body') < text.indexOf('second body'));
+    reset();
+});
+
+test('R2 B1: composeAnnouncement puts important first, low next, dropped folded into Also', () => {
+    const t = T.composeAnnouncement([
+        { text: 'low shown', low: true }, { text: 'Dropped the mug', dropped: true },
+        { text: 'Teach line.' }, { text: 'Someone is in the way.', dropped: true }]);
+    assert.equal(t, 'Teach line. low shown. Also: Dropped the mug; Someone is in the way.');
+});
+
+test('R2 M1: the hold moves when the toast above closes and the toasts slide up', async () => {
+    reset();
+    await wait(20);
+    const a = T.showNotification('top', 'info', '', 60000);
+    const b = T.showNotification('middle', 'info', '', 60000);
+    const c = T.showNotification('bottom', 'success', '', 60000, { brief: true });
+    const box = (top) => ({ left: 10, right: 110, top, bottom: top + 50, width: 100, height: 50 });
+    let slot = { a: 10, b: 70, c: 130 };
+    a.getBoundingClientRect = () => box(slot.a);
+    b.getBoundingClientRect = () => box(slot.b);
+    c.getBoundingClientRect = () => box(slot.c);
+    document.dispatchEvent(new dom.window.MouseEvent('mousemove', { clientX: 50, clientY: 90, bubbles: true }));
+    assert.equal(b._hoverHeld, true);
+    assert.ok(b._pausedLeft > 0, 'the middle toast is paused');
+    assert.ok(!c._hoverHeld);
+    slot = { a: -100, b: 10, c: 70 };   // the top one closes and the rest slide up; the pointer has not moved
+    T.removeNotification(a);
+    await wait(400);
+    assert.equal(b._hoverHeld, false, 'the toast that slid away from the pointer is released');
+    assert.equal(b._pausedLeft, null, 'its countdown runs again');
+    assert.equal(c._hoverHeld, true, 'the toast now under the pointer is held');
+    assert.ok(c._pausedLeft > 0);
+    slot = { a: -100, b: 10, c: 300 };
+    dom.window.dispatchEvent(new dom.window.Event('resize'));
+    assert.equal(c._hoverHeld, false, 'resize tests the pointer again');
+    reset();
+});
+
+test('R2 m1: a mouseleave on an ordinary element does not release the hold', () => {
+    reset();
+    const el = T.showNotification('held', 'info', '', 60000);
+    el.getBoundingClientRect = () => ({ left: 10, right: 110, top: 10, bottom: 60, width: 100, height: 50 });
+    document.dispatchEvent(new dom.window.MouseEvent('mousemove', { clientX: 50, clientY: 30, bubbles: true }));
+    assert.equal(el._hoverHeld, true);
+    const other = document.createElement('div');
+    document.body.appendChild(other);
+    other.dispatchEvent(new dom.window.Event('mouseleave'));
+    assert.equal(el._hoverHeld, true, 'an element crossing is not the pointer leaving the page');
+    document.documentElement.dispatchEvent(new dom.window.Event('mouseleave'));
+    assert.equal(el._hoverHeld, false, 'leaving the page releases it');
     reset();
 });
 
@@ -171,20 +239,22 @@ test('B2: hover and focus pause the countdown and it carries on with the time le
     reset();
     const el = T.showNotification('read me slowly', 'info', '', 700);
     await wait(250);
-    el.dispatchEvent(new dom.window.Event('mouseenter'));
+    el.getBoundingClientRect = () => ({ left: 10, right: 110, top: 10, bottom: 60, width: 100, height: 50 });
+    mouseAt(50, 30);
     assert.ok(el._pausedLeft > 0 && el._pausedLeft < 700);
     const left = el._pausedLeft;
     await wait(900);
     assert.equal(el._toast.closing, undefined, 'still up well past its time');
-    el.dispatchEvent(new dom.window.Event('mouseleave'));
+    mouseAt(-1, -1);
     assert.equal(el._pausedLeft, null);
     await wait(left + 700);
     assert.equal(el._toast.closing, true, 'closes after the rest of its time');
     reset();
     const el2 = T.showNotification('focus me', 'info', '', 400);
     el2.dispatchEvent(new dom.window.Event('focusin'));
-    el2.dispatchEvent(new dom.window.Event('mouseenter'));
-    el2.dispatchEvent(new dom.window.Event('mouseleave'));
+    el2.getBoundingClientRect = () => ({ left: 10, right: 110, top: 10, bottom: 60, width: 100, height: 50 });
+    mouseAt(50, 30);
+    mouseAt(-1, -1);
     await wait(700);
     assert.equal(el2._toast.closing, undefined, 'focus still holds it');
     el2.dispatchEvent(new dom.window.Event('focusout'));
@@ -197,11 +267,11 @@ test('B2: the pointer over a click-through toast body pauses it, by position', a
     reset();
     const el = T.showNotification('under the pointer', 'info', '', 600);
     el.getBoundingClientRect = () => ({ left: 10, right: 110, top: 10, bottom: 60, width: 100, height: 50 });
-    T.updateHoverFromPointer(50, 30);
+    mouseAt(50, 30);
     assert.ok(el._pausedLeft > 0);
     await wait(900);
     assert.equal(el._toast.closing, undefined, 'held past its time');
-    T.updateHoverFromPointer(500, 500);
+    mouseAt(500, 500);
     assert.equal(el._pausedLeft, null);
     await wait(1200);
     assert.equal(el._toast.closing, true);
