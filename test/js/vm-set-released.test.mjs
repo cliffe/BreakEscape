@@ -146,7 +146,7 @@ test('flag wording: vm_released shows the server sentence, or the fallback', asy
     assert.ok(F.REJECT_REASONS.includes('vm_released'));
     assert.equal(F.flagRejectReason('whatever', 'vm_released'), 'vm_released');
     const sentence = "This session's VMs have been released. Start the mission again to get fresh VMs.";
-    assert.equal(F.flagRefusalLine(sentence, { reason: 'vm_released' }), `✗ ${sentence}`);
-    assert.equal(F.flagRefusalLine('', { reason: 'vm_released' }), `✗ ${sentence}`);
+    assert.equal(F.flagRefusalLine(sentence, { reason: 'vm_released' }), sentence);
+    assert.equal(F.flagRefusalLine('', { reason: 'vm_released' }), sentence);
     assert.doesNotMatch(F.flagRefusalLine(sentence, { reason: 'vm_released', flagValue: 'abc' }), /Flags usually look like/);
 });
