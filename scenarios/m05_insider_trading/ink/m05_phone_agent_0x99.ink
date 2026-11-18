@@ -334,7 +334,7 @@ That should worry you more than the pitch. He knows the cost, and decided he cou
     - call_is_callback: Thank you. Listen.
     - call_answer_seconds > 10: Finally. Sit down for this.
 }
-The Architect's own authorisation. A casualty projection, reviewed, and signed off as an acceptable cost.
+The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
 
 // Blind m05 #4: the call opening, the authorisation and the two follow-ups arrived as one run. A
 // one-option beat after the authorisation lets it land; the player taps on for the rest.
@@ -432,7 +432,7 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
 - flag2_submitted and not flag2_discussed:
     ~ flag1_discussed = true
     ~ flag2_discussed = true
-    Its user accounts will tell you who's been living on it.
+    Start with the box's user accounts.
 - else:
     ~ flag1_discussed = true
     Now use it. The upload flaw needs you logged in, and you are.
@@ -909,7 +909,7 @@ Map what's alive on that subnet before you touch anything. Then find out everyth
 #speaker:agent_0x99
 ~ confrontation_advice_given = true
 
-Go soft and he gets the exit ENTROPY never offered: he works for us and his family stays whole, if he wants out.
+Go soft and, if he wants out, he gets the exit ENTROPY never offered: he works for us and his family stays whole.
 
 {patricia_ko:
     Go hard and you hold him, and I call the police from a number that leads nowhere.
