@@ -11,16 +11,36 @@ const check = (ok, msg) => { console.log((ok ? 'ok   ' : 'FAIL ') + msg); if (!o
 const HAX = 'agent_0x99';
 const browser = await chromium.launch();
 
+
+// Open the player's phone through the bridge. A fresh game first shows the resume overlay,
+// the title screen, Agent HaX's intro chat and the Mission Brief; clear each in turn, then
+// open the phone and fail with the bridge's reason if it never opens.
+async function openPhone(page, tag) {
+  let last = null;
+  for (let i = 0; i < 40; i++) {
+    last = await page.evaluate(() => window.__test.openInventoryItem('phone'));
+    if (last?.ok) {
+      await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
+      return;
+    }
+    const blocked = last?.reason === 'minigame-active' || last?.reason === 'item-obscured' || last?.reason === 'no-inventory-item-matching';
+    if (!blocked) break;
+    // Pick the intro choice that ends HaX's chat; otherwise the plain dismiss; the session overlay wants "Resume".
+    const miss = (d) => !d || String(d.reason || '').startsWith('no-button-matching');
+    let d = await page.evaluate(() => window.__test.dismissBlockingUi('Resume'));
+    if (miss(d)) d = await page.evaluate(() => window.__test.dismissBlockingUi('ready'));
+    if (miss(d)) await page.evaluate(() => window.__test.dismissBlockingUi());
+    await page.waitForTimeout(1500);
+  }
+  throw new Error(`${tag}: could not open the phone: ${JSON.stringify(last).slice(0, 600)}`);
+}
+
 async function run(w, h, tag) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   await page.goto(url, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.game?.loop && !!window.__test, null, { timeout: 90000 });
   await page.evaluate(() => window.__test.throttleFps(20)); // fixed steps stay on
   await page.waitForTimeout(1500);
-  // dismiss any Mission Brief / resume overlay so the phone can open
-  for (const sel of ['#session-resume-btn', '.mission-brief-close', '.mission-brief-start']) {
-    const el = await page.$(sel); if (el && await el.isVisible()) { await el.click(); await page.waitForTimeout(300); }
-  }
   const send = (text, startKnot, skipAdd) => page.evaluate(({ id, text, startKnot, skipAdd }) => {
     if (!skipAdd) window.npcManager.addMessage(id, 'npc', text, { isBark: true });
     const npc = window.npcManager.getNPC(id);
@@ -30,8 +50,7 @@ async function run(w, h, tag) {
   const active = () => page.evaluate(() => { const a = document.activeElement; return a ? (a.className || a.id || a.tagName) + '' : null; });
 
   // A1: open the phone (list or HaX thread) and look at focus
-  await page.evaluate(() => window.__test.openInventoryItem?.('phone') || window.__test.openPhone?.());
-  await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
+  await openPhone(page, tag);
   await page.waitForTimeout(800);
   const inside = await page.evaluate(() => !!document.activeElement?.closest?.('.phone-messages-container'));
   check(inside, `${tag}: focus is inside the phone on open (${await active()})`);
@@ -92,8 +111,7 @@ async function run(w, h, tag) {
   // (M2, a text during a call: not scripted here. m01 has no __test route to start a call;
   // the ringer offer needs a mapping, and the unit test covers isCallMode / callActive.)
   await page.evaluate(() => window.barkSystem?.dismissAllBarks?.());
-  await page.evaluate(() => window.__test.openInventoryItem?.('phone') || window.__test.openPhone?.());
-  await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
+  await openPhone(page, tag);
   await page.evaluate((id) => window.MinigameFramework.currentMinigame.openConversation(id), HAX);
   await page.waitForTimeout(1500);
   const b0 = await barks();
