@@ -761,10 +761,8 @@ export default class PhoneChatUI {
             contactList.appendChild(contactItem);
             // Opt-in (NPC "livePreview": true, lab R5 F4): a looping hint contact
             // previews the line opening its thread would add now
-            if (npc.livePreview === true) {
-                contactItem.dataset.historyLength = String(this.npcManager.getConversationHistory(npc.id).length);
-                this.refreshLivePreview(npc, contactItem);
-            }
+            if (npc.livePreview === true) contactItem.dataset.historyLength = String(this.npcManager.getConversationHistory(npc.id).length);
+            if (npc.livePreview === true) this.refreshLivePreview(npc, contactItem);
         });
 
         console.log(`📋 Populated ${npcs.length} contacts`);
