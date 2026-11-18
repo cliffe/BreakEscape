@@ -173,7 +173,7 @@ Everything later (the console claim, trip measurements, the doorway check) is me
 
 | Object | Declared as | Notes |
 |---|---|---|
-| `ops_cooler` | `type: "water_cooler"` (base name), no position | claims Tiled `water_cooler1`; `offWhen: "ops_watch_upset"`; `affordance { capacity: 2, useSeconds: 18, chatter: "cooler", overhearRadius: 360, seat: "stand", queue }` with the hand-written cells from 3.1 |
+| `ops_cooler` | `type: "water_cooler"` (base name), no position | claims Tiled `water_cooler1`; `offWhen: "ops_watch_ko"`; `affordance { capacity: 2, useSeconds: 18, chatter: "cooler", overhearRadius: 360, seat: "stand", queue }` with the hand-written cells from 3.1 |
 | `julian_console` | `type: "pc"`, no `position`, declared first | claims the duty desk's west pc12 (first in the new layer order); `workstation: true`, `owner: "julian_sallow"`, `readable`, `readDisplay: "gameDisplay"`, `addToNotes: false`, `"affordance": false`, text and variants in section 5; no `lockType`, not a network host |
 | pc12 twin, duty desk east monitor | `decor: true`, `type: "pc"`, no `position`, declared second | claims the duty desk's east pc12 and keeps it visible |
 | pc12 twin, analyst's desk | `decor: true`, `type: "pc"`, no `position`, declared third | claims the analyst's pc12 (239,145) and keeps it visible |
@@ -266,7 +266,7 @@ Exchanges (`exchanges` on Julian, `with: "agnieszka_duda"`, `topic: "cooler"`):
 
 `flag4_submitted` is set only by the VM flag (SCN:1951). Gating an optional exchange on it leaves the flag as required as before. The needs clock stops while the VM is open, so this exchange cannot fire then; it plays on a later cooler meeting.
 
-Bark: one, Julian, `room_entered:operations_floor`, `onceOnly`, `delayMs` 3000, condition `globalVars.found_badge_audit === true && !globalVars.ops_watch_ko && !globalVars.julian_ko`: "Relief watch is on, Agent. Don't mind us." Reason: tells a returning player the floor has changed.
+Bark: one, Julian, `room_entered:operations_floor`, `onceOnly`, `delayMs` 3000, condition `globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko` (stays on upset: it is a spoken line): "Relief watch is on, Agent. Don't mind us." Reason: tells a returning player the floor has changed.
 
 Existing lines changed: none. New line in an existing file: the debrief block in 2.6.
 
