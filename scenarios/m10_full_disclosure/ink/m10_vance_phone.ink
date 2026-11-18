@@ -7,7 +7,7 @@ INCLUDE m10_carryover_vars.ink
 
 === start ===
 + [(Put the phone away.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> start
 
 // ---------------------------------------------------------------
@@ -92,7 +92,7 @@ That's it. Shutter's dead. Sixty-year-old kit, and it still does what it's told.
 // After the cut: no text, one way out.
 === cut_after ===
 + [(Put the phone away.)]
-    #exit_conversation
+    #exit_conversation #close_phone
     -> cut_after
 
 // Stage 9 final check (m09 CONTRACT §15 pattern): the phone closes ~3 ms after

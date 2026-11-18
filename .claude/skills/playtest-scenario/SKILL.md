@@ -125,6 +125,8 @@ Never reconstruct a trace from what you expected to happen. If a command was not
 
 ### Harness gotchas from the phone calls track (November 2026)
 
+- **`--start-room` strands mappings owned by NPCs in other rooms.** The client loads NPCs per room, so a person NPC outside the start room never registers its eventMappings. m03's `closing_debrief` owns the debrief mappings: start in `conference_room_01` without `--carry-npc closing_debrief` and the debrief never fires. new-game.rb prints a WARNING naming each such NPC; carry them (only possible from the original start room), or walk there.
+- **`--set` now seeds `objectivesState`.** Story-gated aims used to stay shut on a `--set`-only game because the controller sends `objectivesState` only when it is present; the workaround was a throwaway `--complete-task`. Not needed any more.
 - **`new-game.rb --start-room` changes speaker resolution.** It rewrites the game's room copy, so records move rooms and a display-name prefix shared by two records (HaX in m09/m10) can resolve to the other one: voice requests then 403 in that game only. Reach a scene with `--set` and `--imports` when voices matter.
 - **`--set` is overwritten for imported globals** (`importGlobals` are re-applied by the server). Use `--imports=<file.json>` for those.
 - **Assigning a global through the bridge does not emit `global_variable_changed`**, so event mappings keyed on it don't fire. Trigger the real action, or emit the event yourself after setting the value.

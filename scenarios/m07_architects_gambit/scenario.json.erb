@@ -1194,14 +1194,14 @@ scada_password = "CascadeWindow19"
             <%# PASS 5 puzzle chains r1 (F2): when a fight starts, say how to fight and
                 that walking away works (m06 S1 pattern, the tutorial's control words).
                 A reload restores hostility with restored: true, so it doesn't repeat. %>
-            <%# PASS 5 puzzle chains closing round (F8/N1): Q cycles open hand, jab, cross
-                (hud.js), so it never "stows" the fists, and the chase has no leash, so no
+            <%# PASS 5 puzzle chains closing round (F8/N1): the old Q cycling is gone (F
+                punches, Q held blocks), and the chase has no leash, so no
                 promise that walking away ends it. Same wording as m05; split for the 30-word cap. %>
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'ray_hollis' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Fists up, face him, hit him. Q a second time throws the harder punch." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you. Face him and hit him: F to punch, keep pressing for a harder one. Hold Q to block." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
@@ -1213,25 +1213,25 @@ scada_password = "CascadeWindow19"
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+              "sendTimedMessage": { "delay": 1000, "message": "Park's swinging. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'thomas_park' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the vault, and won't wait while you read." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk (not while blocking). He's slower than you, won't follow you out of the vault, and won't wait while you read." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. Q switches to fists (again for a harder punch), then E or click when he's in front. Face him squarely." }
+              "sendTimedMessage": { "delay": 1000, "message": "Mercer's coming at you. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'james_mercer' && data.isHostile === true && data.restored !== true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk, fists up or not. He's slower than you, won't follow you out of the control room, and won't wait while you read." }
+              "sendTimedMessage": { "delay": 5500, "message": "To get clear, click open floor and walk (not while blocking). He's slower than you, won't follow you out of the control room, and won't wait while you read." }
             },
             <%# Engine regression fixes (2026-10-17, finding 3): a Restart after a
                 knockout calms a non-KO'd Hollis, Park or Mercer and emits
@@ -1255,17 +1255,14 @@ scada_password = "CascadeWindow19"
             {
               "eventPattern": "conversation_closed:opening_briefing_cutscene",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: Q for fists, E or click to punch, face them squarely. Q until the open hand shows to use anything." }
+              "sendTimedMessage": { "delay": 2500, "message": "The checkpoint guard is bought. If anyone swings at you: F to punch, hold Q to block, face them squarely." }
             },
-            <%# Blind run A fixes (M1, the run's Mercer note): after the first knockout,
-                fists up blocks every click (m05's pattern). Once, on whichever KO is first. %>
 <% %w[ray_hollis thomas_park james_mercer].each do |ko_id| %>
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_ko:<%= ko_id %>",
-              "condition": "!globalVars.hands_down_said",
-              "onceOnly": true,
-              "setGlobal": { "hands_down_said": true },
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             },
 <% end %>
             <%# Blind run A fixes (m7) added a case hint as the keypad opened. Since
@@ -1390,7 +1387,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.debrief_requested && globalVars.flag1_submitted === true && globalVars.flag2_submitted === true && globalVars.flag3_submitted === true",
               "onceOnly": true,
               "setGlobal": { "debrief_requested": true },
-              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. Next door you go through, he's on the link." }
+              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. Next door you go through, he's on the link. Anything left to do here, finish it before you take that door." }
             },
 <% [1, 2, 3].each do |n| %>
             {
@@ -1399,7 +1396,7 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.debrief_requested && !globalVars.flag<%= n %>_submitted",
               "onceOnly": true,
               "setGlobal": { "debrief_requested": true },
-              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. The moment the last of it is through the relay, he's on." }
+              "sendTimedMessage": { "delay": 500, "message": "Netherton's done waiting. The moment the last of it is through the relay, he's on. Finish anything else here first." }
             },
 <% end %>
 <% %w[security_checkpoint operations_floor server_room scada_control generator_room cable_vault].each do |r| %>
@@ -1437,18 +1434,16 @@ scada_password = "CascadeWindow19"
             { "eventPattern": "npc_attacked:adaeze_okafor", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
             { "eventPattern": "npc_attacked:gwen_pritchard", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } },
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_ko:adaeze_okafor",
-              "condition": "!globalVars.hands_down_said",
-              "onceOnly": true,
-              "setGlobal": { "hands_down_said": true },
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             },
             {
+              "_comment": "Retired 2026-11-18: the 'Hands down' text is gone (no fists mode any more). Kept as an inert placeholder so later eventMappings keep their index (once-only records key on it).",
               "eventPattern": "npc_ko:gwen_pritchard",
-              "condition": "!globalVars.hands_down_said",
-              "onceOnly": true,
-              "setGlobal": { "hands_down_said": true },
-              "sendTimedMessage": { "delay": 7000, "message": "Hands down: press Q until the open hand shows. While your fists are up, nothing you click will open." }
+              "condition": "data.retired_2026_11_18 === true",
+              "onceOnly": true
             }
           ],
           "itemsHeld": [
@@ -2642,7 +2637,6 @@ scada_password = "CascadeWindow19"
     "architect_echo_heard": false,
     "teacher_discussed": false,
     "hurt_line_said": false,
-    "hands_down_said": false,
     "flags_nag_sent": false,
     "live_warning_sent": false,
     "debrief_requested": false,

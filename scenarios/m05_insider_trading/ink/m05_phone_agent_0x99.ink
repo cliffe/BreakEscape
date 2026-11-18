@@ -935,7 +935,7 @@ It only works if he wants out.
     I won't choose for you. But weigh it like this.
     Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside.
     Hard is certain tonight, and we learn nothing from him.
-    If it turns into a fight: he's no fighter. Q switches to fists. Can't take him? Get out of his reach, then message me.
+    If it turns into a fight: he's no fighter. F to punch, hold Q to block. Can't win? Get clear, then message me.
     -> support_hub
 
 + [I'll decide when I'm standing in front of him.]
@@ -1066,7 +1066,7 @@ Thursday, nine o'clock. My office.
     Torres is down and nobody's decided what happens to him. Get back to the vault.
 // Struggling run A (D1): mid-fight, or after a lost one.
 - torres_hostile:
-    Torres went for you at that terminal. He's past talking. If he swings: Q for fists, then E or click when he's in front.
+    Torres went for you at that terminal. He's past talking. If he swings: F to punch, hold Q to block. Face him squarely.
     Or get clear of him, then tell me to send Security. It'll cost us any chance of talking to him.
 - torres_identified and not torres_print_collected:
     He's in the key vault, past the server room. The reader takes one of two prints, and his is on something in his office.

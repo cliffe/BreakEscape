@@ -21,7 +21,7 @@ function copy(p, rewrites = {}) {
     return pathToFileURL(out).href;
 }
 writeFileSync(join(tmp, 'api-stub.mjs'), 'export const ApiClient = {};');
-writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.gameContainer = c; this.params = p; } init() {} start() {} complete() {} cleanup() {} }');
+writeFileSync(join(tmp, 'base-minigame.mjs'), 'export class MinigameScene { constructor(c, p) { this.gameContainer = c; this.params = p; } init() {} start() {} complete() {} cleanup() {} resolveEarlyClose(s) { return s || this._successPending === true; } markSuccessPending() { this._successPending = true; } holdSuccess(ms) { this.markSuccessPending(); setTimeout(() => this.complete(true), ms); } }');
 const P = "'./rfid-protocols.js'", PM = "'./rfid-protocols.mjs'";
 const protocolsUrl = copy('minigames/rfid/rfid-protocols.js');
 copy('utils/display-dashes.js');
