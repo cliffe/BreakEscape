@@ -24,6 +24,8 @@ Observed (7895):
 
 Correction (17 November 2026, build review R2 m4): the line above says the sofa shot was taken with the player in reception at (48, 210). `screenshots/lp4_sofa_after_evac.png` does not show that. The frame is centred on the SCADA control room with an examine box open; reception's sofa is at the top-left edge, half covered by the objectives panel, and the visible half is empty. It agrees with the text but is not the sofa render check. A re-shoot with the player in reception and the objectives panel collapsed is still open.
 
+Replaced (18 November 2026): the re-shoot is `screenshots/sofa_after_evac_reshoot.png` (LIVE_PROOF_7.md check C). Player in reception at (107.5, 218.5), objectives panel collapsed, no toasts, the sofa empty and the guard at his desk. `lp4_sofa_after_evac.png` is superseded.
+
 Note (7888): the first sofa shot walked the player to (150, 200) and the guard's "Still need you at the desk first, my lover. Badge." challenge covered the frame. Not usable as the sofa shot, kept as `screenshots/lp4_c1_7888_guard_overlay_not_used.png`. Reload result on 7888 was the same as 7895.
 
 ## 2a. Attack Ibrahim while seated. Recorded
