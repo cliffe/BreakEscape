@@ -8,7 +8,7 @@ import { phoneBarkText } from '../minigames/phone-chat/phone-chat-speaker.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { releaseHeldBarks, HELD_BARK_VOICE_CAP_MS } from './bark-release-policy.js';
 import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from '../utils/overlay-open.js';
-import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS } from './bark-lifetime.js';
+import { barkLifetimeMs, barksToTrim, BARK_RESUME_MIN_MS, barkMaxVisible } from './bark-lifetime.js';
 import { inventoryBlockedByForcedMinigame } from './forced-minigame-guard.js';
 import { barkSource, arrowDirection, startHudLanes, dialogLayerOpen } from '../ui/hud-lanes.js';
 import { applyHeadshotBox } from '../utils/npc-headshot.js';
@@ -487,6 +487,7 @@ export default class NPCBarkSystem {
     this.lastRoute = { npcId, route: 'toast', source: speech ? 'speech' : 'phone' };
 
     const el = document.createElement('div');
+    el._continuation = payload.continuation === true;
     el.className = `npc-bark ${speech ? 'npc-bark--speech' : 'npc-bark--phone'}`;
     el.dataset.source = speech ? 'speech' : 'phone';
 
@@ -824,7 +825,16 @@ export default class NPCBarkSystem {
       // Phone texts placed by the lanes are not closed for want of room: the lanes step the
       // oldest aside, paused, until there is room (review R1 m1); only the count limit applies
       if (host === this.container && host.dataset.lane === 'notify') available = Infinity;
-      const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available);
+      // The two lanes share a budget of four: with toasts on screen the phone stack keeps to
+      // what is left, at least one text (older ones stay in the phone thread), so the lanes
+      // together do not pile up (m09 blind run)
+      // The count is notifications.js shownToasts: timed toasts only, so a Key Ring or Mission
+      // Brief left open does not cut the stack. The newest text being a continuation (a gate's
+      // hint, not in the thread) is exempt from the budget.
+      const shown = host === this.container && !barks[barks.length - 1]?._continuation
+        ? (window.shownToastCount?.() || 0) : 0;
+      const maxVisible = barkMaxVisible(shown);
+      const drop = barksToTrim(barks.map(el => ({ height: el.offsetHeight })), available, { maxVisible });
       barks.slice(0, drop).forEach(el => this._removeBark(el));
     });
   }

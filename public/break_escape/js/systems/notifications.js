@@ -220,19 +220,129 @@ function findSameToast(container, message, type, title, options, pending) {
 }
 
 // Start (or restart) a toast's countdown: the progress bar and the removal timer.
-function startCountdown(notification, duration) {
+// total: the length the bar was drawn for (a resumed countdown starts part way along it).
+function startCountdown(notification, duration, total = duration) {
     clearTimeout(notification._hideTimer);
+    notification._countdownAt = Date.now();
+    notification._countdownMs = duration;
+    notification._barTotal = total;
     const progress = notification.querySelector('.notification-progress');
+    const pct = `${Math.max(0, Math.min(100, (duration / total) * 100))}%`;
+    // Under the pointer or with keyboard focus inside: the time waits, nothing runs down
+    // (WCAG 2.2.1). It starts when the pointer leaves or the focus goes (resumeCountdown).
+    if (isHeld(notification)) {
+        notification._pausedLeft = duration;
+        if (progress?.style) {
+            progress.style.transition = 'none';
+            progress.style.width = pct;
+        }
+        return;
+    }
+    notification._pausedLeft = null;
     if (progress?.style) {
         progress.style.transition = 'none';
-        progress.style.width = '100%';
-        void progress.offsetWidth;   // restart the bar from full
+        progress.style.width = pct;
+        void progress.offsetWidth;   // restart the bar from where it is
         progress.style.transition = `width ${duration}ms linear`;
         setTimeout(() => { progress.style.width = '0%'; }, 10);
     }
-    notification._countdownAt = Date.now();
-    notification._countdownMs = duration;
     notification._hideTimer = setTimeout(() => removeNotification(notification), duration);
+}
+
+// ---- Hover and focus pause (toast R1 B2) ----
+// Every timed toast stops its countdown while the pointer is over it or focus is inside it,
+// and carries on with the time it had left when both are gone.
+function isHeld(notification) {
+    return notification._hoverHeld === true || notification._focusHeld === true;
+}
+
+function pauseCountdown(notification) {
+    const t = notification._toast;
+    if (!t || t.closing || !(t.duration > 0) || notification._pausedLeft != null) return;
+    if (notification._yieldLeft != null || !notification._countdownAt) return;   // stepped aside / not started
+    clearTimeout(notification._hideTimer);
+    const total = notification._barTotal || notification._countdownMs || t.duration;
+    const left = Math.max(0, (notification._countdownMs || t.duration) - (Date.now() - notification._countdownAt));
+    notification._pausedLeft = left;
+    const progress = notification.querySelector?.('.notification-progress');
+    if (progress?.style) {
+        progress.style.transition = 'none';
+        progress.style.width = `${Math.max(0, Math.min(100, (left / total) * 100))}%`;
+    }
+}
+
+function resumeCountdown(notification) {
+    const left = notification._pausedLeft;
+    if (left == null || isHeld(notification)) return;
+    notification._pausedLeft = null;
+    if (notification._toast?.closing) return;
+    startCountdown(notification, Math.max(left, 500), notification._barTotal || left);
+}
+
+function setHold(notification, flag, on) {
+    if ((notification[flag] === true) === on) return;
+    notification[flag] = on;
+    if (on) pauseCountdown(notification); else resumeCountdown(notification);
+}
+
+// A toast's body takes no pointer events (it is click-through, so it never blocks the game
+// under it), which means mouseenter never fires over it. The pointer is tested against each
+// toast's box instead, from one mousemove listener on the document.
+export function updateHoverFromPointer(x, y, doc = (typeof document === 'undefined' ? null : document)) {
+    const list = doc?.querySelectorAll ? [...doc.querySelectorAll('#notification-container .notification')] : [];
+    list.forEach((el) => {
+        if (!el._toast || el._toast.closing) return;
+        const r = el.getBoundingClientRect();
+        const inside = r.width > 0 && r.height > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+        setHold(el, '_hoverHeld', inside);
+    });
+}
+let pointerWatched = false;
+// Where the pointer last was. A toast above closing slides the rest up while the pointer
+// stays still, so holds are worked out again from here after every layout change (R2 M1).
+let lastPointerX = -1;
+let lastPointerY = -1;
+function refreshHover() {
+    try { updateHoverFromPointer(lastPointerX, lastPointerY); } catch (e) { /* a hold must never break a toast */ }
+}
+function watchPointer() {
+    if (pointerWatched || typeof document === 'undefined' || typeof document.addEventListener !== 'function') return;
+    pointerWatched = true;
+    // A tap makes a compatibility mousemove on plain HTML, which must not set a hover point
+    // (R3 m2): pointer events say what made the move, mousemove is the fallback without them.
+    const hoverAt = (e) => {
+        lastPointerX = e.clientX;
+        lastPointerY = e.clientY;
+        updateHoverFromPointer(lastPointerX, lastPointerY);
+    };
+    const hasPointerEvents = typeof window !== 'undefined' && typeof window.PointerEvent === 'function';
+    if (hasPointerEvents) {
+        document.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') hoverAt(e); }, true);
+    } else {
+        document.addEventListener('mousemove', (e) => { if (!e.sourceCapabilities?.firesTouchEvents) hoverAt(e); }, true);
+    }
+    // mouseleave does not bubble: on the root element it fires only when the pointer leaves the page
+    document.documentElement?.addEventListener?.('mouseleave', () => {
+        lastPointerX = -1;
+        lastPointerY = -1;
+        updateHoverFromPointer(-1, -1);
+    });
+    if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+        window.addEventListener('resize', refreshHover);
+        window.addEventListener('scroll', refreshHover, true);
+    }
+}
+
+function wireHoldHandlers(notification) {
+    if (typeof notification.addEventListener !== 'function') return;   // a test stub
+    watchPointer();
+    const hold = (flag, on) => setHold(notification, flag, on);
+    notification.addEventListener('focusin', () => hold('_focusHeld', true));
+    notification.addEventListener('focusout', (e) => {
+        // focus moving between the toast's own controls is not leaving it
+        if (e?.relatedTarget && notification.contains?.(e.relatedTarget)) return;
+        hold('_focusHeld', false);
+    });
 }
 
 // A toast that steps aside for a finished-task line (ui/hud-lanes.js, review R2 M4) keeps the
@@ -246,7 +356,9 @@ function laneYieldHandler(notification) {
             if (notification._yieldLeft != null) return;
             clearTimeout(notification._hideTimer);
             const used = Date.now() - (notification._countdownAt || Date.now());
-            notification._yieldLeft = Math.max(0, (notification._countdownMs || t.duration) - used);
+            notification._yieldLeft = notification._pausedLeft != null ? notification._pausedLeft
+                : Math.max(0, (notification._countdownMs || t.duration) - used);
+            notification._pausedLeft = null;
         } else if (notification._yieldLeft != null) {
             const left = Math.max(TOAST_RESUME_MIN_MS, notification._yieldLeft);
             notification._yieldLeft = null;
@@ -270,6 +382,7 @@ function hudLanesActive() {
 
 function relayoutLanes() {
     try { if (hudLanesActive()) window.hudLanesRelayout(); } catch (e) { /* the hard release stands behind it */ }
+    refreshHover();
 }
 
 // Errors first: with hud-lanes present an error goes before the first toast in the container
@@ -413,9 +526,63 @@ function dropWaitingWarnings(container, keep) {
 
 // Screen readers hear every toast once (plan 2.7): errors in an alert region, the rest in a
 // polite one. The regions sit on body (never in the toast container, which the lanes measure)
-// and are looked up by id on each use. Emptied first and filled a tick later, so the same text
-// twice is read twice. Nothing here may break a toast.
-function announceToast(type, text) {
+// and are looked up by id on each use. Nothing here may break a toast.
+//
+// Toasts raised in one tick (the held queue after a panel, a burst of drops) used to overwrite
+// each other in the region, so a screen reader heard only the last (R2 B1). Texts are now
+// collected per region and written once, a tick later, joined: important ones first in the
+// order raised, then low-priority ones, then dropped asides folded into one "Also: ..." line.
+// The region is emptied first, so the same text twice is read twice.
+// A screen reader has read the text long before ANNOUNCE_CLEAR_MS. Left in place it stays in
+// the page text for the rest of the game (a "Fingerprint Reader" refusal was found long after
+// its toast closed). Both regions are emptied that long after each write; a token stops an
+// older timer wiping a newer announcement.
+export const ANNOUNCE_CLEAR_MS = 8000;
+export const ANNOUNCE_FALLBACK_MS = 100;   // flush anyway when no frame comes (hidden tab)
+let announceSerial = 0;
+const announceSerials = {};   // region id -> token of its latest write
+const pendingAnnouncements = { 'toast-live-alert': [], 'toast-live-polite': [] };
+const sentencePunct = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
+// A verbatim item (a password, a code) is joined exactly as given, never with a full stop added.
+const VERBATIM_SEP = ' \u2014 ';
+
+export function composeAnnouncement(items) {
+    if (items.length === 1) return items[0].text;   // one toast: its text exactly as spoken
+    const main = items.filter((i) => !i.dropped);
+    const ordered = [...main.filter((i) => !i.low), ...main.filter((i) => i.low)];
+    const dropped = items.filter((i) => i.dropped).map((i) => i.text.replace(/[.!?]$/, ''));
+    let out = '';
+    ordered.forEach((i, n) => {
+        const piece = i.verbatim ? i.text : sentencePunct(i.text);
+        if (n === 0) out = piece;
+        else out += (i.verbatim || ordered[n - 1].verbatim) ? VERBATIM_SEP + piece : ` ${piece}`;
+    });
+    if (dropped.length) {
+        const tail = `Also: ${dropped.join('; ')}.`;
+        out = main.length ? `${out} ${tail}` : dropped.join('; ') + '.';   // all asides: no "Also:" with nothing before it
+    }
+    return out;
+}
+
+function flushAnnouncements(id) {
+    const items = pendingAnnouncements[id].splice(0);
+    if (!items.length) return;
+    try {
+        const r = document.getElementById(id);
+        if (r) r.textContent = composeAnnouncement(items);
+    } catch (e) { /* not announced */ }
+    const token = ++announceSerial;
+    announceSerials[id] = token;
+    setTimeout(() => {
+        try {
+            if (announceSerials[id] !== token) return;
+            const r = document.getElementById(id);
+            if (r) r.textContent = '';
+        } catch (e) { /* nothing to clear */ }
+    }, ANNOUNCE_CLEAR_MS);
+}
+
+export function announceToast(type, text, flags = {}) {
     try {
         if (typeof document === 'undefined') return;
         const body = document.body;
@@ -434,19 +601,28 @@ function announceToast(type, text) {
             }
             body.appendChild(region);
         }
-        region.textContent = '';
-        setTimeout(() => {
-            try {
-                const r = document.getElementById(id);
-                if (r) r.textContent = text;
-            } catch (e) { /* not announced */ }
-        }, 0);
+        const queue = pendingAnnouncements[id];
+        queue.push({ text: String(text ?? ''), low: flags.low === true, dropped: flags.dropped === true, verbatim: flags.verbatim === true });
+        if (queue.length === 1) region.textContent = '';
+        // The flush waits two frames (then a tick), so announcements raised in separate tasks of
+        // one frame join instead of overwriting each other (R3 m1). One flush per announcement
+        // (a later one finds the queue already empty and does nothing), so a timer that never
+        // ran cannot leave the queue stuck; a hidden tab never runs rAF, so a plain timer backs it.
+        const flush = () => flushAnnouncements(id);
+        const win = typeof window !== 'undefined' ? window : null;
+        if (win && typeof win.requestAnimationFrame === 'function') {
+            // two frames: the engine can render one toast a frame after the one before it
+            win.requestAnimationFrame(() => win.requestAnimationFrame(() => setTimeout(flush, 0)));
+            setTimeout(flush, ANNOUNCE_FALLBACK_MS);
+        } else {
+            setTimeout(flush, 0);
+        }
     } catch (e) { /* not announced */ }
 }
 
 function spokenText(notification, title, message, plainText, verbatim) {
     const plainOf = (sel, raw) => {
-        const t = notification.querySelector?.(sel)?.textContent;
+        const t = notification?.querySelector?.(sel)?.textContent;
         return typeof t === 'string' && t ? t : String(raw).replace(/<[^>]*>/g, ' ');
     };
     const head = !title ? '' : (plainText ? displayDashes(title) : plainOf('.notification-title', title));
@@ -475,6 +651,7 @@ export function maxShownToasts(doc = (typeof document === 'undefined' ? null : d
 // (going over the limit by one for a moment), so it never lands long after the event it is
 // about. The rest follow it a TOAST_STAGGER_MS apart.
 export const MAX_TOAST_WAIT_MS = 4000;
+// (HARD_MAX_SHOWN_TOASTS, the backlog dwells and MAX_WAITING_TOASTS are with the pile-up code below)
 const waitingToasts = [];
 
 /**
@@ -486,6 +663,9 @@ export function shownToasts(container) {
     const all = container?.querySelectorAll ? [...container.querySelectorAll('.notification')] : [];
     return all.filter((el) => el._toast && !el._toast.pulled && !el._toast.closing && !el._toast.pending && el._toast.duration > 0);
 }
+
+/** Forget every toast waiting for a place (tests only: nothing in the engine calls it). */
+export function clearWaitingToasts() { takeWaiting(); }
 
 /** Number of info and success toasts waiting for a free place. */
 export function waitingToastCount() { return waitingToasts.length; }
@@ -500,7 +680,110 @@ let lastOverLimitAt = 0;
 function addWaiting(args) {
     args.waitingSince = Date.now();
     waitingToasts.push(args);
+    dropLowPriorityWaiting();
+    speedUpShown();
     armHead();
+}
+
+// ---- Pile-up control (m09 blind run: four or five toasts stacked over the view) ----
+// A soft ceiling on timed toasts on screen, counting the ones that skip the waiting line
+// (brief task lines, immediate feedback). The waiting line limit is MAX_SHOWN_TOASTS (above);
+// a toast that skips it may take the count to this. Only a toast raised with options.low
+// (an aside: "Dropped X", "Someone's in the way") is ever closed early, dropped from the
+// line or given a shorter dwell. Teaching lines, hints, verbatim and whole toasts, titled
+// toasts, errors, warnings and toasts that stay until closed always get their full time and
+// wait their turn instead. Warnings, errors and a fresh toast can still pass the ceiling, so
+// it is soft.
+export const HARD_MAX_SHOWN_TOASTS = 3;
+// A toast is not evicted before it has been on screen this long.
+export const TOAST_MIN_READ_MS = 1500;
+// With this many toasts waiting, the ones on screen and the ones raised now get a shorter dwell.
+export const BACKLOG_SHORT = 2;
+export const BACKLOG_LONG = 4;
+export const SHORT_DWELL_MS = 2500;
+export const SHORTEST_DWELL_MS = 2000;
+// More than this many waiting: the oldest low-priority ones are dropped.
+export const MAX_WAITING_TOASTS = 4;
+
+/**
+ * Dwell for a low-priority (options.low) timed info or success toast given how many are waiting
+ * for a place. Anything else is returned unchanged: errors, warnings, toasts that stay until
+ * closed, hints, teaching lines and every toast not marked low. A shortened dwell is never less
+ * than 250 ms a word of the message.
+ */
+export function dwellForBacklog(type, duration, backlog, low = false, message = '') {
+    const d = Number(duration);
+    if (low !== true || !HOLDABLE_TYPES.has(type) || !(d > 0) || !(backlog >= BACKLOG_SHORT)) return duration;
+    const words = String(message || '').trim().split(/\s+/).filter(Boolean).length;
+    const floor = words * 250;
+    const target = backlog >= BACKLOG_LONG ? SHORTEST_DWELL_MS : SHORT_DWELL_MS;
+    return Math.min(d, Math.max(target, floor));
+}
+
+/**
+ * Low priority: only a plain info or success toast raised with options.low (an aside). Never
+ * one that is brief, immediate, whole, verbatim, a hint (options.hint) or kept (options.keep),
+ * whatever else is set: those carry something to read or copy and are not dropped, cut short
+ * or closed early. (title is accepted for the old signature and not used.)
+ */
+export function isLowPriorityToast(type, title, options = {}) {
+    if (!HOLDABLE_TYPES.has(type) || options?.low !== true) return false;
+    return !(options.brief === true || options.immediate === true || options.whole === true
+        || options.verbatim === true || options.hint === true || options.keep === true);
+}
+
+/** Indexes (in a waiting line of toast args) to drop so at most `max` wait: oldest low-priority first. */
+export function pickLowPriorityDrops(queue, max = MAX_WAITING_TOASTS) {
+    const drops = [];
+    for (let i = 0; i < queue.length && queue.length - drops.length > max; i++) {
+        const q = queue[i];
+        if (isLowPriorityToast(q[1], q[2], q[5])) drops.push(i);
+    }
+    return drops;
+}
+
+/**
+ * The shown toast to close so one more fits under `cap`, or null. entries: [{ el?, type, shownAt,
+ * duration, low, held?, yieldLeft? }] oldest first. Only a low-priority timed toast that has
+ * been up TOAST_MIN_READ_MS goes, never one under the pointer or focus or one hud-lanes has
+ * stepped aside (it is due back).
+ */
+export function pickEvictable(entries, now, cap = HARD_MAX_SHOWN_TOASTS) {
+    if (entries.length < cap) return null;
+    return entries.find((e) => e.low === true && HOLDABLE_TYPES.has(e.type) && e.duration > 0
+        && !e.held && e.yieldLeft == null
+        && typeof e.shownAt === 'number' && now - e.shownAt >= TOAST_MIN_READ_MS) || null;
+}
+
+function dropLowPriorityWaiting() {
+    const drops = pickLowPriorityDrops(waitingToasts);
+    for (let k = drops.length - 1; k >= 0; k--) {
+        const [gone] = waitingToasts.splice(drops[k], 1);
+        clearTimeout(gone.waitTimer);
+        console.debug('[toasts] dropped, low priority and the line is long:', gone[0]);
+        // Never shown, so it is announced here instead (once): a screen reader still hears it
+        announceToast(gone[1], spokenText(null, gone[2], gone[0], gone[5]?.html !== true, gone[5]?.verbatim === true), { dropped: true });
+    }
+}
+
+// With a backlog, shown low-priority toasts that would outstay SHORT_DWELL_MS close sooner.
+function speedUpShown() {
+    if (typeof document === 'undefined' || waitingToasts.length < BACKLOG_SHORT) return;
+    const container = document.getElementById('notification-container');
+    const target = waitingToasts.length >= BACKLOG_LONG ? SHORTEST_DWELL_MS : SHORT_DWELL_MS;
+    shownToasts(container).forEach((el) => {
+        const t = el._toast;
+        if (t.low !== true || !HOLDABLE_TYPES.has(t.type) || el._yieldLeft != null || !el._countdownAt || isHeld(el)) return;
+        const left = (el._countdownMs || t.duration) - (Date.now() - el._countdownAt);
+        if (left > target) startCountdown(el, target);
+    });
+}
+
+// Close the oldest readable low-priority toast so a toast that skips the waiting line fits.
+function makeRoomForImmediate(container) {
+    const shown = shownToasts(container);
+    const pick = pickEvictable(shown.map((el) => ({ el, ...el._toast, held: isHeld(el), yieldLeft: el._yieldLeft })), Date.now());
+    if (pick) removeNotification(pick.el);
 }
 
 // Arm the wait limit on the head of the line: due MAX_TOAST_WAIT_MS after it joined, and no
@@ -547,7 +830,7 @@ function showWaitingToast(args, overLimit) {
         holdForPanel([args]);
         return true;
     }
-    return !!renderNotification(args[0], args[1], args[2], args[3], args[4], args[5], overLimit);
+    return !!renderNotification(args[0], args[1], args[2], args[3], args[4], args[5], overLimit, true);
 }
 
 // Into the held queue (shown when the panel closes), skipping copies already there.
@@ -571,7 +854,8 @@ function showNextWaiting() {
     armHead();
 }
 
-function renderNotification(message, type, title, duration, seen = false, options = {}, overLimit = false) {
+function renderNotification(message, type, title, duration, seen = false, options = {}, overLimit = false, waited = false) {
+    const low = isLowPriorityToast(type, title, options);
     const plainText = options?.html !== true;
     const verbatim = plainText && options?.verbatim === true;
     const notificationContainer = document.getElementById('notification-container');
@@ -593,6 +877,7 @@ function renderNotification(message, type, title, duration, seen = false, option
         armErrorFloor(same);
         relayoutLanes();
         if (duration > 0) {
+            if (low && !waited) duration = dwellForBacklog(type, duration, waitingToasts.length, true, message);
             same._toast.duration = duration;
             if (same._yieldLeft != null) {
                 // Stepped aside for a finished-task line: the fresh time waits with it (review R3 m3)
@@ -618,6 +903,15 @@ function renderNotification(message, type, title, duration, seen = false, option
             addWaiting([message, type, title, duration, seen, options]);
         }
         return null;
+    }
+
+    // A long line shortens the dwell of a low-priority toast raised now, unless it has already
+    // waited its turn (it would lose time twice)
+    if (!waited) duration = dwellForBacklog(type, duration, waitingToasts.length, low, message);
+
+    // Skipping the waiting line (brief, immediate) still keeps to the hard ceiling
+    if (HOLDABLE_TYPES.has(type) && duration > 0 && (options?.brief === true || options?.immediate === true)) {
+        makeRoomForImmediate(notificationContainer);
     }
 
     // A warning or error over an open panel waits, unshown, until hud-lanes has a place for it
@@ -659,10 +953,11 @@ function renderNotification(message, type, title, duration, seen = false, option
     // teaching line) is read whole, with none of brief's push-aside or skipped limit (K3b R1 m2)
     if (options?.whole === true) notification.classList.add('whole');
     notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim,
-        whole: options?.whole === true, brief: options?.brief === true, immediate: options?.immediate === true };
+        whole: options?.whole === true, low, brief: options?.brief === true, immediate: options?.immediate === true };
     // Marks the toast for hud-lanes, which steps the others aside for it as for a brief one (no styling)
     if (options?.immediate === true) notification.classList.add('immediate');
     notification._onLaneYield = laneYieldHandler(notification);
+    wireHoldHandlers(notification);
     if (hudLanesActive()) notification._onSupersede = supersedeHandler(notification);
 
     // Add to container: errors first while hud-lanes places the block, else at the end
@@ -690,7 +985,8 @@ function renderNotification(message, type, title, duration, seen = false, option
         if (duration > 0) startCountdown(notification, duration);
         armErrorFloor(notification);
     }
-    announceToast(type, spokenText(notification, title, message, plainText, verbatim));
+    announceToast(type, spokenText(notification, title, message, plainText, verbatim), { low: options?.low === true, verbatim });
+    refreshHover();
 
     // The X is a real button. Enter and Space stop at it: the PIN pad's document handler
     // would cancel the click on Enter and submit the PIN. Click is added last (some test
@@ -731,6 +1027,7 @@ export function removeNotification(notification) {
         if (notification.parentNode) {
             notification.parentNode.removeChild(notification);
         }
+        refreshHover();
         showNextWaiting();
     }, 300);
 }
@@ -915,6 +1212,9 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
     window.addEventListener('keyup', (e) => { heldKeys.delete(e.key); }, true);
     window.addEventListener('blur', () => heldKeys.clear());
 }
+
+// The bark lane (npc-barks.js) reads the count of timed toasts on screen through this
+window.shownToastCount = () => shownToasts(document.getElementById('notification-container')).length;
 
 // Export for global access
 window.showNotification = showNotification;
