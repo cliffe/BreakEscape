@@ -198,6 +198,9 @@ Val Okonkwo: Reception's paper log's been amended, and there's nothing on the sy
 -> cover_challenge_options
 
 === cover_challenge_options ===
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 + {staff_lanyard_obtained and (lanyard_issued or (not pretext_story_told and (holds_contractor_pass or not agency_pass_refused)))} [Show her the lanyard.]
     -> show_lanyard
 
@@ -383,6 +386,9 @@ Narrator: She unlocks the office door and stands aside.
 ->->
 
 === the_argument ===
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 {val_argument_heard:
     Val Okonkwo: We've done this. A pass, a name on a log, or somebody on a phone. Not a theory.
 - else:
@@ -635,6 +641,9 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
 -> reeves_questions
 
 === reeves_questions ===
+{attacked_guard and not guard_knocked_out:
+    -> after_fight
+}
 + {not asked_about_drill} [Anything odd on nights lately? Drills, alarms?]
     ~ asked_about_drill = true
     ~ influence += 10
