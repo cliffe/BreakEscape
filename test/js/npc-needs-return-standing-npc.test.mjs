@@ -11,6 +11,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import vm from 'node:vm';
+import { NPCNeedsSystem, NEEDS_TICK_MS, RETURN_YIELD_MS } from '../../public/break_escape/js/systems/npc-needs.js';
+import { makeWorld } from './fixtures/needs-stub-world.mjs';
 
 globalThis.window = globalThis.window || {};
 vm.runInThisContext(readFileSync(new URL('./vendor/easystar-0.4.4.js', import.meta.url), 'utf8'));
@@ -344,4 +346,50 @@ test('R3 m1 (c): a 5 to 8 cell walk with the standing NPC near the start keeps t
         assert.ok(r.path && r.path.length > 0, `a path home (${cells} cells)`);
         assert.equal(r.lane, null, `${cells} cells: the path keeps ${LANE} px clear of Vector: ${JSON.stringify(r.path.slice(0, 4))}`);
     }
+});
+
+// Return stall R4: the re-issue after return_resumed. The needs layer used to leave `reroute` off the
+// first one, so the behaviour layer planned the plain path from the stop; from (508,164) that ran along
+// y 164, 10.6 px off Vector, inside his lane, and local avoidance held her about 6 s (m08 game 9532,
+// scenarios/m08_the_mole/office_life/LIVE_RETURN_STALL.md). The flag comes from the real needs layer
+// here, is applied by the real goToAndStay, and the plan is the real _planMovePath.
+test('R4: the first re-issue after return_resumed plans round Vector, not the plain path through his lane', async () => {
+    // A clerk wedged on the way home in the stub world; take the move the needs layer issues on the first resume.
+    const w = makeWorld({
+        npcs: { clerk: { pos: { x: 100, y: 100 }, rec: { id: 'clerk', needsHome: 'clerk_pc', needs: { caffeine: { decayPerMin: 8, urgentAt: 30, initial: 50, jitterPct: 0 } } } } },
+        objects: [
+            { id: 'clerk_pc', x: 100, y: 68, affordance: { accepts: ['found_item'], useSeconds: 10 } },
+            { id: 'coffee_machine', x: 300, y: 300, affordance: { satisfies: 'caffeine', restores: 70, useSeconds: 40 } }
+        ],
+        arrive: false
+    });
+    const sys = new NPCNeedsSystem(w.world, { seed: 1, manualClock: true });
+    w.attach(sys); sys.registerAll();
+    let guard = 0;
+    while (sys.states.get('clerk').job?.phase !== 'goto_target' && guard++ < 4000) sys.step(NEEDS_TICK_MS);
+    const job = sys.states.get('clerk').job;
+    w.pos.clerk.x = job.dest.x; w.pos.clerk.y = job.dest.y;
+    sys.onArrived('clerk', 'needs', { x: job.dest.x, y: job.dest.y, moveId: job.moveId });
+    sys.step(41000);
+    assert.equal(sys.getState('clerk').mode, 'returning');
+    w.pos.clerk.x = 200; w.pos.clerk.y = 200;
+    sys.step(NEEDS_TICK_MS);
+    sys.step(RETURN_YIELD_MS + NEEDS_TICK_MS);
+    assert.equal(sys.getLog().filter(e => e.npc === 'clerk' && e.ev === 'return_resumed').length, 1, 'the first resume');
+    const mv = w.calls.moves.filter(m => m.id === 'clerk').at(-1);
+
+    const { pm, me, vector, home } = m08();
+    me.body = box(508, 164);
+    const b = walker(pm, me, [vector]);
+    b._moveReroute = false;
+    b.config = { patrol: {} };
+    b.sprite.body.setVelocity = () => {};
+    b.npcBodyPos = () => me.body.center;
+    b.playAnimation = () => {};
+    window.seating = null;
+    quietSync(() => b.goToAndStay(home.x, home.y, 80, { owner: 'needs', yieldToPlayer: false, ...(mv.reroute ? { reroute: true } : {}) }));
+    const path = await plan(b, pm, me.body.center, home);
+    assert.ok(path && path.length > 0, 'a path home');
+    assert.equal(b._planTier, 'ring');
+    assert.equal(inLane(me.body.center, path, vector), null, `the re-issued path keeps ${LANE} px clear of Vector: ${JSON.stringify(path.slice(0, 4))}`);
 });
