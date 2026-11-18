@@ -288,7 +288,7 @@ Agent HaX: You used Maya as your primary source. Good call—she knew exactly wh
 
 Agent HaX: Kevin Park was removed from the picture during the operation.
 
-Agent HaX: We ran Kevin's background after the fact. Nothing connects him to ENTROPY. He was the IT manager, doing his job and flagging concerns.
+Agent HaX: I want to be clear about something: we ran Kevin's background after the fact. Nothing connects him to ENTROPY. He was the IT manager—doing his job, flagging concerns, following procedure.
 
 Agent HaX: You had the authority to make that call. I'm noting it as an operational decision, not a failure.
 
@@ -299,7 +299,9 @@ Agent HaX: You ran this operation without building rapport with either Kevin or 
 
 Agent HaX: Kevin Park was removed from the picture during the operation.
 
-Agent HaX: Post-operation check on Kevin's files: no ENTROPY connections. He was an IT manager raising security concerns nobody would listen to.
+Agent HaX: Post-operation check on Kevin's files confirms: no ENTROPY connections. No hidden agenda.
+
+Agent HaX: He was exactly what he appeared to be—an IT manager who'd been raising security concerns nobody would listen to.
 
 Agent HaX: You had the authority. The operation succeeded. I'm logging it as an operational casualty, not a failure of judgment.
 
@@ -312,7 +314,7 @@ Agent HaX: I want to be direct with you: neither of them was ENTROPY.
 
 Agent HaX: Kevin was an IT manager flagging concerns. Maya was our own informant—the one who brought us the lead on Operation Shatter in the first place.
 
-Agent HaX: We lost whatever Maya still had to share: ENTROPY's internal connections, the names she hadn't written down yet. That's a real cost.
+Agent HaX: We lost whatever intelligence Maya had still to share. That's a real cost. ENTROPY's internal connections, the names she hadn't written down yet—gone.
 
 Agent HaX: You had the authority to make those calls. The mission succeeded. But I'm noting it: two civilians removed, one of them our asset.
 
@@ -340,9 +342,13 @@ Agent HaX: She wasn't ENTROPY. She was trying to help. I'm logging it as an oper
     -> kevin_frame_discussion
 
 === maya_removed_alone ===
-Agent HaX: You ran this mostly solo, and Maya Chen was removed during the operation.
+Agent HaX: You ran this mostly solo.
 
-Agent HaX: We may never know what Maya had to tell us. She'd been documenting ENTROPY's operations here, and the names, contacts and methods she hadn't written down yet are gone.
+Agent HaX: Maya Chen was removed during the operation.
+
+Agent HaX: We may never know what Maya had to tell us. She'd been documenting everything about ENTROPY's operations at Viral Dynamics.
+
+Agent HaX: The parts she hadn't written down yet—names, contacts, methods—that intelligence is gone.
 
 Agent HaX: Maya wasn't ENTROPY. She was our informant. She trusted SAFETYNET enough to reach out, and that cost her.
 
@@ -446,7 +452,7 @@ Agent HaX: Clean. Professional. And kind.
 === kevin_outcome_positive ===
 Agent HaX: You know what Derek would have said? "Kevin is acceptable collateral damage."
 
-Agent HaX: You disagreed. Not every agent would have cared.
+Agent HaX: You disagreed. That matters.
 
 -> security_audit_review
 
@@ -467,15 +473,16 @@ Agent HaX: He's cleared now. But he's traumatized. His neighbors saw him taken a
 
 + [I... I saw the files. I knew.]
     Agent HaX: I know. It's in Derek's computer logs.
-    Agent HaX: You chose the mission over Kevin. Sometimes that's the right call.
-    Agent HaX: But Kevin's going to need therapy. His kids too.
+    Agent HaX: You made a choice. Focus on the mission. Let Kevin be collateral damage.
+    Agent HaX: Sometimes that's the right call. Sometimes the mission really does come first.
+    Agent HaX: But Kevin's going to need therapy. His kids are going to need therapy.
     Agent HaX: Just... remember that. Next time you're weighing priorities.
     -> security_audit_review
 + [The mission had to come first]
     Agent HaX: Did it? You still stopped Operation Shatter. You still caught Derek.
     Agent HaX: Would five minutes to warn Kevin have changed that?
-    Agent HaX: Field decisions are hard. But consequences are real.
-    Agent HaX: That arrest, in front of his kids, happened because of a choice you made.
+    Agent HaX: I'm not judging. Field decisions are hard. But consequences are real.
+    Agent HaX: Kevin's kids watched him get arrested. That happened because of a choice you made.
     Agent HaX: Live with it. Learn from it.
     -> security_audit_review
 
@@ -493,7 +500,7 @@ Agent HaX: The anomaly report showed his workstation running a simultaneous sess
 Agent HaX: Any competent investigator will see that in the first hour. Kevin pointed all of this out to you directly.
 
 {framing_evidence_seen:
-    Agent HaX: He showed you the inconsistencies, and you still called it in.
+    Agent HaX: He showed you the inconsistencies. In real time. And you still called it in.
     Agent HaX: That's your call to make — you had the authority. But I want you to sit with that.
 }
 
@@ -566,7 +573,8 @@ Agent HaX: I noticed you gave Kevin a security assessment during your cover oper
     Agent HaX: Your security assessment was... rough. Two or fewer correct answers out of five.
     Agent HaX: Kevin was asking you about obvious vulnerabilities he'd already identified. You dismissed most of them.
     + [I was trying not to alarm him]
-        Agent HaX: Understandable. But you're supposed to be the security expert. Kevin needed you to see what he was seeing.
+        Agent HaX: Understandable. But when an insider is showing you red flags, validate their concerns.
+        Agent HaX: You're supposed to be a security expert. Kevin needed you to see what he was seeing.
         Agent HaX: Fortunately, your other actions kept him cooperative. But that assessment almost blew your cover.
         -> derek_discussion
     + [Security assessment wasn't my priority]
@@ -579,7 +587,7 @@ Agent HaX: I noticed you gave Kevin a security assessment during your cover oper
 === no_audit_feedback ===
 Agent HaX: I noticed you didn't provide Kevin with a security assessment during your cover operation.
 
-Agent HaX: That's fine, it wasn't required, though it would have strengthened your cover.
+Agent HaX: That's fine. It wasn't required, though it would have strengthened your cover.
 
 Agent HaX: Next time you're undercover as a professional, show real expertise. Trust gives you access.
 
@@ -656,7 +664,7 @@ Agent HaX: Different approach than a quiet arrest, but the result's the same. He
     -> phase_3_discussion
 
 === fight_outcome_justified ===
-Agent HaX: Derek's in custody.
+Agent HaX: Derek's in custody. You neutralized a potentially armed hostile.
 
 Agent HaX: Turned out he was reaching for a phone, not a weapon. But split-second decisions don't have hindsight.
 
@@ -899,7 +907,7 @@ Agent HaX: Get some rest. Next briefing is in 48 hours.
 {player_launched_attack:
     Agent HaX: We learn from this. That's what SAFETYNET is for.
 - else:
-    Agent HaX: Those people will never know your name. That's what SAFETYNET is for.
+    Agent HaX: You did more than complete a mission today. You saved lives. Real people who will never know your name. That's what SAFETYNET is for.
 }
 
 
