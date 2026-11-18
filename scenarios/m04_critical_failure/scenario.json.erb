@@ -253,6 +253,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           { "text": "VOLTAGE: CAPTURED, Blackout's field lead in custody", "style": "entry", "condition": "globalVars.voltage_captured" },
           { "text": "VOLTAGE: ESCAPED, you took the button and let him reach the dock", "style": "entry", "condition": "globalVars.voltage_escaped" },
           { "text": "ROBERT VANCE: brought in, ran the desk while you ran the halls", "style": "entry", "condition": "globalVars.vance_is_ally" },
+          <%# Blind m04: the debrief says he had the alarm on his desk when he was told and it was never sounded; the credits agree. %>
+          { "text": "ROBERT VANCE: told the truth, but the evacuation alarm stayed on his desk", "style": "entry", "condition": "globalVars.vance_is_ally && !globalVars.crew_warned && !globalVars.crew_lost && !globalVars.robert_vance_ko && globalVars.attack_prevented" },
           { "text": "ROBERT VANCE: never told, the cover held all night", "style": "entry", "condition": "globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
           { "text": "ROBERT VANCE: never met, you went round him", "style": "entry", "condition": "!globalVars.vance_spoken && !globalVars.vance_is_ally && !globalVars.robert_vance_ko" },
           { "text": "ROBERT VANCE: knocked down in his own office, by us", "style": "warning", "condition": "globalVars.robert_vance_ko" },
@@ -2818,6 +2820,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "name": "Emergency Shutdown Pushbutton — Rack Banks A-C",
           <%# Room dressing c3: fixed on the plant room's back wall under the EMERGENCY SHUTDOWN plate, a red-hatched keep-clear box on the floor in front (room_aes_plant, aes_esd_station1, top-left 160,33). It landed at random before (regression M4). Fix pass 2026-10-17 (engine regression F5): on the wall its centre sat on the Hall 2 / plant room line, so it could be reached (and approached) from Hall 2, where Relay waits. The station now stands on the floor inside the keep-clear box (room_aes_plant object 2, top-left 161,65, was 160,33), its centre about 46 px below the nearest Hall 2 standing point, so only the plant room reaches it. %>
           "position": "as-type:aes_esd_station",
+          <%# Blind playtest (m04): reach is measured to the sprite's top edge, so standing "near" the 25 px station was out of range (3-8 px worked). wallMounted clamps the player's y into the sprite's span (interaction-reach.js reachY), which only ever shortens the reach. %>
+          "wallMounted": true,
           "takeable": false,
           "locked": false,
           "puzzle_graph_role": "lock",
@@ -2867,6 +2871,8 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "position": "as-type:laptop",
           "takeable": false,
           "readable": true,
+          <%# Blind playtest (m04): a pc with no desktopUser only raised a short alert, so the laptop read as dead. It is a fixed thing read in place like the process diagram: the text opens in the game display (text only, not voiced). %>
+          "readDisplay": "gameDisplay",
           "text": "REMOTE OVERCHARGE CONTROLLER — ARMED\n\nTarget: Albion Rack Banks A / B / C\nTrigger: 0800 local (countdown running)\nSCADA thermal feed: SPOOFED (nominal)\nHydrogen vent fans: FORCED OFF\nESD interlocks (software): DISABLED\n\nSoftware abort: LOCKED until trigger. Hardwired ESD: OUT OF OUR REACH.",
           "observations": "Critical Mass's command laptop: the overcharge is armed and counting down. The software won't stop it; the hardwired ESD will."
         },
