@@ -1752,7 +1752,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed' && !globalVars.ward_nurse_ko",
               "onceOnly": true,
-              "bark": "I can't leave Bed 2 -- someone get to Bed 4, now!",
+              "bark": "I can't leave Bed 2. Someone get to Bed 4, now!",
               "barkDelay": 500
             },
             {
@@ -1819,7 +1819,7 @@ boardroom_pin = "0417"
               "condition": "value === 'distressed' && !globalVars.raval_ko",
               "onceOnly": true,
               "fireOnlyWhenLoaded": true,
-              "bark": "Bed 4 -- I'm going. Out the way.",
+              "bark": "Bed 4. I'm going. Out the way.",
               "barkDelay": 200,
               "patrolOverride": { "targetTile": { "x": 4, "y": 8 }, "speed": 150, "stopOnArrival": true }
             }
@@ -1947,7 +1947,7 @@ boardroom_pin = "0417"
               "eventPattern": "global_variable_changed:patient_bed4_state",
               "condition": "value === 'distressed' && !globalVars.patient_bed5_ko",
               "onceOnly": true,
-              "bark": "Bed 4's alarming. Nobody's coming — the desk can't see it. You. Do something.",
+              "bark": "Bed 4's alarming. Nobody's coming. The desk can't see it. You. Do something.",
               "barkDelay": 800
             },
             {

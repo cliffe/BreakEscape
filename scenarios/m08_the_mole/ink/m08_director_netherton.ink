@@ -268,7 +268,7 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
         { stopping:
         - Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. If a man's own row is wrong, he will say so.
           Director Magnus Netherton: Come back when one of them has told you it is right.
-        - Director Magnus Netherton: Not yet. A row nobody has owned is only paper. Put the log in front of Vector or Nightshade, and let him tell you whether his line is right.
+        - Director Magnus Netherton: Not yet. A row nobody has owned is only paper. Put the log in front of Vector or Nightshade. Let the man tell you whether his line is right.
         - Director Magnus Netherton: Still nothing from the lab door. Vector or Nightshade, Agent. One of them has to say "that row is mine" before I will weigh it.
         }
         -> back
