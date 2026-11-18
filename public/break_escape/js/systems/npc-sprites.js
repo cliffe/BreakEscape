@@ -650,13 +650,16 @@ export function updateNPCDepth(sprite) {
 // rest of the physics step, so the player stops against him and he keeps his line. With the
 // player against or within PLAYER_WALL_MARGIN_PX (12, more than one 20 fps step of a 200 px/s
 // NPC) of a wall the pair does not separate (an unpushable NPC would otherwise press the player into the 8 px wall
-// boxes) and the player's step into the NPC is undone instead (blockPlayerIntoNpc), so he is blocked, never passed through.
-// The old no-separation rule let the player walk through him.
+// boxes) and the player's step into the NPC is undone instead (blockPlayerIntoNpc), so a walking NPC
+// blocks him there rather than letting him through. Two exceptions: a stopped NPC (paused, dwelling,
+// seated, talking) is not walking, so the player slides through it ('slide'); and when an NPC walks into a
+// player who stands still, clearPlayerOfNpc moves the player aside, or leaves the pair overlapped if no
+// clear spot exists (the accepted fallback).
 // Bodies tunnel through walls when pressed into the 8 px boxes. A desk, table or other static body counts as
 // a wall here too (code review R1, G2). The pin lasts until the end of that physics step, so an
 // NPC-NPC collider later in the same step also sees him unpushable: one step at most.
-const CLEAR_QUERY_MARGIN_PX = 32;   // wider than any overlap depth clearPlayerOfNpc moves by
 export const PLAYER_WALL_MARGIN_PX = 12;
+const CLEAR_QUERY_MARGIN_PX = 32;   // wider than any overlap depth clearPlayerOfNpc moves by
 
 /**
  * Does a bump end this goToAndStay walk as an arrival? Any move: within two tiles of the
@@ -768,6 +771,9 @@ export function blockPlayerIntoNpc(playerBody, npcBody) {
  * passed through: there are no far-side candidates. If neither axis has a clear spot, nothing
  * moves and the pair stay overlapped (the accepted rare fallback: the NPC is not stopped, so it
  * carries on along its route and the overlap ends once it has passed).
+ *
+ * A player who overlaps a stopped NPC that then starts walking can pop out by up to about 10 px
+ * in one step. That is bounded and wall-safe, and deliberate: do not turn it into a far-side move.
  */
 export function clearPlayerOfNpc(playerBody, npcBody, blockers) {
     if (!playerBody || !npcBody) return false;

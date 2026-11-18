@@ -121,7 +121,7 @@ test('blockPlayerIntoNpc: closes in only is undone; stepping away or along is le
     assert.equal(away.position.y, 40);
     const diag = body(96, 30, 110, 40);                         // closing on both axes
     assert.equal(blockPlayerIntoNpc(diag, npc), true);
-    const slideAlong = body(112, 30, 100, 30);                  // x move toward centre line? starts 0 off, ends 12 off: away
+    const slideAlong = body(112, 30, 100, 30);                  // the x spans already overlapped before the step, so no axis closed in: left alone
     assert.equal(blockPlayerIntoNpc(slideAlong, npc), false);
     const noPrev = { x: 1, y: 1, width: 16, height: 10 };
     assert.equal(blockPlayerIntoNpc(noPrev, npc), false);

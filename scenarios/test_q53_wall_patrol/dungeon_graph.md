@@ -7,7 +7,7 @@ TEST: patrol NPCs and the player by walls, a one-tile gap and a locked door
 Three patrols on fixed waypoints (random patrols steer round the player and never make contact):
 
 1. Wall Walker shuttles along the north wall between two waypoints. Stand in its way against the wall: it must not pass through you or push you into the wall.
-2. Gap Guard shuttles through the one-tile gap in the desk row at the south of the room (about 38 px wide). It pauses when you are near. Stand in the gap and walk through it: you must never be stuck.
+2. Gap Guard shuttles through the one-tile gap in the desk row at the south of the room (one 32 px tile wide). It pauses when you are near. Stand in the gap and walk through it: you must never be stuck.
 3. Door Watcher shuttles toward the locked door in the north wall (north-west corner). Stand between it and the door: you must never end up on the far side of the locked door.
 
 TEST DURATION: 2 to 3 minutes. Nothing to solve.
@@ -215,23 +215,21 @@ flowchart TD
   rc_obj1_1{"Desk 1"}
   rc_obj2_2{"Desk 2"}
   rc_obj3_3{"Desk 3"}
-  rc_obj4_4{"Desk 4"}
-  rc_npc_wall_walker_5("Wall Walker")
-  rc_npc_gap_guard_6("Gap Guard")
-  rc_npc_door_watcher_7("Door Watcher")
+  rc_npc_wall_walker_4("Wall Walker")
+  rc_npc_gap_guard_5("Gap Guard")
+  rc_npc_door_watcher_6("Door Watcher")
 
   hall --> vault
   hall --> rc_obj1_1
   hall --> rc_obj2_2
   hall --> rc_obj3_3
-  hall --> rc_obj4_4
-  hall --> rc_npc_wall_walker_5
-  hall --> rc_npc_gap_guard_6
-  hall --> rc_npc_door_watcher_7
+  hall --> rc_npc_wall_walker_4
+  hall --> rc_npc_gap_guard_5
+  hall --> rc_npc_door_watcher_6
 
   class hall room
   class vault lock
-  class rc_obj1_1,rc_obj2_2,rc_obj3_3,rc_obj4_4 item
-  class rc_npc_wall_walker_5,rc_npc_gap_guard_6,rc_npc_door_watcher_7 npc
+  class rc_obj1_1,rc_obj2_2,rc_obj3_3 item
+  class rc_npc_wall_walker_4,rc_npc_gap_guard_5,rc_npc_door_watcher_6 npc
   class node_start start
 ```
