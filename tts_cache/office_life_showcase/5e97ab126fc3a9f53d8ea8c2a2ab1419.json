@@ -1,0 +1,13 @@
+{
+  "key": "5e97ab126fc3a9f53d8ea8c2a2ab1419",
+  "npc": "chidi_okeke",
+  "text": "Go on, just a small slice.",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:41:34Z"
+}

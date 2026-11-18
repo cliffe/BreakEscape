@@ -1,0 +1,469 @@
+{
+  "scenario_brief": "Office Life Tour. A non-combat demo of ambient office staff. Ama Owusu hosts from the aisle. Five staff work at their desks and follow their needs: they queue for the one office coffee machine, meet at the water cooler, carry the abandoned mugs to the washing-up tray, lock or leave their screens, and one stays late. There is nothing to break into. Both rooms, the office and the kitchen, are open from the start.",
+  "endGoal": "Demo only: watch the office run itself.",
+  "startRoom": "office",
+  "startPosition": { "x": 5, "y": 6 },
+  "npcNeedsSeed": "office_life_showcase",
+  "npcWindupMs": 700,
+  "showPressingNeeds": true,
+  "officePresets": true,
+  "roomTone": true,
+  "disableAttacks": true,
+  "lighting": { "enabled": true, "defaultMode": "on" },
+
+  "chatter": {
+    "coffee": ["Go on, after you.", "Is there any milk left?", "This machine takes forever.", "Strong one today?", "Who keeps taking the mugs?", "Busy morning?"],
+    "cooler": ["Did you see the car park email?", "Friday drinks again?", "How was the weekend?", "Is it raining again?", "Train was late again.", "Any plans for lunch?", "Quiet one today, isn't it?", "Have you tried the new sandwich place?"],
+    "grumble_off": ["Who switched the coffee off?", "It's off. Typical.", "No coffee here, then."],
+    "grumble_gone": ["Missed it."],
+    "cake": ["Who's the cake from?", "Go on, just a small slice.", "Whose birthday is it?", "This is really good."]
+  },
+
+  "actionIcons": {
+    "upkeep": "icon:npc-upkeep"
+  },
+
+  "globalVariables": {
+    "office_coffee_off": false,
+    "jun_badge_left": false,
+    "kitchen_seen": false,
+    "heard_exchange_cooler_chat": false,
+    "act_midday": false,
+    "act_evening": false,
+    "chidi_pc_owner_away": false,
+    "jun_pc_owner_away": false,
+    "cake_servings": 2
+  },
+
+  "startItemsInInventory": [
+    {
+      "type": "cake1",
+      "id": "cake",
+      "name": "Cake",
+      "takeable": true,
+      "droppable": true,
+      "observations": "A cake for the office. Choose Drop here in your inventory to put it out where people will see it.",
+      "affordance": {
+        "satisfies": ["hunger", "social"], "restores": 40, "useSeconds": 12, "capacity": 3, "chatter": "cake", "useSound": "eat_snack",
+        "magnet": { "tempt": 45, "servings": 2, "perPerson": 1 }
+      }
+    }
+  ],
+
+  "objectives": [
+    {
+      "aimId": "morning",
+      "title": "Morning",
+      "description": "Watch the office wake up. Each task ticks when you have seen that behaviour happen.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_queue", "title": "Someone waits their turn for coffee", "type": "custom", "status": "active" },
+        { "taskId": "hear_queue_chat", "title": "Two in the coffee line pass the time", "type": "custom", "status": "active" },
+        { "taskId": "see_coffee_off", "title": "Switch the coffee off and watch them turn back", "type": "custom", "status": "active" },
+        { "taskId": "hear_cooler_exchange", "title": "Overhear the conversation at the cooler", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "midday",
+      "title": "Midday",
+      "description": "Lunch takes people away from their desks. Each task ticks when you have seen that behaviour happen.",
+      "status": "active",
+      "order": 1,
+      "tasks": [
+        { "taskId": "use_open_screen", "title": "Use a screen its owner left open", "type": "custom", "status": "active" },
+        { "taskId": "see_caught", "title": "Get caught at someone's desk", "type": "custom", "status": "active" },
+        { "taskId": "see_cake_eaten", "title": "Put the cake out and watch it go", "type": "custom", "status": "active" }
+      ]
+    },
+    {
+      "aimId": "evening",
+      "title": "Evening",
+      "description": "Home time for nearly all of them, and they don't come back, so finish the earlier tasks first. Each task ticks when you have seen that behaviour happen.",
+      "status": "active",
+      "order": 2,
+      "tasks": [
+        { "taskId": "see_who_stays", "title": "See who stays late", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "office": {
+      "type": "room_office",
+      "door_sign": "Office",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "ambient": "#8f96b0", "lights": [{ "x": 2.3, "y": 5.5, "color": "#ffd9a0", "radius": 70, "intensity": 0.8 }] }
+        ]
+      },
+      "connections": { "west": "kitchen" },
+      "objects": [
+        {
+          "type": "pc",
+          "id": "chidi_pc",
+          "owner": "chidi_okeke",
+          "private": true,
+          "name": "Chidi's PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "Chidi's desk PC.",
+          "workstation": true,
+          "affordance": {}
+        },
+        {
+          "type": "pc",
+          "id": "jun_pc",
+          "owner": "jun_watanabe",
+          "private": true,
+          "name": "Jun's PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "Jun's desk PC. His inbox is open on the screen.",
+          "workstation": true,
+          "affordance": {}
+        },
+        {
+          "type": "pc",
+          "id": "graham_pc",
+          "owner": "graham_whitfield",
+          "private": true,
+          "name": "Graham's PC",
+          "takeable": false,
+          "locked": false,
+          "observations": "Graham's desk PC. It locks itself when he leaves it.",
+          "workstation": true,
+          "autoLockSeconds": 20,
+          "affordance": {}
+        },
+        {
+          "type": "laptop",
+          "id": "agnieszka_laptop",
+          "name": "Agnieszka's Laptop",
+          "takeable": false,
+          "observations": "Agnieszka's laptop, open on a rota spreadsheet.",
+          "affordance": false
+        },
+        {
+          "type": "m10_tool_roll1",
+          "id": "zainab_tool_roll",
+          "name": "Zainab's tool roll",
+          "owner": "zainab_hussain",
+          "private": true,
+          "takeable": false,
+          "interactable": false,
+          "position": { "x": 2.0, "y": 5.4, "elevation": 24 },
+          "affordance": { "useFrom": { "dx": 0, "dy": 1 } },
+          "observations": "A field engineer's tool roll, laid out on the desk: crimpers, a punch-down tool and a cable tester."
+        },
+        {
+          "type": "id_badge",
+          "id": "jun_badge",
+          "name": "Jun's ID badge",
+          "position": { "x": 1.75, "y": 5.25 },
+          "takeable": true,
+          "observations": "Jun's staff ID on a lanyard. He has left it on his desk again.",
+          "owner": "jun_watanabe",
+          "leftBehindChance": 0.7,
+          "revealOnGlobal": "jun_badge_left"
+        },
+        {
+          "type": "coffee_station1",
+          "id": "office_coffee",
+          "name": "Office Coffee Station",
+          "position": { "x": 8, "y": 8 },
+          "takeable": false,
+          "observations": "The office coffee station. One person at a time; anyone else waits in line.",
+          "affordance": { "useFrom": { "dx": -1, "dy": 0 }, "queue": { "cells": [{ "dx": -1, "dy": 0 }, { "dx": -2, "dy": 0 }] }, "chatter": "coffee", "overhearRadius": 200 },
+          "offWhen": "office_coffee_off"
+        },
+        {
+          "type": "power_socket2",
+          "id": "office_coffee_socket",
+          "name": "Wall socket",
+          "position": { "x": 8.65625, "y": 7.0625 },
+          "spriteVariants": [{ "condition": "globalVars.office_coffee_off", "value": "power_socket_off2" }],
+          "takeable": false,
+          "triggerOnInteract": [
+            {
+              "type": "confirm_action",
+              "condition": "!globalVars.office_coffee_off",
+              "text": "Switch off the coffee machine at the wall?",
+              "confirmLabel": "Switch off",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": true },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched off at the wall. Anyone on their way to it turns back." }
+              ]
+            },
+            {
+              "type": "confirm_action",
+              "condition": "globalVars.office_coffee_off",
+              "text": "Switch the coffee machine back on at the wall?",
+              "confirmLabel": "Switch on",
+              "cancelLabel": "Leave it",
+              "onConfirm": [
+                { "type": "set_global", "key": "office_coffee_off", "value": false },
+                { "type": "hint", "title": "Wall socket", "message": "The coffee machine is switched on at the wall. The next coffee run comes here again." }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "dirty_mugs1",
+          "id": "office_mugs",
+          "name": "Abandoned Mugs",
+          "position": { "x": 4, "y": 7 },
+          "takeable": true,
+          "needsTag": "dirty_mugs",
+          "observations": "Someone's left their mugs on the floor again."
+        },
+        {
+          "type": "notice_board1",
+          "id": "tour_notice",
+          "name": "Things to try",
+          "position": { "x": 8.1875, "y": 0.6875 },
+          "wallMounted": true,
+          "takeable": false,
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "",
+          "text": "Morning:\n- Watch the coffee run: one at a time.\n- Switch the coffee off at the socket.\n- Note the mugs, then go to the cooler.\nMidday:\n- Ask Ama for lunch after the kitchen.\n- Use an open screen; wait for the owner.\n- When all are back and sat, drop the cake.\nEvening:\n- Call it a day, then see who stays.\n- Walk into the kitchen; the lights follow you."
+        }
+      ],
+      "npcs": [
+        {
+          "id": "ama_owusu",
+          "displayName": "Ama Owusu",
+          "npcType": "person",
+          "position": { "x": 5.5, "y": 4.5 },
+          "spriteSheet": "ama_owusu",
+          "spriteTalk": "assets/characters/ama_owusu_talk.png",
+          "spriteVisemes": "assets/characters/ama_owusu_visemes.png",
+          "storyPath": "scenarios/office_life_showcase/ink/ama_owusu.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Autonoe", "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "immovable": true },
+          "eventMappings": [
+            { "eventPattern": "room_entered:office", "onceOnly": true, "cooldown": 0, "bark": "Morning! Come and find me when you're ready." },
+            { "eventPattern": "npc_queued:office_coffee", "onceOnly": true, "cooldown": 0, "completeTask": "see_queue", "bark": "Look, a queue. They wait their turn." },
+            { "eventPattern": "npc_chatted:office_coffee", "condition": "data.overheard === true", "cooldown": 0, "completeTask": "hear_queue_chat" },
+            { "eventPattern": "npc_turned_back:*", "condition": "data.reason === 'off'", "onceOnly": true, "cooldown": 0, "completeTask": "see_coffee_off", "bark": "Machine's off, so they turn back. Your lever." },
+            { "eventPattern": "npc_exchange_heard:exchange_cooler_chat", "cooldown": 0, "completeTask": "hear_cooler_exchange" },
+            { "eventPattern": "npc_picked_up:office_mugs", "onceOnly": true, "cooldown": 0, "bark": "There go the mugs. Agnieszka can't leave them." },
+            { "eventPattern": "room_entered:kitchen", "cooldown": 0, "setGlobal": { "kitchen_seen": true } },
+            { "eventPattern": "workstation_screen_changed:chidi_pc", "condition": "data.how === 'leave' && data.locked === true && globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Chidi's locked his screen before lunch." },
+            { "eventPattern": "npc_left_post:jun_watanabe", "condition": "globalVars.act_midday === true", "onceOnly": true, "cooldown": 0, "bark": "Jun's left his screen open. Have a look." },
+            { "eventPattern": "workstation_accessed:jun_pc", "cooldown": 0, "completeTask": "use_open_screen" },
+            { "eventPattern": "npc_caught_at_post:jun_watanabe", "onceOnly": true, "cooldown": 0, "delayMs": 2500, "bark": "Caught! People notice who's at their desk." },
+            { "eventPattern": "magnet_finished:cake", "onceOnly": true, "cooldown": 0, "completeTask": "see_cake_eaten", "bark": "Two slices, then it's gone. Late ones miss out." },
+            { "eventPattern": "npc_left_item_gone:jun_watanabe", "onceOnly": true, "cooldown": 0, "bark": "Jun's just found his badge gone. That was you." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setGlobal": { "office_coffee_off": false } },
+            { "eventPattern": "npc_left_post:zainab_hussain", "condition": "globalVars.act_evening === true", "cooldown": 0, "completeTask": "see_who_stays" },
+            { "eventPattern": "npc_used:*", "condition": "data.npcId === 'zainab_hussain' && data.need === 'caffeine' && globalVars.act_evening === true", "cooldown": 0, "completeTask": "see_who_stays" }
+          ]
+        },
+        {
+          "id": "chidi_okeke",
+          "displayName": "Chidi Okeke",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "chidi_okeke",
+          "spriteTalk": "assets/characters/chidi_okeke_talk.png",
+          "spriteVisemes": "assets/characters/chidi_okeke_visemes.png",
+          "storyPath": "scenarios/office_life_showcase/ink/chidi_okeke.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Zubenelgenubi", "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "chidi_pc",
+          "habits": { "screen": { "lockIfAwayOverSeconds": 10 } },
+          "needsSpeed": 90,
+          "needs": {
+            "caffeine": { "decayPerMin": 25, "urgentAt": 40, "initial": 61 },
+            "work": { "decayPerMin": 10, "urgentAt": 50, "initial": 72 },
+            "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "coffee": ["Report's due at four. Wish me luck.", "Someone's finished the biscuits."] },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "jun_watanabe",
+          "displayName": "Jun Watanabe",
+          "npcType": "person",
+          "position": { "x": 3, "y": 6 },
+          "spriteSheet": "jun_watanabe",
+          "spriteTalk": "assets/characters/jun_watanabe_talk.png",
+          "spriteVisemes": "assets/characters/jun_watanabe_visemes.png",
+          "storyPath": "scenarios/office_life_showcase/ink/jun_watanabe.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Puck", "style": "Tarrowby's HR assistant, in his early 20s, in his first job, eager and polite. Speak with a consistent southern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "jun_pc",
+          "habits": { "screen": { "lockChance": 0 } },
+          "needsSpeed": 80,
+          "needs": {
+            "caffeine": { "decayPerMin": 10, "urgentAt": 40, "initial": 70 },
+            "work": { "decayPerMin": 8, "urgentAt": 50, "initial": 80 },
+            "hunger": { "decayPerMin": 5, "urgentAt": 40, "initial": 90 }
+          },
+          "chatter": { "coffee": ["Third one today. Don't judge.", "Did you see that new rota?"] },
+          "eventMappings": [
+            { "eventPattern": "npc_left_post:chidi_okeke", "condition": "data.targetId === 'office_coffee'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 20 } } },
+            { "eventPattern": "workstation_accessed:jun_pc", "condition": "globalVars.act_midday === true", "cooldown": 60000, "needs": { "set": { "work": 5 } } },
+            { "eventPattern": "npc_caught_at_post:jun_watanabe", "cooldown": 30000, "completeTask": "see_caught", "bark": "Er, that's my desk. Can I help you?" },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "graham_whitfield",
+          "displayName": "Graham Whitfield",
+          "npcType": "person",
+          "position": { "x": 3, "y": 4 },
+          "spriteSheet": "graham_whitfield",
+          "spriteTalk": "assets/characters/graham_whitfield_talk.png",
+          "spriteVisemes": "assets/characters/graham_whitfield_visemes.png",
+          "storyPath": "scenarios/office_life_showcase/ink/graham_whitfield.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Umbriel", "style": "Brightwell's finance training lead, in his early 60s, unhurried and kind; a neutral proctor for the year-end edition. Speak with a consistent West Yorkshire accent from Halifax throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "graham_pc",
+          "habits": { "screen": { "lockChance": 0 } },
+          "needsSpeed": 85,
+          "needs": {
+            "work": { "decayPerMin": 15, "urgentAt": 50, "initial": 65 },
+            "social": { "decayPerMin": 12, "urgentAt": 40, "initial": 72 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 },
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 }
+          },
+          "chatter": { "cooler": ["How's tricks, then?", "Nobody tells me anything up here."] },
+          "exchanges": [{ "with": "agnieszka_duda", "knot": "exchange_cooler_chat", "topic": "cooler" }],
+          "eventMappings": [
+            { "eventPattern": "npc_left_post:agnieszka_duda", "condition": "data.targetId === 'water_cooler'", "cooldown": 30000, "needs": { "set": { "social": 10 } } },
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "npcType": "person",
+          "position": { "x": 1, "y": 5 },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "storyPath": "scenarios/office_life_showcase/ink/agnieszka_duda.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Callirrhoe", "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "agnieszka_laptop",
+          "needsSpeed": 70,
+          "needs": {
+            "thirst": { "decayPerMin": 15, "urgentAt": 40, "initial": 80 },
+            "hunger": { "decayPerMin": 4, "urgentAt": 40, "initial": 90 }
+          },
+          "interests": { "dirty_mugs": { "weight": 3, "noticeRooms": ["office", "kitchen"] } },
+          "chatter": { "cooler": ["Someone's left mugs everywhere again.", "Are you going to the quiz?"] },
+          "eventMappings": [
+            { "eventPattern": "global_variable_changed:act_midday", "condition": "data.value === true", "cooldown": 0, "needs": { "set": { "hunger": 62 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "cooldown": 0, "setVisible": false }
+          ]
+        },
+        {
+          "id": "zainab_hussain",
+          "displayName": "Zainab Hussain",
+          "npcType": "person",
+          "position": { "x": 2.15, "y": 6.65 },
+          "spriteSheet": "zainab_hussain",
+          "spriteTalk": "assets/characters/zainab_hussain_talk.png",
+          "spriteVisemes": "assets/characters/zainab_hussain_visemes.png",
+          "storyPath": "scenarios/office_life_showcase/ink/zainab_hussain.json",
+          "currentKnot": "start",
+          "reopenRefreshesHub": true,
+          "voice": { "name": "Achernar", "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.", "language": "en-GB" },
+          "behavior": { "facePlayer": true, "facePlayerDistance": 96 },
+          "needsHome": "zainab_tool_roll",
+          "needsSpeed": 80,
+          "needsCompany": { "avoids": ["*"], "avoidRadius": 0 },
+          "needs": {
+            "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 95 },
+            "thirst": { "decayPerMin": 2, "urgentAt": 30, "initial": 95 }
+          },
+          "eventMappings": [
+            { "eventPattern": "npc_queued:office_coffee", "condition": "data.npcId !== 'zainab_hussain'", "cooldown": 30000, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 1500, "cooldown": 0, "bark": "Quiet now. Time for a coffee in peace." },
+            { "eventPattern": "global_variable_changed:act_evening", "condition": "data.value === true", "delayMs": 8000, "cooldown": 0, "needs": { "set": { "caffeine": 10 } } },
+            { "eventPattern": "room_entered:office", "condition": "globalVars.act_evening === true", "cooldown": 60000, "needs": { "set": { "caffeine": 10 } } }
+          ]
+        }
+      ]
+    },
+
+    "kitchen": {
+      "type": "room_break",
+      "door_sign": "Kitchen",
+      "lighting": {
+        "variants": [
+          { "condition": "globalVars.act_evening === true", "mode": "motion", "offAfter": 10 }
+        ]
+      },
+      "connections": { "east": "office" },
+      "objects": [
+        {
+          "type": "qdc_fridge1",
+          "id": "fridge",
+          "name": "Fridge",
+          "position": { "x": 1, "y": 2 },
+          "takeable": false,
+          "observations": "The office fridge. Mostly yoghurts with names on."
+        },
+        {
+          "type": "microwave1",
+          "id": "microwave",
+          "name": "Microwave",
+          "position": { "x": 5, "y": 3 },
+          "takeable": false,
+          "observations": "A microwave on the kitchen table."
+        },
+        {
+          "type": "coffee_station1",
+          "id": "kitchen_coffee",
+          "name": "Kitchen Coffee Station",
+          "position": { "x": 3, "y": 8 },
+          "takeable": false,
+          "observations": "The kitchen coffee machine. It shares a fuse with the office one, so only one of them runs at a time.",
+          "affordance": { "useFrom": { "dx": 0, "dy": -1 }, "queue": { "cells": [{ "dx": 1, "dy": -1 }, { "dx": 2, "dy": -1 }] } },
+          "offWhen": { "office_coffee_off": false }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 1, "y": 7 },
+          "takeable": false,
+          "observations": "A water cooler. Room for two to stand and chat.",
+          "affordance": { "useSeconds": 40, "overhearRadius": 360 }
+        },
+        {
+          "type": "mugs_tray1",
+          "id": "washing_up_tray",
+          "name": "Washing-up Tray",
+          "position": { "x": 3, "y": 3 },
+          "takeable": false,
+          "observations": "A tray for dirty mugs. Somebody will wash them. Eventually.",
+          "affordance": { "accepts": ["dirty_mugs"], "useSeconds": 5 }
+        }
+      ],
+      "npcs": []
+    }
+  }
+}

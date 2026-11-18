@@ -3285,7 +3285,7 @@ the turn-back bubble, the walk to the kitchen.
    global set false. Either way a reload keeps it gone. A walker turned back with
    `gone` grumbles from `grumble_gone` ("Missed it."); an untempted one falls back or parks, a tempted
    one (`job.tempted`) does neither. **One slice each:** `magnet.perPerson` (default 1) is how many servings
-   one NPC takes before the magnet stops tempting it; a plain urgent need may still use it. Without
+   one NPC takes before the magnet stops tempting it; a plain urgent need may still use it (superseded: perPerson now caps urgent needs too, fix/magnet-serving). Without
    this, an NPC starting at 25 with `restores: 40` ends at 65, still inside a band of 70, and eats
    again at once. Eaters are remembered client side, so after a reload someone may have one more.
    **Redeploying:** at a declared spot, when a magnet's reveal global turns true while its servings
@@ -4316,7 +4316,7 @@ and 46 are accepted with a note, and OQ31 changed; each says so below.
 49. **Does the ring cadence run on the needs clock?** **Yes: it pauses with a VM, like every other
     needs timer.**
 50. **One serving per person?** **Yes, `perPerson: 1`: after that the magnet no longer tempts that
-    NPC, though a plain urgent need may still use it while servings are left.**
+    NPC, though a plain urgent need may still use it while servings are left.** (Superseded: perPerson now caps urgent needs too, fix/magnet-serving.)
 51. **Do print hooks fire on deliveries?** **No: `revealOutput` fires only for need uses.
     `setGlobal` and `emitEvent` hooks keep today's behaviour (any finished job), documented. The
     return-leg rule applies to the print errand only (`job.errand`); every other carry home keeps its

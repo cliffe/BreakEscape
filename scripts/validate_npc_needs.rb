@@ -903,6 +903,12 @@ module ValidateNpcNeeds
         if rg.is_a?(String) && !globals.key?(rg)
           issues << "⚠️ WARNING: #{where} '#{e['knot']}' requireGlobal '#{rg}' is not declared in globalVariables."
         end
+        # topic pins the exchange to one object's chatter pool (a shared object can
+        # carry more than one). It must be a non-empty string; a reachability check
+        # (that some object both NPCs can reach uses that chatter) is a backlog item.
+        if e.key?('topic') && !(e['topic'].is_a?(String) && !e['topic'].strip.empty?)
+          issues << "❌ ERROR: #{where} '#{e['knot']}' topic must be a non-empty string."
+        end
         unless globals.key?("heard_#{e['knot']}")
           issues << "⚠️ WARNING: #{where} '#{e['knot']}': declare heard_#{e['knot']} (false) in globalVariables; it is set when the exchange has been heard."
         end
