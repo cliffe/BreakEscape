@@ -225,13 +225,17 @@ function missionEndState() {
     if (!visible) return null;
 
     const closeBtn = document.getElementById('bv-close-btn');
-    const closable = !!closeBtn && closeBtn.style.display !== 'none' &&
+    // Once the mission is over the header control reads EXIT MISSION (bv-exit-btn): it leaves the
+    // game and never closes the overlay back into it, so it is not "closable".
+    const exitMission = !!closeBtn && closeBtn.classList.contains('bv-exit-btn');
+    const closable = !!closeBtn && !exitMission && closeBtn.style.display !== 'none' &&
                      closeBtn.getBoundingClientRect().width > 0;
 
     return {
         kind: 'credits',
         creditsShowing: true,
         closable,
+        exitMission,
         creditsText: (stage.innerText || '').trim().slice(0, 500) || null,
         note: closable
             ? 'End-of-mission credits. Closable via the ✕ CLOSE button if you need the canvas back.'
