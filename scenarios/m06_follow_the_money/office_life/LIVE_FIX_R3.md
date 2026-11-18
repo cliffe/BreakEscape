@@ -1,6 +1,6 @@
 # m06 office life: live proof of build review R3 fixes
 
-Fix commit `4ed61aa0d` (on tip `1f159f902`). Keyless server on port 3096, headless, `setFPS(20)` with fixed steps on. Script: `office_life/live_r3/q.mjs` (modes queue, fridge, print). Server stopped by PID afterwards.
+Fix commit `4ed61aa0d` (on tip `1f159f902`). Keyless server on port 3096, headless, `setFPS(20)` with fixed steps on. The script (modes queue, fridge, print) is kept in the build scratch, not in the repo. Server stopped by PID afterwards.
 
 ## Change
 - `floor_coffee` `queue.cells`: `{dx 2, dy 1}, {dx 3, dy 1}` to `{dx 2, dy 0}, {dx 3, dy 0}` (M1).

@@ -254,3 +254,28 @@ test('the consume sounds are clips the sound manager loads', () => {
     }
     assert.equal(DRINK_SOUND, 'drink_gulp');
 });
+
+test('pizza boxes and cake are eaten from the inventory: a small heal, the eat sound, the whole item used', () => {
+    for (const type of ['pizza_boxes', 'cake1']) {
+        assert.equal(consumableHealAmount({ type, takeable: true }), 20, `${type} has a default heal`);
+        assert.equal(consumableKind({ type }), 'food');
+    }
+    // the real m06 pizza shape: an NPC magnet on the table, takeable
+    const pizza = { scenarioData: { type: 'pizza_boxes', id: 'pizza', name: 'Leftover Pizza', takeable: true, droppable: true,
+        affordance: { satisfies: ['hunger'], restores: 60, magnet: { tempt: 60, servings: 2, perPerson: 1 } } } };
+    assert.equal(shouldConsumeOnInteract(pizza, []), false, 'on the table it is picked up first');
+    assert.equal(shouldConsumeOnInteract(pizza, [pizza]), true, 'in the inventory it is eaten');
+    const notes = [], sounds = [], usedUp = [], h = health(60);
+    useConsumable(pizza, { playerHealth: h, notify: (...a) => notes.push(a), noCombat: false,
+                           inventoryItems: [pizza], useUp: (s) => usedUp.push(s), playSound: (n) => sounds.push(n) });
+    assert.deepEqual(sounds, [CONSUME_SOUNDS.food]);
+    assert.deepEqual(h.healed, [20]);
+    assert.deepEqual(usedUp, [pizza]);
+    assert.equal(notes[0][0], 'Leftover Pizza: +20 HP');
+    // at full health it is still eaten, with the sound
+    const sounds2 = [], used2 = [];
+    useConsumable(pizza, { playerHealth: health(100), notify: () => {}, noCombat: false,
+                           inventoryItems: [pizza], useUp: (s) => used2.push(s), playSound: (n) => sounds2.push(n) });
+    assert.deepEqual(sounds2, [CONSUME_SOUNDS.food]);
+    assert.deepEqual(used2, [pizza]);
+});
