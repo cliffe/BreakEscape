@@ -10,7 +10,9 @@
 // Run with: node test/js/person-chat-retalk-restart.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -219,4 +221,60 @@ test('phone: _showRestoredThread restarts such a thread instead of ending it', a
     calls.length = 0;
     mg._showRestoredThread(npc, npc.id, [{ type: 'npc', text: 'Sorry, I am busy.' }], { renavigated: false });
     assert.deepEqual(calls, ['showCurrentChoices']);
+});
+
+// R3 minors: the probe stubs every bound external except the pure getters, the stubs return a
+// number (not void), and a probe that provoked an ink error leaves the story steppable.
+test('probe: value-using external is stubbed, errors cleared, real step calls it once', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'retalk-ext-'));
+    writeFileSync(join(dir, 's.ink'),
+        'EXTERNAL se_influence(n)\nEXTERNAL mystery(n)\nEXTERNAL player_name()\n-> start\n=== start ===\nOne.\n' +
+        '{se_influence(1) > 0:\n  Two.\n- else:\n  Three.\n}\nMid.\n{mystery(2)}\nName {player_name()}.\n-> DONE\n');
+    const r = spawnSync(join(root, 'bin/inklecate'), ['-o', join(dir, 's.json'), join(dir, 's.ink')], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const json = JSON.parse(readFileSync(join(dir, 's.json'), 'utf8').replace(/^﻿/, ''));
+    const { default: InkEngine } = await import(pathToFileURL(join(root, 'public/break_escape/js/systems/ink/ink-engine.js')).href);
+    const engine = new InkEngine('x');
+    await engine.loadStory(json);
+    const calls = { se: 0, mystery: 0, name: 0 };
+    engine.bindExternalFunction('se_influence', () => { calls.se++; return 5; });
+    engine.bindExternalFunction('mystery', () => { calls.mystery++; return 1; });
+    engine.bindExternalFunction('player_name', () => { calls.name++; return 'Ann'; });
+    engine.story.ChoosePathString('start');
+    engine.continue(); // One.
+    const saved = engine.story.state.ToJson();
+    const probe = engine.withEffectfulExternalsStubbed(() => engine.continue());
+    assert.match(probe.text, /Two|Three/);
+    assert.equal(calls.se, 0, 'se_influence stubbed during the probe');
+    engine.story.state.LoadJson(saved);
+    assert.equal(engine.story.hasError, false);
+    assert.equal(engine.story.canContinue, true);
+    calls.se = 0; calls.mystery = 0; calls.name = 0;
+    const real = engine.continue();
+    assert.match(real.text, /Two/);
+    assert.equal(calls.se, 1, 'real external called exactly once');
+    // an unknown newly bound external is stubbed in the probe, pure getter stays bound
+    const saved2 = engine.story.state.ToJson();
+    let nameLine;
+    engine.withEffectfulExternalsStubbed(() => { engine.continue(); engine.continue(); nameLine = engine.continue(); });
+    assert.equal(calls.mystery, 0, 'unknown external stubbed');
+    assert.match(nameLine.text, /Ann/, 'pure getter stays bound in the probe');
+    engine.story.state.LoadJson(saved2);
+    engine.story.ResetErrors();
+    engine.continue(); engine.continue();
+    assert.equal(calls.mystery, 1, 'unknown external called once for real');
+});
+
+test('probe: an ink error raised inside the probe is cleared when it ends', async () => {
+    const { default: InkEngine } = await import(pathToFileURL(join(root, 'public/break_escape/js/systems/ink/ink-engine.js')).href);
+    const dir = mkdtempSync(join(tmpdir(), 'retalk-err-'));
+    writeFileSync(join(dir, 's.ink'), 'One.\nTwo.\n-> DONE\n');
+    const r = spawnSync(join(root, 'bin/inklecate'), ['-o', join(dir, 's.json'), join(dir, 's.ink')], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const engine = new InkEngine('y');
+    await engine.loadStory(JSON.parse(readFileSync(join(dir, 's.json'), 'utf8').replace(/^\uFEFF/, '')));
+    engine.continue();
+    engine.withEffectfulExternalsStubbed(() => engine.story.state.AddError('void value', false));
+    assert.equal(engine.story.hasError, false);
+    assert.equal(engine.story.canContinue, true);
 });
