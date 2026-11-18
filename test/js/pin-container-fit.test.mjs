@@ -196,3 +196,12 @@ test('PIN pad: windows up to 840px high get the compact layout, so 720 and 768 f
     assert.equal(c.padding, '12px 20px');
     assert.ok(px(rule(pin, '.pin-minigame-key', '(max-height: 840px)')['min-height']) <= 40);
 });
+
+test('B6: a short narrow phone keeps the 400px display size (digits never grow on a shorter screen)', () => {
+    const narrow = rule(pin, '.pin-minigame-display', '(max-width: 400px)');
+    const both = rule(pin, '.pin-minigame-display', '(max-height: 840px) and (max-width: 400px)');
+    assert.equal(both['font-size'], narrow['font-size']);
+    assert.ok(px(both['font-size']) <= px(rule(pin, '.pin-minigame-display', '(max-height: 840px)')['font-size']));
+    // the combined block must come after the plain 840 block to win
+    assert.ok(pin.indexOf('(max-height: 840px) and (max-width: 400px)') > pin.indexOf('@media (max-height: 840px) {'));
+});

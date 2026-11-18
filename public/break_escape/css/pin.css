@@ -548,8 +548,9 @@
     margin-left: 0;
 }
 
-/* Short screens (800x600 and below): a tighter pad so the display, every key and the
-   attempts log all fit on the plate (slice 7 R1) */
+/* Short screens (840px high and below, so 1280x720, 1366x768 and 1280x800 too): a tighter
+   pad so the display, every key and the attempts log all fit on the plate with no scroll
+   (slice 7 R1, sweep B6) */
 @media (max-height: 840px) {
     .pin-minigame-game-container { padding: 12px 20px; gap: 12px; }
     .pin-minigame-interface { gap: 10px; }
@@ -561,6 +562,12 @@
     .pin-minigame-attempts-title { margin-bottom: 6px; }
     .pin-minigame-attempts-log { max-height: 88px; }
     .pin-minigame-attempt-empty { padding: 6px; }
+}
+
+/* A short narrow phone keeps the 400px display size, so its digits are never larger than
+   those on a taller phone of the same width */
+@media (max-height: 840px) and (max-width: 400px) {
+    .pin-minigame-display { font-size: 24px; padding: 10px 15px; }
 }
 
 /* Landscape phones (915x412): the keypad stands beside the display and the attempts
