@@ -35,20 +35,83 @@ const { default: NPCManager } = await import(pathToFileURL(join(dir, 'npc-manage
 const scenario = skip ? null : render();
 const allNpcs = scenario ? Object.values(scenario.rooms).flatMap(r => r.npcs || []).concat(scenario.startRoom ? [] : []) : [];
 const hax = allNpcs.find(n => n.id === 'agent_0x99' || (n.eventMappings || []).some(m => m.eventPattern === 'conversation_closed:opening_briefing'));
-const nudgeIdx = hax ? hax.eventMappings.findIndex(m => m.eventPattern === 'room_entered:data_center' && m.sendTimedMessage) : -1;
+const nudges = hax ? hax.eventMappings.map((m, i) => ({ m, i })).filter(x => x.m.eventPattern === 'room_entered:data_center' && x.m.sendTimedMessage) : [];
+const std = nudges.find(x => /patricia_ko !== true/.test(x.m.condition || ''));
+const ko = nudges.find(x => /patricia_ko === true/.test(x.m.condition || ''));
+const nudgeIdx = std ? std.i : -1;
 
-test('the nudge is on HaX, is short, and uses no dashes', { skip }, () => {
-    assert.ok(nudgeIdx >= 0, 'nudge mapping present on the HaX phone NPC');
-    const m = hax.eventMappings[nudgeIdx];
-    assert.ok(m.onceOnly);
-    assert.ok(m.sendTimedMessage.message.split(/\s+/).length <= 30);
-    assert.doesNotMatch(m.sendTimedMessage.message, /[–—]/);
-    assert.equal(m.sendTimedMessage.skipIfGlobal, 'torres_identified');
-    assert.ok(!m.setVisible, 'does not touch Torres');
+test('the nudges are on HaX, short, dash-free, and split on patricia_ko', { skip }, () => {
+    assert.equal(nudges.length, 2, 'exactly two nudge mappings');
+    assert.ok(std && ko, 'both variants present');
+    for (const { m } of [std, ko]) {
+        assert.ok(m.onceOnly);
+        assert.match(m.condition, /torres_identified !== true/);
+        assert.ok(m.sendTimedMessage.message.split(/\s+/).length <= 30);
+        assert.doesNotMatch(m.sendTimedMessage.message, /[–—]/);
+        assert.equal(m.sendTimedMessage.skipIfGlobal, 'torres_identified');
+        assert.ok(!m.setVisible, 'does not touch Torres');
+    }
+    assert.match(std.m.sendTimedMessage.message, /Patricia/);
+    assert.match(ko.m.sendTimedMessage.message, /Call me/);
+    assert.doesNotMatch(ko.m.sendTimedMessage.message, /Patricia/);
+});
+
+function fresh() {
+    const mgr = new NPCManager({ on() {}, off() {}, emit() {} }, null);
+    mgr.npcs.set('hax', { id: 'hax', npcType: 'phone', phoneId: 'player_phone', currentKnot: 'hub' });
+    mgr.gameStartTime = Date.now() - 600000;
+    return mgr;
+}
+const timed = mgr => mgr.getConversationHistory('hax').filter(h => h.timed).map(h => h.text);
+
+test('KO variant: only the matching branch fires', { skip }, () => {
+    for (const [pko, want, other] of [[true, ko, std], [false, std, ko]]) {
+        const mgr = fresh();
+        window.gameState.globalVariables = { torres_identified: false, patricia_ko: pko };
+        for (const x of [std, ko]) {
+            const cfg = mgr._buildMappingConfig(x.m, x.i);
+            if (mgr._mappingWouldFire ? mgr._mappingWouldFire('hax', cfg, {}) !== false : true) {
+                mgr._handleEventMapping('hax', 'room_entered:data_center', cfg, {});
+            }
+        }
+        mgr.gameStartTime -= 3000;
+        mgr._checkTimedMessages();
+        assert.deepEqual(timed(mgr), [want.m.sendTimedMessage.message], `patricia_ko=${pko}`);
+        assert.ok(!timed(mgr).includes(other.m.sendTimedMessage.message));
+    }
+    window.gameState.globalVariables = {};
+});
+
+test('reload does not resend a fired nudge or lose a pending one', { skip }, () => {
+    const m = std.m;
+    window.gameState.globalVariables = { torres_identified: false, patricia_ko: false };
+    // Fired and delivered, then reload.
+    const a = fresh();
+    a._handleEventMapping('hax', 'room_entered:data_center', a._buildMappingConfig(m, std.i), {});
+    a.gameStartTime -= 3000; a._checkTimedMessages();
+    assert.equal(timed(a).length, 1);
+    const trig = JSON.parse(JSON.stringify(a.exportTriggeredEvents()));
+    assert.ok(Object.keys(trig).length > 0, 'trigger persisted');
+    const b = fresh();
+    b.restoreTriggeredEvents(trig);
+    b._handleEventMapping('hax', 'room_entered:data_center', b._buildMappingConfig(m, std.i), {});
+    b.gameStartTime -= 3000; b._checkTimedMessages();
+    assert.deepEqual(timed(b), [], 'no resend after reload');
+    // Fired but still counting down at reload: restored once, not duplicated.
+    const c = fresh();
+    c._handleEventMapping('hax', 'room_entered:data_center', c._buildMappingConfig(m, std.i), {});
+    const tm = JSON.parse(JSON.stringify(c.exportTimedMessages()));
+    const d = fresh();
+    d.restoreTriggeredEvents(JSON.parse(JSON.stringify(c.exportTriggeredEvents())));
+    d.restoreTimedMessages(tm);
+    d._handleEventMapping('hax', 'room_entered:data_center', d._buildMappingConfig(m, std.i), {});
+    d.gameStartTime -= 3000; d._checkTimedMessages();
+    assert.deepEqual(timed(d), [m.sendTimedMessage.message], 'exactly one after restore');
+    window.gameState.globalVariables = {};
 });
 
 test('fires once while unidentified, not after naming', { skip }, () => {
-    const m = hax.eventMappings[nudgeIdx];
+    const m = std.m;
     const mgr = new NPCManager({ on() {}, off() {}, emit() {} }, null);
     mgr.npcs.set('hax', { id: 'hax', npcType: 'phone', phoneId: 'player_phone', currentKnot: 'hub' });
     mgr.gameStartTime = Date.now() - 600000;
