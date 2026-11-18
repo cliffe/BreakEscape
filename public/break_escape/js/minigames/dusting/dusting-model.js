@@ -92,22 +92,24 @@ export const POWDERS = {
  * - `residueStrength`: ridge density multiplier for the latent print (0..1; hard is 0.9).
  * - `candidates`: reference cards shown in the compare step (including the correct one).
  * - `decoySamePattern`: 'never' (decoys use a different pattern, unless the scenario forces one with a { name, pattern } entry), 'one' (exactly one decoy shares it), 'all'.
- * - `findHintVisible`: a faint smudge shows in the find step without the torch.
+ * - `findFloor`: strength of the dotted checker floor of the print mask in the find step, with no torch
+ *   (0 on hard, so hard needs the torch unless High contrast is on). The game rescales it per surface so the
+ *   luma change is about the same on dark and light surfaces (see `findFloorScale`).
  * - `partial`: 'never' | 'maybe' (about half the surfaces) | 'always' the print is cut by a straight edge.
  * - `sheenScale`: multiplier for the torch sheen's visibility radius.
  * - `marks`: minutiae marked round the core on the lift and every card in the compare step (F26), so the
  *   cards can be told apart by eye; the right card carries the same marks in the same places.
  * @type {Object<string, {pfog:number, minCoverage:number, residueStrength:number, candidates:number,
- *   decoySamePattern:'never'|'one'|'all', findHintVisible:boolean, partial:'never'|'maybe'|'always', sheenScale:number,
+ *   decoySamePattern:'never'|'one'|'all', findFloor:number, partial:'never'|'maybe'|'always', sheenScale:number,
  *   marks:number}>}
  */
 export const DIFFICULTY = {
     // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
     // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
     // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
-    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0, marks: 3 },
-    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0, marks: 3 },
-    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7, marks: 2 }
+    easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findFloor: 0.24, partial: 'never', sheenScale: 1.0, marks: 3 },
+    medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findFloor: 0.16, partial: 'maybe', sheenScale: 1.0, marks: 3 },
+    hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findFloor: 0, partial: 'always', sheenScale: 0.7, marks: 2 }
 };
 
 const PATTERN_CLASSES = ['loop', 'whorl', 'arch'];
@@ -392,6 +394,7 @@ export class TapeGrid {
  * surface (it still works, gently), else 0.85.
  * @param {string} powder POWDERS id.
  * @param {string} surface SURFACES id.
+ * @param {boolean} [short] Short landscape wording: the same advice in fewer characters (four lines at 667x375).
  * @returns {number} 1, 0.95 or 0.85
  */
 export function contrastFactor(powder, surface) {
@@ -441,13 +444,54 @@ const POWDER_NAMES = { black: 'Black powder', silver: 'Silver powder', magnetic:
  * @param {string} surface SURFACES id.
  * @returns {string|null}
  */
-export function wrongPowderReason(powder, surface) {
+export function wrongPowderReason(powder, surface, short = false) {
     const s = SURFACES[surface], p = POWDERS[powder];
     if (!s || !p || s.bestPowder === powder) return null;
     const better = POWDER_NAMES[s.bestPowder] || s.bestPowder;
     let why;
-    if (powder === 'magnetic') why = 'it works, but it is meant for textured plastic and shows a little faint';
+    if (powder === 'magnetic') why = short ? 'meant for textured plastic, so it shows faint' : 'it works, but it is meant for textured plastic and shows a little faint';
     else if (!s.smooth) why = 'it catches in the grain and shows faint';
     else why = 'low contrast';
     return `${POWDER_NAMES[powder]} on ${s.name}: ${why}. ${better} would show these ridges better.`;
+}
+
+export const FIND_BEAM_GAIN = 1.6;
+export const FIND_HC_FLOOR_BONUS = 0.16;
+/** Luma change the medium floor (0.16) makes on every surface; easy and High contrast scale from it. */
+export const FIND_FLOOR_DELTA = 30;
+const FIND_FLOOR_REF = 0.16;
+const FIND_FLOOR_MAX = 0.9;
+const lumaOf = c => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+/**
+ * Glint colour of the find step: white on dark surfaces; on light ones a dark blue (near black with
+ * High contrast), dark enough to move the pale surface visibly.
+ * @param {boolean} light @param {boolean} hc @returns {number[]} rgb
+ */
+export function findGlint(light, hc) {
+    return light ? (hc ? [0, 0, 0] : [20, 28, 45]) : [255, 255, 255];
+}
+/**
+ * Multiplier for the floor so it moves the unlit surface by about FIND_FLOOR_DELTA luma at medium
+ * whatever the surface (the old fixed blend moved pale surfaces by 2 to 5 levels).
+ * Never below 1, so a dark or textured surface keeps at least the tuned blend.
+ * @param {number} unlitLuma luma of the surface with no torch @param {number[]} glint rgb
+ */
+export function findFloorScale(unlitLuma, glint) {
+    const d = Math.abs(unlitLuma - lumaOf(glint));
+    return d < 1 ? 1 : Math.max(1, (FIND_FLOOR_DELTA / FIND_FLOOR_REF) / d);
+}
+/**
+ * Find step: how strongly one pixel of the latent print shows (0 to 1 blend towards the glint colour).
+ * Two parts, both hard pixels (no blur): the torch sheen, full strength over most of the beam
+ * (`lit` reaches 1 only at its centre, so it is scaled by FIND_BEAM_GAIN and capped), and a dotted
+ * checkerboard floor of the print mask that shows without the torch, so the patch can be spotted by
+ * looking while the torch still confirms it. The floor is a texture, so it does not rely on colour.
+ * High contrast raises both (sheen gain and floor) and returns a stronger glint colour.
+ * @param {{lit:number, ridge:number, mask:number, res:number, floor:number, floorScale?:number, dotted:boolean, hc:boolean}} p
+ */
+export function findSheen({ lit, ridge, mask, res, floor, floorScale = 1, dotted, hc }) {
+    let s = lit > 0 ? ridge * mask * res * Math.min(1, lit * FIND_BEAM_GAIN) : 0;
+    if (hc) s = Math.min(1, s * 1.25);
+    if (dotted) s = Math.max(s, mask * Math.min(FIND_FLOOR_MAX, (floor + (hc ? FIND_HC_FLOOR_BONUS : 0)) * floorScale));
+    return s;
 }
