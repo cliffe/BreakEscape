@@ -148,9 +148,9 @@ Guard: Whoa. Hands where I can see them.
 - hall_a_warnings == 0:
     Guard: Hall's closed. Turn around.
 - hall_a_warnings == 1:
-    Guard: Turn around. I won't say it again.
-- else:
     Guard: Last time. Turn around.
+- else:
+    Guard: Turn around. I won't say it again.
 }
 + {hall_team_present} [(Wave the team up behind you.)]
     -> hall_stand_down
@@ -172,7 +172,7 @@ Guard: One more step and we put you on the floor.
     ~ hall_a_quiet = true
     #exit_conversation
     -> hall_a
-+ [(Go through them anyway.)]
++ [(Go through him anyway.)]
     ~ hall_a_engaged = true
     #hostile:hall_guard_a
     Guard: Have it your way.
