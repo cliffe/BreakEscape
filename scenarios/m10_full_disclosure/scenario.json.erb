@@ -2916,13 +2916,14 @@ raid_copy = lambda do |p, id, room, knot, x, y, arms, look|
   r = raid[p]
   maps = after_end.(room)
   maps += arms.map do |arm|
-    m = { 'eventPattern' => "room_entered:#{room}", 'condition' => [raid_guard.(p), arm, '!globalVars.closing_done'].compact.join(' && '), 'setVisible' => true }
+    # cooldown 0: the default 5 s cooldown let a step back out and in again within 5 s skip this reveal after the exit hid the copy (hall_team_present stayed false, no wave option).
+    m = { 'eventPattern' => "room_entered:#{room}", 'cooldown' => 0, 'condition' => [raid_guard.(p), arm, '!globalVars.closing_done'].compact.join(' && '), 'setVisible' => true }
     # Playtest B-03: a raid copy standing in the hall lets the player call the team up (ink: hall_team_present). HaX clears it first on entry and on leaving.
     m['setGlobal'] = { 'hall_team_present' => true } if room == 'server_hall'
     m
   end
   # Walkthrough R1 m-3: gone when the player moves on, as vector_so (they are "a room ahead").
-  maps << { 'eventPattern' => 'room_exited', 'condition' => "data.roomId === '#{room}'", 'setVisible' => false }
+  maps << { 'eventPattern' => 'room_exited', 'cooldown' => 0, 'condition' => "data.roomId === '#{room}'", 'setVisible' => false }
   maps << { 'eventPattern' => 'global_variable_changed:officer_out', 'condition' => "value === '#{p}'", 'setVisible' => false, 'delayMs' => 500 }
   if p == 'kowalczyk'
     maps << { 'eventPattern' => 'global_variable_changed:accused', 'condition' => "value === 'kowalczyk'", 'setVisible' => false, 'delayMs' => 500 }
