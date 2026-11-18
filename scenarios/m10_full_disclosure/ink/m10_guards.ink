@@ -136,18 +136,27 @@ Guard: Whoa. Hands where I can see them.
 {hall_guards_stood_down:
     -> passed
 }
-Guard: Hall's closed. Turn around.
+Guard: {stopping:Hall's closed. Turn around.|Turn around. I won't say it again.|Hands on the batons now. Turn around.}
 + {hall_team_present} [(Wave the team up behind you.)]
     -> hall_stand_down
 + [I'm going to the core. Read the photo.]
-    #hostile:hall_guard_a
     Guard: Core's past us. Nobody's going past us.
+    -> hall_a_warn
++ [Move.]
+    Guard: Nope.
+    -> hall_a_warn
+
+// Fair warning before the fight: both guards are set to put you down.
+=== hall_a_warn ===
+Narrator: Both guards square up, batons out.
+Guard: One more step and we put you on the floor.
++ [(Back off.)]
     ~ grd_quiet = true
     #exit_conversation
-    -> fight
-+ [Move.]
+    -> hall_a
++ [(Go through them anyway.)]
     #hostile:hall_guard_a
-    Guard: Nope.
+    Guard: Your call.
     ~ grd_quiet = true
     #exit_conversation
     -> fight

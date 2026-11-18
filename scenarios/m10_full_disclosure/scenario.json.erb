@@ -76,9 +76,9 @@ m10_vms = {
 # One flag per station (F-18): each station lists only its own flag, by slice.
 m10_stations = [
   { id: 'gate_terminal',      flag: 1, vm: 'bunker_monitor', index: 0, hint: "That one goes in at the gate terminal, up at the forward post." },
-  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That one goes in at the release console in the server hall." },
-  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That one goes in at the sealed section's hatch, at the east end of the server hall." },
-  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That one goes in at the core host terminal." }
+  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That flag belongs at a different station." },
+  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That flag belongs at a different station." },
+  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That flag belongs at a different station." }
 ]
 # The attack box (HaX's racked field console). VM-WIRE: title and fallback ip.
 m10_attack_vm = 'attack_vm'
@@ -1878,6 +1878,7 @@ end
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && !globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === ''", "setGlobal": { "wendell_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_captured === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_escaped === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },
+            { "eventPattern": "fingerprint_collected:voltage", "condition": "data.objectId === 'bypass_panel' && !globalVars.m04_voltage_escaped && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Every fitter's been at that panel. Nothing there to follow up." } },
             { "eventPattern": "fingerprint_collected:voltage", "condition": "data.objectId === 'bypass_panel' && globalVars.m04_voltage_escaped === true && !globalVars.voltage_print_lifted", "setGlobal": { "voltage_print_lifted": true } },
             <%# Regression fix pass m-3: no call opens during the Voltage fight; it rings once the fight is over (power_fight_over). %>
             { "eventPattern": "global_variable_changed:power_fight_over", "condition": "value === true && globalVars.cut_by_hand === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
@@ -2946,6 +2947,7 @@ not_tethered = '!globalVars.nightshade_tethered'
       "locked": true,
       "lockType": "rfid",
       "requires": "tg_story_lock_blast_tunnel",
+      "lockedHint": "No badge opens this one. Their gate terminal at the forward post is what the door answers to.",
       "connections": { "west": "forward_post", "east": "security_office" },
       "npcs": [
         {
@@ -3676,7 +3678,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "puzzle_graph_links": [{ "from": "action_cut_the_shutter", "to": "door_gallery" }],
-          "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
+          "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here.",
           "observationVariants": [
             <%# Blind fix pass F4: the key's turned, the pull is still to do. %>
             { "condition": "globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "value": "The key turned a quarter right; the row is off their board. Third breaker from the left, GALLERY SHUTTER, still up." },
@@ -3686,7 +3688,7 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
           ],
-          "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
+          "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here.",
           "textVariants": [
             <%# Blind fix pass F4: the key's turned, the pull is still to do. %>
             { "condition": "globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "value": "The key turned a quarter right; the row is off their board. Third breaker from the left, GALLERY SHUTTER, still up." },
@@ -3722,7 +3724,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "fingerprintOwnerName": "an unidentified fitter",
           "fingerprintCandidates": ["Wendell Briggs", "the fitters"],
           "fingerprintDifficulty": "easy",
-          "observations": "The refit's bypass panel, bolted over the 1960s switchgear. Smudged by every fitter who has touched it.",
+          "observations": "The refit's bypass panel, bolted over the 1960s switchgear. Smudged by every fitter who has touched it. Nothing here worth lifting.",
           "observationVariants": [
             { "condition": "globalVars.m04_voltage_escaped === true && globalVars.voltage_print_lifted === true && globalVars.m04_voltage_print_on_bypass === true", "value": "Dusted. One clean thumbprint, lifted. It matches the print you took off the bypass at Albion." },
             { "condition": "globalVars.m04_voltage_escaped === true && globalVars.voltage_print_lifted === true", "value": "Dusted. One clean thumbprint, lifted. There's nothing on file to match it to." },
