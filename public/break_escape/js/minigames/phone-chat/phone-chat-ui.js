@@ -611,6 +611,8 @@ export default class PhoneChatUI {
         // Hide conversation, show contact list
         this.elements.conversationView.style.display = 'none';
         this.elements.contactListView.style.display = 'flex';
+        this.elements.contactListView.setAttribute('role', 'region');
+        this.elements.contactListView.setAttribute('aria-label', 'Messages');
         
         // Populate contacts
         this.populateContactList(phoneId);
@@ -878,11 +880,16 @@ export default class PhoneChatUI {
 
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
+        // The thread is cleared below and redrawn from the history once that loads; a text
+        // that arrives in between is part of that draw (npc-barks _foldIntoOpenThread)
+        this.historyDrawn = false;
         this.syncSkipHint();
         
         // Hide contact list, show conversation
         this.elements.contactListView.style.display = 'none';
         this.elements.conversationView.style.display = 'flex';
+        this.elements.conversationView.setAttribute('role', 'region');
+        this.elements.conversationView.setAttribute('aria-label', `Conversation with ${npc.displayName || npc.id}`);
         
         // Update header with avatar
         this.updateHeader(npc.displayName || npc.id, npc.id);

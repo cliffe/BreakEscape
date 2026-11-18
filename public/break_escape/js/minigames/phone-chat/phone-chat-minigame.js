@@ -586,6 +586,8 @@ export class PhoneChatMinigame extends MinigameScene {
             this.history.markAllRead();
             if (window.updatePhoneBadge && this.phoneId) window.updatePhoneBadge(this.phoneId);
         }
+        // The history (every stored row, including a text that arrived meanwhile) is drawn
+        if (this.ui) this.ui.historyDrawn = true;
         // A toast from this contact, or repeating a line now drawn here, is done with
         // (m06 confirmation R4 M2: HaX's fight text barked before the phone opened)
         window.barkSystem?.dismissBarksForOpenThread?.();

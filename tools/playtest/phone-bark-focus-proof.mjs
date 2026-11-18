@@ -21,11 +21,11 @@ async function run(w, h, tag) {
   for (const sel of ['#session-resume-btn', '.mission-brief-close', '.mission-brief-start']) {
     const el = await page.$(sel); if (el && await el.isVisible()) { await el.click(); await page.waitForTimeout(300); }
   }
-  const send = (text) => page.evaluate(({ id, text }) => {
+  const send = (text, startKnot) => page.evaluate(({ id, text, startKnot }) => {
     window.npcManager.addMessage(id, 'npc', text, { isBark: true });
     const npc = window.npcManager.getNPC(id);
-    window.barkSystem.showBark({ npcId: id, npcName: npc?.displayName, message: text, avatar: npc?.avatar, phoneId: npc?.phoneId });
-  }, { id: HAX, text });
+    window.barkSystem.showBark({ npcId: id, npcName: npc?.displayName, message: text, avatar: npc?.avatar, phoneId: npc?.phoneId, startKnot });
+  }, { id: HAX, text, startKnot });
   const barks = () => page.evaluate(() => document.querySelectorAll('#npc-bark-container .npc-bark').length);
   const active = () => page.evaluate(() => { const a = document.activeElement; return a ? (a.className || a.id || a.tagName) + '' : null; });
 
@@ -69,6 +69,25 @@ async function run(w, h, tag) {
   await page.waitForTimeout(1500);
   check((await barks()) > 0, `${tag}: toast shows with the phone closed`);
   await page.screenshot({ path: `${outdir}/${tag}-4-closed-toast.png` });
+
+  // M1: a text that names a knot is not folded: held while the thread is open, toast after close.
+  // (M2, a text during a call: not scripted here. m01 has no __test route to start a call;
+  // the ringer offer needs a mapping, and the unit test covers isCallMode / callActive.)
+  await page.evaluate(() => window.barkSystem?.dismissAllBarks?.());
+  await page.evaluate(() => window.__test.openInventoryItem?.('phone') || window.__test.openPhone?.());
+  await page.waitForSelector('.phone-messages-container', { timeout: 20000 });
+  await page.evaluate((id) => window.MinigameFramework.currentMinigame.openConversation(id), HAX);
+  await page.waitForTimeout(1500);
+  const b0 = await barks();
+  await send('Proof text four: knot text, held.', 'first_ring');
+  await page.waitForTimeout(1500);
+  check((await barks()) === b0, `${tag}: knot text shows no toast while the thread is open`);
+  check(!(await page.evaluate(() => document.body.innerText.includes('Proof text four'))), `${tag}: knot text is not folded into the thread`);
+  await page.screenshot({ path: `${outdir}/${tag}-5-knot-held.png` });
+  await page.evaluate(() => window.MinigameFramework.endMinigame(false, null));
+  await page.waitForTimeout(4500);
+  check((await barks()) > b0, `${tag}: knot text toast shows after the phone closes`);
+  await page.screenshot({ path: `${outdir}/${tag}-6-knot-toast-after-close.png` });
   await page.close();
 }
 

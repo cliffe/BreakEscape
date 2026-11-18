@@ -233,6 +233,7 @@ export default class NPCBarkSystem {
     // (m06 confirmation R4 M2)
     if (this._shownInOpenThread(payload)) {
       console.debug('[barks] dropped, already in the open thread:', payload.text || payload.message);
+      if (payload.npcId && phoneThreadOpenFor(payload.npcId)) this._markThreadRead(payload.npcId);
       return null;
     }
 
@@ -271,31 +272,44 @@ export default class NPCBarkSystem {
   /**
    * True when the bark is a phone text for the contact whose conversation is open: the
    * text goes into that thread (drawn if it isn't already, then marked read) and the
-   * caller shows no toast. Speech lines and continuations are never folded in.
+   * caller shows no toast. Speech lines and continuations are never folded in. Only the
+   * open same-contact thread may be the reason the bark would be held: a text that names a
+   * knot (its click opens the thread there), a call, a dialog and a workstation popup all
+   * keep the old hold-and-toast path (review R1 M1, M2).
    */
   _foldIntoOpenThread(payload = {}) {
-    if (payload.continuation || !payload.npcId) return false;
+    if (payload.continuation || !payload.npcId || payload.startKnot) return false;
     if (!phoneThreadOpenFor(payload.npcId) || this._isSpeech(payload)) return false;
     try {
+      const m = window.MinigameFramework?.currentMinigame;
+      if (m?.ui?.isCallMode || window.phoneRinger?.callActive?.() || dialogLayerOpen() || workstationPopupOpen()) return false;
       const raw = String(payload.text || payload.message || '');
       const contact = this.npcManager?.getNPC?.(payload.npcId) || { id: payload.npcId, displayName: payload.npcName };
       let text = raw;
       try { text = phoneBarkText(raw, contact); } catch (e) { /* keep raw */ }
       if (!text.trim()) return false;
-      const m = window.MinigameFramework?.currentMinigame;
-      const key = threadTextKey(text);
-      const drawn = openPhoneThread();
-      if (key && !(drawn && drawn.keys.has(key)) && typeof m?.ui?.addMessage === 'function') {
-        Promise.resolve(m.ui.addMessage('npc', text)).catch(() => {});
+      // stillValid is not checked: the text is already in the thread's history, so folding it
+      // in is a display choice, not a delayed notification that may have gone stale.
+      // The thread was cleared and its history is still loading: that draw includes this row.
+      if (m?.ui?.historyDrawn !== false) {
+        const key = threadTextKey(text);
+        if (key && typeof m?.ui?.addMessage === 'function') {
+          Promise.resolve(m.ui.addMessage('npc', text)).catch(() => {});
+        }
       }
-      const rows = this.npcManager?.conversationHistory?.get?.(payload.npcId) || [];
-      for (let i = rows.length - 1; i >= 0; i--) {
-        if (rows[i] && rows[i].type === 'npc' && !rows[i].read && threadTextKey(rows[i].text) === key) { rows[i].read = true; break; }
-      }
+      this._markThreadRead(payload.npcId);
       if (m?.phoneId && typeof window.updatePhoneBadge === 'function') window.updatePhoneBadge(m.phoneId);
       console.debug('[barks] folded into the open thread, no toast:', text);
       return true;
     } catch (e) { return false; }
+  }
+
+  /** Mark every unread npc/call row of a contact's saved thread read (as markAllRead does). */
+  _markThreadRead(npcId) {
+    const rows = this.npcManager?.conversationHistory?.get?.(npcId) || [];
+    for (const r of rows) {
+      if (r && !r.read && (r.type === 'npc' || r.type === 'call')) r.read = true;
+    }
   }
 
   _shouldDefer(payload) {
