@@ -202,42 +202,42 @@ wall_safe_pin = "5829"
           { "text": "ST. CATHERINE'S REGIONAL: CLINICAL SYSTEMS RESTORED", "style": "entry" },
           { "text": "PATIENT DEATHS: 1 (cardiac event before ward monitoring returned)", "style": "entry", "condition": "globalVars.ghost_keys_used" },
           { "text": "PATIENT DEATHS: 2 (cardiac events during system transition)", "style": "entry", "condition": "(globalVars.paid_ransom || globalVars.ward_recovering) && !globalVars.ghost_keys_used" },
-          { "text": "PATIENT DEATHS: 6 (ventilator and dialysis complications — extended downtime)", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ward_recovering && !globalVars.bed4_manually_stabilised" },
-          { "text": "PATIENT DEATHS: 5 (ventilator and dialysis complications — extended downtime; Bed 4 saved by hand)", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ward_recovering && globalVars.bed4_manually_stabilised" },
+          { "text": "PATIENT DEATHS: 6 (ventilator and dialysis complications; extended downtime)", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ward_recovering && !globalVars.bed4_manually_stabilised" },
+          { "text": "PATIENT DEATHS: 5 (ventilator and dialysis complications; extended downtime; Bed 4 saved by hand)", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ward_recovering && globalVars.bed4_manually_stabilised" },
           { "text": "" },
           { "text": "── DECISION ──",                                      "style": "section-header" },
-          { "text": "RANSOM PAID: £150,000 to Ransomware Incorporated — ENTROPY funded",   "style": "entry", "condition": "globalVars.paid_ransom" },
-          { "text": "RANSOM REFUSED: Offline backup keys used — ENTROPY denied funding",  "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used && !globalVars.ward_recovering" },
-          { "text": "RANSOM REFUSED: Combined restore — escrow keys plus Ghost's own key material, ENTROPY denied funding", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used && globalVars.ward_recovering" },
-          { "text": "GHOST'S KEYS: Wards restored on the attacker's terms — no money paid, the evidence promised in return", "style": "warning", "condition": "globalVars.ghost_keys_used" },
+          { "text": "RANSOM PAID: £150,000 to Ransomware Incorporated; ENTROPY funded",   "style": "entry", "condition": "globalVars.paid_ransom" },
+          { "text": "RANSOM REFUSED: Offline backup keys used; ENTROPY denied funding",  "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used && !globalVars.ward_recovering" },
+          { "text": "RANSOM REFUSED: Combined restore; escrow keys plus Ghost's own key material, ENTROPY denied funding", "style": "entry", "condition": "!globalVars.paid_ransom && !globalVars.ghost_keys_used && globalVars.ward_recovering" },
+          { "text": "GHOST'S KEYS: Wards restored on the attacker's terms; no money paid, the evidence promised in return", "style": "warning", "condition": "globalVars.ghost_keys_used" },
           { "text": "GHOST'S FOOTHOLD: Attacker access survives the restore inside St. Catherine's network", "style": "warning", "condition": "globalVars.ghost_keys_used" },
-          { "text": "HOSPITAL EXPOSED: Negligence on public record — Health and Social Care Committee to take evidence", "style": "entry", "condition": "globalVars.exposed_hospital" },
-          { "text": "QUIET RESOLUTION: Negligence kept confidential — St. Catherine's reputation intact",  "style": "entry", "condition": "!globalVars.exposed_hospital" },
+          { "text": "HOSPITAL EXPOSED: Negligence on public record; Health and Social Care Committee to take evidence", "style": "entry", "condition": "globalVars.exposed_hospital" },
+          { "text": "QUIET RESOLUTION: Negligence kept confidential; St. Catherine's reputation intact",  "style": "entry", "condition": "!globalVars.exposed_hospital" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                                     "style": "section-header" },
-          { "text": "OFFLINE BACKUP KEYS RECOVERED — Independent recovery pathway available", "style": "entry", "condition": "globalVars.offline_keys_recovered" },
-          { "text": "GARY WHITLOCK: Vindicated — Career protected by agent documentation", "style": "entry", "condition": "globalVars.gary_protected" },
-          { "text": "GARY WHITLOCK: Fired quietly — career over in healthcare IT",          "style": "entry", "condition": "!globalVars.gary_protected && !globalVars.exposed_hospital" },
+          { "text": "OFFLINE BACKUP KEYS RECOVERED: Independent recovery pathway available", "style": "entry", "condition": "globalVars.offline_keys_recovered" },
+          { "text": "GARY WHITLOCK: Vindicated; career protected by agent documentation", "style": "entry", "condition": "globalVars.gary_protected" },
+          { "text": "GARY WHITLOCK: Fired quietly; career over in healthcare IT",          "style": "entry", "condition": "!globalVars.gary_protected && !globalVars.exposed_hospital" },
           { "text": "GARY WHITLOCK: Sacked, then rehired when his warnings went public", "style": "entry", "condition": "!globalVars.gary_protected && globalVars.exposed_hospital" },
           { "text": "COVER BURNED: Booking pulled from the visitor system mid-operation", "style": "warning", "condition": "globalVars.cover_burned && !globalVars.cover_restored" },
           { "text": "COVER RE-ESTABLISHED: Val Okonkwo checked you out and opened her office", "style": "entry", "condition": "globalVars.cover_restored && globalVars.val_opened_office && !globalVars.guard_knocked_out && !globalVars.attacked_guard" },
           { "text": "COVER RE-ESTABLISHED: On paper -- you let yourself past Val anyway", "style": "entry", "condition": "globalVars.cover_restored && !globalVars.val_opened_office && !globalVars.guard_knocked_out && !globalVars.attacked_guard" },
           { "text": "BERNIE NWOSU: Vouched for the agent when the paperwork vanished",  "style": "entry", "condition": "globalVars.bernie_vouched" },
           { "text": "SECURITY OFFICER V. OKONKWO: Neutralised on shift",                "style": "warning", "condition": "globalVars.guard_knocked_out" },
-          { "text": "SECURITY OFFICER V. OKONKWO: Caught the agent picking a lock — logged it", "style": "warning", "condition": "globalVars.val_caught_picking && !globalVars.guard_knocked_out" },
-          { "text": "SECURITY OFFICER V. OKONKWO: Attacked by the agent — logged it", "style": "warning", "condition": "globalVars.attacked_guard && !globalVars.guard_knocked_out" },
+          { "text": "SECURITY OFFICER V. OKONKWO: Caught the agent picking a lock; logged it", "style": "warning", "condition": "globalVars.val_caught_picking && !globalVars.guard_knocked_out" },
+          { "text": "SECURITY OFFICER V. OKONKWO: Attacked by the agent; logged it", "style": "warning", "condition": "globalVars.attacked_guard && !globalVars.guard_knocked_out" },
           { "text": "BERNIE NWOSU: Assaulted at the reception desk",                    "style": "warning", "condition": "globalVars.receptionist_ko" },
           { "text": "DR SARAH KIM: Assaulted in her own office",                       "style": "warning", "condition": "globalVars.dr_kim_ko" },
-          { "text": "GARY WHITLOCK: Assaulted at his desk — keycard taken",            "style": "warning", "condition": "globalVars.gary_ko" },
+          { "text": "GARY WHITLOCK: Assaulted at his desk; keycard taken",            "style": "warning", "condition": "globalVars.gary_ko" },
           { "text": "WARD STAFF: Nurse assaulted mid-shift",                           "style": "warning", "condition": "globalVars.ward_nurse_ko || globalVars.raval_ko" },
           { "text": "ERNESTO BAUTISTA, NIGHT PORTER: Assaulted on shift",             "style": "warning", "condition": "globalVars.ernesto_bautista_ko" },
           { "text": "HODAN WARSAME, NIGHT DOMESTIC: Assaulted on shift",              "style": "warning", "condition": "globalVars.hodan_warsame_ko" },
           { "text": "NIGHT STAFF: Porter or domestic struck by the agent",             "style": "warning", "condition": "globalVars.night_staff_attacked && !globalVars.ernesto_bautista_ko && !globalVars.hodan_warsame_ko" },
           { "text": "PATIENT ASSAULTED: A ward patient struck by the agent",           "style": "warning", "condition": "globalVars.patient_assaulted" },
-          { "text": "GRAHAM REEVES (badge SC-4471): Identified and detained — cell thread recovered", "style": "entry", "condition": "globalVars.insider_asset_arrested" },
-          { "text": "GRAHAM REEVES (badge SC-4471): Walked out of the boardroom — no trace",  "style": "warning", "condition": "globalVars.insider_asset_escaped && !globalVars.insider_asset_arrested && !globalVars.night_security_supervisor_ko" },
-          { "text": "GRAHAM REEVES (badge SC-4471): Neutralised — affiliation confirmed after the fact", "style": "entry", "condition": "globalVars.night_security_supervisor_ko && !globalVars.insider_asset_arrested" },
-          { "text": "GRAHAM REEVES (badge SC-4471): Named by the agent — picked up by SAFETYNET", "style": "entry", "condition": "globalVars.insider_identified && !globalVars.insider_asset_arrested && !globalVars.insider_asset_escaped && !globalVars.night_security_supervisor_ko" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Identified and detained; cell thread recovered", "style": "entry", "condition": "globalVars.insider_asset_arrested" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Walked out of the boardroom; no trace",  "style": "warning", "condition": "globalVars.insider_asset_escaped && !globalVars.insider_asset_arrested && !globalVars.night_security_supervisor_ko" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Neutralised; affiliation confirmed after the fact", "style": "entry", "condition": "globalVars.night_security_supervisor_ko && !globalVars.insider_asset_arrested" },
+          { "text": "GRAHAM REEVES (badge SC-4471): Named by the agent; picked up by SAFETYNET", "style": "entry", "condition": "globalVars.insider_identified && !globalVars.insider_asset_arrested && !globalVars.insider_asset_escaped && !globalVars.night_security_supervisor_ko" },
           { "text": "WRONG SUSPECT: The agent accused a member of staff who had done nothing", "style": "warning", "condition": "globalVars.accused_wrong_suspect" },
           { "text": "" },
           { "text": "GHOST: At large...",                                  "style": "warning" },
@@ -2054,27 +2054,27 @@ wall_safe_pin = "5829"
           "position": "as-type:vitals-monitor",
           "takeable": false,
           "readable": true,
-          "text": "VENTILATOR — BED 4 (T. PRYCE)\n\nMode: SIMV | Rate: 14 | FiO2: 40%\nStatus: RUNNING (backup power)\n\nCentral monitoring: OFFLINE\nRemote alarm relay: UNAVAILABLE\nLast nurse observation: 14 min ago (paper)",
+          "text": "VENTILATOR, BED 4 (T. PRYCE)\n\nMode: SIMV | Rate: 14 | FiO2: 40%\nStatus: RUNNING (backup power)\n\nCentral monitoring: OFFLINE\nRemote alarm relay: UNAVAILABLE\nLast nurse observation: 14 min ago (paper)",
           "textVariants": [
             {
               "condition": "globalVars.patient_bed4_deceased",
-              "value": "VENTILATOR — BED 4 (T. PRYCE)\n\nNO SPONTANEOUS RESPIRATORY EFFORT\nCircuit: cycling | Patient effort: NONE\n\nStatus: NO OUTPUT DETECTED\nLocal alarm: CONTINUOUS\nCentral monitoring: OFFLINE"
+              "value": "VENTILATOR, BED 4 (T. PRYCE)\n\nNO SPONTANEOUS RESPIRATORY EFFORT\nCircuit: cycling | Patient effort: NONE\n\nStatus: NO OUTPUT DETECTED\nLocal alarm: CONTINUOUS\nCentral monitoring: OFFLINE"
             },
             {
               "condition": "globalVars.ward_recovering",
-              "value": "VENTILATOR — BED 4 (T. PRYCE)\n\nMode: SIMV | Rate: 14 | FiO2: 40%\nStatus: RUNNING — central monitoring RESTORING\n\nRemote alarm relay: COMING BACK ONLINE\nStation view: re-establishing"
+              "value": "VENTILATOR, BED 4 (T. PRYCE)\n\nMode: SIMV | Rate: 14 | FiO2: 40%\nStatus: RUNNING, central monitoring RESTORING\n\nRemote alarm relay: COMING BACK ONLINE\nStation view: re-establishing"
             },
             {
               "condition": "globalVars.patient_bed4_state === 'attended'",
-              "value": "VENTILATOR — BED 4 (T. PRYCE)\n\nManual ventilation in progress at bedside.\nCircuit alarm: CLEARED | Patient effort: SUPPORTED\n\nStable under direct supervision.\nCentral monitoring: OFFLINE"
+              "value": "VENTILATOR, BED 4 (T. PRYCE)\n\nManual ventilation in progress at bedside.\nCircuit alarm: CLEARED | Patient effort: SUPPORTED\n\nStable under direct supervision.\nCentral monitoring: OFFLINE"
             },
             {
               "condition": "globalVars.patient_bed4_state === 'critical'",
-              "value": ">>> VENTILATOR ALARM — BED 4 (T. PRYCE) <<<\n\nHIGH-PRESSURE / DESAT\nSpO2: 79% [CRITICAL] | Patient fighting circuit\n\nIMMEDIATE INTERVENTION REQUIRED\nLocal alarm: CRITICAL | Central monitoring: OFFLINE"
+              "value": ">>> VENTILATOR ALARM, BED 4 (T. PRYCE) <<<\n\nHIGH-PRESSURE / DESAT\nSpO2: 79% [CRITICAL] | Patient fighting circuit\n\nIMMEDIATE INTERVENTION REQUIRED\nLocal alarm: CRITICAL | Central monitoring: OFFLINE"
             },
             {
               "condition": "globalVars.patient_bed4_state === 'distressed'",
-              "value": ">>> VENTILATOR ALARM — BED 4 (T. PRYCE) <<<\n\nCircuit desynchrony / rising airway pressure\nSpO2: 88% [LOW] | Rate mismatch\n\nURGENT REVIEW — no remote relay to the desk\nLocal alarm: ACTIVE | Central monitoring: OFFLINE"
+              "value": ">>> VENTILATOR ALARM, BED 4 (T. PRYCE) <<<\n\nCircuit desynchrony / rising airway pressure\nSpO2: 88% [LOW] | Rate mismatch\n\nURGENT REVIEW: no remote relay to the desk\nLocal alarm: ACTIVE | Central monitoring: OFFLINE"
             }
           ],
           "observations": "The ventilator panel at Mr Pryce's bedside, running on backup power. Its numbers are steady for now.",
@@ -2089,7 +2089,7 @@ wall_safe_pin = "5829"
             },
             {
               "condition": "globalVars.patient_bed4_state === 'distressed'",
-              "value": "The ventilator panel has gone into an alarm state — the tone is sharp and repeating, and there is no relay to carry it to the nurses' station."
+              "value": "The ventilator panel has gone into an alarm state; the tone is sharp and repeating, and there is no relay to carry it to the nurses' station."
             }
           ]
         },
@@ -2402,7 +2402,7 @@ wall_safe_pin = "5829"
           "takeable": true,
           "phoneId": "ghost_terminal",
           "npcIds": ["ghost"],
-          "observations": "A compact wireless bridge — not hospital equipment. Someone attached this to the LAN before the attack. A text interface is blinking on the screen.",
+          "observations": "A compact wireless bridge, not hospital equipment. Someone attached this to the LAN before the attack. A text interface is blinking on the screen.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "ghost_planted_physical_foothold_six_weeks_before_attack"
         },
@@ -2488,25 +2488,25 @@ wall_safe_pin = "5829"
             {
               "type": "give_item",
               "item_name": "Gary's Recovery Crib Sheet",
-              "label": "SSH foothold confirmed — a page lifted from Gary's account.",
+              "label": "SSH foothold confirmed: a page lifted from Gary's account.",
               "description": "SSH access flag submitted - the drop-site prints the recovery crib lifted from Gary's account"
             },
             {
               "type": "give_item",
               "item_name": "Equipment Deployment Log",
-              "label": "ProFTPD backdoor exploited — root on the backup server, with Ghost's deployment log.",
+              "label": "ProFTPD backdoor exploited: root on the backup server, with Ghost's deployment log.",
               "description": "ProFTPD exploitation flag submitted - root access prints Ghost's equipment deployment log"
             },
             {
               "type": "give_item",
               "item_name": "Verified Restore Manifest",
-              "label": "Backup catalogue mapped — a verified restore manifest is cut.",
+              "label": "Backup catalogue mapped: a verified restore manifest is cut.",
               "description": "Database backup flag submitted - the drop-site cuts a verified restore manifest from the recovered catalogue"
             },
             {
               "type": "unlock_object",
               "objectId": "entropy_staging_cache",
-              "label": "Ghost's operational log recovered — the ENTROPY staging cache opens.",
+              "label": "Ghost's operational log recovered: the ENTROPY staging cache opens.",
               "description": "Ghost's operational log submitted - ENTROPY Staging Cache unlocks automatically"
             }
           ],
@@ -3859,7 +3859,7 @@ wall_safe_pin = "5829"
     },
     {
       "id": "bed4_slow_path_window",
-      "label": "Bed 4 — critical",
+      "label": "Bed 4: critical",
       "delayMs": 100000,
       "startOnGlobal": "slow_path_window_open",
       "condition": "!globalVars.bed4_manually_stabilised && !globalVars.ward_recovering",
@@ -3869,7 +3869,7 @@ wall_safe_pin = "5829"
     },
     {
       "id": "bed4_death_window",
-      "label": "Bed 4 — failing",
+      "label": "Bed 4: failing",
       "delayMs": 45000,
       "startOnGlobal": "bed4_critical",
       "condition": "!globalVars.bed4_manually_stabilised && !globalVars.ward_recovering",
