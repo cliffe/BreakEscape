@@ -58,6 +58,7 @@
 .lockpicking-item-info h4 {
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;   /* on its 8px grid (slice 7 R5 M2) */
+    line-height: 24px;
     margin: 0 0 10px 0;
     color: #3498db;
 }
@@ -183,6 +184,14 @@
         height: auto;
         flex: 0 0 auto;
     }
+
+    /* The frame wraps the lock and its feedback line: the shared 100% height left an empty dark
+       band under the feedback box. Spare window height sits outside the frame (the shell centres
+       it, over the dimmed backdrop). Scoped to the lock, so other minigames keep the shared rule. */
+    .minigame-game-container:has(> #phaser-game-container) {
+        height: auto;
+        flex: 0 0 auto;
+    }
 }
 
 /* Portrait mobile: let the canvas fill available vertical space */
@@ -202,15 +211,16 @@
     }
 
     .lockpicking-item-image {
-        width: 50px;
+        /* The box follows the picture's shape (a 48x96 door is 25x50), no side gaps */
+        width: auto;
         height: 50px;
-        min-width: 50px;
+        min-width: 0;
         min-height: 50px;
     }
 
     .lockpicking-item-info h4 {
-        font-size: 12px;   /* Press Start 2P heading: 12px is the smallest legible size (was 8px) */
-        line-height: 16px;
+        font-size: 16px;   /* Press Start 2P on its 8px grid, as .container-info h4 (was 8px) */
+        line-height: 24px;
     }
 
     .lockpicking-item-info p {
