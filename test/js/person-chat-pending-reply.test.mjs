@@ -52,7 +52,7 @@ function harness() {
     const shown = [];
     const deps = {
         processGameActionTags, splitReplyTags, partitionSlowTags, tagAction, window: win,
-        npcConversationStateManager: { saveNPCState() {} }, rememberShownText: () => {}, markClosedByExit: () => {},
+        npcConversationStateManager: { saveNPCState() {} }, rememberShownText: () => {}, markClosedByExit: () => {}, isExitTag: t => /^(exit|end)_conversation\b/i.test(String(t).trim()),
         isSessionOverlayShowing: () => false, onSessionOverlayClosed: () => () => {},
         DIALOGUE_AUTO_ADVANCE_DELAY: 1500
     };
@@ -209,7 +209,7 @@ test('slow tags never overlap', async () => {
     // swap in a stub that is genuinely async
     const deps = {
         processGameActionTags: async () => { running++; peak = Math.max(peak, running); await new Promise(r => setTimeout(r, 5)); running--; },
-        splitReplyTags, partitionSlowTags, tagAction, window: win
+        splitReplyTags, partitionSlowTags, tagAction, window: win, isExitTag: () => false, markClosedByExit: () => {}
     };
     o._flushPendingReply = method('_flushPendingReply', deps);
     o._pendingReply = { tags: ['give_item:a', 'give_item:b', 'give_item:c'] };
