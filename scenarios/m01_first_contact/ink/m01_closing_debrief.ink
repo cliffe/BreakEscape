@@ -42,6 +42,11 @@ VAR audit_wrong_answers = 0             // Number of incorrect assessments
 // ================================================
 
 === start ===
+// Read the contingency file and did nothing: the "ignore" outcome. Only the
+// phone knots that set it are unreachable, so the debrief infers it.
+{ contingency_file_read && kevin_choice == "" && not kevin_ko:
+    ~ kevin_choice = "ignore"
+}
 { player_launched_attack:
     -> launch_weight
 - else:
