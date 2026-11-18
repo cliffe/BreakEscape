@@ -269,9 +269,13 @@ The shutter has to be dead before you reach him.
 // Clue 1 (arc §8.2). HaX volunteers the same read as a bark on the log's first
 // read; this topic is for a player who missed it.
 === door_log ===
+{ door_log_given:
+    That's the read I texted you. Ask me what you like.
+- else:
+    Ten past two, the core's service door opened to one of our badges.
+    The log says Malhotra's badge. Malhotra was on with me at ten past.
+}
 ~ door_log_given = true
-Ten past two, the core's service door opened to one of our badges.
-The log says Malhotra's badge. Malhotra was on with me at ten past.
 + [Is there a camera on that door?]
     That camera's a box on a bracket. Never wired.
     -> support_hub
