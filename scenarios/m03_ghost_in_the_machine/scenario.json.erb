@@ -999,11 +999,19 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           ],
           "eventMappings": [
             {
+              "_comment": "Blind m03 m8/m10: the optional staff-badge task used to unlock only if the reader was tried before cloning, so the ending warning (which lists open optional tasks) never mentioned it. It now also opens as soon as the cloner has been explained (briefing, HaX), which is also when Ffion's 'lean in by her lanyard' choice appears.",
+              "eventPattern": "global_variable_changed:cloner_explained",
+              "condition": "value === true && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
+              "onceOnly": true,
+              "setGlobal": { "staff_badge_task_shown": true },
+              "unlockTask": "copy_staff_badge"
+            },
+            {
               "_comment": "P2-2/P2-16: the player meets the conference reader before the cloner is explained. conference_reader_tried opens the receptionist's clone choice (lock before key); asking HaX or the briefing about cloning opens it too (cloner_explained). The cloner is in the start kit, so the engine opens the read/emulate minigame rather than a hard access-denied; a true 'fail then grant the tool' needs engine work (the cloner can't be made unusable mission-local). This reframes the tool as the answer to the wall just met. Fires once, before the badge is cloned.",
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'conference_room_01' && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
-              "setGlobal": { "conference_reader_tried": true },
+              "setGlobal": { "conference_reader_tried": true, "staff_badge_task_shown": true },
               "unlockTask": "copy_staff_badge",
               "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. The cloner in your kit copies one from arm's length. Talk to the receptionist and lean in by her lanyard." }
             },
@@ -1411,9 +1419,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "eventMappings": [
             {
-              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task once the staff badge is had (clone or receptionist KO). Only if the pointer was shown, so a locked task never completes out of nowhere.",
+              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task once the staff badge is had (clone or receptionist KO). Only if the pointer was shown (staff_badge_task_shown, set by both unlock mappings), so a locked task never completes out of nowhere.",
               "eventPattern": "objective_task_completed:clone_reception_badge",
-              "condition": "globalVars.conference_reader_tried === true",
+              "condition": "globalVars.staff_badge_task_shown === true",
               "onceOnly": true,
               "completeTask": "copy_staff_badge"
             },
@@ -2253,6 +2261,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "sterling_on_call_seen": false,
     "conference_reader_tried": false,
     "cloner_explained": false,
+    "staff_badge_task_shown": false,
     "directive_guessed": false,
     "vm_flag1_reward": false,
     "vm_flag2_reward": false,
