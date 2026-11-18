@@ -958,7 +958,7 @@ export function afterPlayerMovement() {
 export function onMoveIntent() {
     pending = null;
     if (stepOff && !stepOff.proxy) endStep();
-    if (state && state.phase === 'seated' && state.seat.kind === 'static') standUp(null, { step: false });
+    if (state && state.phase === 'seated' && (state.seat.kind === 'static' || isFixed(state.chair))) standUp(null, { step: false });
 }
 
 // A chair tapped from out of reach: sit once the walk there ends in reach.
@@ -1580,7 +1580,7 @@ function advanceSeatMove(behavior) {
             }
             const { chair, opts } = m;
             endSeatMove(behavior); // walking body back, reservation off: seatNPC takes the place
-            return seatNPC(behavior, chair, { toward: opts.toward, facePlayer: false, needsStop: opts.needsStop, standAt: opts.ref });
+            return seatNPC(behavior, chair, { toward: opts.toward, facing: opts.toward?.homeFacing, facePlayer: false, needsStop: opts.needsStop, standAt: opts.ref });
         }
         case 'step': {
             const r = npcWalkTick(behavior, m, m.target);
@@ -1605,7 +1605,7 @@ export function seatNPC(behavior, chair, opts = {}) {
     }
     let facing = seat.kind === 'static' ? seat.facing
         : snapFacing(opts.facing && COMPASS.includes(opts.facing) ? opts.facing : chairFacing(chair, seat), seat.valid);
-    if (seat.kind === 'swivel' && opts.toward) {
+    if (seat.kind === 'swivel' && opts.toward && !(opts.facing && COMPASS.includes(opts.facing))) {
         const f = bodyFeet(sprite);
         facing = snapFacing(compassToward(opts.toward.x - f.x, opts.toward.y - f.y), seat.valid);
     }
@@ -2414,6 +2414,8 @@ function updateNeedsSeat(behavior, ns, playerPos) {
     const feet = needsSeatRef(bodyFeet(sprite), stop, ns.home);
     // No object to face (a coordinate home): the home's own `facing`, when it has one
     const toward = facePointFor(obj, feet) || (stop.post ? homeFacingPoint(feet, ns?.home?.facing) : null);
+    // A coordinate home's own facing rides on the point, so the sitter takes it from the home, not from the chair-foot bearing
+    if (toward && !obj) toward.homeFacing = ns?.home?.facing;
     // Chairs at another needs NPC's post are theirs, unless this is that spot too
     const posts = otherPosts(behavior.npcId).filter(p => Math.hypot(p.x - feet.x, p.y - feet.y) > NEAR_CHAIR);
     const free = c => !chairAtOtherPost({ x: c.obj.x + c.obj.width / 2, y: c.obj.y + c.obj.height }, feet, posts);

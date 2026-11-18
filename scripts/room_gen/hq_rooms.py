@@ -147,8 +147,10 @@ def room_hq_ops():
     Back wall: OPERATIONS plate, world clocks, the operations status wall (every
     team STAND DOWN, INVESTIGATION). The floor: Cipher barricaded behind his three
     monitors; the junior analyst at her desk of threat feeds east; the print tray
-    on the photocopier west of Cipher.
-    Doors: W and E on row 2, N (top-left), S (bottom-left): the walkways stay clear.
+    on the photocopier against the back wall, north-east of Cipher.
+    Doors: W and E on row 2, N (top-left), S (bottom-left): the walkways stay clear, except that
+    the photocopier body (x 226-241, y 88-100) takes the top of the W-E band; the lane bends round it
+    and stays open.
     The archives cover the bottom two rows (feet at 256 or above).
     NPCs: Cipher at (5.2,4.8): frame x 126-206, y 83-163, his desk below him; the
     analyst at (8.2,7.0): frame x 222-302, y 153-233, below her desk (c2 C2-8).

@@ -4888,13 +4888,13 @@
           }
         },
         "needsHome": {
-          "description": "NPC needs system: where the NPC idles and returns. An object id (it stands at that object's approach cell) or a { room, x, y } tile. Default: spawn point.",
+          "description": "NPC needs system: where the NPC idles and returns. An object id (it stands at that object's approach cell) or a { room, x, y, facing? } tile (facing: which way a coordinate home faces, one of the 8 compass names). Default: spawn point.",
           "oneOf": [
             { "type": "string" },
             {
               "type": "object",
               "required": ["room", "x", "y"],
-              "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" }, "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"], "description": "Which way the NPC faces at this home when there is no object to face: a swivel chair turns to match when it sits; a static chair cannot turn, so one that faces more than 67 degrees off this is refused and the NPC stands (the validator warns). Applied at spawn, on reload and on each return from a trip." } },
+              "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" }, "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"], "description": "Which way the NPC faces at this home when there is no object to face: a swivel chair turns to match when it sits; a static chair cannot turn, so one that faces more than 67 degrees off this is refused (the validator warns), and at its post the NPC then stands or fetches a loose swivel chair within 192 px. A standing NPC turns to it whenever it is idle at home (after a conversation or a turn to the player), on each return from a trip, and at spawn or reload once it is at its home (within 24 px; one that starts further away turns on arrival)." } },
               "additionalProperties": false
             }
           ]

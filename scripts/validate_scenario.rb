@@ -6193,7 +6193,7 @@ def home_facing_static_chair_conflicts(json_data, repo_root, room_npcs)
         d = 360 - d if d > 180
         next if d <= 67
         out << "NPC '#{e[:npc]['id']}' needsHome facing '#{h['facing']}' contradicts the static chair '#{File.basename(img, '.png')}' " \
-               "(faces #{facing}) at its home: a static chair more than 67 degrees off the facing is refused, so the NPC stands."
+               "(faces #{facing}) at its home: a static chair more than 67 degrees off the facing is refused, so the NPC stands or fetches a loose swivel chair."
       end
     end
   end

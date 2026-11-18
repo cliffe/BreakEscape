@@ -1944,3 +1944,128 @@ test('fixed chair: a needs NPC sits on it without moving it, and never fetches i
         } finally { r.restore(); }
     }
 });
+
+// ── R2 minors (fixed chairs and needsHome.facing) ────────────────────────────────────────
+
+function sitCoordHome(facing, homeDy) {
+    const { rig, chair } = coordHomeRig(facing, { fixed: true });
+    const ns = window.npcNeedsSystem.states.get('pierce');
+    ns.home.y = 182 - homeDy;   // the chair foot is (204, 182); the home sits homeDy px off it, across the facing
+    assert.equal(seating.updateSeatedNPC(rig.behavior, null), true, 'the sit move starts');
+    for (let i = 0; i < 80 && !rig.behavior._seat; i++) {
+        seating.updateGlides();
+        const v = rig.sprite.body.velocity;
+        rig.sprite.x += v.x * 0.05; rig.sprite.y += v.y * 0.05;
+        seating.updateSeatedNPC(rig.behavior, null);
+    }
+    return { rig, chair };
+}
+
+test('R2 m1: a coordinate-home sitter takes the home facing even when the home is 30 px across it from the fixed chair foot', () => {
+    for (const [facing, dy] of [['east', 30], ['east', 0], ['west', 30]]) {
+        const { rig } = sitCoordHome(facing, dy);
+        try {
+            assert.ok(rig.behavior._seat, `${facing}/${dy}: seated`);
+            assert.equal(rig.behavior._seat.facing, facing, `${facing}/${dy}: facing comes from the home, not the foot bearing`);
+        } finally { rig.restore(); }
+    }
+});
+
+test('R2 m2: on a fixed swivel chair a move key or click stands the player up; a loose swivel chair too keeps its old behaviour', async () => {
+    const fixedRig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [], fixed: true });
+    try {
+        fixedRig.sit();
+        seating.onMoveIntent();
+        assert.equal(seating.isSeated(), false, 'a move intent stands the player up');
+        assert.deepEqual([fixedRig.chair.x, fixedRig.chair.y], [67, 225], 'and the chair stays put');
+    } finally { fixedRig.restore(); }
+    const looseRig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        looseRig.sit();
+        seating.onMoveIntent();
+        assert.equal(seating.isSeated(), true, 'a loose swivel still rolls instead');
+    } finally { looseRig.restore(); }
+});
+
+test('R2 m3: a fixed chair cancels the driver velocity (the roll branch), not scaled by ROLL_SPEED', async () => {
+    const rig = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [], fixed: true });
+    try {
+        rig.sit();
+        rig.player.body.setVelocity(100, 0);
+        seating.afterPlayerMovement();
+        assert.deepEqual([rig.player.body.velocity.x, rig.player.body.velocity.y], [0, 0]);
+    } finally { rig.restore(); }
+    const loose = await standRig({ castor: { x: 87, y: 260 }, facing: 'east', approach: { x: 87, y: 232 }, statics: [] });
+    try {
+        loose.sit();
+        loose.player.body.setVelocity(100, 0);
+        seating.afterPlayerMovement();
+        assert.ok(loose.player.body.velocity.x > 0, 'control: a loose chair keeps (scaled) velocity');
+    } finally { loose.restore(); }
+});
+
+test('R2 m3: a seated NPC\'s fixed chair never fidgets; a loose one does', () => {
+    const prev = { n: window.npcNeedsSystem, m: window.npcManager, e: window.eventDispatcher, g: window.gameScenario };
+    try {
+        const moved = fixed => {
+            const rig = seatedNeedsRig({ clockMs: 1000 });
+            rig.install();
+            if (fixed) rig.chair.fixedChair = true;
+            rig.chair.body.enable = true; rig.chair.body.width = 16; rig.chair.body.height = 8; rig.chair.body.offset = { x: 0, y: 18 };
+            rig.chair.body.velocity = { x: 0, y: 0 };
+            rig.chair.body.setVelocity = () => {};
+            rig.chair.width = 16; rig.chair.height = 26;
+            let any = false;
+            for (let t = 0; t < 200000; t += 250) {
+                rig.behavior.sprite.scene.time.now = t;
+                seating.updateSeatedNPC(rig.behavior, null);
+                if (rig.chair.x !== 100 || rig.chair.y !== 120) any = true;
+            }
+            return any;
+        };
+        assert.equal(moved(false), true, 'control: a loose chair fidgets in 200 s');
+        assert.equal(moved(true), false, 'a fixed chair stays at its spot');
+    } finally {
+        Object.assign(window, { npcNeedsSystem: prev.n, npcManager: prev.m, eventDispatcher: prev.e, gameScenario: prev.g });
+    }
+});
+
+test('R2 m3: unseatNPC pushes a loose swivel chair back, never a fixed one', () => {
+    for (const [fixed, pushed] of [[false, true], [true, false]]) {
+        const rig = labSeatRig(204);
+        const chair = Object.assign(swivel('chair-white-1-rotate', 3), { x: 196, y: 156, width: 16, height: 26, depth: 190, active: true,
+            objectId: 'duty_chair', fixedChair: fixed || undefined, scene: { textures: { exists: () => false } } });
+        const pushes = [];
+        chair.body = { enable: true, immovable: false, offset: { x: 0, y: 18 }, width: 16, height: 8, velocity: { x: 0, y: 0 },
+            setVelocity(x, y) { this.velocity.x = x; this.velocity.y = y; if (x || y) pushes.push([x, y]); }, reset() {} };
+        window.rooms = { open_plan: { objects: { duty_chair: chair } } };
+        const sb = rig.sprite.body;
+        Object.assign(sb, { setSize() {}, setOffset() {} });
+        const st = { chair, seat: seating.seatSpec(chair), facing: 'east', homeFacing: 'east', place: 0, facePlayer: false,
+            saved: { none: false, immovable: false, chairImmovable: false, w: 20, h: 10, ox: 30, oy: 35 },
+            standAt: { x: 230, y: 172 } };
+        rig.behavior._seat = st;
+        try {
+            seating.unseatNPC(rig.behavior);
+            assert.equal(pushes.length > 0, pushed, fixed ? 'fixed: no push' : 'loose: pushed back');
+        } finally { rig.restore(); }
+    }
+});
+
+test('R2 m3: a punch cone over a fixed chair calls no kick; over a loose one it does', async () => {
+    const { PlayerCombat } = await import('../../public/break_escape/js/systems/player-combat.js');
+    const saved = { player: window.player, chairs: window.chairs, rooms: window.rooms };
+    try {
+        for (const [fixedChair, kicks] of [[true, 0], [undefined, 1]]) {
+            window.player = { x: 0, y: 0, lastDirection: 'right', body: { x: 0, y: 0, width: 10, height: 10 } };
+            window.rooms = {};
+            const chair = { x: 20, y: 31, isSwivelChair: true, fixedChair, body: { x: 15, y: 26, width: 10, height: 10 } };
+            window.chairs = [chair];
+            let n = 0;
+            const ctx = { getCurrentModeConfig: () => ({ damage: 1 }), bodyOverlapsCone: () => true, nearBody: () => true,
+                          kickChair() { n++; }, drawPunchHitbox() {} };
+            PlayerCombat.prototype.checkForHits.call(ctx);
+            assert.equal(n, kicks, fixedChair ? 'fixed: the loop skips it' : 'control: the loop kicks a loose chair');
+        }
+    } finally { Object.assign(window, saved); }
+});

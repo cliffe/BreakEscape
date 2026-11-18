@@ -108,3 +108,55 @@ test('room_hq_ops marks exactly the two duty officers\' chairs fixed', () => {
     const fixedCount = map.layers.flatMap(l => l.objects || []).filter(o => isFixedChair(o)).length;
     assert.equal(fixedCount, 2);
 });
+
+// R2 m4 / R1 m3: a standing NPC with a home facing goes back to it whenever it is idle at home
+function idleHome(facing, { start = { x: 96, y: 96 } } = {}) {
+    const w = makeWorld({
+        npcs: { clerk: { pos: { ...start }, rec: { id: 'clerk', needsHome: { room: 'office', x: 3, y: 3, ...(facing ? { facing } : {}) },
+            needs: { caffeine: { decayPerMin: 0.1, urgentAt: 5, initial: 90, jitterPct: 0 } } } } },
+        objects: []
+    });
+    const restores = [];
+    w.world.restoreFacing = (id, x, y) => restores.push({ id, x, y });
+    const sys = new NPCNeedsSystem(w.world, { seed: 3, manualClock: true });
+    w.attach(sys);
+    sys.registerAll();
+    return { sys, w, restores };
+}
+
+test('idle at home with a facing: the NPC is turned back east, again after a conversation ends', () => {
+    const { sys, w, restores } = idleHome('east');
+    sys.step(5000);
+    assert.ok(restores.length > 0, 'turned at home');
+    assert.ok(restores.every(r => r.id === 'clerk' && r.x > 96 && Math.abs(r.y - 96) < 1), 'due east of the home');
+    w.setChat('clerk');
+    sys.step(5000);
+    const during = restores.length;
+    sys.step(5000);
+    assert.equal(restores.length, during, 'not while a conversation holds it');
+    w.setChat(null);
+    sys.step(5000);
+    assert.ok(restores.length > during, 'turned back once the conversation ends');
+});
+
+test('idle at home without a facing: never restored; away from home: not restored until it arrives', () => {
+    const none = idleHome(undefined);
+    none.sys.step(5000);
+    assert.equal(none.restores.length, 0);
+    const away = idleHome('east', { start: { x: 400, y: 400 } });
+    away.sys.step(5000);
+    assert.equal(away.restores.length, 0, 'more than 24 px from the home: no turn yet');
+    away.w.pos.clerk.x = 96; away.w.pos.clerk.y = 96;   // it gets home (a trip, a script)
+    away.sys.step(5000);
+    assert.ok(away.restores.length > 0, 'turned on arrival');
+});
+
+test('npc-needs.js restoreFacing (engine adapter) skips a seated NPC, a pose hold and a player close enough to face', () => {
+    const s = src('systems/npc-needs.js');
+    const m = s.match(/restoreFacing\(id, x, y\) \{[\s\S]*?\n        \},/);
+    assert.ok(m, 'adapter present');
+    assert.match(m[0], /b\._seat/);
+    assert.match(m[0], /_seatMove/);
+    assert.match(m[0], /_poseHoldFacing/);
+    assert.match(m[0], /facePlayer/);
+});

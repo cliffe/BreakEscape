@@ -1540,6 +1540,14 @@ export class NPCNeedsSystem {
         // need, a due errand or a tempted magnet starts on the first select after the call
         if (s.call) return;
 
+        // Idle at a coordinate home with a facing: back to that facing after a conversation or a turn
+        // to the player (the world skips a seated NPC, a pose hold and a player in turn-to range)
+        if (s.home?.facing && !s.home.objectId && (s.mode === 'idle' || (s.mode === 'returning' && s.atPost))
+            && Math.hypot(pos.x - s.home.x, pos.y - s.home.y) <= HOME_EPS * 2) {
+            const p = facingPointFrom(pos, s.home.facing, 64);
+            if (p) this.world.restoreFacing?.(id, p.x, p.y);
+        }
+
         // Access 9.2 A (plan 5.3): a queued visit starts before the selector runs
         if (s.visits.length && this._startVisit(s)) return;
 
@@ -5790,6 +5798,17 @@ export function createEngineWorld() {
         },
         faceTo(id, x, y) {
             behaviour(id)?.faceWorldPoint?.(x, y);
+        },
+        /** Turn an idle, standing NPC back to a point unless it is seated, held in a pose, or the player is close enough to be faced. */
+        restoreFacing(id, x, y) {
+            const b = behaviour(id);
+            if (!b || b._seat || b._seatMove || b._poseHoldFacing || !b.npcBodyPos) return;
+            const p = b.npcBodyPos();
+            const pl = W().player;
+            const range = b.config?.facePlayerDistance || 96;
+            if (b.config?.facePlayer && pl && Math.hypot((pl.x ?? 0) - p.x, (pl.y ?? 0) - p.y) < range) return;
+            const dir = b.calculateDirection(x - p.x, y - p.y);
+            if (b.direction !== dir) { b.direction = dir; b.playAnimation?.('idle', dir); }
         },
         pickUp(npcId, itemId) {
             const f = findSprite(itemId);
