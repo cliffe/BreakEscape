@@ -279,3 +279,40 @@ test('R3 m1: recordCalm saves a calm for an NPC that never turned, without an ev
     sys.recordCalm('');
     assert.equal(sys.exportHostility()[''], undefined);
 });
+
+test('restored KO and calm NPCs get their configured combat numbers, without a sync change', () => {
+    sys.restoreHostility({
+        joanne_ko: { hostile: true, ko: true },
+        calm_brute: { hostile: false, ko: false },
+        hurt_brute: { hostile: true, ko: false, hp: 5, maxHP: 30 }
+    });
+    // Restored before any behavior exists: defaults
+    assert.equal(sys.getState('joanne_ko').attackDamage, 10);
+    const before = JSON.stringify(sys.exportHostility());
+
+    emitted.length = 0;
+    assert.equal(sys.applyRestoredStats('joanne_ko', { attackDamage: 4, attackCooldown: 900, attackRange: 55 }), true);
+    assert.equal(sys.applyRestoredStats('calm_brute', { attackDamage: 6 }), true);
+    assert.equal(sys.applyRestoredStats('hurt_brute', { attackDamage: 8, maxHP: 40 }), true);
+    assert.equal(sys.applyRestoredStats('never_restored', { attackDamage: 8 }), false);
+
+    const ko = sys.getState('joanne_ko');
+    assert.equal(ko.attackDamage, 4);
+    assert.equal(ko.attackCooldown, 900);
+    assert.equal(ko.attackRange, 55);
+    assert.equal(ko.isKO, true);
+    assert.equal(ko.currentHP, 0, 'a KO stays at 0 HP');
+    assert.equal(sys.getState('calm_brute').attackDamage, 6);
+    assert.equal(sys.getState('hurt_brute').attackDamage, 8);
+    assert.equal(sys.getState('hurt_brute').currentHP, 5, 'a hurt NPC keeps its HP');
+    assert.equal(emitted.length, 0, 'no event');
+    assert.equal(JSON.stringify(sys.exportHostility()), before, 'the synced record is unchanged');
+});
+
+test('wiring: the behavior applies restored stats for every restored NPC, not only hostile ones', () => {
+    const src = readFileSync(join(js, 'systems/npc-behavior.js'), 'utf8');
+    const take = src.indexOf('takeRestoredHostility?.(npcId)');
+    const apply = src.indexOf('applyRestoredStats?.(npcId, this.config.hostile)');
+    const hostileBranch = src.indexOf('if (restored.hostile)', take);
+    assert.ok(take > 0 && apply > take && apply < hostileBranch);
+});
