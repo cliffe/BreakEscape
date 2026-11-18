@@ -279,3 +279,10 @@ test('pizza boxes and cake are eaten from the inventory: a small heal, the eat s
     assert.deepEqual(sounds2, [CONSUME_SOUNDS.food]);
     assert.deepEqual(used2, [pizza]);
 });
+
+test('wiring: handleObjectInteraction eats a consumable before it drops a droppable one', () => {
+    const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    const eat = src.indexOf('if (shouldConsumeOnInteract(sprite, window.inventory?.items))');
+    const drop = src.indexOf('if (isDroppableInventoryItem(sprite, window.inventory?.items))');
+    assert.ok(eat > 0 && drop > 0 && eat < drop, 'the consume branch precedes the drop branch');
+});

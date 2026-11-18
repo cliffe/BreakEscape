@@ -7,6 +7,7 @@
  *
  *   droppable wearable                 "Put on" or "Take off", "Drop here", "Examine"
  *   droppable, no triggerOnInteract    "Drop here", "Examine"
+ *   droppable consumable (pizza, cake) "Eat" (or "Drink", "Use"), "Drop here", "Examine"
  *   droppable with triggerOnInteract   "Use" (useLabel overrides the word), "Drop here", "Examine"
  *   wearable, not droppable, with text "Put on" or "Take off", "Examine"
  *   saved connection (keyring K3b)     "Connect", "Drop here" when droppable, "Examine";
@@ -34,6 +35,7 @@
 import { isDroppableInventoryItem, dropInventoryItem } from './item-drop.js';
 import { showInteractionMenu, menuIconsBase, openHandIcon } from '../ui/interaction-menu.js';
 import { resolveObjectField } from '../utils/conditional-text.js';
+import { consumableHealAmount, consumableKind } from './consumables.js';
 
 // interactions.js takes the chain's drop test and the drop itself from here, so the
 // menu and the chain read the same functions.
@@ -121,6 +123,11 @@ export function inventoryMenuFor(sprite, ctx = {}) {
     } else if (hasTriggerOnInteract(data)) {
         const useLabel = typeof data.useLabel === 'string' && data.useLabel.trim() ? data.useLabel.trim() : 'Use';
         entries.push({ id: 'use', label: useLabel });
+    } else if (consumableHealAmount(data, { inInventory: true }) > 0) {
+        // A droppable consumable gets the menu too, so eating it needs its own entry: "use"
+        // reaches the consume branch of handleObjectInteraction (consumables.js)
+        const kind = consumableKind(data);
+        entries.push({ id: 'use', label: kind === 'drink' ? 'Drink' : kind === 'food' ? 'Eat' : 'Use' });
     }
     entries.push(drop, { id: 'examine', label: 'Examine' });
     return entries;

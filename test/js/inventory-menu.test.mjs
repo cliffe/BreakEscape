@@ -42,8 +42,19 @@ const SCENARIO_DROPPABLES = [
 
 test('every droppable item in the scenarios shows "Drop here" and "Examine"', () => {
     for (const data of SCENARIO_DROPPABLES) {
-        assert.deepEqual(labels(menu(held(data))), ['Drop here', 'Examine'], data.id);
+        // the cake is a consumable: it also offers "Eat" (next test)
+        const want = data.id === 'cake' ? ['Eat', 'Drop here', 'Examine'] : ['Drop here', 'Examine'];
+        assert.deepEqual(labels(menu(held(data))), want, data.id);
     }
+});
+
+test('a droppable consumable offers Eat or Drink first, then "Drop here" and "Examine" (m06 pizza, test_needs_sims cake)', () => {
+    const pizza = { id: 'pizza', type: 'pizza_boxes', name: 'Leftover Pizza', takeable: true, droppable: true };
+    assert.deepEqual(labels(menu(held(pizza))), ['Eat', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ id: 'cake', type: 'cake1', name: 'Cake', droppable: true }))), ['Eat', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ id: 'c', type: 'coffee', droppable: true }))), ['Drink', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ id: 'k', type: 'first_aid_kit', droppable: true }))), ['Use', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ ...pizza, healAmount: 0 }))), ['Drop here', 'Examine'], 'healAmount 0 opts out');
 });
 
 test('the scenario files still mark exactly those droppables, none with triggerOnInteract', () => {

@@ -1090,19 +1090,20 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Consumables (coffee, snacks, a first aid kit) heal the player and are used up (7.1c).
+    // A takeable one is picked up first and used from the inventory. This comes before the
+    // drop branch so a droppable one (pizza, cake) is eaten; "Drop here" stays a menu entry.
+    if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {
+        useConsumable(sprite);
+        return;
+    }
+
     // Droppable inventory items (item-drop.js) go down at the player's feet as a
     // world object an interested NPC can collect (npc-needs.js). A tray click on one
     // opens its menu instead (inventory-menu.js) and never gets here; this branch is
     // for every other caller, such as the test bridge.
     if (isDroppableInventoryItem(sprite, window.inventory?.items)) {
         dropInventoryItem(sprite);
-        return;
-    }
-
-    // Consumables (coffee, snacks, a first aid kit) heal the player and are used
-    // up (7.1c). A takeable one is picked up first and used from the inventory.
-    if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {
-        useConsumable(sprite);
         return;
     }
 
