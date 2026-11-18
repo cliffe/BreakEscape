@@ -147,15 +147,19 @@ test('crop: centred on the reference point, whole numbers, every mark inside', (
     assert.ok(sets.length);
 });
 
-test('zoom scale: whole number, at least 2x, height within budget', () => {
-    for (let side = 48; side <= 120; side += 2) {
-        for (const [availW, maxH] of [[210, M.ZOOM_MAX_H], [180, M.ZOOM_MAX_H], [150, M.ZOOM_MAX_H_SHORT], [60, M.ZOOM_MAX_H_SHORT]]) {
+test('zoom scale: whole number, at least 2x, and within the real bound over the simulated side range (60 to 106)', () => {
+    for (let side = 60; side <= 106; side += 2) {
+        for (const [availW, maxH] of [[210, M.ZOOM_MAX_H], [180, M.ZOOM_MAX_H], [150, M.ZOOM_MAX_H_SHORT], [60, M.ZOOM_MAX_H_SHORT], [247, M.ZOOM_MAX_H_SHORT]]) {
             const S = M.zoomScale(side, availW, maxH);
-            assert.ok(Number.isInteger(S) && S >= 2 && S <= 6);
-            if (S > 2) assert.ok(S * side <= maxH && S * side <= availW);
+            assert.ok(Number.isInteger(S) && S >= 2 && S <= 6, `S ${S}`);
+            const W = S * side;
+            // above 2x the pane fits both the width and the height cap; 2x is the floor, so only then may it pass the cap
+            if (S > 2) assert.ok(W <= maxH && W <= availW, `side ${side} avail ${availW} cap ${maxH}: ${W}`);
+            else assert.ok(W <= Math.max(maxH, 2 * side), `side ${side}: ${W}`);
+            // the floor is the only way past the cap: at S = 2 a larger S really did not fit
+            if (S === 2) assert.ok(3 * side > maxH || 3 * side > availW, `side ${side} avail ${availW} cap ${maxH}: 3x would have fitted`);
         }
     }
-    // desktop pair under the lift: a typical 100 px crop is 200 px tall, caption and legend add about 70
     assert.equal(M.zoomScale(100, 210, M.ZOOM_MAX_H), 2);
     assert.ok(M.ZOOM_MAX_H <= 160 && M.ZOOM_MAX_H_SHORT <= 128);
 });
@@ -171,8 +175,9 @@ test('glyphs are whole pixels (no arcs at the zoom scale)', () => {
 test('compare zoom: structure, crisp scale, text tags, pixel-art CSS', () => {
     assert.match(game, /data-zoom/);
     assert.match(game, /imageSmoothingEnabled = false/);
-    assert.match(game, /zoomScale\(side, avail, inPanel \? ZOOM_MAX_H_SHORT : ZOOM_MAX_H\)/, 'whole-number scale of at least 2x, height capped');
-    assert.match(game, /Both magnified at the same scale and centred on the core\. Your lift's marks are numbered: check each has a mark of the same kind in the same place on the card\./);
+    assert.match(game, /zoomScale\(side, avail, ZOOM_MAX_H_SHORT\)/, 'short landscape: whole-number scale of at least 2x, height capped');
+    assert.match(game, /zoomPlan\(\{ side, availW, budgetH: zoomBudgetH/, 'elsewhere the plan fits the width and the height left');
+    assert.match(game, /Check that each numbered mark on your lift has the same kind of mark in the same place on the card:/);
     assert.match(game, /Math\.max\(0, Math\.min\(W - 24/, 'tag left is clamped');
     assert.match(game, /t\.textContent = labels\[i\]/, 'tags set by textContent');
     assert.match(game, /'pointerover'/);

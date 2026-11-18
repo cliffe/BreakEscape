@@ -529,4 +529,38 @@ export function zoomScale(side, availW, maxH) {
     return Math.max(2, Math.min(6, Math.floor(availW / side), Math.floor(maxH / side)));
 }
 export const ZOOM_MAX_H = 160;
+/** Estimated height (px) of everything in the frame except the main row while comparing on a desktop-sized window:
+ *  padding and border 20, title 32, step row 44, status line (two lines) 44, options 32. An estimate, not a measurement. */
+export const ZOOM_CHROME_H = 172;
+/** Height the pair may use in the stage column: the frame is the window less 24 px, less the chrome. */
+export function zoomBudgetH(innerH) { return Math.max(240, innerH - 24 - ZOOM_CHROME_H); }
+/**
+ * The pair for the stage column (non-short screens). Panes sit side by side (width 2 (S side + 4) + 8, height S side + 26)
+ * or stacked, lift above card (width S side + 4, height 2 S side + 62). The largest whole S from 2 to `maxS` that fits
+ * the width `availW` and the height budget wins; side by side on a tie. If even 2x does not fit, the crop is limited to
+ * what fits (stacked, 2x) and `limited` is true: a mark near the edge of a wide crop may then lose its margin.
+ * @returns {{side:number, S:number, W:number, stacked:boolean, limited:boolean}}
+ */
+export function zoomPlan({ side, availW, budgetH, maxS = 6 }) {
+    const capSbs = budgetH - 30, capStack = Math.floor((budgetH - 62) / 2);
+    const best = (stacked) => {
+        const cap = stacked ? capStack : capSbs;
+        for (let S = maxS; S >= 2; S--) {
+            const W = S * side;
+            if (W > cap) continue;
+            if ((stacked ? W + 4 : 2 * (W + 4) + 8) > availW) continue;
+            return S;
+        }
+        return 0;
+    };
+    const a = best(false), b = best(true);
+    if (a || b) {
+        const stacked = b > a;
+        const S = stacked ? b : a;
+        return { side, S, W: S * side, stacked, limited: false };
+    }
+    const lim = Math.max(48, 2 * Math.floor(Math.min(capStack, availW - 4) / 4));
+    const s2 = Math.min(side, lim);
+    return { side: s2, S: 2, W: 2 * s2, stacked: true, limited: s2 < side };
+}
 export const ZOOM_MAX_H_SHORT = 128;

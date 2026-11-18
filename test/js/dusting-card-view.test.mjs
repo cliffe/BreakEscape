@@ -129,11 +129,13 @@ test('each card has its own pick button and a separate View large button; none o
     assert.equal((done.match(/data-action="view"/g) || []).length, 0);
 });
 
-test('the key under the lift explains the marks and that viewing is not a pick; gone once identified', () => {
+test('the one-sentence key explains the marks with pixel glyphs; gone once identified', () => {
     const g = compareGame();
     const note = g._compareNote();
     assert.match(note, /ridge ending/);
-    assert.match(note, /View large \(or V\) shows a card at the lift's size above; click a card or press its number to pick it/);
+    assert.match(note, /each numbered mark on your lift has the same kind of mark in the same place on the card/);
+    assert.equal((note.match(/<canvas class="dusting-key-glyph"/g) || []).length, 2, 'the key marks are drawn pixels, not a rounded CSS box');
+    assert.equal((note.match(/<p /g) || []).length, 1, 'one sentence in one paragraph');
     g.identified = true;
     assert.equal(g._compareNote(), '');
 });

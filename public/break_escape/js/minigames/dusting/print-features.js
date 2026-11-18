@@ -243,6 +243,39 @@ export function cropSide(sets, pad = 10, min = 48, max = 120) {
 }
 
 /**
+ * A mark's place in the upright card frame: the reference point plus its core-relative offset (dx, dy). The lift is
+ * rotated on the surface, so its own x, y are not comparable with a card's; these are.
+ * @param {{dx:number, dy:number}[]} marks @param {{x:number,y:number}} centre
+ */
+export function uprightMarks(marks, centre) {
+    return marks.map(m => ({ ...m, x: centre.x + m.dx, y: centre.y + m.dy }));
+}
+
+/**
+ * Turn a lift upright: a copy of an n x n RGBA image rotated by -rotation (radians) about `centre`, the inverse of the
+ * generator's canonical -> final turn, so a mark at centre + R(rotation)(dx, dy) lands at centre + (dx, dy). Nearest
+ * neighbour by inverse mapping (no smoothing); pixels that fall outside the source take `bg` ([r, g, b]).
+ * @param {Uint8ClampedArray|number[]} src @param {number} n @param {{x:number,y:number}} centre
+ * @param {number} rotation @param {number[]} bg
+ * @returns {Uint8ClampedArray}
+ */
+export function rotateUpright(src, n, centre, rotation, bg = [0, 0, 0]) {
+    const out = new Uint8ClampedArray(n * n * 4);
+    const cs = Math.cos(rotation), sn = Math.sin(rotation);
+    for (let y = 0; y < n; y++) {
+        for (let x = 0; x < n; x++) {
+            const rx = x - centre.x, ry = y - centre.y;
+            const sx = Math.round(centre.x + cs * rx - sn * ry), sy = Math.round(centre.y + sn * rx + cs * ry);
+            const o = (y * n + x) * 4;
+            if (sx < 0 || sy < 0 || sx >= n || sy >= n) { out[o] = bg[0]; out[o + 1] = bg[1]; out[o + 2] = bg[2]; out[o + 3] = 255; continue; }
+            const i = (sy * n + sx) * 4;
+            out[o] = src[i]; out[o + 1] = src[i + 1]; out[o + 2] = src[i + 2]; out[o + 3] = src[i + 3];
+        }
+    }
+    return out;
+}
+
+/**
  * Pixel offsets of a mark glyph at 1x: a ring (radius 3) for a ridge ending, a 7 x 7 square outline for a fork.
  * Drawn with fillRect and scaled by a whole number, so the glyph is never antialiased.
  */
