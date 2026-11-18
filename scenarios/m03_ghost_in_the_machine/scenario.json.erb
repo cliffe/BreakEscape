@@ -262,7 +262,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "taskId": "clone_reception_badge",
           "title": "Find a way past the conference room's card reader",
           "description": "Staff badges only beyond reception. Find a way through.",
-          "type": "custom",
+          "_comment": "Gate minor m1: completes when the conference door actually opens (unlock_room, so the emulate at the reader), not when the clone is saved. A receptionist KO still completes it at once (taskOnKO). The clone Save keeps its own feedback: reception_badge_cloned drives HaX's emulate hint and ticks copy_staff_badge.",
+          "type": "unlock_room",
+          "targetRoom": "conference_room_01",
           "status": "active"
         },
         {
@@ -781,8 +783,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "card_cloned",
               "condition": "data.cardName === 'Staff Access Badge'",
               "onceOnly": true,
-              "setGlobal": { "reception_badge_cloned": true },
-              "completeTask": "clone_reception_badge"
+              "setGlobal": { "reception_badge_cloned": true }
             },
             {
               "_comment": "A4 fix pass (S7): at night she has come back for her charger. One bark the first time the player walks into reception after the night turn, before she has spoken to them at night, so her being at the desk at eleven reads as on purpose. Her chat opens on different words.",
@@ -1052,8 +1053,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
             {
               "_comment": "Pass 4: a receptionist KO also completes this task (taskOnKO), but then the badge is on the floor, not in the cloner. globalVarOnKO is written before taskOnKO fires (npc-hostile.js), so the condition holds.",
-              "eventPattern": "objective_task_completed:clone_reception_badge",
-              "condition": "globalVars.receptionist_ko !== true",
+              "eventPattern": "global_variable_changed:reception_badge_cloned",
+              "condition": "value === true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
             },
@@ -1423,7 +1424,14 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             {
               "_comment": "Pass 5 blind (B-2): ticks the reader pointer task once the staff badge is had (clone or receptionist KO). Only if the pointer was shown (staff_badge_task_shown, set by both unlock mappings), so a locked task never completes out of nowhere.",
               "eventPattern": "objective_task_completed:clone_reception_badge",
-              "condition": "globalVars.staff_badge_task_shown === true",
+              "condition": "globalVars.staff_badge_task_shown === true && globalVars.receptionist_ko === true",
+              "onceOnly": true,
+              "completeTask": "copy_staff_badge"
+            },
+            {
+              "_comment": "Gate minor m1: the clone route ticks the reader pointer task when the badge is saved in the cloner (the main task now waits for the door).",
+              "eventPattern": "global_variable_changed:reception_badge_cloned",
+              "condition": "value === true && globalVars.staff_badge_task_shown === true",
               "onceOnly": true,
               "completeTask": "copy_staff_badge"
             },

@@ -809,6 +809,15 @@
     color: #FFA500;
 }
 
+/* Left on the Info screen after a dictionary attack found nothing */
+.flipper-dict-miss {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #FFA500;
+    border: 2px solid #FFA500;
+    padding: 4px 8px;
+}
+
 /* Whether the card's data is encrypted (getReadProfile in rfid-protocols.js) */
 .rfid-crypto-line {
     margin: 8px 0;

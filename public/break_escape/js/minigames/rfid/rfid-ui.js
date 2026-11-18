@@ -943,6 +943,12 @@ export class RFIDUIRenderer {
             && !(cardData.rfid_data?.sectors && Object.keys(cardData.rfid_data.sectors).length);
         if (firstCrackChoice) {
             screen.appendChild(crackChoiceNote());
+            // A dictionary miss leaves this line behind after the 3 s result screen, so the
+            // player still reads why the next move is Darkside (gate m03: it passed unseen).
+            if (this.minigame?.dictionaryMissUid && this.minigame.dictionaryMissUid === cardData.rfid_data?.uid) {
+                screen.appendChild(iconLine('flipper-info flipper-dict-miss', 'signal',
+                    'Dictionary found no keys: this card uses custom keys. Run a Darkside attack instead.'));
+            }
         } else if (displayData.securityNote) {
             const note = document.createElement('div');
             note.className = 'flipper-info';

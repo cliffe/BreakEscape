@@ -106,3 +106,33 @@ test('dictionary attack on a weak-defaults read goes straight to the read screen
     assert.equal(g.dataManager.canClone(card), true);
     assert.equal(Object.keys(card.rfid_data.sectors).length, 16);
 });
+
+const customCard = () => ({ card_id: 'victoria_keycard_clone', rfid_protocol: 'MIFARE_Classic_Custom_Keys', name: 'Executive Keycard' });
+
+test('dictionary miss on a custom-keys card says so, points at Darkside, and leaves a note on the Info screen', () => {
+    const g = Object.create(RFIDMinigame.prototype);
+    g.dataManager = new RFIDDataManager();
+    g.attackManager = new MIFAREAttackManager();
+    const errors = [];
+    const { ui } = makeUI();
+    ui.minigame = g;
+    g.ui = { showSuccess: () => errors.push(['unexpected-success']),
+        showError: (m, d, tone) => errors.push([m, d, tone]),
+        showCardDataScreen: () => errors.push(['card']), showProtocolInfo: (c) => ui.showProtocolInfo(c) };
+    g.gameContainer = mk('div');
+    const card = customCard();
+    g.dataManager.getCardDisplayData(card);
+    const realTimeout = globalThis.setTimeout;
+    globalThis.setTimeout = (f) => f();
+    try { g.startKeyAttack('dictionary', card); } finally { globalThis.setTimeout = realTimeout; }
+    assert.equal(errors[0][0], 'Dictionary attack found no keys');
+    assert.match(errors[0][1], /Darkside/);
+    assert.equal(errors[0][2], 'notice');
+    assert.equal(g.dictionaryMissUid, card.rfid_data.uid);
+    const note = flat(screen).find(e => /custom keys/.test(e.textContent || '') && /Darkside attack instead/.test(e.textContent || ''));
+    assert.ok(note, 'the Info screen keeps a Darkside pointer after the miss');
+    // A different card does not inherit it
+    g.dictionaryMissUid = 'OTHER';
+    ui.showProtocolInfo(card);
+    assert.ok(!flat(screen).some(e => /Darkside attack instead/.test(e.textContent || '')));
+});
