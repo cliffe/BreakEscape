@@ -187,5 +187,29 @@ Natural trip, player parked at (520,248). Game 8186: both `using` at 88 s after 
 ### m4 (`chaseRange` 200): PASS with a limit, games 8202, 8206, 8210
 Punch from the west side with `window.playerCombat.attack`: Adaeze hostile at once, `ops_staff_upset` true, Gwen not hostile. Player kept within about 120 px: she left her seat and chased (81 to 98 px from post, game 8210). Player retreated 270 to 300 px: she was back within 11 px of her post (game 8206, 8202), still hostile, mode idle, at post. The leash now bounds her near her post. Not shown cleanly: the single frame at which she gives up between 120 and 200 px.
 
-### m5 (walkthrough route, L1): NOT RUN
-Out of the tool-call budget. The route probe `m07-ol-route.mjs` has not been proved end to end from the game start. Still to do on a fresh game.
+### m5 (walkthrough route, L1): superseded
+Run later the same day; see "R1 m5 walkthrough run" below.
+
+## R1 m5 walkthrough run (2026-11-18)
+
+Games 8225 and 8229, each fresh from `m07-ol-ng.sh`, keyless server on :3098 (boot warning seen), probe `tools/playtest/m07-ol-r1m5.mjs` (headless, setFPS(20) fixed steps, no globals or needs set, no `enterRoom` past a locked door). Route: start in `security_checkpoint`, `enterRoom('operations_floor')` through the open checkpoint door (first entry), stay 45 s, then Shift Handover Sheet, back to the checkpoint, Contractor Badge Station with PIN 0616, take the Printed Contractor Badge, ops floor again, interact with the RFID door (badge held; `door_unlocked`), `enterRoom('server_room')`. Times are seconds on the page clock; entry is the first sample in the ops floor (8225 at 4.1, 8229 at 3.1).
+
+| Check | 8225 | 8229 |
+|---|---|---|
+| L1: Adaeze and Gwen seated at post (`atPost`, `_seat`, visible, no job), 44 one-second samples from entry to entry + 45 s | 0 of 44 bad | 0 of 44 bad |
+| HaX text ("You're inside, and the team's still over Denver ... Let it hurt afterwards") | bark 4.4, popup on screen 5.1 to 8.3 | bark 4.5, popup 5.1 to 8.2 |
+| Architect's call | 5000 ms timer set 3.2, ring offer `ringing` at 8.2 (`phone_ringtone`), phone chat for the_architect opened at 28.5 (`architect_echo_heard` set) | timer 3.0, ring 8.0, chat opened 28.3 |
+| RFID text (HaX: "Server hall door, far side of this floor, wants a server-zone badge ...") | bark 13.4 | bark 13.5 |
+| Pool chatter during the call (ring to 45 s) | none: no bubble or chatter console line, `needs.log` since entry has only `registered` (t 31), `blocked`, `urgent` (t 358 to 361, after the window, in the checkpoint and server legs) | same (`registered` t 30, `blocked` t 354, `urgent` t 360) |
+| Later route steps | sheet note opened 52.9, PIN 0616 accepted 65.8, container 66 to 68, badge in inventory, HaX PIN text 69.3 | sheet 53.3, PIN done about 65, HaX PIN text 68.5 |
+| Server room reached; both operators hidden on arrival (`sprite.visible` false, `atPost`, mode idle) | `door_unlocked` and `door_opened` at the door interaction, server room at 83.6, `server_hall_reached` true, both hidden | server room 83.1, both hidden |
+| Page errors | none | none |
+
+Result: m5 passes on both games for L1, the three texts and the hidden-on-arrival check.
+
+Limits and slips:
+- The call was not answered by the probe. The phone chat opened by itself about 20 s after the ring (28.5 and 28.3); the probe did not observe it end. "No chatter" covers the whole 45 s window, so it includes the ring and the open chat.
+- Chatter was judged from the barks recorder, the console and `needs.log`, not from bubble pixels.
+- Seeded flags (`session-start.sh --flags`) were not used. The route has no VM step and the probe lib drives the page directly. The opening state after load had no briefing minigame open (the lib's load dismisses any blocking UI), and the team was not committed, which the route does not need.
+- The probe's own `route()` first step `enter ops` returns `no-doorway` when already on the ops floor (harmless; the run continues).
+- The first 2 s of sampler output before entry (checkpoint) are not counted in L1.
