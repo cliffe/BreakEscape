@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
+import { reachX, reachY, aimX, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -2297,6 +2297,8 @@ export function tryInteractWithNearest() {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
+                // A chair with an NPC on it is her, not "A chair." (interaction-reach.js seatOccupant); she is considered below
+                if (obj.seatedBy && window.seating?.isSeat(obj) && seatOccupant(obj, Object.values(rooms).flatMap(r => r.npcSprites || []), { isKo: (n) => !!window.npcHostileSystem?.isNPCKO?.(n.npcId) })) return;
                 consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), obj.y);
             });
         }

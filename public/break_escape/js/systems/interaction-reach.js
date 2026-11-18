@@ -278,3 +278,41 @@ export function withoutLeavingNpcsIfObjects(candidates) {
     if (!candidates.some(c => c.isObject && !c.isChair)) return candidates;
     return candidates.filter(c => !c.leavingNpc);
 }
+
+/**
+ * The NPC sitting on a seat, or null. A chair holds one person (chair.seatedBy, set by
+ * seating.js when an NPC takes or reserves it), and a click or E on that person is for
+ * the person: "A chair." is wrong when the centre of a seated NPC is clicked. The chair's
+ * reach and the NPC's differ (the chair's is its nearest edge, hers her centre), so a
+ * player in reach of the chair but not of her used to get the chair's description.
+ * A sofa reading 'full' (several places) has no single occupant and is left alone.
+ *
+ * @param {?object} seat - the chair sprite (seatedBy)
+ * @param {Array<object>} npcSprites - NPC sprites to look through (npcId, visible, destroyed)
+ * @param {object} [deps]
+ * @param {function(object): boolean} [deps.isKo] - the NPC is knocked out (she is not a person to talk to)
+ * @returns {?object}
+ */
+export function seatOccupant(seat, npcSprites, deps = {}) {
+    const id = seat?.seatedBy;
+    if (!id || id === 'full' || !Array.isArray(npcSprites)) return null;
+    return npcSprites.find(n => n && n.npcId === id && !n.destroyed && n.visible !== false
+        && !(deps.isKo && deps.isKo(n))) || null;
+}
+
+/**
+ * Whether a tap on an NPC-occupied seat is for its occupant (seatOccupant): the occupant's
+ * frame holds the tap and the tap is on her figure (deps.npcOnFigure). A tap on the chair
+ * away from her (the empty part of its frame) still reaches the chair.
+ *
+ * @param {object} seat
+ * @param {Array<object>} npcsUnderTap - NPC sprites whose frame holds the tap (findNPCsAtPosition)
+ * @param {object} deps
+ * @param {function(object): boolean} deps.npcOnFigure
+ * @param {function(object): boolean} [deps.isKo]
+ * @returns {?object} the occupant, or null
+ */
+export function occupantUnderTap(seat, npcsUnderTap, deps) {
+    const who = seatOccupant(seat, npcsUnderTap, deps);
+    return who && deps.npcOnFigure(who) ? who : null;
+}
