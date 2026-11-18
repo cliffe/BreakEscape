@@ -1,3 +1,28 @@
+# Live run R4: the re-issue after return_resumed plans round bodies (code review R3 follow-up)
+
+Added 2026-11-18, branch fix/needs-return-npc-stall at 3c465a21c (HEAD only). Keyless server on :3092 from the worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Four fresh games from new-game.rb (9564, 9566, 9567, 9568), three trips each with docs/achitechture/reviews/return-stall/drivers/trip4.js: natural, then Vector nudged to y 152.7 and y 157.0 with body.reset (immovable value kept: false, enable true, in `_dynamicBlockers()` on all 12).
+
+Change under test: every `return_resumed` re-issue now passes `reroute: true` (npc-needs.js `_watchReturn`), so it plans ring, then tight, then plain. Before, the first re-issue was plain.
+
+| Game | Trip | Vector y start -> end | Body when `returning` began | Plan tiers while returning | Lane hits (nearestBlockerOnPath, lane 13) | Return s | return_resumed | return_stuck | Holds over 3 s |
+|---|---|---|---|---|---|---|---|---|---|
+| 9564 | 1 natural | 153.6 -> 153.6 | 534.4,188.2 | plain, ring | none | 3.5 | 0 | 0 | 0 |
+| 9564 | 2 y152.7 | 152.7 -> 152.7 | 532.7,194.9 | plain | none | 3.6 | 0 | 0 | 0 |
+| 9564 | 3 y157.0 | 157 -> 157 | 526.1,182.9 | none logged | none | 3.1 | 0 | 0 | 0 |
+| 9566 | 1 natural | 153.6 -> 153.6 | 531.2,189.1 | plain, ring | none | 3.5 | 0 | 0 | 0 |
+| 9566 | 2 y152.7 | 152.7 -> 152.7 | 531.2,189.4 | ring | none | 3.6 | 0 | 0 | 0 |
+| 9566 | 3 y157.0 | 157 -> 157 | 536,188.6 | ring | none | 3.5 | 0 | 0 | 0 |
+| 9567 | 1 natural | 153.6 -> 153.6 | 528.4,184.1 | plain, ring | none | 3.6 | 0 | 0 | 0 |
+| 9567 | 2 y152.7 | 152.7 -> 152.7 | 532.1,197.2 | plain, ring | none | 3.6 | 0 | 0 | 0 |
+| 9567 | 3 y157.0 | 157 -> 157 | 527.2,184.9 | plain, ring | none | 3.6 | 0 | 0 | 0 |
+| 9568 | 1 natural | 153.6 -> 153.5 | 532.9,194.3 | plain x3, ring, plain x2, ring | Vector lat 10.5 (twice), lat -7.9 (twice), all plain plans | 5.6 | 1 | 0 | 1 |
+| 9568 | 2 y152.7 | 152.7 -> 150.7 | 534.5,187.6 | plain | none | 2.1 | 0 | 0 | 0 |
+| 9568 | 3 y157.0 | 157 -> 157 | 516.2,172.2 | ring | none | 3.0 | 0 | 0 | 0 |
+
+Result: 11 of 12 trips home in 2.1 to 3.6 s with no hold. No return_stuck and no return_abandoned on any. One trip held (9568 trip 1, hold snapshot at 3 s of stillness, 5.6 s home, one return_resumed). Longest search 17.5 ms.
+
+The one hold, explained. It was not the re-issue. The first walk home (`_moveReroute` false, plain by design for a fresh return) planned along y 164 and, from the cell (508,164), the behaviour layer's own re-plans were plain too (nearest agent_vector lat 10.5, fwd 21.6, inside the 13 px lane), so local avoidance stopped her. The return_resumed that followed planned a ring plan along y 172 (nearest null) and she went home on it; the previous engine would have re-issued plain along y 164 again. The snapshot (body 505.8,163.5, velocity 0, no `_avoid`, path along y 172 already adopted) was taken after that ring plan was in hand. So the fix does what it should for the re-issue, and the remaining exposure is the first, non-rerouted walk home: its plain plan can start in a standing NPC's lane (here 1 of 12 trips, one stop of about 3 s, cleared by the first resume). Planning the first return ring-first would remove it; that changes every needs walk home and is left for the owner.
+
 # Live contrast R3: f48c80af8 against the branch, instrumented (code review R3, m3)
 
 Added 2026-11-18, branch fix/needs-return-npc-stall at 5bb5cf541 (engine) with the driver fix noted below. Keyless server on :3092 from the worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Six fresh games from new-game.rb, alternating f48c80af8 (its npc-pathfinding.js and npc-behavior.js served through the page.route hook, OLD=1; the hook previously served f48c80af8^), then HEAD, three games each, three trips per game with `drivers/trip4.js` (trip3.js plus the logs R3 asked for). Trip 1 of each game is natural (Vector where earlier play left him); trips 2 and 3 nudge only his y with `body.reset` to 152.7 and 157.0 (x kept, `immovable` as found). No globals set, no game row edited. Each trip started once she was home and idle plus 3 s, with thirst 5 on julian_sallow and agnieszka_duda.

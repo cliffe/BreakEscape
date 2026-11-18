@@ -19,3 +19,13 @@ Result in scenarios/m08_the_mole/office_life/LIVE_RETURN_STALL.md and DIAGNOSIS_
 - HEAD: 1 of 9 held, 9.6 s home, two return_resumed, no return_stuck. Cause visible in the plan record: a plain re-issue plan along y 164 (nearest agent_vector lat 10.6, fwd 21.6) after a clear ring plan. The criterion "HEAD must not hold" is not met; the 30 s loop did not recur.
 
 Open for the owner (not changed here): the first re-issue after `return_resumed` is a plain plan; it can walk into a standing NPC's lane for a few seconds. Making that re-issue use the held-aware (ring) plan first would remove the residual hold. It needs its own unit test and a live run, so it is left as a follow-up.
+
+
+## R4 pre-review fix
+
+The follow-up left open above: the first re-issue after `return_resumed` was a plain plan. Done in 3c465a21c.
+
+- Where: npc-needs.js `_watchReturn`, the `return_resumed` branch, line 4274. Before: `this._goHome(s, { yieldToPlayer: false, keepFarFlag: true, reroute: tries > 1, nudge: tries === STUCK_TRIES })`. After: `reroute: true`. The behaviour layer needed no change: `goToAndStay` sets `_moveReroute` from the flag and `_planMovePath` already plans ring, tight, plain.
+- Why it was plain: the comment (added with the stall watch, 0a5cdfd98) says "a player who held the walk has gone". The first resume was assumed to follow the player holding the NPC, so a plan round bodies would have been pointless. That reason does not cost anything to drop: the avoid cells are bodies' positions now, a player who has left blocks no cell, and no held-aware path falls back to the plain one. It also did not cover a standing NPC, whose lane the plain plan can enter (game 9532: 10.6 px off Vector, held about 6 s).
+- Test: "R4: the first re-issue after return_resumed plans round Vector, not the plain path through his lane" in test/js/npc-needs-return-standing-npc.test.mjs. The flag comes from the real needs layer (stub world), `goToAndStay` applies it, `_planMovePath` plans on the m08 geometry (her at 508,164, Vector at 486.4,152.7). It fails with `reroute: tries > 1` and passes with the fix. npc-needs-stuck-walk.test.mjs now expects `reroute: true` on the first re-issue. `bin/test-js`: 825 files passed, 0 failed.
+- Live: four fresh games, 12 trips on HEAD, table in scenarios/m08_the_mole/office_life/LIVE_RETURN_STALL.md. No return_stuck, no return_abandoned, 11 of 12 without a hold. The one hold (9568 trip 1) came from the first, non-rerouted walk home planning plain from (508,164) inside Vector's lane; the first return_resumed planned the clear ring path and ended it. Open for the owner: plan the first walk home ring-first too (every needs walk home; needs its own tests and live run).
