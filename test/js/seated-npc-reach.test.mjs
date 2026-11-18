@@ -115,10 +115,70 @@ test('E beside the free place of a sofa with a sitter sits, even with her centre
 test('a sofa measures to her own place: its far end does not reach her (m2)', () => {
     const seat = sofa();
     const npc = amara({ x: 400, y: 100 });
-    setup({ seat, npc, place: 0, player: { x: 200, y: 110, direction: 'down' } });
-    assert.equal(tryInteractWithNPC(npc), false, '80 px from her place, 30 from the sofa edge');
+    setup({ seat, npc, place: 0, player: { x: 180, y: 110, direction: 'down' } });
+    assert.equal(tryInteractWithNPC(npc), false, '65 px from her place foot, 15 from the sofa edge (the old edge rule reached her)');
     setup({ seat, npc, place: 0, player: { x: 100, y: 110, direction: 'down' } });
     assert.equal(tryInteractWithNPC(npc), true, '20 px from her place');
+});
+
+test('the tap and the talk icon reach follow her place on a sofa, as E does (m2)', () => {
+    const seat = sofa();
+    const npc = amara({ x: 400, y: 100 });
+    setup({ seat, npc, place: 0, player: { x: 180, y: 110, direction: 'down' } });
+    assert.equal(isObjectInInteractionRange(npc), false, 'tap: 65 px from her place, 15 from the sofa edge');
+    setup({ seat, npc, place: 0, player: { x: 100, y: 110, direction: 'down' } });
+    assert.equal(isObjectInInteractionRange(npc), true, 'tap: 20 px from her place');
+});
+
+test('the talk icon, the tap and E share one decision for a free place that wins (R3 n1)', () => {
+    const seat = sofa();
+    const npc = amara({ x: 150, y: 100 });
+    setup({ seat, npc, place: 0, player: { x: 170, y: 110, direction: 'down' } });
+    assert.equal(isObjectInInteractionRange(npc), false, 'clearly nearer the free place: not her');
+    assert.equal(tryInteractWithNPC(npc), false);
+    setup({ seat, npc, place: 0, player: { x: 140, y: 110, direction: 'down' } }); // 20 from hers, 20 from free: inside the margin
+    assert.equal(isObjectInInteractionRange(npc), true, 'inside the margin: her');
+    // The talk icon (checkObjectInteractions) goes through the same function, not the bare NPC reach
+    const src = readFileSync(join(js, 'systems/interactions.js'), 'utf8');
+    assert.match(src, /const distanceSq = seatedNpcReachDistSq\(player, sprite, npcReachDistSq\(/, 'icon reach is the shared one');
+});
+
+test('standing on her figure or just below her, E talks to her; the free place needs a clear margin', () => {
+    const seat = sofa();
+    const her = { x: 120, y: 105 };
+    for (const [x, y] of [[120, 105], [125, 117], [128, 112]]) {
+        setup({ seat, npc: amara(her), place: 0, player: { x, y, direction: 'down' } });
+        press();
+        assert.deepEqual(aimed(), ['120,105'], `at ${x},${y}: aimed at Amara: ${aimed()}`);
+    }
+    // Facing the sofa's far side, her centre is 146 degrees off and the sofa 79: the plain chair penalty (30000) would hand E to the sofa
+    setup({ seat, npc: amara(her), place: 0, player: { x: 135, y: 115, direction: 'right' } });
+    press();
+    assert.deepEqual(aimed(), ['120,105'], 'facing away from her: still her, the sofa yields: ' + aimed());
+    setup({ seat, npc: amara(her), place: 0, player: { x: 160, y: 110, direction: 'down' } });
+    press();
+    assert.ok(!aimed().includes('120,105'), 'at the free place foot: the sofa: ' + aimed());
+});
+
+test('the free-place test measures the foot point (body centre), not the sprite centre', () => {
+    const seat = sofa();
+    const npc = amara({ x: 120, y: 105 });
+    // Sprite centre nearer her place (26.9 against 39 px), but the feet (body centre) are 8 px from the free place's foot, 32 from hers
+    setup({ seat, npc, place: 0, player: { x: 130, y: 95, direction: 'down', body: { center: { x: 152, y: 120 } } } });
+    assert.equal(isObjectInInteractionRange(npc), false, 'feet by the free place: not her');
+    window.player = { x: 130, y: 95, direction: 'down' };
+    assert.equal(isObjectInInteractionRange(npc), true, 'with no body the sprite point stands in: hers');
+});
+
+test('a three-place bench: the free place wins only against every sitter (n2)', () => {
+    const seat = chair({ width: 90, displayWidth: 90, _places: { 0: 'amara', 1: 'bo' } });
+    const npc = amara({ x: 120, y: 105 });
+    setup({ seat, npc, place: 0, player: { x: 100, y: 110, direction: 'down' } });
+    window.npcBehaviorManager.getBehavior = (id) => (id === 'amara' ? { _seat: { chair: seat, seat: { places: [[10, 0], [50, 0], [80, 0]] }, place: 0 } } : { _seat: { chair: seat, seat: { places: [[10, 0], [50, 0], [80, 0]] }, place: 1 } });
+    seat._places = { 0: 'amara', 1: 'bo' };
+    // Player by the free end (x 190 = place 2's foot) is nearer it than both sitters
+    window.player = { x: 190, y: 120, direction: 'down' };
+    assert.equal(isObjectInInteractionRange(npc), false, 'beyond both sitters: free end');
 });
 
 test('the tap path reaches a seated NPC through her seat, as E does (m1)', () => {

@@ -2275,16 +2275,18 @@ export function tryInteractWithNearest() {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
-        // Beside the free place of a sofa she shares, E is for the sofa: no seat reach for her, and she loses to it
+        // Clearly nearer the free place of a sofa she shares, E is for the sofa: no seat reach for her, and she loses to it
         const freeFirst = npcSprite && nearerFreePlace(player, npcSprite);
         const npcSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
-        const distSq = npcSprite && !freeFirst ? seatedNpcReachDistSq(player, npcSprite, npcSq) : npcSq;
+        const distSq = npcSprite ? seatedNpcReachDistSq(player, npcSprite, npcSq) : npcSq; // gives the plain reach itself when freeFirst
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
         let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
-        if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += 30000; // a chair loses to anything else faced
+        // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
+        // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
+        if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (freeFirst) score += 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
@@ -2299,8 +2301,17 @@ export function tryInteractWithNearest() {
     let npcList = null;
     const allNpcs = () => npcList || (npcList = Object.values(rooms).flatMap(r => r.npcSprites || []));
     const npcKo = (n) => !!window.npcHostileSystem?.isNPCKO?.(n.npcId);
-    // A sofa with a sitter whose player stands nearer a free place than her place (E sits there)
-    const sofaFreePlaceWins = (seat) => !!seat._places && allNpcs().some(n => n.active !== false && !npcKo(n) && npcSeatedOn(n, seat) && nearerFreePlace(player, n));
+    const sittersOn = (seat) => allNpcs().filter(n => n.active !== false && !npcKo(n) && npcSeatedOn(n, seat));
+    // A sofa with sitters, the player clearly nearer a free place than every one of their places (E sits there). Any number of places:
+    // one sitter the player is not clearly away from keeps E for her.
+    const sofaFreePlaceWins = (seat) => {
+        if (!seat._places) return false;
+        const sitters = sittersOn(seat);
+        return sitters.length > 0 && sitters.every(n => nearerFreePlace(player, n));
+    };
+    // A sitter on this sofa that E would talk to: in her reach, and the player not clearly nearer a free place
+    const sofaSitterTalkFirst = (seat) => !!seat._places && sittersOn(seat).some(n => !nearerFreePlace(player, n)
+        && seatedNpcReachDistSq(player, n, npcReachDistSq(player, n, (n.x - px) ** 2 + (n.y - py) ** 2)) <= INTERACTION_RANGE_SQ);
     Object.values(rooms).forEach(room => {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
@@ -2376,7 +2387,20 @@ function distSqTo(player, pt) {
     return (pt.x - player.x) ** 2 + (pt.y - player.y) ** 2;
 }
 
-// The player is nearer a free place of her sofa or bench than her own place (E there sits, not talks)
+// The player's foot point (body centre, as interaction-walls playerFeet): the sprite sits about 25 px above it
+function footOf(player) {
+    const c = player?.body?.center;
+    return c && Number.isFinite(c.x) && Number.isFinite(c.y) ? c : { x: player.x, y: player.y };
+}
+
+// How much nearer (px) the player's feet must be to a free place's foot than to her own place's foot before E sits
+// there instead of talking to her: standing on or close beside her always talks.
+const FREE_PLACE_MARGIN = 10;
+// A sofa whose sitter wins E sits behind everything else in score, past the widest aim term (180 deg x 1000)
+const SOFA_SITTER_PENALTY = 400000;
+
+// The player is clearly nearer a free place of her sofa or bench than her own place (E there sits, not talks).
+// Takes the nearest free place, so it holds for any number of places.
 function nearerFreePlace(player, npcSprite) {
     const chair = seatedChairOf(npcSprite);
     const b = chair ? window.npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat : null;
@@ -2385,8 +2409,9 @@ function nearerFreePlace(player, npcSprite) {
     const taken = chair._places || {};
     const free = places.map((_, i) => i).filter(i => !taken[i]);
     if (!free.length) return false;
-    const hers = distSqTo(player, placeFootPoint(chair, places, b.place));
-    return Math.min(...free.map(i => distSqTo(player, placeFootPoint(chair, places, i)))) < hers;
+    const feet = footOf(player);
+    const d = (i) => Math.sqrt(distSqTo(feet, placeFootPoint(chair, places, i)));
+    return Math.min(...free.map(d)) + FREE_PLACE_MARGIN < d(b.place);
 }
 
 // A seated NPC is reached from her seat, counted with her centre (the seat's reach is the one the
@@ -2398,6 +2423,7 @@ function seatedNpcReachDistSq(player, npcSprite, distSq) {
     if (!chair) return distSq;
     const b = window.npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat;
     const places = b?.seat?.places;
+    if (nearerFreePlace(player, npcSprite)) return Infinity; // the free place is the player's: E sits, so no icon, tap or talk for her
     if (places && places[b.place]) return Math.min(distSq, distSqTo(player, placeFootPoint(chair, places, b.place)));
     const dx = reachX(chair, player.x) - player.x;
     const dy = reachY(chair, player.y) - player.y;
