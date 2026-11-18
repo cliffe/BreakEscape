@@ -1092,7 +1092,7 @@ Last stretch. Anyone still standing with him goes down first.
     {down_count() >= 4:
         All four. {done_phrases()}.
     - else:
-        That's {down_count()} of four. {done_phrases()}. Still about: {remaining_names()}.
+        That's {down_count()} of 4. {done_phrases()}. Still about: {remaining_names()}.
     }
 }
 // Struggling run A (F8): straight back to the hub (as the hint knots do), not a
