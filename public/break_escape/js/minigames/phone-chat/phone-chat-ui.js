@@ -142,6 +142,14 @@ export default class PhoneChatUI {
                 .classList.add('phone-terminal-theme');
             this.container.querySelector('#messages-container')
                 ?.setAttribute('title', 'Click, Space or Enter to skip');
+            // Visible skip hint, shown only while a line types or a pause runs (syncSkipHint)
+            const hint = document.createElement('div');
+            hint.className = 'phone-skip-hint';
+            hint.id = 'phone-skip-hint';
+            hint.setAttribute('aria-hidden', 'true');
+            hint.hidden = true;
+            hint.textContent = 'Space or click to skip';
+            this.container.querySelector('.phone-screen')?.appendChild(hint);
         }
         if (this.isCallMode) this._renderCallChrome();
         if (this.isSocialTheme) {
@@ -1127,6 +1135,19 @@ export default class PhoneChatUI {
         return typeof this._typewriterFinish === 'function';
     }
 
+    /** A wait between story lines is running (set by the minigame's pace timer). */
+    setPaceActive(on) {
+        this._paceActive = !!on;
+        this.syncSkipHint();
+    }
+
+    /** Show the skip hint while a line types or a pause runs; hidden otherwise (choices, idle). */
+    syncSkipHint() {
+        const hint = this.container?.querySelector?.('#phone-skip-hint');
+        if (!hint) return;
+        hint.hidden = !(this.isTerminalTheme && (this.isTypewriting() || this._paceActive));
+    }
+
     /** Finish the line being typed at once. Returns true if there was one. */
     skipTypewriter() {
         if (!this.isTypewriting()) return false;
@@ -1167,6 +1188,7 @@ export default class PhoneChatUI {
                 cancelled = true;
                 if (this._typewriterFinish === finish) this._typewriterFinish = null;
                 if (this._typewriterCancel === cancel) this._typewriterCancel = null;
+                this.syncSkipHint();
                 resolve();
             };
             this._typewriterCancel = cancel;
@@ -1177,6 +1199,7 @@ export default class PhoneChatUI {
                 if (cancelled) return;
                 cancelled = true;
                 if (this._typewriterFinish === finish) this._typewriterFinish = null;
+                this.syncSkipHint();
                 messageText.textContent = text;
                 messageText.classList.remove('terminal-typing');
                 cursor.remove();
@@ -1184,6 +1207,7 @@ export default class PhoneChatUI {
                 resolve();
             };
             this._typewriterFinish = finish;
+            this.syncSkipHint();
             // Reduced motion: lines appear whole (no character-by-character typing)
             if (this._instantType || prefersReducedMotion()) { finish(); return; }
 
@@ -1199,6 +1223,7 @@ export default class PhoneChatUI {
                     setTimeout(() => {
                         if (cancelled) return;
                         if (this._typewriterFinish === finish) this._typewriterFinish = null;
+                        this.syncSkipHint();
                         cursor.remove();
                         resolve();
                     }, BLINK_DURATION);
