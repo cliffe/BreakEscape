@@ -34,3 +34,8 @@ Branch fix/phone-restore-stitch. Fix commit eae5f561a (on top of review eb16d9c7
 - Tests: phone-reopen-stitch tests 22-26 (R3 M2 x2, N3, N5, M1) with fixtures in phone_reopen_stitch.ink; mutants for M2, N3, N5 each fail one test.
 - Sweep (own copy of reopencheck with a replay yardstick for the three m07 submenus; reviewer's copy not on disk): m07 HaX submenu reopens stale 24 of 316 before, 0 of 317 after. m02 HaX home-fallback-without-visible-line rows 10 before, 0 after.
 - Live: port 3085 only (3086 belongs to the checker).
+- bin/test-js: 762 passed, 0 failed (R3 commit e21a8cc45).
+- Live R3 (port 3085, Xvfb :85, both stopped by PID):
+  - m07 game 8101: HaX "I'm stuck on something." showed "I've got a username and a password. Now what?"; closed, flag3_submitted emitted, reopened: re-ran stuck_topics.menu, choices "I'm in as their operator. How do I stop the cascade?" / "Send me a field guide." / "Never mind." Stale choice gone. PASS.
+  - m02 game 8110: HaX "Where do I start?" resting on "What about Gary Whitlock?" / "Understood"; dr_kim_met emitted; reopen kept both choices (re-ran hint_start, no hub). PASS.
+  - Unused game 8100 (m07, from the first new-game run).
