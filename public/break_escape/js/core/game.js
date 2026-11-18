@@ -3028,7 +3028,7 @@ if (typeof window !== 'undefined') {
 
 // Face an in-reach object and use it (a tap, a pick from the menu, or a far tap's arrival)
 function useObjectInReach(obj) {
-    facePlayerToward(aimX(obj), obj.y); // the object's centre, as the E key faces it
+    facePlayerToward(aimX(obj), obj.y, obj); // the object's centre, as the E key faces it; E then prefers it over a neighbour
     if (window.getTutorialManager) window.getTutorialManager().notifyPlayerInteracted();
     if (window.handleObjectInteraction) window.handleObjectInteraction(obj);
 }
