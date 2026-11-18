@@ -956,7 +956,7 @@ export class DustingMinigame extends MinigameScene {
     _countStroke() {
         if (this.step !== 'dust' || this.puffMode) return;
         this.toolStrokes = (this.toolStrokes || 0) + 1;
-        if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.advise(FEATHER_SUGGESTION);
+        if (this.toolStrokes === FINE_SWITCH_AFTER_STROKES && this._suggestFeather()) this.announce(FEATHER_SUGGESTION);
     }
 
     _suggestFeather() {
@@ -1177,9 +1177,10 @@ export class DustingMinigame extends MinigameScene {
         return 'The ridges are clear. Lift when you are happy, or fill any gaps first.';
     }
 
-    /** Advice that can run long (wrong powder, feather brush). It is announced as usual; in short landscape the status
-     *  line is capped at two lines, so the full text also rides on the panel's feedback line, which is not clipped. The
-     *  feedback line is not a live region, so a screen reader still hears it once, from the status line. */
+    /** Advice that can run long (the wrong-powder reason). It is announced as usual; in short landscape the status line is
+     *  visually hidden on the dust and lift steps, so the full text rides on the panel's feedback line, which is not a live
+     *  region: a screen reader hears it once, from the status line. The feather tip is not stored here: a live warning about
+     *  the current state (fog, over-brushing) beats stale advice, and _coach() already ranks and drops the tip. */
     advise(msg) {
         if (!msg) return;
         this.advice = this.root && this.root.classList.contains('dusting-short') ? msg : '';

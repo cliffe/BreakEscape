@@ -20,7 +20,7 @@ globalThis.window = { gameState: { globalVariables: {} }, innerWidth: 1280, inne
 globalThis.document = { getElementById: () => null, createElement: el, head: { appendChild() {} }, body: { appendChild() {} } };
 globalThis.Image = class {};
 const mod = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-game.js')).href);
-const { DustingMinigame, SHORT_LANDSCAPE_MAX_H } = mod;
+const { DustingMinigame, SHORT_LANDSCAPE_MAX_H, FEATHER_SUGGESTION, foggyCoach } = mod;
 
 const rule = sel => {
     const i = css.indexOf(sel + ' {');
@@ -305,7 +305,14 @@ test('short dust and lift: the panel keeps room above the 80 px strip (no headin
     assert.doesNotMatch(hide, /display: none/);
     assert.match(css, /\.dusting-keys \{ display: none; \}/);
     for (const step of ['dust', 'lift']) assert.match(css, new RegExp(`\\.dusting-short\\[data-step="${step}"\\] \\.dusting-status`));
-    assert.match(css, /\.dusting-status \{ max-height: 32px; overflow: hidden; \}/);
+    // m2: the status line is visually hidden (still announced) on dust and lift in short mode, and no longer capped
+    const sHide = css.match(/\.dusting-short\[data-step="dust"\] \.dusting-status[^{]*\{[^}]*\}/)[0];
+    assert.match(sHide, /\.dusting-short\[data-step="lift"\] \.dusting-status/);
+    assert.match(sHide, /clip: rect\(0 0 0 0\)/);
+    assert.match(sHide, /width: 1px; height: 1px/);
+    assert.doesNotMatch(sHide, /display: none|visibility: hidden/);
+    assert.doesNotMatch(css, /max-height: 32px/);
+    assert.match(src, /class="dusting-status" role="status" aria-live="polite"/);
     // the other steps keep their heading and note
     assert.doesNotMatch(css, /dusting-short\[data-step="compare"\] \.dusting-forensic/);
 });
@@ -313,7 +320,8 @@ test('short dust and lift: the panel keeps room above the 80 px strip (no headin
 test('M1: long advice reaches the unclipped feedback line in short mode and is announced once', () => {
     assert.match(src, /advise\(msg\) \{/);
     assert.match(src, /this\.advise\(`\$\{why\} You can change powder\.`\)/);
-    assert.match(src, /this\.advise\(FEATHER_SUGGESTION\)/);
+    assert.match(src, /this\.announce\(FEATHER_SUGGESTION\)/);
+    assert.doesNotMatch(src, /advise\(FEATHER_SUGGESTION\)/);
     assert.match(src, /this\.message \|\| this\.advice \|\| this\._coach\(\)/);
     // the status line stays the only live region; the feedback line is not
     assert.match(src, /class="dusting-status" role="status" aria-live="polite"/);
@@ -351,4 +359,63 @@ test('M2: phone portrait pins only the primary button; short landscape and deskt
     assert.doesNotMatch(m[0], /^\s+\.dusting-(actions|buttons|primary|meters)/m);   // every selector is scoped not-short
     // the original phone-width rule (static, in flow) still holds
     assert.match(css, /@media \(max-width: 760px\) \{\s*\.dusting-actions \{\s*position: static/);
+});
+
+test('m1: portrait scroll-padding clears the pinned bar and the pinned primary has an inset focus ring', () => {
+    const i = css.indexOf('/* Phone portrait (not short): one 44 px bar');
+    const blk = css.slice(i, css.indexOf('/* Short landscape (a phone on its side;', i));
+    assert.match(blk, /\.dusting-root:not\(\.dusting-short\) \{ scroll-padding-bottom: 52px; \}/);
+    assert.match(blk, /\.dusting-primary:focus-visible \{ outline-offset: -5px; \}/);
+    assert.doesNotMatch(blk, /:focus-visible \{[^}]*outline:/, 'colour and width stay with the shared focus rule');
+});
+
+function feedbackGame({ short = true, foggy = 0.2, coverage = 0.2 } = {}) {
+    const fb = { textContent: '' };
+    const dyn = {};
+    const any = () => ({ textContent: '', style: {}, dataset: {}, querySelector: () => ({}) });
+    const g = Object.create(DustingMinigame.prototype);
+    Object.assign(g, {
+        canvas: { focus() {}, style: {} }, tape: { coverage: () => 0 }, _currentQuality: () => 0.5,
+        step: 'dust', tool: 'fine', toolStrokes: 0, powder: 'black', surfaceId: 'glass', advice: '', message: '',
+        metrics: { coverage, foggy, clarity: 0.5 }, diff: { minCoverage: 0.45 }, puffMode: false,
+        statusEl: { textContent: '' }, panel: { querySelector: sel => (sel.includes('"feedback"') ? fb : (dyn[sel] = dyn[sel] || any())) },
+        root: { classList: { contains: c => short && c === 'dusting-short' }, querySelectorAll: () => [] },
+        forensicEl: { textContent: '' }
+    });
+    return { g, fb };
+}
+
+test('r6 M1: with fog the coach line beats the feather tip on the feedback line, and the tip is still announced', () => {
+    const { g, fb } = feedbackGame();
+    for (let i = 0; i < 6; i++) g._countStroke();
+    assert.equal(g.toolStrokes, 6);
+    assert.equal(g.advice, '', 'the feather tip is not stored as advice');
+    assert.match(g.statusEl.textContent, /feather brush/i, 'still announced once');
+    g._refreshDynamic();
+    assert.equal(fb.textContent, foggyCoach(0.2, 0.45));
+    assert.doesNotMatch(fb.textContent, /feather/i);
+});
+
+test('r6 M1: without fog the feather tip shows through the coach, and drops once coverage passes the minimum', () => {
+    const { g, fb } = feedbackGame({ foggy: 0 });
+    for (let i = 0; i < 6; i++) g._countStroke();
+    g._refreshDynamic();
+    assert.equal(fb.textContent, FEATHER_SUGGESTION);
+    g.metrics.coverage = 0.5;
+    g._refreshDynamic();
+    assert.notEqual(fb.textContent, FEATHER_SUGGESTION);
+});
+
+test('r6 M1: advice clears on a tool change and on a step change', () => {
+    const a = feedbackGame();
+    a.g.advice = 'Black powder would show these. You can change powder.';
+    a.g._renderPanel = () => {}; a.g.announce = () => {};
+    a.g.powder = 'black';
+    a.g._chooseTool('fine');
+    assert.equal(a.g.advice, '');
+    const b = feedbackGame();
+    b.g.advice = 'stale';
+    Object.assign(b.g, { _layout() {}, _renderPanel() {}, _updateAria() {}, root: { dataset: {}, querySelectorAll: () => [], classList: { contains: () => true } } });
+    b.g._setStep('lift');
+    assert.equal(b.g.advice, '');
 });
