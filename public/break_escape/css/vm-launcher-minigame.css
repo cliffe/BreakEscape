@@ -5,6 +5,7 @@
 .vm-launcher {
     padding: 15px;
     font-family: 'GNF', monospace;
+    max-height: calc(100vh - 110px);   /* fallback where dvh is unsupported */
     max-height: min(400px, calc(100dvh - 110px));  /* viewport-relative: the launch actions stay reachable at 390px high */
     overflow-y: auto;
 }
@@ -47,6 +48,8 @@
 
 .vm-header {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
@@ -55,7 +58,7 @@
 .vm-title {
     color: #00ff00;
     font-size: 16px;
-    font-weight: bold;
+    overflow-wrap: anywhere;
 }
 
 .vm-status {
@@ -92,11 +95,6 @@
     color: #666;
 }
 
-.vm-ip {
-    font-family: 'VT323', monospace;   /* a pixel face for the address (critique A30) */
-    font-size: 24px;
-    color: #ffaa00;
-}
 
 .vm-actions {
     margin-top: 15px;
@@ -112,6 +110,7 @@
     padding: 10px 20px;
     font-family: 'Press Start 2P', monospace;
     font-size: 16px;   /* on its 8px grid */
+    overflow-wrap: anywhere;
     cursor: pointer;
     transition: background 0.2s;
 }
@@ -241,28 +240,9 @@
 .vm-ip-value {
     font-family: 'VT323', monospace;   /* a pixel face for the address */
     font-size: 24px;
-    font-weight: bold;
     color: #ffaa00;
     letter-spacing: 1px;
 }
 
-.vm-names {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    margin: 24px 0;
-}
 
-.vm-name-badge {
-    background: #00aa00;
-    color: #000;
-    padding: 16px 24px;
-    font-weight: bold;
-    font-size: 16px;
-    border: 2px solid #000;
-}
 
-.standalone-instructions h3 {
-    color: #00ff00;
-    margin-top: 0;
-}

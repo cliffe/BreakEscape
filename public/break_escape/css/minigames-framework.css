@@ -562,11 +562,23 @@
 
 /* The title-bar X (Crypto Workstation, Lab Sheet) sits beside the 30 px "Open in new tab" button
    (5 px to its left) in a 46 px bar. The X is a border-box button: 30 px outer, padding box 22 px
-   (4 px border) or 18 px (6 px themed border). Vertical inset -13 gives 48 / 44 px, so the target
-   fills the bar without hanging into the iframe. Left inset -2 starts inside the X's own edge, so
-   it never reaches the new-tab button; right -14 is the usual reach. Live proof measures it. */
+   (4 px border) or 18 px (6 px themed border). Insets are measured from that padding box, so the
+   border width (--ui-small-button-px, 4px unthemed) is added to the side reaches: left starts 1 px
+   outside the X's own edge (the new-tab button is 5 px away), right reaches 14 px past the X
+   (inside the 15 px to the bar edge), so the target is 45 px wide whichever border is drawn.
+   Vertical inset -13 gives 56 minus twice the border (44 themed, 48 unthemed), filling the bar
+   without hanging into the iframe. Live proof measures it. */
 .title-bar .minigame-close-button::after {
-    inset: -13px -14px -13px -2px;
+    inset: -13px calc(-14px - var(--ui-small-button-px, 4px)) -13px calc(-1px - var(--ui-small-button-px, 4px));
+}
+
+/* Phone on a phone-width screen: the phone sits 44 px down and its header's Notepad button is
+   right under the fixed X, so the X's reach stops at the phone's top edge (border box bottom
+   minus 1 px) and goes upward instead (15 px, to the viewport edge): 44 px tall in all. */
+@media (max-width: 500px) {
+    [data-minigame="phone-chat"] > .minigame-close-button::after {
+        inset: calc(-15px - var(--ui-small-button-px, 4px)) -14px calc(1px - var(--ui-small-button-px, 4px)) -14px;
+    }
 }
 
 .minigame-close-button:hover {

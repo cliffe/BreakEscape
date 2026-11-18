@@ -71,17 +71,67 @@ test('no close-button rule sets position: static (the hit area anchors to the X)
     assert.deepEqual(bad, []);
 });
 
-test('title-bar X hit area stays clear of the new-tab button and inside the bar (M1)', () => {
+// Union of the X's border box (30px) and its ::after: insets are from the padding box, so each
+// side reaches (-inset - border) past the border box (negative = inside it).
+const BASE_BORDER = 30;
+function unionSize(insetText, border) {
+    const body = insetText.replace(/^inset:\s*/, '').replace(/;$/, '');
+    const vals = body.match(/calc\([^)]*\([^)]*\)[^)]*\)|calc\([^)]*\)|-?\d+px/g);
+    assert.equal(vals.length, 4, `four-value inset in "${insetText}"`);
+    const px = vals.map((v) => {
+        if (!v.startsWith('calc')) return parseFloat(v);
+        // calc(Apx - var(--ui-small-button-px, Bpx)) with the border substituted
+        const m = v.match(/calc\((-?\d+)px\s*([-+])\s*var\(--ui-small-button-px,\s*(\d+)px\)\)/);
+        assert.ok(m, `understood ${v}`);
+        const a = parseFloat(m[1]);
+        return m[2] === '-' ? a - border : a + border;
+    });
+    // `border` of the 4px/6px is taken off every side: padding box = border box - 2 * border.
+    // px[] are inset values from the padding box (negative = outward). Reach past the border box:
+    const reach = px.map((v) => -v - border);
+    const [t, r, b, l] = reach;
+    return { w: BASE_BORDER + l + r, h: BASE_BORDER + t + b, reach: { t, r, b, l } };
+}
+const insetOf = (r) => r.match(/inset:[^;]+;/)[0];
+
+test('title-bar X hit area is at least 44px both ways, clear of the new-tab button, inside the bar (M1)', () => {
     const r = rule(read('minigames-framework.css'), '.title-bar .minigame-close-button::after');
-    const m = r.match(/inset:\s*(-?\d+)px (-?\d+)px (-?\d+)px (-?\d+)px/);
-    assert.ok(m, 'four-value inset');
-    const [top, , bottom, left] = m.slice(1).map(Number);
-    assert.ok(top >= -13 && bottom >= -13, 'no more than 13px above or below');
-    assert.ok(left >= -2, 'does not reach left past the X edge');
+    for (const border of [4, 6]) {
+        const u = unionSize(insetOf(r), border);
+        assert.ok(u.w >= 44, `width ${u.w} at border ${border}`);
+        assert.ok(u.h >= 44, `height ${u.h} at border ${border}`);
+        assert.ok(u.reach.l <= 5 - 1, `left reach ${u.reach.l} stops short of the new-tab button (5px away)`);
+        assert.ok(u.reach.r <= 15, `right reach ${u.reach.r} stays inside the 15px to the bar edge`);
+        assert.ok(u.h <= 50, `height ${u.h} fits the 46px bar plus rounding`);
+    }
 });
 
-test('pc-monitor bezel X hit area does not spill downward (m1)', () => {
-    assert.match(rule(read('pc-monitor.css'), '.pc-monitor-bezel > .pc-monitor-close::after'), /inset: -14px -14px -4px -14px/);
+test('the unthemed and themed border variable fallback is 4px, as the X border is (M1)', () => {
+    assert.match(rule(read('minigames-framework.css'), '.minigame-close-button'), /border: 4px solid/);
+    assert.match(rule(read('minigames-framework.css'), '.title-bar .minigame-close-button::after'), /var\(--ui-small-button-px, 4px\)/);
+    assert.match(read('ui-themes.css'), /--ui-small-button-px: 6px/);
+});
+
+test('pc-monitor bezel X hit area is at least 44px tall and 44px wide (m1)', () => {
+    const r = rule(read('pc-monitor.css'), '.pc-monitor-bezel > .pc-monitor-close::after');
+    for (const border of [4, 6]) {
+        const u = unionSize(insetOf(r), border);
+        assert.ok(u.h >= 44, `height ${u.h} at border ${border}`);
+        assert.ok(u.w >= 44, `width ${u.w} at border ${border}`);
+        assert.ok(u.reach.b <= 6, `spill below the X ${u.reach.b}px stays small (the in-screen window X is under the strip)`);
+    }
+});
+
+test('phone-chat X hit area on a phone stops at the phone header and is 44px tall (m2)', () => {
+    const s = read('minigames-framework.css');
+    const i = s.indexOf('[data-minigame="phone-chat"] > .minigame-close-button::after');
+    assert.ok(i >= 0, 'rule exists');
+    const r = s.slice(i, s.indexOf('}', i));
+    for (const border of [4, 6]) {
+        const u = unionSize(insetOf(r), border);
+        assert.ok(u.h >= 44, `height ${u.h} at border ${border}`);
+        assert.ok(u.reach.b <= 0, `bottom reach ${u.reach.b} does not pass the X's border box`);
+    }
 });
 
 test('se-overlay-close touch hit area is 44px (m2)', () => {
@@ -94,10 +144,21 @@ test('dusting key-end notch is 2px (m3)', () => {
     assert.match(line, /2px/);
 });
 
-test('vm-launcher max-height uses dvh only (m4)', () => {
+test('vm-launcher max-height is dvh with a vh fallback line before it (m4, n3)', () => {
     const r = rule(read('vm-launcher-minigame.css'), '.vm-launcher');
     assert.match(r, /min\(400px, calc\(100dvh - \d+px\)\)/);
-    assert.doesNotMatch(r, /100vh/);
+    assert.ok(r.indexOf('100vh') >= 0 && r.indexOf('100vh') < r.indexOf('100dvh'), 'vh fallback before dvh');
+});
+
+test('vm-launcher wraps long VM titles and has no faux bold or dead rules (m3, n1, n2)', () => {
+    const s = read('vm-launcher-minigame.css');
+    assert.match(rule(s, '.vm-header'), /flex-wrap: wrap/);
+    assert.match(rule(s, '.vm-header'), /gap: 8px/);
+    assert.match(rule(s, '.vm-title'), /overflow-wrap: anywhere/);
+    assert.match(rule(s, '.vm-action-btn'), /overflow-wrap: anywhere/);
+    assert.doesNotMatch(rule(s, '.vm-title'), /font-weight/);
+    assert.doesNotMatch(rule(s, '.vm-ip-value'), /font-weight/);
+    for (const dead of ['.vm-names {', '.vm-name-badge {', '.standalone-instructions h3 {', '.vm-ip {']) assert.ok(!s.includes(dead), `${dead} removed`);
 });
 
 test('vm-launcher JS injects no stylesheet and the moved rules live in the css (M2)', () => {
@@ -105,7 +166,7 @@ test('vm-launcher JS injects no stylesheet and the moved rules live in the css (
     assert.doesNotMatch(js, /createElement\('style'\)/);
     assert.doesNotMatch(js, /\.vm-launcher \{/);
     const s = read('vm-launcher-minigame.css');
-    for (const sel of ['.vm-ip-display', '.vm-ip-display .vm-detail-label', '.vm-ip-value', '.vm-names', '.vm-name-badge', '.standalone-instructions h3']) rule(s, sel);
+    for (const sel of ['.vm-ip-display', '.vm-ip-display .vm-detail-label', '.vm-ip-value']) rule(s, sel);
     assert.doesNotMatch(s, /font-size: (12|13|14|20)px/);
 });
 

@@ -308,9 +308,11 @@
     z-index: 5;
 }
 
-/* No spill downward: the in-screen window X sits just below the strip */
+/* Little spill downward (the in-screen window X sits just below the strip), so the reach goes
+   up instead: 60 minus twice the border = 48 px (themed) to 52 px tall, whatever --pc-bezel-top is
+   (the compact strip is 34 px, so the target starts 12 px above the frame). */
 .pc-monitor-bezel > .pc-monitor-close::after {
-    inset: -14px -14px -4px -14px;
+    inset: -20px -14px -10px -14px;
 }
 
 /* The post-it, stuck on the chin: its top just under the screen's bottom edge, in from the

@@ -1613,12 +1613,12 @@
     color: #000;
     border: 2px solid #333;
     font-family: 'GNF', monospace;
-    font-size: 14px;
+    font-size: 16px;
     line-height: 1;
     cursor: pointer;
     position: relative;
 }
-.phone-notepad-btn .notepad-btn-icon { width: 14px; height: 14px; image-rendering: pixelated; }
+.phone-notepad-btn .notepad-btn-icon { width: 16px; height: 16px; image-rendering: pixelated; }
 .phone-notepad-btn:hover { background: rgba(0, 0, 0, 0.16); }
 /* 44px touch target without changing the drawn size (as the close button does) */
 @media (max-width: 600px), (pointer: coarse) {
