@@ -1,6 +1,6 @@
-// Live proof for the m03 R1 fixes: the receptionist's badge cloned with Darkside through to the save,
-// the whiteboard hint, and the ending warning listing an open decode task. Headless, setFPS(20) after each load.
-//   SHOT_DIR=<dir> STEP=clone|hint|ending node tools/playtest/m03-r1-fix-proof.mjs <gameId> <port>
+// Live proof for the m03 R1 fixes: the receptionist's badge cloned with Darkside through to the save (STEP=clone),
+// and the Ffion "Lean in" route to the save (STEP=ffion). Headless, setFPS(20) after each load.
+//   SHOT_DIR=<dir> STEP=clone|ffion node tools/playtest/m03-r1-fix-proof.mjs <gameId> <port>
 // Drive only a game id new-game.rb printed in this run.
 import { createRequire } from 'node:module';
 const REPO_ROOT = new URL('../../', import.meta.url).pathname;

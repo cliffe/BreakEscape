@@ -1133,9 +1133,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "Keyed on the roster task (completed by the roster_decoded mapping, when CyberChef shows the decoded roster) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
-              "eventPattern": "objective_task_completed:decode_client_roster",
-              "condition": "globalVars.pc_call_done !== true",
+              "_comment": "Keyed on roster_seen (set when the roster is opened), not the optional decode task, so opening only the roster still brings the call.",
+              "eventPattern": "global_variable_changed:roster_seen",
+              "condition": "value === true && globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
               "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Message me when you've had a look." },
               "onceOnly": true

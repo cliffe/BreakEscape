@@ -96,13 +96,16 @@ test('opening the workstation with a decodeWatch sets the global once the output
     globalThis.window.inventory = { items: [{ scenarioData: { type: 'workstation',
         decodeWatch: [{ contains: 'CLIENT ROSTER', setVariable: 'roster_decoded' }] } }] };
     mod.openCryptoWorkstation();
-    await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS + 150));
-    assert.equal(events.length, 0);
-    out.text = 'Zero Day: Active Client Roster';
-    await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS + 150));
-    assert.deepEqual(events, [['global_variable_changed:roster_decoded', true]]);
-    assert.equal(globalThis.window.gameState.globalVariables.roster_decoded, true);
-    mod.closeLaptop();
+    try {
+        await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS + 150));
+        assert.equal(events.length, 0);
+        out.text = 'Zero Day: Active Client Roster';
+        await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS + 150));
+        assert.deepEqual(events, [['global_variable_changed:roster_decoded', true]]);
+        assert.equal(globalThis.window.gameState.globalVariables.roster_decoded, true);
+    } finally {
+        mod.closeLaptop();
+    }
 });
 
 test('a decode lands through writeGlobal: the open chat story gets the value, the event fires once', async () => {
@@ -120,9 +123,12 @@ test('a decode lands through writeGlobal: the open chat story gets the value, th
     w.inventory = { items: [{ scenarioData: { type: 'workstation',
         decodeWatch: [{ contains: 'NIGHT TEAM: CATALOGUE', setVariable: 'whiteboard_decoded' }] } }] };
     mod.openCryptoWorkstation();
-    await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS * 2 + 200));
-    assert.equal(w.gameState.globalVariables.whiteboard_decoded, true);
-    assert.deepEqual(chatWrites, [['whiteboard_decoded', true]]);
-    assert.deepEqual(events, [['global_variable_changed:whiteboard_decoded', true]]);
-    mod.closeLaptop();
+    try {
+        await new Promise((r) => setTimeout(r, mod.DECODE_WATCH_INTERVAL_MS * 2 + 200));
+        assert.equal(w.gameState.globalVariables.whiteboard_decoded, true);
+        assert.deepEqual(chatWrites, [['whiteboard_decoded', true]]);
+        assert.deepEqual(events, [['global_variable_changed:whiteboard_decoded', true]]);
+    } finally {
+        mod.closeLaptop();
+    }
 });
