@@ -10,6 +10,7 @@
 
 // Scenario globals (CONTRACT §5.3).
 VAR old_coyote_told = false
+VAR old_coyote_cover_given = false
 
 // Ink-local.
 VAR coyote_challenges = 0
@@ -35,11 +36,13 @@ VAR hub_quiet = false
 }
 + {coyote_cover == ""} [Lease-holder's audit. Sorensen knows I'm here.]
     ~ coyote_cover = "auditor"
+    #set_global:old_coyote_cover_given:true
     Cody Old Coyote: She didn't tell me. She doesn't tell me much. Go ahead.
     #exit_conversation
     -> back
 + {coyote_cover == ""} [Shredder contractor. It's been jamming.]
     ~ coyote_cover = "contractor"
+    #set_global:old_coyote_cover_given:true
     Cody Old Coyote: It hasn't jammed once all week. Believe me, I'd know. Go on.
     #exit_conversation
     -> back

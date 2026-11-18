@@ -25,7 +25,7 @@ import { globals, playChat, closeAll, syncNow, ttsBusy } from '../m04/_live.mjs'
 
 const screenText = (page) => page.evaluate(() => (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 400)).catch(() => '');
 
-// After the 2026-11-17 upstream merge the objectives panel (top-right) overlaps the inventory tray and covers the
+// After the 2026-11-17 upstream merge the objectives panel (top-left) overlaps the inventory tray and covers the
 // phone slot, so openInventoryItem('phone') returns item-obscured. Collapse the panel first via its own toggle.
 const collapseObjectives = async (page) => {
   await page.evaluate(() => {

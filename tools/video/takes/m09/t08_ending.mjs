@@ -58,9 +58,13 @@ export default async (page, bridge, mark) => {
   // A held ending (the warning answered "Keep going" by a stray Esc): press the panel's "End the mission".
   if (!open && await page.evaluate(() => !!(window.endingCheck && window.endingCheck.hasHeld && window.endingCheck.hasHeld()))) {
     await closeAll(bridge); await sleep(1000);
+    // The button sits in the panel's list, which a folded panel hides: open it, and fall back to endHeld
+    await page.evaluate(() => { const p = window.objectivesPanel; if (p && p.isCollapsed) p.setCollapsed(false); });
+    await sleep(500);
     const b = await page.$('.objectives-end-button');
-    if (b) await b.click().catch(() => {}); else await page.evaluate(() => window.endingCheck.endHeld());
-    mark('end-held', { how: b ? 'button' : 'endHeld' });
+    const shown = b ? await b.isVisible().catch(() => false) : false;
+    if (shown) await b.click({ timeout: 5000 }).catch(() => {}); else await page.evaluate(() => window.endingCheck.endHeld());
+    mark('end-held', { how: shown ? 'button' : 'endHeld' });
     for (let i = 0; i < 40 && !open; i++) {
       if (!pressed && await page.$('#ending-check-end')) { await sleep(1500); await page.click('#ending-check-end').catch(() => {}); pressed = true; mark('ending-check-end'); }
       open = await debriefOpen(bridge); if (!open) await sleep(500);
