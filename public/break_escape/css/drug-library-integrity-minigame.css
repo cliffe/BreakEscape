@@ -560,7 +560,7 @@
 
 /* The shared X, in the pop-up's header row (not floated over the title) */
 .dli-modal-head .dli-modal-close {
-  position: static;
+  position: relative;   /* anchors the X's hit area */
   flex: none;
 }
 
