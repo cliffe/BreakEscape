@@ -388,9 +388,9 @@ test('R14: a retry that gets through is a normal conclusion; a refusal stays a r
         if (n++ === 0) throw new Error('blip');
         return { ok: true, json: async () => ({ success: true }) };
     } });
-    assert.deepEqual(r, { concluded: true, missing: [], offline: false });
+    assert.deepEqual(r, { concluded: true, missing: [], offline: false, score: null });
     r = await conclude.concludeWithRetry(7, { ...noWait, fetch: async () => ({ ok: true, json: async () => ({ success: false, missing: ['submit_flag_2'] }) }) });
-    assert.deepEqual(r, { concluded: false, missing: ['submit_flag_2'], offline: false });
+    assert.deepEqual(r, { concluded: false, missing: ['submit_flag_2'], offline: false, score: null });
 });
 
 test('R14: the offline ending says not yet recorded, never the plain MISSION COMPLETE', () => {

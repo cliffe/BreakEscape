@@ -91,7 +91,7 @@ export const POWDERS = {
  * - `minCoverage`: coverage (0..1) needed before Lift unlocks.
  * - `residueStrength`: ridge density multiplier for the latent print (0..1; hard is 0.9).
  * - `candidates`: reference cards shown in the compare step (including the correct one).
- * - `decoySamePattern`: 'never' (decoys use a different pattern), 'one' (exactly one decoy shares it), 'all'.
+ * - `decoySamePattern`: 'never' (decoys use a different pattern, unless the scenario forces one with a { name, pattern } entry), 'one' (exactly one decoy shares it), 'all'.
  * - `findHintVisible`: a faint smudge shows in the find step without the torch.
  * - `partial`: 'never' | 'maybe' (about half the surfaces) | 'always' the print is cut by a straight edge.
  * - `sheenScale`: multiplier for the torch sheen's visibility radius.
@@ -102,8 +102,9 @@ export const POWDERS = {
  *   marks:number}>}
  */
 export const DIFFICULTY = {
-    // easy: the decoy has a different pattern class, so the compare is by class; near-identical
-    // whorls on easy were not a fair comparison (m08 E16). Medium and hard keep the minutiae test.
+    // easy: decoys have a different pattern class by default, so the compare is by class; near-identical
+    // whorls on easy were not a fair comparison (m08 E16). A scenario may force a same-class decoy with a
+    // { name, pattern } entry in fingerprintCandidates (m05's mug does). Medium and hard keep the minutiae test.
     easy: { pfog: 7, minCoverage: 0.40, residueStrength: 1.0, candidates: 2, decoySamePattern: 'never', findHintVisible: true, partial: 'never', sheenScale: 1.0, marks: 3 },
     medium: { pfog: 6, minCoverage: 0.45, residueStrength: 1.0, candidates: 3, decoySamePattern: 'one', findHintVisible: false, partial: 'maybe', sheenScale: 1.0, marks: 3 },
     hard: { pfog: 5, minCoverage: 0.55, residueStrength: 0.9, candidates: 3, decoySamePattern: 'all', findHintVisible: false, partial: 'always', sheenScale: 0.7, marks: 2 }

@@ -333,6 +333,14 @@ That should worry you more than the pitch. He understands the cost. He decided h
 }
 The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
 
+// Blind m05 #4: the call opening, the authorisation and the two follow-ups arrived as one run. A
+// one-option beat after the authorisation lets it land; the player taps on for the rest.
++ [Go on.]
+    -> topic_architect_more
+
+=== topic_architect_more ===
+// lint: call-knot
+#speaker:agent_0x99
 No rogue cell improvised that. Someone priced human lives and approved the invoice.
 
 // Blind run A (2026-10-16, M1): HaX doesn't name Torres before the player
