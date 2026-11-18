@@ -167,3 +167,22 @@ test('an empty nav row is hidden by CSS', () => {
     const css = readFileSync(join(js, '../css/notes.css'), 'utf8');
     assert.match(css, /\.notes-minigame-nav-container:empty\s*\{\s*display:\s*none/);
 });
+
+test('searchNotes("") after a no-match re-enables both nav buttons', () => {
+    const m = open({ title: 'Notepad', noteContent: '', item: { scenarioData: { type: 'notepad', name: 'Notepad' } } }, mk(6));
+    const [prev, next] = m.container.querySelectorAll('.notes-minigame-nav-button');
+    m.searchNotes('zzz');
+    assert.equal(prev.disabled, true);
+    assert.equal(next.disabled, true);
+    m.searchNotes('');
+    assert.equal(prev.disabled, false);
+    assert.equal(next.disabled, false);
+});
+
+test('a filed page with no observations shows no placeholder, pencil or edit title', () => {
+    const item = { scenarioData: { type: 'text_file', name: 'Filed page', text: 'filed body' } };
+    const m = open({ title: 'Filed page', item, noteContent: 'filed body', observationText: '', autoAddToNotes: false, navigateToNote: null }, mk(3));
+    assert.equal(m.container.querySelector('.notes-minigame-edit-btn'), null);
+    assert.ok(!/Click edit to add/.test(m.container.textContent));
+    assert.equal(m.container.querySelector('[title^="Click to"]'), null);
+});

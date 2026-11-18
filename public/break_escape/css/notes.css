@@ -295,7 +295,7 @@
     transition: background-color 0.3s ease;
 }
 
-.notes-minigame-nav-button:hover {
+.notes-minigame-nav-button:not(:disabled):hover {
     background: #7f8c8d;
 }
 

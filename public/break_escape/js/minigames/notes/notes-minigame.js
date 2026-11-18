@@ -165,7 +165,7 @@ export class NotesMinigame extends MinigameScene {
                     setObservationText(observationDiv, this.observationText);
                     observationDiv.dataset.raw = this.observationText;
                     if (!this.showsFiledPage) observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
-                    observationDiv.title = 'Click to edit observations';
+                    if (!this.showsFiledPage) observationDiv.title = 'Click to edit observations';
                     if (!this.showsFiledPage) observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
 
                     // Add edit button
@@ -185,7 +185,7 @@ export class NotesMinigame extends MinigameScene {
                     // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
                     if (!this.showsFiledPage) observationContainer.appendChild(editBtn);
                     contentArea.appendChild(observationContainer);
-                } else {
+                } else if (!this.showsFiledPage) {
                     // Add empty observation area with edit button
                     const observationContainer = document.createElement('div');
                     observationContainer.className = 'notes-minigame-observation-container';
@@ -193,9 +193,9 @@ export class NotesMinigame extends MinigameScene {
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation empty';
                     setObservationText(observationDiv, '');
-                    if (!this.showsFiledPage) observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
+                    observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to add observations';
-                    if (!this.showsFiledPage) observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
+                    observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
 
                     // Add edit button
                     const editBtn = document.createElement('button');

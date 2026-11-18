@@ -1013,7 +1013,9 @@
 }
 
 [data-ui-theme] .player-preferences-modal-content .btn:disabled,
-[data-ui-theme] #music-widget-panel .mw-btn:disabled {
+[data-ui-theme] #music-widget-panel .mw-btn:disabled,
+[data-ui-theme] .notes-minigame-nav-button:disabled,
+[data-ui-theme] .notes-minigame-nav-button:disabled:hover {
   filter: grayscale(1) brightness(0.6);
   cursor: not-allowed;
   transform: none;
