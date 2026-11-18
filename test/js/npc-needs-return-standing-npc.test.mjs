@@ -1,6 +1,6 @@
 // A returning needs NPC steps round a standing NPC that fills an aisle the clearance ring closes
 // (m08 game 9155: Agnieszka stalled for over a minute 22 px from Vector), and is never planned
-// into the local avoidance lane of a standing NPC (m08 games 9336, 9356: DIAGNOSIS_M08). Real
+// into the local avoidance lane of a standing NPC (m08 games 9336, 9356: docs/achitechture/reviews/return-stall/DIAGNOSIS_M08.md). Real
 // EasyStar and the real pathfinding manager; the walker's body is stepped along the path with the
 // engine's 8 px waypoint advance against the standing body.
 // Run with: node test/js/npc-needs-return-standing-npc.test.mjs
@@ -103,6 +103,22 @@ function follow(path, from, standing, w = 20, h = 10) {
     return { pos, ticks, stalled };
 }
 
+/** Step as follow() does but never stop: the deepest overlap (the smaller axis) with the standing body. */
+function deepestOverlap(path, from, standing) {
+    const pos = { ...from };
+    let worst = 0;
+    for (let i = 0; i < path.length; i++) {
+        const wp = path[i], last = i === path.length - 1;
+        for (let t = 0; t < 5000 && Math.hypot(wp.x - pos.x, wp.y - pos.y) >= (last ? 1 : 8); t++) {
+            const d = Math.hypot(wp.x - pos.x, wp.y - pos.y), k = Math.min(2, d) / d;
+            pos.x += (wp.x - pos.x) * k; pos.y += (wp.y - pos.y) * k;
+            const a = box(pos.x, pos.y), g = standing.body;
+            if (overlaps(a, g)) worst = Math.max(worst, Math.min(Math.min(a.right, g.right) - Math.max(a.left, g.left), Math.min(a.bottom, g.bottom) - Math.max(a.top, g.top)));
+        }
+    }
+    return worst;
+}
+
 /** Plan a stalled walk home along an aisle `h` cells tall past a standing NPC, and follow it. */
 async function walkHome(h, { standingY = null, startX = 45 * STEP, chairs = [], me = [20, 10], guard = [20, 10] } = {}) {
     const pm = aisle(h);
@@ -168,19 +184,30 @@ test('R1 m1: starting 1 px off the standing NPC, and other body sizes', async ()
     }
 });
 
-// Open, by design: a walker exactly touching the guard (centres 20 px apart) in a 40 px aisle. The
+// Bounded limit: a walker exactly touching the guard (centres 20 px apart) in a 40 px aisle. The
 // path steps off to (268,188) then (260,196); the 8 px waypoint advance turns toward (252,196) at
-// about (262,189), where the box still overlaps the guard's corner by a pixel or two. Fixing it
-// means a smaller advance radius on rerouted walks (orbit risk at speed, touches every needs walk)
-// or a wider tight margin (loses the 40 px aisle). Physics slides off a graze; see
-// tmp/rs/REVIEW_R1_OUTCOMES.md.
-test('R1 m1: starting exactly touching the standing NPC', { todo: 'design decision: waypoint advance radius or tight margin (tmp/rs/REVIEW_R1_OUTCOMES.md)' }, async () => {
-    const r = await walkHome(5, { startX: 30 * STEP + 20 });
-    assert.ok(r.path && r.path.length > 0, 'a path');
-    assert.equal(r.stalled, false, `no step into the standing body (stopped at ${Math.round(r.pos.x)},${Math.round(r.pos.y)})`);
+// about (262,189), where the box still overlaps the guard's corner along one axis. The depth of the
+// overlap (the smaller axis) is 0.02 px at 2 px per tick and about 0.3 px at worst, and
+// nearestBlockerOnPath finds no blocker on the path, so local avoidance does not stop the walker
+// either. Arcade separation resolves a graze that size in one step. A smaller advance on rerouted
+// walks or a wider tight margin would cost more (every rerouted walk, or the 40 px aisle), so this
+// test bounds it: a change that makes it worse fails. See
+// docs/achitechture/reviews/return-stall/REVIEW_R2_OUTCOMES.md.
+test('R1 m1: starting exactly touching the standing NPC: overlap at most 1 px deep, no lane stop', async () => {
+    const pm = aisle(5);
+    const cy = 22.5 * STEP;
+    const startX = 30 * STEP + 20;
+    const self = { body: box(startX, cy) };
+    const standing = { body: box(30 * STEP, cy) };
+    const b = walker(pm, self, [standing]);
+    const path = await plan(b, pm, self.body.center, { x: 10 * STEP, y: cy });
+    assert.ok(path && path.length > 0, 'a path');
+    assert.equal(inLane(self.body.center, path, standing), null, 'no lane stop on this path');
+    const worst = deepestOverlap(path, self.body.center, standing);
+    assert.ok(worst <= 1, `deepest overlap ${worst.toFixed(2)} px`);
 });
 
-// m08, games 9336 and 9356 (DIAGNOSIS_M08.md): Agnieszka's walk home stopped at body (505.5,162.7),
+// m08, games 9336 and 9356 (reviews/return-stall/DIAGNOSIS_M08.md): Agnieszka's walk home stopped at body (505.5,162.7),
 // 11 px below Vector (standing, body centre (486.4,152.7)). Each re-plan and detour from there gave the
 // same path along y 164, inside local avoidance's 13 px lane round Vector, because the ring tier left
 // ring cells open within 2 cells of the start. 3 s re-issues, then return_stuck and a 15 s back-off.
@@ -253,4 +280,21 @@ test('R1 m4: the tight tier keeps the clearance ring round the player', async ()
     window.player = null;
     assert.equal(b._planTier, 'plain', 'no held-aware path past a player in a 40 px aisle: the plain path and the pass rules');
     assert.ok(path && path.length > 0);
+});
+
+test('R2 m1: a standing NPC 20 px east of the home with a chair 14 px west: a held-aware path, outside his lane', async () => {
+    // Open floor; home (84,180); a held chair (16x12) 14 px west; a standing NPC touching the walker's box at home.
+    const pm = floor([[2, 10, 57, 35]]);
+    const home = { x: 84, y: 180 };
+    const me = { body: box(200, 180) };
+    const guard = { body: box(104, 180) };
+    const b = walker(pm, me, [guard], [box(70, 180, 16, 12, true)]);
+    const path = await plan(b, pm, me.body.center, home);
+    assert.ok(path && path.length > 0, 'a path home');
+    assert.notEqual(b._planTier, 'plain', 'the ring or tight search finds it, not the plain path');
+    assert.equal(inLane(me.body.center, path, guard), null, `the path keeps ${LANE} px clear of him: ${JSON.stringify(path.slice(-4))}`);
+    // Touching at home, so the 8 px advance on the last turn grazes his corner (3.2 px deep at 2 px
+    // per tick, inside the 32 px near-arrival radius and not on the lane); bounded, not zero.
+    const worst = deepestOverlap(path, me.body.center, guard);
+    assert.ok(worst <= 4, `deepest overlap ${worst.toFixed(2)} px`);
 });

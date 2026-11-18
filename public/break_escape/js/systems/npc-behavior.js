@@ -2036,11 +2036,11 @@ export class NPCBehavior {
         const rooms = this._moveOwner === 'needs' ? this._moveAvoidRooms : null;
         // A needs walk first routes round held bodies too (chairs, seated staff); when their
         // clearance rings close the only aisle that search finds nothing, so it tries the tight
-        // search (exact body reach, a standing NPC in a narrow aisle), then the plain detour round
-        // the moving bodies, before giving up (code review R1, M1; return stall R1, m3)
+        // search (exact body reach, a standing NPC in a narrow aisle), then the 'moving' detour round
+        // the moving bodies only (not the plain path, which avoids none), before giving up (code review R1, M1; return stall R1, m3)
         const held = this._moveOwner === 'needs';
         const search = (tier) => {
-            const includeHeld = tier !== 'plain';
+            const includeHeld = tier !== 'moving';
             const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld } };
             if (tier !== 'tight' && rooms?.length) opts.avoidRooms = rooms;
             pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
@@ -2057,14 +2057,14 @@ export class NPCBehavior {
                 } else if (tier === 'held') {
                     search('tight');           // the clearance rings close the way: the exact reach
                 } else if (tier === 'tight') {
-                    search('plain');           // nothing held-aware: the plain detour
+                    search('moving');          // nothing held-aware: the detour round the moving bodies only
                 } else {
                     a.pending = false;
                     a.gaveUp = true;           // nothing routes round the blocker
                 }
             }, false, opts);
         };
-        search(held ? 'held' : 'plain');
+        search(held ? 'held' : 'moving');
     }
 
     /** Options for the tight held-aware search (npc-pathfinding.js), with the needs room leash. */

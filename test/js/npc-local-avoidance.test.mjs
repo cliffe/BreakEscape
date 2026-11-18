@@ -384,7 +384,7 @@ test('needs errand: a player far from the target (mid-path) is still a normal yi
 
 // ── Code review R1 (OFFICE_LIFE_STUCK_RETURN_REVIEW_R1.md) ───────────────────────
 
-test('M1: a needs detour that finds nothing round held bodies tries the tight detour, then the plain detour, before giving up', () => {
+test('M1: a needs detour that finds nothing round held bodies tries the tight detour, then the moving-bodies detour, before giving up', () => {
     window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
     window.rooms = {};
     const detour = [{ x: 50, y: 60 }, { x: 400, y: 0 }];
@@ -394,7 +394,7 @@ test('M1: a needs detour that finds nothing round held bodies tries the tight de
         findWorldPath: (sx, sy, ex, ey, cb, _w, opts) => {
             const held = !!opts?.avoidDynamic?.includeHeld;
             const tight = !!opts?.avoidDynamic?.tight;
-            seen.push(tight ? 'tight' : held ? 'held' : 'plain');
+            seen.push(tight ? 'tight' : held ? 'held' : 'moving');
             cb(held ? null : detour);
         } };
     const b = walker({ busy: true, pathfinder: pf });
@@ -402,8 +402,8 @@ test('M1: a needs detour that finds nothing round held bodies tries the tight de
     let t = 100000;
     quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
     t += 700; quiet(() => b._handleBlockerAhead(t, { x: 400, y: 0 }));
-    assert.deepEqual(seen, ['held', 'tight', 'plain'], 'held-aware first, then tight, then the plain detour');
-    assert.equal(b.currentPath, detour, 'the plain detour is adopted');
+    assert.deepEqual(seen, ['held', 'tight', 'moving'], 'held-aware first, then tight, then the moving-bodies detour');
+    assert.equal(b.currentPath, detour, 'the moving-bodies detour is adopted');
     assert.equal(b._avoid, null, 'and it did not give up');
 });
 

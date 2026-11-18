@@ -525,11 +525,24 @@ export class NPCPathfindingManager {
         // standing NPC keeps its whole ring: local avoidance (_handleBlockerAhead) stops for any
         // movable NPC within AVOID_LANE_HALF_PX (13) of the path, and a ring opened beside one put
         // the path 11 px from Vector, so every re-plan and detour gave the walker the same path it
-        // stopped on (m08, DIAGNOSIS_M08: return_stuck at (506,164)).
+        // stopped on (m08, docs/achitechture/reviews/return-stall/DIAGNOSIS_M08.md: return_stuck at (506,164)).
         const END_RING_CELLS = 2;
-        const nearEnd = (cx, cy) => includeHeld && (
-            (Math.abs(cx - skipCX) <= END_RING_CELLS && Math.abs(cy - skipCY) <= END_RING_CELLS) ||
-            (endCX >= 0 && Math.abs(cx - endCX) <= END_RING_CELLS && Math.abs(cy - endCY) <= END_RING_CELLS));
+        const nearStart = (cx, cy) => includeHeld && Math.abs(cx - skipCX) <= END_RING_CELLS && Math.abs(cy - skipCY) <= END_RING_CELLS;
+        const nearGoal = (cx, cy) => includeHeld && endCX >= 0 && Math.abs(cx - endCX) <= END_RING_CELLS && Math.abs(cy - endCY) <= END_RING_CELLS;
+        const nearEnd = (cx, cy) => nearStart(cx, cy) || nearGoal(cx, cy);
+        // Near the goal only (never the start, the m08 case) a standing NPC gets the lane rule
+        // instead of its whole ring: a ring cell stays avoided only when the walker's box there
+        // would overlap his, or the cell is within the lane (AVOID_LANE_HALF_PX 13, plus 1) of his
+        // centre on both axes. A standing NPC 20 px from a home with a chair on the far side then
+        // no longer closes the home's neighbours and forces the plain path (return stall R2, m1);
+        // the near-arrival timer (32 px) ends the walk if the lane check stops it close in.
+        const LANE_PX = 14;
+        const standingRing = (body, wx, wy) => {
+            const hw = (exceptSprite?.body?.width || 20) / 2, hh = (exceptSprite?.body?.height || 10) / 2;
+            const dx = Math.abs(wx - (body.left + body.right) / 2), dy = Math.abs(wy - (body.top + body.bottom) / 2);
+            const overlap = dx < (body.right - body.left) / 2 + hw && dy < (body.bottom - body.top) / 2 + hh;
+            return overlap || (dx <= LANE_PX && dy <= LANE_PX);
+        };
         // soft: the body's ring (or tight reach) may open near the start and goal. keepRing: the
         // tight tier still rings this body.
         const avoidBody = (body, npc = false, soft = true, keepRing = false) => {
@@ -547,6 +560,8 @@ export class NPCPathfindingManager {
                     if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
                     const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
                     if (ring && soft && nearEnd(cx, cy)) continue;
+                    if (ring && !soft && npc && nearGoal(cx, cy) && !nearStart(cx, cy) &&
+                        !standingRing(body, minX + cx * step + step / 2, minY + cy * step + step / 2)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }
@@ -576,7 +591,9 @@ export class NPCPathfindingManager {
                     if ((cx === skipCX && cy === skipCY) || (cx === endCX && cy === endCY)) continue;
                     const wx = minX + cx * step + step / 2, wy = minY + cy * step + step / 2;
                     if (Math.abs(wx - cxMid) >= reachX || Math.abs(wy - cyMid) >= reachY) continue;
-                    if (soft && (cx < bx1 || cx > bx2 || cy < by1 || cy > by2) && nearEnd(cx, cy)) continue;
+                    const ring = cx < bx1 || cx > bx2 || cy < by1 || cy > by2;
+                    if (soft && ring && nearEnd(cx, cy)) continue;
+                    if (!soft && ring && nearGoal(cx, cy) && !nearStart(cx, cy) && !standingRing(body, wx, wy)) continue;
                     if (this.worldGrid[cy]?.[cx] === 0) this.worldPathfinder.avoidAdditionalPoint(cx, cy);
                 }
             }

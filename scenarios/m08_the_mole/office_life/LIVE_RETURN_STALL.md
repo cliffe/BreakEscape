@@ -1,6 +1,6 @@
 # Live proof on m08: Agnieszka's return trip, new engine (f401b9ee0 and later)
 
-Added 2026-11-18, branch fix/needs-return-npc-stall at 82466fa7d (engine as in f401b9ee0). Keyless server on :3092 from this worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Three fresh games made with new-game.rb, audit read in play (setup2.sh route), then each trip started by setting thirst to 5 on julian_sallow and agnieszka_duda, once she was home and idle plus 3 s. No globals set, no game row edited. Driver: tmp/rs/trip2.js and runtrip2.sh (trip.js plus Vector's body centre and the tier record `_planTier/_detourTier` sampled while she returns).
+Added 2026-11-18, branch fix/needs-return-npc-stall at 82466fa7d (engine as in f401b9ee0). Keyless server on :3092 from this worktree, headless, throttleFps(20), fixed steps on, TTS aborted by pathname, Mission Brief closed. Three fresh games made with new-game.rb, audit read in play (setup2.sh route), then each trip started by setting thirst to 5 on julian_sallow and agnieszka_duda, once she was home and idle plus 3 s. No globals set, no game row edited. Driver: docs/achitechture/reviews/return-stall/drivers/trip2.js and runtrip2.sh (trip.js plus Vector's body centre and the tier record `_planTier/_detourTier` sampled while she returns).
 
 Why Vector's height matters (DIAGNOSIS_M08.md): the old return leg ran along body y 164, so it stalled only when Vector's body centre was at y 151 or more (within the 13 px lane). Body y 140 to 145 never stalled. Vector's body stood at y 153.6 at the start of games 9400 and 9404 with no help, and gets shoved up by her trips, so later trips cover the low-y case too. On game 9411 he was placed through the test bridge (`sprite.body.reset`, body centre x 486.4, y 152.7, 157 and 150) so the stalling height was exercised on purpose; those three rows say "placed".
 
@@ -20,7 +20,7 @@ Why Vector's height matters (DIAGNOSIS_M08.md): the old return leg ran along bod
 
 11 trips, 11 home, 0 return_stuck, 0 return_abandoned. Eight trips began with Vector's body at y 151 or more (the case that stalled before: 4 of 9 trips on the earlier fixed engine, all about 30 s); six of them natural, two placed. No tight tier was needed on this layout: the ring tier, with standing NPCs no longer given the near-end softening, plans clear of his lane.
 
-Longest hold while returning: game 9411 trip 1 (Vector at the stalling height 152.7), held about 6 s at sprite (506,132) with two return_resumed, then home at 7.6 s. That is the earlier hold spot (about (506,127) to (510,125)) but it cleared on the next re-plan; the earlier engine held there for 12 s, was flagged return_stuck, backed off 15 s and took 29 to 32 s. No other trip held longer than 3 s. Samples for every trip are in tmp/rs/trips2.jsonl (field `samples`).
+Longest hold while returning: game 9411 trip 1 (Vector at the stalling height 152.7), held about 6 s at sprite (506,132) with two return_resumed, then home at 7.6 s. That is the earlier hold spot (about (506,127) to (510,125)) but it cleared on the next re-plan; the earlier engine held there for 12 s, was flagged return_stuck, backed off 15 s and took 29 to 32 s. No other trip held longer than 3 s. Samples for every trip are in a scratch trips2.jsonl (not kept) (field `samples`).
 
 Not shown: an unfixed contrast in this session. The earlier rows below are that contrast (1 of 9 unfixed and 4 of 9 stalled on the first fix; the diagnosis explains the spread by Vector's height).
 
@@ -61,7 +61,7 @@ Totals: unfixed 9 trips, 9 home, 1 stalled (return_stuck), 0 abandon. Fixed 9 tr
 
 ## Path samples every 1 s (the stalled trips)
 
-Format: seconds from trip start, mode, sprite centre. The full samples for all 18 trips are in tmp/rs/trips.jsonl (field `samples`).
+Format: seconds from trip start, mode, sprite centre. The full samples for all 18 trips are in a scratch trips.jsonl (field `samples`, not kept in the repo).
 
 ### unfixed game 9298
 
@@ -107,4 +107,4 @@ Events: level_set, urgent, job_start, windup, arrival, using, used, return_resum
 No contrast was shown. The unfixed engine stalled once in 9 trips and never abandoned. The fixed engine got home 9 of 9 with no abandon loop, but stalled with a return_stuck in 4 of 9, so the fix is not shown to cure the m08 aisle stall. The synthetic test_npc_needs aisle proof and unit tests stand; this live m08 run neither confirms nor refutes them.
 
 Games used: 9291, 9296, 9298 (unfixed); 9305, 9310, 9320 (fixed).
-Driver files: tmp/rs/game.sh, setup2.sh, runtrip.sh, trip.js, pt/playtest-session.js (copy with an OLD=1 page.route hook), trips.jsonl.
+Driver files: docs/achitechture/reviews/return-stall/drivers/ (game2.sh, setup2.sh, runtrip2.sh, trip2.js, rundiag.sh, diag.js), pt/playtest-session.js (copy with an OLD=1 page.route hook), trips.jsonl.
