@@ -753,8 +753,9 @@ html .minigame-container.minigame-console {
     color: var(--ui-accent, #ffcc44);
     text-align: left;
     text-transform: none;
-    /* One line, never wrapped: a long title ends in an ellipsis and the bar's title
-       attribute holds the full text (Fix round 1 M2) */
+    /* Above 600px: one line, a long title ends in an ellipsis and the bar's title attribute
+       holds the full text. At 600px and below it wraps to up to three lines (see the
+       max-width: 600px block below). */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -870,6 +871,24 @@ html .minigame-container .console-window > .console-body > * {
     }
     .console-window .console-subtitle {
         display: none;
+    }
+    /* One look for every console scene: whole words wrap to up to three lines beside the X
+       instead of ending in an ellipsis. The 2px on the right is all the X needs (its hit area
+       reaches 14px minus the border past the X; the bar's gap here is 8px). Pixel font stays
+       16px on a 24px line. */
+    .console-titles {
+        padding-right: 2px;
+    }
+    .console-window .console-title {
+        white-space: normal;
+        overflow-wrap: break-word;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+        text-overflow: clip;
+        line-height: 24px;
     }
     /* An essential subtitle (a scene sets static consoleSubtitleEssential) stays, on a
        second line of the bar: one line with an ellipsis */

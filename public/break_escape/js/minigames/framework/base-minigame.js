@@ -218,8 +218,9 @@ export class MinigameScene {
         if (sub.clientWidth < 48) sub.classList.add('console-subtitle-nowidth');
     }
 
-    // The title is one line with an ellipsis, and on short or narrow windows the subtitle
-    // shares that line or is hidden, so the bar's title attribute carries the full text
+    // One line with an ellipsis above 600px, up to three wrapped lines at 600px and below. The
+    // subtitle can share the line or be hidden, so the bar's title attribute always carries the
+    // full text (set whenever there is any, whichever axis the title is cut on).
     syncConsoleTitleTip() {
         const holder = this.consoleTitleEl?.parentElement;
         if (!holder) return;

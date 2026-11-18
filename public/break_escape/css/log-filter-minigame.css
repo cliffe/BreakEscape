@@ -883,17 +883,3 @@
         min-height: 300px;
     }
 }
-
-/* Phones: the console title wraps to two lines beside the X instead of ending in an ellipsis.
-   The 8px on the right keeps the text clear of the X's 44px hit area. Pixel font stays 16px. */
-.minigame-container[data-minigame="log-filter"] .console-titles {
-    padding-right: 8px;
-}
-.minigame-container[data-minigame="log-filter"] .console-window .console-title {
-    white-space: normal;
-    overflow-wrap: anywhere;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-}

@@ -14,29 +14,60 @@ const block = (s, sel) => {
     return s.slice(i, s.indexOf('}', i));
 };
 
-test('episode-runner step tabs wrap instead of scrolling and clipping (kiosk at 390)', () => {
-    const r = block(read('episode-runner.css'), '.minigame-container[data-minigame="episode-runner"] .aw-steps');
-    assert.match(r, /flex-wrap: wrap/);
-    assert.match(r, /overflow-x: visible/);
-    // the shared strip is untouched for the other steppers
-    assert.match(read('awareness-skin.css'), /@media \(max-width: 767px\) \{\s*\.aw-steps \{ flex-wrap: nowrap; overflow-x: auto; \}/);
+test('steppers wrap and keep every step: one shared rule, no scoped duplicate, no nowrap', () => {
+    const skin = read('awareness-skin.css');
+    assert.match(block(skin, '.aw-steps'), /flex-wrap: wrap/);
+    assert.doesNotMatch(skin, /\.aw-steps \{ flex-wrap: nowrap/);
+    assert.doesNotMatch(read('episode-runner.css'), /\.aw-steps \{ flex-wrap/);
+    assert.match(skin, /Revised 2026-11-18 \(AC1 UI sweep\): steppers wrap at narrow widths so no step is hidden\./);
+    const tri = read('inbox-triage-minigame.css');
+    assert.doesNotMatch(tri, /\.tri-steps \{[^}]*nowrap/);
+    assert.match(tri, /\.tri-steps \{ flex: 1 1 100%; flex-wrap: wrap; \}/);
+    assert.doesNotMatch(read('landing-page-builder-minigame.css'), /\.lpb-steps \{ flex-wrap: nowrap/);
 });
 
-for (const [file, key] of [['drug-library-integrity-minigame.css', 'drug-library-integrity'], ['log-filter-minigame.css', 'log-filter']]) {
-    test(`${key} console title wraps (two lines max) and stays clear of the X`, () => {
-        const s = read(file);
-        const t = block(s, `.minigame-container[data-minigame="${key}"] .console-window .console-title`);
-        assert.match(t, /white-space: normal/);
-        assert.match(t, /-webkit-line-clamp: 2/);
-        assert.doesNotMatch(t, /font-size/);   // stays the framework's 16px pixel size
-        assert.match(block(s, `.minigame-container[data-minigame="${key}"] .console-titles`), /padding-right: 8px/);
-    });
-}
+test('current step has a thicker bottom border, not colour alone, with padding compensating', () => {
+    assert.match(read('awareness-skin.css'), /\.aw-step-current \{[^}]*border-bottom-width: 4px; padding-bottom: 1px/);
+    assert.match(read('inbox-triage-minigame.css'), /\.tri-step\.current \{ border-bottom-width: 4px; padding-bottom: 2px; \}/);
+    assert.match(read('landing-page-builder-minigame.css'), /\.lpb-step\.is-current \{[^}]*border-bottom-width: 4px;\s*padding-bottom: 2px/);
+});
+
+test('console titles: one framework rule, 3 lines at 600px and below, per-scene copies gone', () => {
+    const fw = read('minigames-framework.css');
+    const m = fw.match(/@media \(max-width: 600px\) \{[\s\S]*?\n\}/g).find((x) => /-webkit-line-clamp: 3/.test(x));
+    assert.ok(m, 'clamp rule sits in a max-width: 600px block');
+    const t = block(m, '.console-window .console-title');
+    assert.match(t, /white-space: normal/);
+    assert.match(t, /overflow-wrap: break-word/);
+    assert.doesNotMatch(t, /anywhere/);
+    assert.match(t, /line-clamp: 3/);
+    assert.match(t, /line-height: 24px/);
+    assert.doesNotMatch(t, /font-size/);
+    assert.match(block(m, '.console-titles'), /padding-right: 2px/);
+    // the base rule above 600px stays one line
+    assert.match(block(fw, '.console-window .console-title'), /white-space: nowrap/);
+    for (const f of ['drug-library-integrity-minigame.css', 'log-filter-minigame.css']) {
+        assert.doesNotMatch(read(f), /\.console-title\b/, `${f} has no per-scene title rule`);
+        assert.doesNotMatch(read(f), /\.console-titles\b/);
+    }
+});
+
+test('DLI CSS has no blue left; source button is green with focus rings', () => {
+    const d = read('drug-library-integrity-minigame.css');
+    assert.doesNotMatch(d, /#1f6feb|#58a6ff/i);
+    const r = block(d, '.dli-source-btn');
+    for (const re of [/padding: 5px 12px/, /border: 2px solid #33cc66/, /border-radius: 0/, /background: #0f2d1a/, /color: #33cc66/, /VT323/, /font-size: 16px/, /white-space: nowrap/]) assert.match(r, re);
+    assert.match(d, /\.dli-source-btn:hover:not\(:disabled\) \{ background: #1a4a2a/);
+    assert.match(d, /\.dli-modal-confirm-btn:hover \{ background: #1a4a2a/);
+    assert.match(d, /\.dli-restore-btn-active:hover \{ background: #1a4a2a/);
+    assert.match(d, /\.dli-modal-confirm-btn:focus-visible,\s*\.dli-source-btn:focus-visible,\s*\.dli-restore-btn:focus-visible \{\s*outline: 2px solid #33cc66;\s*outline-offset: 2px;/);
+    assert.match(d, /\.dli-source-btn:disabled/);
+});
 
 test('DLI source-modal confirm uses the pixel-palette confirm look, not blue', () => {
     const r = block(read('drug-library-integrity-minigame.css'), '.dli-modal-confirm-btn');
     assert.doesNotMatch(r, /#1f6feb|#388bfd|border: none/i);
     assert.match(r, /border: 2px solid #33cc66/);
     assert.match(r, /border-radius: 0/);
-    assert.doesNotMatch(read('drug-library-integrity-minigame.css'), /\.dli-modal-confirm-btn:hover \{ background: #388bfd/);
+    
 });
