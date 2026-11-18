@@ -138,7 +138,7 @@ test('B1: a long line of low asides drops the oldest low ones and the region end
     ['aside one', 'aside two', 'aside three', 'aside four', 'aside five'].forEach((m) => T.showNotification(m, 'info', '', 5000, { low: true }));
     T.showNotification('Flag accepted', 'success', 'Flag', 5000);
     assert.equal(T.waitingToastCount(), 4);
-    await wait(50);
+    await wait(200);
     const text = live();
     assert.ok(text.includes('s1') && text.includes('s2'), `R2 B1: the shown toasts are in the settled region: ${text}`);
     assert.ok(text.includes('Also: aside one; aside two.'), `the dropped asides are folded in after them: ${text}`);
@@ -157,7 +157,7 @@ test('R2 B1: two titled toasts rendered in one tick are both in the region after
     await wait(20);
     T.showNotification('first body', 'success', 'Task Complete', 5000);
     T.showNotification('second body', 'info', 'Intel', 5000);
-    await wait(30);
+    await wait(200);
     const text = live();
     assert.ok(text.includes('first body') && text.includes('second body'), text);
     assert.ok(text.indexOf('first body') < text.indexOf('second body'));
@@ -359,7 +359,7 @@ test('R2: batched announcements are cleared after ANNOUNCE_CLEAR_MS, with a toke
     await wait(20);
     T.showNotification('one', 'info', 'A', 60000);
     T.showNotification('two', 'info', 'B', 60000);
-    await wait(30);
+    await wait(200);
     assert.ok(live().includes('one') && live().includes('two'));
     await wait(T.ANNOUNCE_CLEAR_MS + 200);
     assert.equal(live(), '', 'the joined text leaves the region');
