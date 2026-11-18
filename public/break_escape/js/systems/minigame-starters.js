@@ -142,8 +142,24 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         itemObservations: itemObservations,
         canSwitchToKeyMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
-            item.scenarioData.type === 'key'
+            (item.scenarioData.type === 'key' ||
+             (item.scenarioData.type === 'key_ring' && item.scenarioData.allKeys?.length > 0))
         ),
+        // Held keys plus a lockpick: "Switch to Key Mode" shows, so the way back to
+        // picking must work and pass the same watcher gate as the first pick.
+        canSwitchToPickMode: window.inventory.items.some(item =>
+            item && item.scenarioData &&
+            item.scenarioData.type === 'lockpick'
+        ),
+        beforeSwitchToPickMode: () => !!catchLockpickInView(lockable, {
+            beforeEmit: () => {
+                const mg = window.MinigameFramework?.currentMinigame;
+                if (mg) {
+                    mg.gameResult = { caughtLockpicking: true };
+                    mg.complete(false);
+                }
+            }
+        }),
         availableKeys: (() => {
             // Collect all available keys for mode switching
             const keys = [];
@@ -207,10 +223,17 @@ export function startLockpickingMinigame(lockable, scene, difficulty = 'medium',
         })(),
         onComplete: (success, result) => {
             if (success) {
-                console.log('LOCKPICK SUCCESS');
+                // The player may have switched to key mode and opened it with a key: the
+                // minigame reports the method it succeeded with in its result.
+                const usedKey = result?.method === 'key';
+                console.log(`LOCKPICK SUCCESS (method=${usedKey ? 'key' : 'lockpick'})`);
                 window.expectContainerAfterUnlock?.(lockable);
-                window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
-                callback(true);
+                if (usedKey) {
+                    window.gameAlert('Successfully unlocked with the correct key!', 'success', 'Unlock Successful', 4000);
+                } else {
+                    window.gameAlert('Successfully picked the lock!', 'success', 'Lockpicking', 4000);
+                }
+                callback(true, { method: usedKey ? 'key' : 'lockpick' });
             } else {
                 // The Phaser lockpick game has no failed-attempt state: it only ends
                 // unsuccessfully when closed (Close, ×, Esc, or a hit). Closing is not a
@@ -419,6 +442,13 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
         itemName: itemName,
         itemImage: itemImage,
         itemObservations: itemObservations,
+        // Same predicate as the pick-first path uses for its "Switch to Key Mode": once the
+        // player has gone to pick mode they need the way back to the keys.
+        canSwitchToKeyMode: window.inventory.items.some(item =>
+            item && item.scenarioData &&
+            (item.scenarioData.type === 'key' ||
+             (item.scenarioData.type === 'key_ring' && item.scenarioData.allKeys?.length > 0))
+        ),
         canSwitchToPickMode: window.inventory.items.some(item => 
             item && item.scenarioData && 
             item.scenarioData.type === 'lockpick'
@@ -459,9 +489,11 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 console.log('KEY SELECTION CLOSED: caught switching to lockpicking');
             } else {
                 console.log('KEY SELECTION FAILED');
-                // Closed because the player was hit: no "wrong key" on top of it (F2).
-                // A door with a lockedHint adds where the key comes from; others are unchanged.
-                if (!window.minigameClosedByDamage?.()) {
+                // A wrong key never ends this minigame: it shows "Wrong key!" in the lock and
+                // offers the keys again. So a failed completion here is a close (X, Esc, a
+                // hit, a conversation starting), never a wrong key: no toast unless the result
+                // says wrongKey. A door with a lockedHint adds where the key comes from.
+                if (result?.wrongKey === true && !window.minigameClosedByDamage?.()) {
                     window.gameAlert(withLockedHint('The selected key doesn\'t work with this lock.', lockable), 'error', 'Wrong Key', lockedHintDuration(lockable, 4000, 'The selected key doesn\'t work with this lock.'));
                 }
             }
@@ -471,7 +503,11 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
     // Start with key selection using inventory keys
     // Wait for the minigame to be fully initialized and lock configuration to be saved
     setTimeout(() => {
-        if (window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.startWithKeySelection) {
+        // The list is always prepared, even when the player has already switched to picking:
+        // switching back to keys reads it from originalInventoryKeys.
+        const mg = window.MinigameFramework.currentMinigame;
+        // Only the minigame this call opened: another lock may be current by now
+        if (mg && mg.startWithKeySelection && mg.params?.lockable === lockable) {
             // DEFERRED KEY PREPARATION:
             // Regenerate keys after minigame initialization to ensure lock config is saved
             const updatedInventoryKeys = playerKeys.map(key => {
@@ -501,7 +537,12 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 };
             });
             
-            window.MinigameFramework.currentMinigame.startWithKeySelection(updatedInventoryKeys, requiredKeyId);
+            mg.originalInventoryKeys = updatedInventoryKeys;
+            mg.originalCorrectKeyId ??= requiredKeyId;
+            // Only open the panel while the player is still in key mode
+            if (mg.keyMode) {
+                mg.startWithKeySelection(updatedInventoryKeys, requiredKeyId);
+            }
         }
     }, 500);
 }

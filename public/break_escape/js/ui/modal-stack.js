@@ -61,3 +61,6 @@ export function openModalCount() {
 }
 
 export { onKeyDown as _onKeyDownForTest };
+
+// Exposed for the minigame focus trap, which cannot import this file (test harness copies)
+if (typeof window !== 'undefined') window.openModalCount = openModalCount;

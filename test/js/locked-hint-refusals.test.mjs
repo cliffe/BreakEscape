@@ -63,7 +63,8 @@ test('unlock-system: rfid, default and biometric/cloner refusals use the hint; k
 });
 
 test('the door opening shows no hint: the hint is only on refusal paths', () => {
-    const s = src('systems/unlock-system.js');
+    // 'Lock Picked' is now shown only by minigame-starters.js (unlock-system.js no longer toasts the pick: it showed twice)
+    const s = src('systems/unlock-system.js') + '\n' + src('systems/minigame-starters.js');
     // success alerts never mention the hint
     for (const ok of ["'Access Granted'", "'Lock Picked'"]) {
         const line = s.split('\n').filter(l => l.includes(ok));

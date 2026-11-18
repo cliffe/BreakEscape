@@ -10,8 +10,39 @@ export function createLabWorkstation(objectData) {
     return workstationSprite;
 }
 
+/**
+ * Lab sheets are Jekyll pages that carry authoring metadata (description such as
+ * "Hidden in-game field guide...", licence, an empty Tags line, the site header).
+ * Their layout hides all of it when the URL has an `embedded` query parameter, so
+ * the in-game popup must always ask for it (m01 blind playtest, item 4b).
+ */
+export function withEmbeddedParam(url) {
+    if (typeof url !== 'string' || !url) return url;
+    const hashAt = url.indexOf('#');
+    const hash = hashAt >= 0 ? url.slice(hashAt) : '';
+    const base = hashAt >= 0 ? url.slice(0, hashAt) : url;
+    const qAt = base.indexOf('?');
+    const query = qAt >= 0 ? base.slice(qAt + 1) : '';
+    if (/(^|&)embedded(=|&|$)/.test(query)) return url;
+    const sep = qAt < 0 ? '?' : (query === '' || base.endsWith('&') ? '' : '&');
+    return `${base}${sep}embedded=1${hash}`;
+}
+
+/** The reverse of withEmbeddedParam: the full page, for "Open in new tab". */
+export function withoutEmbeddedParam(url) {
+    if (typeof url !== 'string' || !url) return url;
+    const hashAt = url.indexOf('#');
+    const hash = hashAt >= 0 ? url.slice(hashAt) : '';
+    const base = hashAt >= 0 ? url.slice(0, hashAt) : url;
+    const qAt = base.indexOf('?');
+    if (qAt < 0) return url;
+    const kept = base.slice(qAt + 1).split('&').filter(p => p !== '' && !/^embedded(=|$)/.test(p));
+    return `${base.slice(0, qAt)}${kept.length ? '?' + kept.join('&') : ''}${hash}`;
+}
+
 // Open the lab workstation
 export function openLabWorkstation(url) {
+    url = withEmbeddedParam(url);
     const labPopup = document.getElementById('lab-popup');
     const labFrame = document.getElementById('lab-frame');
     
@@ -68,7 +99,7 @@ export function openLabWorkstationInNewTab() {
     const labFrame = document.getElementById('lab-frame');
     
     if (labFrame && labFrame.src) {
-        window.open(labFrame.src, '_blank');
+        window.open(withoutEmbeddedParam(labFrame.src), '_blank');
     }
 }
 

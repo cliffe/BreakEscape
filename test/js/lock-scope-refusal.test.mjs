@@ -230,7 +230,7 @@ test('startPasswordMinigame shows no toast for a refused result or a player clos
     const stubs = {
         './key-lock-system.js': 'export const generateKeyCutsForLock = () => {}; export const doesKeyMatchLock = () => false; export const PREDEFINED_LOCK_CONFIGS = {};',
         '../utils/key-cut-calculator.js': 'export default class KeyCutCalculator {}',
-        './lockpick-catch.js': 'export const catchLockpickInView = () => {};',
+        './lockpick-catch.js': 'export const catchLockpickInView = () => {}; export function anyKeyMightFitLock() { return true; } export function lockKeyPinsOf() { return undefined; }',
         '../utils/lock-titles.js': 'export const keypadTitle = (t) => t;',
         '../utils/conditional-text.js': 'export const resolveObjectField = () => null;',
         '../minigames/framework/social-overlay.js': 'export const socialOverlayParams = () => ({});',

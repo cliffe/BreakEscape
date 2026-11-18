@@ -535,7 +535,7 @@ Agent HaX: And you built a case on evidence Derek manufactured specifically to d
 
 === security_audit_review ===
 {kevin_gear_all and not kevin_ko:
-    Agent HaX: You took the lockpicks and the keycard in one go. That keycard has Kevin's name on its log. Next time, borrow only what the job needs.
+    Agent HaX: You took the lockpicks and the keycard in one go. That keycard has Kevin's name on its log.
 }
 {security_audit_completed:
     -> audit_feedback
