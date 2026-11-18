@@ -529,6 +529,7 @@ const pendingAnnouncements = { 'toast-live-alert': [], 'toast-live-polite': [] }
 const sentencePunct = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
 
 export function composeAnnouncement(items) {
+    if (items.length === 1) return items[0].text;   // one toast: its text exactly as spoken
     const main = items.filter((i) => !i.dropped);
     const ordered = [...main.filter((i) => !i.low), ...main.filter((i) => i.low)];
     const parts = ordered.map((i) => sentencePunct(i.text));
