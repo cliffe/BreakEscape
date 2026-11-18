@@ -490,6 +490,10 @@ hax_maps << text_map("global_variable_changed:ledger_read_heard", "value === tru
                      "Harwick & Lowe's boxes are in the open stacks, by their bay label. The lid takes that file number.", delay: 6000)
 hax_maps << text_map("global_variable_changed:case_file_read", "value === true && globalVars.m06_monitoring_enabled",
                      "Your tags, from HashChain. Someone's paying rent on a building in Montana that isn't this one.")
+# Blind playtest 2026-11-18: the shredding optional looked unwinnable. Asking gets nothing; the
+# plan cabinet holds the thing she did not schedule. Appended at the end of the list (mapping indexes).
+hax_maps << text_map("objective_task_completed:open_plan_cabinet", "globalVars.sorensen_fate === 'left' && !globalVars.nightshade_file_held",
+                     "She won't stop for asking. Find something in that cabinet she never put on her list, and show her.", delay: 9000)
 
 # --- The Recruiter's mappings (recruiter, loading_dock) -----------------------
 # S4 §4 row 3 and §6.1. The two in_cage setters come first (one NPC's
@@ -831,7 +835,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         { "taskId": "open_the_cage", "title": "Get through the cage gate", "type": "custom", "status": "active" },
         { "taskId": "open_plan_cabinet", "title": "Open the locked plan cabinet at the back of the cage", "type": "unlock_object", "targetObject": "plan_cabinet", "status": "active" },
         { "taskId": "match_the_hand", "title": "Compare the hand on Nightshade's file (Candidate Assessment, Intake 2011) with the notebook scan in HaX's case file", "type": "custom", "status": "locked" },
-        { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding", "type": "custom", "status": "locked", "optional": true },
+        { "taskId": "stop_the_shredding", "title": "Stop Sorensen's shredding (asking will not work; find what she cannot ignore)", "type": "custom", "status": "locked", "optional": true },
         { "taskId": "stop_the_tape_wipe", "title": "Stop the tape wipe in the server closet", "type": "custom", "status": "active", "optional": true }
       ]
     },
