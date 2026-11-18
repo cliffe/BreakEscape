@@ -61,13 +61,11 @@ Agent HaX: Worse than Ransomware Incorporated. This lot don't want paying.
 === briefing_main ===
 #speaker:agent_0x99
 
-Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries.
+Agent HaX: Albion Energy Storage. Two hundred megawatt-hours of grid batteries, and two hundred and forty thousand people get their power through them.
 
 Agent HaX: A cell called Critical Mass got in as maintenance contractors, under the name OptiGrid Solutions.
 
 Agent HaX: They own the SCADA network now, the control system that runs the battery racks.
-
-Agent HaX: Two hundred and forty thousand people get their power through that site.
 
 -> briefing_hub
 
@@ -110,9 +108,7 @@ Agent HaX: Lithium cells are safe while they stay under their charge limit and t
 
 Agent HaX: Critical Mass have bypassed the safety interlocks on all three rack banks and faked the temperature sensors. An overcharge trigger is armed.
 
-Agent HaX: If it fires, the cells heat past the point where they can stop themselves, and they catch.
-
-Agent HaX: One rack lights the next, then the hydrogen goes. The hall burns and the grid drops.
+Agent HaX: If it fires, the cells heat past saving and catch. One rack lights the next, then the hydrogen goes. The hall burns and the grid drops.
 
 + [Then we stop them before they press it.]
     Agent HaX: Yes.
@@ -201,7 +197,7 @@ Agent HaX: People fall through the cracks. They know that before they start.
 
 Agent HaX: You're the grid-safety regulator Albion is expecting today. Four hours early.
 
-Agent HaX: Credentials are in your kit. Find Robert Vance. He runs the site, and he's on shift. He isn't expecting anyone before dawn.
+Agent HaX: Credentials are in your kit. Find Robert Vance. He runs the site, and he's on shift.
 
 Agent HaX: He doesn't know about ENTROPY. The cover gets you in.
 
@@ -215,9 +211,7 @@ Agent HaX: He doesn't know about ENTROPY. The cover gets you in.
 === vance_briefing_advice ===
 #speaker:agent_0x99
 
-Agent HaX: Your call. Vance is a career engineer, safety first, and he knows that plant.
-
-Agent HaX: Tell him and he'll help. Nobody on site knows those control systems better.
+Agent HaX: Your call. Vance is a safety-first career engineer, and nobody on site knows those control systems better. Tell him and he'll help.
 
 Agent HaX: But if they're watching him, your cover goes with his.
 
@@ -325,9 +319,7 @@ Agent HaX: But if he goes for the trigger, stop him any way you have to. Lives f
 === mission_departure ===
 #speaker:agent_0x99
 
-Agent HaX: The site's twenty minutes out. The gate will want your credentials.
-
-Agent HaX: Show them the regulator badge. You're a routine audit that came early.
+Agent HaX: The site's twenty minutes out. Show the gate your regulator badge: a routine audit that came early.
 
 Agent HaX: {combat_ready: If it comes to a fight, keep your head.| Stay alert. They're expecting somebody.}
 
