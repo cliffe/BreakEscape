@@ -359,10 +359,9 @@ export class RFIDMinigame extends MinigameScene {
                     this.ui.showSuccess(alreadyOpen ? 'Already open' : 'Access Granted');
                     this.gameResult = result;
                     emit({ success: true });
-                    setTimeout(() => {
-                        if (this._isLive()) this.complete(true);
-                        else late();
-                    }, emulated ? 2000 : 1500);
+                    // The server has already unlocked: an X or Esc during the hold commits the
+                    // result once through complete() (holdSuccess), so there is no late path here
+                    this.holdSuccess(emulated ? 2000 : 1500);
                     return;
                 }
                 if (outcome === 'error') {

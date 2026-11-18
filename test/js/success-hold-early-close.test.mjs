@@ -114,3 +114,24 @@ test('RFID tap and emulate paths hold through holdSuccess, and complete() resolv
     assert.equal((src.match(/this\.holdSuccess\((1500|2000)\)/g) || []).length, 2);
     assert.match(src, /complete\(success\) \{[^}]*resolveEarlyClose\(success\)/);
 });
+
+test('access-list "unlocked" path holds through holdSuccess, not a bare setTimeout', () => {
+    const src = readFileSync(js('minigames/rfid/rfid-minigame.js'), 'utf8');
+    assert.match(src, /this\.holdSuccess\(emulated \? 2000 : 1500\)/);
+    assert.doesNotMatch(src, /setTimeout\(\(\) => \{\s*if \(this\._isLive\(\)\) this\.complete\(true\)/);
+});
+
+test('access-list hold: X 250 ms after the grant commits once, the full hold commits once', () => {
+    for (const closeAt of [250, null]) {
+        setup();
+        const { r, calls } = open();
+        r.gameResult = { success: true, cardName: 'Staff badge', serverResponse: { ok: true } };
+        r.holdSuccess(1500);
+        if (closeAt !== null) { mock.timers.tick(closeAt); r.closeByPlayer(); }
+        mock.timers.tick(1500);
+        assert.deepEqual(calls, [[true, 'Staff badge']]);
+        mock.timers.tick(5000);
+        assert.equal(calls.length, 1);
+        mock.timers.reset();
+    }
+});
