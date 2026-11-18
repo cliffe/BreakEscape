@@ -76,9 +76,9 @@ m10_vms = {
 # One flag per station (F-18): each station lists only its own flag, by slice.
 m10_stations = [
   { id: 'gate_terminal',      flag: 1, vm: 'bunker_monitor', index: 0, hint: "That one goes in at the gate terminal, up at the forward post." },
-  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That flag belongs at a different station." },
-  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That flag belongs at a different station." },
-  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That flag belongs at a different station." }
+  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That's their staging schedule, not the foothold. It goes where they stage the release." },
+  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That's off the release host. Find the station that takes the release host." },
+  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That's the core host's. Its terminal is further in." }
 ]
 # The attack box (HaX's racked field console). VM-WIRE: title and fallback ip.
 m10_attack_vm = 'attack_vm'
@@ -1816,7 +1816,14 @@ end
             { "eventPattern": "<%= ev %>", "condition": "globalVars.split_started === true && globalVars.arakawa_ko === true && !globalVars.arakawa_call_done", "setGlobal": { "arakawa_call_done": true } },
 <% end %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.nightshade_tethered && !globalVars.override_held", "setGlobal": { "breach_announced": true } },
-            { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
+            <%# Blind fix R1 m5: tunnel_fight_on holds the breach call while either tunnel guard is fighting (it would cover the screen mid-fight); the call rings once the fight is over. Set by hostility, cleared by a KO or a Restart's reset. The condition is re-checked when the 1.5 s delay is up, so a fight that starts inside it cancels the ring. %>
+            { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.hax_jammed && !globalVars.tunnel_fight_on", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard' && data.isHostile === true", "setGlobal": { "tunnel_fight_on": true } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard_kettle' && data.isHostile === true", "setGlobal": { "tunnel_fight_on": true } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard' && data.isHostile === false", "setGlobal": { "tunnel_fight_on": false } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'tunnel_guard_kettle' && data.isHostile === false", "setGlobal": { "tunnel_fight_on": false } },
+            { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard' || data.npcId === 'tunnel_guard_kettle'", "setGlobal": { "tunnel_fight_on": false } },
+            { "eventPattern": "global_variable_changed:tunnel_fight_on", "condition": "value === false && globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
 <%# --- The inner door and the tripwire (OT 4.3) ------------------------------ %>
             { "eventPattern": "room_entered:blast_tunnel", "condition": "!globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 800 },
             { "eventPattern": "game_loaded", "condition": "globalVars.blast_tunnel_entered === true && !globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
@@ -2821,7 +2828,7 @@ end
           "puzzle_graph_note": "The breach also waits on the table scene and the pair back (OT 4.1).",
           <%# VM-WIRE: flag 1 (the foothold on the security monitoring host). One flag per station (F-18). %>
           "acceptsVms": [<%= j.(station.(1)[:vm]) %>],
-          "acceptsVmLabels": { <%= j.(station.(1)[:vm]) %>: "the monitoring host" },
+          "acceptsVmLabels": { <%= j.(station.(1)[:vm]) %>: "the monitoring host (the foothold)" },
           "flags": <%= station_flags.(1) %>,
           "hintOnlyFlags": <%= station_hints.(1) %>,
           "flagRewards": [
@@ -2947,7 +2954,7 @@ not_tethered = '!globalVars.nightshade_tethered'
       "locked": true,
       "lockType": "rfid",
       "requires": "tg_story_lock_blast_tunnel",
-      "lockedHint": "No badge opens this one. Their gate terminal at the forward post is what the door answers to.",
+      "lockedHint": "Not a badge door. It answers to their gate terminal at the forward post.",
       "connections": { "west": "forward_post", "east": "security_office" },
       "npcs": [
         {
@@ -3678,7 +3685,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "readDisplay": "gameDisplay",
           "addToNotes": false,
           "puzzle_graph_links": [{ "from": "action_cut_the_shutter", "to": "door_gallery" }],
-          "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here.",
+          "observations": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "observationVariants": [
             <%# Blind fix pass F4: the key's turned, the pull is still to do. %>
             { "condition": "globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "value": "The key turned a quarter right; the row is off their board. Third breaker from the left, GALLERY SHUTTER, still up." },
@@ -3686,16 +3693,20 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
-            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
+            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." },
+            <%# Blind fix R1 M1: Wendell is only on shift on the default import branch. %>
+            { "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped", "value": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here." }
           ],
-          "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here.",
+          "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "textVariants": [
             <%# Blind fix pass F4: the key's turned, the pull is still to do. %>
             { "condition": "globalVars.cut_step === 2 && !globalVars.gallery_shutter_cut", "value": "The key turned a quarter right; the row is off their board. Third breaker from the left, GALLERY SHUTTER, still up." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
-            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
+            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." },
+            <%# Blind fix R1 M1: Wendell is only on shift on the default import branch. %>
+            { "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped", "value": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here." }
           ]
         },
         {
@@ -3825,7 +3836,11 @@ not_tethered = '!globalVars.nightshade_tethered'
           "eventMappings": [
             <%= after_end_json.('server_hall') %>
             <%# Playtest B-03: the second guard's challenge waits 4 s after the first (re-checked then), so the two do not land back to back; neither plays once the raid team has stood them down. %>
-            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
+            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down<%= gid == 'hall_guard_a' ? ' && globalVars.hall_a_warnings === 0' : '' %>", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
+<% if gid == 'hall_guard_a' %>
+            <%# Blind fix R1 m1: after Back off (hall_a_warnings above 0) the next sighting, 30 s on at the earliest, reopens him at hall_a_final, where the only way on is the fight. Repeatable, so a reload or a long wait does not lose it; the sight cooldown keeps it from looping. %>
+            { "eventPattern": "player_spotted:hall_guard_a", "condition": "!globalVars.hall_guards_stood_down && globalVars.hall_a_warnings !== 0", "conversationMode": "person-chat", "targetKnot": "hall_a_final", "cooldown": 30000 },
+<% end %>
             <%# Playtest B-03: the talk-past (ink: hall_guards_stood_down) stops both patrols where they turn. %>
             { "eventPattern": "global_variable_changed:hall_guards_stood_down", "condition": "value === true", "patrolOverride": { "targetTile": { "x": <%= x1 %>, "y": <%= y1 %> }, "speed": 60 } },
             { "eventPattern": "room_entered:server_hall", "condition": "globalVars.hall_guards_stood_down === true && !globalVars.closing_done", "patrolOverride": { "targetTile": { "x": <%= x1 %>, "y": <%= y1 %> }, "speed": 200 } }
@@ -3888,7 +3903,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "puzzle_graph_note": "The gallery stair waits on flags 2 and 3 and the shutter cut (OT 4.4).",
           <%# VM-WIRE: flag 2 (the staging schedule). %>
           "acceptsVms": [<%= j.(station.(2)[:vm]) %>],
-          "acceptsVmLabels": { <%= j.(station.(2)[:vm]) %>: "the monitoring host" },
+          "acceptsVmLabels": { <%= j.(station.(2)[:vm]) %>: "the monitoring host (the staging schedule)" },
           "flags": <%= station_flags.(2) %>,
           "hintOnlyFlags": <%= station_hints.(2) %>,
           "flagRewards": [
@@ -4690,6 +4705,9 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "mercer_fighting": false,
     "victoria_call_deferred": false,
     "power_fight_on": false,
+    "tunnel_fight_on": false,
+    "breach_call_done": false,
+    "hall_a_warnings": 0,
     "gallery_call_deferred": false,
     "static_power_ko": false,
     "power_fight_over": false,
