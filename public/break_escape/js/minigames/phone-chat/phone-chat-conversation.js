@@ -714,16 +714,15 @@ export default class PhoneChatConversation {
         const runs = entries.map(dryRun).filter(Boolean);
         let chosen = runs.find(r => r.baselineKey === savedKey && r.baselineFirst === sourcePath) || null;
         // A guard at the knot top that today's globals have just made fire wins over the
-        // saved choices and over a stitch entry (m10 "already dead", m09 flag1 read-out sent
-        // to the hub, a recruiter call ended once the deck is chosen). "Just made fire" means
+        // saved choices and over a stitch entry (m10 "already dead", a recruiter call ended
+        // once the deck is chosen). "Just made fire" means
         // the top's run under the OLD globals stayed in the knot and offered choices, while
         // today's run leaves for another knot or ends. A guard that already fired under the
         // old globals (m09 hour_read sets its own flag on its first line; m02 Ghost sets
         // ghost_contacted_player before its first menu) is not new, so the saved menu stays.
         // If the new run ends the thread, the phone closes on open, as tapping the choice would.
         const top = runs.find(r => r.path === knot);
-        if (top && top !== chosen && top.baselineKey !== '[]' &&
-            String(top.baselineFirst || '').split('.')[0] === knot) {
+        if (top && top !== chosen && String(top.baselineFirst || '').split('.')[0] === knot) {
             const nowEnds = top.choices.length === 0;
             const nowLeaves = top.choices.length > 0 && top.firstPath.split('.')[0] !== knot;
             if (nowEnds || nowLeaves) chosen = top;
@@ -735,11 +734,19 @@ export default class PhoneChatConversation {
         // guards for real, with the effects of a fresh open (it can print and tag a close
         // such as #exit_conversation, or set the flags it sets on entry). A contact without
         // that knot in its story just skips it.
+        // Known gap (R3 m1): m02 Ghost's first menu lives in `start`, its home knot, so the
+        // fallback is never tried there. A reopen resting on a later intro menu (ransom demand,
+        // philosophy) after ransom_decision_made lands on the ending lines; the first menu
+        // keeps its choices. Dialogue only, no globals written, so left as is.
         const home = String(homeKnot || 'start').split('.')[0];
         const sameChoices = !chosen || JSON.stringify(chosen.choices) === savedKey;
         if ((!chosen || chosen.fresh === 0) && sameChoices && knot !== home && this._hasKnot(story, home)) {
             const viaHome = dryRun(home);
-            if (viaHome && viaHome.fresh > 0) chosen = viaHome;
+            // Visible output only: a tag-only step (m02 support_hub opens with one) is a
+            // change the player cannot see, and would drop a kept follow-up menu.
+            const showsSomething = viaHome && viaHome.steps.slice(viaHome.replayed)
+                .some(st => phoneStepLines(st.text, st.tags).length > 0);
+            if (showsSomething) chosen = viaHome;
         }
         if (!chosen) return { renavigated: false };
         const path = chosen.path;

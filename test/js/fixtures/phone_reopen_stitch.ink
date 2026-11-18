@@ -227,3 +227,88 @@ Done deal.
 ~ bt_cnt += 1
 + [Option {bt_cnt}.]
     -> DONE
+
+// ---- R3 fixtures ----
+VAR tg = false
+VAR tg2 = false
+VAR pf = false
+VAR nf = false
+
+// M2: a home knot whose new-globals path opens with a tag-only step, then a different menu.
+=== tghome ===
+{tg: -> tgsupport}
+-> hub
+
+=== tgsupport ===
+# speaker:agent
++ [Hub choice.]
+    -> DONE
+
+// A home knot that does print a line when the global lands.
+=== tghome2 ===
+{tg2:
+    Home news.
+    -> tgsupport2
+}
+-> hub
+
+=== tgsupport2 ===
++ [Home choice.]
+    -> DONE
+
+// The resting hint menu the home fallback must not replace.
+=== tghint ===
+Hint text.
++ [Follow.]
+    -> DONE
+
+// N3: the saved menu is a stitch of `pre`; the knot top leads to `pre_two`, a knot whose
+// name merely starts with `pre`. A new global would send the top to the hub.
+=== pre ===
+{pf: -> hub}
+-> pre_two
+= menu
++ [Y.]
+    -> DONE
+
+=== pre_two ===
++ [Z.]
+    -> DONE
+
+// N5: the knot's first menu gains a leading choice, the player rests on the later menu.
+=== inner ===
+-> first
+= first
++ {nf} [A0.]
+    -> second
++ [A.]
+    -> second
+= second
++ [B.]
+    -> DONE
+
+// R3 M1 (m07 HaX submenus): the knot top's guard clears itself on entry, so a reopen of the
+// knot top goes to the hub; the choices live in the `menu` stitch so a reopen resting on the
+// menu re-runs it under the new globals (a choice gated on `not s_done` drops out).
+VAR sub_from_hub = false
+VAR s_done = false
+
+=== subhub ===
+Agent: Sub hub.
++ [Open the list.]
+    ~ sub_from_hub = true
+    -> subs
++ [Bye.]
+    -> DONE
+
+=== subs ===
+{not sub_from_hub:
+    -> subhub
+}
+~ sub_from_hub = false
+-> menu
+= menu
++ {not s_done} [Stale hint.]
+    -> DONE
++ [Never mind.]
+    -> subhub

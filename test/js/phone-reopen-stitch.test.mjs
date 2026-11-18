@@ -1,7 +1,7 @@
 // A phone thread reopened with saved ink state and a changed story global:
 // the re-run starts from the stitch that owns the saved choices, and when that
-// shows nothing new it falls back to the thread's `start` so the diversions to
-// new content (the hub's read-outs) run.
+// shows nothing new it falls back to the contact's home knot (opts.homeKnot,
+// `start` by default) so the diversions to new content (the hub's read-outs) run.
 // Run with: node --test test/js/phone-reopen-stitch.test.mjs
 
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -308,4 +308,54 @@ test('m1: a home knot the story does not have is skipped without a warning', asy
         console.warn = warn;
     }
     assert.deepEqual(warned, []);
+});
+
+test('R3 M2: a home knot that reaches only a tag-only step before another menu does not replace a kept menu', async () => {
+    setGlobals({ tg: false });
+    const saved = await openAtPath('tghint');
+    setGlobals({ tg: true });
+    const { conv, out } = await reopen(saved, { homeKnot: 'tghome' });
+    assert.equal(out.knot, 'tghint', 'the resting menu is re-run, not the home knot');
+    assert.deepEqual(out.messages, []);
+    assert.deepEqual(texts(conv), ['Follow.']);
+});
+
+test('R3 M2: a home knot that prints a visible line still wins', async () => {
+    setGlobals({ tg2: false });
+    const saved = await openAtPath('tghint');
+    setGlobals({ tg2: true });
+    const { conv, out } = await reopen(saved, { homeKnot: 'tghome2' });
+    assert.equal(out.renavigated, true);
+    assert.ok(out.messages.some(m => /Home news/.test(m)), `got ${JSON.stringify(out.messages)}`);
+    assert.deepEqual(texts(conv), ['Home choice.']);
+});
+
+test('R3 N3: a knot top that stays in a knot whose name only starts with the saved knot name does not override', async () => {
+    setGlobals({ pf: false });
+    const saved = await openAtPath('pre.menu');
+    setGlobals({ pf: true });
+    const { conv, out } = await reopen(saved, { homeKnot: 'pre' });
+    assert.equal(out.knot, 'pre.menu', 'the saved stitch is re-run, not sent to the hub');
+    assert.deepEqual(texts(conv), ['Y.']);
+});
+
+test('R3 N5: a knot top whose first menu merely changes inside the knot does not override a later menu', async () => {
+    setGlobals({ nf: false });
+    const saved = await openAtPath('inner.first', [0]);
+    assert.deepEqual((await reopen(saved, { homeKnot: 'inner' })).conv.engine.currentChoices.map(c => c.text), ['B.']);
+    setGlobals({ nf: true });
+    const { conv, out } = await reopen(saved, { homeKnot: 'inner' });
+    assert.equal(out.knot, 'inner.second', 'the later menu is re-run, the knot top does not win');
+    assert.deepEqual(texts(conv), ['B.']);
+});
+
+test('R3 M1: a submenu whose top guard clears itself re-runs its menu stitch under the new globals', async () => {
+    setGlobals({ s_done: false });
+    const saved = await openAtPath('subhub', [0]);
+    assert.deepEqual((await reopen(saved)).conv.engine.currentChoices.map(c => c.text), ['Stale hint.', 'Never mind.']);
+    setGlobals({ s_done: true });
+    const { conv, out } = await reopen(saved);
+    assert.equal(out.renavigated, true);
+    assert.equal(out.knot, 'subs.menu');
+    assert.deepEqual(texts(conv), ['Never mind.']);
 });
