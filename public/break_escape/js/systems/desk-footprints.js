@@ -32,6 +32,22 @@ export function mapProperty(tilemap, name) {
 }
 
 /**
+ * Whether a Tiled chair object opts out of being shoved: object property `fixed` = true.
+ * A fixed chair is immovable even when empty, so it stays where the map put it while its
+ * sitter is away. Every other chair keeps the bounce and drag.
+ * @param {object} tiledObj - the Tiled object (properties array or plain object)
+ */
+export function isFixedChair(tiledObj) {
+    const v = mapProperty(tiledObj, 'fixed');
+    return v === true || v === 'true';
+}
+
+/** The physics a wheeled chair gets: loose by default, immovable with no bounce when fixed. */
+export function chairMotion(fixed) {
+    return fixed ? { immovable: true, bounce: 0, drag: 0 } : { immovable: false, bounce: 0.3, drag: 100 };
+}
+
+/**
  * The desk box mode for a room: the test override wins, then the map property.
  * Any value other than "footprint" means legacy.
  * @param {object} tilemap
