@@ -74,6 +74,7 @@ if ARGV.include?('--help') || ARGV.include?('-h')
   exit
 end
 require_relative 'lib/reward_keys'
+require_relative 'lib/flag_needs'
 
 imports_opt = 'none'
 seed_full_cloner = false
@@ -104,7 +105,7 @@ until args.empty?
 end
 ARGV.replace(rest)
 ARGV.reject! { |a| a.start_with?('--imports=') && (imports_opt = a.split('=', 2)[1]) }
-arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--unlock R] [--set k=v] [--give ITEM_ID] [--complete-task TASK_ID] [--submit-flag FLAG_ID]  (--help for details)'
+arg = ARGV[0] or abort 'usage: new-game.rb <mission_name_or_id> [flag_hints.xml] [--imports=none|latest|<file.json>] [--start-room R] [--carry-npc NPC_ID] [--unlock R] [--set k=v] [--give ITEM_ID] [--complete-task TASK_ID] [--submit-flag FLAG_ID]  (--help for details)'
 xml_path = ARGV[1]
 
 mission = if arg =~ /\A\d+\z/
@@ -125,27 +126,7 @@ def scenario_flag_needs(mission)
   template = mission.scenario_path.join('scenario.json') unless File.exist?(template)
   return {} unless File.exist?(template)
 
-  src = File.read(template)
-  needs = Hash.new(0)
-  src.scan(/"([a-z0-9_]+):flag_(\d+)"/i) do |vm, n|
-    needs[vm] = [needs[vm], n.to_i].max
-  end
-  # targetFlags entries reference "station_id:vm_name-flagN" (a dash before
-  # "flag", not "vm:flag_N") — e.g. m02's
-  # "flag_station_dropsite:hospital_backup_server-flag4". Without this, the
-  # scan above never sees these references at all, so `needs` silently falls
-  # back to the flags_for_vm(...) minimum of 1 even when a scenario's own
-  # targetFlags reference flag2/flag3/flag4 — undercounting the flags a real
-  # playtest game needs seeded, and every submission past the first then
-  # returns "Invalid flag" for reasons indistinguishable from a scenario bug.
-  src.scan(/"[a-z0-9_]+:([a-z0-9_]+)-flag(\d+)"/i) do |vm, n|
-    needs[vm] = [needs[vm], n.to_i].max
-  end
-  # A VM named in a helper but with no explicit flag_N reference still needs one.
-  src.scan(/(?:flags_for_vm|vm_flags_json)\(\s*'([^']+)'/) do |(vm)|
-    needs[vm] = [needs[vm], 1].max
-  end
-  needs
+  FlagNeeds.from_source(File.read(template))
 end
 
 state = {}

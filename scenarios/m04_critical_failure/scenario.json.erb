@@ -1379,7 +1379,13 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "eventPattern": "npc_ko:voltage",
               "condition": "globalVars.voltage_escaped !== true",
               "onceOnly": true,
-              "setGlobal": { "voltage_neutralised": true, "voltage_captured": true }
+              "setGlobal": { "voltage_neutralised": true, "voltage_captured": true },
+              <%# Gate minor 1: a KO'd NPC is never talkable (interactions.js skips knocked-out
+                  NPCs; m07 answers Park's KO with a HaX text, m05 opens a scripted chat).
+                  Voltage has no post-KO talk knot, so HaX says what his state means. One
+                  text (it lands after the ESD-live text when that arms at 1.2 s) that
+                  sends the player to "Where do I stand?" for the next step. %>
+              "sendTimedMessage": { "delay": 6000, "message": "Voltage is down and he isn't answering anyone tonight. Leave him on the floor. Ask me where you stand for the next step." }
             },
             {
               "eventPattern": "global_variable_changed:voltage_captured",
@@ -1541,6 +1547,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             { "eventPattern": "global_variable_changed:vance_met", "condition": "value === true && globalVars.vance_provided_keycard === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
             { "eventPattern": "global_variable_changed:vance_provided_keycard", "condition": "value === true && globalVars.vance_met === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
             { "eventPattern": "global_variable_changed:aes_staff_off", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_kettle_off": true } },
+            { "eventPattern": "global_variable_changed:guard_admitted", "condition": "value === true && !globalVars.aes_staff_off", "onceOnly": true, "setGlobal": { "ops_kettle_off": false } },
             { "eventPattern": "npc_attacked:ibrahim_diallo", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "npc_attacked:joanne_pell", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
             { "eventPattern": "npc_attacked:robert_vance", "onceOnly": true, "setGlobal": { "aes_staff_off": true } },
@@ -1674,7 +1681,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "needsCompany": { "groups": ["aes_office"] },
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "These desktops take an age to image."]
+            "coffee": ["Two sugars, and don't tell anyone.", "This kettle is older than my car.", "Is there any milk that isn't sour?", "These desktops take an age to image.", "Third cup, imaging's at forty per cent."]
           },
 <%# Exchanges (office_life/SPOKEN_LINES.md): read in order, the first unheard one whose gates hold plays when the pair
     meet at the kettle with the first line's speaker in earshot. The knots are in his ink; his storyPath is required. %>
@@ -1688,7 +1695,10 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             "caffeine": { "initial": 85, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 }
           },
           "eventMappings": [
+            { "eventPattern": "global_variable_changed:guard_admitted", "condition": "value === true && !globalVars.aes_staff_off && !globalVars.ibrahim_ko", "delayMs": 12000, "onceOnly": true, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "room_entered:operations_office", "condition": "data.previousRoom !== 'main_entrance' && !globalVars.ops_kettle_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.ibrahim_ko", "onceOnly": true, "bark": "Alarm. Right, leave the desktops, we're going." },
+            { "eventPattern": "global_variable_changed:aes_staff_off", "condition": "value === true && !globalVars.crew_warned && !globalVars.ibrahim_ko", "onceOnly": true, "bark": "Right. I'm touching nothing till somebody tells me what that was." },
             { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true", "onceOnly": true, "setVisible": false }
           ]
         },
@@ -1714,7 +1724,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "needsCompany": { "groups": ["aes_office"] },
           "chatterCooldownMin": 2,
           "chatter": {
-            "coffee": ["Proper brew, none of that cooler stuff.", "Who leaves teabags in the sink?", "Who's moved my mug again, duck?", "I'll be needing another one of these."]
+            "coffee": ["Proper brew, none of that cooler stuff.", "Who leaves teabags in the sink?", "Who's moved my mug again, duck?", "I'll be needing another one of these.", "Is that the last of the biscuits?"]
           },
           "needs": {
             "thirst": { "initial": 90, "decayPerMin": 1.5, "urgentAt": 30, "jitterPct": 15 },
@@ -1724,6 +1734,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
             { "eventPattern": "room_entered:main_entrance", "condition": "data.previousRoom === 'operations_office' && !globalVars.aes_staff_off", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
             { "eventPattern": "npc_use_started:ops_kettle", "condition": "data.npcId === 'ibrahim_diallo' && !globalVars.ops_kettle_off", "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
             { "eventPattern": "global_variable_changed:crew_warned", "condition": "value === true && !globalVars.joanne_ko", "onceOnly": true, "bark": "That's the alarm. Coats on, out we go." },
+            { "eventPattern": "global_variable_changed:aes_staff_off", "condition": "value === true && !globalVars.crew_warned && !globalVars.joanne_ko", "onceOnly": true, "bark": "Nobody's inducting anyone tonight, are they?" },
             { "eventPattern": "room_entered:*", "condition": "globalVars.aes_staff_evacuated === true", "onceOnly": true, "setVisible": false }
           ]
         }
@@ -1944,6 +1955,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "locked": true,
       "lockType": "rfid",
       "requires": "server_room_keycard",
+      "lockedHint": "The reader wants a Level 2 workshop card.",
       "difficulty": "medium",
       "door_sign": "Engineering Workshop — Authorised Access Only",
       "connections": {
@@ -2338,7 +2350,11 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
               "value": "The thermometer dial reads: 61°C\n\nThe analogue thermometer confirms a physical thermal anomaly that the SCADA readout (28°C) is hiding."
             }
           ],
+          <%# Blind m04 minor: a triggerOnInteract returns before the examine text, so the dial said nothing.
+              The reading is shown as a hint, one per state. %>
           "triggerOnInteract": [
+            { "type": "hint", "title": "Analogue Thermometer", "condition": "!globalVars.attack_prevented", "message": "The dial reads 61 degrees C. The SCADA screen says 28. The old dial is not on any network, so it is the honest one." },
+            { "type": "hint", "title": "Analogue Thermometer", "condition": "globalVars.attack_prevented === true", "message": "The dial reads 49 degrees C and the needle is dropping since the shutdown." },
             { "type": "set_global", "key": "anomaly_detected", "value": true },
             { "type": "complete_task", "taskId": "identify_scada_anomalies" }
           ]
@@ -2405,7 +2421,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
           "fingerprintOwner": "Robert Vance",
           "fingerprintCandidates": ["Security Guard", "Cipher", "Relay"],
           "fingerprintDifficulty": "easy",
-          "observations": "A small wall terminal by the rack rows where the duty engineer logs each round.",
+          "observations": "A small wall terminal by the rack rows where the duty engineer logs each round. The keypad is smudged with prints. With a fingerprint kit, choose \"Dust for prints\" to lift one.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "robert_vance_fingerprint",
           "puzzle_graph_unlocks": "plant_room"
@@ -2462,6 +2478,7 @@ jump_server_ip = vm_ip_for.call('bms_jump_server', '192.168.100.10')
       "locked": true,
       "lockType": "rfid",
       "requires": "facility_keycard_level1",
+      "lockedHint": "The reader wants a Level 1 facility card.",
       "difficulty": "easy",
       "door_sign": "BATTERY HALL 2 / INVERTER ROOM — PPE REQUIRED",
       "ambientSound": "server_room_ventilation",

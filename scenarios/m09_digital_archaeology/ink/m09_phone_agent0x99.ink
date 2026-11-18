@@ -968,6 +968,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     Analysis is pulling the watch. It's dark by morning.
     -> support_hub
 + [Not yet.]
+    // Review R1 m5: answered, so the optional task closes; "His notice." still sends it later.
+    #complete_task:send_the_notice
     It keeps. So does the hole.
     // Educational R1 E-m2: the equities call, named as a real practice.
     Every service that finds a hole makes this call: keep it to use, or tell the vendor. We kept this one nine years.

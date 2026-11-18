@@ -409,6 +409,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
         return !o.disableClose && !!o.ringCondition && call('ringConditionHolds', o.ringCondition) === false;
     }
 
+    /** R3 m1: the one-off read of a forced held call's condition as it leaves the queue. */
+    function ringStaleOnce(o) {
+        o.recheckOnStart = false;
+        return !!o.ringCondition && call('ringConditionHolds', o.ringCondition) === false;
+    }
+
     /**
      * Drop a stale `ringWhile` offer quietly, like a held bark dropped on release: no "Missed call"
      * row, no phone_call_missed, no callback or voicemail. A popup it had put aside comes back.
@@ -827,6 +833,15 @@ export function createPhoneRinger({ adapter, clock } = {}) {
                 // Rows 23 and 24: a conversation opened, or the player was knocked out. Sweep item 9:
                 // a tutorial step that came up while it rang holds it too (it rings again within 20 s).
                 requeueHead(o);
+            } else if (!o.disableClose && o.untilAnswered && queue.some((x) => x.disableClose)) {
+                // R3 m2: a forced offer waiting in the queue pre-empts an unforced call that rings until
+                // answered (which would otherwise hold the slot indefinitely). The unforced one goes back
+                // to the head of the queue behind the forced one, elapsed ring time kept; it is not lost.
+                const forcedWaiting = queue.find((x) => x.disableClose);
+                requeueHead(o);
+                queue.splice(queue.indexOf(forcedWaiting), 1);
+                queue.unshift(forcedWaiting);
+                again = true;
             } else if (o.disableClose) {
                 // Row 22: a forced call answers itself.
                 if (!isPaused() && o.ringMs >= AUTO_ANSWER_MS && !hitWithin(HIT_QUIET_MS)) {
@@ -854,6 +869,12 @@ export function createPhoneRinger({ adapter, clock } = {}) {
             const head = queue[0];
             if (ringStale(head)) {
                 // ringWhile: its condition went stale while it waited in the queue; drop it, don't ring.
+                dropQuietly(head);
+                again = true;
+            } else if (head.disableClose && head.recheckOnStart && !ringBlocked() && !tutorialHold(head)
+                && now() >= head.notBefore && ringStaleOnce(head)) {
+                // R3 m1: a forced call held by a fight, about to ring for the first time, whose condition
+                // went false meanwhile: drop it quietly. Read once; after this it is exempt again.
                 dropQuietly(head);
                 again = true;
             } else if (tutorialHold(head)) {
@@ -887,6 +908,10 @@ export function createPhoneRinger({ adapter, clock } = {}) {
                 ? raw.ringSetGlobalRestore : null,
             withheld: !!raw.withheld,
             untilAnswered: !!raw.untilAnswered && !forced,
+            // A forced voiced call held by a fight: its ringCondition is read once, as it leaves the
+            // queue to ring, and the call is dropped quietly if it no longer holds (R3 m1). After that
+            // a forced call is exempt from ringWhile, as ever.
+            recheckOnStart: !!raw.recheckOnStart && forced,
             callLabel: typeof raw.callLabel === 'string' ? raw.callLabel : null,
             opening: !!raw.opening,
             setGlobalOnStart: raw.setGlobalOnStart && typeof raw.setGlobalOnStart === 'object'

@@ -34,6 +34,7 @@ VAR lockpick_confrontations = 0
 VAR talked_about_reeves = false
 VAR asked_about_drill = false
 VAR val_notebook_given = false   // her notebook is offered on every route, but handed over once
+VAR val_reported_back = false    // the player came back and told her what they found (blind playtest fix)
 VAR talked_about_attack = false
 VAR cleared_after_burn = false
 // Pass 4 dialogue: a re-talk re-navigates to hub, so the hub re-checks the challenge and
@@ -47,6 +48,7 @@ VAR staff_lanyard_obtained = false
 VAR bernie_vouched = false
 VAR dr_kim_met = false
 VAR insider_identified = false
+VAR backdoor_fully_exploited = false // Synced scenario global: the backup server investigation is done
 VAR val_opened_office = false
 VAR bernie_gave_key = false
 VAR bernie_trusts_player = false
@@ -489,6 +491,9 @@ Val Okonkwo: I'm going to ask you once more, properly, and then I'm going to sto
 + {talked_about_reeves and insider_identified} [Graham Reeves is ENTROPY's man inside. You were right.]
     -> reeves_vindicated
 
++ {cover_restored and not val_reported_back and (backdoor_fully_exploited or insider_identified)} [I said I'd tell you what I found.]
+    -> report_back
+
 + {cover_burned and read_handover_board and not insider_identified and not val_accused and not accuse_val and (val_opened_office or reached_security_office)} [That drill ran on a security override. You're security. Was it you?]
     -> accuse_val
 
@@ -591,8 +596,25 @@ Val Okonkwo: I've raised it twice. Twice I've been told it's "crisis protocol" b
 Narrator: She taps her breast pocket.
 
 Val Okonkwo: Every shift. Dates, times, who told me to drop it.
-Val Okonkwo: Here. Take the whole thing. I've been waiting eight weeks for somebody to want it.
+Val Okonkwo: Here. Take the whole thing. I've been waiting six weeks for somebody to want it.
 Narrator: She tears the used pages out and folds them into your hand.
+~ hub_quiet = true
+-> hub
+
+// Blind playtest: she asks to be told on the way out (show_lanyard), so there is a way to do it.
+=== report_back ===
+~ val_reported_back = true
+#set_global:val_reported_back:true
+#complete_task:tell_val_findings
+~ influence += 10
+# influence_increased
+Val Okonkwo: Go on, then.
+{backdoor_fully_exploited:
+    Narrator: You tell her about the backup server and the door ENTROPY left in it. She listens like she's logging every word.
+- else:
+    Narrator: You tell her what you know about the man ENTROPY had inside. She listens like she's logging every word.
+}
+Val Okonkwo: So it was never my corridor. Thank you for coming back.
 ~ hub_quiet = true
 -> hub
 
@@ -600,9 +622,9 @@ Narrator: She tears the used pages out and folds them into your hand.
 {val_accused:
     Val Okonkwo: And an hour ago you had me down for it.
 }
-Val Okonkwo: Eight weeks.
+Val Okonkwo: Six weeks.
 
-Val Okonkwo: Eight weeks I've had that man in my notebook. Twice I was told to leave it. And now you're telling me he let them in.
+Val Okonkwo: Six weeks I've had that man in my notebook. Twice I was told to leave it. And now you're telling me he let them in.
 
 Val Okonkwo: I'll not be dramatic. But when they ask afterwards who knew, and they always ask, I want it said somebody knew and got told to drop it.
 
@@ -618,7 +640,7 @@ Val Okonkwo: I'll not be dramatic. But when they ask afterwards who knew, and th
 + [Stay out of the boardroom until SAFETYNET arrive. He's not what he looks like.]
     ~ influence += 8
     # influence_increased
-    Val Okonkwo: I've had him in my notebook eight weeks. I know exactly what he looks like.
+    Val Okonkwo: I've had him in my notebook six weeks. I know exactly what he looks like.
     Val Okonkwo: But I'll hold this corridor. Go on.
     ~ hub_quiet = true
     #exit_conversation
@@ -639,7 +661,7 @@ Val Okonkwo: You've got a nerve, coming back to me. It's all in my log.
 
 === accuse_val ===
 Val Okonkwo: Me.
-Val Okonkwo: Eight weeks I've been writing down a man nobody'll let me question. You've had me for five minutes.
+Val Okonkwo: Six weeks I've been writing down a man nobody'll let me question. You've had me for five minutes.
 
 + {read_night_rota and insider_badge_id_found} [Your rota number isn't the one in Ghost's log.]
     Val Okonkwo: No. It isn't. Nice to know somebody reads my rota.

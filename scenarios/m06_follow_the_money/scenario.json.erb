@@ -50,7 +50,7 @@ require 'json'
 # ----------------------------------------------------------------------------
 
 # Password hint lives OUTSIDE the server room it opens (checkpoint noticeboard)
-password_hint_note = "HASHCHAIN IT — NEW STARTER CHECKLIST\n(Rev. January 2025)\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated when this checklist\nwas written, and still follows the convention. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
+password_hint_note = "HASHCHAIN IT — NEW STARTER CHECKLIST\n(Rev. January 2025)\n\nStep 4: Door controller passphrases\n\nEvery restricted-area controller uses the house convention:\n  <crypto term, lowercase> + <current year>\n\nThe server room controller was last rotated when this checklist\nwas written, and still follows the convention. The term is whichever one Dr. Volkova's\naudit finds staff pick most. It is the obvious one. It is always the\nobvious one, because nobody wants to be locked out at 3am.\n\n(IT has been asked four times to stop doing this. IT has declined.)\n\nStep 5: If you are locked out, do NOT call the CTO. She has opinions."
 
 # PASS 4 fix 1: the follow-the-money puzzle. Priya's write-up has what went
 # INTO the mixer (amount + time); the transaction server has what came OUT
@@ -1027,7 +1027,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "relayed_password_dictionary",
               "name": "Password Dictionary List (relayed copy)",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n(copy pulled from Dr. Volkova's workstation by SAFETYNET)\n\nhodl\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nmoonshot\nprivatekey\ncoldstorage\n\n(Most-picked first.)\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.",
               "observations": "Volkova's audit wordlist, pulled off her workstation by SAFETYNET"
             },
             {
@@ -1180,7 +1180,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "sendTimedMessage": { "delay": 1800, "message": "Backend. An analytics service that shouldn't be listening is your way in. Four accounts hold what we want; one operator login runs the box. Recon, Druid, cracking guides?" }
             },
             {
-              "_comment": "PASS 2: used to read the passphrase out ('bitcoin2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
+              "_comment": "PASS 2: used to read the passphrase out ('hodl2025') the moment the checklist was picked up, which made the puzzle a pickup. Now HaX points at the second half of the clue.",
               "eventPattern": "global_variable_changed:server_passphrase_known",
               "condition": "value === true",
               "onceOnly": true,
@@ -1953,7 +1953,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "id": "m06_password_dictionary",
               "name": "Password Dictionary List",
               "takeable": true,
-              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nhodl\nmoonshot\nprivatekey\ncoldstorage\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
+              "text": "HASHCHAIN INTERNAL — CREDENTIAL AUDIT WORDLIST\n\nCompiled by Dr. I. Volkova for internal password strength testing.\n\nhodl\nbitcoin\nethereum\nsatoshi\nblockchain\nledger\nmonero\nmoonshot\nprivatekey\ncoldstorage\n\n(Most-picked first.)\n\nDoor passphrases: a word above plus 2023 / 2024 / 2025 / 123 / !\nService accounts on the backend: the bare words above, no suffix.\n\nNote: 61% of staff accounts fell to this list in the last audit.\nManagement's response was to stop running the audit.",
               "observations": "Irina's own audit wordlist: the words staff here pick, with the years they bolt on for door passphrases. The backend service accounts use the bare words. Short enough to type out by hand.",
               "puzzle_graph_role": "tool",
               "puzzle_graph_unlocks": "server_room"
@@ -2255,7 +2255,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
       "door_sign": "Server Room",
       "locked": true,
       "lockType": "password",
-      "requires": "bitcoin2025",
+      "requires": "hodl2025",
       "connections": {
         "south": "trading_floor",
         "north": "data_center"

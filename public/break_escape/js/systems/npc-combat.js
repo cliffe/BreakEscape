@@ -20,6 +20,16 @@ export function npcReachesPlayer(npcSprite) {
   return feetClear(a, playerFeet(window.player));
 }
 
+/**
+ * The attacker as the player's health system records it, so a knockout can say who did it.
+ * The name is the NPC's display name from the scenario (plain text; the KO screen sets it
+ * with textContent). Without a name the knockout screen keeps its generic line.
+ */
+export function attackerSource(npcId) {
+  const npc = window.npcManager?.getNPC?.(npcId);
+  return { npcId, name: npc?.displayName || null };
+}
+
 export class NPCCombat {
   /** Can this NPC's blow land on the player now? (the chase code keeps closing in when it can't) */
   canReachPlayer(npcSprite) {
@@ -314,7 +324,7 @@ export class NPCCombat {
                    COMBAT_CONFIG.block.coverHalfAngle);
     if (blocked) {
       const through = blockedDamage(state.attackDamage, COMBAT_CONFIG.block.damageScale);
-      window.playerHealth.damage(through);
+      window.playerHealth.damage(through, attackerSource(npcId));
       window.playerCombat.showBlockedHit?.(player, through);
       console.log(`🛡️ Player blocked ${npcId}: ${through} of ${state.attackDamage} damage got through`);
       return;
@@ -322,7 +332,7 @@ export class NPCCombat {
 
     // Apply damage to player
     const damage = state.attackDamage;
-    window.playerHealth.damage(damage);
+    window.playerHealth.damage(damage, attackerSource(npcId));
 
     // Play hit animation if available
     this.playHitAnimation(window.player);

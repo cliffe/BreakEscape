@@ -1018,14 +1018,16 @@ scada_password = "CascadeWindow19"
               "eventPattern": "global_variable_changed:projection_revised",
               "condition": "value === true && globalVars.team_assigned === true && !globalVars.redirect_window_closed && globalVars.team_assignment !== 'trojan_horse'",
               "onceOnly": true,
-              "setGlobal": { "revision_found_open": true }
+              "setGlobal": { "revision_found_open": true },
+              "sendTimedMessage": { "delay": 2500, "message": "The team can still be moved. The timer on your screen is the window, and it shuts early the moment that operator flag goes through the relay." }
             },
             {
               "_comment": "...or when a player who already had the correction commits the team somewhere else (the window is open from the commit).",
               "eventPattern": "global_variable_changed:team_assigned",
               "condition": "value === true && globalVars.projection_revised === true && !globalVars.redirect_window_closed && globalVars.team_assignment !== 'trojan_horse'",
               "onceOnly": true,
-              "setGlobal": { "revision_found_open": true }
+              "setGlobal": { "revision_found_open": true },
+              "sendTimedMessage": { "delay": 7000, "message": "The team can still be moved. The timer on your screen is the window, and it shuts early the moment that operator flag goes through the relay." }
             },
             {
               "_comment": "PASS 5 alignment r2 (m1, m2): the correction was in hand before the team was committed, wherever it went and whether or not the window was open. The debrief stops telling an informed Trojan Horse commit that it had no way to know, and an informed commit elsewhere after a login that it found the correction late.",
@@ -1074,6 +1076,14 @@ scada_password = "CascadeWindow19"
               "onceOnly": true,
               "setGlobal": { "redirect_window_closed": true, "cascade_armed": true },
               "sendTimedMessage": { "delay": 1500, "message": "They saw you. Sequence armed: fifteen minutes. The window to move the team just shut. A user shell can't kill it. Get root. Privesc guide's yours if you want it." }
+            },
+            {
+              "_comment": "Blind m07 minor 6: the first time the player opens the attack terminal, say plainly that going live on the host as the operator locks the team assignment. Fires while the window is open and the team is not already on Trojan Horse; the flag 2 and reuse nudges still follow. Latched on live_warning_sent.",
+              "eventPattern": "object_interacted",
+              "condition": "data.objectType === 'vm-launcher' && !globalVars.live_warning_sent && !globalVars.redirect_window_closed && !globalVars.team_redirected && globalVars.team_assignment !== 'trojan_horse' && !globalVars.grid_saved",
+              "onceOnly": true,
+              "setGlobal": { "live_warning_sent": true },
+              "sendTimedMessage": { "delay": 7000, "message": "One thing before you go live. Log in as the operator and they see you, and the team assignment locks. Move the team first if you mean to." }
             },
             {
               "_comment": "PASS 3 (r3-m6): the same for a player who never committed the team. They still can (HaX's hub), so don't say it's committed.",
@@ -1348,9 +1358,22 @@ scada_password = "CascadeWindow19"
               "condition": "value === true && !globalVars.flag<%= n %>_submitted && !globalVars.flags_nag_sent",
               "onceOnly": true,
               "setGlobal": { "flags_nag_sent": true },
-              "sendTimedMessage": { "delay": 4000, "message": "Grid's held. Some of what you took off that host hasn't gone through the relay yet. Submit the rest, then call me and I'll put you through." }
+              "sendTimedMessage": { "delay": 6000, "message": "Grid's held. Some of what you took off that host hasn't gone through the relay yet. Submit the rest, then call me and I'll put you through." }
             },
 <% end %>
+            {
+              "_comment": "Blind m07 minor 3: the abort console prints a take-able confirmation, and the countdown stopping was the only sign it had worked. HaX says so the moment the abort lands. Two rows, disjoint on countdown_expired.",
+              "eventPattern": "global_variable_changed:grid_saved",
+              "condition": "value === true && !globalVars.countdown_expired",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 900, "message": "Abort accepted. The sequence is cancelled and the breakers are holding. You stopped it." }
+            },
+            {
+              "eventPattern": "global_variable_changed:grid_saved",
+              "condition": "value === true && globalVars.countdown_expired === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 900, "message": "Abort accepted. Steps two to four are cancelled and the breakers are holding. Seattle's on manual, but the rest of the grid is safe." }
+            },
             {
               "_comment": "PASS 4 (design review fix 1): after the Architect hangs up, HaX says the debrief waits on the player and the plant is still open. Only when all four flags are in; otherwise the nag above has already told them what's missing.",
               "eventPattern": "global_variable_changed:architect_signoff_done",
@@ -1863,7 +1886,7 @@ scada_password = "CascadeWindow19"
         "east": "server_room"
       },
       "npcs": [
-<%# Office life (office_life/PLAN.md section 2): two ambient operators, appended. Ink: ink/m07_npc_adaeze_okafor.ink, ink/m07_npc_gwen_pritchard.ink. They hide on the first server room entry; a KO body stays. %>
+<%# Office life (office_life/PLAN.md section 2): two ambient operators, appended. Ink: ink/m07_npc_adaeze_okafor.ink, ink/m07_npc_gwen_pritchard.ink. They stay on the ops floor until the player first enters the generator room or the SCADA control room (the rooms past the server hall), so the server room visit no longer ends office life; a KO body stays. %>
         {
           "id": "adaeze_okafor",
           "displayName": "Adaeze Okafor",
@@ -1889,15 +1912,16 @@ scada_password = "CascadeWindow19"
           "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
           "chatter": { "cooler": ["Cold water again. Great.", "The load is holding. Don't jinx it.", "Somebody fix that coffee machine.", "Almost there. Almost."] },
           "exchanges": [
-            { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false } },
-            { "with": "gwen_pritchard", "knot": "ex_going_now", "requireGlobal": { "ops_staff_upset": false, "server_hall_reached": false, "heard_ex_last_two": true } }
+            { "with": "gwen_pritchard", "knot": "ex_last_two", "requireGlobal": { "ops_staff_upset": false, "ops_staff_gone": false } },
+            { "with": "gwen_pritchard", "knot": "ex_going_now", "requireGlobal": { "ops_staff_upset": false, "ops_staff_gone": false, "heard_ex_last_two": true } }
           ],
           "eventMappings": [
-            { "eventPattern": "conversation_closed:adaeze_okafor", "condition": "!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "eventPattern": "conversation_closed:gwen_pritchard", "condition": "!globalVars.ops_staff_upset && globalVars.server_hall_reached !== true", "delayMs": 4000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
-            { "eventPattern": "room_entered:server_room", "condition": "globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.server_hall_reached === true && globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'operations_floor' && globalVars.server_hall_reached === true && globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false }
+            { "eventPattern": "conversation_closed:adaeze_okafor", "condition": "!globalVars.ops_staff_upset && globalVars.ops_staff_gone !== true", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "conversation_closed:gwen_pritchard", "condition": "!globalVars.ops_staff_upset && globalVars.ops_staff_gone !== true", "delayMs": 4000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:generator_room", "condition": "globalVars.adaeze_ko !== true", "onceOnly": true, "setGlobal": { "ops_staff_gone": true }, "setVisible": false },
+            { "eventPattern": "room_entered:scada_control", "condition": "globalVars.adaeze_ko !== true", "onceOnly": true, "setGlobal": { "ops_staff_gone": true }, "setVisible": false },
+            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.ops_staff_gone === true && globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'operations_floor' && globalVars.ops_staff_gone === true && globalVars.adaeze_ko !== true", "onceOnly": true, "setVisible": false }
           ]
         },
         {
@@ -1926,9 +1950,10 @@ scada_password = "CascadeWindow19"
           "chatter": { "cooler": ["Cooler's the only thing working.", "Plan's simple: finish up, then out.", "I'd give a lot for real coffee.", "Last glass, then I'm off."] },
           "eventMappings": [
             { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'adaeze_okafor' && !globalVars.ops_staff_upset", "delayMs": 2000, "cooldown": 10000, "needs": { "set": { "thirst": 30 } } },
-            { "eventPattern": "room_entered:server_room", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.server_hall_reached === true && globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },
-            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'operations_floor' && globalVars.server_hall_reached === true && globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false }
+            { "eventPattern": "room_entered:generator_room", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setGlobal": { "ops_staff_gone": true }, "setVisible": false },
+            { "eventPattern": "room_entered:scada_control", "condition": "globalVars.gwen_ko !== true", "onceOnly": true, "setGlobal": { "ops_staff_gone": true }, "setVisible": false },
+            { "eventPattern": "room_entered:operations_floor", "condition": "globalVars.ops_staff_gone === true && globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false },
+            { "eventPattern": "door_opened", "condition": "data.connectedRoom === 'operations_floor' && globalVars.ops_staff_gone === true && globalVars.gwen_ko !== true", "onceOnly": true, "setVisible": false }
           ]
         }
       ],
@@ -2312,7 +2337,7 @@ scada_password = "CascadeWindow19"
             {
               "type": "text_file",
               "name": "Sequence Abort Confirmation",
-              "takeable": true,
+              "takeable": false,
               "readable": true,
               "observations": "The console printed it without being asked. Grid control keeps paper for exactly this.",
               "observationDisplay": "gameDisplay",
@@ -2623,6 +2648,7 @@ scada_password = "CascadeWindow19"
     "hurt_line_said": false,
     "hands_down_said": false,
     "flags_nag_sent": false,
+    "live_warning_sent": false,
     "debrief_requested": false,
     "debrief_timer_fired": false,
 
@@ -2691,6 +2717,7 @@ scada_password = "CascadeWindow19"
     "splice_found": false,
     "inside_reached": false,
     "server_hall_reached": false,
+    "ops_staff_gone": false,
 
 <%# --- Win condition and lore --------------------------------------------- %>
     "grid_saved": false,

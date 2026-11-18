@@ -1,4 +1,4 @@
-// 7.1d (m05 D5, m07 U11): Restart after a knockout resets hostile NPCs that
+// 7.1d (m05 D5, m07 U11): Respawn after a knockout resets hostile NPCs that
 // aren't knocked out (calm, full health; back at their posts after the reload).
 // A KO'd NPC stays down, so its dropped items stay dropped; an NPC that wasn't
 // KO'd keeps its itemsHeld. game-over-screen.js saves the reset before reloading.
@@ -79,7 +79,7 @@ test('hostility restored from a save but never loaded is reset too', () => {
     assert.deepEqual(sys.exportHostility().vault_guard, { hostile: false, ko: false });
 });
 
-test('game-over Restart resets and saves before it reloads', () => {
+test('game-over Respawn resets and saves before it reloads', () => {
     const screen = readFileSync(join(js, 'ui/game-over-screen.js'), 'utf8');
     const restart = screen.slice(screen.indexOf('async restart() {'), screen.indexOf('mainMenu() {'));
     const resetAt = restart.indexOf('resetHostilesForRespawn');

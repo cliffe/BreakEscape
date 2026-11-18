@@ -191,6 +191,23 @@
     color: #ccc;
 }
 
+/* The scenario's note on where captured flags go: a framed panel like the
+   connection instructions, with an amber edge so it reads as a hint. */
+.vm-flag-note {
+    background: #1a1a1a;
+    border: 2px solid #ffaa00;
+    padding: 10px 15px;
+    margin-top: 15px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    line-height: 1.4;
+}
+
+.vm-flag-note p {
+    margin: 0;
+    color: #ffaa00;
+}
+
 /* Hacktivity mode: iframe fills the panel with no extra padding */
 .vm-launcher.vm-launcher-iframe {
     padding: 0;

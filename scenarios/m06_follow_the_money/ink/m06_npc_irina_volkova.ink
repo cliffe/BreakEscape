@@ -500,7 +500,10 @@ Narrator: You put your SAFETYNET credentials on the desk.
 
 === recruitment_decision ===
 #speaker:irina_volkova
-{irina_trust >= 35:
+// Blind-playtest minor G2: trust alone no longer turns her. She turns when
+// trust is high AND the player has shown her the trace (Priya's write-up);
+// her notes and the Ledger Hold Log are the other proof routes below.
+{irina_trust >= 35 and shown_casualties:
     -> recruit_accept
 - else:
     // Dialogue C1 (D6-9): true on both routes in, and different on a return.
@@ -510,6 +513,9 @@ Narrator: You put your SAFETYNET credentials on the desk.
         Dr. Irina Volkova: I won't turn on Satoshi because a stranger put a badge on my desk.
 
         Dr. Irina Volkova: Financial privacy is a right. If people abuse it, that is on them.
+    }
+    {not shown_casualties:
+        Dr. Irina Volkova: Being pleasant isn't proof of what my mixer moved. Show me where the money went.
     }
 
     + [Then you're complicit. You're detained until the police arrive.]

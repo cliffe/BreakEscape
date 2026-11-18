@@ -363,7 +363,8 @@
       "tasks": [
         {
           "taskId": "clone_reception_badge",
-          "type": "custom"
+          "type": "unlock_room",
+          "targetRoom": "conference_room_01"
         },
         {
           "taskId": "copy_staff_badge",
@@ -448,7 +449,8 @@
         },
         {
           "taskId": "decode_client_roster",
-          "type": "custom"
+          "type": "custom",
+          "optional": true
         },
         {
           "taskId": "danny_choice_made",
@@ -478,7 +480,8 @@
         },
         {
           "taskId": "decode_whiteboard",
-          "type": "custom"
+          "type": "custom",
+          "optional": true
         },
         {
           "taskId": "lore_fragment_3",
@@ -560,6 +563,7 @@
     "ffion_rees": "reception_lobby",
     "flag_station_dropsite": "server_room",
     "ftp_rehearsal_note": "server_room",
+    "hallway_cooler": "main_hallway",
     "m03_cyberchef_field_guide": "reception_lobby",
     "m03_lockpicking_field_guide": "reception_lobby",
     "m03_netexploit_field_guide": "reception_lobby",
@@ -567,6 +571,7 @@
     "m03_recon_field_guide": "reception_lobby",
     "m03_rfid_field_guide": "reception_lobby",
     "night_transition": "reception_lobby",
+    "reception_coffee": "reception_lobby",
     "relayed_executive_keycard": "reception_lobby",
     "server_filing_cabinet": "server_room",
     "terry_mott": "executive_wing_hallway",
@@ -576,6 +581,9 @@
     "visitor_badge": "reception_lobby",
     "vm_launcher_zero_day": "server_room",
     "wall_safe_server": "server_room",
+    "yusuf_demir": "reception_lobby",
+    "zainab_hussain": "reception_lobby",
+    "zainab_laptop": "reception_lobby",
     "zero_day_price_list": "server_room",
     "zero_day_transaction_log": "server_room"
   },
@@ -611,6 +619,11 @@
     }
   },
   "requiredContent": [
+    [
+      "conference_room_01",
+      "task clone_reception_badge",
+      null
+    ],
     [
       "conference_room_01",
       "task clone_rfid_card (mapping 'npc_ko:victoria_sterling')",
@@ -658,11 +671,6 @@
     ],
     [
       "executive_office",
-      "task decode_client_roster (mapping 'global_variable_changed:roster_seen')",
-      null
-    ],
-    [
-      "executive_office",
       "task hear_debrief (mapping 'room_entered:executive_office')",
       null
     ],
@@ -688,22 +696,7 @@
     ],
     [
       "reception_lobby",
-      "task clone_reception_badge (mapping 'card_cloned')",
-      null
-    ],
-    [
-      "reception_lobby",
       "task clone_rfid_card (mapping 'card_cloned')",
-      null
-    ],
-    [
-      "reception_lobby",
-      "task decode_client_roster (mapping 'global_variable_changed:roster_seen')",
-      null
-    ],
-    [
-      "reception_lobby",
-      "task decode_whiteboard (mapping 'global_variable_changed:whiteboard_seen')",
       null
     ],
     [
@@ -745,11 +738,6 @@
       "server_room",
       "VM launcher (flag tasks)",
       "vm_launcher_zero_day"
-    ],
-    [
-      "server_room",
-      "task decode_whiteboard (mapping 'global_variable_changed:whiteboard_seen')",
-      null
     ],
     [
       "server_room",
