@@ -103,3 +103,7 @@ All seven checks pass; evidence in LIVE_SLICE3.md "part 4". Server :3098 stopped
 # Engine follow-up (build review R1, m2)
 
 Clicking a seated NPC's sprite centre hits the chair's hit box ("A chair.") instead of opening the chat. Evidence: games 7779, 7789, 7793. Gwen's chair box sits about 19 px west of her sprite centre. Likely in tap-pick.js (npcYieldTarget, in-reach pick) or the bridge's aimPointFor reporting clean on a chair. No data-only fix: moving her position off the chair breaks the sit. Send to the engine owner. Workaround for probes: click 12 px right of her sprite centre.
+
+# R1 fix handover (2026-11-18)
+
+Done: M1, m1, m2, m3, m4, m6, m7, m8 (see LOG.md and LIVE_SLICE3.md "R1 fixes"). Not done: m5 (L1 and the real walkthrough route to the server room on a fresh game with seeded flags). Server :3098 stopped by PID 1039641. Game ids used up to 8210. New probes: tools/playtest/m07-ol-r1m1.mjs, m07-ol-r1m4.mjs, m07-ol-r1chairs.mjs. Dismiss the HaX phone bark with `__test.dismissBlockingUi()` before moveToNear or it returns blocking-ui.

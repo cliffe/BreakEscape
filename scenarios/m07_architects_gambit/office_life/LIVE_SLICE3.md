@@ -176,3 +176,16 @@ Note: the earlier probe's waypoint (440,230) is the cooler approach, not the sup
 
 ### Games used (do not reuse)
 7959, 7961, 7964, 7968, 7972, 7975, 7980, 7986, 7990, 7993, 8002, 8004, 8018, 8049, 8050, 8055, 8059, 8062, 8066, 8069, 8089. Exploratory or failed: 7959 to 7968 (route and door), 7975 to 7986 (reload without Resume), 8004 and 8018 (L3 first attempts), 8049 and 8050 (walk with bark open, door id), 8059 (desk waypoint), 8069 (probe bug).
+
+## R1 fixes (2026-11-18, build review R1, commit f0440a469 data)
+
+Server keyless on :3098, puma PID 1039641, stopped by PID, port confirmed closed. Headless, setFPS(20), fixed steps on, no globals or needs set in the page. Probes: `m07-ol-r1m1.mjs` (cooler trip), `m07-ol-r1m4.mjs` (attack), `m07-ol-r1chairs.mjs`.
+
+### M1 (cooler `seat: "stand"`): PASS, games 8180, 8186
+Natural trip, player parked at (520,248). Game 8186: both `using` at 88 s after entry (8180: 107 s in its log clock after the first 'using' polling, same order); needs-log shows `using`, `returned_post` for each and no `seat_move*`, no `mount_stuck`, no `no_beside_cell`. Chair sprites in the ops floor before and after the trip: `(344,219)`, `aes_office_chair1 (556,150)` and `pnw_office_chair_m1 (406,252)` unchanged to the pixel. The two operator chairs `(364,125)` and `(428,125)` roll out when they rise and are back at the same positions within about 20 s of the return (+2 s: (364,185),(448,153); +20 s: (364,125),(429,126)), both seated again. Gwen's long walk home was not re-timed. Game 8180's trip printed only the tail of its output, so 8186 carries the before/after comparison.
+
+### m4 (`chaseRange` 200): PASS with a limit, games 8202, 8206, 8210
+Punch from the west side with `window.playerCombat.attack`: Adaeze hostile at once, `ops_staff_upset` true, Gwen not hostile. Player kept within about 120 px: she left her seat and chased (81 to 98 px from post, game 8210). Player retreated 270 to 300 px: she was back within 11 px of her post (game 8206, 8202), still hostile, mode idle, at post. The leash now bounds her near her post. Not shown cleanly: the single frame at which she gives up between 120 and 200 px.
+
+### m5 (walkthrough route, L1): NOT RUN
+Out of the tool-call budget. The route probe `m07-ol-route.mjs` has not been proved end to end from the game start. Still to do on a fresh game.
