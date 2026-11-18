@@ -60,36 +60,48 @@ test('base notepad is still scaled from the width with the image aspect (desktop
     assert.equal(r['aspect-ratio'], '165 / 205');
 });
 
-test('portrait phones: the page takes the height the shell leaves, not the width-derived one', () => {
+test('portrait phones: the notepad keeps the image shape and the container wraps it (no stretch)', () => {
     const r = rule(notes, '.notes-minigame-notepad', PORTRAIT);
-    assert.equal(r['aspect-ratio'], 'auto', 'the aspect lock that capped it near 445px is off');
-    assert.ok(has(r.height, '100vh - 176px'), 'height from the viewport less the nav row and Continue');
-    assert.ok(has(r.height, '100dvh - 176px'), 'dynamic viewport height on phones');
-    assert.ok(has(r.height, '1.6'), 'stretch capped so a squat portrait window is not over-stretched');
-    assert.equal(r['background-size'], '100% 100%', 'the picture fills the taller page');
-    assert.equal(r.flex, 'none');
-    assert.match(r.width, /^88vw$/, 'narrower than 92vw so the X stays inside the notepad');
+    assert.equal(r['aspect-ratio'], '165 / 205', 'true image shape, no non-uniform stretch');
+    assert.equal(r['background-size'], undefined, 'no 100% 100% stretch in portrait');
+    assert.ok(has(r.width, '88vw'), 'narrower than 92vw so the X stays inside the notepad');
+    assert.ok(has(r.width, '165 / 205'), 'the height budget turns into a width at the image shape');
+    assert.ok(has(r.width, '100dvh - 176px'), 'dynamic viewport height on phones');
+    const g = rule(notes, '.minigame-container .notes-minigame-game-container', PORTRAIT);
+    assert.equal(g.height, 'auto', 'beats the framework height: 100% (linked after notes.css) so no empty band');
+    assert.equal(rules(notes, '.notes-minigame-notepad', PORTRAIT).some(x => x.height), false, 'no portrait height, so no stretch');
 });
 
-test('portrait: the page body is not cut off, it scrolls inside the notepad', () => {
-    const area = rule(notes, '.notes-minigame-content-area');
-    assert.equal(area.overflow, 'auto');
-    assert.match(area.height, /calc\(90% - 48px\)/);
-    assert.equal(rules(notes, '.notes-minigame-content-area', PORTRAIT).length, 0, 'no portrait override that fixes a height');
-    const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
-    assert.match(js, /notes-minigame-content-area pixel-scroll/, 'visible pixel scrollbar');
-});
-
-test('the portrait rule is not a width-only max-height or fixed pixel height', () => {
-    for (const r of rules(notes, '.notes-minigame-notepad', PORTRAIT)) {
-        assert.ok(!r['max-height'], 'no max-height cap');
-        assert.ok(!/^\d+px$/.test(String(r.height || '')), 'no fixed pixel height');
+test('no rule slices or stretches the notepad non-uniformly (the art has per-ring detail, so no 3-slice)', () => {
+    assert.doesNotMatch(notes, /border-image/);
+    for (const m of notes.matchAll(/\.notes-minigame-notepad \{([^}]*)\}/g)) {
+        const body = m[1];
+        if (!/100% 100%/.test(body)) continue;
+        // allowed only where width and height are the same figure at 165:205
+        const h = body.match(/height: calc\(([^;]*?)\);/)[1];
+        const w = body.match(/width: calc\(\(([^;]*?)\) \* 165 \/ 205\);/)[1];
+        assert.equal(w, h, 'box is exactly 165:205, so 100% 100% is a uniform scale');
     }
 });
 
-test('short landscape (phone on its side) keeps its own sizing', () => {
+test('portrait: the page body scrolls inside the notepad with a scrollbar and a MORE cue', () => {
+    const area = rule(notes, '.notes-minigame-content-area');
+    assert.equal(area.overflow, 'auto');
+    assert.match(area.height, /calc\(90% - 48px\)/);
+    const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
+    assert.match(js, /notes-minigame-content-area pixel-scroll/, 'visible pixel scrollbar');
+    assert.match(js, /moreCue\.className = 'notes-minigame-more'/);
+    assert.match(js, /moreCue\.textContent = 'MORE /, 'text via textContent');
+    const cue = rule(notes, '.notes-minigame-more');
+    assert.equal(cue['font-size'], '8px');
+    assert.equal(cue['pointer-events'], 'none');
+    assert.match(cue['font-family'], /Press Start 2P/);
+});
+
+test('short landscape (phone on its side) keeps its own sizing at the true 165:205 shape', () => {
     const r = rules(notes, '.notes-minigame-notepad', 'orientation: landscape) and (max-height: 640px)')[0];
     assert.equal(r.height, 'calc(100vh - 12px)');
+    assert.equal(r.width, 'calc((100vh - 12px) * 165 / 205)');
     assert.equal(r['aspect-ratio'], 'auto');
 });
 

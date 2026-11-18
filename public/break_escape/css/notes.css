@@ -73,23 +73,45 @@
     image-rendering: crisp-edges;
 }
 
-/* Portrait phones: the page was sized from the width alone (92vw, aspect-ratio locked to the
-   165x205 image), so a 390x844 screen got a 358x445 notepad with 400px of empty shell under
-   it and the page body cut off. Here the page takes the height the shell leaves (the same 176px
-   for the navigation row and Continue), stretched on the image the way the short-landscape
-   rule does, capped at 1.6x its natural shape so a squat portrait window is not over-stretched.
-   Long notes scroll inside the page body (.notes-minigame-content-area, pixel scrollbar). The
-   width is 88vw so the X, placed inside the frame's top-right corner, stays within the notepad. */
+/* Portrait phones: the page was sized from the width alone, and the game container filled the
+   shell (minigames-framework.css is linked again after this file, so its `height: 100%` beat
+   the `height: auto` above), so a 390x844 screen got a 358x445 notepad at the top, the
+   navigation row at the bottom and 230px of dark band between. Here the container wraps the
+   notepad (a selector with more weight than the framework's), the shell centres notepad and
+   navigation row together, and the notepad keeps the image's true 165:205 shape: the art is
+   rings and shaded shadow rows that differ from ring to ring, so it cannot be stretched or
+   sliced and repeated without distorting it. Width 88vw keeps the X inside the notepad. A page
+   longer than the notepad scrolls in its body, with the scrollbar and a "MORE" cue. */
 @media (orientation: portrait) and (max-width: 768px) {
+    .minigame-container .notes-minigame-game-container {
+        height: auto;
+        margin: 8px auto;
+    }
     .notes-minigame-notepad {
-        width: 88vw;
-        height: min(calc(100vh - 176px), calc(88vw * 205 / 165 * 1.6));
-        height: min(calc(100dvh - 176px), calc(88vw * 205 / 165 * 1.6));
-        aspect-ratio: auto;
-        background-size: 100% 100%;
+        width: min(88vw, calc((100vh - 176px) * 165 / 205));
+        width: min(88vw, calc((100dvh - 176px) * 165 / 205));
+        aspect-ratio: 165 / 205;
         flex: none;
     }
 }
+
+/* The "more below" cue at the foot of the page */
+.notes-minigame-more {
+    position: absolute;
+    right: 12%;
+    bottom: 9%;
+    z-index: 2;
+    padding: 2px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 16px;
+    color: #fefefe;
+    background: #2c3e50;
+    border: 2px solid #5c5446;
+    pointer-events: none;
+}
+
+.notes-minigame-more[hidden] { display: none; }
 
 /* Content area */
 .notes-minigame-content-area {

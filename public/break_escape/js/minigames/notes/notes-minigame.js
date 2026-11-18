@@ -205,6 +205,20 @@ export class NotesMinigame extends MinigameScene {
         // Add content area to notepad container, then notepad container to game container
         notepadContainer.appendChild(contentArea);
         this.gameContainer.appendChild(notepadContainer);
+
+        // A page longer than the notepad scrolls inside it: a flat "more" cue at its foot says
+        // so while there is text below (the scrollbar alone is easy to miss on a phone)
+        const moreCue = document.createElement('div');
+        moreCue.className = 'notes-minigame-more';
+        moreCue.textContent = 'MORE \u25BC';
+        moreCue.hidden = true;
+        notepadContainer.appendChild(moreCue);
+        const syncMore = () => {
+            moreCue.hidden = !(contentArea.scrollHeight - contentArea.clientHeight - contentArea.scrollTop > 4);
+        };
+        contentArea.addEventListener('scroll', syncMore, { passive: true });
+        if (typeof window.ResizeObserver === 'function') new window.ResizeObserver(syncMore).observe(contentArea);
+        (window.requestAnimationFrame || setTimeout)(syncMore);
         
         // Create navigation buttons container (only if navigation is not hidden)
         if (!this.params.hideNavigation) {
