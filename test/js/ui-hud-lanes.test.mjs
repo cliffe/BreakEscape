@@ -792,7 +792,7 @@ test('older bug: on short landscape phones the replies fit inside the phone fram
     const c = css('phone-chat-minigame.css');
     const block = c.match(/@media \(max-height: 500px\) \{([\s\S]*?)\n\}/);
     assert.ok(block, 'short-height rule');
-    const thread = parseInt(block[1].match(/\.conversation-view \.messages-container \{ min-height: (\d+)px;/)[1], 10);
+    const thread = parseInt(block[1].match(/\.conversation-view \.messages-container \{[^}]*min-height: (\d+)px;/)[1], 10);
     const replies = block[1].match(/\.conversation-view \.choices-container \{[^}]*min-height: (\d+)px;[^}]*flex-shrink: 1;[^}]*overflow-y: auto;/);
     assert.ok(replies, 'replies shrink and scroll inside the frame');
     // The thread gives way before the replies do: its minimum is the smaller one.

@@ -117,28 +117,68 @@ check('portrait and desktop thread/reply base rules unchanged', () => {
 
 // Review R1 (M1, M2, M3, m1, n1)
 const num = (body, re) => parseInt(body.match(re)[1], 10);
-const phoneHeaderPad = 4 * 2 + 30;       // 4px padding top and bottom around a 30px row = 38
-const chatHeaderRow = 36;                 // back button row with a 32px headshot
-const cueH = 29;
+// Heights counted from the CSS: padding and borders included, the thread and replies border-box.
+const px = (body, prop) => num(body, new RegExp(prop + ':\\s*(\\d+)px'));
+const base = all.filter(r => r.media === '');
+const B = sel => base.find(r => r.selector === sel);
+const statusHeader = 4 * 2 + 2 + 28;      // padding 4 + 4, border-bottom 2, 28px row = 38
+const chatHeaderRow = 32 + 2 * 2;         // 32px headshot plus its 2px border
+const chatHeader = 4 * 2 + 2 + chatHeaderRow; // padding 4 + 4, border-bottom 2 = 46
+const cueH = 2 + 2 + 2 + 19;              // landscape cue: padding 2 + 2, border-top 2, 19px line = 25
+const choicesRule = L('.conversation-view .choices-container');
+const buttonRule = L('.conversation-view .choice-button');
+const buttonH = 2 * 2 + 3 * 2 + 2 * 16 * 1.2; // border + padding + two 16px lines at 1.2 = 48.4
+const repliesNeeded = 2 * buttonH + px(choicesRule.body, 'gap') + 2 * 4 + px(B('.choices-container').body, 'border-top'); // 110.8
+const th = r => px(r.body, 'min-height');
+const cueSel = ':has(.choices-more-cue.visible)';
+check('landscape: thread and replies are border-box', () => {
+    assert.match(L('.conversation-view .messages-container').body, /box-sizing:\s*border-box/);
+    assert.match(choicesRule.body, /box-sizing:\s*border-box/);
+});
+check('landscape: button and container sizes give the arithmetic', () => {
+    assert.match(buttonRule.body, /padding:\s*3px 10px/);
+    assert.match(choicesRule.body, /padding:\s*4px 10px/);
+    assert.ok(Math.abs(repliesNeeded - 110.8) < 0.01, String(repliesNeeded));
+});
 check('landscape budget: two two-line replies fit, with and without the more cue', () => {
-    const th = num(L('.conversation-view .messages-container').body, /min-height:\s*(\d+)px/);
-    const re = num(L('.conversation-view .choices-container').body, /min-height:\s*(\d+)px/);
-    const thCue = num(land.find(r => /^\.conversation-view:has\(\.choices-more-cue\.visible\) \.messages-container$/.test(r.selector)).body, /min-height:\s*(\d+)px/);
-    assert.ok(re >= 110, 'replies minimum shows two two-line replies');
-    assert.ok(phoneHeaderPad + chatHeaderRow + th + re <= 253, 'without cue');
-    assert.ok(phoneHeaderPad + chatHeaderRow + thCue + re + cueH <= 253, 'with cue');
+    const t = th(L('.conversation-view .messages-container'));
+    const re = th(choicesRule);
+    const tCue = th(L('.conversation-view' + cueSel + ' .messages-container'));
+    assert.ok(re >= repliesNeeded, 'replies minimum holds two two-line replies');
+    assert.ok(statusHeader + chatHeader + t + re <= 253, 'without cue: ' + (statusHeader + chatHeader + t + re));
+    assert.ok(statusHeader + chatHeader + tCue + re + cueH <= 253, 'with cue: ' + (statusHeader + chatHeader + tCue + re + cueH));
+    assert.equal(px(L('.conversation-view .choices-more-cue').body, 'padding'), 2);
 });
 check('landscape: phone status header padding trimmed', () => {
     assert.match(L('.phone-header').body, /padding-top:\s*4px/);
 });
-check('landscape SE chats: legend hidden, budget with and without the cue', () => {
+check('landscape SE chats: legend hidden, empty change hidden, one-row bar, budget with and without the cue', () => {
     assert.match(L('.conversation-header .ib-infl-legend').body, /display:\s*none/);
-    const seHeader = 90;
-    const th = num(L('.conversation-view:has(.se-chat-header) .messages-container').body, /min-height:\s*(\d+)px/);
-    const re = num(L('.conversation-view:has(.se-chat-header) .choices-container').body, /min-height:\s*(\d+)px/);
-    const thCue = num(L('.conversation-view:has(.se-chat-header):has(.choices-more-cue.visible) .messages-container').body, /min-height:\s*(\d+)px/);
-    assert.ok(phoneHeaderPad + seHeader + th + re <= 253);
-    assert.ok(phoneHeaderPad + seHeader + thCue + re + cueH <= 253);
+    assert.match(L('.conversation-header .ib-infl-change:empty').body, /display:\s*none/);
+    assert.match(L('.conversation-header .se-chat-header .influence-bar').body, /padding:\s*0 8px/);
+    // bar: border 2 + 2, one row = track margin 8 + (12 + 2 + 2) + 2 = 26 (taller than the 22.5 head), padding 0
+    const trackM = L('.conversation-header .ib-infl-track').body.match(/margin:\s*(\d+)px \d+px (\d+)px/);
+    const bar = 2 * 2 + (Number(trackM[1]) + 12 + 2 * 2 + Number(trackM[2]));
+    assert.equal(bar, 30);
+    const seHeader = 4 + chatHeaderRow + 4 + bar + 4 + 2;   // padding, row, row-gap, bar, padding, border = 80
+    assert.equal(seHeader, 80);
+    const t = th(L('.conversation-view:has(.se-chat-header) .messages-container'));
+    const re = th(L('.conversation-view:has(.se-chat-header) .choices-container'));
+    const tCue = th(L('.conversation-view:has(.se-chat-header)' + cueSel + ' .messages-container'));
+    const reCue = th(L('.conversation-view:has(.se-chat-header)' + cueSel + ' .choices-container'));
+    assert.ok(statusHeader + seHeader + t + re <= 253, 'no cue: ' + (statusHeader + seHeader + t + re));
+    assert.ok(statusHeader + seHeader + tCue + reCue + cueH <= 253, 'cue: ' + (statusHeader + seHeader + tCue + reCue + cueH));
+    assert.ok(re >= 100, 'at least one two-line reply and a half');
+});
+check('landscape: an empty reply list takes no room (terminal keeps 36px for the skip hint)', () => {
+    const e = L('.conversation-view .choices-container:empty');
+    assert.match(e.body, /min-height:\s*0/);
+    assert.match(e.body, /padding-top:\s*0/);
+    assert.match(e.body, /border-top-width:\s*0/);
+    assert.match(L('.phone-terminal-theme .conversation-view .choices-container:empty').body, /min-height:\s*36px/);
+    // The empty rule comes after every min-height rule of equal specificity
+    const order = land.map(r => r.selector.replace(/\s+/g, ' '));
+    assert.ok(order.indexOf('.conversation-view .choices-container:empty') > order.indexOf('.conversation-view:has(.se-chat-header) .choices-container'));
 });
 check('landscape: headshot shrinks to 32px outside call mode; call mode keeps its portrait', () => {
     const r = land.find(x => /:not\(\.phone-call-mode\) \.conversation-header \.conversation-avatar,/.test(x.selector));
@@ -149,7 +189,9 @@ check('landscape: headshot shrinks to 32px outside call mode; call mode keeps it
     assert.match(call.body, /width:\s*128px/);
 });
 check('terminal status line fits 246px (26 chars of VT323 18px plus spacing)', () => {
-    const r = all.find(x => x.selector === '.phone-terminal-theme .phone-header::after');
+    // the cascade winner is the LAST matching rule
+    const r = all.filter(x => x.selector === '.phone-terminal-theme .phone-header::after').pop();
+    assert.equal(all.filter(x => x.selector === '.phone-terminal-theme .phone-header::after').length, 1);
     const em = parseFloat(r.body.match(/letter-spacing:\s*([\d.]+)em/)[1]);
     assert.ok(26 * (18 * 0.5 + 18 * em) <= 246);
 });
@@ -157,6 +199,22 @@ check('no box-shadow ring on the clipped phone shell', () => {
     for (const sel of ['.phone-terminal-theme', '.phone-social-theme']) {
         const r = all.find(x => x.selector === sel);
         assert.doesNotMatch(r.body, /box-shadow/, sel);
+    }
+});
+
+check('no selector block appears twice with an identical body', () => {
+    const seen = new Map(), dup = [];
+    for (const r of all) {
+        const key = r.media + '|' + r.selector.replace(/\s+/g, ' ') + '|' + r.body.replace(/\s+/g, ' ').trim();
+        if (seen.has(key)) dup.push(r.selector); else seen.set(key, 1);
+    }
+    assert.deepEqual(dup, []);
+});
+check('no @media block repeats a selector', () => {
+    for (const m of new Set(all.map(r => r.media))) {
+        if (!m) continue;
+        const sels = all.filter(r => r.media === m).map(r => r.selector.replace(/\s+/g, ' '));
+        assert.equal(new Set(sels).size, sels.length, m);
     }
 });
 
