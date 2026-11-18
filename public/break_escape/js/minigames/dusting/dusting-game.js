@@ -1152,7 +1152,6 @@ export class DustingMinigame extends MinigameScene {
                     el.querySelector('.dusting-lbl').innerHTML = lblHtml(parts);
                 }
             });
-            if (this.advice === FEATHER_SUGGESTION && !this._suggestFeather()) this.advice = '';   // no longer true
             this._setDyn('feedback', el => { el.textContent = this.message || this.advice || this._coach(); });
         } else if (this.step === 'lift') {
             const tc = this.tape.coverage();
