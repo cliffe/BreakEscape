@@ -169,3 +169,24 @@ test('a stale save (its choice thread no longer in the story) is not treated as 
     try { story.state.LoadJson(t.saved); } finally { console.warn = warn; }
     assert.equal(conv._savedChoicesAreExits(story, t.saved), false);
 });
+
+test('_savedChoicesAreExits on the lone-exit fixture: only the silent, stateless single choice counts', async () => {
+    const fx = load(join(here, 'fixtures/phone_lone_exits.json'));
+    const at = async knot => {
+        globalThis.window = { gameState: { globalVariables: {} } };
+        const conv = new PhoneChatConversation('hax', { getNPC: () => null }, new InkEngine('hax'));
+        await conv.loadStory(fx);
+        const story = conv.engine.story;
+        story.ChoosePathString(knot);
+        while (story.canContinue) story.Continue();
+        const saved = story.state.ToJson();
+        const before = JSON.stringify(JSON.parse(saved).variablesState); // VARs must come back untouched
+        const res = conv._savedChoicesAreExits(story, saved);
+        assert.equal(JSON.stringify(JSON.parse(story.state.ToJson()).variablesState), before);
+        return res;
+    };
+    assert.equal(await at('silent'), true, 'silent close');
+    assert.equal(await at('prints'), false, 'close that prints a line');
+    assert.equal(await at('sets_var'), false, 'close that only sets a VAR');
+    assert.equal(await at('menu'), false, 'two options that both close silently');
+});

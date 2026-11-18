@@ -658,8 +658,8 @@ export default class PhoneChatConversation {
         const priorOnError = story.onError;
         let inkTrouble = false;
         story.onError = () => { inkTrouble = true; };
-        const names = Array.from(story.variablesState._defaultGlobalVariables?.keys?.() || []);
-        const snapshot = () => names.map(n => story.variablesState[n]);
+        // Public save format, not a private inkjs field: a rename there must not turn the rule off
+        const snapshot = () => JSON.stringify(JSON.parse(story.state.ToJson()).variablesState || {});
         const silentTag = t => /^(exit_conversation|end_conversation|speaker|delivery)$/i
             .test(String(t).split(':')[0].trim());
         try {
@@ -675,7 +675,7 @@ export default class PhoneChatConversation {
                 (st.tags || []).some(t => !silentTag(t)))) return false;
             // It sets a VAR
             const after = snapshot();
-            return before.every((v, i) => v === after[i]);
+            return before === after;
         } catch (e) {
             return false;
         } finally {
