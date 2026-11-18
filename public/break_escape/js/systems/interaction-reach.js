@@ -13,7 +13,7 @@
  * that part. The vertical measure is the sprite's y, which keeps every
  * existing stand point valid; this only ever shortens a reach. reachY() is
  * the vertical counterpart, and applies to every scenario object: a tall prop
- * against the back wall (a 60px filing cabinet) is reached at its footprint,
+ * against the back wall (a 47px filing cabinet) is reached at its footprint,
  * not its top edge, which a player's feet cannot get within 32px of.
  *
  * Doors and NPCs keep their own measures (DOOR_INTERACTION_RANGE_SQ,
@@ -21,7 +21,7 @@
  */
 
 /** Objects at least this tall (px) are reached at their footprint, not their top edge (reachY). */
-export const TALL_PROP_PX = 48;
+export const TALL_PROP_PX = 32;
 
 /** The x to measure reach to for `sprite`, seen from player x `fromX`. */
 export function reachX(sprite, fromX) {
@@ -47,9 +47,9 @@ export function reachX(sprite, fromX) {
  * vertical counterpart of reachX. The player's y is clamped into the sprite's
  * vertical span, so standing level with any part of it counts as being at that
  * part. A scenario object's origin is its top-left, so measuring to sprite.y
- * put a floor-standing 60px cabinet against the back wall (m01 derek_cabinet)
+ * put a floor-standing 47px cabinet against the back wall (m01 derek_cabinet)
  * about 27px beyond the nearest the player's feet can reach, and the walk
- * stopped short. This applies to every scenario object at least TALL_PROP_PX (48) tall,
+ * stopped short. This applies to every scenario object at least TALL_PROP_PX (32) tall,
  * or marked "wallMounted"; shorter props, doors, NPCs, rotated sprites and sprites without
  * scenario data keep sprite.y. Like reachX it only ever shortens a reach: the
  * clamped point is never further from fromY than sprite.y is. It does not

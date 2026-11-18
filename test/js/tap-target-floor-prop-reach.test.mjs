@@ -1,6 +1,6 @@
 // A tall floor-standing prop against the back wall (m01 derek_cabinet, filing_cabinet_locked2,
-// 29x60, origin 0,0) is reached at its footprint, not its top edge. Reach used to be measured
-// to the top: with the player's feet unable to go above y 69 the top was ~27 px away at best, so
+// 29x47 in the game, origin 0,0) is reached at its footprint, not its top edge. Reach used to be measured
+// to the top: with the player's feet unable to go above y 69 the top was ~58 px away at best, so
 // a tap walk stopped short ("Can't reach it from here.") and E opened the safe beside it instead.
 // Uses the real interactions.js, interaction-reach.js, interaction-walls.js and tap-pick.js.
 //
@@ -56,13 +56,13 @@ globalThis.window = {};
 const { isObjectInInteractionRange, tryInteractWithNearest } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
 const occMod = await import(dataUrl(readFileSync(join(js, 'systems/npc-sight-occlusion.js'), 'utf8')));
 
-// m01 geometry, room-relative, scenario origin (0,0): the cabinet 29x60 with its top at 10.75 (bottom
-// 70.75), the safe beside it 24x30 at x 108.5-132.5, top 35.5
+// m01 geometry, room-relative, scenario origin (0,0): the cabinet 29x47 (the texture size rooms.js uses, not the
+// 29x60 in the Tiled object) with its top at 10.75 (bottom 57.75), the safe beside it 24x30 at x 108.5-132.5, top 35.5
 const mk = (id, x, y, w, h) => ({ x, y, displayWidth: w, displayHeight: h, originX: 0, originY: 0, active: true,
     interactable: true, visible: true, name: id, objectId: id, scenarioData: { id, name: id, type: 'safe' } });
-const cabinet = mk('derek_cabinet', 79.5, 10.75, 29, 60);
+const cabinet = mk('derek_cabinet', 79.5, 10.75, 29, 47);
 const safe = mk('derek_safe', 108.5, 35.5, 24, 30);
-// The player sprite is 31 px above the feet; the cabinet's base blocks the feet above y 69
+// The player sprite is 31 px above the feet; the walkable floor starts at feet y 69 (the cabinet's footprint and the back wall)
 const FOOT = 31;
 const playerAtFeet = (fx, fy, direction = 'up') => ({ x: fx, y: fy - FOOT, direction, body: { center: { x: fx, y: fy } } });
 // The walkable cells: feet y >= 69, on a 32 px grid whose first row below the base is feet y 80
@@ -162,7 +162,7 @@ test('nothing becomes reachable across a wall: a cabinet whose top pokes into th
     const room = (x, y, rows) => ({ position: { x, y }, map: { width: 10, height: 10, tileWidth: 32, tileHeight: 32 },
         wallsLayers: [layer(rows)], objects: {}, npcSprites: [], doorSprites: [], collisionBodies: [] });
     const reception = room(0, 0, RECEPTION);
-    const cab = { ...mk('wall_cab', 200, 10.75, 29, 60), roomId: 'reception_area', texture: { key: 'filing_cabinet' } };
+    const cab = { ...mk('wall_cab', 200, 10.75, 29, 47), roomId: 'reception_area', texture: { key: 'filing_cabinet' } };
     reception.objects.wall_cab = cab;
     window.rooms = { reception_area: reception, main_office_area: room(0, -256, OFFICE) };
     window.npcSightOcclusion = new occMod.SightOcclusion();

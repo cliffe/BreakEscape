@@ -18,7 +18,7 @@ import { staticNpcBodyDistSq } from '../npc-reach.js';
 // Reach also needs no wall between (interactions.js asks the same function)
 import { interactionLineClear, wallClearFrom, sameRoomFrom, playerFeet as wallsPlayerFeet } from '../interaction-walls.js';
 // Reach runs to the nearest part of a wide object, in the game and here
-import { reachX, reachY, aimX } from '../interaction-reach.js';
+import { reachX, reachY, aimX, TALL_PROP_PX } from '../interaction-reach.js';
 // The engine's own door placement: door sprites (doors.js) and the wall gaps
 // cut for them (collision.js) both come from this one function, so a doorway
 // computed with it is where the gap really is, sprite or no sprite.
@@ -703,7 +703,7 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
     const centresY = [targetY];
     const h = target && target.scenarioData && !target._isNPC && !target.doorProperties
         ? (target.displayHeight ?? target.height ?? 0) : 0;   // a short prop adds nothing: reachY keeps its top edge
-    if (h > 16) {
+    if (h >= TALL_PROP_PX) {   // the same rule as reachY; a shorter prop keeps its top edge
         const top = target.y - (target.originY ?? 0.5) * h;
         const n = Math.min(6, Math.ceil(h / 16));
         for (let i = 0; i <= n; i++) {
