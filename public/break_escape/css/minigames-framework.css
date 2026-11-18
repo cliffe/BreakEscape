@@ -564,8 +564,9 @@
    (5 px to its left) in a 46 px bar. The X is a border-box button: 30 px outer, padding box 22 px
    (4 px border) or 18 px (6 px themed border). Insets are measured from that padding box, so the
    border width (--ui-small-button-px, 4px unthemed) is added to the side reaches: left starts 1 px
-   outside the X's own edge (the new-tab button is 5 px away), right reaches 14 px past the X
-   (inside the 15 px to the bar edge), so the target is 45 px wide whichever border is drawn.
+   outside the X's own edge (the new-tab button is 5 px away), right reaches 14 px past the X,
+   so the target is 45 px wide whichever border is drawn. The unthemed X's reach spills about
+   1.5 px past the bar's edge; nothing is drawn there, so it is cosmetic.
    Vertical inset -13 gives 56 minus twice the border (44 themed, 48 unthemed), filling the bar
    without hanging into the iframe. Live proof measures it. */
 .title-bar .minigame-close-button::after {

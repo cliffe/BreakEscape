@@ -127,11 +127,28 @@ test('phone-chat X hit area on a phone stops at the phone header and is 44px tal
     const i = s.indexOf('[data-minigame="phone-chat"] > .minigame-close-button::after');
     assert.ok(i >= 0, 'rule exists');
     const r = s.slice(i, s.indexOf('}', i));
+    const mq = s.lastIndexOf('@media', i);
+    assert.ok(mq >= 0 && /^@media \(max-width: 500px\)/.test(s.slice(mq)), 'rule sits in @media (max-width: 500px)');
+    assert.ok(!s.slice(mq, i).includes('\n}\n'), 'the media block is still open at the rule');
     for (const border of [4, 6]) {
         const u = unionSize(insetOf(r), border);
         assert.ok(u.h >= 44, `height ${u.h} at border ${border}`);
         assert.ok(u.reach.b <= 0, `bottom reach ${u.reach.b} does not pass the X's border box`);
+        assert.ok(u.reach.t <= 15, `top reach ${u.reach.t} stays within the 15px to the viewport edge`);
     }
+});
+
+test('terminal-theme phone header fits Notepad plus the status line in 350px (m1)', () => {
+    const s = read('phone-chat-minigame.css');
+    const r = rule(s, '.phone-terminal-theme .phone-header');
+    assert.match(r, /gap: 4px/);
+    assert.match(r, /padding-left: 12px/);
+    assert.match(r, /padding-right: 12px/);
+    // GNF stays at 16px multiples
+    assert.match(rule(s, '.phone-notepad-btn'), /font-size: 16px/);
+    const after = rule(s, '.phone-terminal-theme .phone-header::after');
+    assert.match(after, /SECURE CHANNEL ESTABLISHED/);
+    assert.match(after, /font-size: 14px/);
 });
 
 test('se-overlay-close touch hit area is 44px (m2)', () => {
@@ -148,6 +165,7 @@ test('vm-launcher max-height is dvh with a vh fallback line before it (m4, n3)',
     const r = rule(read('vm-launcher-minigame.css'), '.vm-launcher');
     assert.match(r, /min\(400px, calc\(100dvh - \d+px\)\)/);
     assert.ok(r.indexOf('100vh') >= 0 && r.indexOf('100vh') < r.indexOf('100dvh'), 'vh fallback before dvh');
+    assert.match(r, /max-height: min\(400px, calc\(100vh - 110px\)\)/, 'vh fallback is capped like the dvh line');
 });
 
 test('vm-launcher wraps long VM titles and has no faux bold or dead rules (m3, n1, n2)', () => {

@@ -5,7 +5,7 @@
 .vm-launcher {
     padding: 15px;
     font-family: 'GNF', monospace;
-    max-height: calc(100vh - 110px);   /* fallback where dvh is unsupported */
+    max-height: min(400px, calc(100vh - 110px));   /* fallback where dvh is unsupported */
     max-height: min(400px, calc(100dvh - 110px));  /* viewport-relative: the launch actions stay reachable at 390px high */
     overflow-y: auto;
 }
