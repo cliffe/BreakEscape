@@ -228,13 +228,24 @@
 }
 
 /* Short landscape (844x390): the strip sits outside the lock's scroll area, so a row on its own
-   line would take about 70px from the lock. Put it back on the image's line there: the strip's
-   content is about 790px (shell margins and border included), enough for image 48 + gap 16 +
-   name + the about 460px row */
+   line would take about 70px from the lock. Keep one line there: the strip does not wrap, the
+   row keeps its natural width (about 460px with the caption, 290 without) and the name block
+   takes what is left of the about 790px (shell margins and border included) and wraps its own
+   text, so "Door: Derek Lawson - Operations" goes to two lines instead of pushing the row down */
 @media (max-height: 560px) and (min-width: 769px) {
+    .lockpicking-item-section {
+        flex-wrap: nowrap;
+    }
+
+    .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
     .lockpicking-mode-row {
         width: auto;
-        flex: 1 1 auto;
+        flex: 0 0 auto;
         margin-top: 0;
     }
 }
