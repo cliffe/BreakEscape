@@ -322,7 +322,7 @@ Every default here equals the default stage 9 puts in `globalVariables` (or `imp
 
 ### 2.3 Imports
 
-FA §3.2: 90 variables (Tier 1 40, Tier 2 50) plus nine `completed`, every alias the default `mNN_<var>`. Read-only. Defaults: `""` where marked, else `false`. **Wherever a present, at-large or penalising value equals the default**, the condition also needs that source's `mNN_completed`, so a player who never played it is told nothing false (FA §3, rule above the never-played table; MC rule 1.9).
+FA §3.2: 92 variables (Tier 1 40, Tier 2 52; the last two are m08 `julian_ko` and `agnieszka_ko`, D151b, added 2026-11-18) plus nine `completed`, every alias the default `mNN_<var>`. Read-only. Defaults: `""` where marked, else `false`. **Wherever a present, at-large or penalising value equals the default**, the condition also needs that source's `mNN_completed`, so a player who never played it is told nothing false (FA §3, rule above the never-played table; MC rule 1.9).
 
 | Source | Tier 1 (presence, route, helper, obstacle, scene form) | Tier 2 (lines only) |
 |---|---|---|
@@ -333,11 +333,11 @@ FA §3.2: 90 variables (Tier 1 40, Tier 2 50) plus nine `completed`, every alias
 | m05 | – | `m05_entropy_program_exposed`, `m05_elena_treatment_funded`, `m05_final_choice` `""`, `m05_found_pipeline_list`, `m05_recruiter_deal_accepted`, `m05_recruiter_deal_confessed`, `m05_lisa_ko`, `m05_owen_ko`, `m05_halloran_ko`, `m05_patricia_ko` |
 | m06 | `m06_assets_seized` | `m06_satoshi_stance` `""`, `m06_monitoring_enabled`, `m06_guard_ko`, `m06_trader_ko`, `m06_analyst_ko` |
 | m07 | `m07_elena_outcome` `""`, `m07_mercer_fate` `""`, `m07_mercer_ko`, `m07_hollis_resolved` `""`, `m07_debrief_stance` `""`, `m07_team_assignment` `""`, `m07_team_redirected` | `m07_countdown_expired`, `m07_architect_echo_heard`, `m07_elena_ko` |
-| m08 | `m08_nightshade_triple_agent`, `m08_triple_agent_first_payment`, `m08_nightshade_arrested`, `m08_nightshade_ko_before_fate`, `m08_accused_vector`, `m08_accused_phantom`, `m08_vector_apologised`, `m08_phantom_apologised`, `m08_vector_hostile`, `m08_phantom_hostile` | `m08_offduty_agent_ko`, `m08_analyst_ko`, `m08_athena_ko`, `m08_netherton_ko`, `m08_hax_ko`, `m08_named_on_evidence` |
+| m08 | `m08_nightshade_triple_agent`, `m08_triple_agent_first_payment`, `m08_nightshade_arrested`, `m08_nightshade_ko_before_fate`, `m08_accused_vector`, `m08_accused_phantom`, `m08_vector_apologised`, `m08_phantom_apologised`, `m08_vector_hostile`, `m08_phantom_hostile` | `m08_offduty_agent_ko`, `m08_analyst_ko`, `m08_athena_ko`, `m08_netherton_ko`, `m08_hax_ko`, `m08_julian_ko`, `m08_agnieszka_ko`, `m08_named_on_evidence` |
 | m09 | `m09_nightshade_shown_file`, `m09_sleeper_named`, `m09_recruiter_offer` `""`, `m09_deck_pulled` `""`, `m09_sleeper_shortlist` | `m09_recruiter_secret` `""`, `m09_reading_finished`, `m09_albion_notified`, `m09_cage_bin` `""`, `m09_legacy_files_saved`, `m09_hax_confession_answer` `""` |
 | completed | `m01_completed` … `m09_completed` (nine) | |
 
-Counts: Tier 1, 40; Tier 2, 50. FA §3.2 and MC §7 say which line or branch each one changes; writers read those rows, not this table, for meaning. Values the ink tests against (for typos): `m03_victoria_fate` `recruited` / `escaped` / `arrested` / `ko`; `m04_disclosure_choice` `full` / `partial` / `quiet`; `m06_satoshi_stance` `wondered` / `rejected` / `refused`; `m07_team_assignment` `fracture` / `trojan_horse` / `meltdown`; `m07_debrief_stance` `hardened` (and others; only `hardened` is read); `m07_mercer_fate` `arrested` (else at large, with `m07_completed`); `m07_hollis_resolved` `evaded`; `m07_elena_outcome` `turned`; `m09_recruiter_offer` `taken` / `double_crossed` / `named` / `refused`; `m09_deck_pulled` `none` / `her_file` / `alpha_tapes`; `m09_recruiter_secret` `kept` / `told` / `confessed` / `denied`; `m09_cage_bin` `derek_file` / `letters` / `nightshade_copy`; `m09_hax_confession_answer` `should_have_told` / `same_in_your_place` / `afterwards`; `m01_final_choice` and `m05_final_choice` as their missions export them (writers check the source erb's values before testing one).
+Counts: Tier 1, 40; Tier 2, 52 (with m08 `julian_ko` and `agnieszka_ko`). FA §3.2 and MC §7 say which line or branch each one changes; writers read those rows, not this table, for meaning. Values the ink tests against (for typos): `m03_victoria_fate` `recruited` / `escaped` / `arrested` / `ko`; `m04_disclosure_choice` `full` / `partial` / `quiet`; `m06_satoshi_stance` `wondered` / `rejected` / `refused`; `m07_team_assignment` `fracture` / `trojan_horse` / `meltdown`; `m07_debrief_stance` `hardened` (and others; only `hardened` is read); `m07_mercer_fate` `arrested` (else at large, with `m07_completed`); `m07_hollis_resolved` `evaded`; `m07_elena_outcome` `turned`; `m09_recruiter_offer` `taken` / `double_crossed` / `named` / `refused`; `m09_deck_pulled` `none` / `her_file` / `alpha_tapes`; `m09_recruiter_secret` `kept` / `told` / `confessed` / `denied`; `m09_cage_bin` `derek_file` / `letters` / `nightshade_copy`; `m09_hax_confession_answer` `should_have_told` / `same_in_your_place` / `afterwards`; `m01_final_choice` and `m05_final_choice` as their missions export them (writers check the source erb's values before testing one).
 
 ### 2.4 The seven exports
 
@@ -463,7 +463,7 @@ Four functions in the include. Ink functions can't print in a way the player see
 | m05 | `m05_lisa_ko or m05_owen_ko or m05_halloran_ko or m05_patricia_ko` |
 | m06 | `m06_guard_ko or m06_trader_ko or m06_analyst_ko` |
 | m07 | `m07_elena_ko` |
-| m08 | `m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko` |
+| m08 | `m08_offduty_agent_ko or m08_analyst_ko or m08_athena_ko or m08_netherton_ko or m08_hax_ko or m08_julian_ko or m08_agnieszka_ko` |
 
 Read in two places only: exchange 3's ledger sting by band (1; 2–3; 4 or more; 0 says nothing), and the clean-first-day answer's gate in exchange 1 (`ko_pattern() == 0`). A table-driven test of it waits for stage 9 (§6.2).
 
