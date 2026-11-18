@@ -49,21 +49,21 @@ for (const [spec, body] of Object.entries(stubs)) {
 }
 writeFileSync(join(dir, 'interactions.mjs'), src);
 globalThis.window = {};
-const { tryInteractWithNearest, tryInteractWithNPC } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
+const { tryInteractWithNearest, tryInteractWithNPC, isObjectInInteractionRange } = await import(pathToFileURL(join(dir, 'interactions.mjs')).href);
 
 // Player at (100, 100) facing down (both targets need a turn, so the aim shows in faceCalls). A chair spans x 110..140 (nearest edge 10 px away); Amara's centre is 60 px away.
-const chair = (extra = {}) => ({ x: 110, y: 90, displayWidth: 30, displayHeight: 30, originX: 0, originY: 0,
+const chair = (extra = {}) => ({ x: 110, y: 90, width: 30, height: 30, displayWidth: 30, displayHeight: 30, originX: 0, originY: 0,
     active: true, interactable: true, visible: true, scenarioData: { id: 'chair' }, ...extra });
 const amara = (extra = {}) => ({ x: 160, y: 100, npcId: 'amara', _isNPC: true, active: true, visible: true, ...extra });
 
-function setup({ seat, npc, seated = true }) {
+function setup({ seat, npc, seated = true, place = null, player = { x: 100, y: 100, direction: 'down' } }) {
     globalThis.__faceCalls = [];
     globalThis.__handled = [];
     for (const k of Object.keys(globalThis.__testRooms)) delete globalThis.__testRooms[k];
     globalThis.__testRooms.r = { objects: { c: seat }, npcSprites: [npc] };
-    window.player = { x: 100, y: 100, direction: 'down' };
+    window.player = { ...player };
     window.seating = { isSeat: (o) => o === seat, currentSeat: () => null, trySit: () => false, standUp() { globalThis.__stood = true; } };
-    window.npcBehaviorManager = { getBehavior: (id) => (id === 'amara' && seated ? { _seat: { chair: seat } } : {}) };
+    window.npcBehaviorManager = { getBehavior: (id) => (id === 'amara' && seated ? { _seat: place === null ? { chair: seat } : { chair: seat, seat: { places: [[10, 0], [50, 0]] }, place } } : {}) };
     window.npcHostileSystem = { isNPCKO: () => false, isNPCHostile: () => false };
     window.npcManager = { getNPC: () => null };
 }
@@ -94,11 +94,47 @@ test('a reserved-but-empty chair does not route E to the NPC walking over to it'
     assert.ok(!aimed().includes('160,100'), 'she is not reached: ' + aimed());
 });
 
-test('E beside a two-place sofa with one sitter does not skip the sofa (a place is free)', () => {
-    const seat = chair({ _places: { 0: 'amara' } });
-    setup({ seat, npc: amara() });
+// A 60 px sofa at x 110..170: place feet at (120,120) and (160,120). Amara sits on place 0.
+const sofa = () => chair({ width: 60, displayWidth: 60, _places: { 0: 'amara' } });
+
+test('E beside a two-place sofa near her place talks to her (m3)', () => {
+    const seat = sofa();
+    setup({ seat, npc: amara({ x: 120, y: 105 }), place: 0 });
     press();
-    assert.deepEqual(aimed(), ['160,100'], 'she wins by score (the sofa carries the seat penalty) and is reachable from the sofa');
+    assert.deepEqual(aimed(), ['120,105'], 'aimed at Amara, not at the sofa: ' + aimed());
+});
+
+test('E beside the free place of a sofa with a sitter sits, even with her centre in reach (m3)', () => {
+    const seat = sofa();
+    setup({ seat, npc: amara({ x: 150, y: 100 }), place: 0, player: { x: 170, y: 110, direction: 'down' } });
+    press();
+    assert.equal(aimed().length, 1, aimed());
+    assert.ok(!aimed().includes('150,100'), 'the sofa, not Amara: ' + aimed());
+});
+
+test('a sofa measures to her own place: its far end does not reach her (m2)', () => {
+    const seat = sofa();
+    const npc = amara({ x: 400, y: 100 });
+    setup({ seat, npc, place: 0, player: { x: 200, y: 110, direction: 'down' } });
+    assert.equal(tryInteractWithNPC(npc), false, '80 px from her place, 30 from the sofa edge');
+    setup({ seat, npc, place: 0, player: { x: 100, y: 110, direction: 'down' } });
+    assert.equal(tryInteractWithNPC(npc), true, '20 px from her place');
+});
+
+test('the tap path reaches a seated NPC through her seat, as E does (m1)', () => {
+    const seat = chair({ seatedBy: 'amara' });
+    const npc = amara();
+    setup({ seat, npc });
+    assert.equal(isObjectInInteractionRange(npc), true, 'seat in reach, centre 60 px away');
+    setup({ seat, npc, seated: false });
+    assert.equal(isObjectInInteractionRange(npc), false, 'not on the seat');
+});
+
+test('a full sofa with both sitters on it is skipped; E picks a sitter (n1)', () => {
+    const seat = chair({ width: 60, displayWidth: 60, seatedBy: 'full', _places: { 0: 'amara', 1: 'bo' } });
+    setup({ seat, npc: amara({ x: 120, y: 105 }), place: 0 });
+    press();
+    assert.deepEqual(aimed(), ['120,105']);
 });
 
 test('a reserved chair stays an ordinary chair for E: it is aimed at, not skipped', () => {
@@ -107,4 +143,23 @@ test('a reserved chair stays an ordinary chair for E: it is aimed at, not skippe
     press();
     assert.equal(aimed().length, 1, 'the chair is the one target: ' + aimed());
     assert.ok(!aimed().includes('400,100'));
+});
+
+test('a knocked-out sitter is not reached and does not hide her chair (n1)', () => {
+    const seat = chair({ seatedBy: 'amara' });
+    setup({ seat, npc: amara() });
+    window.npcHostileSystem.isNPCKO = () => true;
+    press();
+    assert.ok(!aimed().includes('160,100'), 'not aimed at the KO sitter: ' + aimed());
+});
+
+test('a hostile sitter reached through her seat is struck, not talked to (n1)', () => {
+    const seat = chair({ seatedBy: 'amara' });
+    const npc = amara();
+    setup({ seat, npc });
+    window.npcHostileSystem.isNPCHostile = () => true;
+    globalThis.__hits = 0;
+    window.playerCombat = { attack() { globalThis.__hits++; } };
+    assert.equal(tryInteractWithNPC(npc), true);
+    assert.equal(globalThis.__hits, 1);
 });

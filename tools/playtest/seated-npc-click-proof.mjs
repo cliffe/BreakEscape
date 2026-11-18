@@ -56,6 +56,13 @@ await t(500);
 out.atEdge = await info(); await shot('1-at-sofa-edge');
 out.tap = await page.evaluate(([x, y]) => window.__test.clickAt(x, y), miniaTap);
 out.tapWait = await waitUi();                       // the first tap walks to her; chat opens only if it was already in reach
+// Ade's club chair is also in reach from this edge, so the tap can open the who-do-you-mean menu (R2 m1: the tap
+// reach matches E). Record it and pick Mina from it.
+if (out.tapWait.blocking?.id === 'be-interaction-menu-overlay') {
+    out.tapMenu = out.tapWait.blocking.text;
+    await page.evaluate(() => { const b = [...document.querySelectorAll('#be-interaction-menu .be-im-item')].find(e => /Mina/.test(e.textContent)); if (b) b.click(); });
+    out.tapPickWait = await waitUi();
+}
 out.afterTap = await info(); out.logTap = await page.evaluate(() => window.__log.slice());
 await shot('2-after-tap');
 const closeChat = async () => { const u = (await info()).ui; if (u.minigame || u.blocking) { await page.evaluate(() => { try { window.MinigameFramework?.endMinigame?.(true); } catch (e) {} }); await t(600); } };
