@@ -10,7 +10,7 @@
 import { start } from './m10-ol-lib.mjs';
 const [gid, out, which = 'A'] = process.argv.slice(2);
 const g = await start(gid, { reload: true });
-g.page.on('console', (m) => { const x = m.text(); if (/ring offer|📵|held|game_loaded|breach_call|missed|Restored/i.test(x)) console.log('  [console]', x.slice(0, 220)); });
+g.page.on('console', (m) => { const x = m.text(); if (/dropped: the player is in combat/.test(x)) g.page.evaluate(() => { window.__proofLog = (window.__proofLog || '') + 'dropped: the player is in combat;'; }).catch(() => {}); if (/ring offer|📵|held|game_loaded|breach_call|missed|Restored/i.test(x)) console.log('  [console]', x.slice(0, 220)); });
 // Resume overlay, then the title card and any popup, as the harness's bootstrap does (resume:"resume").
 const boot = async () => {
   for (let i = 0; i < 12; i++) {
@@ -190,6 +190,79 @@ if (which === 'C') {
   console.log('errs', JSON.stringify(g.errs.slice(0, 5)));
   await g.close();
   process.exit(viol.length ? 1 : 0);
+}
+// S and G: a slowed guard (chaseSpeed 1) 90 px away in the player's room, so he chases but cannot reach.
+//   S: while the chase is on, a scripted conversation, the guard's person chat (player_spotted) and a sight challenge must all be held;
+//      after the fight the scripted chat opens, the person chat re-fires on a new sighting, the sight challenge fires if the player is still in the cone.
+//   G: the 20 s give-up: playerInCombat falls to false after about 20 s with the guard still chasing and the queued breach call rings
+//      and then stays up for 12 s (not pulled back, no hit lands).
+if (which === 'S' || which === 'G') {
+  await g.ev(() => { const b = window.npcBehaviorManager.getBehavior('tunnel_guard'); b.config.hostile.chaseSpeed = 1; });
+  // G moves the player 90 px away (he may leave the room: the guard is then the other-room case); S moves the guard instead, so both stay in blast_tunnel
+  if (which === 'G') await g.ev(() => { window.playerHealth.heal(100); const gb = window.npcBehaviorManager.getBehavior('tunnel_guard').sprite, p = window.player; const dx = p.x - gb.x, dy = p.y - gb.y, d = Math.hypot(dx, dy) || 1; p.setPosition(p.x + dx / d * 90, p.y + dy / d * 90); });
+  else await g.ev(() => { window.playerHealth.heal(100); const gb = window.npcBehaviorManager.getBehavior('tunnel_guard').sprite, p = window.player; const dx = gb.x - p.x, dy = gb.y - p.y, d = Math.hypot(dx, dy) || 1; gb.setPosition(p.x + (dx / d || 1) * 90, p.y + (dy / d) * 90); });
+  await g.t(500);
+  await closeChat();
+  await g.ev(() => { window.__spotted = []; const ed = window.eventDispatcher, o = ed.emit.bind(ed); ed.emit = (ev, d) => { if (/^player_spotted/.test(ev)) window.__spotted.push(ev); return o(ev, d); }; });
+  console.log('slowed start', JSON.stringify(await R()));
+}
+if (which === 'G') {
+  const t0 = Date.now(); let fellAt = null, ringAt = null, pulled = false, seenRing = false;
+  for (let i = 0; i < 70; i++) {
+    await g.t(1000); await closeChat();
+    const r = await R(); const sec = Math.round((Date.now() - t0) / 1000);
+    if (i % 3 === 0 || (!r.combat && fellAt === null)) console.log(`G t+${sec}s`, JSON.stringify(r));
+    if (!r.combat && fellAt === null) { fellAt = sec; await sh('2-gave-up'); }
+    if (r.cur && r.cur.state === 'ringing' && ringAt === null) { ringAt = sec; await sh('3-ringing'); }
+    if (r.cur && r.cur.state === 'ringing') seenRing = true;
+    if (seenRing && !r.cur && r.q > 0) { pulled = true; viol.push(`G t+${sec}s: the ringing call was pulled back to the queue`); }
+    if (ringAt !== null && sec - ringAt >= 12) break;
+    if (r.hp < 100) { viol.push(`INVALID: the guard hit the player (hp ${r.hp}) at t+${sec}s`); break; }
+  }
+  console.log(`G gave up at ${fellAt}s, rang at ${ringAt}s, pulled back: ${pulled}`);
+  if (fellAt === null || fellAt < 17 || fellAt > 30) viol.push(`the hold fell at ${fellAt}s, expected about 20 s`);
+  if (ringAt === null) viol.push('the call never rang after the give-up');
+  await sh('4-after-12s');
+  console.log(`VERDICT G: ${viol.length ? 'FAIL' : 'PASS'}`, JSON.stringify(viol));
+  await g.close(); process.exit(viol.length ? 1 : 0);
+}
+if (which === 'S') {
+  const ST = () => g.ev(() => ({ mg: window.MinigameFramework?.currentMinigame?.constructor?.name || null, q: window.npcManager._scriptedCallQueue.length, combat: !!window.playerInCombat?.(), spotted: window.__spotted.length }));
+  await g.ev(() => { window.npcManager._queueScriptedConversation({ npcId: 'tunnel_guard', label: 'proof-scripted', sceneType: 'person-chat', startDelayMs: 0, params: () => ({ npcId: 'tunnel_guard', startKnot: 'tunnel', scenario: window.gameScenario }) }); });
+  await g.t(3000);
+  const s1 = await ST(); console.log('S scripted chat during chase', JSON.stringify(s1));
+  if (s1.mg === 'PersonChatMinigame') viol.push('the scripted chat opened mid-chase');
+  if (!s1.combat) viol.push('S: not in combat at the scripted check');
+  if (!s1.q) viol.push('the scripted chat is not held in the queue');
+  const log0 = await g.ev(() => 0);
+  await g.ev(() => { for (const k of [...window.npcManager.triggeredEvents.keys()]) if (/player_spotted:tunnel_guard/.test(k)) window.npcManager.triggeredEvents.delete(k); });   // the guard's own once-only chat, re-armed in the page
+  await g.ev(() => { window.eventDispatcher.emit('player_spotted:tunnel_guard', { npcId: 'tunnel_guard' }); });
+  await g.t(3000);
+  const s2 = await ST(); console.log('S person chat (player_spotted) during chase', JSON.stringify(s2));
+  if (s2.mg === 'PersonChatMinigame') viol.push('the person chat opened mid-chase');
+  if (!/dropped: the player is in combat/.test(await g.ev(() => window.__proofLog || ''))) console.log('S note: no drop line seen for the person chat');
+  await g.ev(() => { const n = window.npcManager.getNPC('tunnel_guard'); n.los = { enabled: true, range: 400, angle: 360, challengeOnSight: { cooldown: 0, rooms: ['blast_tunnel'] } }; });
+  const f1 = await g.ev(() => window.sightChallengeWatcher ? null : 'no watcher global');
+  const fired1 = await g.ev(async () => { const m = await import('/break_escape/js/systems/npc-sight-challenge.js'); const a = m.sightChallengeWatcher.update(Date.now(), { force: true }); return a; });
+  console.log('S sight challenge during chase fired:', JSON.stringify(fired1), f1 || '');
+  if (fired1.length) viol.push('the sight challenge fired mid-chase');
+  await sh('2-held-during-chase');
+  await g.ev(() => { window.npcHostileSystem.setNPCHostile('tunnel_guard', false); });
+  let opened = null;
+  for (let i = 0; i < 12 && !opened; i++) { await g.t(1000); const s = await ST(); if (s.mg === 'PersonChatMinigame') opened = s; }
+  console.log('S after the fight the scripted chat opened:', JSON.stringify(opened));
+  if (!opened) viol.push('the scripted chat never opened after the fight');
+  await sh('3-opened-after-fight');
+  await g.ev(() => { try { window.MinigameFramework.forceCloseMinigame(); } catch (e) { /* none */ } });
+  await g.t(1500);
+  const fired2 = await g.ev(async () => { const m = await import('/break_escape/js/systems/npc-sight-challenge.js'); return m.sightChallengeWatcher.update(Date.now() + 1000, { force: true }); });
+  console.log('S sight challenge after the fight fired:', JSON.stringify(fired2));
+  // The game loop's own watcher fires it as the fight ends (before this forced update, which then finds it already fired): count the events
+  const nSpot = await g.ev(() => window.__spotted.length);
+  console.log('S player_spotted events in all (1 is the scripted emit during the chase):', nSpot);
+  if (nSpot < 2) viol.push('the sight challenge did not fire after the fight');
+  console.log(`VERDICT S: ${viol.length ? 'FAIL' : 'PASS'}`, JSON.stringify(viol));
+  await g.close(); process.exit(viol.length ? 1 : 0);
 }
 // End the fight (D: the guard is knocked out through the documented shortcut)
 if (which === 'D') await g.ev(() => window.__test.debugKO('tunnel_guard'));
