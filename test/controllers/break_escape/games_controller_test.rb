@@ -282,10 +282,10 @@ module BreakEscape
           params: { progress: 1, submittedFlags: target_flags }
       assert_response :success
 
-      # Verify flags are stored (the vector exists in the DB)
+      # The endpoint no longer stores a client-supplied list at all
       flagged_game.reload
       stored_flags = flagged_game.player_state.dig('objectivesState', 'tasks', 'submit_flag_1', 'submittedFlags')
-      assert_equal target_flags, stored_flags, 'Pre-condition: flags should be stored in state'
+      assert_nil stored_flags, 'update_task_progress must not store client-supplied submittedFlags'
 
       # Step 2: Attacker calls complete_task WITHOUT submittedFlags in the request body
       # The fix ensures stored flags are NOT used — this must fail

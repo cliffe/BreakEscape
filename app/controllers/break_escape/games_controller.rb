@@ -1261,7 +1261,8 @@ module BreakEscape
       end
 
       # Use transaction to ensure atomic update
-      ActiveRecord::Base.transaction do
+      flag_not_recorded = false
+      ActiveRecord::Base.transaction(requires_new: true) do
         if target_type == 'door'
           if @game.gated_route_room?(attempt, target_id) && !@game.room_unlocked?(target_id)
             # Gated route-room split (§3.5): the NPC route opened the door for the player's
@@ -1318,7 +1319,14 @@ module BreakEscape
           # If this was a flag-unlock: submit to Hacktivity, process rewards, complete linked task
           if method == 'flag' && attempt.present?
             # Submit flag to Hacktivity and mark in submitted_flags (ignore if already submitted)
-            @game.submit_flag(attempt)
+            submit_result = @game.submit_flag(attempt)
+            if !submit_result[:success] && submit_result[:reason].nil?
+              # Hacktivity could not record the flag (FlagService error, no VM set). Undo the
+              # unlock so the player sees a refusal and can try again, rather than opening the
+              # object with its task silently left incomplete. already_submitted is not an error.
+              flag_not_recorded = true
+              raise ActiveRecord::Rollback
+            end
 
             rewards = find_flag_rewards(attempt)
             unless rewards.empty?
@@ -1343,6 +1351,12 @@ module BreakEscape
 
           render json: response
         end
+      end
+
+      if flag_not_recorded
+        render json: { success: false, reason: 'flag_not_recorded',
+                       message: 'The flag could not be recorded. Try again.' },
+               status: :unprocessable_entity
       end
     rescue ActiveRecord::RecordInvalid => e
       render json: {
@@ -2018,8 +2032,8 @@ module BreakEscape
 
       result = @game.update_task_progress!(task_id, progress, submitted_flags)
 
-      Rails.logger.debug "[BreakEscape] Task progress updated: #{task_id} = #{progress}, submittedFlags: #{submitted_flags&.length || 0}"
-      render json: result
+      Rails.logger.debug "[BreakEscape] Task progress updated: #{task_id} = #{progress}"
+      render json: result, status: result[:success] ? :ok : :not_found
     end
 
     # ==========================================

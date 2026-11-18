@@ -5365,27 +5365,28 @@ module BreakEscape
       response
     end
 
-    # Update task progress (for collect_items and submit_flags tasks)
-    def update_task_progress!(task_id, progress, submitted_flags = nil)
+    # Update task progress (for collect_items tasks; submit_flags progress is server-written).
+    #
+    # Only tasks the scenario defines are accepted, and progress is capped, so a client cannot
+    # grow player_state (it ships back on bootstrap) with made-up task ids or large values.
+    # submitted_flags is accepted for old clients and ignored: submit_flags completion is decided
+    # from the server-only flag_task_matches record (process_flag_task_completions!).
+    def update_task_progress!(task_id, progress, _submitted_flags = nil)
       initialize_objectives
 
-      progress = [progress, 0].max
-      task = find_task_in_scenario(task_id)
-      if (max_progress = task&.dig('maxProgress'))
-        progress = [progress, max_progress].min
-      end
+      task = find_task_in_scenario(task_id.to_s)
+      return { success: false, error: 'Unknown task' } unless task
 
-      player_state['objectivesState']['tasks'][task_id] ||= {}
-      player_state['objectivesState']['tasks'][task_id]['progress'] = progress
+      progress = [progress.to_i, 0].max
+      cap = task['maxProgress'] || task['targetCount'] || Array(task['targetFlags']).size
+      progress = [progress, cap].min if cap.to_i.positive?
 
-      # Store submittedFlags for submit_flags tasks
-      if submitted_flags.is_a?(Array)
-        player_state['objectivesState']['tasks'][task_id]['submittedFlags'] = submitted_flags
-      end
+      player_state['objectivesState']['tasks'][task['taskId']] ||= {}
+      player_state['objectivesState']['tasks'][task['taskId']]['progress'] = progress
 
       save!
 
-      { success: true, taskId: task_id, progress: progress }
+      { success: true, taskId: task['taskId'], progress: progress }
     end
 
     # Get current objectives state
@@ -6800,26 +6801,22 @@ module BreakEscape
           # Skip already-completed tasks
           next if player_state.dig('objectivesState', 'tasks', task_id, 'status') == 'completed'
 
-          # Record the matched targetFlags entries in submittedFlags (merge, not
-          # replace) so stored progress stays in the same form as targetFlags.
-          player_state['objectivesState']['tasks'][task_id] ||= {}
-          task_state = player_state['objectivesState']['tasks'][task_id]
-          task_state['submittedFlags'] ||= []
-
-          matched.each do |entry|
-            task_state['submittedFlags'] << entry unless task_state['submittedFlags'].include?(entry)
-          end
-
-          # Server-only record of the same matches. task_state['submittedFlags'] can be
-          # overwritten by the client (update_task_progress!), so complete_task! reads this.
+          # Server-only record of the matches. task_state['submittedFlags'] is client-visible
+          # and was once client-writable, so completion is decided from this record alone.
+          # No backfill for games part-way through a multi-flag task: no current mission
+          # (m01-m10) has a submit_flags task with more than one targetFlag.
           player_state['flag_task_matches'] ||= {}
           recorded = (player_state['flag_task_matches'][task_id] ||= [])
           matched.each { |entry| recorded << entry unless recorded.include?(entry) }
 
-          # Check if all targetFlags are now submitted
-          all_submitted = Array(task['targetFlags']).all? do |tf|
-            task_state['submittedFlags'].include?(tf)
-          end
+          # Mirror the record into submittedFlags for the client's progress display. This
+          # replaces whatever was stored, so a forged list left by an older build is wiped.
+          player_state['objectivesState']['tasks'][task_id] ||= {}
+          task_state = player_state['objectivesState']['tasks'][task_id]
+          task_state['submittedFlags'] = recorded.dup
+
+          # Check if all targetFlags are now submitted (server record only)
+          all_submitted = Array(task['targetFlags']).all? { |tf| recorded.include?(tf) }
 
           if all_submitted
             # Mark complete (merge-style — preserves submittedFlags)

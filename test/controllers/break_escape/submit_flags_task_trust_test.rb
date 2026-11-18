@@ -70,16 +70,38 @@ module BreakEscape
       assert_not_equal 'completed', status(game)
     end
 
-    test 'a client-written task submittedFlags (update_task_progress) does not complete it either' do
+    test 'a full list injected through update_task_progress plus one real flag does not complete the task' do
       game = build_game(['target_vm-flag1', 'target_vm-flag2'])
       put update_task_progress_game_url(game, task_id: 'task_flags'),
           params: { progress: 2, submittedFlags: ['target_vm-flag1', 'target_vm-flag2'] }
       assert_response :success
+      score_before = game.reload.score
 
-      body = complete(game, ['target_vm-flag1', 'target_vm-flag2'])
+      post flags_game_url(game), params: { flag: FLAG_ONE, stationId: 'station_a' }, as: :json
+      assert_response :success
 
-      assert_equal false, body['success'], body.inspect
       assert_not_equal 'completed', status(game)
+      assert_equal score_before, game.reload.score
+      # The injected list is not kept: stored progress mirrors the server record.
+      assert_equal ['target_vm-flag1'],
+                   game.player_state.dig('objectivesState', 'tasks', 'task_flags', 'submittedFlags')
+      assert_equal false, complete(game, ['target_vm-flag1', 'target_vm-flag2'])['success']
+    end
+
+    test 'update_task_progress ignores unknown task ids and caps progress' do
+      game = build_game(['target_vm-flag1', 'target_vm-flag2'])
+
+      put update_task_progress_game_url(game, task_id: 'made_up_task'),
+          params: { progress: 1, submittedFlags: Array.new(500) { |i| "x#{i}" } }
+      assert_response :not_found
+      assert_nil game.reload.player_state.dig('objectivesState', 'tasks', 'made_up_task')
+
+      put update_task_progress_game_url(game, task_id: 'task_flags'),
+          params: { progress: 999_999, submittedFlags: ['a'] }
+      assert_response :success
+      stored = game.reload.player_state.dig('objectivesState', 'tasks', 'task_flags')
+      assert_equal 2, stored['progress']
+      assert_nil stored['submittedFlags']
     end
 
     test 'genuine path: flags accepted by /flags complete a multi-flag task' do
@@ -133,6 +155,98 @@ module BreakEscape
       post complete_task_game_url(theirs, task_id: 'task_flags')
       assert_response :redirect
       assert_nil theirs.reload.player_state.dig('objectivesState', 'tasks', 'task_flags', 'status')
+    end
+
+    # --- flag-locked object with completesTask (m01 submit_ssh_flag shape) ---
+
+    def lock_scenario
+      {
+        'startRoom' => 'reception',
+        'flags' => { 'target_vm' => { 'flag_1' => FLAG_ONE } },
+        'objectives' => [{
+          'aimId' => 'aim_flags',
+          'tasks' => [{ 'taskId' => 'task_flags', 'type' => 'submit_flags', 'targetFlags' => ['target_vm:flag_1'] }]
+        }],
+        'rooms' => {
+          'reception' => {
+            'type' => 'room_reception',
+            'objects' => [{
+              'type' => 'safe', 'id' => 'flag_safe', 'name' => 'Flag Safe', 'locked' => true,
+              'lockType' => 'flag', 'requires' => 'target_vm:flag_1', 'completesTask' => 'task_flags'
+            }]
+          }
+        }
+      }
+    end
+
+    def unlock_safe(game, flag)
+      post unlock_game_url(game), params: { targetType: 'object', targetId: 'flag_safe', attempt: flag, method: 'flag' }, as: :json
+    end
+
+    # Makes the Hacktivity submit fail the way a FlagService error does.
+    def with_flagservice_error
+      Game.class_eval do
+        alias_method :__orig_submit_to_hacktivity, :submit_to_hacktivity
+        define_method(:submit_to_hacktivity) { |_flag| { success: false, message: 'Error submitting flag to Hacktivity' } }
+      end
+      Mission.singleton_class.class_eval do
+        alias_method :__orig_hacktivity_mode?, :hacktivity_mode?
+        define_method(:hacktivity_mode?) { true }
+      end
+      yield
+    ensure
+      Mission.singleton_class.class_eval do
+        alias_method :hacktivity_mode?, :__orig_hacktivity_mode?
+        remove_method :__orig_hacktivity_mode?
+      end
+      Game.class_eval do
+        alias_method :submit_to_hacktivity, :__orig_submit_to_hacktivity
+        remove_method :__orig_submit_to_hacktivity
+      end
+    end
+
+    test 'flag-locked object: the right flag unlocks it and completes the linked task' do
+      game = Game.create!(mission: @mission, player: @owner, scenario_data: lock_scenario)
+
+      unlock_safe(game, FLAG_ONE)
+
+      assert_response :success
+      body = JSON.parse(response.body)
+      assert_equal true, body['success'], body.inspect
+      assert_includes body['completedTasks'], 'task_flags'
+      assert_equal 'completed', status(game)
+    end
+
+    test 'flag-locked object: a wrong flag completes nothing' do
+      game = Game.create!(mission: @mission, player: @owner, scenario_data: lock_scenario)
+
+      unlock_safe(game, 'flag{nope}')
+
+      assert_response :unprocessable_entity
+      assert_not_equal 'completed', status(game)
+    end
+
+    test 'flag-locked object: a FlagService error is refused so the player can retry' do
+      game = Game.create!(mission: @mission, player: @owner, scenario_data: lock_scenario)
+      game.player_state['vm_set_id'] = 1
+      game.save!
+
+      with_flagservice_error { unlock_safe(game, FLAG_ONE) }
+
+      assert_response :unprocessable_entity
+      body = JSON.parse(response.body)
+      assert_equal false, body['success']
+      assert_equal 'flag_not_recorded', body['reason']
+      assert body['message'].present?
+      game.reload
+      assert_not_equal 'completed', status(game)
+      assert_not game.object_unlocked?('flag_safe'), 'the unlock must be rolled back'
+      assert_empty Array(game.player_state['submitted_flags'])
+
+      # Retry once the service is back: unlocks and completes.
+      unlock_safe(game, FLAG_ONE)
+      assert_response :success
+      assert_equal 'completed', status(game)
     end
   end
 end
