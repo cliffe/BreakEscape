@@ -468,7 +468,9 @@ export class LockpickingMinigamePhaser extends MinigameScene {
         
         // Adjust canvas size for mobile to crop empty space
         // Lock is positioned from x=100 to x=500, y=50 to y=350 in the 600x400 game world.
-        if (window.innerWidth <= 768) {
+        // Short windows (a landscape phone, 560px or less tall) get the same crop and Scale.FIT
+        // whatever their width: the 400px lock cannot fit under the info row, so it scales down
+        if (window.innerWidth <= 768 || window.innerHeight <= 560) {
             const isPortrait = window.innerHeight > window.innerWidth;
 
             if (isPortrait) {
@@ -535,7 +537,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
     _fitLockZoom() {
         const game = this.game;
         const box = this.gameContainer?.querySelector?.('#phaser-game-container');
-        if (!game?.scale || !box || window.innerWidth <= 768) return;
+        if (!game?.scale || !box || window.innerWidth <= 768 || window.innerHeight <= 560) return;
         const room = this._lockRoom();
         if (!room) return;
         const z = LockpickingMinigamePhaser.wholeZoom(room.w, room.h);
@@ -556,7 +558,7 @@ export class LockpickingMinigamePhaser extends MinigameScene {
 
     _watchLockZoom() {
         this._watchLockScroll();
-        if (window.innerWidth <= 768) return;
+        if (window.innerWidth <= 768 || window.innerHeight <= 560) return;
         const fit = () => this._fitLockZoom();
         this._lockZoomOnResize = fit;
         window.addEventListener('resize', fit);

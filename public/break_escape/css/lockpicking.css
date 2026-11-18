@@ -335,3 +335,126 @@
     transform: none;
     cursor: not-allowed;
 }
+
+/* Short windows (a landscape phone: 667x375, 740x360, 844x390; 560px tall or less): the lock
+   must be usable without scrolling. The info strip becomes one compact row (picture at 48px,
+   name over one line of observations, the mode switch as an icon button) and the lock's frame
+   takes the rest of the window: the Phaser canvas (cropped to 580x340, Scale.FIT in the
+   lockpicking JS) scales down to the box, and the feedback line sits under it in the same
+   frame. The shell then has nothing to scroll. Last in the file so it wins over the phone and
+   short-landscape rules above; taller windows (561px and up) are untouched. */
+@media (max-height: 560px) {
+    .lockpicking-item-section {
+        flex: 0 0 auto;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 0;
+        /* clear of the shell's fixed X (15px in, 30px wide, plus its hit area) and scrollbar */
+        padding: 4px calc(52px + var(--minigame-shell-bar, 0px)) 4px 8px;
+    }
+
+    .lockpicking-item-image {
+        width: auto;
+        height: 48px;
+        min-width: 0;
+        min-height: 0;
+        max-width: 64px;
+        max-height: 48px;
+    }
+
+    .lockpicking-item-info {
+        flex: 1 1 0;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    /* The name takes up to two lines; the observations one, cut with an ellipsis */
+    .lockpicking-item-info h4 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 24px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        overflow: hidden;
+    }
+
+    .lockpicking-item-info p {
+        font-size: 20px;
+        line-height: 20px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Mode switch: the icon alone (the label is in aria-label and title), 48px square */
+    .lockpicking-mode-row {
+        flex: 0 0 auto;
+        width: auto;
+        margin: 0;
+        gap: 0;
+    }
+
+    .lockpicking-mode-row .lockpicking-or-caption,
+    .lockpicking-mode-row .lockpicking-mode-label {
+        display: none;
+    }
+
+    .lockpicking-mode-row .minigame-button {
+        min-width: 48px;
+        min-height: 48px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .lockpicking-mode-row .minigame-button .icon-large {
+        width: 32px;
+        height: 32px;   /* the icon's own size: no scaling */
+    }
+
+    /* The frame is the rest of the window, a column: lock box, then the feedback line */
+    .minigame-game-container:has(> #phaser-game-container) {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 0;
+        width: 100%;
+        height: initial;   /* the shared 100% would fight the flex share */
+        min-height: 0;
+        margin: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container) > #phaser-game-container {
+        flex: 1 1 0;
+        min-height: 0;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        aspect-ratio: auto;
+        margin: 4px auto 0;
+        overflow: hidden;
+    }
+
+    /* The feedback line keeps its place when empty, so the canvas does not rescale (under a
+       drag) when a message arrives; text sits on the 16px GNF grid */
+    .minigame-game-container:has(> #phaser-game-container) > .lockpick-feedback {
+        min-height: 32px;
+        padding: 4px 8px;
+        margin: 4px auto;
+        line-height: 24px;
+        border-width: 2px;
+    }
+
+    .minigame-game-container:has(> #phaser-game-container) > .lockpick-feedback:empty {
+        display: flex;
+        visibility: hidden;
+    }
+}

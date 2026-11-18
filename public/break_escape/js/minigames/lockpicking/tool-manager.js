@@ -40,7 +40,10 @@ export class ToolManager {
         const btn = document.createElement('button');
         btn.className = 'minigame-button';
         btn.id = 'lockpicking-switch-mode-btn';
-        btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
+        // The label is its own span so a short landscape window can show the icon alone
+        // (lockpicking.css); aria-label and title keep the name for readers and hover
+        btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="" class="icon-large"> <span class="lockpicking-mode-label">Switch to Lockpicking</span>';
+        this.labelModeButton(btn, 'Switch to Lockpicking');
         btn.onclick = () => this.switchToPickMode();
         this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween || this.parent.keyUnlocked));
         row.appendChild(createPickCaption());
@@ -54,11 +57,19 @@ export class ToolManager {
         const btn = document.createElement('button');
         btn.className = 'minigame-button';
         btn.id = 'lockpicking-switch-to-keys-btn';
-        btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
+        btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="" class="icon-large"> <span class="lockpicking-mode-label">Switch to Key Mode</span>';
+        this.labelModeButton(btn, 'Switch to Key Mode');
         btn.onclick = () => this.switchToKeyMode();
         this.applyDisabled(btn, !!(this.parent.keyInserting || this.parent.keyInsertTween || this.parent.keyUnlocked));
         row.appendChild(btn);
         return row;
+    }
+
+    // The button's name for assistive tech and hover; applyDisabled puts it back on re-enable
+    labelModeButton(btn, label) {
+        btn.modeLabel = label;
+        btn.title = label;
+        if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-label', label);
     }
 
     // Replace whatever mode row the strip holds with the given one (or none)
@@ -99,6 +110,8 @@ export class ToolManager {
         btn.disabled = !!disabled;
         if (disabled) {
             btn.title = this.parent.keyUnlocked ? 'The lock is opening' : 'Not while a key is going in';
+        } else if (btn.modeLabel) {
+            btn.title = btn.modeLabel;
         } else if (typeof btn.removeAttribute === 'function') {
             btn.removeAttribute('title');
         } else {
