@@ -867,7 +867,7 @@ wall_safe_pin = "5829"
               "eventPattern": "objective_task_completed:make_ransom_decision",
               "condition": "globalVars.advised_board_refuse && globalVars.paid_ransom && !globalVars.dr_kim_ko",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 18000, "message": "Word from Dr Kim. She held the board off on your word, and someone wrote the cheque anyway. She spent trust she couldn't spare. That's a debt. Know it's there." }
+              "sendTimedMessage": { "delay": 18000, "message": "Word from Dr Kim. She held the board off on your word, and they paid anyway. That's a debt." }
             },
             {
               "eventPattern": "objective_task_completed:make_ransom_decision",
@@ -891,7 +891,7 @@ wall_safe_pin = "5829"
               "eventPattern": "global_variable_changed:noticed_struck_booking",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 2000, "message": "You've read that right. Your booking's on the paper log with a line through it. Different pen, no initials. Somebody's tidied you out of the record. File it, keep moving." }
+              "sendTimedMessage": { "delay": 2000, "message": "You've read that right. Somebody's tidied you out of the record. File it, keep moving." }
             },
             {
               "eventPattern": "objective_task_completed:sign_in_at_reception",
@@ -983,7 +983,7 @@ wall_safe_pin = "5829"
               "setGlobal": { "cover_burned": true },
               "completeTask": "cover_burned_notified",
               "unlockAim": "cover_compromised",
-              "sendTimedMessage": { "delay": 4000, "message": "Stop. Two minutes ago someone rang the security desk from an internal extension and said no consultant was booked tonight. Your name's off their system. Your booking's gone." }
+              "sendTimedMessage": { "delay": 4000, "message": "Stop. Someone just rang the security desk from an internal extension: no consultant booked tonight. Your booking's gone." }
             },
             {
               <%# Round 3 (struggle M5): this used to fire 11 s after Gary, while his chat was
@@ -1101,7 +1101,7 @@ wall_safe_pin = "5829"
               "eventPattern": "global_variable_changed:ghost_keys_used",
               "condition": "value === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 24000, "message": "Ghost's keys are running the restore, ward first. The other half: the keys are Ghost's, so whatever they decrypt, Ghost can reach again. We'll be weeks getting them out." }
+              "sendTimedMessage": { "delay": 24000, "message": "Ghost's keys are running the restore, ward first. Now we start the weeks of digging Ghost out of that network." }
             },
 <%# U2: every route past Val counts -- her clearance, a pick in her blind spot, or a KO
     and her key. The room is the only way to the server room. Gated on the burn so a
@@ -1172,7 +1172,7 @@ wall_safe_pin = "5829"
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "obtain_password_hints",
-              "sendTimedMessage": { "delay": 2000, "message": "Gary's down, so no password hints from him now. He wrote them on a sticky note by his monitor. Grab it. Same credentials unlock the backup server over SSH." }
+              "sendTimedMessage": { "delay": 2000, "message": "Gary's down. His password hints are on the sticky note by his monitor, and they unlock the backup server over SSH." }
             },
 <%# Eight different things set insider_evidence_partial (the Proposal, the Night
     Rota, Val's notebook and drill answer, Kim's fire_drill knot, the ENTROPY Asset Tag,
@@ -1285,7 +1285,7 @@ wall_safe_pin = "5829"
               "condition": "value === true",
               "onceOnly": true,
               "unlockTask": "learn_about_scapegoating",
-              "sendTimedMessage": { "delay": 2000, "message": "That email is damning. The board meant to scapegoat Gary before the ink was dry. Talk to Dr. Kim. She needs to know what her board has decided." }
+              "sendTimedMessage": { "delay": 2000, "message": "Talk to Dr. Kim. She needs to know what her board has decided about Gary." }
             },
             {
               "eventPattern": "global_variable_changed:backup_restore_initiated",
@@ -1378,7 +1378,7 @@ wall_safe_pin = "5829"
               "eventPattern": "global_variable_changed:slow_path_window_open",
               "condition": "value === true && !globalVars.patient_bed4_ko",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 6000, "message": "The ward's radioed. Bed 4's alarming: Mr Pryce's ventilator's out of sync, no relay to the desk. Nobody's coming for him in time. You're the nearest hands. Get there." }
+              "sendTimedMessage": { "delay": 6000, "message": "The ward's radioed. Mr Pryce in Bed 4, ventilator out of sync, and nobody's coming. You're the nearest hands. Get there." }
             },
             {
               "eventPattern": "global_variable_changed:bed4_manually_stabilised",

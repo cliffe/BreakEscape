@@ -292,8 +292,7 @@ So go and get that back from somebody who has a reason to give it.
 
 Somebody who knew exactly which lever to pull.
 
-Think what that call required. Knowing you existed. Knowing your booking was informal. Knowing the access system was down so nobody could check.
-And knowing security would challenge rather than assume.
+Think what that call required: knowing you existed, that your booking was informal, and that nobody could check it.
 
 If Ghost wanted you stopped, Ghost had cleaner ways.
 This is somebody standing in the building with a telephone and a working knowledge of the procedures.
@@ -344,11 +343,7 @@ That's pressure, nothing more. They can't stop you from there.
 #speaker:agent_0x99
 ~ ghost_deal_discussed = true
 
-You made a deal with Ghost.
-
-Free decryption keys. No ransom payment. Faster recovery, ENTROPY denied the money.
-
-In exchange: you publish the board's negligence from the press terminal.
+You made a deal with Ghost. Free keys and no ransom, and in exchange you publish the board's negligence.
 
 #speaker:narrator
 Narrator: A pause.
@@ -356,7 +351,7 @@ Narrator: A pause.
 #speaker:agent_0x99
 Ghost gets exactly what they wanted without spending £150,000.
 
-You're still the one making the final choice at that terminal. Ghost's deal doesn't override your judgement.
+You still make the final choice at that terminal.
 
 + [Is it wrong to have taken it?]
     I don't know. You took a terrorist's keys to save lives, and kept the money off them.
@@ -375,9 +370,7 @@ You're still the one making the final choice at that terminal. Ghost's deal does
 #speaker:agent_0x99
 ~ board_email_discussed = true
 
-The board was going to sack Gary and bury his warnings before anyone asked questions.
-
-That's a deliberate cover-up of what created this crisis.
+So the board meant to sack Gary and bury his warnings. That's a cover-up.
 
 That email will matter at the press terminal.
 
@@ -764,14 +757,12 @@ The answer's somewhere in the building. Check plaques, framed documents, adminis
     }
 }
 
-Ghost will have given you numbers. Deaths per hour, one figure for paying and a worse one for not.
-Put them down.
+Ghost will have given you deaths per hour, one figure for paying and a worse one for not. Put them down.
 
 Nobody can tell you how many a six-hour delay kills on a specific ward on a specific night.
 The person offering to is selling something.
 
 What's true is smaller and harder. Paying is faster, and it pays them. Doing it yourself is slower, and it doesn't.
-Everything past that is a guess wearing a decimal point.
 -> hint_ransom_decision_choices
 
 === hint_ransom_decision_choices ===
@@ -785,10 +776,9 @@ Everything past that is a guess wearing a decimal point.
 
 + [Is there a third option?]
     {ghost_offer_made:
-        Ghost offered you one. Free keys in exchange for publishing the evidence.
-        It's a real option. Fastest of the lot, no funding -- but Ghost's keys stay Ghost's.
-        Whatever they unlock, Ghost can reach again. And Ghost's lesson lands publicly.
-        It's your call whether to engage with that.
+        Ghost offered you one: free keys, in exchange for publishing the evidence.
+        Fastest of the lot, and no funding. But the keys stay Ghost's, and whatever they unlock, Ghost can reach again.
+        Your call.
         -> support_hub
     }
     Not through official channels. The recovery console has the options available to you.
@@ -801,14 +791,11 @@ Everything past that is a guess wearing a decimal point.
 === ghost_deal_recovery_advice ===
 #speaker:agent_0x99
 
-If Ghost's keys are legitimate, that's your fastest path.
-
-No ransom paid. No ENTROPY funding. Recovery in under an hour.
+If Ghost's keys are legitimate, that's your fastest path: no ransom, no ENTROPY funding, recovery inside the hour.
 
 The cost is twofold. You publish the evidence at the press terminal.
 And the keys are Ghost's, so whatever they unlock, Ghost can reach again. We'd be weeks getting them out of that network.
 
-Make sure you understand what you're agreeing to before you initiate recovery.
 -> ghost_deal_recovery_advice_choices
 
 === ghost_deal_recovery_advice_choices ===
