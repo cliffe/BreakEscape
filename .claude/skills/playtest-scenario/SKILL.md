@@ -95,6 +95,8 @@ The harness writes a session log — one JSON line per command and per result �
    BREAK_ESCAPE_STANDALONE=true bin/rails runner tools/playtest/verify-run.rb <game_id>
    ```
 
+   The `flags submitted` line shows each value as `<redacted len=N sha=xxxxxx>`; keep it that way in reports. `--show-flags` prints the values in full and is for your own debugging only.
+
    Send `{"cmd":"sync"}` before `quit` — globals and notes are otherwise flushed on a 30-second timer, and the verifier reads persisted state, so without it a real run can look less far along than it was.
 
    It prints the server's own record — rooms unlocked, inventory, globals, flags submitted — and exits non-zero unless the game shows something that could only have come from playing: a room beyond the first, an object opened, or a flag submitted. Globals and encountered NPCs do not count; mission setup and the opening cutscene set those. Run it at the end of every playtest. If it says NO PROGRESS RECORDED, you did not play the game, whatever your notes say.
