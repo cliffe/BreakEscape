@@ -11,13 +11,14 @@ Worked example to copy: `tools/video/edits/m01_trailer60.json` (v7, 24 shots, 60
 
 ## Who does this
 
+- **Opus 5.5: the video's script.** The story, beat sheet, card and title text, and the shot list a recipe needs are written by Opus 5.5 (the orchestrator, or the `opus55` agent type). Sonnet or Haiku gather the shots it calls for (`video-takes`), never write the script (user, 2026-11-17).
 - **Orchestrator (Opus): selects and review.** Picks in and out points from contact sheets *and frames*, chooses the music window, reads every contact sheet of every render, runs the spoiler checklist. These are not delegated.
 - **Sonnet:** fills and fixes the edit list, runs `render.sh`, builds effects or components if a recipe needs one, makes the A/B renders. One agent per render batch.
 - **Haiku:** file chores only (extracting frames, contact sheets, listing take marks).
 
 ## Inputs
 
-Takes and the takes table (`video-takes`), the picks file, the recipe, the game's Veo clips in `tools/video/assets/clips/` (one opening and one launch clip per game: `spy_into_frame.mp4`, `spy_laptop_out.mp4` for SAFETYNET: Licence to Hack; `title-launch-clips` recipe if they do not exist), brand art in `tools/video/assets/brand/`, the real-hacking placeholder in `tools/video/assets/placeholders/`.
+Takes and the takes table (`video-takes`), the picks file, the recipe, and - to plan selects (especially a **cross-mission** edit such as a trailer that cuts the best beats of m01-m10) **from metadata, before opening any footage** - the footage catalogue in hacktivity-videos `catalogue/` (`catalogue.json`, `INDEX.md`; see its README). Start from its **trailer candidates** (highlights scored 4-5, spoiler none/mild), honour each take's `spoiler`, `sensitive.needs_mask`/`mask_spans` and `quality.status`, then open only the chosen takes at the catalogue's in-points and check them against frames as below. The game's Veo clips are in `tools/video/assets/clips/` (one opening and one launch clip per game: `spy_into_frame.mp4`, `spy_laptop_out.mp4` for SAFETYNET: Licence to Hack; `title-launch-clips` recipe if they do not exist), brand art in `tools/video/assets/brand/`, the real-hacking placeholder in `tools/video/assets/placeholders/`.
 
 ## Outputs
 

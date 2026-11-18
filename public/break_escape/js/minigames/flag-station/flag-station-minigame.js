@@ -609,7 +609,7 @@ export class FlagStationMinigame extends MinigameScene {
                 }, 1500);
             } else {
                 if (window.playUISound) window.playUISound('reject');
-                this.showResult(resultEl, 'error', flagRefusalLine(null));
+                this.showResult(resultEl, 'error', flagRefusalLine(null, { flagValue }));
                 this.emitFlagRejected('invalid', { objectId: targetId });
             }
         } catch (error) {
@@ -625,7 +625,7 @@ export class FlagStationMinigame extends MinigameScene {
                 const body = error.body || {};
                 const reason = flagRejectReason(body.message || body.error, body.reason);
                 if (window.playUISound) window.playUISound('reject');
-                this.showResult(resultEl, 'error', flagRefusalLine(body.message || body.error, { reason }));
+                this.showResult(resultEl, 'error', flagRefusalLine(body.message || body.error, { reason, flagValue }));
                 this.emitFlagRejected(reason, { objectId: targetId });
             } else {
                 console.error('[FlagLock] Unlock error:', error);
@@ -904,7 +904,7 @@ export class FlagStationMinigame extends MinigameScene {
                 if (window.playUISound) window.playUISound('reject');
                 const reason = flagRejectReason(data.message, data.reason);
                 const ownerName = reason === 'wrong_station' ? (data.ownerStationName || null) : null;
-                this.showResult(resultEl, 'error', flagRefusalLine(data.message, { reason, ownerName }));
+                this.showResult(resultEl, 'error', flagRefusalLine(data.message, { reason, ownerName, flagValue }));
                 this.emitFlagRejected(reason, ownerName ? { ownerStationName: ownerName } : {});
             }
             

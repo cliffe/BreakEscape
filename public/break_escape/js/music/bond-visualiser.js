@@ -55,6 +55,7 @@ let _creditsHideTimer = null;  // setTimeout handle for deferred display:none af
 let _creditsActive    = false;
 let _autoCloseOnEnd   = false; // close visualiser when musiccontroller:trackended fires
 let _disableClose     = false; // hide × and block Esc — for forced/cutscene contexts
+let _endNote          = null;  // a short result line (the score) kept in the STATUS row once the credits end
 let _missionOver      = false; // past the point of no return: × becomes EXIT MISSION, never unset
 
 // ── MusicController state ─────────────────────────────────────────────────
@@ -158,7 +159,7 @@ function _buildOverlay() {
     </div>
     <div class="bv-status-block">
       <div class="bv-status-line"><span class="label">OPERTN:</span><span class="val" id="bv-op-name">THUNDERBALL</span></div>
-      <div class="bv-status-line"><span class="label">STATUS:</span><span class="val bv-blink">MONITORING</span></div>
+      <div class="bv-status-line"><span class="label">STATUS:</span><span class="val bv-blink" id="bv-status-val">MONITORING</span></div>
       <div class="bv-status-line"><span class="label">THREAT:</span><span class="val" id="bv-threat-level" style="color:var(--bv-green)">LOW</span></div>
     </div>
     <button class="bv-close-btn" id="bv-close-btn">✕ CLOSE</button>
@@ -1452,6 +1453,22 @@ const STYLE_MAP = {
     'teaser':         `font-family:VT323,monospace;font-size:26px;line-height:1.35;color:#C77DFF;font-style:italic;letter-spacing:0.08em;text-shadow:${_GLOW_DARK},0 0 18px rgba(199,125,255,0.7);`,
 };
 
+/** The STATUS row's value element, by id: rows may be reordered by a theme overlay. */
+function _statusValEl() {
+    return (_overlay || document).querySelector('#bv-status-val');
+}
+
+/**
+ * Show the end note (the score) in the STATUS row. A scenario statusText such as
+ * COMPROMISED stays, with the score appended; otherwise the score takes the row.
+ */
+function _writeEndNote() {
+    const el = _statusValEl();
+    if (!el || !_endNote) return;
+    el.textContent = _statusText ? `${_statusText} // ${_endNote}` : _endNote;
+    el.classList.remove('bv-blink');
+}
+
 function _startCredits(lines) {
     const overlay = document.getElementById('bv-credits-overlay');
     if (!overlay) return;
@@ -1502,6 +1519,8 @@ function _startCredits(lines) {
                 const closeBtn = document.getElementById('bv-close-btn');
                 if (closeBtn) closeBtn.style.display = '';
             }
+            // The credits fade away with the score line: leave the result in the STATUS row.
+            if (finished && _missionOver && _endNote) _writeEndNote();
             return;
         }
         const item = items[idx++];
@@ -1752,7 +1771,7 @@ function _applyTheme(opts) {
     if (t) _applyOverlayText(t);
     const h1 = _overlay.querySelector('.bv-title-block h1');
     if (h1) h1.textContent = creditsHeader(_headerText, t?.heading);
-    const status = _overlay.querySelectorAll('.bv-status-block .bv-status-line .val')[1];
+    const status = _statusValEl();
     if (status) status.textContent = creditsStatus(_statusText, t?.status);
     _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
@@ -1787,8 +1806,8 @@ function _applyOverlayText(t) {
         const op = statusLines[0].querySelector('.val');
         if (op) { op.removeAttribute('id'); op.textContent = t.scene[1]; }
     }
-    if (statusLines[1]) {
-        const st = statusLines[1].querySelector('.val');
+    {
+        const st = _statusValEl();
         if (st) { st.textContent = t.status; st.classList.remove('bv-blink'); }
     }
     // Third row: THREAT (audio-driven LOW..CRITICAL) becomes a neutral fixed phase when the theme sets one.
@@ -1880,6 +1899,8 @@ function _open_overlay(opts = {}) {
 
     // missionOver — the mission has concluded: no way back into the game
     if (opts.missionOver) _missionOver = true;
+    // The end note belongs to one set of credits: a new set replaces it (or clears it).
+    if (opts.credits?.length) _endNote = (typeof opts.endNote === 'string' && opts.endNote) ? opts.endNote : null;
     _applyCloseLabel();
 
     // disableClose — hide × button and block Esc
@@ -1904,6 +1925,7 @@ function _applyCloseLabel() {
 
 function _close_overlay() {
     if (_disableClose || _missionOver) return;
+    _endNote = null;
     _open = false;
     _autoCloseOnEnd = false;
     _disableClose   = false;
@@ -2040,6 +2062,17 @@ export const BondVisualiser = {
      * @param {string}   [opts.statusText]   - STATUS row value in place of MONITORING; same rules as headerText
      */
     open(opts) { _open_overlay(opts || {}); },
+    /**
+     * Set the result line in the STATUS row after the fact (a conclude that
+     * succeeded late). With replace, the note takes the row from a stale value
+     * such as PENDING SYNC; without it a scenario statusText is kept.
+     */
+    setEndNote(note, { replace = false } = {}) {
+        if (typeof note !== 'string' || !note) return;
+        _endNote = note;
+        if (replace) _statusText = null;
+        _writeEndNote();
+    },
     /** Close the fullscreen visualiser. */
     close() { _close_overlay(); },
     /** Toggle open/closed. */

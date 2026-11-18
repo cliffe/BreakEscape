@@ -75,7 +75,7 @@ const path = require('path');
 const { briefTasks } = require('./brief-tasks');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
-const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
+const { nextBootstrapTarget, readBootstrapFacts, converseEnding, converseIdleAction } = require('./bootstrap-steps');
 const { installToastCapture } = require('./toast-capture');
 const { createResponseCapture } = require('./response-capture');
 const endingGuard = require('./ending-overlay-guard');
@@ -748,6 +748,7 @@ const vmSteps = createVmSteps({
       let exhaustedBranches = false;
       let turns = 0;
       let endingAccepted = false;
+      let idleWaits = 0;
       for (; turns < maxTurns; turns++) {
         // The debrief choice can carry #ending_check, which raises the "Before the
         // mission ends" overlay (systems/ending-check.js) when optional objectives
@@ -768,7 +769,16 @@ const vmSteps = createVmSteps({
           const st = window.__test.minigame.getState();
           return st && st.dialogue ? st.dialogue : null;
         });
-        if (!d) break;
+        if (!d) {
+          // No dialogue object while the minigame is still open: a thread mid-typing (see below).
+          const stillOpen = await page.evaluate(() => !!(window.MinigameFramework && window.MinigameFramework.currentMinigame));
+          if (stillOpen && converseIdleAction({ idleWaits }) === 'wait') {
+            idleWaits += 1;
+            await pause(1000);
+            continue;
+          }
+          break;
+        }
         const dialogueKey = [d.speaker, d.text, d.awaitingChoice, d.canContinue, (d.choices || []).length].join('|');
         if (d.text) {
           const line = `${d.speaker || ''}: ${d.text}`.trim();
@@ -813,9 +823,29 @@ const vmSteps = createVmSteps({
           await page.evaluate(n => window.__test.minigame.chooseIndex(n), idx + 1);
         } else if (d.canContinue) {
           await page.evaluate(() => window.__test.minigame.continue());
+        } else if (converseIdleAction({ ended: !!d.ended, idleWaits }) === 'wait') {
+          // A phone-chat or terminal thread types its next message after a delay: for a few
+          // seconds the panel shows no text, no choices and no Continue. That is "not yet",
+          // not "finished" (the m02 press terminal closed after one pick this way, gate m3).
+          idleWaits += 1;
+          const before = dialogueKey;
+          const changed = await page.evaluate((k) => new Promise(resolve => {
+            const t0 = Date.now();
+            const tick = () => {
+              const m = window.MinigameFramework && window.MinigameFramework.currentMinigame;
+              const st = m && window.__test.minigame.getState();
+              const dd = st && st.dialogue;
+              const now = dd ? [dd.speaker, dd.text, dd.awaitingChoice, dd.canContinue, (dd.choices || []).length].join('|') : 'closed';
+              if (now !== k) resolve(true); else if (Date.now() - t0 > 3000) resolve(false); else setTimeout(tick, 100);
+            };
+            tick();
+          }), before).catch(() => false);
+          if (!changed && converseIdleAction({ idleWaits }) === 'stop') break;
+          continue;
         } else {
           break;
         }
+        idleWaits = 0;
         // waitForDialogue resolves at once while the old line still shows a Continue
         // button, so wait for the panel to actually change (or close) before reading
         // again; otherwise the same line is read, and a turn spent, on every pass.
@@ -886,6 +916,10 @@ const vmSteps = createVmSteps({
             + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
             + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
             + 'pick unvisited options itself (that commits real choices), or "close":true to leave.'
+          : (turns >= maxTurns && !pendingChoice)
+          ? `Hit maxTurns (${maxTurns}) before the conversation ended, and closed it; nothing was lost, it resumes where it stopped. `
+            + 'A monologue costs one turn per line (the m02 Reeves confrontation is about 25 before its first ending choice), '
+            + 'so this is a turn-cap artefact, not a stuck point: run converse again with a larger "maxTurns".'
           : nothingHappened
           ? 'The target opened no dialogue. Some interactables (phones, terminals) '
             + 'need a selection first — interact, inspect the minigame state, and drive it '

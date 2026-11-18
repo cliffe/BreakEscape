@@ -517,7 +517,10 @@ voices = {
   guard_m: { 'name' => 'Sadachbia', 'style' => 'Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.', 'language' => 'en-US' },
   guard_f: { 'name' => 'Laomedeia', 'style' => 'Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.', 'language' => 'en-US' },
   farah: { 'name' => 'Zephyr', 'style' => 'Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.', 'language' => 'en-US' },
-  minder: { 'name' => 'Sulafat', 'style' => "SAFETYNET van-team minder. #{rp} Calm, low, practical.", 'language' => 'en-GB' }
+  minder: { 'name' => 'Sulafat', 'style' => "SAFETYNET van-team minder. #{rp} Calm, low, practical.", 'language' => 'en-GB' },
+  # Office life (office_life/PLAN.md 2.7): the forward post's support staff. Swap Sofia's voice by changing the name here only.
+  fp_darren: { 'name' => 'Orus', 'style' => 'SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.', 'language' => 'en-GB' },
+  fp_sofia: { 'name' => 'Despina', 'style' => "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.", 'language' => 'en-GB' }
 }
 voice = ->(key) { voices.fetch(key).to_json }
 # Walkthrough R1b-M1: once the night has closed, nobody in the raid can be
@@ -973,6 +976,36 @@ credits_fragment = JSON.parse(<<~'JSON')
           ]
         },
         {
+          "name": "DARREN PRICE",
+          "clauses": [
+            {
+              "text": "Field support. Knocked out by the agent he kept the lights on for.",
+              "condition": "globalVars.fp_darren_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Field support. Kept the generator running till dawn."
+            }
+          ]
+        },
+        {
+          "name": "SOFIA MARCHETTI",
+          "clauses": [
+            {
+              "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
+              "condition": "globalVars.fp_sofia_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Welfare. Put the kettle away when the shouting started.",
+              "condition": "globalVars.fp_staff_upset === true"
+            },
+            {
+              "text": "Welfare. Kept the kettle on all night."
+            }
+          ]
+        },
+        {
           "name": "AGENT 0x23 'VECTOR'",
           "clauses": [
             {
@@ -1104,6 +1137,36 @@ credits_fragment = JSON.parse(<<~'JSON')
             },
             {
               "text": "Comms. Logged the minute it went out."
+            }
+          ]
+        },
+        {
+          "name": "DARREN PRICE",
+          "clauses": [
+            {
+              "text": "Field support. Knocked out by the agent he kept the lights on for.",
+              "condition": "globalVars.fp_darren_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Field support. Kept the generator running till dawn."
+            }
+          ]
+        },
+        {
+          "name": "SOFIA MARCHETTI",
+          "clauses": [
+            {
+              "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
+              "condition": "globalVars.fp_sofia_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Welfare. Put the kettle away when the shouting started.",
+              "condition": "globalVars.fp_staff_upset === true"
+            },
+            {
+              "text": "Welfare. Kept the kettle on all night."
             }
           ]
         },
@@ -1290,6 +1353,7 @@ end
   },
 
   "npcThoughts": false,
+  "ttsPregenerateChatter": true,
   "startRoom": "forward_post",
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
@@ -1985,7 +2049,15 @@ end
             { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true && globalVars.clue_alibi === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 12000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             <%# The override keeps the board quiet (S6 1.10): onPickup sets override_held; this is the net if a #give_item skips onPickup. %>
-            { "eventPattern": "item_picked_up:key", "condition": "data.itemId === 'alarm_override' && !globalVars.override_held", "setGlobal": { "override_held": true } }
+            { "eventPattern": "item_picked_up:key", "condition": "data.itemId === 'alarm_override' && !globalVars.override_held", "setGlobal": { "override_held": true } },
+<%# Office life (office_life/PLAN.md 2.6): any attack on the support staff, or a team member knocked out, stops the tea. Appended last so no saved once index moves. %>
+            { "eventPattern": "npc_attacked:darren_price", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "npc_attacked:sofia_marchetti", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:arakawa_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:vector_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:phantom_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:quintero_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:kowalczyk_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } }
           ]
         },
 <%# --- Nightshade (RL 2.1): the table on three branches, the van on the silent one. Each copy is its own NPC; all koImmune. door_branch(): shown = triple_agent && shown_file; unshown = triple_agent; arrested = arrested && !ko_before_fate; else silent. --- %>
@@ -2541,6 +2613,67 @@ end
             { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 2500 }
           ]
         },
+<%# Office life (office_life/PLAN.md 2.7): forward post support staff, ambient only. Keys are literal JSON, outside any ERB loop; only the voice and the hide helper are expressions. %>
+        {
+          "id": "darren_price",
+          "displayName": "Darren Price",
+          "npcType": "person",
+          "gender": "male",
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "avatar": "assets/characters/darren_price_headshot.png",
+          "voice": <%= voice.(:fp_darren) %>,
+          "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json",
+          "currentKnot": "talk_darren",
+          "position": { "x": 8.625, "y": 8.375 },
+          "needsHome": { "room": "forward_post", "x": 8.625, "y": 8.375 },
+          "needsRooms": ["forward_post"],
+          "needsCompany": { "groups": ["fp_support"] },
+          "chatterCooldownMin": 2,
+          "globalVarOnKO": "fp_darren_ko",
+          "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
+          "needs": { "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 } },
+          "chatter": { "kettle_fp": ["Fuel's good till dawn. Probably.", "Should've brought the big coat.", "Too cold for the laptops, never mind me.", "I've run the lamp off a spare battery."] },
+          "exchanges": [
+            { "with": "sofia_marchetti", "knot": "ex_fp_kettle_on", "requireGlobal": { "fp_staff_upset": false, "split_started": false } },
+            { "with": "sofia_marchetti", "knot": "ex_fp_radios", "requireGlobal": { "fp_staff_upset": false, "split_started": true, "breach_open": false } },
+            { "with": "sofia_marchetti", "knot": "ex_fp_door_open", "requireGlobal": { "fp_staff_upset": false, "breach_open": true, "closing_done": false } }
+          ],
+          "eventMappings": [
+            <%= after_end_json.('forward_post') %>
+            { "eventPattern": "conversation_closed:director_netherton", "condition": "!globalVars.split_started && !globalVars.gate_console_used && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:arakawa_gate", "condition": "globalVars.arakawa_call_done === true && !globalVars.breach_open && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:forward_post", "condition": "!!data.previousRoom && globalVars.breach_open === true && !globalVars.closing_done && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
+          ]
+        },
+<%# Office life (office_life/PLAN.md 2.7): forward post support staff, ambient only. Keys are literal JSON, outside any ERB loop; only the voice and the hide helper are expressions. %>
+        {
+          "id": "sofia_marchetti",
+          "displayName": "Sofia Marchetti",
+          "npcType": "person",
+          "gender": "female",
+          "spriteSheet": "sofia_marchetti",
+          "spriteTalk": "assets/characters/sofia_marchetti_talk.png",
+          "spriteVisemes": "assets/characters/sofia_marchetti_visemes.png",
+          "avatar": "assets/characters/sofia_marchetti_headshot.png",
+          "voice": <%= voice.(:fp_sofia) %>,
+          "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json",
+          "currentKnot": "talk_sofia",
+          "position": { "x": 9.625, "y": 8.375 },
+          "needsHome": { "room": "forward_post", "x": 9.625, "y": 8.375 },
+          "needsRooms": ["forward_post"],
+          "needsCompany": { "groups": ["fp_support"] },
+          "chatterCooldownMin": 2,
+          "globalVarOnKO": "fp_sofia_ko",
+          "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
+          "needs": { "caffeine": { "initial": 90, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 } },
+          "chatter": { "kettle_fp": ["Who's not had a cup yet?", "Both vans have their heaters on now.", "The kettle's the easy bit tonight.", "Soup's in the flask, if anyone wants it."] },
+          "eventMappings": [
+            <%= after_end_json.('forward_post') %>
+            { "eventPattern": "npc_use_started:fp_kettle", "condition": "data.npcId === 'darren_price' && !globalVars.fp_staff_upset", "delayMs": 1500, "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
+          ]
+        },
 <%# Implementation R1 (playtest C F2, D m-2): a "Name:" prefix resolves only
     against NPCs registered this session, and the engine registers a room's NPCs
     when the room loads. The forward post is the start room, so it loads on every
@@ -2736,6 +2869,19 @@ end
           "text": "TOMB GAMMA SECURITY MONITORING.\nHost: <%= bunker_monitor_ip %>\nConsole: port <%= monitor_console_port %>.\nRuns as service account <%= monitor_login_user %>. Maintenance only.\nDo not remove.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "gate_terminal"
+        },
+        {
+          "_comment": "Office life (office_life/PLAN.md 3): the support staff's kettle, on the third kit crate south of the table. as-type:kettle claims the Tiled kettle1 placeholder on that crate. The whole affordance is by hand (no officePresets). useFrom dy -0.1 puts the use cells at (276,268) and (308,268) px, measured live; two users, one per cell.",
+          "type": "kettle",
+          "officeType": "kettle",
+          "id": "fp_kettle",
+          "name": "Kettle",
+          "sprite": "kettle1",
+          "takeable": false,
+          "position": "as-type:kettle",
+          "offWhen": "fp_staff_upset",
+          "observations": "A dented camping kettle on a kit crate, plugged into the generator's spare lead. Two mugs, one chipped.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 22, "capacity": 2, "useFrom": { "dx": 0, "dy": -0.1 }, "queue": false, "chatter": "kettle_fp", "overhearRadius": 320, "useSound": "drink_gulp" }
         }
       ]
     },
@@ -4611,6 +4757,12 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "arakawa_ko": false,
     "vector_ko": false,
     "phantom_ko": false,
+    "fp_staff_upset": false,
+    "fp_darren_ko": false,
+    "fp_sofia_ko": false,
+    "heard_ex_fp_kettle_on": false,
+    "heard_ex_fp_radios": false,
+    "heard_ex_fp_door_open": false,
     "malhotra_recalled": false,
     "arakawa_recalled": false,
     "quintero_recalled": false,

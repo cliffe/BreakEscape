@@ -87,7 +87,9 @@ VAR vm3_hint_given = false
 VAR vm4_hint_given = false
 VAR vault_hint_given = false
 // Phase 4 dialogue C1 (D7-5): set by the hub choice that opens a sub-menu and
-// cleared inside it, so a reopen that re-runs a sub-menu goes to the hub.
+// cleared on entry, so a reopen that re-runs the knot top goes to the hub. The
+// choices live in a `= menu` stitch: a reopen resting on a sub-menu re-runs
+// that stitch under the new globals (stale hints dropped) instead.
 VAR submenu_from_hub = false
 
 // ===========================================
@@ -457,6 +459,9 @@ HaX here, Agent. I've got your channel and the board.
     -> hub
 }
 ~ submenu_from_hub = false
+-> menu
+
+= menu
 + {(hollis_resolved != "" or hollis_ko) and not hollis_discussed} [The guard on the checkpoint, Hollis. He was dirty.]
     -> topic_hollis
 + {elena_outcome != "" and not elena_discussed} [Elena's numbers don't match the brief.]
@@ -473,6 +478,9 @@ HaX here, Agent. I've got your channel and the board.
     -> hub
 }
 ~ submenu_from_hub = false
+-> menu
+
+= menu
 + {found_tomb_gamma and not tomb_discussed} [A dossier. Tomb Gamma.]
     -> topic_tomb
 + {found_mole_evidence and not mole_discussed} [An intercept. They didn't leak the operation. They leaked me.]
@@ -485,6 +493,9 @@ HaX here, Agent. I've got your channel and the board.
     -> hub
 }
 ~ submenu_from_hub = false
+-> menu
+
+= menu
 // PASS 4 round 2 (playtest note 5): the Park pointer, findable again.
 // Phase 4 dialogue C2 (D7C2-9): filed under "stuck", where a player in the vault looks.
 + {park_pointer_open()} [The man in the vault won't stop. What would reach him?]

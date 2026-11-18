@@ -170,6 +170,7 @@ function fakeMinigame({ voiced, tts }) {
         params: voiced ? { voiced: true, disableClose: true } : { disableClose: true },
         isConversationActive: true,
         _typeoutRun: 0,
+        _pace: () => Promise.resolve(), _resetSkip() {},   // skip helpers (browser timers)
         _pendingNpcMessages: [],
         currentNPCId: HAX.id,
         npcManager: { getNPC: id => characters.get(id), npcs: characters },
@@ -250,7 +251,7 @@ test('an ordinary phone conversation is not voiced', async () => {
 test('wiring: lines redrawn on a reopen are not voiced; close stops and teardown destroys the voice', () => {
     // Only _showStoryLine voices; the history redraw (addMessages) does not go through it
     assert.match(mgSrc, /this\.history\.addMessage\(line\.type, line\.text, \{ read: true \}\);\n[\s\S]{0,200}if \(line\.type === 'npc' && isVoicedCall\(this\.params\)\) await this\._speakCallLine\(line, raw, \{ delivery \}\);\n\s+return true;/);
-    assert.match(mgSrc, /closeConversation\(\) \{[\s\S]{0,120}this\._flushPendingMessages\(\);\n\s+this\._callVoice\?\.stop\(\);/);
+    assert.match(mgSrc, /closeConversation\(\) \{[\s\S]{0,200}this\._flushPendingMessages\(\);\n\s+this\._callVoice\?\.stop\(\);/);
     assert.match(mgSrc, /cleanup\(\) \{[\s\S]{0,400}this\._callVoice\?\.destroy\(\);\n\s+this\._callVoice = null;/);
     assert.equal((mgSrc.match(/_speakCallLine\(/g) || []).length, 3, 'one definition, the typeout call and the preloaded opening');
     // The one redraw that is voiced: a voiced contact's first call, whose opening the phone preloaded

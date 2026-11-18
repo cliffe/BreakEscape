@@ -204,6 +204,7 @@ test('a reopened voiced call hands each fresh line\'s note to the line it types 
     const shown = [];
     const deps = { processGameActionTags() {}, deliveryFromTags };
     const mg = {
+        _resetSkip() {}, _pace: () => Promise.resolve(),   // skip helpers (real ones need the browser timers)
         currentNPCId: 'agent', isConversationActive: true, _pendingNpcMessages: [],
         ui: { showNotification() {}, addChoices() {} },
         async _showStoryLine(raw, delay, delivery) { shown.push({ raw, delivery }); return true; },
@@ -297,6 +298,7 @@ function lineMinigame(params) {
         whenSessionOverlayClosed: async () => {}, classifyPhoneLine: speaker.classifyPhoneLine, isVoicedCall: voice.isVoicedCall
     };
     const mg = {
+        _pace: () => Promise.resolve(),
         params, isConversationActive: true, _typeoutRun: 1, currentNPCId: 'agent',
         ui: { showTypingIndicator() {}, hideTypingIndicator() {}, scrollToBottom() {}, async addMessage() {} },
         history: { addMessage() {} },
