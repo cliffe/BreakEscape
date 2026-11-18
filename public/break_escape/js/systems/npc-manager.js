@@ -673,6 +673,8 @@ export default class NPCManager {
     if (open && open._sceneType === 'phone-chat' && open.currentNPCId === npcId && typeof open.ui?.addMessage === 'function') {
       try { open.ui.addMessage('call', text, true, row); row.read = true; } catch (e) { /* the row stays in the thread */ }
     }
+    // The contact list is showing: its row takes the new call line
+    if (open && open._sceneType === 'phone-chat' && !open._ending) { try { open.ui?.refreshContactList?.(); } catch (e) { /* the list redraws on its next open */ } }
     const phoneId = this.npcs.get(npcId)?.phoneId;
     if (typeof window !== 'undefined' && window.updatePhoneBadge && phoneId) {
       try { window.updatePhoneBadge(phoneId); } catch (e) { /* inventory not ready yet */ }

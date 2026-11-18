@@ -690,6 +690,40 @@ export default class PhoneChatUI {
     }
     
     /**
+     * A text or call row arrived while the contact list is showing: bring each row's preview,
+     * time and unread badge up to date in place (the rows keep their place and focus). A
+     * contact the list has not shown yet rebuilds the whole list. Does nothing in a thread.
+     * @returns {boolean} whether the list was refreshed
+     */
+    refreshContactList() {
+        try {
+            const list = this.elements?.contactList;
+            if (this.currentView !== 'contact-list' || !list || !list.isConnected) return false;
+            const npcs = this.listContacts(this._listPhoneId ?? this.params.phoneId ?? 'player_phone', true);
+            const rowFor = (id) => Array.from(list.querySelectorAll('.contact-item')).find(r => r.dataset.npcId === id);
+            if (npcs.some(npc => !rowFor(npc.id))) {
+                this.populateContactList(this._listPhoneId);
+                return true;
+            }
+            for (const npc of npcs) {
+                const row = rowFor(npc.id);
+                const fresh = this.createContactItem(npc);
+                const meta = row.querySelector('.contact-meta');
+                const freshMeta = fresh.querySelector('.contact-meta');
+                if (meta && freshMeta) meta.replaceWith(freshMeta);
+                // A livePreview row shows its own dry-run line: left as it is
+                const last = row.querySelector('.contact-last-message');
+                const freshLast = fresh.querySelector('.contact-last-message');
+                if (npc.livePreview !== true && last && freshLast) {
+                    last.className = freshLast.className;
+                    last.textContent = freshLast.textContent;
+                }
+            }
+            return true;
+        } catch (e) { return false; }
+    }
+
+    /**
      * Populate the contact list with NPCs
      * @param {string} phoneId - Optional phone ID to filter contacts
      */

@@ -867,11 +867,15 @@ export default class NPCBarkSystem {
     }, NPCBarkSystem.DIALOG_HOLD_POLL_MS);
   }
 
-  /** The open phone's back button counts unread texts in its other threads (review R2 M2). */
+  /** The open phone's back button counts unread texts in its other threads (review R2 M2); its contact list rows are refreshed. */
   _refreshPhoneUnread() {
     try {
       const m = window.MinigameFramework?.currentMinigame;
-      if (m && !m._ending && m._sceneType === 'phone-chat') m.ui?.refreshBackUnread?.();
+      if (m && !m._ending && m._sceneType === 'phone-chat') {
+        m.ui?.refreshBackUnread?.();
+        // The contact list's rows (preview, time, badge) show the text that just arrived
+        m.ui?.refreshContactList?.();
+      }
     } catch (e) { /* the phone closed meanwhile */ }
   }
 
