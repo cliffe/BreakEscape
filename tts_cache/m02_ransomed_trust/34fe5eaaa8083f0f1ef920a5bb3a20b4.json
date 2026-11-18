@@ -1,0 +1,13 @@
+{
+  "key": "34fe5eaaa8083f0f1ef920a5bb3a20b4",
+  "npc": "security_guard_patrol",
+  "text": "Every reader on this floor's dead, and Gary's not let anyone touch them.",
+  "voice": "Leda",
+  "style": "Hospital security officer on nights. Consistent Liverpool / Scouse accent throughout. Warm and quick with a joke until the moment she isn't -- then completely immovable. Not stupid, not a jobsworth, genuinely believes the corridor is her responsibility.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m02_ransomed_trust",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T13:55:51Z"
+}
