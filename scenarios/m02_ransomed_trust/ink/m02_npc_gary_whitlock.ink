@@ -405,6 +405,9 @@ Gary Whitlock: I know how that looks. Put it in the report. Put all of it in.
     -> hub
 }
 
+// Set before any line of the offer is shown: closing the chat on "take the lot" must keep it.
+~ gary_cabinet_permission = true
+
 Gary Whitlock: One more thing. Filing cabinet, behind you.
 
 Gary Whitlock: Every warning I sent and every answer I got. A year of it.
@@ -416,7 +419,6 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 // Task completes when the player actually recovers the email (handler eventMapping
 // on item_picked_up:gary_vindication_email), not when Gary mentions the cabinet.
 
-~ gary_cabinet_permission = true
 ~ hub_quiet = true
 -> hub
 

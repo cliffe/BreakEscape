@@ -167,4 +167,18 @@ test('a catch conditioned on the lock only fires for that lock; the other pick g
         assert.match(knot, /~ gary_cabinet_permission = true/);
         assert.ok(readFileSync(join(root, 'scenarios/m02_ransomed_trust/ink/m02_npc_gary_whitlock.json'), 'utf8').includes('gary_cabinet_permission'));
     });
+    // Real inkjs run. Closing the chat on "take the lot" must not lose the permission, so
+    // the variable has to be true as soon as the first line of the offer is shown.
+    test('Gary cabinet permission: already true on the first offer_cabinet line', async () => {
+        const { createRequire } = await import('node:module');
+        const inkjs = createRequire(import.meta.url)(join(root, 'public/break_escape/assets/vendor/ink.js'));
+        const json = readFileSync(join(root, 'scenarios/m02_ransomed_trust/ink/m02_npc_gary_whitlock.json'), 'utf8').replace(/^\uFEFF/, '');
+        const story = new inkjs.Story(json);
+        story.BindExternalFunction('player_name', () => 'Agent 0x00', false);
+        assert.equal(story.variablesState.$('gary_cabinet_permission'), false);
+        story.ChoosePathString('offer_cabinet');
+        const first = story.Continue();
+        assert.match(first, /One more thing\. Filing cabinet/);
+        assert.equal(story.variablesState.$('gary_cabinet_permission'), true);
+    });
 }
