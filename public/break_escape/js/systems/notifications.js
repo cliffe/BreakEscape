@@ -604,14 +604,15 @@ export function announceToast(type, text, flags = {}) {
         const queue = pendingAnnouncements[id];
         queue.push({ text: String(text ?? ''), low: flags.low === true, dropped: flags.dropped === true, verbatim: flags.verbatim === true });
         if (queue.length === 1) region.textContent = '';
-        // The flush waits a frame (then a tick), so announcements raised in separate tasks of
+        // The flush waits two frames (then a tick), so announcements raised in separate tasks of
         // one frame join instead of overwriting each other (R3 m1). One flush per announcement
         // (a later one finds the queue already empty and does nothing), so a timer that never
         // ran cannot leave the queue stuck; a hidden tab never runs rAF, so a plain timer backs it.
         const flush = () => flushAnnouncements(id);
         const win = typeof window !== 'undefined' ? window : null;
         if (win && typeof win.requestAnimationFrame === 'function') {
-            win.requestAnimationFrame(() => setTimeout(flush, 0));
+            // two frames: the engine can render one toast a frame after the one before it
+            win.requestAnimationFrame(() => win.requestAnimationFrame(() => setTimeout(flush, 0)));
             setTimeout(flush, ANNOUNCE_FALLBACK_MS);
         } else {
             setTimeout(flush, 0);
