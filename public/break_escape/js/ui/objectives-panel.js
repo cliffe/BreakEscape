@@ -60,8 +60,8 @@ export class ObjectivesPanel {
     this._autoCollapseDone = false;
     this._userTouched = false;
     this._hovering = false;
-    this.container.addEventListener('mouseenter', () => { this._hovering = true; });
-    this.container.addEventListener('mouseleave', () => { this._hovering = false; });
+    this.container.addEventListener?.('mouseenter', () => { this._hovering = true; });
+    this.container.addEventListener?.('mouseleave', () => { this._hovering = false; });
 
     // Initial render
     this.render(this.manager.getActiveAims());
@@ -178,9 +178,11 @@ export class ObjectivesPanel {
     if (this._autoCollapseDone || this._autoCollapseTimer || this._userTouched) return;
     const tick = () => {
       this._autoCollapseTimer = null;
+      if (!this.container?.classList) return;   // torn down, or a test's stand-in panel
       const focusInside = !!this.container?.contains?.(document.activeElement);
       if (this._hovering || focusInside) {   // in use: look again shortly
         this._autoCollapseTimer = setTimeout(tick, ObjectivesPanel.AUTO_COLLAPSE_RETRY_MS);
+        this._autoCollapseTimer?.unref?.();
         return;
       }
       if (ObjectivesPanel.shouldAutoCollapse({
@@ -190,6 +192,7 @@ export class ObjectivesPanel {
       this._autoCollapseDone = true;
     };
     this._autoCollapseTimer = setTimeout(tick, ObjectivesPanel.AUTO_COLLAPSE_MS);
+    this._autoCollapseTimer?.unref?.();   // node: never keeps a test process alive
   }
 
   toggleCollapse() {
