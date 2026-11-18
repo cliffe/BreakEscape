@@ -45,3 +45,4 @@ Checks: ink compile 11 of 11 (existing json unchanged); dialoguelint on both .in
 - M1: hostile leash (`behavior.hostile.leash: true`) on trader_npc, lerato_dlamini, tomasz_wisniewski. Validator 0 errors, 44 warnings, lock diff empty.
 - m1, m2: PLAN 10.4 and 2.8 wording.
 - Engine note for the orchestrator (m3): `needs.state(id).atPost` reads true for a hostile NPC far from its post and for a knocked-out NPC, because the needs layer drops hostile and KO'd NPCs from its updates (`npc-needs.js:1031`). Live probes should poll `atPost && !npcHostileSystem.isNPCHostile(id) && !npcHostileSystem.isNPCKO(id)` before interacting. Not a build change; skill not edited.
+- Live proof of M1 and the follow-up items: LIVE_FIX_R2.md (leash passes for Lerato and Dani; away talk queued and at point pass; Irina badge clone with walking staff passes; one new finding: queued Dani's chat background reads the checkpoint view).
