@@ -5389,6 +5389,16 @@ module BreakEscape
       end
 
       player_state['objectivesState']['tasks'][task_id] ||= {}
+
+      # A progress POST can arrive after the completion POST (the client fires both
+      # without waiting: the last-but-one pickup's "2 of 3" sync lands after the
+      # third pickup completed the task). Writing it then left a completed task
+      # showing progress 2 of 3 (m06 read_transaction_server_files). A completed
+      # task keeps its record; the stale count is dropped.
+      if player_state['objectivesState']['tasks'][task_id]['status'] == 'completed'
+        return { success: true, taskId: task_id, progress: progress, ignored: 'already completed' }
+      end
+
       player_state['objectivesState']['tasks'][task_id]['progress'] = progress
 
       # Store submittedFlags for submit_flags tasks
