@@ -85,7 +85,7 @@ test('tableBodyBox: legacy is today\'s box exactly; footprint only with data', (
 
 test('rooms.js: both table body sites go through applyTableBody with the room mode', () => {
     const src = readFileSync(join(root, 'public/break_escape/js/core/rooms.js'), 'utf8');
-    assert.match(src, /import \{ deskBoxModeFor, tableBodyBox \} from '\.\.\/systems\/desk-footprints\.js';/);
+    assert.match(src, /import \{ deskBoxModeFor, tableBodyBox, isFixedChair, chairMotion \} from '\.\.\/systems\/desk-footprints\.js';/);
     assert.equal((src.match(/applyTableBody\((tableSprite|sprite), rooms\[roomId\]\?\.deskBoxes\)/g) || []).length, 2);
     assert.match(src, /deskBoxes: deskBoxModeFor\(map, typeof window !== 'undefined' \? window\.__deskBoxes : undefined\)/);
     assert.doesNotMatch(src, /collisionHeight = tableHeight \/ 4/, 'the old inline box is gone');

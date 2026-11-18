@@ -147,8 +147,10 @@ def room_hq_ops():
     Back wall: OPERATIONS plate, world clocks, the operations status wall (every
     team STAND DOWN, INVESTIGATION). The floor: Cipher barricaded behind his three
     monitors; the junior analyst at her desk of threat feeds east; the print tray
-    on the photocopier west of Cipher.
-    Doors: W and E on row 2, N (top-left), S (bottom-left): the walkways stay clear.
+    on the photocopier against the back wall, north-east of Cipher.
+    Doors: W and E on row 2, N (top-left), S (bottom-left): the walkways stay clear, except that
+    the photocopier body (x 226-241, y 88-100) takes the top of the W-E band; the lane bends round it
+    and stays open.
     The archives cover the bottom two rows (feet at 256 or above).
     NPCs: Cipher at (5.2,4.8): frame x 126-206, y 83-163, his desk below him; the
     analyst at (8.2,7.0): frame x 222-302, y 153-233, below her desk (c2 C2-8).
@@ -161,25 +163,33 @@ def room_hq_ops():
     r.item("hq_ops_board1", 140.0, 54.0)
     r.item("hq_poster_ears1", 256.0, 50.0)
     r.item("hq_badge_reader1", 68.0, 54.0)
-    # the print tray, west of Cipher
-    cop = r.table("photocopier1", 84.0, 170.0, kind="objects")   # x 84-119
+    # the print tray, against the back wall north-east of Cipher, clear of the officers and the walkway
+    cop = r.table("photocopier1", 216.0, 100.0, kind="objects")  # x 216-251, against the back wall (was 84,170: its body blocked the post-2 officer)
     r.on(cop, "notes3", 0.45, 0.12, layer="conditional_table_items")
     # Cipher's barricade of three monitors
     cd = r.table("zds_desk1", 127.0, 210.0, kind="objects")      # x 127-205
-    for f in (0.18, 0.50, 0.82):
-        r.on(cd, "pc8", f, 0.40)
     r.on(cd, "office-misc-cup3", 0.04, 0.30)
     # the analyst's desk
     r.item("aes_office_chair1", 200.0, 166.0)        # Cipher's chair, pushed aside: he won't sit
     ad = r.table("zds_desk3", 236.0, 170.0, kind="objects")      # x 236-287, above the analyst
-    r.on(ad, "pc12", 0.36, 0.40)
-    r.on(ad, "phone2", 0.82, 0.32)
     # a stood-down hot desk back to back with Cipher's: dark monitors, chairs pushed in (c2 C2-7)
     hd = r.table("zds_desk1", 127.0, 254.0, kind="objects")      # x 127-205
     r.on(hd, "pc12", 0.25, 0.40)
     r.on(hd, "pc12", 0.70, 0.40)
-    # south-west: filing
-    r.solid("qdc_filing_steel1", 90.0, 256.0)
+    # m08 office life: a plain scenario type "pc" claims the first unreserved pc sprite in
+    # table_items order (rooms.js findMatchFor). The pc order is therefore: duty desk west
+    # pc12, duty desk east pc12, the analyst's pc12, then Cipher's three pc8, so three plain
+    # pc objects claim the three pc12 and the pc8 stay drawn in place. Only the order of the
+    # r.on calls matters; every r.table stays where it is.
+    r.on(ad, "pc12", 0.36, 0.40)
+    r.on(ad, "phone2", 0.82, 0.32)        # after its pc12, as it was drawn before
+    for f in (0.18, 0.50, 0.82):
+        r.on(cd, "pc8", f, 0.40)
+    # the relief watch's posts, west end of the hot desk, facing east to its west monitor
+    # (band x 77-127; the x 32-76 archives lane stays clear; feet at or above y 256).
+    # The filing cabinet that stood here is gone: it filled the band.
+    r.item("chair-exec-rotate3", 86.0, 233.0, fixed=True)         # post 1, sit_east (rotate3 = E, seatable swivel); placed where seating used to leave it, as a fixed chair never moves
+    r.item("chair-exec-rotate3", 86.0, 185.0, fixed=True)         # post 2, 48 px north of post 1, sit_east
     r.solid("water_cooler1", 214.0, 256.0)
     r.item("fire_alarm_point1", 14.0, 210.0)
     r.item("hq_badge_reader1", 16.0, 140.0)
