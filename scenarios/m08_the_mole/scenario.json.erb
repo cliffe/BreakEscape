@@ -298,6 +298,9 @@ backup_plain = "SENT -- To: architect@entropy.onion  From: deep_state_drop. Pack
           { "text": "AGENT HAX: Put on the break-room floor by her own agent.", "style": "warning", "condition": "globalVars.hax_ko" },
           { "text": "AN OFF-DUTY AGENT: Knocked out in the break room. A witness, not a suspect.", "style": "warning", "condition": "globalVars.offduty_agent_ko" },
           { "text": "A JUNIOR ANALYST: Knocked out at her desk. A witness to nothing.", "style": "warning", "condition": "globalVars.analyst_ko" },
+          { "text": "A NIGHT-DUTY OFFICER: Knocked down at the duty desk. A witness to nothing.", "style": "warning", "condition": "globalVars.julian_ko && !globalVars.agnieszka_ko" },
+          { "text": "A NIGHT-DUTY OFFICER: Knocked down at the duty desk. A witness to nothing.", "style": "warning", "condition": "globalVars.agnieszka_ko && !globalVars.julian_ko" },
+          { "text": "TWO NIGHT-DUTY OFFICERS: Both knocked down at the duty desk.", "style": "warning", "condition": "globalVars.julian_ko && globalVars.agnieszka_ko" },
           { "text": "ATHENA: Her reception avatar, knocked flat. She logged it.", "style": "warning", "condition": "globalVars.athena_ko" },
           { "text": "" },
           { "text": "THE ARCHITECT: At large, with every weakness SAFETYNET ever catalogued.", "style": "warning" },
@@ -606,7 +609,8 @@ CREDITS
   <%# Lighting stage (pass 5): the Citadel at night on Level Red. LIGHTING_PLAN.md. %>
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
-  <%# Office life (office_life/PLAN.md 2): room tone only, no people. Keys are room types. %>
+  <%# Office life (office_life/PLAN.md 2): room tone, and (relief-watch plan, slice 3) machine presets; the clue PCs opt out below. Keys are room types. %>
+  "officePresets": true,
   "roomTone": true,
   "roomToneTypes": {
     "room_hq_lobby": "quiet_office", "room_hq_director": "quiet_office", "room_hq_intel": "quiet_office",
@@ -1262,6 +1266,27 @@ CREDITS
               "onceOnly": true,
               "setGlobal": { "scanning_guide_offered": true, "vulnanalysis_guide_offered": true },
               "sendTimedMessage": { "delay": 1500, "message": "That's the repo box. Fingerprint the service, then go for the GitList flaw. I've got the scanning guide, and one on why that flaw works, if you want either." }
+            },
+<%# Relief watch (slice 3): trouble on the ops floor, never cleared. The cooler carries offWhen on this global. %>
+            { "eventPattern": "npc_attacked:julian_sallow", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+            { "eventPattern": "npc_attacked:agnieszka_duda", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+<% %w[julian_ko agnieszka_ko analyst_ko vector_ko].each do |g| %>
+            { "eventPattern": "global_variable_changed:<%= g %>", "condition": "value === true", "onceOnly": true, "setGlobal": { "ops_watch_upset": true } },
+<% end %>
+<%# Relief watch: a KO before the naming tips the mole off, as for every other bystander. One text per officer; the nightshade_tipped_off gate lets only the first through. %>
+            {
+              "eventPattern": "npc_ko:julian_sallow",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "watch" },
+              "sendTimedMessage": { "delay": 2000, "message": "You've put a duty officer down on the ops floor. The watch log will have it before he wakes. If the mole reads it, he knows we're looking." }
+            },
+            {
+              "eventPattern": "npc_ko:agnieszka_duda",
+              "condition": "globalVars.mole_identified !== true && globalVars.nightshade_tipped_off !== true",
+              "onceOnly": true,
+              "setGlobal": { "nightshade_tipped_off": true, "tipoff_source": "watch" },
+              "sendTimedMessage": { "delay": 2000, "message": "You've put a duty officer down on the ops floor. The watch log will have it before she wakes. If the mole reads it, he knows we're looking." }
             }
           ],
           "itemsHeld": [
@@ -1732,6 +1757,72 @@ CREDITS
             { "eventPattern": "room_entered:operations_floor", "condition": "!globalVars.analyst_ko", "onceOnly": true, "delayMs": 3500, "bark": "Nobody's said a word on this floor for an hour. I counted." }
           ],
           "observations": "A junior analyst monitoring threat feeds she has read four times without seeing."
+        },
+        {
+          "_comment": "Relief watch (slice 3): senior night-duty officer. Ambient: holds nothing, no clue, no task. Appears when the badge audit is read (found_badge_audit); thirst reset at the reveal so the first cooler trip comes later. Lines, pools and exchanges arrive in slice 5.",
+          "id": "julian_sallow",
+          "displayName": "Julian Sallow",
+          "npcType": "person",
+          "gender": "male",
+          "position": { "x": 3.27, "y": 7.19 },
+          "spriteSheet": "julian_sallow",
+          "spriteTalk": "assets/characters/julian_sallow_talk.png",
+          "spriteVisemes": "assets/characters/julian_sallow_visemes.png",
+          "avatar": "assets/characters/julian_sallow_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "currentKnot": "julian_start",
+          "voice": {
+            "name": "Rasalgethi",
+            "style": "SAFETYNET's senior night-duty officer, in his mid 60s, calm, measured and a little wry. Speak with a consistent southern English accent throughout -- do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "seated": true,
+          "needsHome": { "room": "operations_floor", "x": 3.27, "y": 7.19 },
+          "needsRooms": ["operations_floor"],
+          "needsCompany": { "groups": ["ops_watch"] },
+          "chatterCooldownMin": 2,
+          "needs": { "thirst": { "initial": 100, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
+          "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
+          "globalVarOnKO": "julian_ko",
+          "eventMappings": [
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'main_lobby' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'intel_analysis' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "room_entered:operations_floor", "condition": "data.previousRoom === 'server_room' && globalVars.found_badge_audit === true && !globalVars.ops_watch_upset && !globalVars.julian_ko", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 100 } } }
+          ],
+          "observations": "The senior night-duty officer on the relief watch. He keeps the duty desk, the door readers and the log."
+        },
+        {
+          "_comment": "Relief watch (slice 3): watch log-keeper. Follows Julian to the cooler (one-way coupling). Appears with him.",
+          "id": "agnieszka_duda",
+          "displayName": "Agnieszka Duda",
+          "npcType": "person",
+          "gender": "female",
+          "position": { "x": 3.27, "y": 6.19 },
+          "spriteSheet": "agnieszka_duda",
+          "spriteTalk": "assets/characters/agnieszka_duda_talk.png",
+          "spriteVisemes": "assets/characters/agnieszka_duda_visemes.png",
+          "avatar": "assets/characters/agnieszka_duda_headshot.png",
+          "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
+          "currentKnot": "agnieszka_start",
+          "voice": {
+            "name": "Callirrhoe",
+            "style": "SAFETYNET's night-watch log-keeper, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout -- do not shift to any other accent.",
+            "language": "en-GB"
+          },
+          "seated": true,
+          "needsHome": { "room": "operations_floor", "x": 3.27, "y": 6.19 },
+          "needsRooms": ["operations_floor"],
+          "needsCompany": { "groups": ["ops_watch"] },
+          "chatterCooldownMin": 2,
+          "needs": { "thirst": { "initial": 85, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
+          "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
+          "globalVarOnKO": "agnieszka_ko",
+          "eventMappings": [
+            { "eventPattern": "npc_use_started:ops_cooler", "condition": "data.npcId === 'julian_sallow' && !globalVars.ops_watch_upset && !globalVars.agnieszka_ko", "delayMs": 2000, "cooldown": 120000, "needs": { "set": { "thirst": 20 } } },
+            { "eventPattern": "global_variable_changed:found_badge_audit", "condition": "value === true", "onceOnly": true, "setVisible": true, "needs": { "set": { "thirst": 85 } } }
+          ],
+          "observations": "The night-watch log-keeper, seated beside the senior duty officer with the watch log open in front of her."
         }
       ],
       "objects": [
@@ -1762,6 +1853,18 @@ CREDITS
           "observations": "The floor's wall board. Every active operation reads the same word.",
           "observationDisplay": "gameDisplay",
           "text": "SAFETYNET GLOBAL OPERATIONS -- LIVE\n\nTeam Alpha ....... STAND DOWN (debrief)\nTeam Bravo ....... STAND DOWN (debrief)\nTeam Charlie ..... STAND DOWN (debrief)\nPortland response . AFTERMATH -- CASUALTY ASSESSMENT ONGOING\n\nINTERNAL INVESTIGATION: ACTIVE\nAll non-essential operations suspended until the leak is closed.\n\nFooter: 'We are not running operations. We are running a search of ourselves.'"
+        },
+<%# Relief watch (slice 3): the ops-floor water cooler. Base type name, no position (claims the Tiled water_cooler1). offWhen switches it off for good once the watch is upset. Use and queue cells are hand-written north of the cooler, off the archives walkway and the door mouths. %>
+        {
+          "type": "water_cooler",
+          "id": "ops_cooler",
+          "name": "Water Cooler",
+          "takeable": false,
+          "offWhen": "ops_watch_upset",
+          "observations": "The floor's water cooler, a stack of paper cups beside it.",
+          "affordance": { "capacity": 2, "useSeconds": 18, "chatter": "cooler", "overhearRadius": 360, "seat": "stand",
+                          "useFrom": { "dx": -0.375, "dy": -1.02 },
+                          "queue": { "cells": [ { "dx": 0.19, "dy": -0.5 }, { "dx": 0.875, "dy": -0.44 } ] } }
         }
       ]
     },
@@ -2152,6 +2255,7 @@ CREDITS
           "name": "CyberChef Workstation",
           "host": "LAB-DECODE-01",
           "takeable": false,
+          "affordance": false,
           "observations": "The lab's decoding station, CyberChef loaded and waiting. Whatever turns up encoded in this building, this is where it comes apart."
         },
         <%# No host or desktopUser here on purpose: this is a text-only object that never opens a desktop, and a numbered host would pair with the lab terminal log clue. %>
@@ -2161,6 +2265,7 @@ CREDITS
           "id": "nightshade_desk",
           "name": "Nightshade's Workstation",
           "takeable": false,
+          "affordance": false,
           "readable": true,
           "observations": "A desk with nothing personal on it. No photos, no mug, no clutter.",
           "text": "0x47 -- SESSION LOCKED.\nRe-authentication required (Level Red)."
@@ -2815,6 +2920,14 @@ CREDITS
     "offduty_agent_ko": false,
     "analyst_ko": false,
     "athena_ko": false,
+    "julian_ko": false,
+    "agnieszka_ko": false,
+    "ops_watch_upset": false,
+    "julian_console_owner_away": false,
+    "julian_console_screen_locked": false,
+    "heard_ex_relief_handover": false,
+    "heard_ex_lock_it": false,
+    "heard_ex_the_suite": false,
     "nightshade_tidied": false,
     "triple_agent_first_payment": false,
 
