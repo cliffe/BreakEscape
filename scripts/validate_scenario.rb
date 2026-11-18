@@ -6819,7 +6819,7 @@ end
 # never does in play, since the bootstrap scenario has no doors. requires is checked on
 # its own (a copy of the room's is harmless); access and acceptsUIDOnly are errors.
 DOOR_ENTRY_LOCK_FIELDS = %w[locked lockType keyPins key_pins difficulty lockedHint biometricMatchThreshold
-                            maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength dustable dustHint].freeze
+                            maxAttempts lockoutSeconds passwordHint showHint postitNote showPostit showKeyboard pinLength dustable dustHint].freeze
 # ─────────────────────────────────────────────────────────────
 # Gated-door credit (GATED_DOOR_SERVER_CHECK_PLAN.md §12). The server owns the credit for
 # passing a split gated door: at promotion it sets the gate's creditOnPass globals and completes
@@ -7861,6 +7861,16 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     end
   end
   find_card_ids.call(json_data)
+
+  # lockoutSeconds only does anything on a password lock (room or object)
+  lockout_nodes = rooms.filter_map { |id, room| [room, "rooms/#{id}"] if room.is_a?(Hash) }
+  lockout_nodes += objects.map { |e| [e[:object], e[:path]] }
+  lockout_nodes.each do |lock, path|
+    next unless lock.key?('lockoutSeconds') && lock['lockType'] != 'password'
+
+    warn.call("'#{path}' has 'lockoutSeconds' but its lock is not a password lock (lockType " \
+              "#{lock['lockType'].inspect}); only a password pad reads it.")
+  end
 
   # rfid locks: requires or access; requires cards on an access lock must exist
   rfid_nodes = rooms.filter_map { |id, room| [room, "rooms/#{id}"] if room.is_a?(Hash) && room['lockType'] == 'rfid' }

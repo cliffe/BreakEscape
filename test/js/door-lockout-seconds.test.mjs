@@ -88,9 +88,7 @@ test('a room lockoutSeconds reaches doorProperties and the password pad options'
     assert.equal(options.maxAttempts, 3);
 });
 
-test('a door definition lockoutSeconds wins over the room, and none means no lockout', () => {
-    const def = { connectedRoom: 'vault', direction: 'north', lockoutSeconds: 10 };
-    assert.equal(buildDoor({ lockoutSeconds: 45 }, def).doorProperties.lockoutSeconds, 10);
+test('no lockoutSeconds on the room means no lockout reaches the pad', () => {
     const plain = buildDoor({ maxAttempts: 3 });
     assert.equal(plain.doorProperties.lockoutSeconds, null);
     globalThis.__pwStarts.length = 0;

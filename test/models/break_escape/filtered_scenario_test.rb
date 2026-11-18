@@ -474,6 +474,7 @@ module BreakEscape
       room = game.filtered_scenario_for_bootstrap['rooms']['next_room']
       assert_equal 45, room['lockoutSeconds']
       assert_equal 3, room['maxAttempts']
+      assert_nil room['requires'], 'the password never ships'
       assert_nil room['combination'], 'a combination answer is not in the allowlist'
       assert_nil room['objects'], 'contents are still lazy-loaded'
     end
