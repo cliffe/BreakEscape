@@ -1,0 +1,14 @@
+{
+  "key": "52ba304c6653a4ccbdf56303ce6423b8",
+  "npc": "kevin_park",
+  "text": "I'll log it, but I'm checking it against my own notes before it goes anywhere near management.",
+  "delivery": "polite but cooler",
+  "voice": "Charon",
+  "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:58:25Z"
+}

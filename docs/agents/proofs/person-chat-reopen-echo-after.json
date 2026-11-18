@@ -1,0 +1,115 @@
+{
+  "npc": "receptionist",
+  "gid": "8826",
+  "steps": [
+    {
+      "name": "first open, at first choices",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.",
+        "1. I'm the security consultant Dr. Kim called in. It's about the ransomware.",
+        "2. I need Dr. Kim. Where is she?",
+        "3. You've been on this desk since it started, haven't you?"
+      ],
+      "controls": [
+        "×",
+        "1. I'm the security consultant Dr. Kim called in. It's about the ransomware.",
+        "2. I need Dr. Kim. Where is she?",
+        "3. You've been on this desk since it started, haven't you?"
+      ],
+      "tts": [
+        "{\"npc_id\":\"narrator\",\"text\":\"Ten past four in the morning. Every screen behind the desk is black, and the lights run amber off the generators.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the computers, I know. If it's your appointment, it's cancelled.\",\"delivery\":\"rattling it off\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.\"}"
+      ]
+    },
+    {
+      "name": "after one pick, at choices",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "So \"I need Dr. Kim\" isn't a sentence. It's the start of one.",
+        "1. Emergency security consultant. She called me in at one this morning.",
+        "2. Every minute you spend on this, those generators are burning."
+      ],
+      "controls": [
+        "×",
+        "1. Emergency security consultant. She called me in at one this morning.",
+        "2. Every minute you spend on this, those generators are burning."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"And you are?\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Forty-seven people upstairs on generators, and I've no way of checking who anybody is tonight.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"So \\\"I need Dr. Kim\\\" isn't a sentence. It's the start of one.\"}"
+      ]
+    },
+    {
+      "name": "closed",
+      "active": false,
+      "lines": [],
+      "controls": [],
+      "tts": []
+    },
+    {
+      "name": "REOPEN (same session)",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "So \"I need Dr. Kim\" isn't a sentence. It's the start of one.",
+        "1. Emergency security consultant. She called me in at one this morning.",
+        "2. Every minute you spend on this, those generators are burning."
+      ],
+      "controls": [
+        "×",
+        "1. Emergency security consultant. She called me in at one this morning.",
+        "2. Every minute you spend on this, those generators are burning."
+      ],
+      "tts": []
+    },
+    {
+      "name": "after reload (no chat)",
+      "active": false,
+      "lines": [],
+      "controls": [],
+      "tts": []
+    },
+    {
+      "name": "REOPEN after reload",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.",
+        "1. I'm the security consultant Dr. Kim called in. It's about the ransomware.",
+        "2. I need Dr. Kim. Where is she?",
+        "3. You've been on this desk since it started, haven't you?"
+      ],
+      "controls": [
+        "×",
+        "1. I'm the security consultant Dr. Kim called in. It's about the ransomware.",
+        "2. I need Dr. Kim. Where is she?",
+        "3. You've been on this desk since it started, haven't you?"
+      ],
+      "tts": [
+        "{\"npc_id\":\"narrator\",\"text\":\"Ten past four in the morning. Every screen behind the desk is black, and the lights run amber off the generators.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the computers, I know. If it's your appointment, it's cancelled.\",\"delivery\":\"rattling it off\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.\"}"
+      ]
+    }
+  ],
+  "errors": [
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED",
+    "console: Failed to load resource: net::ERR_FAILED"
+  ]
+}

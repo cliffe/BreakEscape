@@ -807,6 +807,10 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
     "halloran_questioned": false,
     "halloran_accused": false,
     "found_halloran_vetting": false,
+    "found_ashworth_vetting": false,
+    "found_ashworth_notice": false,
+    "ashworth_lead_texted": false,
+    "ashworth_named": false,
     "door_log_reasoned": false,
     "it_notice_read": false,
 
@@ -1578,7 +1582,23 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
             { "eventPattern": "npc_ko:lisa_park", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "npc_attacked:bernadette_lyons", "onceOnly": true, "setGlobal": { "qdc_staff_upset": true } },
             { "eventPattern": "global_variable_changed:qdc_staff_upset", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
-            { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } }
+            { "eventPattern": "global_variable_changed:torres_identified", "condition": "value === true", "onceOnly": true, "setGlobal": { "qdc_cooler_off": true } },
+<% %w[found_ashworth_notice found_ashworth_vetting].each do |g| %>
+            {
+              "_comment": "D136 a: either Ashworth lead latches ashworth_lead_texted once, so HaX texts once however the player finds him. && only.",
+              "eventPattern": "global_variable_changed:<%= g %>",
+              "condition": "value === true && globalVars.torres_identified !== true",
+              "onceOnly": true,
+              "setGlobal": { "ashworth_lead_texted": true }
+            },
+<% end %>
+            {
+              "_comment": "D136 a: one HaX reaction to the Ashworth lead. Fair and unspoiled: it names no culprit and sends the player to the badge log. skipIfGlobal drops it after the naming.",
+              "eventPattern": "global_variable_changed:ashworth_lead_texted",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 9000, "message": "Ben Ashworth is short of money and works nights. That makes him a lead, not a name. Test his times against the badge log before you spend one.", "skipIfGlobal": "torres_identified" }
+            }
           ]
         },
         {
@@ -2060,7 +2080,20 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
           ]
         }
       ],
-      "objects": []
+      "objects": [
+        {
+          "_comment": "D136 a (2026-11-18): the one piece of evidence that points at Ben Ashworth. Money and nights, nothing about the data. The badge log clears him (see ashworth_vetting_file). Reading it sets found_ashworth_notice; a latch mapping on HaX turns that into one text.",
+          "type": "notes",
+          "id": "ashworth_final_notice",
+          "name": "Final Reminder: B. Ashworth",
+          "takeable": true,
+          "position": { "x": 3.6, "y": 6.0 },
+          "readable": true,
+          "text": "FINAL REMINDER\nMr B. Ashworth\n\nYour account is 61 days overdue. Pay GBP 1,860 by Friday 9 October or the debt passes to collections.\n\n[Stuck to it in biro, underlined twice: \"Overnight runs pay double. Ask Ruth for more nights. Always behind, always skint.\"]",
+          "observations": "A final-demand letter left at the end of a desk in the junior engineers' row, with a note stuck to it",
+          "onRead": { "setVariable": { "found_ashworth_notice": true } }
+        }
+      ]
     },
 
     "server_hallway": {
@@ -2419,6 +2452,17 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: Dr Ruth Halloran, Chief Scientist\nClearance: Developed Vetting\n\nChange of circumstances: DECLARED (late)\n\nForeign travel: conference, Switzerland, September. Dates to follow. [Not yet supplied.]\nContact report: approached at a conference dinner by an executive recruiter (TalentStack). Reported to Security by email eleven days later.\nKnown context: open dispute with the CEO's office over publishing Heisenberg results.\n\nAction: follow-up interview requested.\nCancelled by the CEO's office: \"Classified project. Do not disturb the team.\"\n\n- P. Morgan",
               "observations": "Patricia's vetting file on Dr Halloran",
               "onRead": { "setVariable": { "found_halloran_vetting": true } }
+            },
+            {
+              "_comment": "D136 a (2026-11-18): the third folder, Ben Ashworth the junior engineer. It points at him (money, the overnight rota, his own server-hallway badge) and is cleared by the badge log: one evening swipe, 20:11, badge 4419, against 23:47 and 02:00-04:00 on the spare 4471. Handed over with the other two, so the KO drop carries it too. The id and name differ from every other item (item lookup matches id OR name).",
+              "type": "notes",
+              "id": "ashworth_vetting_file",
+              "name": "Vetting Aftercare File: B. Ashworth",
+              "takeable": true,
+              "readable": true,
+              "text": "QDC PERSONNEL SECURITY - VETTING AFTERCARE (RESTRICTED)\n\nSubject: Ben Ashworth, Junior Engineer\nClearance: Developed Vetting\n\nChange of circumstances: DECLARED\n\nQuarterly credit check: overdraft at its limit, two payday loans, rent two months behind. Asked twice for a pay review; declined both times.\nAccess: overnight test-run rota (Cryptography), own badge #4419. No contact reports.\n\nAction: welfare conversation suggested. Not yet held.\n\n- P. Morgan",
+              "observations": "Patricia's vetting file on Ben Ashworth",
+              "onRead": { "setVariable": { "found_ashworth_vetting": true } }
             },
             {
               "_comment": "PASS 3 P8: Patricia's own copy, handed over from her confession knot. The cabinet holds the other copy for a player who picks it. Its NAME must differ from the cabinet copy: the server's item lookup matches id OR name and searches room containers before NPC itemsHeld (games_controller.rb:1543-1606), so a shared name resolved her give to the locked cabinet and was rejected (playtest 3b).",

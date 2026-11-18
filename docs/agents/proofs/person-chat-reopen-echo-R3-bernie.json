@@ -1,0 +1,157 @@
+{
+  "gid": "8978",
+  "rec": [
+    {
+      "name": "first open",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "If it's the vending machine, that's been broken since March. And if you're press, there's a car park you can stand in.",
+        "1. I'm the security consultant Dr. Kim called in. It's about the ransomware.",
+        "2. I need Dr. Kim. Where is she?",
+        "3. You've been on this desk since it started, haven't you?"
+      ],
+      "tts": [
+        "{\"npc_id\":\"narrator\",\"text\":\"Ten past four in the morning. Every screen behind the desk is black, and the lights run amber off the generator",
+        "{\"npc_id\":\"narrator\",\"text\":\"Bernie Nwosu is holding the front of this hospital together with a clipboard, a landline and a dying biro.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the computers, I know. If it's your appointment, it's cancelled.\",\"delivery\":\"rattling it off\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"If it's the vending machine, that's been broken since March. And if you're press, there's a car park you ca"
+      ],
+      "posts": [],
+      "logs": [
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "hub",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Anything goes sideways for you tonight, you come back to this desk. Yeah?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [
+        "{\"npc_id\":\"receptionist\",\"text\":\"And you are?\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Forty-seven people upstairs on generators, and I've no way of checking who anybody is tonight.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"So \\\"I need Dr. Kim\\\" isn't a sentence. It's the start of one.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Right. That I can work with.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She turns the paper log round so you can both read it. Halfway down, in the small hours: EXTERNAL SECURITY CONS",
+        "{\"npc_id\":\"narrator\",\"text\":\"A line has been ruled through it. Different biro. No initials.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"That's my log. And that's somebody else's crossing-out.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Nobody amends this book but me. That's the whole point of the book.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"You want me to preserve it.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"You're not really a consultant, are you.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She lets the question sit, then visibly decides not to ask it again.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Right. It stays as it is.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She writes you into the log by hand, pressing hard.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"You're in the book. And no, I can't give you a badge that does anything.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"The readers are down, and the permissions system's behind that ransom screen with everything else.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"So Estates dumped every mechanical override on my hook and made it my problem.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She unhooks a worn brass key and holds it a moment before she lets go.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"IT's off the handover room. Through Ward Three, along the link and up the main corridor. In the handover ro",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Gary's in there. He's not come out since half ten, so knock properly.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"And listen. You told me the truth when you could've fed me something easier. I've clocked that.\"}",
+        "{\"npc_id\":\"receptionist\",\"text\":\"Anything goes sideways for you tonight, you come back to this desk. Yeah?\"}"
+      ],
+      "posts": [
+        "POST /break_escape/games/8978/objectives/tasks/sign_in_at_reception ",
+        "POST /break_escape/games/8978/objectives/unlock {\"kind\":\"aim\",\"objective_id\":\"access_it_systems\"}",
+        "POST /break_escape/games/8978/inventory {\"action_type\":\"add\",\"item\":{\"id\":\"receptionist_held_0\",\"name\":\"IT Department Override Key\",\"type\":\"key\",\"keyPins\":[35,45,25,55],\"takeable\":true,\"opens_lock\":\"i"
+      ],
+      "logs": [
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb All dialogue blocks done, showing 2 choices",
+        "\ud83c\udf10 Global variable changed: bernie_influence = 2 (from receptionist)",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb All dialogue blocks done, showing 3 choices",
+        "\ud83c\udf10 Global variable changed: bernie_influence = 4 (from receptionist)",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Task completion tag: sign_in_at_reception",
+        "\ud83d\udccb Aim unlock tag: access_it_systems",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: narrator",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83c\udf10 Global variable changed: bernie_influence = 6 (from receptionist)",
+        "\ud83c\udf10 Global variable changed: bernie_trusts_player = true (from receptionist)",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb Displaying line 1/1 from block 1/1: receptionist",
+        "\ud83d\udccb All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "REOPEN after goodbye + Esc in delay #1",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Anything goes sideways for you tonight, you come back to this desk. Yeah?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "\ud83d\udd04 Continuing previous conversation with receptionist",
+        "\ud83d\udccb 3 choices available",
+        "\ud83d\udccb Reopened at a choice point - re-showing last line from receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after goodbye + Esc in delay #2",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Anything goes sideways for you tonight, you come back to this desk. Yeah?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "\ud83d\udd04 Continuing previous conversation with receptionist",
+        "\ud83d\udccb 3 choices available",
+        "\ud83d\udccb Reopened at a choice point - re-showing last line from receptionist"
+      ]
+    },
+    {
+      "name": "REOPEN after goodbye + Esc in delay #3",
+      "active": true,
+      "lines": [
+        "Bernie Nwosu",
+        "Anything goes sideways for you tonight, you come back to this desk. Yeah?",
+        "1. How bad is it upstairs, honestly?",
+        "2. Has anyone come through tonight who doesn't belong?",
+        "3. I should get moving."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "\ud83d\udd04 Continuing previous conversation with receptionist",
+        "\ud83d\udccb 3 choices available",
+        "\ud83d\udccb Reopened at a choice point - re-showing last line from receptionist"
+      ]
+    }
+  ],
+  "errors": [],
+  "note": "R3 live check, m02 receptionist (Bernie), keyless :3179, fresh game. Goodbye 'I should get moving' then Esc 300 ms later (inside the 1.5 s reply delay), reopen, x3. All three reopens are silent (no TTS) but NOT through the echo path: no 'reopen would replay' log. The Bernie goodbye is 'farewell / hub_quiet = true / #exit_conversation / -> hub', so the saved story is mid-knot, the first continue enters the hub with hub_quiet set, prints nothing and the recap shows the old line. That is the ink's hub_quiet design (pre-existing; the opt-in reopenRefreshesHub exists for it), not the m1 echo. A voiced greeting after Esc-in-delay therefore cannot be shown on Bernie; m1 is covered by the unit tests only."
+}
