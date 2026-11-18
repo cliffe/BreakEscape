@@ -5272,7 +5272,9 @@ module BreakEscape
           return { success: false, error: 'Room not reached', retryable: true }
         end
       when 'submit_flags'
-        unless validate_flag_submission(task, validation_data[:submittedFlags])
+        # The client's submittedFlags list is ignored: the decision rests on the flags this
+        # game's own /flags endpoint accepted (see server_satisfied_target_flags).
+        unless validate_flag_submission(task)
           return { success: false, error: 'Not all required flags submitted' }
         end
       when 'custom'
@@ -6808,6 +6810,12 @@ module BreakEscape
             task_state['submittedFlags'] << entry unless task_state['submittedFlags'].include?(entry)
           end
 
+          # Server-only record of the same matches. task_state['submittedFlags'] can be
+          # overwritten by the client (update_task_progress!), so complete_task! reads this.
+          player_state['flag_task_matches'] ||= {}
+          recorded = (player_state['flag_task_matches'][task_id] ||= [])
+          matched.each { |entry| recorded << entry unless recorded.include?(entry) }
+
           # Check if all targetFlags are now submitted
           all_submitted = Array(task['targetFlags']).all? do |tf|
             task_state['submittedFlags'].include?(tf)
@@ -6954,25 +6962,34 @@ module BreakEscape
       count >= target_count
     end
 
-    # Validate submit_flags tasks.
-    # submitted_flags_from_request MUST be provided — stored state is never used
-    # for validation to prevent pre-injection via update_task_progress.
-    def validate_flag_submission(task, submitted_flags_from_request = nil)
+    # Validate submit_flags tasks from the server's own record only. The request body is
+    # never consulted: a crafted submittedFlags list must not complete the task.
+    def validate_flag_submission(task)
       return false unless task['targetFlags'].is_a?(Array)
+      return false if task['targetFlags'].empty?
 
-      # Require flags to be supplied in the request body; reject attempts that
-      # omit them (which would otherwise fall through to manipulable stored state).
-      return false unless submitted_flags_from_request.present?
+      satisfied = server_satisfied_target_flags(task)
+      task['targetFlags'].all? { |target_flag| satisfied.include?(target_flag) }
+    end
 
-      submitted = Array(submitted_flags_from_request)
-      Rails.logger.debug "[BreakEscape] Validating flags using request data: #{submitted.inspect}"
+    # The task's targetFlags entries this game has really satisfied, from server state:
+    #   - entries process_flag_task_completions! recorded when /flags accepted a flag at
+    #     the matching station (player_state['flag_task_matches']); and
+    #   - entries written as a flag reference ("vm:flag_N") whose value is in the
+    #     player_state['submitted_flags'] list that submit_flag fills.
+    # Nothing here reads the client-writable task submittedFlags.
+    def server_satisfied_target_flags(task)
+      recorded = Array(player_state.dig('flag_task_matches', task['taskId']))
+      submitted = Array(player_state['submitted_flags']).map { |f| f.to_s.downcase }
 
-      # Check that all targetFlags are in submittedFlags
-      all_submitted = task['targetFlags'].all? { |target_flag| submitted.include?(target_flag) }
+      from_refs = Array(task['targetFlags']).select do |target|
+        next false unless target.is_a?(String) && target.match?(/\A[^:]+:flag_\d+\z/)
 
-      Rails.logger.debug "[BreakEscape] Flag validation: targetFlags=#{task['targetFlags'].inspect}, submitted=#{submitted.inspect}, result=#{all_submitted}"
+        value = resolve_flag_ref(target)
+        value.present? && submitted.include?(value.to_s.downcase)
+      end
 
-      all_submitted
+      recorded + from_refs
     end
 
     # Check if NPC was encountered
