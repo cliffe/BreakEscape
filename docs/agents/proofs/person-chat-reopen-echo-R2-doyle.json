@@ -1,0 +1,136 @@
+{
+  "gid": "8906",
+  "rec": [
+    {
+      "name": "doyle first open",
+      "active": true,
+      "lines": [
+        "Sister Doyle",
+        "I've had four people through here tonight who weren't, and every one of them wanted to tell me about the computers.",
+        "1. Security consultant. I'm here to get your monitoring back.",
+        "2. What am I looking at? Talk me through the ward.",
+        "3. No. Tell me to go and I'll go."
+      ],
+      "tts": [
+        "{\"npc_id\":\"narrator\",\"text\":\"Six beds. A nurse working the far end with a clipboard, and Sister Doyle planted at bed two, eyes on the machin",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Are you meant to be on my ward?\",\"delivery\":\"brisk, attention on the patient\"}",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"I've had four people through here tonight who weren't, and every one of them wanted to tell me about the comp"
+      ],
+      "posts": [
+        "POST /break_escape/games/8906/unlock {\"targetType\":\"door\",\"targetId\":\"ward_vestibule\",\"attempt\":null,\"method\":\"unlocked\"}",
+        "POST /break_escape/games/8906/unlock {\"targetType\":\"door\",\"targetId\":\"ward_approach\",\"attempt\":null,\"method\":\"unlocked\"}",
+        "POST /break_escape/games/8906/unlock {\"targetType\":\"door\",\"targetId\":\"hospital_ward\",\"attempt\":null,\"method\":\"unlocked\"}",
+        "POST /break_escape/games/8906/objectives/tasks/assess_the_ward "
+      ],
+      "logs": [
+        "📋 Setting up event mappings for ward_nurse: [Object, Object]",
+        "📋 Setting up event mappings for roaming_ward_nurse: [Object]",
+        "📋 Setting up event mappings for patient_bed4: [Object, Object]",
+        "📋 Setting up event mappings for patient_bed2: [Object, Object]",
+        "📋 Setting up event mappings for patient_bed5: [Object, Object, Object, Object]",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "ward_tour choices (tags ran)",
+      "active": true,
+      "lines": [
+        "Sister Doyle",
+        "Six beds in this bay. Two more bays down the corridor. Forty-seven altogether.",
+        "1. Four minutes. And no alarm.",
+        "2. What are you most frightened of?",
+        "3. Understood. I'll be quick."
+      ],
+      "tts": [
+        "{\"npc_id\":\"narrator\",\"text\":\"Sister Doyle looks round for the first time.\"}",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Two minutes. And I'm not leaving this bed while I do it.\"}",
+        "{\"npc_id\":\"narrator\",\"text\":\"She nods down the row as she talks. She doesn't lower her voice. These are her patients, and they can hear.\"}",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Bed four. Mr Pryce, sixty-seven, ventilated. The machine has its own power. It's the monitoring that's gone d",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Bed two. Mrs Hargreaves, on ECMO. That's her heart and her lungs, both, in a box beside the bed.\"}",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"If that alarms and nobody's stood next to it, she has about four minutes.\"}",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Bed five's Ms Chen. Seventy-one, post-op, and she's been doing my obs for me with her eyes.\"}",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Six beds in this bay. Two more bays down the corridor. Forty-seven altogether.\"}"
+      ],
+      "posts": [
+        "POST /break_escape/games/8906/objectives/tasks/talk_to_ward_nurse "
+      ],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Task completion tag: talk_to_ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: narrator",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    },
+    {
+      "name": "REOPEN ward_tour (expect echo: no TTS, no task post)",
+      "active": true,
+      "lines": [
+        "Sister Doyle",
+        "Six beds in this bay. Two more bays down the corridor. Forty-seven altogether.",
+        "1. Four minutes. And no alarm.",
+        "2. What are you most frightened of?",
+        "3. Understood. I'll be quick."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with ward_nurse",
+        "🔄 Re-navigating to current knot \"ward_tour\" to re-evaluate choices with updated globals",
+        "🔇 ward_nurse: reopen would replay lines already shown - showing choices with a recap",
+        "📋 3 choices available",
+        "📋 Reopened at a choice point - re-showing last line from ward_nurse"
+      ]
+    },
+    {
+      "name": "REOPEN ward_tour again",
+      "active": true,
+      "lines": [
+        "Sister Doyle",
+        "Six beds in this bay. Two more bays down the corridor. Forty-seven altogether.",
+        "1. Four minutes. And no alarm.",
+        "2. What are you most frightened of?",
+        "3. Understood. I'll be quick."
+      ],
+      "tts": [],
+      "posts": [],
+      "logs": [
+        "🔄 Continuing previous conversation with ward_nurse",
+        "🔄 Re-navigating to current knot \"ward_tour\" to re-evaluate choices with updated globals",
+        "🔇 ward_nurse: reopen would replay lines already shown - showing choices with a recap",
+        "📋 3 choices available",
+        "📋 Reopened at a choice point - re-showing last line from ward_nurse"
+      ]
+    },
+    {
+      "name": "picked a choice after the echo",
+      "active": true,
+      "lines": [
+        "Sister Doyle",
+        "Twenty years of training, and tonight I'm an alarm.",
+        "1. How are you managing without the systems?",
+        "2. How long can you keep this up?",
+        "3. I'll let you work."
+      ],
+      "tts": [
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"So I stand here. That's the whole plan. I watch this bed with my own eyes, and Priya runs everybody else on p",
+        "{\"npc_id\":\"ward_nurse\",\"text\":\"Twenty years of training, and tonight I'm an alarm.\"}"
+      ],
+      "posts": [],
+      "logs": [
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 Displaying line 1/1 from block 1/1: ward_nurse",
+        "📋 All dialogue blocks done, showing 3 choices"
+      ]
+    }
+  ],
+  "errors": []
+}

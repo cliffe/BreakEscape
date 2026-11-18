@@ -542,10 +542,16 @@ Agent HaX: And you built a case on evidence Derek manufactured specifically to d
 === audit_feedback ===
 Agent HaX: I noticed you gave Kevin a security assessment during your cover operation.
 
-{audit_correct_answers >= 4:
+{audit_correct_answers == 4:
+    Agent HaX: Your security analysis was strong. Four of the five, and the one you missed didn't cost you Kevin.
+    Agent HaX: That's good security consulting. Your cover held up.
+}
+{audit_correct_answers == 5:
     Agent HaX: Your security analysis was excellent. You identified every major vulnerability correctly.
     Agent HaX: Physical access controls, Derek's suspicious access patterns, predictable passwords, Patricia's firing, and Derek's unjustified network segmentation.
     Agent HaX: That's professional-grade security consulting. Your cover was completely convincing.
+}
+{audit_correct_answers >= 4:
     + [I wanted to maintain my cover properly]
         Agent HaX: And you did. Kevin trusted you completely because you demonstrated real expertise.
         Agent HaX: That kind of authentic tradecraft makes all the difference in deep cover work.

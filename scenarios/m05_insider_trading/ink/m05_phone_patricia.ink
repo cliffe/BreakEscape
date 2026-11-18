@@ -59,12 +59,18 @@ VAR torres_suspected = false // Synced scenario global: enough on Torres to sear
 VAR found_door_log = false
 VAR found_halloran_alibi = false
 VAR halloran_accused = false // Synced scenario global: Halloran suspended on the player's word; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
+VAR ashworth_named = false // Synced scenario global: the player named Ben Ashworth to Patricia or HaX, with or without the log; read by the debrief
 VAR halloran_questioned = false
+VAR found_ashworth_notice = false // Synced scenario global (D136 a): Ben Ashworth's final-demand notice has been read
+VAR found_ashworth_vetting = false // Synced scenario global (D136 a): Ben Ashworth's vetting folder is in the notes
 VAR door_log_reasoned = false // Synced scenario global: the player has read the badge-log pattern; also set by HaX (m05_phone_agent_0x99) and Patricia in person (m05_npc_patricia_morgan)
 VAR it_notice_read = false
 VAR door_log_reasoned_first = false // Synced scenario global (pass 5 R3-1): the front-door reason given in a reason menu, before the naming; set only in the *log_reason_right knots. The early-naming reward reads this, not door_log_reasoned
 VAR owen_refused_password = false // Synced scenario global (pass 5 puzzle R1, P6): Owen has been asked for the server-room password and wanted a reason; set by Owen. Patricia's sign-off waits for it
 VAR torres_reason_guessed = false // Synced scenario global (pass 5 R2 B2): a wrong reason or a wrong name was tried; also set by HaX and Patricia's phone/in person. Excludes the early-naming reward
+
+=== function ashworth_lead()
+~ return found_ashworth_notice or found_ashworth_vetting
 
 === function has_motive()
 ~ return found_medical_bills or found_torres_journal or found_vetting_file
@@ -176,18 +182,69 @@ Go on, then. Who?
 + {found_door_log and not halloran_accused} [Dr Ruth Halloran.]
     -> phone_accuse_halloran
 // Struggling run A (D3, M3): a wrong name ends the call; her own facts.
-+ {found_door_log} [Ben Ashworth.]
-    ~ torres_reason_guessed = true
-    Ben's on that log one night, at eight on a Thursday evening. The transfers I flagged run between two and four in the morning.
-    Don't throw names at me. Ring back when you're sure.
-    #exit_conversation
-    -> DONE
+// D136 a: Ben is a live name once the player holds his folder, his notice or the log.
++ {found_door_log or ashworth_lead()} [Ben Ashworth.]
+    -> phone_accuse_ashworth
 + {found_door_log or torres_suspected or has_motive() or has_exfil()} [David Torres.]
     -> phone_name_torres
 + [I've got a feeling. Nothing I can show you yet.]
     So have I. Ring me back with evidence.
     #exit_conversation
     -> DONE
+
+// D136 a: the third suspect, as in person (accuse_ashworth). Same lines, so the
+// recordings are shared. Choices-only reason menu; the log rules him out.
+=== phone_accuse_ashworth ===
+// lint: call-knot
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
+~ ashworth_named = true
+#speaker:patricia_morgan
+Ben. Why?
+-> phone_ashworth_why
+
+=== phone_ashworth_why ===
+// lint: call-knot
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
++ {ashworth_lead()} [He's broke, and he works nights.]
+    -> phone_ashworth_money
++ {found_door_log} [His badge is on the server hallway on the log.]
+    -> phone_ashworth_hallway
+
+=== phone_ashworth_money ===
+// lint: call-knot
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+{found_door_log:
+    That's why he might. It isn't how. Ben's on that log one night, Thursday the 24th, eight in the evening, on his own badge.
+    -> phone_ashworth_cleared
+}
+Skint and on the overnight rota. That's a lead, not a case. Half my caseload is skint.
+Owen keeps the badge readers. See when Ben's really in that hallway, then ring back.
+#exit_conversation
+-> DONE
+
+=== phone_ashworth_hallway ===
+// lint: call-knot
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+Once. Front door at five past eight on a Thursday evening, the hallway six minutes later, on his own badge, 4419.
+-> phone_ashworth_cleared
+
+=== phone_ashworth_cleared ===
+// lint: call-knot
+{patricia_ko: -> no_answer}
+{torres_identified: -> hub}
+#speaker:patricia_morgan
+~ torres_reason_guessed = true
+The transfers I flagged run between two and four in the morning.
+The first night went in on the spare, 4471. Ben isn't either of those.
+Don't throw names at me. Ring back when you're sure.
+#exit_conversation
+-> DONE
 
 === phone_accuse_halloran ===
 // lint: call-knot

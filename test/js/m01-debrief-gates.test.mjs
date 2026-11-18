@@ -122,3 +122,18 @@ test('F6: the Not yet reply is a line with a cached clip (reuses "Good. Off you 
     while (s.canContinue) out.push(s.Continue().trim());
     assert.ok(out.includes('Good. Off you go.'));
 });
+
+test('abort-call guard: m01_debrief_offered is declared, set on entering closing_debrief, and gates all abort rings', () => {
+    const s = story({});
+    assert.equal(s.variablesState['m01_debrief_offered'], false);
+    s.ChoosePathString('closing_debrief');
+    const tags = [];
+    while (s.canContinue) { s.Continue(); tags.push(...(s.currentTags || [])); }
+    assert.ok(tags.includes('set_global:m01_debrief_offered:true'), 'knot does not set the flag');
+    const erb = readFileSync(join(root, 'scenarios/m01_first_contact/scenario.json.erb'), 'utf8');
+    assert.match(erb, /"m01_debrief_offered": false/);
+    const a = erb.indexOf('"eventPattern": "attack_aborted"');
+    const seg = erb.slice(a, erb.indexOf('"id": "closing_debrief_person"'));
+    assert.equal(seg.match(/start_debrief_cutscene !== true/g).length, 6);
+    assert.equal(seg.match(/start_debrief_cutscene !== true && globalVars\.m01_debrief_offered !== true/g).length, 6);
+});

@@ -343,9 +343,11 @@ export function signInRefusalMessage(result, { remote = false, host } = {}) {
 export function signInErrorMessage(result, { remote = false, host } = {}) {
     if (remote) {
         // A remote screen names the host, as its row in the network view does (8.5)
-        if (result?.serverReason === 'not_responding') return notRespondingMessage(host);
-        if (result?.status === 403 || result?.status === 404) return unreachableMessage(host);
-        return 'Network error. Please try again.';
+        // After a timed-out sync the line says the link may be behind (R2 n1)
+        const late = result?.syncLate && result?.syncNote ? ` ${result.syncNote}` : '';
+        if (result?.serverReason === 'not_responding') return notRespondingMessage(host) + late;
+        if (result?.status === 403 || result?.status === 404) return unreachableMessage(host) + late;
+        return 'Network error. Please try again.' + late;
     }
     if (result?.serverReason === 'off') return 'This PC is off.';
     if (result?.serverReason === 'not_responding') return 'This PC is not responding.';

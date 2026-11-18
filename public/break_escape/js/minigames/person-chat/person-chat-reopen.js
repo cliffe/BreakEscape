@@ -44,6 +44,169 @@ export function forgetNpcLine(npcId) {
 }
 
 /**
+ * Reopen echo. Closing a chat at a choice point and reopening it re-enters the knot
+ * that owns the choices (so conditions re-read the current globals), and a knot that
+ * prints lines before its choices prints them all again: the player saw and heard
+ * them a moment ago, and hears the same lines twice.
+ *
+ * Every line displayed is remembered per NPC, per page load, in order (newest 40), with
+ * the game tags that came with it. A reopen is an echo only when running the knot
+ * forward in silence yields exactly the most recent lines shown, in order, with the same
+ * tags, and nothing else (no extra tag-only step, no exit). The caller then shows the
+ * choices with the usual one-line recap instead (display only, no TTS, no tags). Anything
+ * else (a changed return greeting, a cycling greeting that moved on, a line a changed
+ * global now prints, a tag that differs) is real content and plays as normal.
+ * A chat that closed on an exit_conversation reply never echoes: the next visit greets.
+ */
+const MAX_SHOWN = 40;
+const MAX_STEPS = 60;
+const shownLines = new Map(); // npcId -> { list: [{ t, g }], exit: boolean }
+const normLine = l => String(l).replace(/\s+/g, ' ').trim();
+export const isExitTag = t => /^(exit|end)_conversation\b/i.test(String(t).trim());
+// speaker: / delivery: only change how a line is presented, not what it does
+const isPresentationTag = t => /^(speaker|delivery)\s*:/i.test(String(t).trim());
+const tagKey = tags => (tags || []).map(t => String(t).trim()).filter(t => t && !isPresentationTag(t)).join('|');
+// A player's choice sits in the log as an entry no ink line can equal (NUL cannot survive
+// normLine's text), so a tail match can never span a choice.
+const CHOICE_MARK = { t: '\u0000player-chose', g: '' };
+const entriesOf = (text, tags) => {
+    const g = tagKey(tags);
+    return String(text || '').split('\n').map(normLine).filter(Boolean).map(t => ({ t, g }));
+};
+
+/**
+ * Remember the lines of a displayed step and its tags. A step carrying an
+ * exit_conversation / end_conversation tag marks the chat as closed by exit; any later
+ * step clears the mark.
+ */
+export function rememberShownText(npcId, text, tags) {
+    if (!npcId) return;
+    const rec = shownLines.get(npcId) || { list: [], exit: false };
+    const added = typeof text === 'string' ? entriesOf(text, tags) : [];
+    if ((tags || []).some(isExitTag)) rec.exit = true;
+    else if (added.length) rec.exit = false;
+    for (const e of added) rec.list.push(e);
+    rec.list = rec.list.slice(-MAX_SHOWN);
+    shownLines.set(npcId, rec);
+}
+
+/** The player picked a choice: later lines are new, so an echo can never reach back past this. */
+export function rememberPlayerChoice(npcId) {
+    if (!npcId) return;
+    const rec = shownLines.get(npcId);
+    if (!rec || !rec.list.length) return;
+    rec.list.push(CHOICE_MARK);
+    rec.list = rec.list.slice(-MAX_SHOWN);
+}
+
+/** The chat closed on an exit_conversation that was not recorded with a line (tags-only step). */
+export function markClosedByExit(npcId) {
+    if (!npcId) return;
+    const rec = shownLines.get(npcId) || { list: [], exit: false };
+    rec.exit = true;
+    shownLines.set(npcId, rec);
+}
+
+export function forgetShownText(npcId) {
+    if (npcId === undefined) shownLines.clear();
+    else shownLines.delete(npcId);
+}
+
+/**
+ * True when `entries` (drained, in order) are exactly the most recent lines shown for
+ * this NPC. Exported for tests.
+ */
+export function matchesShownTail(npcId, entries) {
+    const rec = shownLines.get(npcId);
+    if (!rec || rec.exit || !entries.length || entries.length > rec.list.length) return false;
+    const tail = rec.list.slice(-entries.length);
+    return entries.every((e, i) => e.t === tail[i].t && e.g === tail[i].g);
+}
+
+/**
+ * Decide whether a reopened story only replays what was just shown, without touching
+ * anything. The look-ahead is the same as the other ones (_flushTrailingTags,
+ * restoredStoryHasOnlyTheEnd): global observer detached, effectful externals stubbed,
+ * story put back after. Only when it is an echo is the knot run again for real, the
+ * same number of steps, through `step` (the conversation's own continue, so its
+ * bookkeeping runs and ink variables reach gameState once); the text and tags of that
+ * replay are dropped, because the tags already ran when the lines were first shown.
+ *
+ * A true echo drops every tag of the replayed steps on purpose, presentation ones
+ * (portrait, lighting) and counters included: they ran when the lines were first shown,
+ * and a non-idempotent tag must not run again on each re-entry.
+ *
+ * Returns the choices result with text and tags blanked for an echo, else null with the
+ * story exactly as it was. Not an echo: a new or reordered line, a tag that differs, an
+ * action-tag step with no text, an exit/end tag, no choices, an error, more than 60 steps
+ * (a longer knot replays in full), or a chat that closed on an exit.
+ * @param {Object} opts
+ * @param {string} opts.npcId
+ * @param {Object} opts.engine - InkEngine-like, continue() -> { text, choices, tags, canContinue }
+ * @param {Object} opts.story - inkjs Story (state.ToJson / state.LoadJson / variablesState)
+ * @param {Function} [opts.step] - the real continue (default engine.continue)
+ * @returns {Object|null}
+ */
+export function drainReopenEcho({ npcId, engine, story, step }) {
+    const rec = shownLines.get(npcId);
+    if (!engine || !story?.state || !rec || !rec.list.length || rec.exit) return null;
+    let snapshot;
+    try { snapshot = story.state.ToJson(); } catch (e) { return null; }
+
+    const entries = [];
+    const stepTexts = [];
+    const stepKeys = [];
+    let reachedChoices = false;
+    const dryRun = () => {
+        for (let i = 0; i < MAX_STEPS; i++) {
+            const r = engine.continue();
+            if (!r) return;
+            const tags = r.tags || [];
+            if (tags.some(isExitTag)) return;
+            const hasText = !!(r.text && r.text.trim());
+            if (hasText) entries.push(...entriesOf(r.text, tags));
+            // Once there are more lines than the log holds it can no longer match
+            else if (tagKey(tags)) return; // an action tag with no line: cannot prove it already ran
+            stepTexts.push(hasText ? normLine(r.text) : '');
+            stepKeys.push(tagKey(tags));
+            if (entries.length > rec.list.length) return;
+            if (r.choices && r.choices.length > 0) { reachedChoices = true; return; }
+            if (!r.canContinue) return;
+        }
+    };
+    const vs = story.variablesState;
+    const hadOwn = vs ? Object.prototype.hasOwnProperty.call(vs, 'variableChangedEvent') : false;
+    const observer = hadOwn ? vs.variableChangedEvent : undefined;
+    try {
+        if (vs) vs.variableChangedEvent = null;
+        if (typeof engine.withEffectfulExternalsStubbed === 'function') engine.withEffectfulExternalsStubbed(dryRun);
+        else dryRun();
+    } catch (e) { reachedChoices = false; }
+    finally {
+        try { story.state.LoadJson(snapshot); } catch (e) { console.warn('⚠️ Could not restore story after echo check:', e.message); }
+        if (vs) {
+            if (hadOwn) vs.variableChangedEvent = observer;
+            else delete vs.variableChangedEvent;
+        }
+    }
+    if (!reachedChoices || !entries.length || !matchesShownTail(npcId, entries)) return null;
+
+    const run = typeof step === 'function' ? step : () => engine.continue();
+    let last = null;
+    for (let i = 0; i < stepTexts.length; i++) {
+        last = run();
+        // Stubbed externals can return different values from the live ones. If the real
+        // replay prints anything else (other text, other tags), hand that step back
+        // unchanged as ordinary content. The story has moved, so never null.
+        if (!last) return { text: '', choices: [], tags: [], canContinue: false, hasEnded: true };
+        if (normLine(last.text || '') !== stepTexts[i] || tagKey(last.tags) !== stepKeys[i]) return last;
+    }
+    // The run must still end at choices, and carry no exit/end tag
+    if (!(last.choices && last.choices.length > 0) || (last.tags || []).some(isExitTag)) return last;
+    return { ...last, text: '', tags: [], hasEnded: false };
+}
+
+/**
  * Decide whether a reopened conversation needs a context line.
  * Returns the remembered line when the conversation was resumed from saved
  * state, the first continue() printed no text, and there are choices to show

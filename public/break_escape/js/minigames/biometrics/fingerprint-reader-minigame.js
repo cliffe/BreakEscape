@@ -245,6 +245,12 @@ export class FingerprintReaderMinigame extends MinigameScene {
             window.gameAlert?.(`You unlocked the ${this.lockType} with ${sample.ownerName || sample.owner}'s fingerprint.`,
                 'success', 'Biometric Unlock Successful', 5000);
             this.after(prefersReducedMotion() ? 0 : ACCEPT_CLOSE_MS, () => {
+                // A container opens itself 500 ms after the unlock: toasts raised in between (the
+                // task that completes on the unlock) wait for it instead of flashing and replaying
+                // when it closes ("Task Complete" twice, m09 gate m1). Like the PIN and password locks.
+                // The contents arrive with the server's reply, so expectContainerAfterUnlock cannot
+                // see them yet: expect the panel for any non-door lock.
+                if (this.lockType !== 'door' && !this.lockable?.doorProperties) window.expectPanelWithin?.(1500);
                 this.complete(true);
                 if (typeof this.onAccepted === 'function') this.onAccepted();
             });

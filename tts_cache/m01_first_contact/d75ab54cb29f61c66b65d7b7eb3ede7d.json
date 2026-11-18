@@ -1,0 +1,14 @@
+{
+  "key": "d75ab54cb29f61c66b65d7b7eb3ede7d",
+  "npc": "graham_whitfield",
+  "text": "Marketing has a budget line called partner services. Eleven thousand a month, and I've never seen an invoice.",
+  "delivery": "dry, a little quieter",
+  "voice": "Umbriel",
+  "style": "Finance training lead in his early sixties, Halifax accent, dry and unhurried.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m01_first_contact",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T11:57:52Z"
+}
