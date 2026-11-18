@@ -134,3 +134,37 @@ test('a catch conditioned on the lock only fires for that lock; the other pick g
     assert.equal(catchLockpickInView(cabinet)?.id, 'guard');
     assert.equal(d.emitted.length, 1);
 });
+
+// m02 release-gate F1: Gary's catch fired after he had said "take the lot". His
+// offer_cabinet knot now sets gary_cabinet_permission and the mapping excludes it.
+// The condition is read from the scenario source so the test breaks if it is edited out.
+{
+    const root = join(here, '../..');
+    const erb = readFileSync(join(root, 'scenarios/m02_ransomed_trust/scenario.json.erb'), 'utf8');
+    const condition = erb.match(/"targetKnot": "on_cabinet_picked",[\s\S]*?"condition": "([^"]+)"/)[1];
+    const cabinet = { scenarioData: { id: 'it_filing_cabinet' }, roomId: 'checkpoint' };
+
+    test('Gary cabinet catch: does not fire once he has given permission', () => {
+        const d = setup();
+        window.npcManager.npcs.get('guard').eventMappings[0].condition = condition;
+        window.gameState.globalVariables = { accused_wrong_suspect: false, gary_cabinet_permission: true };
+        assert.equal(catchLockpickInView(cabinet), null);
+        assert.equal(d.emitted.length, 0);
+    });
+
+    test('Gary cabinet catch: still fires without permission', () => {
+        const d = setup();
+        window.npcManager.npcs.get('guard').eventMappings[0].condition = condition;
+        window.gameState.globalVariables = { accused_wrong_suspect: false, gary_cabinet_permission: false };
+        assert.equal(catchLockpickInView(cabinet)?.id, 'guard');
+        assert.equal(d.emitted.length, 1);
+    });
+
+    test('Gary cabinet permission is declared as a global and set by offer_cabinet', () => {
+        assert.match(erb, /"gary_cabinet_permission": false/);
+        const ink = readFileSync(join(root, 'scenarios/m02_ransomed_trust/ink/m02_npc_gary_whitlock.ink'), 'utf8');
+        const knot = ink.split('=== offer_cabinet ===')[1].split('=== hub ===')[0];
+        assert.match(knot, /~ gary_cabinet_permission = true/);
+        assert.ok(readFileSync(join(root, 'scenarios/m02_ransomed_trust/ink/m02_npc_gary_whitlock.json'), 'utf8').includes('gary_cabinet_permission'));
+    });
+}

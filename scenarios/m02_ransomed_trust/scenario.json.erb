@@ -2132,7 +2132,7 @@ boardroom_pin = "0417"
               "eventPattern": "lockpick_used_in_view",
               "targetKnot": "on_cabinet_picked",
               "conversationMode": "person-chat",
-              "condition": "!globalVars.accused_wrong_suspect && data.lockable.scenarioData.id === 'it_filing_cabinet'",
+              "condition": "!globalVars.accused_wrong_suspect && !globalVars.gary_cabinet_permission && data.lockable.scenarioData.id === 'it_filing_cabinet'",
               "onceOnly": true
             },
             {
@@ -3958,6 +3958,7 @@ boardroom_pin = "0417"
     "awaiting_ambush": false,
     "insider_ambushed": false,
     "accused_wrong_suspect": false,
+    "gary_cabinet_permission": false,
 
     "night_security_supervisor_ko": false
   }

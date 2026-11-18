@@ -47,6 +47,7 @@ VAR hub_quiet = false                // pass 4 dialogue: re-entry line on a re-t
 
 // Synced from globalVars by engine at call-open
 VAR gary_evidence_recovered = false
+VAR gary_cabinet_permission = false  // Gary said "take the lot": the cabinet catch no longer fires. Synced scenario global, set here
 VAR board_coverup_email_found = false
 VAR cover_burned = false // Synced scenario global: the player's booking has been pulled; also set by the talk_to_gary task mapping
 VAR cover_restored = false
@@ -415,6 +416,7 @@ Gary Whitlock: If you can get into it, take the lot. Better your hands than the 
 // Task completes when the player actually recovers the email (handler eventMapping
 // on item_picked_up:gary_vindication_email), not when Gary mentions the cabinet.
 
+~ gary_cabinet_permission = true
 ~ hub_quiet = true
 -> hub
 
