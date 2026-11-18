@@ -50,15 +50,20 @@ html .tutorial-panel {
 html .game-display-dialog {
   /* border-box: centred, so 116px (HUD px, scaled by the zoom) each side clears the top HUD rows and the inventory bar (measured 390x844 and 1280x720) */
   max-height: min(calc(80vh / var(--hud-zoom, 1)), calc(100vh / var(--hud-zoom, 1) - 232px));
+  /* the game and HUD lay out against 100dvh (main.css); vh stays as the fallback */
+  max-height: min(calc(80dvh / var(--hud-zoom, 1)), calc(100dvh / var(--hud-zoom, 1) - 232px));
 }
 
 /* Phone landscape (844x390): 232px of reserve left a 34px body, one line of an HMI or sign
    to read behind a scroll. The top bar ends near 70px and the inventory bar starts near 300px,
    so the dialog may use 70 to 300 (centred: 90px each side). GNF drops to its 16px crisp size
-   and the frame padding tightens so about five lines show. */
-@media (max-height: 520px) {
+   and the frame padding tightens so about five lines show. 500px matches the HUD's compact
+   breakpoint (hud-lanes.js isCompactViewport: 500px tall or less, so 1024x500 gets it too); the
+   140px floor keeps the body from collapsing on very short screens. */
+@media (max-height: 500px) {
   html .game-display-dialog {
-    max-height: calc(100vh / var(--hud-zoom, 1) - 180px);
+    max-height: max(140px, calc(100vh / var(--hud-zoom, 1) - 180px));
+    max-height: max(140px, calc(100dvh / var(--hud-zoom, 1) - 180px));
     padding: 14px 20px 8px;
   }
   html .game-display-dialog .game-display-title { margin-bottom: 8px; padding-bottom: 6px; }
