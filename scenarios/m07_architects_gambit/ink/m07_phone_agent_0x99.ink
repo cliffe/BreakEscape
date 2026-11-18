@@ -610,7 +610,7 @@ One authority signing for all four. One operation wearing four coats.
         The window's shut. It goes in the report as found, not as ignored.
     - else:
         {team_assigned:
-            That's grounds to move the team. The window's open until they're too committed, or until that login goes through the relay. Whichever comes first.
+            That's grounds to move the team, while the window's open.
         - else:
             The team's still waiting on your call. If you're making it now, that's where it goes.
         }
@@ -633,12 +633,10 @@ And the place you pull them from goes dark. Whatever was going to happen there, 
 
 Health record and dispatch keys are late in the Austin run. Even a late team keeps ambulances on the road.
 
-You pay for it with the operation you abandon. Your call.
-
 // Engine regression fixes (2026-10-17, blind A M2): "now or never" read as
 // "decide before you read anything". The window shuts on the operator login
 // (flag 3) or the forty-minute timer, so say which.
-The window stays open until that operator login goes through the relay, or the timer on screen runs out. Then the team stays put.
+The window stays open until that operator login goes through the relay, or the timer on screen runs out. Your call.
 
 -> redirect_open_choices
 
@@ -665,7 +663,7 @@ The window stays open until that operator login goes through the relay, or the t
 + [No. Leave them where they are.]
     #set_global:redirect_declined:true
     ~ redirect_declined = true
-    Then they stay. I'll log that you weighed it and held. If that changes before that operator login goes through the relay, tell me.
+    Then they stay. I'll log that you weighed it and held. Tell me if that changes while the window's open.
     -> hub
 
 === redirect_closed ===
@@ -691,9 +689,7 @@ No. I'm sorry. That window's shut.
 ~ moral_discussed = true
 Yeah. I've been sitting with that since you made the call.
 
-Whichever way you turned it, two went unanswered. One team, three fires.
-
-ENTROPY built that arithmetic on purpose.
+Whichever way you turned it, two went unanswered. ENTROPY built that arithmetic on purpose.
 
 -> moral_soundingboard_choices
 
@@ -810,7 +806,7 @@ Leave it with me. And keep it out of your notes for now.
 ~ mole_discussed = true
 Narrator: Nothing comes back for a while.
 
-Wait. I want to be sure I've read this right.
+Wait.
 
 He had your deployment before the order went out. Somebody handed ENTROPY you, by name.
 
@@ -857,7 +853,7 @@ You've got a name from the share and a password from the listener. That's one lo
 
 But open the control room door first. The moment you put that login flag through the relay, assume they see you and start the clock.
 {projection_revised and team_assigned and team_assignment != "trojan_horse" and not team_redirected and not redirect_window_closed:
-    And if you mean to move the team, do it before that flag's in. Once they see you, it stays where it is.
+    And if you mean to move the team, do it before that flag's in.
 }
 -> hub
 
@@ -946,12 +942,11 @@ Go.
 === guide_nfs ===
 ~ nfs_guide_hint_given = true
 #give_item:lab-workstation:m07_nfs_field_guide
-NFS and netcat guide's in your inventory now -- open it to read it.
+NFS and netcat guide's in your inventory now. Open it to read it.
 
 Read what the host shares, without changing it.
 
-Then scan every port, not just the usual ones, and connect to anything that answers. Some services hand over more than a banner.
-Read, don't touch. Go.
+Then scan every port, not just the usual ones, and connect to anything that answers. Some services hand over more than a banner. Go.
 -> hub
 
 === guide_ssh ===
@@ -959,9 +954,9 @@ Read, don't touch. Go.
 #give_item:lab-workstation:m07_ssh_field_guide
 SSH guide's in your kit. The worked example's the hospital job. Skip the Hydra half; you already have the pair.
 
-You've got a name from the share and a password from the listener. That's one login. Use it and look through what that account holds.
+One login: the name from the share, the password from the listener. Look through what that account holds.
 
-Put that login through the relay only once the control room door's open, not before. Go.
+Open the control room door before that login goes through the relay. Go.
 -> hub
 
 === guide_privesc ===
