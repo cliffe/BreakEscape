@@ -1754,7 +1754,8 @@ module BreakEscape
     def pin_dust
       authorize @game if defined?(Pundit)
 
-      apply = ActiveModel::Type::Boolean.new.cast(params[:apply]) == true
+      # Only a real true (JSON true, or the string 'true') applies; anything else is a read-only peek
+      apply = params[:apply] == true || params[:apply].to_s == 'true'
       result = @game.pin_dust!(params[:targetType].to_s, params[:targetId].to_s, apply: apply)
       render json: result[:body], status: result[:status]
     end

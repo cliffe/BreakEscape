@@ -163,7 +163,7 @@ module BreakEscape
 
     test 'once the route room is earned the object dusts, and demotion hides the record again' do
       take_kit
-      @game.player_state['unlockedRooms'] = %w[office annex]
+      @game.reload.player_state['unlockedRooms'] = %w[office annex]
       @game.save!
       assert_equal %w[0 3 4 6], dust('object', 'annex_safe')['digits']
       @game.reload.player_state['unlockedRooms'] = ['office']
@@ -197,7 +197,7 @@ module BreakEscape
 
     test 'apply must be a real true: strings, numbers and a missing apply are only a peek' do
       take_kit
-      ['true ', 'yes', '2', 0, nil, 'false'].each do |apply|
+      ['true ', 'yes', '1', 2, 0, nil, 'false'].each do |apply|
         params = { targetType: 'object', targetId: 'wall_safe' }
         params[:apply] = apply unless apply.nil?
         post path('pin_dust'), params: params, as: :json
