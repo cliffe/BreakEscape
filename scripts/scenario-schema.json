@@ -5319,7 +5319,20 @@
         },
         "fingerprintCandidates": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "description": "A reference card with its pattern class fixed (F26): a decoy in the lift's class forces ridge comparison",
+                "properties": {
+                  "name": { "type": "string" },
+                  "pattern": { "type": "string", "enum": ["loop", "whorl", "arch"] }
+                },
+                "required": ["name"]
+              }
+            ]
+          }
         },
         "fingerprintCandidateCount": {
           "type": "integer", "minimum": 2, "maximum": 4,
