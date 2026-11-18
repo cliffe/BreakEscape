@@ -1,0 +1,13 @@
+{
+  "key": "9b0077a4aa2fcca9a036ae76ff6d230c",
+  "npc": "tomasz_wisniewski",
+  "text": "Someone left a mug. Mine, I think.",
+  "voice": "Algieba",
+  "style": "Evening app-support lead at a cryptocurrency exchange, in his 50s, careful and reassuring. Speak with a consistent, lightly Polish-accented English, softened by long years in the UK, throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:10:43Z"
+}

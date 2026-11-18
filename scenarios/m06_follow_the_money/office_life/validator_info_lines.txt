@@ -1,0 +1,3 @@
+13. ℹ️ acknowledged clue: cold_storage_console in transaction_server: Tracing the three suspense withdrawals to the matching slot number is the puzzle; the slots are shown in the unlocked transaction server, not on the custody console.
+14. ℹ️ acknowledged clue: cold_storage_console in transaction_server: Tracing the three suspense withdrawals to the matching slot number is the puzzle; the slots are shown in the unlocked transaction server, not on the custody console.
+15. ℹ️ acknowledged clue: cold_storage_console in transaction_server: Tracing the three suspense withdrawals to the matching slot number is the puzzle; the slots are shown in the unlocked transaction server, not on the custody console.

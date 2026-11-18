@@ -49,6 +49,10 @@ export const DEFAULT_HEAL_BY_TYPE = [
   [/^(energy|soda|cola|drink_can)/, 20],
   [/^water_bottle/, 10],
   [/^(sandwich|lunch)/, 25],
+  // pizza_boxes and cake1 are NPC magnets while on a table; once in the inventory the player
+  // eats the whole box or cake in one go (servings only apply to NPCs on a table).
+  [/^pizza_box/, 25],
+  [/^cake1/, 20],
   [/^(snack|chocolate|biscuit|crisps|apple|banana|donut|doughnut|muffin|cereal_bar)/, 15],
   [/^(first_aid|medkit|bandage)/, 40]
 ];

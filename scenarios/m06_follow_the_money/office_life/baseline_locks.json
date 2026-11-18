@@ -1,0 +1,1093 @@
+{
+  "tool": "scripts/lock_key_diff.rb (V9)",
+  "format": 3,
+  "scenario": "m06_follow_the_money",
+  "graph": {
+    "lockNodes": [
+      {
+        "id": "custody_console",
+        "optional": false
+      },
+      {
+        "id": "door_data_center",
+        "optional": false
+      },
+      {
+        "id": "door_executive_wing",
+        "optional": false
+      },
+      {
+        "id": "door_irina_office",
+        "optional": false
+      },
+      {
+        "id": "door_satoshi_office",
+        "optional": false
+      },
+      {
+        "id": "door_server_room",
+        "optional": false
+      },
+      {
+        "id": "door_trading_floor",
+        "optional": false
+      },
+      {
+        "id": "lock_cold_storage_console",
+        "optional": false
+      },
+      {
+        "id": "lock_credential_reuse_available",
+        "optional": false
+      },
+      {
+        "id": "lock_executive_safe",
+        "optional": false
+      },
+      {
+        "id": "lock_financial_database_reachable",
+        "optional": false
+      },
+      {
+        "id": "lock_flag_station_financial",
+        "optional": false
+      },
+      {
+        "id": "lock_satoshi_signing_case",
+        "optional": false
+      }
+    ],
+    "keyNodes": [
+      {
+        "id": "ceo_s_office_key",
+        "optional": false
+      },
+      {
+        "id": "cto_access_badge",
+        "optional": false
+      },
+      {
+        "id": "executive_access_badge",
+        "optional": false
+      },
+      {
+        "id": "npc_dr_irina_volkova",
+        "optional": false
+      },
+      {
+        "id": "npc_kemal_aydin",
+        "optional": false
+      },
+      {
+        "id": "npc_satoshi_nakamoto_ii",
+        "optional": false
+      }
+    ],
+    "roomNodes": [
+      "blockchain_lab",
+      "data_center",
+      "executive_wing",
+      "irina_office",
+      "reception_lobby",
+      "satoshi_office",
+      "security_checkpoint",
+      "server_room",
+      "trading_floor"
+    ],
+    "edges": [
+      [
+        "blockchain_lab",
+        "entropy_transaction_network_analysis",
+        false
+      ],
+      [
+        "blockchain_lab",
+        "privacy_coin_mixing_analysis",
+        true
+      ],
+      [
+        "ceo_s_office_key",
+        "door_satoshi_office",
+        false
+      ],
+      [
+        "cto_access_badge",
+        "door_irina_office",
+        false
+      ],
+      [
+        "data_center",
+        "cold_storage_procedure",
+        false
+      ],
+      [
+        "data_center",
+        "custody_console",
+        false
+      ],
+      [
+        "data_center",
+        "lock_cold_storage_console",
+        false
+      ],
+      [
+        "data_center",
+        "mixer_pool_config_yml",
+        false
+      ],
+      [
+        "data_center",
+        "mixer_settlements_log",
+        false
+      ],
+      [
+        "door_data_center",
+        "data_center",
+        false
+      ],
+      [
+        "door_executive_wing",
+        "executive_wing",
+        false
+      ],
+      [
+        "door_irina_office",
+        "irina_office",
+        false
+      ],
+      [
+        "door_satoshi_office",
+        "satoshi_office",
+        false
+      ],
+      [
+        "door_server_room",
+        "server_room",
+        false
+      ],
+      [
+        "door_trading_floor",
+        "trading_floor",
+        false
+      ],
+      [
+        "email_from_the_architect",
+        "lock_executive_safe",
+        false
+      ],
+      [
+        "entropy_transaction_network_analysis",
+        "lock_cold_storage_console",
+        false
+      ],
+      [
+        "executive_access_badge",
+        "door_executive_wing",
+        false
+      ],
+      [
+        "executive_wing",
+        "framed_press_clipping",
+        true
+      ],
+      [
+        "executive_wing",
+        "npc_kemal_aydin",
+        false
+      ],
+      [
+        "fingerprint_kit",
+        "lock_satoshi_signing_case",
+        true
+      ],
+      [
+        "framed_press_clipping",
+        "lock_satoshi_signing_case",
+        true
+      ],
+      [
+        "hashchain_backend_server_terminal",
+        "lock_flag_station_financial",
+        false
+      ],
+      [
+        "hashchain_backend_server_terminal",
+        "vmch_submit_flag1",
+        false
+      ],
+      [
+        "irina_office",
+        "cryptography_research_notes",
+        false
+      ],
+      [
+        "irina_office",
+        "email_from_the_architect",
+        false
+      ],
+      [
+        "it_new_starter_checklist",
+        "door_server_room",
+        false
+      ],
+      [
+        "lock_cold_storage_console",
+        "the_architect_s_fund_allocation",
+        false
+      ],
+      [
+        "lock_pick_kit",
+        "door_trading_floor",
+        false
+      ],
+      [
+        "lock_satoshi_signing_case",
+        "release_signing_record",
+        false
+      ],
+      [
+        "mixer_pool_config_yml",
+        "lock_cold_storage_console",
+        false
+      ],
+      [
+        "mixer_settlements_log",
+        "lock_cold_storage_console",
+        false
+      ],
+      [
+        "npc_dr_irina_volkova",
+        "action_irina_cooperation",
+        false
+      ],
+      [
+        "npc_dr_irina_volkova",
+        "cto_access_badge",
+        false
+      ],
+      [
+        "npc_dr_irina_volkova",
+        "executive_access_badge",
+        false
+      ],
+      [
+        "npc_dr_irina_volkova",
+        "password_dictionary_list",
+        false
+      ],
+      [
+        "npc_kemal_aydin",
+        "ceo_s_office_key",
+        false
+      ],
+      [
+        "npc_satoshi_nakamoto_ii",
+        "action_satoshi_confrontation",
+        false
+      ],
+      [
+        "password_dictionary_list",
+        "door_server_room",
+        false
+      ],
+      [
+        "privacy_coin_mixing_analysis",
+        "lock_executive_safe",
+        true
+      ],
+      [
+        "reception_lobby",
+        "fingerprint_kit",
+        true
+      ],
+      [
+        "reception_lobby",
+        "lock_pick_kit",
+        false
+      ],
+      [
+        "reception_lobby",
+        "rfid_cloner",
+        true
+      ],
+      [
+        "reception_lobby",
+        "security_checkpoint",
+        false
+      ],
+      [
+        "rfid_cloner",
+        "door_irina_office",
+        true
+      ],
+      [
+        "satoshi_office",
+        "executive_safe",
+        true
+      ],
+      [
+        "satoshi_office",
+        "lock_executive_safe",
+        false
+      ],
+      [
+        "satoshi_office",
+        "lock_satoshi_signing_case",
+        false
+      ],
+      [
+        "satoshi_office",
+        "npc_satoshi_nakamoto_ii",
+        false
+      ],
+      [
+        "satoshi_office",
+        "signing_case",
+        true
+      ],
+      [
+        "security_checkpoint",
+        "it_new_starter_checklist",
+        false
+      ],
+      [
+        "server_room",
+        "hashchain_backend_server_terminal",
+        false
+      ],
+      [
+        "server_room",
+        "rack_inventory_sheet",
+        false
+      ],
+      [
+        "server_room",
+        "safetynet_financial_intelligence_drop",
+        false
+      ],
+      [
+        "trading_floor",
+        "daily_trading_report",
+        false
+      ],
+      [
+        "trading_floor",
+        "npc_dr_irina_volkova",
+        false
+      ],
+      [
+        "vmch_submit_flag1",
+        "vmfl_submit_flag1",
+        false
+      ],
+      [
+        "vmch_submit_flag2",
+        "vmfl_submit_flag2",
+        false
+      ],
+      [
+        "vmch_submit_flag3",
+        "vmfl_submit_flag3",
+        false
+      ],
+      [
+        "vmch_submit_flag4",
+        "vmfl_submit_flag4",
+        false
+      ],
+      [
+        "vmfl_submit_flag1",
+        "lock_credential_reuse_available",
+        false
+      ],
+      [
+        "vmfl_submit_flag1",
+        "vmch_submit_flag2",
+        true
+      ],
+      [
+        "vmfl_submit_flag2",
+        "lock_financial_database_reachable",
+        false
+      ],
+      [
+        "vmfl_submit_flag2",
+        "vmch_submit_flag3",
+        true
+      ],
+      [
+        "vmfl_submit_flag3",
+        "door_data_center",
+        false
+      ],
+      [
+        "vmfl_submit_flag3",
+        "vmch_submit_flag4",
+        true
+      ]
+    ]
+  },
+  "locks": [
+    {
+      "path": "/rooms/data_center",
+      "id": null,
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "69d2dda7ae47af84",
+      "requiresHash": "b45b85b5e697010b"
+    },
+    {
+      "path": "/rooms/data_center/objects[cold_storage_console]",
+      "id": "cold_storage_console",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "b6424dc2978f03c6",
+      "requiresHash": "a4155382241de8df"
+    },
+    {
+      "path": "/rooms/executive_wing",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "2216f20d6d29aafa",
+      "requiresHash": "b24346000dc6ee47"
+    },
+    {
+      "path": "/rooms/irina_office",
+      "id": null,
+      "lockType": "rfid",
+      "locked": true,
+      "requirementHash": "b32dd02deb852953",
+      "requiresHash": "bca910244f282a08"
+    },
+    {
+      "path": "/rooms/satoshi_office",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "bc433e2e25f47613",
+      "requiresHash": "e238fe7f0bbb33f4"
+    },
+    {
+      "path": "/rooms/satoshi_office/objects[executive_safe]",
+      "id": "executive_safe",
+      "lockType": "pin",
+      "locked": true,
+      "requirementHash": "34fb7ab673d07374",
+      "requiresHash": "c6739f9f12f07ccb"
+    },
+    {
+      "path": "/rooms/satoshi_office/objects[satoshi_signing_case]",
+      "id": "satoshi_signing_case",
+      "lockType": "biometric",
+      "locked": true,
+      "requirementHash": "99f8d3ac7ec01562",
+      "requiresHash": "09e382bdfa36a953"
+    },
+    {
+      "path": "/rooms/server_room",
+      "id": null,
+      "lockType": "password",
+      "locked": true,
+      "requirementHash": "5fc1dcdc53303f1b",
+      "requiresHash": "fa3fa500f00f4b2a"
+    },
+    {
+      "path": "/rooms/trading_floor",
+      "id": null,
+      "lockType": "key",
+      "locked": true,
+      "requirementHash": "da3775e6ea314842",
+      "requiresHash": "44136fa355b3678a"
+    }
+  ],
+  "gates": [
+
+  ],
+  "aims": [
+    {
+      "aimId": "establish_cover",
+      "order": 0,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "receive_briefing",
+          "type": "custom"
+        },
+        {
+          "taskId": "meet_irina",
+          "type": "npc_conversation",
+          "targetNPC": "irina_volkova",
+          "puzzle_graph_unlocks": "irina_cooperation",
+          "onComplete": {
+            "unlockAim": "access_backend_systems"
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "access_backend_systems",
+      "order": 1,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "establish_cover"
+      },
+      "tasks": [
+        {
+          "taskId": "obtain_access_tools",
+          "type": "collect_items",
+          "targetItemIds": [
+            "m06_password_dictionary",
+            "relayed_password_dictionary"
+          ],
+          "targetCount": 1,
+          "optional": true,
+          "puzzle_graph_unlocks": "server_room"
+        },
+        {
+          "taskId": "find_server_credentials",
+          "type": "manual",
+          "puzzle_graph_unlocks": "server_room"
+        },
+        {
+          "taskId": "access_server_room",
+          "type": "enter_room",
+          "targetRoom": "server_room",
+          "onComplete": {
+            "unlockAim": "crack_passwords"
+          }
+        },
+        {
+          "taskId": "access_blockchain_lab",
+          "type": "enter_room",
+          "targetRoom": "blockchain_lab"
+        },
+        {
+          "taskId": "find_transaction_records",
+          "type": "collect_items",
+          "targetItemIds": [
+            "blockchain_evidence",
+            "ENTROPY Transaction Network Analysis"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "financial_network_mapped"
+        },
+        {
+          "taskId": "question_the_trader",
+          "type": "npc_conversation",
+          "targetNPC": "trader_npc",
+          "optional": true
+        },
+        {
+          "taskId": "question_the_analyst",
+          "type": "npc_conversation",
+          "targetNPC": "blockchain_analyst",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "crack_passwords",
+      "order": 2,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "access_backend_systems"
+      },
+      "tasks": [
+        {
+          "taskId": "access_hackme_vm",
+          "type": "custom",
+          "puzzle_graph_unlocks": "vm_access_terminal"
+        },
+        {
+          "taskId": "submit_flag1",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_financial:hackme_crack_me_lab-flag1"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "credential_reuse_available"
+        },
+        {
+          "taskId": "submit_flag2",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_financial:hackme_crack_me_lab-flag2"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "financial_database_reachable"
+        },
+        {
+          "taskId": "submit_flag3",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_financial:hackme_crack_me_lab-flag3"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "data_center",
+          "onComplete": {
+            "unlockAim": "map_financial_network"
+          }
+        },
+        {
+          "taskId": "submit_flag4",
+          "type": "submit_flags",
+          "targetFlags": [
+            "flag_station_financial:hackme_crack_me_lab-flag4"
+          ],
+          "targetCount": 1
+        }
+      ]
+    },
+    {
+      "aimId": "map_financial_network",
+      "order": 3,
+      "optional": false,
+      "unlockCondition": null,
+      "tasks": [
+        {
+          "taskId": "access_data_center",
+          "type": "enter_room",
+          "targetRoom": "data_center"
+        },
+        {
+          "taskId": "read_transaction_server_files",
+          "type": "collect_items",
+          "targetGroup": "transaction_server_files",
+          "targetCount": 3,
+          "optional": true
+        },
+        {
+          "taskId": "trace_mixer_deposits",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "identify_fund_wallet",
+          "type": "unlock_object",
+          "targetObject": "cold_storage_console",
+          "puzzle_graph_unlocks": "architects_fund_doc"
+        },
+        {
+          "taskId": "discover_architects_fund",
+          "type": "collect_items",
+          "targetItemIds": [
+            "architects_fund_doc",
+            "The Architect's Fund Allocation"
+          ],
+          "targetCount": 1,
+          "puzzle_graph_unlocks": "executive_access_badge",
+          "onComplete": {
+            "unlockAim": "breach_executive_wing"
+          }
+        }
+      ]
+    },
+    {
+      "aimId": "breach_executive_wing",
+      "order": 4,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "map_financial_network"
+      },
+      "tasks": [
+        {
+          "taskId": "take_executive_badge",
+          "type": "enter_room",
+          "targetRoom": "executive_wing",
+          "puzzle_graph_unlocks": "executive_wing"
+        },
+        {
+          "taskId": "access_satoshi_office",
+          "type": "enter_room",
+          "targetRoom": "satoshi_office",
+          "onComplete": {
+            "unlockAim": "resolve_the_fund"
+          }
+        },
+        {
+          "taskId": "open_executive_safe",
+          "type": "unlock_object",
+          "targetObject": "executive_safe",
+          "optional": true
+        },
+        {
+          "taskId": "open_signing_case",
+          "type": "collect_items",
+          "targetItemIds": [
+            "release_signing_record",
+            "Release Signing Record"
+          ],
+          "targetCount": 1,
+          "optional": true
+        }
+      ]
+    },
+    {
+      "aimId": "resolve_the_fund",
+      "order": 5,
+      "optional": false,
+      "unlockCondition": {
+        "aimCompleted": "breach_executive_wing"
+      },
+      "tasks": [
+        {
+          "taskId": "confront_satoshi",
+          "type": "npc_conversation",
+          "targetNPC": "satoshi_nakamoto"
+        },
+        {
+          "taskId": "decide_asset_strategy",
+          "type": "manual"
+        },
+        {
+          "taskId": "decide_irina_fate",
+          "type": "manual"
+        },
+        {
+          "taskId": "call_in_after_sweep",
+          "type": "custom",
+          "optional": true
+        },
+        {
+          "taskId": "hear_debrief",
+          "type": "custom"
+        }
+      ]
+    }
+  ],
+  "concludeRequires": [
+    {
+      "path": "/objectives[resolve_the_fund]",
+      "concludeRequires": {
+        "tasksCompleted": [
+          "submit_flag1",
+          "submit_flag2",
+          "submit_flag3",
+          "submit_flag4"
+        ]
+      }
+    }
+  ],
+  "placement": {
+    "agent_0x99_handler": "reception_lobby",
+    "agent_nightshade": "reception_lobby",
+    "architect_email": "irina_office",
+    "architect_identity_file": "satoshi_office",
+    "architects_fund_doc": "data_center",
+    "blockchain_analyst": "blockchain_lab",
+    "blockchain_evidence": "blockchain_lab",
+    "blockchain_workstation": "blockchain_lab",
+    "ceo_office_key": "executive_wing",
+    "checkpoint_guard": "security_checkpoint",
+    "closing_debrief_person": "reception_lobby",
+    "cold_storage_console": "data_center",
+    "cold_storage_recovery_keys": "server_room",
+    "cr_1": "data_center",
+    "cr_10": "data_center",
+    "cr_11": "data_center",
+    "cr_12": "data_center",
+    "cr_13": "data_center",
+    "cr_14": "data_center",
+    "cr_2": "data_center",
+    "cr_3": "data_center",
+    "cr_4": "data_center",
+    "cr_5": "data_center",
+    "cr_6": "data_center",
+    "cr_7": "data_center",
+    "cr_8": "data_center",
+    "cr_9": "data_center",
+    "crypto_anarchist_manifesto": "satoshi_office",
+    "custody_index": "data_center",
+    "daily_trading_report": "trading_floor",
+    "dep_ransom": "data_center",
+    "dep_social": "data_center",
+    "dep_zeroday": "data_center",
+    "director_netherton": "reception_lobby",
+    "door_controller_export": "server_room",
+    "executive_access_badge": "trading_floor",
+    "executive_safe": "satoshi_office",
+    "executive_wing_plaque": "executive_wing",
+    "flag_station_financial": "server_room",
+    "hashchain_brochure": "reception_lobby",
+    "irina_cooperation": "trading_floor",
+    "irina_research_notes": "irina_office",
+    "irina_volkova": "trading_floor",
+    "irina_workstation": "irina_office",
+    "it_onboarding_checklist": "security_checkpoint",
+    "ledger_hold_log": "server_room",
+    "m06_cracking_field_guide": "reception_lobby",
+    "m06_cto_badge": "trading_floor",
+    "m06_druid_field_guide": "reception_lobby",
+    "m06_lockpicking_field_guide": "reception_lobby",
+    "m06_password_dictionary": "trading_floor",
+    "m06_privesc_field_guide": "reception_lobby",
+    "m06_recon_field_guide": "reception_lobby",
+    "m06_rfid_field_guide": "reception_lobby",
+    "mixer_config": "data_center",
+    "mixing_analysis": "blockchain_lab",
+    "opening_briefing_npc": "reception_lobby",
+    "relayed_cto_badge": "reception_lobby",
+    "relayed_executive_badge": "reception_lobby",
+    "relayed_password_dictionary": "reception_lobby",
+    "release_signing_record": "satoshi_office",
+    "satoshi_confrontation": "satoshi_office",
+    "satoshi_minder": "executive_wing",
+    "satoshi_nakamoto": "satoshi_office",
+    "satoshi_signing_case": "satoshi_office",
+    "server_rack_labels": "server_room",
+    "settlement_log": "data_center",
+    "trader_npc": "trading_floor",
+    "trading_workstation": "trading_floor",
+    "transaction_server": "data_center",
+    "vm_launcher_hackme": "server_room",
+    "wallet_recovery_keys": "data_center"
+  },
+  "layout": {
+    "start": "reception_lobby",
+    "adj": {
+      "blockchain_lab": [
+        "trading_floor"
+      ],
+      "data_center": [
+        "executive_wing",
+        "server_room"
+      ],
+      "executive_wing": [
+        "data_center",
+        "satoshi_office"
+      ],
+      "irina_office": [
+        "trading_floor"
+      ],
+      "reception_lobby": [
+        "security_checkpoint"
+      ],
+      "satoshi_office": [
+        "executive_wing"
+      ],
+      "security_checkpoint": [
+        "reception_lobby",
+        "trading_floor"
+      ],
+      "server_room": [
+        "data_center",
+        "trading_floor"
+      ],
+      "trading_floor": [
+        "blockchain_lab",
+        "irina_office",
+        "security_checkpoint",
+        "server_room"
+      ]
+    }
+  },
+  "requiredContent": [
+    [
+      "blockchain_lab",
+      "task access_blockchain_lab",
+      null
+    ],
+    [
+      "blockchain_lab",
+      "task find_transaction_records",
+      "blockchain_evidence"
+    ],
+    [
+      "blockchain_lab",
+      "task hear_debrief (mapping 'room_entered:blockchain_lab')",
+      null
+    ],
+    [
+      "data_center",
+      "task access_data_center",
+      null
+    ],
+    [
+      "data_center",
+      "task discover_architects_fund",
+      "architects_fund_doc"
+    ],
+    [
+      "data_center",
+      "task hear_debrief (mapping 'room_entered:data_center')",
+      null
+    ],
+    [
+      "data_center",
+      "task identify_fund_wallet",
+      "cold_storage_console"
+    ],
+    [
+      "executive_wing",
+      "task hear_debrief (mapping 'room_entered:executive_wing')",
+      null
+    ],
+    [
+      "executive_wing",
+      "task take_executive_badge",
+      null
+    ],
+    [
+      "irina_office",
+      "task hear_debrief (mapping 'room_entered:irina_office')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task access_hackme_vm (mapping 'object_interacted')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task decide_asset_strategy (ink of 'agent_0x99_handler')",
+      "agent_0x99_handler"
+    ],
+    [
+      "reception_lobby",
+      "task decide_irina_fate (mapping 'global_variable_changed:irina_fate_decided')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task decide_irina_fate (mapping 'objective_task_completed:access_satoshi_office')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task find_server_credentials (mapping 'global_variable_changed:server_passphrase_known')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task find_server_credentials (mapping 'item_picked_up:text_file')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (ink of 'closing_debrief_person')",
+      "closing_debrief_person"
+    ],
+    [
+      "reception_lobby",
+      "task hear_debrief (mapping 'room_entered:reception_lobby')",
+      null
+    ],
+    [
+      "reception_lobby",
+      "task receive_briefing (ink of 'opening_briefing_npc')",
+      "opening_briefing_npc"
+    ],
+    [
+      "reception_lobby",
+      "task receive_briefing (mapping 'conversation_closed:opening_briefing_npc')",
+      "opening_briefing_npc"
+    ],
+    [
+      "reception_lobby",
+      "task receive_briefing (mapping 'room_entered:reception_lobby')",
+      null
+    ],
+    [
+      "satoshi_office",
+      "task access_satoshi_office",
+      null
+    ],
+    [
+      "satoshi_office",
+      "task confront_satoshi",
+      "satoshi_nakamoto"
+    ],
+    [
+      "satoshi_office",
+      "task confront_satoshi (ink of 'satoshi_nakamoto')",
+      "satoshi_nakamoto"
+    ],
+    [
+      "satoshi_office",
+      "task confront_satoshi (mapping 'npc_ko:satoshi_nakamoto')",
+      "satoshi_nakamoto"
+    ],
+    [
+      "satoshi_office",
+      "task decide_asset_strategy (ink of 'satoshi_nakamoto')",
+      "satoshi_nakamoto"
+    ],
+    [
+      "satoshi_office",
+      "task hear_debrief (mapping 'room_entered:satoshi_office')",
+      null
+    ],
+    [
+      "security_checkpoint",
+      "task find_server_credentials (mapping 'global_variable_changed:server_passphrase_known')",
+      null
+    ],
+    [
+      "security_checkpoint",
+      "task hear_debrief (mapping 'room_entered:security_checkpoint')",
+      null
+    ],
+    [
+      "server_room",
+      "VM launcher (flag tasks)",
+      "vm_launcher_hackme"
+    ],
+    [
+      "server_room",
+      "task access_server_room",
+      null
+    ],
+    [
+      "server_room",
+      "task find_server_credentials (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task hear_debrief (mapping 'room_entered:server_room')",
+      null
+    ],
+    [
+      "server_room",
+      "task submit_flag1 (flag station)",
+      "flag_station_financial"
+    ],
+    [
+      "server_room",
+      "task submit_flag2 (flag station)",
+      "flag_station_financial"
+    ],
+    [
+      "server_room",
+      "task submit_flag3 (flag station)",
+      "flag_station_financial"
+    ],
+    [
+      "server_room",
+      "task submit_flag4 (flag station)",
+      "flag_station_financial"
+    ],
+    [
+      "trading_floor",
+      "task decide_irina_fate (mapping 'global_variable_changed:irina_fate_decided')",
+      null
+    ],
+    [
+      "trading_floor",
+      "task hear_debrief (mapping 'room_entered:trading_floor')",
+      null
+    ],
+    [
+      "trading_floor",
+      "task meet_irina",
+      "irina_volkova"
+    ],
+    [
+      "trading_floor",
+      "task meet_irina (ink of 'irina_volkova')",
+      "irina_volkova"
+    ]
+  ]
+}

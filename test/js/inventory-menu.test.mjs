@@ -36,14 +36,32 @@ const SCENARIO_DROPPABLES = [
     { id: 'kit_cable', type: 'usb', name: 'Charging cable', sprite: 'charging_cable', droppable: true, needsTag: 'charging_cable' },
     { id: 'parcel', type: 'm09_box_taped1', name: 'Parcel for Amara', droppable: true, needsTag: 'post' },
     { id: 'player_mugs', type: 'dirty_mugs1', name: 'Dirty Mugs', droppable: true, needsTag: 'dirty_mugs' },
-    { id: 'cake', type: 'cake', name: 'Cake', droppable: true, affordance: { magnet: { tempt: 30 } } },
+    { id: 'cake', type: 'cake1', name: 'Cake', droppable: true, affordance: { magnet: { tempt: 30 } } },
     { id: 'sample_binder', type: 'book1', name: 'Sample Binder', droppable: true, needsTag: 'found_item' }
 ];
 
 test('every droppable item in the scenarios shows "Drop here" and "Examine"', () => {
     for (const data of SCENARIO_DROPPABLES) {
-        assert.deepEqual(labels(menu(held(data))), ['Drop here', 'Examine'], data.id);
+        // the cake is a consumable and a magnet: it also offers "Eat", after "Drop here" (next test)
+        const want = data.id === 'cake' ? ['Drop here', 'Eat', 'Examine'] : ['Drop here', 'Examine'];
+        assert.deepEqual(labels(menu(held(data))), want, data.id);
     }
+});
+
+test('a magnet consumable (m06 pizza, cake) offers "Drop here" first, then Eat, then Examine', () => {
+    const mag = { magnet: { tempt: 60, servings: 2, perPerson: 1 } };
+    const pizza = { id: 'pizza', type: 'pizza_boxes', name: 'Leftover Pizza', takeable: true, droppable: true, affordance: mag };
+    assert.deepEqual(labels(menu(held(pizza))), ['Drop here', 'Eat', 'Examine']);
+    assert.deepEqual(labels(menu(held({ id: 'cake', type: 'cake1', name: 'Cake', droppable: true, affordance: mag }))), ['Drop here', 'Eat', 'Examine']);
+    assert.deepEqual(menu(held(pizza)).map(e => e.id), ['drop', 'use', 'examine'], 'Eat is still the use action');
+    assert.deepEqual(labels(menu(held({ ...pizza, healAmount: 0 }))), ['Drop here', 'Examine'], 'healAmount 0 opts out');
+});
+
+test('a non-magnet droppable consumable keeps Eat or Drink first, then "Drop here" and "Examine"', () => {
+    assert.deepEqual(labels(menu(held({ id: 'p2', type: 'pizza_boxes', droppable: true }))), ['Eat', 'Drop here', 'Examine'], 'pizza without a magnet block');
+    assert.deepEqual(labels(menu(held({ id: 'p3', type: 'pizza_boxes', droppable: true, affordance: { satisfies: ['hunger'] } }))), ['Eat', 'Drop here', 'Examine'], 'affordance without magnet');
+    assert.deepEqual(labels(menu(held({ id: 'c', type: 'coffee', droppable: true }))), ['Drink', 'Drop here', 'Examine']);
+    assert.deepEqual(labels(menu(held({ id: 'k', type: 'first_aid_kit', droppable: true }))), ['Use', 'Drop here', 'Examine']);
 });
 
 test('the scenario files still mark exactly those droppables, none with triggerOnInteract', () => {
