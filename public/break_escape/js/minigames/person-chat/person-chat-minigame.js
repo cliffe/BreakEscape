@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pend
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, rememberShownText, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, rememberShownText, markClosedByExit, drainReopenEcho, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -647,7 +647,7 @@ export class PersonChatMinigame extends MinigameScene {
             // once, display only. Anything new in it plays as normal (person-chat-reopen.js).
             let result = null;
             if (this.isResumedConversation) {
-                result = drainReopenEcho({ npcId: this.npcId, engine: this.inkEngine, story: this.inkEngine?.story });
+                result = drainReopenEcho({ npcId: this.npcId, engine: this.inkEngine, story: this.inkEngine?.story, step: () => this.conversation.continue() });
                 if (result) console.log(`🔇 ${this.npcId}: reopen would replay lines already shown - showing choices with a recap`);
             }
             if (!result) result = this.conversation.continue();
@@ -752,7 +752,7 @@ export class PersonChatMinigame extends MinigameScene {
                         this.ui.showChoices(result.choices);
                         this.ui.showDialogue(result.text, speaker, true); // preserveChoices=true
                         rememberNpcLine(this.npcId, { text: result.text, speaker });
-                        rememberShownText(this.npcId, result.text);
+                        rememberShownText(this.npcId, result.text, result.tags);
                     }
                 } else {
                     // No text, just choices - show them immediately
@@ -1264,6 +1264,7 @@ export class PersonChatMinigame extends MinigameScene {
             // tags: it cannot be answered during teardown, so that step stays unread.
             if ((probe.tags || []).some(t => tagAction(t) === 'ending_check')) return;
             const step = this.conversation.continue();
+            if (step && (step.tags || []).some(t => String(t).includes('exit_conversation'))) markClosedByExit(this.npcId);
             if (step && step.tags && step.tags.length > 0) {
                 this._pendingReply = { tags: step.tags };
                 this._flushPendingReply();
@@ -1363,13 +1364,14 @@ export class PersonChatMinigame extends MinigameScene {
      * @param {Object} result - Result with potentially multiple lines and tags
      */
     displayAccumulatedDialogue(result) {
-        rememberShownText(this.npcId, result?.text);
         // PHASE 0: State locking to prevent race conditions during rapid dialogue advancement
         if (this.isProcessingDialogue) {
             console.log('⏳ Already processing dialogue, ignoring call');
             return;
         }
         this.isProcessingDialogue = true;
+        // Remembered only for a call that is not ignored, with its tags (reopen echo test)
+        rememberShownText(this.npcId, result?.text, result?.tags);
         
         try {
             // Process any game action tags (give_item, unlock_door, exit_conversation, etc.) FIRST
@@ -1677,6 +1679,7 @@ export class PersonChatMinigame extends MinigameScene {
                 // Check for exit_conversation tag FIRST (may come with empty text)
                 if (nextLine.tags && nextLine.tags.some(tag => tag.includes('exit_conversation'))) {
                     console.log('🚪 Exit conversation tag detected after blocks - closing minigame');
+                    markClosedByExit(this.npcId);
                     // Process game action tags (set_global, give_item, remove_npc, etc.) before closing.
                     // PhoneChatConversation.processTags() fires exit_conversation synchronously during
                     // continue(), ending the minigame before displayAccumulatedDialogue can process them.
@@ -1880,7 +1883,7 @@ export class PersonChatMinigame extends MinigameScene {
                 console.log(`🗣️ Calling showDialogue with speaker: ${speaker}`);
                 this.ui.showDialogue(result.text, speaker);
                 rememberNpcLine(this.npcId, { text: result.text, speaker });
-                rememberShownText(this.npcId, result.text);
+                rememberShownText(this.npcId, result.text, result.tags);
             } else {
                 console.log(`⚠️ Skipping showDialogue - no text or text is empty`);
             }
