@@ -22,7 +22,18 @@ const ruleFor = (sel) => {
 
 test('the credits label is capped to the centre panel and wraps', () => {
     const r = ruleFor('#bv-credits-overlay #bv-cr-label.bv-cr-label');
-    assert.match(r, /max-width: calc\(100vw - 440px\)/);
+    const m = r.match(/max-width: calc\(100% - (\d+)px\)/);
+    assert.ok(m, 'label max-width is calc(100% - Npx) of the fixed overlay');
+    const reserve = Number(m[1]);
+    const stage = ruleFor('#bond-vis-overlay .bv-stage');
+    const cols = stage.match(/grid-template-columns:\s*(\d+)px\s+minmax\(0,\s*1fr\)\s+(\d+)px/);
+    assert.ok(cols, 'stage is side panel, centre, side panel');
+    const gap = Number(stage.match(/gap:\s*(\d+)px/)[1]);
+    const pad = Number(ruleFor('#bond-vis-overlay .bv-app').match(/padding:\s*(\d+)px/)[1]);
+    const need = 2 * (pad + Number(cols[1]) + gap);
+    assert.ok(Number(cols[1]) === Number(cols[2]), 'side panels equal width');
+    assert.ok(reserve >= need, `reserve ${reserve}px covers padding, panels and gaps (${need}px)`);
+    assert.match(r, /line-height: 1\.2/);
     assert.match(r, /box-sizing: border-box/);
     assert.match(r, /overflow-wrap: anywhere/);
     assert.ok(r.indexOf('text-wrap: pretty') >= 0 && r.indexOf('text-wrap: pretty') < r.indexOf('text-wrap: balance'));
@@ -30,7 +41,7 @@ test('the credits label is capped to the centre panel and wraps', () => {
 
 test('with the side panels hidden the label takes the window and keeps its side padding', () => {
     const narrow = css.slice(css.lastIndexOf('@media (max-width: 900px)'));
-    assert.match(narrow, /#bv-cr-label\.bv-cr-label \{ max-width: 100vw; padding: 0 10%; \}/);
+    assert.match(narrow, /#bv-cr-label\.bv-cr-label \{ max-width: 100%; padding: 0 10%; \}/);
 });
 
 test('every place that styles the label gives it the class and no inline padding', () => {
