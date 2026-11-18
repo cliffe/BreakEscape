@@ -746,6 +746,10 @@ export default class PhoneChatUI {
                 const meta = row.querySelector('.contact-meta');
                 const freshMeta = fresh.querySelector('.contact-meta');
                 if (meta && freshMeta) meta.replaceWith(freshMeta);
+                // The swapped meta may add or drop the unread badge: keep the description ids in step
+                const freshDesc = fresh.getAttribute('aria-describedby');
+                if (freshDesc) row.setAttribute('aria-describedby', freshDesc);
+                else row.removeAttribute('aria-describedby');
                 const last = row.querySelector('.contact-last-message');
                 const freshLast = fresh.querySelector('.contact-last-message');
                 if (!last || !freshLast) continue;
@@ -787,6 +791,8 @@ export default class PhoneChatUI {
                     <p>No contacts available</p>
                 </div>
             `;
+            // The focused contact left and none remain: keep focus inside the phone
+            if (focusedId) this.focusIntoPhone();
             return;
         }
         

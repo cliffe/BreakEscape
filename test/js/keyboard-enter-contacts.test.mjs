@@ -422,3 +422,46 @@ test('nit: showConversation for a thread not opened by a keyboard press clears _
     ui.showConversation('ana');       // inside a keyboard open of the row
     assert.equal(ui._threadByKeyboard, true);
 });
+
+test('R3 M: an in-place refresh keeps aria-describedby in step with the unread badge (0 -> N -> 0)', () => {
+    const { mg } = listRig();
+    const ui = mg.ui;
+    ui.currentView = 'contact-list';
+    ui.params = { phoneId: 'p' };
+    ui.listContacts = () => [{ id: 'bob', displayName: 'Bob' }];
+    ui.refreshLivePreview = () => {};
+    let unread = 0;
+    ui.unreadCountFor = () => unread;
+    ui.populateContactList('p');
+    const row = document.querySelector('.contact-item[data-npc-id="bob"]');
+    const desc = () => (row.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+    assert.ok(!desc().some((id) => /-unread$/.test(id)), 'no unread id at 0');
+    unread = 1;
+    assert.equal(ui.refreshContactList(), true);
+    assert.equal(document.querySelector('.contact-item[data-npc-id="bob"]'), row, 'refreshed in place, not rebuilt');
+    const unreadId = desc().find((id) => /-unread$/.test(id));
+    assert.ok(unreadId, 'the new unread id is in the description');
+    assert.match(document.getElementById(unreadId).textContent, /1 unread/);
+    unread = 0;
+    ui.refreshContactList();
+    assert.ok(!desc().some((id) => /-unread$/.test(id)), 'no dangling unread id once read');
+    for (const id of desc()) assert.ok(document.getElementById(id), `describedby id ${id} exists`);
+});
+
+test('R3 n: the last focused contact leaving keeps focus inside the phone', () => {
+    const { mg } = listRig();
+    const ui = mg.ui;
+    const listView = document.createElement('div'); listView.tabIndex = -1;
+    document.body.append(listView);
+    listView.append($('list'));
+    ui.elements.contactListView = listView; ui.elements.conversationView = document.createElement('div');
+    ui.container = document.body;
+    ui.currentView = 'contact-list';
+    ui.listContacts = () => [{ id: 'ana', displayName: 'Ana Reyes' }];
+    ui.refreshLivePreview = () => {};
+    ui.populateContactList('p');
+    document.querySelector('.contact-item[data-npc-id="ana"]').focus();
+    ui.listContacts = () => [];
+    ui.populateContactList('p');
+    assert.equal(document.activeElement, listView);
+});
