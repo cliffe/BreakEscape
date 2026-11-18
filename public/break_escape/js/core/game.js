@@ -492,6 +492,8 @@ export function preload() {
     this.load.image('lw_chair_n1', 'objects/lw_chair_n1.png');
     this.load.image('lw_chair_w1', 'objects/lw_chair_w1.png');
     this.load.image('lw_chair_e1', 'objects/lw_chair_e1.png');
+    this.load.image('lw_fire_door_propped1', 'objects/lw_fire_door_propped1.png');
+    this.load.image('lw_delivery_hatch1', 'objects/lw_delivery_hatch1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -3162,12 +3164,12 @@ if (typeof window !== 'undefined') {
 
 // The walk was blocked: say so, not drop the use silently (code review R2 m4)
 function tapWalkBlocked() {
-    window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500);
+    window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Something's in the way.", 'info', '', 2500, { low: true });
 }
 
 // The walk ended out of reach: say so, not drop the use silently (code review R3 m1)
 function tapWalkStoppedShort() {
-    window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Can't reach it from here.", 'info', '', 2500);
+    window.gameAlert?.(npcBesidePlayer() ? "Someone's in the way." : "Can't reach it from here.", 'info', '', 2500, { low: true });
 }
 
 // Something else took over on the way: a minigame, the pick-one menu or a confirm dialog;

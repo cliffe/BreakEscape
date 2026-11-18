@@ -1155,6 +1155,8 @@ WALL_MOUNTED_EXTRAS = {
     "lw_guest_card",
     "lw_sign_archive",
     "lw_framed_notice",
+    "lw_fire_door_propped",
+    "lw_delivery_hatch",
 }
 
 

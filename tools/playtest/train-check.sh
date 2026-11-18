@@ -22,6 +22,8 @@
 #   2. MERGE_BATCH=1 SHELL_X_SEPARATE=1 bin/test-js -j $TRAIN_CHECK_JS_JOBS (default 8)   (js.txt)
 #   3. tools/playtest/train-smoke.mjs       (smoke.txt)
 #   4. the scenario validator over every scenarios/*/scenario.json.erb (v_<scenario>.txt)
+#   4b. tools/check_mapping_index_drift.rb main: eventMappings inserted or removed before existing ones
+#      (shifts once-only keys) is RED; skipped with the corpus (mapdrift.txt; MAPDRIFT_BASE overrides main)
 # and writes <outdir>/summary.txt. It kills only the server it started. It never touches ports 3000,
 # 3085 or 3086 and runs no db: task.
 # Env: PLAYWRIGHT_CHROMIUM_EXECUTABLE (default: the chrome-headless-shell in $HOME/.cache/ms-playwright),
@@ -231,6 +233,17 @@ else
   ue=$(cat "$OUT"/v_*.txt | grep '❌ ERROR' | grep -vc '(known:')
   echo "validator ERROR lines: known $ke, unknown $ue" >> "$SUM"
   [ "$ue" -ne 0 ] && RED+=("unknown validator ERROR lines $ue")
+fi
+
+# ---- 4b. eventMappings index drift against the train base (main) ----
+# Once-only records are keyed npc:pattern:handlerIndex, so a mapping inserted or removed before
+# existing ones re-fires saved games' once-only texts. Appends and content edits pass.
+if [ "${TRAIN_CHECK_SKIP_CORPUS:-0}" = 1 ]; then
+  echo "mapdrift SKIPPED" >> "$SUM"; SKIPPED+=(mapdrift)
+else
+  LANG=C.UTF-8 "$TC_RUBY" tools/check_mapping_index_drift.rb "${MAPDRIFT_BASE:-main}" > "$OUT/mapdrift.txt" 2>&1; rc=$?
+  echo "mapdrift exit $rc: $(tail -1 "$OUT/mapdrift.txt")" >> "$SUM"
+  [ "$rc" -ne 0 ] && RED+=("mapdrift exit $rc (see mapdrift.txt; append new eventMappings, never insert before existing ones)")
 fi
 
 HEAD1="$(git rev-parse HEAD)"

@@ -54,6 +54,31 @@ test('each type is announced once in the right region: errors in the alert regio
   done(win);
 });
 
+test('R3 m1: announcements from separate tasks within a frame or two join instead of overwriting', () => {
+  const frames = [];
+  const win = page({ patch: (w) => { w.requestAnimationFrame = (cb) => frames.push(cb); } });
+  N.announceToast('info', 'X1 first task line');
+  tick(2);   // a second task, 2 ms later, in the same frame
+  N.announceToast('info', 'X2 second task line');
+  tick(1);
+  assert.equal(text('toast-live-polite'), '', 'nothing is written until the frames have passed, so X1 is not there to be overwritten');
+  frames.splice(0).forEach((cb) => cb());   // first frame
+  tick(1);
+  N.announceToast('info', 'X3 a frame later');
+  frames.splice(0).forEach((cb) => cb());   // second frame
+  tick(1);
+  assert.equal(text('toast-live-polite'), 'X1 first task line. X2 second task line. X3 a frame later.', 'one write holds all three, in order');
+  done(win);
+});
+
+test('R3 m1: a tab that never runs a frame still announces, by the fallback timer', () => {
+  const win = page({ patch: (w) => { w.requestAnimationFrame = () => {}; } });
+  N.announceToast('info', 'Hidden tab line');
+  tick(N.ANNOUNCE_FALLBACK_MS + 1);
+  assert.equal(text('toast-live-polite'), 'Hidden tab line');
+  done(win);
+});
+
 test('the same message twice is announced twice: the region is emptied first and filled a tick later', () => {
   const win = page();
   const a = N.showNotification('Saved', 'info', '', 0);
@@ -184,4 +209,51 @@ test('the compact lift rules come after the clamp rules and are at least as spec
 test('both padding rules keep 48 px on the right for the X', () => {
   assert.match(block(css, '.notification'), /padding: \d+px 48px \d+px \d+px;/);
   assert.match(block(css, 'body.hud-compact .notification'), /padding: \d+px 48px \d+px \d+px;/);
+});
+
+test('the announcement is cleared after it has been read, so a gone toast leaves no text behind', () => {
+  const win = page();
+  N.showNotification("This reader needs a fingerprint. You haven't lifted any prints yet.", 'error', 'Fingerprint Reader', 5000);
+  tick(1);
+  assert.match(text('toast-live-alert'), /^Fingerprint Reader: /);
+  tick(N.ANNOUNCE_CLEAR_MS - 10);
+  assert.match(text('toast-live-alert'), /^Fingerprint Reader: /, 'still there while it is being read');
+  tick(20);
+  assert.equal(text('toast-live-alert'), '', 'gone once read');
+  tick(10000);
+  assert.equal(document.querySelectorAll('.notification').length, 0, 'toast gone');
+  assert.ok(!document.body.textContent.includes('Fingerprint Reader'), 'nothing left in the page text');
+  done(win);
+});
+
+test('a newer announcement in the same region is not cleared by the older timer', () => {
+  const win = page();
+  N.showNotification('First', 'info', '', 0);
+  tick(1);
+  tick(N.ANNOUNCE_CLEAR_MS - 2000);
+  N.showNotification('Second', 'info', '', 0);
+  tick(1);
+  tick(2500);   // the first one's timer is past
+  assert.equal(text('toast-live-polite'), 'Second', 'the second is still being read');
+  tick(N.ANNOUNCE_CLEAR_MS);
+  assert.equal(text('toast-live-polite'), '');
+  done(win);
+});
+
+test('every exit of the fingerprint reader leaves no reader text in the live regions', () => {
+  for (const [type, title, msg, ms] of [
+    ['success', 'Biometric Unlock Successful', 'You unlocked the door with X Person\'s fingerprint.', 5000],
+    ['error', 'Locked', 'The reader is cold to the touch.', 4000],
+    ['error', 'Fingerprint Reader', 'This reader needs a fingerprint.', 5000]
+  ]) {
+    const win = page();
+    const el = N.gameAlert(msg, type, title, ms);
+    tick(1);
+    N.removeNotification(el);
+    tick(400);
+    tick(N.ANNOUNCE_CLEAR_MS);
+    assert.equal(document.querySelectorAll('.notification').length, 0, `${title}: toast gone`);
+    for (const r of document.querySelectorAll('.toast-live-region')) assert.equal(r.textContent, '', `${title}: ${r.id} empty`);
+    done(win);
+  }
 });

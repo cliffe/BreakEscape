@@ -1,0 +1,13 @@
+{
+  "key": "17bfd9464827f4359757f7331b0c9da0",
+  "npc": "security_guard",
+  "text": "Nothing new. If something turns up, you'll hear the radio before I do.",
+  "voice": "Schedar",
+  "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:14:03Z"
+}
