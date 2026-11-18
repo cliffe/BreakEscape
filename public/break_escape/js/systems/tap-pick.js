@@ -486,32 +486,55 @@ export function objectStandPoint(obj, player, deps) {
     const wallClear = deps.wallClear || (() => true);
     const sameRoom = deps.sameRoom || (() => true);
     const usable = (p) => wallClear(p, obj) && sameRoom(p, obj);
-    const dx = obj.x - player.x;
-    const dy = obj.y - player.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (!(distance > 0)) return null;
-    const stopShort = range / 2;
-    const centreX = obj.x - (dx / distance) * stopShort;
-    const centreY = obj.y - (dy / distance) * stopShort;
     const footDx = player.body ? player.body.center.x - player.x : 0;
     const footDy = player.body ? player.body.center.y - player.y : 0;
+    // Reach is measured to the object's nearest part (interactions.js isObjectInInteractionRange:
+    // reachX, reachY), so judge and aim stand points the same way. A scenario object's origin is its
+    // top-left, so a tall prop against the back wall is far from its top edge but near its base.
+    const rx = typeof deps.reachX === 'function' ? (x) => deps.reachX(obj, x) : () => obj.x;
+    const ry = typeof deps.reachY === 'function' ? (y) => deps.reachY(obj, y) : () => obj.y;
+    const nx = rx(player.x), ny = ry(player.y);
+    const dx = nx - player.x;
+    const dy = ny - player.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    // Beside the object's body (the nearest part is on the player's own row and column): aim at its corner
+    const aimX = distance > 0 ? nx : obj.x, aimY = distance > 0 ? ny : obj.y;
+    const adx = aimX - player.x, ady = aimY - player.y;
+    const adist = Math.sqrt(adx * adx + ady * ady);
+    if (!(adist > 0)) return null;
+    const stopShort = range / 2;
+    const centreX = aimX - (adx / adist) * stopShort;
+    const centreY = aimY - (ady / adist) * stopShort;
     const target = { x: centreX + footDx, y: centreY + footDy };
     const findCell = deps.findCell;
     if (!findCell) return target;
-    // The arrival check measures y to the object's nearest part when it is wall-mounted
-    // (interactions.js isObjectInInteractionRange, reachY), so judge stand points the same way
-    const ry = typeof deps.reachY === 'function' ? (y) => deps.reachY(obj, y) : () => obj.y;
-    const reachAfter = (p) => Math.hypot(p.x - footDx - obj.x, p.y - footDy - ry(p.y - footDy));
+    const reachAfter = (p) => {
+        const sx = p.x - footDx, sy = p.y - footDy;
+        return Math.hypot(sx - rx(sx), sy - ry(sy));
+    };
     const walk = (p) => Math.hypot(p.x - (player.x + footDx), p.y - (player.y + footDy));
+    // Ring centres: the object's origin, plus points across its footprint (a 60px cabinet's base is
+    // far from its top-left corner, and the rings only reach 24px)
+    const centres = [{ x: obj.x, y: obj.y }];
+    if (deps.reachX && deps.reachY) {
+        const far = 1000000;
+        const L = rx(-far), R = rx(far), T = ry(-far), B = ry(far);
+        if (R - L > 0 || B - T > 0) {
+            for (const fx of [0, 0.5, 1]) for (const fy of [0, 0.5, 1]) {
+                const c = { x: L + (R - L) * fx, y: T + (B - T) * fy };
+                if (!centres.some(o => Math.abs(o.x - c.x) < 1 && Math.abs(o.y - c.y) < 1)) centres.push(c);
+            }
+        }
+    }
     const aimed = findCell(target.x, target.y);
     // Return the cell that was checked, not the raw aim: the raw aim can lie inside a desk,
     // and the walk's last leg heads for it and stops short (code review R3 m1)
     if (aimed && reachAfter(aimed) <= range - 4 && usable(aimed)) return aimed;
     let best = aimed, bestReach = aimed ? reachAfter(aimed) : Infinity, bestWalk = aimed ? walk(aimed) : Infinity;
-    for (let a = 0; a < 16; a++) {
+    for (const ctr of centres) for (let a = 0; a < 16; a++) {
         const ang = (a / 16) * Math.PI * 2;
         for (const r of [8, 16, 24]) {
-            const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
+            const c = findCell(ctr.x + Math.cos(ang) * r + footDx, ctr.y + Math.sin(ang) * r + footDy, 3);
             if (!c) continue;
             const ra = reachAfter(c), wk = walk(c);
             const ok = ra <= range - 4 && usable(c);
@@ -528,12 +551,13 @@ export function objectStandPoint(obj, player, deps) {
     // isObjectInInteractionRange, is the plain centre distance within the range). Look north
     // of it for a usable point within the range itself, nearest walk first (UX slice 15 R2, M1).
     if (deps.sameRoom) {
+        const aimOx = obj.x, aimOy = obj.y;
         let edge = null, edgeWalk = Infinity;
         for (let a = 0; a < 16; a++) {
             const ang = (a / 16) * Math.PI * 2;
             if (Math.sin(ang) >= 0) continue;    // only points north of the object
             for (const r of [20, 24, 28, 30, 31]) {
-                const c = findCell(obj.x + Math.cos(ang) * r + footDx, obj.y + Math.sin(ang) * r + footDy, 3);
+                const c = findCell(aimOx + Math.cos(ang) * r + footDx, aimOy + Math.sin(ang) * r + footDy, 3);
                 if (!c || reachAfter(c) > range - 1 || !usable(c)) continue;
                 const wk = walk(c);
                 if (wk < edgeWalk) { edge = c; edgeWalk = wk; }

@@ -697,12 +697,12 @@ function solveStandingPointWhere(targetX, targetY, fromX, fromY, standable, targ
             if (!centres.includes(cx)) centres.push(cx);
         }
     }
-    // The same for a tall wall-mounted target: reachY measures to the nearest part of its
+    // The same for a tall target: reachY measures to the nearest part of its
     // height, so the rings are centred on a grid of points down the sprite (every x centre
-    // against every y centre), not round the top edge only. Unmarked targets keep the top edge (reachY returns sprite.y).
+    // against every y centre), not round the top edge only. Doors and NPCs keep the top edge (reachY returns sprite.y).
     const centresY = [targetY];
-    const h = target && target.scenarioData?.wallMounted === true
-        ? (target.displayHeight ?? target.height ?? 0) : 0;
+    const h = target && target.scenarioData && !target._isNPC && !target.doorProperties
+        ? (target.displayHeight ?? target.height ?? 0) : 0;   // a short prop adds nothing: reachY keeps its top edge
     if (h > 16) {
         const top = target.y - (target.originY ?? 0.5) * h;
         const n = Math.min(6, Math.ceil(h / 16));

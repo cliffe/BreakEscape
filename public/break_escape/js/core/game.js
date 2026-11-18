@@ -3232,7 +3232,8 @@ function standPointDeps(player) {
     const pfm = window.pathfindingManager;
     return {
         range: INTERACTION_RANGE,
-        reachY: (o, y) => reachY(o, y),   // a tall wall-mounted object: its nearest part (interaction-reach.js)
+        reachX: (o, x) => reachX(o, x),   // a wide object: its nearest part (interaction-reach.js)
+        reachY: (o, y) => reachY(o, y),   // a tall object: its nearest part (interaction-reach.js)
         findCell: pfm?.findNearestWalkableWorldCell ? (x, y, r) => pfm.findNearestWalkableWorldCell(x, y, r) : null,
         wallClear: (p, o) => wallClearFrom(p, o),
         // Stand on the object's own side of a shared strip (UX slice 15 R2, M1)

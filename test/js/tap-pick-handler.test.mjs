@@ -90,7 +90,10 @@ const STUBS = ['window', 'document', 'Phaser', 'player', 'playerIsMoving', 'pend
     'closeInteractionMenu', 'resolveObjectField', 'worldObservations', 'TILE_SIZE', 'SPRITE_PADDING_BOTTOM_ATLAS',
     'SPRITE_PADDING_BOTTOM_LEGACY', 'DOOR_INTERACTION_RANGE', 'INTERACTION_RANGE', 'ARRIVAL_THRESHOLD', 'stopClickToMove',
     'menuIconsFor'];
-const IMPORTS = { ...tapPick, ...reachMod, openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
+// These fixtures model reach as a distance to the sprite's top-left corner; a sprite flagged topLeftReach keeps
+// that measure through reachX/reachY so the overlap-walk logic is tested on its own geometry, not on the span
+const legacyOr = (fn, pos) => (s, v) => (s && s.topLeftReach ? s[pos] : fn(s, v));
+const IMPORTS = { ...tapPick, ...reachMod, reachX: legacyOr(reachMod.reachX, 'x'), reachY: legacyOr(reachMod.reachY, 'y'), openHandIcon: menuIcons.openHandIcon, jabHandIcon: menuIcons.jabHandIcon, talkIcon: menuIcons.talkIcon };
 const IMPORT_NAMES = ['tapPickList', 'farUnderTap', 'npcYieldsToObject', 'npcYieldTarget', 'opaqueAt', 'opaqueNear', 'objectStandPoint',
     'createPendingTapUse', 'aimX', 'reachX', 'reachY', 'withoutChairsIfOthers', 'takeablesBeforeChairs', 'npcGivesWay', 'objectIdOf',
     'withoutLeavingNpcsIfObjects', 'openHandIcon', 'jabHandIcon', 'talkIcon', 'pixelHits', 'soleHit', 'overlapStandPoint', 'overlapRetryTarget',
@@ -158,7 +161,7 @@ function world({ player, objects = [], npcs = [], doors = [], hostile = [], ko =
         get playerIsMoving() { return state.moving; },
         pendingGateWalk: { clear() {}, arm() {} },
         doorGates: { walkThroughTarget: () => null },
-        isObjectInInteractionRange: (s, from = player, range = RANGE) => !(from === player && ovr.out.has(s.id)) && Math.hypot(s.x - from.x, s.y - from.y) <= range,
+        isObjectInInteractionRange: (s, from = player, range = RANGE) => !(from === player && ovr.out.has(s.id)) && Math.hypot(IMPORTS.reachX(s, from.x) - from.x, IMPORTS.reachY(s, from.y) - from.y) <= range,   // the engine's measure: nearest part (wide or tall)
         menuIconsFor: (list) => list.map(c => (c.sprite ? { src: `icon:${c.sprite.id}` } : null)),
         stopClickToMove: () => { state.stopped = (state.stopped || 0) + 1; state.moving = false; },
         ARRIVAL_THRESHOLD: 8,
@@ -517,8 +520,8 @@ test('handler R3 n2: a knocked-out body beside the player is not "someone" in th
 
 // ── Overlap plan: the far overlap walk, the pixel pick, hostiles and doors (handler tests 16 to 36) ──
 const diamond = (lx, ly) => Math.abs(lx - 7.5) + Math.abs(ly - 7.5) <= 8;
-const copierAt = () => sprite('copier', 100, 100, 35, 46, { depth: 10 });
-const printoutAt = () => sprite('printout', 110, 100, 16, 16, { depth: 11, shape: diamond });
+const copierAt = () => sprite('copier', 100, 100, 35, 46, { depth: 10, topLeftReach: true });
+const printoutAt = () => sprite('printout', 110, 100, 16, 16, { depth: 11, shape: diamond, topLeftReach: true });
 const doorAt = (id, x, y, extra = {}) => sprite(id, x, y, 32, 32, { doorProperties: { direction: 'north', roomId: 'r1',
     connectedRoom: 'r2', open: false }, ...extra });
 
@@ -570,8 +573,8 @@ test('overlap 20: the only spot found is the player\'s own, hits out of reach: a
 
 test('overlap 21: no spot reaches every hit: one far click on the topmost hit, walked to and used on arrival, no overlap walk', () => {
     const player = { x: 300, y: 165 };
-    const tall = sprite('tall', 100, 100, 10, 80, { depth: 0 });
-    const low = sprite('low', 100, 160, 10, 10, { depth: 5 });
+    const tall = sprite('tall', 100, 100, 10, 80, { depth: 0, topLeftReach: true });
+    const low = sprite('low', 100, 160, 10, 10, { depth: 5, topLeftReach: true });
     const w = world({ player, objects: [tall, low] });
     w.tap(105, 165);
     assert.ok(walkedTo(w.log), 'walks');
@@ -581,7 +584,7 @@ test('overlap 21: no spot reaches every hit: one far click on the topmost hit, w
 });
 
 test('overlap 22b (R5 M1): a walk that ends 7 px short with one hit out of reach takes one retry step past the stand point, far enough to move', () => {
-    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10 });
+    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10, topLeftReach: true });
     const player = { x: 400, y: 115 };
     const w = world({ player, objects: [wide('a', 100), wide('b', 156)] });
     w.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }) };
@@ -714,7 +717,7 @@ test('overlap 22d (R2 M1): a second click within 8 px of the stand point with no
 });
 
 test('overlap 22e (R2 n6): a retry step still waiting on the pathfinder is not dropped; it is after the grace', () => {
-    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10 });
+    const wide = (id, x) => sprite(id, x, 100, 60, 30, { depth: id === 'b' ? 11 : 10, topLeftReach: true });
     const player = { x: 400, y: 115 };
     const w = world({ player, objects: [wide('a', 100), wide('b', 156)] });
     w.win.pathfindingManager = { findNearestWalkableWorldCell: (x, y) => ({ x, y }) };
