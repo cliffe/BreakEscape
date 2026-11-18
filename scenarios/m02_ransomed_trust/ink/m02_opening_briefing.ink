@@ -106,7 +106,7 @@ Agent HaX: One entry in it matches this attack almost exactly. This is them.
 + {not knows_entropy_link} [How can you be sure it's ENTROPY and not an ordinary crew?]
     -> q_entropy_link
 
-+ {not asked_zds} [Who sells them the way in?]
++ {not asked_zds} [What do ENTROPY's cells actually trade with each other?]
     -> q_zds
 
 + {not asked_ransomware} [So who actually pulled the trigger on this?]
@@ -204,7 +204,7 @@ Agent HaX: Then turn their own backdoor on them. Recover the decryption keys and
 
 Agent HaX: Their CTO, Dr. Sarah Kim, put out a call at one this morning for an emergency security consultant. We made sure you answered it.
 
-Agent HaX: There's a line in their visitor log with your job title on it.
+Agent HaX: So you're genuinely booked. There's a line in their visitor log with your job title on it.
 
 Agent HaX: Kim doesn't know SAFETYNET's involved, or that this is ENTROPY. To her you're a contractor on a very bad night. Keep it that way.
 
