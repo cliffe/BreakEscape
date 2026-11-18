@@ -105,12 +105,30 @@ test('no modal when nothing optional is open', async () => {
     assert.equal(overlay(), null);
 });
 
+test('the modal is a framed dialog: title inside the frame, an X that keeps going, focus inside, no inline styling', async () => {
+    const answer = E.confirmEnding({ reason: 'credits' });
+    const o = overlay();
+    const dialog = o.querySelector('.game-confirm-dialog');
+    assert.ok(dialog, 'uses the shared confirm/display dialog frame');
+    assert.equal(o.getAttribute('style'), null, 'overlay has no inline style');
+    assert.ok(dialog.contains(o.querySelector('#ending-check-title')), 'title is inside the frame');
+    assert.ok(dialog.contains(o.querySelector('#ending-check-keep')) && dialog.contains(o.querySelector('#ending-check-end')));
+    const x = o.querySelector('#ending-check-close');
+    assert.ok(x && x.classList.contains('game-modal-close') && dialog.contains(x), 'X in the frame');
+    assert.equal(x.getAttribute('aria-label'), 'Keep going');
+    assert.ok(dialog.contains(document.activeElement), 'focus is inside the dialog');
+    x.click();
+    assert.equal(await answer, false);
+    assert.equal(overlay(), null);
+    assert.equal(window.player.disableMovement, false);
+});
+
 test('the modal names what is open, and Keep going resolves false', async () => {
     const answer = E.confirmEnding({ reason: 'credits' });
     assert.ok(overlay());
     assert.match(overlay().querySelector('.ending-check-intro').textContent, /^You have done what the mission needs\. 2 optional objectives are still open:$/);
     assert.deepEqual([...overlay().querySelectorAll('li')].map((li) => li.textContent), ['Find the spare key', 'Read the notice']);
-    assert.deepEqual([...overlay().querySelectorAll('button')].map((b) => b.textContent), ['Keep going', 'End the mission now']);
+    assert.deepEqual([...overlay().querySelectorAll('.ending-check-buttons button')].map((b) => b.textContent), ['Keep going', 'End the mission now']);
     assert.equal(window.player.disableMovement, true);
     click('ending-check-keep');
     assert.equal(await answer, false);
