@@ -70,3 +70,7 @@ Finding (new, not an attack effect): in game 9155 Agnieszka's walk home stalled.
 - `node test/js/m08-relief-watch.test.mjs`: 19 pass, 0 fail.
 
 Screenshots (scratchpad m08-console): at_post.png, away_unlocked_before_tune.png, away_unlocked_tuned.png, plus crops.
+
+## Chatter-pool gate (data half)
+
+The two officers' `cooler` chatter pools now carry `requireGlobal {ops_watch_upset: false}`. The cooler's `offWhen` is the new `ops_watch_ko` (set with `ops_watch_upset` by the julian_ko and agnieszka_ko mappings on `agent_0x99`), so upset alone no longer switches it off. The three Julian break mappings and Agnieszka's cooler coupling test `!ops_watch_ko` instead of `!ops_watch_upset`; cooldowns unchanged. No line text changed. Live proof: LIVE_CHATTER_GATE.md (upset: trips continue, 0 spoken; KO: cooler off).
