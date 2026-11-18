@@ -76,7 +76,7 @@ m10_vms = {
 # One flag per station (F-18): each station lists only its own flag, by slice.
 m10_stations = [
   { id: 'gate_terminal',      flag: 1, vm: 'bunker_monitor', index: 0, hint: "That one goes in at the gate terminal, up at the forward post." },
-  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That's their staging schedule, not the foothold. It goes where they stage the release." },
+  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That's their staging schedule. It goes where they stage the release." },
   { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That's off the release host. Find the station that takes the release host." },
   { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That's the core host's. Its terminal is further in." }
 ]
@@ -1825,6 +1825,13 @@ end
             { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard'", "setGlobal": { "tunnel_fight_on": false } },
             { "eventPattern": "npc_ko", "condition": "data.npcId === 'tunnel_guard_kettle'", "setGlobal": { "tunnel_fight_on": false } },
             { "eventPattern": "global_variable_changed:tunnel_fight_on", "condition": "value === false && globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
+            <%# Blind fix R2 m3: backstops for a breach call the fight hold lost. A Respawn or an F5 inside the 1.5 s re-ring window reloads the page and the timer dies, so game_loaded rings it again; a tunnel guard who is out-run stays hostile, so entering the security office rings it (the first mapping) or clears tunnel_fight_on (the second, whose change rings it through the mapping above). Both stop at breach_call_done. %>
+            { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.tunnel_fight_on && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 3000 },
+            { "eventPattern": "room_entered:security_office", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.tunnel_fight_on && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
+            { "eventPattern": "room_entered:security_office", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && globalVars.tunnel_fight_on === true", "setGlobal": { "tunnel_fight_on": false } },
+            <%# Blind fix R2 M1/m2: a hall guard who turns hostile by any route is engaged, which ends the repeat challenge. %>
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_a' && data.isHostile === true", "setGlobal": { "hall_a_engaged": true } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_b' && data.isHostile === true", "setGlobal": { "hall_b_engaged": true } },
 <%# --- The inner door and the tripwire (OT 4.3) ------------------------------ %>
             { "eventPattern": "room_entered:blast_tunnel", "condition": "!globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 800 },
             { "eventPattern": "game_loaded", "condition": "globalVars.blast_tunnel_entered === true && !globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
@@ -3817,6 +3824,7 @@ not_tethered = '!globalVars.nightshade_tethered'
 <% [['hall_guard_a', 2, 6, 8, 6, 'male_security_guard', :guard_m, 'The west patrol, walking the plotting board end.'],
     # Dressing R4 H4: hall_guard_b's start and west turn were (13, 8), tucked into the east rack's corner; (13.6, 8) clears it.
     ['hall_guard_b', 13.6, 8, 17, 8, 'female_security_guard_v2', :guard_f, 'The east patrol, past the hatch and back.']].each do |gid, x1, y1, x2, y2, sprite, vkey, look| %>
+<% wv = gid.sub('hall_guard_', 'hall_') %>
         {
           "id": "<%= gid %>",
           "displayName": "Guard",
@@ -3837,11 +3845,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "eventMappings": [
             <%= after_end_json.('server_hall') %>
             <%# Playtest B-03: the second guard's challenge waits 4 s after the first (re-checked then), so the two do not land back to back; neither plays once the raid team has stood them down. %>
-            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down<%= gid == 'hall_guard_a' ? ' && globalVars.hall_a_warnings === 0' : '' %>", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
-<% if gid == 'hall_guard_a' %>
-            <%# Blind fix R1 m1: after Back off (hall_a_warnings above 0) the next sighting, 30 s on at the earliest, reopens him at hall_a_final, where the only way on is the fight. Repeatable, so a reload or a long wait does not lose it; the sight cooldown keeps it from looping. %>
-            { "eventPattern": "player_spotted:hall_guard_a", "condition": "!globalVars.hall_guards_stood_down && globalVars.hall_a_warnings !== 0", "conversationMode": "person-chat", "targetKnot": "hall_a_final", "cooldown": 30000 },
-<% end %>
+            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down && globalVars.<%= wv %>_warnings === 0", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
+<%# Blind fix R1 m1, R2 M1/m2: after Back off (the guard's warnings above 0) the next sighting, 30 s on at the earliest, reopens the guard at its _final knot, where the only way on is the fight. Repeatable, so a reload or a long wait does not lose it; the sight cooldown keeps it from looping, and <id>_engaged (set when the guard turns hostile) stops it for good, so it never opens over a fight. A KO'd NPC is skipped by the chat opener itself. %>
+            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down && globalVars.<%= wv %>_warnings !== 0 && !globalVars.<%= wv %>_engaged", "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>_final", "cooldown": 30000<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
             <%# Playtest B-03: the talk-past (ink: hall_guards_stood_down) stops both patrols where they turn. %>
             { "eventPattern": "global_variable_changed:hall_guards_stood_down", "condition": "value === true", "patrolOverride": { "targetTile": { "x": <%= x1 %>, "y": <%= y1 %> }, "speed": 60 } },
             { "eventPattern": "room_entered:server_hall", "condition": "globalVars.hall_guards_stood_down === true && !globalVars.closing_done", "patrolOverride": { "targetTile": { "x": <%= x1 %>, "y": <%= y1 %> }, "speed": 200 } }
@@ -4709,6 +4715,9 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "tunnel_fight_on": false,
     "breach_call_done": false,
     "hall_a_warnings": 0,
+    "hall_a_engaged": false,
+    "hall_b_warnings": 0,
+    "hall_b_engaged": false,
     "gallery_call_deferred": false,
     "static_power_ko": false,
     "power_fight_over": false,

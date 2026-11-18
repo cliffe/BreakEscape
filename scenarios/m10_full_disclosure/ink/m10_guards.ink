@@ -13,6 +13,8 @@ VAR grd_tunnel_ok = false
 VAR grd_kettle_ok = false
 VAR grd_duty_b_ok = false
 VAR grd_workshop_ok = false
+VAR hall_a_quiet = false
+VAR hall_b_quiet = false
 
 // A copy with no currentKnot lands in the deepest room reached so far.
 === start ===
@@ -141,6 +143,8 @@ Guard: Whoa. Hands where I can see them.
     -> passed
 }
 {
+- hall_a_quiet:
+    ~ hall_a_quiet = false
 - hall_a_warnings == 0:
     Guard: Hall's closed. Turn around.
 - hall_a_warnings == 1:
@@ -148,10 +152,6 @@ Guard: Whoa. Hands where I can see them.
 - else:
     Guard: Last time. Turn around.
 }
--> hall_a_choices
-
-// Choices only, so Back off can end the chat without a parting line.
-=== hall_a_choices ===
 + {hall_team_present} [(Wave the team up behind you.)]
     -> hall_stand_down
 + [I'm going to the core. Read the photo.]
@@ -161,15 +161,19 @@ Guard: Whoa. Hands where I can see them.
     Guard: Nope.
     -> hall_a_warn
 
-// Fair warning before the fight: both guards are set to put you down.
+// Fair warning before the fight. Back off is offered twice at most, so a
+// reopen cannot loop it for ever (blind fix R2 m1); hall_a_quiet skips the
+// opener once while the chat parks, so a re-talk meets the next one.
 === hall_a_warn ===
-Narrator: Both guards square up, batons out.
+Narrator: The guard squares up, baton out.
 Guard: One more step and we put you on the floor.
-+ [(Back off.)]
++ {hall_a_warnings < 2} [(Back off.)]
     ~ hall_a_warnings = hall_a_warnings + 1
+    ~ hall_a_quiet = true
     #exit_conversation
-    -> hall_a_choices
+    -> hall_a
 + [(Go through them anyway.)]
+    ~ hall_a_engaged = true
     #hostile:hall_guard_a
     Guard: Have it your way.
     ~ grd_quiet = true
@@ -177,15 +181,24 @@ Guard: One more step and we put you on the floor.
     -> fight
 
 // The sight mapping reopens him here once the player has backed off and
-// come back into his view. He does not ask twice.
+// come back into his view, unless he has already turned (hall_a_engaged).
+// He does not ask twice: the line itself turns him, so closing the chat
+// with X or Esc changes nothing. With the team in the hall the line is plain
+// and the stand-down choice is open.
 === hall_a_final ===
 {hall_guards_stood_down:
     -> passed
 }
-Guard: I told you. Floor, now.
+{hall_team_present:
+    Guard: I told you. Floor, now.
+- else:
+    ~ hall_a_engaged = true
+    Guard: I told you. Floor, now. #hostile:hall_guard_a
+}
 + {hall_team_present} [(Wave the team up behind you.)]
     -> hall_stand_down
 + [(Stand your ground.)]
+    ~ hall_a_engaged = true
     #hostile:hall_guard_a
     ~ grd_quiet = true
     #exit_conversation
@@ -195,10 +208,14 @@ Guard: I told you. Floor, now.
 {hall_guards_stood_down:
     -> passed
 }
-Guard: Hey! Off the console row!
--> hall_b_choices
-
-=== hall_b_choices ===
+{
+- hall_b_quiet:
+    ~ hall_b_quiet = false
+- hall_b_warnings == 0:
+    Guard: Hey! Off the console row!
+- else:
+    Guard: I said off the row.
+}
 + {hall_team_present} [(Wave the team up behind you.)]
     -> hall_stand_down
 + [Do you know what that schedule does?]
@@ -208,15 +225,38 @@ Guard: Hey! Off the console row!
     Guard: Then I'll have to stop you.
     -> hall_b_warn
 
-// Fair warning for the east patrol too (blind fix R1 M2).
+// Fair warning for the east patrol too (blind fix R1 M2). One Back off; the
+// sight mapping then reopens her at hall_b_final (blind fix R2 m2).
 === hall_b_warn ===
 Guard: Last chance. Step away from the row.
-+ [(Back off.)]
++ {hall_b_warnings == 0} [(Back off.)]
+    ~ hall_b_warnings = hall_b_warnings + 1
+    ~ hall_b_quiet = true
     #exit_conversation
-    -> hall_b_choices
+    -> hall_b
 + [(Go through her anyway.)]
+    ~ hall_b_engaged = true
     #hostile:hall_guard_b
     Guard: Then come on.
+    ~ grd_quiet = true
+    #exit_conversation
+    -> fight
+
+=== hall_b_final ===
+{hall_guards_stood_down:
+    -> passed
+}
+{hall_team_present:
+    Guard: That was your chance. Down, now.
+- else:
+    ~ hall_b_engaged = true
+    Guard: That was your chance. Down, now. #hostile:hall_guard_b
+}
++ {hall_team_present} [(Wave the team up behind you.)]
+    -> hall_stand_down
++ [(Stand your ground.)]
+    ~ hall_b_engaged = true
+    #hostile:hall_guard_b
     ~ grd_quiet = true
     #exit_conversation
     -> fight
