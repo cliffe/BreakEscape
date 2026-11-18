@@ -4894,7 +4894,7 @@
             {
               "type": "object",
               "required": ["room", "x", "y"],
-              "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" }, "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"], "description": "Which way the NPC faces at this home when there is no object to face: a chair turns to match when it sits." } },
+              "properties": { "room": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" }, "facing": { "type": "string", "enum": ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"], "description": "Which way the NPC faces at this home when there is no object to face: a swivel chair turns to match when it sits; a static chair cannot turn, so one that faces more than 67 degrees off this is refused and the NPC stands (the validator warns). Applied at spawn, on reload and on each return from a trip." } },
               "additionalProperties": false
             }
           ]

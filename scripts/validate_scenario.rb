@@ -6148,6 +6148,58 @@ def desk_box_maps(json_data, repo_root)
   out
 end
 
+COMPASS8_ANGLE = %w[south south-east east north-east north north-west west south-west].each_with_index.to_h { |n, i| [n, i * 45] }.freeze
+
+# Static chairs' fixed facings, read from seating.js (STATIC_SEATS, HOSPITAL_S/N), by texture name.
+def static_seat_facings(repo_root)
+  js = File.join(repo_root, 'public/break_escape/js/systems/seating.js')
+  return {} unless File.exist?(js)
+  src = File.read(js)
+  alias_facing = {}
+  src.scan(/const (HOSPITAL_[SN]) = \{ facing: '([\w-]+)'/) { |n, f| alias_facing[n] = f }
+  body = src[/const STATIC_SEATS = \{(.*?)^\};/m, 1].to_s
+  out = {}
+  body.scan(/['"]?([\w-]+)['"]?: (?:\{ facing: '([\w-]+)'|(HOSPITAL_[SN]))/) { |k, f, a| out[k] = f || alias_facing[a] }
+  out
+end
+
+# Warnings for a coordinate needsHome whose `facing` is more than 67 degrees off a static chair within
+# 36 px of the home: seating.js refuses such a chair (it cannot turn), so the NPC stands or fetches a swivel.
+def home_facing_static_chair_conflicts(json_data, repo_root, room_npcs)
+  facings = static_seat_facings(repo_root)
+  return [] if facings.empty?
+  type_map = geom_type_to_tilemap(repo_root)
+  out = []
+  room_npcs.each do |e|
+    h = e[:npc]['needsHome']
+    next unless h.is_a?(Hash) && COMPASS8_ANGLE.key?(h['facing']) && h['room']
+    type = (json_data['rooms'] || {}).dig(h['room'], 'type')
+    file = type && type_map[type]
+    path = file && File.join(repo_root, 'public/break_escape/assets/rooms', file)
+    next unless path && File.exist?(path)
+    map = JSON.parse(File.read(path)) rescue next
+    hx = h['x'].to_f * GEOM_TILE_SIZE
+    hy = h['y'].to_f * GEOM_TILE_SIZE
+    sets = (map['tilesets'] || []).select { |t| t['firstgid'] }.sort_by { |t| -t['firstgid'] }
+    (map['layers'] || []).each do |layer|
+      (layer['objects'] || []).each do |o|
+        next unless o['gid']
+        ts = sets.find { |t| t['firstgid'] <= o['gid'] }
+        img = ts && (ts['tiles'] || []).find { |t| t['id'] == o['gid'] - ts['firstgid'] }&.fetch('image', nil)
+        facing = img && facings[File.basename(img, '.png')]
+        next unless facing
+        next if Math.hypot(o['x'].to_f + o['width'].to_f / 2 - hx, o['y'].to_f - 4 - hy) > 36
+        d = (COMPASS8_ANGLE[h['facing']] - COMPASS8_ANGLE[facing]).abs % 360
+        d = 360 - d if d > 180
+        next if d <= 67
+        out << "NPC '#{e[:npc]['id']}' needsHome facing '#{h['facing']}' contradicts the static chair '#{File.basename(img, '.png')}' " \
+               "(faces #{facing}) at its home: a static chair more than 67 degrees off the facing is refused, so the NPC stands."
+      end
+    end
+  end
+  out
+end
+
 # Build the room-type -> tilemap-file map from the engine's loader.
 def geom_type_to_tilemap(repo_root)
   game_js = File.join(repo_root, 'public/break_escape/js/core/game.js')
@@ -8081,6 +8133,10 @@ def check_access_model(json_data, repo_root = nil, scenario_dir = nil)
     next if ai.account_admitted?(pc, e[:npc])
 
     warn.call("account '#{e[:npc]['id']}' has needsHome '#{home}', a sign-in PC whose access list does not admit it.")
+  end
+
+  if repo_root
+    home_facing_static_chair_conflicts(json_data, repo_root, room_npcs).each { |m| warn.call(m) }
   end
 
   # Owners placed in a different room from their workstation (section 5.4)

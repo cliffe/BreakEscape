@@ -494,8 +494,8 @@
      "type": "",
      "visible": true,
      "width": 38,
-     "x": 88.0,
-     "y": 252.0,
+     "x": 86.0,
+     "y": 233.0,
      "properties": [
       {
        "name": "fixed",
@@ -513,8 +513,8 @@
      "type": "",
      "visible": true,
      "width": 38,
-     "x": 88.0,
-     "y": 204.0,
+     "x": 86.0,
+     "y": 185.0,
      "properties": [
       {
        "name": "fixed",

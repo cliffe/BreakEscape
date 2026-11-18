@@ -186,8 +186,8 @@ def room_hq_ops():
     # the relief watch's posts, west end of the hot desk, facing east to its west monitor
     # (band x 77-127; the x 32-76 archives lane stays clear; feet at or above y 256).
     # The filing cabinet that stood here is gone: it filled the band.
-    r.item("chair-exec-rotate3", 88.0, 252.0, fixed=True)         # post 1, sit_east (rotate3 = E, seatable swivel)
-    r.item("chair-exec-rotate3", 88.0, 204.0, fixed=True)         # post 2, 48 px north of post 1, sit_east
+    r.item("chair-exec-rotate3", 86.0, 233.0, fixed=True)         # post 1, sit_east (rotate3 = E, seatable swivel); placed where seating used to leave it, as a fixed chair never moves
+    r.item("chair-exec-rotate3", 86.0, 185.0, fixed=True)         # post 2, 48 px north of post 1, sit_east
     r.solid("water_cooler1", 214.0, 256.0)
     r.item("fire_alarm_point1", 14.0, 210.0)
     r.item("hq_badge_reader1", 16.0, 140.0)

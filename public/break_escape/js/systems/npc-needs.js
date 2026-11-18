@@ -9,15 +9,17 @@
  * NPC-owned `onUse` map; it never reads the NPC's `usePayload`, only clones it
  * onto npc_used.
  *
- * No static imports on purpose: the engine reaches it through window, and the
- * node tests import it directly with a stub world (see createEngineWorld for the
- * live adapter).
+ * One static import, the import-free compass8.js (the 8 facings, shared with seating.js): the
+ * engine reaches this module through window, and the node tests import it directly with a stub
+ * world (see createEngineWorld for the live adapter).
  *
  * Determinism: every decision happens on a fixed 250 ms tick of the needs clock, which the
  * engine advances by the frame step its walks use (see update);
  * the only randomness is a per-NPC mulberry32 seeded from (seed, npcId), used for
  * jitterPct. Arrivals are queued and handled at the next tick.
  */
+
+import { COMPASS8, facingPointFrom } from './compass8.js';
 
 export const NEEDS_TICK_MS = 250;
 const MAX_FRAME_MS = 1000;
@@ -32,7 +34,6 @@ const HOME_EPS = 12;
 // destination (1.5 tiles). A farther arrival is a short path that ended before the cell (an async
 // path answer, a path stopped at a door); it is re-issued, not taken as "arrived".
 const ARRIVAL_NEAR_PX = 48;
-const HOME_FACINGS = ['south', 'south-east', 'east', 'north-east', 'north', 'north-west', 'west', 'south-west'];
 const HOME_RETRY_TICKS = 4;   // provisional needsHome re-lookup: once a second
 const SELECT_BACKOFF_TICKS = 4; // a selection that path-searched and found nothing retries after 1 s
 // The walk home yields to the player (stops and faces them). After this long without moving
@@ -1498,8 +1499,8 @@ export class NPCNeedsSystem {
             s.mode = 'idle';
             // A coordinate home with a facing: stand turned that way (a seat takes it from here)
             if (s.home?.facing && !s.home.objectId) {
-                const d = HOME_FACINGS.indexOf(s.home.facing) * 45, a = (90 - d) * Math.PI / 180;
-                this.world.faceTo(id, pos.x + Math.cos(a) * 64, pos.y + Math.sin(a) * 64);
+                const p = facingPointFrom(pos, s.home.facing, 64);
+                if (p) this.world.faceTo(id, p.x, p.y);
             }
             // Only a real trip emits; a session at one's own post object never left it
             s.returnAbandon = null;
@@ -4148,7 +4149,14 @@ export class NPCNeedsSystem {
                 const woken = Object.keys(s.parked).sort().filter(n => s.parked[n].reason === 'no_source');
                 this._wakeParkedFor(s, woken);
             }
+            const first = !s.home || s.home.provisional;
             s.home = h;
+            // Spawn and reload: a coordinate home with a facing turns the NPC at it once, the first time
+            // the home resolves while it stands there (a trip's return turns it separately)
+            if (first && h.facing && !h.objectId && pos && Math.hypot(pos.x - h.x, pos.y - h.y) <= HOME_EPS * 2) {
+                const p = facingPointFrom(pos, h.facing, 64);
+                if (p) this.world.faceTo?.(s.npcId, p.x, p.y);
+            }
             return;
         }
         if (!s.home) s.home = h;   // keep the first provisional spot; don't chase the NPC's position
@@ -4167,7 +4175,7 @@ export class NPCNeedsSystem {
             const w = this.world.tileToWorld(h.room, h.x, h.y);
             if (w) {
                 const home = { x: w.x, y: w.y, roomId: h.room, objectId: null };
-                if (HOME_FACINGS.includes(h.facing)) home.facing = h.facing;   // seating.js turns the sitter this way
+                if (COMPASS8.includes(h.facing)) home.facing = h.facing;   // seating.js turns the sitter this way
                 return home;
             }
         }

@@ -62,7 +62,8 @@ test('back from a trip, a standing NPC with a home facing turns that way; withou
     // faceTo also fires at the coffee machine (300, 300); the home turns are the ones off it
     const homeTurns = r => r.faced.filter(f => f.x !== 300);
     const returns = withFacing.w.calls.moves.filter(m => m.x === 96 && m.y === 96).length;
-    assert.ok(returns > 0 && homeTurns(withFacing).length === returns, 'one turn per return');
+    // one turn per return, plus the one at spawn when the home first resolves
+    assert.ok(returns > 0 && homeTurns(withFacing).length === returns + 1, 'one turn per return and one at spawn');
     for (const f of homeTurns(withFacing)) {
         assert.equal(f.id, 'clerk');
         assert.ok(f.x > 96 && Math.abs(f.y - 96) < 1, 'the point is due east of the home');
@@ -88,7 +89,7 @@ test('isFixedChair reads the Tiled property (array or object form); anything els
 test('chairMotion: loose chairs keep bounce 0.3 and drag 100; fixed ones are immovable', () => {
     assert.deepEqual(chairMotion(false), { immovable: false, bounce: 0.3, drag: 100 });
     assert.deepEqual(chairMotion(undefined), { immovable: false, bounce: 0.3, drag: 100 });
-    assert.deepEqual(chairMotion(true), { immovable: true, bounce: 0, drag: 0 });
+    assert.deepEqual(chairMotion(true), { immovable: true, bounce: 0, drag: 100 });
 });
 
 test('rooms.js feeds the Tiled object to isFixedChair and applies chairMotion to the wheeled chair body', () => {
@@ -101,7 +102,7 @@ test('rooms.js feeds the Tiled object to isFixedChair and applies chairMotion to
 
 test('room_hq_ops marks exactly the two duty officers\' chairs fixed', () => {
     const map = JSON.parse(readFileSync(join(root, 'public/break_escape/assets/rooms/room_hq_ops.json'), 'utf8'));
-    const chairs = map.layers.flatMap(l => l.objects || []).filter(o => o.gid && o.x === 88 && (o.y === 252 || o.y === 204));
+    const chairs = map.layers.flatMap(l => l.objects || []).filter(o => o.gid && o.x === 86 && (o.y === 233 || o.y === 185));
     assert.equal(chairs.length, 2);
     assert.ok(chairs.every(c => isFixedChair(c)));
     const fixedCount = map.layers.flatMap(l => l.objects || []).filter(o => isFixedChair(o)).length;

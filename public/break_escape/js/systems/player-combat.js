@@ -474,7 +474,7 @@ export class PlayerCombat {
     if (window.chairs && window.chairs.length > 0) {
       window.chairs.forEach(chair => {
         // Only kick swivel chairs with physics bodies, and not one someone sits on (seating.js)
-        if (!chair.isSwivelChair || !chair.body || chair.seatedBy) {
+        if (!chair.isSwivelChair || !chair.body || chair.seatedBy || chair.fixedChair) {
           return;
         }
 
@@ -831,7 +831,7 @@ export class PlayerCombat {
    * @param {Phaser.GameObjects.Sprite} chair - Chair sprite
    */
   kickChair(chair) {
-    if (!chair || !chair.body || !window.player) {
+    if (!chair || !chair.body || !window.player || chair.fixedChair) {   // a fixed chair is never kicked
       return;
     }
 

@@ -42,9 +42,13 @@ export function isFixedChair(tiledObj) {
     return v === true || v === 'true';
 }
 
-/** The physics a wheeled chair gets: loose by default, immovable with no bounce when fixed. */
+/**
+ * The physics a wheeled chair gets: loose by default, immovable with no bounce when fixed. A fixed
+ * chair keeps the drag as a safety net: immovable only stops bodies pushing it, so any velocity a
+ * stray code path gave it would otherwise never decay. seating.js and player-combat.js also skip it.
+ */
 export function chairMotion(fixed) {
-    return fixed ? { immovable: true, bounce: 0, drag: 0 } : { immovable: false, bounce: 0.3, drag: 100 };
+    return fixed ? { immovable: true, bounce: 0, drag: 100 } : { immovable: false, bounce: 0.3, drag: 100 };
 }
 
 /**

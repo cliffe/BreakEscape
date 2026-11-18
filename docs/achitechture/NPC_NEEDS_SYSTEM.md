@@ -112,7 +112,7 @@ option only while a matching item is present (section 5.2).
 
 | Field | Meaning |
 |---|---|
-| `needsHome` | Object id (preferred; the NPC stands at its approach cell) or `{room, x, y}` tile. Where the NPC idles and returns. Default: spawn point |
+| `needsHome` | Object id (preferred; the NPC stands at its approach cell) or `{room, x, y, facing?}` tile. Where the NPC idles and returns. Default: spawn point. `facing` (coordinate homes only; one of the 8 compass names `south`, `south-east`, `east`, `north-east`, `north`, `north-west`, `west`, `south-west`) is which way the NPC faces at the home when there is no object to face: applied at spawn and reload, and on each return from a trip. A sitter takes it too: a swivel chair turns to match; a static chair cannot turn, so one that faces more than 67 degrees off `facing` is refused and the NPC stands (the validator warns). Pair it with a `fixed` chair (Tiled property, see the mission-room-dressing skill) so the chair never moves |
 | `usePayload` | Any JSON value. **Opaque and NPC-owned.** Never read, logged or interpreted by the engine; a clone rides on every `npc_used` event this NPC emits |
 | `onUse` | Object id → `{ setGlobal?: name, emitEvent?: name, revealOutput?: producerId }`. Applied when **this** NPC completes a use of **that** object (need or carry). `setGlobal` sets the global to `true`; `revealOutput` shows the producer's next free reveal slot (3.3a) |
 | `needsSpeed` | Walk speed for needs moves (px/s). Default `behavior.patrol.speed`, else 80 |
