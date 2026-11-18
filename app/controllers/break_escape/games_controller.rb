@@ -24,9 +24,9 @@ module BreakEscape
       policy.worker_src  :self, :blob
     end
 
-    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :conclude_mission,
+    before_action :set_game, only: [:show, :scenario, :scenario_map, :ink, :room, :container, :update_room, :unlock, :inventory, :objectives, :capture_secrets, :keyring, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :tts, :reset, :new_session, :vm_panel, :vm_set_panel, :unlock_vm_console, :conclude_mission,
                                         :login, :logout, :lock_session, :login_accounts, :clone_card, :network, :network_plant, :network_unplug, :network_implant, :network_join,
-                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :se_landing_page, :se_phish_send]
+                                        :npc_frustration, :npc_workaround, :feed_post, :friendface_phone, :wear, :pin_dust, :se_landing_page, :se_phish_send]
     # A host may also route the game page under its own address (Hacktivity: /hacktivities/:event_id/play/mission/:id,
     # inside a Game event's web app scope). The game must belong to that event: any other pair is a 404.
     before_action :require_game_in_host_event, only: [:show]
@@ -102,7 +102,7 @@ module BreakEscape
     # takes the lock so it reloads under it, like the others.
     around_action :with_game_lock, only: [:container, :update_room, :unlock, :complete_task, :skip_task, :update_task_progress, :unlock_objective, :submit_flag, :reset, :new_session, :inventory, :room,
                                           :login, :logout, :lock_session, :clone_card, :network_plant, :network_unplug, :network_implant, :network_join,
-                                          :npc_frustration, :npc_workaround, :feed_post, :wear, :se_landing_page, :se_phish_send]
+                                          :npc_frustration, :npc_workaround, :feed_post, :wear, :pin_dust, :se_landing_page, :se_phish_send]
 
     # GET /games/new?mission_id=:id
     # Show VM set selection page for VM-required missions
@@ -1271,6 +1271,7 @@ module BreakEscape
             # untracked until promotion.
             @game.record_npc_route_room!(target_id)
             room_data = @game.filtered_room_data(target_id)
+            annotate_station_submission_status!(room_data, target_id) if room_data
             track_npc_encounters(target_id, room_data)
           else
             # Credential path (GATED_DOOR §3.3b): capture "not yet earned" before serve_opened_room's
@@ -1747,6 +1748,19 @@ module BreakEscape
       render json: result[:body], status: result[:status]
     end
 
+    # POST /games/:id/pin_dust { targetType, targetId, apply }
+    # Dust a PIN pad with the fingerprint kit: answers the distinct digits of the PIN (sorted,
+    # never their order) once per lock, and only while the server's inventory holds a real kit.
+    # apply false asks what the pad already learnt (so a reload keeps it greyed).
+    def pin_dust
+      authorize @game if defined?(Pundit)
+
+      # Only a real true (JSON true, or the string 'true') applies; anything else is a read-only peek
+      apply = params[:apply] == true || params[:apply].to_s == 'true'
+      result = @game.pin_dust!(params[:targetType].to_s, params[:targetId].to_s, apply: apply)
+      render json: result[:body], status: result[:status]
+    end
+
     # POST /games/:id/network/join (ap_id, optional key) -- join an in-game Wi-Fi network
     # through an access point (slice 9.3b sub-slice W, 5.3). The key is compared on the
     # server; an open network sends no key.
@@ -2040,7 +2054,7 @@ module BreakEscape
         missing: result[:missing],
         missionConcludedAt: @game.mission_concluded_at,
         status: @game.status,
-        score: @game.score
+        score: @game.score_for_client # nil when a host (Hacktivity) owns scoring
       }
     end
 
@@ -2213,8 +2227,10 @@ module BreakEscape
         end
       end
 
-      # Player has reached this VM terminal legitimately in-game. Unlock console access.
-      vm.update_column(:enable_console, true)
+      # Player has reached this VM terminal legitimately in-game. Set the console to its
+      # canonical default: attack/player VMs get a console, "*server*" targets stay locked
+      # (so this never turns a server VM's console on). Idempotent.
+      vm.apply_default_console!
 
       redirect_to Rails.application.routes.url_helpers.event_sec_gen_batch_vm_set_vm_path(
         event,
@@ -2247,7 +2263,55 @@ module BreakEscape
       )
     end
 
+    # POST /games/:id/unlock_vm_console?vm_title=:title
+    # The vm-launcher minigame calls this when it opens in Hacktivity mode, before it needs
+    # the console token. For the VM behind the launcher the player has reached in-game, set
+    # enable_console to its canonical default (::Vm.default_enable_console): attack/player VMs
+    # get a console, target "*server*" VMs stay locked. Idempotent and side-effect-free when
+    # the value already matches, so it is safe to call on every launcher open. Standalone mode
+    # (no VMs) answers 404 and the engine's client treats it as a no-op.
+    def unlock_vm_console
+      authorize @game if defined?(Pundit)
+      return head :not_found unless BreakEscape::Mission.hacktivity_mode? && @game.vm_set_id
+
+      # Race guard: only act while the game is still in_progress (a finished game's set may be
+      # relinquished and reverted; re-locking is the start/restart flow's job, not this one).
+      return head :not_found unless @game.reload.status == 'in_progress'
+
+      vm_set = defined?(::VmSet) ? ::VmSet.find_by(id: @game.vm_set_id) : nil
+      return head :not_found unless vm_set&.sec_gen_batch&.event
+
+      # Only a VM of THIS game's set is reachable here (another game's VM is simply not found),
+      # so a player cannot touch a VM outside their own assignment.
+      vm = params[:vm_title].present? ? vm_set.vms.find_by(title: params[:vm_title])
+                                      : vm_set.vms.first
+      return head :not_found unless vm
+
+      # Gate: the player must have reached the room that holds this VM's launcher in-game,
+      # verified server-side from player_state (the same check vm_panel uses). Admins and
+      # account managers bypass it. A scenario with no matching launcher object degrades to
+      # allowing the set's console default, as vm_panel does.
+      unless staff_player?
+        launcher_room_id = find_vm_launcher_room(@game.scenario_data, vm.title)
+        if launcher_room_id && !@game.room_unlocked?(launcher_room_id)
+          Rails.logger.warn "[BreakEscape] unlock_vm_console blocked: player #{current_player&.id} " \
+                            "attempted VM #{vm.title} without unlocking #{launcher_room_id}"
+          return head :forbidden
+        end
+      end
+
+      enable_console = vm.apply_default_console!
+      render json: { ok: true, title: vm.title, enable_console: enable_console }
+    end
+
     private
+
+    # A player who may see any game's VM console regardless of in-game progress (admins and
+    # managing account managers). Mirrors the bypass in vm_panel.
+    def staff_player?
+      current_player.respond_to?(:admin?) &&
+        (current_player.admin? || (current_player.respond_to?(:account_manager?) && current_player.account_manager?))
+    end
 
     # A network route answers the `added`/`removed` inventory delta (sync deltas P2) only when
     # the request opts in with `delta: true`; an old open tab that still reads the whole-inventory
@@ -2822,6 +2886,10 @@ module BreakEscape
     def serve_opened_room(room_id)
       @game.unlock_room!(room_id)
       room_data = @game.filtered_room_data(room_id)
+      # The client caches this copy and builds the room from it, so a flag station in it
+      # needs the same submitted-flags annotation as GET /room (else its list reads empty
+      # after a reload until the player submits again).
+      annotate_station_submission_status!(room_data, room_id) if room_data
       # Track NPC encounters when unlocking a door (room data is cached by client)
       # This ensures NPCs are tracked even if loadRoom() uses cached data
       track_npc_encounters(room_id, room_data)

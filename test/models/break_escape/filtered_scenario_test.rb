@@ -459,6 +459,26 @@ module BreakEscape
       assert_nil room['objects'], 'contents are still lazy-loaded'
     end
 
+    test 'bootstrap keeps a password room lockoutSeconds while the answer and other secrets are stripped' do
+      scenario = @scenario_data.deep_dup
+      scenario['rooms']['next_room'].merge!(
+        'locked' => true, 'lockType' => 'password', 'requires' => 'hunter2',
+        'maxAttempts' => 3, 'lockoutSeconds' => 45, 'passwordHint' => 'A pet',
+        'combination' => '1234', 'objects' => [{ 'type' => 'safe', 'name' => 'Safe' }]
+      )
+      game = Game.new(mission: break_escape_missions(:ceo_exfil),
+                      player: break_escape_demo_users(:test_user),
+                      scenario_data: scenario)
+      game.save(validate: false)
+
+      room = game.filtered_scenario_for_bootstrap['rooms']['next_room']
+      assert_equal 45, room['lockoutSeconds']
+      assert_equal 3, room['maxAttempts']
+      assert_nil room['requires'], 'the password never ships'
+      assert_nil room['combination'], 'a combination answer is not in the allowlist'
+      assert_nil room['objects'], 'contents are still lazy-loaded'
+    end
+
     # Review R2 m1: the model's bootstrap strips a declared grant's contents itself, not
     # only the controller, so every caller of the model method is safe.
     test 'filtered_scenario_for_bootstrap strips a timer grant contents' do

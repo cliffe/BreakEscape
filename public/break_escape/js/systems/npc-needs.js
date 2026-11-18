@@ -3003,14 +3003,20 @@ export class NPCNeedsSystem {
      *   the same meeting looks again, and the exchange can start once the gate opens;
      * - null: nothing in this meeting can become playable (no entries for the pair, all heard,
      *   malformed, or lines naming another speaker), so the meeting stops looking.
+     *
+     * `topic` is the chat's chatter topic (the object's affordance `chatter`). When an entry sets
+     * its own `topic`, it plays only on a chat whose topic matches, so an exchange written for the
+     * water cooler does not fire at another chatter object (such as a dropped cake). An entry with no
+     * `topic` plays at any chatter object, as before.
      */
-    _findExchange(A, B) {
+    _findExchange(A, B, topic) {
         let pending = false, gated = false;
         for (const [own, other] of [A, B].sort((x, y) => (x.npcId < y.npcId ? -1 : 1)).map((x, i, arr) => [x, arr[1 - i]])) {
             const list = this._rec(own).exchanges;
             if (!Array.isArray(list)) continue;
             for (const e of list) {
                 if (!e || typeof e.knot !== 'string' || !e.knot || !this._exchangeWith(e, other)) continue;
+                if (e.topic !== undefined && e.topic !== topic) continue;
                 if (this._exchangeHeard(e.knot)) continue;
                 if (e.requireGlobal !== undefined && !this._globalHolds(e.requireGlobal)) { gated = true; continue; }
                 const lines = typeof this.world.exchangeLines === 'function' ? this.world.exchangeLines(own.npcId, e.knot) : null;
@@ -4476,7 +4482,7 @@ export class NPCNeedsSystem {
             // Order of preference (11.4): an unplayed exchange with its first speaker in earshot, then
             // a bark from the bag (only for a speaker the player hears, E7), then picture chat
             if (!c.ex && !c.exDone) {
-                const ex = this._findExchange(A, B);
+                const ex = this._findExchange(A, B, c.topic);
                 // E9: start only when the player hears the first line's speaker. A pending or gated
                 // result looks again on the next free turn; only null ends the search this meeting.
                 if (ex && ex.lines) {

@@ -1,0 +1,13 @@
+{
+  "key": "141fe3b6b112a830081afa0403523901",
+  "npc": "lerato_dlamini",
+  "text": "If the phones go, I run.",
+  "voice": "Gacrux",
+  "style": "Night floor coordinator at a cryptocurrency exchange, in her 30s, confident and direct. Speak with a consistent South African accent from Durban throughout, and do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m06_follow_the_money",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T04:10:09Z"
+}

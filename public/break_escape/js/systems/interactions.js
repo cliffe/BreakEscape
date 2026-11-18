@@ -23,7 +23,7 @@ import { shouldExamine, startExamine } from './examine.js';
 import { showPastTalkingToast } from './combat-input.js';
 import { shouldConsumeOnInteract, useConsumable } from './consumables.js';
 import { interactionLineClear } from './interaction-walls.js';
-import { reachX, reachY, aimX, npcGivesWay, objectIdOf } from './interaction-reach.js';
+import { reachX, reachY, aimX, npcGivesWay, objectIdOf, seatOccupant } from './interaction-reach.js';
 import { displayDashes } from '../utils/display-dashes.js';
 import { escapeHtml } from '../utils/escape-html.js';
 import { hasMinigameStarter, startRegisteredMinigame } from './minigame-registry.js';
@@ -396,7 +396,7 @@ export function checkObjectInteractions() {
                 // (static-sprite NPCs also measure to their collision body, npc-reach.js)
                 const npcDx = sprite.x - px;
                 const npcDy = sprite.y - py;
-                const distanceSq = npcReachDistSq(player, sprite, npcDx * npcDx + npcDy * npcDy);
+                const distanceSq = seatedNpcReachDistSq(player, sprite, npcReachDistSq(player, sprite, npcDx * npcDx + npcDy * npcDy));
 
                 if (distanceSq <= INTERACTION_RANGE_SQ && sprite.visible && interactionLineClear(player, sprite)) {
                     if (!sprite.isHighlighted) {
@@ -1090,19 +1090,20 @@ export function handleObjectInteraction(sprite) {
         return;
     }
 
+    // Consumables (coffee, snacks, a first aid kit) heal the player and are used up (7.1c).
+    // A takeable one is picked up first and used from the inventory. This comes before the
+    // drop branch so a droppable one (pizza, cake) is eaten; "Drop here" stays a menu entry.
+    if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {
+        useConsumable(sprite);
+        return;
+    }
+
     // Droppable inventory items (item-drop.js) go down at the player's feet as a
     // world object an interested NPC can collect (npc-needs.js). A tray click on one
     // opens its menu instead (inventory-menu.js) and never gets here; this branch is
     // for every other caller, such as the test bridge.
     if (isDroppableInventoryItem(sprite, window.inventory?.items)) {
         dropInventoryItem(sprite);
-        return;
-    }
-
-    // Consumables (coffee, snacks, a first aid kit) heal the player and are used
-    // up (7.1c). A takeable one is picked up first and used from the inventory.
-    if (shouldConsumeOnInteract(sprite, window.inventory?.items)) {
-        useConsumable(sprite);
         return;
     }
 
@@ -1353,7 +1354,8 @@ export function handleObjectInteraction(sprite) {
                 hacktivityMode: hacktivityMode,
                 stationId: sprite.scenarioData.id || sprite.objectId,
                 showPostit: sprite.scenarioData.showPostit || false,
-                postitNote: sprite.scenarioData.postitNote || ''
+                postitNote: sprite.scenarioData.postitNote || '',
+                flagNote: sprite.scenarioData.flagNote || ''
             });
             return;
         }
@@ -2275,13 +2277,16 @@ export function tryInteractWithNearest() {
         const dx = objX - px;
         const dy = objY - py;
         const plainSq = dx * dx + dy * dy;
-        const distSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
+        const npcSq = npcSprite ? npcReachDistSq(player, npcSprite, plainSq) : plainSq;
+        const distSq = npcSprite ? seatedNpcReachDistSq(player, npcSprite, npcSq) : npcSq; // clearly nearer the free place of a sofa she shares, it returns Infinity: E is for the sofa
         if (distSq > rangeSq) return;
         if (target && !interactionLineClear(player, target)) return; // wall between
         if (target && !npcSprite) inReachIds.push(objectIdOf(target));
         const dist = Math.sqrt(distSq);
         let score = angularDiff(faceX, faceY) * 1000 + dist; // angle to the object's centre, range to its nearest part
-        if (target && !npcSprite && window.seating?.isSeat(target)) score += 30000; // a chair loses to anything else faced
+        // A chair loses to anything else faced. A sofa whose sitter E would talk to loses to her outright: standing on her
+        // figure the aim at her centre is arbitrary (up to 180 x 1000), which the plain penalty would not outweigh.
+        if (target && !npcSprite && window.seating?.isSeat(target) && !sofaFreePlaceWins(target)) score += sofaSitterTalkFirst(target) ? SOFA_SITTER_PENALTY : 30000;
         if (npcSprite && npcGivesWay(player, npcSprite, inReachIds)) score += 30000; // so does someone walking away (q55 d)
         if (score < bestScore) { bestScore = score; best = { objX: faceX, objY: faceY, handleFn }; }
     }
@@ -2292,11 +2297,28 @@ export function tryInteractWithNearest() {
     const SIDE_DOOR_Y_OFFSET = INTERACTION_RANGE / 2;    // half-tile down to floor level
 
     const npcsToConsider = [];
+    let npcList = null;
+    const allNpcs = () => npcList || (npcList = Object.values(rooms).flatMap(r => r.npcSprites || []));
+    const npcKo = (n) => !!window.npcHostileSystem?.isNPCKO?.(n.npcId);
+    const sittersOn = (seat) => allNpcs().filter(n => n.active !== false && !npcKo(n) && npcSeatedOn(n, seat));
+    // A sofa with sitters, the player clearly nearer a free place than every one of their places (E sits there). Any number of places:
+    // one sitter the player is not clearly away from keeps E for her.
+    const sofaFreePlaceWins = (seat) => {
+        if (!seat._places) return false;
+        const sitters = sittersOn(seat);
+        return sitters.length > 0 && sitters.every(n => nearerFreePlace(player, n));
+    };
+    // A sitter on this sofa that E would talk to: in her reach, and the player not clearly nearer a free place
+    const sofaSitterTalkFirst = (seat) => !!seat._places && sittersOn(seat).some(n => !nearerFreePlace(player, n)
+        && seatedNpcReachDistSq(player, n, npcReachDistSq(player, n, (n.x - px) ** 2 + (n.y - py) ** 2)) <= INTERACTION_RANGE_SQ);
     Object.values(rooms).forEach(room => {
         if (room.objects) {
             Object.values(room.objects).forEach(obj => {
                 if (!obj.active || !obj.interactable || !obj.visible) return;
                 if (seatedOn && obj === seatedOn) return; // E from a chair reaches what's around it
+                // A seat with no free place whose sitter (any of them, on a full sofa) is on it now is her, not "A chair." (interaction-reach.js
+                // seatOccupant); she is considered below. A sofa with a free place stays, and loses to her by score.
+                if (obj.seatedBy && window.seating?.isSeat(obj) && seatOccupant(obj, allNpcs(), { isKo: npcKo, isSeated: npcSeatedOn })) return;
                 consider(reachX(obj, px), reachY(obj, py), () => handleObjectInteraction(obj), INTERACTION_RANGE_SQ, null, obj, aimX(obj), obj.y);
             });
         }
@@ -2344,6 +2366,69 @@ export function tryInteractWithNearest() {
     chosen.handleFn();
 }
 
+// The seat an NPC is sitting on now (seating.js keeps it on her behaviour), or null
+function seatedChairOf(npcSprite) {
+    const chair = npcSprite?.npcId ? window.npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat?.chair : null;
+    return chair && !chair.destroyed && chair.active !== false ? chair : null;
+}
+
+// She is on this seat now, not just holding its reservation
+function npcSeatedOn(npcSprite, seat) {
+    return seatedChairOf(npcSprite) === seat;
+}
+
+// Floor point under place `i` of a sofa or bench (seating.js placeFoot)
+function placeFootPoint(chair, places, i) {
+    return { x: chair.x + places[i][0], y: chair.y + chair.height };
+}
+
+function distSqTo(player, pt) {
+    return (pt.x - player.x) ** 2 + (pt.y - player.y) ** 2;
+}
+
+// The player's foot point (body centre, as interaction-walls playerFeet): the sprite sits about 25 px above it
+function footOf(player) {
+    const c = player?.body?.center;
+    return c && Number.isFinite(c.x) && Number.isFinite(c.y) ? c : { x: player.x, y: player.y };
+}
+
+// How much nearer (px) the player's feet must be to a free place's foot than to her own place's foot before E sits
+// there instead of talking to her: standing on or close beside her always talks.
+const FREE_PLACE_MARGIN = 10;
+// A sofa whose sitter wins E sits behind everything else in score, past the widest aim term (180 deg x 1000)
+const SOFA_SITTER_PENALTY = 400000;
+
+// The player is clearly nearer a free place of her sofa or bench than her own place (E there sits, not talks).
+// Takes the nearest free place, so it holds for any number of places.
+function nearerFreePlace(player, npcSprite) {
+    const chair = seatedChairOf(npcSprite);
+    const b = chair ? window.npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat : null;
+    const places = b?.seat?.places;
+    if (!places || !places[b.place]) return false;
+    const taken = chair._places || {};
+    const free = places.map((_, i) => i).filter(i => !taken[i]);
+    if (!free.length) return false;
+    const feet = footOf(player);
+    const d = (i) => Math.sqrt(distSqTo(feet, placeFootPoint(chair, places, i)));
+    return Math.min(...free.map(d)) + FREE_PLACE_MARGIN < d(b.place);
+}
+
+// A seated NPC is reached from her seat, counted with her centre (the seat's reach is the one the
+// player sees, and the seat can hide her from the centre). A one-place chair counts its nearest
+// edge; a sofa or bench counts her own place's foot only, so its far end does not reach her.
+// Used by E, the talk icon and the tap, so the screen shows what E does.
+function seatedNpcReachDistSq(player, npcSprite, distSq) {
+    const chair = seatedChairOf(npcSprite);
+    if (!chair) return distSq;
+    const b = window.npcBehaviorManager?.getBehavior?.(npcSprite.npcId)?._seat;
+    const places = b?.seat?.places;
+    if (nearerFreePlace(player, npcSprite)) return Infinity; // the free place is the player's: E sits, so no icon, tap or talk for her
+    if (places && places[b.place]) return Math.min(distSq, distSqTo(player, placeFootPoint(chair, places, b.place)));
+    const dx = reachX(chair, player.x) - player.x;
+    const dy = reachY(chair, player.y) - player.y;
+    return Math.min(distSq, dx * dx + dy * dy);
+}
+
 // Handle NPC interaction by sprite reference
 export function tryInteractWithNPC(npcSprite) {
     if (!npcSprite || !npcSprite._isNPC) {
@@ -2356,7 +2441,7 @@ export function tryInteractWithNPC(npcSprite) {
     }
 
     // Check if NPC is within interaction range of the player
-    const distanceSq = npcReachDistSq(player, npcSprite, getInteractionDistance(player, npcSprite.x, npcSprite.y));
+    const distanceSq = seatedNpcReachDistSq(player, npcSprite, npcReachDistSq(player, npcSprite, getInteractionDistance(player, npcSprite.x, npcSprite.y)));
     const distance = Math.sqrt(distanceSq);
 
     // Only interact if within range, with no wall between
@@ -2392,7 +2477,7 @@ export function isObjectInInteractionRange(sprite, from = undefined, range = INT
     const dx = reachX(sprite, player.x) - player.x;
     const dy = reachY(sprite, player.y) - player.y; // a tall wall-mounted object: its nearest part
     const distSq = dx * dx + dy * dy;
-    if ((sprite._isNPC ? npcReachDistSq(player, sprite, distSq) : distSq) > range * range) return false;
+    if ((sprite._isNPC ? seatedNpcReachDistSq(player, sprite, npcReachDistSq(player, sprite, distSq)) : distSq) > range * range) return false;
     return interactionLineClear(player, sprite);
 }
 

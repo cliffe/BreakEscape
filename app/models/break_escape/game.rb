@@ -11,6 +11,7 @@ module BreakEscape
     include NpcFrustration
     include SocialFeed
     include Wearables
+    include PinDust
 
     # Associations
     belongs_to :player, polymorphic: true
@@ -72,6 +73,22 @@ module BreakEscape
     # 70 × tasks/total + 30 × aims/total. The default ("tasks") score.
     def raw_task_score
       self.class.raw_score(tasks_completed, total_tasks, objectives_completed, total_aims)
+    end
+
+    # True when a host (Hacktivity) owns this game's score: its GameScoringJob
+    # writes games.score from the listing's policy, so the engine's own number
+    # may differ and must not be shown to the player as the mission score.
+    # That holds for a game with a slot, and for any game run inside Hacktivity
+    # (not standalone) even without one: an unlinked game there (admin-created,
+    # legacy, or a "New session" after the event closed) is not counted by the host.
+    def host_owns_score?
+      slot = respond_to?(:game_slot) ? game_slot : nil
+      slot.present? || !BreakEscape.standalone_mode?
+    end
+
+    # The score the client may display, or nil when a host owns scoring.
+    def score_for_client
+      host_owns_score? ? nil : score
     end
 
     # Get score based on game_slot scoring method (if available)
@@ -2003,7 +2020,7 @@ module BreakEscape
     public :npc_ko_claimable?
 
     # Ids of the scenario's room NPCs that are not koImmune and not phone NPCs. Reads scenario_data when it is
-    # loaded; sync_state's narrow load leaves it out, so there two jsonpath lists are read,
+    # loaded; sync_state's narrow load leaves it out, so there the room NPC stubs are read (narrow_room_npc_stubs),
     # as scenario_npc_ids does. Bounded by the scenario.
     def ko_claimable_room_npc_ids
       if has_attribute?(:scenario_data)
@@ -2023,12 +2040,29 @@ module BreakEscape
         return ids
       end
 
-      all, immune = self.class.where(id: id).pick(
-        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
-        Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*] ? (@.koImmune == true || @.npcType == \"phone\").id')")
-      )
-      parse = ->(list) { Array(list.is_a?(String) ? JSON.parse(list) : list).select { |i| i.is_a?(String) } }
-      Set.new(parse.call(all)) - Set.new(parse.call(immune))
+      narrow_room_npc_stubs.each_with_object(Set.new) do |npc, ids|
+        next unless npc['id'].is_a?(String) && npc['koImmune'] != true && npc['npcType'] != 'phone'
+
+        ids << npc['id']
+      end
+    end
+
+    # The scenario's room NPCs as { 'id', 'koImmune', 'npcType' } stubs, read without loading
+    # scenario_data (sync_state's narrow load). jsonb_each / jsonb_array_elements /
+    # jsonb_build_object only, so it runs on PostgreSQL 9.5 (jsonpath needs 12). Bounded by the scenario.
+    NARROW_ROOM_NPC_STUBS_SQL = <<~SQL.squish
+      SELECT jsonb_build_object('id', n.npc -> 'id', 'koImmune', n.npc -> 'koImmune', 'npcType', n.npc -> 'npcType')
+      FROM break_escape_games g
+      CROSS JOIN LATERAL jsonb_each(CASE WHEN jsonb_typeof(g.scenario_data -> 'rooms') = 'object'
+                                         THEN g.scenario_data -> 'rooms' ELSE '{}'::jsonb END) AS r(room_id, room)
+      CROSS JOIN LATERAL jsonb_array_elements(CASE WHEN jsonb_typeof(r.room) = 'object' AND jsonb_typeof(r.room -> 'npcs') = 'array'
+                                                   THEN r.room -> 'npcs' ELSE '[]'::jsonb END) AS n(npc)
+      WHERE g.id = ? AND jsonb_typeof(n.npc) = 'object'
+    SQL
+
+    def narrow_room_npc_stubs
+      sql = self.class.sanitize_sql_array([NARROW_ROOM_NPC_STUBS_SQL, id])
+      self.class.connection.select_values(sql).map { |v| v.is_a?(String) ? JSON.parse(v) : v }
     end
 
     # Review R3 m2: a held item (by id) that has already left the NPC: dropped into any room
@@ -2364,14 +2398,18 @@ module BreakEscape
           # appends it to the locked toast, so it must survive the bootstrap filter (lab R3 F1).
           # pinLength: digits on a PIN door's pad (not secret); the controller fills it from
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
+          # lockoutSeconds: a password lock's opt-in lockout length (a number, not secret), so a
+          # password door's pad can lock out before its room loads.
           # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
           # (access model 4.1). They name roles and NPC ids, nothing secret.
+          # dustable, dustHint: a PIN door's opt-in to fingerprint-kit dusting and its hint line
+          # (neither is secret), so a door pad that opens before its room loads sees them (pin dust R1 M1).
           # cryptexConfig: a cryptex door's wheels (wheelCount, alphabets, hintStrip, wornRings,
           # maxAttempts), so its pad shows the right wheels before the room loads (unlock gaps
           # R1 M2). Its old `answer` field is stripped here and again by the controller filter.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
-             access acceptsUIDOnly cryptexConfig].each do |field|
+             maxAttempts lockoutSeconds passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
+             access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
           self.class.strip_lock_answers!(kept_fields)
@@ -2691,6 +2729,15 @@ module BreakEscape
       # share one object index (review R1 M1).
       BreakEscape::AccessWork.with_index(scenario_data) { filter_requires_and_contents_recursive(room) }
 
+      # Phone-call config from the current scenario (Mission#current_call_configs):
+      # a game started before a contact gained its `call`/`callLabel` keeps the old
+      # snapshot, yet the ink is served live, so the matching #place_call has no entry
+      # to dial and an ending that dials to close soft-locks. Overlay the live config
+      # onto the NPC so an in-progress game can still place the call. Narrow — call
+      # config only, nothing the player has changed. Reads scenario_data on every
+      # request, so it works for games already in progress.
+      apply_current_call_config!(room)
+
       # Account tiles on each sign-in PC (access model 5.3).
       attach_login_accounts!(room['objects'])
 
@@ -2705,6 +2752,28 @@ module BreakEscape
       BreakEscape::AuthorNotes.strip_notes!(room, BreakEscape::ScenarioSchema.at('#/definitions/room'))
 
       room
+    end
+
+    # Overlay the current scenario's phone-call config onto a room's NPCs, so a game
+    # whose snapshot predates a contact's `call`/`callLabel` can still place the call
+    # the live ink's #place_call asks for (see the call site in filtered_room_data and
+    # Mission#current_call_configs). Only `call` and `callLabel` are touched, and only
+    # when the current scenario defines them; everything else in the snapshot stands.
+    def apply_current_call_config!(room)
+      return unless room['npcs'].is_a?(Array)
+
+      configs = mission&.current_call_configs
+      return if configs.blank?
+
+      room['npcs'].each do |npc|
+        next unless npc.is_a?(Hash)
+
+        cfg = configs[npc['id']]
+        next unless cfg
+
+        npc['call'] = cfg['call'] if cfg.key?('call')
+        npc['callLabel'] = cfg['callLabel'] if cfg.key?('callLabel')
+      end
     end
 
     # Place knocked-out NPCs where they fell (D5). Driven by the KO position stored on
@@ -2968,7 +3037,10 @@ module BreakEscape
       # Keyring K3d R1 (CREDENTIAL_KEYRING_PLAN.md 8.7): { registryId => server ms } the first time
       # GET /keyring listed each registry entry, so the Sign-ins order survives a reload.
       # Server-written only, at most 128 keys, never sent to the client except as an entry's gainedAt.
-      'keyringGained' => {}
+      'keyringGained' => {},
+      # Fingerprint-kit dusting of PIN pads (PinDust): { lockKey => the PIN's distinct digits }.
+      # Server-written only, one short string per PIN lock, never in a sync body or the bootstrap.
+      'pinDusted' => {}
     }.freeze
 
     # Globals the server owns (sync deltas R2, 6a): the client never stores them. se_captures
@@ -6022,17 +6094,12 @@ module BreakEscape
         # sync_state's narrow load leaves scenario_data out; read just the ids:
         # room NPCs, and the headless records' ids (social.characters.*.channels.email
         # where the character has an emailRecord; see headless_npc_records)
-        found = self.class.where(id: id).pick(
-          Arel.sql("jsonb_path_query_array(scenario_data, '$.rooms.*.npcs[*].id')"),
-          Arel.sql("jsonb_path_query_array(scenario_data, " \
-                   "'$.social.characters.* ? (@.emailRecord.type() == \"object\").channels.email')"),
-          # ink-email contacts with their own emailRecord (headless_contact_records)
-          Arel.sql("jsonb_path_query_array(scenario_data, " \
-                   "'$.social.mailClient.contacts[*] ? (@.emailRecord.type() == \"object\").npc')")
-        )
-        Array(found).each do |list|
-          list = JSON.parse(list) if list.is_a?(String)
-          Array(list).each { |npc_id| ids << npc_id if npc_id.is_a?(String) && !npc_id.empty? }
+        # (9.5-safe: no jsonpath; see narrow_room_npc_stubs)
+        narrow_room_npc_stubs.each { |npc| ids << npc['id'] if npc['id'].is_a?(String) && !npc['id'].empty? }
+        social = self.class.where(id: id).pick(Arel.sql("scenario_data -> 'social'"))
+        social = JSON.parse(social) if social.is_a?(String)
+        self.class.headless_npc_records('social' => social).each do |rec|
+          ids << rec['id'] if rec['id'].is_a?(String) && !rec['id'].empty?
         end
       end
       (player_state['room_states'] || {}).each_value do |state|
@@ -7538,9 +7605,22 @@ module BreakEscape
     # In Hacktivity, flags belong to individual VMs (not to SecGenBatch).
     def extract_flags_by_vm(vm_set)
       vm_set.vms.each_with_object({}) do |vm, hash|
-        # Hacktivity's read_secgen_flags_job inserts flags in reverse XML order,
-        # so reversing here restores flag_1..flag_N to match the scenario's references.
-        hash[vm.title] = vm.flags.order(:id).map(&:flag_key).reverse
+        flags = vm.flags.to_a
+        ordered =
+          if flags.any? && flags.all? { |f| f.respond_to?(:position) && !f.position.nil? }
+            # Stable: order by the flag's document position in SecGen's flag_hints.xml
+            # (recorded at ingest by ReadSecgenFlagsJob). This makes flag_1..flag_N match
+            # SecGen document order, i.e. the order the scenario task/reward texts and
+            # standalone mode (Mission.parse_flag_hints_xml) both use. No reversal.
+            flags.sort_by(&:position)
+          else
+            # Legacy sets whose flag positions were never recorded (ingested before the
+            # document-order fix and not yet backfilled): fall back to the historical
+            # id-order-reversed behaviour so they are no worse than before. Backfill with
+            # Hacktivity's backfill_flag_positions rake task to make these stable too.
+            flags.sort_by(&:id).reverse
+          end
+        hash[vm.title] = ordered.map(&:flag_key)
       end
     end
 

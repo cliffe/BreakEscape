@@ -4220,6 +4220,8 @@
         },
         "access": { "$ref": "#/definitions/accessList" },
         "acceptsUIDOnly": { "type": "boolean", "description": "Access model 4.1: an rfid lock with access also opens to a UID-only (DESFire) copy. Default false." },
+        "maxAttempts": { "type": "integer", "minimum": 1, "description": "Password locks: wrong guesses allowed before the pad locks out (client-side). Not secret: it survives the bootstrap filter." },
+        "lockoutSeconds": { "type": "integer", "minimum": 1, "description": "Password locks only, opt-in: after maxAttempts wrong guesses the door pad stays shut for this many seconds, and the count survives closing and reopening the window (client-side; a page reload resets it). Not secret: it survives the bootstrap filter." },
         "network": { "x-serverOnly": true, "type": "string", "x-ref": "network", "description": "Networks 3.2: the default network (a networks key) for this room's objects; an object's own network wins. Never sent to the browser (deleted from every room payload)." },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "requires": {
@@ -4239,6 +4241,8 @@
           "type": "array",
           "items": { "type": "integer" }
         },
+        "dustable": { "type": "boolean", "description": "PIN door only: true lets a fingerprint kit dust this door's keypad (opt-in, default off)." },
+        "dustHint": { "type": "string", "description": "PIN door only: shown after dusting, for example to say a digit repeats." },
         "lockedHint": { "type": "string", "minLength": 1, "description": "Opt-in: appended to the Requires key and wrong-key alerts of a locked key lock, to say where the key comes from (utils/locked-hint.js). Linted by scripts/validate_social/options.rb" },
         "difficulty": {
           "type": "string",
@@ -4544,6 +4548,10 @@
                   }
                 }
               ]
+            },
+            "squeezePastPlayer": {
+              "type": "boolean",
+              "description": "Default true: a needs walk (job, need or interest) held by the player's body for about 2.5 s walks on through the player. false keeps the player's body block on every walk."
             },
             "facePlayerDistance": {
               "type": "number",
@@ -4941,7 +4949,7 @@
         "answersPhones": { "type": "boolean", "description": "Desk phones (OFFICE_LIFE_PLAN 12.5, slice 19): true lets this needs NPC answer a colleague's ringing desk phone in its own room. From the second ring, the nearest such NPC that is idle at its post and does not avoid the owner walks over (a real leave, standing at the phone) unless the owner gets back first (turn-back reason answered); if it rings out first, it turns back (rang_out)." },
         "phoneCalls": { "type": "array", "description": "Desk phones (slice 19): ink knots in this NPC's own story, half a phone conversation each: every line is this NPC's own (no 'Name:' prefix), voiced one per bubble with listening gaps when the player is in earshot. Played once per game (sets heard_<knot>, declare it; emits npc_call_heard:<knot>); then calls use the NPC's chatter pool 'phone' (on its own phone) or 'phone_message' (answering someone else's), then the phone picture.", "items": { "type": "object", "properties": { "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, {"x-id-map": true,  "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["knot"], "additionalProperties": false } },
         "chatterCooldownMin": { "type": "number", "minimum": 0, "description": "Voiced chatter (OFFICE_LIFE_PLAN 11.2): needs-clock minutes after a spoken chatter line before this NPC speaks another (default 5); in between it shows picture chat." },
-        "exchanges": { "type": "array", "description": "Scripted exchanges (OFFICE_LIFE_PLAN 11.4): ink knots in this NPC's story, played once per game when this NPC and the 'with' NPC chat (social pairing or queue chat) with the player in earshot. Lines are prefixed with the speaker's id or displayName; each is spoken in that speaker's voice. Sets global heard_<knot> (declare it) and emits npc_exchange_heard:<knot> { complete }. A meeting cut after the player overheard at least one line also counts as heard (event data complete: false) and the rest is never played; a cut before any line was overheard leaves it unplayed. Bind a task with condition \"data.complete === true\" when it needs the whole exchange, and put anything the player must learn in the first line. Keep a knot under 60 s of lines (the validator warns).", "items": { "type": "object", "properties": { "with": { "type": "string", "minLength": 1, "description": "An NPC id or group:<name> (needsCompany.groups)" }, "knot": { "type": "string", "minLength": 1 }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, {"x-id-map": true,  "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["with", "knot"], "additionalProperties": false } },
+        "exchanges": { "type": "array", "description": "Scripted exchanges (OFFICE_LIFE_PLAN 11.4): ink knots in this NPC's story, played once per game when this NPC and the 'with' NPC chat (social pairing or queue chat) with the player in earshot. Lines are prefixed with the speaker's id or displayName; each is spoken in that speaker's voice. Sets global heard_<knot> (declare it) and emits npc_exchange_heard:<knot> { complete }. A meeting cut after the player overheard at least one line also counts as heard (event data complete: false) and the rest is never played; a cut before any line was overheard leaves it unplayed. Bind a task with condition \"data.complete === true\" when it needs the whole exchange, and put anything the player must learn in the first line. Keep a knot under 60 s of lines (the validator warns).", "items": { "type": "object", "properties": { "with": { "type": "string", "minLength": 1, "description": "An NPC id or group:<name> (needsCompany.groups)" }, "knot": { "type": "string", "minLength": 1 }, "topic": { "type": "string", "minLength": 1, "description": "Optional chatter topic (an object affordance's `chatter` pool, e.g. \"cooler\"). When set, the exchange plays only on a chat whose topic matches, so an exchange written for one chatter object does not fire at another (e.g. a dropped cake, topic \"cake\"). Omit it to play at any chatter object the pair shares." }, "requireGlobal": { "description": "Only while this global holds: a name (truthy) or { name: value }", "oneOf": [ { "type": "string" }, {"x-id-map": true,  "type": "object" } ] }, "_comment": { "type": "string" } }, "required": ["with", "knot"], "additionalProperties": false } },
         "usePayload": {"x-free-data": true, "properties": { "secret": { "x-serverOnly": true, "x-servedBy": "GET /capture_secrets", "type": "string", "description": "Hardening step 6a-1: a capture secret riding on the NPC's usePayload. Stripped from the bootstrap (Game.strip_capture_secrets!, CAPTURE_SECRET_KEYS includes 'usePayload'); served by GET /capture_secrets once the capture is earned. The rest of usePayload is free data (the resolver's declared-property rule reaches this node; other keys stay free)." }, "rowTag": { "type": "string", "enum": ["password", "pin", "foothold", "finding"], "description": "Sign-ins list tag override (plan 8.7): password or pin on a credential capture, foothold or finding on a foothold capture. Never stored in the record or sent in se_captures; GET /keyring reads it from the stored scenario." }, "rowSource": { "type": "string", "enum": ["phished"], "description": "Sign-ins list source tag override: phished, on a credential capture reached outside social.phishTargets (a dropped QR card). Refused on a foothold capture." } }, "description": "NPC needs system: any JSON value, opaque to the engine and owned by the NPC. A clone rides on every npc_used event this NPC emits." },
         "captureProof": { "type": "array", "minItems": 1, "description": "Capture proofs for this account holder (engine plan section 6): any one holding lets GET /capture_secrets serve the password. A scenario that declares any proof serves a password that opens a sign-in PC only once one holds.", "items": { "type": "object", "description": "One capture proof: { \"planted\": item, \"on\"?: object }, { \"dropped\": item } or { \"session\": pc } (engine plan section 6)", "properties": { "planted": { "type": "string" }, "on": { "type": "string" }, "dropped": { "type": "string" }, "session": { "type": "string" } }, "patternProperties": { "^_": {} }, "additionalProperties": false } },
         "onUse": {
@@ -5298,8 +5306,11 @@
         },
         "passwordHint": { "type": "string" },
         "showHint": { "type": "boolean" },
+        "dustable": { "type": "boolean", "description": "PIN locks only: true lets a fingerprint kit dust this pad (opt-in, default off; set it on the room for a door)." },
+        "dustHint": { "type": "string", "description": "PIN locks only: shown after dusting, for example to say a digit repeats." },
         "showKeyboard": { "type": "boolean" },
         "maxAttempts": { "type": "integer" },
+        "lockoutSeconds": { "type": "integer", "minimum": 1, "description": "Password locks only, opt-in: after maxAttempts wrong guesses the lock stays shut for this many seconds, and the count survives closing and reopening the window (client-side; a page reload resets it)." },
         "postitNote": { "type": "string", "description": "A sticky note shown on the lock screen. On a sign-in PC a writesDown habit on the owner (slice 9.1) can supply one, served by GET /login_accounts; an authored note wins." },
         "showPostit": { "type": "boolean" },
         "hasFingerprint": { "type": "boolean" },
@@ -5319,7 +5330,24 @@
         },
         "fingerprintCandidates": {
           "type": "array",
-          "items": { "type": "string" }
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "description": "A reference card with its pattern class fixed (F26): a decoy in the lift's class forces ridge comparison",
+                "properties": {
+                  "name": { "type": "string" },
+                  "pattern": { "type": "string", "enum": ["loop", "whorl", "arch"] }
+                },
+                "required": ["name"]
+              }
+            ]
+          }
+        },
+        "fingerprintCandidateCount": {
+          "type": "integer", "minimum": 2, "maximum": 4,
+          "description": "How many reference cards the Compare step shows (the lift's owner plus decoys); default from fingerprintDifficulty (easy 2, medium and hard 3)"
         },
         "biometricMatchThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "mac": { "type": "string" },
@@ -5482,6 +5510,8 @@
         "owner": { "oneOf": [ { "type": "string", "minLength": 1, "x-ref": "npc" }, { "type": "array", "items": { "type": "string", "minLength": 1, "x-ref": "npc" }, "minItems": 1 } ], "description": "Format 2 (hardening step 8b; was screenOwner, phoneOwner, affordance.owners on objects and phoneOf, leftBehindBy on items): who owns this object or item, an NPC id. A single-owner kind (a workstation, a desk phone, a Friendface phone, a left-behind item) takes one id; a private object may take a list (several people use it). No owner on a Friendface phone (type 'phone_friendface') means the player's own phone. needsHome no longer sets an owner: write it here." },
         "private": { "type": "boolean", "description": "Format 2 (hardening step 8b; was affordance.private): NPC needs system: only its owners' needs use this object (satisfies); other NPCs may still deliver to it (accepts). Owners = owner, else the NPC whose needsHome is this object. The player is unaffected." },
         "deskPhone": { "type": "boolean", "description": "Format 2 (hardening step 8b; was the presence of phoneOwner): marks this object a desk phone (OFFICE_LIFE_PLAN 12.5, slice 19). Its owner is its single owner. desk_phone_ring:<id> rings it; the owner idle at its desk answers without moving; away it misses the call (desk_phone_unanswered:<id>). Needs a standing affordance, takeable false, within 1.5 tiles of the owner's post, and useFrom to the side of the owner's chair." },
+        "flagNote": { "type": "string", "description": "vm_launcher objects: a line shown in the launcher under the VM steps (minigames/vm-launcher), for where this room's flag payoff is (m03 Training Lab Terminal)." },
+        "decodeWatch": { "type": "array", "items": { "type": "object", "properties": { "contains": { "type": "string" }, "setVariable": { "type": "string" }, "_comment": { "type": "string" } }, "required": ["contains", "setVariable"] }, "description": "CyberChef workstation items: while CyberChef is open, when its output contains `contains` the global `setVariable` is set (utils/crypto-workstation.js decodeWatch). Used to tick a decode task on the decode, not on opening the file." },
         "workstation": { "type": "boolean", "description": "Marks this object as a workstation whose screen locks/unlocks when its owner leaves (systems/workstation-state.js). Implied by locksScreenOnLeave or lockChance. Owner = owner, else the NPC whose needsHome is this object's id." },
         "locksScreenOnLeave": { "type": "boolean", "description": "Workstation: screen locks when the owner leaves (default true)." },
         "lockChance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Workstation: overrides locksScreenOnLeave; chance 0..1 that the screen locks on each leave, rolled from the needs system's seeded per-NPC RNG so a fixed seed is deterministic." },

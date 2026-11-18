@@ -192,3 +192,13 @@
 
 
 
+
+/* A key-type flag the station recognised but passes on to another device */
+.flag-history-item.flag-recognised {
+    background: rgba(0, 136, 255, 0.08);
+    border-left-color: #0088ff;
+}
+.flag-recognised-tag {
+    color: #0088ff;
+    font-size: 13px;
+}

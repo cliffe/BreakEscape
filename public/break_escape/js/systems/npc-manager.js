@@ -146,6 +146,11 @@ export default class NPCManager {
   // behind another checks this often whether it can open (_queueScriptedConversation)
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
+  static HELD_SAVE_MAX = 8;   // saved fight holds (saveHeldConversations)
+  // A saved hold of a repeatable mapping older than this is dropped on resume: a reload long after
+  // the fight should not open a conversation out of nowhere, and the beat will come round again.
+  // A onceOnly hold has no later chance, so it is kept and its condition is re-read on resume instead.
+  static HELD_SAVE_MAX_AGE_MS = 10 * 60 * 1000;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
   static PHONE_DELIVERY_TAGS_MAX = 5;
@@ -247,6 +252,7 @@ export default class NPCManager {
     this._delayedBarkSeq = 0;          // key counter for barkDelay timers kept in _delayedMappings
     this._scriptedCall = null;        // the scripted conversation starting or open: { npcId, minigame }
     this._scriptedCallQueue = [];     // scripted conversations that arrived while one was starting or open
+    this._heldRecordsPending = this._readHeldRecords().length > 0;   // saved fight holds not yet read back (resumeHeldConversations)
     this._scriptedCallTimer = null;   // retry timer for the queue
     this._restoredTimedPending = new Map(); // id -> { triggerTime } for NPC-level texts not yet re-registered
     this._restoredTimedDelivered = new Set(); // ids of NPC-level texts delivered before a reload
@@ -377,6 +383,11 @@ export default class NPCManager {
     if (existingEntry) this._removeEventMappingListeners(realId);
     if (entry.eventMappings && this.eventDispatcher) {
       this._setupEventMappings(realId, entry.eventMappings);
+      // A held conversation saved before a reload whose NPC registered after game_loaded
+      if (this._heldLeft?.length && this._heldLeft.some(r => r.npcId === realId)) {
+        this._heldLeft = this._heldLeft.filter(r => !(r.npcId === realId && this._resumeHeldRecord(r)));
+        this.saveHeldConversations();
+      }
     } else if (entry.eventMappings && !this.eventDispatcher) {
       console.error(`❌ ${realId} has eventMappings but eventDispatcher is not available!`);
     }
@@ -963,6 +974,17 @@ export default class NPCManager {
    */
   _queueScriptedConversation(conv) {
     const framework = window.MinigameFramework;
+    // Mid-fight a conversation does not take over the screen: it waits in the queue until the
+    // fight is over (_combatHold). An auto-challenge is stale by then, so it is dropped (it
+    // re-fires on the next sighting). The player's own phone never comes through here.
+    if (this._combatHold(conv)) {
+      if (conv.dropIfBusy || conv.dropInFight) {
+        this._dropForCombat(conv);
+        return;
+      }
+      this._deferForCombat(conv);
+      return;
+    }
     // A task or objective toast raised a moment ago (the room-entry task whose event
     // started this) was showing when the conversation opened, got pulled back and showed
     // again on close. Pull it back now, before it is visible, and hold toasts until the
@@ -994,6 +1016,18 @@ export default class NPCManager {
         // minigame opened AFTER, during the delay.) An auto-challenge is DROPPED — it is
         // stale and re-fires on the next sighting; a scripted conversation is DEFERRED
         // to the queue so it is not lost.
+        // A fight started during the start delay: wait for it to end
+        if (this._combatHold(conv)) {
+          this._scriptedCall = null;
+          if (conv.dropIfBusy || conv.dropInFight) {
+            this._dropForCombat(conv);
+            if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
+            return;
+          }
+          // It held the slot, so it keeps its place at the head of the line (R1 m2)
+          this._deferForCombat(conv, { front: true });
+          return;
+        }
         if (window.MinigameFramework?.currentMinigame) {
           // interrupt (an opt-in video-call mapping, m02 R4 M1): the call is meant to
           // cut in before the player acts in the minigame they just opened (Ghost's
@@ -1104,6 +1138,221 @@ export default class NPCManager {
     this._openScriptedConversation({ ...conv, beforeOpen: null });
   }
 
+  /**
+   * True while the player is in a fight (player-damage-interrupt.js playerInCombat). A
+   * conversation marked combatExempt (an NPC's own knock-out scene: the fight it ended) is never
+   * held by it and keeps the cut-in it had before the hold existed.
+   */
+  _combatHold(conv = null) {
+    if (conv?.combatExempt) return false;
+    try { return !!window.playerInCombat?.(); } catch (e) { return false; }
+  }
+
+  /** An auto-challenge met a fight: dropped, and its sighting is re-armed so it fires after the fight. */
+  _dropForCombat(conv) {
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the player is in combat (auto-challenge)`);
+    try { conv.undoTrigger?.(); } catch (e) { /* cosmetic */ }
+    try { window.sightChallengeWatcher?.rearm?.(conv.npcId); } catch (e) { /* cosmetic */ }
+  }
+
+  /**
+   * "Name is calling", "Name sent a message" or "Name wants to talk to you", once per held
+   * contact. kind: 'call' | 'message' | 'talk'.
+   */
+  _toastHeld(npcId, kind) {
+    const name = this.getNPC(npcId)?.displayName || npcId;
+    const what = kind === 'call' ? 'is calling'
+      : kind === 'message' ? 'sent a message' : 'wants to talk to you';
+    try { window.showNotification?.(`${name} ${what}. It opens when the fight is over.`, 'info', 'Incoming', 4000); } catch (e) { /* cosmetic */ }
+  }
+
+  /**
+   * Hold a scripted conversation until the fight is over. It joins the queue (the pump opens it
+   * once no fight, minigame or other scripted scene is up) and the player is told once, by a
+   * toast, that the contact is trying to reach them. A conversation carries its story in the
+   * minigame, so there is no thread row to badge before it opens. A second identical one (same
+   * contact, scene and trigger) queued during the same fight is dropped. Before it opens, its
+   * recheck (conv.recheck, from the event mapping) runs again: the NPC may have been knocked out
+   * or hidden, or the mapping's condition may be false by now, in the long wait.
+   * @param {object} conv
+   * @param {{ front?: boolean }} [opts] front: it goes to the head (it held the slot already)
+   */
+  _deferForCombat(conv, opts = {}) {
+    if (this._scriptedCallQueue.some(q => q !== conv && q.combatHeld && q.npcId === conv.npcId &&
+        q.sceneType === conv.sceneType && q.label === conv.label)) {
+      console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the same one is already waiting out the fight`);
+      return;
+    }
+    console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) deferred: the player is in combat`);
+    conv.combatHeld = true;
+    if (typeof conv.recheck === 'function' && !conv.recheckWrapped) {
+      const inner = conv.beforeOpen;
+      conv.recheckWrapped = true;
+      conv.beforeOpen = () => {
+        let valid = true;
+        try { valid = conv.recheck() !== false; } catch (e) { valid = true; }
+        if (!valid) {
+          console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped at open: no longer valid after the wait`);
+          return false;
+        }
+        return inner ? inner() : undefined;
+      };
+    }
+    if (opts.front) this._scriptedCallQueue.unshift(conv); else this._scriptedCallQueue.push(conv);
+    let voiced = false;
+    try { voiced = conv.sceneType === 'phone-chat' && conv.params?.()?.voiced === true; } catch (e) { /* cosmetic */ }
+    this._toastHeld(conv.npcId, voiced ? 'call' : (conv.sceneType === 'phone-chat' ? 'message' : 'talk'));
+    this.saveHeldConversations();
+    this._pumpScriptedCallQueue();
+  }
+
+  /**
+   * Conversations held by a fight (text threads and person chats; voiced calls go to the ringer,
+   * which saves them as pending calls) are saved as a short list of mapping keys, so a reload
+   * after a KO and Restart brings them back. Browser-local, at most HELD_SAVE_MAX records of
+   * { npcId, eventPattern, handlerIndex, sceneType }, nothing in the synced player state. The
+   * list is rewritten from the live queue, so a delivered or dropped conversation leaves it.
+   */
+  _heldStoreKey() {
+    const gameId = window.breakEscapeConfig?.gameId;
+    return gameId ? `be_held_conversations:${gameId}` : null;
+  }
+
+  _readHeldRecords() {
+    try {
+      const key = this._heldStoreKey();
+      const raw = key ? window.localStorage?.getItem(key) : null;
+      const list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list.filter(r => r && typeof r.npcId === 'string' &&
+        typeof r.eventPattern === 'string' && Number.isInteger(r.handlerIndex) &&
+        !this._heldRecordTooOld(r)).slice(0, NPCManager.HELD_SAVE_MAX) : [];
+    } catch (e) { return []; }
+  }
+
+  saveHeldConversations() {
+    // Until the saved list has been read back after a load, the live queue must not overwrite it
+    if (this._heldRecordsPending) return;
+    try {
+      const key = this._heldStoreKey();
+      if (!key || !window.localStorage) return;
+      const list = this._scriptedCallQueue
+        .filter(q => q.combatHeld && q.heldKey)
+        .map(q => ({ ...q.heldKey, sceneType: q.sceneType }))
+        .concat((this._heldLeft || []).filter(r => !this._heldRecordTooOld(r)))
+        .slice(0, NPCManager.HELD_SAVE_MAX);
+      if (list.length) window.localStorage.setItem(key, JSON.stringify(list));
+      else window.localStorage.removeItem(key);
+    } catch (e) { /* storage unavailable: the hold stays in memory only */ }
+  }
+
+  /**
+   * On game_loaded: queue again the conversations a reload dropped from a fight's hold. Each is
+   * rebuilt from its mapping without the mapping's side effects (they ran before the reload).
+   * A record whose NPC is not registered yet stays saved and is tried when that NPC registers.
+   */
+  resumeHeldConversations() {
+    const records = this._readHeldRecords();
+    this._heldRecordsPending = false;
+    this._heldLeft = [];
+    for (const rec of records) {
+      if (!this._resumeHeldRecord(rec)) this._heldLeft.push(rec);
+    }
+    this.saveHeldConversations();
+  }
+
+  // `once` is whether the record's mapping is onceOnly: as saved by this build, or from the mapping
+  // when it is known (an older record has neither, and counts as repeatable)
+  _heldRecordTooOld(rec, once = rec.once === true) {
+    return !once && Number.isFinite(rec.at) && Date.now() - rec.at > NPCManager.HELD_SAVE_MAX_AGE_MS;
+  }
+
+  /** True when the record was handled (queued, or dropped as no longer rebuildable). */
+  _resumeHeldRecord(rec) {
+    const npc = this.npcs.get(rec.npcId);
+    if (!npc) return this._heldRecordTooOld(rec);   // true: too old, handled (dropped); not registered yet (its room has not loaded): kept, tried when it registers
+    const mapping = this._normalizeEventMappings(npc.eventMappings)[rec.handlerIndex];
+    if (!mapping || mapping.eventPattern !== rec.eventPattern) return true;
+    const config = this._buildMappingConfig(mapping, rec.handlerIndex);
+    if (this._heldRecordTooOld(rec, !!config.once)) {
+      console.log(`📵 saved hold for ${rec.npcId} (${rec.eventPattern}) dropped: too old`);
+      return true;
+    }
+    // R3 m3: the mapping's condition is read again now, less the terms on its own setGlobal keys (it
+    // wrote those before the reload). A story hold whose condition still holds survives a long break.
+    const rw = this._heldCallRingWhile(config);
+    if (rw && !this.ringConditionHolds(rw)) {
+      console.log(`📵 saved hold for ${rec.npcId} (${rec.eventPattern}) dropped on resume: its condition no longer holds`);
+      return true;
+    }
+    const eventKey = `${rec.npcId}:${rec.eventPattern}:${rec.handlerIndex}`;
+    const triggered = this.triggeredEvents.get(eventKey) || { count: 0, lastTime: 0 };
+    triggered.count++;
+    triggered.lastTime = Date.now();
+    this.triggeredEvents.set(eventKey, triggered);
+    const persistOnClose = (config.once || config.maxTriggers)
+      ? () => this._persistTriggerOnClose(rec.npcId, eventKey) : () => {};
+    const ownKOEvent = rec.eventPattern.startsWith('npc_ko');
+    console.log(`📵 resuming ${rec.sceneType} for ${rec.npcId} (${rec.eventPattern}) held by a fight before the reload`);
+    this._openMappingConversation(rec.npcId, npc, rec.eventPattern, config, { _resumeHeld: true },
+      { ownKOEvent, wasHostile: false, ownWrites: {}, isRing: false, ringSetGlobalRestore: null, persistOnClose, eventKey, resumed: true, heldAt: rec.at });
+    return true;
+  }
+
+  /**
+   * The `ringWhile` for a voiced call held by a fight: the mapping's condition (a string of
+   * `globalVars.*` terms joined by &&), less any term that reads a key the mapping itself wrote.
+   * The queue path (_heldMappingStillValid) does the same job another way, by putting the mapping's
+   * own writes back to their previous values while it reads the condition. Neither follows a cascade
+   * (the mapping sets X, another mapping sets Y from X, the condition reads Y).
+   */
+  _heldCallRingWhile(config) {
+    if (typeof config.condition !== 'string' || !config.condition.trim() || config.condition.includes('||')) return null;
+    const own = Object.keys(config.setGlobal || {});
+    // Terms that read a key the mapping itself wrote are left out: its latch is not a reason to drop it
+    const terms = config.condition.split('&&').map(t => t.trim()).filter(Boolean)
+      .filter(t => !own.some(k => new RegExp(`globalVars\\.${k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w$])`).test(t)));
+    return terms.length ? terms.join(' && ') : null;
+  }
+
+  /**
+   * The re-check a combat-held mapping conversation runs when it finally opens. False when the
+   * NPC is gone, hidden by a mapping, knocked out (except for its own knock-out event), or
+   * newly hostile, or when the mapping's condition no longer holds. The condition is read with
+   * the mapping's own setGlobal writes put back for the moment (it has already written its
+   * latch, and a condition such as `!globalVars.x` or `x === true` would read its own writes).
+   */
+  _heldMappingStillValid(npcId, eventPattern, config, eventData, ctx = {}) {
+    const npc = this.getNPC(npcId);
+    if (!npc || this.npcs?.has?.(npcId) === false) return false;
+    if (this.isHiddenByMapping?.(npcId)) return false;
+    const hs = window.npcHostileSystem;
+    if (npc.npcType === 'person' && !ctx.ownKO) {
+      if (hs?.isNPCKO?.(npcId)) return false;
+      if (hs?.isNPCHostile?.(npcId) && !ctx.wasHostile) return false;
+    }
+    if (config.condition && !ctx.skipCondition) {
+      const globals = window.gameState?.globalVariables;
+      const own = ctx.ownWrites || {};
+      const saved = [];
+      try {
+        if (globals) {
+          for (const [k, w] of Object.entries(own)) {
+            if (globals[k] === w.wrote) { saved.push([k, globals[k]]); globals[k] = w.prev; }
+          }
+        }
+        const ok = typeof config.condition === 'function'
+          ? !!config.condition(eventData, npc)
+          : !!safeEvaluateCondition(config.condition, eventData);
+        if (!ok) return false;
+      } catch (e) {
+        return true;
+      } finally {
+        if (globals) for (const [k, v] of saved) globals[k] = v;
+      }
+    }
+    return true;
+  }
+
   // A queued conversation opens when none is starting or open, no minigame is open
   // (the player may have gone from the call to the notepad and back) and the player is
   // not knocked out (startMinigame would refuse it, and it would be lost). One marked
@@ -1115,10 +1364,21 @@ export default class NPCManager {
       this._scriptedCallTimer = null;
       if (!this._scriptedCallQueue.length) return;
       const framework = window.MinigameFramework;
-      const head = this._scriptedCallQueue[0];
+      // A fight holds the line, but a conversation exempt from it (an NPC's own knock-out scene)
+      // goes ahead of the held ones; the held ones keep their order
+      let at = 0;
+      if (this._combatHold()) {
+        at = this._scriptedCallQueue.findIndex(q => q.combatExempt);
+        if (at < 0) {
+          this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
+          return;
+        }
+      }
+      const head = this._scriptedCallQueue[at];
       if (framework && !this._scriptedCallBusy() && framework.currentMinigame &&
           head.interrupt && !head.dropIfBusy && !window.playerIsKnockedOut?.()) {
-        this._scriptedCallQueue.shift();
+        this._scriptedCallQueue.splice(at, 1);
+        this.saveHeldConversations();
         this._interruptAndOpen(head, 'the open minigame (queued call)');
         return;
       }
@@ -1127,7 +1387,8 @@ export default class NPCManager {
         this._scriptedCallTimer = setTimeout(tick, NPCManager.SCRIPTED_CALL_RETRY_MS);
         return;
       }
-      const conv = this._scriptedCallQueue.shift();
+      const conv = this._scriptedCallQueue.splice(at, 1)[0];
+      this.saveHeldConversations();
       this._scriptedCall = { npcId: conv.npcId, minigame: null };
       this._openScriptedConversation(conv);
     };
@@ -1466,7 +1727,8 @@ export default class NPCManager {
 
     console.log(`✅ Event ${eventPattern} conditions passed, triggering NPC reaction`);
     
-    // Update triggered tracking
+    // Update triggered tracking (prevLastTime: for undoing it if a fight drops the challenge)
+    const prevLastTime = triggered.lastTime;
     triggered.count++;
     triggered.lastTime = now;
     // Handlers limited by onceOnly / maxTriggers are saved to the server
@@ -1484,8 +1746,17 @@ export default class NPCManager {
     const opensMinigame = !!config.openMinigame && !opensConversation;
     // A ring mapping's trigger is saved when the call is offered, not when it closes: from
     // then the beat lives in the ringer (plan 2.7). This is the one place a trigger is persisted.
-    const isRing = !!config.ring && config.conversationMode === 'phone-chat' && npc.npcType === 'phone'
+    const ringerOffers = config.conversationMode === 'phone-chat' && npc.npcType === 'phone'
       && typeof window.phoneRinger?.offer === 'function';
+    // This NPC's own knock-out event: its scene is the fight's result and is never held by it
+    const ownKOEvent = eventPattern.startsWith('npc_ko') &&
+      (eventPattern === `npc_ko:${npcId}` || eventData?.npcId === npcId);
+    // A voiced call that meets a fight goes to the ringer: it holds the offer while the fight
+    // lasts and saves it as a pending call, so a reload (a KO and Restart) still brings it back.
+    // The queue holds only what a reload may lose (text threads, person chats).
+    const heldAsCall = ringerOffers && !config.ring && config.voiced === true && !ownKOEvent &&
+      this._combatHold();
+    const isRing = (!!config.ring && ringerOffers) || heldAsCall;
     if ((config.once || config.maxTriggers) && ((!opensConversation && !opensMinigame) || isRing)) triggered.persist = true;
     this.triggeredEvents.set(eventKey, triggered);
     const persistOnClose = (config.once || config.maxTriggers) && opensConversation && !isRing
@@ -1497,12 +1768,15 @@ export default class NPCManager {
     // own latch does not block its twin (or the same trigger later) for a ring that never happened.
     // Keep what the mapping wrote too, so the restore can skip a key something else has since changed.
     let ringSetGlobalRestore = null;
+    const ownWrites = {};   // what this mapping wrote, for the held conversation's re-check
+    const wasHostile = !!window.npcHostileSystem?.isNPCHostile?.(npcId);
     if (config.setGlobal && window.gameState?.globalVariables) {
       if (isRing) ringSetGlobalRestore = {};
       let globalChanged = false;
       Object.entries(config.setGlobal).forEach(([varName, value]) => {
         const oldValue = window.gameState.globalVariables[varName];
         if (oldValue !== value) globalChanged = true;
+        ownWrites[varName] = { wrote: value, prev: oldValue };
         if (isRing) ringSetGlobalRestore[varName] = { wrote: value, prev: oldValue };
         window.gameState.globalVariables[varName] = value;
         console.log(`🌐 Event setGlobal: ${varName} = ${value}`);
@@ -1521,6 +1795,17 @@ export default class NPCManager {
       // changed sends nothing.
       if (globalChanged) window.stateSync?.requestSoon?.();
     }
+
+    // A reconciliation re-announce (eventData._reconcile, from
+    // ObjectivesManager#reconcileCompletedFlagTasks on game_loaded) only needs
+    // to catch a story global up to a flag task that completed server-side but
+    // whose live objective_task_completed event was missed. It must NOT replay
+    // the mapping's player-facing side effects (a call, a timed message, a
+    // bark, a minigame): those had their one live moment. setGlobal above has
+    // run — guarded on !globalVars.<g> in the scenario, so idempotent, and its
+    // global_variable_changed emit drives the normal (non-reconcile) cascade
+    // that opens the door. Stop here, before completeTask and the rest.
+    if (eventData && eventData._reconcile) return;
 
     // Complete tasks directly (bypasses broken ink knot jumping)
     // Sequenced (not Promise.all/forEach) so each task's server round-trip
@@ -1753,17 +2038,107 @@ export default class NPCManager {
       fullConfig: config
     });
     
+    // The conversation a mapping opens, if it opens one (see _openMappingConversation)
+    if (this._openMappingConversation(npcId, npc, eventPattern, config, eventData,
+        { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey,
+          prevLastTime, heldAsCall })) return;
+
+
+    // If bark text is provided, show it directly
+    if (this.barkSystem && (config.bark || config.message)) {
+      const barkText = config.bark || config.message;
+      // A delayed bark is not an answer in view: the sender keeps its own notification
+      const delayed = Number(config.barkDelay) > 0;
+      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
+      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
+
+      const fireBark = (stillValid) => {
+        // Add bark message to conversation history (marked as bark)
+        this.addMessage(npcId, 'npc', barkText, {
+          eventPattern,
+          knot: config.knot,
+          isBark: true  // Flag this as a bark, not full conversation
+        });
+
+        console.log(`💬 Showing bark with direct message: ${barkText}`);
+
+        this.barkSystem.showBark({
+          npcId: npc.id,
+          npcName: npc.displayName,
+          message: barkText,
+          avatar: npc.avatar,
+          inkStoryPath: npc.storyPath,
+          startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
+          phoneId: npc.phoneId,
+          useTTS: npc.npcType === 'person' && !!npc.voice,
+          stillValid,
+          eventPattern,
+          followUp: answered?.followUp || null
+        });
+      };
+
+      this._delayBark(npcId, config.barkDelay, fireBark, this._barkStillValid(npcId, config, eventData));
+    }
+    // Otherwise, if we have a knot, load the Ink story and get the text
+    else if (this.barkSystem && config.knot && npc.storyPath) {
+      console.log(`📖 Loading Ink story from knot: ${config.knot}`);
+
+      // Load the Ink story and navigate to the knot. The event is marked answered only once the
+      // knot has given text, and only while this call has not yet returned (story already
+      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
+      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
+      const stillValid = this._barkStillValid(npcId, config, eventData);
+      let inTime = true;
+      const onText = Number(config.barkDelay) > 0
+        ? null
+        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
+      this._delayBark(npcId, config.barkDelay,
+        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
+      inTime = false;
+    }
+    
+    console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
+  }
+  
+
+  /**
+   * The conversation an event mapping opens (person-chat, video-call or phone-chat), queued for
+   * the scripted-conversation line. Returns true when the mapping was handled here (the caller
+   * stops), false when it falls through to the bark. Also the entry for a reload: a conversation
+   * held by a fight is re-derived from its mapping by resumeHeldConversations, with ctx.resumed.
+   */
+  _openMappingConversation(npcId, npc, eventPattern, config, eventData, ctx) {
+    const { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey, heldAsCall } = ctx;
+    // A challenge dropped by a fight never happened: give back the trigger count the event took, so
+    // an onceOnly or maxTriggers mapping can fire when the sighting is re-armed (R2 m2). Only the
+    // trigger count is given back, not the mapping's setGlobal: a challenge mapping must not latch
+    // itself in setGlobal and read that latch in its condition, or it would not fire again.
+    const undoTrigger = () => {
+      const t = this.triggeredEvents.get(eventKey);
+      if (!t || !(t.count > 0)) return;
+      t.count--;
+      t.lastTime = ctx.prevLastTime || 0;
+    };
     // A knocked-out NPC can't hold a conversation or play a cutscene. The rest of
     // the handler (setGlobal, completeTask, timed messages, ...) has already run
     // above, so missions that rely on KO handlers keep working. The NPC's own KO
     // event is exempt: m01 Derek and m05 Torres open their KO scene from it.
+    // What a conversation held by a fight carries (_deferForCombat): the re-check at open, and the
+    // exemption for the NPC's own knock-out scene
+    const heldCtx = {
+      combatExempt: ownKOEvent,
+      // Names the mapping, so a reload can rebuild this conversation (saveHeldConversations)
+      // `at` is when it was first held: a record this old after a reload is dropped (R2 m3)
+      heldKey: isRing ? null : { npcId, eventPattern, handlerIndex: config.handlerIndex, at: ctx.heldAt || Date.now(), once: !!config.once },
+      undoTrigger,
+      recheck: () => this._heldMappingStillValid(npcId, eventPattern, config, eventData,
+        { ownKO: ownKOEvent, wasHostile, ownWrites, skipCondition: ctx.resumed === true })
+    };
     if ((config.conversationMode === 'person-chat' || config.conversationMode === 'video-call') &&
         npc.npcType === 'person') {
-      const ownKOEvent = eventPattern.startsWith('npc_ko') &&
-        (eventPattern === `npc_ko:${npcId}` || eventData?.npcId === npcId);
       if (!ownKOEvent && window.npcHostileSystem?.isNPCKO?.(npcId)) {
         console.log(`💤 ${npcId} is knocked out - skipping ${config.conversationMode} for ${eventPattern}`);
-        return;
+        return true;
       }
     }
 
@@ -1797,7 +2172,7 @@ export default class NPCManager {
             if (jumpSuccess) {
               persistOnClose();
               console.log(`✅ Successfully jumped to knot ${config.knot} in active conversation`);
-              return;  // Success - exit early
+              return true;  // Success - exit early
             } else {
               console.warn(`⚠️ Failed to jump to knot, falling back to new conversation`);
             }
@@ -1835,12 +2210,17 @@ export default class NPCManager {
         // the walk back). They are dropped if the player is busy when they would open: the
         // NPC re-challenges on the next sighting. Scripted story conversations keep deferring
         // (queued, never lost — m10 R3 / F25).
+        // A fight drops a `player_spotted` challenge too, but outside a fight it queues as before
+        // (dropping it there would need a re-arm that loops while the player stays busy).
         const dropIfBusy = /_in_view/.test(eventPattern);
+        const dropInFight = dropIfBusy || /^player_spotted/.test(eventPattern);
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
           dropIfBusy,
+          dropInFight,
+          ...heldCtx,
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
           beforeOpen: () => {
             console.log(`✅ Starting person-chat minigame for ${npcId}`);
@@ -1899,7 +2279,7 @@ export default class NPCManager {
           }
         });
 
-        return;  // Exit early - person-chat will start after delay
+        return true;  // Exit early - person-chat will start after delay
       } else {
         console.warn(`⚠️ MinigameFramework not available for person-chat`);
       }
@@ -1915,7 +2295,7 @@ export default class NPCManager {
         // alone (the queue below would close it first). Same check as a timedConversation.
         if (config.skipIfGlobal && this._skipGlobalSet(config.skipIfGlobal)) {
           console.log(`📵 video call for ${npcId} (${eventPattern}) skipped: ${config.skipIfGlobal} is set`);
-          return;
+          return true;
         }
 
         // Closes whatever is open and opens 500 ms later, or waits behind another
@@ -1926,6 +2306,7 @@ export default class NPCManager {
           label: eventPattern,
           sceneType: 'person-chat',
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
+          ...heldCtx,
           interrupt: config.interrupt === true,
           // skipIfGlobal: a call that waited (behind an open minigame or another call) is
           // dropped if the global became set meanwhile (m02 P9).
@@ -1951,7 +2332,7 @@ export default class NPCManager {
           }
         });
 
-        return;
+        return true;
       } else {
         console.warn(`⚠️ MinigameFramework not available for video-call`);
       }
@@ -1968,19 +2349,28 @@ export default class NPCManager {
           const outcome = window.phoneRinger.offer({
             npcId: npc.id,
             knot: knotToUse,
-            ring: config.ring,
+            // A voiced call held by a fight rings with the mapping's condition as its ringWhile (R2-M1),
+            // so a condition that turned false during the fight drops it quietly; an unforced one
+            // rings until answered, as the direct call it replaces never timed out to a missed call.
+            // A forced one stays forced (disableClose below) and answers itself; its condition is read
+            // once, as it leaves the hold queue to ring (recheckOnStart), and is exempt after that.
+            ring: heldAsCall
+              ? { ringWhile: this._heldCallRingWhile(config), ...(config.disableClose ? {} : { untilAnswered: true }) }
+              : (config.ring || true),
+            recheckOnStart: !!(heldAsCall && config.disableClose),
             disableClose: config.disableClose || false,
             resume: config.resume === true,
             callLabel: config.callLabel || null,
             // The opt-in `ring.ringWhile` (normalised in the ringer adapter) is re-checked while the
             // call is queued or ringing. The mapping's trigger `condition` is NOT re-checked (M1 R4):
-            // a trigger-time guard never silently drops a call.
+            // a trigger-time guard never silently drops a call. The exception is a call held by a
+            // fight (heldAsCall above), which has waited long enough for its condition to go stale.
             // R1 m2: the pre-offer values of the mapping's own setGlobal keys. A quiet ringWhile drop
             // puts them back, so a dropped ring leaves its latch where a twin can still ring.
             ringSetGlobalRestore
           });
           console.log(`[NPCManager] Event '${eventPattern}' for NPC '${npcId}' → ring offer: ${outcome}`);
-          return;
+          return true;
         }
 
         // The params are built when the call opens: a call queued behind another reads
@@ -1988,6 +2378,7 @@ export default class NPCManager {
         this._queueScriptedPhoneCall({
           npcId: npc.id,
           eventPattern,
+          ...heldCtx,
           params: () => ({
             npcId: npc.id,
             phoneId: npc.phoneId || 'player_phone',
@@ -2007,68 +2398,14 @@ export default class NPCManager {
           }
         });
 
-        return;
+        return true;
       } else {
         console.warn(`⚠️ MinigameFramework not available for phone-chat`);
       }
     }
-
-    // If bark text is provided, show it directly
-    if (this.barkSystem && (config.bark || config.message)) {
-      const barkText = config.bark || config.message;
-      // A delayed bark is not an answer in view: the sender keeps its own notification
-      const delayed = Number(config.barkDelay) > 0;
-      const hasText = typeof barkText === 'string' && barkText.trim() !== '';
-      const answered = (!delayed && hasText) ? this._markAnsweredInView(npcId, eventData) : null;
-
-      const fireBark = (stillValid) => {
-        // Add bark message to conversation history (marked as bark)
-        this.addMessage(npcId, 'npc', barkText, {
-          eventPattern,
-          knot: config.knot,
-          isBark: true  // Flag this as a bark, not full conversation
-        });
-
-        console.log(`💬 Showing bark with direct message: ${barkText}`);
-
-        this.barkSystem.showBark({
-          npcId: npc.id,
-          npcName: npc.displayName,
-          message: barkText,
-          avatar: npc.avatar,
-          inkStoryPath: npc.storyPath,
-          startKnot: config.knot || null,   // none: a click reopens the thread (npc-barks.js)
-          phoneId: npc.phoneId,
-          useTTS: npc.npcType === 'person' && !!npc.voice,
-          stillValid,
-          eventPattern,
-          followUp: answered?.followUp || null
-        });
-      };
-
-      this._delayBark(npcId, config.barkDelay, fireBark, this._barkStillValid(npcId, config, eventData));
-    }
-    // Otherwise, if we have a knot, load the Ink story and get the text
-    else if (this.barkSystem && config.knot && npc.storyPath) {
-      console.log(`📖 Loading Ink story from knot: ${config.knot}`);
-
-      // Load the Ink story and navigate to the knot. The event is marked answered only once the
-      // knot has given text, and only while this call has not yet returned (story already
-      // loaded): marked any later, the sender has already shown its own notification (R2 m4).
-      // A delayed bark never marks it (with no delay _delayBark shows at once, in time).
-      const stillValid = this._barkStillValid(npcId, config, eventData);
-      let inTime = true;
-      const onText = Number(config.barkDelay) > 0
-        ? null
-        : () => (inTime ? this._markAnsweredInView(npcId, eventData) : null);
-      this._delayBark(npcId, config.barkDelay,
-        (valid) => this._showBarkFromKnot(npcId, npc, config.knot, eventPattern, valid, onText), stillValid);
-      inTime = false;
-    }
-    
-    console.log(`[NPCManager] Event '${eventPattern}' triggered for NPC '${npcId}' → knot '${config.knot}'`);
+    return false;
   }
-  
+
   // Load Ink story, navigate to knot, and show the text as a bark
   async _showBarkFromKnot(npcId, npc, knotName, eventPattern, stillValid, onText = null) {
     try {
@@ -3011,6 +3348,7 @@ export default class NPCManager {
   resumePendingCalls() {
     this._pendingCallsResumed = true;
     for (const npc of this.npcs.values()) this._resumeCallState(npc);
+    this.resumeHeldConversations();
   }
 
   /** What a reload does for one contact: its saved call slot (row 27), then a thread left inside a call (A5 R1 M1). */

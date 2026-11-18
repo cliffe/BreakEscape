@@ -11,12 +11,14 @@
  *   node playtest-session.js --url <game-url> [--speed fast|human] [--headless]
  *                            [--vw 1400] [--vh 1000]     (or env VW / VH)
  *                            [--storage-state FILE]      (signed-in browser state from tools/video/capture/login.mjs)
+ *                            [--throttle-fps N]          (headless physics-timed proofs: run the loop at N steps/s
+ *                                                         via window.__test.throttleFps; reply carries before/after)
  *                            [--hacktivity-dir PATH] [--game-id ID]   (VM steps; or env HACKTIVITY_DIR)
  *                            [--capture-responses FILE]  (one line per JSON response from the game server,
  *                                                         for tools/playtest/access-leak-check.rb; see response-capture.js)
  *
  * Commands (one JSON object per line):
- *   {"cmd":"bootstrap","tutorial":"decline","resume":"new"}   (stops at an open briefing: briefingPending:true,
+ *   {"cmd":"bootstrap","tutorial":"decline","resume":"resume"}   (stops at an open briefing: briefingPending:true,
  *                                            settled:false; add "autoBrief":true to auto-drive it)
  *   {"cmd":"converse","id":"npc","choices":["^Yes"]}   (takes only named options; stops at an unnamed
  *                                            choice with ok:false stopped-at-choice; "explore":true takes
@@ -45,6 +47,8 @@
  *   {"cmd":"mg","action":"clickText","args":["Continue"]}
  *   {"cmd":"mg","action":"clickCanvas","args":[420,300]}   (nested Phaser canvas)
  *   {"cmd":"mg","action":"type","args":[0,"Hospital1987",{"submit":true}]}
+ *                                   (a flag station or flag{...} value is echoed as "[redacted N chars]" and masked in the log, drain and getState;
+ *                                    add "showTyped":true to the command to see it)
  *   {"cmd":"select","field":"template","option":"urgent"}    (set a <select>; also mg action "select")
  *   {"cmd":"waitFor","kind":"global","name":"bernie_gave_key"}
  *   {"cmd":"waitFor","kind":"task","id":"sign_in_at_reception"}
@@ -73,9 +77,11 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 const { briefTasks } = require('./brief-tasks');
+const { lockOutcome, padGone, attemptSnapshot, awaitAttempt } = require('./lock-outcome');
+const { redactTyped, isFlagTyped, stateSecrets, scrub } = require('./typed-redact');
 const { createVmSteps } = require('./vm-steps');
 const { completeConfiguration } = require('./config-gate');
-const { nextBootstrapTarget, readBootstrapFacts, converseEnding } = require('./bootstrap-steps');
+const { nextBootstrapTarget, readBootstrapFacts, converseEnding, converseIdleAction } = require('./bootstrap-steps');
 const { installToastCapture } = require('./toast-capture');
 const { createResponseCapture } = require('./response-capture');
 const endingGuard = require('./ending-overlay-guard');
@@ -113,14 +119,20 @@ if (logPath) {
   logStream = fs.createWriteStream(logPath, { flags: 'a' });
 }
 let seq = 0;
+// Flag values the session has seen: configured with --flags, or typed at a flag target.
+// Every line written to the session log, and every reply except a "showTyped" one, has
+// them replaced by a length marker (typed-redact.js scrub), so a flag stays out of the
+// jsonl, `drain` (the bridge logs minigame.type with the text) and `mg getState` on a
+// flag station.
+const secrets = new Set();
 function logLine(dir, obj) {
   if (!logStream) return null;
-  logStream.write(JSON.stringify({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }) + '\n');
+  logStream.write(JSON.stringify(scrub({ seq: ++seq, t: new Date().toISOString(), dir, ...obj }, secrets, true)) + '\n');
   return seq;
 }
 
-function emit(obj) {
-  process.stdout.write(JSON.stringify(obj) + '\n');
+function emit(obj, { raw = false } = {}) {
+  process.stdout.write(JSON.stringify(raw ? obj : scrub(obj, secrets, true)) + '\n');
   logLine('out', obj);
 }
 
@@ -140,6 +152,7 @@ function loadFlags(spec) {
   return [...xml.matchAll(/<flag>([^<]+)<\/flag>/g)].map(m => m[1].trim());
 }
 const FLAGS = loadFlags(argv.flags);
+for (const f of FLAGS) secrets.add(f);
 const flagUses = [];
 
 /** Replace <flag:N> anywhere in a command, recording every substitution. */
@@ -166,7 +179,8 @@ const vmSteps = createVmSteps({
   hacktivityDir: typeof argv['hacktivity-dir'] === 'string' ? argv['hacktivity-dir'] : process.env.HACKTIVITY_DIR,
   gameId: typeof argv['game-id'] === 'string' ? argv['game-id'] : (process.env.PLAYTEST_GAME_ID || undefined),
   command: process.env.PLAYTEST_VM_STEP_CMD ? process.env.PLAYTEST_VM_STEP_CMD.split(' ') : undefined,
-  log: logLine
+  log: logLine,
+  onSecret: (v) => secrets.add(v)
 });
 
 (async () => {
@@ -259,7 +273,12 @@ const vmSteps = createVmSteps({
     await browser.close(); process.exit(1);
   }
   const ready = await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 60000 }));
-  emit({ ok: true, event: 'session-open', ready, speed: argv.speed || 'fast', url: argv.url,
+  let throttle = null;
+  if (argv['throttle-fps'] !== undefined && argv['throttle-fps'] !== true) {
+    throttle = await page.evaluate((n) => window.__test.throttleFps(n), Number(argv['throttle-fps']))
+      .catch((e) => ({ ok: false, reason: String(e && e.message || e) }));
+  }
+  emit({ ok: true, event: 'session-open', ready, throttle, speed: argv.speed || 'fast', url: argv.url,
          flagsConfigured: FLAGS.length, logPath, capturePath: responseCapture ? responseCapture.file : null, pid: process.pid });
 
   const pause = (ms) => ms ? page.waitForTimeout(ms) : Promise.resolve();
@@ -339,7 +358,7 @@ const vmSteps = createVmSteps({
    * until the briefing is done; call bootstrap again afterwards). `autoBrief:true` opts in to the old
    * behaviour (choice 1 at each menu, hubs exit on a repeat).
    */
-  async function bootstrap({ tutorial = 'decline', resume = 'new', maxSteps = 400,
+  async function bootstrap({ tutorial = 'decline', resume = 'resume', maxSteps = 400,
                              settleChecks = 4, settleMs = 900, autoBrief = false, timeoutMs = 90000 } = {}) {
     const trace = [];
     const deadline = Date.now() + timeoutMs;
@@ -528,7 +547,7 @@ const vmSteps = createVmSteps({
           // The overlay's own button can carry an icon or arrow ("▶ Resume"), so match the word,
           // not the whole label; "Resume session" headings are not buttons. Never paginate the
           // OTHER SESSIONS list (Prev/Next): that is what looped for minutes after a reload.
-          const want = { resume: /\bresume\b/i, restart: /\brestart\b/i, new: /new session/i }[resume];
+          const want = { resume: /\bresume\b/i, restart: /\bstart over\b|\brestart\b/i, new: /new session/i }[resume];
           pick = labels.find(l => want.test(l) && !/prev|next|load session/i.test(l));
           if (!pick) {
             throw new Error(`bootstrap: the resume overlay has no "${resume}" button (buttons: ${labels.join(' | ')}). `
@@ -546,7 +565,7 @@ const vmSteps = createVmSteps({
         trace.push(`dismiss "${bl.text.split('\n')[0]}" → "${pick}"`);
         await page.evaluate(l => window.__test.dismissBlockingUi(l), pick);
         await pause(900);
-        // A "New Session" or "Restart" click reloads the page.
+        // A "New Session" or "Start over" click reloads the page.
         await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 }).catch(() => {});
         await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 120000 })).catch(() => {});
         continue;
@@ -678,11 +697,16 @@ const vmSteps = createVmSteps({
           await page.waitForTimeout(250);
         }
       }
-      const r = await page.evaluate(([action, cargs]) => {
+      // Read the target before a type so the echo of a flag value can be redacted.
+      const typeState = c.action === 'type' ? await page.evaluate(() => window.__test.minigame.getState()) : null;
+      let r = await page.evaluate(([action, cargs]) => {
         const m = window.__test.minigame;
         if (typeof m[action] !== 'function') return { ok: false, reason: `no-such-action:${action}` };
         return m[action](...(cargs || []));
       }, [c.action, c.args || []]);
+      if (c.action === 'getState') for (const v of stateSecrets(r)) secrets.add(v);
+      if (c.action === 'type' && isFlagTyped(typeState, (c.args || [])[1])) secrets.add((c.args || [])[1]);
+      if (c.action === 'type') r = redactTyped(r, { state: typeState, text: (c.args || [])[1], show: c.showTyped === true });
       if (['choose', 'chooseIndex', 'chooseMatching', 'continue', 'continue_',
            'pressKey', 'clickText', 'clickControl'].includes(c.action)) {
         // Deterministic: wait for the typewriter to finish and the dialogue to
@@ -748,6 +772,7 @@ const vmSteps = createVmSteps({
       let exhaustedBranches = false;
       let turns = 0;
       let endingAccepted = false;
+      let idleWaits = 0;
       for (; turns < maxTurns; turns++) {
         // The debrief choice can carry #ending_check, which raises the "Before the
         // mission ends" overlay (systems/ending-check.js) when optional objectives
@@ -768,7 +793,16 @@ const vmSteps = createVmSteps({
           const st = window.__test.minigame.getState();
           return st && st.dialogue ? st.dialogue : null;
         });
-        if (!d) break;
+        if (!d) {
+          // No dialogue object while the minigame is still open: a thread mid-typing (see below).
+          const stillOpen = await page.evaluate(() => !!(window.MinigameFramework && window.MinigameFramework.currentMinigame));
+          if (stillOpen && converseIdleAction({ idleWaits }) === 'wait') {
+            idleWaits += 1;
+            await pause(1000);
+            continue;
+          }
+          break;
+        }
         const dialogueKey = [d.speaker, d.text, d.awaitingChoice, d.canContinue, (d.choices || []).length].join('|');
         if (d.text) {
           const line = `${d.speaker || ''}: ${d.text}`.trim();
@@ -813,9 +847,29 @@ const vmSteps = createVmSteps({
           await page.evaluate(n => window.__test.minigame.chooseIndex(n), idx + 1);
         } else if (d.canContinue) {
           await page.evaluate(() => window.__test.minigame.continue());
+        } else if (converseIdleAction({ ended: !!d.ended, idleWaits }) === 'wait') {
+          // A phone-chat or terminal thread types its next message after a delay: for a few
+          // seconds the panel shows no text, no choices and no Continue. That is "not yet",
+          // not "finished" (the m02 press terminal closed after one pick this way, gate m3).
+          idleWaits += 1;
+          const before = dialogueKey;
+          const changed = await page.evaluate((k) => new Promise(resolve => {
+            const t0 = Date.now();
+            const tick = () => {
+              const m = window.MinigameFramework && window.MinigameFramework.currentMinigame;
+              const st = m && window.__test.minigame.getState();
+              const dd = st && st.dialogue;
+              const now = dd ? [dd.speaker, dd.text, dd.awaitingChoice, dd.canContinue, (dd.choices || []).length].join('|') : 'closed';
+              if (now !== k) resolve(true); else if (Date.now() - t0 > 3000) resolve(false); else setTimeout(tick, 100);
+            };
+            tick();
+          }), before).catch(() => false);
+          if (!changed && converseIdleAction({ idleWaits }) === 'stop') break;
+          continue;
         } else {
           break;
         }
+        idleWaits = 0;
         // waitForDialogue resolves at once while the old line still shows a Continue
         // button, so wait for the panel to actually change (or close) before reading
         // again; otherwise the same line is read, and a turn spent, on every pass.
@@ -886,6 +940,10 @@ const vmSteps = createVmSteps({
             + '{"cmd":"converse","choices":["<regex of the option>"]} (no id continues the open dialogue), '
             + 'or {"cmd":"mg","action":"chooseIndex","args":[n]}. Pass "explore":true to let converse '
             + 'pick unvisited options itself (that commits real choices), or "close":true to leave.'
+          : (turns >= maxTurns && !pendingChoice)
+          ? `Hit maxTurns (${maxTurns}) before the conversation ended, and closed it; nothing was lost, it resumes where it stopped. `
+            + 'A monologue costs one turn per line (the m02 Reeves confrontation is about 25 before its first ending choice), '
+            + 'so this is a turn-cap artefact, not a stuck point: run converse again with a larger "maxTurns".'
           : nothingHappened
           ? 'The target opened no dialogue. Some interactables (phones, terminals) '
             + 'need a selection first — interact, inspect the minigame state, and drive it '
@@ -911,7 +969,32 @@ const vmSteps = createVmSteps({
       let lastInsert = null;
       const tried = new Set();
       let st = await read();
-      if (!st) return { ok: false, reason: 'no-active-minigame' };
+      if (padGone(st)) return { ok: false, reason: 'no-active-minigame' };
+      const startId = await page.evaluate(() => window.__test.getState().activeMinigame?.id ?? null);
+      // The last state read while the lock itself was the active minigame: the only
+      // place its verdict (result.success) is visible once the screen moves on.
+      let ownSt = st.id === startId ? st : null;
+      const track = (s2) => { if (s2 && s2.available !== false && s2.id === startId) ownSt = s2; return s2; };
+      // The thing being unlocked (a door sprite or an object). Key locks record no success
+      // in their result, so its real locked state is the fallback verdict (lock-outcome.js).
+      // Read from the open minigame's `lockable`; null when it has none (PIN, password).
+      await page.evaluate(() => {
+        const l = window.MinigameFramework?.currentMinigame?.lockable;
+        window.__ptLockable = l && typeof l === 'object' ? l : null;
+      });
+      const lockableLocked = () => page.evaluate(() => {
+        const l = window.__ptLockable;
+        if (!l) return null;
+        if (l.doorProperties) return !!l.doorProperties.locked;
+        if (l.scenarioData) return !!l.scenarioData.locked;
+        return typeof l.locked === 'boolean' ? l.locked : null;
+      });
+      const startLocked = await lockableLocked();
+      // One submitted code is one attempt, decided by that attempt being answered (the
+      // history grows, or the wrong-code line appears), however slow the server is, up to
+      // ANSWER_TIMEOUT_MS. A wrong one stops the command instead of being re-tapped until
+      // the pad locks out. Returns null when the pad closed, completed or got a result.
+      const awaitAnswer = (base) => awaitAttempt({ base, steps, read: async () => track(await read()), wait: ms => page.waitForTimeout(ms) });
 
       // The lock renders its controls a beat after opening, so the first read
       // can show nothing to act on. Wait for it to become actionable rather
@@ -922,8 +1005,10 @@ const vmSteps = createVmSteps({
           || (st.pinLength !== undefined && c.code) || st.isComplete;
         if (ready) break;
         await page.waitForTimeout(250);
-        st = await read();
+        st = track(await read());
+        if (padGone(st)) break;
       }
+      if (padGone(st)) return { ok: false, reason: 'pad-closed', steps };
       if (st && !((st.keySelection && st.keySelection.length) || st.keyTarget
                   || ((st.fields || []).length && c.code)
                   || (st.pinLength !== undefined && c.code) || st.isComplete)) {
@@ -952,7 +1037,7 @@ const vmSteps = createVmSteps({
           // Insertion plays an animation; the keyhole stays on screen while it
           // runs. Click it once and wait, rather than hammering it.
           const at = `${st.keyTarget.x},${st.keyTarget.y}`;
-          if (at === lastInsert) { await page.waitForTimeout(400); st = await read(); continue; }
+          if (at === lastInsert) { await page.waitForTimeout(400); st = track(await read()); continue; }
           lastInsert = at;
           steps.push(`insert key at ${at}`);
           await page.evaluate(([x, y]) => window.__test.minigame.clickCanvas(x, y),
@@ -960,44 +1045,63 @@ const vmSteps = createVmSteps({
         // Password locks with a real text field: type it and submit.
         } else if ((st.fields || []).length && c.code) {
           steps.push('type code into field 0');
+          const base = attemptSnapshot(track(await read()));
           await page.evaluate(code => window.__test.minigame.type(0, code, { submit: true }), c.code);
+          const wc = await awaitAnswer(base);
+          if (wc) return { ...wc, room: (await page.evaluate(() => window.__test.getState().room)) };
         // Keypad PIN locks have no field at all — they are tapped digit by
         // digit, exactly as a player does it.
         } else if (st.pinLength !== undefined && c.code) {
           steps.push(`tap ${c.code} on the keypad`);
+          const base = attemptSnapshot(track(await read()));
           for (const digit of String(c.code)) {
             await page.evaluate(d => window.__test.minigame.clickText(d, { exact: true }), digit);
             await page.waitForTimeout(120);
           }
           // Some keypads submit on the last digit, others want a confirm key.
-          const st2 = await read();
-          if (st2 && !st2.isComplete) {
+          const st2 = track(await read());
+          if (st2 && st2.available !== false && !st2.isComplete) {
             await page.evaluate(() => window.__test.minigame.clickControl('enter'))
               .catch(() => {});
           }
+          const wc = await awaitAnswer(base);
+          if (wc) return { ...wc, room: (await page.evaluate(() => window.__test.getState().room)) };
         } else {
           break;
         }
 
         await page.waitForTimeout(400);
-        st = await read();
-        if (!st || st.isComplete || st.result) break;
+        st = track(await read());
+        if (!st || st.available === false || st.isComplete || st.result) break;
       }
 
       // Let any success animation finish and the overlay close itself.
-      for (let i = 0; i < 20 && st && !st.isComplete; i++) {
+      for (let i = 0; i < 20 && st && st.available !== false && !st.isComplete; i++) {
         await page.waitForTimeout(250);
-        st = await read();
+        st = track(await read());
         if (!st) break;
       }
-      const after = await page.evaluate(() => {
+      const readAfter = () => page.evaluate(() => {
         const s2 = window.__test.getState();
         return { activeMinigame: s2.activeMinigame, room: s2.room };
       });
+      let after = await readAfter();
+      // The room reads null while a door transition runs; give it a moment to settle.
+      for (let i = 0; i < 8 && !after.room; i++) { await page.waitForTimeout(250); after = await readAfter(); }
+      // No own verdict (key locks): the unlock lands in a callback after the pad closes, so
+      // give the lockable's real state a few seconds to flip before reading it.
+      const noVerdict = !(ownSt && ownSt.result && ownSt.result.success !== undefined);
+      let nowLocked = await lockableLocked();
+      const padStillOpen = !!after.activeMinigame && (after.activeMinigame.id || after.activeMinigame.type || after.activeMinigame) === startId;
+      for (let i = 0; i < 12 && noVerdict && !padStillOpen && startLocked === true && nowLocked === true; i++) {
+        await page.waitForTimeout(400);
+        nowLocked = await lockableLocked();
+      }
       return {
-        ok: !!(st?.isComplete || st?.result === 'success' || !after.activeMinigame),
+        ...lockOutcome({ startId, ownSt, after, lockState: { startLocked, nowLocked },
+          keyInserted: steps.some(x => /^insert key/.test(x)) }),
         steps,
-        finalState: st ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
+        finalState: st && st.available !== false ? { isComplete: st.isComplete, result: st.result, text: st.text } : null,
         activeMinigame: after.activeMinigame,
         room: after.room
       };
@@ -1172,6 +1276,14 @@ const vmSteps = createVmSteps({
     try { cmd = JSON.parse(text); }
     catch (e) { emit({ ok: false, error: 'bad-json', line: text.slice(0, 200) }); continue; }
 
+    // A flag typed at a flag target is registered before anything is logged, so the `in`
+    // record keeps <flag:N> tokens or a length marker, never the value.
+    if (cmd.cmd === 'mg' && cmd.action === 'type' && typeof (cmd.args || [])[1] === 'string') {
+      const typedText = cmd.args[1];
+      let pre = null;
+      try { pre = await page.evaluate(() => window.__test.minigame.getState()); } catch (_) { /* no minigame */ }
+      if (isFlagTyped(pre, typedText) && !/^<flag:\d+>$/.test(typedText)) secrets.add(typedText);
+    }
     const inSeq = logLine('in', { cmd: vmSteps.redact(cmd) });
     if (cmd.cmd === 'quit') { logLine('out', { event: 'quit', commands: seq, flagsUsed: flagUses.length }); break; }
     if (responseCapture) responseCapture.startCommand(inSeq, typeof cmd.cmd === 'string' ? cmd.cmd : null);
@@ -1183,7 +1295,8 @@ const vmSteps = createVmSteps({
 
     try {
       const result = await handler(cmd);
-      emit({ ok: true, cmd: cmd.cmd, result });
+      // "showTyped": true (top level) shows a typed value in this reply only; the log still masks it.
+      emit({ ok: true, cmd: cmd.cmd, result }, { raw: cmd.cmd === 'mg' && cmd.showTyped === true });
     } catch (err) {
       emit({ ok: false, cmd: cmd.cmd, error: String(err && err.message || err), ...(err && err.reason ? { reason: err.reason } : {}), ...(err && err.hint ? { hint: err.hint } : {}) });
     }

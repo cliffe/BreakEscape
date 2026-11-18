@@ -1,0 +1,12 @@
+import { open, ev } from './m01-ol-lib.mjs';
+const [gid, port='3098'] = process.argv.slice(2);
+const h = await open(gid, port, { skipResume: true });
+await h.t(3000);
+await ev(h,()=>window.__test.enterRoom('operations_floor',{timeoutMs:20000}));
+await h.t(2500);
+await ev(h,()=>window.__test.moveTo(520,248,{timeoutMs:25000}));
+await h.t(1500);
+await ev(h,()=>{const c=window.pathfindingManager.scene.cameras.main;c.stopFollow();c.setZoom(2.5);c.centerOn(400,200);});await h.t(1200);
+console.log(JSON.stringify(await ev(h,()=>['adaeze_okafor','gwen_pritchard'].map(i=>{const s=window.npcBehaviorManager.getBehavior(i)?.sprite;return {i,x:s.x,y:s.y};}))));
+await h.page.screenshot({path:'tmp/m07-chair-check.png'});
+await h.browser.close();

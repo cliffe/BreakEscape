@@ -221,8 +221,9 @@ Night guard. Twenty-four. Not ours, not theirs. Don't hurt him.
 // ================================================
 === flag1_read ===
 // Idempotent: a stale toast tap, or a thread opened before her text arrived, shows the hub.
-// M3 R2 m1: a read-out that was started but not finished goes to its choices
-// (a reopen with changed globals re-runs this knot), a finished one to the hub.
+// M3 R2 m1: a read-out that was started but not finished goes to its choices, a
+// finished one to the hub. A reopen with changed globals keeps a thread resting on its
+// closing choice; the hub guard below only wins when it newly fires (phone reopen R2 M1).
 {flag1_read_done: -> support_hub}
 {flag1_read_heard: -> ask}
 ~ flag1_read_heard = true
@@ -967,6 +968,8 @@ Netherton's on the ground at Helena. Tell me when you're ready to come in.
     Analysis is pulling the watch. It's dark by morning.
     -> support_hub
 + [Not yet.]
+    // Review R1 m5: answered, so the optional task closes; "His notice." still sends it later.
+    #complete_task:send_the_notice
     It keeps. So does the hole.
     // Educational R1 E-m2: the equities call, named as a real practice.
     Every service that finds a hole makes this call: keep it to use, or tell the vendor. We kept this one nine years.

@@ -21,6 +21,49 @@ function current() {
 }
 
 /**
+ * Whether an element is rendered. offsetParent is null for position:fixed elements, so it
+ * hides visible controls such as the X (#minigame-close); checkVisibility (where present)
+ * or the client rects do not. visibility:hidden and opacity:0 count as not rendered.
+ */
+export function isRendered(el) {
+    if (!el) return false;
+    if (typeof el.checkVisibility === 'function') {
+        return el.checkVisibility({ visibilityProperty: true, opacityProperty: true });
+    }
+    return el.getClientRects().length > 0;
+}
+
+/**
+ * The controls getState().controls lists, as elements, in the same order. The
+ * minigame itself owns the list (MinigameScene#getTestControlElements), so
+ * clickControl indices cannot drift from getState(). The isRendered filter is
+ * only the fallback for a scene without the method.
+ */
+function controlElements(mg) {
+    if (typeof mg.getTestControlElements === 'function') return mg.getTestControlElements();
+    return Array.from(mg.container.querySelectorAll(
+        'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option'
+    )).filter(el => isRendered(el));
+}
+
+/**
+ * The fields getState().fields lists, as elements, in the same order and cap
+ * (MinigameScene#getTestFieldElements). Fallback only for a non-scene object.
+ */
+function fieldElements(mg) {
+    if (typeof mg.getTestFieldElements === 'function') return mg.getTestFieldElements();
+    return Array.from(mg.container.querySelectorAll(
+        'input:not([type="button"]):not([type="submit"]), textarea, select'
+    )).filter(el => isRendered(el));
+}
+
+/** The same visibility test getState() uses: the scene's isTestVisible, else isRendered. */
+function isShown(mg, el) {
+    if (typeof mg.isTestVisible === 'function') return mg.isTestVisible(el);
+    return isRendered(el);
+}
+
+/**
  * A failure result. The `extra` fields are the diagnostic — the choices that
  * were actually on screen, the pattern that missed, what matched ambiguously.
  * A bare reason string is not enough to fix a broken trace, so always pass them.
@@ -61,12 +104,7 @@ export const minigameBridge = {
     async clickControl(indexOrLabel) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        // .tri-chip: inbox triage flag chips. [role="option"]: the mail composer and
-        // pretext-prep blank-picker rows. .mail-create-option: the Create-account radio
-        // rows. Same list as BaseMinigame#getTestState.
-        const buttons = Array.from(mg.container.querySelectorAll(
-            'button, [role="button"], a[href], .clickable, input[type="button"], input[type="submit"], .tri-chip, [role="option"], .mail-create-option'
-        )).filter(el => el.offsetParent !== null);
+        const buttons = controlElements(mg);
         // Indices shift as a minigame re-renders, so allow a label too — a
         // caller that means "the SUBMIT button" should be able to say so.
         let el;
@@ -108,10 +146,7 @@ export const minigameBridge = {
     async select(field, option) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        const visible = el => el.offsetParent !== null;
-        const all = Array.from(mg.container.querySelectorAll(
-            'input:not([type="button"]):not([type="submit"]), textarea, select'
-        )).filter(visible);
+        const all = fieldElements(mg);
         const labelOf = el => {
             const bits = [el.id, el.name, el.className, el.getAttribute('aria-label')];
             if (el.id) {
@@ -166,7 +201,7 @@ export const minigameBridge = {
         // handlers, and omitting them made whole minigames undriveable.
         const el = Array.from(mg.container.querySelectorAll(
             'button, [role="button"], a[href], .clickable, .contact-item, [data-npc-id], li'
-        )).filter(e => e.offsetParent !== null).find(e => {
+        )).filter(e => isShown(mg, e)).find(e => {
             const label = (e.innerText || e.value || '').trim().toLowerCase();
             return exact ? label === needle : label.includes(needle);
         });
@@ -198,9 +233,7 @@ export const minigameBridge = {
     async type(index, text, { submit = false, clear = true } = {}) {
         const mg = current();
         if (!mg) return fail('no-active-minigame');
-        const fields = Array.from(mg.container.querySelectorAll(
-            'input:not([type="button"]):not([type="submit"]), textarea, select'
-        )).filter(el => el.offsetParent !== null);
+        const fields = fieldElements(mg);
         const el = fields[index];
         if (!el) return fail(`no-field-at-index-${index}`);
         if (clear) { el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
@@ -216,7 +249,7 @@ export const minigameBridge = {
             // caller saw a typed value that was never sent. Click the button too.
             if (mg.container.contains(el) && el.value === text) {
                 const btn = Array.from(mg.container.querySelectorAll('button, input[type="submit"], .clickable'))
-                    .filter(b => b.offsetParent !== null)
+                    .filter(b => isShown(mg, b))
                     .find(b => /submit|confirm|enter|send|unlock|verify|ok\b/i.test((b.innerText || b.value || '')));
                 if (btn) { clickElement(btn); submittedVia = 'button:' + (btn.innerText || btn.value || '').trim(); }
             }
@@ -246,7 +279,7 @@ export const minigameBridge = {
 
         const nodes = Array.from(
             mg.container.querySelectorAll('.container-content-item, .desktop-icon')
-        ).filter(el => el.offsetParent !== null);
+        ).filter(el => isShown(mg, el));
         if (!nodes.length) return fail('no-takeable-items', { active: activeMinigameSummary() });
 
         const labelOf = (el) => (el.title || el.alt ||
@@ -527,7 +560,7 @@ export const minigameBridge = {
         // very next unrelated getState() a moment later.
         const willReturnToContainer = !!window.pendingContainerReturn;
         const closeBtn = mg.container.querySelector('.minigame-close-button');
-        if (closeBtn && closeBtn.offsetParent !== null) {
+        if (closeBtn && isShown(mg, closeBtn)) {
             clickElement(closeBtn);
         } else {
             keyDown('Escape');
@@ -535,6 +568,11 @@ export const minigameBridge = {
             keyUp('Escape');
         }
         await sleepFrames(6);
+        // If the close finished on the first Escape and a second one reached the world, the game
+        // menu opens over the canvas: resume it so the next input is not swallowed.
+        const strayMenu = document.querySelector('#game-menu-overlay.visible');
+        const strayResume = strayMenu && strayMenu.querySelector('.game-menu-resume');
+        if (strayResume) { clickElement(strayResume); await sleepFrames(4); }
         if (willReturnToContainer) {
             const deadline = performance.now() + 500;
             while (performance.now() < deadline) {

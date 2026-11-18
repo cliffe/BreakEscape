@@ -136,6 +136,14 @@ function backButton(onClick) {
     return back;
 }
 
+/** One line on when each key attack works, shown where the first crack is a choice. */
+function crackChoiceNote() {
+    const note = document.createElement('div');
+    note.className = 'flipper-info flipper-crack-choice';
+    note.textContent = 'Dictionary tries factory-default keys: instant, but only works if the owner never changed them. Darkside works on any Classic card, but takes longer.';
+    return note;
+}
+
 /** A line with a pixel icon in front of (escaped) text. */
 function iconLine(className, icon, text, scale = 2) {
     const el = document.createElement('div');
@@ -929,8 +937,19 @@ export class RFIDUIRenderer {
         `;
         screen.appendChild(header);
 
-        // Security note
-        if (displayData.securityNote) {
+        // Security note. Where the first crack is a choice, the note says when each attack
+        // works instead (it sits above the data so it shows without scrolling).
+        const firstCrackChoice = (protocol === 'MIFARE_Classic_Weak_Defaults' || protocol === 'MIFARE_Classic_Custom_Keys')
+            && !(cardData.rfid_data?.sectors && Object.keys(cardData.rfid_data.sectors).length);
+        if (firstCrackChoice) {
+            screen.appendChild(crackChoiceNote());
+            // A dictionary miss leaves this line behind after the 3 s result screen, so the
+            // player still reads why the next move is Darkside (gate m03: it passed unseen).
+            if (this.minigame?.dictionaryMissUid && this.minigame.dictionaryMissUid === cardData.rfid_data?.uid) {
+                screen.appendChild(iconLine('flipper-info flipper-dict-miss', 'signal',
+                    'Dictionary found no keys: this card uses custom keys. Run a Darkside attack instead.'));
+            }
+        } else if (displayData.securityNote) {
             const note = document.createElement('div');
             note.className = 'flipper-info';
             note.textContent = displayData.securityNote;
@@ -970,8 +989,10 @@ export class RFIDUIRenderer {
                 Object.keys(cardData.rfid_data.sectors).length : 0;
 
             if (keysKnown === 0) {
-                // Suggest dictionary first
+                // Dictionary first, Darkside as the slower attack that works on any card:
+                // the choice (and when each works) is the lesson, so both are offered.
                 action('> Dictionary Attack (instant)', () => this.minigame.startKeyAttack('dictionary', cardData));
+                action('  Darkside Attack (~10 sec)', () => this.minigame.startKeyAttack('darkside', cardData), true);
             } else if (keysKnown < 16) {
                 // Some keys found
                 action(`> Nested Attack (${16 - keysKnown} sectors)`, () => this.minigame.startKeyAttack('nested', cardData));

@@ -35,6 +35,11 @@ VAR lore_safehouse_address_found = false
 // does not stand and deliver closing remarks.
 VAR robert_vance_ko = false
 
+// Office life: the two off-roster office staff (Ibrahim Diallo, Joanne Pell). Engine-owned, read only.
+// Not exported: no later mission reads them.
+VAR ibrahim_ko = false
+VAR joanne_ko = false
+
 // PASS 4. Engine-owned globals, read only.
 // fix 14: the three operative KOs (the old operatives_defeated counter only ever
 // counted Cipher and Relay) and the guard's KO.
@@ -103,7 +108,7 @@ Agent, report.
 * {vented_by_trigger} [He reached the laptop before I put him down. Shutdown held A and C.]
     -> debrief_attack_stopped
 
-* [Voltage is {voltage_captured:in custody.|out through the dock.}]
+* [Voltage is {voltage_captured:down and secured.|out through the dock.}]
     -> debrief_voltage_status
 
 === debrief_attack_stopped ===
@@ -124,7 +129,7 @@ Agent, report.
 -> debrief_people ->
 
 {voltage_captured:
-    And you've got Voltage.
+    And Voltage is ours, cuffed or not.
 - else:
     And Voltage got out through the dock.
 }
@@ -166,7 +171,7 @@ Agent, report.
 {voltage_captured:
     #set_global:blackout_named:true
     // C3 (D7-9): no "Good." before the nine.
-    {crew_lost:In custody.|Good.} Nobody else in that building knows the chain above Blackout.
+    {crew_lost:Secured.|Good.} Nobody else in that building knows the chain above Blackout.
 
     He'll talk. He wants someone to check his sums.
 - else:
@@ -426,11 +431,11 @@ He'll call when he's ready. Not tonight.
         Agent HaX: Two on the feed before the grid caught up. The number tomorrow won't be zero. It could have been fifty.
     }
 - else:
-    // Eleven on site: the nine night crew, Vance and the gate guard.
-    {security_guard_ko or robert_vance_ko:
+    // Thirteen on site: the nine night crew, Vance, the gate guard and the two office staff off the rota.
+    {security_guard_ko or robert_vance_ko or ibrahim_ko or joanne_ko:
         Agent HaX: Everyone on site got out alive tonight, not all of them on their own feet. Two hundred and forty thousand people kept their lights on and never knew why.
     - else:
-        Agent HaX: Eleven people walked out of there tonight. Two hundred and forty thousand people kept their lights on and never knew why.
+        Agent HaX: Thirteen people walked out of there tonight, two of them not on anyone's list. Two hundred and forty thousand people kept their lights on and never knew why.
     }
     // Round 2 (review m1): "started your clock early" only when it did.
     {
@@ -438,6 +443,8 @@ He'll call when he's ready. Not tonight.
         Agent HaX: And Vance's alarm had the night crew out before the button went in. It started your clock early.
     - crew_warned:
         Agent HaX: And Vance's alarm had the night crew out before the button went in.
+    - else:
+        Agent HaX: The nine on the night crew were behind the inverter wall the whole time. They went home at six not knowing how close it came.
     }
 }
 

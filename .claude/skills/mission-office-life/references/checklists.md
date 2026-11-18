@@ -31,7 +31,7 @@ Short lists to run through. The procedure is in `../SKILL.md`; the reasons are i
 
 - [ ] Keyless server from the worktree on its own port (not 3000, 3001, 3002, 3085 or 3086), started in the background with the `measurement-recipes.md` section 1 command; log shows the keyless warning; puma PID from `ss -ltnp` recorded.
 - [ ] Fresh game from `new-game.rb`, id taken from its output.
-- [ ] Headless: `setFPS(20)`, fixed steps on.
+- [ ] Headless: `window.__test.throttleFps(20)` and check `after` reads about 17 to 20 (it refuses if `physics.world.fixedStep` is off; re-call after a reload).
 - [ ] Player parked clear of lanes.
 - [ ] Five tries per timed trip; both expected and real away recorded.
 - [ ] Night turn rendered and looked at, not only read from state.

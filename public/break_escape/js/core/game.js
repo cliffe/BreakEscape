@@ -7,7 +7,7 @@ import { setHeldFormatVersion, showBootstrapRefusal } from '../format-guard.js';
 import { initializeInventory, processInitialInventoryItems, registerTrayRule, refreshInventoryTray } from '../systems/inventory.js';
 import { checkObjectInteractions, setGameInstance, isObjectInInteractionRange } from '../systems/interactions.js';
 import { wallClearFrom, findClearStandPoint, sameRoomFrom, playerFeet } from '../systems/interaction-walls.js';
-import { aimX, reachX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker } from '../systems/interaction-reach.js';
+import { aimX, reachX, reachY, withoutChairsIfOthers, takeablesBeforeChairs, npcGivesWay, objectIdOf, withoutLeavingNpcsIfObjects, walkAwayTracker, occupantUnderTap } from '../systems/interaction-reach.js';
 import '../systems/door-gaps.js'; // registers open-doorway lookup for combat reach
 import { createInfoLabel, updateInfoLabel } from '../ui/info-label.js';
 import { preloadPixelFont } from '../utils/pixel-text.js';
@@ -484,6 +484,14 @@ export function preload() {
     this.load.image('network_port_cabinet', 'objects/network_port_cabinet.png');
     this.load.image('network_dropbox_planted_cabinet', 'objects/network_dropbox_planted_cabinet.png');
     this.load.image('rogue_ap_tucked', 'objects/rogue_ap_tucked.png');
+    this.load.image('lw_sign_archive1', 'objects/lw_sign_archive1.png');
+    this.load.image('lw_framed_notice1', 'objects/lw_framed_notice1.png');
+    this.load.image('lw_recycling_bin1', 'objects/lw_recycling_bin1.png');
+    this.load.image('lw_lanyard1', 'objects/lw_lanyard1.png');
+    this.load.image('lw_chair_s1', 'objects/lw_chair_s1.png');
+    this.load.image('lw_chair_n1', 'objects/lw_chair_n1.png');
+    this.load.image('lw_chair_w1', 'objects/lw_chair_w1.png');
+    this.load.image('lw_chair_e1', 'objects/lw_chair_e1.png');
     this.load.image('page-builder', 'objects/page-builder.png');
     this.load.image('report-workstation', 'objects/report-workstation.png');
     this.load.image('suitcase', 'objects/suitcase-1.png');
@@ -2429,7 +2437,10 @@ export async function create() {
             });
             // Only a far object hides her: an in-reach one over her shares the menu (D5)
             const farObjectsUnderTap = objectsUnderTap.filter(o => !isObjectInInteractionRange(o));
-            const tapTests = { onPixels, npcOnFigure, npcCovered: (npc) => npcYieldsToObject(npc, farObjectsUnderTap, yieldDeps) };
+            // A chair with someone seated on it, tapped on her figure, is for her (interaction-reach.js occupantUnderTap)
+            const koSys = window.npcHostileSystem;
+            const seatTakenByNpc = (obj) => !!occupantUnderTap(obj, npcsUnderTap, { npcOnFigure, isKo: (n) => !!(koSys && n.npcId && koSys.isNPCKO(n.npcId)) });
+            const tapTests = { onPixels, npcOnFigure, seatTakenByNpc, npcCovered: (npc) => npcYieldsToObject(npc, farObjectsUnderTap, yieldDeps) };
             const nearClick = gatherInteractablesNearClick(worldX, worldY, tapObjectIds, tapTests);
             const gathered = tapPickList(nearClick, farObjects, farNpcs);
             if (seatsGiveWay(nearClick.filter(c => !c.hostile), farObjects)) farFirst = farObjects[0];   // D6
@@ -2841,7 +2852,7 @@ function findObjectsAtPosition(worldX, worldY) {
  * @returns {Array<{label:string, detail:?string, onSelect:Function}>}
  */
 function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTests = {}) {
-    const { onPixels = null, npcOnFigure = onPixels, npcCovered = null } = tapTests || {};
+    const { onPixels = null, npcOnFigure = onPixels, npcCovered = null, seatTakenByNpc = null } = tapTests || {};
     const player = window.player;
     if (!player || !window.rooms) return [];
 
@@ -2891,6 +2902,8 @@ function gatherInteractablesNearClick(worldX, worldY, tapObjectIds = [], tapTest
                 // Swivel props that aren't seats are kicked (jab); chairs are sat on, and
                 // everything else uses the open-hand interact icon.
                 const seat = !!window.seating?.isSeat(obj);
+                // Someone sits here and the tap is on her: she takes it, not the chair
+                if (seat && seatTakenByNpc && seatTakenByNpc(obj)) return;
                 const icon = obj.isSwivelChair && !seat ? jabHandIcon() : openHandIcon();
                 candidates.push({
                     label: seat ? `Sit: ${name}` : name,

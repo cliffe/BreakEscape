@@ -142,11 +142,15 @@ export function holdRecentNotifications(now = Date.now()) {
         .filter((el) => el._toast && !el._toast.pulled)
         .map((el) => ({ el, ...el._toast }));
     const pulled = pickRecentHoldable(shown, now);
-    pulled.forEach(({ el, message, type, title, duration, html, verbatim }) => {
+    pulled.forEach(({ el, message, type, title, duration, html, verbatim, whole, brief, immediate }) => {
         el._toast.pulled = true;
         if (el.parentNode) el.parentNode.removeChild(el);
         // seen = true: already on screen once, so it is replayed once and never pulled again
-        heldNotifications.push([message, type, title, duration, true, { html: html === true, verbatim: verbatim === true }]);
+        // brief, whole and immediate go with it: a replayed toast keeps its styling and its place in the queue
+        heldNotifications.push([message, type, title, duration, true, {
+            html: html === true, verbatim: verbatim === true,
+            whole: whole === true, brief: brief === true, immediate: immediate === true,
+        }]);
     });
     // Toasts still waiting for a place go behind the pulled ones now, so they keep their
     // order ahead of toasts raised while the panel is open (code review R1 n2).
@@ -176,6 +180,7 @@ export function toastDuration(type, duration) {
 // names, observations, task titles and server text, none of which may become markup.
 // options.html === true: the caller built the title and message as HTML on purpose and has
 // escaped every piece of author text in it. options.plainText is accepted and changes nothing.
+// options.immediate: skip the queue behind other toasts (action feedback that must not arrive late).
 // options.whole: lift the phone's two-line limit for this toast and nothing else.
 // options.verbatim: the message exactly as given, with no " -- " dash display,
 // for text the player must copy character for character (an overheard password).
@@ -604,8 +609,10 @@ function renderNotification(message, type, title, duration, seen = false, option
     // what the player just did, so they still show at once.
     // A toast that stays until closed takes no place and never waits for one.
     // A finished task or aim (options.brief) does not wait: the pill blinks now, and the lanes
-    // step the other toasts aside for it (review R2 M4)
+    // step the other toasts aside for it (review R2 M4). options.immediate does the same for
+    // feedback on something the player just did ("Card copied"), without the brief styling.
     if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0 && options?.brief !== true
+        && options?.immediate !== true
         && shownToasts(notificationContainer).length >= maxShownToasts()) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
             addWaiting([message, type, title, duration, seen, options]);
@@ -651,7 +658,10 @@ function renderNotification(message, type, title, duration, seen = false, option
     // options.whole only lifts the phone's two-line limit: a long sentence (a keyring find, a
     // teaching line) is read whole, with none of brief's push-aside or skipped limit (K3b R1 m2)
     if (options?.whole === true) notification.classList.add('whole');
-    notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim };
+    notification._toast = { message, type, title, duration, shownAt: overPanel ? null : Date.now(), seen, html: !plainText, verbatim,
+        whole: options?.whole === true, brief: options?.brief === true, immediate: options?.immediate === true };
+    // Marks the toast for hud-lanes, which steps the others aside for it as for a brief one (no styling)
+    if (options?.immediate === true) notification.classList.add('immediate');
     notification._onLaneYield = laneYieldHandler(notification);
     if (hudLanesActive()) notification._onSupersede = supersedeHandler(notification);
 

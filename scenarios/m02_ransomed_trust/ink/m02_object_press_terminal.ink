@@ -166,7 +166,9 @@ St. Catherine's board cannot suppress this.
 
 Gary Whitlock's warnings enter public record.
 
-+ [Confirmed. Send it all.]
+This is the last thing you do in this building. Anyone you still want to see, see them first.
+
++ [Confirmed. Send it all. #ending_check]
     -> do_upload
 
 + [Wait -- let me reconsider.]
@@ -218,6 +220,8 @@ St. Catherine's reputation protected. Board members retain their positions.
 
 Gary Whitlock's situation remains an internal matter.
 
+This is the last thing you do in this building. Anyone you still want to see, see them first.
+
 // Playtest loop round 1 (B13): the promise to Ghost is on the line here.
 {ghost_deal_accepted:
     You told Ghost this would go out. Keeping it internal breaks that promise.
@@ -225,7 +229,7 @@ Gary Whitlock's situation remains an internal matter.
 
 The sector-wide vulnerability profile does not become public knowledge.
 
-+ [Confirmed. Keep it internal.]
++ [Confirmed. Keep it internal. #ending_check]
     -> do_stay_quiet
 
 + [Wait -- let me reconsider.]

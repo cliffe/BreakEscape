@@ -1,0 +1,13 @@
+{
+  "key": "fc5793f87be4784dacc65da8de90071f",
+  "npc": "ibrahim_diallo",
+  "text": "Hello. I'm waiting on the office desktops to image. The swap was booked late, so I won't be on tonight's list.",
+  "voice": "Sadaltager",
+  "style": "Albion Energy Storage's office IT support lead, in his 40s, patient and unhurried; fifteen years in Leeds. Speak with a consistent English accent with a light French-West African inflection, now settled in Leeds, throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T01:19:53Z"
+}

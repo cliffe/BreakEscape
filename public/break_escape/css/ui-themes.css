@@ -1529,8 +1529,19 @@
 }
 
 [data-ui-theme] #game-over-screen button:first-of-type,
-[data-ui-theme] #session-resume-btn {
+[data-ui-theme] #session-resume-overlay #session-resume-btn {
   color: var(--ui-accent) !important;
+}
+
+/* The destructive "Start over" in the confirm step: a danger-coloured 2px border and tint
+   instead of the shared button skin, so it cannot be mistaken for the safe buttons.
+   Needs the id + id form to beat the overlay-button rule above. */
+[data-ui-theme] #session-resume-overlay #session-restart-confirm-btn {
+  border: 2px solid var(--ui-danger) !important;
+  border-image: none !important;
+  background: color-mix(in srgb, var(--ui-danger) 28%, #000) !important;
+  color: var(--ui-danger) !important;
+  text-shadow: var(--ui-text-glow);
 }
 
 [data-ui-theme] #game-over-screen button:hover,

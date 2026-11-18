@@ -240,6 +240,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     ]
   },
 
+  <%# Blind m9: a mission-specific ticker in place of the generic banner. True in every ending. The "GHOST IN THE WIRE" line a tester saw on the victory screen is the music track label (credits-theme.js trackLabel), which this does not change; OPERTN already fell back to the mission name. %>
+  "creditsOverlay": {
+    "operation": "GHOST IN THE MACHINE",
+    "ticker": [
+      "OPERATION GHOST IN THE MACHINE: CONCLUDED",
+      "ST. CATHERINE'S LINK: PROVEN",
+      "ZERO DAY SYNDICATE: ON SAFETYNET'S RADAR"
+    ]
+  },
+
   "objectives": [
     {
       "aimId": "act1_gain_access",
@@ -252,14 +262,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "taskId": "clone_reception_badge",
           "title": "Find a way past the conference room's card reader",
           "description": "Staff badges only beyond reception. Find a way through.",
-          "type": "custom",
+          "_comment": "Gate minor m1: completes when the conference door actually opens (unlock_room, so the emulate at the reader), not when the clone is saved. A receptionist KO does not complete it by itself (the room is still locked, so the server would refuse); the player picks up the dropped badge and opens the door, which completes it. The clone Save keeps its own feedback: reception_badge_cloned drives HaX's emulate hint and ticks copy_staff_badge.",
+          "type": "unlock_room",
+          "targetRoom": "conference_room_01",
           "status": "active"
         },
         {
-          "_comment": "Pass 5 blind (B-2): the reader refusal needs an on-screen cue, not only a phone text. HaX's door_unlock_attempt mapping on the conference reader unlocks this (toast and panel); closing_debrief completes it when clone_reception_badge completes (clone or KO). Optional, so a player who never tries the reader first never sees it.",
+          "_comment": "Pass 5 blind (B-2): the reader refusal needs an on-screen cue, not only a phone text. HaX's door_unlock_attempt mapping on the conference reader unlocks this (toast and panel); closing_debrief completes it when clone_reception_badge completes (clone or KO). It opens on the first reader refusal (door_unlock_attempt) or when the briefing explains the cloner (cloner_explained). Optional.",
           "taskId": "copy_staff_badge",
           "title": "Copy the receptionist's staff badge with your cloner",
-          "description": "The reader wants a staff badge. The receptionist wears one on her lanyard. Talk to her and lean in.",
+          "description": "The reader wants a staff badge. The receptionist wears one on her lanyard, and the cloner reads a badge from arm's length. Stand close, talk to her and lean in by the lanyard.",
           "type": "custom",
           "status": "locked",
           "optional": true
@@ -381,10 +393,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "decode_client_roster",
-          "title": "Take Sterling's client roster",
-          "description": "The client roster export is on Sterling's computer, as raw hex. Take it; the CyberChef workstation will read it if you want the names.",
+          "title": "Decode Sterling's client roster",
+          "description": "The client roster export is on Sterling's computer, as raw hex. Take it, then run it through the CyberChef workstation until it reads as names.",
           "type": "custom",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "_comment": "P1-29: Danny's optional task sits with the executive wing he works in (round 1 put it under the server room aim). Settle Accounts is story-gated, so this can't reveal it early.",
@@ -425,10 +438,11 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
         },
         {
           "taskId": "decode_whiteboard",
-          "title": "Read the night team's whiteboard",
-          "description": "Find what the night team wrote on the server room whiteboard. It sits with the wall safe it is about.",
+          "title": "Decode the night team's whiteboard",
+          "description": "The note on the server room whiteboard is scrambled. Read it, then run it through the CyberChef workstation until it makes sense. It sits with the wall safe it is about.",
           "type": "custom",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "taskId": "lore_fragment_3",
@@ -752,7 +766,6 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "puzzle_graph_actions": [
             { "id": "clone_reception_badge_talk", "label": "Talk to her and clone her staff badge", "unlocks_aim": "act1_gain_access" }
           ],
-          "taskOnKO": "clone_reception_badge",
           "spriteSheet": "ffion_rees",
           "spriteTalk": "assets/characters/ffion_rees_talk.png",
           "spriteVisemes": "assets/characters/ffion_rees_visemes.png",
@@ -769,8 +782,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "eventPattern": "card_cloned",
               "condition": "data.cardName === 'Staff Access Badge'",
               "onceOnly": true,
-              "setGlobal": { "reception_badge_cloned": true },
-              "completeTask": "clone_reception_badge"
+              "setGlobal": { "reception_badge_cloned": true }
             },
             {
               "_comment": "A4 fix pass (S7): at night she has come back for her charger. One bark the first time the player walks into reception after the night turn, before she has spoken to them at night, so her being at the desk at eleven reads as on purpose. Her chat opens on different words.",
@@ -989,11 +1001,19 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           ],
           "eventMappings": [
             {
+              "_comment": "Blind m03 m8/m10: the optional staff-badge task used to unlock only if the reader was tried before cloning, so the ending warning (which lists open optional tasks) never mentioned it. It now also opens as soon as the cloner has been explained (briefing, HaX), which is also when Ffion's 'lean in by her lanyard' choice appears.",
+              "eventPattern": "global_variable_changed:cloner_explained",
+              "condition": "value === true && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
+              "onceOnly": true,
+              "setGlobal": { "staff_badge_task_shown": true },
+              "unlockTask": "copy_staff_badge"
+            },
+            {
               "_comment": "P2-2/P2-16: the player meets the conference reader before the cloner is explained. conference_reader_tried opens the receptionist's clone choice (lock before key); asking HaX or the briefing about cloning opens it too (cloner_explained). The cloner is in the start kit, so the engine opens the read/emulate minigame rather than a hard access-denied; a true 'fail then grant the tool' needs engine work (the cloner can't be made unusable mission-local). This reframes the tool as the answer to the wall just met. Fires once, before the badge is cloned.",
               "eventPattern": "door_unlock_attempt",
               "condition": "data.connectedRoom === 'conference_room_01' && globalVars.reception_badge_cloned !== true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
-              "setGlobal": { "conference_reader_tried": true },
+              "setGlobal": { "conference_reader_tried": true, "staff_badge_task_shown": true },
               "unlockTask": "copy_staff_badge",
               "sendTimedMessage": { "delay": 1500, "message": "That reader wants a staff badge. The cloner in your kit copies one from arm's length. Talk to the receptionist and lean in by her lanyard." }
             },
@@ -1031,9 +1051,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "sendTimedMessage": { "delay": 1500, "message": "That's the reception badge. The server room reader wants Sterling's executive card." }
             },
             {
-              "_comment": "Pass 4: a receptionist KO also completes this task (taskOnKO), but then the badge is on the floor, not in the cloner. globalVarOnKO is written before taskOnKO fires (npc-hostile.js), so the condition holds.",
-              "eventPattern": "objective_task_completed:clone_reception_badge",
-              "condition": "globalVars.receptionist_ko !== true",
+              "_comment": "Pass 4: a receptionist KO leaves the badge on the floor, not in the cloner (the task completes later, when the door opens).",
+              "eventPattern": "global_variable_changed:reception_badge_cloned",
+              "condition": "value === true && globalVars.receptionist_ko !== true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 1500, "message": "Reception badge is in the cloner. Emulate it at the conference room reader. Read, crack, emulate -- same order every time." }
             },
@@ -1113,9 +1133,9 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "Keyed on the roster task (completed by the roster_seen mapping) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
-              "eventPattern": "objective_task_completed:decode_client_roster",
-              "condition": "globalVars.pc_call_done !== true",
+              "_comment": "Keyed on roster_seen (set when the roster is opened), not the optional decode task, so opening only the roster still brings the call.",
+              "eventPattern": "global_variable_changed:roster_seen",
+              "condition": "value === true && globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
               "sendTimedMessage": { "delay": 5000, "targetKnot": "on_victoria_computer_accessed", "message": "You're on her machine. Message me when you've had a look." },
               "onceOnly": true
@@ -1341,13 +1361,15 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
             },
 <% end %>
             {
-              "eventPattern": "global_variable_changed:whiteboard_seen",
+              "_comment": "Blind m4: ticks when the CyberChef workstation's output shows the decoded board (decodeWatch on the workstation), not when the board is opened.",
+              "eventPattern": "global_variable_changed:whiteboard_decoded",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "decode_whiteboard"
             },
             {
-              "eventPattern": "global_variable_changed:roster_seen",
+              "_comment": "Blind m7: ticks when the CyberChef workstation's output shows the decoded roster (decodeWatch on the workstation), not when the file is taken.",
+              "eventPattern": "global_variable_changed:roster_decoded",
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "decode_client_roster"
@@ -1399,9 +1421,16 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           },
           "eventMappings": [
             {
-              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task once the staff badge is had (clone or receptionist KO). Only if the pointer was shown, so a locked task never completes out of nowhere.",
+              "_comment": "Pass 5 blind (B-2): ticks the reader pointer task when clone_reception_badge completes (the door opened) after a receptionist KO. Only if the pointer was shown (staff_badge_task_shown, set by both unlock mappings), so a locked task never completes out of nowhere.",
               "eventPattern": "objective_task_completed:clone_reception_badge",
-              "condition": "globalVars.conference_reader_tried === true",
+              "condition": "globalVars.staff_badge_task_shown === true && globalVars.receptionist_ko === true",
+              "onceOnly": true,
+              "completeTask": "copy_staff_badge"
+            },
+            {
+              "_comment": "Gate minor m1: the clone route ticks the reader pointer task when the badge is saved in the cloner (the main task now waits for the door).",
+              "eventPattern": "global_variable_changed:reception_badge_cloned",
+              "condition": "value === true && globalVars.staff_badge_task_shown === true",
               "onceOnly": true,
               "completeTask": "copy_staff_badge"
             },
@@ -1716,7 +1745,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "name": "Training Lab Runbook",
               "takeable": true,
               "readable": true,
-              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It used to be plain ROT13; Sable has put it on her own shift and mails the number to clients. Still only a letter shift, not real encryption.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
+              "text": "STUDENT RUNBOOK -- TRAINING LAB\n\n1. nmap the lab network from the server room terminal. Everything you need answers a scan.\n2. The FTP box runs ProFTPD 1.3.3c, the trojaned 2010 build. Anonymous login works; nothing that matters lives in the anonymous folder.\n3. The web host serves the price list. It used to be plain ROT13; Sable has put it on her own shift and mails the number to clients. Still only a letter shift, not real encryption: twenty-five possible keys, so ROT13 Brute Force on the CyberChef laptop will list them all.\n4. The legacy build runs distcc. Do not run exploits against it without sign-off.\n\nInstructor note: the legacy box is not a toy. Leave it alone."
             }
           ]
         },
@@ -1750,7 +1779,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": false,
           "readable": true,
           "text": "<%= whiteboard_message_encoded %>",
-          "observations": "Someone has written a note across the whiteboard. The letters are scrambled but the word lengths and punctuation hold: each letter swapped for another, not gibberish. The decoding laptop will read it.",
+          "observations": "Every letter has moved the same number of places along the alphabet. A shift like that has only twenty-five possible keys, so ROT13 Brute Force on the laptop can show them all.",
           "onRead": { "setVariable": { "whiteboard_seen": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["wall_safe_server"],
@@ -1768,7 +1797,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "hacktivityMode": <%= vm_context && vm_context['hacktivity_mode'] ? 'true' : 'false' %>,
           "vm": <%= vm_object('attack_vm', {"id":1,"title":"attack_vm","ip":"192.168.100.2","enable_console":true}) %>,
           "showPostit": true,
-          "postitNote": "user: kali\npassword: kali"
+          "postitNote": "user: kali\npassword: kali",
+          "flagNote": "Each flag you capture goes back to the Drop-Site Terminal in this room. Submit it there to turn it into intel."
         },
         {
           "type": "workstation",
@@ -1777,9 +1807,13 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "host": "OPS-BENCH-LT",
           "_comment": "Room dressing cycle 1 (2026-10-12): room_zds_servers puts the workstation and the flag-station on the ops bench, their top-lefts 32 px or more from each other's centres, so the Pass 3e pin on the old west desk is gone.",
           "takeable": true,
+          "decodeWatch": [
+            { "contains": "NIGHT TEAM: CATALOGUE STAYS IN THE WALL SAFE", "setVariable": "whiteboard_decoded" },
+            { "contains": "ZERO DAY: ACTIVE CLIENT ROSTER", "setVariable": "roster_decoded" }
+          ],
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
-          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number."
+          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find: ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number. With no number, a letter shift has just twenty-five keys: ROT13 Brute Force tries them all, and you pick the one that reads as English."
         },
         {
           "type": "flag-station",
@@ -2204,6 +2238,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "debrief_played": false,
     "clone_call_done": false,
     "whiteboard_seen": false,
+    "whiteboard_decoded": false,
+    "roster_decoded": false,
     "draft_seen": false,
     "catalogue_seen": false,
     "exec_office_entered": false,
@@ -2234,6 +2270,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     "sterling_on_call_seen": false,
     "conference_reader_tried": false,
     "cloner_explained": false,
+    "staff_badge_task_shown": false,
     "directive_guessed": false,
     "vm_flag1_reward": false,
     "vm_flag2_reward": false,

@@ -1,0 +1,13 @@
+{
+  "key": "69ad33d98ff7cf64c3a4fd6be70af02a",
+  "npc": "chidi_okeke",
+  "text": "How was the weekend?",
+  "voice": "Zubenelgenubi",
+  "style": "Tarrowby's fleet coordinator at the Shipley depot, in his 40s, easy-going and knows every driver. Speak with a consistent West Yorkshire accent with a light Nigerian inflection throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:40:50Z"
+}

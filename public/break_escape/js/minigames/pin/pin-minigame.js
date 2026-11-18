@@ -14,9 +14,58 @@ export const PIN_SCOPE_REFUSAL_TEXT = LOCK_SCOPE_REFUSAL_TEXT;
 // reopening a pad, or being locked out of it, doesn't wipe what the player has
 // already learnt. Keyed by `${type}:${targetId}`.
 const pinAttemptHistory = new Map();
-export function clearPinAttemptHistory() { pinAttemptHistory.clear(); }
+export function clearPinAttemptHistory() { pinAttemptHistory.clear(); pinDustKnown.clear(); }
+
+// Dusting with the fingerprint kit (server: PinDust). The server answers the sorted distinct
+// digits of the PIN, never their order and never the PIN, and only while it sees a real kit.
+// What a lock has shown is kept per page session so reopening a pad doesn't ask again; a reload
+// asks the server (which stores it per lock), so the pad is still greyed. `${type}:${targetId}`.
+const pinDustKnown = new Map();
+
+/** True when the inventory holds a fingerprint kit (the server checks its own copy again). */
+export function holdsFingerprintKit(items) {
+    return Array.isArray(items) && items.some(item =>
+        item && item.scenarioData && item.scenarioData.type === 'fingerprint_kit');
+}
+
+/** The digits a dust answer reveals, as a Set of single-character strings, or null for a bad answer. */
+export function dustDigitsFrom(body) {
+    if (!body || body.dusted !== true || !Array.isArray(body.digits)) return null;
+    const digits = body.digits.map(String).filter(d => /^\d$/.test(d));
+    return digits.length ? new Set(digits) : null;
+}
+
+/** A key is greyed once a pad is dusted and its digit is not in the PIN. */
+export function isKeyGreyed(digit, dustSet) {
+    return !!dustSet && /^\d$/.test(String(digit)) && !dustSet.has(String(digit));
+}
+
+/** Words for the Dust action's status line. */
+export function dustSummary(dustSet) {
+    if (!dustSet) return '';
+    const list = [...dustSet].sort().join(' ');
+    return `Dust shows the code uses: ${list}. It does not show the order.`;
+}
 
 // PIN Minigame Scene implementation
+/**
+ * Plain-text result of one guess, for screen readers and the test bridge.
+ * feedback is { rightPlace, rightNumber } or null when no lights are shown.
+ * "1 2 3 4: 1 right digit in the right place, 2 right digits in the wrong place".
+ */
+export function describeAttemptFeedback(input, feedback, isCorrect) {
+    const digits = String(input ?? '').split('').join(' ');
+    if (isCorrect) return `${digits}: correct`;
+    if (!feedback) return `${digits}: incorrect`;
+    const part = (n, where) => `${n} right ${n === 1 ? 'digit' : 'digits'} in the ${where} place`;
+    const { rightPlace = 0, rightNumber = 0 } = feedback;
+    if (!rightPlace && !rightNumber) return `${digits}: no right digits`;
+    const parts = [];
+    if (rightPlace) parts.push(part(rightPlace, 'right'));
+    if (rightNumber) parts.push(part(rightNumber, 'wrong'));
+    return `${digits}: ${parts.join(', ')}`;
+}
+
 export class PinMinigame extends MinigameScene {
     // The X sits inside the frame (MinigameScene.closeInsideFrame)
     static closeInsideFrame = true;
@@ -47,6 +96,14 @@ export class PinMinigame extends MinigameScene {
         this.infoLeakMode = params.infoLeakMode || false;
         this.allowBackspace = params.allowBackspace !== false;
         this.hasPinCracker = params.hasPinCracker || false;
+        // Dusting (fingerprint kit): the action shows when the kit is held and the lock hasn't
+        // opted in (`dustable: true`); the server decides again on every ask.
+        this.hasFingerprintKit = params.hasFingerprintKit || false;
+        this.dustable = params.dustable === true;
+        this.dustHint = typeof params.dustHint === 'string' ? params.dustHint : '';
+        this.dustSet = null;
+        this.dustPending = false;
+        this.dustButtonElement = null;
         this.maxAttempts = this.hasPinCracker
             ? Infinity
             : (params.maxAttempts || DEFAULT_PIN_MAX_ATTEMPTS);
@@ -69,6 +126,7 @@ export class PinMinigame extends MinigameScene {
         this.displayElement = null;
         this.keypadElement = null;
         this.attemptsLogElement = null;
+        this.attemptsLiveElement = null;
         this.infoLeakToggleElement = null;
         this.pinCrackerIconElement = null;
     }
@@ -85,7 +143,14 @@ export class PinMinigame extends MinigameScene {
             maxAttempts: Number.isFinite(this.maxAttempts) ? this.maxAttempts : null,
             hasPinCracker: !!this.hasPinCracker,
             lastFeedback: (this.attempts || []).at(-1)?.feedback || null,
-            isLocked: !!this.isLocked
+            // Same text the screen-reader row labels and live region carry
+            attemptSummaries: (this.attempts || []).map(a => a.summary || describeAttemptFeedback(a.input, null, a.isCorrect)),
+            lastResultSummary: this.attemptsLiveElement ? this.attemptsLiveElement.textContent : '',
+            isLocked: !!this.isLocked,
+            // Dusting: whether the action is on offer, and the digits left lit (null: not dusted)
+            dustAvailable: !!(this.hasFingerprintKit && this.dustable),
+            dustDigits: this.dustSet ? [...this.dustSet].sort() : null,
+            greyedKeyDigits: this.greyedKeyDigits()
             // Drive this with clickText('1')..clickText('9') on the keypad,
             // exactly as a player taps it.
         };
@@ -144,6 +209,34 @@ export class PinMinigame extends MinigameScene {
         this.messageLineElement.setAttribute('aria-live', 'polite');
         interfaceContainer.appendChild(this.messageLineElement);
         
+        // The Dust action (fingerprint kit): sits between the message line and the keys it greys
+        if (this.dustable) {
+            this.dustBarElement = document.createElement('div');
+            this.dustBarElement.className = 'pin-minigame-dust-bar';
+            if (this.hasFingerprintKit) {
+                this.dustButtonElement = document.createElement('button');
+                this.dustButtonElement.type = 'button';
+                this.dustButtonElement.className = 'pin-minigame-dust-button';
+                const dustIcon = document.createElement('img');
+                dustIcon.src = '/break_escape/assets/objects/fingerprint_kit.png';
+                dustIcon.alt = '';
+                dustIcon.className = 'pin-minigame-dust-icon';
+                const dustLabel = document.createElement('span');
+                dustLabel.textContent = 'DUST KEYPAD';
+                this.dustButtonElement.appendChild(dustIcon);
+                this.dustButtonElement.appendChild(dustLabel);
+                this.dustButtonElement.setAttribute('aria-label', 'Dust the keypad with the fingerprint kit');
+                this.dustButtonElement.addEventListener('click', () => this.handleDust());
+                this.dustBarElement.appendChild(this.dustButtonElement);
+            }
+            this.dustNoteElement = document.createElement('div');
+            this.dustNoteElement.className = 'pin-minigame-dust-note';
+            this.dustNoteElement.setAttribute('role', 'status');
+            this.dustNoteElement.setAttribute('aria-live', 'polite');
+            this.dustBarElement.appendChild(this.dustNoteElement);
+            interfaceContainer.appendChild(this.dustBarElement);
+        }
+
         // Create keypad
         this.keypadElement = document.createElement('div');
         this.keypadElement.className = 'pin-minigame-keypad';
@@ -219,6 +312,13 @@ export class PinMinigame extends MinigameScene {
         this.attemptsLogElement = document.createElement('div');
         this.attemptsLogElement.className = 'pin-minigame-attempts-log';
         attemptsContainer.appendChild(this.attemptsLogElement);
+
+        // Announces the latest guess's result (the lights alone are visual only)
+        this.attemptsLiveElement = document.createElement('div');
+        this.attemptsLiveElement.className = 'pin-minigame-sr-only';
+        this.attemptsLiveElement.setAttribute('aria-live', 'polite');
+        this.attemptsLiveElement.setAttribute('role', 'status');
+        attemptsContainer.appendChild(this.attemptsLiveElement);
         
         interfaceContainer.appendChild(attemptsContainer);
         
@@ -302,6 +402,10 @@ export class PinMinigame extends MinigameScene {
         if (this.isLocked || this.checkPending || this.currentInput.length >= this.pinLength) {
             return;
         }
+        // A key greyed by dusting is not a digit of the PIN: it takes no input, by click or keyboard
+        if (isKeyGreyed(number, this.dustSet)) {
+            return;
+        }
 
         if (window.playUISound) window.playUISound('keypad');
         // The next code clears the last wrong-code line
@@ -342,6 +446,8 @@ export class PinMinigame extends MinigameScene {
 
     async _checkCurrentInput() {
         this.attemptCount++;
+        // Read the code before the await: nothing that clears the entry meanwhile may blank the record.
+        const enteredCode = this.currentInput;
 
         // SECURITY: ALWAYS use server-side validation for PIN attempts
         let isCorrect;
@@ -350,7 +456,7 @@ export class PinMinigame extends MinigameScene {
 
         if (apiClient && gameId) {
             console.log('Using server-side PIN validation (security enforced)');
-            isCorrect = await this.validatePinWithServer(this.currentInput);
+            isCorrect = await this.validatePinWithServer(enteredCode);
         } else {
             console.error('SECURITY WARNING: API client not available, cannot validate PIN');
             // Fail securely - reject the attempt if we can't validate with server
@@ -359,10 +465,10 @@ export class PinMinigame extends MinigameScene {
 
         // Record attempt
         const attempt = {
-            input: this.currentInput,
+            input: enteredCode,
             isCorrect: isCorrect,
             timestamp: new Date(),
-            feedback: this.feedbackFor(this.currentInput, isCorrect)
+            feedback: this.feedbackFor(enteredCode, isCorrect)
         };
 
         // The server refused the pad's scope, not the PIN (review R3 m1): the PC the folder
@@ -383,12 +489,14 @@ export class PinMinigame extends MinigameScene {
         // A request that never reached the server is not an attempt: it did not
         // cost the player one (attemptCount was refunded above), so it must not
         // appear in the history either.
+        let announceAttempt = false;
         if (this.lastAttemptWasNetworkError) {
             this.lastAttemptWasNetworkError = false;
         } else {
             this.attempts.push(attempt);
+            announceAttempt = true;
         }
-        this.updateAttemptsDisplay();
+        this.updateAttemptsDisplay({ announce: announceAttempt });
 
         if (isCorrect) {
             this.handleSuccess();
@@ -412,6 +520,104 @@ export class PinMinigame extends MinigameScene {
         return this.correctPin ? this.calculateFeedback(input) : null;
     }
 
+    /** Digits of the greyed keys now, for the test bridge. */
+    greyedKeyDigits() {
+        if (!this.dustSet) return [];
+        return '0123456789'.split('').filter(d => isKeyGreyed(d, this.dustSet));
+    }
+
+    /** Grey every key that is not a digit of the PIN, and say what that shows. */
+    applyDust(dustSet, hint = '') {
+        this.dustSet = dustSet;
+        // Digits typed before the dust may be impossible ones, and the last one could auto-submit
+        // a known-wrong code (costing an attempt): start the entry again.
+        if (this.currentInput) {
+            this.currentInput = '';
+            this.updateDisplay();
+        }
+        if (this.keypadElement) {
+            this.keypadElement.querySelectorAll('.pin-minigame-key[data-number]').forEach(key => {
+                const greyed = isKeyGreyed(key.dataset.number, dustSet);
+                key.classList.toggle('pin-minigame-key-greyed', greyed);
+                key.classList.toggle('pin-minigame-key-dusted', !greyed);
+                key.setAttribute('aria-disabled', greyed ? 'true' : 'false');
+            });
+        }
+        if (this.dustButtonElement) {
+            this.dustButtonElement.disabled = true;
+            this.dustButtonElement.classList.add('done');
+        }
+        if (this.dustNoteElement) {
+            this.dustNoteElement.textContent = dustSummary(dustSet) + (hint ? ` ${hint}` : '');
+        }
+    }
+
+    /** The Dust action: ask the server once, then grey the keys. */
+    async handleDust() {
+        // A restore still in flight may be about to show this lock already dusted: wait for it, so a
+        // click before it settles neither dusts twice nor emits pin_dusted a second time (R1 m7)
+        if (this.dustRestoring) await this.dustRestoring;
+        // Not while a code is being checked: dusting clears the entry under the in-flight attempt.
+        if (this.dustPending || this.dustSet || this.isLocked || this.checkPending) return;
+        const targetId = this.getTargetId();
+        const apiClient = window.ApiClient || window.APIClient;
+        if (!targetId || !apiClient?.pinDust) return;
+        this.dustPending = true;
+        try {
+            const body = await apiClient.pinDust(this.getTargetType(), targetId, true);
+            const set = dustDigitsFrom(body);
+            if (!set) {
+                this.showPinMessage('The dust shows nothing useful.', 'wrong');
+                return;
+            }
+            if (window.playUISound) window.playUISound('item');
+            this.showPinMessage(''); // a stale 'The dust does not take.' from an earlier try
+            if (this.historyKey) pinDustKnown.set(this.historyKey, { set, hint: body.hint || '' });
+            this.applyDust(set, body.hint || this.dustHint);
+            // For eventMappings (a debrief can credit the dusted route): which lock, never the digits.
+            // Only a fresh dust emits; reopening a dusted pad (restoreDust) does not.
+            window.eventDispatcher?.emit?.('pin_dusted', { targetType: this.getTargetType(), targetId: this.getEventTargetId() || targetId });
+        } catch (error) {
+            const reason = error?.body?.reason;
+            const line = reason === 'not_dustable' ? 'This keypad is too clean to show anything.'
+                : reason === 'no_kit' ? 'You need your fingerprint kit to dust.'
+                : 'The dust does not take.';
+            this.showPinMessage(line, 'wrong');
+            if (reason === 'not_dustable' || reason === 'no_kit') {
+                if (this.dustButtonElement) this.dustButtonElement.disabled = true;
+            }
+        } finally {
+            this.dustPending = false;
+        }
+    }
+
+    /** On opening: a lock dusted earlier (this session or before a reload) comes up greyed. */
+    restoreDust() {
+        this.dustRestoring = this._restoreDust().finally(() => { this.dustRestoring = null; });
+        return this.dustRestoring;
+    }
+
+    async _restoreDust() {
+        // No kit needed to restore: the server remembers what was dusted, so the pad stays
+        // greyed (with the note, without the button) after the kit is used up or handed on.
+        if (!this.dustable) return;
+        const known = this.historyKey ? pinDustKnown.get(this.historyKey) : null;
+        if (known) { this.applyDust(known.set, known.hint || this.dustHint); return; }
+        const targetId = this.getTargetId();
+        const apiClient = window.ApiClient || window.APIClient;
+        if (!targetId || !apiClient?.pinDust) return;
+        try {
+            const body = await apiClient.pinDust(this.getTargetType(), targetId, false);
+            const set = dustDigitsFrom(body);
+            if (set && !this.dustSet) {
+                pinDustKnown.set(this.historyKey, { set, hint: body.hint || '' });
+                this.applyDust(set, body.hint || this.dustHint);
+            }
+        } catch (error) {
+            // Nothing to restore: the pad simply opens undusted
+        }
+    }
+
     getTargetType() {
         return this.params?.type || 'object'; // 'door' or 'object'
     }
@@ -423,6 +629,17 @@ export class PinMinigame extends MinigameScene {
             return lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId || null;
         }
         return lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId || null;
+    }
+
+    /**
+     * The id an eventMappings condition matches: the object's own id (or its objectId), never the
+     * display name getTargetId falls back to (R1 m8). A door is its connectedRoom, as in getTargetId.
+     */
+    getEventTargetId() {
+        const lockable = this.params?.lockable || this.params?.sprite;
+        if (!lockable) return null;
+        if (this.getTargetType() === 'door') return this.getTargetId();
+        return lockable.scenarioData?.id || lockable.objectId || null;
     }
 
     getHistoryKey() {
@@ -546,10 +763,13 @@ export class PinMinigame extends MinigameScene {
         }
     }
     
-    updateAttemptsDisplay() {
+    // Only a new guess is announced (announce: true). Re-renders from the lights toggle,
+    // a network error or reopening the pad leave the live region as it was.
+    updateAttemptsDisplay({ announce = false } = {}) {
         if (!this.attemptsLogElement) return;
         
         this.attemptsLogElement.innerHTML = '';
+        if (this.attempts.length === 0 && this.attemptsLiveElement) this.attemptsLiveElement.textContent = '';
         
         if (this.attempts.length === 0) {
             const emptyMessage = document.createElement('div');
@@ -573,13 +793,22 @@ export class PinMinigame extends MinigameScene {
             
             attemptElement.appendChild(attemptNumber);
             attemptElement.appendChild(attemptInput);
+
+            const showLights = (this.hasPinCracker && this.infoLeakToggleElement?.checked && attempt.feedback) ||
+                (this.infoLeakMode && attempt.feedback);
+            const summary = describeAttemptFeedback(attempt.input, showLights ? attempt.feedback : null, attempt.isCorrect);
+            attempt.summary = summary;
+            attemptElement.setAttribute('role', 'group');
+            attemptElement.setAttribute('aria-label', `Guess ${index + 1}, ${summary}`);
+            attemptNumber.setAttribute('aria-hidden', 'true');
+            attemptInput.setAttribute('aria-hidden', 'true');
             
             // Add visual feedback lights if pin-cracker is enabled and feedback is available
             // OR if mastermind mode is enabled via parameter
-            if ((this.hasPinCracker && this.infoLeakToggleElement?.checked && attempt.feedback) || 
-                (this.infoLeakMode && attempt.feedback)) {
+            if (showLights) {
                 const feedbackContainer = document.createElement('div');
                 feedbackContainer.className = 'pin-minigame-feedback-lights';
+                feedbackContainer.setAttribute('aria-hidden', 'true');
                 
                 // Add green lights for right place
                 for (let i = 0; i < attempt.feedback.rightPlace; i++) {
@@ -602,6 +831,10 @@ export class PinMinigame extends MinigameScene {
             
             this.attemptsLogElement.appendChild(attemptElement);
         });
+
+        if (announce && this.attemptsLiveElement) {
+            this.attemptsLiveElement.textContent = `Guess ${this.attempts.length}, ${this.attempts.at(-1).summary}`;
+        }
 
         // The log scrolls; keep the newest guess in view.
         this.attemptsLogElement.scrollTop = this.attemptsLogElement.scrollHeight;
@@ -687,6 +920,7 @@ export class PinMinigame extends MinigameScene {
         this.updateDisplay();
         this.updateAttemptsDisplay();
         this.updatePinCrackerIcon();
+        this.restoreDust();
     }
     
     complete(success) {

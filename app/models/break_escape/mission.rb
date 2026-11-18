@@ -303,6 +303,52 @@ module BreakEscape
       @voice_config_cache ||= Concurrent::Map.new
     end
 
+    # Phone-call config (a contact's `call` entries and `callLabel`) by NPC id from
+    # the scenario as it is now. A game keeps the scenario_data it started with, so a
+    # game begun before a contact gained a `call` entry would serve the old snapshot;
+    # but the ink is read live, so the matching `#place_call` reaches the engine with
+    # no entry to dial — the call never connects and an ending that dials to close
+    # soft-locks. Mirrors current_voice_configs: the current template is the truth,
+    # the stored snapshot is the fallback. Narrow by design — call config only, never
+    # state the player has changed. Cached per template mtime; it has no vm_context.
+    def current_call_configs
+      template_path = scenario_path.join('scenario.json.erb')
+      mtime = File.mtime(template_path)
+      cached = self.class.call_config_cache[name]
+      return cached[:configs] if cached && cached[:mtime] == mtime
+
+      configs = self.class.call_configs_from(generate_scenario_data({}))
+      self.class.call_config_cache[name] = { mtime: mtime, configs: configs.freeze }
+      configs
+    rescue => e
+      Rails.logger.warn "[BreakEscape] Could not read current call configs for #{name}: #{e.message}"
+      # Cache the failure too, so a broken template logs once rather than per request
+      self.class.call_config_cache[name] = { mtime: mtime, configs: {}.freeze } if mtime
+      {}
+    end
+
+    # Call config by NPC id from rendered scenario data: { id => { 'call' => ...,
+    # 'callLabel' => ... } }, only for NPCs that define at least one of the two.
+    # Keeps the first record for a repeated id, like voice_configs_from.
+    def self.call_configs_from(data)
+      configs = {}
+      Game.scenario_npc_records(data).each do |npc|
+        next unless npc.is_a?(Hash)
+        id = npc['id']
+        next unless id
+
+        entry = {}
+        entry['call'] = npc['call'] if npc.key?('call')
+        entry['callLabel'] = npc['callLabel'] if npc.key?('callLabel')
+        configs[id] ||= entry unless entry.empty?
+      end
+      configs
+    end
+
+    def self.call_config_cache
+      @call_config_cache ||= Concurrent::Map.new
+    end
+
     # Parse SecGen flag_hints.xml to extract flags per VM
     # Returns: { "desktop" => ["flag{abc}", "flag{def}"], "kali" => [] }
     def self.parse_flag_hints_xml(xml_content)

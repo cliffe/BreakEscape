@@ -1,0 +1,101 @@
+{
+  "scenario_brief": "TEST: NPC squeezes past the player\n\nA row of desks (desk1 with tableItems, so they have bodies) splits the room at y 6.5, and a column of the same desks below it splits the south into two sealed bays. Each bay has one gap about 38 px wide in the desk row: west (x 82 to 120 px) for the coffee bay, east (x 178 to 216 px) for the water cooler bay. The path grid is sealed except for a 16 px lane in each gap, so the coffee is reachable only through the west gap and the cooler only through the east gap. Sam's desk is north of the room; Opal's too.\n\n1. Read the Break Time note: Sam wants coffee and Opal wants water at once.\n2. Stand in the west gap. Sam stops in front of you, waits about 2.5 s, then walks on through you to the coffee (npc-behavior.js _notePlayerBlock). He has no other route. Walk across the gap instead of standing in it and he only waits.\n3. Stand in the east gap. Opal has squeezePastPlayer: false and no other route, so she cannot detour: she waits at the gap with no 'Squeezing past the player' pass (the log line and isPassingPlayer stay off), and only after about 2.5 s at the earliest (often longer) does the older bounded nudge ease her forward.\n\nTEST DURATION: 1 to 2 minutes. Nothing to solve.",
+  "endGoal": "Engine test only: watch Sam squeeze past you in the aisle and Opal hold the block, then ease forward slowly.",
+  "startRoom": "bay",
+  "startPosition": { "x": 5, "y": 3 },
+  "npcNeedsSeed": "test_npc_squeeze_past",
+  "officePresets": true,
+
+  "objectives": [
+    {
+      "aimId": "engine_check",
+      "title": "Engine check",
+      "description": "Stand in the aisles and watch.",
+      "status": "active",
+      "order": 0,
+      "tasks": [
+        { "taskId": "see_sam_pass", "title": "See Sam squeeze past you to the coffee", "type": "custom", "status": "active" }
+      ]
+    }
+  ],
+
+  "rooms": {
+    "bay": {
+      "type": "room_office",
+      "door_sign": "Aisle Test",
+      "connections": {},
+      "objects": [
+        {
+          "type": "notes",
+          "name": "Break Time",
+          "position": { "x": 5, "y": 4 },
+          "takeable": false,
+          "readable": true,
+          "text": "Break time. Sam heads for the coffee bay through the west gap, Opal for the water cooler bay through the east gap. Each bay has only that one way in. Stand in a gap to block them: Sam walks through you after about 2.5 s, Opal waits much longer and never takes another route."
+        },
+        { "type": "pc", "id": "sam_pc", "owner": "sam", "name": "Sam's PC", "position": { "x": 3, "y": 2 }, "takeable": false, "locked": false, "workstation": true, "observations": "Sam's desk PC." },
+        { "type": "pc3", "id": "opal_pc", "owner": "opal", "name": "Opal's PC", "position": { "x": 7, "y": 2 }, "takeable": false, "locked": false, "workstation": true, "observations": "Opal's desk PC." },
+        { "type": "table", "name": "Desk 1", "position": { "x": 0.4375, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Desk 2", "position": { "x": 3.4375, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Desk 3", "position": { "x": 6.4375, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Desk 4", "position": { "x": 6.625, "y": 6.5 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Partition 1", "position": { "x": 3.4375, "y": 7.09375 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Partition 2", "position": { "x": 3.4375, "y": 7.40625 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Partition 3", "position": { "x": 3.4375, "y": 7.71875 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Partition 4", "position": { "x": 3.4375, "y": 8.03125 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        { "type": "table", "name": "Partition 5", "position": { "x": 3.4375, "y": 8.34375 }, "takeable": false, "sprite": "desk1", "tableItems": [] },
+        {
+          "type": "coffee_station1",
+          "id": "coffee_machine",
+          "name": "Coffee Station",
+          "position": { "x": 1.5, "y": 7.75 },
+          "takeable": false,
+          "observations": "A coffee station.",
+          "affordance": { "satisfies": "caffeine", "restores": 80, "useSeconds": 4 }
+        },
+        {
+          "type": "water_cooler1",
+          "id": "water_cooler",
+          "name": "Water Cooler",
+          "position": { "x": 7.75, "y": 7.6 },
+          "takeable": false,
+          "observations": "A water cooler.",
+          "affordance": { "satisfies": "thirst", "restores": 80, "useSeconds": 4 }
+        }
+      ],
+      "npcs": [
+        {
+          "id": "sam",
+          "displayName": "Sam",
+          "npcType": "person",
+          "position": { "x": 3, "y": 3 },
+          "spriteSheet": "male_office_worker_v2",
+          "storyPath": "scenarios/test_npc_squeeze_past/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": false },
+          "needsHome": "sam_pc",
+          "needs": { "caffeine": { "decayPerMin": 1, "urgentAt": 30, "initial": 90 } },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Break Time'", "cooldown": 10000, "needs": { "set": { "caffeine": 5 } } },
+            { "eventPattern": "npc_used:coffee_machine", "completeTask": "see_sam_pass", "onceOnly": true }
+          ]
+        },
+        {
+          "id": "opal",
+          "displayName": "Opal",
+          "npcType": "person",
+          "position": { "x": 7, "y": 3 },
+          "spriteSheet": "female_office_worker_v2",
+          "storyPath": "scenarios/test_npc_squeeze_past/ink/staff.json",
+          "currentKnot": "start",
+          "behavior": { "facePlayer": false, "squeezePastPlayer": false },
+          "needsHome": "opal_pc",
+          "needs": { "thirst": { "decayPerMin": 1, "urgentAt": 30, "initial": 90 } },
+          "eventMappings": [
+            { "eventPattern": "object_interacted", "condition": "data.objectName === 'Break Time'", "cooldown": 10000, "needs": { "set": { "thirst": 5 } } }
+          ]
+        }
+      ]
+    }
+  }
+}

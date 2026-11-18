@@ -1,0 +1,13 @@
+{
+  "key": "df8e1945a8b8b5a9fb282e4045316881",
+  "npc": "gwen_pritchard",
+  "text": "Right, I'll log this and pack up.",
+  "voice": "Sulafat",
+  "style": "The facility's operations floor systems support lead, in her late 30s, friendly and practical. Speak with a consistent General American accent, Pacific Northwest, throughout, do not shift to any other accent.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m07_architects_gambit",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T03:49:56Z"
+}

@@ -36,7 +36,10 @@ export function endingSilenced() { return _silenced; }
 /** Test hook: forget a previous ending. */
 export function _resetEndingAudio() { _silenced = false; }
 
-/** Fade one Phaser sound to nothing on timers, then stop it. */
+/** Fade one Phaser sound to nothing on timers, then stop it. 
+ * Writes setVolume directly, bypassing SoundManager._writeVol (which records the last value for
+ * fades). Safe here: ambience is suppressed first and each sound is stopped at the end, and every
+ * SoundManager restart path rewrites 0 before reading. Route through sm._writeVol if that changes. */
 function fadeOutAndStop(sound, fadeMs, timers) {
     const from = typeof sound.volume === 'number' ? sound.volume : 1;
     if (!fadeMs || fadeMs <= 0 || from <= 0) {

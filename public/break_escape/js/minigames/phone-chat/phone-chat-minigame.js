@@ -18,6 +18,7 @@ import { partitionSlowTags } from '../person-chat/person-chat-pending-reply.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
+import { openModalCount } from '../../ui/modal-stack.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS, TERMINAL_CALL_END_READ_MS } from './phone-call-lock.js';
@@ -212,6 +213,18 @@ export class PhoneChatMinigame extends MinigameScene {
      * Set up event listeners for UI interactions
      */
     setupEventListeners() {
+        // Terminal theme: click the thread, or press Space/Enter, to skip the typeout
+        if (this.ui.isTerminalTheme) {
+            this.addEventListener(this.ui.elements.messagesContainer, 'click', (e) => {
+                if (this._onSkipPress()) e.stopPropagation();
+            });
+        }
+        // Space/Enter act like a click on the thread: the terminal typeout, and a voiced call's clip
+        // on the call screen (any other theme). The click on a voiced thread is wired where the
+        // call voice is made.
+        if (this.ui.isTerminalTheme || this.ui.isCallMode) {
+            this.addEventListener(document, 'keydown', (e) => this._onSkipKey(e));
+        }
         // Contact list item clicks
         this.addEventListener(this.ui.elements.contactList, 'click', (e) => {
             const contactItem = e.target.closest('.contact-item');
@@ -481,6 +494,7 @@ export class PhoneChatMinigame extends MinigameScene {
     }
 
     async openConversation(npcId) {
+        this._resetSkip();   // a skip pressed in the last thread must not carry into this one
         // The phone was closed before this ran (a deferred reopen, e.g. back from notes)
         if (!this.gameState.isActive) return;
         const npc = this.npcManager.getNPC(npcId);
@@ -690,7 +704,7 @@ export class PhoneChatMinigame extends MinigameScene {
                 // Re-assert the pretext card VARs: the restore (LoadJson) above replaced
                 // the story-local VARs, so set them before the re-run reads a choice.
                 this._pretext?.fillVars?.();
-            }, { force: forcePretextRebake });
+            }, { force: forcePretextRebake, homeKnot: String(npc.homeKnot || 'start').split('.')[0] });
 
             this._showRestoredThread(npc, npcId, conversationHistory, reopen);
 
@@ -886,7 +900,8 @@ export class PhoneChatMinigame extends MinigameScene {
     async _presentOutput(accumulatedMessages, accumulatedTags, lastResult, { tagsApplied = false, deliveries = null } = {}) {
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        const delay = ms => this._pace(ms);
+        this._resetSkip();
 
         // If story has ended with no messages, end conversation immediately (unless the step places a
         // call: #place_call is checked once the lines have shown, before the story-end checks)
@@ -944,10 +959,11 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) { this._resetSkip(); return; }
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
+        this._resetSkip();
         this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
@@ -991,6 +1007,85 @@ export class PhoneChatMinigame extends MinigameScene {
     }
 
     /**
+     * A wait between story lines ("receiving_" indicator, pause). Ends early on a skip
+     * press; after a second press (skip-all) it does not wait at all.
+     */
+    _pace(ms) {
+        if (this._skipAll) return Promise.resolve();
+        return new Promise(resolve => {
+            const wake = () => {
+                clearTimeout(timer);
+                if (this._paceWake === wake) {
+                    this._paceWake = null;
+                    this.ui?.setPaceActive?.(false);
+                }
+                resolve();
+            };
+            const timer = setTimeout(wake, ms);
+            this._paceWake = wake;
+            this.ui?.setPaceActive?.(true);
+        });
+    }
+
+    _resetSkip() {
+        this._skipAll = false;
+        this._paceWake?.();   // a wait left running by a closed thread ends now
+        this.ui?.setInstantType?.(false);
+    }
+
+    /**
+     * Skip press (click on the thread, Space or Enter) in the terminal theme. First press while
+     * a line types: the line finishes now. A press during the indicator or pause (or a later
+     * one): skip-all, so the remaining lines appear whole with no waits and the choices come
+     * at once. Returns true if it acted. Never touches audio itself: a voiced line speaks after
+     * its text. The click also skips a playing clip through the click-to-skip-voice handler on
+     * the same element, and _onSkipKey does the same for Space and Enter, so keys match clicks.
+     */
+    _onSkipPress() {
+        if (!this.ui?.isTerminalTheme) return false;
+        if (!this.ui.isTypewriting?.() && !this._paceWake) return false;
+        if (this.ui.isTypewriting() && !this._skipAll) {
+            this.ui.skipTypewriter();
+            return true;
+        }
+        this._skipAll = true;
+        this.ui.setInstantType(true);
+        this.ui.skipTypewriter();
+        this._paceWake?.();
+        return true;
+    }
+
+    /**
+     * Space or Enter acts like a click on the thread: it stops a playing voice clip (when the
+     * call is voiced, in the terminal theme or on the call screen) and then runs the same skip
+     * press (terminal theme only). Ignored while the thread is not on top,
+     * with modifier keys held, on key repeat, or when focus is in a field or button. Swallows
+     * the key only when it did something.
+     */
+    _onSkipKey(e) {
+        if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+        if (e.key !== ' ' && e.key !== 'Enter') return;
+        if (!this._threadIsTop()) return;
+        const t = e.target;
+        const tag = t?.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || t?.isContentEditable) return;
+        const a = document.activeElement;
+        if (a && a !== t && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
+        const clip = !!this._callVoice?.active;
+        if (clip) this._callVoice.skip();   // as the click does on a voiced thread
+        if (this._onSkipPress() || clip) { e.preventDefault(); e.stopPropagation(); }
+    }
+
+    /** The thread is showing and nothing sits over it (incoming-call panel, dialog, menu). */
+    _threadIsTop() {
+        if (!this.gameState?.isActive || this.ui?.getCurrentView?.() !== 'conversation') return false;
+        if (this.ui.incomingCallShowing?.()) return false;
+        if (openModalCount() > 0) return false;
+        const box = this.ui.elements?.messagesContainer;
+        return !!box && box.getClientRects().length > 0;
+    }
+
+    /**
      * Type one story line into the open thread and record it. A line written as the
      * player's ("You: …", or tagged #speaker:player) goes in as a player bubble with the
      * prefix stripped, with no "typing…" from the NPC (U3); phone texts are not voiced, except in a voiced call (F17).
@@ -1014,7 +1109,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (line.type === 'npc') {
             this.ui.showTypingIndicator();
             this.ui.scrollToBottom();
-            await new Promise(resolve => setTimeout(resolve, typingDelayMs));
+            await this._pace(typingDelayMs);
             this.ui.hideTypingIndicator();
             if (!stillOurs()) return false;
         }
@@ -1042,7 +1137,7 @@ export class PhoneChatMinigame extends MinigameScene {
         if (reopen.renavigated) {
             this._presentReopened(reopen);
         } else if (npc.restartOnRetalk !== false && !onlyPreloaded &&
-            this.conversation.getCurrentState().hasEnded &&
+            (this.conversation.getCurrentState().hasEnded || this.conversation.restoredStoryHasOnlyTheEnd()) &&
             this.conversation.restartAfterEnd()) {
             console.log(`🔁 Previous conversation had ended - restarting ${npcId} at knot: ${npc.currentKnot}`);
             this.continueStory();
@@ -1185,7 +1280,8 @@ export class PhoneChatMinigame extends MinigameScene {
 
         const TYPING_DELAY_MS  = 1000;
         const INTER_MESSAGE_MS = 400;
-        const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+        const delay = ms => this._pace(ms);
+        this._resetSkip();
 
         // Get choice text before making choice
         const choices = this.ui.elements.choicesContainer.querySelectorAll('.choice-button');
@@ -1313,10 +1409,11 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) { this._resetSkip(); return; }
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
+        this._resetSkip();
         this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
@@ -1846,6 +1943,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
     closeConversation() {
         console.log('🔙 Closing conversation');
+        this._resetSkip();
         if (this._pretext) return this._leavePretextCall();
 
         this._flushPendingMessages();

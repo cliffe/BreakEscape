@@ -334,6 +334,25 @@ test('a pickup: walkers turn back gone, the one eating finishes at once, knowled
     assert.equal(o.sys.getState('bob').job?.targetId, 'cake', 'seen again');
 });
 
+test('m06 pizza shape: two servings on the table, unchanged by the eatable fix; once taken, NPCs no longer target it', () => {
+    const pizza = { id: 'pizza', roomId: 'kitchen', x: 900, y: 300, type: 'pizza_boxes', takeable: true,
+        affordance: { satisfies: ['hunger'], restores: 60, useSeconds: 12, magnet: { tempt: 60, servings: 2, perPerson: 1 } } };
+    const o = office({ ann: { rec: { needs: hunger(60) } }, bob: { rec: { needs: hunger(60) } } }, { objects: [pizza] });
+    o.sys.scanMagnets();
+    assert.equal(o.sys._servingsLeft('pizza'), 2, 'two servings while on the table');
+    for (const id of ['ann']) o.sys.states.get(id).knows.add('pizza');
+    o.ticks(1);
+    assert.equal(o.sys.getState('ann').job?.targetId, 'pizza', 'on the table a knowing NPC is tempted');
+    o.w.objs.find(x => x.id === 'pizza').roomId = null;   // the player takes it
+    o.ticks(1);
+    o.sys.scanMagnets();
+    for (const id of ['ann', 'bob']) o.sys.states.get(id).knows.add('pizza');
+    o.ticks(3);
+    assert.equal(o.sys.getState('ann').job?.targetId === 'pizza', false, 'ann does not go for a pizza in the inventory');
+    assert.equal(o.sys.getState('bob').job?.targetId === 'pizza', false, 'bob does not either');
+    assert.equal(o.evs('serving_taken').length, 0);
+});
+
 test('a pickup during the windup: the walker turns back gone when it would leave (no job_failed, no cooldown), and a re-drop tempts it again', () => {
     const o = office({ ann: { rec: { needs: hunger(60) } } }, { objects: [cake({}, { servings: 2 })] });
     o.w.world.windupMs = () => 3000;

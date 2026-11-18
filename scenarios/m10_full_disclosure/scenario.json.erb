@@ -76,9 +76,9 @@ m10_vms = {
 # One flag per station (F-18): each station lists only its own flag, by slice.
 m10_stations = [
   { id: 'gate_terminal',      flag: 1, vm: 'bunker_monitor', index: 0, hint: "That one goes in at the gate terminal, up at the forward post." },
-  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That one goes in at the release console in the server hall." },
-  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That one goes in at the sealed section's hatch, at the east end of the server hall." },
-  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That one goes in at the core host terminal." }
+  { id: 'release_console',    flag: 2, vm: 'bunker_monitor', index: 1, hint: "That's their staging schedule. It goes where they stage the release." },
+  { id: 'sealed_hatch',       flag: 3, vm: 'release_host',   index: 0, hint: "That's off the release host. Find the station that takes the release host." },
+  { id: 'core_host_terminal', flag: 4, vm: 'core_host',      index: 0, hint: "That's the core host's. Its terminal is further in." }
 ]
 # The attack box (HaX's racked field console). VM-WIRE: title and fallback ip.
 m10_attack_vm = 'attack_vm'
@@ -517,7 +517,10 @@ voices = {
   guard_m: { 'name' => 'Sadachbia', 'style' => 'Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Bored, wary, paid not to ask questions.', 'language' => 'en-US' },
   guard_f: { 'name' => 'Laomedeia', 'style' => 'Hired night security in a converted Montana bunker. Consistent General American accent throughout -- do not shift to any other accent. Flat, alert, paid not to ask questions.', 'language' => 'en-US' },
   farah: { 'name' => 'Zephyr', 'style' => 'Night-shift floor guard near the end of a long shift. Consistent General American accent throughout -- do not shift to any other accent. Tired and sharp.', 'language' => 'en-US' },
-  minder: { 'name' => 'Sulafat', 'style' => "SAFETYNET van-team minder. #{rp} Calm, low, practical.", 'language' => 'en-GB' }
+  minder: { 'name' => 'Sulafat', 'style' => "SAFETYNET van-team minder. #{rp} Calm, low, practical.", 'language' => 'en-GB' },
+  # Office life (office_life/PLAN.md 2.7): the forward post's support staff. Swap Sofia's voice by changing the name here only.
+  fp_darren: { 'name' => 'Orus', 'style' => 'SAFETYNET field support from the regional office, in his 40s, measured and dry. Speak with a consistent Bristol and West Country accent throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.', 'language' => 'en-GB' },
+  fp_sofia: { 'name' => 'Despina', 'style' => "SAFETYNET's welfare and logistics officer at a forward post, in her 30s, warm and approachable. Speak with a consistent southern English accent with a light Italian-British lilt throughout, with no shift to any other accent. Calm and quiet, as at three in the morning; no urgent wording.", 'language' => 'en-GB' }
 }
 voice = ->(key) { voices.fetch(key).to_json }
 # Walkthrough R1b-M1: once the night has closed, nobody in the raid can be
@@ -973,6 +976,36 @@ credits_fragment = JSON.parse(<<~'JSON')
           ]
         },
         {
+          "name": "DARREN PRICE",
+          "clauses": [
+            {
+              "text": "Field support. Knocked out by the agent he kept the lights on for.",
+              "condition": "globalVars.fp_darren_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Field support. Kept the generator running till dawn."
+            }
+          ]
+        },
+        {
+          "name": "SOFIA MARCHETTI",
+          "clauses": [
+            {
+              "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
+              "condition": "globalVars.fp_sofia_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Welfare. Put the kettle away when the shouting started.",
+              "condition": "globalVars.fp_staff_upset === true"
+            },
+            {
+              "text": "Welfare. Kept the kettle on all night."
+            }
+          ]
+        },
+        {
           "name": "AGENT 0x23 'VECTOR'",
           "clauses": [
             {
@@ -1104,6 +1137,36 @@ credits_fragment = JSON.parse(<<~'JSON')
             },
             {
               "text": "Comms. Logged the minute it went out."
+            }
+          ]
+        },
+        {
+          "name": "DARREN PRICE",
+          "clauses": [
+            {
+              "text": "Field support. Knocked out by the agent he kept the lights on for.",
+              "condition": "globalVars.fp_darren_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Field support. Kept the generator running till dawn."
+            }
+          ]
+        },
+        {
+          "name": "SOFIA MARCHETTI",
+          "clauses": [
+            {
+              "text": "Welfare. Knocked out by the agent she kept a cup warm for.",
+              "condition": "globalVars.fp_sofia_ko === true",
+              "style": "warning"
+            },
+            {
+              "text": "Welfare. Put the kettle away when the shouting started.",
+              "condition": "globalVars.fp_staff_upset === true"
+            },
+            {
+              "text": "Welfare. Kept the kettle on all night."
             }
           ]
         },
@@ -1290,6 +1353,7 @@ end
   },
 
   "npcThoughts": false,
+  "ttsPregenerateChatter": true,
   "startRoom": "forward_post",
   "lighting": { "enabled": true, "defaultMode": "on", "ambient": "#b8bfce" },
 
@@ -1752,7 +1816,16 @@ end
             { "eventPattern": "<%= ev %>", "condition": "globalVars.split_started === true && globalVars.arakawa_ko === true && !globalVars.arakawa_call_done", "setGlobal": { "arakawa_call_done": true } },
 <% end %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.nightshade_tethered && !globalVars.override_held", "setGlobal": { "breach_announced": true } },
+            <%# Engine fight hold (fix/phone-defer-combat): this voiced call, offered while a chaser is in the player's room or the player was hit in the last few seconds, is held by the ringer (playerInCombat) and rings once the fight is over, so no scenario global is needed. A Respawn or F5 mid-fight turns the held unforced call into a missed one; the game_loaded mapping below rings it again, and breach_call_done (set by the call) stops any later ring. %>
             { "eventPattern": "global_variable_changed:breach_open", "condition": "value === true && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 1500 },
+            <%# Backstop for a breach call a reload lost: a Respawn or an F5 turns the unanswered call into a missed one, so game_loaded rings it again until HaX has given it (breach_call_done). Not onceOnly, so a second reload mid-fight cannot lose it; the ringer drops a duplicate offer for the same knot. %>
+            { "eventPattern": "game_loaded", "condition": "globalVars.breach_open === true && !globalVars.breach_call_done && !globalVars.hax_jammed", "conversationMode": "phone-chat", "targetKnot": "breach_call", "voiced": true, "delayMs": 3000 },
+            <%# Blind fix R2 M1/m2: a hall guard who turns hostile by any route is engaged, which ends the repeat challenge. %>
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_a' && data.isHostile === true", "setGlobal": { "hall_a_engaged": true } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_b' && data.isHostile === true", "setGlobal": { "hall_b_engaged": true } },
+            <%# Blind fix R3 m1: a Respawn calms the guard (reset === true) and reloads; clear the engaged flag and arm the repeat challenge (warnings 2 for a, 1 for b) so a reset guard challenges again, as in m03 F4 and m04 F2. %>
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_a' && data.reset === true", "cooldown": 0, "setGlobal": { "hall_a_engaged": false, "hall_a_warnings": 2 } },
+            { "eventPattern": "npc_hostile_state_changed", "condition": "data.npcId === 'hall_guard_b' && data.reset === true", "cooldown": 0, "setGlobal": { "hall_b_engaged": false, "hall_b_warnings": 1 } },
 <%# --- The inner door and the tripwire (OT 4.3) ------------------------------ %>
             { "eventPattern": "room_entered:blast_tunnel", "condition": "!globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 800 },
             { "eventPattern": "game_loaded", "condition": "globalVars.blast_tunnel_entered === true && !globalVars.tripwire_armed && !globalVars.inner_door_open", "unlockDoor": "security_office", "delayMs": 1500 },
@@ -1814,6 +1887,7 @@ end
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && !globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped && globalVars.wendell_outcome === ''", "setGlobal": { "wendell_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_captured === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },
             { "eventPattern": "room_exited", "condition": "data.roomId === 'power_room' && globalVars.m04_voltage_escaped === true && globalVars.voltage_outcome === ''", "setGlobal": { "voltage_outcome": "avoided" } },
+            { "eventPattern": "fingerprint_collected:voltage", "condition": "data.objectId === 'bypass_panel' && !globalVars.m04_voltage_escaped && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 1500, "message": "Every fitter's been at that panel. Nothing there to follow up." } },
             { "eventPattern": "fingerprint_collected:voltage", "condition": "data.objectId === 'bypass_panel' && globalVars.m04_voltage_escaped === true && !globalVars.voltage_print_lifted", "setGlobal": { "voltage_print_lifted": true } },
             <%# Regression fix pass m-3: no call opens during the Voltage fight; it rings once the fight is over (power_fight_over). %>
             { "eventPattern": "global_variable_changed:power_fight_over", "condition": "value === true && globalVars.cut_by_hand === true && globalVars.phone_voice_is_hax === true && !globalVars.gallery_shutter_cut && !globalVars.hax_jammed", "onceOnly": true, "conversationMode": "phone-chat", "targetKnot": "cut_call", "voiced": true, "delayMs": 1500 },
@@ -1985,7 +2059,15 @@ end
             { "eventPattern": "global_variable_changed:clue_alibi", "condition": "value === true && globalVars.clue_door_log === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 6000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             { "eventPattern": "global_variable_changed:clue_door_log", "condition": "value === true && globalVars.clue_alibi === true && globalVars.clue_bench_log === true && globalVars.whodunit_live === true && globalVars.accused === '' && !globalVars.hax_jammed", "onceOnly": true, "sendTimedMessage": { "delay": 12000, "message": "That's three things that point somewhere. Your call, and you don't have to make it.", "skipIfGlobal": "hax_jammed" } },
             <%# The override keeps the board quiet (S6 1.10): onPickup sets override_held; this is the net if a #give_item skips onPickup. %>
-            { "eventPattern": "item_picked_up:key", "condition": "data.itemId === 'alarm_override' && !globalVars.override_held", "setGlobal": { "override_held": true } }
+            { "eventPattern": "item_picked_up:key", "condition": "data.itemId === 'alarm_override' && !globalVars.override_held", "setGlobal": { "override_held": true } },
+<%# Office life (office_life/PLAN.md 2.6): any attack on the support staff, or a team member knocked out, stops the tea. Appended last so no saved once index moves. %>
+            { "eventPattern": "npc_attacked:darren_price", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "npc_attacked:sofia_marchetti", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:arakawa_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:vector_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:phantom_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:quintero_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } },
+            { "eventPattern": "global_variable_changed:kowalczyk_ko", "condition": "value === true", "onceOnly": true, "setGlobal": { "fp_staff_upset": true } }
           ]
         },
 <%# --- Nightshade (RL 2.1): the table on three branches, the van on the silent one. Each copy is its own NPC; all koImmune. door_branch(): shown = triple_agent && shown_file; unshown = triple_agent; arrested = arrested && !ko_before_fate; else silent. --- %>
@@ -2541,6 +2623,67 @@ end
             { "eventPattern": "game_loaded", "condition": "globalVars.ending === 'joined' && !globalVars.closing_done", "conversationMode": "person-chat", "targetKnot": "start", "background": "assets/backgrounds/m10_citadel_blended.png", "disableClose": true, "delayMs": 2500 }
           ]
         },
+<%# Office life (office_life/PLAN.md 2.7): forward post support staff, ambient only. Keys are literal JSON, outside any ERB loop; only the voice and the hide helper are expressions. %>
+        {
+          "id": "darren_price",
+          "displayName": "Darren Price",
+          "npcType": "person",
+          "gender": "male",
+          "spriteSheet": "darren_price",
+          "spriteTalk": "assets/characters/darren_price_talk.png",
+          "spriteVisemes": "assets/characters/darren_price_visemes.png",
+          "avatar": "assets/characters/darren_price_headshot.png",
+          "voice": <%= voice.(:fp_darren) %>,
+          "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json",
+          "currentKnot": "talk_darren",
+          "position": { "x": 8.625, "y": 8.375 },
+          "needsHome": { "room": "forward_post", "x": 8.625, "y": 8.375 },
+          "needsRooms": ["forward_post"],
+          "needsCompany": { "groups": ["fp_support"] },
+          "chatterCooldownMin": 2,
+          "globalVarOnKO": "fp_darren_ko",
+          "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
+          "needs": { "caffeine": { "initial": 60, "decayPerMin": 3, "urgentAt": 30, "jitterPct": 10 } },
+          "chatter": { "kettle_fp": ["Fuel's good till dawn. Probably.", "Should've brought the big coat.", "Too cold for the laptops, never mind me.", "I've run the lamp off a spare battery."] },
+          "exchanges": [
+            { "with": "sofia_marchetti", "knot": "ex_fp_kettle_on", "requireGlobal": { "fp_staff_upset": false, "split_started": false } },
+            { "with": "sofia_marchetti", "knot": "ex_fp_radios", "requireGlobal": { "fp_staff_upset": false, "split_started": true, "breach_open": false } },
+            { "with": "sofia_marchetti", "knot": "ex_fp_door_open", "requireGlobal": { "fp_staff_upset": false, "breach_open": true, "closing_done": false } }
+          ],
+          "eventMappings": [
+            <%= after_end_json.('forward_post') %>
+            { "eventPattern": "conversation_closed:director_netherton", "condition": "!globalVars.split_started && !globalVars.gate_console_used && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "conversation_closed:arakawa_gate", "condition": "globalVars.arakawa_call_done === true && !globalVars.breach_open && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } },
+            { "eventPattern": "room_entered:forward_post", "condition": "!!data.previousRoom && globalVars.breach_open === true && !globalVars.closing_done && !globalVars.fp_staff_upset", "delayMs": 2000, "cooldown": 150000, "needs": { "set": { "caffeine": 20 } } }
+          ]
+        },
+<%# Office life (office_life/PLAN.md 2.7): forward post support staff, ambient only. Keys are literal JSON, outside any ERB loop; only the voice and the hide helper are expressions. %>
+        {
+          "id": "sofia_marchetti",
+          "displayName": "Sofia Marchetti",
+          "npcType": "person",
+          "gender": "female",
+          "spriteSheet": "sofia_marchetti",
+          "spriteTalk": "assets/characters/sofia_marchetti_talk.png",
+          "spriteVisemes": "assets/characters/sofia_marchetti_visemes.png",
+          "avatar": "assets/characters/sofia_marchetti_headshot.png",
+          "voice": <%= voice.(:fp_sofia) %>,
+          "storyPath": "scenarios/m10_full_disclosure/ink/m10_fp_support.json",
+          "currentKnot": "talk_sofia",
+          "position": { "x": 9.625, "y": 8.375 },
+          "needsHome": { "room": "forward_post", "x": 9.625, "y": 8.375 },
+          "needsRooms": ["forward_post"],
+          "needsCompany": { "groups": ["fp_support"] },
+          "chatterCooldownMin": 2,
+          "globalVarOnKO": "fp_sofia_ko",
+          "behavior": { "hostile": { "leash": true, "chaseRange": 32 } },
+          "needs": { "caffeine": { "initial": 90, "decayPerMin": 2.5, "urgentAt": 30, "jitterPct": 10 } },
+          "chatter": { "kettle_fp": ["Who's not had a cup yet?", "Both vans have their heaters on now.", "The kettle's the easy bit tonight.", "Soup's in the flask, if anyone wants it."] },
+          "eventMappings": [
+            <%= after_end_json.('forward_post') %>
+            { "eventPattern": "npc_use_started:fp_kettle", "condition": "data.npcId === 'darren_price' && !globalVars.fp_staff_upset", "delayMs": 1500, "cooldown": 30000, "needs": { "set": { "caffeine": 20 } } }
+          ]
+        },
 <%# Implementation R1 (playtest C F2, D m-2): a "Name:" prefix resolves only
     against NPCs registered this session, and the engine registers a room's NPCs
     when the room loads. The forward post is the start room, so it loads on every
@@ -2687,7 +2830,7 @@ end
           "puzzle_graph_note": "The breach also waits on the table scene and the pair back (OT 4.1).",
           <%# VM-WIRE: flag 1 (the foothold on the security monitoring host). One flag per station (F-18). %>
           "acceptsVms": [<%= j.(station.(1)[:vm]) %>],
-          "acceptsVmLabels": { <%= j.(station.(1)[:vm]) %>: "the monitoring host" },
+          "acceptsVmLabels": { <%= j.(station.(1)[:vm]) %>: "the monitoring host (the foothold)" },
           "flags": <%= station_flags.(1) %>,
           "hintOnlyFlags": <%= station_hints.(1) %>,
           "flagRewards": [
@@ -2736,6 +2879,19 @@ end
           "text": "TOMB GAMMA SECURITY MONITORING.\nHost: <%= bunker_monitor_ip %>\nConsole: port <%= monitor_console_port %>.\nRuns as service account <%= monitor_login_user %>. Maintenance only.\nDo not remove.",
           "puzzle_graph_role": "key",
           "puzzle_graph_unlocks": "gate_terminal"
+        },
+        {
+          "_comment": "Office life (office_life/PLAN.md 3): the support staff's kettle, on the third kit crate south of the table. as-type:kettle claims the Tiled kettle1 placeholder on that crate. The whole affordance is by hand (no officePresets). useFrom dy -0.1 puts the use cells at (276,268) and (308,268) px, measured live; two users, one per cell.",
+          "type": "kettle",
+          "officeType": "kettle",
+          "id": "fp_kettle",
+          "name": "Kettle",
+          "sprite": "kettle1",
+          "takeable": false,
+          "position": "as-type:kettle",
+          "offWhen": "fp_staff_upset",
+          "observations": "A dented camping kettle on a kit crate, plugged into the generator's spare lead. Two mugs, one chipped.",
+          "affordance": { "satisfies": "caffeine", "restores": 70, "useSeconds": 22, "capacity": 2, "useFrom": { "dx": 0, "dy": -0.1 }, "queue": false, "chatter": "kettle_fp", "overhearRadius": 320, "useSound": "drink_gulp" }
         }
       ]
     },
@@ -2800,6 +2956,7 @@ not_tethered = '!globalVars.nightshade_tethered'
       "locked": true,
       "lockType": "rfid",
       "requires": "tg_story_lock_blast_tunnel",
+      "lockedHint": "Not a badge door. It answers to their gate terminal at the forward post.",
       "connections": { "west": "forward_post", "east": "security_office" },
       "npcs": [
         {
@@ -3538,7 +3695,9 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
-            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
+            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." },
+            <%# Blind fix R1 M1: Wendell is only on shift on the default import branch. %>
+            { "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped", "value": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here." }
           ],
           "text": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it.",
           "textVariants": [
@@ -3547,7 +3706,9 @@ not_tethered = '!globalVars.nightshade_tethered'
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3 && globalVars.gallery_camera_blinded === true", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED. Under the row, the painted toggle thrown: GALLERY CAMERA: OFF." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.cut_step === 3", "value": "Key a quarter right. The third breaker from the left is down, where you pulled it. GALLERY SHUTTER: ISOLATED." },
             { "condition": "globalVars.gallery_shutter_cut === true && globalVars.gallery_camera_blinded === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED. Under it, a smaller switch thrown the other way: GALLERY CAMERA: OFF." },
-            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." }
+            { "condition": "globalVars.gallery_shutter_cut === true", "value": "Key turned, breaker row down. GALLERY SHUTTER: ISOLATED." },
+            <%# Blind fix R1 M1: Wendell is only on shift on the default import branch. %>
+            { "condition": "!globalVars.m04_voltage_captured && !globalVars.m04_voltage_escaped", "value": "A key switch and a breaker row, labelled GALLERY SHUTTER. The key is in it. Wendell Briggs, the fitter on shift, does the switching here." }
           ]
         },
         {
@@ -3576,7 +3737,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "fingerprintOwnerName": "an unidentified fitter",
           "fingerprintCandidates": ["Wendell Briggs", "the fitters"],
           "fingerprintDifficulty": "easy",
-          "observations": "The refit's bypass panel, bolted over the 1960s switchgear. Smudged by every fitter who has touched it.",
+          "observations": "The refit's bypass panel, bolted over the 1960s switchgear. Smudged by every fitter who has touched it. Nothing here worth lifting.",
           "observationVariants": [
             { "condition": "globalVars.m04_voltage_escaped === true && globalVars.voltage_print_lifted === true && globalVars.m04_voltage_print_on_bypass === true", "value": "Dusted. One clean thumbprint, lifted. It matches the print you took off the bypass at Albion." },
             { "condition": "globalVars.m04_voltage_escaped === true && globalVars.voltage_print_lifted === true", "value": "Dusted. One clean thumbprint, lifted. There's nothing on file to match it to." },
@@ -3657,6 +3818,7 @@ not_tethered = '!globalVars.nightshade_tethered'
 <% [['hall_guard_a', 2, 6, 8, 6, 'male_security_guard', :guard_m, 'The west patrol, walking the plotting board end.'],
     # Dressing R4 H4: hall_guard_b's start and west turn were (13, 8), tucked into the east rack's corner; (13.6, 8) clears it.
     ['hall_guard_b', 13.6, 8, 17, 8, 'female_security_guard_v2', :guard_f, 'The east patrol, past the hatch and back.']].each do |gid, x1, y1, x2, y2, sprite, vkey, look| %>
+<% wv = gid.sub('hall_guard_', 'hall_') %>
         {
           "id": "<%= gid %>",
           "displayName": "Guard",
@@ -3677,7 +3839,9 @@ not_tethered = '!globalVars.nightshade_tethered'
           "eventMappings": [
             <%= after_end_json.('server_hall') %>
             <%# Playtest B-03: the second guard's challenge waits 4 s after the first (re-checked then), so the two do not land back to back; neither plays once the raid team has stood them down. %>
-            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
+            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down && globalVars.<%= wv %>_warnings === 0", "onceOnly": true, "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>", "cooldown": 0<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
+<%# Blind fix R1 m1, R2 M1/m2: after Back off (the guard's warnings above 0) the next sighting, 30 s on at the earliest, reopens the guard at its _final knot, where the only way on is the fight. Repeatable, so a reload or a long wait does not lose it; the sight cooldown keeps it from looping, and <id>_engaged (set when the guard turns hostile) stops it for good, so it never opens over a fight. A KO'd NPC is skipped by the chat opener itself. %>
+            { "eventPattern": "player_spotted:<%= gid %>", "condition": "!globalVars.hall_guards_stood_down && globalVars.<%= wv %>_warnings !== 0 && !globalVars.<%= wv %>_engaged", "conversationMode": "person-chat", "targetKnot": "<%= gid.sub('hall_guard_', 'hall_') %>_final", "cooldown": 30000<%= gid == 'hall_guard_b' ? ', "delayMs": 4000' : '' %> },
             <%# Playtest B-03: the talk-past (ink: hall_guards_stood_down) stops both patrols where they turn. %>
             { "eventPattern": "global_variable_changed:hall_guards_stood_down", "condition": "value === true", "patrolOverride": { "targetTile": { "x": <%= x1 %>, "y": <%= y1 %> }, "speed": 60 } },
             { "eventPattern": "room_entered:server_hall", "condition": "globalVars.hall_guards_stood_down === true && !globalVars.closing_done", "patrolOverride": { "targetTile": { "x": <%= x1 %>, "y": <%= y1 %> }, "speed": 200 } }
@@ -3740,7 +3904,7 @@ not_tethered = '!globalVars.nightshade_tethered'
           "puzzle_graph_note": "The gallery stair waits on flags 2 and 3 and the shutter cut (OT 4.4).",
           <%# VM-WIRE: flag 2 (the staging schedule). %>
           "acceptsVms": [<%= j.(station.(2)[:vm]) %>],
-          "acceptsVmLabels": { <%= j.(station.(2)[:vm]) %>: "the monitoring host" },
+          "acceptsVmLabels": { <%= j.(station.(2)[:vm]) %>: "the monitoring host (the staging schedule)" },
           "flags": <%= station_flags.(2) %>,
           "hintOnlyFlags": <%= station_hints.(2) %>,
           "flagRewards": [
@@ -4542,6 +4706,11 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "mercer_fighting": false,
     "victoria_call_deferred": false,
     "power_fight_on": false,
+    "breach_call_done": false,
+    "hall_a_warnings": 0,
+    "hall_a_engaged": false,
+    "hall_b_warnings": 0,
+    "hall_b_engaged": false,
     "gallery_call_deferred": false,
     "static_power_ko": false,
     "power_fight_over": false,
@@ -4611,6 +4780,12 @@ m10_imports.keys.each { |from| import_rows << { 'from' => from, 'completed' => "
     "arakawa_ko": false,
     "vector_ko": false,
     "phantom_ko": false,
+    "fp_staff_upset": false,
+    "fp_darren_ko": false,
+    "fp_sofia_ko": false,
+    "heard_ex_fp_kettle_on": false,
+    "heard_ex_fp_radios": false,
+    "heard_ex_fp_door_open": false,
     "malhotra_recalled": false,
     "arakawa_recalled": false,
     "quintero_recalled": false,

@@ -9,7 +9,7 @@ Somebody sold Ghost the way into St. Catherine's. The trail leads to WhiteHat Se
 | Metric | Value |
 |---|---|
 | Story aims | 6 |
-| Total tasks | 22 (5 optional) |
+| Total tasks | 22 (7 optional) |
 | VM flag challenges | 4 |
 | Physical locks | 7 |
 | AND-gate convergences | 3 |
@@ -331,6 +331,7 @@ flowchart TD
   aim_act1_gain_access -.->|night_explored| aim_collect_lore
   aim_act2_breach_server_room -.->|perfect_stealth_earned| aim_perfect_stealth
   aim_act2_breach_server_room -.->|night_confrontation_ready| aim_moral_choices
+  door_conference_room_01 -.-> aim_act1_gain_access
   vmfl_submit_network_scan_flag -.-> aim_act2_breach_server_room
   vmfl_submit_ftp_flag -.-> aim_act2_breach_server_room
   vmfl_submit_http_flag -.-> aim_act2_breach_server_room

@@ -91,6 +91,13 @@ VAR relay_engaged = false
 VAR static_engaged = false
 VAR guard_hostile = false
 VAR operative_cipher_defeated = false
+// Gate minor 2: the head-count reads every route, not just KOs. cipher_walked
+// (talked out of the hall), relay_card_cloned (Relay's card copied, task done),
+// static_left (stood aside, then left), voltage_captured / voltage_escaped.
+VAR cipher_walked = false
+VAR static_left = false
+VAR voltage_captured = false
+VAR voltage_escaped = false
 
 // Local: greet on the first open only (m03 D2-14); one gated hint per stuck
 // point, retired once given (m03 pass 5 P1-12).
@@ -280,9 +287,16 @@ Sent. Paste it in, hit Magic, and it'll tell you what it is.
 === operative_down_advice ===
 ~ operative_down_given = true
 {operatives_defeated >= 2:
-    Two down. Both halls clear.
-    {not operative_static_defeated:
-        Static's still with Voltage in the plant room.
+    {operative_static_defeated and voltage_neutralised:
+        That's all four down. Both halls and the plant room are clear.
+    - else:
+        Both halls are clear.
+        {not operative_static_defeated:
+            Static's still with Voltage in the plant room.
+        }
+        {operative_static_defeated and not voltage_neutralised:
+            Only Voltage is left.
+        }
     }
 - else:
     {operative_relay_defeated:
@@ -377,6 +391,12 @@ If he gets there it's Bank B, not the whole hall. The button still saves A and C
 === hint_crew ===
 #speaker:agent_0x99
 ~ hint_crew_given = true
+// Gate minor 3: a stale option (the vent landed while the list was open) must not
+// send the player to Vance for an alarm that can no longer help.
+{racks_vented:
+    Too late for that. Bank B has gone, and the alarm can't pull anyone out of Hall 2 now.
+    -> support_hub
+}
 Not from here. The site's evacuation alarm is on Vance's desk.
 {
 - robert_vance_ko:
@@ -416,6 +436,110 @@ Not from here. The site's evacuation alarm is on Vance's desk.
 // Phase 8 final check (F1).
 === function hostile_standing() ===
 ~ return (relay_engaged and not operative_relay_defeated) or (cipher_engaged and not operative_cipher_defeated) or (static_engaged and not operative_static_defeated) or (guard_hostile and not security_guard_ko) or (voltage_fight_started and not voltage_neutralised)
+
+// Gate minor 2: who is out of the fight by any means (talked, cloned, KO'd, left).
+=== function cipher_done() ===
+~ return cipher_walked or operative_cipher_defeated
+
+=== function relay_done() ===
+~ return relay_card_cloned or operative_relay_defeated
+
+=== function static_done() ===
+~ return static_left or operative_static_defeated
+
+=== function voltage_done() ===
+~ return voltage_neutralised or voltage_captured or voltage_escaped
+
+=== function down_count() ===
+~ temp n = 0
+{ cipher_done():
+    ~ n = n + 1
+}
+{ relay_done():
+    ~ n = n + 1
+}
+{ static_done():
+    ~ n = n + 1
+}
+{ voltage_done():
+    ~ n = n + 1
+}
+~ return n
+
+// "Cipher's talked, Relay's handled, ..." in the order they were met.
+=== function done_phrases() ===
+~ temp s = ""
+~ temp k = 0
+{ cipher_done():
+    { operative_cipher_defeated:
+        ~ s = s + "Cipher's down"
+    - else:
+        ~ s = s + "Cipher's talked"
+    }
+    ~ k = k + 1
+}
+{ relay_done():
+    { k > 0:
+        ~ s = s + ", "
+    }
+    { operative_relay_defeated:
+        ~ s = s + "Relay's down"
+    - else:
+        ~ s = s + "Relay's handled"
+    }
+    ~ k = k + 1
+}
+{ static_done():
+    { k > 0:
+        ~ s = s + ", "
+    }
+    { operative_static_defeated:
+        ~ s = s + "Static's down"
+    - else:
+        ~ s = s + "Static's gone"
+    }
+    ~ k = k + 1
+}
+{ voltage_done():
+    { k > 0:
+        ~ s = s + ", "
+    }
+    { voltage_escaped and not voltage_captured:
+        ~ s = s + "Voltage has run"
+    - else:
+        ~ s = s + "Voltage is ours"
+    }
+}
+~ return s
+
+=== function remaining_names() ===
+~ temp s = ""
+~ temp k = 0
+{ not cipher_done():
+    ~ s = s + "Cipher"
+    ~ k = k + 1
+}
+{ not relay_done():
+    { k > 0:
+        ~ s = s + ", "
+    }
+    ~ s = s + "Relay"
+    ~ k = k + 1
+}
+{ not static_done():
+    { k > 0:
+        ~ s = s + ", "
+    }
+    ~ s = s + "Static"
+    ~ k = k + 1
+}
+{ not voltage_done():
+    { k > 0:
+        ~ s = s + ", "
+    }
+    ~ s = s + "Voltage"
+}
+~ return s
 
 === extract_blocked ===
 // lint: call-knot
@@ -962,6 +1086,14 @@ Last stretch. Anyone still standing with him goes down first.
     Grid control's nearly there. Stay by the button.
 - else:
     The ESD is live. Press it.
+}
+// Gate minor 2: the head count, whatever route got them out of the fight.
+{not attack_prevented and down_count() >= 1:
+    {down_count() >= 4:
+        All four. {done_phrases()}.
+    - else:
+        That's {down_count()} of 4. {done_phrases()}. Still about: {remaining_names()}.
+    }
 }
 // Struggling run A (F8): straight back to the hub (as the hint knots do), not a
 // one-option "Right." menu.

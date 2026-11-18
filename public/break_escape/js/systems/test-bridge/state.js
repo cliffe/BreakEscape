@@ -87,7 +87,7 @@ function currentRoomId() {
 }
 
 
-/** The Resume / Restart / New Session overlay is up (games/show.html.erb). */
+/** The Resume / Start over / New Session overlay is up (games/show.html.erb). */
 export function sessionOverlayShowing() {
     return window.breakEscapeSessionOverlayShowing === true;
 }
@@ -99,7 +99,7 @@ export function sessionOverlayShowing() {
  * the links (bootstrap: 'the resume overlay has no "resume" button').
  */
 export function sessionOverlayButtons() {
-    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn']
+    return ['session-resume-btn', 'session-restart-btn', 'session-new-btn', 'session-restart-close-btn', 'session-restart-confirm-btn']
         .map(id => document.getElementById(id))
         .filter(el => el && el.getBoundingClientRect().width > 0);
 }
@@ -117,7 +117,7 @@ export function sessionOverlayUi() {
         text: (panel.innerText || 'RESUME SESSION?').trim().slice(0, 500),
         buttons: sessionOverlayButtons().map((el, i) => ({ index: i, id: el.id || null, label: (el.innerText || '').trim().slice(0, 100) })),
         hint: 'The session overlay covers the whole page, a minigame included; the world loads underneath and timed dialogue waits. '
-            + 'Choose with __test.dismissBlockingUi("Resume") (or "Restart" / "New Session"); Enter also resumes.'
+            + 'Choose with __test.dismissBlockingUi("Resume") (or "Start over", which opens a confirm step and so answers still-blocked-after-dismiss, then "Start over" again in the step, or "Close" to back out, or "New Session"); Enter also resumes.'
     };
 }
 
@@ -311,6 +311,15 @@ function playerState() {
  * a stable `id` to pass to interact(), a world position, distance,
  * whether it is in range right now, and whatever state matters for its kind.
  */
+/** The middle of an object's bounds, the point a player clicks; its x/y when there are none. */
+function objectClickPoint(sprite) {
+    try {
+        const b = sprite.getBounds?.();
+        if (b && b.width > 0 && b.height > 0) return { clickX: round(b.centerX), clickY: round(b.centerY) };
+    } catch (e) { /* fall through */ }
+    return { clickX: round(sprite.x), clickY: round(sprite.y) };
+}
+
 function describeObject(sprite, roomId, px, py, mx, my) {
     const data = sprite.scenarioData || {};
     const id = data.id || sprite.objectId || null;
@@ -335,6 +344,11 @@ function describeObject(sprite, roomId, px, py, mx, my) {
         room: roomId,
         x: round(sprite.x),
         y: round(sprite.y),
+        // Where interact() clicks: the middle of the sprite's bounds. A scenario object's
+        // x/y is its top-left corner (origin 0,0), and a click there can round to just
+        // outside the bounds, which the game takes as a floor click and walks to
+        // (m10 core_host_terminal, reached from the north, stopped 34 px short).
+        ...objectClickPoint(sprite),
         distance: round(d),
         interactDistance: round(di),
         inRange: di <= INTERACTION_RANGE && interactionLineClear(window.player, sprite),

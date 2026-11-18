@@ -364,7 +364,7 @@ test('person-chat displaced while its story loads: startConversation stops, noth
             },
             _beginSocialRun() { calls.push('beginSocialRun'); },
             _endSocialRun() { calls.push('endSocialRun'); },
-            _flushPendingReply() {}, _dropPageHideHook() {},
+            _flushPendingReply() {}, _flushTrailingTags() {}, _dropPageHideHook() {},
             _superCleanup() {},
             showCurrentDialogue() { calls.push('showCurrentDialogue'); },
             showError(msg) { calls.push(`showError:${msg}`); }

@@ -122,7 +122,7 @@ module BreakEscape
     # Physical pentest devices (plan slices E0 to B3, plant hiding): every device action is show?,
     # so each one is checked per role. A later edit that narrows or widens one fails here.
     DEVICE_ACTIONS = %i[network_plant? network_unplug? network_join? network_implant?
-                        capture_secrets? keyring? wear? inventory?].freeze
+                        capture_secrets? keyring? wear? pin_dust? inventory?].freeze
 
     test "device actions: owner allowed, other user and nil user denied" do
       DEVICE_ACTIONS.each do |action|
@@ -398,6 +398,26 @@ module BreakEscape
     test "vm_set_panel? returns false for owner when game is completed" do
       @game.update!(status: 'completed', completed_at: Time.current)
       assert_not GamePolicy.new(@owner, @game).vm_set_panel?
+    end
+
+    test "unlock_vm_console? returns true for owner with in_progress game" do
+      assert GamePolicy.new(@owner, @game).unlock_vm_console?
+    end
+
+    test "unlock_vm_console? returns false for non-owner" do
+      assert_not GamePolicy.new(@other, @game).unlock_vm_console?
+    end
+
+    test "unlock_vm_console? returns false for owner when game is completed" do
+      @game.update!(status: 'completed', completed_at: Time.current)
+      assert_not GamePolicy.new(@owner, @game).unlock_vm_console?
+    end
+
+    test "unlock_vm_console? returns true for admin regardless of ownership" do
+      @other.update!(role: 'admin')
+      assert GamePolicy.new(@other, @game).unlock_vm_console?
+    ensure
+      @other.update!(role: 'user')
     end
   end
 end

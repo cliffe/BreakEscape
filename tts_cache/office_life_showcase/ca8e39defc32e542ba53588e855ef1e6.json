@@ -1,0 +1,13 @@
+{
+  "key": "ca8e39defc32e542ba53588e855ef1e6",
+  "npc": "ama_owusu",
+  "text": "Use an open one, then close it and wait by the desk for its owner.",
+  "voice": "Autonoe",
+  "style": "Security lead on Merrin & Sallow's outsourced IT provider (Fenlow Managed IT), in her 40s, warm and practical. Speak with a consistent London and southern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:33:51Z"
+}

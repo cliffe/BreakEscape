@@ -125,7 +125,7 @@ test('scenario text sinks run through displayDashes; matching and stored text do
     assert.match(notes, /dataset\.raw \?\? observationDiv\.textContent/, 'editing starts from the stored observation');
 });
 
-test('bespoke minigames show scenario text through displayDashes; ids and data keep the raw text', () => {
+test('bespoke minigames show scenario text through displayDashes; ids and data keep the raw text', async () => {
     const src = (p) => readFileSync(join(js, p), 'utf8');
     for (const p of [
         'alarm-panel/alarm-panel-minigame.js', 'backup-recovery/backup-recovery-minigame.js',
@@ -153,5 +153,12 @@ test('bespoke minigames show scenario text through displayDashes; ids and data k
     assert.match(src('minigames/ransomware-display/ransomware-display-minigame.js'), /displayDashes\(scenarioData\.encryptedSystems/);
     assert.match(src('minigames/siem/siem-dashboard-minigame.js'), /description\.textContent = displayDashes\(alert\.description\)/);
     assert.match(src('minigames/blockchain-explorer/blockchain-explorer-minigame.js'), /data-id="\$\{escapeHtml\(tx\.hash\)\}"/, 'ids keep the raw text');
-    assert.match(src('minigames/flag-station/flag-station-minigame.js'), /<span class="flag-value">\$\{this\.escapeHtml\(flag\)\}/, 'typed flags stay as typed');
+    // typed flags stay as typed in the list (consumed and key-type alike): no dash display
+    const { flagHistoryHtml } = await load('utils/flag-wording.js', 'flag-wording.mjs');
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const list = flagHistoryHtml(['flag{a--b}'], [{ flag: 'flag{c -- d}', note: 'n' }], esc);
+    assert.ok(list.includes('<span class="flag-value">flag{a--b}</span>'), 'consumed flag keeps its hyphens');
+    assert.ok(list.includes('<span class="flag-value">flag{c -- d}</span>'), 'recognised flag keeps its hyphens');
+    assert.ok(!list.includes('–'), 'no en dash in the flag list');
+    assert.match(src('minigames/flag-station/flag-station-minigame.js'), /flagHistoryHtml\(this\.submittedFlags/, 'the station renders the list through the helper');
 });

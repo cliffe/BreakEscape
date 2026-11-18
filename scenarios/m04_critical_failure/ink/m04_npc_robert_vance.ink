@@ -440,6 +440,9 @@ This place is mine to answer for. I'd rather hear it from you than from the fire
     -> vance_hub
 
 === vance_priority ===
+{vance_priority > 1:
+    Robert Vance: {&Nothing's changed at my end.|Same answer, I'm afraid.|I'd tell you if it had.}
+}
 {
 - attack_prevented:
     Robert Vance: The banks are isolated and the needle's coming down. Go and see what they left behind.

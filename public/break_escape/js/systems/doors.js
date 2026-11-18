@@ -540,6 +540,8 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             biometricMatchThreshold: lockProps.biometricMatchThreshold ?? connectedRoomData?.biometricMatchThreshold ?? null,
             // Password/PIN pad options (the answer in `requires` is never sent to the client)
             maxAttempts: lockProps.maxAttempts ?? connectedRoomData?.maxAttempts ?? null,
+            // Opt-in password lockout (room value only; door entries never reach the client): seconds the pad stays shut after maxAttempts wrong guesses
+            lockoutSeconds: connectedRoomData?.lockoutSeconds ?? null,
             passwordHint: lockProps.passwordHint ?? connectedRoomData?.passwordHint ?? null,
             showHint: lockProps.showHint ?? connectedRoomData?.showHint ?? null,
             postitNote: lockProps.postitNote ?? connectedRoomData?.postitNote ?? null,
@@ -548,7 +550,10 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             // A cryptex door's wheels (never its answer: the server strips that)
             cryptexConfig: lockProps.cryptexConfig ?? connectedRoomData?.cryptexConfig ?? null,
             // Digits on the PIN pad: the server sends the PIN's length, never the PIN
-            pinLength: lockProps.pinLength ?? connectedRoomData?.pinLength ?? null
+            pinLength: lockProps.pinLength ?? connectedRoomData?.pinLength ?? null,
+            // Fingerprint-kit dusting of the PIN pad: opt in with dustable true, or give a hint line (neither is secret)
+            dustable: lockProps.dustable ?? connectedRoomData?.dustable ?? null,
+            dustHint: lockProps.dustHint ?? connectedRoomData?.dustHint ?? null
         };
 
         // Debug door properties

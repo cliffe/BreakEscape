@@ -233,13 +233,35 @@ export function installPhoneRinger(win = window) {
         }
     }
 
+    // The contacts already told that a call waits out the fight, and when (ms). ringBlocked runs
+    // many times a second; the toast is once per contact per HELD_TOAST_AGAIN_MS.
+    const heldRingToasted = new Map();
+    const HELD_TOAST_AGAIN_MS = 30000;
+    function noteHeldRing(npcId) {
+        if (typeof npcId !== 'string' || !npcId) return;
+        const t = Date.now();
+        const last = heldRingToasted.get(npcId);
+        if (last !== undefined && t - last < HELD_TOAST_AGAIN_MS) return;
+        heldRingToasted.set(npcId, t);
+        try {
+            const name = nm()?.getNPC?.(npcId)?.displayName || npcId;
+            win.showNotification?.(`${name} is calling. It rings when the fight is over.`, 'info', 'Incoming', 4000);
+        } catch (e) { /* cosmetic */ }
+    }
+
     // ---- the adapter -------------------------------------------------------------
     const adapter = {
         // A non-conversation minigame or a popup does not block: the call rings over it
         // The player's own phone does not block either: the call rings inside it (row 10)
         // The tutorial hold is timed, so it is not here: the ringer consults tutorialPromptOpen /
         // tutorialStep and holds per offer (sweep item 9).
-        ringBlocked() {
+        ringBlocked(npcId) {
+            // A fight in progress holds a new ring: it rings once the fight is over (a ringing or
+            // forced call is requeued, row 23). The player is told once per contact per fight.
+            if (win.playerInCombat?.()) {
+                noteHeldRing(npcId);
+                return true;
+            }
             return isConversation(openMinigame()) || sceneActive() || queuedBeats() || knockedOut();
         },
         tutorialPromptOpen,
@@ -533,7 +555,7 @@ export function installPhoneRinger(win = window) {
                 untilAnswered: ring ? ring.untilAnswered : raw?.untilAnswered,
                 callbackWhen: ring ? ring.callbackWhen : raw?.callbackWhen,
                 // The opt-in `ring.ringWhile` is the ringer's re-check condition while queued or ringing.
-                ringCondition: ring ? ring.ringWhile : (raw?.ringWhile ?? raw?.ringCondition ?? null),
+                ringCondition: ring ? (ring.ringWhile ?? raw?.ringCondition ?? null) : (raw?.ringWhile ?? raw?.ringCondition ?? null),
             });
         },
         /**
