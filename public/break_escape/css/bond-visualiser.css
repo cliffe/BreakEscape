@@ -437,13 +437,7 @@
   inset: 0;
   z-index: 100000;
   overflow: hidden;
-  background: linear-gradient(
-    to bottom,
-    rgba(0,0,0,0.95) 0%,
-    rgba(0,0,0,0.80) 8%,
-    rgba(0,0,0,0.80) 92%,
-    rgba(0,0,0,0.95) 100%
-  );
+  background: transparent;  /* the credits run over the visualiser; JS also sets this inline */
   pointer-events: none;
   /* Credits sit in the gap between the header band and the controls bar (set by
      bond-visualiser.js _fitCreditsBand; unset they are 0 and the overlay is the window) */
