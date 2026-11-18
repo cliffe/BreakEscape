@@ -483,6 +483,29 @@ export function capturedSignIns(captures, accounts, secrets) {
 }
 if (typeof window !== 'undefined') window.capturedSignIns = capturedSignIns;
 
+// Attempts that survive closing and reopening the window (opt-in per lock with
+// `lockoutSeconds`). Without it a player could close the window to reset the counter and
+// guess freely (m01 blind playtest). The limit is a client-side teaching device, as it
+// always was: the server still checks every guess and keeps no count, so a reload resets
+// this too. Keyed by the lock's id; at the limit the lock stays shut for lockoutSeconds,
+// then the count starts again.
+const passwordLocks = new Map();
+export function clearPasswordLocks() { passwordLocks.clear(); }
+export function passwordLockStatus(key, now = Date.now()) {
+    const st = key ? passwordLocks.get(key) : null;
+    if (!st) return { attempts: 0, lockedLeftSeconds: 0 };
+    if (st.lockedUntil && now >= st.lockedUntil) { passwordLocks.delete(key); return { attempts: 0, lockedLeftSeconds: 0 }; }
+    return { attempts: st.attempts, lockedLeftSeconds: st.lockedUntil ? Math.ceil((st.lockedUntil - now) / 1000) : 0 };
+}
+export function notePasswordAttempts(key, attempts, maxAttempts, lockoutSeconds, now = Date.now()) {
+    if (!key) return;
+    if (attempts <= 0) { passwordLocks.delete(key); return; }
+    passwordLocks.set(key, { attempts, lockedUntil: attempts >= maxAttempts ? now + lockoutSeconds * 1000 : 0 });
+}
+export function passwordLockedMessage(seconds) {
+    return `Too many wrong passwords. Locked for ${seconds} more second${seconds === 1 ? '' : 's'}.`;
+}
+
 export class PasswordMinigame extends MinigameScene {
     // No Cancel: the X and Esc close it (UX slice 2a removed the password Cancel), see MinigameScene.keepsCancelButton
     static keepsCancelButton = false;
@@ -505,6 +528,12 @@ export class PasswordMinigame extends MinigameScene {
             keyboardVisible: false
         };
         
+        // Opt-in lockout that survives reopening (scenario lockoutSeconds on the lock)
+        this.lockoutSeconds = Number(params.lockoutSeconds) > 0 ? Number(params.lockoutSeconds) : 0;
+        const lockId = params.lockable?.scenarioData?.id || params.lockable?.objectId || null;
+        this.lockKey = this.lockoutSeconds && lockId ? `${params.type || 'object'}:${lockId}` : null;
+        if (this.lockKey) this.gameData.attempts = passwordLockStatus(this.lockKey).attempts;
+
         // Store the correct password for validation
         this.correctPassword = params.password || '';
 
@@ -1131,7 +1160,9 @@ export class PasswordMinigame extends MinigameScene {
     start() {
         // Call parent start
         super.start();
-        
+        const left = this.lockKey ? passwordLockStatus(this.lockKey).lockedLeftSeconds : 0;
+        if (left > 0) this.showScreenMessage(passwordLockedMessage(left));
+
         console.log("Password minigame started");
     }
     
@@ -1263,6 +1294,15 @@ export class PasswordMinigame extends MinigameScene {
 
         if (!this.gameState.isActive) return;
 
+        if (this.lockKey) {
+            const left = passwordLockStatus(this.lockKey).lockedLeftSeconds;
+            if (left > 0) {
+                this.showScreenMessage(passwordLockedMessage(left));
+                return;
+            }
+            this.gameData.attempts = passwordLockStatus(this.lockKey).attempts;
+        }
+
         const enteredPassword = this.passwordField.value.trim();
         console.log('Entered password:', enteredPassword);
 
@@ -1273,6 +1313,7 @@ export class PasswordMinigame extends MinigameScene {
         this.showScreenMessage('');
 
         this.gameData.attempts++;
+        this._saveLock();
         if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
         // The counter is on screen after each try, even in a short window (UX slice 2a R2 M2).
         // A PC's screen has no counter: its message line carries the count and is revealed
@@ -1369,6 +1410,7 @@ export class PasswordMinigame extends MinigameScene {
                 // The PC the lock sits on is off, not responding or out of reach (review R4
                 // m2): not an attempt and not a wrong password, so say why and close as cancelled
                 this.gameData.attempts--;
+                this._saveLock();
                 if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
                 this.cleanup();
                 this.showScreenMessage(lockScopeRefusalLine(error), { closeAfterMs: 2000 });
@@ -1380,12 +1422,18 @@ export class PasswordMinigame extends MinigameScene {
                 this.showScreenMessage('Network error. Please try again.');
                 // Decrease attempts counter since this wasn't a real attempt
                 this.gameData.attempts--;
+                this._saveLock();
                 if (this.attemptsDisplay) this.attemptsDisplay.textContent = this.gameData.attempts;
             }
         }
     }
     
+    _saveLock() {
+        if (this.lockKey) notePasswordAttempts(this.lockKey, this.gameData.attempts, this.gameData.maxAttempts, this.lockoutSeconds);
+    }
+
     passwordCorrect() {
+        if (this.lockKey) notePasswordAttempts(this.lockKey, 0, this.gameData.maxAttempts, this.lockoutSeconds);
         this.cleanup();
         if (window.playUISound) window.playUISound('confirm');
         this.showSuccess("Password accepted! Access granted.", true, 1000);
