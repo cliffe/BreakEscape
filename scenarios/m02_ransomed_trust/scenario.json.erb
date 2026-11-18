@@ -100,8 +100,11 @@ board_reply_email = "From: Dr. Sarah Kim (CTO)\nTo: Gary Whitlock (IT Systems)\n
 
 recovery_instructions_encoded = rot13("SITE NOTE -- RECOVERY POSTURE. THEIR ESCROW COPY IS OFFLINE AND I CANNOT REACH IT. OFFLINE SET ALONE = 12 HOURS. OFFLINE SET PLUS MY KEY MATERIAL (CACHE, THIS RACK) = 4 HOURS. THEY WILL NOT WORK THAT OUT IN TIME, SO THEY WILL PAY.")
 
-# Board room door code -- also written in Dr. Kim's desk diary and spoken by Kim.
+# Board room door code -- written in Dr. Kim's desk diary. Kim refuses to say it.
 boardroom_pin = "0417"
+
+# Supervisor's wall safe code -- written nowhere in the game; cracker only.
+wall_safe_pin = "5829"
 %>
 {
   "scenario_brief": "St. Catherine's Regional went dark at 02:47. Every clinical system is encrypted, forty-seven patients are running on backup generators, and the board votes on paying ENTROPY's ransom in four hours. You are in as an emergency security consultant -- which buys you a paper badge and nothing else, because the ransomware took the access control server too. Nobody in this building can grant you access. You will have to earn every door.",
@@ -994,28 +997,29 @@ boardroom_pin = "0417"
             },
 <%# Gary's own spare carries a distinct id so it is a distinct object; taking it off him
     (theft, or off the floor after a KO) counts exactly as the staff-room spare does.
-    His dialogue gift sets the global via an ink tag instead. Pass 4: a lanyard is what
+    His dialogue gift fires this same pickup mapping (gifts go through addToInventory);
+    the gift knot also sets lanyard_issued, which only a hand-over sets. Pass 4: a lanyard is what
     you SHOW Val. It no longer sets cover_restored on pickup, which used to fire HaX's
     "That'll hold" before any burn had happened. %>
             {
               "eventPattern": "item_picked_up:id_badge",
               "condition": "data.itemId === 'gary_contractor_lanyard'",
               "onceOnly": true,
-              "setGlobal": { "staff_lanyard_obtained": true },
+              "setGlobal": { "staff_lanyard_obtained": true, "holds_contractor_pass": true },
               "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no matter how you came by it. If anybody on the corridor asks what you are, show them that." }
             },
             {
               "eventPattern": "item_picked_up:id_badge",
               "condition": "data.itemId === 'contractor_lanyard'",
               "onceOnly": true,
-              "setGlobal": { "staff_lanyard_obtained": true },
-              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no name. Nobody questions one, which is exactly what Gary's been writing emails about. Hang on to it." }
+              "setGlobal": { "staff_lanyard_obtained": true, "holds_contractor_pass": true },
+              "sendTimedMessage": { "delay": 1200, "message": "Blank contractor pass, real hospital stock, no name. Nobody questions one, which is what Gary's been writing emails about. Have an IT reason ready if anyone asks." }
             },
             {
               "eventPattern": "item_picked_up:id_badge",
               "condition": "data.itemId === 'bank_staff_lanyard'",
               "onceOnly": true,
-              "setGlobal": { "staff_lanyard_obtained": true },
+              "setGlobal": { "staff_lanyard_obtained": true, "holds_agency_pass": true },
               "sendTimedMessage": { "delay": 1200, "message": "Agency lanyard off the ward. Green ribbon, no photograph, and at four in the morning that is most of the battle. Show it to whoever asks and don't linger." }
             },
             {
@@ -1030,13 +1034,13 @@ boardroom_pin = "0417"
               "onceOnly": true,
               "setGlobal": { "escrow_safe_known": true },
               "completeTask": "gather_pin_clues",
-              "sendTimedMessage": { "delay": 1400, "message": "The escrow safe's PIN is the founding year. Flagged at three audits, never changed.\n\nThe plaque's in the lobby. You walked past it on the way in." }
+              "sendTimedMessage": { "delay": 1400, "message": "The escrow safe's PIN is the founding year. Flagged at three audits, never changed." }
             },
 <%# The safe opening IS the code worked out, however the player got there -- the
     lobby plaque, the pin-cracker, a lucky guess. Without this, solving it from the
     plaque alone left gather_pin_clues open and "The Emergency Store Safe" (then "The Keys In The Safe") unfinishable.
-    escrow_safe_opened also silences the snag-list "the plaque's in the lobby" nudge
-    for a player who has already been in the safe. %>
+    escrow_safe_opened also silences the safe-clue message for a player who has
+    already been in the safe. %>
             {
               "eventPattern": "objective_task_completed:crack_safe_pin",
               "onceOnly": true,
@@ -1065,7 +1069,7 @@ boardroom_pin = "0417"
               "condition": "value === true",
               "onceOnly": true,
               "completeTask": "obtain_password_hints",
-              "sendTimedMessage": { "delay": 1200, "message": "Shared admin credential on a sticky note. Emma2018, Hospital1987, StCatherines -- one of those gets you an SSH session on the backup box, as gary." }
+              "sendTimedMessage": { "delay": 1200, "message": "Shared admin credential on a sticky note, three candidates. Try them on his own workstation first. People reuse. Then the backup box over SSH, as gary." }
             },
             {
               "eventPattern": "global_variable_changed:cover_restored",
@@ -1170,9 +1174,9 @@ boardroom_pin = "0417"
               "completeTask": "obtain_password_hints",
               "sendTimedMessage": { "delay": 2000, "message": "Gary's down, so no password hints from him now. He wrote them on a sticky note by his monitor. Grab it. Same credentials unlock the backup server over SSH." }
             },
-<%# Seven different things set insider_evidence_partial (the Proposal, the Night
+<%# Eight different things set insider_evidence_partial (the Proposal, the Night
     Rota, Val's notebook and drill answer, Kim's fire_drill knot, the ENTROPY Asset Tag,
-    the Night Handover Board), so the line must fit all of them. The task completion is
+    the Night Handover Board, the Supervisor's Wall Safe form), so the line must fit all of them. The task completion is
     split from the message: the handover board already sends its own reading of the
     evidence, and once the badge is known the naming handler below says it better. %>
             {
@@ -1435,6 +1439,30 @@ boardroom_pin = "0417"
               "condition": "value === true",
               "onceOnly": true,
               "sendTimedMessage": { "delay": 2000, "message": "You just hit one of the night staff in the handover room. They are hospital workers, not the enemy. Leave them be." }
+            },
+            {
+              "eventPattern": "item_picked_up:id_badge",
+              "condition": "data.itemId === 'kim_countersigned_badge'",
+              "onceOnly": true,
+              "setGlobal": { "has_countersigned_badge": true }
+            },
+            {
+              "eventPattern": "global_variable_changed:bernie_key_withheld",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Bernie's kept her key. The IT door is a standard override lock and your picks will do it. Or get Kim's signature and take it back to her." }
+            },
+            {
+              "eventPattern": "room_entered:security_office",
+              "onceOnly": true,
+              "setGlobal": { "seen_wall_safe": true },
+              "sendTimedMessage": { "delay": 6000, "message": "Keypad safe on the wall, no code on it anywhere. If you find anything that reads a keypad back to you, bring it here." }
+            },
+            {
+              "eventPattern": "global_variable_changed:reeves_safe_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 5000, "message": "Reeves requested both drills on his own signature, then locked the forms where only he'd look." }
             }
           ]
         },
@@ -2774,7 +2802,7 @@ boardroom_pin = "0417"
               "observations": "Not SAFETYNET kit -- the matte casing is ENTROPY's, the same moulding as the network bridge someone planted in IT. It clamps over a four-digit keypad and turns the lock against itself: every wrong code you try, it reads the response and tells you how many digits were right in place, and how many were right but in the wrong slot. While it is clamped on, the keypad cannot lock you out, and every guess stays on its log with its lights, so read them and close in. Whoever stashed it was sent to reach the offline keys before you did, and had not got round to it. Take it back through the hospital and turn their own tool on the locks they were saving it for.",
               "onPickup": { "setVariable": { "pin_cracker_found": true } },
               "puzzle_graph_role": "tool",
-              "puzzle_graph_unlocks": "emergency_storage_safe",
+              "puzzle_graph_unlocks": ["emergency_storage_safe", "supervisor_wall_safe", "conference_room"],
               "puzzle_graph_optional": true
             },
             {
@@ -2954,14 +2982,15 @@ boardroom_pin = "0417"
           "taskOnKO": "meet_dr_kim",
           "observations": "Dr. Kim is pacing behind her desk, phone in hand. She looks relieved to see you.",
           "puzzle_graph_actions": [
-            { "id": "meet_dr_kim", "label": "Get Kim's verbal authorisation and the boardroom code", "unlocks_aim": "access_it_systems" }
+            { "id": "meet_dr_kim", "label": "Get Kim's verbal authorisation", "unlocks_aim": "access_it_systems" }
           ],
           "itemsHeld": [
             {
               "type": "id_badge",
+              "id": "kim_countersigned_badge",
               "name": "Visitor Badge (Countersigned)",
               "takeable": true,
-              "observations": "Kim has signed your paper visitor badge herself and written her extension on it. It proves a person vouched for you. It opens precisely nothing -- the system that would have made it mean something is encrypted."
+              "observations": "Kim has signed your paper visitor badge herself and written her extension on it. It proves a person vouched for you. Bernie will honour it; no reader will."
                         },
             {
               "type": "notes",
@@ -3022,7 +3051,6 @@ boardroom_pin = "0417"
           "puzzle_graph_optional": true,
           "puzzle_graph_reveals": "boardroom_pin_and_a_pointer_at_the_estates_snag_list",
           "puzzle_graph_links": [
-            { "from": "action_meet_dr_kim", "to": "conference_room" },
             { "from": "action_meet_dr_kim", "to": "it_department", "dashed": true }
           ]
         },
@@ -3277,6 +3305,47 @@ boardroom_pin = "0417"
       "npcs": [],
       "objects": [
         {
+          "type": "safe",
+          "id": "supervisor_wall_safe",
+          "sprite": "hq_desk_safe1",
+          "position": { "x": 0.35, "y": 0.7 },
+          "name": "Supervisor's Wall Safe",
+          "takeable": false,
+          "locked": true,
+          "lockType": "pin",
+          "requires": "<%= wall_safe_pin %>",
+          "observations": "A small keypad safe fixed to the wall, newer than anything else in here. A label-maker strip on the door: N/SUP POST. No code for it on the rota, the key cabinet or anywhere else in this office. Val isn't a supervisor.",
+          "puzzle_graph_role": "lock",
+          "puzzle_graph_aim": "unmask_inside_asset",
+          "puzzle_graph_optional": true,
+          "puzzle_graph_note": "Cracker-only: the code exists nowhere in the world. Encounter here, the PIN cracker in the server room field case, return.",
+          "contents": [
+            {
+              "type": "notes",
+              "id": "drill_override_form",
+              "name": "Drill Override Authorisation",
+              "takeable": true,
+              "readable": true,
+              "text": "ESTATES -- FIRE DRILL / DOOR OVERRIDE REQUEST\n\nWindow: 02:30-03:00 (unannounced)\nArea: Ward 3, Exec corridor, north doors to comms relay\nDoors: FREE EGRESS for duration\nContractor escort: 2 (facilities)\n\nRequested by: G. REEVES, Night Security Supervisor\nApproved by: ________\n\nWard countersignature: ________\n\nStapled to the back, a second slip in the same hand: REPEAT -- Fri, same window, same doors. No escort.",
+              "observations": "Two override requests in his name: the drill six weeks ago and Friday's repeat. Nobody approved either, and the ward never countersigned. He set both drills running on his own signature and kept the paperwork where nobody else would read it.",
+              "observationDisplay": "gameDisplay",
+              "onRead": { "setVariable": { "insider_evidence_partial": true, "reeves_known": true, "reeves_safe_opened": true } },
+              "puzzle_graph_role": "clue",
+              "puzzle_graph_aim": "unmask_inside_asset",
+              "puzzle_graph_reveals": "reeves_personally_requested_the_drill_overrides_that_held_the_doors"
+            },
+            {
+              "type": "notes",
+              "id": "blank_contractor_pass_stack",
+              "name": "Stack of Blank Contractor Passes",
+              "takeable": true,
+              "readable": true,
+              "text": "Twelve contractor lanyards, still in their wrappers. ST. CATHERINE'S -- CONTRACTOR. Issued by: IT. No names.\n\nA rubber band round the lot, and a sticky note: \"For the estates sweep.\"",
+              "observations": "The same stock as the wrapped pass left in the handover room. Somebody has been handing these out, and it wasn't IT."
+            }
+          ]
+        },
+        {
           "type": "pc",
           "id": "security_desk_terminal",
           "name": "Security Desk Terminal (Encrypted)",
@@ -3334,7 +3403,7 @@ boardroom_pin = "0417"
           "name": "Night Rota",
           "takeable": false,
           "readable": true,
-          "text": "SECURITY -- NIGHT ROTA, THIS WEEK\n\n     OFFICER       BADGE\nMon  V. OKONKWO   SC-2208\nTue  V. OKONKWO   SC-2208\nWed  V. OKONKWO   SC-2208\nThu  V. OKONKWO   SC-2208\nFri  V. OKONKWO   SC-2208 / cover TBC\n\nIn biro at the bottom, underlined twice:\n\"Still no G. REEVES on this. Asked Estates 14/06, 02/07, 19/07. Told to leave it.\"",
+          "text": "SECURITY -- NIGHT ROTA, THIS WEEK\n\n     OFFICER       BADGE\nMon  V. OKONKWO   SC-2208\nTue  V. OKONKWO   SC-2208\nWed  V. OKONKWO   SC-2208\nThu  V. OKONKWO   SC-2208\nFri  V. OKONKWO   SC-2208 / cover TBC\n\nIn biro at the bottom, underlined twice:\n\"Still no G. REEVES on this. Asked Estates 21/07, 04/08, 19/08. Told to leave it.\"",
           "observations": "The printed rota. One officer, one badge number, every night this week -- and somebody has been quietly noting that the man in the boardroom appears on no rota at all.",
           "onRead": { "setVariable": { "insider_evidence_partial": true, "read_night_rota": true, "reeves_known": true } },
           "puzzle_graph_role": "clue",
@@ -3490,7 +3559,7 @@ boardroom_pin = "0417"
           "position": "as-type:directory_sign",
           "takeable": false,
           "readable": true,
-          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room\nnorth off this corridor\n\nBoardroom\nthrough Handover, west (KEYPAD -- ask the CTO)\n\nExecutive / CTO\nthrough Handover, north\n\nIT Systems\nthrough Handover, east (OVERRIDE KEY)\n\nSecurity Office\nwest end of this corridor\n\nServer Room\nthrough Security Office (RESTRICTED)\n\nWard 3 (Critical Care)\ndown the ward link, south\n\nEmergency Equipment Store\nfar end of Ward 3\n\nReception\nthrough Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
+          "text": "ST. CATHERINE'S -- CORRIDOR DIRECTORY\n\nNight Handover Room\nnorth off this corridor\n\nBoardroom\nthrough Handover, west (KEYPAD -- code held in the CTO's office)\n\nExecutive / CTO\nthrough Handover, north\n\nIT Systems\nthrough Handover, east (OVERRIDE KEY)\n\nSecurity Office\nwest end of this corridor\n\nServer Room\nthrough Security Office (RESTRICTED)\n\nWard 3 (Critical Care)\ndown the ward link, south\n\nEmergency Equipment Store\nfar end of Ward 3\n\nReception\nthrough Ward 3, ward approach\n\nHandwritten underneath, in biro: \"ALL READERS DOWN -- overrides at reception, sign them out, DO NOT PROP DOORS.\"",
           "observations": "The corridor directory. Somebody has added the state of the access control system underneath in biro.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_reveals": "map_orientation_and_confirmation_that_overrides_live_at_reception"
@@ -3994,6 +4063,14 @@ boardroom_pin = "0417"
     "insider_ambushed": false,
     "accused_wrong_suspect": false,
     "gary_cabinet_permission": false,
+    "bernie_key_withheld": false,
+    "has_countersigned_badge": false,
+    "lanyard_issued": false,
+    "gary_lanyard_issued": false,
+    "holds_contractor_pass": false,
+    "holds_agency_pass": false,
+    "seen_wall_safe": false,
+    "reeves_safe_opened": false,
 
     "night_security_supervisor_ko": false
   }

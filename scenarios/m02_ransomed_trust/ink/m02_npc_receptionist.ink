@@ -10,10 +10,11 @@
 //   honest   -> she gives you the key AND remembers you as straight with her.
 //               bernie_trusts_player is what lets her VOUCH for you later,
 //               after the cover burn. This is the big delayed payoff.
-//   pressure -> she gives you the key, resents it, will not vouch later.
+//   pressure -> signed in, no key (influence 0 or below); she resents it and will not vouch later.
 //   flatter  -> she gives you the key, likes you, but you learnt nothing.
-// The key is never withheld entirely -- picking the door is always available
-// anyway, so refusing it would only cost the player time, not create tension.
+// A rude player (influence 0 or below at offer_key, and not first met after the burn) is
+// signed in but keeps no key: they pick the IT door or come back with Kim's countersigned
+// badge. A rude opener followed by a cooperative question still loses the key, by design.
 // What the player is actually playing for is BERNIE HERSELF, later.
 //
 // She also plants two hooks: the struck-through booking (cover burn), and
@@ -41,6 +42,10 @@ VAR cover_restored = false // Synced scenario global: the player's cover is re-e
 VAR bernie_trusts_player = false
 VAR noticed_struck_booking = false
 VAR insider_identified = false
+VAR bernie_key_withheld = false // Synced: set at the refusal in offer_key
+VAR bernie_gave_key = false // Synced: set when the key changes hands
+VAR has_countersigned_badge = false // Synced: the player has picked up Kim's countersigned badge
+VAR it_door_open = false // Synced: the IT door has been opened (any route)
 
 // ===========================================
 // ENTRY
@@ -214,8 +219,6 @@ Bernie Nwosu: Nobody amends this book but me. That's the whole point of the book
 ~ gave_key = true
 #complete_task:sign_in_at_reception
 #unlock_aim:access_it_systems
-#set_global:bernie_gave_key:true
-#give_item:key:it_override_key
 
 Narrator: She writes you into the log by hand, pressing hard.
 
@@ -225,24 +228,48 @@ Bernie Nwosu: The readers are down, and the permissions system's behind that ran
 
 Bernie Nwosu: So Estates dumped every mechanical override on my hook and made it my problem.
 
-Narrator: She unhooks a worn brass key and holds it a moment before she lets go.
+{bernie_influence <= 0 and not met_after_burn:
+    ~ bernie_key_withheld = true
+    #set_global:bernie_key_withheld:true
+- else:
+    ~ bernie_gave_key = true
+    #set_global:bernie_gave_key:true
+    #give_item:key:it_override_key
+    Narrator: She unhooks a worn brass key and holds it a moment before she lets go.
+}
 
 Bernie Nwosu: IT's off the handover room. Through Ward Three, along the link and up the main corridor. In the handover room, IT's the door on your right.
 
 Bernie Nwosu: Gary's in there. He's not come out since half ten, so knock properly.
 
-{was_honest:
-    ~ bernie_influence += 2
-    ~ bernie_trusts_player = true
-    # influence_increased
-    #set_global:bernie_trusts_player:true
-    Bernie Nwosu: And listen. You told me the truth when you could've fed me something easier. I've clocked that.
-    Bernie Nwosu: Anything goes sideways for you tonight, you come back to this desk. Yeah?
-}
-{not was_honest:
-    Bernie Nwosu: Sign it back in when you're done. I'll be here. I'm always here.
+{bernie_key_withheld:
+    Bernie Nwosu: That's all you get from me.
+    Bernie Nwosu: The keys stay on my hook. You can knock all you like.
+    Narrator: She goes back to her clipboard as if you've already left.
+- else:
+    {was_honest:
+        ~ bernie_influence += 2
+        ~ bernie_trusts_player = true
+        # influence_increased
+        #set_global:bernie_trusts_player:true
+        Bernie Nwosu: And listen. You told me the truth when you could've fed me something easier. I've clocked that.
+        Bernie Nwosu: Anything goes sideways for you tonight, you come back to this desk. Yeah?
+    }
+    {not was_honest:
+        Bernie Nwosu: Sign it back in when you're done. I'll be here. I'm always here.
+    }
 }
 
+~ hub_quiet = true
+-> hub
+
+=== key_on_badge ===
+Narrator: She reads the signature twice, then the extension, then looks at you over it.
+Bernie Nwosu: That's her hand. I'd know it anywhere. Every memo on this desk this week has it on.
+#set_global:bernie_gave_key:true
+~ bernie_gave_key = true
+#give_item:key:it_override_key
+Bernie Nwosu: Fine. On her name, not yours.
 ~ hub_quiet = true
 -> hub
 
@@ -376,6 +403,9 @@ Bernie Nwosu: I signed you in. That's on the page. That's what I've got.
 
 + {insider_identified} [Graham Reeves. Tell me everything you've noticed about him.]
     -> reeves_confirmed
+
++ {bernie_key_withheld and not bernie_gave_key and has_countersigned_badge and not it_door_open} [Dr. Kim's signed my badge. Her extension's on it.]
+    -> key_on_badge
 
 + [I should get moving.]
     Bernie Nwosu: {bernie_influence >= 4: Go on. And come back if you need me.|Right you are.}
