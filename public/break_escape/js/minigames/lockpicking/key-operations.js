@@ -128,6 +128,8 @@ export class KeyOperations {
         
         console.log('Starting key insertion animation...');
         this.parent.keyInserting = true;
+        // No mode switching while the key goes in
+        this.parent.toolMgr?.setModeButtonsDisabled?.(true);
         this.parent.keyInsertion.updateFeedback("Inserting key...");
         
         // Play key insertion sound
@@ -167,6 +169,8 @@ export class KeyOperations {
                 this.parent.keyAnim.snapPinsToExactPositions();
                 
                 this.checkKeyCorrectness();
+                // A wrong key can be swapped for picking again; a correct one stays locked in
+                if (!this.parent.keyUnlocked) this.parent.toolMgr?.setModeButtonsDisabled?.(false);
             }
         });
     }
@@ -205,7 +209,8 @@ export class KeyOperations {
 
             // The key has opened it: no more mode switching, so the unlock reports 'key'
             this.parent.keyUnlocked = true;
-            this.parent.toolMgr?.replaceModeRow?.(null);
+            // Keep the row (no jump in the strip during the rotation), button disabled
+            this.parent.toolMgr?.setModeButtonsDisabled?.(true);
             
                     // Start the rotation animation for correct key
         this.parent.scene.time.delayedCall(500, () => {
@@ -322,6 +327,7 @@ export class KeyOperations {
         // Close the popup immediately
         if (this.parent.keySelectionContainer) {
             this.parent.keySelectionContainer.destroy();
+            this.parent.keySelectionContainer = null;
         }
         
         // Remove the input blocker (legacy - may not exist)
@@ -374,7 +380,7 @@ export class KeyOperations {
         // Save the lock's pin count: a key without pinCount must not leave it undefined
         const lockPinCount = this.parent.pinCount;
         this.parent.keyData = keyData;
-        this.parent.pinCount = keyData.pinCount ?? keyData.cuts?.length ?? lockPinCount;
+        this.parent.pinCount = keyData.pinCount || keyData.cuts?.length || lockPinCount;
         this.createKey();
         this.parent.pinCount = lockPinCount;
         

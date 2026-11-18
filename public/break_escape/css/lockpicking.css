@@ -264,3 +264,15 @@
         text-align: center;
     }
 }
+
+/* Mode-switch buttons while a key goes in or after a correct key: the real disabled attribute
+   blocks clicks; the label dims, the cursor changes and the border turns dashed so the state
+   is not only colour. */
+.lockpicking-mode-row .minigame-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-style: dashed;
+}
+.lockpicking-mode-row .minigame-button:disabled:hover {
+    background: #3498db;
+}

@@ -501,9 +501,10 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
     // Start with key selection using inventory keys
     // Wait for the minigame to be fully initialized and lock configuration to be saved
     setTimeout(() => {
-        // Bail out if the player has already switched to picking
-        if (window.MinigameFramework.currentMinigame && window.MinigameFramework.currentMinigame.startWithKeySelection &&
-            window.MinigameFramework.currentMinigame.keyMode) {
+        // The list is always prepared, even when the player has already switched to picking:
+        // switching back to keys reads it from originalInventoryKeys.
+        const mg = window.MinigameFramework.currentMinigame;
+        if (mg && mg.startWithKeySelection) {
             // DEFERRED KEY PREPARATION:
             // Regenerate keys after minigame initialization to ensure lock config is saved
             const updatedInventoryKeys = playerKeys.map(key => {
@@ -533,7 +534,12 @@ export function startKeySelectionMinigame(lockable, type, playerKeys, requiredKe
                 };
             });
             
-            window.MinigameFramework.currentMinigame.startWithKeySelection(updatedInventoryKeys, requiredKeyId);
+            mg.originalInventoryKeys = updatedInventoryKeys;
+            mg.originalCorrectKeyId ??= requiredKeyId;
+            // Only open the panel while the player is still in key mode
+            if (mg.keyMode) {
+                mg.startWithKeySelection(updatedInventoryKeys, requiredKeyId);
+            }
         }
     }, 500);
 }

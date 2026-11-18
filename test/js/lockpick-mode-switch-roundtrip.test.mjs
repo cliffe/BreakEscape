@@ -278,7 +278,7 @@ test('m2: createKeySelectionUI destroys an earlier panel first', () => {
     } finally { t.restore(); }
 });
 
-test('m3: once a correct key is turning, "Switch to Lockpicking" does nothing and the row is gone', () => {
+test('m3/n2: once a correct key is turning, "Switch to Lockpicking" does nothing and the row stays, disabled', () => {
     const strip = installDom();
     const t = captureTimers();
     try {
@@ -289,10 +289,178 @@ test('m3: once a correct key is turning, "Switch to Lockpicking" does nothing an
         parent.keyData = { cuts: [40, 30, 50, 20] };
         parent.keyOps.checkKeyCorrectness();
         assert.equal(parent.keyUnlocked, true);
-        assert.equal(strip.children.filter(c => c.className === 'lockpicking-mode-row').length, 0);
+        const rows = strip.children.filter(c => c.className === 'lockpicking-mode-row');
+        assert.equal(rows.length, 1, 'row kept so the strip does not jump');
+        assert.equal(rowButton(rows[0]).disabled, true, 'its button is disabled');
         parent.toolMgr.switchToPickMode();
         assert.equal(parent.keyMode, true, 'still key mode, so the unlock reports key');
         parent.toolMgr.switchToKeyMode();
         assert.equal(log.panels.length, 0);
     } finally { t.restore(); }
+});
+
+test('n3: selectKey nulls the destroyed panel reference', () => {
+    installDom();
+    const t = captureTimers();
+    try {
+        const { parent } = pickFirstParent();
+        let destroyed = 0;
+        parent.keySelectionContainer = { destroy: () => destroyed++ };
+        parent.keyOps.selectKey(0, 0, { id: 'a', cuts: [40, 30, 50, 20], pinCount: 4 });
+        assert.equal(destroyed, 1);
+        assert.equal(parent.keySelectionContainer, null);
+    } finally { t.restore(); }
+});
+
+test('n1: a key with an empty cuts array never gives a pin count of 0', () => {
+    installDom();
+    const t = captureTimers();
+    try {
+        const { parent, log } = pickFirstParent();
+        parent.availableKeys = [{ id: 'e', name: 'E', cuts: [] }];
+        parent.toolMgr.switchToKeyMode();
+        assert.equal(log.panels[0].k[0].pinCount, 4, 'falls back to the lock pin count');
+        parent.keyOps.selectKey(0, 0, { id: 'e', cuts: [] });
+        assert.equal(log.pinCountAtCreate, 4);
+        assert.equal(parent.pinCount, 4);
+    } finally { t.restore(); }
+});
+
+test('m2: mode buttons are disabled while a key goes in and re-enabled after a wrong key', () => {
+    const strip = installDom();
+    const t = captureTimers();
+    try {
+        const { parent } = pickFirstParent();
+        parent.keyMode = true; parent.keySelectionMode = true;
+        parent.keyGroup = {}; parent.keyConfig = { keywayStartX: 100, shoulderWidth: 20, circleRadius: 70 };
+        let onComplete;
+        parent.scene = { time: { delayedCall() {} }, tweens: { add: (cfg) => { onComplete = cfg.onComplete; }, killTweensOf() {} } };
+        parent.keyInsertion.updatePinsWithKeyInsertion = () => {};
+        parent.keyAnim.snapPinsToExactPositions = () => {};
+        parent.keyOps.startKeyInsertion = KeyOperations.prototype.startKeyInsertion;
+        strip.appendChild(parent.toolMgr.buildPickButtonRow());
+        const btn = rowButton(rowOf(strip));
+        assert.equal(btn.disabled, false);
+        parent.keyOps.startKeyInsertion();
+        assert.equal(btn.disabled, true, 'disabled during insertion');
+        // a row rebuilt mid-insertion is also disabled
+        assert.equal(rowButton(parent.toolMgr.buildKeyButtonRow()).disabled, true);
+        parent.selectedKeyData = { cuts: [1, 1, 1, 1] };
+        parent.keyData = { cuts: [40, 30, 50, 20] };
+        onComplete();
+        assert.equal(parent.keyInserting, false);
+        assert.equal(btn.disabled, false, 're-enabled after a wrong key');
+    } finally { t.restore(); }
+});
+
+test('m2: a correct key keeps its mode button disabled after the check', () => {
+    const strip = installDom();
+    const t = captureTimers();
+    try {
+        const { parent } = pickFirstParent();
+        parent.keyMode = true;
+        parent.keyGroup = {}; parent.keyConfig = { keywayStartX: 100, shoulderWidth: 20, circleRadius: 70 };
+        let onComplete;
+        parent.scene = { time: { delayedCall() {} }, tweens: { add: (cfg) => { onComplete = cfg.onComplete; }, killTweensOf() {} } };
+        parent.keyInsertion.updatePinsWithKeyInsertion = () => {};
+        parent.keyAnim.snapPinsToExactPositions = () => {};
+        parent.keyOps.startKeyInsertion = KeyOperations.prototype.startKeyInsertion;
+        strip.appendChild(parent.toolMgr.buildPickButtonRow());
+        parent.selectedKeyData = { cuts: [40, 30, 50, 20] };
+        parent.keyData = { cuts: [40, 30, 50, 20] };
+        parent.keyOps.startKeyInsertion();
+        onComplete();
+        assert.equal(rowButton(rowOf(strip)).disabled, true);
+    } finally { t.restore(); }
+});
+
+test('m2: switchToPickMode during insertion kills the tween and clears keyInserting', () => {
+    installDom();
+    const { mg } = minigame({ keyGroup: { id: 'kg', destroy() {} }, keyInserting: true });
+    const killed = [];
+    mg.scene = { tweens: { killTweensOf: (t) => killed.push(t) } };
+    const group = mg.keyGroup;
+    mg.toolMgr.switchToPickMode();
+    assert.deepEqual(killed, [group]);
+    assert.equal(mg.keyInserting, false);
+    assert.equal(mg.keyMode, false);
+});
+
+// ── m3: real KeyDataGenerator + KeyCutCalculator ─────────────────────────────────────
+mkdirSync(join(dir, 'utils'), { recursive: true });
+writeFileSync(join(dir, 'utils/key-cut-calculator.js'), readFileSync(join(js, 'utils/key-cut-calculator.js'), 'utf8'));
+writeFileSync(join(dir, 'minigames/lockpicking/key-data-generator.js'), readFileSync(join(js, 'minigames/lockpicking/key-data-generator.js'), 'utf8'));
+const { KeyDataGenerator } = await import(pathToFileURL(join(dir, 'minigames/lockpicking/key-data-generator.js')).href);
+const KeyCutCalculator = (await import(pathToFileURL(join(dir, 'utils/key-cut-calculator.js')).href)).default;
+
+test('m3: real generator and calculator, pick-first Derek lock [35,55,45,25]: the matching key fits, a longer key leaves pinCount alone', () => {
+    installDom();
+    const t = captureTimers();
+    try {
+        const { parent, log } = pickFirstParent();
+        parent.pins = [35, 55, 45, 25].map(keyPinLength => ({ keyPinLength }));
+        parent.keyDataGen = new KeyDataGenerator(parent);
+        // availableKeys built as minigame-starters builds them: cuts from keyPins, no pinCount
+        const derek = { id: 'derek_key', name: "Derek's Office Key", cuts: KeyCutCalculator.calculateCutDepthsRounded([35, 55, 45, 25]) };
+        const odd = { id: 'odd_key', name: 'Odd Key', cuts: KeyCutCalculator.calculateCutDepthsRounded([35, 55, 45, 25, 30]) };
+        parent.availableKeys = [derek, odd];
+        parent.toolMgr.switchToKeyMode();
+        const [k1, k2] = log.panels[0].k;
+        assert.equal(k1.pinCount, 4);
+        assert.equal(k2.pinCount, 5, 'length differs, no pinCount: taken from cuts');
+        parent.keyOps.selectKey(0, 0, k1);
+        parent.keyOps.checkKeyCorrectness();
+        assert.ok(log.feedback.includes('Key fits perfectly! Lock unlocked.'));
+        assert.equal(parent.keyUnlocked, true);
+        // second key: pinCount restored unchanged after selectKey
+        const p2 = pickFirstParent().parent;
+        p2.pins = parent.pins;
+        p2.keyDataGen = new KeyDataGenerator(p2);
+        p2.keyDataGen.generateKeyDataFromPins();
+        p2.keyOps.selectKey(1, 0, { id: 'odd_key', cuts: odd.cuts });
+        assert.equal(p2.pinCount, 4, 'lock pinCount restored unchanged');
+    } finally { t.restore(); }
+});
+
+// ── m1: the deferred block in startKeySelectionMinigame ───────────────────────────────
+function deferredBlock() {
+    const src = readFileSync(join(js, 'systems/minigame-starters.js'), 'utf8');
+    const at = src.indexOf('export function startKeySelectionMinigame');
+    const from = src.indexOf('setTimeout(() => {', src.indexOf('Wait for the minigame to be fully initialized', at));
+    const to = src.indexOf('}, 500);', from);
+    assert.ok(from > 0 && to > from, 'deferred block found');
+    return src.slice(from + 'setTimeout('.length, to + 1);
+}
+function runDeferred(mg) {
+    const fn = new Function('window', 'playerKeys', 'lockable', 'requiredKeyId', 'KeyCutCalculator', 'generateKeyCutsForLock',
+        `return (${deferredBlock()});`);
+    const w = { MinigameFramework: { currentMinigame: mg }, lockRef: (d) => d.name };
+    const keys = [{ scenarioData: { name: 'Derek', keyPins: [35, 55, 45, 25] } }];
+    fn(w, keys, {}, 'derek_key', KeyCutCalculator, () => [1, 1, 1, 1])();
+}
+test('m1: a quick switch to picking inside 500 ms still stores the key list; no panel opens', () => {
+    const opened = [];
+    const mg = { keyMode: false, startWithKeySelection: (k, id) => opened.push([k, id]) };
+    runDeferred(mg);
+    assert.equal(opened.length, 0, 'panel not opened in pick mode');
+    assert.equal(mg.originalInventoryKeys.length, 1);
+    assert.equal(mg.originalInventoryKeys[0].pinCount, 4);
+    assert.equal(mg.originalCorrectKeyId, 'derek_key');
+    // and switching back to keys now finds them
+    installDom();
+    const calls = [];
+    Object.assign(mg, { pinCount: 4, keyData: { cuts: [1] }, canSwitchToPickMode: true, canSwitchToKeyMode: true,
+        lockConfig: { resetPinsToOriginalPositions() {} }, keyDataGen: { generateKeyDataFromPins() {} },
+        keyInsertion: { updateFeedback() {} }, keySelection: { createKeySelectionUI: (k) => calls.push(k) } });
+    mg.toolMgr = new ToolManager(mg);
+    mg.toolMgr.switchToKeyMode();
+    assert.equal(calls.length, 1, 'no "No keys available"');
+});
+test('m1: still in key mode, the deferred block opens the panel as before', () => {
+    const opened = [];
+    const mg = { keyMode: true, startWithKeySelection: (k, id) => opened.push([k, id]) };
+    runDeferred(mg);
+    assert.equal(opened.length, 1);
+    assert.equal(opened[0][1], 'derek_key');
+    assert.equal(mg.originalInventoryKeys, opened[0][0]);
 });

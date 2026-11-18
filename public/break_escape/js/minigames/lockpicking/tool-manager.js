@@ -42,6 +42,7 @@ export class ToolManager {
         btn.id = 'lockpicking-switch-mode-btn';
         btn.innerHTML = '<img src="/break_escape/assets/objects/lockpick.png" alt="Lockpick" class="icon-large"> Switch to Lockpicking';
         btn.onclick = () => this.switchToPickMode();
+        btn.disabled = !!(this.parent.keyInserting || this.parent.keyUnlocked);
         row.appendChild(createPickCaption());
         row.appendChild(btn);
         return row;
@@ -55,6 +56,7 @@ export class ToolManager {
         btn.id = 'lockpicking-switch-to-keys-btn';
         btn.innerHTML = '<img src="/break_escape/assets/objects/key.png" alt="Key" class="icon-large"> Switch to Key Mode';
         btn.onclick = () => this.switchToKeyMode();
+        btn.disabled = !!(this.parent.keyInserting || this.parent.keyUnlocked);
         row.appendChild(btn);
         return row;
     }
@@ -66,6 +68,20 @@ export class ToolManager {
         if (!strip) return;
         strip.querySelectorAll('.lockpicking-mode-row').forEach((el) => el.remove());
         if (build) strip.appendChild(build());
+    }
+
+    // Disable (or re-enable) the mode-switch buttons. The real disabled attribute stops
+    // clicks; lockpicking.css dims the label and changes the cursor so it is not only colour.
+    setModeButtonsDisabled(disabled) {
+        if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return;
+        const strip = document.querySelector('.lockpicking-item-section');
+        if (!strip) return;
+        for (const row of Array.from(strip.children || [])) {
+            if (row.className !== 'lockpicking-mode-row') continue;
+            for (const btn of Array.from(row.children || [])) {
+                if ((btn.tagName || btn.tag || '').toLowerCase() === 'button') btn.disabled = !!disabled;
+            }
+        }
     }
 
     hideLockpickingTools() {
@@ -169,6 +185,13 @@ export class ToolManager {
     switchToPickMode() {
         // Switch from key selection mode to lockpicking mode
         console.log('Switching from key mode to lockpicking mode');
+
+        // A key is still going in (the buttons are disabled, this is the defensive guard):
+        // stop the insertion so no wrong-key or unlock result lands in pick mode
+        if (this.parent.keyInserting) {
+            this.parent.scene?.tweens?.killTweensOf(this.parent.keyGroup);
+            this.parent.keyInserting = false;
+        }
 
         // A correct key is already turning: the unlock is a key unlock
         if (this.parent.keyUnlocked) return;
@@ -309,7 +332,7 @@ export class ToolManager {
         if (keys && keys.length > 0 && this.parent.keySelection) {
             // Pick-first locks arrive with no key data and keys without a pinCount
             if (!this.parent.keyData) this.parent.keyDataGen.generateKeyDataFromPins();
-            const normalised = keys.map(k => ({ ...k, pinCount: k.pinCount ?? k.cuts?.length ?? this.parent.pinCount }));
+            const normalised = keys.map(k => ({ ...k, pinCount: k.pinCount || k.cuts?.length || this.parent.pinCount }));
             this.parent.originalInventoryKeys ??= normalised;
             this.parent.originalCorrectKeyId ??= requiredId;
             this.parent.keySelection.createKeySelectionUI(normalised, requiredId);
