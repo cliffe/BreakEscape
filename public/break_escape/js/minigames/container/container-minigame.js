@@ -318,6 +318,25 @@ export function evenShareLabels(grid, selector = '.container-content-label') {
     if (typeof document !== 'undefined') document.fonts?.ready?.then?.(even);
 }
 
+/**
+ * Room under each item of a safe or cabinet for its whole name: the label hangs below the
+ * slot, so each slot's bottom margin is the label's height plus its 6px offset and the row
+ * (and the frame) is exactly as tall as the contents need. Again once the pixel font arrives.
+ */
+export function fitContentLabels(grid) {
+    if (!grid?.querySelectorAll) return;
+    const fit = () => {
+        for (const slot of grid.querySelectorAll('.container-content-slot')) {
+            const label = slot.querySelector('.container-content-label');
+            const h = label?.offsetHeight || 0;
+            if (h > 0) slot.style.marginBottom = `${h + 6}px`;
+        }
+    };
+    fit();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
+    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(fit);
+}
+
 const LABEL_SEP = /[_.\-\/]/;
 const LABEL_TRAIL = /[_.\-\/\s]+$/;
 const LABEL_LINES = 3;
@@ -1319,9 +1338,7 @@ export class ContainerMinigame extends MinigameScene {
                     </div>
                 </div>
                 
-                <div class="container-actions">
-                    ${this.isTakeable ? '<button class="minigame-button" id="take-container-btn">Take Container</button>' : ''}
-                </div>
+                ${this.isTakeable ? '<div class="container-actions"><button class="minigame-button" id="take-container-btn">Take Container</button></div>' : ''}
             </div>
         `;
     }
@@ -1722,6 +1739,7 @@ export class ContainerMinigame extends MinigameScene {
             contentsGrid.appendChild(slot);
         });
         if (this.shareFolder) evenShareLabels(contentsGrid);
+        else fitContentLabels(contentsGrid);
     }
     
     populateDesktopIcons() {

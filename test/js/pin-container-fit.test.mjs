@@ -1,0 +1,133 @@
+// Sweep B6, B8, B9: the PIN pad keeps its message row clear of the display and its log shows
+// whole rows; a safe or cabinet shows every item name in full and the frame wraps the
+// contents; the PIN cracker toggle row is a 32px touch target.
+// Run with: node test/js/pin-container-fit.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, '../../public/break_escape');
+const css = (name) => readFileSync(join(root, 'css', name), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const js = (rel) => readFileSync(join(root, 'js', rel), 'utf8');
+
+// Declarations of every rule (at any nesting) whose selector list includes `selector`,
+// optionally only inside an @media block whose condition contains `media`
+function rules(text, selector, media = null) {
+    const out = [];
+    const walk = (block, cond) => {
+        let i = 0;
+        while (i < block.length) {
+            const open = block.indexOf('{', i);
+            if (open < 0) break;
+            const head = block.slice(i, open).trim();
+            // find the matching close brace
+            let depth = 1, j = open + 1;
+            while (j < block.length && depth) { if (block[j] === '{') depth++; else if (block[j] === '}') depth--; j++; }
+            const body = block.slice(open + 1, j - 1);
+            if (head.startsWith('@')) walk(body, head);
+            else {
+                const sels = head.split(',').map(s => s.trim().replace(/\s+/g, ' '));
+                if (sels.includes(selector) && (media === null ? !cond || !cond.startsWith('@media') : (cond || '').includes(media))) {
+                    const decls = {};
+                    for (const d of body.split(';')) {
+                        const k = d.indexOf(':');
+                        if (k > 0) {
+                            const name = d.slice(0, k).trim();
+                            decls[name] = decls[name] ? [].concat(decls[name], d.slice(k + 1).trim()) : d.slice(k + 1).trim();
+                        }
+                    }
+                    out.push(decls);
+                }
+            }
+            i = j;
+        }
+    };
+    walk(text, null);
+    return out;
+}
+const rule = (text, selector, media = null) => {
+    const all = rules(text, selector, media);
+    assert.ok(all.length > 0, `no rule for ${selector}${media ? ` in ${media}` : ''}`);
+    return Object.assign({}, ...all);
+};
+
+
+
+const px = (v) => parseFloat(v);
+const pin = css('pin.css');
+const box = css('container-minigame.css');
+
+test('B6: the message row is not pulled up over the display on short screens', () => {
+    const short = rule(pin, '.pin-minigame-message', '(max-height: 700px)');
+    assert.ok(short.margin, 'a short-screen rule sets the message margin');
+    assert.ok(!/-\d/.test(short.margin), 'no negative margin: it overlapped the display border by 12px');
+    const base = rule(pin, '.pin-minigame-message');
+    assert.ok(px(base['min-height']) >= 32, 'the row is reserved even when empty');
+});
+
+test('B6: the landscape message row reserves one line and fits the left column', () => {
+    const land = rule(pin, '.pin-minigame-message', '(max-height: 520px)');
+    assert.ok(px(land['min-height']) >= 32);
+    assert.ok(px(land['max-width']) >= 380, 'wide enough for "Incorrect PIN. 4 attempts remaining." on one line');
+});
+
+test('B6: the attempts log shows whole rows and snaps to the newest', () => {
+    const row = rule(pin, '.pin-minigame-attempt');
+    assert.equal(row['flex'], '0 0 auto', 'rows never shrink inside the scrolling log');
+    assert.equal(row['scroll-snap-align'], 'end');
+    const rowH = px(row['line-height']) + 16 + 4;   // 8px padding top and bottom, 2px borders
+    for (const [media, rows] of [[null, 3], ['(max-height: 700px)', 2], ['(max-height: 520px)', 2]]) {
+        const log = rule(pin, '.pin-minigame-attempts-log', media);
+        assert.equal(px(log['max-height']), rows * rowH + (rows - 1) * 8, `${media || 'default'}: ${rows} whole rows`);
+    }
+    assert.match(rule(pin, '.pin-minigame-attempts-log')['scroll-snap-type'], /^y/);
+});
+
+test('B6: the log scrolls to the newest row again once laid out', () => {
+    const s = js('minigames/pin/pin-minigame.js');
+    assert.match(s, /requestAnimationFrame\(\(\) => \{ log\.scrollTop = log\.scrollHeight; \}\)/);
+});
+
+test('B9: the whole cracker label row is the touch target', () => {
+    const r = rule(pin, '.pin-minigame-toggle-label');
+    assert.ok(px(r['min-height']) >= 32);
+    assert.equal(r['flex'], '1 1 auto');
+});
+
+test('B8: item names wrap in full, with no clamp or ellipsis', () => {
+    const sel = '.container-contents-grid:not(.share-folder-files) .container-content-label';
+    const r = rule(box, sel);
+    assert.equal(r['-webkit-line-clamp'], 'unset');
+    assert.equal(r.overflow, 'visible');
+    assert.equal(r['text-overflow'], 'clip');
+    assert.equal(r['white-space'], 'normal');
+    assert.equal(r['overflow-wrap'], 'break-word', 'breaks inside a word only when it is wider than the label');
+    assert.ok(px(r.width) >= 112, 'wide enough for "The Reading," on one line');
+});
+
+test('B8: the grid wraps its labels and has no fixed height or reserved band', () => {
+    const g = rule(box, '.container-contents-grid:not(.share-folder-files)');
+    assert.equal(g['max-height'], 'none');
+    assert.equal(g['min-height'], '0');
+    assert.ok(px(g['padding'].split(' ').pop()) <= 15, 'no 40px padding under the last row');
+    assert.ok(px(rule(box, '.container-contents-grid:not(.share-folder-files) .container-content-slot')['margin-bottom']) > 0,
+        'room for the hanging label comes from the slot, sized to its label');
+});
+
+test('B8: each slot is sized from its label once laid out', () => {
+    const s = js('minigames/container/container-minigame.js');
+    assert.match(s, /export function fitContentLabels\(grid\)/);
+    assert.match(s, /else fitContentLabels\(contentsGrid\)/);
+    assert.match(s, /slot\.style\.marginBottom = `\$\{h \+ 6\}px`/);
+});
+
+test('B8: an empty actions row is neither drawn nor styled as a band', () => {
+    const s = js('minigames/container/container-minigame.js');
+    const ui = s.slice(s.indexOf('createStandardUI() {'), s.indexOf('createShareFolderUI() {'));
+    assert.ok(!/<div class="container-actions">\s*\$\{/.test(ui), 'the row is only emitted with a Take button (whitespace made it non-empty)');
+    assert.match(ui, /\$\{this\.isTakeable \? '<div class="container-actions">/);
+    assert.ok(Object.keys(rules(box, '.container-actions:not(:has(*))')[0] || {}).includes('display'));
+});
