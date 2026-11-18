@@ -1,0 +1,13 @@
+{
+  "key": "dacf820acc8fb497a15fae093f96d811",
+  "npc": "zainab_hussain",
+  "text": "Strong one today?",
+  "voice": "Achernar",
+  "style": "Tarrowby's field service engineer, in her 30s, steady and down-to-earth; eight years working from vans and trains. Speak with a consistent northern English accent throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:46:37Z"
+}

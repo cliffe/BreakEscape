@@ -1,0 +1,13 @@
+{
+  "key": "ee672a9726a985480101617307e0c945",
+  "npc": "agnieszka_duda",
+  "text": "Are you going to the quiz?",
+  "voice": "Callirrhoe",
+  "style": "Brightwell's part-time payroll officer, in her 30s, calm and matter-of-fact. Speak with a consistent, lightly Polish-accented English throughout — do not shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "office_life_showcase",
+  "source": "generate",
+  "generated": "2026-11-17",
+  "recorded_at": "2026-11-17T22:44:57Z"
+}
