@@ -1,13 +1,13 @@
 {
-  "key": "3439d4b78139b4bf15ef3a5b1f3718cf",
+  "key": "91ac3f5b520e9a8fe1d964c8d0f83d47",
   "npc": "victoria_sterling",
-  "text": "Your Ghost liked to tell people they wrote that exploit themselves. They didn't. They bought it from me, twenty-five thousand, hospital premium and all.",
+  "text": "You didn't move me. You're simply a better bet than a shallow grave.",
   "voice": "Despina",
   "style": "CEO and former conference speaker, late forties. Speak with a consistent British Received Pronunciation accent throughout -- do not shift to any other accent. Smooth, low-to-mid pitch; unhurried, polished pace. Cool, precise and amused; never raises her voice, because she has never needed to.",
   "language": "en-GB",
   "model": "gemini-3.8-flash-tts",
   "scenario": "m03_ghost_in_the_machine",
   "source": "generate",
-  "generated": "2026-10-13",
-  "recorded_at": "2026-10-13T01:23:31Z"
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:19:15Z"
 }
