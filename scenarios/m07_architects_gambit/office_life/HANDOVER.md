@@ -20,7 +20,7 @@ Branch `build/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Stage: build. Slic
 ## Decisions taken (log for the user)
 
 - Cast: AC0 excluded the Office Life Tour cast, Lerato, Tomasz, Darren, Ibrahim, Joanne; every free man's voice clashes in m07 (Iapetus, Rasalgethi, Sadaltager), Lorna is facilities (6/6 clear), so two women.
-- B1: the handover sheet says the coffee machine is broken (`scenario.json.erb:1904`), so the pair use the cooler only; the coffee station stays undeclared decor.
+- B1: the handover sheet says the coffee machine is broken (`scenario.json.erb:1995`), so the pair use the cooler only; the coffee station stays undeclared decor.
 
 ## Gotchas
 
@@ -54,7 +54,7 @@ Branch build/ol-m07. Commit e1bccce0e (step 1) plus the commit that adds this no
 
 ## Step 1 done (e1bccce0e)
 - Four exchange lines shortened in ink, SPOKEN_LINES.md (counts 38, 31, 39, 39) and DIALOGUE_SAMPLE.md; ink recompiled; exchanges block wired in adaeze_okafor (ERB comment removed).
-- `server_hall_reached` confirmed: set by HaX's `room_entered:server_room` mapping (scenario.json.erb ~:1136), declared false at :2689, so the exchanges' `server_hall_reached: false` gate holds until the first server-room entry.
+- `server_hall_reached` confirmed: set by HaX's `room_entered:server_room` mapping (scenario.json.erb ~:1141), declared false at :2692, so the exchanges' `server_hall_reached: false` gate holds until the first server-room entry.
 - Validator 0 errors, 31 warnings (baseline 30 plus the two V4 attack-mid-walk notes already justified). Lock/key diff empty.
 - dialoguelint shows one L1 delivery-note on both operator files (control tag `#exit_conversation` inside the hub's conditional). Same finding on m05's Thandiwe file, which is the model; not a voiced-line problem.
 
@@ -98,7 +98,7 @@ Scratch driver for route: scratchpad ex1.mjs (not committed; it only calls route
 
 # Slice 3 live checks part 4 (2026-11-18)
 
-All seven checks pass; evidence in LIVE_SLICE3.md "part 4". Server :3098 stopped by PID 3204557. Nothing running. Game ids up to 8089 used. Probe changes: `m07-ol-route.mjs` now interacts with the server door (badge held) before entering; `m07-ol-s3.mjs` gained modes l6, ko, pre, walk2 and PARK/DESK env; `m07-ol-door.mjs` is an exploration script. Open note: Gwen logs `mount_stuck` once per cooler trip but returns to post.
+All seven checks pass; evidence in LIVE_SLICE3.md "part 4". Server :3098 stopped by PID 3204557. Nothing running. Game ids up to 8089 used. Probe changes: `m07-ol-route.mjs` now interacts with the server door (badge held) before entering; `m07-ol-s3.mjs` gained modes l6, ko, pre, walk2 and PARK/DESK env; `m07-ol-door.mjs` is an exploration script. Open note: Gwen logs `mount_stuck` once per cooler trip but returns to post. Resolved, see `LIVE_SLICE3.md` "R1 fixes" (`seat: "stand"`, no `mount_stuck`).
 
 # Engine follow-up (build review R1, m2)
 
@@ -106,4 +106,4 @@ Clicking a seated NPC's sprite centre hits the chair's hit box ("A chair.") inst
 
 # R1 fix handover (2026-11-18)
 
-Done: M1, m1, m2, m3, m4, m6, m7, m8 (see LOG.md and LIVE_SLICE3.md "R1 fixes"). Not done: m5 (L1 and the real walkthrough route to the server room on a fresh game with seeded flags). Server :3098 stopped by PID 1039641. Game ids used up to 8210. New probes: tools/playtest/m07-ol-r1m1.mjs, m07-ol-r1m4.mjs, m07-ol-r1chairs.mjs. Dismiss the HaX phone bark with `__test.dismissBlockingUi()` before moveToNear or it returns blocking-ui.
+Done: M1, m1, m2, m3, m4, m6, m7, m8 (see LOG.md and LIVE_SLICE3.md "R1 fixes"). Not done: m5 (L1 and the real walkthrough route to the server room on a fresh game with seeded flags). Resolved, see `LOG.md` (R1 table, m5) and `LIVE_SLICE3.md` "R1 m5 walkthrough run". Server :3098 stopped by PID 1039641. Game ids used up to 8210. New probes: tools/playtest/m07-ol-r1m1.mjs, m07-ol-r1m4.mjs, m07-ol-r1chairs.mjs. Dismiss the HaX phone bark with `__test.dismissBlockingUi()` before moveToNear or it returns blocking-ui.

@@ -1,6 +1,6 @@
 # m07 office life: slice 3 build log
 
-Commit c36090d54 (first cut). Measurements below are NOT done yet; see HANDOVER.md.
+Commit c36090d54 (first cut). Resolved: the measurements are done and recorded below ("Slice 3 measurements"; later commits b72a83d5f, eb6df8486, and the R2 re-time).
 
 ## Static checks (all on c36090d54)
 
@@ -69,7 +69,7 @@ Zero in the full logs of the six trips (five above plus a sixth after the chair 
 
 ### Use time and walk home, after seat stand (R2 m5, natural trips)
 
-Natural first trips on three fresh games (8239, 8247, 8260), keyless server :3098, probe `tools/playtest/m07-ol-r2.mjs`, player parked at (520,248), polled every 0.25 s plus call overhead, so each figure is good to about 0.5 s. Seconds on the page clock; `left` is the first sample off post, `home` is the end of `using` to back at post. These games ran on a loaded machine (frame mean 25 to 80 ms), so the page clock ran behind wall time and the use times (34 to 36 s in 8247 and 8260 against 22 s) are inflated; in 8247 and 8260 both operators' `using` ended in the same poll, so `home` there is less exact.
+Natural first trips on three fresh games (8239, 8247, 8260), keyless server :3098, probe `tools/playtest/m07-ol-r2.mjs`, player parked at (520,248), polled every 0.25 s plus call overhead, so each figure is good to about 0.5 s. Wall seconds (the probe computes `(Date.now() - tEnter) / 1000`); `left` is the first sample off post, `home` is the end of `using` to back at post. These games ran on a loaded machine (frame mean 25 to 80 ms), so the simulation ran slower than wall time and the use times (34 to 36 s in 8247 and 8260 against 22 s) are inflated, and the walk figures are inflated by the same factor; in 8247 and 8260 both operators' `using` ended in the same poll, so `home` there is less exact.
 
 | Game | A left | A walk out | A home | A away | G left | G walk out | G home | G away |
 |---|---|---|---|---|---|---|---|---|
@@ -77,7 +77,7 @@ Natural first trips on three fresh games (8239, 8247, 8260), keyless server :309
 | 8247 | 79.8 | 2.6 | 2.7 | 39.7 | 85.3 | 3.1 | 5.9 | 37.4 |
 | 8260 | 74.7 | 3.3 | 6.1 | 45.1 | 81.1 | 4.1 | 6.1 | 38.7 |
 
-Result: Gwen's walk home is 5.9 to 9.3 s (before the fix: 5.5 to 17.25 s, median 11 s, with three `return_resumed` stalls in five). No stall seen in three trips. Adaeze's home is 2.7 to 6.1 s (before: 4.0 to 4.25 s). Walk out 2.6 to 4.1 s for both (before: 3.0 to 3.5 s). First trip started 74.7 to 88.1 s after entering the room, inside 45 to 120 s. Three trips is a small sample, so the stall is reduced in these runs, not shown to be gone.
+Result, read as wall seconds on a loaded machine, so the comparison with the unloaded "before seat stand" table above is not like for like. Against game 8239 only (the quietest, use time 22 s, so no inflation): Gwen's walk home is 9.3 s (before the fix: 5.5 to 17.25 s, median 11 s, with three `return_resumed` stalls in five), Adaeze's 4.3 s (before: 4.0 to 4.25 s), walk out 2.7 and 2.8 s (before: 3.0 to 3.5 s). Adaeze's walk home is not shorter than before. Gwen's stalls were not seen in any of the three trips (8247 and 8260 figures are inflated and shown for completeness). First trip started 74.7 to 88.1 s after entering the room, inside 45 to 120 s. Three trips is a small sample, so the stall is reduced in these runs, not shown to be gone.
 
 ## Accepted: one punch can hit both operators (10.4)
 
