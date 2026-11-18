@@ -763,8 +763,6 @@ module ValidateAccessWork
     found
   end
 
-  REPO_ROOT = File.expand_path('..', __dir__)
-
   def ink_file(story_path)
     return nil unless story_path.is_a?(String) && !story_path.empty?
 
