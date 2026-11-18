@@ -1,0 +1,13 @@
+{
+  "key": "d40cf1557a9f67677342ce093a2089ec",
+  "npc": "joanne_pell",
+  "text": "Robert said I could use the sofa. I'm not complaining.",
+  "voice": "Zephyr",
+  "style": "Albion Energy Storage's training and inductions coordinator, in her late 40s, brisk and friendly. Speak with a consistent East Midlands accent from Leicester throughout, with no shift to any other accent.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:14:38Z"
+}

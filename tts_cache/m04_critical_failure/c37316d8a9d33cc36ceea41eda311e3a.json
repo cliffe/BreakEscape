@@ -1,0 +1,13 @@
+{
+  "key": "c37316d8a9d33cc36ceea41eda311e3a",
+  "npc": "security_guard",
+  "text": "Same as I said. The OptiGrid lot, late on the ninth, and Mr Vance knows more than I do.",
+  "voice": "Schedar",
+  "style": "Site security guard on the early shift, mid-fifties. Speak with a consistent West Country (Bristol) accent throughout -- do not shift to any other accent. Low, even pitch; unhurried pace. Polite and a little grumpy about the hour, then firmly by-the-book once pushed.",
+  "language": "en-GB",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m04_critical_failure",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T10:13:58Z"
+}
