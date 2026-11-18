@@ -99,10 +99,10 @@ test('a flag lock or station says "flag", a password lock keeps its wording', ()
 });
 
 test('the station panel refuses a flag in flag words', () => {
-    assert.match(F.flagRefusalLine('Invalid flag'), /^✗ Flag not accepted\. Check it was copied in full/);
+    assert.match(F.flagRefusalLine('Invalid flag'), /^Flag not accepted\. Check it was copied in full/);
     assert.match(F.flagRefusalLine(undefined), /Flag not accepted/);
     assert.match(F.flagRefusalLine('Incorrect flag'), /different machine/);
-    assert.equal(F.flagRefusalLine('Flag already submitted'), '✗ Flag already submitted');
+    assert.equal(F.flagRefusalLine('Flag already submitted'), 'Flag already submitted');
     assert.doesNotMatch(F.flagRefusalLine('Invalid flag'), /password/i);
 });
 

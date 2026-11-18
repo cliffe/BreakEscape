@@ -22,14 +22,14 @@ test('a recognised key flag shows in the list, not as a tick', () => {
     assert.match(html, /flag-recognised/);
     assert.match(html, /key: use elsewhere/);
     assert.match(html, /title="Decryption Key validated"/);
-    assert.doesNotMatch(html, /✓/);
+    assert.doesNotMatch(html, /DONE/);
 });
 
 test('consumed flags keep the tick and come first; a flag in both lists shows once', () => {
     const html = flagHistoryHtml(['flag{a}'], [{ flag: 'flag{k}', note: '' }, { flag: 'flag{a}', note: '' }], esc);
     assert.equal((html.match(/<li /g) || []).length, 2);
     assert.ok(html.indexOf('flag{a}') < html.indexOf('flag{k}'));
-    assert.match(html, /✓/);
+    assert.match(html, /DONE/);
 });
 
 test('flag and note text is escaped', () => {

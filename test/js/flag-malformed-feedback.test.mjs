@@ -19,7 +19,7 @@ test('looksLikeFlag accepts flag{...} and rejects other shapes', () => {
 test('a malformed value gets the format line, never a silent or generic one', () => {
     for (const typed of ['abc', 'not a flag', 'flag{unclosed']) {
         const line = F.flagRefusalLine('Invalid flag', { flagValue: typed });
-        assert.match(line, /^✗ Flag not accepted\. Flags usually look like flag\{\.\.\.\}/);
+        assert.match(line, /^Flag not accepted\. Flags usually look like flag\{\.\.\.\}/);
     }
 });
 
@@ -35,7 +35,7 @@ test('a well-formed wrong flag keeps the copied-in-full line', () => {
 
 test('wrong-station and already-submitted lines are unchanged by the typed value', () => {
     assert.match(F.flagRefusalLine('Incorrect flag', { reason: 'wrong_station', flagValue: 'oops' }), /different machine/);
-    assert.equal(F.flagRefusalLine('Flag already submitted', { flagValue: 'oops' }), '✗ Flag already submitted');
+    assert.equal(F.flagRefusalLine('Flag already submitted', { flagValue: 'oops' }), 'Flag already submitted');
 });
 
 test('a flag the server could not record is not shown as a wrong flag', () => {
