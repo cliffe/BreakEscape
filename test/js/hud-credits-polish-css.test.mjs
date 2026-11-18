@@ -47,7 +47,7 @@ test('C11: the credits side panel scrollbar is the thin CRT green', () => {
     const css = read('css/bond-visualiser.css');
     const panel = rule(css, '#bond-vis-overlay .bv-side-panel');
     assert.match(panel, /scrollbar-width: thin/);
-    assert.match(panel, /scrollbar-color: var\(--bv-green-dim\) transparent/);
+    assert.match(panel, /scrollbar-color: var\(--bv-green\) var\(--bv-green-dim\)/);
     assert.match(css, /\.bv-side-panel::-webkit-scrollbar-thumb \{[^}]*var\(--bv-green-dim\)/);
     assert.match(css, /\.bv-side-panel::-webkit-scrollbar-thumb \{[^}]*border-radius: 0/);
 });
@@ -97,4 +97,10 @@ test('C2: the hover label is set once and survives img to slot margin moves', ()
     assert.deepEqual(labels, ['Phone'], 'not cleared while the pointer is still on the slot');
     slot.dispatchEvent(new window.MouseEvent('mouseleave'));
     assert.deepEqual(labels, ['Phone', null]);
+});
+
+test('C2: a key ring slot rebuilt or removed under the pointer clears the hover label first', () => {
+    const src = read('js/systems/inventory.js');
+    const re = /if \(keyRing\.slot\.matches\(':hover'\)\) clearHudLabel\(\);\s*keyRing\.slot\.remove\(\);/g;
+    assert.equal((src.match(re) || []).length, 2, 'both key ring slot removals');
 });

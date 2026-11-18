@@ -219,7 +219,8 @@
   overflow-y: auto; /* a short window scrolls the panel instead of cutting the last VIS MODE button */
   box-shadow: 0 0 8px rgba(0,255,65,0.08);
   scrollbar-width: thin;
-  scrollbar-color: var(--bv-green-dim) transparent;
+  /* Chrome 121+ uses these and ignores the webkit rules below, so the thumb is the bright green */
+  scrollbar-color: var(--bv-green) var(--bv-green-dim);
 }
 
 #bond-vis-overlay .bv-side-panel::-webkit-scrollbar { width: 8px; height: 8px; }

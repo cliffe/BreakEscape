@@ -1201,6 +1201,7 @@ function updateKeyRingDisplay() {
     if (!keyRing || keyRing.keys.length === 0) {
         // Remove key ring display if no keys
         if (keyRing && keyRing.slot) {
+            if (keyRing.slot.matches(':hover')) clearHudLabel();
             keyRing.slot.remove();
             keyRing.slot = null;
             keyRing.itemImg = null;
@@ -1216,6 +1217,7 @@ function updateKeyRingDisplay() {
     
     // Remove existing key ring slot if it exists
     if (keyRing.slot) {
+        if (keyRing.slot.matches(':hover')) clearHudLabel();
         keyRing.slot.remove();
     }
     
