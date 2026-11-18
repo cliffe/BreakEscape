@@ -1,6 +1,6 @@
-# m07 office life: handover (plan phase done, five review rounds)
+# m07 office life: handover (build stage)
 
-Branch `plan/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Nothing built. Plan review loop finished at R5 with no blocker or major open.
+Branch `build/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Stage: build. Slices 3 and 6 are done; the plan is in `PLAN.md` (describes what is built), outcomes in `LOG.md` and `BUILD_LOG.md`. Build review rounds so far: R1 B0 M1 m8 (closed), R2 B0 M0 m5 (fixes applied, see the R2 table in `LOG.md`). Voicing comes next, after the review loop; nothing is voiced yet. Live checks run on a keyless server on :3098 only.
 
 ## Done
 
@@ -14,8 +14,8 @@ Branch `plan/ol-m07`, worktree `.claude/worktrees/p-ol-m07`. Nothing built. Plan
 
 ## Next
 
-1. AC0 answers QUESTIONS.md Q1 to Q4 (and the cast clash check).
-2. Then the build stage: `DIALOGUE_SAMPLE.md` for approval before slice 5, then slices per PLAN.md.
+1. Finish the build review loop (fixes from R2 are in; run the next review round).
+2. Then voicing, with its own yes and the V6 clip count.
 
 ## Decisions taken (log for the user)
 

@@ -213,3 +213,15 @@ Limits and slips:
 - Seeded flags (`session-start.sh --flags`) were not used. The route has no VM step and the probe lib drives the page directly. The opening state after load had no briefing minigame open (the lib's load dismisses any blocking UI), and the team was not committed, which the route does not need.
 - The probe's own `route()` first step `enter ops` returns `no-doorway` when already on the ops floor (harmless; the run continues).
 - The first 2 s of sampler output before entry (checkpoint) are not counted in L1.
+
+## R2 m1: frame time on the ops floor (2026-11-18)
+
+Games 8239, 8247, 8260, each fresh from `m07-ol-ng.sh`, keyless server on :3098 (boot warning seen), probe `tools/playtest/m07-ol-r2.mjs`. Headless, physics world fixed at 20 steps per second (the lib's `setFPS(20)`), fixed steps on, render loop target 60 (headless actual about 36 fps in 8239), no globals or needs set. Frame time is the `requestAnimationFrame` interval in ms (the game loop `delta` read the same). Windows: 30 s in the start room (security checkpoint), then 30 s seated on the ops floor right after entry, then the natural trip.
+
+| Game | Checkpoint 30 s mean / p95 | Ops seated 30 s mean / p95 | Both operators away from post (window) mean / p95 |
+|---|---|---|---|
+| 8239 | 25.4 / 50.0 | 40.7 / 66.7 | 40.0 / 66.7 (23.0 s) |
+| 8247 | 35.0 / 66.6 | 49.3 / 83.4 | 59.2 / 100.1 (33.9 s) |
+| 8260 | 50.7 / 100.0 | 81.6 / 216.6 | 62.9 / 150.0 (38.4 s) |
+
+Limits: the machine was shared and its load rose between games, so absolute numbers differ by game; compare within a game. The ops floor reads 1.4 to 1.6 times the checkpoint (a bigger room with more sprites, lights and the chat zone). Operators away (both walking, using or returning) against seated: 0.98, 1.20, 0.77 times, with no consistent direction, so the two operators' trips add no measurable cost over the room itself. The "both at the cooler" window is as long as both are off post (23 to 38 s), not a clean 30 s: they overlap for the use time only, and needs cannot be forced. The p95 on the ops floor is under 100 ms in the quietest game (8239, 66.7 ms with the 20 step cap in force); no reading dropped the step below the 20 fps simulation rate. Page errors: none in all three.

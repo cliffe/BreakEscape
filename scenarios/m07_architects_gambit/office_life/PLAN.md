@@ -1,15 +1,15 @@
 # m07 The Architect's Gambit: office-life plan
 
-Line numbers are for `scenarios/m07_architects_gambit/scenario.json.erb` (SCN) unless a file is named. The analysis behind this plan is in `ANALYSIS.md`; the user's open calls are in `QUESTIONS.md`. The plan follows the recommended answer to each.
+Line numbers are for `scenarios/m07_architects_gambit/scenario.json.erb` (SCN) unless a file is named. The analysis behind this plan is in `ANALYSIS.md`; the user's calls are in `QUESTIONS.md`.
 
 ## 0. Preconditions for stage 4
 
 | Precondition | State |
 |---|---|
-| Tier 2 small, "the last two out" (QUESTIONS Q1) | recommended, awaiting the user |
-| Cast: Adaeze Okafor and Gwen Pritchard (Q3), checked against the other missions' picks by AC0 | proposed |
-| Accent: keep their own British voices (Q2) | recommended, awaiting the user |
-| `DIALOGUE_SAMPLE.md` approved word for word before slice 5 | not yet written |
+| Tier 2 small, "the last two out" (QUESTIONS Q1) | decided (D112 a) |
+| Cast: Adaeze Okafor and Gwen Pritchard (Q3), checked against the other missions' picks by AC0 | decided (D114 a) |
+| Accent: both operators speak General American, `en-US` voice styles; Elena unchanged (Q2) | decided (D113) |
+| `DIALOGUE_SAMPLE.md`, the wording of the 28 lines | written; signed off on the user's instruction of 18 Nov 2026 |
 | Voicing yes with the V6 clip count | after the build |
 | Art | none needed: both atlases have sit and pose frames, talk sheets, visemes and headshots |
 
@@ -46,11 +46,11 @@ No machine is gated by a beat global. The cooler carries only the trouble gate (
 
 ### 2.1 Why these two
 
-Both come from the awareness course cast (D53), keep their names, looks and voices, and keep their kind of job. Adaeze Okafor (40s, Nigerian-British, voice Gacrux) is a finance manager in the course; here she is the grid scheduler, the desk that balances load against contracts. Gwen Pritchard (late 30s, Welsh, voice Sulafat) leads an IT service desk in the course; here she runs the ops floor's own systems support. Neither voice is used in m07; Gacrux is also used in m05 and m09 by other characters, which AC0 can confirm is acceptable. Every free man in the cast has a voice m07 already uses (Iapetus for Mercer, Rasalgethi for Park, Sadaltager for the Architect), so both picks are women. They are operations staff because only OPERATIONS is short on the board. Their sprite keys are their names; no clash with m07's keys.
+Both come from the awareness course cast (D53), keep their names, looks and voices, and keep their kind of job. Adaeze Okafor (40s, Nigerian heritage, voice Gacrux, General American accent with a light Nigerian inflection) is a finance manager in the course; here she is the grid scheduler, the desk that balances load against contracts. Gwen Pritchard (late 30s, voice Sulafat, General American accent, Pacific Northwest) leads an IT service desk in the course; here she runs the ops floor's own systems support. Neither voice is used in m07; Gacrux is also used in m05 and m09 by other characters, which AC0 can confirm is acceptable. Every free man in the cast has a voice m07 already uses (Iapetus for Mercer, Rasalgethi for Park, Sadaltager for the Architect), so both picks are women. They speak American English because the facility is in the US; the course voice text is unchanged and only the m07 style differs (D113). Elena's voice is unchanged. They are operations staff because only OPERATIONS is short on the board. Their sprite keys are their names; no clash with m07's keys.
 
 ### 2.2 Posts and seats
 
-`room_pnw_ops` (10 x 10 tiles of 32 px) has these chairs (Tiled, bottom-left origin): (60, 178), (124, 178), (60, 258), the office chair (236, 204) beside `pnw_console_pos1` (200, 156), and the supervisor's chair (86, 306) between the cooler and `desk1`. The chair at (236, 204) belongs to the abandoned console (`ops_floor_workstation`, "chair pushed back") and stays empty; the supervisor's chair and (60, 258) stay empty too, keeping the cooler corner clear. Gwen sits at (60, 178), Adaeze at (124, 178).
+`room_pnw_ops` (10 x 10 tiles of 32 px) has these chairs (Tiled, bottom-left origin): (60, 178), (124, 178), (60, 258), the office chair (236, 204) beside `pnw_console_pos1` (200, 156), and the supervisor's chair (86, 306) between the cooler and `desk1`. The cooler affordance carries `"seat": "stand"`, so using the cooler does not pull the supervisor's chair out. The chair at (236, 204) belongs to the abandoned console (`ops_floor_workstation`, "chair pushed back") and stays empty; the supervisor's chair and (60, 258) stay empty too, keeping the cooler corner clear. Gwen sits at (60, 178), Adaeze at (124, 178).
 
 `position` and `needsHome` are in tiles, converted from the chair's measured body-centre cell (`HOME_EPS` 12 px), with `seated: true`. `needsHome` takes the object form with its room: `{ "room": "operations_floor", "x": <tile>, "y": <tile> }`. Slice 3 records the final cells and checks a walk from the west door to the supervisor's desk and on to the east door with both at post and both at the cooler.
 
@@ -101,11 +101,11 @@ The cooler preset gives capacity 2; the plan sets `useSeconds` 22, long enough f
   - `{ "eventPattern": "npc_attacked:adaeze_okafor", "onceOnly": true, "setGlobal": { "ops_staff_upset": true } }` and the same for `gwen_pritchard`. `npc_attacked` fires on the first hit while the NPC is still friendly (`player-combat.js:461`). Both start friendly and are not `koImmune`, so every KO of either comes after an `npc_attacked`; no KO row is needed for the trouble global.
   - The hands-down hint: two rows, `npc_ko:adaeze_okafor` and `npc_ko:gwen_pritchard`, each with the same `!globalVars.hands_down_said` condition, `onceOnly`, `setGlobal` and message text as the existing loop rows (`:1250` to `:1258`), copied word for word. Appended, not added to the ERB loop, so no existing once index moves. No new line.
 - `offWhen: "ops_staff_upset"` on the cooler (object level). Once set, a walk to it turns back and the NPC walks home; a use in progress finishes first.
-- Both NPCs: `"behavior": { "hostile": { "leash": true } }` so a struck operator stays near her post. `npc_attacked` turns only the struck one hostile; the other stays talkable and her ink reacts (2.8).
+- Both NPCs: `"behavior": { "hostile": { "leash": true, "chaseRange": 200 } }` so a struck operator stays near her post (the 200 px range bounds the chase; the game default is longer). `npc_attacked` turns only the struck one hostile; the other stays talkable and her ink reacts (2.8).
 - `globalVarOnKO`: `adaeze_ko`, `gwen_ko`.
 - Credits, two entries after Park's block (after `:283`), outside any ERB loop, style `warning`:
-  - `OPERATIONS STAFF: HURT ON YOUR WAY THROUGH`, condition `globalVars.adaeze_ko || globalVars.gwen_ko`.
-  - `OPERATIONS STAFF: STRUCK, LEFT THE BUILDING`, condition `globalVars.ops_staff_upset && !globalVars.adaeze_ko && !globalVars.gwen_ko`.
+  - `OPERATIONS STAFF: Hurt on your way through`, condition `globalVars.adaeze_ko || globalVars.gwen_ko`.
+  - `OPERATIONS STAFF: Struck, left the building`, condition `globalVars.ops_staff_upset && !globalVars.adaeze_ko && !globalVars.gwen_ko`.
   - Restarting the mission keeps `ops_staff_upset` and so keeps the struck line in the credits. This is deliberate and matches m05: the record of what the player did survives a restart.
 - Debrief: unchanged. KO scores nothing in m07 (`ink/m07_closing_debrief.ink:434` to `:511` only pick lines for the four story NPCs).
 - No new HaX message on an attack beyond the copied hands-down rows.
@@ -125,7 +125,7 @@ The files follow the m05 hub shape (`ink/m05_npc_thandiwe_moyo.ink` is the model
 
 The guard stops the `-> hub` after an exit from printing the repeat or upset line a second time with the exit tag attached; the chat closes on the goodbye or the upset line itself. On the next talk the engine re-enters `hub` with fresh globals, the guard is already cleared, and the upset check runs again; an operator who was friendly on the first talk gives the upset line once her colleague has been struck. `met` and `hub_quiet` are NPC ink-local variables, which are saved and restored on a reload (`npc-conversation-state.js:248` to `:265`), so after a reload a player who has met her hears the repeat line, not the opener.
 
-The two exchange knots (`ex_last_two`, `ex_going_now`) live in Adaeze's file, outside the hub; each line carries a speaker prefix (`adaeze_okafor:` or `gwen_pritchard:`) and each knot ends `-> DONE`.
+The two exchange knots (`ex_last_two`, `ex_going_now`) live in Adaeze's file, outside the hub; each line carries a speaker prefix with the display name (`Adaeze Okafor:` or `Gwen Pritchard:`, the engine convention) and each knot ends `-> DONE`.
 
 They take the player for someone the utility sent in; they are leaving in a minute; they name no key, PIN, password, room route or person's whereabouts, and say nothing about Hollis, Elena, Mercer or Park. No global is set in either ink. The chat background is the ops floor's room background (no NPC-level `chatBackground`, no `Background[...]` line).
 
@@ -139,13 +139,13 @@ They take the player for someone the utility sent in; they are leaving in a minu
   "avatar": "assets/characters/adaeze_okafor_headshot.png",
   "spriteConfig": { "idleFrameRate": 6, "walkFrameRate": 10 },
   "storyPath": "scenarios/m07_architects_gambit/ink/m07_npc_adaeze_okafor.json", "currentKnot": "start",
-  "voice": { "name": "Gacrux", "style": "<the course style text, job sentence changed; quoted in DIALOGUE_SAMPLE.md>", "language": "en-GB" },
+  "voice": { "name": "Gacrux", "style": "<the course style text, job sentence changed; quoted in DIALOGUE_SAMPLE.md>", "language": "en-US" },
   "position": { "x": <tile>, "y": <tile> }, "seated": true,
   "needsHome": { "room": "operations_floor", "x": <tile>, "y": <tile> },
   "needsRooms": ["operations_floor"],
   "needsCompany": { "groups": ["ops_floor"] }, "chatterCooldownMin": 2,
   "globalVarOnKO": "adaeze_ko",
-  "behavior": { "hostile": { "leash": true } },
+  "behavior": { "hostile": { "leash": true, "chaseRange": 200 } },
   "needs": { "thirst": { "initial": 40, "decayPerMin": 10, "urgentAt": 30, "jitterPct": 10 } },
   "chatter": { "cooler": ["<4 lines>"] },
   "exchanges": [
@@ -162,7 +162,7 @@ Exchange topics (the sample fixes the words): `ex_last_two`, the board is amber,
 
 None free. Hollis patrols, guards and holds the badge; Mercer and Park are plot-located; Elena is pinned by her ink, which narrates her at the SCADA backup rack, and fails the open-conversation rule. No existing NPC gains any needs-layer key.
 
-Elena's position, proposed and not made here: her record stands her at (3, 7.5) (`:1960`), by the KVM cart (`kvm_cart1`, 110, 200, `room_pnw_servers`), while her ink places her at the backup rack (`pnw_backup_server1`, 256, 170). Proposed fix for a later dressing pass: move her `position` to the cell in front of the backup rack, measured in that pass with the room render, and re-check her `room_entered:server_room` hide (`:1993`) and her conversation background. It changes no lock, key or line, so the lock and key diff stays empty. This plan does not build it.
+Elena's position, not changed here (D115 a: a later room-dressing pass): her record stands her at (3, 7.5) (`:1960`), by the KVM cart (`kvm_cart1`, 110, 200, `room_pnw_servers`), while her ink places her at the backup rack (`pnw_backup_server1`, 256, 170). Proposed fix for a later dressing pass: move her `position` to the cell in front of the backup rack, measured in that pass with the room render, and re-check her `room_entered:server_room` hide (`:1993`) and her conversation background. It changes no lock, key or line, so the lock and key diff stays empty. This plan does not build it.
 
 ## 3. Rooms and objects
 
@@ -170,7 +170,7 @@ Scenario: `"officePresets": true`.
 
 | Object | Room | Declared as | Preset or affordance |
 |---|---|---|---|
-| `ops_cooler` | operations_floor | `"type": "water_cooler"` (base name, never `water_cooler1`), no `position` (claims the Tiled sprite at 60, 300) | cooler preset (capacity 2, pool `cooler`, no queue) plus `{ "useFrom": { "dx": <tiles>, "dy": <tiles> }, "useSeconds": 22, "overhearRadius": 360 }`; `"offWhen": "ops_staff_upset"`. The preset merge is shallow per field, so only these keys are written |
+| `ops_cooler` | operations_floor | `"type": "water_cooler"` (base name, never `water_cooler1`), no `position` (claims the Tiled sprite at 60, 300) | cooler preset (capacity 2, pool `cooler`, no queue) plus `{ "useFrom": { "dx": <tiles>, "dy": <tiles> }, "useSeconds": 22, "overhearRadius": 360, "seat": "stand" }`; `"offWhen": "ops_staff_upset"`. The preset merge is shallow per field, so only these keys are written |
 | `coffee_station1` | operations_floor | not declared: broken by the handover sheet (`:1904`) | none; stays Tiled decor |
 | `ops_floor_workstation` | operations_floor | unchanged (`:1911`) | add `"affordance": false` so the abandoned console gains no desk preset |
 | `badge_printer`, `crisis_control_system` | checkpoint, scada | unchanged | `lockType` set, never gain a preset |
@@ -180,7 +180,7 @@ The cooler stands against the south wall with a collision strip at y 290 to 300,
 
 Slice 3 picks `useFrom` so that the first cell and its east neighbour (or, failing that, its west neighbour) are both free, walkable, and clear of both chairs and the desk front, and records both cells and both routes in `BUILD_LOG.md`. If no such pair exists, two fallbacks, in order:
 
-1. Move chair (60, 258) one cell in a Tiled dressing tweak. The positions diff (10.6) then shows that chair as well as `ops_cooler`, and only those.
+1. Built: the chair at (60, 258) moved one cell west to x 32 in a Tiled dressing tweak (`room_pnw_ops.json` and `.tmj`; only m07 uses this room). The positions diff (10.6) shows that chair as well as `ops_cooler`, and only those.
 2. Set the cooler to capacity 1 with `queue: { "cells": [<one cell>] }`: the second operator waits in the queue cell and the pair chat from there (`npc-needs.js:5055` to `:5080`).
 
 Slice 3 also watches the needs log for `no_beside_cell` across five trips; any hit means the chosen cells are wrong. No same-image twin of the cooler exists in the room. The declared cooler gets a display `name` and plain-text `observations` that fit the room.
@@ -227,7 +227,7 @@ Every new global is a bounded scalar sent as a per-key delta. Nothing grows.
 
 ## 8. Field names to write
 
-Scenario: `officePresets`. NPC: `currentKnot`, `needs` (`initial`, `decayPerMin`, `urgentAt`, `jitterPct`), `needsHome` (`room`, `x`, `y`), `needsRooms`, `needsCompany.groups`, `chatterCooldownMin`, `chatter`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`, `voice`, `spriteSheet`, `spriteTalk`, `spriteVisemes`, `avatar`, `spriteConfig`, `storyPath`. Object: `type`, `offWhen`, `affordance` (`overhearRadius`, `useSeconds`, `useFrom.dx`, `useFrom.dy`; `capacity` and `queue.cells` only under the second cooler fallback in section 3), `affordance: false`. Mapping: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, `needs.set`. Credits entry: `text`, `style`, `condition`. `globalVariables`, in a new office-life block inside the closing `}` at `:2611`: the last existing entry at `:2610` has no trailing comma, so add one there, then the block, outside every `<% %>` tag, all `false`: `ops_staff_upset`, `adaeze_ko`, `gwen_ko`, `heard_ex_last_two`, `heard_ex_going_now`. All at `FormatUpgrade.current`.
+Scenario: `officePresets`. NPC: `currentKnot`, `needs` (`initial`, `decayPerMin`, `urgentAt`, `jitterPct`), `needsHome` (`room`, `x`, `y`), `needsRooms`, `needsCompany.groups`, `chatterCooldownMin`, `chatter`, `exchanges` (`with`, `knot`, `requireGlobal`), `seated`, `globalVarOnKO`, `behavior.hostile.leash`, `behavior.hostile.chaseRange`, `voice`, `spriteSheet`, `spriteTalk`, `spriteVisemes`, `avatar`, `spriteConfig`, `storyPath`. Object: `type`, `offWhen`, `affordance` (`overhearRadius`, `useSeconds`, `useFrom.dx`, `useFrom.dy`, `seat`; `capacity` and `queue.cells` only under the second cooler fallback in section 3), `affordance: false`. Mapping: `eventPattern`, `condition`, `delayMs`, `cooldown`, `onceOnly`, `setVisible`, `setGlobal`, `needs.set`. Credits entry: `text`, `style`, `condition`. `globalVariables`, in a new office-life block inside the closing `}` at `:2611`: the last existing entry at `:2610` has no trailing comma, so add one there, then the block, outside every `<% %>` tag, all `false`: `ops_staff_upset`, `adaeze_ko`, `gwen_ko`, `heard_ex_last_two`, `heard_ex_going_now`. All at `FormatUpgrade.current`.
 
 ## 9. Costs and decisions
 
@@ -235,9 +235,9 @@ Scenario: `officePresets`. NPC: `currentKnot`, `needs` (`initial`, `decayPerMin`
 |---|---|---|
 | Tier 2 small | build time only | QUESTIONS Q1 |
 | Two awareness-cast operators | none: art complete | QUESTIONS Q3 (AC0 checks clashes) |
-| Keep British voices | none | QUESTIONS Q2 |
+| American voice styles (`en-US`) | none | D113, QUESTIONS Q2 |
 | Voicing | about 28 clips | after the build, with the V6 count |
-| Elena's position | none here | proposed for a dressing pass (2A); QUESTIONS Q4 |
+| Elena's position | none here | later room-dressing pass (D115 a); QUESTIONS Q4 |
 
 ### Settled here, with reasons
 

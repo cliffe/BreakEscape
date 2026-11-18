@@ -43,7 +43,7 @@ Commits: b72a83d5f (initial tuning), eb6df8486 (chair move). Needs-log units: `t
 - First natural trip after the tune, three fresh games: 7661 81.7 s, 7662 81.7 s, 7663 81.8 s after entering the operations floor (79.7 s to 79.8 s after the player stops). Margin 36 s above 45, 38 s below 120. Adaeze urgent at clock about 79 s; Gwen follows 21 s (5 s after Adaeze starts using, via the coupled row, plus her walk).
 - Caveat: a different seed could move Adaeze's first urgency across 37 s to 84 s from load (initial 40 with +/-10%). The scenario seed is fixed, so this only matters if the seed ever changes.
 
-### Use time and walk home (forced trip, thirst set to 20; five games, 7667, 7669, 7670, 7671, 7674; 7668 failed to load the page and was dropped)
+### Use time and walk home, before seat stand (forced trip, thirst set to 20; five games, 7667, 7669, 7670, 7671, 7674; 7668 failed to load the page and was dropped)
 | Game | A walk | A use | A home | A away | G walk | G use | G home | G away |
 |---|---|---|---|---|---|---|---|---|
 | 7667 | 3.0 | 22.0 | 4.0 | 29.0 | 3.5 | 22.0 | 5.75 | 31.25 |
@@ -66,6 +66,18 @@ Zero in the full logs of the six trips (five above plus a sixth after the chair 
 - Before: the grey office chair Tiled object (gid 271, 24 x 38, bottom-left origin (60, 258), so footprint x 60..84, y 220..258) contained Adaeze's cooler cell (about (82, 244)). The render shows the chair standing directly above the cooler. Overlap confirmed.
 - Applied PLAN 3 fallback 1: moved that chair to x 32 (one cell west, against the wall column; tmj and json both). It spans x 32..56, clear of Gwen's walk lane (x 56..72), both cooler cells and the desk. Only m07 uses `room_pnw_ops`. The positions diff (10.6) now shows this chair as well as `ops_cooler`.
 - After: render (tmp/m07-chair-check.png, game 7682) shows the cooler's north side clear; a trip on game 7684 reached `using` for both with no `no_beside_cell`. Probe: tools/playtest/m07-ol-chair.mjs.
+
+### Use time and walk home, after seat stand (R2 m5, natural trips)
+
+Natural first trips on three fresh games (8239, 8247, 8260), keyless server :3098, probe `tools/playtest/m07-ol-r2.mjs`, player parked at (520,248), polled every 0.25 s plus call overhead, so each figure is good to about 0.5 s. Seconds on the page clock; `left` is the first sample off post, `home` is the end of `using` to back at post. These games ran on a loaded machine (frame mean 25 to 80 ms), so the page clock ran behind wall time and the use times (34 to 36 s in 8247 and 8260 against 22 s) are inflated; in 8247 and 8260 both operators' `using` ended in the same poll, so `home` there is less exact.
+
+| Game | A left | A walk out | A home | A away | G left | G walk out | G home | G away |
+|---|---|---|---|---|---|---|---|---|
+| 8239 | 88.1 | 2.7 | 4.3 | 29.0 | 93.8 | 2.8 | 9.3 | 34.1 |
+| 8247 | 79.8 | 2.6 | 2.7 | 39.7 | 85.3 | 3.1 | 5.9 | 37.4 |
+| 8260 | 74.7 | 3.3 | 6.1 | 45.1 | 81.1 | 4.1 | 6.1 | 38.7 |
+
+Result: Gwen's walk home is 5.9 to 9.3 s (before the fix: 5.5 to 17.25 s, median 11 s, with three `return_resumed` stalls in five). No stall seen in three trips. Adaeze's home is 2.7 to 6.1 s (before: 4.0 to 4.25 s). Walk out 2.6 to 4.1 s for both (before: 3.0 to 3.5 s). First trip started 74.7 to 88.1 s after entering the room, inside 45 to 120 s. Three trips is a small sample, so the stall is reduced in these runs, not shown to be gone.
 
 ## Accepted: one punch can hit both operators (10.4)
 

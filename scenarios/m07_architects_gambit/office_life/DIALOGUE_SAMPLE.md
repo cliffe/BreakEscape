@@ -1,6 +1,6 @@
 # m07 office life: dialogue sample
 
-Status: awaiting the user's yes. Nothing is voiced until it is given.
+Status: wording signed off. The user's instruction of 18 Nov 2026, relayed by the coordinator, "Implement these using your best judgement", signs off the wording once the dialogue review and the build review are clean. Nothing is voiced yet.
 
 ## Pool lines (cooler chatter, three of four each)
 
@@ -26,7 +26,7 @@ Status: awaiting the user's yes. Nothing is voiced until it is given.
 
 ## Voice styles
 
-Quoted from `planning_notes/phishing_and_social_engineering/awareness/VOICE_CAST.md`. Only the job sentence changes. The course text has a dash before "do not shift"; it is a comma here because this repo allows no dashes, so confirm the comma form is fine for the voice style.
+Quoted from `planning_notes/phishing_and_social_engineering/awareness/VOICE_CAST.md`. Only the job sentence changes. The course text has a dash before "do not shift"; it is a comma here because this repo allows no dashes. The comma form stands; these lines have no cached audio, so nothing needs regenerating.
 
 **Adaeze Okafor** (Gacrux, course en-GB, m07 en-US per D113)
 

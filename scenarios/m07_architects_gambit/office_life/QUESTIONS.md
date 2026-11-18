@@ -2,9 +2,11 @@
 
 **Picks for AC0's clash check: Adaeze Okafor (`adaeze_okafor`) and Gwen Pritchard (`gwen_pritchard`).**
 
-The plan is written around the recommended answer to each question.
+Outcomes are recorded under each question.
 
 ## Q1. Tier: two late operators (Tier 2 small) or no office life (Tier 0)?
+
+Outcome (D112 a): Tier 2 small, "the last two out".
 
 The building is mid-evacuation at night. The muster board already shows three operations staff missing and the abandoned console has warm coffee.
 
@@ -14,6 +16,8 @@ The building is mid-evacuation at night. The muster board already shows three op
 
 ## Q2. British voices in an American facility
 
+Outcome (D113, 17 Nov 2026): option B. Both operators use American voice styles (`en-US`, General American; Adaeze keeps a light Nigerian inflection, Gwen is Pacific Northwest). Elena's voice is unchanged.
+
 Both picks are British (Nigerian-British, Welsh). The rest of the on-site cast is American.
 
 - **A. Keep their own voices (recommended).** The course rule keeps name, look and voice; a US utility employing British staff is ordinary, and nobody comments on it.
@@ -22,12 +26,16 @@ Both picks are British (Nigerian-British, Welsh). The rest of the on-site cast i
 
 ## Q3. Cast
 
+Outcome (D114 a): Adaeze Okafor and Gwen Pritchard.
+
 - **A. Adaeze Okafor (grid scheduler) and Gwen Pritchard (ops systems support) (recommended).** Both unused elsewhere, both atlases complete, voices Gacrux and Sulafat unused in m07.
 - **B. Swap one for Yasmin Chaudhry (Laomedeia, 40s, British Pakistani) or Sofia Marchetti (Despina, 30s, Italian-British).**
 
 Both picks are women: every free man in the cast has a voice m07 already uses (Iapetus for Mercer, Rasalgethi for Park, Sadaltager for the Architect).
 
 ## Q4. Elena's map position
+
+Outcome (D115 a): move her to the backup rack in a later room-dressing pass.
 
 Elena stands by the KVM cart at (3, 7.5); her ink places her at the SCADA backup rack.
 
