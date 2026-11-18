@@ -256,6 +256,7 @@
 
 /* Navigation row: in the shell's column under the notepad, never drawn over the page
    (critique A04); it wraps on a narrow window (A03) */
+.notes-minigame-nav-container:empty { display: none; }
 .notes-minigame-nav-container {
     position: relative;
     display: flex;
@@ -269,6 +270,7 @@
 }
 
 .notes-minigame-nav-button { white-space: nowrap; }
+.notes-minigame-nav-button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Search input */
 .notes-minigame-search {

@@ -118,3 +118,52 @@ test('autoAddToNotes defaults on and honours false', () => {
     const off = open({ title: 'x', noteContent: 'x', autoAddToNotes: false }, []);
     assert.equal(off.autoAddToNotes, false);
 });
+
+// R2 follow-ups
+
+test('a filed page has no edit button and a save attempt leaves every note unchanged', () => {
+    const notes = mk(3);
+    const before = JSON.stringify(notes);
+    const item = { scenarioData: { type: 'text_file', name: 'Filed page', text: 'filed body' } };
+    const m = open({ title: 'Filed page', item, noteContent: 'filed body', observationText: 'seen', autoAddToNotes: false, navigateToNote: null }, notes);
+    assert.equal(m.container.querySelector('.notes-minigame-edit-btn'), null, 'no pencil on a filed page');
+    m.saveObservationToNote('overwritten');
+    m.editObservations(m.container.querySelector('.notes-minigame-observation'));
+    assert.equal(JSON.stringify(window.gameState.notes), before, 'note text unchanged');
+    assert.equal(m.container.querySelector('.notes-minigame-edit-textarea'), null);
+    const st = m.getTestState();
+    assert.equal(st.noteCount, 0);
+    assert.equal(st.filed, true);
+});
+
+test('a Notepad page still has its edit button', () => {
+    const m = open({ title: 'Notepad', noteContent: '', item: { scenarioData: { type: 'notepad', name: 'Notepad' } } }, mk(3));
+    assert.ok(m.container.querySelector('.notes-minigame-edit-btn'));
+    assert.equal(m.getTestState().filed, false);
+    assert.equal(m.getTestState().noteCount, 3);
+});
+
+test('Previous and Next are disabled and inert while the search says No match', () => {
+    const m = open({ title: 'Notepad', noteContent: '', item: { scenarioData: { type: 'notepad', name: 'Notepad' } } }, mk(6));
+    const [prev, next] = m.container.querySelectorAll('.notes-minigame-nav-button');
+    const title = () => m.container.querySelector('.notes-minigame-title').textContent;
+    m.searchNotes('zzz');
+    assert.equal(text(m), 'No match');
+    assert.equal(prev.disabled, true);
+    assert.equal(next.disabled, true);
+    const t = title(), idx = m.currentNoteIndex;
+    m.navigateToNote(1);
+    m.navigateToNote(-1);
+    assert.equal(title(), t);
+    assert.equal(m.currentNoteIndex, idx);
+    m.searchNotes('odd');
+    assert.equal(prev.disabled, false);
+    assert.equal(next.disabled, false);
+    m.navigateToNote(1);
+    assert.equal(text(m), 'Match 2 of 3');
+});
+
+test('an empty nav row is hidden by CSS', () => {
+    const css = readFileSync(join(js, '../css/notes.css'), 'utf8');
+    assert.match(css, /\.notes-minigame-nav-container:empty\s*\{\s*display:\s*none/);
+});

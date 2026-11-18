@@ -75,8 +75,9 @@ export class NotesMinigame extends MinigameScene {
             noteName: this.item?.scenarioData?.name || null,
             ...cappedText('noteContent', this.noteContent || '', NOTE_LIMIT),
             observationText: String(this.observationText || '').slice(0, 1000),
-            noteIndex: this.currentNoteIndex,
-            noteCount: (this.collectedNotes || []).length
+            noteIndex: this.showsFiledPage ? 0 : this.currentNoteIndex,
+            noteCount: this.showsFiledPage ? 0 : (this.collectedNotes || []).length,
+            filed: !!this.showsFiledPage
         };
     }
 
@@ -163,9 +164,9 @@ export class NotesMinigame extends MinigameScene {
                     observationDiv.className = 'notes-minigame-observation';
                     setObservationText(observationDiv, this.observationText);
                     observationDiv.dataset.raw = this.observationText;
-                    observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
+                    if (!this.showsFiledPage) observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to edit observations';
-                    observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
+                    if (!this.showsFiledPage) observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
 
                     // Add edit button
                     const editBtn = document.createElement('button');
@@ -181,7 +182,8 @@ export class NotesMinigame extends MinigameScene {
                     editBtn.addEventListener('click', () => this.editObservations(observationDiv));
 
                     observationContainer.appendChild(observationDiv);
-                    observationContainer.appendChild(editBtn);
+                    // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
+                    if (!this.showsFiledPage) observationContainer.appendChild(editBtn);
                     contentArea.appendChild(observationContainer);
                 } else {
                     // Add empty observation area with edit button
@@ -191,9 +193,9 @@ export class NotesMinigame extends MinigameScene {
                     const observationDiv = document.createElement('div');
                     observationDiv.className = 'notes-minigame-observation empty';
                     setObservationText(observationDiv, '');
-                    observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
+                    if (!this.showsFiledPage) observationDiv.style.cursor = 'pointer'; // Make it clear it's clickable
                     observationDiv.title = 'Click to add observations';
-                    observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
+                    if (!this.showsFiledPage) observationDiv.addEventListener('click', () => this.editObservations(observationDiv));
 
                     // Add edit button
                     const editBtn = document.createElement('button');
@@ -209,7 +211,8 @@ export class NotesMinigame extends MinigameScene {
                     editBtn.addEventListener('click', () => this.editObservations(observationDiv));
 
                     observationContainer.appendChild(observationDiv);
-                    observationContainer.appendChild(editBtn);
+                    // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
+                    if (!this.showsFiledPage) observationContainer.appendChild(editBtn);
                     contentArea.appendChild(observationContainer);
                 }
 
@@ -351,7 +354,7 @@ export class NotesMinigame extends MinigameScene {
     }
 
     navigateToNote(direction) {
-        if (this.collectedNotes.length <= 1 || this.showsFiledPage) return;
+        if (this.collectedNotes.length <= 1 || this.showsFiledPage || this.noMatch) return;
         
         this.playPageTurnSound();
         this.currentNoteIndex += direction;
@@ -495,6 +498,8 @@ export class NotesMinigame extends MinigameScene {
         if (noteCounter) {
             noteCounter.textContent = this.counterText();
         }
+        // Previous and Next do nothing while there is no match
+        this.container.querySelectorAll('.notes-minigame-nav-button').forEach(btn => { btn.disabled = !!this.noMatch; });
     }
     
     updateNavigation() {
@@ -535,6 +540,7 @@ export class NotesMinigame extends MinigameScene {
     }
     
     editObservations(observationDiv) {
+        if (this.showsFiledPage) return;
         const currentText = (observationDiv.dataset.raw ?? observationDiv.textContent).trim();
         const isPlaceholder = currentText === 'Click edit to add your observations...';
         const originalText = isPlaceholder ? '' : currentText;
@@ -621,6 +627,8 @@ export class NotesMinigame extends MinigameScene {
     }
     
     saveObservationToNote(newObservationText) {
+        // A filed page is not a Notepad note; index 0 would be the Mission Brief
+        if (this.showsFiledPage) return;
         // Update the current note in the notes system
         const currentNote = this.collectedNotes[this.currentNoteIndex];
         if (currentNote) {
