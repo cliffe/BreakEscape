@@ -607,7 +607,6 @@ There's a maintenance tag on their gate terminal's lead. It names the host, the 
 // Scenario design R5 n2: an envelope, not a key. Teaching R2-n3 (opus48): its find is an access code (a single token), not a login account.
 // Dialogue R5 n2/n4, puzzle chains R4 n4: beside the terminal, on the desk; one "his box".
 He's left an envelope beside his terminal, stamped CORE. His access code's in it. He wants you on his box.
-If anything moves off that console, I want to be on the feed before it does.
 He walled it off, the same way the release service was. You've broken out of one of those tonight.
 He'll have kept himself a way out. Find it.
 -> support_hub
@@ -615,13 +614,12 @@ He'll have kept himself a way out. Find it.
 // After flag 4 (MC §6.1): the feed, and the vault line with the purge.
 === console_fact ===
 ~ hax_console_asked = true
-I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
+I've got his box. I can try to kill the feed. Try.
 -> support_hub
 
 === vault_line ===
 ~ hax_vault_asked = true
 The line into our vault is open from there. We left it open.
-And if both copies die, the room purges. Doors, lights, all of it. He'll be ready for that. We won't.
 -> support_hub
 
 // The last net for the by-hand cut (OT §4.9). Exits after the cut, as the call does.

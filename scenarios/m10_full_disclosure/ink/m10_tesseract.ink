@@ -199,7 +199,7 @@ Dr Adrian Tesseract: Finish on my box first. I'll keep.
     agent_0x99: He argued for the vendor nine years ago and lost.
     agent_0x99: The notice he wrote to the vendor is on his box. He never sent it.
 }
-agent_0x99: I've got his box. If anything goes out from that console, I can try to kill the feed. Try.
+agent_0x99: I've got his box. I can try to kill the feed. Try.
 + [Only try?]
     agent_0x99: His console. I can't see what he's wired behind it.
 + [Understood.]
