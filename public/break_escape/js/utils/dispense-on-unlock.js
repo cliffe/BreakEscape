@@ -92,16 +92,23 @@ async function runDispense(data, deps) {
     // container screen, so dispense nothing and let the caller open it
     if (contents.some(i => i && (i.takeable === false || NOTES_FAMILY.test(i.type || '')))) return out;
     const items = contents.filter(i => i);
-    if (!items.length) return out;
+    // Nothing left to hand over: clear any stale copy an earlier unlock reply wrote, so the
+    // screen the caller opens says the tray is empty instead of offering a held item
+    if (!items.length) { data.contents = []; return out; }
+    const already = [];
     for (const item of items) {
         const res = await d.addToInventory(takeStandIn(item, d.imageKey));
-        if (res && res.ok) out.taken.push(item.id || item.name);
-        else out.failed.push(item.id || item.name);
+        if (res && res.ok) {
+            out.taken.push(item.id || item.name);
+            if (res.reason === 'already') already.push(item.id || item.name);
+        } else out.failed.push(item.id || item.name);
     }
     data.contents = contents.filter(i => !out.taken.includes(i.id || i.name));
-    if (out.taken.length) {
+    // An item the client already held counts as handed over, but gets no "added" toast
+    const added = out.taken.filter(k => !already.includes(k));
+    if (added.length) {
         sound('item');
-        const names = items.filter(i => out.taken.includes(i.id || i.name)).map(i => i.name).join(', ');
+        const names = items.filter(i => added.includes(i.id || i.name)).map(i => i.name).join(', ');
         alert(`${displayDashes(data.name)}: ${displayDashes(names)} added to inventory`, 'success', 'Printed', 3000);
     }
     if (out.failed.length) sound('reject');
