@@ -18,8 +18,11 @@ function setObservationText(div, text) {
 
 
 // Whether a page has text below its visible part (the MORE cue). Pure.
-export function moreBelow(scrollHeight, clientHeight, scrollTop) {
-    return scrollHeight - clientHeight - scrollTop > 4;
+// lastBottom: bottom edge of the last thing on the page; visibleBottom: bottom of the visible
+// text area (its edge minus padding). The area's own bottom padding and the last box's margin
+// are blank paper, so they never count as "more".
+export function moreBelow(lastBottom, visibleBottom, tolerance = 2) {
+    return lastBottom - visibleBottom > tolerance;
 }
 
 // Pixelify Sans and VT323 are self-hosted in css/fonts.css (no remote font links).
@@ -187,7 +190,9 @@ export class NotesMinigame extends MinigameScene {
                     pencilIcon.alt = 'Edit';
                     editBtn.appendChild(pencilIcon);
 
-                    editBtn.addEventListener('click', () => this.editObservations(observationDiv));
+                    editBtn.setAttribute('aria-label', editBtn.title);
+                    // The observation div is replaced on every page change, so find it at click time
+                    editBtn.addEventListener('click', () => this.editObservations(observationContainer.querySelector('.notes-minigame-observation')));
 
                     observationContainer.appendChild(observationDiv);
                     // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
@@ -216,7 +221,9 @@ export class NotesMinigame extends MinigameScene {
                     pencilIcon.alt = 'Edit';
                     editBtn.appendChild(pencilIcon);
 
-                    editBtn.addEventListener('click', () => this.editObservations(observationDiv));
+                    editBtn.setAttribute('aria-label', editBtn.title);
+                    // The observation div is replaced on every page change, so find it at click time
+                    editBtn.addEventListener('click', () => this.editObservations(observationContainer.querySelector('.notes-minigame-observation')));
 
                     observationContainer.appendChild(observationDiv);
                     // A filed page is not one of the Notepad notes: nothing to edit, so no pencil
@@ -409,7 +416,11 @@ export class NotesMinigame extends MinigameScene {
     _syncMore() {
         const area = this._contentArea;
         if (!this._moreCue || !area) return;
-        this._moreCue.hidden = !moreBelow(area.scrollHeight, area.clientHeight, area.scrollTop);
+        const last = area.lastElementChild;
+        if (!last) { this._moreCue.hidden = true; return; }
+        const areaRect = area.getBoundingClientRect();
+        const padBottom = parseFloat(window.getComputedStyle(area).paddingBottom) || 0;
+        this._moreCue.hidden = !moreBelow(last.getBoundingClientRect().bottom, areaRect.bottom - padBottom);
     }
 
     updateDisplayedNote() {
@@ -473,13 +484,13 @@ export class NotesMinigame extends MinigameScene {
                 observationDiv.style.color = '#666';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to edit observations';
-                editBtn.title = 'Edit observations';
+                if (editBtn) { editBtn.title = 'Edit observations'; editBtn.setAttribute('aria-label', editBtn.title); }
             } else {
                 setObservationText(observationDiv, '');
                 observationDiv.style.color = '#999';
                 observationDiv.style.cursor = 'pointer';
                 observationDiv.title = 'Click to add observations';
-                editBtn.title = 'Add observations';
+                if (editBtn) { editBtn.title = 'Add observations'; editBtn.setAttribute('aria-label', editBtn.title); }
             }
             
             // Re-attach click event listener for the observation text
@@ -582,7 +593,8 @@ export class NotesMinigame extends MinigameScene {
     }
     
     editObservations(observationDiv) {
-        if (this.showsFiledPage) return;
+        if (this.showsFiledPage || !observationDiv) return;
+        if (observationDiv.querySelector('textarea')) return; // already editing
         const currentText = (observationDiv.dataset.raw ?? observationDiv.textContent).trim();
         const isPlaceholder = currentText === 'Click edit to add your observations...';
         const originalText = isPlaceholder ? '' : currentText;

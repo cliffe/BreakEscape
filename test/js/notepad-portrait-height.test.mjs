@@ -108,10 +108,9 @@ test('the MORE cue is kept in sync: pure moreBelow, scroll and observers, new pa
     const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
     const fn = js.match(/export function moreBelow[\s\S]*?\n\}\n/)[0];
     const { moreBelow } = await import('data:text/javascript,' + encodeURIComponent(fn));
-    assert.equal(moreBelow(400, 400, 0), false, 'fits');
-    assert.equal(moreBelow(404, 400, 0), false, 'within 4px of the end');
-    assert.equal(moreBelow(900, 400, 0), true, 'text below');
-    assert.equal(moreBelow(900, 400, 500), false, 'scrolled to the end');
+    assert.equal(moreBelow(400, 400), false, 'fits');
+    assert.equal(moreBelow(402, 400), false, 'within 2px of the end');
+    assert.equal(moreBelow(900, 400), true, 'text below');
     const upd = js.slice(js.indexOf('    updateDisplayedNote() {'), js.indexOf('    parseNoteText('));
     assert.match(upd, /this\._contentArea\.scrollTop = 0;\s*this\._syncMore\(\);\s*\}\s*$/, 'a new page opens at the top and syncs the cue');
     assert.match(js, /this\.addEventListener\(contentArea, 'scroll', \(\) => this\._syncMore\(\)/);
@@ -190,4 +189,71 @@ test('pixel-art rules hold in the notes sheet: no radius, blur or gradient', () 
     assert.doesNotMatch(notes, /border-radius/);
     assert.doesNotMatch(notes, /gradient\(/);
     assert.doesNotMatch(notes, /blur\(/);
+});
+
+// ---- Second round: the cue ignores blank paper; the pencil survives page changes ----
+test('moreBelow compares the last content with the visible bottom, not the scroll height', async () => {
+    const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
+    const fn = js.match(/export function moreBelow[\s\S]*?\n\}\n/)[0];
+    const { moreBelow } = await import('data:text/javascript,' + encodeURIComponent(fn));
+    assert.equal(moreBelow(300, 300), false, 'last box ends at the visible bottom');
+    assert.equal(moreBelow(301.5, 300), false, 'within the 2px tolerance');
+    assert.equal(moreBelow(303, 300), true, 'real overflow');
+});
+
+test('JSDOM: padding/margin-only overflow gives no cue, real overflow does, the pencil opens the editor after page changes', async () => {
+    const { JSDOM } = await import('jsdom');
+    for (const k of ['log', 'info', 'debug', 'warn']) console[k] = () => {};
+    const dom = new JSDOM('<!doctype html><body></body>', { pretendToBeVisual: true });
+    globalThis.window = dom.window;
+    globalThis.document = dom.window.document;
+    globalThis.window.gameState = { notes: [] };
+    const { pathToFileURL } = await import('node:url');
+    const { NotesMinigame } = await import(pathToFileURL(join(root, 'js/minigames/notes/notes-minigame.js')).href);
+    const m = Object.create(NotesMinigame.prototype);
+    m.container = document.createElement('div');
+    m.container.innerHTML = '<div class="notes-minigame-title"></div><div class="notes-minigame-text"></div>'
+        + '<div class="notes-minigame-observation-container"><div class="notes-minigame-observation"></div>'
+        + '<button class="notes-minigame-edit-btn"></button></div>';
+    const area = document.createElement('div');
+    area.style.paddingBottom = '40px';
+    m.container.append(area);
+    m._contentArea = area;
+    const cue = { hidden: true };
+    m._moreCue = cue;
+    const last = document.createElement('div');
+    area.appendChild(last);
+    const rect = (b) => ({ bottom: b, top: 0, left: 0, right: 0, width: 0, height: 0 });
+    area.getBoundingClientRect = () => rect(400);
+    // visible bottom = 400 - 40 = 360. Last box ends at 360 although scrollHeight would be 420.
+    last.getBoundingClientRect = () => rect(360);
+    Object.defineProperty(area, 'scrollHeight', { value: 420 });
+    Object.defineProperty(area, 'clientHeight', { value: 400 });
+    m._syncMore();
+    assert.equal(cue.hidden, true, 'only padding/margin below: no cue');
+    last.getBoundingClientRect = () => rect(380);
+    m._syncMore();
+    assert.equal(cue.hidden, false, 'content below the visible bottom: cue');
+
+    // Pencil: wire it as init does (the handler resolves the observation at click time)
+    const js = readFileSync(join(root, 'js/minigames/notes/notes-minigame.js'), 'utf8');
+    assert.doesNotMatch(js, /editBtn\.addEventListener\('click', \(\) => this\.editObservations\(observationDiv\)\)/,
+        'the pencil must not hold the first observation div');
+    assert.match(js, /editBtn\.addEventListener\('click', \(\) => this\.editObservations\(observationContainer\.querySelector/);
+    m.params = {};
+    m.item = {};
+    m.showsFiledPage = false;
+    m.collectedNotes = [{ title: 'A', text: 'one\n\nObservation: o1' }, { title: 'B', text: 'two' }, { title: 'C', text: 'three\n\nObservation: o3' }];
+    m.currentNoteIndex = 0;
+    const calls = [];
+    m.editObservations = (div) => calls.push(div);
+    const box = m.container.querySelector('.notes-minigame-observation-container');
+    const btn = box.querySelector('.notes-minigame-edit-btn');
+    btn.addEventListener('click', () => m.editObservations(box.querySelector('.notes-minigame-observation')));
+    for (const i of [1, 2]) { m.currentNoteIndex = i; m.updateDisplayedNote(); }
+    btn.click();
+    assert.equal(calls.length, 1);
+    assert.ok(m.container.contains(calls[0]), 'the editor opens on the observation now on the page');
+    assert.equal(calls[0].textContent, 'o3');
+    assert.equal(btn.getAttribute('aria-label'), 'Edit observations', 'accessible name');
 });
