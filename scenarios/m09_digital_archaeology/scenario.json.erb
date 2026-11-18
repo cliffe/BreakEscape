@@ -337,6 +337,9 @@ hax_maps << read_text("global_variable_changed:deck_choice_made", "value === tru
 hax_maps << read_text("game_loaded", "globalVars.deck_choice_made && !globalVars.afterwards_texted && !globalVars.afterwards_heard", "afterwards", "That's done. A word when you can.", "afterwards_texted", skip: "afterwards_heard", msg_delay: 15000)
 hax_maps << { "eventPattern" => "room_entered:sorensen_office", "onceOnly" => true, "setGlobal" => { "office_entered" => true } }
 hax_maps << text_map("room_entered:sorensen_office", "globalVars.sleeper_named", "Her cracker. Use it anyway.")
+# Blind m09 M2: buying the name skips the Harwick & Lowe box, and the objective says what that cost.
+hax_maps << text_map("global_variable_changed:sleeper_named", "value === true && !globalVars.hl_box_opened",
+                     "Bought, not found. The box in the open stacks would have narrowed it to two names, free. This one is a sale in her ledger now.", delay: 9000)
 # Educational R1 E-m9: credit the lease-date deduction when the ledger was read.
 hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && !globalVars.rent_ledger_read", "Safe's open. Kowalczyk will want to hear about her toy.")
 hax_maps << text_map("objective_task_completed:open_the_safe", "!globalVars.sleeper_named && globalVars.rent_ledger_read", "Lease date. She picked a number she'd never forget, then printed it at the top of every page.")
@@ -358,8 +361,10 @@ hax_maps << { "eventPattern" => "door_unlocked", "condition" => "data.connectedR
 # Educational R1 E-M2: the Kerckhoffs point the chart makes (A3-37).
 hax_maps << text_map("global_variable_changed:salvage_opened", "value === true", "She never wrote a code down. She hung the key beside the lock. A cipher is only as safe as its key.", delay: 2000, msg_delay: 6000)
 hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && !globalVars.m02_gary_protected",
-                     "If the cipher's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
+                     "The code is a Vigenere cipher keyed with bay twelve's word from her shelf marks. Typing the word won't open it. If it's new to you, there's an archive-code field guide. Ask me.", set: { "archive_code_guide_offered" => true })
 hax_maps << { "eventPattern" => "global_variable_changed:salvage_keypad_seen", "condition" => "value === true && globalVars.m02_gary_protected", "onceOnly" => true, "setGlobal" => { "archive_code_guide_offered" => true } }
+hax_maps << text_map("global_variable_changed:salvage_keypad_seen", "value === true && globalVars.m02_gary_protected",
+                     "The code is a Vigenere cipher keyed with bay twelve's word from her shelf marks. Typing the word won't open it.")
 hax_maps << text_map("room_entered:salvage_cage", nil, "Field guide for his box is ready. Say the word.", set: { "tomb_beta_guide_offered" => true })
 
 # Flag 3 and the identity scene (S4 §4 row 9, §6.2). Voiced (F17/F20).
@@ -393,6 +398,9 @@ hax_maps << call_map("room_entered", "globalVars.hour_read_done && !globalVars.t
 hax_maps.concat(hax_rerings("globalVars.tesseract_call_started && !globalVars.tesseract_call_done", "tesseract_call", voiced: true))
 hax_maps << { "eventPattern" => "global_variable_changed:tesseract_call_done", "condition" => "value === true", "onceOnly" => true, "completeTask" => "hear_the_mirror_job" }
 hax_maps << { "eventPattern" => "global_variable_changed:albion_notified", "condition" => "value === true", "onceOnly" => true, "completeTask" => "send_the_notice" }
+# Blind m09 B1: a signpost once the call is over. Text, not voiced. Both choices live in her thread.
+hax_maps << text_map("global_variable_changed:tesseract_call_done", "value === true && !globalVars.start_debrief",
+                     "Open our thread when you've finished here. \"His notice\" is in it, to send or to hold. \"Bring me in\" ends the night.", delay: 15000)
 
 # Re-ring 3 of the Recruiter's call: HaX's deck_resume, once she has gone
 # (S4 §6.1). Voiced.
@@ -854,7 +862,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
     {
       "aimId": "take_tomb_beta",
       "title": "Take Tomb Beta's Server",
-      "description": "Tomb Beta's last server is still running somewhere in the tape store, off the destruction schedule. Get to it, take it, and read what it's mirroring.",
+      "description": "Tomb Beta's last server is still running somewhere in the tape store, off the destruction schedule. Get to it, take it, and read what it's mirroring. When HaX has finished with it, her thread holds the rest: \"His notice\" and \"Bring me in\".",
       "status": "locked",
       "order": 4,
       "unlockCondition": { "aimCompleted": "read_the_ledger" },
@@ -867,7 +875,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
         { "taskId": "submit_control_flag", "title": "Take full control of Tomb Beta's server and submit it at the drop link", "type": "submit_flags",
           "targetFlags": ["tomb_beta_station:tomb_beta_server-flag2"], "targetCount": 1, "currentCount": 0, "showProgress": true, "status": "active" },
         { "taskId": "hear_the_mirror_job", "title": "Hear what the server is mirroring to Tomb Gamma", "type": "custom", "status": "locked" },
-        { "taskId": "send_the_notice", "title": "Send his vendor notice, or hold it", "type": "custom", "status": "locked", "optional": true }
+        { "taskId": "send_the_notice", "title": "Send his vendor notice, or hold it (HaX thread: \"His notice\")", "type": "custom", "status": "locked", "optional": true }
       ]
     },
     {
@@ -881,7 +889,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
       "concludeRequires": { "tasksCompleted": ["submit_catalogue_flag", "submit_ledger_flag", "submit_owner_flag", "submit_control_flag"] },
       "conclusionScreen": { "type": "bond_visualiser" },
       "tasks": [
-        { "taskId": "report_to_netherton", "title": "Tell HaX to bring you in to Netherton", "type": "custom", "status": "active" }
+        { "taskId": "report_to_netherton", "title": "Open HaX's thread and say \"Bring me in\"", "type": "custom", "status": "active" }
       ]
     }
   ],
@@ -1449,7 +1457,8 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
             }
           },
           "eventMappings": [
-            { "eventPattern": "player_spotted:old_coyote", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
+            { "eventPattern": "player_spotted:old_coyote", "condition": "!globalVars.old_coyote_cover_given", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 0 },
+            { "eventPattern": "player_spotted:old_coyote", "condition": "globalVars.old_coyote_cover_given", "conversationMode": "person-chat", "targetKnot": "challenge", "cooldown": 240000 },
             { "eventPattern": "global_variable_changed:old_coyote_told", "condition": "value === true", "setVisible": false },
             { "eventPattern": "room_entered:open_stacks", "condition": "globalVars.old_coyote_told", "setVisible": false },
             {
@@ -1880,7 +1889,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "name": "Rubber Stamp",
           "position": "as-type:m09_rubber_stamp",
           "takeable": false,
-          "observations": "A rubber stamp: DESTROYED, in red.",
+          "observations": "A rubber stamp: DESTROYED, in red. She stamps everything, so the handle will hold her prints. The plan cabinet reads a print.",
           "observationVariants": [
             { "condition": "globalVars.flag2_submitted && !globalVars.cage_opened", "value": "DESTROYED, in red. The stamp is still warm. Three boxes left on her side of the counter." }
           ],
@@ -2424,7 +2433,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "observations": "A framed chart of the archive's shelf marks, beside the salvage keypad.",
-          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: each keypad's code is keyed to its own bay's word. Never write a code down. M.S.",
+          "text": "MOUNTAIN STATES RECORDS & RETENTION -- SHELF MARKS\nBay 1 ....... Reading room ..... COTTONWOOD\nBays 2 to 9 . Open stacks ...... MERIDIAN\nBay 10 ...... Restricted ....... WATCHTOWER\nBay 11 ...... Tape store ....... STANDBY\nBay 12 ...... Salvage .......... BONEYARD\nHouse rule: each keypad's code is a Vigenere cipher keyed to its own bay's word, never the word itself. Never write a code down. M.S.",
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["salvage_cage"],
           "puzzle_graph_and_with": "Catalogue: salvage cage",
@@ -2551,7 +2560,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "onRead": { "setVariable": { "albion_folder_opened": true } },
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "Printer tray, empty.",
+          "observations": "Printer tray, empty. It prints what the drop link takes: submit the next flag and come back.",
           "observationVariants": [
             { "condition": "globalVars.flag3_submitted", "value": "Three documents printed off the box, stapled together." }
           ],
@@ -2569,7 +2578,7 @@ rec_maps << text_map("room_entered:tape_room", "globalVars.recruiter_offer === '
           "readable": true,
           "readDisplay": "gameDisplay",
           "addToNotes": false,
-          "observations": "Printer tray, empty.",
+          "observations": "Printer tray, empty. It prints what the drop link takes: submit the next flag and come back.",
           "observationVariants": [
             { "condition": "globalVars.flag4_submitted", "value": "Two pages in the printer tray. The first is signed." }
           ],
@@ -2677,6 +2686,7 @@ rows = imports.map { |m, v, d| %Q(    { "from": "#{m}", "var": "#{v}", "default"
     "noor_ko": false,
     "old_coyote_ko": false,
     "old_coyote_told": false,
+    "old_coyote_cover_given": false,
     "sorensen_fate": "left",
     "tran_outcome": "left",
     "reading_told_hax": false,
