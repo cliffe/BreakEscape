@@ -568,7 +568,7 @@ export class RFIDMinigame extends MinigameScene {
             setTimeout(() => {
                 this.complete(true);
                 // Back in the world (or the chat) nothing else shows the copy worked (shot 18)
-                window.gameAlert?.(savedCardConfirmation(cardData), 'success', 'Card copied', 4000);
+                window.gameAlert?.(savedCardConfirmation(cardData), 'success', 'Card copied', 4000, { immediate: true });
             }, 1500);
         } else {
             this.ui.showError(result.message);

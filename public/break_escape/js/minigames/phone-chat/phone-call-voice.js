@@ -4,7 +4,8 @@
  * A phone conversation opened with `voiced: true` (an event mapping or a timedConversation,
  * passed through as the minigame's params.voiced) speaks each NPC line through the server
  * TTS as it appears in the thread, and the next line waits until it has been heard or the
- * player clicks the thread to skip it, as person-chat does. Player lines and narration are
+ * player skips it, as person-chat does: a click on the thread, or Space or Enter (the phone
+ * minigame's _onSkipKey calls skip() for the key as the click handler does). Player lines and narration are
  * not voiced. A line another character speaks in the thread ("Director Netherton: …" in
  * HaX's) is voiced in that character's voice.
  *
@@ -209,10 +210,13 @@ export class PhoneCallVoice {
         return skipped ? 'skipped' : 'played';
     }
 
-    /** The player clicked the thread: stop this line and let the next one come. */
     /** True while a clip is playing. */
     get active() { return !!this._token; }
 
+    /**
+     * The player skipped (clicked the thread, or pressed Space or Enter): stop this line's
+     * clip and let the next one come. Does nothing when no clip is playing.
+     */
     skip() {
         if (!this._token) return;
         this._token = null;

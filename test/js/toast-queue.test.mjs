@@ -60,6 +60,20 @@ test('a third info or success toast waits, then shows as the first goes, in orde
     assert.equal(T.waitingToastCount(), 0);
 });
 
+test('an immediate toast (action feedback) shows at once, past the limit', async () => {
+    T.showNotification('a', 'info', '', 300);
+    T.showNotification('b', 'info', '', 300);
+    const late = T.showNotification('Card saved', 'success', 'Card copied', 300, { immediate: true });
+    assert.ok(late, 'rendered, not queued');
+    assert.equal(T.waitingToastCount(), 0);
+    assert.deepEqual(messages(), ['a', 'b', 'Card saved']);
+    const plain = T.showNotification('c', 'success', '', 300);
+    assert.equal(plain, null, 'an ordinary toast still waits');
+    await wait(1500);
+    assert.equal(children.length, 0);
+    assert.equal(T.waitingToastCount(), 0);
+});
+
 test('warnings and errors show at once, past the limit', async () => {
     T.showNotification('a', 'info', '', 200);
     T.showNotification('b', 'info', '', 200);

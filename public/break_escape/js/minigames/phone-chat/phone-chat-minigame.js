@@ -1046,6 +1046,12 @@ export class PhoneChatMinigame extends MinigameScene {
         return true;
     }
 
+    /**
+     * Space or Enter acts like a click on the thread: it stops a playing voice clip (when the
+     * call is voiced) and then runs the same skip press. Ignored while the thread is not on top,
+     * with modifier keys held, on key repeat, or when focus is in a field or button. Swallows
+     * the key only when it did something.
+     */
     _onSkipKey(e) {
         if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
         if (e.key !== ' ' && e.key !== 'Enter') return;

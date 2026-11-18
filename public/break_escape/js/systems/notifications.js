@@ -176,6 +176,7 @@ export function toastDuration(type, duration) {
 // names, observations, task titles and server text, none of which may become markup.
 // options.html === true: the caller built the title and message as HTML on purpose and has
 // escaped every piece of author text in it. options.plainText is accepted and changes nothing.
+// options.immediate: skip the queue behind other toasts (action feedback that must not arrive late).
 // options.whole: lift the phone's two-line limit for this toast and nothing else.
 // options.verbatim: the message exactly as given, with no " -- " dash display,
 // for text the player must copy character for character (an overheard password).
@@ -604,8 +605,10 @@ function renderNotification(message, type, title, duration, seen = false, option
     // what the player just did, so they still show at once.
     // A toast that stays until closed takes no place and never waits for one.
     // A finished task or aim (options.brief) does not wait: the pill blinks now, and the lanes
-    // step the other toasts aside for it (review R2 M4)
+    // step the other toasts aside for it (review R2 M4). options.immediate does the same for
+    // feedback on something the player just did ("Card copied"), without the brief styling.
     if (!overLimit && HOLDABLE_TYPES.has(type) && duration > 0 && options?.brief !== true
+        && options?.immediate !== true
         && shownToasts(notificationContainer).length >= maxShownToasts()) {
         if (!isQueuedDuplicate(waitingToasts, message, type, title, options)) {
             addWaiting([message, type, title, duration, seen, options]);
