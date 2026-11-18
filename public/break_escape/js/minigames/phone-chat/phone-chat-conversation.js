@@ -713,6 +713,21 @@ export default class PhoneChatConversation {
         if (stitchEntry && stitchEntry !== knot) entries.push(stitchEntry);
         const runs = entries.map(dryRun).filter(Boolean);
         let chosen = runs.find(r => r.baselineKey === savedKey && r.baselineFirst === sourcePath) || null;
+        // A save taken against an older layout of the same knot (choices once in the knot
+        // itself, now in a `menu` stitch behind a guard that sends a fresh entry to the hub)
+        // has a sourcePath the new story does not contain, so no entry matches it exactly.
+        // Fall back to the knot's own `menu` stitch when it reproduces the same visible menu
+        // under the old globals. The re-run still drops what the baseline already showed, so
+        // no line replays and no tag fires twice.
+        if (!chosen && !stitchEntry) {
+            const menuEntry = this._reopenEntryPath(story, `${knot}.menu`);
+            const viaMenu = menuEntry ? dryRun(menuEntry) : null;
+            if (viaMenu && viaMenu.baselineKey === savedKey &&
+                String(viaMenu.baselineFirst || '').split('.')[0] === knot) {
+                runs.push(viaMenu);
+                chosen = viaMenu;
+            }
+        }
         // A guard at the knot top that today's globals have just made fire wins over the
         // saved choices and over a stitch entry (m10 "already dead", a recruiter call ended
         // once the deck is chosen). "Just made fire" means
