@@ -208,7 +208,7 @@ Difficulty changes how much there is to look at, not how punishing it is.
 | Print | full, residue strong | may be partial | partial, residue a little weaker (0.9) |
 | `Pfog` | 7 | 6 | 5 |
 | Coverage needed to lift | 40% | 45% | 55% |
-| References in compare step | 2, the decoy of a different pattern | 3, one decoy shares the pattern | 3, all share the pattern |
+| References in compare step | 2, the decoy of a different pattern (unless the scenario forces a same-class one) | 3, one decoy shares the pattern | 3, all share the pattern |
 
 ### Where reference prints come from
 
@@ -313,7 +313,7 @@ Every existing field keeps its meaning, so m04, m05, `biometric_breach`, `ceo_ex
 | `fingerprintOwnerName` | object | new, optional | Display name if `fingerprintOwner` is an id ("receptionist"). |
 | `fingerprintPattern` | object | new, optional | Force `loop` / `whorl` / `arch` (for a story that names the pattern). |
 | `fingerprintSurface` | object | new, optional | `glossy_light` / `glossy_dark` / `textured`. Default from the object type: `pc`, screens, terminals and phones are `glossy_dark`; cups and mugs `glossy_light`; keyboards and keypads `textured`; anything else `glossy_light`. |
-| `fingerprintCandidates` | object | new, optional | Array of names to use as compare references in place of NPC names. |
+| `fingerprintCandidates` | object | new, optional | Array of names, or `{ name, pattern }` entries, to use as compare references in place of NPC names. A `{ name, pattern }` entry fixes that card's class and is always dealt, even on easy, so a scenario can force a same-class decoy there (m05's mug). On medium and hard a forced card fills its own slot and the difficulty's same-class decoy is still dealt unless the forced card already is one. |
 | `fingerprintCandidateCount` | object | optional | Integer 2 to 4: how many reference cards the Compare step shows, instead of the difficulty's default (easy 2). Other values are ignored. Keys `1` to `n` pick a card. m05's Torres mug asks for 4. Pair it with a `{ name, pattern }` entry in `fingerprintCandidates` that matches the lift's class, so ridge comparison is needed on easy. |
 
 What this means for the two live missions, with no scenario edits:

@@ -128,9 +128,15 @@
 .dusting-refs { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
 .dusting-ref { display: flex; flex-direction: column; gap: 4px; padding: 6px; max-width: 100%; }
 .dusting-ref-canvas { image-rendering: pixelated; display: block; background: #f2f0ea; }
-/* Four cards (fingerprintCandidateCount 4): a grid, so they sit four across where the panel is wide (one screen at 1280x720) and two across on a phone */
-.dusting-refs[data-count="4"] { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
-.dusting-refs[data-count="4"] .dusting-ref { align-items: center; text-align: center; }
+/* Four cards (fingerprintCandidateCount 4): 2x2 by default, 4x1 once the panel is wide enough for four 144 px cards in a row
+   (about 600 px, e.g. 1280x720). Never 3+1: the switch is on the panel's own width, not the screen's. Every card has the same height. */
+.dusting-panel { container-type: inline-size; }
+.dusting-refs[data-count="4"] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 8px; }
+@container (min-width: 600px) {
+    .dusting-refs[data-count="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.dusting-refs[data-count="4"] .dusting-ref-wrap { height: 100%; }
+.dusting-refs[data-count="4"] .dusting-ref { flex: 1 1 auto; align-items: center; text-align: center; }
 .dusting-refs[data-count="4"] .dusting-ref-canvas { margin: 0 auto; }
 
 .dusting-forensic { margin: 10px 0 4px; color: var(--d-dim); font-size: 18px; line-height: 1.15; border-top: 2px solid var(--d-line); padding-top: 8px; }

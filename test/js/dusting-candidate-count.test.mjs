@@ -113,3 +113,18 @@ test('key 4 picks the fourth card in the Compare step', () => {
     h._onKeyDown({ key: '3', target: { tagName: 'DIV' }, preventDefault() {} });
     assert.deepEqual(got, []);
 });
+
+test('medium: a forced arch card does not displace the same-class decoy', () => {
+    const data = { fingerprintCandidates: ['Lisa Park', { name: 'Owen Gallagher', pattern: 'arch' }, 'Patricia Morgan', 'Dr Ruth Halloran'], fingerprintCandidateCount: 4 };
+    const g = build(data, 'medium');
+    const decoys = g.candidates.filter(c => !c.correct);
+    assert.equal(decoys.length, 3);
+    assert.equal(decoys.find(c => c.label === 'Owen Gallagher').pattern, 'arch');
+    assert.equal(decoys.filter(c => c.pattern === 'whorl').length, 1);
+    // a forced lift-class card is itself the same-class decoy, so no second one is dealt
+    const h = build({ ...data, fingerprintCandidates: [{ name: 'Owen Gallagher', pattern: 'whorl' }, ...names.filter(n => n !== 'Owen Gallagher')] }, 'medium');
+    assert.equal(h.candidates.filter(c => !c.correct && c.pattern === 'whorl').length, 1);
+    // hard: every non-forced decoy shares the class
+    const k = build(data, 'hard');
+    assert.equal(k.candidates.filter(c => !c.correct && c.pattern === 'whorl').length, 2);
+});

@@ -804,7 +804,15 @@ export class DustingMinigame extends MinigameScene {
         const decoyNames = [];
         for (let k = 0; k < n - 1; k++) decoyNames.push(pool[k] || fallback[k]);
 
-        const decoyClasses = decoyPatterns(lp, decoyNames.length, this.diff.decoySamePattern, seed, decoyNames.map(nm => patternForOwner(nm)));
+        // A forced card fills its own slot and keeps its class. The rest are dealt by the difficulty rule,
+        // so on medium a forced non-lift card cannot displace the same-class decoy (a forced lift-class
+        // card already is that decoy, so the others then differ).
+        const free = decoyNames.map((nm, k) => k).filter(k => !forced.has(String(decoyNames[k])));
+        const forcedSame = decoyNames.some(nm => forced.get(String(nm)) === lp);
+        const rule = this.diff.decoySamePattern === 'one' && forcedSame ? 'never' : this.diff.decoySamePattern;
+        const freeClasses = decoyPatterns(lp, free.length, rule, seed, free.map(k => patternForOwner(decoyNames[k])));
+        const decoyClasses = decoyNames.map(() => null);
+        free.forEach((k, j) => { decoyClasses[k] = freeClasses[j]; });
         const decoys = decoyNames.map((nm, k) => {
             const pattern = forced.get(String(nm)) || decoyClasses[k];
             return { label: nm, pattern, print: cachedPrint({ owner: nm, pattern }), correct: false };
