@@ -10,12 +10,17 @@ each tool call and takes the context size of its latest API call.
   agent run on costs about the same as a restart and loses no work.
   Hard limit (default 200k): a firm stop note, repeated every STEP tokens of
   further growth. The tail above 200k is where the context cost was.
+  Opus reviewers (agent description says "review", model Opus) get 200k soft
+  and 300k hard: about half their 150k goes on the starting context and their
+  own reasoning, and a split review loses the understanding it had built.
 
 Main sessions (no agent_id in the payload) are left alone: they auto-compact.
 
 Overrides:
   BE_HANDOVER_TOKENS        soft limit in tokens (default 150000)
   BE_HANDOVER_HARD_TOKENS   hard limit in tokens (default 200000)
+  BE_REVIEW_SOFT_TOKENS, BE_REVIEW_HARD_TOKENS
+                            limits for Opus reviewers (default 200000, 300000)
   $TMPDIR/claude-context-guard/threshold-<session_id>
                             "soft" or "soft,hard" for one session's subagents
                             (for testing the hook live; hard defaults to soft+50k)
@@ -29,6 +34,8 @@ import tempfile
 
 DEFAULT_SOFT = 150_000
 DEFAULT_HARD = 200_000
+REVIEW_SOFT = 200_000
+REVIEW_HARD = 300_000
 STEP = 25_000
 TAIL_BYTES = 400_000
 STATE_DIR = os.path.join(tempfile.gettempdir(), "claude-context-guard")
@@ -84,6 +91,19 @@ def limits_for(session_id):
     return soft, max(env_int("BE_HANDOVER_HARD_TOKENS", DEFAULT_HARD), soft)
 
 
+def is_opus_review(transcript):
+    """Opus reviewer: the launch metadata names a review and the agent runs on Opus."""
+    try:
+        with open(transcript[:-len(".jsonl")] + ".meta.json") as f:
+            meta = json.load(f)
+    except (OSError, ValueError):
+        return False
+    if "review" not in (meta.get("description") or "").lower():
+        return False
+    model = (meta.get("pickedEffortModel") or meta.get("agentType") or "").lower()
+    return "opus" in model
+
+
 def read_state(path):
     """(level, tokens) of the last note sent; an old bare number counts as soft."""
     try:
@@ -114,6 +134,9 @@ def main():
         return
     tokens = context_tokens(path)
     soft, hard = limits_for(payload.get("session_id", ""))
+    if is_opus_review(path) and soft == DEFAULT_SOFT and hard == DEFAULT_HARD:
+        soft = env_int("BE_REVIEW_SOFT_TOKENS", REVIEW_SOFT)
+        hard = max(env_int("BE_REVIEW_HARD_TOKENS", REVIEW_HARD), soft)
     if tokens < soft:
         return
 
