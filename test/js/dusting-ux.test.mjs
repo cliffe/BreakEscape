@@ -1,6 +1,6 @@
 // Dusting UX: the find-step print patch is findable with High contrast and Hint off (raised sheen
 // plus a dotted floor), High contrast raises it further; closing the compare screen without
-// "Log the print" gives one toast titled "Print logged"; the button path keeps "Print Lifted".
+// "Log the print" gives one toast titled "Print Logged"; the button path keeps "Print Lifted".
 // Run with: node --test test/js/dusting-ux.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -44,7 +44,7 @@ const base0 = { lit: 0, ridge: 1, mask: 1, res: 1, dotted: true };
 test('floor luma change on every surface colour: about 30 at medium, easy more, hard none, High contrast more', () => {
     for (const surf of Object.values(SURFACES)) for (const c of surf.colours) {
         const at = (d, hc) => floorDelta(c, d, hc);
-        assert.ok(at('medium', false) >= 25 && at('medium', false) <= 36, `${surf.id} ${c} medium ${at('medium', false)}`);
+        assert.ok(at('medium', false) >= 25 && at('medium', false) <= 40, `${surf.id} ${c} medium ${at('medium', false)}`);
         assert.ok(at('easy', false) > at('medium', false), `${surf.id} easy > medium`);
         assert.equal(at('hard', false), 0, `${surf.id} hard shows no floor without High contrast`);
         for (const d of ['easy', 'medium', 'hard']) {
@@ -91,7 +91,7 @@ test('high contrast raises both the floor and the sheen', () => {
 // ---- close toast: every toast counted through startDustingMinigame -> recordLift
 
 const { MinigameScene } = await import(pathToFileURL(join(root, 'js/minigames/framework/base-minigame.js')).href);
-let onComplete, toasts;
+let onComplete, onForcedEnd, toasts;
 function compareGame({ identified }) {
     const g = Object.create(DustingMinigame.prototype);
     Object.assign(g, {
@@ -113,19 +113,19 @@ function setup() {
     globalThis.window.game = {};
     globalThis.window.MinigameFramework = {
         mainGameScene: {},
-        startMinigame(_n, _c, opts) { onComplete = opts.onComplete; }
+        startMinigame(_n, _c, opts) { onComplete = opts.onComplete; onForcedEnd = opts.onForcedEnd; }
     };
     startDustingMinigame({ scenarioData: { id: 'o1', name: 'Mug', fingerprintOwner: 'Robert Vance' } });
 }
 
-test('close after the peel gives exactly one toast, titled Print logged, and still records', () => {
+test('close after the peel gives exactly one toast, titled Print Logged, and still records', () => {
     setup();
     const g = compareGame({ identified: false });
     g.complete(false);
     assert.equal(toasts.length, 1, JSON.stringify(toasts));
     assert.equal(toasts[0][0], 'gameAlert');
     assert.match(toasts[0][1], /Lifted a print from Mug \(Fair, 64%\)/);
-    assert.equal(toasts[0][3], 'Print logged');
+    assert.equal(toasts[0][3], 'Print Logged');
     assert.equal(window.gameState.biometricSamples.length, 1);
     g.complete(false); // a second close call must not toast again
     assert.equal(toasts.length, 1);
@@ -171,4 +171,58 @@ test('the coach shows the below-threshold line at 34% coverage with heavy powder
     assert.match(g._coach(), /Lift unlocks at 45%/);
     g.metrics.coverage = 0.5;
     assert.match(g._coach(), /or lift now/);
+});
+
+// ---- forced end (scripted call or conversation: endMinigame(false, null) skips complete)
+
+test('a forced end on the compare screen after the peel records the lift with one Print Logged toast', () => {
+    setup();
+    const g = compareGame({ identified: false });
+    Object.assign(g, { params: { onForcedEnd }, _timers: [] });
+    globalThis.cancelAnimationFrame = () => {};
+    MinigameScene.prototype.cleanup = function () {};
+    assert.equal(typeof onForcedEnd, 'function');
+    g.cleanup();
+    assert.equal(toasts.length, 1, JSON.stringify(toasts));
+    assert.equal(toasts[0][3], 'Print Logged');
+    assert.deepEqual(toasts[0][5], { html: false });
+    assert.equal(window.gameState.biometricSamples.length, 1);
+    g.cleanup(); // cleanup twice must not record twice
+    assert.equal(toasts.length, 1);
+});
+
+test('cleanup after Log the print, or before the peel, records nothing extra', () => {
+    setup();
+    const g = compareGame({ identified: false });
+    Object.assign(g, { params: { onForcedEnd }, _timers: [] });
+    g._finish = DustingMinigame.prototype._finish;
+    g._finish();
+    const n = toasts.length;
+    g.cleanup();
+    assert.equal(toasts.length, n);
+    setup();
+    const h = compareGame({ identified: false });
+    Object.assign(h, { params: { onForcedEnd }, _timers: [], mounted: false, final: null });
+    h.cleanup();
+    assert.equal(toasts.length, 0);
+});
+
+test('the find floor scale never drops below 1: no surface goes under the tuned blend', () => {
+    for (const surf of Object.values(SURFACES)) for (const c of surf.colours) {
+        const base = hex(c), unlit = base.map(v => v * 0.5);
+        for (const hc of [false, true]) {
+            assert.ok(findFloorScale(luma(unlit), findGlint(luma(base) > 150, hc)) >= 1, `${surf.id} ${c}`);
+        }
+    }
+    assert.equal(findFloorScale(100, [100, 100, 100]), 1);
+});
+
+test('the coverage text rounds down so 45% is never shown while Lift is locked', () => {
+    const g = Object.create(DustingMinigame.prototype);
+    const texts = {};
+    Object.assign(g, { step: 'dust', metrics: { coverage: 0.4496, clarity: 0.1, foggy: 0 }, diff: DIFFICULTY.medium, powder: 'black', surfaceId: 'glossy_light', tape: { coverage: () => 0 } });
+    g._setDyn = (k, fn) => { const el = { style: {}, textContent: '' }; fn(el); texts[k] = el.textContent; };
+    g._currentQuality = () => 0.5;
+    g._refreshDynamic();
+    assert.match(texts['cov-text'], /^44%/);
 });

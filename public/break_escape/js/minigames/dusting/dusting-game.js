@@ -374,6 +374,15 @@ export class DustingMinigame extends MinigameScene {
         clearInterval(this._keyTimer);
         cancelAnimationFrame(this._raf);
         if (this._unsubArt) this._unsubArt();
+        // A scripted call or conversation ends the minigame with endMinigame(false, null) and never reaches
+        // complete(): a lift mounted on the compare screen is still recorded, through the opener's callback.
+        if (this.mounted && this.final && !this._resultSent) {
+            this._resultSent = true;
+            const forced = this.params && this.params.onForcedEnd;
+            if (typeof forced === 'function') {
+                try { forced({ ...this._buildResult(), viaClose: true }); } catch (e) { console.error('dusting forced-end record failed', e); }
+            }
+        }
         super.cleanup();
     }
 
@@ -759,7 +768,7 @@ export class DustingMinigame extends MinigameScene {
         if (!success && this.mounted && this.final) {
             this.gameResult = this._buildResult();
             this._resultSent = true;
-            // viaClose: recordLift titles its one toast "Print logged" (the Log the print button path keeps "Print Lifted")
+            // viaClose: recordLift titles its one toast "Print Logged" (the Log the print button path keeps "Print Lifted")
             this.gameResult.viaClose = true;
             return super.complete(true);
         }
@@ -1065,13 +1074,14 @@ export class DustingMinigame extends MinigameScene {
     _refreshDynamic() {
         const m = this.metrics;
         const pct = v => `${Math.round(v * 100)}%`;
+        const pctFloor = v => `${Math.floor(v * 100 + 1e-9)}%`;   // 45% never shows while Lift (needs 45%) is still locked
         const word = v => (v >= 0.85 ? 'good' : v >= 0.6 ? 'fair' : v >= 0.3 ? 'faint' : 'low');
         if (this.step === 'find' || this.step === 'compare') {
             this._setDyn('feedback', el => { el.textContent = this.message; });
             return;
         }
         if (this.step === 'dust') {
-            this._setDyn('cov-text', el => { el.textContent = `${pct(m.coverage)} (${word(m.coverage)})`; });
+            this._setDyn('cov-text', el => { el.textContent = `${pctFloor(m.coverage)} (${word(m.coverage)})`; });
             this._setDyn('cov-bar', el => { el.style.width = pct(Math.min(1, m.coverage)); });
             this._setDyn('cov-min', el => { el.style.left = pct(this.diff.minCoverage); el.title = `Lift unlocks at ${pct(this.diff.minCoverage)}`; });
             this._setDyn('clar-text', el => { el.textContent = `${pct(m.clarity)} (${word(m.clarity)})`; });
@@ -1117,7 +1127,7 @@ export class DustingMinigame extends MinigameScene {
 
     _updateAria() {
         if (!this.canvas) return;
-        const pct = Math.round(this.metrics.coverage * 100);
+        const pct = Math.floor(this.metrics.coverage * 100 + 1e-9);
         const label = {
             examine: `Close-up of ${this.surface.name}.`,
             find: `Close-up of ${this.surface.name} lit from a low angle. ${this.found ? 'Print found.' : 'The print has not been found yet.'}`,

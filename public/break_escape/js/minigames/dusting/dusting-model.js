@@ -454,15 +454,6 @@ export function wrongPowderReason(powder, surface) {
     return `${POWDER_NAMES[powder]} on ${s.name}: ${why}. ${better} would show these ridges better.`;
 }
 
-/**
- * Find step: how strongly one pixel of the latent print shows (0 to 1 blend towards the glint colour).
- * Two parts, both hard pixels (no blur): the torch sheen, full strength over most of the beam
- * (`lit` reaches 1 only at its centre, so it is scaled by FIND_BEAM_GAIN and capped), and a dotted
- * checkerboard floor of the print mask that shows without the torch, so the patch can be spotted by
- * looking while the torch still confirms it. The floor is a texture, so it does not rely on colour.
- * High contrast raises both (sheen gain and floor) and returns a stronger glint colour.
- * @param {{lit:number, ridge:number, mask:number, res:number, floor:number, floorScale?:number, dotted:boolean, hc:boolean}} p
- */
 export const FIND_BEAM_GAIN = 1.6;
 export const FIND_HC_FLOOR_BONUS = 0.16;
 /** Luma change the medium floor (0.16) makes on every surface; easy and High contrast scale from it. */
@@ -481,12 +472,22 @@ export function findGlint(light, hc) {
 /**
  * Multiplier for the floor so it moves the unlit surface by about FIND_FLOOR_DELTA luma at medium
  * whatever the surface (the old fixed blend moved pale surfaces by 2 to 5 levels).
+ * Never below 1, so a dark or textured surface keeps at least the tuned blend.
  * @param {number} unlitLuma luma of the surface with no torch @param {number[]} glint rgb
  */
 export function findFloorScale(unlitLuma, glint) {
     const d = Math.abs(unlitLuma - lumaOf(glint));
-    return d < 1 ? 1 : (FIND_FLOOR_DELTA / FIND_FLOOR_REF) / d;
+    return d < 1 ? 1 : Math.max(1, (FIND_FLOOR_DELTA / FIND_FLOOR_REF) / d);
 }
+/**
+ * Find step: how strongly one pixel of the latent print shows (0 to 1 blend towards the glint colour).
+ * Two parts, both hard pixels (no blur): the torch sheen, full strength over most of the beam
+ * (`lit` reaches 1 only at its centre, so it is scaled by FIND_BEAM_GAIN and capped), and a dotted
+ * checkerboard floor of the print mask that shows without the torch, so the patch can be spotted by
+ * looking while the torch still confirms it. The floor is a texture, so it does not rely on colour.
+ * High contrast raises both (sheen gain and floor) and returns a stronger glint colour.
+ * @param {{lit:number, ridge:number, mask:number, res:number, floor:number, floorScale?:number, dotted:boolean, hc:boolean}} p
+ */
 export function findSheen({ lit, ridge, mask, res, floor, floorScale = 1, dotted, hc }) {
     let s = lit > 0 ? ridge * mask * res * Math.min(1, lit * FIND_BEAM_GAIN) : 0;
     if (hc) s = Math.min(1, s * 1.25);
