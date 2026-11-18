@@ -1194,6 +1194,40 @@ export class PersonChatMinigame extends MinigameScene {
         }, 1500);
     }
 
+    /**
+     * Closed while a reply's lines were still being shown. The ink often has one more
+     * step that is only tags (`line / #set_global:x:true / #exit_conversation / -> DONE`),
+     * which the display would read after the last line. Run it now, once, so a close at
+     * the reply keeps its tags and the save that follows is past them. Only a tags-only
+     * (or ended) step counts: a step with text or choices belongs to a line the player
+     * has not reached, so the story is put back exactly as it was.
+     */
+    _flushTrailingTags() {
+        const shown = this._displayInFlight;
+        this._displayInFlight = null;
+        if (!shown || shown.hasEnded || (shown.choices && shown.choices.length > 0)) return;
+        if ((shown.tags || []).some(t => String(t).includes('exit_conversation'))) return;
+        const story = this.conversation?.engine?.story;
+        if (!story || !story.canContinue || story.currentChoices?.length > 0) return;
+        let saved;
+        try {
+            saved = story.state.ToJson();
+            const step = this.conversation.continue();
+            const tagsOnly = step && !(step.text && step.text.trim()) && !(step.choices && step.choices.length > 0);
+            if (!tagsOnly) {
+                story.state.LoadJson(saved);
+                return;
+            }
+            if (step.tags && step.tags.length > 0) {
+                this._pendingReply = { tags: step.tags };
+                this._flushPendingReply();
+            }
+        } catch (error) {
+            console.error('❌ Error flushing trailing tags:', error);
+            if (saved) { try { story.state.LoadJson(saved); } catch (e) { /* keep the story as it is */ } }
+        }
+    }
+
     /** Stop listening for the page going away (the reply has shown, or the chat closed). */
     _dropPageHideHook() {
         if (!this._onPageHide) return;
@@ -1517,6 +1551,11 @@ export class PersonChatMinigame extends MinigameScene {
      * @param {string} accumulatedText - Text accumulated so far for current speaker
      */
     async displayDialogueBlocksSequentially(blocks, originalResult, blockIndex, lineIndex = 0, accumulatedText = '') {
+        // A closed chat never continues: cleanup() has already run the trailing tags once
+        // (_flushTrailingTags), so a late continue() here would fire them again.
+        if (this._cleanedUp) return;
+        // The result whose lines are on screen; cleanup() looks one step past it
+        this._displayInFlight = blockIndex >= blocks.length ? null : originalResult;
         if (blockIndex >= blocks.length) {
             // If a jumpToKnot was deferred while dialogue was in progress, execute it now.
             if (this.pendingKnotJump) {
@@ -1723,8 +1762,10 @@ export class PersonChatMinigame extends MinigameScene {
             const delivery = deliveryFromTags(originalResult?.tags);
             // Voice starts when the session-resume overlay closes, not under it
             await whenSessionOverlayClosed();
-            if (!this.ttsManager) return;
+            if (this._cleanedUp || !this.ttsManager) return;
             const audioDuration = await this.ttsManager.play(ttsSpeakerId, ttsText, { delivery });
+            // Closed while the line was playing: nothing may advance from here
+            if (this._cleanedUp) return;
             // Audio length + buffer; null (no key, fetch or load failure) uses the estimate
             advanceDelay = advanceDelayMs(line, audioDuration);
 
@@ -1973,6 +2014,7 @@ export class PersonChatMinigame extends MinigameScene {
         // A reply still waiting to be shown: apply its state tags now (the story is
         // already saved past it), then stop its timer so nothing fires after the close.
         this._flushPendingReply();
+        this._flushTrailingTags();
         this._dropPageHideHook();
 
         // End the influence ledger run and unwrap ChooseChoiceIndex / the pretext
