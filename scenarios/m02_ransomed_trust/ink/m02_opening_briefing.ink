@@ -241,8 +241,6 @@ Agent HaX: Or get hold of a physical credential that already exists.
 
 Agent HaX: Or open it yourself. You're equipped for that, and it's a confession if anyone sees you do it.
 
-Agent HaX: This is a mission about people, Agent. The picks are for when you've failed at the actual job.
-
 + [Who's worth working on?]
     Agent HaX: The night coordinator on reception has the override keys and eleven years of memory. Dr. Kim has guilt, which is a lever whether you like it or not.
     Agent HaX: And Gary Whitlock, the IT administrator. He flagged this weakness seven times and was told to stop escalating.
