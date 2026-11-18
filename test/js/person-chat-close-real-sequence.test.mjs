@@ -205,3 +205,126 @@ test('#ending_check in the trailing step is not run during teardown, and the ste
     assert.equal(mg._pendingReply === null, true);
     delete window.endingCheck;
 });
+
+// ---- R2 minors -------------------------------------------------------------------------
+
+async function inkFrom(source) {
+    const dir = mkdtempSync(join(tmpdir(), 'retalk-ink-'));
+    writeFileSync(join(dir, 's.ink'), source);
+    const r = spawnSync(join(root, 'bin/inklecate'), ['-o', join(dir, 's.json'), join(dir, 's.ink')], { encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    return JSON.parse(readFileSync(join(dir, 's.json'), 'utf8').replace(/^\uFEFF/, ''));
+}
+
+test('m1: two reloads at the reply run the dropped tags once (the first re-talk saves past them)', async () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const events = world();
+        stateManager.conversationStates.delete('security_guard_patrol');
+        const first = await chat(val, 'the_argument');
+        first.mg.handleChoice(0);                       // saves with the tag line unread, then the page goes away
+        const heard = () => events.filter(e => e[0] === 'global_variable_changed:val_argument_heard').length;
+        for (let reload = 0; reload < 2; reload++) {
+            const next = await chat(val, 'the_argument', 'security_guard_patrol', false);
+            const restored = stateManager.restoreNPCState('security_guard_patrol', next.conv.engine.story);
+            assert.ok(restored, `reload ${reload + 1} restores`);
+            if (restored === 'variables-only') next.conv.goToKnot('the_argument');
+            next.mg.isResumedConversation = true;
+            next.mg._resumedMidKnot = restored !== 'variables-only';
+            next.mg.npc = { ...next.mg.npc, restartOnRetalk: true };
+            next.mg.displayAccumulatedDialogue = () => {};
+            next.mg.showConversationOverMessage = () => {};
+            next.mg.showCurrentDialogue();                 // the player closes before the restarted line is read
+        }
+        assert.equal(heard(), 1, 'one event over two reloads');
+    } finally { mock.timers.reset(); }
+});
+
+test('m2: a restartOnRetalk:false NPC still runs the dropped tags on a reload, and is not restarted', async () => {
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+        const events = world();
+        const first = await chat(val, 'the_argument');
+        first.mg.handleChoice(0);
+        const saved = first.conv.saveState();
+        const second = await chat(val, 'the_argument');
+        assert.equal(second.conv.restoreState(saved), true);
+        second.mg.isResumedConversation = true;
+        second.mg._resumedMidKnot = true;
+        second.mg.npc = { ...second.mg.npc, restartOnRetalk: false };
+        const accumulated = [];
+        second.mg.displayAccumulatedDialogue = (r) => accumulated.push(r.text);
+        second.mg.showConversationOverMessage = () => {};
+        second.mg.showCurrentDialogue();
+        assert.equal(window.gameState.globalVariables.val_argument_heard, true, 'the tag ran');
+        assert.equal(events.filter(e => e[0] === 'global_variable_changed:val_argument_heard').length, 1);
+        assert.equal(accumulated.length, 0, 'no restart for a one-shot NPC');
+    } finally { mock.timers.reset(); }
+});
+
+const EXTERNAL_INK = `EXTERNAL se_influence(x)
+VAR g = 0
+-> start
+=== start ===
+One.
+~ se_influence(1)
+~ g = 1
+-> DONE
+`;
+
+test('m3: an effectful external between two lines fires once (the real step), not also in the probe', async () => {
+    world();
+    const json = await inkFrom(EXTERNAL_INK);
+    const { mg, conv } = await chat(json, 'start', 'ext_npc', false);
+    let calls = 0;
+    conv.engine.bindExternalFunction('se_influence', () => { calls++; return null; });
+    conv.continue();                                   // One.
+    mg._displayInFlight = { tags: [], choices: [], hasEnded: false, text: 'One.' };
+    mg._flushTrailingTags();                           // probe (stubbed), then the empty step runs for real
+    assert.equal(calls, 1, 'one call over probe plus the real step');
+    assert.equal(conv.engine.story.canContinue, false, 'the step was run for real');
+});
+
+test('m3 phone: restoredStoryHasOnlyTheEnd does not call an effectful external in its probe', async () => {
+    world();
+    const json = await inkFrom(EXTERNAL_INK);
+    const { conv } = await chat(json, 'start', 'ext_npc2', false);
+    let calls = 0;
+    conv.engine.bindExternalFunction('se_influence', () => { calls++; return null; });
+    conv.continue();                                   // One.
+    assert.equal(conv.restoredStoryHasOnlyTheEnd(), true, 'the rest is spent');
+    assert.equal(calls, 1, 'once, at the commit, not also in the probe');
+});
+
+test('m4: #ending_check in a genuine tags-only trailing step leaves the step unread', async () => {
+    const events = world();
+    window.gameState.globalVariables.g = 0;
+    const json = await inkFrom(`VAR g = 0
+-> start
+=== start ===
+One.
+* [Go]
+  {g == 0:
+    Two.
+  - else:
+    Three.
+  }
+  #ending_check
+  #set_global:g:5
+  -> DONE
+`);
+    const { mg, conv } = await chat(json, 'start', 'gate_npc2', false);
+    let r;
+    do { r = conv.continue(); } while (!r.choices?.length && !r.hasEnded);
+    const shown = conv.makeChoice(0);
+    assert.match(shown.text, /Two/);
+    mg._displayInFlight = shown;
+    window.endingCheck = { confirm: async () => { throw new Error('asked during teardown'); } };
+    assert.equal(conv.engine.story.canContinue, true, 'the tags-only step is pending');
+    mg._flushTrailingTags();
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+    assert.equal(conv.engine.story.canContinue, true, 'the gated step stays unread for the re-talk');
+    assert.equal(window.gameState.globalVariables.g, 0, 'its tags did not run');
+    assert.deepEqual(events.filter(e => e[0].startsWith('global_variable_changed')), []);
+    delete window.endingCheck;
+});

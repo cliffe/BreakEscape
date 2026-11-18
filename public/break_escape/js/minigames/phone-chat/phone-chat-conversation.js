@@ -309,7 +309,7 @@ export default class PhoneChatConversation {
             vs.variableChangedEvent = null;
             let step;
             try {
-                step = this.engine.continue();
+                step = this.engine.withEffectfulExternalsStubbed(() => this.engine.continue());
             } finally {
                 if (hadOwn) vs.variableChangedEvent = observer;
                 else delete vs.variableChangedEvent;

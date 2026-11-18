@@ -22,7 +22,7 @@ import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pend
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
-import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd } from './person-chat-reopen.js';
+import { rememberNpcLine, getRememberedNpcLine, reopenContextLine, refreshHubAfterMidKnotReopen, resumedStoryHadOnlyTheEnd, resumedStoryEndedEmpty } from './person-chat-reopen.js';
 import { startEventConversation } from './person-chat-event-start.js';
 import { personChatBackgroundFor } from './person-chat-background.js';
 import { advanceDelayMs, readingTimeMs } from './dialogue-pacing.js';
@@ -669,17 +669,19 @@ export class PersonChatMinigame extends MinigameScene {
             // Check if story has ended
             if (result.hasEnded) {
                 // A reopen whose saved story had only the divert to DONE left (closed before the
-                // `#exit_conversation` line was read): it is a finished story, so restart it at
-                // the NPC's knot as restoreNPCState does for one that ended. The empty result's
-                // state tags never ran (the save sits before them), so run them once first
-                // (same denylist as the close flush). A close that did flush them saved past
-                // them, so this never sees them twice.
-                if (resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk: this.npc?.restartOnRetalk }) &&
-                    result.tags && result.tags.length > 0) {
+                // `#exit_conversation` line was read) is a finished story with unread tags.
+                // The empty result's state tags never ran (the save sits before them), so run
+                // them once, whatever restartOnRetalk says (a one-shot scene such as m01 Derek
+                // still needs its `#set_global`), and save past them so a second reload does
+                // not run them again. A close that did flush them saved past them already.
+                // Then restart the knot, unless the NPC opted out with restartOnRetalk:false.
+                const spentOnReopen = resumedStoryEndedEmpty({ isReopen, result });
+                if (spentOnReopen && result.tags && result.tags.length > 0) {
                     this._pendingReply = { tags: result.tags };
                     this._flushPendingReply();
+                    npcConversationStateManager.saveNPCState(this.npcId, this.inkEngine.story);
                 }
-                if (resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk: this.npc?.restartOnRetalk }) &&
+                if (spentOnReopen && resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk: this.npc?.restartOnRetalk }) &&
                     this.conversation.restartAfterEnd()) {
                     console.log(`🔁 Resumed ${this.npcId} had only the end left - restarting at knot: ${this.npc?.currentKnot}`);
                     this._resumedMidKnot = false;
@@ -1237,7 +1239,10 @@ export class PersonChatMinigame extends MinigameScene {
             let probe;
             vs.variableChangedEvent = null;
             try {
-                probe = this.conversation.engine.continue();
+                // Effectful externals (se_influence, pretext_*) are stubbed for the look-ahead
+                // too: they run for real at the step the player reaches, not before.
+                probe = this.conversation.engine.withEffectfulExternalsStubbed(
+                    () => this.conversation.engine.continue());
             } finally {
                 story.state.LoadJson(saved);
                 if (hadOwn) vs.variableChangedEvent = observer;

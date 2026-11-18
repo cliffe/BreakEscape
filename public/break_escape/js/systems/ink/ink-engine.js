@@ -137,6 +137,33 @@ export default class InkEngine {
         }
   }
 
+  /**
+   * Run a look-ahead (reading a step the player has not reached, to be rolled back) with the
+   * externals that have effects swapped for no-op stubs: se_influence writes an influence
+   * global and can fire thresholds, pretext_say / pretext_ask log into the call's ledger.
+   * The pure getters (player_name etc.) stay bound. The real functions are put back after,
+   * even if fn throws.
+   * @param {Function} fn
+   * @returns {*} whatever fn returns
+   */
+  withEffectfulExternalsStubbed(fn) {
+        const externals = this.story && this.story._externals;
+        const swapped = [];
+        if (externals && typeof externals.get === 'function') {
+            for (const name of ['se_influence', 'pretext_say', 'pretext_ask']) {
+                const def = externals.get(name);
+                if (!def) continue;
+                swapped.push([def, def.function]);
+                def.function = () => null;
+            }
+        }
+        try {
+            return fn();
+        } finally {
+            for (const [def, original] of swapped) def.function = original;
+        }
+  }
+
   // Bind an external function that Ink can call
   bindExternalFunction(name, func) {
         if (!this.story) throw new Error('Story not loaded');

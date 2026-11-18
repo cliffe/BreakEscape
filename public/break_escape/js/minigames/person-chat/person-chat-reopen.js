@@ -72,8 +72,9 @@ export function reopenContextLine({ isReopen, result, remembered }) {
  *
  * A `#end_conversation` tag is excluded: that is a deliberate close, already handled.
  * NPC config "restartOnRetalk": false opts out, for one-shot scenes.
- * The empty result's tags are dropped by the caller: the tag line never ran (the save
- * came before it was read), and the restarted knot runs its own tags when it is played.
+ * The empty result's state tags are run by the caller before any restart (the tag line
+ * never ran: the save came before it was read), whatever restartOnRetalk says; the
+ * restarted knot then runs its own tags when it is played.
  * @param {Object} opts
  * @param {boolean} opts.isReopen - saved state was restored this session
  * @param {Object} opts.result - the first continue() result
@@ -81,7 +82,20 @@ export function reopenContextLine({ isReopen, result, remembered }) {
  * @returns {boolean}
  */
 export function resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk }) {
-    if (isReopen !== true || restartOnRetalk === false || !result) return false;
+    if (restartOnRetalk === false) return false;
+    return resumedStoryEndedEmpty({ isReopen, result });
+}
+
+/**
+ * The restartOnRetalk-independent half of the above: a reopen whose first result is an
+ * ended story with no text, no choices and no `#end_conversation`. Its tags are unread.
+ * @param {Object} opts
+ * @param {boolean} opts.isReopen
+ * @param {Object} opts.result
+ * @returns {boolean}
+ */
+export function resumedStoryEndedEmpty({ isReopen, result }) {
+    if (isReopen !== true || !result) return false;
     if (result.hasEnded !== true) return false;
     if (result.text && result.text.trim()) return false;
     if (result.choices && result.choices.length > 0) return false;
