@@ -329,12 +329,13 @@ export function fitContentLabels(grid) {
         for (const slot of grid.querySelectorAll('.container-content-slot')) {
             const label = slot.querySelector('.container-content-label');
             const h = label?.offsetHeight || 0;
-            if (h > 0) slot.style.marginBottom = `${h + 6}px`;
+            slot.style.marginBottom = h > 0 ? `${h + 6}px` : '0px';
         }
     };
     fit();
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fit);
-    if (typeof document !== 'undefined') document.fonts?.ready?.then?.(fit);
+    // Load the face itself: fonts.ready can already be resolved before GNF is requested
+    if (typeof document !== 'undefined' && document.fonts?.load) document.fonts.load('16px GNF').then(fit, () => {});
 }
 
 const LABEL_SEP = /[_.\-\/]/;
@@ -1728,7 +1729,7 @@ export class ContainerMinigame extends MinigameScene {
             // hovering each one (UX pass, 2026-11-12)
             const label = document.createElement('div');
             label.className = 'container-content-label';
-            label.textContent = displayDashes(shareParts ? shareParts.name : item.name);
+            label.textContent = displayDashes((shareParts ? shareParts.name : item.name) ?? '');
 
             // In a share's folder window a file is drawn at a whole-number scale that fills
             // a 64px cell (a 16px glyph at x4), not the grid's x2 (slice 2a review R1 M2)

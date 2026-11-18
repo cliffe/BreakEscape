@@ -86,6 +86,15 @@ test('B6: the attempts log shows whole rows and snaps to the newest', () => {
     assert.match(rule(pin, '.pin-minigame-attempts-log')['scroll-snap-type'], /^y/);
 });
 
+test('B6: the 600px media rows are also 40px tall so no older row shows a sliver', () => {
+    const small = rule(pin, '.pin-minigame-attempt', '(max-width: 600px)');
+    const base = rule(pin, '.pin-minigame-attempt');
+    const pad = (r) => px(r.padding.split(/\s+/)[0]);
+    const lh = px(small['line-height'] || base['line-height']);
+    assert.equal(lh + 2 * pad(small) + 4, px(base['line-height']) + 16 + 4, 'same row height as the base rule');
+    assert.equal(pad(small), 8);
+});
+
 test('B6: the log scrolls to the newest row again once laid out', () => {
     const s = js('minigames/pin/pin-minigame.js');
     assert.match(s, /requestAnimationFrame\(\(\) => \{ log\.scrollTop = log\.scrollHeight; \}\)/);
@@ -105,7 +114,7 @@ test('B8: item names wrap in full, with no clamp or ellipsis', () => {
     assert.equal(r['text-overflow'], 'clip');
     assert.equal(r['white-space'], 'normal');
     assert.equal(r['overflow-wrap'], 'break-word', 'breaks inside a word only when it is wider than the label');
-    assert.ok(px(r.width) >= 112, 'wide enough for "The Reading," on one line');
+    assert.ok(px(r.width) >= 128, 'wide enough for "(Countersigned)" (123px) and "Reconnaissance" (125px) unbroken');
 });
 
 test('B8: the grid wraps its labels and has no fixed height or reserved band', () => {
@@ -121,7 +130,45 @@ test('B8: each slot is sized from its label once laid out', () => {
     const s = js('minigames/container/container-minigame.js');
     assert.match(s, /export function fitContentLabels\(grid\)/);
     assert.match(s, /else fitContentLabels\(contentsGrid\)/);
-    assert.match(s, /slot\.style\.marginBottom = `\$\{h \+ 6\}px`/);
+    assert.match(s, /slot\.style\.marginBottom = h > 0 \? `\$\{h \+ 6\}px` : '0px'/);
+    assert.match(s, /document\.fonts\.load\('16px GNF'\)\.then\(fit/);
+    assert.ok(!/label\.textContent = displayDashes\(shareParts \? shareParts\.name : item\.name\);/.test(s), 'an item without a name prints nothing, not "undefined"');
+    assert.match(s, /\(shareParts \? shareParts\.name : item\.name\) \?\? ''/);
+});
+
+test('B8: the grid column minimum is as wide as the label so two columns fit at 390', () => {
+    const cols = (media) => rule(box, '.container-contents-grid:not(.share-folder-files)', media)['grid-template-columns'];
+    assert.match(cols(null), /minmax\(128px/);
+    assert.match(cols('(max-width: 768px)'), /minmax\(128px/);
+    // 2 columns + 10px gap + 15px padding each side must fit a 390px viewport minus the 20px container padding
+    assert.ok(2 * 128 + 10 + 30 + 40 <= 390);
+});
+
+test('B8: fitContentLabels sizes each slot margin from its label height', () => {
+    const s = js('minigames/container/container-minigame.js');
+    const m = s.match(/export function fitContentLabels\(grid\) \{[\s\S]*?\n\}\n/);
+    assert.ok(m, 'function found');
+    const fit = new Function(m[0].replace('export function', 'function') + '\nreturn fitContentLabels;')();
+    const slot = (h) => ({ style: {}, querySelector: () => (h === null ? null : { offsetHeight: h }) });
+    const slots = [slot(36), slot(0), slot(54), slot(null)];
+    const saved = { rAF: globalThis.requestAnimationFrame, doc: globalThis.document };
+    delete globalThis.requestAnimationFrame;   // not present in node: only the synchronous pass runs
+    let loaded = 0, fonts;
+    globalThis.document = { fonts: { load: (spec) => { loaded++; fonts = spec; return Promise.resolve(); } } };
+    try {
+        fit({ querySelectorAll: () => slots });
+        assert.deepEqual(slots.map(x => x.style.marginBottom), ['42px', '0px', '60px', '0px']);
+        assert.equal(loaded, 1);
+        assert.equal(fonts, '16px GNF');
+        delete globalThis.document;           // no document.fonts at all: no throw
+        fit({ querySelectorAll: () => slots });
+        globalThis.document = {};
+        fit({ querySelectorAll: () => slots });
+        fit(null);
+    } finally {
+        if (saved.rAF) globalThis.requestAnimationFrame = saved.rAF;
+        if (saved.doc) globalThis.document = saved.doc; else delete globalThis.document;
+    }
 });
 
 test('B8: an empty actions row is neither drawn nor styled as a band', () => {

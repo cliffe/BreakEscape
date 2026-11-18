@@ -1176,7 +1176,7 @@
    band. fitContentLabels sets each slot's bottom margin from its label once laid out; the
    margin here is the two-line fallback. A share's folder window keeps its own rules. */
 .container-contents-grid:not(.share-folder-files) {
-    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
     gap: 12px 10px;
     padding: 15px;
     min-height: 0;
@@ -1188,7 +1188,7 @@
 }
 
 .container-contents-grid:not(.share-folder-files) .container-content-label {
-    width: 112px;
+    width: 128px;
     display: block;
     overflow: visible;
     -webkit-line-clamp: unset;
@@ -1202,11 +1202,11 @@
 
 @media (max-width: 768px) {
     .container-contents-grid:not(.share-folder-files) {
-        grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
         gap: 12px 10px;
         padding: 15px;
     }
     .container-contents-grid:not(.share-folder-files) .container-content-label {
-        width: 112px;
+        width: 128px;
     }
 }
