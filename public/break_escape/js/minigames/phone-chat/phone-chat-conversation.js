@@ -648,11 +648,18 @@ export default class PhoneChatConversation {
         if (count === 0) return false;
         const observer = story.variablesState.variableChangedEvent;
         story.variablesState.variableChangedEvent = null;
+        // A save from an older layout can hold a choice thread the story no longer has: ink then
+        // only warns and runs on to a false dead end. Any ink error or warning means "not sure",
+        // which is not "all exits".
+        const priorOnError = story.onError;
+        let inkTrouble = false;
+        story.onError = () => { inkTrouble = true; };
         try {
             for (let i = 0; i < count; i++) {
                 story.state.LoadJson(state);
                 story.ChooseChoiceIndex(i);
                 PhoneChatConversation.collectSteps(story);
+                if (inkTrouble || story.state.hasWarning || story.state.hasError) return false;
                 // Still choices after it: a branch, not a way out
                 if (story.currentChoices?.length > 0) return false;
             }
@@ -662,6 +669,8 @@ export default class PhoneChatConversation {
         } finally {
             try { story.state.LoadJson(state); } catch (e) { /* keep what we have */ }
             story.variablesState.variableChangedEvent = observer;
+            story.onError = priorOnError;
+            try { story.ResetErrors(); } catch (e) { /* older ink */ }
         }
     }
 
