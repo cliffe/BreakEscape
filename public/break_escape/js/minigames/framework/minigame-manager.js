@@ -481,6 +481,12 @@ export const MinigameFramework = {
         }
         if (this.currentMinigame) {
             const ending = this.currentMinigame;
+            // A success already decided and shown, closed during its hold by X, Esc, a click
+            // outside or a forced end, still counts: the unlock must not be lost
+            if (!success && ending._successPending === true) {
+                success = true;
+                if (result == null) result = ending.gameResult;
+            }
             ending._ending = true;
             this._dropStrandedChatReturn(ending);
             try { window.playerPoses?.onMinigameEnd?.(ending); } catch (e) { /* cosmetic */ }

@@ -1,7 +1,7 @@
 {
-  "key": "6488a3c59033874cbbf31879d9e66877",
+  "key": "be0506a2dad653192e7879986e7bc8bf",
   "npc": "gwen_pritchard",
-  "text": "Come on, back to it. Nearly there.",
+  "text": "He's been strange since the contractor renewals in the summer.",
   "voice": "Sulafat",
   "style": "The facility's operations floor systems support lead, in her late 30s, friendly and practical. Speak with a consistent General American accent, Pacific Northwest, throughout, do not shift to any other accent.",
   "language": "en-US",
@@ -9,5 +9,5 @@
   "scenario": "m07_architects_gambit",
   "source": "generate",
   "generated": "2026-11-18",
-  "recorded_at": "2026-11-18T03:35:28Z"
+  "recorded_at": "2026-11-18T17:06:10Z"
 }

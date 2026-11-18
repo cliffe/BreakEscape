@@ -44,6 +44,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/general/thin/badge.png');
 
   --ui-surface: rgba(24, 30, 48, 0.94);
+  --ui-surface-opaque: rgb(24, 30, 48);
   --ui-surface-raised: rgba(38, 48, 74, 0.96);
   --ui-surface-hover: rgba(50, 62, 94, 0.96);
   --ui-slot-bg: rgba(66, 80, 118, 0.88);
@@ -89,6 +90,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/spy/thin/badge.png');
 
   --ui-surface: rgba(29, 30, 32, 0.95);
+  --ui-surface-opaque: rgb(29, 30, 32);
   --ui-surface-raised: rgba(44, 45, 47, 0.96);
   --ui-surface-hover: rgba(58, 58, 56, 0.96);
   --ui-slot-bg: rgba(52, 54, 57, 0.9);
@@ -134,6 +136,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/cyberpunk/thin/badge.png');
 
   --ui-surface: rgba(14, 6, 26, 0.92);
+  --ui-surface-opaque: rgb(14, 6, 26);
   --ui-surface-raised: rgba(30, 10, 50, 0.95);
   --ui-surface-hover: rgba(48, 14, 74, 0.95);
   --ui-slot-bg: rgba(30, 12, 54, 0.85);
@@ -179,6 +182,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/crt/thin/badge.png');
 
   --ui-surface: rgba(2, 12, 4, 0.95);
+  --ui-surface-opaque: rgb(2, 12, 4);
   --ui-surface-raised: rgba(8, 30, 12, 0.96);
   --ui-surface-hover: rgba(14, 46, 20, 0.96);
   --ui-slot-bg: rgba(6, 26, 10, 0.88);
@@ -227,6 +231,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/eldritch/thin/badge.png');
 
   --ui-surface: rgba(20, 14, 28, 0.95);
+  --ui-surface-opaque: rgb(20, 14, 28);
   --ui-surface-raised: rgba(37, 29, 47, 0.96);
   --ui-surface-hover: rgba(52, 42, 64, 0.96);
   --ui-slot-bg: rgba(37, 29, 47, 0.9);
@@ -273,6 +278,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/circuit/thin/badge.png');
 
   --ui-surface: rgba(10, 40, 24, 0.95);
+  --ui-surface-opaque: rgb(10, 40, 24);
   --ui-surface-raised: rgba(23, 71, 59, 0.96);
   --ui-surface-hover: rgba(32, 90, 70, 0.96);
   --ui-slot-bg: rgba(23, 71, 59, 0.9);
@@ -320,6 +326,7 @@
   --ui-badge-image: url('/break_escape/assets/ui/themes/secops/thin/badge.png');
 
   --ui-surface: rgba(12, 18, 36, 0.95);
+  --ui-surface-opaque: rgb(12, 18, 36);
   --ui-surface-raised: rgba(21, 29, 53, 0.96);
   --ui-surface-hover: rgba(30, 42, 74, 0.96);
   --ui-slot-bg: rgba(21, 29, 53, 0.9);
@@ -1013,7 +1020,9 @@
 }
 
 [data-ui-theme] .player-preferences-modal-content .btn:disabled,
-[data-ui-theme] #music-widget-panel .mw-btn:disabled {
+[data-ui-theme] #music-widget-panel .mw-btn:disabled,
+[data-ui-theme] .notes-minigame-nav-button:disabled,
+[data-ui-theme] .notes-minigame-nav-button:disabled:hover {
   filter: grayscale(1) brightness(0.6);
   cursor: not-allowed;
   transform: none;

@@ -1773,6 +1773,9 @@ function _applyTheme(opts) {
     if (h1) h1.textContent = creditsHeader(_headerText, t?.heading);
     const status = _statusValEl();
     if (status) status.textContent = creditsStatus(_statusText, t?.status);
+    // The credits screen keeps its STATUS readable: the blink is for the live visualiser, and
+    // on a screenshot or a slow glance its off phase made the row look empty.
+    if (status && (opts.credits?.length || opts.missionOver)) status.classList.remove('bv-blink');
     _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
 }

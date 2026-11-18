@@ -4,7 +4,7 @@
 
 .flag-station {
     padding: 20px;
-    font-family: 'GNF', monospace;
+    font-family: 'VT323', monospace;
 }
 
 .flag-station-header {
@@ -13,13 +13,18 @@
 }
 
 .flag-station-icon {
-    font-size: 48px;
+    display: inline-block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 24px;
+    color: #00ff00;
+    border: 2px solid #00aa00;
+    padding: 8px 16px;
     margin-bottom: 10px;
 }
 
 .flag-station-description {
     color: #888;
-    font-size: 14px;
+    font-size: 20px;
     line-height: 1.4;
 }
 
@@ -31,7 +36,7 @@
     display: block;
     color: #00ff00;
     margin-bottom: 8px;
-    font-size: 14px;
+    font-size: 20px;
 }
 
 .flag-input-wrapper {
@@ -85,7 +90,8 @@
     margin-top: 15px;
     padding: 15px;
     text-align: center;
-    font-size: 14px;
+    font-size: 20px;
+    overflow-wrap: anywhere;
     display: none;
 }
 
@@ -118,7 +124,7 @@
 
 .flag-history-title {
     color: #888;
-    font-size: 12px;
+    font-size: 20px;
     margin-bottom: 10px;
     text-transform: uppercase;
 }
@@ -135,6 +141,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     padding: 8px 12px;
     margin: 5px 0;
     background: rgba(0, 255, 0, 0.05);
@@ -145,10 +152,13 @@
     font-family: 'VT323', monospace;
     color: #00ff00;
     font-size: 20px;
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .flag-check {
     color: #00aa00;
+    flex-shrink: 0;
 }
 
 .reward-notification {
@@ -162,7 +172,7 @@
 .reward-notification h4 {
     color: #0088ff;
     margin: 0 0 10px 0;
-    font-size: 14px;
+    font-size: 20px;
 }
 
 .reward-item {
@@ -170,18 +180,18 @@
     align-items: center;
     gap: 10px;
     color: #ccc;
-    font-size: 13px;
+    font-size: 20px;
     margin: 5px 0;
 }
 
 .reward-icon {
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .no-flags-yet {
     color: #666;
     font-style: italic;
-    font-size: 13px;
+    font-size: 20px;
 }
 
 
@@ -200,5 +210,18 @@
 }
 .flag-recognised-tag {
     color: #0088ff;
-    font-size: 13px;
+    font-size: 20px;
+}
+
+/* Short landscape screens: compact header and spacing so the input and the result
+   fit without scrolling the panel */
+@media (max-height: 450px) {
+    .flag-station { padding: 8px 12px; }
+    .flag-station-header { margin-bottom: 8px; }
+    .flag-station-icon { font-size: 16px; padding: 4px 8px; margin-bottom: 4px; }
+    .flag-station-description { margin: 4px 0; }
+    .flag-input-container { margin: 8px 0; }
+    .flag-result { margin-top: 8px; padding: 8px; }
+    .flag-history { margin-top: 12px; padding-top: 8px; }
+    .flag-history-list { max-height: 96px; }
 }
