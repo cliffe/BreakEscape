@@ -1178,11 +1178,16 @@ Director Magnus Netherton: Then nobody has it, and nobody fixes anything either.
     ~ database_outcome = "disclosed"
     Director Magnus Netherton: Then I sign it tonight.
     -> core_router
-+ [Wipe both. Theirs and ours.]
++ [Wipe both. Theirs and ours. #ending_check]
     ~ database_outcome = "both_wiped"
     ~ media_story_ran = m07_completed and m07_team_assignment != "fracture"
     ~ ending = "scorched"
     -> ending_scorched
++ [Not yet. I want to finish something.]
+    Dr Adrian Tesseract: I'll be here.
+    ~ tess_quiet = true
+    #exit_conversation
+    -> parked
 + { not hax_asked_database } [HaX. What would you do?]
     ~ hax_asked_database = true
     agent_0x99: No. This one's yours. If I choose, I'll choose for the wrong reasons.

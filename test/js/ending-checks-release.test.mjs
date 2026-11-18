@@ -202,3 +202,76 @@ test('m10: a tagged choice still sets the ending', () => {
     drain(s);
     assert.equal(s.variablesState.ending, 'arrest');
 });
+
+// m10, generic: walk every reachable choice from the core and require that any
+// choice that takes `ending` from "" to a value carries ending_check. A later
+// ending branch that forgets the tag fails here without a new test.
+test('m10: every choice that sets `ending` carries ending_check (graph walk)', () => {
+    const seed = {
+        core_greeted: true, flag1_submitted: true, flag2_submitted: true, flag3_submitted: true,
+        flag4_submitted: true, flag4_heard: true, case_heard: true,
+        exchange_1: 'x', exchange_2: 'x', exchange_3: 'x', tess_menu: true,
+    };
+    const entries = [
+        ['core_router', seed],
+        ['core_router', { ...seed, console_choice: 'stopped', database_outcome: 'secured' }],
+        ['core_router', { ...seed, console_choice: 'stopped' }],
+        ['core_router', { ...seed, console_choice: 'stopped', database_outcome: 'secured', points_landed: 2 }],
+        ['database_menu', seed], ['end_menu_standing', seed], ['end_menu_seated', seed],
+        ['reach', seed], ['cold_warning', seed], ['join_3', seed], ['console_menu', seed],
+    ];
+    const seen = new Set();
+    const setters = new Set();
+    const t = new Story(M10);
+    const KEYS = ['ending', 'console_choice', 'database_outcome', 'join_step', 'tess_menu',
+        'cold_lowered', 'tess_end_said', 'fire_held', 'tess_db_costs_said', 'tess_db_greeted'];
+    const key = () => KEYS.map((k) => String(t.variablesState[k])).join('|') + '#' +
+        t.currentChoices.map((c) => c.text).join('/');
+    let nodes = 0;
+    function visit(stateJson, depth) {
+        if (depth > 12 || ++nodes > 3000) return;
+        t.state.LoadJson(stateJson);
+        const n = t.currentChoices.length;
+        for (let i = 0; i < n; i++) {
+            t.state.LoadJson(stateJson);
+            const c = t.currentChoices[i];
+            const before = t.variablesState.ending;
+            t.ChooseChoiceIndex(i);
+            let guard = 0;
+            while (t.canContinue && guard++ < 400) t.Continue();
+            if (before === '' && t.variablesState.ending !== '') {
+                setters.add(`${t.variablesState.ending}: ${c.text.trim()}`);
+                assert.ok((c.tags || []).includes('ending_check'),
+                    `choice "${c.text.trim()}" sets ending=${t.variablesState.ending} without ending_check`);
+            }
+            if (t.currentChoices.length) {
+                const k = key();
+                if (!seen.has(k)) {
+                    seen.add(k);
+                    visit(t.state.toJson(), depth + 1);
+                }
+            }
+        }
+    }
+    for (const [knot, vars] of entries) {
+        const s = at(M10, knot, vars);
+        let guard = 0;
+        while (s.canContinue && guard++ < 400) s.Continue();
+        visit(s.state.toJson(), 0);
+    }
+    assert.ok(nodes < 3000, `walk converged (${nodes} nodes)`);
+    for (const e of ['scorched', 'surrender', 'arrest', 'lethal', 'executed', 'joined']) {
+        assert.ok([...setters].some((x) => x.startsWith(e + ':')), `walk reached ending ${e}`);
+    }
+});
+
+test('m10: Wipe both is tagged and has an untagged back-out that decides nothing', () => {
+    const s = menu('database_menu');
+    assert.ok(tagged(s, /Wipe both/));
+    assert.ok(!tagged(s, /Not yet/));
+    s.ChooseChoiceIndex(find(s, /Not yet/));
+    const { tags } = drain(s);
+    assert.ok(tags.includes('exit_conversation'));
+    assert.equal(s.variablesState.ending, '');
+    assert.equal(s.variablesState.database_outcome, '');
+});
