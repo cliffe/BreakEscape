@@ -66,8 +66,8 @@ function converseEnding({ pendingChoice = false, closeAsked = false, activeMinig
 // terminal thread types its next message after a delay, so for a moment the panel is empty
 // although the conversation goes on (m02 press terminal, gate m3: converse closed it after one
 // pick). Wait for the panel to change, a few times; an `ended` panel, or one that stayed empty
-// through the wait, is finished.
-const MAX_IDLE_WAITS = 3;
+// through every wait, is finished.
+const MAX_IDLE_WAITS = 5; // each wait is up to 3 s; the press terminal's confirm took about 10 s to type
 function converseIdleAction({ ended = false, idleWaits = 0 } = {}) {
   if (ended) return 'stop';
   return idleWaits < MAX_IDLE_WAITS ? 'wait' : 'stop';

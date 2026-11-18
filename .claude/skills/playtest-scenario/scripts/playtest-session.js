@@ -769,7 +769,16 @@ const vmSteps = createVmSteps({
           const st = window.__test.minigame.getState();
           return st && st.dialogue ? st.dialogue : null;
         });
-        if (!d) break;
+        if (!d) {
+          // No dialogue object while the minigame is still open: a thread mid-typing (see below).
+          const stillOpen = await page.evaluate(() => !!(window.MinigameFramework && window.MinigameFramework.currentMinigame));
+          if (stillOpen && converseIdleAction({ idleWaits }) === 'wait') {
+            idleWaits += 1;
+            await pause(1000);
+            continue;
+          }
+          break;
+        }
         const dialogueKey = [d.speaker, d.text, d.awaitingChoice, d.canContinue, (d.choices || []).length].join('|');
         if (d.text) {
           const line = `${d.speaker || ''}: ${d.text}`.trim();
@@ -831,7 +840,7 @@ const vmSteps = createVmSteps({
             };
             tick();
           }), before).catch(() => false);
-          if (!changed) break;
+          if (!changed && converseIdleAction({ idleWaits }) === 'stop') break;
           continue;
         } else {
           break;
