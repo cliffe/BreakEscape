@@ -23,7 +23,7 @@ console.log = () => {};   // the engine logs emoji-heavy lines (bin/test-js: run
 // public/ has no "type": "module", so load a .mjs copy (as person-chat-reopen.test.mjs does)
 const tmp = mkdtempSync(join(tmpdir(), 'person-chat-pending-reply-'));
 writeFileSync(join(tmp, 'pending-reply.mjs'), readFileSync(join(dirPath, 'person-chat-pending-reply.js'), 'utf8'));
-const { splitReplyTags, partitionSlowTags } = await import(pathToFileURL(join(tmp, 'pending-reply.mjs')).href);
+const { splitReplyTags, partitionSlowTags, tagAction } = await import(pathToFileURL(join(tmp, 'pending-reply.mjs')).href);
 
 function method(name, params) {
     const m = src.match(new RegExp(`\\n    ${name}\\(([^)]*)\\) \\{\\n([\\s\\S]*?)\\n    \\}\\n`));
@@ -51,7 +51,7 @@ function harness() {
     const processGameActionTags = (tags) => { applied.push([[...tags], win.currentConversationNPCId]); return Promise.resolve([]); };
     const shown = [];
     const deps = {
-        processGameActionTags, splitReplyTags, partitionSlowTags, window: win,
+        processGameActionTags, splitReplyTags, partitionSlowTags, tagAction, window: win,
         npcConversationStateManager: { saveNPCState() {} },
         isSessionOverlayShowing: () => false, onSessionOverlayClosed: () => () => {},
         DIALOGUE_AUTO_ADVANCE_DELAY: 1500
@@ -209,7 +209,7 @@ test('slow tags never overlap', async () => {
     // swap in a stub that is genuinely async
     const deps = {
         processGameActionTags: async () => { running++; peak = Math.max(peak, running); await new Promise(r => setTimeout(r, 5)); running--; },
-        splitReplyTags, partitionSlowTags, window: win
+        splitReplyTags, partitionSlowTags, tagAction, window: win
     };
     o._flushPendingReply = method('_flushPendingReply', deps);
     o._pendingReply = { tags: ['give_item:a', 'give_item:b', 'give_item:c'] };

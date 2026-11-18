@@ -18,7 +18,7 @@ import PhoneChatConversation from '../phone-chat/phone-chat-conversation.js'; //
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { attachPretext } from './person-chat-pretext.js';
 import { processGameActionTags, determineSpeaker as determineSpeakerFromTags, choiceAsksEnding, confirmEndingBeforeChoice } from '../helpers/chat-helpers.js';
-import { splitReplyTags, partitionSlowTags } from './person-chat-pending-reply.js';
+import { splitReplyTags, partitionSlowTags, tagAction } from './person-chat-pending-reply.js';
 import npcConversationStateManager from '../../systems/npc-conversation-state.js';
 import TTSManager from '../../systems/tts-manager.js';
 import { deliveryFromTags } from '../../systems/tts-delivery.js';
@@ -662,7 +662,14 @@ export class PersonChatMinigame extends MinigameScene {
                 // A reopen whose saved story had only the divert to DONE left (closed before the
                 // `#exit_conversation` line was read): it is a finished story, so restart it at
                 // the NPC's knot as restoreNPCState does for one that ended. The empty result's
-                // tags are dropped here: they never ran, and the restarted knot runs its own.
+                // state tags never ran (the save sits before them), so run them once first
+                // (same denylist as the close flush). A close that did flush them saved past
+                // them, so this never sees them twice.
+                if (resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk: this.npc?.restartOnRetalk }) &&
+                    result.tags && result.tags.length > 0) {
+                    this._pendingReply = { tags: result.tags };
+                    this._flushPendingReply();
+                }
                 if (resumedStoryHadOnlyTheEnd({ isReopen, result, restartOnRetalk: this.npc?.restartOnRetalk }) &&
                     this.conversation.restartAfterEnd()) {
                     console.log(`🔁 Resumed ${this.npcId} had only the end left - restarting at knot: ${this.npc?.currentKnot}`);
@@ -1211,14 +1218,29 @@ export class PersonChatMinigame extends MinigameScene {
         if (!story || !story.canContinue || story.currentChoices?.length > 0) return;
         let saved;
         try {
+            // Look ahead with the global observer detached and the story put back after,
+            // so a `~ g = g + 1` in a step the player never reached writes nothing to
+            // gameState and fires no event. Only a tags-only step is then run for real.
             saved = story.state.ToJson();
-            const step = this.conversation.continue();
-            const tagsOnly = step && !(step.text && step.text.trim()) && !(step.choices && step.choices.length > 0);
-            if (!tagsOnly) {
+            const vs = story.variablesState;
+            const hadOwn = Object.prototype.hasOwnProperty.call(vs, 'variableChangedEvent');
+            const observer = hadOwn ? vs.variableChangedEvent : undefined;
+            let probe;
+            vs.variableChangedEvent = null;
+            try {
+                probe = this.conversation.engine.continue();
+            } finally {
                 story.state.LoadJson(saved);
-                return;
+                if (hadOwn) vs.variableChangedEvent = observer;
+                else delete vs.variableChangedEvent;
             }
-            if (step.tags && step.tags.length > 0) {
+            const tagsOnly = probe && !(probe.text && probe.text.trim()) && !(probe.choices && probe.choices.length > 0);
+            if (!tagsOnly) return;
+            // #ending_check pops a confirm dialog and "Keep going" skips the rest of its
+            // tags: it cannot be answered during teardown, so that step stays unread.
+            if ((probe.tags || []).some(t => tagAction(t) === 'ending_check')) return;
+            const step = this.conversation.continue();
+            if (step && step.tags && step.tags.length > 0) {
                 this._pendingReply = { tags: step.tags };
                 this._flushPendingReply();
             }
@@ -1255,6 +1277,10 @@ export class PersonChatMinigame extends MinigameScene {
         }
         if (!reply || reply._stateTagsApplied) return;
         const { state } = splitReplyTags(reply.tags);
+        // A debrief gate (#ending_check) asks the player to confirm and, on "Keep going",
+        // drops the tags after it. It cannot be asked while closing, so none of them run
+        // here (and the display path keeps them, should the chat go on).
+        if (state.some(t => tagAction(t) === 'ending_check')) return;
         reply._stateTagsApplied = true;
         if (state.length === 0) return;
         console.log('🏷️ Flushing pending reply state tags:', state);

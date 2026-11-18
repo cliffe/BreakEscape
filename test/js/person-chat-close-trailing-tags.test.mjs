@@ -25,7 +25,7 @@ globalThis.inkjs = createRequire(import.meta.url)(join(root, 'public/break_escap
 const imp = (rel) => import(pathToFileURL(join(js, rel)).href);
 const { default: PhoneChatConversation } = await imp('minigames/phone-chat/phone-chat-conversation.js');
 const { default: InkEngine } = await imp('systems/ink/ink-engine.js');
-const { splitReplyTags, partitionSlowTags } = await imp('minigames/person-chat/person-chat-pending-reply.js');
+const { splitReplyTags, partitionSlowTags, tagAction } = await imp('minigames/person-chat/person-chat-pending-reply.js');
 
 const src = readFileSync(join(js, 'minigames/person-chat/person-chat-minigame.js'), 'utf8');
 function method(name, params) {
@@ -53,7 +53,7 @@ async function chatAtTheReply() {
     conv.continue = () => { continues++; return realContinue(); };
     const win = { currentConversationNPCId: null };
     const deps = {
-        splitReplyTags, partitionSlowTags, window: win,
+        splitReplyTags, partitionSlowTags, tagAction, window: win,
         processGameActionTags: (tags) => { applied.push([...tags]); return Promise.resolve([]); },
         npcConversationStateManager: { saveNPCState: () => saves.push('save') },
         isSessionOverlayShowing: () => false, onSessionOverlayClosed: () => () => {},
@@ -104,8 +104,8 @@ test('the display path stops after a TTS await when the chat closed meanwhile', 
 test('a step with text belongs to a line not reached: the story is put back', async () => {
     const { o, conv, applied } = await chatAtTheReply();
     // Fatima-style: pretend the step after the shown reply has text
-    const real = conv.continue;
-    conv.continue = () => { const r = real(); return { ...r, text: 'A later line.', tags: ['set_global:x:true'] }; };
+    const real = conv.engine.continue.bind(conv.engine);
+    conv.engine.continue = () => { const r = real(); return { ...r, text: 'A later line.', tags: ['set_global:x:true'] }; };
     const before = conv.engine.story.state.ToJson();
     o._flushTrailingTags();
     assert.equal(applied.length, 0, 'no tags run');

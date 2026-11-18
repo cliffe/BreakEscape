@@ -301,12 +301,29 @@ export default class PhoneChatConversation {
         let saved;
         try {
             saved = story.state.ToJson();
-            const step = this.engine.continue();
+            // Detach the global observer for the look-ahead: a `~ g = g + 1` in the
+            // probed step must not write gameState or fire events for unread content.
+            const vs = story.variablesState;
+            const hadOwn = Object.prototype.hasOwnProperty.call(vs, 'variableChangedEvent');
+            const observer = hadOwn ? vs.variableChangedEvent : undefined;
+            vs.variableChangedEvent = null;
+            let step;
+            try {
+                step = this.engine.continue();
+            } finally {
+                if (hadOwn) vs.variableChangedEvent = observer;
+                else delete vs.variableChangedEvent;
+            }
             const tags = step.tags || [];
             const spent = !(step.text && step.text.trim()) && !(step.choices && step.choices.length > 0) &&
                 !step.canContinue && !tags.some(t => String(t).trim().toLowerCase() === 'end_conversation');
-            if (spent) return true;
             story.state.LoadJson(saved);
+            if (spent) {
+                // Commit the spent step for real, observer attached, so any global it
+                // assigns is applied once.
+                this.engine.continue();
+                return true;
+            }
             return false;
         } catch (error) {
             console.error('❌ Error probing the restored story:', error);
