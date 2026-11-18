@@ -43,7 +43,7 @@ const screenText = (page) => page.evaluate(() => (document.body.innerText || '')
 const gv = (page) => page.evaluate(() => (window.gameState && window.gameState.globalVariables) || {}).catch(() => ({}));
 const ttsBusy = (page) => page.evaluate(() => { const mg = window.MinigameFramework && window.MinigameFramework.currentMinigame; return !!(mg && mg.ttsManager && mg.ttsManager.playing); }).catch(() => false);
 
-// The post-upstream-merge objectives panel (top-right) can overlap the inventory/phone; collapse it so no
+// The post-upstream-merge objectives panel (top-left) can overlap the inventory/phone; collapse it so no
 // stray panel sits over the shot. (This take uses world objects, not the tray, but the brief asks for it.)
 const collapseObjectives = async (page) => {
   await page.evaluate(() => {
