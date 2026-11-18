@@ -136,15 +136,15 @@ function backButton(onClick) {
     return back;
 }
 
-/** A line with a pixel icon in front of (escaped) text. */
-// One line on when each key attack works, shown where the first crack is a choice
+/** One line on when each key attack works, shown where the first crack is a choice. */
 function crackChoiceNote() {
     const note = document.createElement('div');
     note.className = 'flipper-info flipper-crack-choice';
-    note.textContent = 'Dictionary tries factory-default keys: instant, but only works if the owner never changed them. Darkside works on any card, but takes longer.';
+    note.textContent = 'Dictionary tries factory-default keys: instant, but only works if the owner never changed them. Darkside works on any Classic card, but takes longer.';
     return note;
 }
 
+/** A line with a pixel icon in front of (escaped) text. */
 function iconLine(className, icon, text, scale = 2) {
     const el = document.createElement('div');
     el.className = className;

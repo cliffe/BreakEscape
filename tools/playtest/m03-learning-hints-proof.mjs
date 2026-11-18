@@ -19,14 +19,16 @@ for (let i = 0; i < 40; i++) {
   if (await page.evaluate(() => window.gameState?.globalVariables && !window.MinigameFramework?.currentMinigame)) break;
   await page.keyboard.press('Space'); await t(800);
 }
+await page.evaluate(() => { const loop = window.game.sys.game.loop, raf = loop.raf; if (loop.actualFps < 10 && !raf.isSetTimeOut) { const cb = raf.callback; raf.stop(); raf.start(cb, true, 4); } loop.smoothStep = false; loop.minFps = 1; window.game.physics.world.setFPS(20); });
 await t(2000);
+for (let i = 0; i < 4; i++) { await page.evaluate(() => { if (window.MinigameFramework?.currentMinigame) window.MinigameFramework.endMinigame(true); }); await t(600); }
 const out = { gid, errs };
 const shot = n => page.screenshot({ path: `${process.env.SHOT_DIR}/${n}.png` });
 // 1. whiteboard
 await page.evaluate(() => { [...document.querySelectorAll('button')].find(b => /^continue$/i.test(b.innerText.trim()))?.click(); });
 await t(1500);
 out.roomObjs = await page.evaluate(() => Object.entries(window.rooms?.server_room?.objects || {}).filter(([k, o]) => /whiteboard/i.test(k + (o.scenarioData?.name || ''))).map(([k, o]) => [k, o.scenarioData?.name]));
-out.whiteboard = await page.evaluate(() => window.__test.interact('server_room_notes_2').then(r => JSON.stringify(r).slice(0, 200)));
+out.whiteboard = await page.evaluate(() => window.__test.interact(Object.entries(window.rooms?.server_room?.objects || {}).find(([k, o]) => /whiteboard/i.test(k + (o.scenarioData?.name || '')))?.[0]).then(r => JSON.stringify(r).slice(0, 200)));
 await t(2500); await shot('whiteboard-hint');
 await page.evaluate(() => { try { window.MinigameFramework?.endMinigame?.(true); } catch (e) {} });
 await t(800);

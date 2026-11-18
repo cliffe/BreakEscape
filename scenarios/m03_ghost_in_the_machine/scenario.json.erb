@@ -240,7 +240,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
     ]
   },
 
-  <%# Blind m9: without this the ticker shows the music track ("Ghost in the Wire") under a header reading GHOST IN THE MACHINE. True in every ending. %>
+  <%# Blind m9: a mission-specific ticker in place of the generic banner. True in every ending. The "GHOST IN THE WIRE" line a tester saw on the victory screen is the music track label (credits-theme.js trackLabel), which this does not change; OPERTN already fell back to the mission name. %>
   "creditsOverlay": {
     "operation": "GHOST IN THE MACHINE",
     "ticker": [
@@ -266,7 +266,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "status": "active"
         },
         {
-          "_comment": "Pass 5 blind (B-2): the reader refusal needs an on-screen cue, not only a phone text. HaX's door_unlock_attempt mapping on the conference reader unlocks this (toast and panel); closing_debrief completes it when clone_reception_badge completes (clone or KO). Optional, so a player who never tries the reader first never sees it.",
+          "_comment": "Pass 5 blind (B-2): the reader refusal needs an on-screen cue, not only a phone text. HaX's door_unlock_attempt mapping on the conference reader unlocks this (toast and panel); closing_debrief completes it when clone_reception_badge completes (clone or KO). It opens on the first reader refusal (door_unlock_attempt) or when the briefing explains the cloner (cloner_explained). Optional.",
           "taskId": "copy_staff_badge",
           "title": "Copy the receptionist's staff badge with your cloner",
           "description": "The reader wants a staff badge. The receptionist wears one on her lanyard, and the cloner reads a badge from arm's length. Stand close, talk to her and lean in by the lanyard.",
@@ -394,7 +394,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "title": "Decode Sterling's client roster",
           "description": "The client roster export is on Sterling's computer, as raw hex. Take it, then run it through the CyberChef workstation until it reads as names.",
           "type": "custom",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "_comment": "P1-29: Danny's optional task sits with the executive wing he works in (round 1 put it under the server room aim). Settle Accounts is story-gated, so this can't reveal it early.",
@@ -438,7 +439,8 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "title": "Decode the night team's whiteboard",
           "description": "The note on the server room whiteboard is scrambled. Read it, then run it through the CyberChef workstation until it makes sense. It sits with the wall safe it is about.",
           "type": "custom",
-          "status": "active"
+          "status": "active",
+          "optional": true
         },
         {
           "taskId": "lore_fragment_3",
@@ -1131,7 +1133,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "onceOnly": true
             },
             {
-              "_comment": "Keyed on the roster task (completed by the roster_seen mapping) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
+              "_comment": "Keyed on the roster task (completed by the roster_decoded mapping, when CyberChef shows the decoded roster) rather than roster_seen itself, so it doesn't share a pattern with that mapping.",
               "eventPattern": "objective_task_completed:decode_client_roster",
               "condition": "globalVars.pc_call_done !== true",
               "setGlobal": { "pc_call_done": true },
@@ -1770,7 +1772,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           "takeable": false,
           "readable": true,
           "text": "<%= whiteboard_message_encoded %>",
-          "observations": "Each letter has been swapped for another. A letter shift has only twenty-five keys: try ROT13, or ROT13 Brute Force to see them all.",
+          "observations": "Every letter has moved the same number of places along the alphabet. A shift like that has only twenty-five possible keys, so ROT13 Brute Force on the laptop can show them all.",
           "onRead": { "setVariable": { "whiteboard_seen": true } },
           "puzzle_graph_role": "clue",
           "puzzle_graph_unlocks": ["wall_safe_server"],
@@ -1804,7 +1806,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
           ],
           "puzzle_graph_role": "tool",
           "puzzle_graph_note": "Decoding tool — take it, then paste the whiteboard, Sterling's draft, the client roster and the desk drive to reveal the intel",
-          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find — ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number. With no number, a letter shift has just twenty-five keys: ROT13 Brute Force tries them all, and you pick the one that reads as English."
+          "observations": "A laptop left open on CyberChef. Take it, then paste anything encoded you find: ROT13, Base64, hex, and layered combinations all decode here. ROT13 is only a letter shift of 13; the same operation takes any amount, so a different shift needs only its number. With no number, a letter shift has just twenty-five keys: ROT13 Brute Force tries them all, and you pick the one that reads as English."
         },
         {
           "type": "flag-station",
@@ -2044,7 +2046,7 @@ operational_log_content = "ZERO DAY TRANSACTION LOG (recovered from the training
               "takeable": true,
               "readable": true,
               "text": "<%= base64_encode("To: night team. From: Sable.\nCatalogue safe re-coded to #{catalogue_safe_code} -- memorise it, do not write it on the board again.\nObsidian Q4 pricing goes out Friday: ProFTPD-class $25k, Struts $18k, healthcare +40% as ever.\nThe web price board is off ROT13 -- any student could read it. Every letter now moves on #{price_board_shift} places. Clients get the number from me, nobody else.\nArchitect wants the Phase 2 list same day. -V") %>",
-              "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it. Whatever is inside, keep the shift-cipher idea for later: a letter shift has only twenty-five possible keys.",
+              "observations": "An unsent email to the night team, shown as raw message source. Her mail client saved it before it was ever sent: one unbroken block of upper and lower case letters, digits, + and /. Not a word of English in it.",
               "onRead": { "setVariable": { "draft_seen": true } },
               "puzzle_graph_role": "clue",
               "puzzle_graph_unlocks": ["wall_safe_server"],

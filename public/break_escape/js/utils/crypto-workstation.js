@@ -1,4 +1,6 @@
 // Crypto workstation functionality
+import { writeGlobal } from '../systems/global-writer.js';
+
 export function createCryptoWorkstation(objectData) {
     // Create the workstation sprite
     const workstationSprite = this.add.sprite(0, 0, 'workstation');
@@ -43,13 +45,8 @@ export function readCyberChefOutput(frame) {
 }
 
 function applyDecodeGlobal(name) {
-    const w = typeof window !== 'undefined' ? window : null;
-    if (!w || !w.gameState || !w.gameState.globalVariables) return;
-    const oldValue = w.gameState.globalVariables[name];
-    if (oldValue === true) return;
-    w.gameState.globalVariables[name] = true;
-    w.npcConversationStateManager?.broadcastGlobalVariableChange?.(name, true, null);
-    w.eventDispatcher?.emit?.(`global_variable_changed:${name}`, { name, value: true, oldValue });
+    // The shared writer updates gameState, cached and open-chat stories, and emits the event.
+    writeGlobal(name, true);
 }
 
 function decodeWatchesFromInventory() {
