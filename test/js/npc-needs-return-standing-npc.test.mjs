@@ -380,16 +380,49 @@ test('R4: the first re-issue after return_resumed plans round Vector, not the pl
 
     const { pm, me, vector, home } = m08();
     me.body = box(508, 164);
-    const b = walker(pm, me, [vector]);
-    b._moveReroute = false;
-    b.config = { patrol: {} };
-    b.sprite.body.setVelocity = () => {};
-    b.npcBodyPos = () => me.body.center;
-    b.playAnimation = () => {};
-    window.seating = null;
-    quietSync(() => b.goToAndStay(home.x, home.y, 80, { owner: 'needs', yieldToPlayer: false, ...(mv.reroute ? { reroute: true } : {}) }));
-    const path = await plan(b, pm, me.body.center, home);
-    assert.ok(path && path.length > 0, 'a path home');
-    assert.equal(b._planTier, 'ring');
-    assert.equal(inLane(me.body.center, path, vector), null, `the re-issued path keeps ${LANE} px clear of Vector: ${JSON.stringify(path.slice(0, 4))}`);
+    // The test stubs these globals; put them back so later tests in the file see what they set up.
+    const saved = { seating: window.seating, rooms: window.rooms, player: window.player, chairs: window.chairs };
+    try {
+        const b = walker(pm, me, [vector]);
+        window.seating = null;
+        b._moveReroute = false;
+        b.config = { patrol: {} };
+        b.sprite.body.setVelocity = () => {};
+        b.npcBodyPos = () => me.body.center;
+        b.playAnimation = () => {};
+        quietSync(() => b.goToAndStay(home.x, home.y, 80, { owner: 'needs', yieldToPlayer: false, ...(mv.reroute ? { reroute: true } : {}) }));
+        const path = await plan(b, pm, me.body.center, home);
+        assert.ok(path && path.length > 0, 'a path home');
+        assert.equal(b._planTier, 'ring');
+        assert.equal(inLane(me.body.center, path, vector), null, `the re-issued path keeps ${LANE} px clear of Vector: ${JSON.stringify(path.slice(0, 4))}`);
+    } finally {
+        for (const [k2, v] of Object.entries(saved)) { if (v === undefined) delete window[k2]; else window[k2] = v; }
+    }
+});
+
+// R4 m2: findWorldPath called with avoidDynamic and no laneHalf keeps the old, stricter behaviour:
+// the whole clearance ring round the standing NPC stays, the goal-side release does not happen. A
+// refactor that turns the null default into a number would let the path cut closer and fail this.
+test('R4 m2: no laneHalf passed: the whole ring round the standing NPC stays (no goal-side release)', async () => {
+    const run = laneHalf => {
+        const pm = floor([[2, 10, 75, 40]]);
+        const me = { body: box(80, 180) };
+        const g = { body: box(180, 180) };   // the R3 m1 (a) geometry: 20 px west of the home (200,180)
+        walker(pm, me, [g]);
+        return new Promise(resolve => {
+            const t = setTimeout(() => resolve(null), 1500);
+            quietSync(() => pm.findWorldPath(80, 180, 200, 180, p => { clearTimeout(t); resolve(p); }, false,
+                { avoidDynamic: { exceptSprite: me, includeHeld: true, ...(laneHalf === undefined ? {} : { laneHalf }) } }));
+        });
+    };
+    // Closest a waypoint on the approach (west of the goal cell's own column) comes to his centre.
+    const closest = path => Math.min(...path.filter(p => p.x < 200).map(p => Math.hypot(p.x - 180, p.y - 180)));
+    const without = await run(undefined);
+    const withLane = await run(LANE);
+    assert.ok(without && without.length > 0, 'a path home without laneHalf');
+    assert.ok(withLane && withLane.length > 0, 'a path home with laneHalf');
+    // Control: the release is real, so passing the lane width lets the path pass closer to him.
+    assert.ok(closest(withLane) < closest(without), `released ${closest(withLane).toFixed(1)} px vs whole ring ${closest(without).toFixed(1)} px`);
+    // The whole ring stays: one cell of clearance either side of his 20x10 body plus the walker's reach.
+    assert.ok(closest(without) >= 24, `kept ${closest(without).toFixed(1)} px clear of him`);
 });

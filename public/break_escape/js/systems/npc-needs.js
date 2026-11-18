@@ -4194,6 +4194,9 @@ export class NPCNeedsSystem {
      * stayPut: an own-desk use just ended; the NPC is at its post (maybe seated off the cell).
      * yieldToPlayer: the walk stops to face a player within reach (the behaviour layer's
      * face_player); _watchReturn turns it off after RETURN_YIELD_MS without progress.
+     * reroute: plan round held bodies first (ring, tight, then plain). Every stall re-issue (the far
+     * re-issue and each return_resumed retry) now passes it, so the option matters only for the first
+     * walk home, which stays plain (docs/IDEAS_BACKLOG.md, "Plan the first needs walk home ring-first").
      */
     _goHome(s, { stayPut = false, yieldToPlayer = true, keepFarFlag = false, reroute = false, nudge = false } = {}) {
         const id = s.npcId;

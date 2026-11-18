@@ -2041,7 +2041,7 @@ export class NPCBehavior {
         const held = this._moveOwner === 'needs';
         const search = (tier) => {
             const includeHeld = tier !== 'moving';
-            const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld, laneHalf: AVOID_LANE_HALF_PX } };
+            const opts = tier === 'tight' ? this._tightOpts(rooms) : { avoidDynamic: { exceptSprite: this.sprite, includeHeld, ...(includeHeld ? { laneHalf: AVOID_LANE_HALF_PX } : {}) } };   // the 'moving' tier skips the held-body rules, so the planner never reads laneHalf there (return stall R4, n1)
             if (tier !== 'tight' && rooms?.length) opts.avoidRooms = rooms;
             pfm.findWorldPath(from.x, from.y, target.x, target.y, (path) => {
                 if (this.patrolTarget !== target) { a.pending = false; this._avoid = null; return; }  // re-targeted meanwhile
