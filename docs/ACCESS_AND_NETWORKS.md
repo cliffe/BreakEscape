@@ -39,7 +39,7 @@ In words. An NPC with `creds` is an identity (A1). Doors and objects carry an ac
 | A4 | [Sign-in PCs and the account picker](#a4-sign-in-pcs-and-the-account-picker) | An object with `lockType: "login"` opens only through a sign-in; the sign-in screen shows account tiles per `loginPicker`, and a written-down password appears as a sticky note. | `lockType: "login"`, `access`, `loginPicker`, `postitNote`, `showPostit`, `owner`, `policy`, `host` (object); `habits.writesDown` (npc); `GET /login_accounts`. |
 | A5 | [Account profiles](#a5-account-profiles) | `accountProfiles` put desktop files on every sign-in PC an account may use; the server serves them through `GET /container` only against a held session. | top level `accountProfiles.<id>.for` and `.contents`; item `transfer` (`copy`/`move`/`both`); `GET /container/:id`, `POST inventory` with a source PC. |
 | A6 | [Sessions: sign-in, claiming the owner's screen, lock, logout](#a6-sessions-sign-in-claiming-the-owners-screen-lock-logout) | The server holds one session per sign-in PC; the player can sign in with a password, claim the owner's open screen, lock a held session, or sign out. | `POST /login` (`username`+`password`, or `claim: "owner"` / `claim: "guest"`, plus keyring `credential`/`foothold`/`from`/`relay`), `POST /logout`, `POST /lock_session`; scenario output `sessions`, `signedInPcs`, `sessionLockingSupported`. |
-| A7 | [PC policies](#a7-pc-policies) | Named policies set how a sign-in PC locks and when it locks accounts out; a PC takes its own `policy` or the scenario `defaultPolicy`. | top level `policies.<name>` (`autoLockMin`, `maxAttempts`; also `usb`, `social`, `remote`, `remoteScreen`, `accepts`: other agents), `defaultPolicy`; object `policy`. |
+| A7 | [PC policies](#a7-pc-policies) | Named policies set how a sign-in PC locks and when it locks accounts out; a PC takes its own `policy` or the scenario `defaultPolicy`. | top level `policies.<name>` (`autoLockMin`, `maxAttempts`; also `usb` (A10b), `social` (A11), `remote` and `remoteScreen` (N2), `accepts` (A15)), `defaultPolicy`; object `policy`. |
 | A8 | [Workstation lock behaviour](#a8-workstation-lock-behaviour) | When a PC's owner leaves, the screen locks or stays open by a fixed order of rules; an open screen can be claimed (A6), a locked one shows a padlock. | object: `workstation`, `owner`, `locksScreenOnLeave`, `lockChance`, `autoLockSeconds`; policy `autoLockMin`; npc `habits.screen` (`lockChance`, `lockIfAwayOverSeconds`), `habits.locksScreen`, `awareness`; sprite `pc_desktop`. |
 | A9 | [Awareness presets and habits](#a9-awareness-presets-and-habits) | A room NPC gets an `awareness` level (low, medium, high) that fills habit defaults, and named `habits` that override them: lock the screen, write the password down, hold doors, password quality. | `awareness` (npc), `habits.locksScreen`, `habits.writesDown`, `habits.password`, `habits.passwordPattern`, `habits.holdsDoors` (npc), `habits.screen`, `habits.print` (npc, office-life blocks), `roles.<role>.awareness` (top level). |
 | A10 | [Work resources, frustration and workarounds](#a10-work-resources-frustration-and-workarounds) | Staff need resources for their work; when a resource is down or locked they get frustrated, show it, and work round the control in ways the player can exploit. | `resources.<id>.{kind,name,access,offWhen,object}` (top level), `roles.<role>.{workNeeds,frustration,workarounds}` (top level), `workNeeds`, `frustration`, `workarounds` (npc), `needs.work`, `affordance.satisfies:"work"` (object), `chatter` pools (top level / npc). |
@@ -174,7 +174,7 @@ Tile contents: `username`, `displayName`, `portrait`, `avatar` only (`game.rb:38
 - Server: the bootstrap/room payload carries `loginAccounts` and `hasPostit: true`, never the note text (`attach_login_accounts!`, `game.rb:4385`).
 - Server: wrong password and unknown username answer the same ("Incorrect username or password"), counted per PC and normalised username (`game.rb:3429`, `LOGIN_INCORRECT`).
 - Client only: the tile UI, `loginPicker: "known"` display filtering is done server-side from `encounteredNPCs`.
-**Events.** `pc_signed_in` `{ pcId, npcId, username, via, previousNpcId, firstAtPc, [token], remote fields }` (`public/break_escape/js/systems/pc-sessions.js:788`); `pc_signed_out` `{ pcId, npcId, reason, ... }` with reasons `sign_out`, `displaced`, `switch`, `claim_ended`, `no_session`, `token_expired`, `link_dropped`, `relay_ended` (`pc-sessions.js:453, 732, 751, 782, 814, 871, 907, 942`).
+**Events.** `pc_signed_in` `{ pcId, npcId, username, via, previousNpcId, firstAtPc, [token], remote fields }` (`public/break_escape/js/systems/pc-sessions.js:788`); `pc_signed_out` `{ pcId, npcId, reason, ... }` with reasons `sign_out`, `displaced`, `switch`, `claim_ended`, `owner_returned`, `auto_locked` (a claim that ended), `no_session`, `token_expired`, `link_dropped`, `relay_ended` (`pc-sessions.js:453, 732, 751, 782, 814, 871, 907, 942`; the claim reasons are `SIGNING_OUT_REASONS`, `workstation-state.js:106`). Also from `pc-sessions.js`: `pc_signin_failed` `{ pcId, reason, attemptsLeft, [credential] }` (533, 602), `pc_signing_out` (455, 729, 807), `pc_in_use` (769), `pc_session_locked` (857), `pc_signin_shown` (1024), `pc_desktop_opened` (1032). Each is also emitted as `<name>:<pcId>` (340).
 **Validator.** PC id must not contain `|` (`vs:8031`); `triggerOnInteract` on a sign-in PC is an error (8034); `unlockable` and `unlock_object` naming one: errors (8040-8048); owner must be a room NPC id (8057); account whose `needsHome` is a PC whose access list excludes it: warning (8095); `desktopUser` on a sign-in PC: warning (`vs:739`).
 **Shown in.** `lockType: login`: test_access_signin (best demo), test_access_sessions, demo_access_tour, lab_physical_pentest, test_access_work, test_access_networks, test_access_devices, test_access_habits, test_access_social, test_access_keyring, test_capture_log. `loginPicker`: test_access_signin, test_access_keyring, test_access_devices, test_access_networks, lab_physical_pentest. `postitNote` on ordinary password PCs is also used in m01 to m09 and others (a different feature: a note on a password lock screen).
 **Known limits.** A headless host shows no tiles. No backlog entry searched for `loginPicker`.
@@ -236,11 +236,11 @@ Tile contents: `username`, `displayName`, `portrait`, `avatar` only (`game.rb:38
 **Shown in.** test_access_sessions (best demo), test_access_signin, demo_access_tour, lab_physical_pentest, test_access_work, test_access_habits.
 **Known limits.** A claim at a PC with a guest or owner who never leaves is refused by design. Backlog: `docs/IDEAS_BACKLOG.md:271` records the autoLockMin 0 guest fix as done.
 **Plan vs code.** README says nothing about `claim`, `lock_session` or `sessions`. Server returns 422 for refused claims, not a distinct "locked" text (generic by design).
-**Unverified.** `pc-sessions.js` internals beyond the emit lines.
+**Unverified.** `pc-sessions.js` internals beyond the emit lines (listed under A4).
 
 ### A7 PC policies
 **One line.** Named policies set how a sign-in PC locks and when it locks accounts out; a PC takes its own `policy` or the scenario `defaultPolicy`.
-**Key fields.** top level `policies.<name>` (`autoLockMin`, `maxAttempts`; also `usb`, `social`, `remote`, `remoteScreen`, `accepts`: other agents), `defaultPolicy`; object `policy`.
+**Key fields.** top level `policies.<name>` (`autoLockMin`, `maxAttempts`; also `usb` (A10b), `social` (A11), `remote` and `remoteScreen` (N2), `accepts` (A15)), `defaultPolicy`; object `policy`.
 **What the player sees.** After `maxAttempts` wrong passwords at a PC for one username, that account is locked out on that PC for the rest of the game ("This account is locked on this PC"). A PC under `autoLockMin: 0` always locks when its owner leaves, so there is no open screen to claim.
 **Fields.**
 
@@ -264,7 +264,7 @@ Cross-reference: `usb`, `social`, `remote`, `remoteScreen`, `accepts` are docume
 **Shown in.** `autoLockMin`: test_access_signin, test_access_sessions, demo_access_tour, test_access_habits, test_access_work, test_access_social. `maxAttempts` in policies: test_access_signin (best demo), test_access_sessions, demo_access_tour, test_access_networks, test_access_habits, test_access_work, test_access_social (other `maxAttempts` hits in m01, m06, ceo_exfil, cybok_heist, lab_* are password locks, a different field).
 **Known limits.** Lockouts last the whole mission. Per-minute `autoLockMin` above 0 depends on the client clock (the needs clock). Policies are static; there is no runtime policy change.
 **Plan vs code.** README:1210 lists `autoLockMin` as a field of the workstation object. It is a policy field; the object field is `autoLockSeconds` (schema 5518). README:1238 is right that it comes via `policy`/`defaultPolicy`.
-**Unverified.** `autoLockMin` > 0 timing path in `workstation-state.js` read only by grep.
+**Unverified.** None: the `autoLockMin` > 0 `lockAt` path is `workstation-state.js:415` (see A8).
 
 ### A8 Workstation lock behaviour
 **One line.** When a PC's owner leaves, the screen locks or stays open by a fixed order of rules; an open screen can be claimed (A6), a locked one shows a padlock.
@@ -283,18 +283,18 @@ Cross-reference: `usb`, `social`, `remote`, `remoteScreen`, `accepts` are docume
 | `habits.locksScreen` | npc | `never`/`sometimes`/`always` fills `habits.screen` (chance 0, 0.5, 1) | from `awareness` |
 | `awareness` | npc | `low`/`medium`/`high` preset for habits (schema 4414) | none |
 
-**Who decides, in order** (`decideLocked`, `public/break_escape/js/systems/workstation-state.js:131-160`): (1) policy `autoLockMin: 0` locks; (2) the object's numeric `lockChance`; (3) the object's `locksScreenOnLeave`; (4) the owner's `habits.screen` (threshold first: a trip expected to last at most `lockIfAwayOverSeconds` stays open, else `lockChance`; a threshold alone locks); (5) nothing set: locks. The server mirrors steps 2 to 5 in `AccessIdentities.screen_always_locks?` (`ai:190`) and checks the policy separately (`game.rb:3541`).
+**Who decides, in order** (`decideLocked`, `public/break_escape/js/systems/workstation-state.js:143-165`): (1) policy `autoLockMin: 0` locks; (2) the object's numeric `lockChance`; (3) the object's `locksScreenOnLeave`; (4) the owner's `habits.screen` (threshold first: a trip expected to last at most `lockIfAwayOverSeconds` stays open, else `lockChance`; a threshold alone locks); (5) nothing set: locks. After that, an owner the server has locked out at that PC always locks it, whatever the roll said (`_rollScreen`, `workstation-state.js:408`). An open screen then locks by itself at the policy's `lockAt` (leave time plus `autoLockMin` game minutes, `:415`) or after the object's `autoLockSeconds` idle (`:433-440`). The server mirrors steps 2 to 5 in `AccessIdentities.screen_always_locks?` (`ai:190`) and checks the policy separately (`game.rb:3541`).
 **Example.** `lena_pc` (workstation, `lockChance`) in the A1 to A8 worked example (section 5). That example draws the lockChance 0.5 warning.
 **Server enforces / client only.**
 - Server: whether a claim is allowed (see A6) from the data, never from the client's globals, which are only logged (`game.rb:3513-3540`).
 - Server: guests: a "careful guest" and `autoLockMin: 0` mean no guest session (`game.rb:3600-3610`).
 - Client only: the owner's departure, the roll and the screen state; the padlock swap needs a `<key>_locked` texture (only `pc_desktop` has one today, README:1213).
-**Events.** `workstation_screen_changed:<id>` `{ objectId, ownerId, locked, how }` (`workstation-state.js:205`); `workstation_auto_locked:<id>` `{ objectId, ownerId, guest? }` (`:312, :391`); `workstation_owner_left:<id>` `{ objectId, ownerId, screenLocked, reason }` (`:329`); README adds `workstation_owner_returned:<id>` `{ objectId, ownerId, wasLocked }` (README:1222; emit not re-grepped) and `workstation_accessed`.
+**Events.** `workstation_screen_changed:<id>` `{ objectId, ownerId, locked, how }` (`workstation-state.js:205`); `workstation_auto_locked:<id>` `{ objectId, ownerId }` (`:479`; with `guest: true` for a guest session, `:312, :391`); `workstation_owner_left:<id>` `{ objectId, ownerId, screenLocked, reason }` (`:552`; `reason: 'guest'` at `:329`); `workstation_owner_returned:<id>` `{ objectId, ownerId, wasLocked }` (`:585`); `workstation_accessed:<id>` `{ objectId, ownerId, [guest] }` (`:623, :638`); `workstation_locked_attempt:<id>` `{ objectId, ownerId }` (`:633`).
 **Validator.** Owner not a room NPC: error (`vs:8057`); `lockChance` strictly between 0 and 1 on a sign-in PC: warning (8063); owner not tracked by the needs system: warning (8068); owner nothing sends away: warning (8070-ish, `OwnerClaim.never_leaves?`); owner placed in a different room: warning (8106); `ValidateNpcNeeds`/`ValidateNpcHabits` handle habit rules (`vs:8806-8830`).
 **Shown in.** `locksScreenOnLeave`: demo_access_tour, test_access_habits, test_npc_needs, test_capture_log. `lockChance`: demo_access_tour (best), test_access_habits, test_access_sessions, test_access_work, test_access_social, lab_physical_pentest, m03, m06, office_life_showcase, test_needs_sims, test_capture_log. `workstation` appears in many (also as an item type name in unrelated scenarios, so the count is inflated).
 **Known limits.** One art base has a locked look. A policy-only lock (`autoLockMin: 0`) is read by the browser at step 1 but by the server's claim check separately.
 **Plan vs code.** README:1238-1246 matches code. README:1246 "server readers read steps 2 to 5" matches `screen_always_locks?`. README:1210 mislabels `autoLockMin` (see A7).
-**Unverified.** `workstation_owner_returned` and `workstation_accessed` emit lines; `autoLockMin` > 0 `lockAt` path.
+**Unverified.** None for the client lock path (read in `workstation-state.js` on 2026-11-18); not live-tested.
 
 ### A9 Awareness presets and habits
 **One line.** A room NPC gets an `awareness` level (low, medium, high) that fills habit defaults, and named `habits` that override them: lock the screen, write the password down, hold doors, password quality.
@@ -416,7 +416,7 @@ Failure causes: `down unreachable no_access off locked_out social_blocked usb_re
   { "id": "jake_post_1", "text": "Biscuit turns five today!", "fact": "jake_pet_name", "date": "Monday" } ] }
 ```
 **Server enforces / client only.**
-- Server: `POST /feed_post` `{npc_id, object_id}` (`games_controller.rb:1677`, `app/models/break_escape/social_feed.rb:51` `reveal_feed_post!`): NPC must be encountered, have a feed and a social need, next post only, pace floor (0.9 of the need period, per README 1396), source check `feed_source_ok?` (line 360: phone, own station not blocked/off/locked out, any social place in an unlocked room). Feed facts are withheld from the bootstrap and sent with their post (`social_feed.rb:306` `withhold_feed_facts!`). Reload restores revealed posts (`feedRevealed` in player_state).
+- Server: `POST /feed_post` `{npc_id, object_id}` (`games_controller.rb:1677`, `app/models/break_escape/social_feed.rb:51` `reveal_feed_post!`): NPC must be encountered, have a feed and a social need, next post only, pace floor (0.9 of the need period less 3 seconds, `lib/break_escape/access_work.rb:378-382`), source check `feed_source_ok?` (line 360): the phone only if `phone` is not false; otherwise one of the NPC's social media places, not its own station while the policy blocks social media or the station is off, and not a sign-in PC where the NPC is locked out. Feed facts are withheld from the bootstrap and sent with their post (`social_feed.rb:306` `withhold_feed_facts!`). Reload restores revealed posts (`feedRevealed` in player_state).
 - Server: `POST /friendface_phone` opens an NPC's phone only if the player holds it (`games_controller.rb:~1695`, `social_feed.rb:281`).
 - Client only: when to ask (`public/break_escape/js/systems/social-feed.js`), toast, icons, thread rendering (`osint-browser-minigame.js`).
 
@@ -424,8 +424,8 @@ Failure causes: `down unreachable no_access off locked_out social_blocked usb_re
 **Validator.** `scripts/validate_access_work.rb` `check_social` 1553, `check_social_need` 1668, `check_feed_order` 1713, `check_reactive_post` 1740, `check_replies` 2047, `check_reply` 2081, `check_reactions` 2311. Errors: feed whose site/person does not resolve, bare list instead of `{site,person,posts}`, post id missing or duplicate, fact naming no `intelFacts`, a feed fact named elsewhere, an NPC password in a post, a reply with no `when` or `insteadOf` or not exactly one of `replyTo`/`replyToComplaint`. Warnings: high-awareness poster with a `fact` and no `deliberate:true`, short post text, resource names in vents, blocking policy with no `social_blocked` line. `check_friendface_phones` at line 50. Full list: README 1414, 1431-1432 (not re-read line by line).
 **Shown in.** `test_access_social` only (beats F1-F16, replies and reactions). Phone item `phone_friendface` appears only there. `ca14_social_media` is the awareness course, not this feature.
 **Known limits.** Server-checked knock-outs for phone drops: `docs/IDEAS_BACKLOG.md:202`. Leak-scanner route-matching gaps: `:213`, `:215`. Open Q33 review items: `:235-236`, `:251`.
-**Plan vs code.** README 1382-1450 matches the schema field list. Unverified for text claims such as the 0.9 pace figure (read from README, not located in `social_feed.rb`).
-**Unverified.** The 0.9 pace figure; the `feedRevealed` reload behaviour beyond the model header (`social_feed.rb:10-20`).
+**Plan vs code.** README 1382-1450 matches the schema field list (`feed`, `phone`, `socialUse` at schema 4910-4912; defaults 20 s and 60 match).
+**Unverified.** The `feedRevealed` reload behaviour beyond the model header (`social_feed.rb:9-20`) and `feed_posts_for_client` (`social_feed.rb:140`, sent as `feedPosts` by `games_controller.rb:469`); not live-tested.
 
 ### A12 Gated doors
 
@@ -449,7 +449,7 @@ Failure causes: `down unreachable no_access off locked_out social_blocked usb_re
 | `gate.sound` | gate | audio key, or `false` to silence | `rfid_unlock` if the door has an RFID lock, else silent |
 | `doors[].connectedRoom`, `doors[].direction` | door entry | which doorway the entry matches (first match wins) | required in practice |
 | `habits.holdsDoors` (via `awareness`: low/medium true, high false) | NPC | `false` makes the guard a "careful guard"; a gate whose every counted guard is careful bars the player like a false `playerMayPassIf` (`lib/break_escape/npc_habits.rb:25,33-35,275-279`; schema 4413, 4421) | true |
-| `closeDoor` | NPC `eventMappings[]` | room id or array of room ids: shut the gate(s) into that room now, forced, and keep shut at least `max(holdMs, 3000)` (door-gates.js:862-890; npc-manager.js:1490,1875-1883; schema 4983-4989) | none |
+| `closeDoor` | NPC `eventMappings[]` | room id or array of room ids: shut the gate(s) into that room now, forced, and keep shut at least `max(holdMs, 3000)`; a gate stays open while the player or an NPC stands in its doorway (door-gates.js:880-881) (door-gates.js:862-890; npc-manager.js:1490,1875-1883; schema 4983-4989) | none |
 
 **Example.** From the A12 to A15 worked example (section 5):
 ```json
@@ -459,7 +459,7 @@ Failure causes: `down unreachable no_access off locked_out social_blocked usb_re
               "playerMayPassIf": "vest_on", "sound": false } }
 ]
 ```
-and in the NPC `eventMappings` (not in the validated example; syntax from test_gate_tailgate:116): `{ "eventPattern": "...", "closeDoor": "vault" }`.
+and in the NPC `eventMappings` (validated on its own by adding it to `sam` in the A12 to A15 example): `{ "eventPattern": "global_variable_changed:vault_seen", "closeDoor": "vault" }`.
 
 **Server enforces / client only.**
 Server:
@@ -582,7 +582,7 @@ Client only:
 
 **Validator.** `check_give_item_collectible` (`scripts/validate_scenario.rb:2778`, registered 8793): error when a `give_item` item cannot be told from a room item ("shares its type and id with ...", 2894; same type and name as an id-less item, 2898; "still has its hidden twin in ...", 2891); errors for a grant with contents but no `hasContents`/empty contents (2855), a contents entry with no type (2860), a locked content with no `requires` (2864) or no `id` (2867), content ids colliding with a room object (2870), two grants with the same identity but different fields (2879) or same type and name, different ids (2881); a `give_item` that is not a valid grant is reported at 2831; warning when a grant is a key or lock tool, claimable from second one (2904: "A declared grant can be claimed from the first second of the game (no trigger check)"). `DeclaredGrants.unexecuted` flags identified `give_item` under `eventMappings`.
 
-**Shown in.** Most scenarios with timers or interaction rewards; the example is built on the pattern. Best focused demo: `scenarios/test_access_keyring` (grants such as `lena_rdp_gift`) and the credential checks that read declared grants (`credential_model.rb:229-263`). I did not grep every scenario for `give_item`.
+**Shown in.** Most scenarios with timers or interaction rewards; the example is built on the pattern. Focused demos: `scenarios/test_capture_log` (identified `give_item` on `timers`) and `scenarios/test_gate_tailgate` (`triggerOnInteract`, line 156); `lab_physical_pentest` and `lab_social_engineering` also use them. `test_access_keyring` has no `give_item`: its `lena_rdp_gift` is an NPC `itemsHeld` gift, which is the pattern the validator asks for in place of a grant (`credential_model.rb:229-263` reads declared grants to warn about that).
 
 **Known limits.** No trigger check, so a grant is claimable from the start by a tampered client. Mitigation by design: give secrets through NPC `itemsHeld` and ink `#give_item`, not grants (README 1580; validator warns).
 
@@ -595,7 +595,7 @@ Client only:
 **One line.** A server-only registry of credentials (passwords, saved connections, assist invites, timed tokens) that the player earns by proof and uses to sign in at a PC without typing a password.
 **Key fields.** top-level `credentials`, item `credential`, `policies.<name>.accepts`, `policies.<name>.remoteScreen`, credential `expiresMin`, `endsOnGlobal`, `connectsTo`, `foundIn`, `proof`.
 
-**What the player sees.** A "Sign-ins" list on the device showing each earned credential (captured passwords included) with how it was gained. At a PC's sign-in screen the matching saved connection, invite or token appears as a button; a typed-NLA PC (`remoteScreen: "typed"`) shows no account tiles until a password is right. Tokens count down and then stop working.
+**What the player sees.** A Sign-ins list in the capture log (`minigames/capture-log/signin-rows.js`) showing each earned credential (captured passwords included) with how it was gained. At a PC's sign-in screen the matching saved connection, invite or token appears as a button; a typed-NLA PC (`remoteScreen: "typed"`) shows no account tiles until a password is right. A held item that proves a saved connection or invite offers Connect in the tray. Tokens count down and then stop working.
 
 **Fields.** (schema 281-317; model `lib/break_escape/credential_model.rb`)
 
@@ -638,19 +638,19 @@ Server:
 - Token clock starts when the proof foothold is first gained (`credential_keyring.rb:~150-195`); tokens expire server-side (login answers `expired`).
 - Lock a credential session (K-lock, built): `Game#session_lockable?` allows password sign-ins and `via: "credential"` sessions with `foothold` or `from`, never relay (`game.rb:3809-3835`; build log `CREDENTIAL_KEYRING_BUILD_LOG.md:1487`).
 Client only:
-- The keyring UI (rows, buttons, the teaching toast); not read in this pass.
+- The keyring client `public/break_escape/js/systems/keyring.js` (header 1-38): caches `GET /keyring` answers per PC and route with `rev`, the find toasts, Connect from the tray, the capture log's Sign-ins list. It asks the server only when the scenario declares credentials (`credentialsDeclared`).
 
-**Events.** Not examined in the client for this feature; the sign-in raises the existing `pc_signed_in` event (used in test_access_signin eventMappings). Unverified for credential-specific names.
+**Events.** `keyring_changed` `{ rev }` when the no-screen answer changes (`keyring.js:790`). A credential sign-in raises `pc_signed_in` with `via: "credential"` (`pc-sessions.js:623`); a refused one `pc_signin_failed` with `credential` (`:602`).
 
 **Validator.** `check_credentials` (`scripts/validate_scenario.rb:7181`, registered after check_access_model): errors: more than 64 entries; id outside the pattern; policy `accepts` naming an unknown kind; unknown kind; "not supported until phase 3" for an unbuilt kind (`hash`); token without `label`, with bad `expiresMin` or a non-foothold proof; account is not an account holder; password with `connectsTo` or without `foundIn`; `foundIn`/`endsOnGlobal` on the wrong kind; `endsOnGlobal` not a declared global; proof not exactly one of the five; `session` PC not a sign-in PC; `held` item not in the held scope, never obtainable, notes-family or always-allowed type; foothold proof naming no foothold any jack/AP/implant can create. Warnings: `accepts` without `password`; `accepts` used by no PC; item does not carry the credential; assist_invite code as a declared grant (give from `itemsHeld` through ink `#give_item`); saved_connection placed only by a declared grant; bare foothold id (must be `jack_<id>`, `wifi_<network>`, `implant_<pc>`); `connectsTo` ACL does not admit the account; token PC policy lacks `token`; no link path from foothold network; label over 32 characters. Info: tokens must not be the only route; a lockout is permanent for a saved connection.
 
-**Shown in.** `scenarios/test_access_keyring` (best demo, has `PLAYTEST.md`; saved connection, password, assist invite, foothold-proof cookie, `expiresMin`), `scenarios/demo_access_tour` (uses `credentials`), `scenarios/test_access_networks` (item `credential` and `remoteScreen`), `scenarios/test_access_devices`, `scenarios/lab_physical_pentest`, `scenarios/test_capture_log` (item `credential` only).
+**Shown in.** `scenarios/test_access_keyring` (best demo, has `PLAYTEST.md`; saved connection, password, assist invite, foothold-proof cookie, `expiresMin`), `scenarios/demo_access_tour` (uses `credentials`). No other scenario declares `credentials` or an item `credential`; the `"kind": "credential"` in `test_access_networks`, `test_access_devices`, `lab_physical_pentest` and `test_capture_log` is a capture kind (A16), not the keyring.
 
 **Known limits.** `hash` kind and machine accounts are phase 3, not built. No per-entry teaching text override (backlog per plan R4: see `docs/IDEAS_BACKLOG.md`, no entry found by my grep of "keyring"/"credential" that is specific; no backlog entry confirmed). A saved connection is refused for the rest of the game once its PC locks out.
 
 **Plan vs code.** `CREDENTIAL_KEYRING_PLAN.md:175` shows `token` as not built until K5; code has it built (`credential_model.rb:32`). Plan 8.6 K-lock is built (build log 1487; `game.rb:3809`). The schema description says "Phase 1 builds password, saved_connection, assist_invite and token (K5)", which matches code.
 
-**Unverified.** Client keyring UI and its event names; README 1557-1582 not compared line by line.
+**Unverified.** Client keyring rendering (rows and buttons); README 1594 onwards not compared line by line.
 
 ### A16 Capture proof
 **One line.** An account holder names facts the server records itself (a device planted, an item dropped, a sign-in made); only once one holds does `GET /capture_secrets` serve the captured password.
@@ -667,7 +667,7 @@ Client only:
 | `addCapture.proof` | npc mapping | shorthand, counted for the account whose username equals `address`, else the carrying NPC (schema 5127) | |
 | `social.captures.revealSecret` | social | server serves the secret only when `true` (schema 485) | false |
 
-**Example.** In the worked example for this group (section 5): `"captureProof": [ { "planted": "kit_stick", "on": "dock" } ]`. Shorthand (from README 1201, not run alone): `"addCapture": { "address": "c.hampshire", "proof": { "planted": "kit_deviceA", "on": "staff_pc" } }`.
+**Example.** In the worked example for this group (section 5): `"captureProof": [ { "planted": "kit_stick", "on": "dock" } ]`. Shorthand on an NPC event mapping (README 1236 and 1261-1266), validated on `kim` in the A9 to A17 example: `"addCapture": { "targetId": "kim", "kind": "credential", "address": "kim", "host": "KIM-PC", "proof": { "planted": "kit_stick", "on": "dock" } }`, with `social.captures.revealSecret: true` (without it the validator warns that the password never shows).
 **Server enforces / client only.**
 - Server: all of it. `capture_proof_holds?` reads `plantedItems`, `gainedFootholds`, `droppedItems`, `signedInPcs` (`app/models/break_escape/capture_proofs.rb:166-181`); strict rule when any proof is declared and the password opens something (`:210-222` `account_capture_served?`); route `GET /capture_secrets` (`config/routes.rb:59`, `games_controller.rb:1810`, `game.rb:2532` `capture_secrets_for_client`). Plants recorded only for a held, non-forged item, an object that takes and consumes it, a USB policy that accepts it, and an unlocked room (`capture_proofs.rb:26-58`). A hideable item is planted only through `hide_device!` (`:79`).
 - Client only: the capture log display (`public/break_escape/js/minigames/capture-log/`).
@@ -718,8 +718,8 @@ Also: the global `<jackId>_planted` (NL:80, 198, 314) is true while a device is 
 
 ### Dungeon-graph treatment (networks)
 
-Built in `scripts/generate_dungeon_graph.rb:528-760` (reads `NetworkModel`). A jack is a lock-like node from its room to its network node; a `portSecurity` jack is drawn as a dead end (line 696-705). A network link is a dashed undirected edge (line 85, `undirected`). A pivot is a `+` gate per sign-in host on a reached network with a `pivot` edge to each linked network (README:1152). A network's `offWhen` goes into its node label ("down while X", "(down at start)"), not a gate (line 654-666). A Wi-Fi access point is a lock-like node opened by a "Wi-Fi key" node, and the key text is scrubbed from the graph output (lines 539-640, `check_wifi_key_free`). Implant nodes: not verified in the generator; I did not read lines 727-end.
-Plan vs code: `docs/IDEAS_BACKLOG.md:239` says "the dungeon graph does not draw links, outages, Wi-Fi or implant nodes", but the generator does draw links, pivots, outages (as labels), Wi-Fi and jacks. The backlog entry is stale at least for links, outages and Wi-Fi.
+Built in `scripts/generate_dungeon_graph.rb:528-760` (reads `NetworkModel`). A jack is a lock-like node from its room to its network node; a `portSecurity` jack is drawn as a dead end (line 696-705). A network link is a dashed undirected edge (line 85, `undirected`). A pivot is a `+` gate per sign-in host on a reached network with a `pivot` edge to each linked network (README:1152). A network's `offWhen` goes into its node label ("down while X", "(down at start)"), not a gate (line 654-666). A Wi-Fi access point is a lock-like node opened by a "Wi-Fi key" node, and the key text is scrubbed from the graph output (lines 539-640, `check_wifi_key_free`). An implant is one node per PC, with edges from where its action runs (prop, timer or NPC beat), from its device node ("(implant device)") and to the PC's network (lines 980-1060). Pivots are drawn at lines 1062-1075.
+Plan vs code: `docs/IDEAS_BACKLOG.md:239` says "the dungeon graph does not draw links, outages, Wi-Fi or implant nodes", but the generator draws all four. That part of the backlog entry is stale.
 
 ---
 
@@ -754,7 +754,7 @@ Validated In the worked example for this group (section 5).
 - Client only: the confirm dialog, the toast, jack look, opening the view (NL:381-460).
 **Events.** `network_device_planted`, `network_foothold_gained` (see list above), plus `<jackId>_planted`.
 **Validator.** `VN` errors: jack inside a container/profile/share (120), jack is a sign-in object (122), jack has a lock or trigger field (127), takeable jack (129), jack with no network (135), rogue device with no id (209), not takeable (211), droppable (214), required-and-consumed by an object (226). Warnings: jack but no `rogueDevice` item (230), device but no jack (234). Unknown network name errors at 96.
-**Shown in.** Fields `networkJack`: `test_access_networks` (best demo, 12 beats with signs), `test_access_devices`, `test_access_keyring`, `demo_access_tour`, `lab_physical_pentest`. `networks` also in `ca20_remote_and_mobile_working` and `ca20_remote_and_mobile_working_defend`.
+**Shown in.** Fields `networkJack`: `test_access_networks` (best demo, 12 beats with signs), `test_access_devices`, `test_access_keyring`, `demo_access_tour`, `lab_physical_pentest`.
 **Known limits.** No bypass for a device the player is not carrying; a sign-in object cannot be a jack. No backlog entry for the jack itself.
 **Plan vs code.** README:1021 table row says optional jack fields include `requiresItemHintVariants`; schema/engine handle it through `resolveObjectField` (NL:411, 420), not checked further. Otherwise none found.
 **Unverified.** Link item file location in the tray (`storeIn` behaviour beyond the schema).
@@ -784,10 +784,10 @@ Validated In the worked example for this group (section 5).
 - Client only: the screens and tile drawing (network-view-minigame.js, pc-sessions.js).
 **Events.** `network_host_opened` (network-view-minigame.js:874) when a host opens; sign-in events belong to the sessions system (not verified here).
 **Validator.** `scripts/validate_scenario.rb:7779-7810`: warns "policy ... sets remoteScreen but remote is 'blocked'"; info line when `tiles` is set and no PC under it can show tiles. `VN:436` errors on a `remote` value other than allowed/blocked. `VN:629` warns on a remote-only host under a `maxAttempts` lockout.
-**Shown in.** `remote:` / `remoteScreen`: `test_access_networks` (best demo: policies `hardened`, `counted`, `kiosk_locked`, `nla`), `test_access_keyring`, `demo_access_tour`, `lab_physical_pentest`, `ca20_remote_and_mobile_working*`.
+**Shown in.** `remote:` / `remoteScreen`: `test_access_networks` (best demo: policies `hardened`, `counted`, `kiosk_locked`, `nla`), `test_access_keyring`, `demo_access_tour`. (The `"networks"` and `"remote"` keys in `ca20_remote_and_mobile_working*` belong to another feature.)
 **Known limits.** The outage global is client-synced, so an outage is a soft gate (NA:1105-1124). No backlog entry for remote sign-in itself.
 **Plan vs code.** README:1070-1072 "remote sign-in screen" matches NA. None found.
-**Unverified.** Exact grep list of scenarios using `remote` in policies (I listed those with `networks`).
+**Unverified.** None for the scenario list (grep of `"remote"`/`"remoteScreen"` keys, 2026-11-18).
 
 ### N3 Headless hosts
 **One line.** A sign-in object with `headless: true` has no screen or keyboard and can be signed in to only through a foothold.
@@ -926,13 +926,128 @@ Validated In the worked example for this group (section 5).
 | wifiTwin | object | planted rogue AP; click opens console (SCH:5546) | false |
 | apScan | object | rows `ssid`, `security`, `signal` 0-4, `clients`, `inScope`, `refusal`, `cloneGlobals`, `cloneLog`, `knownClients` (SCH:5547) | none |
 | apPortal | object | `{ templates: [{ id, label, setGlobals, page }] }`; page rendered by the landing-page builder in build mode (SCH:5586) | none |
-| apCaptureLog | object | `{ global, text, npcId? }`, each shown once its global is true (SCH:5638) | none |
+| apCaptureLog | object | array of `{ global, text, npcId? }`, each line shown once its global is true (SCH:5638) | none |
 
 **Example.** Access point In the worked example for this group (section 5) (`guest_ap`, network `guest_wifi` with `"wifi": { "ssid": "Example-Guest", "psk": "seabreeze-2025" }`):
 ```json
 { "type": "pc", "id": "guest_ap", "name": "Guest access point", "sprite": "lw_staff_ap", "position": { "x": 2, "y": 2 }, "takeable": false, "wifiAp": true, "network": "guest_wifi", "observations": "An access point." }
 ```
-Validated In the worked example for this group (section 5). The rogue AP block (`wifiTwin`, `apScan`, `apPortal`, `apCaptureLog`) was NOT put into the worked example for this group (section 5); take the working example from `scenarios/test_access_devices/scenario.json.erb:150-215` (object `planted_rogue_ap`, which has `hiddenWith`) instead. Unverified by me against the validator.
+Validated in the N1 to N11 worked example (section 5). The rogue AP below was validated by adding it, a `planter_fig1` plant (`lobby_plant`) and the globals `ap_twin_staff`, `ap_portal_account` and `kim_twin_captured` (all `false`) to the lobby of that example: 0 errors, plus a plant-hiding warning that the room has no `lighting.emitters` entry for `planted_rogue_ap`, so its LED would not show. The kit item:
+```json
+{"type": "rogue_ap", "sprite": "rogue_ap", "id": "kit_rogue_ap", "name": "Pocket rogue AP", "takeable": true, "droppable": false, "observations": "A pocket rogue access point.", "hideable": {"rooms": ["lobby"], "spots": "plants", "device": "planted_rogue_ap", "overlay": {"sprite": "rogue_ap_tucked"}, "confirm": "Hide the rogue AP in this plant?"}}
+```
+The console object (it has `hiddenWith` and no `position`):
+```json
+{
+ "type": "pc",
+ "id": "planted_rogue_ap",
+ "name": "Planted rogue AP",
+ "sprite": "rogue_ap_planted",
+ "hiddenWith": "kit_rogue_ap",
+ "takeable": false,
+ "interactable": true,
+ "active": true,
+ "wifiTwin": true,
+ "observations": "Your rogue AP, tucked into the plant.",
+ "apScan": [
+  {
+   "ssid": "Example-Staff",
+   "security": "WPA2",
+   "signal": 4,
+   "clients": 2,
+   "inScope": true,
+   "cloneGlobals": {
+    "ap_twin_staff": true
+   },
+   "cloneLog": "Copy of Example-Staff up (open). Waiting for someone to pick it.",
+   "knownClients": [
+    {
+     "npcId": "sam",
+     "label": "Sam's laptop"
+    }
+   ]
+  },
+  {
+   "ssid": "Cafe-Next-Door",
+   "security": "WPA2",
+   "signal": 1,
+   "clients": 1,
+   "inScope": false,
+   "refusal": "Out of scope. The cafe is not the client."
+  }
+ ],
+ "apPortal": {
+  "templates": [
+   {
+    "id": "staff_signin",
+    "label": "Sign-in page",
+    "setGlobals": {
+     "ap_portal_account": true
+    },
+    "page": {
+     "brands": [
+      {
+       "id": "example",
+       "name": "Example Ltd",
+       "look": "generic",
+       "realDomain": "example.test",
+       "domains": [
+        {
+         "id": "d_wifi",
+         "domain": "wifi-login.example",
+         "trick": "unrelated",
+         "tier": 0
+        }
+       ]
+      }
+     ],
+     "purposes": [
+      {
+       "id": "wifi",
+       "label": "Sign in",
+       "button": "Sign in"
+      }
+     ],
+     "wordings": [
+      {
+       "id": "w_signin",
+       "match": true,
+       "text": "Example-Staff now uses staff accounts. Sign in to reconnect."
+      }
+     ],
+     "fields": [
+      "email",
+      "password"
+     ],
+     "fieldLabels": {
+      "email": "Username"
+     },
+     "choices": {
+      "brand": "example",
+      "purpose": "wifi",
+      "domainId": "d_wifi",
+      "wording": "w_signin",
+      "fields": [
+       "email",
+       "password"
+      ],
+      "logo": true,
+      "padlock": false
+     }
+    }
+   }
+  ]
+ },
+ "apCaptureLog": [
+  {
+   "global": "kim_twin_captured",
+   "text": "Sam's laptop joined the copy; sign-in page submitted.",
+   "npcId": "sam"
+  }
+ ]
+}
+```
+The full demo is `scenarios/test_access_devices/scenario.json.erb:85-215`.
 **Server enforces / client only.**
 - Server (join): `find_wifi_ap` needs a `wifiAp` object on a defined network with a `wifi` block; reach check; the key is compared on the server; wrong key 422 `wrong_key` and counts nothing; one foothold `wifi_<network>` per network; a second AP records the AP in `gainedFootholds`: NA:338-408. `unlock_object` on an AP is met once joined: game.rb:5242-5246.
 - Server (rogue AP): only that the device's console fields are listed as `DEVICE_DATA_FIELDS` (capture_proofs.rb:19). The console writes globals through `writeGlobal` on the client; the server does not check that the globals were earned.
@@ -942,7 +1057,7 @@ Validated In the worked example for this group (section 5). The rogue AP block (
 **Shown in.** `wifiAp`: `test_access_networks` (best demo for join), `test_access_devices`, `demo_access_tour`, `lab_physical_pentest`. `wifiTwin`: `test_access_devices` (best demo), `demo_access_tour`, `lab_physical_pentest`.
 **Known limits.** The rogue AP does not give a foothold: it writes globals and reads capture logs only. No backlog entry for Wi-Fi in particular; `docs/IDEAS_BACKLOG.md:228` is the device pitch (not built).
 **Plan vs code.** none found beyond the table.
-**Unverified.** Rogue AP example not validated separately; behaviour of the key minigame in join mode.
+**Unverified.** Behaviour of the key minigame in join mode; the rogue AP console was not live-tested.
 
 ### N9 Port security
 **One line.** `portSecurity: true` on a jack makes the switch refuse every device: no foothold, the device stays in the inventory, and a message names the fix.
@@ -982,7 +1097,7 @@ Validated In the worked example for this group (section 5).
 | needsSession | action | player must hold a non-foothold session there and carry `needsHeld`; the server removes the device (SCH:989) | false |
 | needsHeld | action | device by id, type or name (id preferred); its host object must not set `consumesItem` (SCH:990) | none |
 | needsDropped | action | id of an item the player has dropped (SCH:988) | none |
-| name | action | link item label (SCH:991) | "<device>: <room>" (NA:550-583) |
+| name | action | link item label (SCH:991); a `linkName` on the PC also wins | "Keystroke injector: <room>" or "USB stick: <room>" (NA:550-583) |
 | usbClass | item | `hid`, `storage` or none; the PC's `usb` policy can refuse it (AccessWork.plant_refused?) | none |
 
 **Example.** `usb_spot` In the worked example for this group (section 5) (the `kit_badusb` item is there too):
@@ -991,7 +1106,7 @@ Validated In the worked example for this group (section 5).
   "triggerOnInteract": [ { "type": "confirm_action", "text": "Plug the injector into the lobby PC?", "confirmLabel": "Plug it in", "cancelLabel": "Leave it",
     "onConfirm": [ { "type": "grant_foothold", "pc": "lobby_pc", "needsSession": true, "needsHeld": "kit_badusb" } ] } ] }
 ```
-Validated In the worked example for this group (section 5). The dropped shape example is `{ "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick" }` (README:1140; not in my combined file).
+Validated In the worked example for this group (section 5). The dropped shape (README:1180), validated on a `timers` entry in the N1 to N11 example with a droppable `kit_stick` item in the lobby: `{ "type": "grant_foothold", "pc": "door_box", "needsDropped": "kit_stick", "name": "USB foothold: door controller" }`.
 **Server enforces / client only.**
 - Server: only a grant_foothold declared on a server-run path counts (`NM:grant_foothold_actions`, NM:213-228). `implant_foothold!` (NA:468-548): the action for [pc, shape] must exist; PC must be on a network; session shape needs a non-remote session (not a claim, relay or `from`), the held device (not client-forged), and a USB policy that does not refuse it (422 `usb_refused`); dropped shape needs the id in `droppedItems`; one foothold `implant_<pc>`; repeat answers `already`; the device is removed. An implant on a PC that is switched off reaches nothing: NA:993-998.
 - Not checked: reach to the PC (the implant route does not call `object_reachable?`; the action must come from a declared path, which is the gate).
@@ -1000,7 +1115,7 @@ Validated In the worked example for this group (section 5). The dropped shape ex
 **Validator.** `VN:705` action on a path the server does not run; `VN:712/714` both or neither of `needsDropped`/`needsSession`; `VN:719` pc not a network sign-in PC; `VN:723` two grants with the same pc and shape; `VN:731` needsSession without `needsHeld`; `VN:733` `needsHeld` names no item; `VN:737` needsSession on the PC it targets; `VN:741` host sets `consumesItem`; `VN:748` device has no id; `VN:754` warning when the PC's USB policy refuses the device.
 **Shown in.** `test_access_networks` (best demo, BadUSB at `sam_pc`), `demo_access_tour`. No other scenario uses `grant_foothold`.
 **Known limits.** `docs/IDEAS_BACKLOG.md:240` lists open minors/nits from the 9.3b I review R3 (not itemised here).
-**Plan vs code.** README:1029 says the `name` default is "Implant: <host>"; code defaults to "<device word>: <room>" ("Keystroke injector: ...", "USB stick: ..."), NA:550-583. Plan (9.3B plan:105) names a BadUSB trigger as N12 in the beat table (line 792); the code has no separate BadUSB feature, it is the `needsSession` shape.
+**Plan vs code.** README (the networks table and the Implants section) now gives the code's `name` default; the code defaults to "<device word>: <room>" ("Keystroke injector: ...", "USB stick: ..."), NA:550-583. Plan (9.3B plan:105) names a BadUSB trigger as N12 in the beat table (line 792); the code has no separate BadUSB feature, it is the `needsSession` shape.
 **Unverified.** The dropped-device flow on the NPC side (which behaviour makes an NPC use the stick).
 
 ### N11 Patch panel
@@ -1051,7 +1166,7 @@ Validated In the worked example for this group (section 5).
 
 ## 5. Worked examples
 
-Each block below is a complete scenario that `ruby scripts/validate_scenario.rb <file> --no-graph --skip-ink` accepts with no content errors (the scratch folder needs a `mission.json`, as every scenario does). The per-feature `Example` lines point at these. Fragments marked "not run alone" in a section were not validated by themselves.
+Each block below is a complete scenario that `ruby scripts/validate_scenario.rb <file> --no-graph --skip-ink` accepts with no content errors (the scratch folder needs a `mission.json`, as every scenario does). The per-feature `Example` lines point at these. Every fragment in sections 3 and 4 was validated too, either as part of one of these blocks or by adding it to one (each says which); A9's and A11's fragments come from shipped scenarios. Warnings are left in on purpose where they teach something.
 
 ### A1 to A8
 
@@ -1904,7 +2019,7 @@ Each block below is a complete scenario that `ruby scripts/validate_scenario.rb 
 
 ## 6. Coverage matrix
 
-`x` means the scenario's template text matches a field-pattern for the feature. It is a text search, so it over-reports where a field name is shared (for example `offWhen` on objects in the office-life scenarios counts under N7, and `rfid_cloner` anywhere counts under A3). Use the section's "Shown in" line for the best demo. N5 is exercised wherever there is a jack. `ta_` is `test_access_`. The scenarios that use these fields and are not in the columns are in the last column. m01 to m10 appear there only where the text search matched.
+`x` means the scenario's template text matches a field-pattern for the feature. It is a text search, so it over-reports where a field name is shared (for example `offWhen` on objects in the office-life scenarios counts under N7, and `rfid_cloner` anywhere counts under A3). Rows A2, A3, A5, A10 to A17, N2, N3, N6, N8, N10 and N11 were re-checked on 2026-11-18 with patterns anchored on the JSON key (for example `"gate": {`); A16 and A17 were corrected then. Use the section's "Shown in" line for the best demo. N5 is exercised wherever there is a jack. `ta_` is `test_access_`. The scenarios that use these fields and are not in the columns are in the last column. m01 to m10 appear there only where the text search matched.
 
 | Feature | demo_access_tour | lab_physical_pentest | ta_devices | ta_doors | ta_habits | ta_keyring | ta_networks | ta_sessions | ta_signin | ta_social | ta_work | Other scenarios |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -1924,8 +2039,8 @@ Each block below is a complete scenario that `ruby scripts/validate_scenario.rb 
 | A13 |  | x |  |  |  |  |  |  |  |  |  | test_gate_tailgate, test_wearable |
 | A14 |  | x |  |  |  |  |  |  |  |  |  | test_capture_log, lab_social_engineering, test_gate_tailgate |
 | A15 | x |  |  |  |  | x |  |  |  |  |  |  |
-| A16 |  | x | x |  |  | x | x |  |  |  |  | test_capture_log, test_secret_leaks |
-| A17 | x | x | x |  |  |  | x |  |  |  | x | test_capture_log, test_remove_item |
+| A16 | x | x | x |  |  | x | x |  |  |  |  | test_capture_log, test_secret_leaks |
+| A17 | x | x | x |  |  | x | x |  |  |  | x | test_capture_log, test_remove_item |
 | N1 | x | x | x |  |  | x | x |  |  |  |  |  |
 | N2 | x |  |  |  |  | x | x |  |  |  |  |  |
 | N3 | x | x |  |  |  |  | x |  |  |  |  |  |
@@ -1948,9 +2063,9 @@ Planned or sketched, not in the code. Check each against the code before relying
 - **Defender missions and investigator missions** built on these systems. `docs/IDEAS_BACKLOG.md:196`, `:198`.
 - **Server-proven NPC hand-overs.** `docs/IDEAS_BACKLOG.md:201`. NPC-given keycards also await a decision (`docs/achitechture/ACCESS_MODEL_BUILD_LOG.md:1221-1222`).
 - **Server enforcement of `wearable.unseenOnly` and `seenBy`.** Client-only today (`app/models/break_escape/wearables.rb:55-90`). `docs/IDEAS_BACKLOG.md:221`, `:230`.
-- **A validator warning for a `closeDoor` that names a non-gate.** The schema text promises one (README:1964 points at it); no check exists, only a console warning in `public/break_escape/js/systems/door-gates.js:873`.
+- **A validator warning for a `closeDoor` that names a non-gate.** The schema text promises one (`scripts/scenario-schema.json:4989`); no check exists, only a console warning in `public/break_escape/js/systems/door-gates.js:873`.
 - **Host-level "not responding" and `offWhen` on hosts** (outage per host). Deferred in `docs/achitechture/ACCESS_MODEL_SLICE_9_3B_BUILD_LOG.md:707-711`; `docs/IDEAS_BACKLOG.md:241`.
-- **A five-second refetch of the network view and a pre-sign-in globals sync.** `docs/IDEAS_BACKLOG.md:239`. The same entry says the dungeon graph draws no links, outages or Wi-Fi; the generator does draw links, pivots, outages and Wi-Fi (`scripts/generate_dungeon_graph.rb:528-760`), so that entry is stale. Whether implant nodes are drawn was not verified.
+- **A five-second refetch of the network view and a pre-sign-in globals sync.** `docs/IDEAS_BACKLOG.md:239`. The same entry says the dungeon graph draws no links, outages or Wi-Fi; the generator does draw links, pivots, outages and Wi-Fi (`scripts/generate_dungeon_graph.rb:528-760`), and implants (`:980-1060`), so that part of the entry is stale.
 - **A rogue device that works like a drop box without a jack** (the device pitch). `docs/IDEAS_BACKLOG.md:228`. The pocket rogue AP (N8) writes globals only and never gives a foothold, by design.
 - **`holdsDoors` approach-drop** (a careful guard dropping the hold as the player nears, beyond what is built). `docs/achitechture/ACCESS_MODEL_SLICE_9_1_BUILD_LOG.md:337-340`. No shipped scenario sets `holdsDoors` even though the loader builds it (`lib/break_escape/npc_habits.rb:127-190`).
 - **Locked look for a sign-in PC with no owner.** `docs/IDEAS_BACKLOG.md:223`.
