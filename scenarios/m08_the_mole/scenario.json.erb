@@ -1781,6 +1781,7 @@ CREDITS
           "needsRooms": ["operations_floor"],
           "needsCompany": { "groups": ["ops_watch"] },
           "chatterCooldownMin": 2,
+          "habits": { "screen": { "lockChance": 0.25 } },
           "needs": { "thirst": { "initial": 100, "decayPerMin": 7, "urgentAt": 40, "jitterPct": 20 } },
           "behavior": { "initiallyHidden": true, "hostile": { "leash": true, "chaseRange": 96, "chaseSpeed": 70, "attackDamage": 3, "pauseToAttack": true } },
           "globalVarOnKO": "julian_ko",
@@ -1826,6 +1827,33 @@ CREDITS
         }
       ],
       "objects": [
+<%# Relief watch (slice 4): the duty-desk console and the two pc12 twins. Plain type pc with no position, declared FIRST so they claim
+    the Tiled pc12 sprites in layer order (hq_rooms.py puts the three pc12s before Vector's pc8s): console = duty desk west monitor,
+    twin 1 = duty desk east monitor, twin 2 = the analyst's monitor. The twins are decor so the sprites stay drawn (a claim hides every
+    unclaimed same-image sprite); nothing else on the floor may be a pc. The console is a workstation owned by Julian: its indicator
+    and texts follow the julian_console_owner_away / _screen_locked globals; his habits.screen decides the lock. affordance false:
+    no officer is ever sent to sit at it (homes are coordinates). %>
+        {
+          "type": "pc",
+          "id": "julian_console",
+          "name": "Duty Officer's Console",
+          "takeable": false,
+          "affordance": false,
+          "workstation": true,
+          "owner": "julian_sallow",
+          "readable": true,
+          "readDisplay": "gameDisplay",
+          "addToNotes": false,
+          "observations": "The duty desk's console, a watch log open on it.",
+          "text": "The duty officer's console. He angles it away from you without looking up.",
+          "textVariants": [
+            { "condition": "globalVars.ops_watch_upset", "value": "The console has been snapped to the lock screen." },
+            { "condition": "globalVars.julian_console_screen_locked", "value": "J. SALLOW -- SESSION LOCKED.\nRe-authentication required (Level Red)." },
+            { "condition": "globalVars.julian_console_owner_away", "value": "NIGHT WATCH CONSOLE. Signed in: J. SALLOW, duty officer.\n\nOPERATIONS: all teams stood down.\nINTERNAL INVESTIGATION: active.\n\nWATCH LOG, this watch\nRelief watch on. Duty desk handed over.\nLevel Red notice: all classified systems require re-authentication.\n\nAnything typed here now goes in the log as J. SALLOW." }
+          ]
+        },
+        { "type": "pc", "id": "ops_duty_pc_east", "name": "Duty Desk Monitor", "decor": true, "takeable": false, "observations": "A monitor on the duty desk, stood down." },
+        { "type": "pc", "id": "ops_analyst_pc", "name": "Analyst's Monitor", "decor": true, "takeable": false, "observations": "The junior analyst's monitor, a threat feed scrolling." },
         {
           "_comment": "Source of the safe PIN. PASS 2: the safe is the Director's, but the PIN printed here used to be Nightshade's own service number. Now the printout carries the requesting officer's service number (the Director's) and the margin note says everyone uses their service number on their safe: a small deduction, not a read-off. ATHENA and HaX both point here.",
           "type": "notes",
