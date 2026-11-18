@@ -27,7 +27,7 @@ Counts are per phase, from the window events after the throttle and the object-s
 
 The gate was flipped only through the wall switch. No globals were set in the page and no game rows were edited.
 
-## Script fixes (tmp/cg/proof.mjs)
+## Script fixes (tools/playtest/chatter-pool-gate-proof.mjs)
 
 1. Opening "Mission Brief" notes minigame. `interact('gate_switch')` was refused with `minigame-active` (game 9153), so the flip never happened and phases b and c were not a real test. Fix: `open()` now calls `window.__test.minigame.close()` up to 4 times after the blocking-UI dismissal, before `throttleFps(20)`. It runs on every load, including after the reload. Checks and assertions are unchanged.
 

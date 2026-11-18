@@ -484,3 +484,23 @@ test('V12: a pool requireGlobal naming an undeclared global warns; a declared on
     assertNot(out, "requireGlobal names 'calm'");
     assertNot(out, "chatter 'grumble' requireGlobal");
 });
+
+test('V12: a gate value whose type differs from the declared global warns; a matching type does not', { skip }, () => {
+    const s = scenario({ npcs: [
+        worker({ chatter: { coffee: { lines: ['Fresh pot.'], requireGlobal: { day: '2', upset: 'false', calm: true } } } })
+    ], extra: { globalVariables: { day: 2, upset: false, calm: true } } });
+    const out = check(s);
+    assertHas(out, "'day' is declared as number but the gate gives string");
+    assertHas(out, "'upset' is declared as boolean but the gate gives string");
+    assertNot(out, "'calm' is declared");
+});
+
+test('V12: a gate on a security pool (login_aloud, usb_refused, work_fail_*, wk_*) warns; a gated coffee pool does not', { skip }, () => {
+    const gate = { lines: ['Line.'], requireGlobal: 'calm' };
+    const s = scenario({ npcs: [
+        worker({ chatter: { login_aloud: gate, usb_refused: gate, work_fail_down: gate, wk_share_login: gate, coffee: gate } })
+    ], extra: { globalVariables: { calm: true } } });
+    const out = check(s);
+    for (const t of ['login_aloud', 'usb_refused', 'work_fail_down', 'wk_share_login']) assertHas(out, `chatter '${t}' is gated by requireGlobal`);
+    assertNot(out, "chatter 'coffee' is gated by requireGlobal");
+});
