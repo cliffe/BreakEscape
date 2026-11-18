@@ -61,6 +61,6 @@ test('npc-combat: no windup while open or in the grace; a running windup does no
 
     const land = combat.slice(combat.indexOf('applyAttackDamage(npcId, npcSprite, state) {'));
     const pauseAt = land.indexOf('attacksPausedByUI()');
-    const damageAt = land.indexOf('window.playerHealth.damage(damage)');
+    const damageAt = land.indexOf('window.playerHealth.damage(damage, attackerSource(npcId))');
     assert.ok(pauseAt > 0 && pauseAt < damageAt, 'checked before the damage is applied');
 });

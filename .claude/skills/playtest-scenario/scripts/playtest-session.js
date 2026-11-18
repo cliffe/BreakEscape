@@ -528,7 +528,7 @@ const vmSteps = createVmSteps({
           // The overlay's own button can carry an icon or arrow ("▶ Resume"), so match the word,
           // not the whole label; "Resume session" headings are not buttons. Never paginate the
           // OTHER SESSIONS list (Prev/Next): that is what looped for minutes after a reload.
-          const want = { resume: /\bresume\b/i, restart: /\brestart\b/i, new: /new session/i }[resume];
+          const want = { resume: /\bresume\b/i, restart: /\bstart over\b|\brestart\b/i, new: /new session/i }[resume];
           pick = labels.find(l => want.test(l) && !/prev|next|load session/i.test(l));
           if (!pick) {
             throw new Error(`bootstrap: the resume overlay has no "${resume}" button (buttons: ${labels.join(' | ')}). `
@@ -546,7 +546,7 @@ const vmSteps = createVmSteps({
         trace.push(`dismiss "${bl.text.split('\n')[0]}" → "${pick}"`);
         await page.evaluate(l => window.__test.dismissBlockingUi(l), pick);
         await pause(900);
-        // A "New Session" or "Restart" click reloads the page.
+        // A "New Session" or "Start over" click reloads the page.
         await page.waitForFunction(() => !!window.__test, null, { timeout: 120000 }).catch(() => {});
         await page.evaluate(() => window.__test.waitUntilReady({ timeoutMs: 120000 })).catch(() => {});
         continue;

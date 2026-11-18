@@ -15,6 +15,8 @@ VAR ops_staff_upset = false
 VAR met = false
 // Skips the line block once after an exit, so the line printed behind the exit tag is not shown.
 VAR hub_quiet = false
+// Set once she has named who is still in the building.
+VAR told_who = false
 
 === start ===
 -> hub
@@ -38,6 +40,12 @@ VAR hub_quiet = false
         }
     }
 }
++ {not told_who} [Who's still in the building?]
+    ~ told_who = true
+    Gwen Pritchard: Elena, in the server hall, at the backup rack. She won't come up. And Ray on the gate.
+    Gwen Pritchard: He's been strange since the contractor renewals in the summer.
+    ~ hub_quiet = true
+    -> hub
 + [Carry on, I'll stay out of your way.]
     Gwen Pritchard: Thanks. Take care.
     ~ hub_quiet = true
