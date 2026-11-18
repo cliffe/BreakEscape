@@ -66,6 +66,7 @@ function harness({ slowDelay = 0 } = {}) {
         }
     };
     const mg = {
+        _resetSkip() {}, _pace: () => Promise.resolve(),   // skip helpers (real ones need the browser timers)
         conversation: null, isConversationActive: true, currentNPCId: 'hax',
         presented: [], kept: [],
         ui: { elements: { choicesContainer: { querySelectorAll: () => [{ dataset: { text: 'Go' } }] } },

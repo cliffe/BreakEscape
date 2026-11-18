@@ -24,6 +24,11 @@ import { isPhoneCallMode, callLabelFor, formatCallDuration, callSubtitle, CALL_S
 import InkEngine from '../../systems/ink/ink-engine.js';
 import { escapeHtml as escHtml } from '../../utils/escape-html.js';
 
+/** The player's OS asks for less motion: terminal lines appear whole. */
+function prefersReducedMotion() {
+    try { return globalThis.window?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches === true; } catch (e) { return false; }
+}
+
 export default class PhoneChatUI {
     /**
      * Create a PhoneChatUI instance
@@ -135,6 +140,8 @@ export default class PhoneChatUI {
         if (this.isTerminalTheme) {
             this.container.querySelector('.phone-messages-container')
                 .classList.add('phone-terminal-theme');
+            this.container.querySelector('#messages-container')
+                ?.setAttribute('title', 'Click, Space or Enter to skip');
         }
         if (this.isCallMode) this._renderCallChrome();
         if (this.isSocialTheme) {
@@ -1156,25 +1163,29 @@ export default class PhoneChatUI {
         let cancelled = false;
 
         return new Promise(resolve => {
-            this._typewriterCancel = () => {
+            const cancel = () => {
                 cancelled = true;
-                this._typewriterFinish = null;
+                if (this._typewriterFinish === finish) this._typewriterFinish = null;
+                if (this._typewriterCancel === cancel) this._typewriterCancel = null;
                 resolve();
             };
+            this._typewriterCancel = cancel;
             // Skip: the rest of the line appears at once, the cursor goes, and the line
             // resolves now. Text only: a voiced line's audio is a separate step that
             // starts after this promise resolves, so a skip never touches it.
-            this._typewriterFinish = () => {
+            const finish = () => {
                 if (cancelled) return;
                 cancelled = true;
-                this._typewriterFinish = null;
+                if (this._typewriterFinish === finish) this._typewriterFinish = null;
                 messageText.textContent = text;
                 messageText.classList.remove('terminal-typing');
                 cursor.remove();
                 if (scrollToBottom) this.scrollToBottom(false);
                 resolve();
             };
-            if (this._instantType) { this._typewriterFinish(); return; }
+            this._typewriterFinish = finish;
+            // Reduced motion: lines appear whole (no character-by-character typing)
+            if (this._instantType || prefersReducedMotion()) { finish(); return; }
 
             const tick = () => {
                 if (cancelled) return;
@@ -1187,7 +1198,7 @@ export default class PhoneChatUI {
                     cursor.classList.add('blink');
                     setTimeout(() => {
                         if (cancelled) return;
-                        this._typewriterFinish = null;
+                        if (this._typewriterFinish === finish) this._typewriterFinish = null;
                         cursor.remove();
                         resolve();
                     }, BLINK_DURATION);

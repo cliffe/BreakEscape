@@ -18,6 +18,7 @@ import { partitionSlowTags } from '../person-chat/person-chat-pending-reply.js';
 import { classifyPhoneLine, displayPhoneLine, phoneStepLines } from './phone-chat-speaker.js';
 import { choiceIndexFromKey } from './phone-chat-choices.js';
 import { whenSessionOverlayClosed } from '../../utils/session-overlay-pause.js';
+import { openModalCount } from '../../ui/modal-stack.js';
 import { displayDashes } from '../../utils/display-dashes.js';
 import { escapeHtml } from '../../utils/escape-html.js';
 import { phoneCloseLocked, phoneEscapeAction, FORCED_CALL_END_CLOSE_MS, TERMINAL_CALL_END_READ_MS } from './phone-call-lock.js';
@@ -488,6 +489,7 @@ export class PhoneChatMinigame extends MinigameScene {
     }
 
     async openConversation(npcId) {
+        this._resetSkip();   // a skip pressed in the last thread must not carry into this one
         // The phone was closed before this ran (a deferred reopen, e.g. back from notes)
         if (!this.gameState.isActive) return;
         const npc = this.npcManager.getNPC(npcId);
@@ -952,12 +954,12 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, deliveries?.[i] || null))) { this._resetSkip(); return; }
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
-        this._pendingNpcMessages = [];
         this._resetSkip();
+        this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
         if (this._placeCallFromTags?.(accumulatedTags)) return;
@@ -1018,6 +1020,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
     _resetSkip() {
         this._skipAll = false;
+        this._paceWake?.();   // a wait left running by a closed thread ends now
         this.ui?.setInstantType?.(false);
     }
 
@@ -1025,8 +1028,9 @@ export class PhoneChatMinigame extends MinigameScene {
      * Skip press (click on the thread, Space or Enter) in the terminal theme. First press while
      * a line types: the line finishes now. A press during the indicator or pause (or a later
      * one): skip-all, so the remaining lines appear whole with no waits and the choices come
-     * at once. Returns true if it acted. Never touches audio: a voiced call line speaks after
-     * its text, and the existing click-to-skip-voice handler is separate.
+     * at once. Returns true if it acted. Never touches audio itself: a voiced line speaks after
+     * its text. The click also skips a playing clip through the click-to-skip-voice handler on
+     * the same element, and _onSkipKey does the same for Space and Enter, so keys match clicks.
      */
     _onSkipPress() {
         if (!this.ui?.isTerminalTheme) return false;
@@ -1045,12 +1049,24 @@ export class PhoneChatMinigame extends MinigameScene {
     _onSkipKey(e) {
         if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
         if (e.key !== ' ' && e.key !== 'Enter') return;
+        if (!this._threadIsTop()) return;
         const t = e.target;
         const tag = t?.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON' || t?.isContentEditable) return;
         const a = document.activeElement;
         if (a && a !== t && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.isContentEditable)) return;
-        if (this._onSkipPress()) { e.preventDefault(); e.stopPropagation(); }
+        const clip = !!this._callVoice?.active;
+        if (clip) this._callVoice.skip();   // as the click does on a voiced thread
+        if (this._onSkipPress() || clip) { e.preventDefault(); e.stopPropagation(); }
+    }
+
+    /** The thread is showing and nothing sits over it (incoming-call panel, dialog, menu). */
+    _threadIsTop() {
+        if (!this.gameState?.isActive || this.ui?.getCurrentView?.() !== 'conversation') return false;
+        if (this.ui.incomingCallShowing?.()) return false;
+        if (openModalCount() > 0) return false;
+        const box = this.ui.elements?.messagesContainer;
+        return !!box && box.getClientRects().length > 0;
     }
 
     /**
@@ -1377,12 +1393,12 @@ export class PhoneChatMinigame extends MinigameScene {
         for (let i = 0; i < accumulatedMessages.length; i++) {
             const message = accumulatedMessages[i];
             if (!message.trim()) continue;
-            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) return;
+            if (!(await this._showStoryLine(message, TYPING_DELAY_MS, accumulatedDeliveries[i] || null))) { this._resetSkip(); return; }
             this._pendingNpcMessages.shift();
             if (i < accumulatedMessages.length - 1) await delay(INTER_MESSAGE_MS);
         }
-        this._pendingNpcMessages = [];
         this._resetSkip();
+        this._pendingNpcMessages = [];
 
         // #place_call: the thread dials (after the lines, before the exit and story-end checks)
         if (this._placeCallFromTags?.(accumulatedTags)) return;
@@ -1911,6 +1927,7 @@ export class PhoneChatMinigame extends MinigameScene {
 
     closeConversation() {
         console.log('🔙 Closing conversation');
+        this._resetSkip();
         if (this._pretext) return this._leavePretextCall();
 
         this._flushPendingMessages();

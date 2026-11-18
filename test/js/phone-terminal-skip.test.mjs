@@ -34,14 +34,25 @@ const UI = uiMod.PhoneChatUI || uiMod.default;
 
 const mgHeader = `
 const noop = () => {};
-class MinigameScene { constructor(c, p) { this.container = c; this.params = p; } addEventListener() {} cleanup() {} }
+class MinigameScene {
+  constructor(c, p) { this.container = c; this.params = p; this._eventListeners = []; }
+  addEventListener(element, eventType, handler, options) {   // as base-minigame.js: add, remember, remove at cleanup
+    element.addEventListener(eventType, handler, options);
+    this._eventListeners.push({ element, eventType, handler, options });
+  }
+  cleanup() {
+    this._eventListeners.forEach(({ element, eventType, handler, options }) => element.removeEventListener(eventType, handler, options));
+    this._eventListeners = [];
+  }
+}
+const openModalCount = () => globalThis.__modalCount || 0;
 class PhoneChatUI {} class PhoneChatHistory {} class InkEngine {} class PhoneCallVoice {} class TTSManager {}
 class PhoneChatConversation { static stepKnot() { return null; } static async waitForPreload() {} static isPreloadedOpening() { return false; } }
 const phoneCloseLocked = noop, phoneEscapeAction = noop, FORCED_CALL_END_CLOSE_MS = 0, TERMINAL_CALL_END_READ_MS = 0,
   attachPretext = async () => null, processGameActionTags = noop, choiceAsksEnding = () => false,
   confirmEndingBeforeChoice = async () => true, partitionSlowTags = () => ({}),
   classifyPhoneLine = (t, raw) => ({ type: 'npc', text: raw }),
-  displayPhoneLine = () => ({}), phoneStepLines = () => [], choiceIndexFromKey = () => -1,
+  displayPhoneLine = () => ({}), phoneStepLines = (t) => String(t || '').split('|').filter(Boolean), choiceIndexFromKey = () => -1,
   whenSessionOverlayClosed = () => Promise.resolve(), isVoicedCall = () => false,
   phoneLineVoice = noop, outcomeLineVoice = noop, stepDeliveries = () => [], voicedCallKnots = () => new Set(),
   callStartKnots = () => new Set(), callHomeKnot = () => 'start', deliveryFromTags = () => null, resolvePhoneApp = () => ({}),
@@ -92,7 +103,13 @@ function rig() {
     mg.isConversationActive = true;
     mg._typeoutRun = 1;
     mg.history = { addMessage() {} };
+    mg.playMessageSent = () => {};
     mg.saveStoryState = () => {};
+    mg.gameState = { isActive: true };
+    ui.getCurrentView = () => 'conversation';
+    ui.incomingCallShowing = () => false;
+    ui.elements.messagesContainer.getClientRects = () => [{}];   // jsdom has no layout: say it is shown
+    globalThis.__modalCount = 0;
     mg._placeCallFromTags = () => false;
     mg._releaseForcedCall = () => {};
     mg._finishPretextCall = () => false;
@@ -221,6 +238,19 @@ test('Space and Enter skip; typing in an input, modifiers and repeats do not', a
         startRun(r, c);
         await c.advance(1000 + 5 * 28);
         const input = document.createElement('input'); document.body.appendChild(input);
+        // covered or hidden: Space/Enter leave the hidden line alone (m3)
+        for (const cover of [() => { r.ui.incomingCallShowing = () => true; }, () => { globalThis.__modalCount = 1; },
+                             () => { r.ui.getCurrentView = () => 'contact-list'; }, () => { r.mg.gameState.isActive = false; },
+                             () => { r.ui.elements.messagesContainer.getClientRects = () => []; }]) {
+            const keep = [r.ui.incomingCallShowing, r.ui.getCurrentView, r.ui.elements.messagesContainer.getClientRects];
+            cover();
+            const ec = key({ key: ' ' }, document.body);
+            r.mg._onSkipKey(ec);
+            assert.equal(ec.defaultPrevented, false);
+            assert.ok(r.ui.isTypewriting(), 'a covered or hidden thread ignores the key');
+            [r.ui.incomingCallShowing, r.ui.getCurrentView, r.ui.elements.messagesContainer.getClientRects] = keep;
+            globalThis.__modalCount = 0; r.mg.gameState.isActive = true;
+        }
         const ta = document.createElement('textarea');
         for (const el of [input, ta]) {
             const e = key({ key: ' ' }, el);
@@ -269,5 +299,155 @@ test('_typewriterCancel (phone closed) still ends the line and clears the skip h
         r.ui._typewriterCancel();
         await p;
         assert.equal(r.ui.isTypewriting(), false);
+    } finally { c.restore(); }
+});
+
+test('m1: closing mid-reply resets skip state, so the next thread types normally', async () => {
+    const c = clock(); const r = rig();
+    try {
+        r.mg._resetSkip = PhoneChatMinigame.prototype._resetSkip;
+        const done = startRun(r, c);
+        await c.advance(1000 + 5 * 28);
+        r.mg._onSkipPress();
+        await c.advance(0);
+        r.mg._onSkipPress();   // skip-all, in the pause
+        assert.equal(r.mg._skipAll, true);
+        // the early return after a closed thread resets
+        r.mg._showStoryLine = async () => false;
+        await r.mg._presentOutput(['x'], [], RESULT, { tagsApplied: true });
+        assert.equal(r.mg._skipAll, false);
+        assert.equal(r.ui._instantType, false);
+        // closeConversation resets (the rest of it is stubbed away: it throws after the reset on a bare rig)
+        r.mg._skipAll = true; r.ui.setInstantType(true);
+        try { r.mg.closeConversation(); } catch (e) { /* bare rig */ }
+        assert.equal(r.mg._skipAll, false);
+        assert.equal(r.ui._instantType, false);
+        // openConversation resets before anything else can type
+        r.mg._skipAll = true; r.ui.setInstantType(true);
+        r.mg.gameState.isActive = true; r.mg.npcManager = { getNPC: () => null }; r.ui.showNotification = () => {}; r.ui.showContactList = () => {};
+        const waiting = r.mg.openConversation('nobody');
+        await c.advance(0);
+        await waiting;
+        assert.equal(r.ui._instantType, false);
+        await c.advance(5000);
+        await done;
+    } finally { c.restore(); }
+});
+
+test('m2: a finished older line never clears a newer line\'s skip hook', async () => {
+    const c = clock(); const r = rig();
+    try {
+        const a = r.ui._typewriterMessage('old', false);
+        await c.advance(130);                 // old is in its blink
+        const b = r.ui._typewriterMessage('a much longer newer line '.repeat(8), false);
+        await c.advance(700);                 // old's blink ends
+        await a;
+        assert.equal(r.ui.isTypewriting(), true, 'the newer line is still skippable');
+        assert.equal(r.mg._onSkipPress(), true);
+        await b;
+        assert.equal(r.ui.isTypewriting(), false);
+    } finally { c.restore(); }
+});
+
+test('m5: reduced motion shows terminal lines whole', async () => {
+    const c = clock(); const r = rig();
+    try {
+        dom.window.matchMedia = (q) => ({ matches: /reduce/.test(q) });
+        await r.ui._typewriterMessage('whole at once', false);
+        assert.equal(document.querySelector('.message-text').textContent, 'whole at once');
+        assert.equal(r.ui.isTypewriting(), false);
+    } finally { delete dom.window.matchMedia; c.restore(); }
+});
+
+// ---- the real wiring (m6) ----
+
+// the framework's cleanup() is what removes every addEventListener'd handler (PhoneChatMinigame.cleanup calls super.cleanup())
+const baseCleanup = (mg) => Object.getPrototypeOf(PhoneChatMinigame.prototype).cleanup.call(mg);
+
+function wiredRig(theme) {
+    const r = rig();
+    r.ui.isTerminalTheme = theme === 'terminal';
+    const els = r.ui.elements;
+    for (const k of ['contactList', 'conversationHeader', 'backButton']) els[k] = document.createElement('div');
+    els.choicesContainer = document.getElementById('choices-container');
+    r.mg.params = { theme };
+    r.mg._eventListeners = [];
+    r.mg.handleKeyPress = () => {};
+    return r;
+}
+
+test('listeners: skip is registered for the terminal theme only', () => {
+    const t = wiredRig('terminal'); t.mg.setupEventListeners();
+    const n = wiredRig('terminal'); n.ui.isTerminalTheme = false; n.mg.setupEventListeners();
+    const skipClicks = (r) => r.mg._eventListeners.filter((l) => l.element === r.ui.elements.messagesContainer && l.eventType === 'click').length;
+    const docKeys = (r) => r.mg._eventListeners.filter((l) => l.element === document && l.eventType === 'keydown').length;
+    assert.equal(skipClicks(t), 1);
+    assert.equal(docKeys(t), 2, 'skip key + the existing shortcuts');
+    assert.equal(skipClicks(n), 0);
+    assert.equal(docKeys(n), 1, 'only the existing shortcuts');
+    baseCleanup(t.mg); baseCleanup(n.mg);
+});
+
+test('listeners: real click and keydown events skip; removed at cleanup', async () => {
+    const c = clock(); const r = wiredRig('terminal');
+    try {
+        r.mg.setupEventListeners();
+        startRun(r, c);
+        await c.advance(1000 + 5 * 28);
+        assert.ok(r.ui.isTypewriting());
+        r.ui.elements.messagesContainer.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        assert.equal(r.ui.isTypewriting(), false, 'a real click skipped the line');
+        await c.advance(400 + 1000 + 5 * 28);   // pause, indicator, then line 2 is typing
+        assert.ok(r.ui.isTypewriting());
+        document.body.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+        assert.equal(r.ui.isTypewriting(), false, 'a real Enter skipped the next one');
+        await c.advance(300);
+        document.body.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true }));
+        assert.equal(r.mg._skipAll, true, 'a real Space in the pause skips the waits');
+        r.mg._skipAll = false; r.ui.setInstantType(false);
+        baseCleanup(r.mg);
+        const before = r.mg._skipAll;
+        r.mg._paceWake = () => {};
+        const ev = new dom.window.KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true });
+        document.body.dispatchEvent(ev);
+        r.ui.elements.messagesContainer.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+        assert.equal(ev.defaultPrevented, false, 'no listener after cleanup');
+        assert.equal(r.mg._skipAll, before);
+    } finally { c.restore(); }
+});
+
+test('a key press also skips a playing clip, as the click does', async () => {
+    const c = clock(); const r = rig();
+    try {
+        let skips = 0, playing = true;
+        r.mg._callVoice = { get active() { return playing; }, skip() { skips++; playing = false; } };
+        const e = key({ key: ' ' }, document.body);
+        r.mg._onSkipKey(e);
+        assert.equal(skips, 1);
+        assert.equal(e.defaultPrevented, true);
+        r.mg._onSkipKey(key({ key: ' ' }, document.body));
+        assert.equal(skips, 1, 'nothing playing, nothing to skip');
+    } finally { c.restore(); }
+});
+
+test('handleChoice: the reply types out, a click skips it, and the skip state resets on entry', async () => {
+    const c = clock(); const r = rig();
+    try {
+        r.mg._resetSkip = PhoneChatMinigame.prototype._resetSkip;
+        r.mg.currentNPCId = 'npc';
+        r.mg.conversation = { makeChoice: () => ({ text: 'Reply one.|Reply two.', tags: [], choices: [{ text: 'c' }], canContinue: false, hasEnded: false }) };
+        r.mg._saveStoryStateFor = () => {}; r.mg._applyLineTags = () => {};
+        r.ui.clearChoices = () => {};
+        r.ui.addMessage = async function (type, text) { if (type === 'player') return; await UI.prototype.addMessage.call(this, type, text, true); };
+        r.mg._skipAll = true; r.ui.setInstantType(true);   // left over from earlier
+        const done = r.mg.handleChoice(0);
+        await c.advance(1000 + 4 * 28);
+        assert.equal(r.mg._skipAll, false, 'stale skip state was cleared on entry');
+        assert.ok(r.ui.isTypewriting(), 'typing normally');
+        r.mg._onSkipPress(); await c.advance(0); r.mg._onSkipPress();
+        await c.advance(0);
+        await done;
+        assert.deepEqual(r.text(), ['Reply one.', 'Reply two.']);
+        assert.equal(r.mg._skipAll, false, 'reset at the end');
     } finally { c.restore(); }
 });
