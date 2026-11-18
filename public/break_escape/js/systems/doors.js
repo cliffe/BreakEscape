@@ -540,6 +540,8 @@ export function createDoorSpritesForRoom(roomId, position, fullRoomData = null) 
             biometricMatchThreshold: lockProps.biometricMatchThreshold ?? connectedRoomData?.biometricMatchThreshold ?? null,
             // Password/PIN pad options (the answer in `requires` is never sent to the client)
             maxAttempts: lockProps.maxAttempts ?? connectedRoomData?.maxAttempts ?? null,
+            // Opt-in password lockout: seconds the pad stays shut after maxAttempts wrong guesses
+            lockoutSeconds: lockProps.lockoutSeconds ?? connectedRoomData?.lockoutSeconds ?? null,
             passwordHint: lockProps.passwordHint ?? connectedRoomData?.passwordHint ?? null,
             showHint: lockProps.showHint ?? connectedRoomData?.showHint ?? null,
             postitNote: lockProps.postitNote ?? connectedRoomData?.postitNote ?? null,

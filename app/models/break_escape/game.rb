@@ -2382,6 +2382,8 @@ module BreakEscape
           # appends it to the locked toast, so it must survive the bootstrap filter (lab R3 F1).
           # pinLength: digits on a PIN door's pad (not secret); the controller fills it from
           # `requires` when it strips the PIN, so a 5-digit door gets a 5-digit pad.
+          # lockoutSeconds: a password lock's opt-in lockout length (a number, not secret), so a
+          # password door's pad can lock out before its room loads.
           # access, acceptsUIDOnly: an rfid door's role list and whether a UID-only copy opens it
           # (access model 4.1). They name roles and NPC ids, nothing secret.
           # dustable, dustHint: a PIN door's opt-in to fingerprint-kit dusting and its hint line
@@ -2390,7 +2392,7 @@ module BreakEscape
           # maxAttempts), so its pad shows the right wheels before the room loads (unlock gaps
           # R1 M2). Its old `answer` field is stripped here and again by the controller filter.
           %w[type connections locked lockType requires difficulty door_sign keyPins lockedHint ambientSound ambientVolume
-             maxAttempts passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
+             maxAttempts lockoutSeconds passwordHint showHint postitNote showPostit showKeyboard pinLength chatBackground lighting
              access acceptsUIDOnly cryptexConfig dustable dustHint].each do |field|
             kept_fields[field] = room_data[field] if room_data.key?(field)
           end
