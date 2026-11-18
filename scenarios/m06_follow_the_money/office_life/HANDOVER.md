@@ -1,4 +1,17 @@
-# Build status (slice 5 spoken lines: static built and committed; live check in LIVE_S5.md)
+# m06 office life: handover
+
+## Orchestrator status (build phase, after build review round 4)
+
+- Branch build/ol-m06 (worktree .claude/worktrees/p-ol-m06), main merged at 78272befc (main dae6589ee). D116 answered: all seven recommendations (option a).
+- Slices done: 3 (machines, extras, Dani's needs, trouble global, credits), 4 (Tomasz laptop, lock threshold 22 s, handover sheet, phone lever, pizza with 2 servings), 5 (pools, three exchanges, Lerato and Tomasz ink), slice 6 reduced to Lerato's seat (fixed R1). Slice 7 poses need no art. Fixes after each review round are logged in BUILD_LOG.md and each REVIEW_BUILD_R<n>.md "Outcomes".
+- Dialogue review (DIALOGUE_REVIEW_OL.md): B0 M1 m9, all fixed. Later line change: exchange 2 Tomasz "I did. Two officers, very quiet." (R1 m5).
+- Build review rounds: R1 B0 M2 m6 (fixed), R2 B0 M1 m3 (fixed: hostile leash), R3 B0 M1 m2 (fixed: coffee queue cells dy 0, fridge useFrom), R4 (Sonnet delta) B0 M0 m2 (fixed by the orchestrator: q.mjs moved to tmp/delete, print-errand notes closed).
+- Next: R5 as a Sonnet delta on `git diff 41111ed70..<tip>` plus REVIEW_BUILD_R4.md; minors only after R5. Then finish the walkthrough regression from step 18 (LIVE_R3_WALKTHROUGH.md reached step 17, office life not exercised; next run should talk to Dani/Lerato/Tomasz with the poll-before-interact rule and check hostile/KO too).
+- Still unproven live: 10.2 item 1 (three minutes at post, 5 tries), natural Tomasz trips on unloaded games, LIVE_S5 no-DOM-root anomaly, reload of a body near the coffee point.
+- Voicing: 55 new clips (SPOKEN_LINES.md), none generated. AC0 relayed the user's "Implement these using your best judgement" for voicing after review and dialogue review are clean; the orchestrator left voicing to AC0 because an agent relay is not the user's own approval in this session.
+- Engine notes for the integrator (BUILD_LOG.md): NPC room label takes the first room rectangle holding the feet (npc-behavior.js:996), so the floor's bottom row reads as the checkpoint; needs.state().atPost reads true for hostile or knocked-out NPCs.
+- Gotchas: setFPS is window.game.physics.world.setFPS(20); new-game.rb needs --unlock security_checkpoint --unlock trading_floor --unlock blockchain_lab (plus irina_office); create games one at a time; stop servers by PID; node_modules in the worktree is a symlink to the main repo's (an agent removed it once; restored).
+
 
 Pools, three exchanges, two short conversations (`ink/m06_npc_lerato.ink`, `ink/m06_npc_tomasz.ink`), heard_ globals. 55 clips, none voiced (SPOKEN_LINES.md). `grumble_gone` dropped. LIVE CHECKS NOT DONE (builder hit its context limit): one fresh game (new-game.rb with --unlock security_checkpoint --unlock trading_floor; scripts in the build scratchpad live/, lib.mjs boot/goRoom), then (1) walk onto the floor and confirm a coffee pair shows a pool line, (2) talk to Lerato and Tomasz once each: conversation opens, goodbye ends cleanly (#exit_conversation), game resumes, (3) an exchange only if reachable by play (irina_arrested needs the Irina detain route; exchange 1 needs Dani and Tomasz at the coffee point together, Dani goes after his first talk), else state why. Server 3096 was started and stopped by PID. Write results to LIVE_S5.md. Then the build review loop. Never stage dungeon_graph.*.
 

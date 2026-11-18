@@ -78,3 +78,4 @@ Both new ink files are fine on a reread: once-only choices, an exit that stays o
 - m1: fixed. Merged fridge affordance keeps hunger, capacity 1 and sound; two users one after the other, `trading_floor`.
 - m2: engine note only, recorded in BUILD_LOG.md.
 - Open observation (copier cell blocking the print errand): not exercised, the errand did not fire in the run.
+- Closed in round 4: the print is immediate with `forget: true` (no errand), so the copier cell cannot block it (REVIEW_BUILD_R4.md item 2).

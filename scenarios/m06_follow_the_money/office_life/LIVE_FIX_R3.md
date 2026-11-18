@@ -22,3 +22,5 @@ Game 8415: the Irina talk was done while Lerato and Tomasz were at the machine, 
 
 ## m2 (engine note, no code edited)
 See BUILD_LOG.md: the behaviour room label is the first `roomBounds` entry holding the feet (`npc-behavior.js:996`), so a bottom walkable row of a room that overlaps its southern neighbour reads as the neighbour. Not fixed here.
+
+Closed in round 4: with `forget: true` the print happens at once and creates no errand, so a coffee pair on the copier cell cannot block it (REVIEW_BUILD_R4.md item 2).
