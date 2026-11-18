@@ -802,7 +802,8 @@ export default class PhoneChatUI {
             }
         });
 
-        if (focusedId) this.focusContactRow(focusedId);
+        // The focused row's contact left the list: keep focus inside the phone
+        if (focusedId && !this.focusContactRow(focusedId)) this.focusIntoPhone();
         console.log(`📋 Populated ${npcs.length} contacts`);
     }
 
@@ -933,11 +934,11 @@ export default class PhoneChatUI {
             </div>
             <div class="contact-info">
                 <div class="contact-name" id="${nameId}">${escHtml(npc.displayName || npc.id)}</div>
-                ${npcDmFields(npc).handle ? `<div class="contact-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
+                ${npcDmFields(npc).handle ? `<div class="contact-handle" id="${nameId}-handle">${escHtml(npcDmFields(npc).handle)}</div>` : ''}
                 <div class="contact-last-message${lastIsMissedCall ? ' missed' : ''}">${escHtml(displayDashes(lastMessagePreview))}</div>
             </div>
             <div class="contact-meta">
-                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}<span class="contact-sr-only"> unread</span></div>` : ''}
+                ${unreadCount > 0 ? `<div class="unread-badge" id="${nameId}-unread">${unreadCount}<span class="contact-sr-only"> unread</span></div>` : ''}
                 <div class="contact-time" id="${nameId}-time">${escHtml(lastMessageTime)}</div>
             </div>
         `;
@@ -945,7 +946,12 @@ export default class PhoneChatUI {
         // the preview and time are the description
         contactItem.querySelector('.contact-last-message')?.setAttribute('id', `${nameId}-preview`);
         contactItem.setAttribute('aria-labelledby', nameId);
-        contactItem.setAttribute('aria-describedby', `${nameId}-preview ${nameId}-time`);
+        // The role=button children are presentational, so the handle and the unread count
+        // must be named here to be heard: "preview time handle N unread"
+        const described = [`${nameId}-preview`, `${nameId}-time`];
+        if (contactItem.querySelector(`#${nameId}-handle`)) described.push(`${nameId}-handle`);
+        if (unreadCount > 0) described.push(`${nameId}-unread`);
+        contactItem.setAttribute('aria-describedby', described.join(' '));
         
         return contactItem;
     }
@@ -974,6 +980,9 @@ export default class PhoneChatUI {
 
         this.currentView = 'conversation';
         this.currentNPCId = npcId;
+        // Only a thread opened by a keyboard press on its row returns focus to that row on Back;
+        // a bark or ring that opens a thread does not
+        if (!this._kbOpen) this._threadByKeyboard = false;
         // The thread is cleared below and redrawn from the history once that loads; a text
         // that arrives in between is part of that draw (npc-barks _foldIntoOpenThread)
         this.historyDrawn = false;

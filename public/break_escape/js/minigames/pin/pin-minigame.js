@@ -393,14 +393,11 @@ export class PinMinigame extends MinigameScene {
             // Enter on a non-text input (the cracker checkbox) keeps its own behaviour
             if (key === 'Enter' && nonTextInput) return;
             if (key === 'Enter' && (tag === 'BUTTON' || tag === 'A') && !target.classList?.contains('pin-minigame-key')) return;
-            // Enter on a pad key that has keyboard focus acts as that key: the native click runs
-            // once (no preventDefault, no handleEnter). A key focused by a mouse click is not
-            // focus-visible, so a physical Enter still submits.
-            if (key === 'Enter' && target.classList?.contains('pin-minigame-key')) {
-                let keyboardFocused = false;
-                try { keyboardFocused = !!target.matches(':focus-visible'); } catch (_) { keyboardFocused = false; }
-                if (keyboardFocused) return;
-            }
+            // Enter on a pad key the player reached by keyboard acts as that key: the native click
+            // runs once (no preventDefault, no handleEnter). A key the player focused with the
+            // pointer still submits. :focus-visible is not used: Chromium turns it on at the
+            // Enter keydown itself, so it cannot tell the two apart.
+            if (key === 'Enter' && target.classList?.contains('pin-minigame-key') && this._padPointerKey !== target) return;
             
             // Handle number keys
             if (key >= '0' && key <= '9') {
@@ -420,6 +417,19 @@ export class PinMinigame extends MinigameScene {
         };
         
         this.addEventListener(document, 'keydown', keyHandler);
+
+        // Input mode of the pad keys: _padPointerKey is the key the pointer last pressed, cleared
+        // by Tab, an arrow key, a pointer press elsewhere, or focus landing on another key.
+        this._padPointerKey = null;
+        const padKey = (el) => (el && el.closest ? el.closest('.pin-minigame-key') : null);
+        this.addEventListener(document, 'pointerdown', (e) => { this._padPointerKey = padKey(e.target); }, true);
+        this.addEventListener(document, 'focusin', (e) => {
+            const k = padKey(e.target);
+            if (k !== this._padPointerKey) this._padPointerKey = null;
+        });
+        this.addEventListener(document, 'keydown', (e) => {
+            if (e.key === 'Tab' || /^Arrow/.test(e.key || '')) this._padPointerKey = null;
+        }, true);
     }
     
     handleNumberInput(number) {

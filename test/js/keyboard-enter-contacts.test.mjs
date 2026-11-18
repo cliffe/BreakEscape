@@ -49,7 +49,7 @@ function padRig() {
     pin.handleEnter = () => { pin.enters++; };
     pin.handleNumberInput = (d) => { pin.digits.push(d); };
     pin.handleBackspace = () => { pin.backs++; };
-    pin.addEventListener = (el, type, handler) => el.addEventListener(type, handler);
+    pin.addEventListener = (el, type, handler, options) => el.addEventListener(type, handler, options);
     pin.setupKeyboardSupport();
     return pin;
 }
@@ -78,26 +78,72 @@ test('D1: Enter on the body, the pad and the display still submits', () => {
     assert.equal(pin.enters, 3);
 });
 
-test('M1/m1: Enter on a focus-visible pad key is left to the native click: no prevent, no submit', () => {
+const pointerDown = (el) => el.dispatchEvent(new dom.window.Event('pointerdown', { bubbles: true, cancelable: true }));
+
+test('M1: pointerdown on a pad key then Enter submits (handleEnter once, no native click)', () => {
     const pin = padRig();
-    $('k5').matches = (sel) => sel === ':focus-visible';
-    assert.equal(press($('k5'), 'Enter'), true, 'not prevented, so the browser clicks the key once');
-    assert.equal(pin.enters, 0, 'handleEnter is not also called');
+    pointerDown($('k5')); $('k5').focus();
+    assert.equal(press($('k5'), 'Enter'), false, 'prevented: handleEnter runs, not the key');
+    assert.equal(pin.enters, 1);
     assert.deepEqual(pin.digits, []);
 });
 
-test('m1: Enter on a pad key focused by a mouse click (not focus-visible) submits once', () => {
+test('M1: a pad key reached with no pointer (Tab) acts as that key: not prevented, no submit', () => {
     const pin = padRig();
-    $('k5').matches = () => false;
-    assert.equal(press($('k5'), 'Enter'), false);
+    $('answer').focus();
+    press($('answer'), 'Tab');
+    $('k5').focus();
+    assert.equal(press($('k5'), 'Enter'), true, 'the browser clicks the key once');
+    assert.equal(pin.enters, 0);
+});
+
+test('M1: pointerdown, then an arrow key, then Enter acts as the key', () => {
+    const pin = padRig();
+    pointerDown($('k5')); $('k5').focus();
+    press($('k5'), 'ArrowRight');
+    assert.equal(press($('k5'), 'Enter'), true);
+    assert.equal(pin.enters, 0);
+});
+
+test('M1: pointerdown, then Tab, then Enter acts as the key', () => {
+    const pin = padRig();
+    pointerDown($('k5')); $('k5').focus();
+    press($('k5'), 'Tab');
+    assert.equal(press($('k5'), 'Enter'), true);
+    assert.equal(pin.enters, 0);
+});
+
+test('M1: focus arriving on a key without a pointerdown clears the pointer mode', () => {
+    const pin = padRig();
+    document.querySelector('.pin-minigame-keypad').insertAdjacentHTML('beforeend', '<button class="pin-minigame-key" id="k6">6</button>');
+    pointerDown($('k5')); $('k5').focus();
+    $('k6').focus();               // script or assistive focus, no pointerdown on k6
+    $('k5').focus();
+    assert.equal(press($('k5'), 'Enter'), true);
+    assert.equal(pin.enters, 0);
+});
+
+test('M1: a pointerdown elsewhere clears the pointer mode; the pointer on the body then Enter submits', () => {
+    const pin = padRig();
+    pointerDown($('k5')); $('k5').focus();
+    pointerDown(document.body);
+    $('k5').focus();               // back by script: not pointer-reached
+    assert.equal(press($('k5'), 'Enter'), true);
+    pointerDown(document.body);
+    assert.equal(press(document.body, 'Enter'), false);
     assert.equal(pin.enters, 1);
 });
 
-test('m1: a matches(:focus-visible) that throws counts as not focus-visible', () => {
+test('M1: each Enter is either one native click or one handleEnter, never both', () => {
     const pin = padRig();
-    $('k5').matches = () => { throw new Error('unsupported'); };
-    assert.equal(press($('k5'), 'Enter'), false);
-    assert.equal(pin.enters, 1);
+    let clicks = 0;
+    $('k5').addEventListener('click', () => clicks++);
+    pointerDown($('k5')); $('k5').focus();
+    const prevented = !press($('k5'), 'Enter');
+    assert.ok(prevented && pin.enters === 1 && clicks === 0);
+    press($('k5'), 'Tab');
+    const prevented2 = !press($('k5'), 'Enter');
+    assert.ok(!prevented2 && pin.enters === 1, 'native path: handleEnter not called again');
 });
 
 test('M1: digits and Backspace still enter from the PIN cracker checkbox, and Enter there does not submit', () => {
@@ -241,6 +287,8 @@ test('m2: a row without an avatar is named by the contact name alone', () => {
     const described = row.getAttribute('aria-describedby').split(' ').map((id) => document.getElementById(id).textContent).join(' ');
     assert.match(described, /Meet me at the dock/);
     assert.match(described, /\d:\d\d/);
+    assert.match(described, /3 unread/, 'the unread count is in the description');
+    assert.match(described, /@ana/, 'the handle is in the description');
     assert.equal(row.querySelector('.unread-badge').textContent, '3 unread');
     assert.equal(row.querySelector('.unread-badge').firstChild.textContent, '3', 'the visible number is unchanged');
 });
@@ -295,4 +343,82 @@ test('m1: repeat and modifier Enter on a row are ignored', () => {
         row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init }));
     }
     assert.deepEqual(mg.opened, []);
+});
+
+test('M2/m1: aria-describedby resolves to existing elements: preview, time, handle and unread', () => {
+    document.body.innerHTML = '';
+    const ui = Object.create(UI.prototype);
+    ui.npcManager = { getConversationHistory: () => [{ type: 'npc', text: 'Meet me at the dock', read: false, timestamp: 1 }] };
+    ui.unreadCountFor = () => 2;
+    const row = ui.createContactItem({ id: 'ana', displayName: 'Ana Reyes', handle: '@ana' });
+    document.body.append(row);
+    const ids = row.getAttribute('aria-describedby').split(' ');
+    assert.equal(ids.length, 4);
+    for (const id of ids) assert.ok(document.getElementById(id), `#${id} exists`);
+    assert.match(ids.join(' '), /-unread/);
+    assert.match(ids.join(' '), /-handle/);
+    const text = ids.map((id) => document.getElementById(id).textContent).join(' ').replace(/\s+/g, ' ');
+    assert.match(text, /2 unread/);
+    assert.match(text, /@ana/);
+    assert.equal(nameOf(row), 'Ana Reyes', 'the name is still the contact name alone');
+});
+
+test('M2: a row with no unread and no handle describes only preview and time', () => {
+    document.body.innerHTML = '';
+    const ui = Object.create(UI.prototype);
+    ui.npcManager = { getConversationHistory: () => [] };
+    ui.unreadCountFor = () => 0;
+    const row = ui.createContactItem({ id: 'bob', displayName: 'Bob' });
+    document.body.append(row);
+    const ids = row.getAttribute('aria-describedby').split(' ');
+    assert.equal(ids.length, 2);
+    for (const id of ids) assert.ok(document.getElementById(id));
+});
+
+test('nit: a focused text input outside the list keeps focus through a rebuild', () => {
+    const { mg } = listRig();
+    const ui = mg.ui;
+    ui.listContacts = () => [{ id: 'ana', displayName: 'Ana Reyes' }];
+    ui.refreshLivePreview = () => {};
+    const input = document.createElement('input'); input.type = 'text'; document.body.append(input);
+    input.focus();
+    ui.populateContactList('p');
+    assert.equal(document.activeElement, input);
+});
+
+test('nit: if the focused row\'s contact leaves the list, focus falls back into the phone view', () => {
+    const { mg } = listRig();
+    const ui = mg.ui;
+    const listView = document.createElement('div'); listView.tabIndex = -1;
+    const convView = document.createElement('div');
+    document.body.append(listView, convView);
+    listView.append($('list'));
+    ui.elements.contactListView = listView; ui.elements.conversationView = convView;
+    ui.container = document.body;
+    ui.currentView = 'contact-list';
+    ui.listContacts = () => [{ id: 'bob', displayName: 'Bob' }, { id: 'ana', displayName: 'Ana Reyes' }];
+    ui.refreshLivePreview = () => {};
+    ui.populateContactList('p');
+    document.querySelector('.contact-item[data-npc-id="ana"]').focus();
+    ui.listContacts = () => [{ id: 'bob', displayName: 'Bob' }];
+    ui.populateContactList('p');
+    assert.notEqual(document.activeElement, document.body, 'focus did not drop to body');
+    assert.equal(document.activeElement, listView);
+});
+
+test('nit: showConversation for a thread not opened by a keyboard press clears _threadByKeyboard', () => {
+    const { mg } = listRig();
+    const ui = mg.ui;
+    const listView = document.createElement('div'), convView = document.createElement('div');
+    ui.elements = { ...ui.elements, contactListView: listView, conversationView: convView,
+        messagesContainer: document.createElement('div'), choicesContainer: document.createElement('div') };
+    ui.npcManager.getNPC = (id) => ({ id, displayName: id });
+    ui.syncSkipHint = () => {}; ui.updateHeader = () => {}; ui.refreshBackUnread = () => {};
+    ui.focusIntoPhone = () => {}; ui._bottomPin = null; ui.isCallMode = false;
+    ui._threadByKeyboard = true;      // left over from an earlier keyboard open
+    ui.showConversation('ana');       // a bark or ring: no keyboard press on a row
+    assert.equal(ui._threadByKeyboard, false);
+    ui._kbOpen = true; ui._threadByKeyboard = true;
+    ui.showConversation('ana');       // inside a keyboard open of the row
+    assert.equal(ui._threadByKeyboard, true);
 });
