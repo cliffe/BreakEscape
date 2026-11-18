@@ -149,9 +149,7 @@ VAR confrontation_advice_given = false
 === first_call ===
 #speaker:agent_0x99
 
-Agent. Four hours to the final upload window.
-
-Patricia Morgan runs security. She called us in, and she can open doors for you. Keep her in the picture.
+Agent. Patricia Morgan runs security. She called us in, and she can open doors for you. Keep her in the picture.
 
 Someone in that building is feeding ENTROPY the keys to the 999 dispatch network. Find them before half past eight tonight.
 
@@ -171,7 +169,6 @@ Someone in that building is feeding ENTROPY the keys to the 999 dispatch network
 
 + [Anything I should be careful of?]
     Don't show your hand early. If the insider hears Security has a name, they'll bring the upload forward.
-    Then you're racing a clock that's just got shorter.
     And watch for anyone who reaches out to you directly. ENTROPY recruits. You might be on someone's list tonight.
     -> support_hub
 
@@ -290,7 +287,7 @@ An answer scribbled on the back of that leaflet means somebody in there has alre
 {
 - found_medical_bills:
     A trial abroad, a wife with Stage 3 cancer, and nobody left to ask.
-    That's a target file, written by his own bad luck.
+    That's a target file.
 - found_vetting_file:
     Undeclared loans, a second charge on the house, and treatment abroad no insurer will cover. That's a target file.
 - else:
@@ -316,7 +313,7 @@ ENTROPY rarely recruits believers. They recruit desperate people and sell them t
 
 Then you've watched him talk himself round, on paper. Thirty to forty-five lives, written down, and he kept going.
 
-That should worry you more than the pitch. He understands the cost. He decided he could live with it.
+That should worry you more than the pitch. He knows the cost, and decided he could live with it.
 
 -> topic_journal_choices
 
@@ -337,7 +334,7 @@ That should worry you more than the pitch. He understands the cost. He decided h
     - call_is_callback: Thank you. Listen.
     - call_answer_seconds > 10: Finally. Sit down for this.
 }
-The Architect's own authorisation. I've read it twice. A casualty projection, reviewed, and signed off as an acceptable cost.
+The Architect's own authorisation. A casualty projection, reviewed, and signed off as an acceptable cost.
 
 // Blind m05 #4: the call opening, the authorisation and the two follow-ups arrived as one run. A
 // one-option beat after the authorisation lets it land; the player taps on for the rest.
@@ -431,11 +428,11 @@ Whatever she offered, she's very good at making a bad trade sound reasonable. It
     ~ flag1_discussed = true
     ~ flag2_discussed = true
     ~ flag3_discussed = true
-    Badge 4471 staged that manifest. No name. Whoever carries that spare is your insider. Root's last: see what that account can run.
+    Whoever carries badge 4471 is your insider. For root, see what that account can run.
 - flag2_submitted and not flag2_discussed:
     ~ flag1_discussed = true
     ~ flag2_discussed = true
-    You're on the box. Its user accounts will tell you who's been living on it.
+    Its user accounts will tell you who's been living on it.
 - else:
     ~ flag1_discussed = true
     Now use it. The upload flaw needs you logged in, and you are.
@@ -732,7 +729,6 @@ So is the server-room password. It was sitting in IT's ticket queue.
 }
 // R4 N5: both leads by name, as Owen says it.
 Past the server room is the key vault. Fingerprint reader, two prints enrolled: Dr Halloran's and David Torres'.
-Whatever else he knew, you'll have to find the hard way.
 -> on_owen_ko_relay_choices
 
 === on_owen_ko_relay_choices ===
@@ -913,18 +909,14 @@ Map what's alive on that subnet before you touch anything. Then find out everyth
 #speaker:agent_0x99
 ~ confrontation_advice_given = true
 
-You've named him. Now it's how you go in.
-
-Go soft and you give him the exit ENTROPY never offered. He works for us, and his family stays whole.
-
-It only works if he wants out.
+Go soft and he gets the exit ENTROPY never offered: he works for us and his family stays whole, if he wants out.
 
 {patricia_ko:
     Go hard and you hold him, and I call the police from a number that leads nowhere.
-    We have no badge. What happens to him after that is up to them.
+    We have no badge, so after that he's theirs.
 - else:
     Go hard and you hold him, hand him to Patricia, and she calls the police.
-    We have no badge. What happens to him after that is up to them.
+    We have no badge, so after that he's theirs.
 }
 
 -> confrontation_advice_choices
@@ -932,8 +924,8 @@ It only works if he wants out.
 === confrontation_advice_choices ===
 // Struggling run A (D1, M7): something to weigh, not an answer.
 + [Which do you recommend?]
-    I won't choose for you. But weigh it like this.
-    Soft gets us his network and keeps his family whole, if he means it. If he doesn't, we've put a liar back inside.
+    I won't choose for you.
+    Soft gets us his network, if he means it. If he doesn't, we've put a liar back inside.
     Hard is certain tonight, and we learn nothing from him.
     If it turns into a fight: he's no fighter. Q switches to fists. Can't take him? Get out of his reach, then message me.
     -> support_hub
@@ -1001,7 +993,7 @@ Ask me what you want to ask.
     His upload schedule's still on the desk.
 }
 {not found_manifest:
-    The package manifest's still there as well.
+    The package manifest's still there.
 }
 // R2 (m7): she has nothing left to offer once he's dealt with.
 {recruiter_texted and not recruiter_contacted_player:
@@ -1172,7 +1164,7 @@ Thursday, nine o'clock. My office.
     - torres_suspected and not has_motive() and not has_exfil():
         You've a pattern on him, not a case. His office for why, then the vault past the server room for proof.
     - torres_suspected and not has_motive():
-        You can see it leaving, and it's his. Now find out why: what he keeps in his office, or Patricia's vetting files.
+        It's leaving, and it's his. Now the why: what he keeps in his office, or Patricia's vetting files.
     - torres_suspected and not has_exfil():
         You know why he might. Now the proof it's leaving: the vault past the server room, or tie the manifest's badge to him.
     - server_password_obtained and not torres_suspected:
@@ -1181,7 +1173,7 @@ Thursday, nine o'clock. My office.
 }
 // R2 (m7): after the fate she has no pitch left (never_talked_terms).
 {recruiter_texted and not recruiter_contacted_player and final_choice == "":
-    That TalentStack number's still there. Hear her out if you want. Just don't give her anything.
+    That TalentStack number's still there. Don't give her anything.
 }
 -> report_progress_choices
 
