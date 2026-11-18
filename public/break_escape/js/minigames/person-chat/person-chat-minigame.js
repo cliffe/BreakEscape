@@ -126,6 +126,15 @@ export class PersonChatMinigame extends MinigameScene {
         // Use global character registry if available
         if (window.characterRegistry) {
             const allCharacters = window.characterRegistry.getAllCharacters();
+            // NPCs register when their room loads, so after a reload a speaker from an unvisited room
+            // (m04's debrief: "Robert Vance:" lines, his room not loaded) did not resolve: the prefix
+            // showed under the conversation NPC's name and the line was voiced as that NPC (403).
+            // Scenario NPCs not registered yet are added after the registered ones, so a registered
+            // NPC still wins a display-name tie.
+            const rooms = this.scenario?.rooms || window.gameScenario?.rooms || {};
+            Object.values(rooms).forEach(room => (room?.npcs || []).forEach(def => {
+                if (def && typeof def === 'object' && def.id && !allCharacters[def.id]) allCharacters[def.id] = def;
+            }));
             console.log(`👥 Using global character registry with ${Object.keys(allCharacters).length} characters:`, Object.keys(allCharacters));
             return allCharacters;
         }
@@ -976,13 +985,11 @@ export class PersonChatMinigame extends MinigameScene {
         }
         
         // Look up by ID or displayName (case-insensitive). NPCManager.resolveSpeakerId
-        // does the same scan; when this conversation's own NPC is a social character
-        // (scenario social.characters, social build 0.6) a display-name tie goes to it.
-        // Every other conversation keeps the first match (P0-R R-01).
+        // does the same scan; when two characters share a display name, the tie goes to
+        // this conversation's own NPC (e.g. m05 patricia_morgan vs patricia_phone).
         const resolveSpeakerId = this.npcManager?.constructor?.resolveSpeakerId;
         if (typeof resolveSpeakerId === 'function') {
-            const influence = typeof window !== 'undefined' ? window.socialInfluence : null;
-            const preferOwn = !!(this.npc?.id && influence?.isSocialCharacter?.(this.npc.id));
+            const preferOwn = !!this.npc?.id;
             const resolved = resolveSpeakerId(this.characters, speakerId, this.npc?.id, { preferOwn });
             if (resolved) return resolved;
         } else for (const [id, character] of Object.entries(this.characters)) {

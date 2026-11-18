@@ -965,6 +965,61 @@ module BreakEscape
       assert_response :not_found
     end
 
+    # ─── unlock_vm_console: the launcher-reached console unlock endpoint ────────
+
+    test 'unlock_vm_console returns 404 in standalone mode (hacktivity_mode? is false)' do
+      # The owner may reach the action (authorize passes), but with no VmSet/FlagService in the
+      # dummy app it is standalone mode, so the endpoint is a no-op 404. The real unlock (and the
+      # ::Vm.default_enable_console value) is exercised in Hacktivity's Vm#apply_default_console!
+      # tests, which run where ::Vm exists.
+      assert_not BreakEscape::Mission.hacktivity_mode?,
+                 'Precondition: test/dummy must not have VmSet/FlagService defined'
+
+      post unlock_vm_console_game_url(@game)
+      assert_response :not_found
+    end
+
+    test "SECURITY: unlock_vm_console rejects another player's game" do
+      other_player = break_escape_demo_users(:other_user)
+      other_game = Game.create!(
+        mission: @mission,
+        player: other_player,
+        scenario_data: @game.scenario_data,
+        player_state: @game.player_state.dup
+      )
+
+      # current_player in standalone test mode is always :test_user, so this is a non-owner.
+      post unlock_vm_console_game_url(other_game), as: :json
+      assert_response :forbidden
+    end
+
+    test 'SECURITY: unlock_vm_console shares the room gate (blocked when launcher room is locked)' do
+      # Documents that the endpoint uses the same find_vm_launcher_room + room_unlocked? gate as
+      # vm_panel: a launcher the player has not reached is refused before any console change.
+      game = Game.create!(
+        mission: @mission,
+        player: @player,
+        scenario_data: {
+          'startRoom' => 'reception',
+          'rooms' => {
+            'reception'   => { 'objects' => [] },
+            'server_room' => { 'objects' => [{ 'type' => 'vm-launcher', 'vm' => { 'title' => 'kali' } }] }
+          }
+        },
+        player_state: {
+          'currentRoom' => 'reception',
+          'unlockedRooms' => ['reception'], # server_room NOT unlocked
+          'unlockedObjects' => []
+        }
+      )
+
+      controller = GamesController.new
+      room_id = controller.send(:find_vm_launcher_room, game.scenario_data, 'kali')
+      assert_equal 'server_room', room_id
+      assert_not game.room_unlocked?(room_id),
+                 'Gate would block: launcher room found but not reached'
+    end
+
     # ─── player_state row locking (lost-update race guard) ─────────────────────
     #
     # These endpoints read-modify-write @game.player_state then save!, with no

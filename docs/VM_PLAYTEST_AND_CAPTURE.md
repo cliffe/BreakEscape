@@ -37,8 +37,9 @@ stays as the background and the options considered.
 
 | Piece | Where | What it does |
 |---|---|---|
-| VM launcher minigame | `public/break_escape/js/minigames/vm-launcher/vm-launcher-minigame.js` | In Hacktivity mode, embeds or links `vm_panel`; standalone it just shows the VM title and IP. The SPICE download path is disabled. |
-| `vm_panel` | `app/controllers/break_escape/games_controller.rb:1323` | Gated on the game being `in_progress` and the launcher's room being unlocked (admins bypass), sets `enable_console` on the VM, redirects to Hacktivity's VM page with `embedded=1`. |
+| VM launcher minigame | `public/break_escape/js/minigames/vm-launcher/vm-launcher-minigame.js` | In Hacktivity mode, embeds or links `vm_panel`; standalone it just shows the VM title and IP. The SPICE download path is disabled. On open in Hacktivity mode it POSTs `unlock_vm_console` first, so the console is set before the panel needs its token. |
+| `unlock_vm_console` | `POST /games/:id/unlock_vm_console?vm_title=` | Called by the launcher minigame when it opens. Same owner + `in_progress` + launcher-room gate as `vm_panel` (admins/AMs bypass); sets the reached VM's console to `Vm.default_enable_console(title)` via `Vm#apply_default_console!` (attack VMs on, `*server*` targets stay locked). Idempotent; returns JSON. Standalone mode (no `VmSet`) answers 404 and the client treats it as a no-op. |
+| `vm_panel` | `app/controllers/break_escape/games_controller.rb` | Gated on the game being `in_progress` and the launcher's room being unlocked (admins bypass); sets the VM's console to its default with `apply_default_console!` (so a `*server*` target is never unlocked here either), redirects to Hacktivity's VM page with `embedded=1`. |
 | Flag station | `POST /games/:id/flags` | Server-side validation; flags never reach the client. |
 | `test:flag:N` alias | `docs/test-bridge.md` "VM-backed flags in testing" | Outside production, resolves to the station's Nth real flag, then runs every normal check. Responses carry `testFlagAlias: true`. |
 | Standalone real flags | `games_controller.rb:135` | `flag_hints_xml` at game creation fills `flags_by_vm`, so a standalone game can take the real flags of a real SecGen build. `vm_ips_json` does the same for IPs. |
