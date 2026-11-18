@@ -1057,6 +1057,13 @@ torres_journal_excerpt = "Met the Recruiter again. Debt relief plus a standing r
               "sendTimedMessage": { "delay": 3000, "message": "You're in. Patricia Morgan's office is off reception, on the east side. Start with her. The clock's running." }
             },
             {
+              "_comment": "Blind finding (part5): in the data centre before the naming, Torres stays hidden and the room looks empty. Once-only HaX text on the first unnamed entry; skipIfGlobal re-checks at delivery, so a naming inside the delay drops it. The condition keeps it off the torres_identified mapping on david_torres.",
+              "eventPattern": "room_entered:data_center",
+              "condition": "globalVars.torres_identified !== true",
+              "onceOnly": true,
+              "sendTimedMessage": { "delay": 2000, "message": "Nobody's going to walk in while we're still guessing. Ring Patricia and give her a name.", "skipIfGlobal": "torres_identified" }
+            },
+            {
               "_comment": "Playtest D4 backstop: the briefing was marked played (setGlobalOnStart) but never finished, e.g. a reload mid-cutscene. The task is custom, so this completes it without the server needing the NPC encountered.",
               "eventPattern": "room_entered:reception_lobby",
               "condition": "globalVars.briefing_played === true",
