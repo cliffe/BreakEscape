@@ -756,7 +756,9 @@ export class DustingMinigame extends MinigameScene {
 
     _buildCandidates() {
         const lp = this.print.pattern;
-        const n = this.diff.candidates;
+        // An object may ask for more (or fewer) reference cards than its difficulty gives: fingerprintCandidateCount, 2 to 4.
+        const asked = Number(this.data.fingerprintCandidateCount);
+        const n = Number.isInteger(asked) && asked >= 2 && asked <= 4 ? asked : this.diff.candidates;
         const names = [];
         const cand = Array.isArray(this.data.fingerprintCandidates) ? this.data.fingerprintCandidates : null;
         const ownerLc = String(this.ownerName).toLowerCase(), ownerRaw = String(this.owner).toLowerCase();

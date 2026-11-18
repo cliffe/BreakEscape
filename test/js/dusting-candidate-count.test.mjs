@@ -1,0 +1,54 @@
+// m05 blind finding #2: the Compare step can show 2 to 4 reference cards when the object sets
+// fingerprintCandidateCount (m05's Torres mug asks for 4), whatever its difficulty gives.
+// Run with: node test/js/dusting-candidate-count.test.mjs
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { cpSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const pub = join(here, '../../public/break_escape');
+const root = mkdtempSync(join(tmpdir(), 'dusting-count-'));
+cpSync(join(pub, 'js'), join(root, 'js'), { recursive: true });
+writeFileSync(join(root, 'package.json'), '{"type":"module"}');
+
+const el = () => ({ setAttribute() {}, appendChild() {}, style: {} });
+globalThis.window = { gameState: { globalVariables: {} } };
+globalThis.document = { getElementById: () => null, createElement: el, head: { appendChild() {} }, body: { appendChild() {} } };
+globalThis.Image = class {};
+const mod = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-game.js')).href);
+const { generatePrint } = await import(pathToFileURL(join(root, 'js/minigames/dusting/fingerprint-generator.js')).href);
+const { DIFFICULTY } = await import(pathToFileURL(join(root, 'js/minigames/dusting/dusting-model.js')).href);
+const Game = mod.DustingMinigame;
+
+const build = (data, level = 'easy') => {
+    const g = Object.create(Game.prototype);
+    Object.assign(g, {
+        data, objectId: 'mug', owner: 'David Torres', ownerName: 'David Torres', diff: DIFFICULTY[level],
+        print: generatePrint({ owner: 'David Torres', pattern: 'whorl', variant: 'panel' })
+    });
+    g._buildCandidates();
+    return g;
+};
+const names = ['Lisa Park', 'Owen Gallagher', 'Patricia Morgan', 'Dr Ruth Halloran'];
+
+test('easy gives two cards by default', () => {
+    assert.equal(build({ fingerprintCandidates: names }).candidates.length, 2);
+});
+
+test('fingerprintCandidateCount 4 gives four cards, one correct, owner among them', () => {
+    const g = build({ fingerprintCandidates: names, fingerprintCandidateCount: 4 });
+    assert.equal(g.candidates.length, 4);
+    assert.equal(g.candidates.filter(c => c.correct).length, 1);
+    assert.equal(g.candidates[g.correctIndex].label, 'David Torres');
+    assert.equal(new Set(g.candidates.map(c => c.label)).size, 4);
+    // easy: no decoy shares the lift's pattern class
+    for (const c of g.candidates) if (!c.correct) assert.notEqual(c.pattern, 'whorl');
+});
+
+test('out-of-range counts are ignored', () => {
+    assert.equal(build({ fingerprintCandidates: names, fingerprintCandidateCount: 9 }).candidates.length, 2);
+    assert.equal(build({ fingerprintCandidates: names, fingerprintCandidateCount: 1 }).candidates.length, 2);
+});
