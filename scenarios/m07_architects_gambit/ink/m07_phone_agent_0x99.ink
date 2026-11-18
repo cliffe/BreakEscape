@@ -518,21 +518,35 @@ HaX here, Agent. I've got your channel and the board.
 + [Never mind.]
     -> hub
 
-// PASS 4 (design review fix 1): prints, exits, parks on the hub; owns no
-// choices, so a re-navigation can't land here. The assignment is above the
-// lines so an early close still records it (the global observer writes it
-// through). The debrief opens on the next room entry
-// or closed screen once all four flags are in (closing_debrief mappings).
+// PASS 4 (design review fix 1): prints, then asks. Ending-convention fix: the
+// request is set only after the confirm, so "Not yet" leaves the debrief
+// closed and the hub re-offers the call. The tag sits in the brackets so the
+// "Before the mission ends" check runs before the choice is taken. Text prints
+// here and the choices live in a text-free knot, so a reopen replays nothing.
+// The debrief opens on the next room entry or closed screen once all four
+// flags are in (closing_debrief mappings).
 === bring_me_in ===
 // lint: call-knot
-~ debrief_requested = true
-{flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted:
-    Putting you through. He's waiting.
-- else:
+#speaker:agent_0x99
+{not (flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted):
     Not yet. Put the rest of the flags through the relay and he's on straight after.
 }
-#exit_conversation
--> DONE
+-> bring_choices
+
+=== bring_choices ===
+// lint: call-knot
++ {flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted} [Put him through. That ends tonight. #ending_check]
+    ~ debrief_requested = true
+    Putting you through. He's waiting.
+    #exit_conversation
+    -> DONE
++ {not (flag1_submitted and flag2_submitted and flag3_submitted and flag4_submitted)} [Understood. Bring me in once it's through. #ending_check]
+    ~ debrief_requested = true
+    #exit_conversation
+    -> DONE
++ [Not yet. I'm still looking.]
+    #exit_conversation
+    -> DONE
 
 // ===========================================
 // PASS 5 alignment r1 (M2): THE DEDUCTION
