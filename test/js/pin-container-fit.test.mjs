@@ -140,8 +140,13 @@ test('B8: the grid column minimum is as wide as the label so two columns fit at 
     const cols = (media) => rule(box, '.container-contents-grid:not(.share-folder-files)', media)['grid-template-columns'];
     assert.match(cols(null), /minmax\(128px/);
     assert.match(cols('(max-width: 768px)'), /minmax\(128px/);
-    // 2 columns + 10px gap + 15px padding each side must fit a 390px viewport minus the 20px container padding
-    assert.ok(2 * 128 + 10 + 30 + 40 <= 390);
+    // At 390 the content box is 390 - 2*frame - container padding/margin - grid padding/border.
+    // The widest theme frame is 28px (cyberpunk); two columns need 2*128 + 10px gap.
+    const c = rule(box, '.container-minigame', '(max-width: 480px)');
+    const pad = parseInt(c.padding, 10), margin = parseInt(c.margin, 10) || 0;
+    const content = 390 - 2 * 28 - 2 * pad - 2 * margin - (2 * 15 + 2 * 2);
+    assert.ok(content >= 2 * 128 + 10, `grid content ${content}px holds two 128px columns`);
+    assert.match(c.height, /calc\(100% - 20px\)/, 'height reserve matches the slimmer padding');
 });
 
 test('B8: fitContentLabels sizes each slot margin from its label height', () => {

@@ -1200,6 +1200,16 @@
     line-height: 18px;
 }
 
+/* Phone width: slimmer container chrome so two 128px label columns fit inside the
+   themed frame at 390 (frame up to 28px each side + 20px padding + grid 34px) */
+@media (max-width: 480px) {
+    .container-minigame {
+        height: calc(100% - 20px);
+        padding: 10px;
+        margin: 0 auto;
+    }
+}
+
 @media (max-width: 768px) {
     .container-contents-grid:not(.share-folder-files) {
         grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
