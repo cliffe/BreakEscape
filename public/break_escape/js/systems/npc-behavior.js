@@ -100,6 +100,19 @@ const AVOID_BACKOFF_BEHIND_PX = TILE_SIZE * 0.75;
 export const AVOID_YIELD_MAX_STEPS = 6;
 // R8 m2: a body, for the player-behind check (a back-off step moves AVOID_BACKOFF_MS at the squeeze speed)
 const AVOID_BODY_PX = 20;
+// Squeeze past the player (lab_physical_pentest USB foothold, games 8412 to 8420): a needs walk
+// (a job, need or interest) that the player's body has blocked for AVOID_PLAYER_PASS_MS walks on
+// through the player: the player's body is ignored by its avoidance and by the NPC and player
+// collider until the two are clear. Walls, doors, furniture and other NPCs still block it. A
+// player near the walk's target (the pickup or use cell) is passed after AVOID_WAIT_MS instead,
+// since the errand only fires at that cell. A block that lapses for AVOID_PLAYER_BLOCK_GAP_MS
+// starts the timer again, so a player walking across the NPC's path changes nothing. The timer
+// survives a detour and a needs re-issue of the same walk (the re-issue every 3 s used to reset
+// the avoidance before it ever gave up). Hostile or KO'd NPCs never pass, and an NPC whose
+// behaviour sets squeezePastPlayer: false keeps the player's body block on every walk.
+export const AVOID_PLAYER_PASS_MS = 2500;
+export const AVOID_PLAYER_BLOCK_GAP_MS = 1000;
+export const AVOID_PLAYER_CLEAR_PX = AVOID_BODY_PX + 8;   // centre to centre: the bodies no longer touch
 
 /**
  * The nearest blocker that lies AHEAD of a walker on its heading, or null.
@@ -629,6 +642,8 @@ export class NPCBehavior {
         const merged = {
             facePlayer: config.facePlayer !== undefined ? config.facePlayer : true,
             facePlayerDistance: config.facePlayerDistance || 96,
+            // false: this NPC never squeezes past the player's body (_mayPassPlayer)
+            squeezePastPlayer: config.squeezePastPlayer !== false,
             patrol: {
                 enabled: config.patrol?.enabled || false,
                 speed: config.patrol?.speed || 100,
@@ -1760,12 +1775,14 @@ export class NPCBehavior {
         // path behind nextWaypoint, the heading check alone.
         const path = this.currentPath;
         const onPath = Array.isArray(path) && path[this.pathIndex] === nextWaypoint;
-        const blockers = this._dynamicBlockers();
+        let blockers = this._dynamicBlockers();
         const ahead = (list, reach) => onPath
             ? nearestBlockerOnPath(pos, path, list, reach, AVOID_LANE_HALF_PX, this.pathIndex)
             : nearestBlockerAhead(pos, { x: nextWaypoint.x - pos.x, y: nextWaypoint.y - pos.y }, list, reach);
         // Trying to come through (R7 M1): following a path, or walking towards this NPC
         const coming = b => !b.isPlayer && (b.walking || b.vx * (pos.x - b.x) + b.vy * (pos.y - b.y) > 0);
+        // Squeezing past the player: the player's body is not a blocker until the two are clear
+        if (this._updatePlayerPass(pos, blockers, ahead)) blockers = blockers.filter(b => !b.isPlayer);
         let hit = ahead(blockers, AVOID_LOOKAHEAD_PX);
         // Still yielding: the NPC it backed off from, a little beyond the look-ahead, still counts
         // while it is still coming through
@@ -1773,18 +1790,14 @@ export class NPCBehavior {
         if (!hit && held?.yieldTo && time < held.yieldUntil) {
             hit = ahead(blockers.filter(b => b.id === held.yieldTo && coming(b)), AVOID_YIELD_HOLD_PX);
         }
-        if (!hit) { this._avoid = null; return false; }
+        if (!hit) { this._avoid = null; this._notePlayerBlock(time, false); return false; }
 
-        // A needs-driven NPC whose pickup/use cell has the player standing on or
-        // beside it must still reach that cell — the pickup/use only fires there — so
-        // a sustained yield or a detour round the player strands the errand. Treat it
-        // like a scripted route action: time-box the brief wait, then squeeze up to
-        // the cell rather than holding or routing the long way. (Office-life
-        // regression: Sofia stalled or detoured for seconds when the player stood by
-        // the BadUSB she was sent to collect — lab_physical_pentest games 1099–1124.)
-        if (!mustReach && hit.isPlayer && this._moveOwner === 'needs' && this.patrolTarget) {
-            const dxt = this.patrolTarget.x - hit.x, dyt = this.patrolTarget.y - hit.y;
-            if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) mustReach = true;
+        // The player's body in the way of a needs walk: after AVOID_PLAYER_PASS_MS (AVOID_WAIT_MS
+        // when the player stands at the walk's target, games 1099 to 1124) walk on through the
+        // player instead of holding or detouring for ever (games 8412 to 8420).
+        if (hit.isPlayer && this._notePlayerBlock(time, true, hit)) {
+            this._avoid = null;
+            return false;
         }
 
         const a = this._avoid || (this._avoid = { since: time, repathAfter: 0, pending: false, gaveUp: false, squeezeUntil: 0 });
@@ -1877,6 +1890,65 @@ export class NPCBehavior {
             this._moveToward(nextWaypoint, this.config.patrol.speed * AVOID_SQUEEZE_FACTOR);
             return true;
         }
+        return true;
+    }
+
+    /**
+     * May this walk squeeze past the player? A needs walk (job, need or interest) in progress,
+     * not hostile or KO'd, and not opted out with behaviour squeezePastPlayer: false.
+     */
+    _mayPassPlayer() {
+        if (this.config?.squeezePastPlayer === false) return false;
+        if (this._moveOwner !== 'needs' || !this._stopOnArrival) return false;
+        const hs = window.npcHostileSystem;
+        if (hs?.isNPCKO?.(this.npcId) || hs?.isNPCHostile?.(this.npcId)) return false;
+        return true;
+    }
+
+    /** Is this NPC squeezing past the player now (its collider with the player is off)? */
+    isPassingPlayer() {
+        return !!this._playerPass?.active && this._mayPassPlayer();
+    }
+
+    /**
+     * Record whether the player blocks this frame; returns true when the block has lasted long
+     * enough to squeeze past (and starts the pass). `hit` is the player blocker when blocked.
+     */
+    _notePlayerBlock(time, blocked, hit = null) {
+        const p = this._playerPass;
+        if (!blocked || !this._mayPassPlayer()) {
+            if (p && !p.active && (!this._mayPassPlayer() || time - p.lastSeen > AVOID_PLAYER_BLOCK_GAP_MS)) this._playerPass = null;
+            return false;
+        }
+        if (!p || p.active || time - p.lastSeen > AVOID_PLAYER_BLOCK_GAP_MS) {
+            this._playerPass = { since: time, lastSeen: time, active: false };
+            return false;
+        }
+        p.lastSeen = time;
+        let wait = AVOID_PLAYER_PASS_MS;
+        const t = this.patrolTarget;
+        if (t && hit) {
+            const dxt = t.x - hit.x, dyt = t.y - hit.y;
+            if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) wait = AVOID_WAIT_MS;
+        }
+        if (time - p.since < wait) return false;
+        p.active = true;
+        console.log(`🫥 [${this.npcId}] Squeezing past the player after ${Math.round(time - p.since)} ms`);
+        return true;
+    }
+
+    /**
+     * While a pass is active, keep it until the player is clear: not ahead within the look-ahead
+     * and not touching. Ends at once if the walk is no longer one that may pass. Returns true
+     * while the pass is active.
+     */
+    _updatePlayerPass(pos, blockers, ahead) {
+        const p = this._playerPass;
+        if (!p?.active) return false;
+        if (!this._mayPassPlayer()) { this._playerPass = null; return false; }
+        const player = blockers.filter(b => b.isPlayer);
+        const touching = player.some(b => Math.hypot(b.x - pos.x, b.y - pos.y) < AVOID_PLAYER_CLEAR_PX);
+        if (!touching && !ahead(player, AVOID_LOOKAHEAD_PX)) { this._playerPass = null; return false; }
         return true;
     }
 
@@ -3397,6 +3469,7 @@ export class NPCBehavior {
         this._goToStayDest = null;
         this._moveId = null;   // SIMS-2: a cancelled move issues no arrival
         this._moveOwner = undefined;
+        this._playerPass = null;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
         this._moveReroute = false;
@@ -3428,6 +3501,7 @@ export class NPCBehavior {
         this._moveId = null;
         this._avoid = null;
         this._moveOwner = undefined;
+        this._playerPass = null;
         this._moveAvoidRooms = undefined;
         this._moveYieldsToPlayer = false;
         this._moveReroute = false;

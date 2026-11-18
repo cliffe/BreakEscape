@@ -33,7 +33,8 @@ const quiet = fn => {
 };
 const mod = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 const { NPCBehavior } = mod.default;
-const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX, AVOID_BACKOFF_MS, AVOID_YIELD_MAX_STEPS } = mod;
+const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX, AVOID_BACKOFF_MS, AVOID_YIELD_MAX_STEPS,
+    AVOID_PLAYER_PASS_MS, AVOID_PLAYER_BLOCK_GAP_MS } = mod;
 
 // ── nearestBlockerOnPath: "ahead" follows the path for the look-ahead ──────────
 
@@ -355,28 +356,25 @@ test('without mustReach the same early frame is still a hold — so mustReach is
 // pickup cell — as a blocker and yielded/detoured for seconds (leg ~29 vs ~17 units),
 // a detour the player sees. The pickup only fires at the cell, so on the final approach
 // a needs errand squeezes up to a player at its target, exactly as a route action does.
-test('needs pickup: a player on the target cell makes the NPC squeeze up to it (not a sustained hold)', () => {
+test('needs pickup: a player on the target cell is passed after the brief wait (not a sustained hold)', () => {
     window.__npcAvoidOff = false;
     window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
     window.rooms = {};
-    const b = walker({ target: { x: 30, y: 0 } });   // no pathfinder: a plain yield would hold for ever
+    const b = walker({ target: { x: 30, y: 0 }, busy: true });   // no pathfinder: a plain yield would hold for ever
     b._moveOwner = 'needs';                           // a needs errand, not a wander
     let t = 100000;
     b._handleBlockerAhead(t, { x: 30, y: 0 });
     assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a brief wait first (no shove)');
     t += 700;                                         // just past AVOID_WAIT_MS
-    const handled = b._handleBlockerAhead(t, { x: 30, y: 0 });
-    assert.equal(handled, true);
-    const speed = Math.hypot(b._vel.x, b._vel.y);
-    assert.ok(speed > 0 && speed < 90, `bounded squeeze toward the item, not a shove (got ${speed.toFixed(1)})`);
-    assert.ok(b._vel.x > 0, 'moving toward the pickup cell, not holding or detouring');
+    assert.equal(b._handleBlockerAhead(t, { x: 30, y: 0 }), false, 'walks on to the item');
+    assert.equal(b.isPassingPlayer(), true, 'through the player, whose body no longer blocks it');
 });
 
 test('needs errand: a player far from the target (mid-path) is still a normal yield, not a squeeze', () => {
     window.__npcAvoidOff = false;
     window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
     window.rooms = {};
-    const b = walker({ target: { x: 400, y: 0 } });  // target far from the blocker → not the "at my cell" case
+    const b = walker({ target: { x: 400, y: 0 }, busy: true });  // target far from the blocker → not the "at my cell" case
     b._moveOwner = 'needs';
     let t = 100000;
     b._handleBlockerAhead(t, { x: 400, y: 0 });
@@ -882,4 +880,121 @@ test('patrol minors: a waypoint patrol blocked by a still player on open floor d
 test('patrol minors: with no way round a still player, a waypoint patrol re-targets after its stall window', () => {
     const r = playerLaneRun({ detour: false });
     assert.ok(r.retargetAt !== null && r.retargetAt < 15000, `re-target at ${r.retargetAt} ms`);
+});
+
+// ── Squeeze past the player (USB foothold, lab_physical_pentest games 8412 to 8420) ─────────
+// Sofia's needs walk to her PC was held by a player standing in the one-tile aisle between two
+// desks: the needs layer re-issued the walk every 3 s, which reset the avoidance, so the give-up
+// squeeze never came and the job timed out. A needs walk blocked by the player for
+// AVOID_PLAYER_PASS_MS now walks on through the player's body.
+
+function aisleWalker(opts = {}) {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    delete window.npcHostileSystem;
+    const pf = { findNearestWalkableStartCell: (x, y) => ({ x, y }),
+        findWorldPath: (sx, sy, ex, ey, cb) => cb(null) };   // a one-tile aisle: no way round
+    const b = walker({ busy: true, pathfinder: pf, ...opts });
+    b._moveOwner = 'needs';
+    return b;
+}
+const wp = { x: 400, y: 0 };
+// Frames every 100 ms from `from` to `to` inclusive (a frame gap over AVOID_PLAYER_BLOCK_GAP_MS
+// would count as the block lapsing); returns the last result
+const hold = (b, from, to) => { let r; for (let t = from; t <= to; t += 100) r = b._handleBlockerAhead(t, wp); return r; };
+
+test('pass: a needs walk held by the player in an aisle walks on through after AVOID_PLAYER_PASS_MS', () => {
+    assert.ok(AVOID_PLAYER_PASS_MS >= 2000 && AVOID_PLAYER_PASS_MS <= 3000, 'about 2 to 3 s');
+    const b = aisleWalker();
+    let t = 100000;
+    for (; t < 100000 + AVOID_PLAYER_PASS_MS - 100; t += 100) {
+        assert.equal(b._handleBlockerAhead(t, wp), true, `still handled (waiting) at ${t - 100000} ms`);
+        assert.equal(b.isPassingPlayer(), false);
+    }
+    t = 100000 + AVOID_PLAYER_PASS_MS;
+    assert.equal(b._handleBlockerAhead(t, wp), false, 'the walk takes over again');
+    assert.equal(b.isPassingPlayer(), true);
+    // While passing, the player overlapping or ahead never blocks it
+    window.player.body.center = { x: 2, y: 0 };
+    assert.equal(b._handleBlockerAhead(t + 100, wp), false);
+    assert.equal(b.isPassingPlayer(), true, 'still passing while the bodies touch');
+});
+
+test('pass: a needs re-issue of the walk (which drops the avoidance) does not restart the timer', () => {
+    const b = aisleWalker();
+    let t = 100000;
+    for (; t < 100000 + AVOID_PLAYER_PASS_MS - 100; t += 100) {
+        b._handleBlockerAhead(t, wp);
+        if ((t - 100000) % 1000 === 0) b._avoid = null;   // what goToAndStay does every 3 s or so
+    }
+    assert.equal(b._handleBlockerAhead(100000 + AVOID_PLAYER_PASS_MS, wp), false);
+    assert.equal(b.isPassingPlayer(), true);
+});
+
+test('pass: a brief block, then a gap, restarts the timer (a player crossing the path changes nothing)', () => {
+    const b = aisleWalker();
+    let t = 100000;
+    hold(b, t, t + 2000); t += 2000;
+    // The player steps away for longer than the gap
+    window.player.body.center = { x: -60, y: 0 };
+    t += 100; assert.equal(b._handleBlockerAhead(t, wp), false);
+    t += AVOID_PLAYER_BLOCK_GAP_MS + 100; b._handleBlockerAhead(t, wp);
+    // Back in the way: the full wait again
+    window.player.body.center = { x: 28, y: 0 };
+    const back = t + 100;
+    assert.equal(hold(b, back, back + AVOID_PLAYER_PASS_MS - 200), true, 'still waiting');
+    assert.equal(b.isPassingPlayer(), false);
+    assert.equal(hold(b, back + AVOID_PLAYER_PASS_MS - 100, back + AVOID_PLAYER_PASS_MS), false);
+    assert.equal(b.isPassingPlayer(), true);
+});
+
+test('pass: ends once the player is clear behind, and the player blocks again afterwards', () => {
+    const b = aisleWalker();
+    hold(b, 100000, 100000 + AVOID_PLAYER_PASS_MS);
+    assert.equal(b.isPassingPlayer(), true);
+    window.player.body.center = { x: -40, y: 0 };   // now behind and not touching
+    b._handleBlockerAhead(100000 + AVOID_PLAYER_PASS_MS + 200, wp);
+    assert.equal(b.isPassingPlayer(), false, 'the pass is over');
+    window.player.body.center = { x: 28, y: 0 };
+    assert.equal(b._handleBlockerAhead(100000 + AVOID_PLAYER_PASS_MS + 300, wp), true, 'a new block holds again');
+    assert.equal(b.isPassingPlayer(), false);
+});
+
+test('pass: arrival or a cancelled walk ends the pass', () => {
+    const b = aisleWalker();
+    hold(b, 100000, 100000 + AVOID_PLAYER_PASS_MS);
+    assert.equal(b.isPassingPlayer(), true);
+    b.cancelMove = NPCBehavior.prototype.cancelMove;
+    quiet(() => b.cancelMove());
+    assert.equal(b.isPassingPlayer(), false);
+    assert.equal(b._playerPass, null);
+});
+
+test('pass: never for a hostile or KO\'d NPC, an opted-out NPC, a patrol or a scripted move', () => {
+    const cases = {
+        hostile: b => { window.npcHostileSystem = { isNPCHostile: id => id === b.npcId, isNPCKO: () => false }; },
+        ko: b => { window.npcHostileSystem = { isNPCHostile: () => false, isNPCKO: id => id === b.npcId }; },
+        optOut: b => { b.config.squeezePastPlayer = false; },
+        patrol: b => { b._stopOnArrival = false; b._moveOwner = undefined; },
+        scripted: b => { b._moveOwner = undefined; },   // a patrolOverride goToAndStay
+    };
+    for (const [name, set] of Object.entries(cases)) {
+        const b = aisleWalker();
+        set(b);
+        let t = 100000;
+        for (; t <= 100000 + AVOID_PLAYER_PASS_MS * 3; t += 100) b._handleBlockerAhead(t, wp);
+        assert.equal(b.isPassingPlayer(), false, `${name}: no pass`);
+        assert.ok(!b._playerPass?.active, `${name}: no pass started`);
+        delete window.npcHostileSystem;
+    }
+});
+
+test('pass: the squeezePastPlayer behaviour flag parses (default on, false opts out)', () => {
+    const b = Object.create(NPCBehavior.prototype);
+    b.npcId = 'x';
+    const on = quiet(() => b.parseConfig({}));
+    const off = quiet(() => b.parseConfig({ squeezePastPlayer: false }));
+    assert.equal(on.squeezePastPlayer, true);
+    assert.equal(off.squeezePastPlayer, false);
 });
