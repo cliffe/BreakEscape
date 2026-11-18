@@ -155,8 +155,9 @@
           "currentKnot": "start",
           "eventMappings": [
             {
-              "_comment": "Combat-hold check: a voiced call goes to the ringer, held while a fight is on.",
+              "_comment": "Combat-hold check: a voiced call goes to the ringer, held while a fight is on; its condition is re-checked when the fight ends (set proof_voice_off during the fight and it never rings).",
               "eventPattern": "proof_voice",
+              "condition": "!globalVars.proof_voice_off",
               "conversationMode": "phone-chat",
               "targetKnot": "start",
               "voiced": true,

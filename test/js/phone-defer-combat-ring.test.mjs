@@ -107,6 +107,8 @@ test('text phone-chat held in a fight is saved as a small record, cleared on del
         await w.advance(1500);
         assert.equal(w.calls.started.length, 0, 'held');
         const rec = JSON.parse(store.get(heldKey));
+        assert.ok(Number.isFinite(rec[0].at), 'stamped with when it was held');
+        delete rec[0].at;
         assert.deepEqual(rec, [{ npcId: 'caller', eventPattern: 'room_entered', handlerIndex: 0, sceneType: 'phone-chat' }]);
         assert.equal(JSON.stringify(saveOf(w)).includes('room_entered'), false, 'nothing added to the synced phone state');
         w.fight.on = false;

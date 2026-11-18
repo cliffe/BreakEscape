@@ -147,6 +147,9 @@ export default class NPCManager {
   static SCRIPTED_CALL_START_MS = 500;
   static SCRIPTED_CALL_RETRY_MS = 500;
   static HELD_SAVE_MAX = 8;   // saved fight holds (saveHeldConversations)
+  // A saved hold older than this is dropped on resume: a reload long after the fight should not
+  // open a conversation out of nowhere (its condition is not re-read on resume)
+  static HELD_SAVE_MAX_AGE_MS = 10 * 60 * 1000;
   static PHONE_MESSAGE_MAX_CHARS = 4000;
   static PHONE_DELIVERY_TAG_MAX_CHARS = 300; // a #delivery: tag (game.rb PHONE_DELIVERY_TAG_MAX)
   static PHONE_DELIVERY_TAGS_MAX = 5;
@@ -974,7 +977,7 @@ export default class NPCManager {
     // fight is over (_combatHold). An auto-challenge is stale by then, so it is dropped (it
     // re-fires on the next sighting). The player's own phone never comes through here.
     if (this._combatHold(conv)) {
-      if (conv.dropIfBusy) {
+      if (conv.dropIfBusy || conv.dropInFight) {
         this._dropForCombat(conv);
         return;
       }
@@ -1015,7 +1018,7 @@ export default class NPCManager {
         // A fight started during the start delay: wait for it to end
         if (this._combatHold(conv)) {
           this._scriptedCall = null;
-          if (conv.dropIfBusy) {
+          if (conv.dropIfBusy || conv.dropInFight) {
             this._dropForCombat(conv);
             if (this._scriptedCallQueue.length) this._pumpScriptedCallQueue();
             return;
@@ -1147,6 +1150,7 @@ export default class NPCManager {
   /** An auto-challenge met a fight: dropped, and its sighting is re-armed so it fires after the fight. */
   _dropForCombat(conv) {
     console.log(`📵 ${conv.sceneType} for ${conv.npcId} (${conv.label}) dropped: the player is in combat (auto-challenge)`);
+    try { conv.undoTrigger?.(); } catch (e) { /* cosmetic */ }
     try { window.sightChallengeWatcher?.rearm?.(conv.npcId); } catch (e) { /* cosmetic */ }
   }
 
@@ -1219,7 +1223,8 @@ export default class NPCManager {
       const raw = key ? window.localStorage?.getItem(key) : null;
       const list = raw ? JSON.parse(raw) : [];
       return Array.isArray(list) ? list.filter(r => r && typeof r.npcId === 'string' &&
-        typeof r.eventPattern === 'string' && Number.isInteger(r.handlerIndex)).slice(0, NPCManager.HELD_SAVE_MAX) : [];
+        typeof r.eventPattern === 'string' && Number.isInteger(r.handlerIndex) &&
+        !this._heldRecordTooOld(r)).slice(0, NPCManager.HELD_SAVE_MAX) : [];
     } catch (e) { return []; }
   }
 
@@ -1232,7 +1237,7 @@ export default class NPCManager {
       const list = this._scriptedCallQueue
         .filter(q => q.combatHeld && q.heldKey)
         .map(q => ({ ...q.heldKey, sceneType: q.sceneType }))
-        .concat(this._heldLeft || [])
+        .concat((this._heldLeft || []).filter(r => !this._heldRecordTooOld(r)))
         .slice(0, NPCManager.HELD_SAVE_MAX);
       if (list.length) window.localStorage.setItem(key, JSON.stringify(list));
       else window.localStorage.removeItem(key);
@@ -1254,8 +1259,16 @@ export default class NPCManager {
     this.saveHeldConversations();
   }
 
+  _heldRecordTooOld(rec) {
+    return Number.isFinite(rec.at) && Date.now() - rec.at > NPCManager.HELD_SAVE_MAX_AGE_MS;
+  }
+
   /** True when the record was handled (queued, or dropped as no longer rebuildable). */
   _resumeHeldRecord(rec) {
+    if (this._heldRecordTooOld(rec)) {
+      console.log(`📵 saved hold for ${rec.npcId} (${rec.eventPattern}) dropped: too old`);
+      return true;
+    }
     const npc = this.npcs.get(rec.npcId);
     if (!npc) return false;   // not registered yet (its room has not loaded): kept, tried when it registers
     const mapping = this._normalizeEventMappings(npc.eventMappings)[rec.handlerIndex];
@@ -1271,8 +1284,21 @@ export default class NPCManager {
     const ownKOEvent = rec.eventPattern.startsWith('npc_ko');
     console.log(`📵 resuming ${rec.sceneType} for ${rec.npcId} (${rec.eventPattern}) held by a fight before the reload`);
     this._openMappingConversation(rec.npcId, npc, rec.eventPattern, config, { _resumeHeld: true },
-      { ownKOEvent, wasHostile: false, ownWrites: {}, isRing: false, ringSetGlobalRestore: null, persistOnClose, eventKey, resumed: true });
+      { ownKOEvent, wasHostile: false, ownWrites: {}, isRing: false, ringSetGlobalRestore: null, persistOnClose, eventKey, resumed: true, heldAt: rec.at });
     return true;
+  }
+
+  /**
+   * The `ringWhile` for a voiced call held by a fight: the mapping's condition (a string of
+   * `globalVars.*` terms joined by &&), less any term that reads a key the mapping itself wrote.
+   */
+  _heldCallRingWhile(config) {
+    if (typeof config.condition !== 'string' || !config.condition.trim() || config.condition.includes('||')) return null;
+    const own = Object.keys(config.setGlobal || {});
+    // Terms that read a key the mapping itself wrote are left out: its latch is not a reason to drop it
+    const terms = config.condition.split('&&').map(t => t.trim()).filter(Boolean)
+      .filter(t => !own.some(k => new RegExp(`globalVars\\.${k}(?![\\w$])`).test(t)));
+    return terms.length ? terms.join(' && ') : null;
   }
 
   /**
@@ -1688,7 +1714,8 @@ export default class NPCManager {
 
     console.log(`✅ Event ${eventPattern} conditions passed, triggering NPC reaction`);
     
-    // Update triggered tracking
+    // Update triggered tracking (prevLastTime: for undoing it if a fight drops the challenge)
+    const prevLastTime = triggered.lastTime;
     triggered.count++;
     triggered.lastTime = now;
     // Handlers limited by onceOnly / maxTriggers are saved to the server
@@ -2000,7 +2027,8 @@ export default class NPCManager {
     
     // The conversation a mapping opens, if it opens one (see _openMappingConversation)
     if (this._openMappingConversation(npcId, npc, eventPattern, config, eventData,
-        { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey })) return;
+        { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey,
+          prevLastTime, heldAsCall })) return;
 
 
     // If bark text is provided, show it directly
@@ -2067,7 +2095,15 @@ export default class NPCManager {
    * held by a fight is re-derived from its mapping by resumeHeldConversations, with ctx.resumed.
    */
   _openMappingConversation(npcId, npc, eventPattern, config, eventData, ctx) {
-    const { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey } = ctx;
+    const { ownKOEvent, wasHostile, ownWrites, isRing, ringSetGlobalRestore, persistOnClose, eventKey, heldAsCall } = ctx;
+    // A challenge dropped by a fight never happened: give back the trigger count the event took, so
+    // an onceOnly or maxTriggers mapping can fire when the sighting is re-armed (R2 m2)
+    const undoTrigger = () => {
+      const t = this.triggeredEvents.get(eventKey);
+      if (!t || !(t.count > 0)) return;
+      t.count--;
+      t.lastTime = ctx.prevLastTime || 0;
+    };
     // A knocked-out NPC can't hold a conversation or play a cutscene. The rest of
     // the handler (setGlobal, completeTask, timed messages, ...) has already run
     // above, so missions that rely on KO handlers keep working. The NPC's own KO
@@ -2077,7 +2113,9 @@ export default class NPCManager {
     const heldCtx = {
       combatExempt: ownKOEvent,
       // Names the mapping, so a reload can rebuild this conversation (saveHeldConversations)
-      heldKey: isRing ? null : { npcId, eventPattern, handlerIndex: config.handlerIndex },
+      // `at` is when it was first held: a record this old after a reload is dropped (R2 m3)
+      heldKey: isRing ? null : { npcId, eventPattern, handlerIndex: config.handlerIndex, at: ctx.heldAt || Date.now() },
+      undoTrigger,
       recheck: () => this._heldMappingStillValid(npcId, eventPattern, config, eventData,
         { ownKO: ownKOEvent, wasHostile, ownWrites, skipCondition: ctx.resumed === true })
     };
@@ -2157,12 +2195,16 @@ export default class NPCManager {
         // the walk back). They are dropped if the player is busy when they would open: the
         // NPC re-challenges on the next sighting. Scripted story conversations keep deferring
         // (queued, never lost — m10 R3 / F25).
-        const dropIfBusy = /_in_view|^player_spotted/.test(eventPattern);
+        // A fight drops a `player_spotted` challenge too, but outside a fight it queues as before
+        // (dropping it there would need a re-arm that loops while the player stays busy).
+        const dropIfBusy = /_in_view/.test(eventPattern);
+        const dropInFight = dropIfBusy || /^player_spotted/.test(eventPattern);
         this._queueScriptedConversation({
           npcId: npc.id,
           label: eventPattern,
           sceneType: 'person-chat',
           dropIfBusy,
+          dropInFight,
           ...heldCtx,
           startDelayMs: NPCManager.SCRIPTED_CALL_START_MS,
           beforeOpen: () => {
@@ -2292,13 +2334,20 @@ export default class NPCManager {
           const outcome = window.phoneRinger.offer({
             npcId: npc.id,
             knot: knotToUse,
-            ring: config.ring || true,
+            // A voiced call held by a fight rings with the mapping's condition as its ringWhile (R2-M1),
+            // so a condition that turned false during the fight drops it quietly; an unforced one
+            // rings until answered, as the direct call it replaces never timed out to a missed call.
+            // A forced one stays forced (disableClose below) and answers itself.
+            ring: heldAsCall
+              ? { ringWhile: this._heldCallRingWhile(config), ...(config.disableClose ? {} : { untilAnswered: true }) }
+              : (config.ring || true),
             disableClose: config.disableClose || false,
             resume: config.resume === true,
             callLabel: config.callLabel || null,
             // The opt-in `ring.ringWhile` (normalised in the ringer adapter) is re-checked while the
             // call is queued or ringing. The mapping's trigger `condition` is NOT re-checked (M1 R4):
-            // a trigger-time guard never silently drops a call.
+            // a trigger-time guard never silently drops a call. The exception is a call held by a
+            // fight (heldAsCall above), which has waited long enough for its condition to go stale.
             // R1 m2: the pre-offer values of the mapping's own setGlobal keys. A quiet ringWhile drop
             // puts them back, so a dropped ring leaves its latch where a twin can still ring.
             ringSetGlobalRestore
