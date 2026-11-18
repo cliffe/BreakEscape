@@ -20,7 +20,7 @@ put('utils/helpers.js', 'export function makeDraggable() {}\n');
 put('utils/display-dashes.js', 'export function displayDashes(s) { return s; }\n');
 put('utils/escape-html.js', read('utils/escape-html.js'));
 put('utils/lock-scope-refusal.js', read('utils/lock-scope-refusal.js'));
-put('minigames/framework/base-minigame.js', 'export class MinigameScene { constructor(container, params) { this.params = params; } cleanup() {} }\n');
+put('minigames/framework/base-minigame.js', 'export class MinigameScene { constructor(container, params) { this.params = params; } cleanup() {} complete() {} resolveEarlyClose(s) { return s || this._successPending === true; } markSuccessPending() { this._successPending = true; } holdSuccess(ms) { this.markSuccessPending(); setTimeout(() => this.complete(true), ms); } }\n');
 for (const rel of ['minigames/combination/combination-minigame.js', 'minigames/cryptex/cryptex-minigame.js']) put(rel, read(rel));
 
 globalThis.window = { breakEscapeConfig: { gameId: 1 } };
