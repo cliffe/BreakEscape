@@ -436,7 +436,7 @@ How bad are we talking?
 === shatter_reaction ===
 ...Forty-two to eighty-five people. Calculated. Deliberate.
 
-They're not just terrorists. They're mass murderers with spreadsheets.
+They're mass murderers with spreadsheets.
 
 {player_name}, listen carefully. Your mission just changed priority.
 
@@ -460,8 +460,6 @@ They're counting on you, {player_name}. Even if they don't know it.
 
 People in the segments ENTROPY treated as statistics—and everyone downstream when switchboards flood and seconds decide outcomes.
 
-Every piece of evidence you find brings us closer to stopping this.
-
 -> mission_commitment
 
 === mission_commitment ===
@@ -470,9 +468,7 @@ Every piece of evidence you find brings us closer to stopping this.
 
 Good work discovering this. Now we know what we're dealing with.
 
-Continue investigating. Find the Operation Shatter files, identify all operatives, and prepare to shut this down.
-
-Message me if you need support. This just became a race against the clock.
+Message me if you need support. We're on the clock now.
 
 + [Understood. I'll stop it.]
     #exit_conversation
@@ -621,14 +617,13 @@ Read those files carefully, {player_name}. Not just the content — the details 
 
 Who filed what. Who signed off. Whether the headers actually match what they claim to be.
 
-Forensic markers are easy to overlook. They're also hard to fake perfectly.
+Forensic markers are easy to overlook, and hard to fake perfectly.
 
 + [I'll take another look.]
     #exit_conversation
     -> support_hub
 + [What am I looking for exactly?]
     Inconsistencies. Someone in the wrong role doing something outside their remit. A timestamp that doesn't add up. Authentication data the system itself has flagged.
-    The files will tell you what they are — if you read them right.
     + + [Understood. I'll look again.]
         #exit_conversation
         -> support_hub

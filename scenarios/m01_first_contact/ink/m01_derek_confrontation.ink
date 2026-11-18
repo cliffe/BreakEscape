@@ -145,7 +145,7 @@ Good. Then you understand what's coming.
 === derek_admits_casualties ===
 Yes. Between 42 and 85 people will die in the first 24 hours.
 
-It's not random noise. We've segmented the population—demographic cohorts where tailored lies land hardest, multiplied by everyone else caught when the system buckles.
+We've segmented the population: demographic cohorts where tailored lies land hardest, multiplied by everyone else caught when the system buckles.
 
 Hospitals overwhelmed by false closure alerts. Emergency lines jammed with spoofed calls—people who can't reach real help in time. Crowd crush and secondary crashes as everyone reacts at once. Heart attacks from sheer panic. It compounds.
 
@@ -211,13 +211,11 @@ We're teaching them—all of them—that trust is dangerous. Verify everything. 
 === evil_monologue_part3 ===
 Forty-two to eighty-five deaths. Let's call it sixty.
 
-The model isn't uniform—lies don't land on everyone with the same weight—but once capacity collapses, geography and timing decide who pays. That's engineered, not accidental.
-
 Do you know how many people die every year because they trusted the wrong email? Clicked the wrong link? Gave credentials to the wrong person?
 
 Thousands. Tens of thousands. Deaths from delayed emergency response. Medical errors from compromised records. Violence incited by disinformation.
 
-We're going to end that. One bad weekend. Sixty deaths. And then NO ONE will ever trust a digital message again without verification.
+We're going to end that. One bad weekend, and then NO ONE will ever trust a digital message again without verification.
 
 Sixty deaths to save tens of thousands per year. That's not murder. That's optimization.
 
@@ -266,9 +264,7 @@ I'm not a villain. I'm a prophet.
 // ================================================
 
 === confrontation_choice ===
-So. Here we are. You've heard my reasoning. You've seen the evidence.
-
-What happens now is up to you.
+So. Here we are. What happens now is up to you.
 
 I have here a launch device to remotely activate Operation Shatter. One confirmation code is all it takes. And I have it memorised.
 

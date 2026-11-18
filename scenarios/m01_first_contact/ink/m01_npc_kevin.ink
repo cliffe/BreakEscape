@@ -532,7 +532,6 @@ Kevin Park: Thank you. Seriously, thank you for taking the time to go through th
 
 {audit_correct_answers == 5:
     Kevin Park: You really understand what's happening here. Everything you've flagged matches my concerns exactly.
-    Kevin Park: It's such a relief to have a professional validate what I've been seeing.
     Kevin Park: I've felt like I'm going crazy, or being paranoid. But you see it too.
     ~ influence += 3
     # influence_increased

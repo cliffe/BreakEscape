@@ -219,8 +219,6 @@ Agent HaX: Get inside, find out what ENTROPY is planning, and report back.
 
 Agent HaX: Talk to Maya. She's your best lead. Whatever Derek's building, she'll have seen pieces of it.
 
-Agent HaX: Once you know what we're dealing with, contact me. We'll figure out how to stop it.
-
 ~ mission_accepted = true
 -> arrival
 

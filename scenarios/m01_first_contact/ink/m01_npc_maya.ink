@@ -114,7 +114,7 @@ Maya Chen: They're planning to kill people. On purpose. They call it "Operation 
 
 Maya Chen: From what I've gathered, Operation Shatter is a coordinated disinformation attack.
 
-Maya Chen: They've profiled millions of people—demographic cohorts they're betting will panic first—cross-referenced with who reacts fastest to an alert, who forwards without checking, who trusts which channels.
+Maya Chen: They've profiled millions of people: who reacts fastest to an alert, who forwards without checking, who trusts which channels.
 
 Maya Chen: The plan is to send fake emergency messages—hospital closures, bank failures, government alerts—tuned per segment where they think it'll spread fastest.
 
@@ -185,9 +185,7 @@ Maya Chen: Derek's the operations lead. He built the target lists, wrote the fak
 
 Maya Chen: Patricia Wells. She was our department manager.
 
-Maya Chen: She noticed Derek's weird behavior. The late nights, the encrypted calls.
-
-Maya Chen: She started investigating. Kept notes in her office.
+Maya Chen: She noticed Derek's late nights and encrypted calls, and started keeping notes in her office.
 
 Maya Chen: One day HR called her in. "Performance issues." She was gone within an hour.
 
