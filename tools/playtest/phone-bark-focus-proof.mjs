@@ -49,6 +49,10 @@ async function run(w, h, tag) {
   await page.waitForTimeout(1500);
   check((await barks()) === before, `${tag}: no toast for HaX while HaX's conversation is open`);
   check(await page.evaluate(() => document.body.innerText.includes('Proof text one')), `${tag}: the open thread shows the text`);
+  const unread = () => page.evaluate((id) => (window.npcManager.getConversationHistory(id) || [])
+    .filter(m => !m.read && (m.type === 'npc' || (m.type === 'call' && m.callEvent === 'missed'))).length, HAX);
+  check((await unread()) === 0, `${tag}: HaX has 0 unread after the fold`);
+  check(await page.evaluate(() => !document.querySelector('.phone-badge')), `${tag}: the phone HUD badge is gone after the fold`);
   await page.screenshot({ path: `${outdir}/${tag}-2-open-thread-no-toast.png` });
   check(await page.evaluate(() => !!document.activeElement?.closest?.('.phone-messages-container')), `${tag}: focus still in the phone after the text`);
 

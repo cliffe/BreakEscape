@@ -16,10 +16,12 @@ writeFileSync(join(dir, 'overlay-open.mjs'), readFileSync(join(js, 'utils/overla
 writeFileSync(join(dir, 'phone-chat-speaker.mjs'), readFileSync(join(js, 'minigames/phone-chat/phone-chat-speaker.js'), 'utf8'));
 writeFileSync(join(dir, 'npc-barks.mjs'), `
 import { phoneBarkText } from './phone-chat-speaker.mjs';
-import { workstationPopupOpen, phoneThreadOpenFor, openPhoneThread, threadTextKey } from './overlay-open.mjs';
+import { workstationPopupOpen as realWs, phoneThreadOpenFor, openPhoneThread, threadTextKey } from './overlay-open.mjs';
+const workstationPopupOpen = () => !!globalThis.__ws || realWs();
 const ASSETS_PATH = '', displayDashes = (s) => s, releaseHeldBarks = () => {}, HELD_BARK_VOICE_CAP_MS = 30000;
 let dialogOpen = false;
 globalThis.__setDialogOpen = (v) => { dialogOpen = v; };
+globalThis.__setWorkstation = (v) => { globalThis.__ws = v; };
 const dialogLayerOpen = () => dialogOpen, barkSource = ({ npcType }) => (npcType === 'person' ? 'speech' : 'phone');
 const arrowDirection = () => null, startHudLanes = () => {}, applyHeadshotBox = () => {};
 const barkLifetimeMs = () => 0, barksToTrim = () => 0, BARK_RESUME_MIN_MS = 0, barkMaxVisible = () => 3;
@@ -30,7 +32,7 @@ globalThis.window = {};
 globalThis.document = { getElementById: () => null };
 const { NPCBarkSystem } = await import(pathToFileURL(join(dir, 'npc-barks.mjs')).href);
 
-function setup({ open = null, view = 'conversation', historyDrawn = true, callMode = false, text = 'New lead on the vault.', rowText = text } = {}) {
+function setup({ noManager = false, open = null, view = 'conversation', historyDrawn = true, callMode = false, text = 'New lead on the vault.', rowText = text } = {}) {
     const added = [];
     globalThis.__setDialogOpen(false);
     const rows = [{ type: 'npc', text: rowText, read: false }];
@@ -40,9 +42,12 @@ function setup({ open = null, view = 'conversation', historyDrawn = true, callMo
         ui: { getCurrentView: () => view, historyDrawn, isCallMode: callMode, addMessage: async (t, x) => { added.push([t, x]); },
               elements: { messagesContainer: { querySelectorAll: () => [] } } } } } : { isOpen: () => false };
     const bark = Object.create(NPCBarkSystem.prototype);
+    const mgr = { getNPC: (id) => npcs[id], conversationHistory: new Map([['hax', rows]]) };
+    // Live game: the bark system has no manager of its own, only window.npcManager
+    if (noManager) window.npcManager = mgr; else delete window.npcManager;
     Object.assign(bark, { container: {}, barkQueue: [], deferredBarkQueue: [], isDrainingDeferred: false,
-        npcManager: { getNPC: (id) => npcs[id], conversationHistory: new Map([['hax', rows]]) },
-        _refreshPhoneUnread() {}, _processBarkQueue() {} });
+        npcManager: noManager ? undefined : mgr,
+        _refreshPhoneUnread() {}, _processBarkQueue() {}, drainDeferredBarks() {} });
     const payload = { npcId: 'hax', message: text };
     return { bark, added, rows, payload, reached: () => bark.barkQueue.length + bark.deferredBarkQueue.length };
 }
@@ -120,7 +125,7 @@ test('a text before the history is drawn is not drawn twice (m1)', () => {
     t.bark.showBark(t.payload);
     assert.equal(t.reached(), 0);
     assert.deepEqual(t.added, []);
-    assert.equal(t.rows[0].read, true);
+    assert.equal(t.rows[0].read, false, 'left for openConversation markAllRead (n1)');
 });
 
 test('a row with a Name: prefix is marked read (m2)', () => {
@@ -139,6 +144,64 @@ test('a bark already drawn in the open thread is dropped and its row marked read
     assert.equal(t.reached(), 0);
     assert.deepEqual(t.added, []);
     assert.equal(t.rows[0].read, true);
+});
+
+test('no bark.npcManager, window.npcManager set (live game): fold and drop mark rows read (M1)', () => {
+    const f = setup({ open: 'hax', noManager: true });
+    f.bark.showBark(f.payload);
+    assert.equal(f.reached(), 0);
+    assert.deepEqual(f.added, [['npc', 'New lead on the vault.']]);
+    assert.equal(f.rows[0].read, true);
+    const d = setup({ open: 'hax', noManager: true });
+    window.MinigameFramework.currentMinigame.ui.elements.messagesContainer.querySelectorAll =
+        () => [{ textContent: 'New lead on the vault.' }];
+    d.bark.showBark(d.payload);
+    assert.equal(d.reached(), 0);
+    assert.equal(d.rows[0].read, true);
+    delete window.npcManager;
+});
+
+test('a workstation popup keeps the hold (m1)', () => {
+    const t = setup({ open: 'hax' });
+    globalThis.__setWorkstation(true);
+    try {
+        t.bark.showBark(t.payload);
+        assert.equal(t.bark.deferredBarkQueue.length, 1);
+        assert.deepEqual(t.added, []);
+        assert.equal(t.rows[0].read, false);
+    } finally { globalThis.__setWorkstation(false); }
+});
+
+test('historyDrawn lifecycle: texts before the draw are skipped, after it are drawn (m1)', () => {
+    const t = setup({ open: 'hax', historyDrawn: false });
+    const ui = window.MinigameFramework.currentMinigame.ui;
+    t.bark.showBark(t.payload);
+    assert.deepEqual(t.added, []);
+    ui.historyDrawn = true; // what openConversation sets once the history is drawn
+    t.bark.showBark({ npcId: 'hax', message: 'Second text.' });
+    assert.deepEqual(t.added, [['npc', 'Second text.']]);
+});
+
+test('a same-contact text held behind a dialog folds when the dialog goes (n2)', () => {
+    const t = setup({ open: 'hax' });
+    globalThis.__setDialogOpen(true);
+    try {
+        t.bark.showBark(t.payload);
+        t.bark.showBark({ npcId: 'hax', message: 'Held two.' });
+        t.bark.showBark({ npcId: 'bob', message: 'Other contact.' });
+        assert.equal(t.bark.deferredBarkQueue.length, 3);
+        assert.deepEqual(t.added, []);
+    } finally { globalThis.__setDialogOpen(false); }
+    t.bark._foldHeldIntoOpenThread(); // what the dialog watch and the drain start call
+    assert.deepEqual(t.added, [['npc', 'New lead on the vault.'], ['npc', 'Held two.']]);
+    assert.deepEqual(t.bark.deferredBarkQueue.map(p => p.npcId), ['bob']);
+    assert.equal(t.rows[0].read, true);
+});
+
+test('the dialog watch and the drain both fold before releasing (n2)', () => {
+    const src = readFileSync(join(js, 'systems/npc-barks.js'), 'utf8');
+    assert.match(src, /_dialogHoldTimer = null;\s*\n\s*this\._foldHeldIntoOpenThread\(\);/);
+    assert.match(src, /async drainDeferredBarks\(\) \{\s*\n\s*this\._foldHeldIntoOpenThread\(\);/);
 });
 
 // A1: focus moves into the phone view.

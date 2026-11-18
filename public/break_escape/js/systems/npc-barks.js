@@ -296,8 +296,10 @@ export default class NPCBarkSystem {
         if (key && typeof m?.ui?.addMessage === 'function') {
           Promise.resolve(m.ui.addMessage('npc', text)).catch(() => {});
         }
+        this._markThreadRead(payload.npcId);
       }
-      this._markThreadRead(payload.npcId);
+      // else: the history draw in openConversation includes this row and its markAllRead
+      // marks it, so a phone that closes during the load leaves it unread, not unseen.
       if (m?.phoneId && typeof window.updatePhoneBadge === 'function') window.updatePhoneBadge(m.phoneId);
       console.debug('[barks] folded into the open thread, no toast:', text);
       return true;
@@ -306,7 +308,9 @@ export default class NPCBarkSystem {
 
   /** Mark every unread npc/call row of a contact's saved thread read (as markAllRead does). */
   _markThreadRead(npcId) {
-    const rows = this.npcManager?.conversationHistory?.get?.(npcId) || [];
+    // main.js builds this system with no manager (as _isSpeech notes): use the global one
+    const manager = this.npcManager || (typeof window !== 'undefined' ? window.npcManager : null);
+    const rows = manager?.conversationHistory?.get?.(npcId) || [];
     for (const r of rows) {
       if (r && !r.read && (r.type === 'npc' || r.type === 'call')) r.read = true;
     }
@@ -393,7 +397,19 @@ export default class NPCBarkSystem {
     return history.some(m => m && typeof m.text === 'string' && m.text.trim() === text);
   }
 
+  /**
+   * Held texts for the contact whose thread is open now go into that thread (they were held
+   * behind a dialog or call, which has gone): fold them and drop them from the queue, so they
+   * are not toasts after the phone closes (round 2 n2). Edits the queue in place.
+   */
+  _foldHeldIntoOpenThread() {
+    const q = this.deferredBarkQueue;
+    const kept = q.filter(p => !this._foldIntoOpenThread(p)); // in arrival order
+    if (kept.length !== q.length) q.splice(0, q.length, ...kept);
+  }
+
   async drainDeferredBarks() {
+    this._foldHeldIntoOpenThread();
     if (!this._shouldDefer()) this._dropStaleVisibleBarks();
     if (this.isDrainingDeferred || this.deferredBarkQueue.length === 0) return;
     // Another minigame opened (drained when it closes), or a dialog is open: a minigame that
@@ -912,6 +928,7 @@ export default class NPCBarkSystem {
       if (dialogLayerOpen()) return;
       clearInterval(this._dialogHoldTimer);
       this._dialogHoldTimer = null;
+      this._foldHeldIntoOpenThread();
       if (this.deferredBarkQueue.length > 0 && !this._shouldDefer()) this.drainDeferredBarks();
     }, NPCBarkSystem.DIALOG_HOLD_POLL_MS);
   }
