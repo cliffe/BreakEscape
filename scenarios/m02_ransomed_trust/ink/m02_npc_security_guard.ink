@@ -605,10 +605,15 @@ Narrator: She tears the used pages out and folds them into your hand.
 === report_back ===
 ~ val_reported_back = true
 #set_global:val_reported_back:true
+#complete_task:tell_val_findings
 ~ influence += 10
 # influence_increased
 Val Okonkwo: Go on, then.
-Narrator: You tell her about the backup server and the door ENTROPY left in it. She listens like she's logging every word.
+{backdoor_fully_exploited:
+    Narrator: You tell her about the backup server and the door ENTROPY left in it. She listens like she's logging every word.
+- else:
+    Narrator: You tell her what you know about the man ENTROPY had inside. She listens like she's logging every word.
+}
 Val Okonkwo: So it was never my corridor. Thank you for coming back.
 ~ hub_quiet = true
 -> hub
