@@ -71,6 +71,19 @@ def plate(text, name):
     c.save(OBJ, name)
 
 
+def plate2(line1, line2, name):
+    """A two-line plate, 18px tall: the same construction as plate(), for a sign that
+    must hang low enough to reach (the kitchen fire door, dressing round 3)."""
+    w = max(len(line1), len(line2)) * 4 - 1 + 8
+    c = Canvas(w, 18)
+    c.rect(0, 0, w - 1, 17, OUTLINE)
+    c.frame(1, 1, w - 2, 16, BRASS)
+    c.rect(2, 2, w - 3, 15, PLATE)
+    c.text(4, 3, line1, CREAM)
+    c.text(4, 10, line2, CREAM)
+    c.save(OBJ, name)
+
+
 # --- the Ledgerwell identity props (ROOM_IDENTITY_PLAN.md S1, S2, S3, S9) ------------
 # All drawn or recoloured at native size; nothing is rescaled.
 
@@ -182,7 +195,7 @@ def more_plates():
     plate("ACCOUNTS", "lw_sign_accounts1")
     plate("RECORDS OFFICE", "lw_sign_records_office1")
     plate("STAFF ONLY", "lw_sign_staff_only1")
-    plate("FIRE DOOR KEEP SHUT", "lw_sign_fire_door1")
+    plate2("FIRE DOOR", "KEEP SHUT", "lw_sign_fire_door1")
     plate("PRESS TO EXIT", "lw_sign_press_exit1")
     plate("KIT ROOM", "lw_sign_kitroom1")
 
@@ -358,26 +371,26 @@ def recycling_bin():
 
 
 def lanyard():
-    """A bottle-green staff lanyard with a brass clip and a white pass card, 10x16,
-    laid flat on a worktop."""
+    """A red staff lanyard with a brass clip and a white pass card, 10x16, laid flat
+    on a worktop: an open U of strap at the top, a white card with a photo block and a
+    name bar below (round 3: the card now reads as a pass, not a small device)."""
     w, h = 10, 16
     c = Canvas(w, h)
-    GREEN, GREEN_D = (30, 92, 62), (20, 60, 42)
-    # a loose loop of strap lying on the worktop: an outlined ring with an open middle,
-    # the clip at its foot and the pass card lying under it
-    c.rect(1, 0, 8, 0, OUTLINE)
-    c.rect(0, 1, 9, 7, OUTLINE)
-    c.rect(1, 1, 8, 6, GREEN)
-    c.hline(1, 8, 6, GREEN_D)
-    c.rect(3, 2, 6, 5, OUTLINE)              # the open middle of the loop
-    c.rect(4, 3, 5, 4, (0, 0, 0, 0))         # transparent: the worktop shows through
-    c.rect(1, 8, 8, 14, OUTLINE)             # the card
-    c.rect(2, 9, 7, 13, CREAM)
-    c.rect(3, 10, 4, 11, GREY)               # photo
-    c.hline(5, 6, 10, GREY)
-    c.hline(5, 6, 12, GREY)
-    c.hline(3, 6, 13, BRASS_DARK)
-    c.rect(4, 7, 5, 8, BRASS)                # clip joining loop and card
+    RED, RED_D = (196, 48, 48), (140, 32, 36)
+    WHITE = (246, 246, 240)
+    # the strap: an outlined U, open in the middle and at the top
+    c.rect(0, 0, 9, 6, OUTLINE)
+    c.rect(1, 0, 2, 5, RED)
+    c.rect(7, 0, 8, 5, RED)
+    c.rect(1, 5, 8, 5, RED_D)
+    c.rect(3, 0, 6, 4, (0, 0, 0, 0))         # open middle: the worktop shows through
+    c.rect(3, 5, 6, 5, RED)
+    c.rect(4, 5, 5, 6, BRASS)                # clip joining strap and card
+    c.rect(1, 7, 8, 14, OUTLINE)             # the card
+    c.rect(2, 8, 7, 13, WHITE)
+    c.rect(3, 9, 5, 10, (70, 110, 170))      # photo block
+    c.rect(6, 9, 6, 10, GREY)
+    c.hline(3, 6, 12, RED_D)                 # name bar
     c.hline(2, 7, 15, (0, 0, 0, 60))
     c.save(OBJ, "lw_lanyard1")
 
