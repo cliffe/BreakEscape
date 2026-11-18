@@ -445,6 +445,11 @@
     rgba(0,0,0,0.95) 100%
   );
   pointer-events: none;
+  /* Credits sit in the gap between the header band and the controls bar (set by
+     bond-visualiser.js _fitCreditsBand; unset they are 0 and the overlay is the window) */
+  box-sizing: border-box;
+  padding-top: var(--bv-cr-top, 0px);
+  padding-bottom: var(--bv-cr-bottom, 0px);
 }
 
 #bv-credits-overlay.bv-cr-active {
@@ -519,14 +524,29 @@
   overflow-wrap: anywhere;
   text-wrap: pretty;
   text-wrap: balance;
-  /* between the header band and the controls bar (bond-visualiser.js _fitCreditsBand
-     sets --bv-cr-inset on the overlay); a card taller than that scrolls inside itself
-     instead of covering either bar. The overlay ignores the pointer, the label takes it
-     so the card can be scrolled. */
-  max-height: calc(100% - 2 * var(--bv-cr-inset, 0px));
+  /* the overlay is padded to the gap between the header band and the controls bar, so
+     100% is that gap; a taller card scrolls inside itself instead of covering a bar */
+  max-height: 100%;
   overflow-y: auto;
-  pointer-events: auto;
+  pointer-events: none;
   scrollbar-width: none;
+}
+
+/* Only when the label overflows (bond-visualiser.js adds the class): a square pixel
+   scrollbar with 2px borders, and the label takes the pointer so it can be scrolled. */
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls {
+  pointer-events: auto;
+  scrollbar-width: auto;
+  scrollbar-color: var(--bv-gold, #FFD700) #000;
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar { width: 12px; }
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-track {
+  background: #000;
+  border: 2px solid var(--bv-gold-dim, #7a6500);
+}
+#bv-credits-overlay #bv-cr-label.bv-cr-label.bv-cr-scrolls::-webkit-scrollbar-thumb {
+  background: var(--bv-gold, #FFD700);
+  border: 2px solid #000;
 }
 
 /* Closing-card lines (bond-visualiser.js _startCredits): no wider than the
