@@ -148,5 +148,11 @@
     "text_md5": "d9f2cc2bad9de8ea6b0490cbd03f8411",
     "start": "note the evidence gap in exhibit b the",
     "reason": "cached voice audio in tts_cache/sis03_cyber_insurance"
+  },
+  {
+    "file": "m01_first_contact/ink/m01_closing_debrief.ink",
+    "text_md5": "4d53613a01cdce15b7de585ef71cf49f",
+    "start": "i want to be clear about something we",
+    "reason": "cached voice audio in tts_cache/m01_first_contact"
   }
 ]
