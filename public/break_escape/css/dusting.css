@@ -222,17 +222,47 @@
 .dusting-short .dusting-step-num { display: none; }
 .dusting-short .dusting-main { display: contents; }
 .dusting-short .dusting-stage { grid-column: 1; grid-row: 2 / 6; align-self: start; max-height: 100%; overflow-y: auto; }
-.dusting-short .dusting-panel { grid-column: 2; grid-row: 2; min-width: 0; width: auto; overflow-y: auto; align-self: stretch; }
+.dusting-short .dusting-panel { grid-column: 2; grid-row: 2; min-width: 0; width: auto; overflow-y: auto; align-self: stretch;
+    --d-pin-h: 44px; display: flex; flex-direction: column; }
 .dusting-short .dusting-forensic { grid-column: 2; grid-row: 3; margin: 4px 0 0; padding-top: 4px; font-size: 16px; }
 .dusting-short .dusting-status { grid-column: 2; grid-row: 4; font-size: 16px; }
 .dusting-short .dusting-options { grid-column: 2; grid-row: 5; gap: 4px 12px; font-size: 16px; }
 .dusting-short .dusting-options label { min-height: 28px; }
-.dusting-short .dusting-actions {
-    position: sticky; bottom: 0; z-index: 3;
-    border-top: 2px solid var(--d-line); padding-top: 4px; margin-top: 6px;
+/* Only the Coverage (or Tape pressed) bar and the button row are pinned, one 84 px strip at the foot of the
+   panel; the tools, powder line, Clarity, estimate and feedback scroll above it. The panel is a flex column
+   here so the pinned bar sits directly above the buttons whatever the markup order is. */
+.dusting-short .dusting-panel > *, .dusting-short .dusting-actions .dusting-meter { flex: 0 0 auto; }
+.dusting-short .dusting-actions { display: contents; position: static; border-top: 0; padding-top: 0; margin: 0; }
+.dusting-short .dusting-actions .dusting-meters { display: contents; margin: 0; }
+.dusting-short .dusting-actions .dusting-meter { margin: 0 0 2px; font-size: 16px; }
+.dusting-short .dusting-actions .dusting-meter:nth-child(2) { order: 1; }
+.dusting-short .dusting-actions .dusting-estimate { order: 2; flex: 0 0 auto; margin: 0 0 4px; }
+.dusting-short .dusting-actions .dusting-feedback { order: 3; flex: 0 0 auto; margin: 0 0 4px; }
+.dusting-short .dusting-actions .dusting-meter:first-child {
+    order: 4; position: sticky; bottom: var(--d-pin-h); z-index: 3; background: var(--d-bg);
+    border-top: 2px solid var(--d-line); padding-top: 2px; margin: 0;
 }
-.dusting-short .dusting-actions .dusting-meters { margin: 0 0 4px; }
-.dusting-short .dusting-actions .dusting-meter { margin-bottom: 2px; }
-.dusting-short .dusting-actions .dusting-estimate, .dusting-short .dusting-actions .dusting-feedback { margin-bottom: 4px; }
-.dusting-short .dusting-actions .dusting-buttons { margin-top: 4px; gap: 6px; }
+.dusting-short .dusting-actions .dusting-buttons {
+    order: 5; position: sticky; bottom: 0; z-index: 3; background: var(--d-bg); box-sizing: border-box;
+    height: var(--d-pin-h); margin: 0; padding: 4px 0; gap: 6px; flex-wrap: nowrap; align-items: stretch;
+}
+.dusting-short .dusting-actions .dusting-btn {
+    flex: 1 1 auto; min-width: 0; min-height: 36px; padding: 2px 6px; font-size: 16px; white-space: nowrap; text-align: center;
+}
+/* Compare screen in short landscape: the frame scrolls as a whole (the panel no longer scrolls on its own) so
+   the reference cards sit right under the instructions on first view; the options and key lines are below. */
+.dusting-short[data-step="compare"] { grid-template-rows: auto auto auto auto auto; overflow-y: auto; }
+.dusting-short[data-step="compare"] .dusting-panel { overflow-y: visible; align-self: start; }
+.dusting-short[data-step="compare"] .dusting-refs { margin: 4px 0; gap: 6px; }
+.dusting-short .dusting-ref { padding: 4px; }
+.dusting-short .dusting-stage-note { font-size: 16px; }
 .dusting-short .dusting-btn, .dusting-short .dusting-jar, .dusting-short .dusting-pattern, .dusting-short .dusting-ref { min-height: 36px; padding: 4px 8px; }
+
+/* Compare screen on a desktop-sized frame (1280x720): a smaller key note and tighter rows so the options and
+   key lines at the foot fit without the frame scrolling (live proof r1: scrollHeight 693 against 660). */
+@media (min-width: 761px) {
+    .dusting-root:not(.dusting-short)[data-step="compare"] { padding-top: 8px; padding-bottom: 8px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-stage-note { font-size: 16px; line-height: 1.1; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-forensic { margin-top: 6px; padding-top: 6px; }
+    .dusting-root:not(.dusting-short)[data-step="compare"] .dusting-options label { min-height: 32px; }
+}

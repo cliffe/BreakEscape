@@ -42,8 +42,46 @@ function layoutAt(w, h, step = 'dust') {
 
 test('the action row (meters and buttons) is sticky to the bottom at phone width', () => {
     assert.match(css, /@media \(max-width: 760px\) \{[^@]*\.dusting-actions \{[^}]*position: sticky;[^}]*bottom: 0/);
-    assert.match(rule('.dusting-short .dusting-actions'), /position: sticky/);
+    assert.doesNotMatch(rule('.dusting-short .dusting-actions'), /position: sticky/);
     assert.match(rule('.dusting-actions'), /background: var\(--d-bg\)/);
+});
+
+test('short landscape pins only the Coverage bar and the button row, not the whole action block', () => {
+    assert.match(rule('.dusting-short .dusting-actions'), /display: contents/);
+    assert.match(rule('.dusting-short .dusting-actions'), /position: static/);
+    assert.match(rule('.dusting-short .dusting-actions .dusting-meters'), /display: contents/) ;
+    const btn = rule('.dusting-short .dusting-actions .dusting-buttons');
+    assert.match(btn, /position: sticky/);
+    assert.match(btn, /bottom: 0/);
+    assert.match(btn, /background: var\(--d-bg\)/);
+    assert.match(btn, /flex-wrap: nowrap/);
+    assert.match(btn, /height: var\(--d-pin-h\)/);
+    const cov = rule('.dusting-short .dusting-actions .dusting-meter:first-child');
+    assert.match(cov, /position: sticky/);
+    assert.match(cov, /bottom: var\(--d-pin-h\)/);
+    assert.match(cov, /background: var\(--d-bg\)/);
+    assert.match(rule('.dusting-short .dusting-panel'), /--d-pin-h: 44px/);
+    // the pinned strip is order 4 and 5, the rest (tools, Clarity, estimate, feedback) scrolls above it
+    assert.match(rule('.dusting-short .dusting-actions .dusting-estimate'), /order: 2/);
+    assert.match(rule('.dusting-short .dusting-actions .dusting-feedback'), /order: 3/);
+    assert.match(btn, /order: 5/);
+    assert.match(cov, /order: 4/);
+});
+
+test('short landscape compare: the frame scrolls as a whole so the cards sit under the instructions', () => {
+    const r = rule('.dusting-short[data-step="compare"]');
+    assert.match(r, /overflow-y: auto/);
+    assert.match(r, /grid-template-rows: auto auto auto auto auto/);
+    assert.match(rule('.dusting-short[data-step="compare"] .dusting-panel'), /overflow-y: visible/);
+});
+
+test('desktop compare screen is tightened so its foot fits 1280x720, scoped to the compare step only', () => {
+    const i = css.indexOf('@media (min-width: 761px)');
+    assert.ok(i > 0);
+    const blk = css.slice(i);
+    assert.match(blk, /\[data-step="compare"\] \.dusting-stage-note \{ font-size: 16px/);
+    assert.match(blk, /\[data-step="compare"\] \.dusting-options label \{ min-height: 32px/);
+    assert.doesNotMatch(blk.replace(/\[data-step="compare"\][^{]*\{[^}]*\}/g, ''), /\.dusting-(root|forensic|options)[^{]*\{[^}]*\}/);
 });
 
 test('the dust and lift panels wrap their meters and buttons in .dusting-actions', () => {
