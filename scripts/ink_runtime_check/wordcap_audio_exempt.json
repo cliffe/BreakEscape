@@ -12,12 +12,6 @@
     "reason": "cached voice audio in tts_cache/m04_critical_failure"
   },
   {
-    "file": "m05_insider_trading/ink/m05_closing_debrief.ink",
-    "text_md5": "60dd8a301656559bac9497f49019b26d",
-    "start": "owen was when he wasnt fixing everything else",
-    "reason": "cached voice audio in tts_cache/m05_insider_trading"
-  },
-  {
     "file": "sis03_cyber_insurance/ink/npc_eleanor_vance.ink",
     "text_md5": "a3ad75a357474d2e9622aecae68a419e",
     "start": "albion has fortyeight hours to either accept our",

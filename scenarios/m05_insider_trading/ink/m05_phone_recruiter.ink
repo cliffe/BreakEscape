@@ -385,7 +385,7 @@ It changes nothing about the rest. I'll simply be more careful with whoever's ne
 
 I didn't lie to him once. I told him exactly what he was trading, and what it would cost other people.
 
-That's not a defence. It's the part nobody wants to hear: the price was real, and he still took it.
+The price was real, and he still took it. That's the uncomfortable part.
 
 Forty-seven names, agent. The clock on those didn't stop because you found one of mine.
 

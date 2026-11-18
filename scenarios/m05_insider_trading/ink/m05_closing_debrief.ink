@@ -370,7 +370,7 @@ Agent HaX: In the logs, that looks exactly like an insider. It's why nobody saw 
 + [And the research portal?]
     Agent HaX: Old software with a known flaw nobody had patched, and an admin login in a lockbox whose code was Owen's badge number.
 + [Nobody was watching the logs?]
-    Agent HaX: Owen was, when he wasn't fixing everything else. The portal was worse: old software nobody had patched, and an admin login behind a code anyone could read off a swipe log.
+    Agent HaX: Owen was, when he wasn't fixing everything else. The portal was worse: old software nobody had patched, and an admin login whose code anyone could read off a swipe log.
 -
 Agent HaX: Once you were in, one account was allowed to run far more than its job needed. That's how you reached the Architect's sign-off.
 + [Whose job was it to fix that?]
