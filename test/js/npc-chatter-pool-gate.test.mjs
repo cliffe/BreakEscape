@@ -216,6 +216,7 @@ test('mutter: with the speech lock busy, a closed pool shows its picture at once
     closed.sys._speechUntil = closed.sys.clockMs + 20000;
     closed.sys.mutter('ann', 'wk_test');
     assert.deepEqual(closed.sys.mutterWaits(), [], 'a closed pool has no line to wait for');
+    assert.ok(closed.w.calls.emits.some(e => e.name === 'npc_mutter:ann'), 'the picture is emitted at once, not dropped');
     const open = office({ wk_test: pool }, { calm: true });
     open.sys._speechUntil = open.sys.clockMs + 20000;
     open.sys.mutter('ann', 'wk_test');

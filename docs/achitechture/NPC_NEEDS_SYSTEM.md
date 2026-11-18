@@ -657,7 +657,7 @@ during the walk home (exists). Player-facing behaviour:
   a security pool (`login_aloud`, `usb_refused`, `work_fail*`, `station_fail`, `social_blocked`, `wk_*`), because a closed gate then
   silently closes the window. V10 ignores gates. Showcase: `scenarios/test_chatter_pool_gate`.
   - A desk call draws its pool lines when it starts, so a gate that closes mid-call does not cut them.
-  - A mutter queued while its gate was open keeps that choice: if the gate closes during the wait, it still waits for the speech lock (at most `MUTTER_WAIT_MS`) and then shows the picture for its topic, not a line. Nothing is spoken from the closed pool.
+  - A mutter queued while its gate was open keeps that choice: if the gate closes during the wait, it still waits for the speech lock (at most `MUTTER_WAIT_MS`) and then shows the picture for its topic (or nothing, with `npcThoughts` off, as in the campaign missions), not a line. Nothing is spoken from the closed pool.
   - A gate flip changes the merged pool, so that topic's shuffle-bag starts again (a line said just
     before the flip can come round again soon after).
   - A system whose world cannot judge a gate (no `globalHolds`) reads it as closed; the pure
