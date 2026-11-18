@@ -43,3 +43,21 @@ There is no PIN leak: the payload is `{ targetType, targetId }` only, and the di
 **m8. The object id falls back to `name`.** `getTargetId` returns `scenarioData.id || scenarioData.name || objectId`. A dustable object with no `id` emits its display name, which a `data.targetId === "<id>"` mapping never matches. Fix: the validator could warn on a `dustable` lock with no `id`, or the guide could say `targetId` is the object's `id`.
 
 **m9. A client event sets a debrief global.** `window.eventDispatcher.emit('pin_dusted', { targetId: 'p4_safe' })` from the console sets `kp_safe_dusted`. It only adds one debrief line, so this is best-effort under the cheat-resistance policy. Note it, and don't use the event for scoring or a capture. If it ever matters, set the global server-side in the `pin_dust` endpoint.
+
+## Outcomes
+
+Fixed in the follow-up commit (engine, tests and this file only):
+
+- **M1**: `_tickPlayerPass` runs every frame of a walk (before the path-follow branch). An active pass within `AVOID_PLAYER_ARRIVE_PX` (48, the old collision radius) of `_goToStayDest` arrives the walk, so the NPC uses or picks up from outside the player's body and the next walk does not start inside it. Test: arrival inside and outside the radius, stopped short of the player.
+- **m1**: the same tick ends a pass by distance when no path is followed, or when the walk may no longer pass (owner change, hostile, KO). `goToAndStay` drops the pass for a non-needs owner or a new destination; `setHostile(true)` clears it. Tests for each.
+- **m2**: the block timer is kept only for a needs re-issue of the same destination; any other walk starts afresh. Test.
+- **m3**: an NPC with `squeezePastPlayer: false` gets the old bounded near-target squeeze (`mustReach`) back. Test.
+- **m5**: `goToAndStay` marks a kept timer `reissued`, so the one frame gap while the path is fetched (up to the 2 s retry) is not counted as the block lapsing. Tests now drive the real `goToAndStay` with a path returning after 100 ms and after 1.5 s, plus a case where a true lapse still restarts the timer (the 1.5 s case fails without the fix).
+- **m6 (arrival half)**: arrival and `cancelMove` both covered by tests. The headless Phaser run of `test_npc_squeeze_past` is not done here; the live-proof agent on :3060 owns it.
+- **m7**: `restoreDust` records its in-flight promise and `handleDust` awaits it, so a click before it settles cannot dust or emit a second time. If the restore request itself fails on the network, a later dust can still emit again; a server-side `fresh` flag would close that, left for the server owner.
+- **m8**: `pin_dusted` carries `getEventTargetId()` (object `id`, then `objectId`, never the display name). Requests to the server still use `getTargetId()`. Test.
+
+Not changed:
+
+- **m4**: the README sentence ("a job, need or interest") is outside this commit's allowed files. Every needs-owned move passes, including the walk home and the chair fetch; reword the README or gate on move kind when the README is next edited.
+- **m9**: left as best-effort under the cheat-resistance policy. A console `pin_dusted` can set `kp_safe_dusted`, which only adds a debrief line. The event must not be used for scoring or a capture. If it ever matters, set the global in the `pin_dust` endpoint.

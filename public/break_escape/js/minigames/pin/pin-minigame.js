@@ -523,6 +523,9 @@ export class PinMinigame extends MinigameScene {
 
     /** The Dust action: ask the server once, then grey the keys. */
     async handleDust() {
+        // A restore still in flight may be about to show this lock already dusted: wait for it, so a
+        // click before it settles neither dusts twice nor emits pin_dusted a second time (R1 m7)
+        if (this.dustRestoring) await this.dustRestoring;
         // Not while a code is being checked: dusting clears the entry under the in-flight attempt.
         if (this.dustPending || this.dustSet || this.isLocked || this.checkPending) return;
         const targetId = this.getTargetId();
@@ -542,7 +545,7 @@ export class PinMinigame extends MinigameScene {
             this.applyDust(set, body.hint || this.dustHint);
             // For eventMappings (a debrief can credit the dusted route): which lock, never the digits.
             // Only a fresh dust emits; reopening a dusted pad (restoreDust) does not.
-            window.eventDispatcher?.emit?.('pin_dusted', { targetType: this.getTargetType(), targetId });
+            window.eventDispatcher?.emit?.('pin_dusted', { targetType: this.getTargetType(), targetId: this.getEventTargetId() || targetId });
         } catch (error) {
             const reason = error?.body?.reason;
             const line = reason === 'not_dustable' ? 'This keypad is too clean to show anything.'
@@ -558,7 +561,12 @@ export class PinMinigame extends MinigameScene {
     }
 
     /** On opening: a lock dusted earlier (this session or before a reload) comes up greyed. */
-    async restoreDust() {
+    restoreDust() {
+        this.dustRestoring = this._restoreDust().finally(() => { this.dustRestoring = null; });
+        return this.dustRestoring;
+    }
+
+    async _restoreDust() {
         // No kit needed to restore: the server remembers what was dusted, so the pad stays
         // greyed (with the note, without the button) after the kit is used up or handed on.
         if (!this.dustable) return;
@@ -590,6 +598,17 @@ export class PinMinigame extends MinigameScene {
             return lockable.doorProperties?.connectedRoom || lockable.doorProperties?.roomId || null;
         }
         return lockable.scenarioData?.id || lockable.scenarioData?.name || lockable.objectId || null;
+    }
+
+    /**
+     * The id an eventMappings condition matches: the object's own id (or its objectId), never the
+     * display name getTargetId falls back to (R1 m8). A door is its connectedRoom, as in getTargetId.
+     */
+    getEventTargetId() {
+        const lockable = this.params?.lockable || this.params?.sprite;
+        if (!lockable) return null;
+        if (this.getTargetType() === 'door') return this.getTargetId();
+        return lockable.scenarioData?.id || lockable.objectId || null;
     }
 
     getHistoryKey() {

@@ -113,6 +113,10 @@ const AVOID_BODY_PX = 20;
 export const AVOID_PLAYER_PASS_MS = 2500;
 export const AVOID_PLAYER_BLOCK_GAP_MS = 1000;
 export const AVOID_PLAYER_CLEAR_PX = AVOID_BODY_PX + 8;   // centre to centre: the bodies no longer touch
+// A pass in progress arrives at the walk's target from this far out (the radius the collision used
+// to arrive from, NEEDS_COLLISION_ARRIVE_PX in npc-sprites.js): the pass turns that collision off,
+// and the NPC would otherwise walk on to its use or pickup cell inside the player's body (M1)
+export const AVOID_PLAYER_ARRIVE_PX = 48;
 
 /**
  * The nearest blocker that lies AHEAD of a walker on its heading, or null.
@@ -1405,6 +1409,7 @@ export class NPCBehavior {
         // (a leg longer than the interval used to be cut short, so the NPC never
         // arrived or dwelt: m02 Val, 3.6 s legs against the 3 s default) and only
         // re-targets if it has stopped making progress for that long.
+        if (this._playerPass?.active && this._tickPlayerPass(this.npcBodyPos())) return;
         const intervalElapsed = time - this.lastPatrolChange > this.config.patrol.changeDirectionInterval;
         if (!this.patrolTarget ||
             this.currentPath.length === 0 ||
@@ -1792,6 +1797,14 @@ export class NPCBehavior {
         }
         if (!hit) { this._avoid = null; this._notePlayerBlock(time, false); return false; }
 
+        // An NPC opted out of the pass (squeezePastPlayer: false) keeps the older bounded squeeze for
+        // a player at its pickup or use cell (games 1099 to 1124): the errand only fires there, so a
+        // time-boxed wait and a squeeze up to the cell, not a hold or a detour until the job times out.
+        if (!mustReach && hit.isPlayer && this._moveOwner === 'needs' && this.config?.squeezePastPlayer === false && this.patrolTarget) {
+            const dxt = this.patrolTarget.x - hit.x, dyt = this.patrolTarget.y - hit.y;
+            if (dxt * dxt + dyt * dyt <= AVOID_LOOKAHEAD_PX * AVOID_LOOKAHEAD_PX) mustReach = true;
+        }
+
         // The player's body in the way of a needs walk: after AVOID_PLAYER_PASS_MS (AVOID_WAIT_MS
         // when the player stands at the walk's target, games 1099 to 1124) walk on through the
         // player instead of holding or detouring for ever (games 8412 to 8420).
@@ -1916,14 +1929,20 @@ export class NPCBehavior {
      */
     _notePlayerBlock(time, blocked, hit = null) {
         const p = this._playerPass;
+        // `reissued`: goToAndStay kept this timer across a needs re-issue of the same walk. The
+        // frames until its path comes back (up to the 2 s path retry) skip the blocker check, so
+        // that one gap does not count as the block lapsing (code review R1 m5).
+        const lapsed = p && time - p.lastSeen > AVOID_PLAYER_BLOCK_GAP_MS && !p.reissued;
         if (!blocked || !this._mayPassPlayer()) {
-            if (p && !p.active && (!this._mayPassPlayer() || time - p.lastSeen > AVOID_PLAYER_BLOCK_GAP_MS)) this._playerPass = null;
+            if (p && !p.active && (!this._mayPassPlayer() || lapsed)) this._playerPass = null;
+            else if (p) p.reissued = false;
             return false;
         }
-        if (!p || p.active || time - p.lastSeen > AVOID_PLAYER_BLOCK_GAP_MS) {
+        if (!p || p.active || lapsed) {
             this._playerPass = { since: time, lastSeen: time, active: false };
             return false;
         }
+        p.reissued = false;
         p.lastSeen = time;
         let wait = AVOID_PLAYER_PASS_MS;
         const t = this.patrolTarget;
@@ -1935,6 +1954,30 @@ export class NPCBehavior {
         p.active = true;
         console.log(`🫥 [${this.npcId}] Squeezing past the player after ${Math.round(time - p.since)} ms`);
         return true;
+    }
+
+    /**
+     * Every frame of a walk, before the path is followed: a pass is ended when the walk may no
+     * longer pass, or by distance when no path is being followed (the following branch ends it
+     * itself in _updatePlayerPass), and arrives the walk at its target once it is within
+     * AVOID_PLAYER_ARRIVE_PX, as the collision used to: the walk would otherwise go on to the use
+     * or pickup cell inside the player's body and leave the next walk starting there (code review
+     * R1 M1, m1). Returns true when it arrived the walk.
+     */
+    _tickPlayerPass(pos) {
+        const p = this._playerPass;
+        if (!p?.active) return false;
+        if (!this._mayPassPlayer()) { this._playerPass = null; return false; }
+        const d = this._goToStayDest;
+        if (d && Math.hypot(d.x - pos.x, d.y - pos.y) <= AVOID_PLAYER_ARRIVE_PX) {
+            this._triggerGoToStayArrival();   // clears the pass
+            return true;
+        }
+        if (!(this.currentPath?.length > 0)) {
+            const touching = this._dynamicBlockers().some(b => b.isPlayer && Math.hypot(b.x - pos.x, b.y - pos.y) < AVOID_PLAYER_CLEAR_PX);
+            if (!touching) this._playerPass = null;
+        }
+        return false;
     }
 
     /**
@@ -3392,6 +3435,13 @@ export class NPCBehavior {
         if (!opts?.fromSeating) window.seating?.cancelFetch?.(this, `move:${opts?.owner || 'script'}`); // and drops a chair it was fetching
         // Who asked for the move (npc-needs.js passes owner 'needs'); a move by
         // anyone else suspends the NPC's needs, so scripts always win.
+        // A pass or a half-served block timer belongs to one walk: keep it only for a needs
+        // re-issue of the same destination (the 3 s re-issue the timer must survive), else the
+        // new walk starts afresh (code review R1 m1, m2)
+        const od = this._goToStayDest;
+        const sameDest = !!od && Math.hypot(od.x - worldX, od.y - worldY) < 1;
+        if (opts?.owner !== 'needs' || !sameDest) this._playerPass = null;
+        else if (this._playerPass) this._playerPass.reissued = true;
         this._moveOwner = opts?.owner;
         // Room leash for a needs move: rooms the walk must not enter. A needs move without
         // avoidRooms (seating's chair fetch, in the NPC's own room) keeps the current value;
@@ -3597,7 +3647,7 @@ export class NPCBehavior {
         if (!hostile && this._startHostileOnReveal) window.npcHostileSystem?.recordCalm?.(this.npcId);
         this._startHostileOnReveal = false;
         if (this.hostile === hostile) return; // No change
-        if (hostile) window.seating?.unseatNPC?.(this);
+        if (hostile) { window.seating?.unseatNPC?.(this); this._playerPass = null; }
 
         this.hostile = hostile;
 

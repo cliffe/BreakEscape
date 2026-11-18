@@ -34,7 +34,7 @@ const quiet = fn => {
 const mod = await quiet(() => import(pathToFileURL(join(dir, 'npc-behavior.mjs')).href));
 const { NPCBehavior } = mod.default;
 const { nearestBlockerAhead, nearestBlockerOnPath, avoidanceYieldsTo, AVOID_LOOKAHEAD_PX, AVOID_BACKOFF_MS, AVOID_YIELD_MAX_STEPS,
-    AVOID_PLAYER_PASS_MS, AVOID_PLAYER_BLOCK_GAP_MS } = mod;
+    AVOID_PLAYER_PASS_MS, AVOID_PLAYER_BLOCK_GAP_MS, AVOID_PLAYER_ARRIVE_PX } = mod;
 
 // ── nearestBlockerOnPath: "ahead" follows the path for the look-ahead ──────────
 
@@ -997,4 +997,137 @@ test('pass: the squeezePastPlayer behaviour flag parses (default on, false opts 
     const off = quiet(() => b.parseConfig({ squeezePastPlayer: false }));
     assert.equal(on.squeezePastPlayer, true);
     assert.equal(off.squeezePastPlayer, false);
+});
+
+
+// ── Code review R1 (docs/agents/REVIEW_npc_squeeze_past_R1.md) ─────────────────────────────────
+
+// A walker driven through the real goToAndStay / arrival code: the sprite and config stand in for Phaser
+function movingWalker(opts = {}) {
+    const b = aisleWalker(opts);
+    b.config.patrol = { enabled: true, speed: 90, waypoints: [], changeDirectionInterval: 3000 };
+    b.direction = 'down';
+    b.npcBodyPos = () => ({ x: b.sprite.body.center.x, y: b.sprite.body.center.y });
+    b.calculateDirection = () => 'right';
+    b._clearPatrolPathDebug = () => {};
+    b.sprite.setVelocity = () => {};
+    return b;
+}
+const goTo = (b, x, y, owner = 'needs') => quiet(() => b.goToAndStay(x, y, undefined, { owner }));
+
+test('M1: a pass within the arrival radius of the target arrives the walk, outside the player', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    b.currentPath = [{ x: 400, y: 0 }]; b.pathIndex = 0;
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    window.player.body.center = { x: 400, y: 0 };            // the player stands on the target
+    b.sprite.body.center = { x: 400 - AVOID_PLAYER_ARRIVE_PX - 5, y: 0 };
+    assert.equal(b._tickPlayerPass(b.npcBodyPos()), false, 'still outside the radius: the pass goes on');
+    assert.equal(b._playerPass.active, true);
+    b.sprite.body.center = { x: 400 - AVOID_PLAYER_ARRIVE_PX + 2, y: 0 };
+    let arrived = 0;
+    const real = b._triggerGoToStayArrival;
+    b._triggerGoToStayArrival = function () { arrived++; return quiet(() => real.call(this)); };
+    assert.equal(b._tickPlayerPass(b.npcBodyPos()), true);
+    assert.equal(arrived, 1, 'arrived, as the collision used to');
+    assert.equal(b._playerPass, null);
+    assert.equal(b._stopOnArrival, false);
+    assert.ok(Math.hypot(400 - b.sprite.body.center.x, 0) > AVOID_PLAYER_CLEAR_PX_T, 'stopped short of the player\'s body');
+});
+const AVOID_PLAYER_CLEAR_PX_T = 28;
+
+test('m1: a pass with no path ends by distance, and ends when the walk may no longer pass', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    b.currentPath = [];
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    window.player.body.center = { x: 10, y: 0 };
+    b.sprite.body.center = { x: 0, y: 0 };
+    b._tickPlayerPass(b.npcBodyPos());
+    assert.equal(b._playerPass?.active, true, 'touching: kept');
+    window.player.body.center = { x: 200, y: 0 };
+    b._tickPlayerPass(b.npcBodyPos());
+    assert.equal(b._playerPass, null, 'clear: ended');
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    b._moveOwner = undefined;
+    b._tickPlayerPass(b.npcBodyPos());
+    assert.equal(b._playerPass, null, 'no longer a needs walk');
+});
+
+test('m1: going hostile or a script move drops an active pass, so a later needs walk waits again', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    goTo(b, 300, 0, undefined);                              // a script walk
+    assert.equal(b._playerPass, null);
+    goTo(b, 400, 0);
+    assert.equal(b._playerPass, null, 'the needs walk starts with no pass');
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    const hostile = Object.create(NPCBehavior.prototype);
+    hostile.npcId = 'h'; hostile._playerPass = { active: true }; hostile.hostile = false; hostile.config = { patrol: {} };
+    hostile.sprite = { setTint() {} };
+    quiet(() => { try { hostile.setHostile(true); } catch (e) { /* later set-up needs the full scene */ } });
+    assert.equal(hostile._playerPass, null);
+});
+
+test('m2: a different walk does not inherit the half-served wait; the same walk re-issued does', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    let t = 100000;
+    hold(b, t, t + 2000);
+    assert.equal(b._playerPass.active, false);
+    goTo(b, 400, 0);
+    assert.equal(b._playerPass.since, 100000, 're-issue of the same destination keeps the timer');
+    goTo(b, 300, 50);
+    assert.equal(b._playerPass, null, 'another destination starts afresh');
+    // An active pass is not carried to another walk either
+    goTo(b, 400, 0);
+    b._playerPass = { since: 0, lastSeen: 0, active: true };
+    goTo(b, 100, 100);
+    assert.equal(b.isPassingPlayer(), false);
+});
+
+test('m3: an opted-out NPC still squeezes up to a player standing on its pickup cell', () => {
+    window.__npcAvoidOff = false;
+    window.player = { body: { enable: true, center: { x: 28, y: 0 } } };
+    window.rooms = {};
+    delete window.npcHostileSystem;
+    const b = walker({ target: { x: 30, y: 0 }, busy: true });   // no pathfinder
+    b.config.squeezePastPlayer = false;
+    b._moveOwner = 'needs';
+    let t = 100000;
+    b._handleBlockerAhead(t, { x: 30, y: 0 });
+    assert.deepEqual(b._vel, { x: 0, y: 0 }, 'a brief wait first');
+    t += 700;
+    assert.equal(b._handleBlockerAhead(t, { x: 30, y: 0 }), true);
+    assert.ok(b._vel.x > 0 && Math.hypot(b._vel.x, b._vel.y) < 90, 'a bounded squeeze toward the item');
+    assert.equal(b.isPassingPlayer(), false, 'not a pass: the collider stays on');
+});
+
+test('m5: a real re-issue (goToAndStay clears the path) with a slow path does not restart the timer', () => {
+    for (const slowMs of [100, 1500]) {
+        const b = movingWalker();
+        goTo(b, 400, 0);
+        b.currentPath = [{ x: 400, y: 0 }]; b.pathIndex = 0;
+        b.patrolTarget = { x: 400, y: 0 };
+        let t = 100000;
+        hold(b, t, t + 2000);
+        t += 2000;
+        goTo(b, 400, 0);                                     // the 3 s needs re-issue: path and target cleared
+        assert.deepEqual(b.currentPath, []);
+        t += slowMs;                                         // the path comes back after a frame, or after the 2 s retry
+        b.currentPath = [{ x: 400, y: 0 }]; b.pathIndex = 0; b.patrolTarget = { x: 400, y: 0 };
+        let r = true;
+        for (let n = 0; n < 4 || t <= 100000 + AVOID_PLAYER_PASS_MS + 200; n++, t += 100) r = b._handleBlockerAhead(t, wp);
+        assert.equal(r, false, `slow path ${slowMs} ms: passes on schedule`);
+        assert.equal(b.isPassingPlayer(), true);
+    }
+});
+
+test('m5: a real lapse (no re-issue) still restarts the timer', () => {
+    const b = movingWalker();
+    goTo(b, 400, 0);
+    hold(b, 100000, 102000);
+    b._handleBlockerAhead(103500, wp);                       // 1.5 s since the last frame, no re-issue
+    assert.equal(b._playerPass.since, 103500);
 });

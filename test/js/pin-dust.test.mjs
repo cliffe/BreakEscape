@@ -361,3 +361,38 @@ test('a fresh dust emits pin_dusted with the lock (no digits); a refusal or a re
         delete window.eventDispatcher;
     }
 });
+
+test('R1 m7: dust clicked while restoreDust is in flight neither dusts twice nor emits for a lock dusted before', async () => {
+    clearPinAttemptHistory();
+    const events = [];
+    window.eventDispatcher = { emit: (name, data) => events.push({ name, data }) };
+    try {
+        const server = fakeServer('7041');
+        await makePin({ server, lockId: 'p4_safe' }).handleDust();    // dusted before the "reload"
+        events.length = 0;
+        clearPinAttemptHistory();
+        const pin = makePin({ server, lockId: 'p4_safe' });
+        const restore = pin.restoreDust();                            // in flight
+        const click = pin.handleDust();                               // before it settles
+        await Promise.all([restore, click]);
+        assert.deepEqual(events, [], 'a lock already dusted emits nothing again');
+        assert.ok(pin.dustSet, 'still greyed');
+    } finally {
+        delete window.eventDispatcher;
+    }
+});
+
+test('R1 m8: pin_dusted carries the object id, never the display name', async () => {
+    clearPinAttemptHistory();
+    const events = [];
+    window.eventDispatcher = { emit: (name, data) => events.push({ name, data }) };
+    try {
+        const pin = makePin({ server: fakeServer('7041'), lockId: 'p4_safe' });
+        pin.params.lockable = { scenarioData: { name: 'Archive safe' }, objectId: 'p4_safe_obj' };
+        await pin.handleDust();
+        assert.equal(events.length, 1);
+        assert.equal(events[0].data.targetId, 'p4_safe_obj');
+    } finally {
+        delete window.eventDispatcher;
+    }
+});
