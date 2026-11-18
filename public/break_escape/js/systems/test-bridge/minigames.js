@@ -21,23 +21,24 @@ function current() {
 }
 
 /**
- * The controls getState().controls lists, as elements, in the same order. The
- * minigame itself owns the list (MinigameScene#getTestControlElements), so
- * clickControl indices cannot drift from getState(). The isRendered filter is
- * only the fallback for a scene without the method: it is wrong for
- * position:fixed elements such as the X (#minigame-close).
- */
-/**
- * Whether an element is rendered. offsetParent is null for position:fixed elements and
- * inside display:contents, so it hides visible controls; checkVisibility (where present)
- * or the client rects do not.
+ * Whether an element is rendered. offsetParent is null for position:fixed elements, so it
+ * hides visible controls such as the X (#minigame-close); checkVisibility (where present)
+ * or the client rects do not. visibility:hidden and opacity:0 count as not rendered.
  */
 export function isRendered(el) {
     if (!el) return false;
-    if (typeof el.checkVisibility === 'function') return el.checkVisibility();
+    if (typeof el.checkVisibility === 'function') {
+        return el.checkVisibility({ visibilityProperty: true, opacityProperty: true });
+    }
     return el.getClientRects().length > 0;
 }
 
+/**
+ * The controls getState().controls lists, as elements, in the same order. The
+ * minigame itself owns the list (MinigameScene#getTestControlElements), so
+ * clickControl indices cannot drift from getState(). The isRendered filter is
+ * only the fallback for a scene without the method.
+ */
 function controlElements(mg) {
     if (typeof mg.getTestControlElements === 'function') return mg.getTestControlElements();
     return Array.from(mg.container.querySelectorAll(
@@ -56,7 +57,7 @@ function fieldElements(mg) {
     )).filter(el => isRendered(el));
 }
 
-/** The same visibility test getState() uses (computed style and size). */
+/** The same visibility test getState() uses: the scene's isTestVisible, else isRendered. */
 function isShown(mg, el) {
     if (typeof mg.isTestVisible === 'function') return mg.isTestVisible(el);
     return isRendered(el);
@@ -200,7 +201,7 @@ export const minigameBridge = {
         // handlers, and omitting them made whole minigames undriveable.
         const el = Array.from(mg.container.querySelectorAll(
             'button, [role="button"], a[href], .clickable, .contact-item, [data-npc-id], li'
-        )).filter(e => isRendered(e)).find(e => {
+        )).filter(e => isShown(mg, e)).find(e => {
             const label = (e.innerText || e.value || '').trim().toLowerCase();
             return exact ? label === needle : label.includes(needle);
         });
@@ -248,7 +249,7 @@ export const minigameBridge = {
             // caller saw a typed value that was never sent. Click the button too.
             if (mg.container.contains(el) && el.value === text) {
                 const btn = Array.from(mg.container.querySelectorAll('button, input[type="submit"], .clickable'))
-                    .filter(b => isRendered(b))
+                    .filter(b => isShown(mg, b))
                     .find(b => /submit|confirm|enter|send|unlock|verify|ok\b/i.test((b.innerText || b.value || '')));
                 if (btn) { clickElement(btn); submittedVia = 'button:' + (btn.innerText || btn.value || '').trim(); }
             }
@@ -278,7 +279,7 @@ export const minigameBridge = {
 
         const nodes = Array.from(
             mg.container.querySelectorAll('.container-content-item, .desktop-icon')
-        ).filter(el => isRendered(el));
+        ).filter(el => isShown(mg, el));
         if (!nodes.length) return fail('no-takeable-items', { active: activeMinigameSummary() });
 
         const labelOf = (el) => (el.title || el.alt ||

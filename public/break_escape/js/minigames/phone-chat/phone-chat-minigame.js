@@ -218,6 +218,11 @@ export class PhoneChatMinigame extends MinigameScene {
             this.addEventListener(this.ui.elements.messagesContainer, 'click', (e) => {
                 if (this._onSkipPress()) e.stopPropagation();
             });
+        }
+        // Space/Enter act like a click on the thread: the terminal typeout, and a voiced call's clip
+        // on the call screen (any other theme). The click on a voiced thread is wired where the
+        // call voice is made.
+        if (this.ui.isTerminalTheme || this.ui.isCallMode) {
             this.addEventListener(document, 'keydown', (e) => this._onSkipKey(e));
         }
         // Contact list item clicks
@@ -1048,7 +1053,8 @@ export class PhoneChatMinigame extends MinigameScene {
 
     /**
      * Space or Enter acts like a click on the thread: it stops a playing voice clip (when the
-     * call is voiced) and then runs the same skip press. Ignored while the thread is not on top,
+     * call is voiced, in the terminal theme or on the call screen) and then runs the same skip
+     * press (terminal theme only). Ignored while the thread is not on top,
      * with modifier keys held, on key repeat, or when focus is in a field or button. Swallows
      * the key only when it did something.
      */

@@ -1,7 +1,7 @@
 // The test bridge's visibility check (systems/test-bridge/minigames.js isRendered) must not
-// use offsetParent: it is null for position:fixed elements and inside display:contents, so a
-// plainly visible submit button was reported hidden. checkVisibility is used where present,
-// getClientRects otherwise. The function source is lifted from the real file.
+// use offsetParent: it is null for position:fixed elements, so a plainly visible control
+// (the X) was reported hidden. checkVisibility (with the visibility and opacity checks) is
+// used where present, getClientRects otherwise. The function source is lifted from the real file.
 // Run with: node test/js/test-bridge-is-rendered.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,6 +23,11 @@ test('a position:fixed control (offsetParent null) is rendered', () => {
 test('a hidden control is not rendered', () => {
     assert.equal(isRendered({ offsetParent: null, getClientRects: () => [] }), false);
     assert.equal(isRendered({ offsetParent: {}, checkVisibility: () => false, getClientRects: () => [{}] }), false);
+});
+test('checkVisibility is asked for the visibility and opacity checks', () => {
+    let seen = null;
+    isRendered({ checkVisibility: (o) => { seen = o; return true; } });
+    assert.deepEqual(seen, { visibilityProperty: true, opacityProperty: true });
 });
 test('null is not rendered', () => { assert.equal(isRendered(null), false); });
 test('no code path reads offsetParent', () => {

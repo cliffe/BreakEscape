@@ -637,6 +637,34 @@ test('R2 M4: computeLanes gives a finished-task line its height whole; the lanes
     assert.deepEqual(computeLanes({ ...m, notifyFloor: 10 }), plain);
 });
 
+test('R1 m4: an immediate toast makes the others step aside, as a brief one does, and they come back after', () => {
+    const rig = hudRig(360, 640, { combat: false });
+    const older = document.createElement('div');
+    older.className = 'notification error show';
+    const imm = document.createElement('div');
+    imm.className = 'notification success immediate show';
+    rig.toasts.append(older, imm);
+    rect(older, { left: 16, top: 84, width: 328, height: 143 });
+    rect(imm, { left: 16, top: 237, width: 328, height: 88 });
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 241 });
+    rect(rig.speech, { left: 16, top: 380, width: 328, height: 140 });
+    const yields = [];
+    older._onLaneYield = (h) => yields.push(h);
+    imm._onLaneYield = () => assert.fail('the immediate toast never steps aside');
+    L.applyLanes(document, window);
+    assert.ok(older.classList.contains('hud-lane-yield'), 'the older toast stepped aside');
+    assert.deepEqual(yields, [true]);
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 98 });
+    const { lanes } = L.applyLanes(document, window);
+    assert.ok(lanes.notify.maxHeight >= 98, `the immediate toast is whole (${lanes.notify.maxHeight})`);
+    imm.remove();
+    rect(rig.toasts, { left: 16, top: 84, width: 328, height: 0 });
+    L.applyLanes(document, window);
+    assert.ok(!older.classList.contains('hud-lane-yield'));
+    assert.deepEqual(yields, [true, false]);
+    setWindow(1400, 1000);
+});
+
 test('R2 M4: with a finished-task line the other toasts step aside first (countdown waits) and come back after', () => {
     const rig = hudRig(360, 640, { combat: false });
     const older = document.createElement('div');
