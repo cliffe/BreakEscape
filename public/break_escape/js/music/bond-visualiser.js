@@ -1469,6 +1469,64 @@ function _writeEndNote() {
     el.classList.remove('bv-blink');
 }
 
+/**
+ * Keep the credits label in the real gap between the header band and the controls bar.
+ * Sets --bv-cr-top (header bottom + 8px) and --bv-cr-bottom (space under the controls
+ * top + 8px) on the overlay; CSS pads the full-window flex overlay by them, so the label
+ * is centred in that gap and capped to it. A band that is missing, hidden or not laid
+ * out (zero height) counts as 0 plus the 8px margin. A label taller than the gap scrolls
+ * inside itself and gets .bv-cr-scrolls (visible pixel scrollbar, takes the pointer).
+ */
+function _fitCreditsBand(overlay) {
+    if (!overlay) return;
+    const app = document.getElementById('bond-vis-overlay');
+    const hd = app && app.querySelector('.bv-header');
+    const ct = app && app.querySelector('.bv-controls');
+    let top = 0;
+    let bottom = 0;
+    if (hd) {
+        const r = hd.getBoundingClientRect();
+        if (r.height > 0) top = Math.max(0, r.bottom);
+    }
+    if (ct) {
+        const r = ct.getBoundingClientRect();
+        if (r.height > 0) bottom = Math.max(0, window.innerHeight - r.top);
+    }
+    overlay.style.setProperty('--bv-cr-top', `${Math.ceil(top) + 8}px`);
+    overlay.style.setProperty('--bv-cr-bottom', `${Math.ceil(bottom) + 8}px`);
+    const label = overlay.querySelector('#bv-cr-label');
+    if (label) _syncCreditsScroll(label);
+}
+
+/** Show the pixel scrollbar (and take the pointer) only when the label overflows. */
+function _syncCreditsScroll(label) {
+    label.classList.toggle('bv-cr-scrolls', label.scrollHeight > label.clientHeight + 1);
+}
+
+let _creditsResizeRaf = 0;
+let _creditsResizeBound = false;
+function _onCreditsResize() {
+    if (_creditsResizeRaf) return;
+    _creditsResizeRaf = requestAnimationFrame(() => {
+        _creditsResizeRaf = 0;
+        _fitCreditsBand(document.getElementById('bv-credits-overlay'));
+    });
+}
+/** Re-measure on resize and rotation while the credits (or the hold line) are showing. */
+function _watchCreditsBand() {
+    if (_creditsResizeBound) return;
+    _creditsResizeBound = true;
+    window.addEventListener('resize', _onCreditsResize);
+    window.addEventListener('orientationchange', _onCreditsResize);
+}
+function _unwatchCreditsBand() {
+    if (!_creditsResizeBound) return;
+    _creditsResizeBound = false;
+    window.removeEventListener('resize', _onCreditsResize);
+    window.removeEventListener('orientationchange', _onCreditsResize);
+    if (_creditsResizeRaf) { cancelAnimationFrame(_creditsResizeRaf); _creditsResizeRaf = 0; }
+}
+
 function _startCredits(lines) {
     const overlay = document.getElementById('bv-credits-overlay');
     if (!overlay) return;
@@ -1499,7 +1557,10 @@ function _startCredits(lines) {
         label.id = 'bv-cr-label';
         overlay.appendChild(label);
     }
-    label.style.cssText = 'text-align:center;padding:0 10%;transition:opacity 0.4s ease;';
+    label.className = 'bv-cr-label';
+    label.style.cssText = 'text-align:center;transition:opacity 0.4s ease;';
+    _fitCreditsBand(overlay);
+    _watchCreditsBand();
 
     // Filter to non-empty lines only (a card carries its own lines)
     const items = lines.filter(l => (Array.isArray(l.lines) && l.lines.length) || (l.text && l.text.trim()));
@@ -1528,7 +1589,10 @@ function _startCredits(lines) {
 
         label.style.opacity = '0';
         _creditsTimerId = setTimeout(() => {
-            label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${baseStyle}`;
+            label.className = 'bv-cr-label';
+            label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${baseStyle}`;
+            _fitCreditsBand(overlay);
+            label.scrollTop = 0;
             let holdMs = 3000;
             if (Array.isArray(item.lines) && item.lines.length) {
                 // A closing card or teaser: its lines together, one per row
@@ -1548,6 +1612,7 @@ function _startCredits(lines) {
                 if (_themeDef.logCredits) addLog('> ' + displayDashes(item.text));
             }
             label.style.opacity = '1';
+            _syncCreditsScroll(label);
             _creditsTimerId = setTimeout(showNext, holdMs);
         }, 450); // brief fade-out gap before switching text
     }
@@ -1570,13 +1635,18 @@ function _showCreditsHold(text) {
         label.id = 'bv-cr-label';
         overlay.appendChild(label);
     }
-    label.style.cssText = `text-align:center;padding:0 10%;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    label.className = 'bv-cr-label';
+    label.style.cssText = `text-align:center;transition:opacity 0.4s ease;${STYLE_MAP['entry']}`;
+    _fitCreditsBand(overlay);
     label.textContent = text;
     label.style.opacity = '1';
+    _syncCreditsScroll(label);
+    _watchCreditsBand();
 }
 
 function _stopCredits() {
     _creditsActive = false;
+    _unwatchCreditsBand();
     clearTimeout(_creditsTimerId);
     _creditsTimerId = null;
 
@@ -1773,6 +1843,9 @@ function _applyTheme(opts) {
     if (h1) h1.textContent = creditsHeader(_headerText, t?.heading);
     const status = _statusValEl();
     if (status) status.textContent = creditsStatus(_statusText, t?.status);
+    // The credits screen keeps its STATUS readable: the blink is for the live visualiser, and
+    // on a screenshot or a slow glance its off phase made the row look empty.
+    if (status && (opts.credits?.length || opts.missionOver)) status.classList.remove('bv-blink');
     _applyScenarioOverlay(scenarioCreditsOverlay(window.gameScenario, missionName));
     _themeApplied = _theme;
 }
@@ -1943,6 +2016,7 @@ function _close_overlay() {
     // Stop any credits immediately (no fade — overlay is closing anyway)
     _creditsHoldToken++;
     _creditsActive = false;
+    _unwatchCreditsBand();
     clearTimeout(_creditsTimerId);  _creditsTimerId  = null;
     clearTimeout(_creditsHideTimer); _creditsHideTimer = null;
     const creditsOverlay = document.getElementById('bv-credits-overlay');

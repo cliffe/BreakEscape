@@ -20,6 +20,8 @@ VAR ghost_deal_accepted = false
 VAR ghost_keys_used = false
 VAR advised_board_pay = false
 VAR advised_board_refuse = false
+VAR advised_board_time = false // Synced: told Kim "buy me time, I'll change the options"
+VAR reeves_stance = ""       // Synced: how the player closed the Reeves scene (quiet / public / handover / hostile)
 VAR flag_ghost_log_submitted = false
 VAR lore_ghosts_manifesto_found = false
 VAR lore_cryptosecure_found = false
@@ -159,8 +161,6 @@ Agent HaX: He's not wrong. He usually isn't. #delivery: quietly
 #speaker:agent_0x99
 ~ asked_about_the_call = true
 
-Agent HaX: Yes. I've thought about very little else since your field notes came in.
-
 Agent HaX: Eleven words on an internal telephone, and it nearly cost you the operation. No exploit, no weapon.
 
 Agent HaX: He removed the thing every one of your doors was actually running on. Other people's willingness to believe you.
@@ -264,10 +264,6 @@ Agent HaX: We don't have a name. We have a philosophy, a signature, and now two 
     Agent HaX: Pre-planned. Spreadsheet-precise. They knew what the statistics meant before the operation started and ran it anyway.
 }
 
-{lore_ghosts_manifesto_found:
-    Agent HaX: The manifesto -- read it again when you have time. It's how they see themselves. Understanding their ideology matters for what comes next.
-}
-
 // R6: the technical-arc recap is unconditional now. It used to be gated to
 // players who did NOT submit the ghost log and did NOT find the manifesto, so the
 // completionist -- who most earned the reflection -- was routed to the manifesto
@@ -344,8 +340,7 @@ Agent HaX: One died in the night, and she was critical before any of this starte
 
 Agent HaX: And Ghost is still in that network. The keys were Ghost's, so every host they decrypted is a host Ghost can reach again.
 Agent HaX: The trust's incident team has found three ways back in so far, and they don't think that's all of them.
-
-Agent HaX: The restore ran because Ghost chose to let it. Remember that the next time anybody offers you something for free.
+Agent HaX: Remember that the next time anybody offers you something for free.
 
 -> entropy_funding_discussion
 
@@ -478,8 +473,6 @@ Agent HaX: A Health and Social Care Committee inquiry. Forty-plus hospitals impl
 
 === exposure_reflection ===
 #speaker:agent_0x99
-
-Agent HaX: Forty hospitals upgraded their security posture within two weeks of the story breaking.
 
 Agent HaX: Long-term lives saved -- hard to count, but real.
 
@@ -614,7 +607,7 @@ Narrator: A pause.
 #speaker:agent_0x99
 Agent HaX: That's the injustice that radicalises people. The ones who did the right thing and got ground up for it anyway.
 
-Agent HaX: Remember that when you think about Ghost's ideology. They're not wrong about the problem.
+Agent HaX: Ghost isn't wrong about the problem.
 
 -> ghost_status
 
@@ -680,6 +673,10 @@ Agent HaX: He authorised the fire drill that put ENTROPY's device on the LAN, si
 
 {cover_burned:
     Agent HaX: And he made the phone call. Which means the man slowing you down all night was standing four feet from the evidence, being helpful.
+}
+
+{reeves_stance == "quiet":
+    Agent HaX: You took him quietly. No scene in the boardroom, and he gave us the cell without being asked twice.
 }
 
 {insider_asset_exposed:
@@ -908,6 +905,9 @@ Agent HaX: Here's what I'll say, Agent.
 {advised_board_refuse and not paid_ransom:
     Agent HaX: And you kept your word to Kim. You said you'd get the keys without paying, and you did.
     Agent HaX: In this work that's rarer than it should be. She knows what you spent to make good on it.
+}
+{advised_board_time:
+    Agent HaX: You told Kim the decision wasn't yours to make and asked her for time instead. She went into that room and bought it.
 }
 {advised_board_pay and paid_ransom:
     Agent HaX: You told Kim to pay, and that's how it ended. No surprises for her.

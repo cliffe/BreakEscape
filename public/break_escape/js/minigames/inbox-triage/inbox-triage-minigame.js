@@ -361,7 +361,7 @@ export class InboxTriageMinigame extends SocialOverlayScene {
         const steps = STEPS.map(([id, label]) => ({ id, label }));
         const here = steps.findIndex((s) => s.id === this.step);
         const items = buildStepItems(this.stepsEl, steps, { stepClass: 'tri-step', dataKey: 'step', label: { as: 'text' } });
-        applyStepStates(items, steps, { currentClass: 'current', doneClass: 'done' },
+        applyStepStates(items, steps, { currentClass: 'current', doneClass: 'done', srClass: 'tri-step-sr', srDone: ' (done)' },
             (step, i) => ({ current: i === here, done: i < here }));
     }
 

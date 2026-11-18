@@ -3,6 +3,7 @@ EXTERNAL player_name()
 // danny_fate is a scenario global; assigning it writes through to game state,
 // where the credits and the debrief read it back. No unbound EXTERNAL getters.
 VAR danny_fate = ""
+VAR danny_scene_opened = false // Synced scenario global: set in each opening choice, so a reload mid-scene resumes at the_question instead of replaying the opener
 VAR danny_evidence_seen = false // Synced scenario global: the player has seen Danny's hospital files; also set by the GHOST folder's onRead
 // Story pass (flag 2): synced scenario globals. The FTP note says Zero Day rehearses
 // St. Catherine's "before every healthcare job"; with it in hand the player can ask
@@ -26,6 +27,11 @@ VAR rest_quiet = false
 { danny_fate != "":
     -> after_choice
 }
+// Reload resume: the story position is not saved. The opening choices set this
+// synced global, so a reload after them lands on the question, not the opener.
+{ danny_scene_opened:
+    -> the_question
+}
 Narrator: The office is small and lived-in. A framed photo faces the chair. On the screen, a folder is still open: "GHOST -- Hospital Infrastructure Assessment".
 Narrator: A man is sitting in the dark with his coat on, as if he has been about to leave for hours and hasn't managed it. He doesn't startle.
 Danny Foster: You're not one of ours. I'd know you.
@@ -36,12 +42,16 @@ Danny Foster: You're not one of ours. I'd know you.
     Danny Foster: You're here about the hospital. Aren't you.
 }
 * [SAFETYNET. I'm investigating the St. Catherine's attack.]
+    ~ danny_scene_opened = true
     -> reveal
 * [St. Catherine's. Your reconnaissance. People died.]
+    ~ danny_scene_opened = true
     -> guilt
 * [She lied to you about the client, didn't she.]
+    ~ danny_scene_opened = true
     -> sympathy
 * {flag_ftp_submitted} [SAFETYNET. Zero Day rehearses St. Catherine's before every healthcare job. There's a next one.]
+    ~ danny_scene_opened = true
     -> next_job
 
 === reveal ===

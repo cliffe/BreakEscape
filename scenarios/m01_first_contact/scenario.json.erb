@@ -71,40 +71,40 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         "condition": "!globalVars.briefing_played",
         "playlist": "cutscene",
         "fade": false,
-        "comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
+        "_comment": "Opening briefing cutscene — play immediately, no fade (first run only)"
       },
       {
         "trigger": "game_loaded",
         "condition": "globalVars.briefing_played === true",
         "playlist": "noir",
         "fade": false,
-        "comment": "Cutscene already seen (resume) — skip straight to noir"
+        "_comment": "Cutscene already seen (resume) — skip straight to noir"
       },
       {
         "trigger": "conversation_closed:briefing_cutscene",
         "playlist": "noir",
         "fade": true,
-        "comment": "Briefing ends → mission proper begins"
+        "_comment": "Briefing ends → mission proper begins"
       },
       {
         "trigger": "npc_hostile_state_changed",
         "condition": "isHostile === true",
         "playlist": "threat",
         "fade": true,
-        "comment": "Any NPC turns hostile → switch to tension music"
+        "_comment": "Any NPC turns hostile → switch to tension music"
       },
       {
         "trigger": "all_hostiles_ko",
         "playlist": "noir",
         "fade": true,
-        "comment": "All hostile NPCs KO'd — back to noir"
+        "_comment": "All hostile NPCs KO'd — back to noir"
       },
       {
         "trigger": "global_variable_changed:start_debrief_cutscene",
         "condition": "value === true",
         "playlist": "spy-action",
         "fade": true,
-        "comment": "Final debrief begins — spy-action mood while Agent HaX debrief plays"
+        "_comment": "Final debrief begins — spy-action mood while Agent HaX debrief plays"
       },
       {
         "trigger": "conversation_closed:closing_debrief_person",
@@ -113,35 +113,35 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         "autoStop": true,
         "disableClose": true,
         "fade": true,
-        "comment": "Debrief ends — play one specific victory track with mission credits scroll",
+        "_comment": "Debrief ends — play one specific victory track with mission credits scroll",
         "credits": [
           { "text": "MISSION COMPLETE",                          "style": "title",    "condition": "!globalVars.player_launched_attack" },
           { "text": "MISSION FAILED",                            "style": "title",    "condition": "globalVars.player_launched_attack" },
           { "text": "FIRST CONTACT",                             "style": "subtitle" },
           { "text": "" },
-          { "text": "OPERATION SHATTER: NEUTRALIZED",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },
+          { "text": "OPERATION SHATTER: NEUTRALISED",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },
           { "text": "OPERATION SHATTER: EXECUTED",               "style": "entry",    "condition": "globalVars.player_launched_attack" },
           { "text": "LIVES SAVED: 42-85 (estimated)",            "style": "entry",    "condition": "!globalVars.player_launched_attack" },
-          { "text": "ESTIMATED CASUALTIES: 42-85 — Attack not stopped in time", "style": "entry", "condition": "globalVars.player_launched_attack" },
+          { "text": "ESTIMATED CASUALTIES: 42-85. Attack not stopped in time", "style": "entry", "condition": "globalVars.player_launched_attack" },
           { "text": "" },
           { "text": "── EVIDENCE ──",                            "style": "section-header" },
-          { "text": "COMPLETE — All critical documents recovered",          "style": "entry", "condition": "globalVars.found_casualty_projections && globalVars.found_target_database" },
-          { "text": "SUBSTANTIAL — Casualty projections secured",           "style": "entry", "condition": "globalVars.found_casualty_projections && !globalVars.found_target_database" },
-          { "text": "SUBSTANTIAL — Target database secured",                "style": "entry", "condition": "!globalVars.found_casualty_projections && globalVars.found_target_database" },
-          { "text": "PARTIAL — Forensics team recovering additional files", "style": "entry", "condition": "!globalVars.found_casualty_projections && !globalVars.found_target_database" },
+          { "text": "COMPLETE: All critical documents recovered",          "style": "entry", "condition": "globalVars.found_casualty_projections && globalVars.found_target_database" },
+          { "text": "SUBSTANTIAL: Casualty projections secured",           "style": "entry", "condition": "globalVars.found_casualty_projections && !globalVars.found_target_database" },
+          { "text": "SUBSTANTIAL: Target database secured",                "style": "entry", "condition": "!globalVars.found_casualty_projections && globalVars.found_target_database" },
+          { "text": "PARTIAL: Forensics team recovering additional files", "style": "entry", "condition": "!globalVars.found_casualty_projections && !globalVars.found_target_database" },
           { "text": "" },
           { "text": "── PERSONNEL ──",                           "style": "section-header" },
-          { "text": "DEREK LAWSON: Neutralized — In custody",                                 "style": "entry",   "condition": "globalVars.derek_fight_triggered" },
-          { "text": "DEREK LAWSON: Surrendered — In custody",                                 "style": "entry",   "condition": "globalVars.derek_surrendered" },
-          { "text": "DEREK LAWSON: Arrested — In custody",                                    "style": "entry",   "condition": "globalVars.derek_confronted && !globalVars.derek_fight_triggered && !globalVars.derek_surrendered" },
-          { "text": "SARAH O'BRIEN: Removed — No ENTROPY connection",                        "style": "entry",   "condition": "globalVars.sarah_ko" },
-          { "text": "MAYA CHEN: Removed — Intelligence lost — No ENTROPY connection",         "style": "entry",   "condition": "globalVars.maya_ko" },
+          { "text": "DEREK LAWSON: Neutralised, in custody",                                 "style": "entry",   "condition": "globalVars.derek_fight_triggered" },
+          { "text": "DEREK LAWSON: Surrendered, in custody",                                 "style": "entry",   "condition": "globalVars.derek_surrendered" },
+          { "text": "DEREK LAWSON: Arrested, in custody",                                    "style": "entry",   "condition": "globalVars.derek_confronted && !globalVars.derek_fight_triggered && !globalVars.derek_surrendered" },
+          { "text": "SARAH O'BRIEN: Removed, no ENTROPY connection",                        "style": "entry",   "condition": "globalVars.sarah_ko" },
+          { "text": "MAYA CHEN: Removed, intelligence lost, no ENTROPY connection",         "style": "entry",   "condition": "globalVars.maya_ko" },
           { "text": "MAYA CHEN: Identity protected",                                           "style": "entry",   "condition": "!globalVars.maya_ko && globalVars.maya_identity_protected" },
-          { "text": "MAYA CHEN: Identity compromised — Under SAFETYNET protection",           "style": "entry",   "condition": "!globalVars.maya_ko && !globalVars.maya_identity_protected" },
-          { "text": "KEVIN PARK: Removed — Evidence confirms no ENTROPY connection",          "style": "entry",   "condition": "globalVars.kevin_ko" },
-          { "text": "KEVIN PARK: Protected from frame-up — Career intact",                    "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_protected" },
-          { "text": "KEVIN PARK: Wrongly reported as ENTROPY operative — Being cleared",      "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'wrongly_accused'" },
-          { "text": "KEVIN PARK: Arrested under Derek's frame-up — Later cleared",            "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'ignore'" },
+          { "text": "MAYA CHEN: Identity compromised, under SAFETYNET protection",           "style": "entry",   "condition": "!globalVars.maya_ko && !globalVars.maya_identity_protected" },
+          { "text": "KEVIN PARK: Removed, evidence confirms no ENTROPY connection",          "style": "entry",   "condition": "globalVars.kevin_ko" },
+          { "text": "KEVIN PARK: Protected from frame-up, career intact",                    "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_protected" },
+          { "text": "KEVIN PARK: Wrongly reported as ENTROPY operative, being cleared",      "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'wrongly_accused'" },
+          { "text": "KEVIN PARK: Arrested under Derek's frame-up, later cleared",            "style": "entry",   "condition": "!globalVars.kevin_ko && globalVars.kevin_choice === 'ignore'" },
           { "text": "KEVIN PARK: Status unknown",                                              "style": "entry",   "condition": "!globalVars.kevin_ko && !globalVars.kevin_choice" },
           { "text": "FATIMA BEGUM: Bystander knocked out, no ENTROPY connection",   "style": "entry",   "condition": "globalVars.fatima_ko" },
           { "text": "GRAHAM WHITFIELD: Bystander knocked out, no ENTROPY connection", "style": "entry",   "condition": "globalVars.graham_ko" },
@@ -387,7 +387,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     {
       "aimId": "decrypt_entropy_intel",
       "title": "Decrypt ENTROPY Intelligence",
-      "description": "The VM revealed a passphrase — use it to access the encrypted ENTROPY archive in the server room",
+      "description": "The VM revealed a passphrase. Use it to access the encrypted ENTROPY archive in the server room",
       "status": "locked",
       "unlockCondition": { "aimCompleted": "capture_technical_evidence" },
       "order": 5,
@@ -439,7 +439,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "tasks": [
         {
           "taskId": "confront_derek",
-          "title": "Confront Derek Lawson",
+          "title": "Confront Derek Lawson in the break room",
           "type": "npc_conversation",
           "targetNPC": "derek_lawson",
           "status": "active",
@@ -673,7 +673,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "SAFETYNET Field Guide: Lockpicking",
               "takeable": true,
               "labUrl": "https://cliffe.github.io/HacktivityLabSheets/labs/safetynet/lockpicking/",
-              "observations": "Field guide to pin tumbler lock picking — tension application, pin setting, and technique for security testing"
+              "observations": "Field guide to pin tumbler lock picking, tension application, pin setting, and technique for security testing"
             }
           ],
           "timedMessages": [
@@ -698,7 +698,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "Check-in resolved. Sarah's key and badge are on the floor — she's got nothing to do with any of this."
+                "message": "Check-in resolved. Sarah's key and badge are on the floor: she's got nothing to do with any of this."
               }
             },
             {
@@ -714,7 +714,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "We may never know what Maya had to tell us. She wasn't ENTROPY — she was trying to help."
+                "message": "We may never know what Maya had to tell us. She wasn't ENTROPY: she was trying to help."
               }
             },
             {
@@ -730,7 +730,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "Kevin's down. His items are on the floor. For the record — he's got nothing to do with ENTROPY."
+                "message": "Kevin's down. His items are on the floor. For the record: he's got nothing to do with ENTROPY."
               }
             },
             {
@@ -739,7 +739,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Hold on — those logs pointing at Kevin were filed by Derek. Check his office before you do anything you can't take back."
+                "message": "Hold on, those logs pointing at Kevin were filed by Derek. Check his office before you do anything you can't take back."
               }
             },
             {
@@ -786,7 +786,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "m01_tour_sent": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Texting from here, then. Now get a feel for the place. 🦎 Check the desks, filing cabinets, notice boards. The IT room is east, break room is west. Start broad."
+                "message": "You missed my call. Call me back when you can, using the button on this thread. 🦎 Meanwhile, check desks, cabinets and notice boards. IT room is east, break room west."
               }
             },
             {
@@ -808,7 +808,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "server_room_entered": true },
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "You're in the server room. 🦎 That Kali terminal is connected to ENTROPY's Operation Shatter infrastructure — a live attack server. Use what you've learned about Dereks username/passwords, and servers."
+                "message": "You're in the server room. 🦎 That Kali terminal is connected to ENTROPY's Operation Shatter infrastructure, a live attack server. Use what you've learned about Dereks username/passwords, and servers."
               }
             },
             {
@@ -848,7 +848,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "priv_esc_guide_offered": true },
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "You have SSH access. 🦎 I’ve pushed the privilege escalation guide to your terminal — check sudo permissions and move into the target account from there."
+                "message": "You have SSH access. 🦎 I’ve pushed the privilege escalation guide to your terminal. Check sudo permissions and move into the target account from there."
               }
             },
             {
@@ -857,7 +857,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "derek_office_entered": true },
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "You're in Derek's office. Computer's locked — try something he'd remember. Filing cabinets, encoded notes. Be thorough."
+                "message": "You're in Derek's office. Computer's locked. Try something he'd remember. Filing cabinets, encoded notes. Be thorough."
               }
             },
             {
@@ -866,7 +866,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "You're in. Check his files carefully — framing evidence, operational plans, anything about a safe combination."
+                "message": "You're in. Check his files carefully, framing evidence, operational plans, anything about a safe combination."
               }
             },
             {
@@ -875,7 +875,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "setGlobal": { "cyberchef_guide_offered": true },
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Patricia's CyberChef workstation — good find. I can upload a field guide for Base64 and ROT13 decoding if you want it. Message me when you're ready."
+                "message": "Patricia's CyberChef workstation, good find. I can upload a field guide for Base64 and ROT13 decoding if you want it. Message me when you're ready."
               }
             },
             {
@@ -889,10 +889,11 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               }
             },
             {
+              "_comment": "Release fix: this slot used to complete decode_derek_notes on reading the note. It now only records the read; the tick moved to the end of this list (saved games key onceOnly triggers by index).",
               "eventPattern": "global_variable_changed:whiteboard_cipher_seen",
               "condition": "value === true",
               "onceOnly": true,
-              "completeTask": "decode_derek_notes"
+              "setGlobal": { "derek_notes_read": true }
             },
             {
               "eventPattern": "global_variable_changed:derek_personal_safe_opened",
@@ -901,7 +902,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "open_derek_personal_safe",
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "The Architect's Letter. Physical correspondence — this is rare. Derek was trusted enough to receive direct contact. That letter is critical evidence. Secure it."
+                "message": "The Architect's Letter. Physical correspondence: this is rare. Derek was trusted enough to receive direct contact. That letter is critical evidence. Secure it."
               }
             },
             {
@@ -911,7 +912,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "open_derek_storage_safe",
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Derek decoded that note and used the combination. He wasn't just hiding things — he was actively running the operation out of this building."
+                "message": "Derek decoded that note and used the combination. He wasn't just hiding things: he was actively running the operation out of this building."
               }
             },
             {
@@ -921,7 +922,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "open_derek_cabinet",
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "Filing cabinet open. Secure everything inside — casualty projections, manifesto, deployment assets. All of it is evidence."
+                "message": "Filing cabinet open. Secure everything inside, casualty projections, manifesto, deployment assets. All of it is evidence."
               }
             },
             {
@@ -930,7 +931,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "You found a contingency plan in Derek's files. Read it carefully — this looks significant."
+                "message": "You found a contingency plan in Derek's files. Read it carefully: this looks significant."
               }
             },
             {
@@ -948,7 +949,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "You found something on the PC. Read it carefully — not just the content. Check who filed what, whether the headers add up. Details matter."
+                "message": "You found something on the PC. Read it carefully, not just the content. Check who filed what, whether the headers add up. Details matter."
               }
             },
             {
@@ -966,7 +967,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 2500,
-                "message": "That's the full picture — and Derek's already contained. 🦎 Use the launch device to end Operation Shatter, then call me for debrief."
+                "message": "That's the full picture, and Derek's already contained. 🦎 Use the launch device to end Operation Shatter, then call me for debrief."
               }
             },
             {
@@ -1002,7 +1003,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "unlockAim": "decrypt_entropy_intel",
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "ENTROPY archive decryption key confirmed. 🦎 The archive is unlocked — open it in the server room and pull the intelligence inside."
+                "message": "ENTROPY archive decryption key confirmed. 🦎 The archive is unlocked. Open it in the server room and pull the intelligence inside."
               }
             },
             {
@@ -1012,7 +1013,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "submit_linux_flag",
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "Directory traversal evidence secured. 🦎 Navigate the Operation Shatter directory structure — there's more in there."
+                "message": "Directory traversal evidence secured. 🦎 Navigate the Operation Shatter directory structure: there's more in there."
               }
             },
             {
@@ -1032,7 +1033,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "submit_sudo_flag",
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 One thing left: ~/launch_code/launch_flag in the shatter account goes into Derek's device."
+                "message": "Encoded deployment intel secured: the shatter_configuration confirms full operation scope. 🦎 One thing left: ~/launch_code/launch_flag in the shatter account goes into Derek's device."
               }
             },
             {
@@ -1042,7 +1043,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "submit_sudo_flag",
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 One thing left: open the ENTROPY archive with the DECRYPTION_KEY from derek's account."
+                "message": "Encoded deployment intel secured: the shatter_configuration confirms full operation scope. 🦎 One thing left: open the ENTROPY archive with the DECRYPTION_KEY from derek's account."
               }
             },
             {
@@ -1052,7 +1053,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "completeTask": "submit_sudo_flag",
               "sendTimedMessage": {
                 "delay": 2000,
-                "message": "Encoded deployment intel secured — the shatter_configuration confirms full operation scope. 🦎 All flags in."
+                "message": "Encoded deployment intel secured: the shatter_configuration confirms full operation scope. 🦎 All flags in."
               }
             },
             {
@@ -1060,7 +1061,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1500,
-                "message": "You have the launch device. 🦎 Abort the launch: the authorization code is in the shatter account at `~/launch_code/launch_flag`. Enter it on the device to end this."
+                "message": "You have the launch device. 🦎 Abort the launch: the authorisation code is in the shatter account at `~/launch_code/launch_flag`. Enter it on the device to end this."
               }
             },
             {
@@ -1087,7 +1088,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek in the break room, west of the main office."
               }
             },
             {
@@ -1096,7 +1097,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek in the break room, west of the main office."
               }
             },
             {
@@ -1105,7 +1106,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 3000,
-                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek — you have everything you need."
+                "message": "All technical flags secured. 🦎 The ENTROPY archive is unlocked, so read it if you haven't. Then find Derek in the break room, west of the main office."
               }
             },
             {
@@ -1141,7 +1142,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "Derek is contained and ENTROPY's full picture is in your hands. 🦎 Use the launch device — then call me for debrief."
+                "message": "Derek is contained and ENTROPY's full picture is in your hands. 🦎 Use the launch device, then call me for debrief."
               }
             },
             {
@@ -1150,7 +1151,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "onceOnly": true,
               "sendTimedMessage": {
                 "delay": 1000,
-                "message": "Derek is contained. You still need to access the ENTROPY encrypted archive in the server room — the full picture is in there. Finish that, then call me."
+                "message": "Derek is contained. You still need to access the ENTROPY encrypted archive in the server room: the full picture is in there. Finish that, then call me."
               }
             },
             {
@@ -1217,6 +1218,13 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "ring": { "onMissed": "callback", "callbackWhen": "globalVars.start_debrief_cutscene !== true && globalVars.m01_debrief_offered !== true", "ringWhile": "globalVars.start_debrief_cutscene !== true && globalVars.m01_debrief_offered !== true" },
               "callLabel": "SAFETYNET secure line",
               "setGlobal": { "m01_abort_call_rung": true }
+            },
+            {
+              "_comment": "Release fix, appended so saved-game indices hold: the decode tick fires when the Base64 note's combination has opened the storage safe, the first event that cannot happen without the decode (it used to fire when the note was only read).",
+              "eventPattern": "global_variable_changed:derek_storage_safe_opened",
+              "condition": "value === true",
+              "onceOnly": true,
+              "completeTask": "decode_derek_notes"
             }
           ]
         },
@@ -1272,7 +1280,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "readable": true,
           "puzzle_graph_unlocks": "it_room",
           "puzzle_graph_reveals": "it_room_pin",
-          "voice": "Hi Sarah, it's Kevin from IT. Just leaving this message to confirm the door code update I mentioned in the meeting. The IT room PIN has been changed to 2468 — please shred the old one from the maintenance folder. Also, uh... heads up. I've been noticing some unusual access patterns on the server logs, and I really think we need to talk offline before I escalate. I'm not sure who to trust at management level right now. Call me when you're back. Cheers.",
+          "voice": "Hi Sarah, it's Kevin from IT. Just leaving this message to confirm the door code update I mentioned in the meeting. The IT room PIN has been changed to 2468, please shred the old one from the maintenance folder. Also, uh... heads up. I've been noticing some unusual access patterns on the server logs, and I really think we need to talk offline before I escalate. I'm not sure who to trust at management level right now. Call me when you're back. Cheers.",
           "ttsVoice": {
             "name": "Charon",
             "style": "Enthusiastic, nerdy tech professional. Speak with a consistent Australian accent throughout — do not shift to any other accent. Use a slightly higher-pitched, energetic voice. Slightly anxious and overworked.",
@@ -1281,7 +1289,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "avatar": "assets/characters/kevin_park_headshot.png",
           "sender": "Kevin Park (IT)",
           "timestamp": "Yesterday, 6:47 PM",
-          "observations": "The message light is blinking — one unheard voicemail"
+          "observations": "The message light is blinking, one unheard voicemail"
         },
         {
           "type": "notes",
@@ -1471,8 +1479,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Viral Dynamics Business Outline",
               "takeable": true,
               "readable": true,
-              "text": "VIRAL DYNAMICS MEDIA — STRATEGIC OVERVIEW\nCLASSIFICATION: INTERNAL / EXECUTIVE EYES ONLY\n\nMISSION STATEMENT\nViral Dynamics empowers clients to achieve large-scale, measurable shifts in public sentiment through precision-targeted social media engagement. All operations comply with applicable advertising and communications law.\n\nSERVICE TIERS\n\n[TIER 1 — INSIGHT]\nProprietary psychographic profiling. We segment populations by personality, political tendency, and emotional trigger patterns using aggregated social data. OCEAN model scoring applied across >200M profiles.\n\n[TIER 2 — AMPLIFY]\nCoordinated organic-style content distribution. Micro-targeted messaging delivered via networks of managed social accounts. Authenticated users only — no bot farms. Content is legally truthful; framing is our expertise.\n\n[TIER 3 — INFLUENCE]\nLong-tail narrative seeding. Sustained 6–18 month campaigns to shift baseline attitudes on target topics (e.g., electoral candidates, public health policy, corporate reputation). Clients include political campaigns, foreign governments (UK restriction applies), and corporate PR.\n\nCLIENT CONFIDENTIALITY\nAll client engagements are conducted under strict NDA. No public attribution. Engagement outcomes are deniable by design.",
-              "observations": "A glossy internal document outlining Viral Dynamics's core business — psychographic profiling and influence campaigns at scale. Legal. Meticulous. Chilling."
+              "text": "VIRAL DYNAMICS MEDIA: STRATEGIC OVERVIEW\nCLASSIFICATION: INTERNAL / EXECUTIVE EYES ONLY\n\nMISSION STATEMENT\nViral Dynamics empowers clients to achieve large-scale, measurable shifts in public sentiment through precision-targeted social media engagement. All operations comply with applicable advertising and communications law.\n\nSERVICE TIERS\n\n[TIER 1: INSIGHT]\nProprietary psychographic profiling. We segment populations by personality, political tendency, and emotional trigger patterns using aggregated social data. OCEAN model scoring applied across >200M profiles.\n\n[TIER 2: AMPLIFY]\nCoordinated organic-style content distribution. Micro-targeted messaging delivered via networks of managed social accounts. Authenticated users only, no bot farms. Content is legally truthful; framing is our expertise.\n\n[TIER 3: INFLUENCE]\nLong-tail narrative seeding. Sustained 6–18 month campaigns to shift baseline attitudes on target topics (e.g., electoral candidates, public health policy, corporate reputation). Clients include political campaigns, foreign governments (UK restriction applies), and corporate PR.\n\nCLIENT CONFIDENTIALITY\nAll client engagements are conducted under strict NDA. No public attribution. Engagement outcomes are deniable by design.",
+              "observations": "A glossy internal document outlining Viral Dynamics's core business, psychographic profiling and influence campaigns at scale. Legal. Meticulous. Chilling."
             }
           ]
         },
@@ -1488,7 +1496,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "name": "Office Chalkboard",
           "takeable": false,
           "position": { "x": 2.29, "y": 0.4 },
-          "observations": "A shared chalkboard covered in campaign schedules and meeting reminders. At the bottom in faded marker: 'Office safe — think election year. (2024 if you've already forgotten, Karen.)'"
+          "observations": "A shared chalkboard covered in campaign schedules and meeting reminders. At the bottom in faded marker: 'Office safe, think election year. (2024 if you've already forgotten, Karen.)'"
         },
         {
           "type": "bookcase",
@@ -1512,7 +1520,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "puzzle_graph_unlocks": "it_room",
               "puzzle_graph_optional": true,
               "puzzle_graph_reveals": "it_room_pin",
-              "text": "VIRAL DYNAMICS - MAINTENANCE LOG\n\nIT Room Access:\nKevin keeps forgetting the code. He said he'd leave\na voicemail for Sarah with the updated PIN after the\naudit — check the reception desk phone if you need it.\n\nLast updated: 2 weeks ago",
+              "text": "VIRAL DYNAMICS - MAINTENANCE LOG\n\nIT Room Access:\nKevin keeps forgetting the code. He said he'd leave\na voicemail for Sarah with the updated PIN after the\naudit, check the reception desk phone if you need it.\n\nLast updated: 2 weeks ago",
               "observations": "Discarded maintenance checklist with access codes scrawled on it"
             }
           ]
@@ -1538,7 +1546,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "locked": true,
           "lockType": "pin",
           "requires": "1337",
-          "observations": "A personal safe — 4-digit PIN. Someone's been storing things in here privately.",
+          "observations": "A personal safe, 4-digit PIN. Someone's been storing things in here privately.",
           "contents": [
             {
               "type": "notes",
@@ -1546,7 +1554,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "readable": true,
               "text": "shatter_server\nIP: 172.16.0.2\nUser: derek\n\nUse with password list for SSH access.",
-              "observations": "A printed reference note stored alongside the password list — server address and username for the ENTROPY attack infrastructure"
+              "observations": "A printed reference note stored alongside the password list, server address and username for the ENTROPY attack infrastructure"
             },
             {
               "type": "notes",
@@ -1643,12 +1651,12 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "ENTROPY Launch Device",
               "operationName": "OPERATION SHATTER",
               "takeable": true,
-              "observations": "A ruggedised tactical device. Screen: OPERATION SHATTER — ARMED. T-72 HOURS TO LAUNCH WINDOW.",
+              "observations": "A ruggedised tactical device. Screen: OPERATION SHATTER: ARMED. T-72 HOURS TO LAUNCH WINDOW.",
               "acceptsVms": ["shatter_server"],
               "acceptsVmLabels": { "shatter_server": "ENTROPY attack server (172.16.0.2)" },
               "flags": ["shatter_server:flag_3"],
               "flagRewards": [
-                { "type": "set_global", "key": "launch_code_submitted", "value": true, "label": "Launch authorisation accepted — Operation Shatter is yours to abort." }
+                { "type": "set_global", "key": "launch_code_submitted", "value": true, "label": "Launch authorisation accepted. Operation Shatter is yours to abort." }
               ],
               "onAbort": {
                 "setGlobal": { "player_aborted_attack": true, "ready_for_debrief": true },
@@ -1680,7 +1688,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "name": "Break Room Calendar",
           "takeable": false,
           "readable": true,
-          "text": "MARCH — VIRAL DYNAMICS\n\nFri 14 ✓  |  Sat 15 ✓  |  Sun 16\nMon 17 ✓  |  Tue 18 ✓  |  Wed 19 ✓\nThu 20 ✓  |  Fri 21 ✓  |  Sat 22\n\n► SUNDAY: 'LAUNCH'",
+          "text": "MARCH: VIRAL DYNAMICS\n\nFri 14 ✓  |  Sat 15 ✓  |  Sun 16\nMon 17 ✓  |  Tue 18 ✓  |  Wed 19 ✓\nThu 20 ✓  |  Fri 21 ✓  |  Sat 22\n\n► SUNDAY: 'LAUNCH'",
           "observations": "Calendar with this coming Sunday marked 'LAUNCH' in Derek's handwriting"
         },
         {
@@ -1698,7 +1706,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "puzzle_graph_unlocks": ["derek_computer", "derek_cabinet"],
               "puzzle_graph_optional": true,
               "puzzle_graph_reveals": "anniversary_pin_0419",
-              "observations": "An anniversary card someone tossed out — April 19th circled inside",
+              "observations": "An anniversary card someone tossed out. April 19th circled inside",
               "text": "🎂 HAPPY ANNIVERSARY! 🎂\n\nTo Derek & Lisa,\nCongratulations on 10 years!\nApril 19th - a day to remember!\n(Derek keys dates month first, then day.)\n\nFrom your Viral Dynamics family\n\n(Note: Several signatures, including Maya, Kevin, Sarah)"
             },
             {
@@ -1714,8 +1722,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Sticky Note on Fridge",
               "takeable": true,
               "readable": true,
-              "text": "Derek —\n\nYou've been in here a lot this week. Everything okay?\nYou seem stressed.\n\n- Maya\n\n(Handwritten reply below, different ink:)\n'Big project. Wraps up Sunday. After that, I'll be gone for a while.'",
-              "observations": "Exchange between Maya and Derek — he's planning to disappear after Sunday"
+              "text": "Derek,\n\nYou've been in here a lot this week. Everything okay?\nYou seem stressed.\n\n- Maya\n\n(Handwritten reply below, different ink:)\n'Big project. Wraps up Sunday. After that, I'll be gone for a while.'",
+              "observations": "Exchange between Maya and Derek: he's planning to disappear after Sunday"
             }
           ]
         }
@@ -1752,7 +1760,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "ZDS Meeting Notes",
               "takeable": true,
               "readable": true,
-              "text": "MEETING NOTES - ZDS Infrastructure Review\nDate: Last Wednesday\nAttendees: Derek Lawson, [REDACTED]\n\nAgenda:\n1. Technical infrastructure status - CONFIRMED\n2. Message deployment timeline - ON SCHEDULE\n3. Target list finalization - 2.3M profiles ready\n4. Casualty projections review - ACCEPTABLE\n\nAction Items:\n- Derek to confirm Phase 3 launch window\n- ZDS to provide backup exfiltration routes",
+              "text": "MEETING NOTES - ZDS Infrastructure Review\nDate: Last Wednesday\nAttendees: Derek Lawson, [REDACTED]\n\nAgenda:\n1. Technical infrastructure status - CONFIRMED\n2. Message deployment timeline - ON SCHEDULE\n3. Target list finalisation - 2.3M profiles ready\n4. Casualty projections review - ACCEPTABLE\n\nAction Items:\n- Derek to confirm Phase 3 launch window\n- ZDS to provide backup exfiltration routes",
               "observations": "Meeting notes revealing coordination with Zero Day Syndicate"
             },
             {
@@ -1834,7 +1842,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Lock Pick Instructions",
               "takeable": true,
               "readable": true,
-              "text": "LOCK PICK KIT — QUICK REFERENCE\n\nThis kit is for authorised security testing only.\n\nHOW TO USE (pin tumbler locks):\n\n1. INSERT the tension wrench into the bottom of the keyhole.\n   Apply light rotational pressure in the direction the key turns.\n   Too much pressure and the pins won't move — keep it light.\n\n2. INSERT the pick above the wrench and feel for the pins.\n   There are usually 4–6 pins stacked vertically inside the barrel.\n\n3. LIFT each pin gently until you feel it set.\n   A set pin produces a faint click and the barrel rotates slightly.\n   Work from the back of the lock toward the front.\n\n4. Once ALL pins are set, the barrel turns and the lock opens.\n\nTIPS:\n- Light tension is everything. If you're forcing it, ease off.\n- Go slow. Rushing resets the pins.\n- Practice on unlocked locks to get a feel for pin feedback.\n- Harder locks have more pins or security pins — same method, more patience.",
+              "text": "LOCK PICK KIT: QUICK REFERENCE\n\nThis kit is for authorised security testing only.\n\nHOW TO USE (pin tumbler locks):\n\n1. INSERT the tension wrench into the bottom of the keyhole.\n   Apply light rotational pressure in the direction the key turns.\n   Too much pressure and the pins won't move. Keep it light.\n\n2. INSERT the pick above the wrench and feel for the pins.\n   There are usually 4–6 pins stacked vertically inside the barrel.\n\n3. LIFT each pin gently until you feel it set.\n   A set pin produces a faint click and the barrel rotates slightly.\n   Work from the back of the lock towards the front.\n\n4. Once ALL pins are set, the barrel turns and the lock opens.\n\nTIPS:\n- Light tension is everything. If you're forcing it, ease off.\n- Go slow. Rushing resets the pins.\n- Practice on unlocked locks to get a feel for pin feedback.\n- Harder locks have more pins or security pins, same method, more patience.",
               "observations": "A laminated reference card tucked inside the lock pick kit"
             }
           ]
@@ -1855,8 +1863,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Server Access Log",
               "takeable": false,
               "readable": true,
-              "text": "UNAUTHORIZED ACCESS LOG\n\nFlagged Entries:\n- Derek Lawson accessed SERVER_ROOM at 11:52 PM (no ticket)\n- Derek Lawson accessed SERVER_ROOM at 12:03 AM (no ticket)\n- Derek Lawson accessed BACKUP_SYSTEM at 2:15 AM (no ticket)\n\nNote: I've flagged these to management 3 times. No response.\nSomething's not right.\n- Kevin",
-              "observations": "Kevin's log of Derek's unauthorized server access"
+              "text": "UNAUTHORISED ACCESS LOG\n\nFlagged Entries:\n- Derek Lawson accessed SERVER_ROOM at 11:52 PM (no ticket)\n- Derek Lawson accessed SERVER_ROOM at 12:03 AM (no ticket)\n- Derek Lawson accessed BACKUP_SYSTEM at 2:15 AM (no ticket)\n\nNote: I've flagged these to management 3 times. No response.\nSomething's not right.\n- Kevin",
+              "observations": "Kevin's log of Derek's unauthorised server access"
             }
           ]
         },
@@ -1865,7 +1873,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "name": "IT Security Concerns",
           "takeable": true,
           "readable": true,
-          "text": "MEMO TO MANAGEMENT (UNSENT)\n\nRE: Security Concerns - Derek Lawson\n\nI've documented multiple instances of Derek accessing the server room without authorization. When I asked him about it, he said he was 'checking campaign servers.'\n\nWe don't have campaign servers in that room.\n\nI think he's doing something he shouldn't be, but I don't know who to trust. The last person who raised concerns about Derek was Patricia, and she got fired.\n\nI'm keeping this memo in case something happens to me too.\n\n- Kevin Park, IT Manager",
+          "text": "MEMO TO MANAGEMENT (UNSENT)\n\nRE: Security Concerns - Derek Lawson\n\nI've documented multiple instances of Derek accessing the server room without authorisation. When I asked him about it, he said he was 'checking campaign servers.'\n\nWe don't have campaign servers in that room.\n\nI think he's doing something he shouldn't be, but I don't know who to trust. The last person who raised concerns about Derek was Patricia, and she got fired.\n\nI'm keeping this memo in case something happens to me too.\n\n- Kevin Park, IT Manager",
           "observations": "Kevin's unsent memo expressing concerns about Derek"
         }
       ]
@@ -1908,7 +1916,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         }
       },
       "locked": false,
-      "door_sign": "Patricia Wells — Manager",
+      "door_sign": "Patricia Wells, Manager",
       "connections": {
         "south": "hallway_west"
       },
@@ -1949,14 +1957,14 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "puzzle_graph_role": "tool",
               "puzzle_graph_note": "Decoding tool — required with Encoded Note (1) and Encoded Note (2) to derive safe/PC/cabinet PINs",
-              "observations": "A laptop preloaded with CyberChef — Patricia's personal crypto analysis tool. Take it."
+              "observations": "A laptop preloaded with CyberChef. Patricia's personal crypto analysis tool. Take it."
             },
             {
               "type": "notes",
-              "name": "Patricia's Note — CyberChef",
+              "name": "Patricia's Note: CyberChef",
               "takeable": true,
               "readable": true,
-              "text": "PATRICIA'S NOTES — ENCODING METHODS\n\nI found evidence Derek is obfuscating messages using two very basic schemes: Base64 and ROT13. He leaves encoded notes around, probably thinking no one will notice.\n\n────────────\nBASE64\n────────────\nBase64 converts text to a string of letters, numbers, + and /.\nIt almost always ends in = or ==.\n\nExample:\n  Plain:   Meet at the server room\n  Base64:  TWVldCBhdCB0aGUgc2VydmVyIHJvb20=\n\nAnother:\n  Plain:   2048\n  Base64:  MjA0OA==\n\nTo decode: open CyberChef, drag in 'From Base64', paste the text.\nOr on Kali terminal:\n  echo \"MjA0OA==\" | base64 -d\n\n────────────\nROT13\n────────────\nROT13 shifts every letter 13 places. A→N, B→O, etc.\nSpaces and punctuation stay the same, so word lengths are preserved.\n\nExample:\n  Plain:   Derek is the leak\n  ROT13:   Qrerx vf gur yrnx\n\nAnother:\n  Plain:   The meeting is at noon\n  ROT13:   Gur zrrgvat vf ng abba\n\nTo decode: open CyberChef, drag in 'ROT13', paste the text.\nOr on Kali terminal:\n  echo \"Gur zrrgvat vf ng abba\" | tr 'A-Za-z' 'N-ZA-Mn-za-m'\n\n────────────\nTIP: If it ends in = — try Base64 first.\nIf the words look scrambled but the lengths match — try ROT13.\n────────────",
+              "text": "PATRICIA'S NOTES: ENCODING METHODS\n\nI found evidence Derek is obfuscating messages using two very basic schemes: Base64 and ROT13. He leaves encoded notes around, probably thinking no one will notice.\n\n────────────\nBASE64\n────────────\nBase64 converts text to a string of letters, numbers, + and /.\nIt almost always ends in = or ==.\n\nExample:\n  Plain:   Meet at the server room\n  Base64:  TWVldCBhdCB0aGUgc2VydmVyIHJvb20=\n\nAnother:\n  Plain:   2048\n  Base64:  MjA0OA==\n\nTo decode: open CyberChef, drag in 'From Base64', paste the text.\nOr on Kali terminal:\n  echo \"MjA0OA==\" | base64 -d\n\n────────────\nROT13\n────────────\nROT13 shifts every letter 13 places. A→N, B→O, etc.\nSpaces and punctuation stay the same, so word lengths are preserved.\n\nExample:\n  Plain:   Derek is the leak\n  ROT13:   Qrerx vf gur yrnx\n\nAnother:\n  Plain:   The meeting is at noon\n  ROT13:   Gur zrrgvat vf ng abba\n\nTo decode: open CyberChef, drag in 'ROT13', paste the text.\nOr on Kali terminal:\n  echo \"Gur zrrgvat vf ng abba\" | tr 'A-Za-z' 'N-ZA-Mn-za-m'\n\n────────────\nTIP: If it ends in =. Try Base64 first.\nIf the words look scrambled but the lengths match. Try ROT13.\n────────────",
               "observations": "Patricia's handwritten notes on the encoding methods Derek uses"
             },
             {
@@ -1976,7 +1984,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "phoneId": "patricia_desk_phone",
           "takeable": false,
           "readable": true,
-          "voice": "Patricia... it's Maya. I know you probably won't hear this. They cleared out your desk so fast. I just — I needed to say it somewhere. You were right about Derek. I'm sorry we didn't back you up when it mattered. Be safe.",
+          "voice": "Patricia... it's Maya. I know you probably won't hear this. They cleared out your desk so fast. I just... I needed to say it somewhere. You were right about Derek. I'm sorry we didn't back you up when it mattered. Be safe.",
           "ttsVoice": {
             "name": "Leda",
             "style": "Content analyst in her late twenties. Speak with a consistent Chinese-American (California) accent throughout — do not shift to any other accent. Soft, mid-to-high pitch; quiet, hesitant pace. Nervous and concerned. Speaking quietly, like she doesn't want to be overheard.",
@@ -1985,7 +1993,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "avatar": "assets/characters/female_scientist_headshot.png",
           "sender": "Maya Chen",
           "timestamp": "3 days ago, 8:02 AM",
-          "observations": "Patricia's desk phone — message light still blinking. Someone called after she was fired."
+          "observations": "Patricia's desk phone, message light still blinking. Someone called after she was fired."
         },
         {
           "type": "notes",
@@ -2003,7 +2011,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "chatBackground": "assets/backgrounds/rooms/m01_kevin_office_blended.png",
       "lighting": { "mode": "motion" },
       "locked": false,
-      "door_sign": "Kevin Park — IT",
+      "door_sign": "Kevin Park, IT",
       "connections": {
         "south": "hallway_west"
       },
@@ -2030,7 +2038,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "readable": true,
               "onRead": { "setVariable": { "framing_evidence_seen": true } },
               "text": "AUTOMATED SERVER ACCESS LOG\n\nAccount: kevin_park@viraldynamics.com\nPeriod: Last 30 days\n\nFlagged Events:\n  11:47 PM  SERVER_ROOM  [Keycard: KP-0094]\n  11:52 PM  SERVER_ROOM  [Keycard: KP-0094]\n  12:03 AM  SERVER_ROOM  [Keycard: KP-0094]\n  02:15 AM  BACKUP_SYSTEM  [Session: KPARK_2]\n\nData Transfer Summary:\n  External transfer detected: 847 MB → 185.220.101.x\n\nNote: Log generated and filed by D. Lawson.\n",
-              "observations": "Server access logs on Kevin's workstation that appear to show him exfiltrating data — suspiciously convenient. This file appears to implicate Kevin — but compare with the files in Derek's office"
+              "observations": "Server access logs on Kevin's workstation that appear to show him exfiltrating data, suspiciously convenient. This file appears to implicate Kevin, but compare with the files in Derek's office"
             },
             {
               "type": "text_file",
@@ -2038,8 +2046,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": false,
               "readable": true,
               "onRead": { "setVariable": { "framing_evidence_seen": true } },
-              "text": "════════════\nVIRAL DYNAMICS MAIL - DRAFT (RECOVERED)\nNOTE: Draft found in Kevin's account — never sent\n════════════\n\nFROM:    kevin_park@viraldynamics.com\nTO:      secure-relay@zds-partners.net\nSUBJECT: access confirmed - phase 3\n\n> Access window arranged as discussed.\n> Server credentials attached.\n> Keep this channel dark.\n\n[HEADER ANOMALIES DETECTED:\n  Origin IP: 10.0.1.47 — matches D. Lawson's workstation\n  Session metadata: author=D.LAWSON\n  Timestamp: 4 minutes before Kevin's session began]",
-              "observations": "A draft email in Kevin's account that would frame him — but the metadata points to Derek"
+              "text": "════════════\nVIRAL DYNAMICS MAIL - DRAFT (RECOVERED)\nNOTE: Draft found in Kevin's account, never sent\n════════════\n\nFROM:    kevin_park@viraldynamics.com\nTO:      secure-relay@zds-partners.net\nSUBJECT: access confirmed - phase 3\n\n> Access window arranged as discussed.\n> Server credentials attached.\n> Keep this channel dark.\n\n[HEADER ANOMALIES DETECTED:\n  Origin IP: 10.0.1.47, matches D. Lawson's workstation\n  Session metadata: author=D.LAWSON\n  Timestamp: 4 minutes before Kevin's session began]",
+              "observations": "A draft email in Kevin's account that would frame him, but the metadata points to Derek"
             }
           ]
         },
@@ -2051,16 +2059,16 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "puzzle_graph_unlocks": "it_room",
           "puzzle_graph_optional": true,
           "puzzle_graph_reveals": "it_room_pin",
-          "text": "Gone to check the servers again.\nIf you need me, I'm in the IT Room (east of main office, PIN: 2468).\nServer room is through the IT room — back door, RFID reader.\n- Kevin\n\nP.S. Yes I finally memorised the code. Please stop writing it on the whiteboard.\nP.P.S. If my name is showing up somewhere it shouldn't be, talk to me before you assume anything. Someone has been filing things in my name and I've been trying to figure out who.",
-          "observations": "Note from Kevin — he's in the IT room, not here"
+          "text": "Gone to check the servers again.\nIf you need me, I'm in the IT Room (east of main office, PIN: 2468).\nServer room is through the IT room, back door, RFID reader.\n- Kevin\n\nP.S. Yes I finally memorised the code. Please stop writing it on the whiteboard.\nP.P.S. If my name is showing up somewhere it shouldn't be, talk to me before you assume anything. Someone has been filing things in my name and I've been trying to figure out who.",
+          "observations": "Note from Kevin, he's in the IT room, not here"
         },
         {
           "type": "notes2",
           "name": "IT Incident Log",
           "takeable": true,
           "readable": true,
-          "text": "IT INCIDENT LOG - K. Park\n\nWeek of incident:\n- Multiple unauthorised server room accesses flagged (D. Lawson)\n- Raised with management x3 — no response\n- Logs show data exfiltration attempts to external IP\n- I've started keeping my own records in case something happens\n\nNote to self: Talk to Patricia. She was asking the same questions.",
-          "observations": "Kevin's personal incident log — he's been tracking Derek's behaviour"
+          "text": "IT INCIDENT LOG - K. Park\n\nWeek of incident:\n- Multiple unauthorised server room accesses flagged (D. Lawson)\n- Raised with management x3, no response\n- Logs show data exfiltration attempts to external IP\n- I've started keeping my own records in case something happens\n\nNote to self: Talk to Patricia. She was asking the same questions.",
+          "observations": "Kevin's personal incident log: he's been tracking Derek's behaviour"
         }
       ]
     },
@@ -2072,7 +2080,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
         { "x": [0.6, 1], "image": "assets/backgrounds/rooms/m01_maya_office_blended.png" }
       ],
       "locked": false,
-      "door_sign": "Maya Chen — Research",
+      "door_sign": "Maya Chen, Research",
       "connections": {
         "south": "hallway_east"
       },
@@ -2124,7 +2132,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "name": "Disinformation Research",
           "takeable": true,
           "readable": true,
-          "text": "RESEARCH NOTES - MAYA CHEN\n\nI was hired to analyze content effectiveness.\nWhat I found was something else entirely.\n\nThe 'campaigns' we're running aren't marketing.\nThey're psychological operations.\n\nTarget demographics aren't customers.\nThey're victims.\n\nI tried to raise concerns internally.\nPatricia listened. Then Patricia got fired.\n\nI'm documenting everything now.\nSomeone needs to know the truth.\n\n(If you're reading this and you're not Derek, we should talk.)",
+          "text": "RESEARCH NOTES - MAYA CHEN\n\nI was hired to analyse content effectiveness.\nWhat I found was something else entirely.\n\nThe 'campaigns' we're running aren't marketing.\nThey're psychological operations.\n\nTarget demographics aren't customers.\nThey're victims.\n\nI tried to raise concerns internally.\nPatricia listened. Then Patricia got fired.\n\nI'm documenting everything now.\nSomeone needs to know the truth.\n\n(If you're reading this and you're not Derek, we should talk.)",
           "observations": "Maya's research notes revealing her concerns"
         },
         {
@@ -2147,7 +2155,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "requires": "derek_office_key",
       "keyPins": [35, 55, 45, 25],
       "difficulty": "medium",
-      "door_sign": "Derek Lawson — Operations",
+      "door_sign": "Derek Lawson, Operations",
       "connections": {
         "south": "hallway_east"
       },
@@ -2167,7 +2175,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "lockoutSeconds": 30,
           "postitNote": "Anniversary",
           "showPostit": true,
-          "observations": "Derek's personal workstation — password locked",
+          "observations": "Derek's personal workstation, password locked",
           "contents": [
             {
               "type": "text_file",
@@ -2176,7 +2184,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "readable": true,
               "collection_group": "dereks_computer_files",
               "onRead": { "setVariable": { "framing_evidence_seen": true } },
-              "text": "════════════\nVIRAL DYNAMICS MEDIA - IT SECURITY ANOMALY REPORT\nReference: ITSA-2024-047  |  Auto-generated: AutoSec v2.1\n════════════\n\nFLAGGED ACCOUNT: K.PARK (kevin_park@viraldynamics.com)\nPriority: HIGH\n\nANOMALOUS ACCESS EVENTS:\n\n  11:47 PM  SERVER_ROOM  [Keycard: KP-0094]\n  12:03 AM  SERVER_ROOM  [Keycard: KP-0094]\n  02:15 AM  BACKUP_SYSTEM via server terminal  [Session: KPARK_2]\n\nDATA TRANSFER DETECTED:\n  847 MB exported to external IP: 185.220.101.x (Tor exit node)\n  Transfer initiated from session KPARK_2\n\nSECURITY NOTE:\n  Primary K.PARK workstation session was simultaneously active\n  during events at 11:47 PM and 12:03 AM.\n  Possible credential delegation or shared access.\n\n[Filed for compliance review]\n[SUBMITTED BY: D. Lawson (Senior Marketing Manager) — IT Manager sign-off bypassed]",
+              "text": "════════════\nVIRAL DYNAMICS MEDIA - IT SECURITY ANOMALY REPORT\nReference: ITSA-2024-047  |  Auto-generated: AutoSec v2.1\n════════════\n\nFLAGGED ACCOUNT: K.PARK (kevin_park@viraldynamics.com)\nPriority: HIGH\n\nANOMALOUS ACCESS EVENTS:\n\n  11:47 PM  SERVER_ROOM  [Keycard: KP-0094]\n  12:03 AM  SERVER_ROOM  [Keycard: KP-0094]\n  02:15 AM  BACKUP_SYSTEM via server terminal  [Session: KPARK_2]\n\nDATA TRANSFER DETECTED:\n  847 MB exported to external IP: 185.220.101.x (Tor exit node)\n  Transfer initiated from session KPARK_2\n\nSECURITY NOTE:\n  Primary K.PARK workstation session was simultaneously active\n  during events at 11:47 PM and 12:03 AM.\n  Possible credential delegation or shared access.\n\n[Filed for compliance review]\n[SUBMITTED BY: D. Lawson (Senior Marketing Manager): IT Manager sign-off bypassed]",
               "observations": "Auto-generated security report flagging Kevin Park's credentials for suspicious server access"
             },
             {
@@ -2187,7 +2195,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "collection_group": "dereks_computer_files",
               "onRead": { "setVariable": { "framing_evidence_seen": true } },
               "text": "════════════\nFORENSIC EMAIL RECOVERY - VIRAL DYNAMICS MAIL SERVER\nRecovered from: Deleted Items / Overwritten Drafts\n════════════\n\nFROM:    kevin_park@viraldynamics.com\n         [HEADER MISMATCH DETECTED - See forensic notes]\nTO:      secure-relay@zds-partners.net\nDATE:    [TIMESTAMP INCONSISTENT WITH MAIL SERVER LOGS]\nSUBJECT: access confirmed - phase 3\n\n> Access window arranged as discussed.\n> Server credentials attached (encrypted).\n> Logs will be clean by morning.\n> Keep this channel dark.\n>\n> - K.P.\n\n════════════\nFORENSIC NOTES:\n  Header origin IP does not match K.Park's workstation.\n  Timestamp predates account session by 4 minutes.\n  Draft metadata shows author: D.LAWSON\n════════════",
-              "observations": "Recovered email purportedly from Kevin Park to an external contact — forensic metadata flags inconsistencies"
+              "observations": "Recovered email purportedly from Kevin Park to an external contact, forensic metadata flags inconsistencies"
             },
             {
               "type": "text_file",
@@ -2196,7 +2204,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "readable": true,
               "puzzle_graph_unlocks": "derek_personal_safe",
               "puzzle_graph_reveals": "personal_safe_pin_0319",
-              "text": "Safe combo — my birthday (19th March). Keyed month first, then day (MMDD).",
+              "text": "Safe combo, my birthday (19th March). Keyed month first, then day (MMDD).",
               "observations": "A brief personal note tucked in a desktop folder"
             },
             {
@@ -2206,7 +2214,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": false,
               "readable": true,
               "onRead": { "setVariable": { "contingency_file_read": true } },
-              "text": "════════════\nCONTINGENCY PLAN: IT AUDIT RESPONSE\n[ACTIVATE IF COMPROMISED]\n════════════\n\nIf audit discovers anomalies, activate CONTINGENCY.\n\nIT Manager Kevin Park becomes the fall guy.\nHis access patterns can be retroactively modified.\nHis termination provides closure for the company and\nends investigation.\n\nPREPARED EVIDENCE:\n- Fake security logs showing Kevin accessing servers at odd hours\n- Forged email from Kevin to 'unknown external party'\n- Timeline framing Kevin as source of data breach\n\nKevin helped you. Gave you access. Trusted you.\nAnd Derek is going to destroy his career—maybe his life—\nto cover ENTROPY's tracks.",
+              "text": "════════════\nCONTINGENCY PLAN: IT AUDIT RESPONSE\n[ACTIVATE IF COMPROMISED]\n════════════\n\nIf audit discovers anomalies, activate CONTINGENCY.\n\nIT Manager Kevin Park becomes the fall guy.\nHis access patterns can be retroactively modified.\nHis termination provides closure for the company and\nends investigation.\n\nPREPARED EVIDENCE:\n- Fake security logs showing Kevin accessing servers at odd hours\n- Forged email from Kevin to 'unknown external party'\n- Timeline framing Kevin as source of data breach\n\nKevin helped you. Gave you access. Trusted you.\nAnd Derek is going to destroy his career, maybe his life,\nto cover ENTROPY's tracks.",
               "observations": "Derek's plan to frame Kevin for everything"
             }
           ]
@@ -2220,8 +2228,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "puzzle_graph_unlocks": "derek_storage_safe",
           "puzzle_graph_and_with": "cyberchef_workstation",
           "puzzle_graph_reveals": "storage_safe_pin_1337",
-          "text": "<%= base64_encode("Storage room safe — 1337\nssh username: derek") %>",
-          "observations": "A printed note left on the desk — the text looks like encoded gibberish. Base64, maybe?"
+          "text": "<%= base64_encode("Storage room safe, 1337\nssh username: derek") %>",
+          "observations": "A printed note left on the desk: the text looks like encoded gibberish. Base64, maybe?"
         },
         {
           "type": "notes",
@@ -2233,7 +2241,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "puzzle_graph_and_with": "cyberchef_workstation",
           "puzzle_graph_reveals": "anniversary_pin_0419",
           "text": "<%= rot13('Password reminder: anniversary. You know the date.') %>",
-          "observations": "A handwritten note with scrambled-looking text — letters are wrong but word lengths look normal. ROT13?"
+          "observations": "A handwritten note with scrambled-looking text, letters are wrong but word lengths look normal. ROT13?"
         },
         {
           "type": "safe",
@@ -2243,7 +2251,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "locked": true,
           "lockType": "pin",
           "requires": "0319",
-          "observations": "A small personal safe tucked under the desk — 4-digit PIN",
+          "observations": "A small personal safe tucked under the desk, 4-digit PIN",
           "contents": [
             {
               "type": "notes",
@@ -2271,7 +2279,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Operation Shatter Casualty Projections",
               "takeable": true,
               "readable": true,
-              "text": "════════════\nOPERATION SHATTER - IMPACT ASSESSMENT\n[INTERNAL PLANNING DOCUMENT]\n════════════\n\nPROJECTED CASUALTY ANALYSIS:\n\nNOTE: Model weights demographic vulnerability—tailored payloads seed panic unevenly; systemic overload amplifies outcomes.\n\nDirect Casualties (First 24 Hours):\n- Cardiac events from panic: 12-24 fatalities\n- Critical care delayed or diverted due to false facility alerts: 8-14 fatalities\n- Emergency lines saturated—real callers unable to reach services in time: 8-14 fatalities\n- Violence from incitement: 5-15 fatalities\n- Traffic accidents from panic: 10-20 fatalities\n\nESTIMATED DIRECT DEATHS: 42-85 people\n\nSTRATEGIC JUSTIFICATION:\nThese deaths are not the goal—they are the demonstration.\nWhen truth emerges that fake messages caused real deaths,\ntrust in ALL digital communications collapses permanently.\n\nThis is not terrorism. This is education at scale.\n\nAPPROVED: The Architect",
+              "text": "════════════\nOPERATION SHATTER - IMPACT ASSESSMENT\n[INTERNAL PLANNING DOCUMENT]\n════════════\n\nPROJECTED CASUALTY ANALYSIS:\n\nNOTE: Model weights demographic vulnerability, tailored payloads seed panic unevenly; systemic overload amplifies outcomes.\n\nDirect Casualties (First 24 Hours):\n- Cardiac events from panic: 12-24 fatalities\n- Critical care delayed or diverted due to false facility alerts: 8-14 fatalities\n- Emergency lines saturated, real callers unable to reach services in time: 8-14 fatalities\n- Violence from incitement: 5-15 fatalities\n- Traffic accidents from panic: 10-20 fatalities\n\nESTIMATED DIRECT DEATHS: 42-85 people\n\nSTRATEGIC JUSTIFICATION:\nThese deaths are not the goal: they are the demonstration.\nWhen truth emerges that fake messages caused real deaths,\ntrust in ALL digital communications collapses permanently.\n\nThis is not terrorism. This is education at scale.\n\nAPPROVED: The Architect",
               "observations": "Derek's calculated death projections - critical evidence",
               "onPickup": { "setVariable": { "found_casualty_projections": true } }
             },
@@ -2280,7 +2288,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Social Fabric Manifesto",
               "takeable": true,
               "readable": true,
-              "text": "════════════\nENTROPY CELL: SOCIAL FABRIC\nOPERATIONAL PHILOSOPHY DOCUMENT\n[RECOVERED INTELLIGENCE]\n════════════\n\nPHILOSOPHY:\n\nSecurity professionals focus on technical defenses—\nfirewalls, encryption, access controls. They miss the\nmost vulnerable attack surface: human belief systems.\n\nPeople don't believe what's true. They believe what\naligns with their existing narratives.\n\nWe don't hack systems. We hack perception.\n\nOPERATIONAL METHODS:\n- Fabricate content that confirms existing fears\n- Segment demographic cohorts for panic leverage—tune fiction accordingly\n- Profile who trusts which channels—and how fast they act\n- Exploit trust in institutional communications\n- Create panic through coordinated false information\n\nACCEPTABLE LOSSES:\nSome will die so others learn the lesson:\nVerify everything. Trust nothing.\nUnverified trust kills at scale. Only the adaptable survive.",
+              "text": "════════════\nENTROPY CELL: SOCIAL FABRIC\nOPERATIONAL PHILOSOPHY DOCUMENT\n[RECOVERED INTELLIGENCE]\n════════════\n\nPHILOSOPHY:\n\nSecurity professionals focus on technical defences:\nfirewalls, encryption, access controls. They miss the\nmost vulnerable attack surface: human belief systems.\n\nPeople don't believe what's true. They believe what\naligns with their existing narratives.\n\nWe don't hack systems. We hack perception.\n\nOPERATIONAL METHODS:\n- Fabricate content that confirms existing fears\n- Segment demographic cohorts for panic leverage, tune fiction accordingly\n- Profile who trusts which channels, and how fast they act\n- Exploit trust in institutional communications\n- Create panic through coordinated false information\n\nACCEPTABLE LOSSES:\nSome will die so others learn the lesson:\nVerify everything. Trust nothing.\nUnverified trust kills at scale. Only the adaptable survive.",
               "observations": "ENTROPY operational philosophy - critical intelligence"
             },
             {
@@ -2288,7 +2296,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "name": "Campaign Materials",
               "takeable": true,
               "readable": true,
-              "text": "CONFIDENTIAL - OPERATION SHATTER ASSETS\n\nTarget: 2.3 million profiled individuals\n\nDemographic & behavioural targeting:\n- High-leverage cohorts (composite stress/isolation indices—aggregated scoring only)\n- Tailored message variants per segment (hospital / bank / gov vectors)\n- Zero-verification responders; institutional-channel subscribers\n- Forward-first amplifiers; high-density metro cascade corridors\n\nDeployment Assets:\n- Fabricated hospital closure notices\n- Fake bank failure announcements\n- Forged government emergency alerts\n- Coordinated social media panic accounts\n\nLaunch Window: This Sunday, 6:00 AM",
+              "text": "CONFIDENTIAL - OPERATION SHATTER ASSETS\n\nTarget: 2.3 million profiled individuals\n\nDemographic & behavioural targeting:\n- High-leverage cohorts (composite stress/isolation indices, aggregated scoring only)\n- Tailored message variants per segment (hospital / bank / gov vectors)\n- Zero-verification responders; institutional-channel subscribers\n- Forward-first amplifiers; high-density metro cascade corridors\n\nDeployment Assets:\n- Fabricated hospital closure notices\n- Fake bank failure announcements\n- Forged government emergency alerts\n- Coordinated social media panic accounts\n\nLaunch Window: This Sunday, 6:00 AM",
               "observations": "Evidence of coordinated disinformation campaign"
             }
           ]
@@ -2316,7 +2324,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
       "locked": true,
       "lockType": "rfid",
       "requires": "server_keycard",
-      "door_sign": "Server Room — Authorised Access Only",
+      "door_sign": "Server Room: Authorised Access Only",
       "connections": {
         "north": "it_room"
       },
@@ -2347,23 +2355,23 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "acceptsVmLabels": { "shatter_server": "ENTROPY attack server (172.16.0.2)" },
           "flags": ["shatter_server:flag_2", "shatter_server:flag_4"],
           "hintOnlyFlags": {
-            "shatter_server:flag_1": "Decryption Key validated — this key unlocks the ENTROPY encrypted archive in the server room.",
-            "shatter_server:flag_3": "Launch authorization code validated — enter it into the ENTROPY launch device."
+            "shatter_server:flag_1": "Decryption Key validated, this key unlocks the ENTROPY encrypted archive in the server room.",
+            "shatter_server:flag_3": "Launch authorisation code validated. Enter it into the ENTROPY launch device."
           },
           "flagRewards": [
             {
               "type": "set_global",
               "key": "linux_flag_submitted",
               "value": true,
-              "label": "Directory-traversal evidence secured — logged with SAFETYNET.",
+              "label": "Directory-traversal evidence secured, logged with SAFETYNET.",
               "description": "Directory traversal intel submitted (deployment_notes in operation_shatter/)"
             },
             {
               "type": "set_global",
               "key": "sudo_flag_submitted",
               "value": true,
-              "label": "Encoded deployment configuration secured — logged with SAFETYNET.",
-              "description": "Encoded deployment intel submitted (shatter_configuration, base64) — requires sudo to shatter account"
+              "label": "Encoded deployment configuration secured, logged with SAFETYNET.",
+              "description": "Encoded deployment intel submitted (shatter_configuration, base64), requires sudo to shatter account"
             }
           ]
         },
@@ -2378,24 +2386,24 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
           "requires": "shatter_server:flag_1",
           "completesTask": "submit_ssh_flag",
           "puzzle_graph_note": "Unlocked by VM flag shatter_server:flag_1 (SSH brute force into derek account using passwords wordlist)",
-          "observations": "A ruggedised encrypted drive in a reinforced case. Stamped: ENTROPY — EYES ONLY. The decryption key is stored on shatter_server (172.16.0.2) in derek's account. Submit it here to unlock.",
+          "observations": "A ruggedised encrypted drive in a reinforced case. Stamped: ENTROPY, EYES ONLY. The decryption key is stored on shatter_server (172.16.0.2) in derek's account. Submit it here to unlock.",
           "flagRewards": [
             {
               "type": "set_global",
               "key": "ssh_flag_submitted",
               "value": true,
-              "label": "Decryption key accepted — the ENTROPY archive unlocks.",
-              "description": "ENTROPY archive decryption key confirmed — SSH brute force into derek's account complete"
+              "label": "Decryption key accepted, the ENTROPY archive unlocks.",
+              "description": "ENTROPY archive decryption key confirmed. SSH brute force into derek's account complete"
             }
           ],
           "contents": [
             {
               "type": "notes5",
-              "name": "Operation Shatter: Architect's Authorization",
+              "name": "Operation Shatter: Architect's Authorisation",
               "takeable": true,
               "readable": true,
-              "text": "════════════\nOPERATION SHATTER — FINAL AUTHORIZATION\n[RECOVERED FROM ENCRYPTED ARCHIVE]\n════════════\n\nTO:   Cell Social Fabric — Field Command\nFROM: The Architect\nRE:   Final Authorization — Operation Shatter\n\nYou have my full authorization to proceed.\n\nThe infrastructure is in place. The profiles are compiled.\nThe message vectors are loaded and ready for deployment.\n\nThis Sunday at 06:00, you will demonstrate to the world\nthat digital trust is not a foundation — it is a fiction.\n\nWhen 2.3 million people receive simultaneous, credible\nemergency alerts telling them their bank has collapsed,\ntheir hospital is closed, the emergency grid is locking up —\nthe panic that follows will be measurable.\nProfiling concentrates the opening shock; congestion and contagion do the rest.\nHistoric.\n\nThe casualties are regrettable. They are also necessary.\nThe world must learn: nothing digital can be trusted.\nNot banks. Not hospitals. Not governments. Not each other.\n\nWe will force the lesson.\n\nDo not fail me.\n\n  — The Architect\n\n[TOP SECRET — ENTROPY COMMAND INTELLIGENCE]",
-              "observations": "Direct authorization from The Architect for Operation Shatter — signed command ordering the attack"
+              "text": "════════════\nOPERATION SHATTER: FINAL AUTHORISATION\n[RECOVERED FROM ENCRYPTED ARCHIVE]\n════════════\n\nTO:   Cell Social Fabric, Field Command\nFROM: The Architect\nRE:   Final Authorisation, Operation Shatter\n\nYou have my full authorisation to proceed.\n\nThe infrastructure is in place. The profiles are compiled.\nThe message vectors are loaded and ready for deployment.\n\nThis Sunday at 06:00, you will demonstrate to the world\nthat digital trust is not a foundation: it is a fiction.\n\nWhen 2.3 million people receive simultaneous, credible\nemergency alerts telling them their bank has collapsed,\ntheir hospital is closed, the emergency grid is locking up,\nthe panic that follows will be measurable.\nProfiling concentrates the opening shock; congestion and contagion do the rest.\nHistoric.\n\nThe casualties are regrettable. They are also necessary.\nThe world must learn: nothing digital can be trusted.\nNot banks. Not hospitals. Not governments. Not each other.\n\nWe will force the lesson.\n\nDo not fail me.\n\n  The Architect\n\n[TOP SECRET: ENTROPY COMMAND INTELLIGENCE]",
+              "observations": "Direct authorisation from The Architect for Operation Shatter, signed command ordering the attack"
             },
             {
               "type": "notes5",
@@ -2403,15 +2411,15 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
               "takeable": true,
               "readable": true,
               "onPickup": { "setVariable": { "entropy_reveal_read": true } },
-              "text": "════════════\nENTROPY — COMMAND ARCHITECTURE\n[RECOVERED FROM ENCRYPTED ARCHIVE]\n════════════\n\nCOMMAND HIERARCHY (recovered from root partition)\n\nLEVEL 0 — THE ARCHITECT\n  [Identity: CLASSIFIED — Omega clearance required]\n  Role: Strategic vision, final authorization\n  Method: Encrypted dead-drop only. No direct contact.\n\nLEVEL 1 — OPERATIONAL CELLS (independent, compartmentalized)\n  │\n  ├── CELL: SOCIAL FABRIC\n  │     Operative: Derek Lawson (Viral Dynamics Media)\n  │     Specialty: Disinformation at scale\n  │     Operation: SHATTER [ACTIVE]\n  │\n  ├── CELL: ZERO DAY SYNDICATE\n  │     Specialty: Infrastructure compromise\n  │     Role: Technical support for SHATTER\n  │\n  ├── CELL: [REDACTED]\n  │     Status: Active — details above current clearance\n  │\n  └── CELL: [REDACTED]\n        Status: Active — details above current clearance\n\nOPERATIONAL PRINCIPLE:\n  No cell knows another. No cell can burn another.\n  Only The Architect holds the full picture.\n\n[TOP SECRET — ENTROPY COMMAND INTELLIGENCE]",
-              "observations": "ENTROPY's full command structure — reveals the network is far larger than one operative. \n\nThis file confirms what you already suspect: Derek Lawson is one node. ENTROPY is the network. Stopping Operation Shatter is not enough."
+              "text": "════════════\nENTROPY: COMMAND ARCHITECTURE\n[RECOVERED FROM ENCRYPTED ARCHIVE]\n════════════\n\nCOMMAND HIERARCHY (recovered from root partition)\n\nLEVEL 0: THE ARCHITECT\n  [Identity: CLASSIFIED, Omega clearance required]\n  Role: Strategic vision, final authorisation\n  Method: Encrypted dead-drop only. No direct contact.\n\nLEVEL 1: OPERATIONAL CELLS (independent, compartmentalised)\n  │\n  ├── CELL: SOCIAL FABRIC\n  │     Operative: Derek Lawson (Viral Dynamics Media)\n  │     Specialty: Disinformation at scale\n  │     Operation: SHATTER [ACTIVE]\n  │\n  ├── CELL: ZERO DAY SYNDICATE\n  │     Specialty: Infrastructure compromise\n  │     Role: Technical support for SHATTER\n  │\n  ├── CELL: [REDACTED]\n  │     Status: Active, details above current clearance\n  │\n  └── CELL: [REDACTED]\n        Status: Active, details above current clearance\n\nOPERATIONAL PRINCIPLE:\n  No cell knows another. No cell can burn another.\n  Only The Architect holds the full picture.\n\n[TOP SECRET: ENTROPY COMMAND INTELLIGENCE]",
+              "observations": "ENTROPY's full command structure, reveals the network is far larger than one operative. \n\nThis file confirms what you already suspect: Derek Lawson is one node. ENTROPY is the network. Stopping Operation Shatter is not enough."
             },
             {
               "type": "notes",
               "name": "Operation Shatter Target Database",
               "takeable": true,
               "readable": true,
-              "text": "════════════\nOPERATION SHATTER - TARGET DEMOGRAPHICS\n[PSYCHOLOGICAL WARFARE DATABASE]\n════════════\n\nTOTAL PROFILES: 2,347,832\nCOLLECTION PERIOD: 90 days\n\nSEGMENT 1: HIGH-LEVERAGE STRESS COHORTS\nPopulation: 47,832 individuals\n- Composite indices from fused datasets (financial strain, care-load proxies, isolation markers—aggregated only)\n- Sub-cluster message variants tuned for fastest initial uptake\n- Simulations show steeper panic-response curves vs population baseline\nVulnerability Score: 9.2/10\n\nSEGMENT 2: CASCADE AMPLIFIERS\nPopulation: 156,432 individuals\n- High re-share velocity during breaking-news spikes\n- Large local follower networks / neighbourhood mesh apps\n- Pattern: amplify before authenticate\nVulnerability Score: 8.7/10\n\nSEGMENT 3: CROSS-CHANNEL SUPER-USERS\nPopulation: 89,247 individuals\n- Active simultaneously across social, messaging, and carrier alerts\n- Maximizes coordinated-blast reach when payloads align\nVulnerability Score: 9.5/10\n\nSEGMENT 4: ISOLATION × INSTITUTIONAL TRUST\nPopulation: 34,891 individuals\n- Limited corroboration networks—fewer peers to sanity-check an alert\n- High trust in SMS/email presenting as hospital, bank, or government channels\n- Geographic concentration in dense metro corridors—minutes-level propagation\nVulnerability Score: 9.8/10",
+              "text": "════════════\nOPERATION SHATTER - TARGET DEMOGRAPHICS\n[PSYCHOLOGICAL WARFARE DATABASE]\n════════════\n\nTOTAL PROFILES: 2,347,832\nCOLLECTION PERIOD: 90 days\n\nSEGMENT 1: HIGH-LEVERAGE STRESS COHORTS\nPopulation: 47,832 individuals\n- Composite indices from fused datasets (financial strain, care-load proxies, isolation markers, aggregated only)\n- Sub-cluster message variants tuned for fastest initial uptake\n- Simulations show steeper panic-response curves vs population baseline\nVulnerability Score: 9.2/10\n\nSEGMENT 2: CASCADE AMPLIFIERS\nPopulation: 156,432 individuals\n- High re-share velocity during breaking-news spikes\n- Large local follower networks / neighbourhood mesh apps\n- Pattern: amplify before authenticate\nVulnerability Score: 8.7/10\n\nSEGMENT 3: CROSS-CHANNEL SUPER-USERS\nPopulation: 89,247 individuals\n- Active simultaneously across social, messaging, and carrier alerts\n- Maximises coordinated-blast reach when payloads align\nVulnerability Score: 9.5/10\n\nSEGMENT 4: ISOLATION × INSTITUTIONAL TRUST\nPopulation: 34,891 individuals\n- Limited corroboration networks, fewer peers to sanity-check an alert\n- High trust in SMS/email presenting as hospital, bank, or government channels\n- Geographic concentration in dense metro corridors, minutes-level propagation\nVulnerability Score: 9.8/10",
               "observations": "Database of 2.3 million people profiled for demographic and behavioural vulnerability to coordinated panic",
               "onPickup": { "setVariable": { "found_target_database": true } }
             }
@@ -2445,6 +2453,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "derek_showed_remorse": false,
 
     "kevin_choice": "",
+    "kevin_gear_all": false,
     "kevin_protected": false,
     "kevin_ko": false,
     "kevin_accused": false,
@@ -2477,6 +2486,7 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "derek_personal_safe_opened": false,
     "derek_storage_safe_opened": false,
     "whiteboard_cipher_seen": false,
+    "derek_notes_read": false,
     "decoded_whiteboard": false,
 
     "talked_to_maya": false,
@@ -2515,6 +2525,8 @@ password_hints = "Common passwords: Marketing123, Campaign2024, Viral_Dynamics_A
     "launch_code_submitted": false,
     "player_aborted_attack": false,
     "player_launched_attack": false,
+    "m01_first_ring_done": false,
+    "m01_tour_sent": false,
     "m01_abort_call_rung": false,
     "m01_debrief_offered": false,
     "ready_for_debrief": false,

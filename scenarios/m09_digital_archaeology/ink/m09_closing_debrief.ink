@@ -110,7 +110,7 @@ Director Magnus Netherton: Dr Adrian Tesseract. It is easier to say in a hangar 
     Director Magnus Netherton: You have read his memo. Was he right?
 - else:
     Director Magnus Netherton: In 2017 he told the board to warn the vendor within thirty days. The board kept the flaw.
-    Director Magnus Netherton: That was his memo, in short. Was he right?
+    Director Magnus Netherton: Was he right?
 }
 + [About Albion, yes.]
     #set_global:memo_stance:yes_albion

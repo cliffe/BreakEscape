@@ -1,0 +1,13 @@
+{
+  "key": "7aaff59110f5ecb9983d843e2900b428",
+  "npc": "sorensen_hatch",
+  "text": "A stamp, and a list in my head of what went in the feed. The list is the heavier one.",
+  "voice": "Vindemiatrix",
+  "style": "Retired county clerk in her sixties, now director of a Montana records archive. Consistent Western American (Montana) accent throughout -- do not shift to any other accent. Low, warm pitch; unhurried, exact, kind in tone. She never raises her voice and never hurries; the kindness is the dangerous part.",
+  "language": "en-US",
+  "model": "gemini-3.8-flash-tts",
+  "scenario": "m09_digital_archaeology",
+  "source": "generate",
+  "generated": "2026-11-18",
+  "recorded_at": "2026-11-18T17:15:56Z"
+}

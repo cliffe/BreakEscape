@@ -303,10 +303,9 @@
   font-family: 'VT323', monospace;
   font-size: 16px;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.dli-backup-btn:hover { background: #112210; }
+.dli-backup-btn:hover { background: #1a4a2a; }
 
 /* ── Diff view ─────────────────────────────────────────────── */
 .dli-diff-split {
@@ -448,18 +447,17 @@
 
 .dli-source-btn {
   padding: 5px 12px;
-  border: 2px solid #1f6feb;
+  border: 2px solid #33cc66;
   border-radius: 0;
-  background: #0d1c36;
-  color: #58a6ff;
+  background: #0f2d1a;
+  color: #33cc66;
   font-family: 'VT323', monospace;
   font-size: 16px;
   cursor: pointer;
   white-space: nowrap;
-  transition: background 0.15s;
 }
 
-.dli-source-btn:hover:not(:disabled) { background: #112240; }
+.dli-source-btn:hover:not(:disabled) { background: #1a4a2a; }
 
 .dli-source-btn:disabled {
   border-color: #21262d;
@@ -504,7 +502,7 @@
   animation: dli-glow-green 1.5s ease-in-out 1;
 }
 
-.dli-restore-btn-active:hover { background: #122a19; }
+.dli-restore-btn-active:hover { background: #1a4a2a; }
 
 .dli-restore-btn-done {
   background: #0a1a0f;
@@ -605,22 +603,32 @@
   line-height: 1.5;
 }
 
+/* Same look as the pop-up's other confirm: the DLI green-on-dark button (matches .dli-restore-btn-active;
+   the log filter's .lf-flag-confirm-btn is the same look), 2px border, no blue. */
 .dli-modal-confirm-btn {
   display: block;
   width: 100%;
   margin-top: 14px;
   padding: 9px;
-  background: #1f6feb;
-  color: #fff;
+  background: #0f2d1a;
+  color: #33cc66;
   font-family: 'VT323', monospace;
   font-size: 16px;
-  border: none;
+  border: 2px solid #33cc66;
   border-radius: 0;
   cursor: pointer;
-  transition: background 0.15s;
 }
 
-.dli-modal-confirm-btn:hover { background: #388bfd; }
+.dli-modal-confirm-btn:hover { background: #1a4a2a; }
+
+.dli-modal-confirm-btn:focus-visible,
+.dli-source-btn:focus-visible,
+.dli-restore-btn:focus-visible,
+.dli-backup-btn:focus-visible,
+.dli-view-log-btn:focus-visible {
+  outline: 2px solid #33cc66;
+  outline-offset: 2px;
+}
 
 /* ── Fleet report tab ──────────────────────────────────────── */
 .dli-fleet-title {

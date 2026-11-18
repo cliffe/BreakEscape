@@ -40,6 +40,7 @@ VAR named_on_evidence = false
 VAR audit_misread = false
 VAR audit_closed = false
 VAR suite_code_found = false
+VAR found_nightshade_profile = false // Synced scenario global: Okafor's evaluation picked up from the safe
 // PASS 4 (fixes 1 and 2): the card waits for the three interviews, then he lets
 // the player clone it. netherton_card_taken is set by the card_cloned mapping
 // (and by picking up his card after a KO); badge_cloned by the printer route.
@@ -167,7 +168,7 @@ Director Magnus Netherton: Already? Say it. Not for the file. For me. Who is you
     Director Magnus Netherton: A man asking too many questions is either the leak or the only other person hunting it.
     Director Magnus Netherton: I have not decided which, and neither, yet, have you. Bring me the door log. #set_global:suspect_theory:phantom
     -> back
-+ [Nightshade. Too calm, and ATHENA says he never signed the PIN device back in.]
++ [Nightshade. Too calm, and ATHENA's log has his PIN device still out.]
     ~ suspect_theory = "nightshade"
     Director Magnus Netherton: An instinct is not evidence. Calm is a temperament, and half this floor keeps kit it should have returned.
     Director Magnus Netherton: If it is him, he has been careful for years. Careful men leave exactly one mistake. Find it. #set_global:suspect_theory:nightshade
@@ -269,6 +270,7 @@ Director Magnus Netherton: Then don't give me a suspect. Give me a reading.
         - Director Magnus Netherton: Before you read it to me, take it to the men who went through that lab door. Come back when one of them has told you his row is right.
         - Director Magnus Netherton: Not yet. A row nobody has owned is only paper. Put the log in front of Vector or Nightshade.
         - Director Magnus Netherton: Still nothing from the lab door. Vector or Nightshade, Agent. One of them has to say "that row is mine" before I will weigh it.
+        - Director Magnus Netherton: Take the printout to the men on it: Vector on the operations floor, Nightshade in the Crypto Lab. Ask each about the lab door. Then come back.
         }
         -> back
     }
@@ -397,7 +399,15 @@ Director Magnus Netherton: That audit is Phantom's query, off Phantom's printer.
         Director Magnus Netherton: Enough. Give it to me. #set_global:audit_closed:true
         Narrator: He reads the audit against the box's minute himself. It takes him less than a minute. #set_global:named_by_director:true #set_global:mole_identified:true #complete_task:name_the_mole
         Director Magnus Netherton: Nightshade. I should not have had to read that for you, Agent.
-        Director Magnus Netherton: The suite code is in my safe, with Dr Okafor's evaluation. Read hers before you face him.
+        { not suite_code_found and not found_nightshade_profile:
+            Director Magnus Netherton: The suite code is in my safe, with Dr Okafor's evaluation. Read hers before you face him.
+        }
+        { suite_code_found and not found_nightshade_profile:
+            Director Magnus Netherton: Dr Okafor's evaluation is in that safe as well. Read hers before you face him.
+        }
+        { not suite_code_found and found_nightshade_profile:
+            Director Magnus Netherton: The suite code is in my safe. Take it with you.
+        }
     - else:
         Director Magnus Netherton: Enough. You've read me that log three ways. I shall take it from here, and that means asking questions on this floor. #set_global:audit_closed:true #set_global:nightshade_tipped_off:true
         Director Magnus Netherton: People will notice. If he did not know we were looking, he will soon. Get root on the box. When its logs come in, I will name him.
@@ -429,12 +439,28 @@ Director Magnus Netherton: He walked into his own lab twenty-three minutes befor
 Narrator: He puts one hand flat on the desk, as if the floor has moved.
 Director Magnus Netherton: I sealed a warning about him a year ago and told myself it was prudence.
 // PASS 5 (round 1 browser N6): "through the relay" only while it isn't.
+// m08 blind part 2: nothing he repeats once the player holds it. The code card
+// is read from his safe (suite_code_found); the evaluation is picked up there
+// (found_nightshade_profile). Each branch reuses a voiced line that exists.
 { all_flags_submitted:
-    Director Magnus Netherton: The chain is in. He goes down to the suite now. The code is {suite_code}.
+    { suite_code_found:
+        Director Magnus Netherton: The chain is in. He goes down to the suite now.
+    - else:
+        Director Magnus Netherton: The chain is in. He goes down to the suite now. The code is {suite_code}.
+    }
 - else:
-    Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite. The code is {suite_code}.
+    { suite_code_found:
+        Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite.
+    - else:
+        Director Magnus Netherton: When the whole chain is through the relay, he goes down to the suite. The code is {suite_code}.
+    }
 }
-Director Magnus Netherton: The code card is in my safe as well, with Dr Okafor's evaluation. Read hers before you face him.
+{ not suite_code_found and not found_nightshade_profile:
+    Director Magnus Netherton: The code card is in my safe as well, with Dr Okafor's evaluation. Read hers before you face him.
+}
+{ suite_code_found and not found_nightshade_profile:
+    Director Magnus Netherton: Dr Okafor's evaluation is in that safe as well. Read hers before you face him.
+}
 -> back
 
 === repeat_code ===

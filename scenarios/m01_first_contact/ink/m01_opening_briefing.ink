@@ -47,7 +47,7 @@ Agent HaX: Whatever they're planning, it's active. And it's dangerous.
 // ================================================
 
 === briefing_threat ===
-Agent HaX: Three weeks ago, we flagged suspicious activity at Viral Dynamics—far beyond typical disinformation work.
+Agent HaX: Three weeks ago, we flagged suspicious activity at Viral Dynamics, far beyond typical disinformation work.
 
 Agent HaX: Our intel suggests they're coordinating something larger. Data collection, psychological profiling, attack infrastructure.
 
@@ -128,7 +128,7 @@ Agent HaX: Completely legitimate. Viral Dynamics actually requested the audit we
     -> deployment
 
 === technical_access ===
-Agent HaX: Server room, computers, network infrastructure—all fair game under your cover.
+Agent HaX: Server room, computers, network infrastructure: all fair game under your cover.
 
 Agent HaX: That's where you'll find evidence of what Derek's planning. Look for encrypted files, attack infrastructure, target databases.
 
@@ -137,7 +137,7 @@ Agent HaX: That's where you'll find evidence of what Derek's planning. Look for 
 === employee_interaction ===
 Agent HaX: Most employees at Viral Dynamics have no idea what's happening.
 
-Agent HaX: They think they work at a marketing agency. The ENTROPY team is isolated—probably just a few people.
+Agent HaX: They think they work at a marketing agency. The ENTROPY team is isolated, probably just a few people.
 
 Agent HaX: Everyone else is innocent. Keep collateral damage to zero.
 
@@ -148,7 +148,7 @@ Agent HaX: One more thing: there's someone inside named Maya Chen.
 
 Agent HaX: She contacted us anonymously. Suspected something was wrong but doesn't have the full picture.
 
-Agent HaX: Find her. She might have critical information. And protect her identity—if Derek finds out she tipped us off, she's in danger.
+Agent HaX: Find her. She might have critical information. And protect her identity: if Derek finds out she tipped us off, she's in danger.
 
 ~ asked_about_maya = true
 
@@ -180,7 +180,7 @@ Agent HaX: And document everything you find. We need complete evidence of whatev
 // ================================================
 
 === final_instructions ===
-Agent HaX: Remember—Derek doesn't know we're onto him. This is just a routine IT audit as far as he's concerned.
+Agent HaX: Remember: Derek doesn't know we're onto him. This is just a routine IT audit as far as he's concerned.
 
 Agent HaX: Use that advantage. Gather intelligence and evidence before making any moves.
 
@@ -194,7 +194,7 @@ Agent HaX: Use that advantage. Gather intelligence and evidence before making an
 // ================================================
 
 === specific_advice ===
-Agent HaX: The IT manager—Kevin Park—is your entry point. Build rapport with him.
+Agent HaX: The IT manager, Kevin Park, is your entry point. Build rapport with him.
 
 Agent HaX: He's not ENTROPY, just overworked and underpaid. He'll appreciate competent help and give you access.
 
@@ -218,8 +218,6 @@ Agent HaX: And Maya Chen, the analyst who contacted us. Be careful around her. D
 Agent HaX: Get inside, find out what ENTROPY is planning, and report back.
 
 Agent HaX: Talk to Maya. She's your best lead. Whatever Derek's building, she'll have seen pieces of it.
-
-Agent HaX: Once you know what we're dealing with, contact me. We'll figure out how to stop it.
 
 ~ mission_accepted = true
 -> arrival
