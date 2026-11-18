@@ -266,7 +266,7 @@ test('the phone contact list shows a hostile NPC name as text', () => {
 // Review round 3 and the full sink sweep: the text these sinks show is plain text too
 
 test('the notes page shows a hostile observation as text: on open, after Save, after Cancel and on a page change', () => {
-    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: HOSTILE, autoAddToNotes: false });
+    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: HOSTILE, autoAddToNotes: false , navigateToNote: 0 });
     initQuietly(mg);
     let div = document.querySelector('.notes-minigame-observation');
     assertText(div, 'notes observation on open');
@@ -290,7 +290,7 @@ test('the notes page shows a hostile observation as text: on open, after Save, a
 });
 
 test('the notes page keeps its placeholder when an observation is cleared', () => {
-    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: 'old', autoAddToNotes: false });
+    const mg = new NotesMinigame(fresh(), { title: 'Notes', noteContent: 'x', observationText: 'old', autoAddToNotes: false , navigateToNote: 0 });
     initQuietly(mg);
     mg.editObservations(document.querySelector('.notes-minigame-observation'));
     document.querySelector('.notes-minigame-edit-textarea').value = '';

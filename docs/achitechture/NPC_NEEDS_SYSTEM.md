@@ -588,7 +588,7 @@ during the walk home (exists). Player-facing behaviour:
 - **Pools.** Since slice 15 there are no built-in lines (5.6a): a scenario's `chatter` pools
   (`coffee`, `cooler`, `greet`, `grumble`) and an NPC's own `chatter` lines for that topic make up
   what an NPC can say, and with none it shows picture chat. `"chatter": false` turns chat off
-  entirely. A pool is a list or `{ lines, hush, overhearRadius }`.
+  entirely. A pool is a list or `{ lines, hush, overhearRadius, requireGlobal }`.
   `chattiness` (0..1, default 1) is the seeded chance an NPC speaks on its turn. Lines are at most
   40 characters, one line (validator error).
 - **Ends** when either NPC is frozen in a conversation, finishes, or is interrupted; the other
@@ -639,6 +639,40 @@ during the walk home (exists). Player-facing behaviour:
 - **Bag.** An NPC draws from a seeded shuffle-bag per NPC and topic over the pool it speaks (shared
   plus own lines). It refills when empty and a refill never starts with the line just said. Bags are
   in memory only (not saved).
+- **Gated pools (`requireGlobal`).** A pool in its object form may carry `requireGlobal`: a global
+  name (truthy) or `{ name: value }` (every entry matches by strict equality), judged by
+  `requiredGlobalsHold`, as an exchange's gate is. `chatterPool(topic, scenario, own, thoughts, holds)`
+  asks `holds` for each pool at the moment a line is drawn (pair chat at a chatter object, queue
+  chat, grumbles, mutters, announces, phone-pool lines and the has-lines checks all go through it),
+  so the gate reacts live to the global changing and, being read from the saved globals, holds after
+  a reload. A closed pool contributes nothing: no lines, no `hush`, no `overhearRadius`. With several
+  pools under one key (the scenario's and the NPC's own) only the closed ones are skipped. A plain
+  array pool has no gate. Exchanges are unchanged. **A closed pool silences the speech only.** The
+  pair still forms, walks to the object, uses it for the same time and takes its chat turns, so trips
+  and use timing do not change; with no open lines a turn is picture chat as for any topic with no
+  lines (`"chatter": false` or `"npcThoughts": false` removes those too). In a campaign mission
+  (`npcThoughts` false) a closed pool therefore leaves the pair standing silent. The validator warns
+  (V12) when a gate names a global that `globalVariables` does not declare, when a `{ name: value }`
+  value has a different JSON type from the declared global (`"2"` against `2`), and when a gate sits on
+  a security pool (`login_aloud`, `usb_refused`, `work_fail*`, `station_fail`, `social_blocked`, `wk_*`), because a closed gate then
+  silently closes the window. V10 ignores gates. Showcase: `scenarios/test_chatter_pool_gate`.
+  - A desk call draws its pool lines when it starts, so a gate that closes mid-call does not cut them.
+  - A mutter queued while its gate was open keeps that choice: if the gate closes during the wait, it still waits for the speech lock (at most `MUTTER_WAIT_MS`) and then shows the picture for its topic (or nothing, with `npcThoughts` off, as in the campaign missions), not a line. Nothing is spoken from the closed pool.
+  - A gate flip changes the merged pool, so that topic's shuffle-bag starts again (a line said just
+    before the flip can come round again soon after).
+  - A system whose world cannot judge a gate (no `globalHolds`) reads it as closed; the pure
+    `chatterPool` with no `holds` ignores gates.
+  - **Silence while upset, worked example.** Declare the global `false`, gate on the opposite value:
+    ```json
+    "globalVariables": { "ops_watch_upset": false },
+    "chatter": { "cooler": { "lines": ["Quiet morning."], "requireGlobal": { "ops_watch_upset": false } } }
+    ```
+    The pool speaks while `ops_watch_upset` is `false` and the pair stands silent once it is `true`.
+    `"requireGlobal": "ops_watch_upset"` is the inverse (speaks only while upset), and an undeclared
+    global is `undefined`, which never equals `false`, so the pool would never open.
+  - **A pool gate silences only its own pool.** Exchanges (their own `requireGlobal`), `grumble*`,
+    `phone` and announce pools each need their own gate, so a "say nothing when upset" state lists
+    every pool and exchange the NPCs can reach.
 - **Earshot (E7 to E9).** A chat turn counts as heard by `playerHears(speakerId, radius)`: the
   player in the speaker's room, within the radius, the room lit, a clear line. The radius is one
   rule, `_chatRadius`: the object's `overhearRadius`, else the `overhearRadius` of that speaker's

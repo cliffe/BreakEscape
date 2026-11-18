@@ -714,7 +714,7 @@ Agent, status check. Are you inside the facility?
 
 * {not guard_admitted and not security_guard_ko and not checkpoint_passed} [Not yet. I'm at the gate.]
     #exit_conversation
-    Then the badge. Routine audit, came early. Once you're past him: Vance, then something in Hall 1 that isn't on their feed.
+    Then the badge. Routine audit, came early. Once you're past him, find Vance.
     -> support_hub
 
 === vance_status_inquiry ===
@@ -903,9 +903,7 @@ They own the SCADA layer, and there's a remote trigger sitting on top of it.
 
 Right. Faked temperatures, interlocks bypassed, an overcharge on a timer.
 
-So you don't fight it with software.
-
-The plant room has a hardwired shutdown button, no network path. The one thing they couldn't reach.
+So the answer's the hardwired shutdown button in the plant room. No network path, nothing for them to undo.
 
 // Phase 4 dialogue C1 (D5-5): not "press it" before it can arm.
 {anomaly_detected:
@@ -952,7 +950,7 @@ He knows The Architect, how the cells coordinate, what's coming next.
 === capture_vs_speed_guidance ===
 #speaker:agent_0x99
 
-Your call on the ground. Both ways cost something.
+Your call. Both ways cost something.
 
 Go for him and you're close to the trigger he's holding. Cornered, he'll use it.
 
@@ -961,8 +959,6 @@ Go for him and you're close to the trigger he's holding. Cornered, he'll use it.
 - else:
     Go for the button and he's out the dock and gone. And it won't arm till grid control has a real reading.
 }
-
-You'll see it better than I will.
 -> capture_vs_speed_guidance_choices
 
 === capture_vs_speed_guidance_choices ===

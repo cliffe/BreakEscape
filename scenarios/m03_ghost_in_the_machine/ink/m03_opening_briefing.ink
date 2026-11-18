@@ -199,7 +199,6 @@ Agent HaX: Then Sterling's executive card in the meeting. Custom keys, so it's D
 Agent HaX: Your moment's at the whiteboard. Stand close and keep her talking while it reads.
 Agent 0x47 'Nightshade': Capture and replay. Her card broadcasts, we copy it, we wear it. Same trick they use on us.
 Agent 0x47 'Nightshade': One day it'll be our badge somebody clones. Remember how easy it was.
-Agent 0x47 'Nightshade': Last time, a card meant getting it off somebody. This time you just stand next to it.
 Agent HaX: Picks for anything keyed, the cloner for anything carded. No PIN cracker this time. Nightshade still has ours in pieces from St. Catherine's.
 * [What if she notices?]
     Agent HaX: Play the curious recruit. She loves talking about the work. The cloner is passive until you trigger it.
@@ -212,8 +211,7 @@ Agent HaX: Picks for anything keyed, the cloner for anything carded. No PIN crac
 Agent HaX: In the server room you'll find their training lab: an isolated VM network, reachable only from a terminal in that room. It's where they rehearse exploits before they sell them.
 Agent HaX: Map it, work the services, and get to the legacy distcc box. That's where the operational logs live.
 * [What am I looking for exactly?]
-    Agent HaX: Recon, FTP, the web host's price list, then distcc for the logs. The distcc one is the case.
-    Agent HaX: Four flags. Submit each at the drop-site terminal in the server room -- it sends them to me.
+    Agent HaX: Recon, FTP, the web host's price list, then distcc for the logs. Four flags, and the distcc one is the case.
     -> briefing_hub
 + [Standard workflow. Got it.]
     ~ handler_trust = handler_trust + 5
@@ -259,7 +257,7 @@ Agent HaX: Your call.
 === final_instructions ===
 #speaker:agent_0x99
 { knows_m2_connection:
-    Agent HaX: Listen. Every life St. Catherine's lost, it lost to something Zero Day sold.
+    Agent HaX: Every life St. Catherine's lost, it lost to something Zero Day sold.
 }
 * [I'll get the evidence. Zero Day goes down.]
     ~ handler_trust = handler_trust + 10

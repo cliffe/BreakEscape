@@ -549,13 +549,36 @@
     right: calc(15px + var(--minigame-shell-bar, 0px));
 }
 
-/* A conversation's only exit on a phone is its X (UX q100): keep the drawn size but give it
-   a hit area of at least 44 px on small or touch screens. Nothing is drawn. */
-@media (max-width: 600px), (pointer: coarse) {
-    [data-minigame="person-chat"] .minigame-close-button::after {
-        content: '';
-        position: absolute;
-        inset: -14px; /* from the padding box: the themed border is up to 6 px, so the target is at least 44 px */
+/* Every minigame X keeps its drawn size but gets a hit area of at least 44 px (UX q100). The
+   box is 30 px plus the 4-6 px themed border, so inset -14px from the padding box reaches 44+.
+   Applies at every size, not only under a width query: phone landscape (844x390) is wider than
+   600px, and a larger target with the same glyph is harmless on desktop. Nothing is drawn.
+   The console title bar X is position: relative (below) so the hit area anchors to it. */
+.minigame-close-button::after {
+    content: '';
+    position: absolute;
+    inset: -14px;
+}
+
+/* The title-bar X (Crypto Workstation, Lab Sheet) sits beside the 30 px "Open in new tab" button
+   (5 px to its left) in a 46 px bar. The X is a border-box button: 30 px outer, padding box 22 px
+   (4 px border) or 18 px (6 px themed border). Insets are measured from that padding box, so the
+   border width (--ui-small-button-px, 4px unthemed) is added to the side reaches: left starts 1 px
+   outside the X's own edge (the new-tab button is 5 px away), right reaches 14 px past the X,
+   so the target is 45 px wide whichever border is drawn. The unthemed X's reach spills about
+   1.5 px past the bar's edge; nothing is drawn there, so it is cosmetic.
+   Vertical inset -13 gives 56 minus twice the border (44 themed, 48 unthemed), filling the bar
+   without hanging into the iframe. Live proof measures it. */
+.title-bar .minigame-close-button::after {
+    inset: -13px calc(-14px - var(--ui-small-button-px, 4px)) -13px calc(-1px - var(--ui-small-button-px, 4px));
+}
+
+/* Phone on a phone-width screen: the phone sits 44 px down and its header's Notepad button is
+   right under the fixed X, so the X's reach stops at the phone's top edge (border box bottom
+   minus 1 px) and goes upward instead (15 px, to the viewport edge): 44 px tall in all. */
+@media (max-width: 500px) {
+    [data-minigame="phone-chat"] > .minigame-close-button::after {
+        inset: calc(-15px - var(--ui-small-button-px, 4px)) -14px calc(1px - var(--ui-small-button-px, 4px)) -14px;
     }
 }
 
@@ -613,7 +636,7 @@
 /* A 44 px touch target on small or touch screens, without changing the drawn 30 px square. */
 @media (max-width: 600px), (pointer: coarse) {
     .se-overlay-close { position: relative; }
-    .se-overlay-close::after { content: ''; position: absolute; inset: -7px; }
+    .se-overlay-close::after { content: ''; position: absolute; inset: -11px; }
 }
 
 /* Open in new tab button for workstations */
@@ -730,8 +753,9 @@ html .minigame-container.minigame-console {
     color: var(--ui-accent, #ffcc44);
     text-align: left;
     text-transform: none;
-    /* One line, never wrapped: a long title ends in an ellipsis and the bar's title
-       attribute holds the full text (Fix round 1 M2) */
+    /* Above 600px: one line, a long title ends in an ellipsis and the bar's title attribute
+       holds the full text. At 600px and below it wraps to up to three lines (see the
+       max-width: 600px block below). */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -755,7 +779,7 @@ html .minigame-container.minigame-console {
 
 /* The X is a box in the bar, not fixed to the window or placed over the frame */
 .console-titlebar > .minigame-close-button {
-    position: static;
+    position: relative;   /* in flow, and the anchor for the hit area */
     flex: none;
     top: auto;
     right: auto;
@@ -837,6 +861,12 @@ html .minigame-container .console-window > .console-body > * {
         min-width: 0;
         margin: 0;
     }
+    /* Short phone landscape (844x390): the org prefix goes too, as under 600px wide, so the
+       console's own name is not cut with an ellipsis. The full text stays in textContent and
+       the bar's title attribute. */
+    .console-window .console-title-org {
+        display: none;
+    }
 }
 
 /* Narrow phones: no room beside the title, so the subtitle lives in the bar's title
@@ -847,6 +877,24 @@ html .minigame-container .console-window > .console-body > * {
     }
     .console-window .console-subtitle {
         display: none;
+    }
+    /* One look for every console scene: whole words wrap to up to three lines beside the X
+       instead of ending in an ellipsis. The 2px on the right is all the X needs (its hit area
+       reaches 14px minus the border past the X; the bar's gap here is 8px). Pixel font stays
+       16px on a 24px line. */
+    .console-titles {
+        padding-right: 2px;
+    }
+    .console-window .console-title {
+        white-space: normal;
+        overflow-wrap: break-word;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+        text-overflow: clip;
+        line-height: 24px;
     }
     /* An essential subtitle (a scene sets static consoleSubtitleEssential) stays, on a
        second line of the bar: one line with an ellipsis */
@@ -863,6 +911,7 @@ html .minigame-container .console-window > .console-body > * {
     .console-window.console-subtitle-essential .console-title {
         flex: 1 1 0;
         min-width: 0;
+        margin-right: 2px; /* .console-titles is display: contents here, so its padding-right is lost */
     }
     .console-window.console-subtitle-essential .console-subtitle {
         order: 3;

@@ -93,9 +93,7 @@ Agent HaX: We've been chasing cells one at a time. Now we can see who pays them 
 // ================================================
 
 === strategic_impact ===
-Agent HaX: A lot. Every cell's money runs through one mixer, into one fund.
-
-Agent HaX: Advances first, then the balances, all on one clock. Seventy-two hours from when you found it.
+Agent HaX: Their timetable. Advances first, then the balances, all on one clock: seventy-two hours from when you found it.
 
 + [What's left of that clock?]
     -> operation_disrupted

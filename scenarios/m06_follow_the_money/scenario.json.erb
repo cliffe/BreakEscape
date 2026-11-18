@@ -1078,7 +1078,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "condition": "globalVars.exchange_infiltrated !== true && globalVars.irina_ko !== true",
               "onceOnly": true,
               "setGlobal": { "exchange_infiltrated": true },
-              "sendTimedMessage": { "delay": 4000, "message": "You've met Volkova. She built the mixer and hates what it's used for. She's the one person in there who might want out. Work that." }
+              "sendTimedMessage": { "delay": 4000, "message": "Volkova built the mixer and hates what it's used for. She might want out. Work that." }
             },
             {
               "_comment": "PASS 4 fix 13 (round 2: its own short text, after the Irina text): point at the lab.",
@@ -1224,7 +1224,7 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "objective_task_completed:submit_flag3",
               "onceOnly": true,
               "setGlobal": { "flag3_submitted": true },
-              "sendTimedMessage": { "delay": 1500, "message": "Financial database. It runs their doors: data centre code's in the export, north door. Last backend box is the vault account. It holds the wallet keys. Get it before upstairs." }
+              "sendTimedMessage": { "delay": 1500, "message": "Data centre's through the north door; the code's in the door export. Last backend box is the vault account, with the wallet keys. Get it before upstairs." }
             },
             {
               "_comment": "PASS 2: flag 4 pays out the cold-storage recovery keys from the vault account (flag-station give_item). found_wallet_keys is set here, not by an onRead on a gifted item, so it is deterministic. Freezing the fund needs it.",
@@ -1605,13 +1605,13 @@ architects_fund_document = "THE ARCHITECT'S FUND - STRATEGIC ALLOCATION\n\nCUSTO
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_minder' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's coming for you, and he won't wait while you read this. Q for fists, then E or click. Q till the open hand shows to walk away." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's coming, and he won't wait while you read this. F punches, keep pressing for harder. Hold Q to block, but you can't walk." }
             },
             {
               "eventPattern": "npc_hostile_state_changed",
               "condition": "data.npcId === 'satoshi_nakamoto' && data.isHostile === true",
               "onceOnly": true,
-              "sendTimedMessage": { "delay": 1000, "message": "He's fighting, and he won't wait while you read this. Q for your fists, then E or click when he's in front of you." }
+              "sendTimedMessage": { "delay": 1000, "message": "He's fighting, and he won't wait while you read this. F to punch, keep pressing for a harder one. Hold Q to block. Face him squarely." }
             },
             <%# Puzzle chains R2 (M-R2-1): a turned Irina checks one slot per visit, and
                 a visit is a trip back to the console. slot_checked_visit is synced
