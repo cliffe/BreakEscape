@@ -7,7 +7,7 @@ Length is the spoken text without the speaker prefix. Pool and exchange lines ar
 | Darren Price | conversation | ink/m10_fp_support.ink:27 (talk_darren) | 48 | Watch the leads. The generator's touchy tonight. |
 | Darren Price | conversation | ink/m10_fp_support.ink:30 (talk_darren) | 49 | Lamps, heaters, the van chargers. Nothing clever. |
 | Darren Price | conversation | ink/m10_fp_support.ink:36 (darren_bye) | 23 | Shout if the lights go. |
-| Sofia Marchetti | conversation | ink/m10_fp_support.ink:45 (talk_sofia) | 58 | Kettle's on, for all the good it does. We're out of sugar. |
+| Sofia Marchetti | conversation | ink/m10_fp_support.ink:45 (talk_sofia) | 38 | Cold out here, and we're out of sugar. |
 | Sofia Marchetti | conversation | ink/m10_fp_support.ink:48 (talk_sofia) | 52 | Cold and tired, but fed. One out of three's not bad. |
 | Sofia Marchetti | conversation | ink/m10_fp_support.ink:54 (sofia_bye) | 27 | I'll keep one warm for you. |
 | Darren Price | exchange | ink/m10_fp_support.ink:61 (ex_fp_kettle_on) | 36 | Kettle's on. They'll be a while yet. |

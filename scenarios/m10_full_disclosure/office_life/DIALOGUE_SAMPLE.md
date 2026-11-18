@@ -21,7 +21,7 @@ The user picked all five recommendations on the office-life questions (D118). Th
 
 ### Conversation
 
-- Kettle's on, for all the good it does. We're out of sugar.
+- Cold out here, and we're out of sugar.
 - Cold and tired, but fed. One out of three's not bad.
 - I'll keep one warm for you.
 

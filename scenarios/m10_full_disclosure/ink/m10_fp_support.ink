@@ -42,7 +42,7 @@ Darren Price: Shout if the lights go.
 {sofia_quiet:
     ~ sofia_quiet = false
 - else:
-    Sofia Marchetti: Kettle's on, for all the good it does. We're out of sugar.
+    Sofia Marchetti: Cold out here, and we're out of sugar.
 }
 + [How's the post holding up?]
     Sofia Marchetti: Cold and tired, but fed. One out of three's not bad.
